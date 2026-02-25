@@ -1,3 +1,4 @@
 {
-    "snyk.advanced.autoSelectOrganization": false
+    "snyk.advanced.autoSelectOrganization": false,
+    "java.compile.nullAnalysis.mode": "automatic"
 }

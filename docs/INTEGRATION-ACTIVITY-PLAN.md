@@ -142,7 +142,7 @@ This document outlines the day-by-day activity plan for implementing two high-pr
 | 37 | Tue 4/17 | Write integration tests with ES testcontainers | Integration tests | ✅ |
 | 38 | Wed 4/18 | Create README.md and API documentation | Documentation | ✅ |
 | 39 | Thu 4/19 | Create sample: RAG pipeline with ES | Sample 1 | ✅ |
-| 40 | Fri 4/22 | Create sample: Elastic Cloud deployment | Sample 2 | ⬜ |
+| 40 | Fri 4/22 | Create sample: Elastic Cloud deployment | Sample 2 | ✅ |
 
 **Week 8 Milestone:** `@sap-ai-sdk/elasticsearch` package ready for release
 
@@ -1031,7 +1031,7 @@ packages/vllm/
 | 5 | ES | Vector Store Core | ✅ Complete | 100% |
 | 6 | ES | Hybrid Search | ✅ Complete | 100% |
 | 7 | ES | Orchestration | ✅ Complete | 100% |
-| 8 | ES | Docs & Samples | 🟡 In Progress | 80% |
+| 8 | ES | Docs & Samples | ✅ Complete | 100% |
 
 ### Key Milestones
 
