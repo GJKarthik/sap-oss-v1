@@ -1,0 +1,1 @@
+{"version":3,"file":"EmbeddingError.js","sourceRoot":"","sources":["EmbeddingError.ts"],"names":[],"mappings":";;;AAAA,2DAAwD;AAExD;;;;GAIG;AACH,MAAa,cAAe,SAAQ,qCAAiB;IACnD,YAAY,OAAe,EAAE,IAAY,EAAE,OAAiC;QAC1E,KAAK,CAAC,OAAO,EAAE,IAAI,EAAE,OAAO,CAAC,CAAC;QAC9B,IAAI,CAAC,IAAI,GAAG,gBAAgB,CAAC;IAC/B,CAAC;CACF;AALD,wCAKC"}

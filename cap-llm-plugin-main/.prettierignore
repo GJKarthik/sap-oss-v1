@@ -1,0 +1,15 @@
+node_modules/
+coverage/
+# Generated from TypeScript
+cds-plugin.js
+cds-plugin.js.map
+cds-plugin.d.ts
+cds-plugin.d.ts.map
+srv/cap-llm-plugin.js
+srv/cap-llm-plugin.js.map
+srv/cap-llm-plugin.d.ts
+srv/cap-llm-plugin.d.ts.map
+lib/anonymization-helper.js
+lib/anonymization-helper.js.map
+lib/anonymization-helper.d.ts
+lib/anonymization-helper.d.ts.map

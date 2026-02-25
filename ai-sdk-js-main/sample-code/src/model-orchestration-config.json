@@ -1,0 +1,23 @@
+{
+  "modules": {
+    "prompt_templating": {
+      "model": {
+        "name": "gpt-4o",
+        "params": {},
+        "version": "latest"
+      },
+      "prompt": {
+        "template": [
+          {
+            "role": "user",
+            "content": "SAP"
+          },
+          {
+            "role": "system",
+            "content": "When given the name of a company, provide the year of it's establishment."
+          }
+        ]
+      }
+    }
+  }
+}

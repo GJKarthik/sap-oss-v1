@@ -1,0 +1,31 @@
+{
+  "name": "ui5-angular-theming",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/ui5-angular-theming/src",
+  "prefix": "ui-angular",
+  "tags": [],
+  "targets": {
+    "prepare": {
+      "executor": "@ui5/webcomponents-nx:prepare"
+    },
+    "build": {
+      "executor": "@nx/angular:package",
+      "outputs": ["{workspaceRoot}/dist/libs/ui5-angular-theming"],
+      "options": {
+        "project": "libs/ui5-angular-theming/ng-package.json",
+        "tsConfig": "libs/ui5-angular-theming/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/ui5-angular-theming/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

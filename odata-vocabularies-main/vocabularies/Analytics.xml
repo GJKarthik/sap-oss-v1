@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Aggregation.V1.xml">
+    <edmx:Include Alias="Aggregation" Namespace="Org.OData.Aggregation.V1" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.xml">
+    <edmx:Include Alias="Validation" Namespace="Org.OData.Validation.V1" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Hierarchy.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Hierarchy.v1" Alias="Hierarchy" />
+  </edmx:Reference>
+
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="com.sap.vocabularies.Analytics.v1" Alias="Analytics">
+      <Annotation Term="Core.Description">
+        <String>Terms for annotating analytical resources</String>
+      </Annotation>
+      <Annotation Term="Core.Description" Qualifier="Published">
+        <String>2017-02-15 © Copyright 2013 SAP AG. All rights reserved</String>
+      </Annotation>
+      <Annotation Term="Core.Links">
+        <Collection>
+          <Record>
+            <PropertyValue Property="rel" String="latest-version" />
+            <PropertyValue Property="href" String="https://sap.github.io/odata-vocabularies/vocabularies/Analytics.xml" />
+          </Record>
+          <Record>
+            <PropertyValue Property="rel" String="alternate" />
+            <PropertyValue Property="href" String="https://sap.github.io/odata-vocabularies/vocabularies/Analytics.json" />
+          </Record>
+          <Record>
+            <PropertyValue Property="rel" String="describedby" />
+            <PropertyValue Property="href" String="https://github.com/sap/odata-vocabularies/blob/main/vocabularies/Analytics.md" />
+          </Record>
+        </Collection>
+      </Annotation>
+
+      <Term Name="Dimension" Type="Core.Tag" BaseTerm="Aggregation.Groupable" Nullable="false" DefaultValue="true" AppliesTo="Property">
+        <Annotation Term="Core.Revisions">
+          <Collection>
+            <Record>
+              <PropertyValue Property="Kind" EnumMember="Core.RevisionKind/Deprecated" />
+              <PropertyValue Property="Description" String="Deprecated in favor of [`AnalyticalContext/Dimension`](#AnalyticalContext)" />
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="Core.Description" String="A property holding the key of a dimension in an analytical context" />
+      </Term>
+
+      <Term Name="Measure" Type="Core.Tag" BaseTerm="Aggregation.Aggregatable" Nullable="false" DefaultValue="true" AppliesTo="Property">
+        <Annotation Term="Core.Revisions">
+          <Collection>
+            <Record>
+              <PropertyValue Property="Kind" EnumMember="Core.RevisionKind/Deprecated" />
+              <PropertyValue Property="Description" String="Deprecated in favor of [`AnalyticalContext/Measure`](#AnalyticalContext)" />
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="Core.Description" String="A property holding the numeric value of a measure in an analytical context" />
+      </Term>
+
+      <Term Name="AccumulativeMeasure" BaseTerm="Analytics.Measure" Type="Core.Tag" Nullable="false" DefaultValue="true">
+        <Annotation Term="Core.Revisions">
+          <Collection>
+            <Record>
+              <PropertyValue Property="Kind" EnumMember="Core.RevisionKind/Deprecated" />
+              <PropertyValue Property="Description" String="Deprecated in favor of [`AnalyticalContext/AccumulativeMeasure`](#AnalyticalContext)" />
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="Core.Description" String="The measure has non-negative and additive values; it can be used in whole-part charts, e.g. the Donut" />
+      </Term>
+
+      <Term Name="RolledUpPropertyCount" Type="Edm.Int16" Nullable="false">
+        <!-- instance annotation -->
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description" String="Number of properties in the entity instance that have been aggregated away" />
+      </Term>
+
+      <Term Name="DrillURL" Type="Edm.String" AppliesTo="EntityType" Nullable="false">
+        <!-- metadata annotation that can also appear as instance annotation -->
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description">
+          <String>
+            URL to retrieve more detailed data related to a node of a recursive hierarchy.
+            Annotations with this term MUST include a qualifier to select the hierarchy for which the drill URL is provided.
+          </String>
+        </Annotation>
+        <Annotation Term="Core.IsURL" />
+      </Term>
+
+      <Term Name="PlanningAction" Type="Core.Tag" Nullable="false" DefaultValue="true" AppliesTo="ActionImport">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description">
+          <String> Processes or generates plan data. Its logic may have side-effects on entity sets.
+          </String>
+        </Annotation>
+      </Term>
+
+      <Term Name="AggregatedProperties" Type="Collection(Analytics.AggregatedPropertyType)" Nullable="false" AppliesTo="EntityType">
+        <Annotation Term="Core.Revisions">
+          <Collection>
+            <Record>
+              <PropertyValue Property="Kind" EnumMember="Core.RevisionKind/Deprecated" />
+              <PropertyValue Property="Description" String="Deprecated in favor of [`AggregatedProperty`](#AggregatedProperty)" />
+            </Record>
+          </Collection>
+        </Annotation>
+        <Annotation Term="Core.Description" String="Dynamic properties for aggregate expressions with specified aggregation method defined on the annotated entity type." />
+        <Annotation Term="Core.LongDescription">
+          <String>
+            Other annotations may refer in property paths to dynamic properties declared in any AgrgegatedProperties annotation of the 
+            given entity type to leverage the results of the aggregate expression determined in the context of an entity collection of 
+            the annotated type.
+          </String>
+        </Annotation>
+      </Term>
+      <Term Name="AggregatedProperty" Type="Analytics.AggregatedPropertyType" Nullable="false" AppliesTo="EntityType">
+        <Annotation Term="Core.Description" String="Dynamic property for aggregate expression with specified aggregation method defined on the annotated entity type." />
+      </Term>
+      <ComplexType Name="AggregatedPropertyType">
+        <Property Name="Name" Type="Core.SimpleIdentifier" Nullable="false">
+          <Annotation Term="Core.Description" String="Name of the dynamic property holding the aggregated value." />
+        </Property>
+        <Property Name="AggregationMethod" Type="Aggregation.AggregationMethod" Nullable="false">
+          <Annotation Term="Core.Description" String="Name of the standard or custom aggregation method to be applied." />
+        </Property>
+        <Property Name="AggregatableProperty" Type="Edm.PropertyPath" Nullable="false">
+          <Annotation Term="Core.Description" String="Property whose values shall be aggregated." />
+        </Property>
+        <Annotation Term="Validation.ApplicableTerms">
+          <Collection>
+            <String>Common.Label</String> <!-- more in the future as needed -->
+          </Collection>
+        </Annotation>
+      </ComplexType>
+
+      <Term Name="AnalyticalContext" Type="Collection(Analytics.AnalyticalContextType)" Nullable="false" AppliesTo="Collection">
+        <Annotation Term="Core.AppliesViaContainer" />
+        <Annotation Term="Core.Description" String="Collection of properties that define an analytical context" />
+      </Term>
+      <ComplexType Name="AnalyticalContextType">
+        <Annotation Term="Core.Description" String="Exactly one of `Property` and `DynamicProperty` must be present" />
+        <Property Name="Property" Type="Edm.PropertyPath">
+          <Annotation Term="Core.Description" String="Property that is part of the analytical context" />
+        </Property>
+        <Property Name="DynamicProperty" Type="Edm.AnnotationPath">
+          <Annotation Term="Core.Description" String="Dynamic property introduced by annotations that is part of the analytical context" />
+          <Annotation Term="Validation.AllowedTerms">
+            <Collection>
+              <String>Analytics.AggregatedProperty</String>
+              <String>Aggregation.CustomAggregate</String>
+            </Collection>
+          </Annotation>
+        </Property>
+        <Property Name="Dimension" Type="Core.Tag" Nullable="false" DefaultValue="true">
+          <Annotation Term="Core.Description" String="The property holds the key of a dimension" />
+        </Property>
+        <Property Name="Measure" Type="Core.Tag" Nullable="false" DefaultValue="true">
+          <Annotation Term="Core.Description" String="The property holds the numeric value of a measure" />
+        </Property>
+        <Property Name="AccumulativeMeasure" Type="Core.Tag" Nullable="false" DefaultValue="true">
+          <Annotation Term="Core.Description" String="The measure has non-negative and additive values; it can be used in whole-part charts, e.g. the Donut" />
+        </Property>
+      </ComplexType>
+
+      <Annotations Target="Aggregation.CustomAggregate">
+        <Annotation Term="Validation.ApplicableTerms">
+          <Annotation Term="Core.Description" String="Adding a list of other terms that can be annotated to it." />
+          <Collection>
+            <String>Common.Label</String> <!-- more in the future as needed -->
+          </Collection>
+        </Annotation>
+      </Annotations>
+
+      <Function Name="MultiLevelExpand" IsBound="true" EntitySetPath="InputSet">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description" String="`$apply` transformation that expands an unnamed leveled hierarchy with custom aggregation of certain properties" />
+        <Annotation Term="Core.LongDescription">
+          <String>Example transformation sequence:
+filter on columns `Industry`, `Amount` and `Currency`,
+order by `Amount` descending,
+show 2 levels, with two exceptions
+preceded by one row with a leaves count and one row with the grand total
+```
+$apply=filter(Industry in ('IT','AI'))
+/groupby((Country,Region,Segment,Industry),
+         filter($these/aggregate(Amount) gt 0 and
+                $these/aggregate(Currency) ne null))
+/concat(
+  groupby((Country,Region,Segment,Industry))
+    /aggregate($count as LeavesCount),
+  aggregate(Amount,Currency),
+  Analytics.MultiLevelExpand(
+    LevelProperties=[{"DimensionProperties":["Country"],"AdditionalProperties":["CountryName"]},
+                     {"DimensionProperties":["Region"],"AdditionalProperties":["RegionName"]},
+                     {"DimensionProperties":["Segment","Industry"],"AdditionalProperties":[]}],
+    Aggregation=["Amount","Currency"],
+    SiblingOrder=[{"Property":"Amount","Descending":true}],
+    Levels=2,
+    ExpandLevels=[{"Entry":["US"],"Levels":0},
+                  {"Entry":["DE","BW"],"Levels":1}]
+  )/concat(aggregate($count as ResultEntriesCount),
+           skip(20)/top(10)))
+```
+</String>
+        </Annotation>
+        <Parameter Name="InputSet" Type="Collection(Edm.EntityType)" Nullable="false">
+          <Annotation Term="Core.Description" String="Entity set to be processed" />
+        </Parameter>
+        <Parameter Name="LevelProperties" Type="Collection(Analytics.MultiLevelExpandLevel)" Nullable="false">
+          <Annotation Term="Core.Description" String="Collection of aggregation levels forming a leveled hierarchy" />
+          <Annotation Term="Core.LongDescription">
+            <String>Each element in the collection defines the properties that constitute one level.
+            A property must not be referenced by more than one level.
+            The first element in the collection defines the property names of the coarsest level,
+            the following elements define the property names of consecutively finer-grained aggregation levels.
+            The function result is the leveled hierarchy with these levels in preorder,
+            entries on the finest-grained level cannot be expanded further.
+            The result does not contain a level representing a root or grand total.
+            All referenced properties must be groupable.</String>
+          </Annotation>
+        </Parameter>
+        <Parameter Name="Aggregation" Type="Collection(Edm.String)" Nullable="false">
+          <Annotation Term="Core.Description" String="Properties to aggregate for all result entries on all levels" />
+          <Annotation Term="Core.LongDescription">
+            <String>All properties in this collection must be custom aggregates.</String>
+          </Annotation>
+        </Parameter>
+        <Parameter Name="SiblingOrder" Type="Collection(Analytics.MultiLevelExpandSiblingOrder)" Nullable="false">
+          <Annotation Term="Core.Description" String="Sort specification to apply to all direct descendants of a given entry (so-called siblings) in the resulting leveled hierarchy" />
+        </Parameter>
+        <Parameter Name="Levels" Type="Edm.Int64" Nullable="false">
+          <Annotation Term="Core.Description" String="Number N of levels to be shown in the initial expansion" />
+          <Annotation Term="Core.LongDescription">
+            <String>The initial expansion shows the first N levels as defined in `LevelProperties` (1 ≤ N ≤ length of `LevelProperties`).
+            If this parameter is omitted, all levels are shown.</String>
+          </Annotation>
+          <Annotation Term="Core.OptionalParameter">
+            <Record/>
+          </Annotation>
+        </Parameter>
+        <Parameter Name="ExpandLevels" Type="Collection(Analytics.MultiLevelExpandEntry)" Nullable="false">
+          <Annotation Term="Core.Description" String="Entries with exceptional expansion" />
+          <Annotation Term="Core.OptionalParameter">
+            <Record/>
+          </Annotation>
+        </Parameter>
+        <Parameter Name="SubtotalsAtBottom" Type="Edm.Boolean" Nullable="false">
+          <Annotation Term="Core.Description" String="Whether to duplicate the group headers so that they appear before and after their descendants" />
+          <Annotation Term="Core.LongDescription">
+            <String>The entry before has [DrillState](Hierarchy.md#HierarchyType) `expanded`,
+            the entry after has DrillState `subtotal`.</String>
+          </Annotation>
+          <Annotation Term="Core.OptionalParameter">
+            <Record>
+              <PropertyValue Property="DefaultValue" String="false" />
+            </Record>
+          </Annotation>
+        </Parameter>
+        <ReturnType Type="Collection(Edm.EntityType)">
+          <Annotation Term="Core.Description" String="Output set including the instance annotation [`LevelInformation`](#LevelInformation)" />
+        </ReturnType>
+      </Function>
+      <ComplexType Name="MultiLevelExpandLevel">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description" String="Property names constituting a level in an [unnamed leveled hierarchy](#MultiLevelExpand)" />
+        <Annotation Term="Core.LongDescription">
+          <String>`DimensionProperties` must be used to identify entries in [`ExpandEntries/Entry`](#MultiLevelExpandEntry),
+          otherwise they have the same effect as `AdditionalProperties`.</String>
+        </Annotation>
+        <Property Name="DimensionProperties" Type="Collection(Edm.String)" Nullable="false">
+          <Annotation Term="Core.Description" String="A non-empty list of property names that define a combination of dimension values" />
+        </Property>
+        <Property Name="AdditionalProperties" Type="Collection(Edm.String)" Nullable="false">
+          <Annotation Term="Core.Description" String="A possibly empty list of names of additional properties of the dimensions that occur in `DimensionProperties`" />
+        </Property>
+      </ComplexType>
+      <ComplexType Name="MultiLevelExpandSiblingOrder">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description" String="Sibling order in an [unnamed leveled hierarchy](#MultiLevelExpand)" />
+        <Property Name="Property" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Property by which to sort" />
+        </Property>
+        <Property Name="Descending" Type="Edm.Boolean" Nullable="true">
+          <Annotation Term="Core.Description" String="Sort direction, ascending if not specified otherwise" />
+        </Property>
+      </ComplexType>
+      <ComplexType Name="MultiLevelExpandEntry">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description" String="Expansion state of an entry in an [unnamed leveled hierarchy](#MultiLevelExpand)" />
+        <Property Name="Entry" Type="Collection(Edm.String)" Nullable="false">
+          <Annotation Term="Core.Description" String="An entry on a given [level](#MultiLevelExpandLevel) is identified by a list of values for the `DimensionProperties` that constitute all levels up to and including the given one" />
+          <Annotation Term="Core.LongDescription">
+            <String>The values are cast to strings as in the OData `cast` function.</String>
+          </Annotation>
+        </Property>
+        <Property Name="Levels" Type="Edm.Int64" Nullable="true">
+          <Annotation Term="Core.Description" String="Number of levels to be expanded, null means all levels, 0 means collapsed" />
+        </Property>
+      </ComplexType>
+
+      <Term Name="LevelInformation" Type="Hierarchy.HierarchyType" Nullable="false" AppliesTo="EntityType">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.Description" String="Information about grouping levels in the result set of a request including the [`MultiLevelExpand`](#MultiLevelExpand) transformation" />
+      </Term>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

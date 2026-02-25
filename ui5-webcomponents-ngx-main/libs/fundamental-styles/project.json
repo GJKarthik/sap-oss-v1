@@ -1,0 +1,55 @@
+{
+  "name": "fundamental-styles",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/fundamental-styles",
+  "prefix": "ui-angular",
+  "tags": [],
+  "targets": {
+    "prepare": {
+      "executor": "@ui5/webcomponents-nx:prepare",
+      "options": {
+        "configFile": "libs/fundamental-styles/wrapper.conf.ts",
+        "distPath": "dist/libs/fundamental-styles",
+        "schematics": {
+          "defaultSchematics": "libs/angular-generator/src/lib/schematics/common-schematics",
+          "tsConfig": "tsconfig.schematics.json",
+          "collection": "schematics"
+        }
+      }
+    },
+    "sync": {
+      "executor": "@ui5/webcomponents-nx:sync",
+      "options": {
+        "configFiles": [
+          "libs/fundamental-styles/wrapper.conf.ts",
+          "libs/fundamental-styles/theming.conf.ts"
+        ]
+      },
+      "outputs": [
+        "{projectRoot}/directives",
+        "{projectRoot}/theming/theming.config.ts",
+        "{projectRoot}/fundamental-styles-components.module.ts",
+        "{projectRoot}/index.ts"
+      ]
+    },
+    "build": {
+      "executor": "@nx/angular:package",
+      "outputs": ["{workspaceRoot}/dist/libs/fundamental-styles"],
+      "options": {
+        "project": "libs/fundamental-styles/ng-package.json",
+        "tsConfig": "libs/fundamental-styles/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/fundamental-styles/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

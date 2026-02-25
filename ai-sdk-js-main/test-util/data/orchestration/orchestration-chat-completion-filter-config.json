@@ -1,0 +1,71 @@
+{
+  "request_id": "anonymized-request-id",
+  "intermediate_results": {
+    "templating": [
+      {
+        "role": "user",
+        "content": "Create {number} paraphrases of {phrase}"
+      }
+    ],
+    "input_filtering": {
+      "message": "Input filter passed successfully.",
+      "data": {
+        "azure_content_safety": {
+          "Hate": 0,
+          "SelfHarm": 0
+        }
+      }
+    },
+    "llm": {
+      "id": "anonymized-id",
+      "object": "chat.completion",
+      "created": 0,
+      "model": "gpt-4o",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "I'm sorry, but I cannot generate a specific number of paraphrases without knowing the phrase you would like me to paraphrase. Could you please provide the phrase you would like me to work with?"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "completion_tokens": 40,
+        "prompt_tokens": 17,
+        "total_tokens": 57
+      }
+    },
+    "output_filtering": {
+      "message": "Output filter passed successfully.",
+      "data": {
+        "azure_content_safety": {
+          "Sexual": 0,
+          "Violence": 0
+        }
+      }
+    }
+  },
+  "final_result": {
+    "id": "anonymized-id",
+    "object": "chat.completion",
+    "created": 0,
+    "model": "gpt-4o",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "I'm sorry, but I cannot generate a specific number of paraphrases without knowing the phrase you would like me to paraphrase. Could you please provide the phrase you would like me to work with?"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "completion_tokens": 40,
+      "prompt_tokens": 17,
+      "total_tokens": 57
+    }
+  }
+}

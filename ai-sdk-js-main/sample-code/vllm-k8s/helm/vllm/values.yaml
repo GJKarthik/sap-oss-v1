@@ -1,0 +1,122 @@
+# Default values for vLLM Helm chart
+
+# Number of replicas
+replicaCount: 1
+
+image:
+  repository: vllm/vllm-openai
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Model configuration
+model:
+  name: "meta-llama/Llama-3.1-8B-Instruct"
+  maxModelLen: 8192
+  dtype: auto
+  quantization: ""  # awq, gptq, or empty for none
+
+# Server configuration
+server:
+  port: 8000
+  host: "0.0.0.0"
+  apiKey: ""  # Set via --set or secrets
+
+# GPU configuration
+gpu:
+  enabled: true
+  count: 1
+  type: "nvidia.com/gpu"
+
+# Resource requests/limits
+resources:
+  requests:
+    memory: "16Gi"
+    cpu: "4"
+  limits:
+    memory: "32Gi"
+    cpu: "8"
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: vllm.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# HPA configuration
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector:
+  # cloud.google.com/gke-accelerator: nvidia-tesla-a100
+  # kubernetes.io/instance-type: p4d.24xlarge
+
+# Tolerations for GPU nodes
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+# Pod affinity
+affinity: {}
+
+# Health check configuration
+healthCheck:
+  enabled: true
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+# Hugging Face token (for gated models)
+huggingface:
+  tokenSecretName: ""
+  tokenSecretKey: "token"
+
+# Persistent volume for model cache
+persistence:
+  enabled: true
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 100Gi
+  existingClaim: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext: {}
+
+# Container security context
+securityContext: {}
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Prometheus metrics
+metrics:
+  enabled: false
+  port: 9090
+  serviceMonitor:
+    enabled: false
+    interval: 30s

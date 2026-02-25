@@ -1,0 +1,337 @@
+import { fileURLToPath } from 'url';
+import path, { resolve } from 'path';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import {
+  AzureOpenAiChatClient,
+  AzureOpenAiEmbeddingClient
+} from '@sap-ai-sdk/langchain';
+// eslint-disable-next-line import/no-internal-modules
+import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
+// eslint-disable-next-line import/no-internal-modules
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text';
+import {
+  HumanMessage,
+  SystemMessage,
+  ToolMessage
+} from '@langchain/core/messages';
+// eslint-disable-next-line import/no-internal-modules
+import * as z from 'zod/v4';
+import { createAgent } from 'langchain';
+import { tool } from '@langchain/core/tools';
+import type { AIMessageChunk, BaseMessage } from '@langchain/core/messages';
+
+/**
+ * Ask GPT about the capital of France.
+ * @returns The answer from GPT.
+ */
+export async function invoke(): Promise<string> {
+  // initialize client with options
+  const client = new AzureOpenAiChatClient({
+    modelName: 'gpt-4o',
+    max_tokens: 1000,
+    temperature: 0.7
+  });
+
+  // invoke a prompt
+  const response = await client.invoke('What is the capital of France?');
+
+  // create an output parser
+  const parser = new StringOutputParser();
+
+  // parse the response
+  return parser.invoke(response);
+}
+
+/**
+ * Ask GPT about the capital of France.
+ * @returns The answer from GPT-o3.
+ */
+export async function invokeReasoningWithMaxTokens(): Promise<string> {
+  // initialize client with options
+  const client = new AzureOpenAiChatClient({
+    modelName: 'gpt-5-mini',
+    max_tokens: 1000
+  });
+
+  // invoke a prompt
+  const response = await client.invoke('What is the capital of France?', {
+    requestConfig: {
+      params: {
+        'api-version': '2024-12-01-preview'
+      }
+    }
+  });
+
+  // create an output parser
+  const parser = new StringOutputParser();
+
+  // parse the response
+  return parser.invoke(response);
+}
+
+/**
+ * Ask GPT about the capital of France, as part of a chain.
+ * @returns The answer from ChatGPT.
+ */
+export async function invokeChain(): Promise<string> {
+  // initialize the client
+  const client = new AzureOpenAiChatClient({ modelName: 'gpt-4o' });
+
+  // create a prompt template
+  const promptTemplate = ChatPromptTemplate.fromMessages([
+    ['system', 'Answer the following in {language}:'],
+    ['user', '{text}']
+  ]);
+  // create an output parser
+  const parser = new StringOutputParser();
+
+  // chain together template, client, and parser
+  const llmChain = promptTemplate.pipe(client).pipe(parser);
+
+  // invoke the chain
+  return llmChain.invoke({
+    language: 'german',
+    text: 'What is the capital of France?'
+  });
+}
+
+/**
+ * Perform retrieval augmented generation with the chat and embedding LangChain clients.
+ * @returns The answer from GPT.
+ */
+export async function invokeRagChain(): Promise<string> {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const resourcePath = resolve(__dirname, '../resources/orchestration.md');
+
+  // Create a text loader and load the document
+  const loader = new TextLoader(resourcePath);
+  const docs = await loader.load();
+
+  // Create a text splitter and split the document
+  const textSplitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 2000,
+    chunkOverlap: 200
+  });
+  const splits = await textSplitter.splitDocuments(docs);
+
+  // Initialize the embedding client with 0 retries for fast testing
+  const embeddingClient = new AzureOpenAiEmbeddingClient({
+    modelName: 'text-embedding-3-small',
+    maxRetries: 0
+  });
+
+  // Create a vector store from document splits
+  const vectorStore = new MemoryVectorStore(embeddingClient);
+  await vectorStore.addDocuments(splits);
+
+  // Construct a tool for retrieving context
+  const retrieveSchema = z.object({ query: z.string() });
+  const retrieve = tool(
+    async ({ query }) => {
+      const retrievedDocs = await vectorStore.similaritySearch(query, 2);
+      const serialized = retrievedDocs
+        .map(
+          doc => `Source: ${doc.metadata.source}\nContent: ${doc.pageContent}`
+        )
+        .join('\n');
+      return [serialized];
+    },
+    {
+      name: 'retrieve',
+      description: 'Retrieve information related to a query.',
+      schema: retrieveSchema,
+      responseFormat: 'contentlist'
+    }
+  );
+
+  // Initialize the chat client
+  const chatClient = new AzureOpenAiChatClient({
+    modelName: 'gpt-4o',
+    max_tokens: 1000,
+    temperature: 0.7
+  });
+
+  // Create a system prompt
+  const systemPrompt = `You are an assistant for question-answering tasks.
+      You have access to a tool that retrieves information related to a query.
+      Use the tool to help answer user queries.
+      If you don't know the answer, just say that you don't know.
+      Use ten sentences maximum and keep the answer concise.
+      Always include code snippets in your answer including class instantiation.`;
+
+  const agent = createAgent({
+    model: chatClient,
+    tools: [retrieve],
+    systemPrompt
+  });
+
+  const inputMessage =
+    'How do you use templating in the SAP Orchestration client?';
+
+  const agentInputs = { messages: [{ role: 'user', content: inputMessage }] };
+  const result = await agent.invoke(agentInputs);
+  return result.messages.at(-1)!.content as string;
+}
+
+/**
+ * Let GPT increase the shareholder value.
+ * @returns The answer from GPT.
+ */
+export async function invokeToolChain(): Promise<string> {
+  // initialize client with options
+  const client = new AzureOpenAiChatClient({
+    modelName: 'gpt-4o',
+    max_tokens: 1000,
+    temperature: 0.7
+  });
+
+  // create a function to increase the shareholder value
+  function shareholderValueFunction(value: number): string {
+    return `The shareholder value has been increased to ${value * 2}`;
+  }
+
+  // create a tool
+  const shareholderValueTool = tool(shareholderValueFunction, {
+    name: 'shareholder_value',
+    description: 'Multiplies the shareholder value',
+    schema: z.object({
+      value: z
+        .number()
+        .meta({ description: 'The value that is supposed to be increased.' })
+    })
+  });
+
+  const messages: BaseMessage[] = [
+    new HumanMessage('Increase the shareholder value, it is currently at 10')
+  ];
+
+  const response = await client
+    .bindTools([shareholderValueTool])
+    .invoke(messages);
+
+  messages.push(response);
+
+  if (
+    Array.isArray(response.tool_calls) &&
+    response.tool_calls[0].name === 'shareholder_value'
+  ) {
+    const shareholderValue = shareholderValueFunction(
+      response.tool_calls[0].args.value
+    );
+
+    const toolMessage = new ToolMessage({
+      content: shareholderValue,
+      tool_call_id: response.tool_calls[0].id ?? 'default'
+    });
+
+    messages.push(toolMessage);
+  } else {
+    const failMessage = new SystemMessage(
+      'Shareholder value tool was not called'
+    );
+    messages.push(failMessage);
+  }
+
+  const finalResponse = await client.invoke(messages);
+
+  // create an output parser
+  const parser = new StringOutputParser();
+
+  // parse the response
+  return parser.invoke(finalResponse);
+}
+
+/**
+ * Stream responses using LangChain Orchestration client.
+ * @param controller - The abort controller to cancel the request if needed.
+ * @returns An async iterable of {@link AIMessageChunk} objects.
+ */
+export async function streamChain(
+  controller = new AbortController()
+): Promise<AsyncIterable<AIMessageChunk>> {
+  const client = new AzureOpenAiChatClient({
+    modelName: 'gpt-4o'
+  });
+  return client.stream(
+    [
+      {
+        role: 'user',
+        content:
+          'Write a 100 word explanation about SAP Cloud SDK and its capabilities'
+      }
+    ],
+    {
+      signal: controller.signal
+    }
+  );
+}
+
+/**
+ * With Structured Output using `jsonSchema` option with `strict: true`.
+ * @returns The answer from GPT with exactly the structure defined in the schema.
+ */
+export async function invokeWithStructuredOutputJsonSchema(): Promise<{
+  setup: string;
+  punchline: string;
+  rating: number;
+}> {
+  // initialize client with options
+  const llm = new AzureOpenAiChatClient({
+    modelName: 'gpt-4o'
+  });
+
+  const joke = z.object({
+    setup: z.string().meta({ description: 'The setup of the joke' }),
+    punchline: z.string().meta({ description: 'The punchline to the joke' }),
+    rating: z
+      .number()
+      .meta({ description: 'How funny the joke is, from 1 to 10' })
+  });
+  const structuredLlm = llm.withStructuredOutput(joke, {
+    name: 'joke',
+    strict: true
+  });
+
+  return structuredLlm.invoke('Tell me a joke about cats');
+}
+
+/**
+ * Invoke with structured output using tool calling.
+ * Used for models that don't support `response_format` or `json_schema`.
+ * @example JSON Schema:
+ * {
+ *   name: "joke",
+ *   description: "Joke to tell user.",
+ *   parameters: {
+ *     title: "Joke",
+ *     type: "object",
+ *     properties: {
+ *       setup: { type: "string", description: "The setup for the joke" },
+ *       punchline: { type: "string", description: "The joke's punchline" },
+ *     },
+ *     required: ["setup", "punchline"],
+ *   },
+ * }
+ * @returns The answer from GPT with structured output using tool calls.
+ */
+export async function invokeWithStructuredOutputToolCalling(): Promise<string> {
+  // initialize client with options
+  const llm = new AzureOpenAiChatClient({
+    modelName: 'gpt-4o'
+  });
+
+  const joke = z.object({
+    setup: z.string().meta({ description: 'The setup of the joke' }),
+    punchline: z.string().meta({ description: 'The punchline to the joke' })
+  });
+
+  const structuredLlm = llm.withStructuredOutput(joke, {
+    name: 'joke',
+    method: 'functionCalling'
+  });
+
+  const finalResponse = await structuredLlm.invoke('Tell me a joke about cats');
+  return JSON.stringify(finalResponse);
+}

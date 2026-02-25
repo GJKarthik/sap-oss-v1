@@ -1,0 +1,252 @@
+import {
+  orchestrationChatCompletion,
+  orchestrationTemplating,
+  orchestrationPromptRegistry,
+  orchestrationCompletionPromptRegistryScoped,
+  orchestrationInputFiltering,
+  orchestrationOutputFiltering,
+  orchestrationRequestConfig,
+  orchestrationCompletionMasking,
+  orchestrationMaskGroundingInput,
+  orchestrationChatCompletionImage,
+  chatCompletionStreamWithJsonModuleConfig,
+  chatCompletionStream,
+  orchestrationResponseFormat,
+  orchestrationMessageHistoryWithToolCalling,
+  orchestrationTranslation,
+  orchestrationEmbeddingWithMasking,
+  OrchestrationConfigRef,
+  orchestrationWithFallbackConfigs
+} from '@sap-ai-sdk/sample-code';
+import {
+  OrchestrationClient,
+  type OrchestrationModuleConfig,
+  type OrchestrationResponse
+} from '@sap-ai-sdk/orchestration';
+import { addNumbersTool } from '../../../test-util/tools.js';
+import { loadEnv } from './utils/load-env.js';
+
+loadEnv();
+
+describe('orchestration', () => {
+  const assertContent = (response: OrchestrationResponse) => {
+    expect(response.getIntermediateResults()).toBeDefined();
+    expect(response.getIntermediateResults().templating).not.toHaveLength(0);
+    expect(response.findChoiceByIndex(0)).toBeDefined();
+    expect(response.getContent()).toEqual(expect.any(String));
+    expect(response.getFinishReason()).toEqual('stop');
+  };
+
+  it('should complete a chat', async () => {
+    const response = await orchestrationChatCompletion();
+
+    assertContent(response);
+  });
+
+  it('should complete a chat with a template', async () => {
+    const response = await orchestrationTemplating();
+
+    assertContent(response);
+  });
+
+  it('should complete a chat with a template reference', async () => {
+    const response = await orchestrationPromptRegistry();
+
+    assertContent(response);
+  });
+
+  it('should complete a chat with a scoped template reference', async () => {
+    const response = await orchestrationCompletionPromptRegistryScoped();
+
+    assertContent(response);
+  });
+
+  it('should complete a chat with orchestration config reference', async () => {
+    const response = await OrchestrationConfigRef();
+
+    assertContent(response);
+  });
+
+  it('should trigger an input filter', async () => {
+    await orchestrationInputFiltering();
+  });
+
+  it('should trigger an output filter', async () => {
+    const response = await orchestrationOutputFiltering();
+
+    expect(response.getIntermediateResults()).toBeDefined();
+    expect(
+      response.getIntermediateResults().output_filtering!.data
+    ).toBeDefined();
+    expect(response.getContent).toThrow(Error);
+    expect(response.getFinishReason()).toEqual('content_filter');
+  });
+
+  it('should allow for custom request parameters', async () => {
+    const response = await orchestrationRequestConfig();
+
+    assertContent(response);
+  });
+
+  it('should complete a chat with masking', async () => {
+    const response = await orchestrationCompletionMasking();
+    expect(response).toEqual(expect.any(String));
+  });
+
+  it('should complete a chat with masked grounding input', async () => {
+    const response = await orchestrationMaskGroundingInput();
+    const parsedGroundingInput =
+      response.getIntermediateResults().input_masking!.data!
+        .masked_grounding_input[0];
+    expect(parsedGroundingInput).toEqual(
+      "What is MASKED_ORG_1's product Joule?"
+    );
+    assertContent(response);
+  });
+
+  it('should complete a chat with image', async () => {
+    const response = await orchestrationChatCompletionImage();
+    expect(response.getContent()?.includes('SAP')).toBe(true);
+    expect(response.getContent()?.includes('logo')).toBe(true);
+  });
+
+  it('should complete a chat with a required response format', async () => {
+    const result = await orchestrationResponseFormat();
+    expect(result.language).toBeDefined();
+    expect(result.translation).toBeDefined();
+  });
+
+  it('should complete a chat when message history with tool calls is passed', async () => {
+    const chatCompletionResult =
+      await orchestrationMessageHistoryWithToolCalling();
+    assertContent(chatCompletionResult);
+  });
+
+  it('should return stream of orchestration responses', async () => {
+    const response = await chatCompletionStream(new AbortController());
+
+    for await (const chunk of response.stream) {
+      expect(chunk).toBeDefined();
+    }
+    expect(response.getFinishReason()).toEqual('stop');
+    expect(response.getTokenUsage()).toBeDefined();
+  });
+
+  it('should return stream of orchestration responses, using a JSON client', async () => {
+    const response = await chatCompletionStreamWithJsonModuleConfig(
+      new AbortController()
+    );
+
+    for await (const chunk of response.stream) {
+      expect(chunk).toBeDefined();
+    }
+    expect(response.getFinishReason()).toEqual('stop');
+    expect(response.getTokenUsage()).toBeDefined();
+  });
+
+  it('should return error message when incorrect templating is provided on orchestration stream call', async () => {
+    const config: OrchestrationModuleConfig = {
+      promptTemplating: {
+        model: {
+          name: 'gpt-4o',
+          params: {}
+        }
+      }
+    };
+
+    try {
+      await new OrchestrationClient(config).stream({
+        messages: [
+          {
+            role: 'user',
+            content: 'Give me a short introduction on {{ ?__input__ }}.'
+          }
+        ],
+        placeholderValues: { __input__: 'SAP Cloud SDK' }
+      });
+    } catch (err: any) {
+      expect(err.stack).toContain(
+        'Caused by:\nHTTP Response: Request failed with status code 400'
+      );
+      expect(err.cause?.response?.data?.error?.message).toBeDefined();
+    }
+  });
+
+  it('should complete a chat with input and output translation', async () => {
+    const response = await orchestrationTranslation();
+    assertContent(response);
+  });
+
+  it('should return multiple tool calls in a single stream response', async () => {
+    const config: OrchestrationModuleConfig = {
+      promptTemplating: {
+        model: {
+          name: 'gpt-4o',
+          params: {}
+        },
+        prompt: {
+          tools: [addNumbersTool]
+        }
+      }
+    };
+
+    const response = await new OrchestrationClient(config).stream({
+      messages: [
+        {
+          role: 'user',
+          content: 'Add 1 and 2, as well as 3 and 4.'
+        }
+      ]
+    });
+
+    for await (const _ of response.stream) {
+      /* do nothing */
+    }
+
+    const tools = response.getToolCalls();
+
+    expect(tools).toHaveLength(2);
+    expect(tools!.every(tool => tool.id !== undefined)).toBe(true);
+    expect(tools!.map(tool => ({ ...tool, id: 'mock_id' })))
+      .toMatchInlineSnapshot(`
+     [
+       {
+         "function": {
+           "arguments": "{"a": 1, "b": 2}",
+           "name": "add",
+         },
+         "id": "mock_id",
+         "index": 0,
+         "type": "function",
+       },
+       {
+         "function": {
+           "arguments": "{"a": 3, "b": 4}",
+           "name": "add",
+         },
+         "id": "mock_id",
+         "index": 1,
+         "type": "function",
+       },
+     ]
+    `);
+  });
+
+  it('should generate embeddings with masking', async () => {
+    const response = await orchestrationEmbeddingWithMasking();
+    expect(response).toBeDefined();
+    expect(response.getEmbeddings().map(item => item.embedding)).toEqual(
+      expect.arrayContaining([expect.arrayContaining([expect.any(Number)])])
+    );
+    expect(response.getIntermediateResults()?.input_masking).toBeDefined();
+  });
+
+  it('should execute module fallback configs until one succeeds', async () => {
+    const response = await orchestrationWithFallbackConfigs();
+
+    expect(response.getIntermediateFailures()).toEqual(expect.any(Array));
+    expect(response.getIntermediateFailures()).toHaveLength(2);
+
+    assertContent(response);
+  });
+});

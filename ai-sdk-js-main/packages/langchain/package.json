@@ -1,0 +1,49 @@
+{
+  "name": "@sap-ai-sdk/langchain",
+  "version": "2.7.0",
+  "description": "",
+  "license": "Apache-2.0",
+  "keywords": [
+    "sap-ai-sdk",
+    "langchain"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SAP/ai-sdk-js",
+    "directory": "packages/langchain"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "internal.js",
+    "internal.d.ts"
+  ],
+  "scripts": {
+    "compile": "tsc",
+    "compile:cjs": "mv package.json package.json.bak && echo '{ \"type\": \"commonjs\" }' > package.json && tsc -p tsconfig.cjs.json && mv package.json.bak package.json",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "lint": "eslint \"**/*.ts\" && prettier . --config ../../.prettierrc --ignore-path ../../.prettierignore -c",
+    "lint:fix": "eslint \"**/*.ts\" --fix && prettier . --config ../../.prettierrc --ignore-path ../../.prettierignore -w --log-level error"
+  },
+  "dependencies": {
+    "@sap-ai-sdk/ai-api": "workspace:^",
+    "@sap-ai-sdk/core": "workspace:^",
+    "@sap-ai-sdk/foundation-models": "workspace:^",
+    "@sap-ai-sdk/orchestration": "workspace:^",
+    "@sap-cloud-sdk/connectivity": "^4.4.0",
+    "@sap-cloud-sdk/util": "^4.4.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@langchain/langgraph": "^1.1.5",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@langchain/core": "^1.1.16"
+  }
+}

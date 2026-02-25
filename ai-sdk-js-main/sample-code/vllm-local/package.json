@@ -1,0 +1,27 @@
+{
+  "name": "vllm-local-sample",
+  "version": "1.0.0",
+  "description": "Local development sample for @sap-ai-sdk/vllm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "basic": "npx ts-node src/basic-chat.ts",
+    "streaming": "npx ts-node src/streaming.ts",
+    "multi-model": "npx ts-node src/multi-model.ts",
+    "discovery": "npx ts-node src/discovery.ts",
+    "start:vllm": "docker-compose up -d",
+    "stop:vllm": "docker-compose down",
+    "logs:vllm": "docker-compose logs -f vllm"
+  },
+  "dependencies": {
+    "@sap-ai-sdk/vllm": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

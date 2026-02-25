@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.xml">
+    <edmx:Include Alias="Validation" Namespace="Org.OData.Validation.V1" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common" />
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI" />
+  </edmx:Reference>
+
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="com.sap.vocabularies.HTML5.v1" Alias="HTML5">
+      <Annotation Term="Core.Description">
+        <String>Terms for HTML5</String>
+      </Annotation>
+      <Annotation Term="Core.LongDescription">
+        <String>The HTML5 vocabulary provides rendering hints for HTML5 clients</String>
+      </Annotation>
+      <Annotation Term="Core.Description" Qualifier="Published">
+        <String>2020-04-21 © Copyright 2020 SAP SE. All rights reserved</String>
+      </Annotation>
+      <Annotation Term="Core.Links">
+        <Collection>
+          <Record>
+            <PropertyValue Property="rel" String="latest-version" />
+            <PropertyValue Property="href" String="https://sap.github.io/odata-vocabularies/vocabularies/HTML5.xml" />
+          </Record>
+          <Record>
+            <PropertyValue Property="rel" String="alternate" />
+            <PropertyValue Property="href" String="https://sap.github.io/odata-vocabularies/vocabularies/HTML5.json" />
+          </Record>
+          <Record>
+            <PropertyValue Property="rel" String="describedby" />
+            <PropertyValue Property="href" String="https://github.com/sap/odata-vocabularies/blob/main/vocabularies/HTML5.md" />
+          </Record>
+        </Collection>
+      </Annotation>
+
+      <Term Name="CssDefaults" Type="HTML5.CssDefaultsType" Nullable="false" AppliesTo="Record">
+        <Annotation Term="Core.Description" String="CSS definitions that may be used as defaults" />
+        <Annotation Term="Core.LongDescription" String="This term can applied to e.g. UI.DataFieldAbstract records" />
+      </Term>
+
+      <ComplexType Name="CssDefaultsType">
+        <Property Name="width" Type="Edm.String">
+          <Annotation Term="Core.Description" String="css: width, see https://www.w3.org/TR/CSS21/visudet.html#propdef-width" />
+          <Annotation Term="Core.LongDescription">
+            <String>
+              The property allows all values specified for the original css width property.
+              Note that clients consuming this annotation may only support selected length units.
+            </String>
+          </Annotation>
+        </Property>
+      </ComplexType>
+
+      <Term Name="LinkTarget" Type="HTML5.LinkTargetType" Nullable="false" DefaultValue="_self">
+        <Annotation Term="Core.Description" String="Where to open a link for the annotated [URL](https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.html#IsURL)" />
+        <Annotation Term="Core.LongDescription">
+          <String>When the UI contains a link to the URL, it shall open as specified by this annotation.
+          This can be achieved, for example, by giving the UI5 `sap.m.Link` element a corresponding `target` property.
+          Applicability of this term is governed by [`Validation.ApplicableTerms`](https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.html#ApplicableTerms) annotations.</String>
+        </Annotation>
+      </Term>
+      <TypeDefinition Name="LinkTargetType" UnderlyingType="Edm.String">
+        <Annotation Term="Core.Description" String="The values are interpreted like the [target attribute](https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-target) in HTML" />
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record>
+              <PropertyValue Property="Value" String="_self" />
+              <Annotation Term="Core.Description" String="Open link in the current browsing context" />
+            </Record>
+            <Record>
+              <PropertyValue Property="Value" String="_blank" />
+              <Annotation Term="Core.Description" String="Open link in a new browsing context" />
+            </Record>
+            <Record>
+              <PropertyValue Property="Value" String="_parent" />
+              <Annotation Term="Core.Description" String="Open link in the parent browsing context" />
+            </Record>
+            <Record>
+              <PropertyValue Property="Value" String="_top" />
+              <Annotation Term="Core.Description" String="Open link in the top browsing context" />
+            </Record>
+          </Collection>
+        </Annotation>
+      </TypeDefinition>
+
+      <Term Name="RowSpanForDuplicateValues" Type="Core.Tag" Nullable="false" DefaultValue="true" AppliesTo="Record">
+        <Annotation Term="Common.Experimental" />
+        <Annotation Term="Core.RequiresType" String="UI.DataFieldAbstract" />
+        <Annotation Term="Core.Description" String="The annotated data field might use a rowSpan for adjacent duplicate values if used in a table." />
+        <Annotation Term="Core.LongDescription">
+          <String>In order to achieve a good user experience the respective columns should be sorted.
+            Applicability of this term is governed by [`Validation.ApplicableTerms`](https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.html#ApplicableTerms) annotations.
+          </String>
+        </Annotation>
+      </Term>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

@@ -1,0 +1,112 @@
+# Docker Compose for vLLM Local Development
+#
+# This sets up a vLLM server with GPU support for local testing.
+# 
+# Requirements:
+#   - Docker with NVIDIA Container Toolkit
+#   - NVIDIA GPU with at least 40GB VRAM (for 70B models)
+#   - Or use smaller models (7B/13B) for less VRAM
+#
+# Usage:
+#   # Start vLLM server
+#   docker-compose up -d
+#
+#   # View logs
+#   docker-compose logs -f vllm
+#
+#   # Stop
+#   docker-compose down
+
+version: "3.8"
+
+services:
+  # Main vLLM server
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_TOKEN=${HF_TOKEN:-}  # Optional: for gated models
+    ports:
+      - "8000:8000"
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+    command: >
+      --model meta-llama/Llama-3.1-8B-Instruct
+      --host 0.0.0.0
+      --port 8000
+      --max-model-len 8192
+      --dtype auto
+      --api-key ${VLLM_API_KEY:-demo-key}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Alternative: Smaller model for limited VRAM
+  vllm-small:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server-small
+    runtime: nvidia
+    profiles:
+      - small
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "8001:8000"
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+    command: >
+      --model microsoft/Phi-3-mini-4k-instruct
+      --host 0.0.0.0
+      --port 8000
+      --max-model-len 4096
+      --dtype auto
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Code model for code-related tasks
+  vllm-code:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server-code
+    runtime: nvidia
+    profiles:
+      - multi
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "8002:8000"
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+    command: >
+      --model codellama/CodeLlama-7b-Instruct-hf
+      --host 0.0.0.0
+      --port 8000
+      --max-model-len 8192
+      --dtype auto
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  huggingface-cache:
+    driver: local

@@ -1,0 +1,18 @@
+{
+  "name": "@ui5/theming-ngx",
+  "version": "0.5.11-rc.5",
+  "license": "Apache-2.0",
+  "author": "SAP SE (https://www.sap.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SAP/ui5-webcomponents-ngx.git",
+    "directory": "libs/ui5-angular-theming"
+  },
+  "peerDependencies": {
+    "@angular/common": "^20.0.0",
+    "@angular/core": "^20.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}

@@ -1,0 +1,97 @@
+
+
+
+<h3>Radio</h3>
+<section>
+  <ui5-button (click)="updateRadioFormModel()">radioControl.setValue("Option 1")</ui5-button>FormControl value: {{ radioControl.value }}, touched: {{ radioControl.touched }}<br>
+
+  <ui5-radio-button name="GroupA" text="Option 1" [value]="'Option 1'" [formControl]="radioControl"></ui5-radio-button>
+  <ui5-radio-button name="GroupA" text="Option 2" value="Option 2" [formControl]="radioControl" checked></ui5-radio-button>
+  <ui5-radio-button name="GroupA" text="Option 3" value="Option 3" [formControl]="radioControl"></ui5-radio-button>
+</section>
+
+
+<h3>Select</h3>
+<section>
+  <ui5-button (click)="updateSelectFormModel()">selectControl.setValue("phone")</ui5-button> FormControl value: {{ selectControl.value }}, touched: {{ selectControl.touched }}<br>
+
+  <ui5-select class="select" [formControl]="selectControl">
+    <ui5-option value="phone">Phone</ui5-option>
+    <ui5-option value="tablet">Tablet</ui5-option>
+    <ui5-option value="desktop">Desktop</ui5-option>
+  </ui5-select>
+</section>
+
+
+<h3>CheckBox</h3>
+<section>
+	<ui5-button (click)="updateCbFormModel()">cbControl.setValue(true)</ui5-button>FormControl value: {{ cbControl.value }}, touched: {{ cbControl.touched }}<br>
+
+	<ui5-checkbox [formControl]="cbControl"></ui5-checkbox>
+</section>
+
+
+<h3>Input</h3>
+<section>
+  <ui5-button (click)="updateInpFormModel()">inpControl.setValue("form updated")</ui5-button> FormControl value: {{ inpControl.value }}, touched: {{ inpControl.touched }}<br>
+
+  <ui5-input [formControl]="inpControl"></ui5-input>
+</section>
+
+<h3>DatePicker</h3>
+<section>
+  <ui5-button (click)="updateDPFormModel()">dpControl.setValue("29 мая 2024 г.")</ui5-button> FormControl value: {{ dpControl.value }}, touched: {{ dpControl.touched }}<br>
+
+  <ui5-date-picker [formControl]="dpControl"></ui5-date-picker>
+</section>
+
+
+<h2>Profile Form</h2>
+<p><ui5-label show-colon>Name</ui5-label> <ui5-text>{{ profileForm.value.name || "N/A"}}</ui5-text> </p>
+<p><ui5-label showColon>Email</ui5-label> <ui5-text>{{ profileForm.value.email || "N/A"}}</ui5-text></p>
+
+<form [formGroup]="profileForm"  (ngSubmit)="handleSubmit()">
+
+  <ui5-label for="nameInp" show-colon>Name</ui5-label>
+  <ui5-input id="nameInp" formControlName="name"></ui5-input>
+
+  <ui5-label for="emailInp" show-colon>Email</ui5-label>
+  <ui5-input formControlName="email"></ui5-input>
+
+  <ui5-button type="Submit" [disabled]="!profileForm.valid">Submit</ui5-button>
+</form>
+
+
+<ui5-table id="table" overflow-mode="Popin">
+  <ui5-table-header-row slot="headerRow">
+    <ui5-table-header-cell id="produtCol" width="300px"><span>Product</span></ui5-table-header-cell>
+    <ui5-table-header-cell id="supplierCol" width="200px">Supplier</ui5-table-header-cell>
+    <ui5-table-header-cell id="dimensionsCol" width="300px">Dimensions</ui5-table-header-cell>
+    <ui5-table-header-cell id="weightCol" width="100px">Weight</ui5-table-header-cell>
+    <ui5-table-header-cell id="priceCol" width="220px">Price</ui5-table-header-cell>
+  </ui5-table-header-row>
+
+  <ui5-table-row>
+    <ui5-table-cell><ui5-label><b>Notebook Basic 15</b><br>HT-1000</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label>Very Best Screens</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label>30 x 18 x 3 cm</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label style="color: #2b7c2b"><b>4.2</b> KG</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label><b>956</b> EUR</ui5-label></ui5-table-cell>
+  </ui5-table-row>
+
+  <ui5-table-row>
+    <ui5-table-cell><ui5-label><b>Notebook Basic 17</b><br>HT-1001</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label>Smartcards</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label>29 x 17 x 3.1 cm</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label style="color: #2b7c2b"><b>4.5</b> KG</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label><b>1249</b> EUR</ui5-label></ui5-table-cell>
+  </ui5-table-row>
+
+  <ui5-table-row>
+    <ui5-table-cell><ui5-label><b>Notebook Basic 18</b><br>HT-1002</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label>Technocom</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label>32 x 21 x 4 cm</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label style="color: #2b7c2b"><b>3.7</b> KG</ui5-label></ui5-table-cell>
+    <ui5-table-cell><ui5-label><b>29</b> EUR</ui5-label></ui5-table-cell>
+  </ui5-table-row>
+</ui5-table>

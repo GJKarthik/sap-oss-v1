@@ -1,0 +1,158 @@
+openapi: 3.0.3
+info:
+  title: SAP LangChain Integration API
+  description: |
+    REST API contract for integrating SAP AI Core (ai-sdk-js) with SAP HANA Cloud Vector Engine (langchain-hana).
+    
+    This API enables:
+    - Embedding generation via SAP AI Core / Generative AI Hub
+    - Vector storage and retrieval via SAP HANA Cloud Vector Engine
+    - Similarity search with metadata filtering
+    - Document management for RAG pipelines
+    
+    ## Architecture
+    
+    ```
+    ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+    │  Frontend   │────►│  Node.js    │────►│  Python     │
+    │  (Any)      │     │  ai-sdk-js  │     │  langchain  │
+    └─────────────┘     └─────────────┘     └─────────────┘
+                              │                    │
+                              ▼                    ▼
+                        ┌─────────────┐     ┌─────────────┐
+                        │ SAP AI Core │     │ SAP HANA    │
+                        │ GPT-4, etc  │     │ Vector DB   │
+                        └─────────────┘     └─────────────┘
+    ```
+    
+    ## Authentication
+    
+    All endpoints require BTP authentication via one of:
+    - OAuth 2.0 Bearer Token (recommended)
+    - X-API-Key header (for service-to-service)
+    
+  version: 1.0.0
+  contact:
+    name: SAP AI SDK Team
+    url: https://github.com/SAP/ai-sdk-js
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: http://localhost:8000/v1
+    description: Local development server
+
+tags:
+  - name: Embeddings
+    description: Generate embeddings via SAP AI Core
+  - name: VectorStore
+    description: Store and search vectors in SAP HANA Cloud
+  - name: Documents
+    description: Document management operations
+  - name: Health
+    description: Service health and readiness checks
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns service health status including HANA and AI Core connectivity
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /embeddings:
+    post:
+      tags:
+        - Embeddings
+      summary: Generate embeddings
+      description: |
+        Generate embedding vectors for one or more text inputs.
+        
+        Supported embedding models via SAP AI Core:
+        - `text-embedding-ada-002` (Azure OpenAI)
+        - `text-embedding-3-small` (Azure OpenAI)
+        - `text-embedding-3-large` (Azure OpenAI)
+        
+        For HANA internal embeddings, use the vectorstore endpoints directly
+        with `use_internal_embeddings: true`.
+      operationId: generateEmbeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddingRequest'
+            examples:
+              single_text:
+                summary: Single text embedding
+                value:
+                  texts:
+                    - "What is SAP HANA Cloud?"
+                  model: "text-embedding-ada-002"
+              batch_texts:
+                summary: Batch embedding
+                value:
+                  texts:
+                    - "SAP HANA is an in-memory database"
+                    - "Vector search enables semantic retrieval"
+                    - "LangChain provides AI application abstractions"
+                  model: "text-embedding-3-small"
+                  resource_group: "default"
+      responses:
+        '200':
+          description: Embeddings generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddingResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+
+  /vectorstore/collections:
+    get:
+      tags:
+        - VectorStore
+      summary: List collections
+      description: List all vector collections (tables) in HANA

@@ -1,0 +1,34 @@
+{
+  "name": "sap-vocabularies",
+  "version": "0.0.0",
+  "description": "Convert SAP vocabularies in CSDL XML to CSDL JSON and GitHub Flavored Markdown",
+  "homepage": "https://github.com/SAP/odata-vocabularies",
+  "bugs": "https://github.com/SAP/odata-vocabularies/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SAP/odata-vocabularies.git"
+  },
+  "files": [
+    "lib/*"
+  ],
+  "exports": {
+    "./transform": "./lib/transform.js"
+  },
+  "dependencies": {
+    "colors": "^1.4.0",
+    "odata-csdl": "^0.11.1",
+    "odata-vocabularies": "github:oasis-tcs/odata-vocabularies"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "express": "^4.22.1",
+    "prettier": "^3.2.5"
+  },
+  "scripts": {
+    "build": "node lib/transform.js",
+    "pages": "node -e \"require('odata-vocabularies/pages')\" \"OData @ SAP\"",
+    "serve-pages": "node -e \"require('odata-vocabularies/serve-pages')\""
+  },
+  "author": "",
+  "license": ""
+}

@@ -1,0 +1,78 @@
+{
+  "name": "cap-llm-plugin",
+  "version": "1.5.0",
+  "description": "CAP LLM Plugin helps developers create tailored Generative AI based CAP applications",
+  "main": "cds-plugin.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "lib",
+    "srv",
+    "src",
+    "types",
+    "docs"
+  ],
+  "peerDependencies": {
+    "@sap-ai-sdk/orchestration": ">=2.0.0",
+    "@sap/cds": ">=7.1.1",
+    "@sap/cds-hana": ">=2"
+  },
+  "keywords": [
+    "cap-llm-plugin",
+    "CAP application",
+    "SAP HANA Cloud Anonymization",
+    "SAP HANA Cloud Vector Store",
+    "Similarity Search",
+    "RAG",
+    "SAP AI Core"
+  ],
+  "devDependencies": {
+    "@babel/plugin-transform-dynamic-import": "^7.27.1",
+    "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "@types/node": "^25.3.0",
+    "eslint": "^9.39.3",
+    "eslint-config-prettier": "^10.1.8",
+    "jest": "^30.2.0",
+    "jest-junit": "^16.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --verbose",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,ts,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,json,md}\"",
+    "cds:validate": "cdsc toCsn srv/llm-service.cds -o /dev/null",
+    "generate:client": "echo 'Angular client is hand-maintained in generated/angular-client/ from docs/api/openapi.yaml. Update models.ts + cap-llm-plugin.service.ts when the OpenAPI spec changes.'",
+    "contract:check": "node scripts/contract-check.js",
+    "test:e2e": "jest tests/e2e/ --verbose",
+    "test:e2e:ci": "jest tests/e2e/ --reporters=default --reporters=jest-junit --forceExit",
+    "test:ci": "jest --reporters=default --reporters=jest-junit --forceExit"
+  },
+  "jest-junit": {
+    "outputDirectory": "test-results",
+    "outputName": "junit.xml",
+    "classNameTemplate": "{classname}",
+    "titleTemplate": "{title}",
+    "ancestorSeparator": " > ",
+    "usePathForSuiteName": "true"
+  },
+  "author": "SAP SE",
+  "license": "Apache-2.0",
+  "cds": {
+    "requires": {
+      "kinds": {
+        "cap-llm-plugin": {
+          "impl": "cap-llm-plugin/srv/cap-llm-plugin.js",
+          "vcap": {
+            "label": "hana",
+            "plan": "hdi-shared"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+langchain-community
+langchain-text-splitters
+
+numpy
+pandas
+
+hana-ml>=2.27.26020601
+
+pydantic>=2.11,<2.13
+sap-ai-sdk-gen[all]
+langchain-hana
+fastmcp>=2.0

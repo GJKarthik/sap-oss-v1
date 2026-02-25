@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAP LLM Plugin — E2E Test UI</title>
+  <script
+    id="sap-ui-bootstrap"
+    src="https://openui5.hana.ondemand.com/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_horizon"
+    data-sap-ui-libs="sap.m, sap.ui.layout"
+    data-sap-ui-compatVersion="edge"
+    data-sap-ui-async="true"
+    data-sap-ui-onInit="onInit"
+    data-sap-ui-resourceroots='{ "app": "./" }'
+  ></script>
+  <script>
+    function onInit() {
+      sap.ui.require([
+        "sap/m/App",
+        "sap/m/Page",
+        "sap/m/VBox",
+        "sap/m/HBox",
+        "sap/m/Input",
+        "sap/m/Button",
+        "sap/m/Text",
+        "sap/m/MessageStrip",
+        "sap/m/List",
+        "sap/m/CustomListItem",
+        "sap/m/Label",
+        "sap/ui/model/json/JSONModel",
+      ], function (App, Page, VBox, HBox, Input, Button, Text, MessageStrip, List, CustomListItem, Label, JSONModel) {
+
+        // ── Model ────────────────────────────────────────────────────
+        var model = new JSONModel({
+          messages: [],
+          ragResults: [],
+          status: "",
+          error: "",
+          loading: false,
+        });
+
+        // ── API helpers ──────────────────────────────────────────────
+        function apiCall(endpoint, body) {
+          return fetch("/api/" + endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }).then(function (res) {
+            return res.json().then(function (data) {
+              if (!res.ok) throw data;
+              return data;
+            });
+          });
+        }
+
+        // ── Chat handler ─────────────────────────────────────────────
+        function onSendChat() {
+          var input = sap.ui.getCore().byId("chatInput");
+          var text = input.getValue().trim();
+          if (!text) return;
+
+          var msgs = model.getProperty("/messages");
+          msgs.push({ role: "user", content: text });
+          model.setProperty("/messages", msgs.slice());
+          model.setProperty("/loading", true);
+          model.setProperty("/error", "");
+          input.setValue("");
+
+          apiCall("chat", {
+            config: { modelName: "gpt-4o", resourceGroup: "default" },
+            payload: { messages: msgs },
+          })
+          .then(function (data) {
+            var content = data.result?.orchestration_result?.choices?.[0]?.message?.content || "No response";
+            msgs.push({ role: "assistant", content: content });
+            model.setProperty("/messages", msgs.slice());
+            model.setProperty("/status", "Chat complete");
+          })
+          .catch(function (err) {
+            model.setProperty("/error", (err.error?.code || "ERROR") + ": " + (err.error?.message || "Unknown error"));
+          })
+          .finally(function () {
+            model.setProperty("/loading", false);
+          });
+        }
+
+        // ── RAG handler ──────────────────────────────────────────────
+        function onSendRag() {
+          var input = sap.ui.getCore().byId("ragInput");
+          var text = input.getValue().trim();
+          if (!text) return;
+
+          model.setProperty("/loading", true);
+          model.setProperty("/error", "");
+          model.setProperty("/ragResults", []);
+          input.setValue("");
+
+          apiCall("rag", {
+            input: text,
+            tableName: "DOCUMENTS",
+            embeddingColumnName: "EMBEDDING",
+            contentColumn: "TEXT_CONTENT",
+            chatInstruction: "Answer based on the provided context.",
+            embeddingConfig: { modelName: "text-embedding-ada-002", resourceGroup: "default" },
+            chatConfig: { modelName: "gpt-4o", resourceGroup: "default" },
+            topK: 3,
+          })
+          .then(function (data) {
+            model.setProperty("/status", "RAG complete");
+            var msgs = model.getProperty("/messages");
+            var completion = data.completion?.data?.orchestration_result?.choices?.[0]?.message?.content || "No response";
+            msgs.push({ role: "user", content: text });
+            msgs.push({ role: "assistant", content: completion });
+            model.setProperty("/messages", msgs.slice());
+            model.setProperty("/ragResults", data.additionalContents || []);
+          })
+          .catch(function (err) {
+            model.setProperty("/error", (err.error?.code || "ERROR") + ": " + (err.error?.message || "Unknown error"));
+          })
+          .finally(function () {
+            model.setProperty("/loading", false);
+          });
+        }
+
+        // ── UI ───────────────────────────────────────────────────────
+        var page = new Page("mainPage", {
+          title: "CAP LLM Plugin — E2E Test",
+          content: [
+            new VBox({ class: "sapUiMediumMargin", items: [
+
+              // Status / Error
+              new MessageStrip("statusStrip", {
+                text: "{/status}",
+                type: "Information",
+                visible: "{= ${/status} !== '' }",
+              }),
+              new MessageStrip("errorStrip", {
+                text: "{/error}",
+                type: "Error",
+                visible: "{= ${/error} !== '' }",
+                class: "sapUiSmallMarginTop",
+              }),
+
+              // Chat section
+              new Label({ text: "Chat Completion", design: "Bold", class: "sapUiMediumMarginTop" }),
+              new HBox({ items: [
+                new Input("chatInput", { placeholder: "Ask a question...", width: "400px" }),
+                new Button("chatSendBtn", { text: "Send Chat", press: onSendChat, type: "Emphasized" }),
+              ]}),
+
+              // RAG section
+              new Label({ text: "RAG Pipeline", design: "Bold", class: "sapUiMediumMarginTop" }),
+              new HBox({ items: [
+                new Input("ragInput", { placeholder: "Ask with context...", width: "400px" }),
+                new Button("ragSendBtn", { text: "Send RAG", press: onSendRag, type: "Emphasized" }),
+              ]}),
+
+              // Messages
+              new Label({ text: "Messages", design: "Bold", class: "sapUiMediumMarginTop" }),
+              new List("messageList", {
+                noDataText: "No messages yet",
+                items: {
+                  path: "/messages",
+                  template: new CustomListItem({
+                    content: [
+                      new HBox({ items: [
+                        new Text({ text: "{role}: ", wrapping: false }),
+                        new Text("msgContent", { text: "{content}", wrapping: true }),
+                      ]}),
+                    ],
+                  }),
+                },
+              }),
+
+              // RAG results
+              new Label({ text: "RAG Context Documents", design: "Bold", class: "sapUiMediumMarginTop" }),
+              new List("ragResultsList", {
+                noDataText: "No RAG results",
+                items: {
+                  path: "/ragResults",
+                  template: new CustomListItem({
+                    content: [
+                      new VBox({ items: [
+                        new Text({ text: "Score: {SCORE}" }),
+                        new Text("ragContent", { text: "{PAGE_CONTENT}", wrapping: true }),
+                      ]}),
+                    ],
+                  }),
+                },
+              }),
+            ]}),
+          ],
+        });
+
+        page.setModel(model);
+        new App({ pages: [page] }).placeAt("content");
+      });
+    }
+  </script>
+</head>
+<body class="sapUiBody" id="content"></body>
+</html>

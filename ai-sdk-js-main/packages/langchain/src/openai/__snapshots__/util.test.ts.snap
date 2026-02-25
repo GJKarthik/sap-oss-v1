@@ -1,0 +1,75 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Mapping Functions should parse an OpenAI response to a (LangChain) chat response 1`] = `
+{
+  "generations": [
+    {
+      "generationInfo": {
+        "finish_reason": "stop",
+        "function_call": undefined,
+        "index": 0,
+        "tool_calls": undefined,
+      },
+      "message": {
+        "id": [
+          "langchain_core",
+          "messages",
+          "AIMessage",
+        ],
+        "kwargs": {
+          "additional_kwargs": {
+            "function_call": undefined,
+            "tool_calls": undefined,
+          },
+          "content": "Hello! I’m here and ready to help. How can I assist you today?",
+          "invalid_tool_calls": [],
+          "response_metadata": {},
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+          },
+        },
+        "lc": 1,
+        "type": "constructor",
+      },
+      "text": "Hello! I’m here and ready to help. How can I assist you today?",
+    },
+  ],
+  "llmOutput": {
+    "created": 1736864686,
+    "id": "chatcmpl-Apc8UYiHfmiWG3OXxMDvODHQSOVNN",
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "promptFilterResults": [
+      {
+        "content_filter_results": {
+          "hate": {
+            "filtered": false,
+            "severity": "safe",
+          },
+          "self_harm": {
+            "filtered": false,
+            "severity": "safe",
+          },
+          "sexual": {
+            "filtered": false,
+            "severity": "safe",
+          },
+          "violence": {
+            "filtered": false,
+            "severity": "safe",
+          },
+        },
+        "prompt_index": 0,
+      },
+    ],
+    "tokenUsage": {
+      "completionTokens": 17,
+      "promptTokens": 13,
+      "totalTokens": 30,
+    },
+  },
+}
+`;

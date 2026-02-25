@@ -1,0 +1,4889 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Snapshot test Fiori Barcode Scanner Dialog should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/BarcodeScannerDialog.js';
+import {
+  default as BarcodeScannerDialog,
+  BarcodeScannerDialogScanErrorEventDetail,
+  BarcodeScannerDialogScanSuccessEventDetail,
+} from '@ui5/webcomponents-fiori/dist/BarcodeScannerDialog.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['open'])
+@ProxyOutputs([
+  'close: ui5Close',
+  'scan-success: ui5ScanSuccess',
+  'scan-error: ui5ScanError',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-barcode-scanner-dialog',
+  template: '<ng-content></ng-content>',
+  inputs: ['open'],
+  outputs: ['ui5Close', 'ui5ScanSuccess', 'ui5ScanError'],
+  exportAs: 'ui5BarcodeScannerDialog',
+})
+class BarcodeScannerDialogComponent {
+  /**
+        Indicates whether the dialog is open.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  open!: boolean;
+
+  /**
+     Fired when the user closes the component.
+    */
+  ui5Close!: EventEmitter<void>;
+  /**
+     Fires when the scan is completed successfuuly.
+    */
+  ui5ScanSuccess!: EventEmitter<BarcodeScannerDialogScanSuccessEventDetail>;
+  /**
+     Fires when the scan fails with error.
+    */
+  ui5ScanError!: EventEmitter<BarcodeScannerDialogScanErrorEventDetail>;
+
+  private elementRef: ElementRef<BarcodeScannerDialog> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): BarcodeScannerDialog {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { BarcodeScannerDialogComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Dynamic Page Header should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/DynamicPageHeader.js';
+import DynamicPageHeader from '@ui5/webcomponents-fiori/dist/DynamicPageHeader.js';
+
+@Component({
+  standalone: true,
+  selector: 'ui5-dynamic-page-header',
+  template: '<ng-content></ng-content>',
+  exportAs: 'ui5DynamicPageHeader',
+})
+class DynamicPageHeaderComponent {
+  private elementRef: ElementRef<DynamicPageHeader> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): DynamicPageHeader {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { DynamicPageHeaderComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Dynamic Page Title should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/DynamicPageTitle.js';
+import DynamicPageTitle from '@ui5/webcomponents-fiori/dist/DynamicPageTitle.js';
+
+@Component({
+  standalone: true,
+  selector: 'ui5-dynamic-page-title',
+  template: '<ng-content></ng-content>',
+  exportAs: 'ui5DynamicPageTitle',
+})
+class DynamicPageTitleComponent {
+  private elementRef: ElementRef<DynamicPageTitle> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): DynamicPageTitle {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { DynamicPageTitleComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Dynamic Page should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/DynamicPage.js';
+import DynamicPage from '@ui5/webcomponents-fiori/dist/DynamicPage.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['hidePinButton', 'headerPinned', 'showFooter', 'headerSnapped'])
+@ProxyOutputs([
+  'pin-button-toggle: ui5PinButtonToggle',
+  'title-toggle: ui5TitleToggle',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-dynamic-page',
+  template: '<ng-content></ng-content>',
+  inputs: ['hidePinButton', 'headerPinned', 'showFooter', 'headerSnapped'],
+  outputs: ['ui5PinButtonToggle', 'ui5TitleToggle'],
+  exportAs: 'ui5DynamicPage',
+})
+class DynamicPageComponent {
+  /**
+        Defines if the pin button is hidden.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hidePinButton!: boolean;
+  /**
+        Defines if the header is pinned.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  headerPinned!: boolean;
+  /**
+        Defines if the footer is shown.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showFooter!: boolean;
+  /**
+        Defines if the header is snapped.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  headerSnapped!: boolean;
+
+  /**
+     Fired when the pin header button is toggled.
+    */
+  ui5PinButtonToggle!: EventEmitter<void>;
+  /**
+     Fired when the expand/collapse area of the title is toggled.
+    */
+  ui5TitleToggle!: EventEmitter<void>;
+
+  private elementRef: ElementRef<DynamicPage> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): DynamicPage {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { DynamicPageComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Dynamic Side Content should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/DynamicSideContent.js';
+import {
+  default as DynamicSideContent,
+  DynamicSideContentAccessibilityAttributes,
+  DynamicSideContentLayoutChangeEventDetail,
+} from '@ui5/webcomponents-fiori/dist/DynamicSideContent.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'hideMainContent',
+  'hideSideContent',
+  'sideContentPosition',
+  'sideContentVisibility',
+  'sideContentFallDown',
+  'equalSplit',
+  'accessibilityAttributes',
+])
+@ProxyOutputs(['layout-change: ui5LayoutChange'])
+@Component({
+  standalone: true,
+  selector: 'ui5-dynamic-side-content',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'hideMainContent',
+    'hideSideContent',
+    'sideContentPosition',
+    'sideContentVisibility',
+    'sideContentFallDown',
+    'equalSplit',
+    'accessibilityAttributes',
+  ],
+  outputs: ['ui5LayoutChange'],
+  exportAs: 'ui5DynamicSideContent',
+})
+class DynamicSideContentComponent {
+  /**
+        Defines the visibility of the main content.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideMainContent!: boolean;
+  /**
+        Defines the visibility of the side content.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideSideContent!: boolean;
+  /**
+        Defines whether the side content is positioned before the main content (left side
+in LTR mode), or after the the main content (right side in LTR mode).
+        */
+  sideContentPosition!: 'End' | 'Start';
+  /**
+        Defines on which breakpoints the side content is visible.
+        */
+  sideContentVisibility!:
+    | 'AlwaysShow'
+    | 'ShowAboveL'
+    | 'ShowAboveM'
+    | 'ShowAboveS'
+    | 'NeverShow';
+  /**
+        Defines on which breakpoints the side content falls down below the main content.
+        */
+  sideContentFallDown!: 'BelowXL' | 'BelowL' | 'BelowM' | 'OnMinimumWidth';
+  /**
+        Defines whether the component is in equal split mode. In this mode, the side and
+the main content take 50:50 percent of the container on all screen sizes
+except for phone, where the main and side contents are switching visibility
+using the toggle method.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  equalSplit!: boolean;
+  /**
+        Defines additional accessibility attributes on different areas of the component.
+
+The accessibilityAttributes object has the following fields:
+
+ - **mainContent**: \`mainContent.ariaLabel\` defines the aria-label of the main content area. Accepts any string.
+ - **sideContent**: \`sideContent.ariaLabel\` defines the aria-label of the side content area. Accepts any string.
+        */
+  accessibilityAttributes!: DynamicSideContentAccessibilityAttributes;
+
+  /**
+     Fires when the current breakpoint has been changed.
+    */
+  ui5LayoutChange!: EventEmitter<DynamicSideContentLayoutChangeEventDetail>;
+
+  private elementRef: ElementRef<DynamicSideContent> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): DynamicSideContent {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { DynamicSideContentComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Filter Item Option should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/FilterItemOption.js';
+import FilterItemOption from '@ui5/webcomponents-fiori/dist/FilterItemOption.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'selected'])
+@Component({
+  standalone: true,
+  selector: 'ui5-filter-item-option',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'selected'],
+  exportAs: 'ui5FilterItemOption',
+})
+class FilterItemOptionComponent {
+  /**
+        Defines the text of the filter option.
+        */
+  text!: string | undefined;
+  /**
+        Defines if the filter option is selected.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+
+  private elementRef: ElementRef<FilterItemOption> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): FilterItemOption {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { FilterItemOptionComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Filter Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/FilterItem.js';
+import FilterItem from '@ui5/webcomponents-fiori/dist/FilterItem.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'additionalText'])
+@Component({
+  standalone: true,
+  selector: 'ui5-filter-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'additionalText'],
+  exportAs: 'ui5FilterItem',
+})
+class FilterItemComponent {
+  /**
+        Defines the text of the filter item.
+        */
+  text!: string | undefined;
+  /**
+        Defines the additional text of the filter item.
+This text is typically used to show the number of selected filter options within this category.
+        */
+  additionalText!: string | undefined;
+
+  private elementRef: ElementRef<FilterItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): FilterItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { FilterItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Flexible Column Layout should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/FlexibleColumnLayout.js';
+import {
+  FCLAccessibilityAttributes,
+  default as FlexibleColumnLayout,
+  FlexibleColumnLayoutLayoutChangeEventDetail,
+  FlexibleColumnLayoutLayoutConfigurationChangeEventDetail,
+  LayoutConfiguration,
+} from '@ui5/webcomponents-fiori/dist/FlexibleColumnLayout.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'layout',
+  'disableResizing',
+  'accessibilityAttributes',
+  'layoutsConfiguration',
+])
+@ProxyOutputs([
+  'layout-change: ui5LayoutChange',
+  'layout-configuration-change: ui5LayoutConfigurationChange',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-flexible-column-layout',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'layout',
+    'disableResizing',
+    'accessibilityAttributes',
+    'layoutsConfiguration',
+  ],
+  outputs: ['ui5LayoutChange', 'ui5LayoutConfigurationChange'],
+  exportAs: 'ui5FlexibleColumnLayout',
+})
+class FlexibleColumnLayoutComponent {
+  /**
+        Defines the columns layout and their proportion.
+
+**Note:** The layout also depends on the screen size - one column for screens smaller than 599px,
+two columns between 599px and 1023px and three columns for sizes bigger than 1023px.
+
+**For example:** layout=\`TwoColumnsStartExpanded\` means the layout will display up to two columns
+in 67%/33% proportion.
+        */
+  layout!:
+    | 'OneColumn'
+    | 'TwoColumnsStartExpanded'
+    | 'TwoColumnsMidExpanded'
+    | 'ThreeColumnsMidExpanded'
+    | 'ThreeColumnsEndExpanded'
+    | 'ThreeColumnsStartExpandedEndHidden'
+    | 'ThreeColumnsMidExpandedEndHidden'
+    | 'ThreeColumnsStartHiddenMidExpanded'
+    | 'ThreeColumnsStartHiddenEndExpanded'
+    | 'MidColumnFullScreen'
+    | 'EndColumnFullScreen';
+  /**
+        Specifies if the user is allowed to change the columns layout by dragging the separator between the columns.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disableResizing!: boolean;
+  /**
+        Defines additional accessibility attributes on different areas of the component.
+
+The accessibilityAttributes object has the following fields,
+where each field is an object supporting one or more accessibility attributes:
+
+ - **startColumn**: \`startColumn.role\` and \`startColumn.name\`.
+ - **midColumn**: \`midColumn.role\` and \`midColumn.name\`.
+ - **endColumn**: \`endColumn.role\` and \`endColumn.name\`.
+ - **startSeparator**: \`startSeparator.role\` and \`startSeparator.name\`.
+ - **endSeparator**: \`endSeparator.role\` and \`endSeparator.name\`.
+
+The accessibility attributes support the following values:
+
+- **role**: Defines the accessible ARIA landmark role of the area.
+Accepts the following values: \`none\`, \`complementary\`, \`contentinfo\`, \`main\` or \`region\`.
+
+- **name**: Defines the accessible ARIA name of the area.
+Accepts any string.
+        */
+  accessibilityAttributes!: FCLAccessibilityAttributes;
+  /**
+        Allows to customize the column proportions per screen size and layout.
+If no custom proportion provided for a specific layout, the default will be used.
+
+**Notes:**
+
+- The proportions should be given in percentages. For example [\\"30%\\", \\"40%\\", \\"30%\\"], [\\"70%\\", \\"30%\\", 0], etc.
+- The proportions should add up to 100%.
+- Hidden columns are marked as \\"0px\\", e.g. [\\"0px\\", \\"70%\\", \\"30%\\"]. Specifying 0 or \\"0%\\" for hidden columns is also valid.
+- If the proportions do not match the layout (e.g. if provided proportions [\\"70%\\", \\"30%\\", \\"0px\\"] for \\"OneColumn\\" layout), then the default proportions will be used instead.
+- Whenever the user drags the columns separator to resize the columns, the \`layoutsConfiguration\` object will be updated with the user-specified proportions for the given layout (and the \`layout-configuration-change\` event will be fired).
+- No custom configuration available for the phone screen size, as the default of 100% column width is always used there.
+        */
+  layoutsConfiguration!: LayoutConfiguration;
+
+  /**
+     Fired when the layout changes via user interaction by dragging the separators
+or by changing the component size due to resizing.
+    */
+  ui5LayoutChange!: EventEmitter<FlexibleColumnLayoutLayoutChangeEventDetail>;
+  /**
+     Fired when the \`layoutsConfiguration\` changes via user interaction by dragging the separators.
+    */
+  ui5LayoutConfigurationChange!: EventEmitter<FlexibleColumnLayoutLayoutConfigurationChangeEventDetail>;
+
+  private elementRef: ElementRef<FlexibleColumnLayout> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): FlexibleColumnLayout {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { FlexibleColumnLayoutComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Group Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/GroupItem.js';
+import GroupItem from '@ui5/webcomponents-fiori/dist/GroupItem.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'selected'])
+@Component({
+  standalone: true,
+  selector: 'ui5-group-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'selected'],
+  exportAs: 'ui5GroupItem',
+})
+class GroupItemComponent {
+  /**
+        Defines the text of the group item.
+        */
+  text!: string | undefined;
+  /**
+        Defines if the group item is selected.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+
+  private elementRef: ElementRef<GroupItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): GroupItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { GroupItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Illustrated Message should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/IllustratedMessage.js';
+import IllustratedMessage from '@ui5/webcomponents-fiori/dist/IllustratedMessage.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'name',
+  'design',
+  'subtitleText',
+  'titleText',
+  'accessibleNameRef',
+  'decorative',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-illustrated-message',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'name',
+    'design',
+    'subtitleText',
+    'titleText',
+    'accessibleNameRef',
+    'decorative',
+  ],
+  exportAs: 'ui5IllustratedMessage',
+})
+class IllustratedMessageComponent {
+  /**
+        Defines the illustration name that will be displayed in the component.
+
+Example:
+
+\`name='BeforeSearch'\`, \`name='UnableToUpload'\`, etc..
+
+**Note:** To use the TNT illustrations,
+you need to set the \`tnt\` or \`Tnt\` prefix in front of the icon's name.
+
+Example:
+
+\`name='tnt/Avatar'\` or \`name='TntAvatar'\`.
+
+**Note:** By default the \`BeforeSearch\` illustration is loaded.
+When using an illustration type, other than the default, it should be loaded in addition:
+
+\`import \\"@ui5/webcomponents-fiori/dist/illustrations/NoData.js\\";\`
+
+For TNT illustrations:
+
+\`import \\"@ui5/webcomponents-fiori/dist/illustrations/tnt/SessionExpired.js\\";\`
+        */
+  name!: string;
+  /**
+        Determines which illustration breakpoint variant is used.
+
+As \`IllustratedMessage\` adapts itself around the \`Illustration\`, the other
+elements of the component are displayed differently on the different breakpoints/illustration designs.
+        */
+  design!:
+    | 'Auto'
+    | 'Base'
+    | 'Dot'
+    | 'Spot'
+    | 'Dialog'
+    | 'Scene'
+    | 'ExtraSmall'
+    | 'Small'
+    | 'Medium'
+    | 'Large';
+  /**
+        Defines the subtitle of the component.
+
+**Note:** Using this property, the default subtitle text of illustration will be overwritten.
+
+**Note:** Using \`subtitle\` slot, the default of this property will be overwritten.
+        */
+  subtitleText!: string | undefined;
+  /**
+        Defines the title of the component.
+
+**Note:** Using this property, the default title text of illustration will be overwritten.
+        */
+  titleText!: string | undefined;
+  /**
+        Receives id(or many ids) of the elements that label the component.
+        */
+  accessibleNameRef!: string | undefined;
+  /**
+        Defines whether the illustration is decorative.
+
+When set to \`true\`, the attributes \`role=\\"presentation\\"\` and \`aria-hidden=\\"true\\"\` are applied to the SVG element.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  decorative!: boolean;
+
+  private elementRef: ElementRef<IllustratedMessage> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): IllustratedMessage {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { IllustratedMessageComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Index Ts should match the snapshot 1`] = `"export { Ui5FioriModule } from './ui5-fiori.module';"`;
+
+exports[`Snapshot test Fiori Media Gallery Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/MediaGalleryItem.js';
+import MediaGalleryItem from '@ui5/webcomponents-fiori/dist/MediaGalleryItem.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['selected', 'disabled', 'layout'])
+@Component({
+  standalone: true,
+  selector: 'ui5-media-gallery-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['selected', 'disabled', 'layout'],
+  exportAs: 'ui5MediaGalleryItem',
+})
+class MediaGalleryItemComponent {
+  /**
+        Defines the selected state of the component.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines whether the component is in disabled state.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Determines the layout of the item container.
+        */
+  layout!: 'Square' | 'Wide';
+
+  private elementRef: ElementRef<MediaGalleryItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): MediaGalleryItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { MediaGalleryItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Media Gallery should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/MediaGallery.js';
+import {
+  default as MediaGallery,
+  MediaGallerySelectionChangeEventDetail,
+} from '@ui5/webcomponents-fiori/dist/MediaGallery.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'showAllThumbnails',
+  'interactiveDisplayArea',
+  'layout',
+  'menuHorizontalAlign',
+  'menuVerticalAlign',
+])
+@ProxyOutputs([
+  'selection-change: ui5SelectionChange',
+  'overflow-click: ui5OverflowClick',
+  'display-area-click: ui5DisplayAreaClick',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-media-gallery',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'showAllThumbnails',
+    'interactiveDisplayArea',
+    'layout',
+    'menuHorizontalAlign',
+    'menuVerticalAlign',
+  ],
+  outputs: ['ui5SelectionChange', 'ui5OverflowClick', 'ui5DisplayAreaClick'],
+  exportAs: 'ui5MediaGallery',
+})
+class MediaGalleryComponent {
+  /**
+        If set to \`true\`, all thumbnails are rendered in a scrollable container.
+If \`false\`, only up to five thumbnails are rendered, followed by
+an overflow button that shows the count of the remaining thumbnails.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showAllThumbnails!: boolean;
+  /**
+        If enabled, a \`display-area-click\` event is fired
+when the user clicks or taps on the display area.
+
+The display area is the central area that contains
+the enlarged content of the currently selected item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  interactiveDisplayArea!: boolean;
+  /**
+        Determines the layout of the component.
+        */
+  layout!: 'Auto' | 'Vertical' | 'Horizontal';
+  /**
+        Determines the horizontal alignment of the thumbnails menu
+vs. the central display area.
+        */
+  menuHorizontalAlign!: 'Left' | 'Right';
+  /**
+        Determines the vertical alignment of the thumbnails menu
+vs. the central display area.
+        */
+  menuVerticalAlign!: 'Top' | 'Bottom';
+
+  /**
+     Fired when selection is changed by user interaction.
+    */
+  ui5SelectionChange!: EventEmitter<MediaGallerySelectionChangeEventDetail>;
+  /**
+     Fired when the thumbnails overflow button is clicked.
+    */
+  ui5OverflowClick!: EventEmitter<void>;
+  /**
+     Fired when the display area is clicked.
+The display area is the central area that contains
+the enlarged content of the currently selected item.
+    */
+  ui5DisplayAreaClick!: EventEmitter<void>;
+
+  private elementRef: ElementRef<MediaGallery> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): MediaGallery {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { MediaGalleryComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Navigation Layout should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/NavigationLayout.js';
+import NavigationLayout from '@ui5/webcomponents-fiori/dist/NavigationLayout.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['mode'])
+@Component({
+  standalone: true,
+  selector: 'ui5-navigation-layout',
+  template: '<ng-content></ng-content>',
+  inputs: ['mode'],
+  exportAs: 'ui5NavigationLayout',
+})
+class NavigationLayoutComponent {
+  /**
+        Specifies the navigation layout mode.
+        */
+  mode!: 'Auto' | 'Collapsed' | 'Expanded';
+
+  private elementRef: ElementRef<NavigationLayout> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): NavigationLayout {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { NavigationLayoutComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Ng Package Json should match the snapshot 1`] = `"{\\"lib\\":{\\"entryFile\\":\\"./index.ts\\"}}"`;
+
+exports[`Snapshot test Fiori Notification List Group Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/NotificationListGroupItem.js';
+import NotificationListGroupItem from '@ui5/webcomponents-fiori/dist/NotificationListGroupItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'titleText',
+  'read',
+  'loading',
+  'loadingDelay',
+  'collapsed',
+  'growing',
+])
+@ProxyOutputs(['toggle: ui5Toggle', 'load-more: ui5LoadMore'])
+@Component({
+  standalone: true,
+  selector: 'ui5-li-notification-group',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'titleText',
+    'read',
+    'loading',
+    'loadingDelay',
+    'collapsed',
+    'growing',
+  ],
+  outputs: ['ui5Toggle', 'ui5LoadMore'],
+  exportAs: 'ui5LiNotificationGroup',
+})
+class NotificationListGroupItemComponent {
+  /**
+        Defines the \`titleText\` of the item.
+        */
+  titleText!: string | undefined;
+  /**
+        Defines if the \`notification\` is new or has been already read.
+
+**Note:** if set to \`false\` the \`titleText\` has bold font,
+if set to true - it has a normal font.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  read!: boolean;
+  /**
+        Defines if a busy indicator would be displayed over the item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Defines the delay in milliseconds, after which the busy indicator will show up for this component.
+        */
+  loadingDelay!: number;
+  /**
+        Defines if the group is collapsed or expanded.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  collapsed!: boolean;
+  /**
+        Defines whether the component will have growing capability by pressing a \`More\` button.
+When button is pressed \`load-more\` event will be fired.
+        */
+  growing!: 'Button' | 'None';
+
+  /**
+     Fired when the \`ui5-li-notification-group\` is expanded/collapsed by user interaction.
+    */
+  ui5Toggle!: EventEmitter<void>;
+  /**
+     Fired when additional items are requested.
+    */
+  ui5LoadMore!: EventEmitter<void>;
+
+  private elementRef: ElementRef<NotificationListGroupItem> =
+    inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): NotificationListGroupItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { NotificationListGroupItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Notification List Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/NotificationListItem.js';
+import {
+  default as NotificationListItem,
+  NotificationListItemCloseEventDetail,
+} from '@ui5/webcomponents-fiori/dist/NotificationListItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'titleText',
+  'read',
+  'loading',
+  'loadingDelay',
+  'wrappingType',
+  'state',
+  'showClose',
+  'importance',
+])
+@ProxyOutputs(['close: ui5Close'])
+@Component({
+  standalone: true,
+  selector: 'ui5-li-notification',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'titleText',
+    'read',
+    'loading',
+    'loadingDelay',
+    'wrappingType',
+    'state',
+    'showClose',
+    'importance',
+  ],
+  outputs: ['ui5Close'],
+  exportAs: 'ui5LiNotification',
+})
+class NotificationListItemComponent {
+  /**
+        Defines the \`titleText\` of the item.
+        */
+  titleText!: string | undefined;
+  /**
+        Defines if the \`notification\` is new or has been already read.
+
+**Note:** if set to \`false\` the \`titleText\` has bold font,
+if set to true - it has a normal font.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  read!: boolean;
+  /**
+        Defines if a busy indicator would be displayed over the item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Defines the delay in milliseconds, after which the busy indicator will show up for this component.
+        */
+  loadingDelay!: number;
+  /**
+        Defines if the \`titleText\` and \`description\` should wrap,
+they truncate by default.
+
+**Note:** by default the \`titleText\` and \`description\`,
+and a \`ShowMore/Less\` button would be displayed.
+        */
+  wrappingType!: 'None' | 'Normal';
+  /**
+        Defines the status indicator of the item.
+        */
+  state!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
+  /**
+        Defines if the \`Close\` button would be displayed.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showClose!: boolean;
+  /**
+        Defines the \`Important\` label of the item.
+        */
+  importance!: 'Standard' | 'Important';
+
+  /**
+     Fired when the \`Close\` button is pressed.
+    */
+  ui5Close!: EventEmitter<NotificationListItemCloseEventDetail>;
+
+  private elementRef: ElementRef<NotificationListItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): NotificationListItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { NotificationListItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Notification List should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/NotificationList.js';
+import {
+  NotificationItemClickEventDetail,
+  NotificationItemCloseEventDetail,
+  NotificationItemToggleEventDetail,
+  default as NotificationList,
+} from '@ui5/webcomponents-fiori/dist/NotificationList.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['noDataText'])
+@ProxyOutputs([
+  'item-click: ui5ItemClick',
+  'item-close: ui5ItemClose',
+  'item-toggle: ui5ItemToggle',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-notification-list',
+  template: '<ng-content></ng-content>',
+  inputs: ['noDataText'],
+  outputs: ['ui5ItemClick', 'ui5ItemClose', 'ui5ItemToggle'],
+  exportAs: 'ui5NotificationList',
+})
+class NotificationListComponent {
+  /**
+        Defines the text that is displayed when the component contains no items.
+        */
+  noDataText!: string | undefined;
+
+  /**
+     Fired when an item is clicked.
+    */
+  ui5ItemClick!: EventEmitter<NotificationItemClickEventDetail>;
+  /**
+     Fired when the \`Close\` button of any item is clicked.
+    */
+  ui5ItemClose!: EventEmitter<NotificationItemCloseEventDetail>;
+  /**
+     Fired when an item is toggled.
+    */
+  ui5ItemToggle!: EventEmitter<NotificationItemToggleEventDetail>;
+
+  private elementRef: ElementRef<NotificationList> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): NotificationList {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { NotificationListComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Page should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/Page.js';
+import Page from '@ui5/webcomponents-fiori/dist/Page.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['backgroundDesign', 'noScrolling', 'fixedFooter', 'hideFooter'])
+@Component({
+  standalone: true,
+  selector: 'ui5-page',
+  template: '<ng-content></ng-content>',
+  inputs: ['backgroundDesign', 'noScrolling', 'fixedFooter', 'hideFooter'],
+  exportAs: 'ui5Page',
+})
+class PageComponent {
+  /**
+        Defines the background color of the \`ui5-page\`.
+
+**Note:** When a ui5-list is placed inside the page, we recommend using “List” to ensure better color contrast.
+        */
+  backgroundDesign!: 'List' | 'Solid' | 'Transparent';
+  /**
+        Disables vertical scrolling of page content.
+If set to true, there will be no vertical scrolling at all.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  noScrolling!: boolean;
+  /**
+        Defines if the footer is fixed at the very bottom of the page.
+
+**Note:** When set to true the footer is fixed at the very bottom of the page, otherwise it floats over the content with a slight offset from the bottom.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  fixedFooter!: boolean;
+  /**
+        Defines the footer visibility.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideFooter!: boolean;
+
+  private elementRef: ElementRef<Page> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): Page {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { PageComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Product Switch Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ProductSwitchItem.js';
+import ProductSwitchItem from '@ui5/webcomponents-fiori/dist/ProductSwitchItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['titleText', 'subtitleText', 'icon', 'target', 'targetSrc'])
+@ProxyOutputs(['click: ui5Click'])
+@Component({
+  standalone: true,
+  selector: 'ui5-product-switch-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['titleText', 'subtitleText', 'icon', 'target', 'targetSrc'],
+  outputs: ['ui5Click'],
+  exportAs: 'ui5ProductSwitchItem',
+})
+class ProductSwitchItemComponent {
+  /**
+        Defines the title of the component.
+        */
+  titleText!: string | undefined;
+  /**
+        Defines the subtitle of the component.
+        */
+  subtitleText!: string | undefined;
+  /**
+        Defines the icon to be displayed as a graphical element within the component.
+
+Example:
+
+\`<ui5-product-switch-item icon=\\"palette\\">\`
+
+See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
+        */
+  icon!: string | undefined;
+  /**
+        Defines a target where the \`targetSrc\` content must be open.
+
+Available options are:
+
+- \`_self\`
+- \`_top\`
+- \`_blank\`
+- \`_parent\`
+- \`_search\`
+
+**Note:** By default target will be open in the same frame as it was clicked.
+        */
+  target!: string | undefined;
+  /**
+        Defines the component target URI. Supports standard hyperlink behavior.
+        */
+  targetSrc!: string | undefined;
+
+  /**
+     Fired when the \`ui5-product-switch-item\` is activated either with a
+click/tap or by using the Enter or Space key.
+    */
+  ui5Click!: EventEmitter<void>;
+
+  private elementRef: ElementRef<ProductSwitchItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ProductSwitchItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ProductSwitchItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Product Switch should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ProductSwitch.js';
+import ProductSwitch from '@ui5/webcomponents-fiori/dist/ProductSwitch.js';
+
+@Component({
+  standalone: true,
+  selector: 'ui5-product-switch',
+  template: '<ng-content></ng-content>',
+  exportAs: 'ui5ProductSwitch',
+})
+class ProductSwitchComponent {
+  private elementRef: ElementRef<ProductSwitch> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ProductSwitch {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ProductSwitchComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Search Item Group should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SearchItemGroup.js';
+import SearchItemGroup from '@ui5/webcomponents-fiori/dist/SearchItemGroup.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+import { ListItemGroupMoveEventDetail } from '@ui5/webcomponents/dist/ListItemGroup.js';
+@ProxyInputs(['headerText', 'headerAccessibleName', 'wrappingType'])
+@ProxyOutputs(['move-over: ui5MoveOver', 'move: ui5Move'])
+@Component({
+  standalone: true,
+  selector: 'ui5-search-item-group',
+  template: '<ng-content></ng-content>',
+  inputs: ['headerText', 'headerAccessibleName', 'wrappingType'],
+  outputs: ['ui5MoveOver', 'ui5Move'],
+  exportAs: 'ui5SearchItemGroup',
+})
+class SearchItemGroupComponent {
+  /**
+        Defines the header text of the <code>ui5-li-group</code>.
+        */
+  headerText!: string | undefined;
+  /**
+        Defines the accessible name of the header.
+        */
+  headerAccessibleName!: string | undefined;
+  /**
+        Defines if the text of the component should wrap when it's too long.
+When set to \\"Normal\\", the content (title, description) will be wrapped
+using the \`ui5-expandable-text\` component.<br/>
+
+The text can wrap up to 100 characters on small screens (size S) and
+up to 300 characters on larger screens (size M and above). When text exceeds
+these limits, it truncates with an ellipsis followed by a text expansion trigger.
+
+Available options are:
+- \`None\` (default) - The text will truncate with an ellipsis.
+- \`Normal\` - The text will wrap (without truncation).
+        */
+  wrappingType!: 'None' | 'Normal';
+
+  /**
+     Fired when a movable list item is moved over a potential drop target during a dragging operation.
+
+If the new position is valid, prevent the default action of the event using \`preventDefault()\`.
+    */
+  ui5MoveOver!: EventEmitter<ListItemGroupMoveEventDetail>;
+  /**
+     Fired when a movable list item is dropped onto a drop target.
+
+**Note:** \`move\` event is fired only if there was a preceding \`move-over\` with prevented default action.
+    */
+  ui5Move!: EventEmitter<ListItemGroupMoveEventDetail>;
+
+  private elementRef: ElementRef<SearchItemGroup> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SearchItemGroup {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SearchItemGroupComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Search Item Show More should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SearchItemShowMore.js';
+import {
+  default as SearchItemShowMore,
+  ShowMoreItemClickEventDetail,
+} from '@ui5/webcomponents-fiori/dist/SearchItemShowMore.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['itemsToShowCount', 'selected'])
+@ProxyOutputs(['click: ui5Click'])
+@Component({
+  standalone: true,
+  selector: 'ui5-search-item-show-more',
+  template: '<ng-content></ng-content>',
+  inputs: ['itemsToShowCount', 'selected'],
+  outputs: ['ui5Click'],
+  exportAs: 'ui5SearchItemShowMore',
+})
+class SearchItemShowMoreComponent {
+  /**
+        Specifies the number of additional items available to show.
+If no value is defined, the control shows \\"Show more\\" (without any counter).
+If a number is provided, it displays \\"Show more (N)\\", where N is that number.
+        */
+  itemsToShowCount!: number | undefined;
+  /**
+        Defines whether the show more item is selected.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+
+  /**
+     Fired when the component is activated, either with a mouse/tap
+or by pressing the Enter or Space keys.
+    */
+  ui5Click!: EventEmitter<ShowMoreItemClickEventDetail>;
+
+  private elementRef: ElementRef<SearchItemShowMore> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SearchItemShowMore {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SearchItemShowMoreComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Search Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SearchItem.js';
+import SearchItem from '@ui5/webcomponents-fiori/dist/SearchItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'text',
+  'description',
+  'icon',
+  'selected',
+  'deletable',
+  'scopeName',
+])
+@ProxyOutputs(['delete: ui5Delete'])
+@Component({
+  standalone: true,
+  selector: 'ui5-search-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'description', 'icon', 'selected', 'deletable', 'scopeName'],
+  outputs: ['ui5Delete'],
+  exportAs: 'ui5SearchItem',
+})
+class SearchItemComponent {
+  /**
+        Defines the heading text of the search item.
+        */
+  text!: string | undefined;
+  /**
+        Defines the description that appears right under the item text, if available.
+        */
+  description!: string | undefined;
+  /**
+        Defines the icon name of the search item.
+**Note:** If provided, the image slot will be ignored.
+        */
+  icon!: string | undefined;
+  /**
+        Defines whether the search item is selected.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines whether the search item is deletable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  deletable!: boolean;
+  /**
+        Defines the scope of the search item
+        */
+  scopeName!: string | undefined;
+
+  /**
+     Fired when delete button is pressed.
+    */
+  ui5Delete!: EventEmitter<void>;
+
+  private elementRef: ElementRef<SearchItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SearchItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SearchItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Search Message Area should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SearchMessageArea.js';
+import SearchMessageArea from '@ui5/webcomponents-fiori/dist/SearchMessageArea.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'description'])
+@Component({
+  standalone: true,
+  selector: 'ui5-search-message-area',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'description'],
+  exportAs: 'ui5SearchMessageArea',
+})
+class SearchMessageAreaComponent {
+  /**
+        Defines the text to be displayed.
+        */
+  text!: string | undefined;
+  /**
+        Defines the description text to be displayed.
+        */
+  description!: string | undefined;
+
+  private elementRef: ElementRef<SearchMessageArea> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SearchMessageArea {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SearchMessageAreaComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Search Scope should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SearchScope.js';
+import SearchScope from '@ui5/webcomponents-fiori/dist/SearchScope.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'value'])
+@Component({
+  standalone: true,
+  selector: 'ui5-search-scope',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'value'],
+  exportAs: 'ui5SearchScope',
+})
+class SearchScopeComponent {
+  /**
+        Defines the text of the component.
+        */
+  text!: string;
+  /**
+        Defines the value of the \`ui5-search-scope\`.
+Used for selection in Search scopes.
+        */
+  value!: string | undefined;
+
+  private elementRef: ElementRef<SearchScope> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SearchScope {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SearchScopeComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Search should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/Search.js';
+import Search from '@ui5/webcomponents-fiori/dist/Search.js';
+import { SearchFieldScopeSelectionChangeDetails } from '@ui5/webcomponents-fiori/dist/SearchField.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'loading',
+  'noTypeahead',
+  'open',
+  'showClearIcon',
+  'value',
+  'placeholder',
+  'accessibleName',
+  'accessibleDescription',
+  'scopeValue',
+])
+@ProxyOutputs([
+  'open: ui5Open',
+  'close: ui5Close',
+  'input: ui5Input',
+  'scope-change: ui5ScopeChange',
+  'search: ui5Search',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-search',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'loading',
+    'noTypeahead',
+    'open',
+    'showClearIcon',
+    'value',
+    'placeholder',
+    'accessibleName',
+    'accessibleDescription',
+    'scopeValue',
+  ],
+  outputs: ['ui5Open', 'ui5Close', 'ui5Input', 'ui5ScopeChange', 'ui5Search'],
+  exportAs: 'ui5Search',
+})
+class SearchComponent {
+  /**
+        Indicates whether a loading indicator should be shown in the popup.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Defines whether the value will be autcompleted to match an item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  noTypeahead!: boolean;
+  /**
+        Indicates whether the items picker is open.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  open!: boolean;
+  /**
+        Defines whether the clear icon of the search will be shown.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showClearIcon!: boolean;
+  /**
+        Defines the value of the component.
+
+**Note:** The property is updated upon typing.
+        */
+  value!: string;
+  /**
+        Defines a short hint intended to aid the user with data entry when the
+component has no value.
+        */
+  placeholder!: string | undefined;
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+  /**
+        Defines the accessible ARIA description of the field.
+        */
+  accessibleDescription!: string | undefined;
+  /**
+        Defines the value of the component:
+
+Applications are responsible for setting the correct scope value.
+
+**Note:** If the given value does not match any existing scopes,
+no scope will be selected and the SearchField scope component will be displayed as empty.
+        */
+  scopeValue!: string | undefined;
+
+  /**
+     Fired when the popup is opened.
+    */
+  ui5Open!: EventEmitter<void>;
+  /**
+     Fired when the popup is closed.
+    */
+  ui5Close!: EventEmitter<void>;
+  /**
+     Fired when typing in input or clear icon is pressed.
+    */
+  ui5Input!: EventEmitter<void>;
+  /**
+     Fired when the scope has changed.
+    */
+  ui5ScopeChange!: EventEmitter<SearchFieldScopeSelectionChangeDetails>;
+  /**
+     Fired when the user has triggered search with Enter key or Search Button press.
+    */
+  ui5Search!: EventEmitter<void>;
+
+  private elementRef: ElementRef<Search> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): Search {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SearchComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Shell Bar Branding should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ShellBarBranding.js';
+import ShellBarBranding from '@ui5/webcomponents-fiori/dist/ShellBarBranding.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['href', 'target', 'accessibleName'])
+@ProxyOutputs(['click: ui5Click'])
+@Component({
+  standalone: true,
+  selector: 'ui5-shellbar-branding',
+  template: '<ng-content></ng-content>',
+  inputs: ['href', 'target', 'accessibleName'],
+  outputs: ['ui5Click'],
+  exportAs: 'ui5ShellbarBranding',
+})
+class ShellBarBrandingComponent {
+  /**
+        Defines the component href.
+
+**Note:** Standard hyperlink behavior is supported.
+        */
+  href!: string | undefined;
+  /**
+        Defines the component target.
+
+**Notes:**
+
+- \`_self\`
+- \`_top\`
+- \`_blank\`
+- \`_parent\`
+- \`_search\`
+
+**This property must only be used when the \`href\` property is set.**
+        */
+  target!: string | undefined;
+  /**
+        Defines the text alternative of the component.
+If not provided a default text alternative will be set, if present.
+        */
+  accessibleName!: string | undefined;
+
+  /**
+     Fired, when the logo is activated.
+    */
+  ui5Click!: EventEmitter<void>;
+
+  private elementRef: ElementRef<ShellBarBranding> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ShellBarBranding {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ShellBarBrandingComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Shell Bar Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
+import {
+  default as ShellBarItem,
+  ShellBarItemAccessibilityAttributes,
+  ShellBarItemClickEventDetail,
+} from '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['icon', 'text', 'count', 'accessibilityAttributes'])
+@ProxyOutputs(['click: ui5Click'])
+@Component({
+  standalone: true,
+  selector: 'ui5-shellbar-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['icon', 'text', 'count', 'accessibilityAttributes'],
+  outputs: ['ui5Click'],
+  exportAs: 'ui5ShellbarItem',
+})
+class ShellBarItemComponent {
+  /**
+        Defines the name of the item's icon.
+        */
+  icon!: string | undefined;
+  /**
+        Defines the item text.
+
+**Note:** The text is only displayed inside the overflow popover list view.
+        */
+  text!: string | undefined;
+  /**
+        Defines the count displayed in the top-right corner.
+        */
+  count!: string | undefined;
+  /**
+        Defines additional accessibility attributes on Shellbar Items.
+
+The accessibility attributes support the following values:
+
+- **expanded**: Indicates whether the button, or another grouping element it controls,
+is currently expanded or collapsed.
+Accepts the following string values: \`true\` or \`false\`.
+
+- **hasPopup**: Indicates the availability and type of interactive popup element,
+such as menu or dialog, that can be triggered by the button.
+
+- **controls**: Identifies the element (or elements) whose contents
+or presence are controlled by the component.
+Accepts a lowercase string value, referencing the ID of the element it controls.
+        */
+  accessibilityAttributes!: ShellBarItemAccessibilityAttributes;
+
+  /**
+     Fired, when the item is pressed.
+    */
+  ui5Click!: EventEmitter<ShellBarItemClickEventDetail>;
+
+  private elementRef: ElementRef<ShellBarItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ShellBarItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ShellBarItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Shell Bar Search should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import { SearchFieldScopeSelectionChangeDetails } from '@ui5/webcomponents-fiori/dist/SearchField.js';
+import '@ui5/webcomponents-fiori/dist/ShellBarSearch.js';
+import ShellBarSearch from '@ui5/webcomponents-fiori/dist/ShellBarSearch.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'loading',
+  'noTypeahead',
+  'open',
+  'showClearIcon',
+  'value',
+  'placeholder',
+  'accessibleName',
+  'accessibleDescription',
+  'scopeValue',
+  'autoOpen',
+])
+@ProxyOutputs([
+  'open: ui5Open',
+  'close: ui5Close',
+  'input: ui5Input',
+  'scope-change: ui5ScopeChange',
+  'search: ui5Search',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-shellbar-search',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'loading',
+    'noTypeahead',
+    'open',
+    'showClearIcon',
+    'value',
+    'placeholder',
+    'accessibleName',
+    'accessibleDescription',
+    'scopeValue',
+    'autoOpen',
+  ],
+  outputs: ['ui5Open', 'ui5Close', 'ui5Input', 'ui5ScopeChange', 'ui5Search'],
+  exportAs: 'ui5ShellbarSearch',
+})
+class ShellBarSearchComponent {
+  /**
+        Indicates whether a loading indicator should be shown in the popup.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Defines whether the value will be autcompleted to match an item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  noTypeahead!: boolean;
+  /**
+        Indicates whether the items picker is open.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  open!: boolean;
+  /**
+        Defines whether the clear icon of the search will be shown.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showClearIcon!: boolean;
+  /**
+        Defines the value of the component.
+
+**Note:** The property is updated upon typing.
+        */
+  value!: string;
+  /**
+        Defines a short hint intended to aid the user with data entry when the
+component has no value.
+        */
+  placeholder!: string | undefined;
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+  /**
+        Defines the accessible ARIA description of the field.
+        */
+  accessibleDescription!: string | undefined;
+  /**
+        Defines the value of the component:
+
+Applications are responsible for setting the correct scope value.
+
+**Note:** If the given value does not match any existing scopes,
+no scope will be selected and the SearchField scope component will be displayed as empty.
+        */
+  scopeValue!: string | undefined;
+  /**
+        Indicates whether the suggestions popover should be opened on focus.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  autoOpen!: boolean;
+
+  /**
+     Fired when the popup is opened.
+    */
+  ui5Open!: EventEmitter<void>;
+  /**
+     Fired when the popup is closed.
+    */
+  ui5Close!: EventEmitter<void>;
+  /**
+     Fired when typing in input or clear icon is pressed.
+    */
+  ui5Input!: EventEmitter<void>;
+  /**
+     Fired when the scope has changed.
+    */
+  ui5ScopeChange!: EventEmitter<SearchFieldScopeSelectionChangeDetails>;
+  /**
+     Fired when the user has triggered search with Enter key or Search Button press.
+    */
+  ui5Search!: EventEmitter<void>;
+
+  private elementRef: ElementRef<ShellBarSearch> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ShellBarSearch {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ShellBarSearchComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Shell Bar Spacer should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ShellBarSpacer.js';
+import ShellBarSpacer from '@ui5/webcomponents-fiori/dist/ShellBarSpacer.js';
+
+@Component({
+  standalone: true,
+  selector: 'ui5-shellbar-spacer',
+  template: '<ng-content></ng-content>',
+  exportAs: 'ui5ShellbarSpacer',
+})
+class ShellBarSpacerComponent {
+  private elementRef: ElementRef<ShellBarSpacer> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ShellBarSpacer {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ShellBarSpacerComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Shell Bar should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ShellBar.js';
+import {
+  default as ShellBar,
+  ShellBarAccessibilityAttributes,
+  ShellBarContentItemVisibilityChangeEventDetail,
+  ShellBarLogoClickEventDetail,
+  ShellBarMenuItemClickEventDetail,
+  ShellBarNotificationsClickEventDetail,
+  ShellBarProductSwitchClickEventDetail,
+  ShellBarProfileClickEventDetail,
+  ShellBarSearchButtonEventDetail,
+  ShellBarSearchFieldClearEventDetail,
+  ShellBarSearchFieldToggleEventDetail,
+} from '@ui5/webcomponents-fiori/dist/ShellBar.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'hideSearchButton',
+  'disableSearchCollapse',
+  'primaryTitle',
+  'secondaryTitle',
+  'notificationsCount',
+  'showNotifications',
+  'showProductSwitch',
+  'showSearchField',
+  'accessibilityAttributes',
+])
+@ProxyOutputs([
+  'notifications-click: ui5NotificationsClick',
+  'profile-click: ui5ProfileClick',
+  'product-switch-click: ui5ProductSwitchClick',
+  'logo-click: ui5LogoClick',
+  'menu-item-click: ui5MenuItemClick',
+  'search-button-click: ui5SearchButtonClick',
+  'search-field-toggle: ui5SearchFieldToggle',
+  'search-field-clear: ui5SearchFieldClear',
+  'content-item-visibility-change: ui5ContentItemVisibilityChange',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-shellbar',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'hideSearchButton',
+    'disableSearchCollapse',
+    'primaryTitle',
+    'secondaryTitle',
+    'notificationsCount',
+    'showNotifications',
+    'showProductSwitch',
+    'showSearchField',
+    'accessibilityAttributes',
+  ],
+  outputs: [
+    'ui5NotificationsClick',
+    'ui5ProfileClick',
+    'ui5ProductSwitchClick',
+    'ui5LogoClick',
+    'ui5MenuItemClick',
+    'ui5SearchButtonClick',
+    'ui5SearchFieldToggle',
+    'ui5SearchFieldClear',
+    'ui5ContentItemVisibilityChange',
+  ],
+  exportAs: 'ui5Shellbar',
+})
+class ShellBarComponent {
+  /**
+        Defines the visibility state of the search button.
+
+**Note:** The \`hideSearchButton\` property is in an experimental state and is a subject to change.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideSearchButton!: boolean;
+  /**
+        Disables the automatic search field expansion/collapse when the available space is not enough.
+
+**Note:** The \`disableSearchCollapse\` property is in an experimental state and is a subject to change.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disableSearchCollapse!: boolean;
+  /**
+        Defines the \`primaryTitle\`.
+
+**Note:** The \`primaryTitle\` would be hidden on S screen size (less than approx. 700px).
+        */
+  primaryTitle!: string | undefined;
+  /**
+        Defines the \`secondaryTitle\`.
+
+**Note:** The \`secondaryTitle\` would be hidden on S and M screen sizes (less than approx. 1300px).
+        */
+  secondaryTitle!: string | undefined;
+  /**
+        Defines the \`notificationsCount\`,
+displayed in the notification icon top-right corner.
+        */
+  notificationsCount!: string | undefined;
+  /**
+        Defines, if the notification icon would be displayed.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showNotifications!: boolean;
+  /**
+        Defines, if the product switch icon would be displayed.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showProductSwitch!: boolean;
+  /**
+        Defines, if the Search Field would be displayed when there is a valid \`searchField\` slot.
+
+**Note:** By default the Search Field is not displayed.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showSearchField!: boolean;
+  /**
+        Defines additional accessibility attributes on different areas of the component.
+
+The accessibilityAttributes object has the following fields,
+where each field is an object supporting one or more accessibility attributes:
+
+- **logo** - \`logo.role\` and \`logo.name\`.
+- **notifications** - \`notifications.expanded\` and \`notifications.hasPopup\`.
+- **profile** - \`profile.expanded\`, \`profile.hasPopup\` and \`profile.name\`.
+- **product** - \`product.expanded\` and \`product.hasPopup\`.
+- **search** - \`search.hasPopup\`.
+- **overflow** - \`overflow.expanded\` and \`overflow.hasPopup\`.
+- **branding** - \`branding.name\`.
+
+The accessibility attributes support the following values:
+
+- **role**: Defines the accessible ARIA role of the logo area.
+Accepts the following string values: \`button\` or \`link\`.
+
+- **expanded**: Indicates whether the button, or another grouping element it controls,
+is currently expanded or collapsed.
+Accepts the following string values: \`true\` or \`false\`.
+
+- **hasPopup**: Indicates the availability and type of interactive popup element,
+such as menu or dialog, that can be triggered by the button.
+
+Accepts the following string values: \`dialog\`, \`grid\`, \`listbox\`, \`menu\` or \`tree\`.
+- **name**: Defines the accessible ARIA name of the area.
+Accepts any string.
+        */
+  accessibilityAttributes!: ShellBarAccessibilityAttributes;
+
+  /**
+     Fired, when the notification icon is activated.
+    */
+  ui5NotificationsClick!: EventEmitter<ShellBarNotificationsClickEventDetail>;
+  /**
+     Fired, when the profile slot is present.
+    */
+  ui5ProfileClick!: EventEmitter<ShellBarProfileClickEventDetail>;
+  /**
+     Fired, when the product switch icon is activated.
+
+**Note:** You can prevent closing of overflow popover by calling \`event.preventDefault()\`.
+    */
+  ui5ProductSwitchClick!: EventEmitter<ShellBarProductSwitchClickEventDetail>;
+  /**
+     Fired, when the logo is activated.
+    */
+  ui5LogoClick!: EventEmitter<ShellBarLogoClickEventDetail>;
+  /**
+     Fired, when a menu item is activated
+
+**Note:** You can prevent closing of overflow popover by calling \`event.preventDefault()\`.
+    */
+  ui5MenuItemClick!: EventEmitter<ShellBarMenuItemClickEventDetail>;
+  /**
+     Fired, when the search button is activated.
+
+**Note:** You can prevent expanding/collapsing of the search field by calling \`event.preventDefault()\`.
+    */
+  ui5SearchButtonClick!: EventEmitter<ShellBarSearchButtonEventDetail>;
+  /**
+     Fired, when the search field is expanded or collapsed.
+    */
+  ui5SearchFieldToggle!: EventEmitter<ShellBarSearchFieldToggleEventDetail>;
+  /**
+     Fired, when the search cancel button is activated.
+
+**Note:** You can prevent the default behavior (clearing the search field value) by calling \`event.preventDefault()\`. The search will still be closed.
+**Note:** The \`search-field-clear\` event is in an experimental state and is a subject to change.
+    */
+  ui5SearchFieldClear!: EventEmitter<ShellBarSearchFieldClearEventDetail>;
+  /**
+     Fired, when an item from the content slot is hidden or shown.
+**Note:** The \`content-item-visibility-change\` event is in an experimental state and is a subject to change.
+    */
+  ui5ContentItemVisibilityChange!: EventEmitter<ShellBarContentItemVisibilityChangeEventDetail>;
+
+  private elementRef: ElementRef<ShellBar> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ShellBar {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ShellBarComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Side Navigation Group should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SideNavigationGroup.js';
+import SideNavigationGroup from '@ui5/webcomponents-fiori/dist/SideNavigationGroup.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'disabled', 'tooltip', 'expanded'])
+@Component({
+  standalone: true,
+  selector: 'ui5-side-navigation-group',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'disabled', 'tooltip', 'expanded'],
+  exportAs: 'ui5SideNavigationGroup',
+})
+class SideNavigationGroupComponent {
+  /**
+        Defines the text of the item.
+        */
+  text!: string | undefined;
+  /**
+        Defines whether the component is disabled.
+A disabled component can't be pressed or
+focused, and it is not in the tab chain.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Defines the tooltip of the component.
+
+A tooltip attribute should be provided, in order to represent meaning/function,
+when the component is collapsed (\\"icon only\\" design is visualized) or the item text is truncated.
+        */
+  tooltip!: string | undefined;
+  /**
+        Defines if the item is expanded
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  expanded!: boolean;
+
+  private elementRef: ElementRef<SideNavigationGroup> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SideNavigationGroup {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SideNavigationGroupComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Side Navigation Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SideNavigationItem.js';
+import SideNavigationItem from '@ui5/webcomponents-fiori/dist/SideNavigationItem.js';
+import { SideNavigationItemClickEventDetail } from '@ui5/webcomponents-fiori/dist/SideNavigationItemBase.js';
+import { SideNavigationItemAccessibilityAttributes } from '@ui5/webcomponents-fiori/dist/SideNavigationSelectableItemBase.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'text',
+  'disabled',
+  'tooltip',
+  'icon',
+  'selected',
+  'href',
+  'target',
+  'design',
+  'unselectable',
+  'accessibilityAttributes',
+  'expanded',
+])
+@ProxyOutputs(['click: ui5Click'])
+@Component({
+  standalone: true,
+  selector: 'ui5-side-navigation-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'text',
+    'disabled',
+    'tooltip',
+    'icon',
+    'selected',
+    'href',
+    'target',
+    'design',
+    'unselectable',
+    'accessibilityAttributes',
+    'expanded',
+  ],
+  outputs: ['ui5Click'],
+  exportAs: 'ui5SideNavigationItem',
+})
+class SideNavigationItemComponent {
+  /**
+        Defines the text of the item.
+        */
+  text!: string | undefined;
+  /**
+        Defines whether the component is disabled.
+A disabled component can't be pressed or
+focused, and it is not in the tab chain.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Defines the tooltip of the component.
+
+A tooltip attribute should be provided, in order to represent meaning/function,
+when the component is collapsed (\\"icon only\\" design is visualized) or the item text is truncated.
+        */
+  tooltip!: string | undefined;
+  /**
+        Defines the icon of the item.
+
+The SAP-icons font provides numerous options.
+
+See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
+        */
+  icon!: string | undefined;
+  /**
+        Defines whether the item is selected.
+
+**Note:** Items that have a set \`href\` and \`target\` set to \`_blank\` should not be selectable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines the link target URI. Supports standard hyperlink behavior.
+If a JavaScript action should be triggered,
+this should not be set, but instead an event handler
+for the \`click\` event should be registered.
+        */
+  href!: string | undefined;
+  /**
+        Defines the component target.
+
+Possible values:
+
+- \`_self\`
+- \`_top\`
+- \`_blank\`
+- \`_parent\`
+- \`framename\`
+
+**Note:** Items that have a defined \`href\` and \`target\`
+attribute set to \`_blank\` should not be selectable.
+        */
+  target!: string | undefined;
+  /**
+        Item design.
+
+**Note:** Items with \\"Action\\" design must not have sub-items.
+        */
+  design!: 'Default' | 'Action';
+  /**
+        Indicates whether the navigation item is selectable. By default, all items are selectable unless specifically marked as unselectable.
+
+When a parent item is marked as unselectable, selecting it will only expand or collapse its sub-items.
+To improve user experience do not mix unselectable parent items with selectable parent items in a single side navigation.
+
+
+**Guidelines**:
+- Items with an assigned \`href\` and a target of \`_blank\` should be marked as unselectable.
+- Items that trigger actions (with design \\"Action\\") should be marked as unselectable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  unselectable!: boolean;
+  /**
+        Defines the additional accessibility attributes that will be applied to the component.
+The following fields are supported:
+
+- **hasPopup**: Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by the button.
+Accepts the following string values: \`dialog\`, \`grid\`, \`listbox\`, \`menu\` or \`tree\`.
+
+**Note:** Do not use it on parent items, as it will be overridden if the item is in the overflow menu.
+        */
+  accessibilityAttributes!: SideNavigationItemAccessibilityAttributes;
+  /**
+        Defines if the item is expanded
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  expanded!: boolean;
+
+  /**
+     Fired when the component is activated either with a click/tap or by using the [Enter] or [Space] keys.
+    */
+  ui5Click!: EventEmitter<SideNavigationItemClickEventDetail>;
+
+  private elementRef: ElementRef<SideNavigationItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SideNavigationItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SideNavigationItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Side Navigation Sub Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import { SideNavigationItemClickEventDetail } from '@ui5/webcomponents-fiori/dist/SideNavigationItemBase.js';
+import { SideNavigationItemAccessibilityAttributes } from '@ui5/webcomponents-fiori/dist/SideNavigationSelectableItemBase.js';
+import '@ui5/webcomponents-fiori/dist/SideNavigationSubItem.js';
+import SideNavigationSubItem from '@ui5/webcomponents-fiori/dist/SideNavigationSubItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'text',
+  'disabled',
+  'tooltip',
+  'icon',
+  'selected',
+  'href',
+  'target',
+  'design',
+  'unselectable',
+  'accessibilityAttributes',
+])
+@ProxyOutputs(['click: ui5Click'])
+@Component({
+  standalone: true,
+  selector: 'ui5-side-navigation-sub-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'text',
+    'disabled',
+    'tooltip',
+    'icon',
+    'selected',
+    'href',
+    'target',
+    'design',
+    'unselectable',
+    'accessibilityAttributes',
+  ],
+  outputs: ['ui5Click'],
+  exportAs: 'ui5SideNavigationSubItem',
+})
+class SideNavigationSubItemComponent {
+  /**
+        Defines the text of the item.
+        */
+  text!: string | undefined;
+  /**
+        Defines whether the component is disabled.
+A disabled component can't be pressed or
+focused, and it is not in the tab chain.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Defines the tooltip of the component.
+
+A tooltip attribute should be provided, in order to represent meaning/function,
+when the component is collapsed (\\"icon only\\" design is visualized) or the item text is truncated.
+        */
+  tooltip!: string | undefined;
+  /**
+        Defines the icon of the item.
+
+The SAP-icons font provides numerous options.
+
+See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
+        */
+  icon!: string | undefined;
+  /**
+        Defines whether the item is selected.
+
+**Note:** Items that have a set \`href\` and \`target\` set to \`_blank\` should not be selectable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines the link target URI. Supports standard hyperlink behavior.
+If a JavaScript action should be triggered,
+this should not be set, but instead an event handler
+for the \`click\` event should be registered.
+        */
+  href!: string | undefined;
+  /**
+        Defines the component target.
+
+Possible values:
+
+- \`_self\`
+- \`_top\`
+- \`_blank\`
+- \`_parent\`
+- \`framename\`
+
+**Note:** Items that have a defined \`href\` and \`target\`
+attribute set to \`_blank\` should not be selectable.
+        */
+  target!: string | undefined;
+  /**
+        Item design.
+
+**Note:** Items with \\"Action\\" design must not have sub-items.
+        */
+  design!: 'Default' | 'Action';
+  /**
+        Indicates whether the navigation item is selectable. By default, all items are selectable unless specifically marked as unselectable.
+
+When a parent item is marked as unselectable, selecting it will only expand or collapse its sub-items.
+To improve user experience do not mix unselectable parent items with selectable parent items in a single side navigation.
+
+
+**Guidelines**:
+- Items with an assigned \`href\` and a target of \`_blank\` should be marked as unselectable.
+- Items that trigger actions (with design \\"Action\\") should be marked as unselectable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  unselectable!: boolean;
+  /**
+        Defines the additional accessibility attributes that will be applied to the component.
+The following fields are supported:
+
+- **hasPopup**: Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by the button.
+Accepts the following string values: \`dialog\`, \`grid\`, \`listbox\`, \`menu\` or \`tree\`.
+
+**Note:** Do not use it on parent items, as it will be overridden if the item is in the overflow menu.
+        */
+  accessibilityAttributes!: SideNavigationItemAccessibilityAttributes;
+
+  /**
+     Fired when the component is activated either with a click/tap or by using the [Enter] or [Space] keys.
+    */
+  ui5Click!: EventEmitter<SideNavigationItemClickEventDetail>;
+
+  private elementRef: ElementRef<SideNavigationSubItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SideNavigationSubItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SideNavigationSubItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Side Navigation should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SideNavigation.js';
+import {
+  default as SideNavigation,
+  SideNavigationSelectionChangeEventDetail,
+} from '@ui5/webcomponents-fiori/dist/SideNavigation.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['collapsed', 'accessibleName'])
+@ProxyOutputs(['selection-change: ui5SelectionChange'])
+@Component({
+  standalone: true,
+  selector: 'ui5-side-navigation',
+  template: '<ng-content></ng-content>',
+  inputs: ['collapsed', 'accessibleName'],
+  outputs: ['ui5SelectionChange'],
+  exportAs: 'ui5SideNavigation',
+})
+class SideNavigationComponent {
+  /**
+        Defines whether the \`ui5-side-navigation\` is expanded or collapsed.
+
+**Note:** The collapsed mode is not supported on phones.
+The \`ui5-side-navigation\` component is intended to be used within a \`ui5-navigation-layout\`
+component to ensure proper responsive behavior. If you choose not to use the
+\`ui5-navigation-layout\`, you will need to implement the appropriate responsive patterns yourself,
+particularly for phones where the collapsed mode should not be used.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  collapsed!: boolean;
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+
+  /**
+     Fired when the selection has changed via user interaction
+    */
+  ui5SelectionChange!: EventEmitter<SideNavigationSelectionChangeEventDetail>;
+
+  private elementRef: ElementRef<SideNavigation> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SideNavigation {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SideNavigationComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Sort Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/SortItem.js';
+import SortItem from '@ui5/webcomponents-fiori/dist/SortItem.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'selected'])
+@Component({
+  standalone: true,
+  selector: 'ui5-sort-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'selected'],
+  exportAs: 'ui5SortItem',
+})
+class SortItemComponent {
+  /**
+        Defines the text of the sort item.
+        */
+  text!: string | undefined;
+  /**
+        Defines if the sort item is selected.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+
+  private elementRef: ElementRef<SortItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): SortItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { SortItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Theming should match the snapshot 1`] = `
+"import { Injectable } from '@angular/core';
+import { WebcomponentsThemingProvider } from '@ui5/webcomponents-ngx/theming';
+
+@Injectable({ providedIn: 'root' })
+class Ui5WebcomponentsFioriThemingService extends WebcomponentsThemingProvider {
+  name = 'ui-5-webcomponents-fiori-theming-service';
+  constructor() {
+    super(
+      () =>
+        import(
+          '@ui5/webcomponents-fiori/dist/generated/json-imports/Themes.js'
+        ),
+    );
+  }
+}
+
+export { Ui5WebcomponentsFioriThemingService };
+"
+`;
+
+exports[`Snapshot test Fiori Timeline Group Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/TimelineGroupItem.js';
+import TimelineGroupItem from '@ui5/webcomponents-fiori/dist/TimelineGroupItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['groupName', 'collapsed'])
+@ProxyOutputs(['toggle: ui5Toggle'])
+@Component({
+  standalone: true,
+  selector: 'ui5-timeline-group-item',
+  template: '<ng-content></ng-content>',
+  inputs: ['groupName', 'collapsed'],
+  outputs: ['ui5Toggle'],
+  exportAs: 'ui5TimelineGroupItem',
+})
+class TimelineGroupItemComponent {
+  /**
+        Defines the text of the button that expands and collapses the group.
+        */
+  groupName!: string | undefined;
+  /**
+        Determines if the group is collapsed or expanded.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  collapsed!: boolean;
+
+  /**
+     Fired when the group item is expanded or collapsed.
+    */
+  ui5Toggle!: EventEmitter<void>;
+
+  private elementRef: ElementRef<TimelineGroupItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): TimelineGroupItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { TimelineGroupItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Timeline Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/TimelineItem.js';
+import TimelineItem from '@ui5/webcomponents-fiori/dist/TimelineItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'icon',
+  'name',
+  'nameClickable',
+  'titleText',
+  'subtitleText',
+  'state',
+])
+@ProxyOutputs(['name-click: ui5NameClick'])
+@Component({
+  standalone: true,
+  selector: 'ui5-timeline-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'icon',
+    'name',
+    'nameClickable',
+    'titleText',
+    'subtitleText',
+    'state',
+  ],
+  outputs: ['ui5NameClick'],
+  exportAs: 'ui5TimelineItem',
+})
+class TimelineItemComponent {
+  /**
+        Defines the icon to be displayed as graphical element within the \`ui5-timeline-item\`.
+SAP-icons font provides numerous options.
+
+See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
+        */
+  icon!: string | undefined;
+  /**
+        Defines the name of the item, displayed before the \`title-text\`.
+        */
+  name!: string | undefined;
+  /**
+        Defines if the \`name\` is clickable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  nameClickable!: boolean;
+  /**
+        Defines the title text of the component.
+        */
+  titleText!: string | undefined;
+  /**
+        Defines the subtitle text of the component.
+        */
+  subtitleText!: string | undefined;
+  /**
+        Defines the state of the icon displayed in the \`ui5-timeline-item\`.
+        */
+  state!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
+
+  /**
+     Fired when the item name is pressed either with a
+click/tap or by using the Enter or Space key.
+
+**Note:** The event will not be fired if the \`name-clickable\`
+attribute is not set.
+    */
+  ui5NameClick!: EventEmitter<void>;
+
+  private elementRef: ElementRef<TimelineItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): TimelineItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { TimelineItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Timeline should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/Timeline.js';
+import Timeline from '@ui5/webcomponents-fiori/dist/Timeline.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['layout', 'accessibleName', 'loading', 'loadingDelay', 'growing'])
+@ProxyOutputs(['load-more: ui5LoadMore'])
+@Component({
+  standalone: true,
+  selector: 'ui5-timeline',
+  template: '<ng-content></ng-content>',
+  inputs: ['layout', 'accessibleName', 'loading', 'loadingDelay', 'growing'],
+  outputs: ['ui5LoadMore'],
+  exportAs: 'ui5Timeline',
+})
+class TimelineComponent {
+  /**
+        Defines the items orientation.
+        */
+  layout!: 'Vertical' | 'Horizontal';
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+  /**
+        Defines if the component should display a loading indicator over the Timeline.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Defines the delay in milliseconds, after which the loading indicator will show up for this component.
+        */
+  loadingDelay!: number;
+  /**
+        Defines whether the Timeline will have growing capability either by pressing a \\"More\\" button,
+or via user scroll. In both cases a \`load-more\` event is fired.
+
+Available options:
+
+\`Button\` - Displays a button at the end of the Timeline, which when pressed triggers the \`load-more\` event.
+
+\`Scroll\` -Triggers the \`load-more\` event when the user scrolls to the end of the Timeline.
+
+\`None\` (default) - The growing functionality is off.
+        */
+  growing!: 'Button' | 'Scroll' | 'None';
+
+  /**
+     Fired when the user presses the \`More\` button or scrolls to the Timeline's end.
+
+**Note:** The event will be fired if \`growing\` is set to \`Button\` or \`Scroll\`.
+    */
+  ui5LoadMore!: EventEmitter<void>;
+
+  private elementRef: ElementRef<Timeline> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): Timeline {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { TimelineComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Ui 5 Fiori Module Ts should match the snapshot 1`] = `
+"import { NgModule } from \\"@angular/core\\";
+import { Ui5WebcomponentsFioriThemingService } from \\"@ui5/webcomponents-ngx/fiori/theming\\";
+import \\"@ui5/webcomponents-fiori/dist/Assets.js\\";
+import { BarcodeScannerDialogComponent } from \\"@ui5/webcomponents-ngx/fiori/barcode-scanner-dialog\\";
+import { DynamicPageComponent } from \\"@ui5/webcomponents-ngx/fiori/dynamic-page\\";
+import { DynamicPageHeaderComponent } from \\"@ui5/webcomponents-ngx/fiori/dynamic-page-header\\";
+import { DynamicPageTitleComponent } from \\"@ui5/webcomponents-ngx/fiori/dynamic-page-title\\";
+import { DynamicSideContentComponent } from \\"@ui5/webcomponents-ngx/fiori/dynamic-side-content\\";
+import { FilterItemComponent } from \\"@ui5/webcomponents-ngx/fiori/filter-item\\";
+import { FilterItemOptionComponent } from \\"@ui5/webcomponents-ngx/fiori/filter-item-option\\";
+import { FlexibleColumnLayoutComponent } from \\"@ui5/webcomponents-ngx/fiori/flexible-column-layout\\";
+import { GroupItemComponent } from \\"@ui5/webcomponents-ngx/fiori/group-item\\";
+import { IllustratedMessageComponent } from \\"@ui5/webcomponents-ngx/fiori/illustrated-message\\";
+import { MediaGalleryComponent } from \\"@ui5/webcomponents-ngx/fiori/media-gallery\\";
+import { MediaGalleryItemComponent } from \\"@ui5/webcomponents-ngx/fiori/media-gallery-item\\";
+import { NavigationLayoutComponent } from \\"@ui5/webcomponents-ngx/fiori/navigation-layout\\";
+import { NotificationListComponent } from \\"@ui5/webcomponents-ngx/fiori/notification-list\\";
+import { NotificationListGroupItemComponent } from \\"@ui5/webcomponents-ngx/fiori/notification-list-group-item\\";
+import { NotificationListItemComponent } from \\"@ui5/webcomponents-ngx/fiori/notification-list-item\\";
+import { PageComponent } from \\"@ui5/webcomponents-ngx/fiori/page\\";
+import { ProductSwitchComponent } from \\"@ui5/webcomponents-ngx/fiori/product-switch\\";
+import { ProductSwitchItemComponent } from \\"@ui5/webcomponents-ngx/fiori/product-switch-item\\";
+import { SearchComponent } from \\"@ui5/webcomponents-ngx/fiori/search\\";
+import { SearchItemComponent } from \\"@ui5/webcomponents-ngx/fiori/search-item\\";
+import { SearchItemGroupComponent } from \\"@ui5/webcomponents-ngx/fiori/search-item-group\\";
+import { SearchItemShowMoreComponent } from \\"@ui5/webcomponents-ngx/fiori/search-item-show-more\\";
+import { SearchMessageAreaComponent } from \\"@ui5/webcomponents-ngx/fiori/search-message-area\\";
+import { SearchScopeComponent } from \\"@ui5/webcomponents-ngx/fiori/search-scope\\";
+import { ShellBarComponent } from \\"@ui5/webcomponents-ngx/fiori/shell-bar\\";
+import { ShellBarBrandingComponent } from \\"@ui5/webcomponents-ngx/fiori/shell-bar-branding\\";
+import { ShellBarItemComponent } from \\"@ui5/webcomponents-ngx/fiori/shell-bar-item\\";
+import { ShellBarSearchComponent } from \\"@ui5/webcomponents-ngx/fiori/shell-bar-search\\";
+import { ShellBarSpacerComponent } from \\"@ui5/webcomponents-ngx/fiori/shell-bar-spacer\\";
+import { SideNavigationComponent } from \\"@ui5/webcomponents-ngx/fiori/side-navigation\\";
+import { SideNavigationGroupComponent } from \\"@ui5/webcomponents-ngx/fiori/side-navigation-group\\";
+import { SideNavigationItemComponent } from \\"@ui5/webcomponents-ngx/fiori/side-navigation-item\\";
+import { SideNavigationSubItemComponent } from \\"@ui5/webcomponents-ngx/fiori/side-navigation-sub-item\\";
+import { SortItemComponent } from \\"@ui5/webcomponents-ngx/fiori/sort-item\\";
+import { TimelineComponent } from \\"@ui5/webcomponents-ngx/fiori/timeline\\";
+import { TimelineGroupItemComponent } from \\"@ui5/webcomponents-ngx/fiori/timeline-group-item\\";
+import { TimelineItemComponent } from \\"@ui5/webcomponents-ngx/fiori/timeline-item\\";
+import { UploadCollectionComponent } from \\"@ui5/webcomponents-ngx/fiori/upload-collection\\";
+import { UploadCollectionItemComponent } from \\"@ui5/webcomponents-ngx/fiori/upload-collection-item\\";
+import { UserMenuComponent } from \\"@ui5/webcomponents-ngx/fiori/user-menu\\";
+import { UserMenuAccountComponent } from \\"@ui5/webcomponents-ngx/fiori/user-menu-account\\";
+import { UserMenuItemComponent } from \\"@ui5/webcomponents-ngx/fiori/user-menu-item\\";
+import { UserMenuItemGroupComponent } from \\"@ui5/webcomponents-ngx/fiori/user-menu-item-group\\";
+import { UserSettingsAccountViewComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-account-view\\";
+import { UserSettingsAppearanceViewComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-appearance-view\\";
+import { UserSettingsAppearanceViewGroupComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-appearance-view-group\\";
+import { UserSettingsAppearanceViewItemComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-appearance-view-item\\";
+import { UserSettingsDialogComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-dialog\\";
+import { UserSettingsItemComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-item\\";
+import { UserSettingsViewComponent } from \\"@ui5/webcomponents-ngx/fiori/user-settings-view\\";
+import { ViewSettingsDialogComponent } from \\"@ui5/webcomponents-ngx/fiori/view-settings-dialog\\";
+import { WizardComponent } from \\"@ui5/webcomponents-ngx/fiori/wizard\\";
+import { WizardStepComponent } from \\"@ui5/webcomponents-ngx/fiori/wizard-step\\";
+
+const imports = [
+  BarcodeScannerDialogComponent,
+  DynamicPageComponent,
+  DynamicPageHeaderComponent,
+  DynamicPageTitleComponent,
+  DynamicSideContentComponent,
+  FilterItemComponent,
+  FilterItemOptionComponent,
+  FlexibleColumnLayoutComponent,
+  GroupItemComponent,
+  IllustratedMessageComponent,
+  MediaGalleryComponent,
+  MediaGalleryItemComponent,
+  NavigationLayoutComponent,
+  NotificationListComponent,
+  NotificationListGroupItemComponent,
+  NotificationListItemComponent,
+  PageComponent,
+  ProductSwitchComponent,
+  ProductSwitchItemComponent,
+  SearchComponent,
+  SearchItemComponent,
+  SearchItemGroupComponent,
+  SearchItemShowMoreComponent,
+  SearchMessageAreaComponent,
+  SearchScopeComponent,
+  ShellBarComponent,
+  ShellBarBrandingComponent,
+  ShellBarItemComponent,
+  ShellBarSearchComponent,
+  ShellBarSpacerComponent,
+  SideNavigationComponent,
+  SideNavigationGroupComponent,
+  SideNavigationItemComponent,
+  SideNavigationSubItemComponent,
+  SortItemComponent,
+  TimelineComponent,
+  TimelineGroupItemComponent,
+  TimelineItemComponent,
+  UploadCollectionComponent,
+  UploadCollectionItemComponent,
+  UserMenuComponent,
+  UserMenuAccountComponent,
+  UserMenuItemComponent,
+  UserMenuItemGroupComponent,
+  UserSettingsAccountViewComponent,
+  UserSettingsAppearanceViewComponent,
+  UserSettingsAppearanceViewGroupComponent,
+  UserSettingsAppearanceViewItemComponent,
+  UserSettingsDialogComponent,
+  UserSettingsItemComponent,
+  UserSettingsViewComponent,
+  ViewSettingsDialogComponent,
+  WizardComponent,
+  WizardStepComponent,
+];
+const exports = [...imports];
+
+@NgModule({
+  imports: [...imports],
+  exports: [...exports],
+})
+class Ui5FioriModule {
+  constructor(
+    ui5WebcomponentsFioriThemingService: Ui5WebcomponentsFioriThemingService,
+  ) {}
+}
+export { Ui5FioriModule };
+"
+`;
+
+exports[`Snapshot test Fiori Upload Collection Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UploadCollectionItem.js';
+import UploadCollectionItem from '@ui5/webcomponents-fiori/dist/UploadCollectionItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+import { ListItemAccessibilityAttributes } from '@ui5/webcomponents/dist/ListItem.js';
+@ProxyInputs([
+  'type',
+  'accessibilityAttributes',
+  'navigated',
+  'tooltip',
+  'highlight',
+  'selected',
+  'file',
+  'fileName',
+  'fileNameClickable',
+  'disableDeleteButton',
+  'hideDeleteButton',
+  'hideRetryButton',
+  'hideTerminateButton',
+  'progress',
+  'uploadState',
+])
+@ProxyOutputs([
+  'detail-click: ui5DetailClick',
+  'file-name-click: ui5FileNameClick',
+  'rename: ui5Rename',
+  'terminate: ui5Terminate',
+  'retry: ui5Retry',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-upload-collection-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'type',
+    'accessibilityAttributes',
+    'navigated',
+    'tooltip',
+    'highlight',
+    'selected',
+    'file',
+    'fileName',
+    'fileNameClickable',
+    'disableDeleteButton',
+    'hideDeleteButton',
+    'hideRetryButton',
+    'hideTerminateButton',
+    'progress',
+    'uploadState',
+  ],
+  outputs: [
+    'ui5DetailClick',
+    'ui5FileNameClick',
+    'ui5Rename',
+    'ui5Terminate',
+    'ui5Retry',
+  ],
+  exportAs: 'ui5UploadCollectionItem',
+})
+class UploadCollectionItemComponent {
+  /**
+        Defines the visual indication and behavior of the list items.
+Available options are \`Active\` (by default), \`Inactive\`, \`Detail\` and \`Navigation\`.
+
+**Note:** When set to \`Active\` or \`Navigation\`, the item will provide visual response upon press and hover,
+while with type \`Inactive\` and \`Detail\` - will not.
+        */
+  type!: 'Inactive' | 'Active' | 'Detail' | 'Navigation';
+  /**
+        Defines the additional accessibility attributes that will be applied to the component.
+The following fields are supported:
+
+- **ariaSetsize**: Defines the number of items in the current set  when not all items in the set are present in the DOM.
+**Note:** The value is an integer reflecting the number of items in the complete set. If the size of the entire set is unknown, set \`-1\`.
+
+	- **ariaPosinset**: Defines an element's number or position in the current set when not all items are present in the DOM.
+	**Note:** The value is an integer greater than or equal to 1, and less than or equal to the size of the set when that size is known.
+        */
+  accessibilityAttributes!: ListItemAccessibilityAttributes;
+  /**
+        The navigated state of the list item.
+If set to \`true\`, a navigation indicator is displayed at the end of the list item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  navigated!: boolean;
+  /**
+        Defines the text of the tooltip that would be displayed for the list item.
+        */
+  tooltip!: string | undefined;
+  /**
+        Defines the highlight state of the list items.
+Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+        */
+  highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
+  /**
+        Defines the selected state of the component.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Holds an instance of \`File\` associated with this item.
+        */
+  file!: File | null;
+  /**
+        The name of the file.
+        */
+  fileName!: string;
+  /**
+        If set to \`true\` the file name will be clickable and it will fire \`file-name-click\` event upon click.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  fileNameClickable!: boolean;
+  /**
+        Disables the delete button.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disableDeleteButton!: boolean;
+  /**
+        Hides the delete button.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideDeleteButton!: boolean;
+  /**
+        Hides the retry button when \`uploadState\` property is \`Error\`.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideRetryButton!: boolean;
+  /**
+        Hides the terminate button when \`uploadState\` property is \`Uploading\`.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideTerminateButton!: boolean;
+  /**
+        The upload progress in percentage.
+
+**Note:** Expected values are in the interval [0, 100].
+        */
+  progress!: number;
+  /**
+        Upload state.
+
+Depending on this property, the item displays the following:
+
+- \`Ready\` - progress indicator is displayed.
+- \`Uploading\` - progress indicator and terminate button are displayed. When the terminate button is pressed, \`terminate\` event is fired.
+- \`Error\` - progress indicator and retry button are displayed. When the retry button is pressed, \`retry\` event is fired.
+- \`Complete\` - progress indicator is not displayed.
+        */
+  uploadState!: 'Complete' | 'Error' | 'Ready' | 'Uploading';
+
+  /**
+     Fired when the user clicks on the detail button when type is \`Detail\`.
+    */
+  ui5DetailClick!: EventEmitter<void>;
+  /**
+     Fired when the file name is clicked.
+
+**Note:** This event is only available when \`fileNameClickable\` property is \`true\`.
+    */
+  ui5FileNameClick!: EventEmitter<void>;
+  /**
+     Fired when the \`fileName\` property gets changed.
+
+**Note:** An edit button is displayed on each item,
+when the \`ui5-upload-collection-item\` \`type\` property is set to \`Detail\`.
+    */
+  ui5Rename!: EventEmitter<void>;
+  /**
+     Fired when the terminate button is pressed.
+
+**Note:** Terminate button is displayed when \`uploadState\` property is set to \`Uploading\`.
+    */
+  ui5Terminate!: EventEmitter<void>;
+  /**
+     Fired when the retry button is pressed.
+
+**Note:** Retry button is displayed when \`uploadState\` property is set to \`Error\`.
+    */
+  ui5Retry!: EventEmitter<void>;
+
+  private elementRef: ElementRef<UploadCollectionItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UploadCollectionItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UploadCollectionItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Upload Collection should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UploadCollection.js';
+import {
+  default as UploadCollection,
+  UploadCollectionItemDeleteEventDetail,
+  UploadCollectionSelectionChangeEventDetail,
+} from '@ui5/webcomponents-fiori/dist/UploadCollection.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'selectionMode',
+  'noDataDescription',
+  'noDataText',
+  'noDataHeaderLevel',
+  'hideDragOverlay',
+  'accessibleName',
+])
+@ProxyOutputs([
+  'item-delete: ui5ItemDelete',
+  'selection-change: ui5SelectionChange',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-upload-collection',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'selectionMode',
+    'noDataDescription',
+    'noDataText',
+    'noDataHeaderLevel',
+    'hideDragOverlay',
+    'accessibleName',
+  ],
+  outputs: ['ui5ItemDelete', 'ui5SelectionChange'],
+  exportAs: 'ui5UploadCollection',
+})
+class UploadCollectionComponent {
+  /**
+        Defines the selection mode of the \`ui5-upload-collection\`.
+        */
+  selectionMode!:
+    | 'None'
+    | 'Single'
+    | 'SingleStart'
+    | 'SingleEnd'
+    | 'SingleAuto'
+    | 'Multiple';
+  /**
+        Allows you to set your own text for the 'No data' description.
+        */
+  noDataDescription!: string | undefined;
+  /**
+        Allows you to set your own text for the 'No data' text.
+        */
+  noDataText!: string | undefined;
+  /**
+        Defines the header level of the 'No data' text.
+        */
+  noDataHeaderLevel!: 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
+  /**
+        By default there will be drag and drop overlay shown over the \`ui5-upload-collection\` when files
+are dragged. If you don't intend to use drag and drop, set this property.
+
+**Note:** It is up to the application developer to add handler for \`drop\` event and handle it.
+\`ui5-upload-collection\` only displays an overlay.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  hideDragOverlay!: boolean;
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+
+  /**
+     Fired when an element is dropped inside the drag and drop overlay.
+
+**Note:** The \`drop\` event is fired only when elements are dropped within the drag and drop overlay and ignored for the other parts of the \`ui5-upload-collection\`.
+    */
+  ui5ItemDelete!: EventEmitter<UploadCollectionItemDeleteEventDetail>;
+  /**
+     Fired when selection is changed by user interaction
+in \`Single\` and \`Multiple\` modes.
+    */
+  ui5SelectionChange!: EventEmitter<UploadCollectionSelectionChangeEventDetail>;
+
+  private elementRef: ElementRef<UploadCollection> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UploadCollection {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UploadCollectionComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Menu Account should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserMenuAccount.js';
+import UserMenuAccount from '@ui5/webcomponents-fiori/dist/UserMenuAccount.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'avatarSrc',
+  'avatarInitials',
+  'titleText',
+  'subtitleText',
+  'description',
+  'additionalInfo',
+  'selected',
+  'loading',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-menu-account',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'avatarSrc',
+    'avatarInitials',
+    'titleText',
+    'subtitleText',
+    'description',
+    'additionalInfo',
+    'selected',
+    'loading',
+  ],
+  exportAs: 'ui5UserMenuAccount',
+})
+class UserMenuAccountComponent {
+  /**
+        Defines the avatar image url of the user.
+        */
+  avatarSrc!: string | undefined;
+  /**
+        Defines the avatar initials of the user.
+        */
+  avatarInitials!: string | undefined;
+  /**
+        Defines the title text of the user.
+        */
+  titleText!: string;
+  /**
+        Defines additional text of the user.
+        */
+  subtitleText!: string;
+  /**
+        Defines description of the user.
+        */
+  description!: string;
+  /**
+        Defines additional information for the user.
+        */
+  additionalInfo!: string;
+  /**
+        Defines if the user is selected.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Indicates whether a loading indicator should be shown.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+
+  private elementRef: ElementRef<UserMenuAccount> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserMenuAccount {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserMenuAccountComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Menu Item Group should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserMenuItemGroup.js';
+import UserMenuItemGroup from '@ui5/webcomponents-fiori/dist/UserMenuItemGroup.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['checkMode'])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-menu-item-group',
+  template: '<ng-content></ng-content>',
+  inputs: ['checkMode'],
+  exportAs: 'ui5UserMenuItemGroup',
+})
+class UserMenuItemGroupComponent {
+  /**
+        Defines the component's check mode.
+        */
+  checkMode!: 'None' | 'Single' | 'Multiple';
+
+  private elementRef: ElementRef<UserMenuItemGroup> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserMenuItemGroup {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserMenuItemGroupComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Menu Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserMenuItem.js';
+import UserMenuItem from '@ui5/webcomponents-fiori/dist/UserMenuItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+import {
+  MenuBeforeCloseEventDetail,
+  MenuBeforeOpenEventDetail,
+  MenuItemAccessibilityAttributes,
+} from '@ui5/webcomponents/dist/MenuItem.js';
+@ProxyInputs([
+  'type',
+  'accessibilityAttributes',
+  'navigated',
+  'tooltip',
+  'highlight',
+  'selected',
+  'text',
+  'additionalText',
+  'icon',
+  'disabled',
+  'loading',
+  'loadingDelay',
+  'accessibleName',
+  'checked',
+])
+@ProxyOutputs([
+  'detail-click: ui5DetailClick',
+  'before-open: ui5BeforeOpen',
+  'open: ui5Open',
+  'before-close: ui5BeforeClose',
+  'close: ui5Close',
+  'check: ui5Check',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-menu-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'type',
+    'accessibilityAttributes',
+    'navigated',
+    'tooltip',
+    'highlight',
+    'selected',
+    'text',
+    'additionalText',
+    'icon',
+    'disabled',
+    'loading',
+    'loadingDelay',
+    'accessibleName',
+    'checked',
+  ],
+  outputs: [
+    'ui5DetailClick',
+    'ui5BeforeOpen',
+    'ui5Open',
+    'ui5BeforeClose',
+    'ui5Close',
+    'ui5Check',
+  ],
+  exportAs: 'ui5UserMenuItem',
+})
+class UserMenuItemComponent {
+  /**
+        Defines the visual indication and behavior of the list items.
+Available options are \`Active\` (by default), \`Inactive\`, \`Detail\` and \`Navigation\`.
+
+**Note:** When set to \`Active\` or \`Navigation\`, the item will provide visual response upon press and hover,
+while with type \`Inactive\` and \`Detail\` - will not.
+        */
+  type!: 'Inactive' | 'Active' | 'Detail' | 'Navigation';
+  /**
+        Defines the additional accessibility attributes that will be applied to the component.
+The following fields are supported:
+
+- **ariaKeyShortcuts**: Indicated the availability of a keyboard shortcuts defined for the menu item.
+
+- **role**: Defines the role of the menu item. If not set, menu item will have default role=\\"menuitem\\".
+        */
+  accessibilityAttributes!: MenuItemAccessibilityAttributes;
+  /**
+        The navigated state of the list item.
+If set to \`true\`, a navigation indicator is displayed at the end of the list item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  navigated!: boolean;
+  /**
+        Defines the text of the tooltip for the menu item.
+        */
+  tooltip!: string | undefined;
+  /**
+        Defines the highlight state of the list items.
+Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+        */
+  highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
+  /**
+        Defines the selected state of the component.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines the text of the tree item.
+        */
+  text!: string | undefined;
+  /**
+        Defines the \`additionalText\`, displayed in the end of the menu item.
+
+**Note:** The additional text will not be displayed if there are items added in \`items\` slot or there are
+components added to \`endContent\` slot.
+
+The priority of what will be displayed at the end of the menu item is as follows:
+sub-menu arrow (if there are items added in \`items\` slot) -> components added in \`endContent\` -> text set to \`additionalText\`.
+        */
+  additionalText!: string | undefined;
+  /**
+        Defines the icon to be displayed as graphical element within the component.
+The SAP-icons font provides numerous options.
+
+**Example:**
+
+See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
+        */
+  icon!: string | undefined;
+  /**
+        Defines whether menu item is in disabled state.
+
+**Note:** A disabled menu item is noninteractive.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Defines the delay in milliseconds, after which the loading indicator will be displayed inside the corresponding menu popover.
+
+**Note:** If set to \`true\` a busy indicator component will be displayed into the related one to the current menu item sub-menu popover.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Defines the delay in milliseconds, after which the loading indicator will be displayed inside the corresponding menu popover.
+        */
+  loadingDelay!: number;
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+  /**
+        Defines whether menu item is in checked state.
+
+**Note:** checked state is only taken into account when menu item is added to menu item group
+with \`checkMode\` other than \`None\`.
+
+**Note:** A checked menu item has a checkmark displayed at its end.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  checked!: boolean;
+
+  /**
+     Fired when the user clicks on the detail button when type is \`Detail\`.
+    */
+  ui5DetailClick!: EventEmitter<void>;
+  /**
+     Fired before the menu is opened. This event can be cancelled, which will prevent the menu from opening.
+
+**Note:** Since 1.14.0 the event is also fired before a sub-menu opens.
+    */
+  ui5BeforeOpen!: EventEmitter<MenuBeforeOpenEventDetail>;
+  /**
+     Fired after the menu is opened.
+    */
+  ui5Open!: EventEmitter<void>;
+  /**
+     Fired before the menu is closed. This event can be cancelled, which will prevent the menu from closing.
+    */
+  ui5BeforeClose!: EventEmitter<MenuBeforeCloseEventDetail>;
+  /**
+     Fired after the menu is closed.
+    */
+  ui5Close!: EventEmitter<void>;
+  /**
+     Fired when an item is checked or unchecked.
+    */
+  ui5Check!: EventEmitter<void>;
+
+  private elementRef: ElementRef<UserMenuItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserMenuItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserMenuItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Menu should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserMenu.js';
+import {
+  default as UserMenu,
+  UserMenuItemClickEventDetail,
+  UserMenuOtherAccountClickEventDetail,
+} from '@ui5/webcomponents-fiori/dist/UserMenu.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'open',
+  'opener',
+  'showManageAccount',
+  'showOtherAccounts',
+  'showEditAccounts',
+  'showEditButton',
+])
+@ProxyOutputs([
+  'avatar-click: ui5AvatarClick',
+  'manage-account-click: ui5ManageAccountClick',
+  'edit-accounts-click: ui5EditAccountsClick',
+  'change-account: ui5ChangeAccount',
+  'item-click: ui5ItemClick',
+  'open: ui5Open',
+  'close: ui5Close',
+  'sign-out-click: ui5SignOutClick',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-menu',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'open',
+    'opener',
+    'showManageAccount',
+    'showOtherAccounts',
+    'showEditAccounts',
+    'showEditButton',
+  ],
+  outputs: [
+    'ui5AvatarClick',
+    'ui5ManageAccountClick',
+    'ui5EditAccountsClick',
+    'ui5ChangeAccount',
+    'ui5ItemClick',
+    'ui5Open',
+    'ui5Close',
+    'ui5SignOutClick',
+  ],
+  exportAs: 'ui5UserMenu',
+})
+class UserMenuComponent {
+  /**
+        Defines if the User Menu is opened.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  open!: boolean;
+  /**
+        Defines the ID or DOM Reference of the element at which the user menu is shown.
+When using this attribute in a declarative way, you must only use the \`id\` (as a string) of the element at which you want to show the popover.
+You can only set the \`opener\` attribute to a DOM Reference when using JavaScript.
+        */
+  opener!: HTMLElement | string | null | undefined;
+  /**
+        Defines if the User Menu shows the Manage Account option.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showManageAccount!: boolean;
+  /**
+        Defines if the User Menu shows the Other Accounts option.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showOtherAccounts!: boolean;
+  /**
+        Defines if the User Menu shows the Edit Accounts option.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showEditAccounts!: boolean;
+  /**
+        Defines if the User menu shows edit button.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showEditButton!: boolean;
+
+  /**
+     Fired when the account avatar is selected.
+    */
+  ui5AvatarClick!: EventEmitter<void>;
+  /**
+     Fired when the \\"Manage Account\\" button is selected.
+    */
+  ui5ManageAccountClick!: EventEmitter<void>;
+  /**
+     Fired when the \\"Edit Accounts\\" button is selected.
+    */
+  ui5EditAccountsClick!: EventEmitter<void>;
+  /**
+     Fired when the account is switched to a different one.
+    */
+  ui5ChangeAccount!: EventEmitter<UserMenuOtherAccountClickEventDetail>;
+  /**
+     Fired when a menu item is selected.
+    */
+  ui5ItemClick!: EventEmitter<UserMenuItemClickEventDetail>;
+  /**
+     Fired when a user menu is open.
+    */
+  ui5Open!: EventEmitter<void>;
+  /**
+     Fired when a user menu is close.
+    */
+  ui5Close!: EventEmitter<void>;
+  /**
+     Fired when the \\"Sign Out\\" button is selected.
+    */
+  ui5SignOutClick!: EventEmitter<void>;
+
+  private elementRef: ElementRef<UserMenu> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserMenu {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserMenuComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings Account View should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsAccountView.js';
+import UserSettingsAccountView from '@ui5/webcomponents-fiori/dist/UserSettingsAccountView.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'selected', 'secondary', 'showManageAccount'])
+@ProxyOutputs([
+  'edit-accounts-click: ui5EditAccountsClick',
+  'manage-account-click: ui5ManageAccountClick',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-account-view',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'selected', 'secondary', 'showManageAccount'],
+  outputs: ['ui5EditAccountsClick', 'ui5ManageAccountClick'],
+  exportAs: 'ui5UserSettingsAccountView',
+})
+class UserSettingsAccountViewComponent {
+  /**
+        Defines the title text of the user settings view.
+        */
+  text!: string | undefined;
+  /**
+        Defines whether the view is selected. There can be just one selected view at a time.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Indicates whether the view is secondary. It is relevant only if the view is used in \`pages\` slot of \`ui5-user-settings-item\`
+and controls the visibility of the back button.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  secondary!: boolean;
+  /**
+        Defines if the User Menu shows the \`Manage Account\` option.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showManageAccount!: boolean;
+
+  /**
+     Fired when the \`Edit Accounts\` button is selected.
+    */
+  ui5EditAccountsClick!: EventEmitter<void>;
+  /**
+     Fired when the \`Manage Account\` button is selected.
+    */
+  ui5ManageAccountClick!: EventEmitter<void>;
+
+  private elementRef: ElementRef<UserSettingsAccountView> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsAccountView {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsAccountViewComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings Appearance View Group should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsAppearanceViewGroup.js';
+import UserSettingsAppearanceViewGroup from '@ui5/webcomponents-fiori/dist/UserSettingsAppearanceViewGroup.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+import { ListItemGroupMoveEventDetail } from '@ui5/webcomponents/dist/ListItemGroup.js';
+@ProxyInputs(['headerText', 'headerAccessibleName', 'wrappingType'])
+@ProxyOutputs(['move-over: ui5MoveOver', 'move: ui5Move'])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-appearance-view-group',
+  template: '<ng-content></ng-content>',
+  inputs: ['headerText', 'headerAccessibleName', 'wrappingType'],
+  outputs: ['ui5MoveOver', 'ui5Move'],
+  exportAs: 'ui5UserSettingsAppearanceViewGroup',
+})
+class UserSettingsAppearanceViewGroupComponent {
+  /**
+        Defines the header text of the <code>ui5-li-group</code>.
+        */
+  headerText!: string | undefined;
+  /**
+        Defines the accessible name of the header.
+        */
+  headerAccessibleName!: string | undefined;
+  /**
+        Defines if the text of the component should wrap when it's too long.
+When set to \\"Normal\\", the content (title, description) will be wrapped
+using the \`ui5-expandable-text\` component.<br/>
+
+The text can wrap up to 100 characters on small screens (size S) and
+up to 300 characters on larger screens (size M and above). When text exceeds
+these limits, it truncates with an ellipsis followed by a text expansion trigger.
+
+Available options are:
+- \`None\` (default) - The text will truncate with an ellipsis.
+- \`Normal\` - The text will wrap (without truncation).
+        */
+  wrappingType!: 'None' | 'Normal';
+
+  /**
+     Fired when a movable list item is moved over a potential drop target during a dragging operation.
+
+If the new position is valid, prevent the default action of the event using \`preventDefault()\`.
+    */
+  ui5MoveOver!: EventEmitter<ListItemGroupMoveEventDetail>;
+  /**
+     Fired when a movable list item is dropped onto a drop target.
+
+**Note:** \`move\` event is fired only if there was a preceding \`move-over\` with prevented default action.
+    */
+  ui5Move!: EventEmitter<ListItemGroupMoveEventDetail>;
+
+  private elementRef: ElementRef<UserSettingsAppearanceViewGroup> =
+    inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsAppearanceViewGroup {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsAppearanceViewGroupComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings Appearance View Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsAppearanceViewItem.js';
+import UserSettingsAppearanceViewItem from '@ui5/webcomponents-fiori/dist/UserSettingsAppearanceViewItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+import { ListItemAccessibilityAttributes } from '@ui5/webcomponents/dist/ListItem.js';
+@ProxyInputs([
+  'type',
+  'accessibilityAttributes',
+  'navigated',
+  'tooltip',
+  'highlight',
+  'selected',
+  'movable',
+  'accessibleName',
+  'itemKey',
+  'text',
+  'icon',
+  'colorScheme',
+])
+@ProxyOutputs(['detail-click: ui5DetailClick'])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-appearance-view-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'type',
+    'accessibilityAttributes',
+    'navigated',
+    'tooltip',
+    'highlight',
+    'selected',
+    'movable',
+    'accessibleName',
+    'itemKey',
+    'text',
+    'icon',
+    'colorScheme',
+  ],
+  outputs: ['ui5DetailClick'],
+  exportAs: 'ui5UserSettingsAppearanceViewItem',
+})
+class UserSettingsAppearanceViewItemComponent {
+  /**
+        Defines the visual indication and behavior of the list items.
+Available options are \`Active\` (by default), \`Inactive\`, \`Detail\` and \`Navigation\`.
+
+**Note:** When set to \`Active\` or \`Navigation\`, the item will provide visual response upon press and hover,
+while with type \`Inactive\` and \`Detail\` - will not.
+        */
+  type!: 'Inactive' | 'Active' | 'Detail' | 'Navigation';
+  /**
+        Defines the additional accessibility attributes that will be applied to the component.
+The following fields are supported:
+
+- **ariaSetsize**: Defines the number of items in the current set  when not all items in the set are present in the DOM.
+**Note:** The value is an integer reflecting the number of items in the complete set. If the size of the entire set is unknown, set \`-1\`.
+
+	- **ariaPosinset**: Defines an element's number or position in the current set when not all items are present in the DOM.
+	**Note:** The value is an integer greater than or equal to 1, and less than or equal to the size of the set when that size is known.
+        */
+  accessibilityAttributes!: ListItemAccessibilityAttributes;
+  /**
+        The navigated state of the list item.
+If set to \`true\`, a navigation indicator is displayed at the end of the list item.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  navigated!: boolean;
+  /**
+        Defines the text of the tooltip that would be displayed for the list item.
+        */
+  tooltip!: string | undefined;
+  /**
+        Defines the highlight state of the list items.
+Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+        */
+  highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
+  /**
+        Defines the selected state of the component.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines whether the item is movable.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  movable!: boolean;
+  /**
+        Defines the text alternative of the component.
+
+**Note**: If not provided a default text alternative will be set, if present.
+        */
+  accessibleName!: string | undefined;
+  /**
+        Defines the unique identifier of the item.
+        */
+  itemKey!: string;
+  /**
+        Defines the text label displayed for the appearance item.
+        */
+  text!: string;
+  /**
+        Defines the icon of the appearance item.
+        */
+  icon!: string;
+  /**
+        Defines the color scheme of the avatar.
+        */
+  colorScheme!: string;
+
+  /**
+     Fired when the user clicks on the detail button when type is \`Detail\`.
+    */
+  ui5DetailClick!: EventEmitter<void>;
+
+  private elementRef: ElementRef<UserSettingsAppearanceViewItem> =
+    inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsAppearanceViewItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsAppearanceViewItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings Appearance View should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsAppearanceView.js';
+import {
+  default as UserSettingsAppearanceView,
+  UserSettingsAppearanceViewItemSelectEventDetail,
+} from '@ui5/webcomponents-fiori/dist/UserSettingsAppearanceView.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'selected', 'secondary'])
+@ProxyOutputs(['selection-change: ui5SelectionChange'])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-appearance-view',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'selected', 'secondary'],
+  outputs: ['ui5SelectionChange'],
+  exportAs: 'ui5UserSettingsAppearanceView',
+})
+class UserSettingsAppearanceViewComponent {
+  /**
+        Defines the title text of the user settings view.
+        */
+  text!: string | undefined;
+  /**
+        Defines whether the view is selected. There can be just one selected view at a time.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Indicates whether the view is secondary. It is relevant only if the view is used in \`pages\` slot of \`ui5-user-settings-item\`
+and controls the visibility of the back button.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  secondary!: boolean;
+
+  /**
+     Fired when an item is selected.
+    */
+  ui5SelectionChange!: EventEmitter<UserSettingsAppearanceViewItemSelectEventDetail>;
+
+  private elementRef: ElementRef<UserSettingsAppearanceView> =
+    inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsAppearanceView {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsAppearanceViewComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings Dialog should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsDialog.js';
+import {
+  default as UserSettingsDialog,
+  UserSettingsItemSelectEventDetail,
+} from '@ui5/webcomponents-fiori/dist/UserSettingsDialog.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['open', 'headerText', 'showSearchField'])
+@ProxyOutputs([
+  'selection-change: ui5SelectionChange',
+  'open: ui5Open',
+  'before-close: ui5BeforeClose',
+  'close: ui5Close',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-dialog',
+  template: '<ng-content></ng-content>',
+  inputs: ['open', 'headerText', 'showSearchField'],
+  outputs: ['ui5SelectionChange', 'ui5Open', 'ui5BeforeClose', 'ui5Close'],
+  exportAs: 'ui5UserSettingsDialog',
+})
+class UserSettingsDialogComponent {
+  /**
+        Defines, if the User Settings Dialog is opened.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  open!: boolean;
+  /**
+        Defines the headerText of the item.
+        */
+  headerText!: string | undefined;
+  /**
+        Defines if the Search Field would be displayed.
+
+**Note:** By default the Search Field is not displayed.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  showSearchField!: boolean;
+
+  /**
+     Fired when an item is selected.
+    */
+  ui5SelectionChange!: EventEmitter<UserSettingsItemSelectEventDetail>;
+  /**
+     Fired when a settings dialog is open.
+    */
+  ui5Open!: EventEmitter<void>;
+  /**
+     Fired before the settings dialog is closed.
+    */
+  ui5BeforeClose!: EventEmitter<void>;
+  /**
+     Fired when a settings dialog is closed.
+    */
+  ui5Close!: EventEmitter<void>;
+
+  private elementRef: ElementRef<UserSettingsDialog> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsDialog {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsDialogComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings Item should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsItem.js';
+import {
+  default as UserSettingsItem,
+  UserSettingsItemViewSelectEventDetail,
+} from '@ui5/webcomponents-fiori/dist/UserSettingsItem.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'text',
+  'tooltip',
+  'headerText',
+  'selected',
+  'disabled',
+  'loading',
+  'loadingReason',
+  'icon',
+  'accessibleName',
+])
+@ProxyOutputs(['selection-change: ui5SelectionChange'])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-item',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'text',
+    'tooltip',
+    'headerText',
+    'selected',
+    'disabled',
+    'loading',
+    'loadingReason',
+    'icon',
+    'accessibleName',
+  ],
+  outputs: ['ui5SelectionChange'],
+  exportAs: 'ui5UserSettingsItem',
+})
+class UserSettingsItemComponent {
+  /**
+        Defines the text of the user settings item.
+        */
+  text!: string;
+  /**
+        Defines the tooltip of the component.
+
+A tooltip attribute should be provided to represent the meaning or function when the component is collapsed and only the icon is visible.
+        */
+  tooltip!: string;
+  /**
+        Defines the headerText of the item.
+        */
+  headerText!: string | undefined;
+  /**
+        Shows item tab.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Defines whether the component is in disabled state.
+
+**Note:** A disabled component is completely noninteractive.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Indicates whether a loading indicator should be shown.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  loading!: boolean;
+  /**
+        Indicates why the control is in loading state.
+        */
+  loadingReason!: string | undefined;
+  /**
+        Defines the icon of the component.
+        */
+  icon!: string;
+  /**
+        Defines the accessible ARIA name of the component.
+        */
+  accessibleName!: string | undefined;
+
+  /**
+     Fired when a selected view changed.
+    */
+  ui5SelectionChange!: EventEmitter<UserSettingsItemViewSelectEventDetail>;
+
+  private elementRef: ElementRef<UserSettingsItem> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsItem {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsItemComponent };
+"
+`;
+
+exports[`Snapshot test Fiori User Settings View should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/UserSettingsView.js';
+import UserSettingsView from '@ui5/webcomponents-fiori/dist/UserSettingsView.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['text', 'selected', 'secondary'])
+@Component({
+  standalone: true,
+  selector: 'ui5-user-settings-view',
+  template: '<ng-content></ng-content>',
+  inputs: ['text', 'selected', 'secondary'],
+  exportAs: 'ui5UserSettingsView',
+})
+class UserSettingsViewComponent {
+  /**
+        Defines the title text of the user settings view.
+        */
+  text!: string | undefined;
+  /**
+        Defines whether the view is selected. There can be just one selected view at a time.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        Indicates whether the view is secondary. It is relevant only if the view is used in \`pages\` slot of \`ui5-user-settings-item\`
+and controls the visibility of the back button.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  secondary!: boolean;
+
+  private elementRef: ElementRef<UserSettingsView> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): UserSettingsView {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { UserSettingsViewComponent };
+"
+`;
+
+exports[`Snapshot test Fiori View Settings Dialog should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/ViewSettingsDialog.js';
+import {
+  default as ViewSettingsDialog,
+  ViewSettingsDialogCancelEventDetail,
+  ViewSettingsDialogConfirmEventDetail,
+} from '@ui5/webcomponents-fiori/dist/ViewSettingsDialog.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['sortDescending', 'groupDescending', 'open'])
+@ProxyOutputs([
+  'confirm: ui5Confirm',
+  'cancel: ui5Cancel',
+  'before-open: ui5BeforeOpen',
+  'open: ui5Open',
+  'close: ui5Close',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-view-settings-dialog',
+  template: '<ng-content></ng-content>',
+  inputs: ['sortDescending', 'groupDescending', 'open'],
+  outputs: ['ui5Confirm', 'ui5Cancel', 'ui5BeforeOpen', 'ui5Open', 'ui5Close'],
+  exportAs: 'ui5ViewSettingsDialog',
+})
+class ViewSettingsDialogComponent {
+  /**
+        Defines the initial sort order.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  sortDescending!: boolean;
+  /**
+        Defines the initial group order.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  groupDescending!: boolean;
+  /**
+        Indicates if the dialog is open.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  open!: boolean;
+
+  /**
+     Fired when confirmation button is activated.
+    */
+  ui5Confirm!: EventEmitter<ViewSettingsDialogConfirmEventDetail>;
+  /**
+     Fired when cancel button is activated.
+    */
+  ui5Cancel!: EventEmitter<ViewSettingsDialogCancelEventDetail>;
+  /**
+     Fired before the component is opened.
+    */
+  ui5BeforeOpen!: EventEmitter<void>;
+  /**
+     Fired after the dialog is opened.
+    */
+  ui5Open!: EventEmitter<void>;
+  /**
+     Fired after the dialog is closed.
+    */
+  ui5Close!: EventEmitter<void>;
+
+  private elementRef: ElementRef<ViewSettingsDialog> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): ViewSettingsDialog {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { ViewSettingsDialogComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Wizard Step should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Input as InputDecorator,
+  NgZone,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/WizardStep.js';
+import WizardStep from '@ui5/webcomponents-fiori/dist/WizardStep.js';
+import { ProxyInputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs([
+  'titleText',
+  'subtitleText',
+  'icon',
+  'disabled',
+  'selected',
+  'branching',
+])
+@Component({
+  standalone: true,
+  selector: 'ui5-wizard-step',
+  template: '<ng-content></ng-content>',
+  inputs: [
+    'titleText',
+    'subtitleText',
+    'icon',
+    'disabled',
+    'selected',
+    'branching',
+  ],
+  exportAs: 'ui5WizardStep',
+})
+class WizardStepComponent {
+  /**
+        Defines the \`titleText\` of the step.
+
+**Note:** The text is displayed in the \`ui5-wizard\` navigation header.
+        */
+  titleText!: string | undefined;
+  /**
+        Defines the \`subtitleText\` of the step.
+
+**Note:** the text is displayed in the \`ui5-wizard\` navigation header.
+        */
+  subtitleText!: string | undefined;
+  /**
+        Defines the \`icon\` of the step.
+
+**Note:** The icon is displayed in the \`ui5-wizard\` navigation header.
+
+The SAP-icons font provides numerous options.
+See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
+        */
+  icon!: string | undefined;
+  /**
+        Defines if the step is \`disabled\`. When disabled the step is displayed,
+but the user can't select the step by clicking or navigate to it with scrolling.
+
+**Note:** Step can't be \`selected\` and \`disabled\` at the same time.
+In this case the \`selected\` property would take precedence.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  disabled!: boolean;
+  /**
+        Defines the step's \`selected\` state - the step that is currently active.
+
+**Note:** Step can't be \`selected\` and \`disabled\` at the same time.
+In this case the \`selected\` property would take precedence.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  selected!: boolean;
+  /**
+        When \`branching\` is enabled a dashed line would be displayed after the step,
+meant to indicate that the next step is not yet known and depends on user choice in the current step.
+
+**Note:** It is recommended to use \`branching\` on the last known step
+and later add new steps when it becomes clear how the wizard flow should continue.
+        */
+  @InputDecorator({ transform: booleanAttribute })
+  branching!: boolean;
+
+  private elementRef: ElementRef<WizardStep> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): WizardStep {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { WizardStepComponent };
+"
+`;
+
+exports[`Snapshot test Fiori Wizard should match the snapshot 1`] = `
+"import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  NgZone,
+  inject,
+} from '@angular/core';
+import '@ui5/webcomponents-fiori/dist/Wizard.js';
+import {
+  default as Wizard,
+  WizardStepChangeEventDetail,
+} from '@ui5/webcomponents-fiori/dist/Wizard.js';
+import { ProxyInputs, ProxyOutputs } from '@ui5/webcomponents-ngx/utils';
+@ProxyInputs(['contentLayout'])
+@ProxyOutputs(['step-change: ui5StepChange'])
+@Component({
+  standalone: true,
+  selector: 'ui5-wizard',
+  template: '<ng-content></ng-content>',
+  inputs: ['contentLayout'],
+  outputs: ['ui5StepChange'],
+  exportAs: 'ui5Wizard',
+})
+class WizardComponent {
+  /**
+        Defines how the content of the \`ui5-wizard\` would be visualized.
+        */
+  contentLayout!: 'MultipleSteps' | 'SingleStep';
+
+  /**
+     Fired when the step is changed by user interaction - either with scrolling,
+or by clicking on the steps within the component header.
+    */
+  ui5StepChange!: EventEmitter<WizardStepChangeEventDetail>;
+
+  private elementRef: ElementRef<Wizard> = inject(ElementRef);
+  private zone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
+
+  get element(): Wizard {
+    return this.elementRef.nativeElement;
+  }
+
+  constructor() {
+    this.cdr.detach();
+  }
+}
+export { WizardComponent };
+"
+`;
