@@ -128,32 +128,38 @@ describe("E2E Smoke Test — Real HTTP Server", () => {
 
   // ── Error handling ──────────────────────────────────────────────────
 
-  test("POST /api/chat with missing modelName returns 500 with error code", async () => {
+  test("POST /api/chat with missing modelName returns 400 with LLMErrorResponse", async () => {
     const { status, data } = await post("/api/chat", {
       config: { resourceGroup: "default" },
       payload: { messages: [{ role: "user", content: "Hello" }] },
     });
-    expect(status).toBe(500);
+    expect(status).toBe(400);
     expect(data.error).toBeDefined();
     expect(data.error.code).toBe("CHAT_CONFIG_INVALID");
+    expect(data.error.message).toBeDefined();
+    expect(data.error.details).toBeDefined();
   });
 
-  test("POST /api/embedding with missing modelName returns 500 with error code", async () => {
+  test("POST /api/embedding with missing modelName returns 400 with LLMErrorResponse", async () => {
     const { status, data } = await post("/api/embedding", {
       config: { resourceGroup: "default" },
       input: "test",
     });
-    expect(status).toBe(500);
+    expect(status).toBe(400);
     expect(data.error).toBeDefined();
     expect(data.error.code).toBe("EMBEDDING_CONFIG_INVALID");
+    expect(data.error.message).toBeDefined();
+    expect(data.error.details).toBeDefined();
   });
 
-  test("POST /api/filters with unsupported type returns 500", async () => {
+  test("POST /api/filters with unsupported type returns 400 with LLMErrorResponse", async () => {
     const { status, data } = await post("/api/filters", {
       type: "unsupported",
       config: {},
     });
-    expect(status).toBe(500);
+    expect(status).toBe(400);
     expect(data.error.code).toBe("UNSUPPORTED_FILTER_TYPE");
+    expect(data.error.message).toBeDefined();
+    expect(data.error.details).toBeDefined();
   });
 });

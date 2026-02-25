@@ -1,0 +1,317 @@
+/* UI5 theming is loaded via main.ts JS imports */
+
+
+:root {
+  --_ui5-v2-shellbar-height: 3rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "72", "72full", Arial, Helvetica, sans-serif;
+  background: var(--sapBackgroundColor, #f7f7f7);
+}
+
+.copilot-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.copilot-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+/* === Chat Panel === */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 2;
+  min-width: 0;
+  background: var(--sapBaseColor, #fff);
+  border-radius: 0.5rem;
+  border: 1px solid var(--sapList_BorderColor, #e5e5e5);
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: var(--sapScrollBar_ThumbColor, #c5c5c5);
+  border-radius: 3px;
+}
+
+.message {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 90%;
+  animation: fadeIn 0.15s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message.assistant {
+  align-self: flex-start;
+}
+
+.message-bubble {
+  padding: 0.6rem 0.9rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.message.user .message-bubble {
+  background: var(--sapButton_Emphasized_Background, #0a6ed1);
+  color: var(--sapButton_Emphasized_TextColor, #fff);
+  border-bottom-right-radius: 0.2rem;
+}
+
+.message.assistant .message-bubble {
+  background: var(--sapList_Background, #f0f4f9);
+  color: var(--sapTextColor, #1d2d3e);
+  border-bottom-left-radius: 0.2rem;
+}
+
+.message-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.message.user .message-avatar {
+  background: var(--sapButton_Emphasized_Background, #0a6ed1);
+  color: #fff;
+}
+
+.message.assistant .message-avatar {
+  background: var(--sapSuccessColor, #107e3e);
+  color: #fff;
+}
+
+.empty-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 0.5rem;
+  color: var(--sapContent_LabelColor, #6a7a8e);
+  font-size: 0.95rem;
+}
+
+.empty-chat-icon {
+  font-size: 3rem;
+  opacity: 0.4;
+}
+
+.chat-input-area {
+  padding: 0.75rem;
+  border-top: 1px solid var(--sapList_BorderColor, #e5e5e5);
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  background: var(--sapBaseColor, #fff);
+}
+
+.chat-input-area ui5-textarea {
+  flex: 1;
+}
+
+/* === Right Panel === */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 320px;
+  max-width: 420px;
+  background: var(--sapBaseColor, #fff);
+  border-radius: 0.5rem;
+  border: 1px solid var(--sapList_BorderColor, #e5e5e5);
+  overflow: hidden;
+}
+
+.right-panel ui5-tab-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+.tab-content {
+  padding: 0.75rem;
+  overflow-y: auto;
+  height: calc(100vh - 180px);
+}
+
+.tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background: var(--sapScrollBar_ThumbColor, #c5c5c5);
+  border-radius: 3px;
+}
+
+/* === Check Card === */
+.check-card {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--sapList_BorderColor, #e5e5e5);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--sapList_Background, #f9f9f9);
+}
+
+.check-card-header {
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: var(--sapList_HeaderBackground, #f0f4f9);
+}
+
+.check-card-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sapTextColor, #1d2d3e);
+}
+
+.check-card-body {
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--sapContent_LabelColor, #6a7a8e);
+  line-height: 1.5;
+}
+
+.check-code {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 0.3rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+}
+
+.check-code.expanded {
+  display: block;
+}
+
+.no-checks {
+  text-align: center;
+  color: var(--sapContent_LabelColor, #6a7a8e);
+  font-size: 0.9rem;
+  margin-top: 2rem;
+  opacity: 0.7;
+}
+
+.tab-actions {
+  padding: 0 0.75rem 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* === History / Config JSON === */
+.history-item {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+.history-item.role-user {
+  background: #e8f4fd;
+  border-left: 3px solid #0a6ed1;
+}
+
+.history-item.role-assistant {
+  background: #f0faf4;
+  border-left: 3px solid #107e3e;
+}
+
+.history-role {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  margin-bottom: 0.2rem;
+  opacity: 0.7;
+}
+
+.config-json {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 0.75rem;
+  border-radius: 0.3rem;
+  font-family: monospace;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.panel-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--sapContent_LabelColor, #6a7a8e);
+  margin: 0.75rem 0 0.4rem;
+  letter-spacing: 0.04em;
+}
+
+.loading-row {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}

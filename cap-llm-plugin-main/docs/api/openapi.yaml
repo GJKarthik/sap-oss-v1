@@ -383,20 +383,37 @@ components:
             $ref: "#/components/schemas/SimilaritySearchResult"
           description: Similar documents from the vector search
 
-    ErrorDetail:
+    LLMErrorDetail:
       type: object
       required: [code, message]
       properties:
         code:
           type: string
-          description: Machine-readable error code (e.g., EMBEDDING_CONFIG_INVALID)
+          description: "Machine-readable error code (e.g., EMBEDDING_CONFIG_INVALID, CHAT_CONFIG_INVALID)"
         message:
           type: string
           description: Human-readable error description
+        target:
+          type: string
+          description: "Optional: the parameter, field, or resource that caused the error"
         details:
           type: object
-          description: Additional structured context about the error
+          description: Additional structured context (model name, cause, missing field, etc.)
           additionalProperties: true
+        innerError:
+          type: object
+          description: Optional upstream/SDK error information
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    LLMErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: "#/components/schemas/LLMErrorDetail"
 
   responses:
     ErrorResponse:
@@ -404,7 +421,4 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                $ref: "#/components/schemas/ErrorDetail"
+            $ref: "#/components/schemas/LLMErrorResponse"

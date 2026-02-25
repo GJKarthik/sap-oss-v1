@@ -13,11 +13,18 @@
 // Shared types
 // ═══════════════════════════════════════════════════════════════════
 
-/** Standard error response returned by all actions on failure. */
-type ErrorResponse {
-  code    : String;
-  message : String;
-  details : String; // JSON-serialized object with additional context
+/** Structured inner error detail (maps to LLMErrorDetail in TypeScript). */
+type LLMErrorDetail {
+  code        : String not null; // Machine-readable error code
+  message     : String not null; // Human-readable description
+  target      : String;          // Parameter or resource that caused the error
+  details     : String;          // JSON-serialized additional context
+  innerError  : String;          // JSON-serialized upstream error info
+}
+
+/** Top-level HTTP error response wrapper (maps to LLMErrorResponse in TypeScript). */
+type LLMErrorResponse {
+  error : LLMErrorDetail;
 }
 
 /** Configuration for embedding model operations. */

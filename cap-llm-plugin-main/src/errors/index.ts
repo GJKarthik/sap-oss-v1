@@ -11,3 +11,5 @@ export { EmbeddingError } from "./EmbeddingError";
 export { ChatCompletionError } from "./ChatCompletionError";
 export { SimilaritySearchError } from "./SimilaritySearchError";
 export { AnonymizationError } from "./AnonymizationError";
+export type { LLMErrorDetail, LLMErrorResponse } from "./LLMErrorResponse";
+export { ERROR_HTTP_STATUS, toErrorResponse } from "./LLMErrorResponse";

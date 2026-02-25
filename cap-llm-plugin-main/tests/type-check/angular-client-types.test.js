@@ -47,8 +47,8 @@ describe("Angular Client Type Alignment", () => {
     "ChatMessage",
     "SimilaritySearchResult",
     "RagResponse",
-    "ErrorDetail",
-    "ErrorResponse",
+    "LLMErrorDetail",
+    "LLMErrorResponse",
   ];
 
   test.each(requiredSchemas)(

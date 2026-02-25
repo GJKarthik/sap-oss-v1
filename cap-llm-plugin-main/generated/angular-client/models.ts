@@ -54,18 +54,25 @@ export interface RagResponse {
 }
 
 /** Structured error detail returned by all actions on failure. */
-export interface ErrorDetail {
-  /** Machine-readable error code (e.g., EMBEDDING_CONFIG_INVALID) */
+export interface LLMErrorDetail {
+  /** Machine-readable error code (e.g., EMBEDDING_CONFIG_INVALID, CHAT_CONFIG_INVALID) */
   code: string;
   /** Human-readable error description */
   message: string;
-  /** Additional structured context about the error */
+  /** Optional: the parameter, field, or resource that caused the error */
+  target?: string;
+  /** Additional structured context (model name, cause, missing field, etc.) */
   details?: Record<string, unknown>;
+  /** Optional upstream/SDK error information */
+  innerError?: {
+    code?: string;
+    message?: string;
+  };
 }
 
 /** Standard error response envelope. */
-export interface ErrorResponse {
-  error: ErrorDetail;
+export interface LLMErrorResponse {
+  error: LLMErrorDetail;
 }
 
 // ── Request bodies ──────────────────────────────────────────────────

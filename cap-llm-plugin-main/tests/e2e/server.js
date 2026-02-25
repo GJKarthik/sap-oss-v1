@@ -13,6 +13,7 @@
  */
 
 const path = require("path");
+const { toErrorResponse } = require("../../src/errors/LLMErrorResponse");
 const PORT = process.env.E2E_PORT || 4004;
 
 /**
@@ -32,7 +33,8 @@ function createApp(plugin) {
       const result = await plugin.getEmbeddingWithConfig(config, input);
       res.json({ embeddings: result.getEmbeddings() });
     } catch (err) {
-      res.status(500).json({ error: { code: err.code || "UNKNOWN", message: err.message } });
+      const { httpStatus, body } = toErrorResponse(err);
+      res.status(httpStatus).json(body);
     }
   });
 
@@ -42,7 +44,8 @@ function createApp(plugin) {
       const result = await plugin.getChatCompletionWithConfig(config, payload);
       res.json({ result: result.data || result });
     } catch (err) {
-      res.status(500).json({ error: { code: err.code || "UNKNOWN", message: err.message } });
+      const { httpStatus, body } = toErrorResponse(err);
+      res.status(httpStatus).json(body);
     }
   });
 
@@ -58,7 +61,8 @@ function createApp(plugin) {
       );
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: { code: err.code || "UNKNOWN", message: err.message } });
+      const { httpStatus, body } = toErrorResponse(err);
+      res.status(httpStatus).json(body);
     }
   });
 
@@ -70,7 +74,8 @@ function createApp(plugin) {
       );
       res.json({ results: result });
     } catch (err) {
-      res.status(500).json({ error: { code: err.code || "UNKNOWN", message: err.message } });
+      const { httpStatus, body } = toErrorResponse(err);
+      res.status(httpStatus).json(body);
     }
   });
 
@@ -79,7 +84,8 @@ function createApp(plugin) {
       const result = await plugin.getHarmonizedChatCompletion(req.body);
       res.json({ result });
     } catch (err) {
-      res.status(500).json({ error: { code: err.code || "UNKNOWN", message: err.message } });
+      const { httpStatus, body } = toErrorResponse(err);
+      res.status(httpStatus).json(body);
     }
   });
 
@@ -88,7 +94,8 @@ function createApp(plugin) {
       const result = await plugin.getContentFilters(req.body);
       res.json({ result });
     } catch (err) {
-      res.status(500).json({ error: { code: err.code || "UNKNOWN", message: err.message } });
+      const { httpStatus, body } = toErrorResponse(err);
+      res.status(httpStatus).json(body);
     }
   });
 

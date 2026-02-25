@@ -35,4 +35,9 @@ export {
   ChatCompletionError,
   SimilaritySearchError,
   AnonymizationError,
+  ERROR_HTTP_STATUS,
+  toErrorResponse,
 } from "./errors";
+
+// ── Error response types ─────────────────────────────────────────────
+export type { LLMErrorDetail, LLMErrorResponse } from "./errors";

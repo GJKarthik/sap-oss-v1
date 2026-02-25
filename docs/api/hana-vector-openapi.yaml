@@ -1,0 +1,743 @@
+openapi: 3.0.3
+info:
+  title: SAP HANA Cloud Vector Engine API
+  description: |
+    Unified API specification for SAP HANA Cloud Vector Engine operations.
+    
+    This specification can be used to generate clients in multiple languages:
+    - TypeScript (ai-sdk-js)
+    - Python (langchain-hana)
+    - Java (future)
+    
+    ## Related Projects
+    - [langchain-integration-for-sap-hana-cloud](https://github.com/SAP/langchain-integration-for-sap-hana-cloud)
+    - [ai-sdk-js](https://github.com/SAP/ai-sdk-js)
+    - [cap-llm-plugin](https://github.com/SAP/cap-llm-plugin)
+  version: 1.0.0
+  contact:
+    name: SAP AI SDK Team
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: /api/v1/vector
+    description: Vector Store API endpoint
+
+tags:
+  - name: Documents
+    description: Document storage and retrieval
+  - name: Search
+    description: Similarity search operations
+  - name: Schema
+    description: Table schema management
+  - name: Index
+    description: HNSW index management
+
+paths:
+  /documents:
+    post:
+      summary: Add documents
+      description: Add one or more documents to the vector store
+      operationId: addDocuments
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddDocumentsRequest'
+      responses:
+        '201':
+          description: Documents added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddDocumentsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /documents/upsert:
+    post:
+      summary: Upsert documents
+      description: Insert or update documents in the vector store
+      operationId: upsertDocuments
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddDocumentsRequest'
+      responses:
+        '200':
+          description: Documents upserted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddDocumentsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /documents/{id}:
+    get:
+      summary: Get document by ID
+      description: Retrieve a single document by its ID
+      operationId: getDocument
+      tags:
+        - Documents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Document ID
+        - name: includeEmbedding
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Whether to include the embedding vector in the response
+      responses:
+        '200':
+          description: Document found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorDocument'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete document
+      description: Delete a document by its ID
+      operationId: deleteDocument
+      tags:
+        - Documents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Document ID
+      responses:
+        '204':
+          description: Document deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /documents/batch:
+    get:
+      summary: Get multiple documents
+      description: Retrieve multiple documents by their IDs
+      operationId: getDocuments
+      tags:
+        - Documents
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+          description: Comma-separated list of document IDs
+        - name: includeEmbedding
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Documents found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VectorDocument'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete multiple documents
+      description: Delete multiple documents by their IDs
+      operationId: deleteDocuments
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of document IDs to delete
+      responses:
+        '200':
+          description: Documents deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                    description: Number of documents deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /search/similarity:
+    post:
+      summary: Similarity search
+      description: Search for documents similar to a query embedding
+      operationId: similaritySearch
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimilaritySearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /search/mmr:
+    post:
+      summary: Maximum Marginal Relevance search
+      description: Search with diversity optimization using MMR algorithm
+      operationId: mmrSearch
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MMRSearchRequest'
+      responses:
+        '200':
+          description: Search results with diversity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /search/hybrid:
+    post:
+      summary: Hybrid search
+      description: Combine vector similarity with keyword search
+      operationId: hybridSearch
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HybridSearchRequest'
+      responses:
+        '200':
+          description: Hybrid search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /table:
+    post:
+      summary: Create vector table
+      description: Create a new vector table with specified schema
+      operationId: createTable
+      tags:
+        - Schema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTableRequest'
+      responses:
+        '201':
+          description: Table created successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Table already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Drop vector table
+      description: Drop the vector table
+      operationId: dropTable
+      tags:
+        - Schema
+      parameters:
+        - name: tableName
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Table name to drop
+        - name: schemaName
+          in: query
+          schema:
+            type: string
+          description: Schema name (optional)
+      responses:
+        '204':
+          description: Table dropped successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /table/exists:
+    get:
+      summary: Check table exists
+      description: Check if a vector table exists
+      operationId: tableExists
+      tags:
+        - Schema
+      parameters:
+        - name: tableName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: schemaName
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Table existence check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+
+  /table/count:
+    get:
+      summary: Get document count
+      description: Get the number of documents in the vector store
+      operationId: getDocumentCount
+      tags:
+        - Schema
+      responses:
+        '200':
+          description: Document count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /index/hnsw:
+    post:
+      summary: Create HNSW index
+      description: Create an HNSW index for fast approximate nearest neighbor search
+      operationId: createHnswIndex
+      tags:
+        - Index
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHnswIndexRequest'
+      responses:
+        '201':
+          description: Index created successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Drop HNSW index
+      description: Drop an HNSW index
+      operationId: dropHnswIndex
+      tags:
+        - Index
+      parameters:
+        - name: indexName
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Index name to drop
+      responses:
+        '204':
+          description: Index dropped successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    VectorDocument:
+      type: object
+      required:
+        - id
+        - content
+        - embedding
+      properties:
+        id:
+          type: string
+          description: Unique document identifier
+          example: "doc-001"
+        content:
+          type: string
+          description: Document text content
+          example: "SAP HANA Cloud is a cloud-native database..."
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+          description: Embedding vector (e.g., 1536 dimensions for OpenAI ada-002)
+          example: [0.1, 0.2, 0.3]
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional metadata key-value pairs
+          example:
+            source: "documentation"
+            category: "database"
+
+    ScoredDocument:
+      allOf:
+        - $ref: '#/components/schemas/VectorDocument'
+        - type: object
+          required:
+            - score
+          properties:
+            score:
+              type: number
+              format: float
+              description: Similarity score (0-1 for cosine)
+              example: 0.92
+
+    AddDocumentsRequest:
+      type: object
+      required:
+        - documents
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/VectorDocument'
+          minItems: 1
+          description: Documents to add
+        batchSize:
+          type: integer
+          default: 1000
+          description: Batch size for insertion
+          minimum: 1
+          maximum: 10000
+
+    AddDocumentsResponse:
+      type: object
+      properties:
+        added:
+          type: integer
+          description: Number of documents added
+        ids:
+          type: array
+          items:
+            type: string
+          description: IDs of added documents
+
+    SimilaritySearchRequest:
+      type: object
+      required:
+        - embedding
+      properties:
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+          description: Query embedding vector
+        k:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 1000
+          description: Number of results to return
+        minScore:
+          type: number
+          format: float
+          default: 0
+          minimum: 0
+          maximum: 1
+          description: Minimum similarity score threshold
+        metric:
+          type: string
+          enum:
+            - COSINE
+            - EUCLIDEAN
+            - DOT_PRODUCT
+          default: COSINE
+          description: Distance metric to use
+        filter:
+          type: object
+          additionalProperties: true
+          description: Metadata filter conditions
+        includeEmbeddings:
+          type: boolean
+          default: false
+          description: Include embeddings in results
+
+    MMRSearchRequest:
+      allOf:
+        - $ref: '#/components/schemas/SimilaritySearchRequest'
+        - type: object
+          properties:
+            lambda:
+              type: number
+              format: float
+              default: 0.5
+              minimum: 0
+              maximum: 1
+              description: |
+                Balance between relevance (1.0) and diversity (0.0)
+            fetchK:
+              type: integer
+              default: 40
+              minimum: 1
+              description: Number of candidates to fetch before MMR reranking
+
+    HybridSearchRequest:
+      allOf:
+        - $ref: '#/components/schemas/SimilaritySearchRequest'
+        - type: object
+          required:
+            - keywords
+          properties:
+            keywords:
+              type: array
+              items:
+                type: string
+              minItems: 1
+              description: Keywords for text search
+              example: ["SAP", "HANA", "cloud"]
+            vectorWeight:
+              type: number
+              format: float
+              default: 0.7
+              minimum: 0
+              maximum: 1
+              description: Weight for vector similarity score
+            keywordWeight:
+              type: number
+              format: float
+              default: 0.3
+              minimum: 0
+              maximum: 1
+              description: Weight for keyword match score
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoredDocument'
+        total:
+          type: integer
+          description: Total number of results
+        executionTimeMs:
+          type: integer
+          description: Query execution time in milliseconds
+
+    CreateTableRequest:
+      type: object
+      required:
+        - tableName
+        - embeddingDimensions
+      properties:
+        tableName:
+          type: string
+          pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$'
+          description: Table name (alphanumeric and underscores only)
+        schemaName:
+          type: string
+          description: Schema name (optional, uses default schema if not specified)
+        embeddingDimensions:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: Number of dimensions for embedding vectors
+          example: 1536
+        vectorType:
+          type: string
+          enum:
+            - REAL_VECTOR
+            - HALF_VECTOR
+          default: REAL_VECTOR
+          description: Vector column type
+        idColumn:
+          type: string
+          default: ID
+          description: Name of ID column
+        contentColumn:
+          type: string
+          default: CONTENT
+          description: Name of content column
+        embeddingColumn:
+          type: string
+          default: EMBEDDING
+          description: Name of embedding column
+        metadataColumn:
+          type: string
+          default: METADATA
+          description: Name of metadata column
+
+    CreateHnswIndexRequest:
+      type: object
+      properties:
+        indexName:
+          type: string
+          description: Custom index name (auto-generated if not provided)
+        m:
+          type: integer
+          minimum: 4
+          maximum: 1000
+          default: 16
+          description: Maximum number of neighbors per graph node
+        efConstruction:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 200
+          description: Build-time candidate pool size
+        efSearch:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 100
+          description: Search-time candidate pool size
+        metric:
+          type: string
+          enum:
+            - COSINE
+            - EUCLIDEAN
+          default: COSINE
+          description: Similarity function for the index
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: "INVALID_EMBEDDING"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Embedding dimension mismatch: expected 1536, got 768"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+        target:
+          type: string
+          description: Field or parameter that caused the error
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidEmbedding:
+              summary: Invalid embedding
+              value:
+                code: INVALID_EMBEDDING
+                message: "Embedding dimension mismatch: expected 1536, got 768"
+                target: embedding
+            missingField:
+              summary: Missing required field
+              value:
+                code: MISSING_FIELD
+                message: "Required field 'embedding' is missing"
+                target: embedding
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: NOT_FOUND
+            message: "Document with ID 'doc-999' not found"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INTERNAL_ERROR
+            message: "Database connection failed"
+            details:
+              sqlCode: -10709
+              sqlState: "HY000"

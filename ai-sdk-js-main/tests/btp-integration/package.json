@@ -1,0 +1,17 @@
+{
+  "name": "btp-integration-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for SAP BTP services (HANA, AI Core, Object Store)",
+  "private": true,
+  "scripts": {
+    "test": "node run-all-tests.js",
+    "test:hana": "TEST_AICORE=false TEST_OBJECTSTORE=false node run-all-tests.js",
+    "test:aicore": "TEST_HANA=false TEST_OBJECTSTORE=false node run-all-tests.js",
+    "test:objectstore": "TEST_HANA=false TEST_AICORE=false node run-all-tests.js"
+  },
+  "dependencies": {
+    "@sap/hana-client": "^2.19.0",
+    "@aws-sdk/client-s3": "^3.500.0",
+    "dotenv": "^16.3.1"
+  }
+}

@@ -106,14 +106,16 @@ describe("E2E Chat Completion Flow", () => {
 
   // ── Error scenarios ─────────────────────────────────────────────────
 
-  test("missing config returns 500 with error", async () => {
+  test("missing config returns 400 with LLMErrorResponse", async () => {
     const { status, data } = await post("/api/chat", {
       payload: { messages: [{ role: "user", content: "Hello" }] },
     });
 
-    expect(status).toBe(500);
+    expect(status).toBe(400);
     expect(data.error).toBeDefined();
+    expect(data.error.code).toBe("CHAT_CONFIG_INVALID");
     expect(data.error.message).toBeDefined();
+    expect(data.error.details).toBeDefined();
   });
 
   test("missing messages still reaches SDK (plugin does not validate)", async () => {

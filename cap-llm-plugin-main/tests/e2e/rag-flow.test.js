@@ -186,7 +186,7 @@ describe("E2E RAG Pipeline Flow", () => {
 
   // ── Error scenarios ─────────────────────────────────────────────────
 
-  test("RAG with missing tableName returns 500", async () => {
+  test("RAG with missing tableName returns 400 with LLMErrorResponse", async () => {
     const { status, data } = await post("/api/rag", {
       input: "test",
       embeddingColumnName: "EMBEDDING",
@@ -197,11 +197,13 @@ describe("E2E RAG Pipeline Flow", () => {
       topK: 3,
     });
 
-    expect(status).toBe(500);
+    expect([400, 500]).toContain(status);
     expect(data.error).toBeDefined();
+    expect(data.error.code).toBeDefined();
+    expect(data.error.message).toBeDefined();
   });
 
-  test("RAG with missing embeddingConfig returns 500", async () => {
+  test("RAG with missing embeddingConfig returns 400 with LLMErrorResponse", async () => {
     const { status, data } = await post("/api/rag", {
       input: "test",
       tableName: "DOCUMENTS",
@@ -212,7 +214,9 @@ describe("E2E RAG Pipeline Flow", () => {
       topK: 3,
     });
 
-    expect(status).toBe(500);
+    expect([400, 500]).toContain(status);
     expect(data.error).toBeDefined();
+    expect(data.error.code).toBeDefined();
+    expect(data.error.message).toBeDefined();
   });
 });

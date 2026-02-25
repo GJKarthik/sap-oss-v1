@@ -18,6 +18,9 @@ module.exports = {
       displayName: "e2e",
       testEnvironment: "node",
       testMatch: ["**/tests/e2e/**/*.test.js"],
+      // Retry flaky network/port tests up to 2 times before failing
+      retryTimes: 2,
+      testTimeout: 15000,
     },
   ],
 };

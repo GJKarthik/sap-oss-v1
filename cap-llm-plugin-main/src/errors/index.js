@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AnonymizationError = exports.SimilaritySearchError = exports.ChatCompletionError = exports.EmbeddingError = exports.CAPLLMPluginError = void 0;
+exports.toErrorResponse = exports.ERROR_HTTP_STATUS = exports.AnonymizationError = exports.SimilaritySearchError = exports.ChatCompletionError = exports.EmbeddingError = exports.CAPLLMPluginError = void 0;
 /**
  * cap-llm-plugin error class hierarchy.
  *
@@ -19,4 +19,7 @@ var SimilaritySearchError_1 = require("./SimilaritySearchError");
 Object.defineProperty(exports, "SimilaritySearchError", { enumerable: true, get: function () { return SimilaritySearchError_1.SimilaritySearchError; } });
 var AnonymizationError_1 = require("./AnonymizationError");
 Object.defineProperty(exports, "AnonymizationError", { enumerable: true, get: function () { return AnonymizationError_1.AnonymizationError; } });
+var LLMErrorResponse_1 = require("./LLMErrorResponse");
+Object.defineProperty(exports, "ERROR_HTTP_STATUS", { enumerable: true, get: function () { return LLMErrorResponse_1.ERROR_HTTP_STATUS; } });
+Object.defineProperty(exports, "toErrorResponse", { enumerable: true, get: function () { return LLMErrorResponse_1.toErrorResponse; } });
 //# sourceMappingURL=index.js.map

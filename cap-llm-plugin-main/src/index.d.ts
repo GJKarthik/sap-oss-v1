@@ -15,5 +15,6 @@ export type { GptChatPayload, GeminiChatPayload, ClaudeChatPayload, ChatPayload 
 export type { SimilaritySearchResult, RagResponse } from "../srv/cap-llm-plugin";
 export type { HarmonizedChatCompletionParams, ContentFilterParams } from "../srv/cap-llm-plugin";
 export type { AnonymizedElements, AnonymizeAlgorithm } from "../lib/anonymization-helper";
-export { CAPLLMPluginError, EmbeddingError, ChatCompletionError, SimilaritySearchError, AnonymizationError, } from "./errors";
+export { CAPLLMPluginError, EmbeddingError, ChatCompletionError, SimilaritySearchError, AnonymizationError, ERROR_HTTP_STATUS, toErrorResponse, } from "./errors";
+export type { LLMErrorDetail, LLMErrorResponse } from "./errors";
 //# sourceMappingURL=index.d.ts.map
