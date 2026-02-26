@@ -12,9 +12,15 @@
     "docs"
   ],
   "peerDependencies": {
+    "@opentelemetry/api": ">=1.0.0",
     "@sap-ai-sdk/orchestration": ">=2.0.0",
     "@sap/cds": ">=7.1.1",
     "@sap/cds-hana": ">=2"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api": {
+      "optional": true
+    }
   },
   "keywords": [
     "cap-llm-plugin",
@@ -28,6 +34,7 @@
   "devDependencies": {
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
     "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "@opentelemetry/api": "^1.9.0",
     "@types/node": "^25.3.0",
     "eslint": "^9.39.3",
     "eslint-config-prettier": "^10.1.8",

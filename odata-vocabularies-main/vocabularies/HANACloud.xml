@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SAP HANA Cloud Vocabulary - Phase 2 Enhancement
+  
+  This vocabulary provides terms for HANA-specific metadata including:
+  - Calculation View references
+  - Column mappings to HANA columns
+  - Input parameters for calculation views
+  - Hierarchy configurations
+  - Delta/CDC tracking for HANA sync
+  
+  Part of the Universal Dictionary initiative for data and HANA discovery.
+-->
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Namespace="Org.OData.Core.V1" Alias="Core"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" 
+            Namespace="com.sap.vocabularies.HANACloud.v1" Alias="HANACloud">
+      
+      <Annotation Term="Core.Description">
+        <String>Terms for SAP HANA Cloud specific metadata and discovery</String>
+      </Annotation>
+      <Annotation Term="Core.Description" Qualifier="Published">
+        <String>2026-02-26 © SAP SE. All rights reserved.</String>
+      </Annotation>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Calculation View References -->
+      <!-- ================================================================== -->
+      
+      <Term Name="CalculationView" Type="HANACloud.CalculationViewType" AppliesTo="EntitySet EntityType">
+        <Annotation Term="Core.Description" String="Reference to a HANA calculation view that backs this entity"/>
+        <Annotation Term="Core.LongDescription">
+          <String>Associates an OData EntitySet or EntityType with a HANA calculation view.
+This enables the mangle-query-service to route analytical queries directly to HANA
+for optimal performance on aggregations, groupings, and hierarchies.</String>
+        </Annotation>
+      </Term>
+      
+      <ComplexType Name="CalculationViewType">
+        <Annotation Term="Core.Description" String="Details about a HANA calculation view"/>
+        <Property Name="SchemaName" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Database schema containing the calculation view"/>
+        </Property>
+        <Property Name="ViewName" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Name of the calculation view"/>
+        </Property>
+        <Property Name="PackagePath" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="HDI package path for design-time artifacts"/>
+        </Property>
+        <Property Name="ViewType" Type="HANACloud.ViewTypeEnum" Nullable="true">
+          <Annotation Term="Core.Description" String="Type of HANA view"/>
+        </Property>
+        <Property Name="IsAnalytical" Type="Edm.Boolean" Nullable="false" DefaultValue="true">
+          <Annotation Term="Core.Description" String="Whether the view supports OLAP-style aggregations"/>
+        </Property>
+        <Property Name="SupportsHierarchies" Type="Edm.Boolean" Nullable="false" DefaultValue="false">
+          <Annotation Term="Core.Description" String="Whether the view includes recursive hierarchies"/>
+        </Property>
+      </ComplexType>
+      
+      <EnumType Name="ViewTypeEnum">
+        <Annotation Term="Core.Description" String="Types of HANA database views"/>
+        <Member Name="CalculationView" Value="0">
+          <Annotation Term="Core.Description" String="HANA calculation view (graphical or scripted)"/>
+        </Member>
+        <Member Name="AttributeView" Value="1">
+          <Annotation Term="Core.Description" String="Legacy attribute view (deprecated in HANA 2.0)"/>
+        </Member>
+        <Member Name="AnalyticView" Value="2">
+          <Annotation Term="Core.Description" String="Legacy analytic view (deprecated in HANA 2.0)"/>
+        </Member>
+        <Member Name="Table" Value="3">
+          <Annotation Term="Core.Description" String="Direct table access"/>
+        </Member>
+        <Member Name="SQLView" Value="4">
+          <Annotation Term="Core.Description" String="SQL-defined view"/>
+        </Member>
+        <Member Name="VirtualTable" Value="5">
+          <Annotation Term="Core.Description" String="Virtual table via Smart Data Access"/>
+        </Member>
+      </EnumType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Column Mappings -->
+      <!-- ================================================================== -->
+      
+      <Term Name="ColumnMapping" Type="HANACloud.ColumnMappingType" AppliesTo="Property">
+        <Annotation Term="Core.Description" String="Mapping between OData property and HANA column"/>
+        <Annotation Term="Core.LongDescription">
+          <String>Provides the physical HANA column details for an OData property.
+Used for query pushdown optimization and type validation.</String>
+        </Annotation>
+      </Term>
+      
+      <ComplexType Name="ColumnMappingType">
+        <Annotation Term="Core.Description" String="HANA column metadata"/>
+        <Property Name="HANAColumnName" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Physical column name in HANA (may differ from OData property name)"/>
+        </Property>
+        <Property Name="HANADataType" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="HANA SQL data type (NVARCHAR, INTEGER, DECIMAL, etc.)"/>
+        </Property>
+        <Property Name="Precision" Type="Edm.Int32" Nullable="true">
+          <Annotation Term="Core.Description" String="Numeric precision for DECIMAL columns"/>
+        </Property>
+        <Property Name="Scale" Type="Edm.Int32" Nullable="true">
+          <Annotation Term="Core.Description" String="Numeric scale for DECIMAL columns"/>
+        </Property>
+        <Property Name="Length" Type="Edm.Int32" Nullable="true">
+          <Annotation Term="Core.Description" String="Maximum length for string columns"/>
+        </Property>
+        <Property Name="IsCalculated" Type="Edm.Boolean" Nullable="false" DefaultValue="false">
+          <Annotation Term="Core.Description" String="Column is a calculated column in the view"/>
+        </Property>
+      </ComplexType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Input Parameters -->
+      <!-- ================================================================== -->
+      
+      <Term Name="InputParameter" Type="HANACloud.InputParameterType" AppliesTo="Parameter">
+        <Annotation Term="Core.Description" String="HANA calculation view input parameter"/>
+        <Annotation Term="Core.LongDescription">
+          <String>Maps an OData function/action parameter to a HANA calculation view input parameter.
+These parameters are evaluated at query time and can filter data at the database level.</String>
+        </Annotation>
+      </Term>
+      
+      <Term Name="InputParameters" Type="Collection(HANACloud.InputParameterType)" AppliesTo="EntitySet EntityType">
+        <Annotation Term="Core.Description" String="List of input parameters for the underlying calculation view"/>
+      </Term>
+      
+      <ComplexType Name="InputParameterType">
+        <Annotation Term="Core.Description" String="HANA calculation view input parameter definition"/>
+        <Property Name="ParameterName" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Name of the input parameter in the calculation view"/>
+        </Property>
+        <Property Name="DataType" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="HANA data type of the parameter"/>
+        </Property>
+        <Property Name="Mandatory" Type="Edm.Boolean" Nullable="false" DefaultValue="false">
+          <Annotation Term="Core.Description" String="Whether the parameter must be provided"/>
+        </Property>
+        <Property Name="DefaultValue" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Default value if not provided"/>
+        </Property>
+        <Property Name="Description" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Human-readable description of the parameter"/>
+          <Annotation Term="Core.IsLanguageDependent"/>
+        </Property>
+      </ComplexType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Hierarchy Configuration -->
+      <!-- ================================================================== -->
+      
+      <Term Name="HierarchyDefinition" Type="HANACloud.HierarchyDefinitionType" AppliesTo="EntityType">
+        <Annotation Term="Core.Description" String="HANA parent-child hierarchy configuration"/>
+        <Annotation Term="Core.LongDescription">
+          <String>Defines how a recursive hierarchy is stored and navigated in HANA.
+Used with Analytics.RecursiveHierarchy for full hierarchy support.</String>
+        </Annotation>
+      </Term>
+      
+      <ComplexType Name="HierarchyDefinitionType">
+        <Annotation Term="Core.Description" String="HANA hierarchy node configuration"/>
+        <Property Name="HierarchyName" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Name of the hierarchy in the calculation view"/>
+        </Property>
+        <Property Name="NodeColumn" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Column containing the node ID"/>
+        </Property>
+        <Property Name="ParentColumn" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="Column containing the parent node ID"/>
+        </Property>
+        <Property Name="LevelColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column containing the hierarchy level (0 = root)"/>
+        </Property>
+        <Property Name="DescendantCountColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column containing the count of descendants"/>
+        </Property>
+        <Property Name="DrillStateColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column for drill state (expanded, collapsed, leaf)"/>
+        </Property>
+        <Property Name="IsLeveledHierarchy" Type="Edm.Boolean" Nullable="false" DefaultValue="false">
+          <Annotation Term="Core.Description" String="True for leveled hierarchies with fixed depth"/>
+        </Property>
+        <Property Name="MaxLevels" Type="Edm.Int32" Nullable="true">
+          <Annotation Term="Core.Description" String="Maximum number of levels for leveled hierarchies"/>
+        </Property>
+      </ComplexType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Delta/CDC Tracking -->
+      <!-- ================================================================== -->
+      
+      <Term Name="DeltaTracking" Type="HANACloud.DeltaTrackingType" AppliesTo="EntitySet EntityType">
+        <Annotation Term="Core.Description" String="Change data capture configuration for HANA sync"/>
+        <Annotation Term="Core.LongDescription">
+          <String>Configures how changes are tracked for delta loads from HANA to Elasticsearch.
+Used by the BatchETL sync pipeline in mangle-query-service.</String>
+        </Annotation>
+      </Term>
+      
+      <ComplexType Name="DeltaTrackingType">
+        <Annotation Term="Core.Description" String="CDC configuration for incremental data sync"/>
+        <Property Name="Method" Type="HANACloud.DeltaMethodEnum" Nullable="false">
+          <Annotation Term="Core.Description" String="Method used to detect changes"/>
+        </Property>
+        <Property Name="TimestampColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column containing last modification timestamp"/>
+        </Property>
+        <Property Name="ChangeTypeColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column indicating change type (I/U/D)"/>
+        </Property>
+        <Property Name="VersionColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column containing row version for optimistic locking"/>
+        </Property>
+        <Property Name="SoftDeleteColumn" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Column indicating soft-deleted records"/>
+        </Property>
+        <Property Name="RetentionDays" Type="Edm.Int32" Nullable="true">
+          <Annotation Term="Core.Description" String="Days to retain change history"/>
+        </Property>
+      </ComplexType>
+      
+      <EnumType Name="DeltaMethodEnum">
+        <Annotation Term="Core.Description" String="Methods for tracking data changes"/>
+        <Member Name="Timestamp" Value="0">
+          <Annotation Term="Core.Description" String="Use a timestamp column to detect changes"/>
+        </Member>
+        <Member Name="CDCTable" Value="1">
+          <Annotation Term="Core.Description" String="Use a separate CDC log table"/>
+        </Member>
+        <Member Name="Version" Value="2">
+          <Annotation Term="Core.Description" String="Use a version/sequence number"/>
+        </Member>
+        <Member Name="FullLoad" Value="3">
+          <Annotation Term="Core.Description" String="No delta support, always full load"/>
+        </Member>
+        <Member Name="TriggerBased" Value="4">
+          <Annotation Term="Core.Description" String="Changes captured via database triggers"/>
+        </Member>
+      </EnumType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Analytical Semantics -->
+      <!-- ================================================================== -->
+      
+      <Term Name="AnalyticalSemantics" Type="HANACloud.AnalyticalSemanticsType" AppliesTo="Property">
+        <Annotation Term="Core.Description" String="HANA-specific analytical semantics for a property"/>
+      </Term>
+      
+      <ComplexType Name="AnalyticalSemanticsType">
+        <Annotation Term="Core.Description" String="Extended analytical metadata from HANA"/>
+        <Property Name="SemanticType" Type="HANACloud.SemanticTypeEnum" Nullable="true">
+          <Annotation Term="Core.Description" String="HANA semantic type of the column"/>
+        </Property>
+        <Property Name="AggregationType" Type="HANACloud.AggregationTypeEnum" Nullable="true">
+          <Annotation Term="Core.Description" String="Default aggregation for measures"/>
+        </Property>
+        <Property Name="CurrencyProperty" Type="Edm.PropertyPath" Nullable="true">
+          <Annotation Term="Core.Description" String="Reference to currency code property"/>
+        </Property>
+        <Property Name="UnitProperty" Type="Edm.PropertyPath" Nullable="true">
+          <Annotation Term="Core.Description" String="Reference to unit of measure property"/>
+        </Property>
+        <Property Name="ExceptionAggregationType" Type="HANACloud.AggregationTypeEnum" Nullable="true">
+          <Annotation Term="Core.Description" String="Exception aggregation for non-additive measures"/>
+        </Property>
+        <Property Name="ExceptionAggregationDimension" Type="Edm.PropertyPath" Nullable="true">
+          <Annotation Term="Core.Description" String="Dimension for exception aggregation"/>
+        </Property>
+      </ComplexType>
+      
+      <EnumType Name="SemanticTypeEnum">
+        <Annotation Term="Core.Description" String="HANA semantic types for columns"/>
+        <Member Name="Amount" Value="0">
+          <Annotation Term="Core.Description" String="Currency amount"/>
+        </Member>
+        <Member Name="Quantity" Value="1">
+          <Annotation Term="Core.Description" String="Quantity with unit of measure"/>
+        </Member>
+        <Member Name="Date" Value="2">
+          <Annotation Term="Core.Description" String="Calendar date"/>
+        </Member>
+        <Member Name="Time" Value="3">
+          <Annotation Term="Core.Description" String="Time of day"/>
+        </Member>
+        <Member Name="DateTime" Value="4">
+          <Annotation Term="Core.Description" String="Date and time"/>
+        </Member>
+        <Member Name="CurrencyCode" Value="5">
+          <Annotation Term="Core.Description" String="ISO currency code"/>
+        </Member>
+        <Member Name="UnitOfMeasure" Value="6">
+          <Annotation Term="Core.Description" String="Unit of measure"/>
+        </Member>
+        <Member Name="GeoLocation" Value="7">
+          <Annotation Term="Core.Description" String="Geographic coordinates"/>
+        </Member>
+        <Member Name="Text" Value="8">
+          <Annotation Term="Core.Description" String="Language-dependent text"/>
+        </Member>
+      </EnumType>
+      
+      <EnumType Name="AggregationTypeEnum">
+        <Annotation Term="Core.Description" String="Types of aggregation for measures"/>
+        <Member Name="SUM" Value="0">
+          <Annotation Term="Core.Description" String="Sum of values"/>
+        </Member>
+        <Member Name="MIN" Value="1">
+          <Annotation Term="Core.Description" String="Minimum value"/>
+        </Member>
+        <Member Name="MAX" Value="2">
+          <Annotation Term="Core.Description" String="Maximum value"/>
+        </Member>
+        <Member Name="COUNT" Value="3">
+          <Annotation Term="Core.Description" String="Count of values"/>
+        </Member>
+        <Member Name="AVG" Value="4">
+          <Annotation Term="Core.Description" String="Average of values"/>
+        </Member>
+        <Member Name="FIRST" Value="5">
+          <Annotation Term="Core.Description" String="First value"/>
+        </Member>
+        <Member Name="LAST" Value="6">
+          <Annotation Term="Core.Description" String="Last value"/>
+        </Member>
+        <Member Name="NOP" Value="7">
+          <Annotation Term="Core.Description" String="No aggregation (non-additive)"/>
+        </Member>
+      </EnumType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Query Pushdown Hints -->
+      <!-- ================================================================== -->
+      
+      <Term Name="QueryPushdown" Type="HANACloud.QueryPushdownType" AppliesTo="EntitySet">
+        <Annotation Term="Core.Description" String="Hints for query pushdown optimization"/>
+      </Term>
+      
+      <ComplexType Name="QueryPushdownType">
+        <Annotation Term="Core.Description" String="Query optimization hints for HANA"/>
+        <Property Name="PreferPushdown" Type="Edm.Boolean" Nullable="false" DefaultValue="true">
+          <Annotation Term="Core.Description" String="Prefer pushing queries to HANA over ES"/>
+        </Property>
+        <Property Name="SupportedOperations" Type="Collection(Edm.String)" Nullable="false">
+          <Annotation Term="Core.Description" String="List of supported SQL operations"/>
+        </Property>
+        <Property Name="EstimatedRowCount" Type="Edm.Int64" Nullable="true">
+          <Annotation Term="Core.Description" String="Estimated row count for query planning"/>
+        </Property>
+        <Property Name="LastAnalyzed" Type="Edm.DateTimeOffset" Nullable="true">
+          <Annotation Term="Core.Description" String="Last time statistics were gathered"/>
+        </Property>
+      </ComplexType>
+      
+      <!-- ================================================================== -->
+      <!-- Section: Connection Information -->
+      <!-- ================================================================== -->
+      
+      <Term Name="HANAConnection" Type="HANACloud.HANAConnectionType" AppliesTo="EntityContainer">
+        <Annotation Term="Core.Description" String="HANA database connection information"/>
+      </Term>
+      
+      <ComplexType Name="HANAConnectionType">
+        <Annotation Term="Core.Description" String="HANA Cloud connection details"/>
+        <Property Name="InstanceID" Type="Edm.String" Nullable="false">
+          <Annotation Term="Core.Description" String="HANA Cloud instance identifier"/>
+        </Property>
+        <Property Name="Host" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Database host (for direct connections)"/>
+        </Property>
+        <Property Name="Port" Type="Edm.Int32" Nullable="true">
+          <Annotation Term="Core.Description" String="Database port"/>
+        </Property>
+        <Property Name="Schema" Type="Edm.String" Nullable="true">
+          <Annotation Term="Core.Description" String="Default schema"/>
+        </Property>
+        <Property Name="UseTLS" Type="Edm.Boolean" Nullable="false" DefaultValue="true">
+          <Annotation Term="Core.Description" String="Use TLS encryption"/>
+        </Property>
+      </ComplexType>
+      
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

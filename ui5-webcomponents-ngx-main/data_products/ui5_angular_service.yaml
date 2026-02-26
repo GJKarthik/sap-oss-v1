@@ -1,0 +1,103 @@
+# =============================================================================
+# UI5 Web Components Angular Service Data Product (ODPS 4.1)
+# =============================================================================
+
+dataProduct:
+  id: "ui5-angular-service-v1"
+  version: "1.0.0"
+  name: "UI5 Angular Service Data Product"
+  description: "UI5 Web Components for Angular - code generation and development assistance"
+  
+  # ODPS 4.1 Standard Fields - Public documentation/code
+  dataSecurityClass: "public"
+  dataGovernanceClass: "development-tools"
+  
+  # Data Owner
+  owner:
+    name: "UI Framework Team"
+    team: "Frontend Engineering"
+    contact: "ui-framework@company.com"
+  
+  # Extension: LLM Routing Policy - AI Core default for public code
+  x-llm-policy:
+    routing: "aicore-default"
+    defaultBackend: "aicore"
+    confidentialBackend: "vllm"
+    auditLevel: "basic"
+    
+    routingRules:
+      - condition: "component_generation"
+        backend: "aicore"
+        reason: "Component code is public documentation"
+      - condition: "code_completion"
+        backend: "aicore"
+        reason: "Code patterns are public"
+      - condition: "with_user_data"
+        backend: "vllm"
+        reason: "User data requires on-premise processing"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are a UI5 Web Components expert for Angular development.
+      Help developers create Angular components using UI5 Web Components.
+      Provide TypeScript code examples and best practices.
+      Follow Angular style guide and UI5 documentation standards.
+    maxTokens: 4096
+    temperature: 0.5
+    responseFormat: "code"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+    autonomyLevel: "L3"
+    requiresHumanOversight: false
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+  
+  # Output Ports
+  outputPort:
+    - id: "component-generator"
+      name: "Component Generator API"
+      description: "Generate UI5 Angular components"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+    
+    - id: "code-completion"
+      name: "Code Completion API"
+      description: "Complete UI5 component code"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+    
+    - id: "documentation"
+      name: "Documentation API"
+      description: "Query component documentation"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Input Ports
+  inputPort:
+    - id: "component-specs"
+      name: "Component Specifications"
+      description: "UI5 Web Component specifications"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+    
+    - id: "angular-templates"
+      name: "Angular Templates"
+      description: "Angular template patterns"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Quality Metrics
+  quality:
+    availability: "99.9%"
+    latencyP95: "2000ms"
+    throughput: "200 req/min"

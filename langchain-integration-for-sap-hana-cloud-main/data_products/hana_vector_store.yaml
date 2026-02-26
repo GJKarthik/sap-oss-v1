@@ -1,0 +1,123 @@
+# =============================================================================
+# HANA Vector Store Data Product (ODPS 4.1)
+# =============================================================================
+
+dataProduct:
+  id: "hana-vector-store-v1"
+  version: "1.0.0"
+  name: "HANA Vector Store Data Product"
+  description: "LangChain vector store integration with SAP HANA Cloud for RAG applications"
+  
+  # ODPS 4.1 Standard Fields - HANA data is confidential by default
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "enterprise-data"
+  
+  # Data Owner
+  owner:
+    name: "Data Platform Team"
+    team: "HANA Cloud Operations"
+    contact: "hana-platform@company.com"
+  
+  # Extension: LLM Routing Policy - vLLM only for HANA data
+  x-llm-policy:
+    routing: "vllm-only"
+    defaultBackend: "vllm"
+    confidentialBackend: "vllm"
+    auditLevel: "full"
+    retentionPolicy: "no-storage"
+    
+    routingRules:
+      - condition: "hana_table_query"
+        backend: "vllm"
+        reason: "HANA table data is confidential financial data"
+      - condition: "vector_search"
+        backend: "vllm"
+        reason: "Vector embeddings contain encoded business data"
+      - condition: "metadata_only"
+        backend: "aicore"
+        reason: "Schema metadata can use external LLM"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are an AI assistant with access to SAP HANA Cloud data.
+      Use the vector store for semantic search when appropriate.
+      Never expose raw database values in responses.
+      All data queries must be executed on-premise.
+      Follow enterprise data governance policies.
+    maxTokens: 4096
+    temperature: 0.3
+    responseFormat: "structured"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+      - "AI-Agent-Index"
+      - "GDPR-Data-Processing"
+    autonomyLevel: "L2"
+    requiresHumanOversight: true
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+      - "audit-logging"
+      - "query-filtering"
+  
+  # Output Ports
+  outputPort:
+    - id: "vector-search"
+      name: "Vector Search API"
+      description: "Semantic similarity search in HANA"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+    
+    - id: "sql-query"
+      name: "SQL Query API"
+      description: "Execute SQL queries on HANA"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+    
+    - id: "schema-info"
+      name: "Schema Information API"
+      description: "Get table/column metadata"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "hybrid"
+  
+  # Input Ports
+  inputPort:
+    - id: "hana-tables"
+      name: "HANA Tables"
+      description: "Financial and business tables in HANA"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+        allowTokenization: false
+    
+    - id: "embeddings"
+      name: "Embeddings Input"
+      description: "Document embeddings for vector store"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+  
+  # HANA-specific configuration
+  x-hana-config:
+    confidentialSchemas:
+      - "TRADING"
+      - "RISK"
+      - "TREASURY"
+      - "CUSTOMER"
+      - "FINANCIAL"
+    publicSchemas:
+      - "PUBLIC"
+      - "REFERENCE"
+    vectorTablePrefix: "VECTOR_"
+  
+  # Quality Metrics
+  quality:
+    availability: "99.9%"
+    latencyP95: "3000ms"
+    throughput: "200 req/min"

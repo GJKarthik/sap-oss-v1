@@ -1,0 +1,97 @@
+# =============================================================================
+# AI Core Streaming Service Data Product (ODPS 4.1)
+# Infrastructure - External AI Core Backend for Streaming
+# =============================================================================
+
+dataProduct:
+  id: "aicore-streaming-service-v1"
+  version: "1.0.0"
+  name: "AI Core Streaming Service Data Product"
+  description: "SAP AI Core streaming inference - external backend for public/internal data"
+  
+  # ODPS 4.1 Standard Fields - Public/Internal only
+  dataSecurityClass: "public"
+  dataGovernanceClass: "infrastructure"
+  
+  # Data Owner
+  owner:
+    name: "AI Platform Team"
+    team: "Platform Engineering"
+    contact: "ai-platform@company.com"
+  
+  # Extension: LLM Routing Policy - External by default, vLLM fallback
+  x-llm-policy:
+    routing: "security-based"
+    defaultBackend: "aicore"
+    confidentialBackend: "vllm"
+    auditLevel: "standard"
+    
+    routingRules:
+      - condition: "public_data"
+        backend: "aicore"
+        reason: "Public data can use external AI Core"
+      - condition: "internal_data"
+        backend: "aicore"
+        reason: "Internal data allowed on AI Core"
+      - condition: "confidential_data"
+        backend: "vllm"
+        reason: "Confidential data must use on-premise vLLM"
+      - condition: "restricted_data"
+        backend: "blocked"
+        reason: "Restricted data not allowed via streaming"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are an AI assistant powered by SAP AI Core.
+      Process queries efficiently with streaming responses.
+      Only handle public and internal data through this service.
+      Confidential data must be redirected to on-premise systems.
+    maxTokens: 4096
+    temperature: 0.7
+    streaming: true
+    responseFormat: "stream"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+      - "AI-Agent-Index"
+    autonomyLevel: "L2"
+    requiresHumanOversight: true
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+      - "audit-logging"
+  
+  # Output Ports
+  outputPort:
+    - id: "streaming-inference"
+      name: "Streaming Inference API"
+      description: "Stream LLM responses"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+    
+    - id: "batch-inference"
+      name: "Batch Inference API"
+      description: "Non-streaming inference"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Input Ports
+  inputPort:
+    - id: "prompts"
+      name: "Prompt Input"
+      description: "Public/internal prompts only"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "aicore-ok"
+        blockConfidential: true
+  
+  # Quality Metrics
+  quality:
+    availability: "99.9%"
+    latencyP95: "500ms"
+    throughput: "1000 req/min"

@@ -1,0 +1,83 @@
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: ai-core-streaming
+  annotations:
+    scenarios.ai.sap.com/description: "Pulsar-based streaming broker with HANA persistence and GPU acceleration"
+    scenarios.ai.sap.com/name: "ai-core-streaming"
+    executables.ai.sap.com/description: "GPU-accelerated streaming broker for real-time event processing"
+    executables.ai.sap.com/name: "ai-core-streaming-exec"
+  labels:
+    scenarios.ai.sap.com/id: "ai-core-streaming"
+    executables.ai.sap.com/id: "ai-core-streaming-exec"
+    ai.sap.com/version: "1.0.0"
+spec:
+  inputs:
+    parameters:
+      - name: HANA_SCHEMA
+        type: string
+        default: "PULSAR_STORAGE"
+      - name: PULSAR_HOME
+        type: string
+        default: "/opt/pulsar"
+  template:
+    apiVersion: serving.kserve.io/v1beta1
+    metadata:
+      annotations:
+        autoscaling.knative.dev/metric: "concurrency"
+        autoscaling.knative.dev/target: "10"
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "4"
+      labels:
+        ai.sap.com/resourcePlan: "infer.s"
+    spec:
+      predictor:
+        imagePullSecrets:
+          - name: docker-registry-secret
+        minReplicas: 1
+        maxReplicas: 4
+        containers:
+          - name: kserve-container
+            image: "{{DOCKER_REGISTRY}}/ai-core-streaming:{{VERSION}}"
+            ports:
+              - containerPort: 6650
+                protocol: TCP
+              - containerPort: 6651
+                protocol: TCP
+              - containerPort: 8080
+                protocol: TCP
+              - containerPort: 8443
+                protocol: TCP
+            env:
+              - name: HANA_SCHEMA
+                value: "{{HANA_SCHEMA}}"
+              - name: PULSAR_HOME
+                value: "{{PULSAR_HOME}}"
+              - name: PULSAR_CONF_DIR
+                value: "{{PULSAR_HOME}}/conf"
+              - name: PULSAR_DATA_DIR
+                value: "{{PULSAR_HOME}}/data"
+              - name: PULSAR_LOG_DIR
+                value: "{{PULSAR_HOME}}/logs"
+            resources:
+              requests:
+                memory: "4Gi"
+                cpu: "2"
+                nvidia.com/gpu: "1"
+              limits:
+                memory: "8Gi"
+                cpu: "4"
+                nvidia.com/gpu: "1"
+            livenessProbe:
+              httpGet:
+                path: /admin/v2/brokers/health
+                port: 8080
+              initialDelaySeconds: 30
+              periodSeconds: 30
+            readinessProbe:
+              httpGet:
+                path: /admin/v2/brokers/ready
+                port: 8080
+              initialDelaySeconds: 10
+              periodSeconds: 10
+

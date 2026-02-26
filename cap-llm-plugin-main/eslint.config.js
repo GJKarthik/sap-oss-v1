@@ -49,6 +49,8 @@ module.exports = [
       "cds-plugin.js",
       "srv/cap-llm-plugin.js",
       "lib/anonymization-helper.js",
+      "src/**/*.js",
+      "src/**/*.js.map",
     ],
   },
 ];

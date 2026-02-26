@@ -86,6 +86,21 @@ function isCAPLLMPluginError(err: unknown): err is { code: string; message: stri
 }
 
 /**
+ * Duck-type check for InvalidSimilaritySearchAlgoNameError.
+ *
+ * This legacy error class stores a numeric HTTP status in `.code` instead of
+ * a string error code. We detect it by class name so we can map it correctly
+ * to the `INVALID_ALGO_NAME` string code with HTTP 400.
+ */
+function isInvalidAlgoNameError(err: unknown): err is Error {
+  return (
+    err !== null &&
+    typeof err === "object" &&
+    (err as Record<string, unknown>).name === "InvalidSimilaritySearchAlgoNameError"
+  );
+}
+
+/**
  * Convert any thrown value to a structured `LLMErrorResponse`.
  *
  * - Plugin errors (duck-typed via `code` + `message`): uses `code`, `message`, `details`
@@ -99,6 +114,18 @@ function isCAPLLMPluginError(err: unknown): err is { code: string; message: stri
  *   }
  */
 export function toErrorResponse(err: unknown): { httpStatus: number; body: LLMErrorResponse } {
+  if (isInvalidAlgoNameError(err)) {
+    return {
+      httpStatus: 400,
+      body: {
+        error: {
+          code: "INVALID_ALGO_NAME",
+          message: (err as Error).message,
+        },
+      },
+    };
+  }
+
   if (isCAPLLMPluginError(err)) {
     const code = err.code ?? "UNKNOWN";
     const httpStatus = ERROR_HTTP_STATUS[code] ?? 500;

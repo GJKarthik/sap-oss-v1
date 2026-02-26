@@ -1,0 +1,33 @@
+# =============================================================================
+# Data Cleaning Copilot - Data Product Registry (ODPS 4.1)
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "data-cleaning-copilot-catalog"
+  name: "Data Cleaning Copilot Data Product Catalog"
+  description: "Data products for AI-assisted data cleaning and transformation"
+
+products:
+  - ref: "data_cleaning_service.yaml"
+
+# Global policies
+globalPolicies:
+  defaultSecurityClass: "confidential"
+  defaultLLMRouting: "vllm-only"
+  auditEnabled: true
+  
+# LLM Backend Configuration  
+llmBackends:
+  aicore:
+    endpoint: "http://localhost:9110/mcp"
+    models:
+      - "anthropic-claude"
+    forSecurityClass: ["public"]
+  
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+      - "codellama-34b"
+    forSecurityClass: ["internal", "confidential", "restricted"]

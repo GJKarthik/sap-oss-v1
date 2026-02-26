@@ -18,8 +18,9 @@ import {
   RagResponse,
   SimilaritySearchResult,
   GetHarmonizedChatCompletionRequest,
-  ErrorResponse,
+  LLMErrorDetail,
 } from "../../generated/angular-client";
+import { extractErrorDetail } from "./error.interceptor";
 
 @Component({
   selector: "app-chat",
@@ -42,7 +43,7 @@ export class ChatComponent {
   messages: ChatMessage[] = [];
   userInput = "";
   loading = false;
-  error: { code: string; message: string } | null = null;
+  error: LLMErrorDetail | null = null;
 
   // ── Config — type-safe, IDE autocomplete works ─────────────────────
   private embeddingConfig: EmbeddingConfig = {
@@ -83,12 +84,8 @@ export class ChatComponent {
 
       this.messages.push({ role: "assistant", content: assistantContent });
     } catch (err: unknown) {
-      // Error response follows ErrorResponse schema
-      const errorResp = err as { error: ErrorResponse };
-      this.error = {
-        code: errorResp?.error?.error?.code ?? "UNKNOWN",
-        message: errorResp?.error?.error?.message ?? "An error occurred",
-      };
+      // extractErrorDetail handles HttpErrorResponse, LLMErrorDetail, and raw errors
+      this.error = extractErrorDetail(err);
     } finally {
       this.loading = false;
     }

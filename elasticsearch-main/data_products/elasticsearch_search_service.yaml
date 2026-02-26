@@ -1,0 +1,125 @@
+# =============================================================================
+# Elasticsearch Search Service Data Product (ODPS 4.1)
+# =============================================================================
+
+dataProduct:
+  id: "elasticsearch-search-v1"
+  version: "1.0.0"
+  name: "Elasticsearch Search Service Data Product"
+  description: "Elasticsearch search, analytics, and log aggregation service"
+  
+  # ODPS 4.1 Standard Fields - Index-based routing
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "search-analytics"
+  
+  # Data Owner
+  owner:
+    name: "Search Platform Team"
+    team: "Data Infrastructure"
+    contact: "search-platform@company.com"
+  
+  # Extension: LLM Routing Policy - Index-based routing
+  x-llm-policy:
+    routing: "index-based"
+    defaultBackend: "vllm"
+    confidentialBackend: "vllm"
+    auditLevel: "full"
+    retentionPolicy: "query-only"
+    
+    routingRules:
+      - condition: "confidential_index"
+        backend: "vllm"
+        reason: "Confidential indices contain business data"
+      - condition: "log_index"
+        backend: "vllm"
+        reason: "Logs may contain sensitive information"
+      - condition: "public_index"
+        backend: "aicore"
+        reason: "Public indices can use external LLM"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are an Elasticsearch assistant.
+      Help users construct queries, analyze search results, and optimize indices.
+      Never expose raw document content from confidential indices.
+      Focus on query patterns and aggregation results.
+    maxTokens: 4096
+    temperature: 0.3
+    responseFormat: "structured"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+      - "AI-Agent-Index"
+    autonomyLevel: "L2"
+    requiresHumanOversight: true
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+      - "audit-logging"
+      - "query-filtering"
+  
+  # Output Ports
+  outputPort:
+    - id: "search-query"
+      name: "Search Query API"
+      description: "Execute search queries"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "index-based"
+    
+    - id: "aggregations"
+      name: "Aggregations API"
+      description: "Run analytics aggregations"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "index-based"
+    
+    - id: "cluster-health"
+      name: "Cluster Health API"
+      description: "Get cluster status and health"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Input Ports
+  inputPort:
+    - id: "business-indices"
+      name: "Business Indices"
+      description: "Customer, order, and transaction indices"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+    
+    - id: "log-indices"
+      name: "Log Indices"
+      description: "Application and audit logs"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "vllm-only"
+  
+  # Elasticsearch-specific configuration
+  x-elasticsearch-config:
+    confidentialIndices:
+      - "customers*"
+      - "orders*"
+      - "transactions*"
+      - "trading*"
+      - "financial*"
+      - "audit*"
+    publicIndices:
+      - "products*"
+      - "docs*"
+      - "help*"
+    logIndices:
+      - "logs-*"
+      - "metrics-*"
+      - "traces-*"
+  
+  # Quality Metrics
+  quality:
+    availability: "99.9%"
+    latencyP95: "500ms"
+    throughput: "1000 req/min"

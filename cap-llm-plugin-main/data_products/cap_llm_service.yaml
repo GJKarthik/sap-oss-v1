@@ -1,0 +1,106 @@
+# =============================================================================
+# CAP LLM Service Data Product (ODPS 4.1)
+# =============================================================================
+
+dataProduct:
+  id: "cap-llm-service-v1"
+  version: "1.0.0"
+  name: "CAP LLM Service Data Product"
+  description: "LLM integration for CAP applications with RAG and chat capabilities"
+  
+  # ODPS 4.1 Standard Fields
+  dataSecurityClass: "internal"
+  dataGovernanceClass: "enterprise-cap"
+  
+  # Data Owner
+  owner:
+    name: "CAP Development Team"
+    team: "Enterprise Applications"
+    contact: "cap-team@company.com"
+  
+  # Extension: LLM Routing Policy
+  x-llm-policy:
+    routing: "hybrid"
+    defaultBackend: "aicore"
+    confidentialBackend: "vllm"
+    auditLevel: "full"
+    retentionPolicy: "no-storage"
+    
+    routingRules:
+      - condition: "contains_business_data"
+        backend: "vllm"
+        reason: "Business data must stay on-premise"
+      - condition: "contains_financial_data"
+        backend: "vllm"
+        reason: "Financial data is confidential"
+      - condition: "general_query"
+        backend: "aicore"
+        reason: "General queries can use external LLM"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are an AI assistant integrated with SAP CAP applications.
+      Follow all enterprise governance requirements.
+      Handle business data with appropriate confidentiality.
+      Use RAG context when available for accurate responses.
+    maxTokens: 2048
+    temperature: 0.7
+    responseFormat: "text"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+      - "AI-Agent-Index"
+    autonomyLevel: "L2"
+    requiresHumanOversight: false
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+      - "audit-logging"
+  
+  # Output Ports
+  outputPort:
+    - id: "chat-completion"
+      name: "Chat Completion API"
+      description: "Multi-turn chat for CAP applications"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "hybrid"
+    
+    - id: "rag-query"
+      name: "RAG Query API"
+      description: "Retrieval-augmented generation"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "hybrid"
+    
+    - id: "embeddings"
+      name: "Embeddings API"
+      description: "Text embeddings for vector search"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Input Ports
+  inputPort:
+    - id: "cap-entities"
+      name: "CAP Entity Data"
+      description: "Data from CAP CDS entities"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+    
+    - id: "user-prompts"
+      name: "User Prompts"
+      description: "User-provided prompts"
+      dataSecurityClass: "variable"
+      x-llm-policy:
+        requiresClassification: true
+  
+  # Quality Metrics
+  quality:
+    availability: "99.9%"
+    latencyP95: "2500ms"
+    throughput: "500 req/min"

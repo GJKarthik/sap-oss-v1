@@ -17,4 +17,8 @@ export type { HarmonizedChatCompletionParams, ContentFilterParams } from "../srv
 export type { AnonymizedElements, AnonymizeAlgorithm } from "../lib/anonymization-helper";
 export { CAPLLMPluginError, EmbeddingError, ChatCompletionError, SimilaritySearchError, AnonymizationError, ERROR_HTTP_STATUS, toErrorResponse, } from "./errors";
 export type { LLMErrorDetail, LLMErrorResponse } from "./errors";
+export { getTracer, SpanStatusCode, _resetTracerCache } from "./telemetry/tracer";
+export type { PluginSpan, PluginTracer, SpanStatusCodeValue } from "./telemetry/tracer";
+export { createOtelMiddleware } from "./telemetry/ai-sdk-middleware";
+export type { OtelMiddlewareOptions, AiSdkMiddleware } from "./telemetry/ai-sdk-middleware";
 //# sourceMappingURL=index.d.ts.map

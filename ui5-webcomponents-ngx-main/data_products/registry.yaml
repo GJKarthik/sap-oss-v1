@@ -1,0 +1,32 @@
+# =============================================================================
+# UI5 Web Components for Angular - Data Product Registry (ODPS 4.1)
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "ui5-webcomponents-ngx-catalog"
+  name: "UI5 Web Components Angular Data Product Catalog"
+  description: "Data products for UI5 component generation and Angular development"
+
+products:
+  - ref: "ui5_angular_service.yaml"
+
+# Global policies - UI components are public, but user data needs protection
+globalPolicies:
+  defaultSecurityClass: "public"
+  defaultLLMRouting: "aicore-default"
+  auditEnabled: true
+  
+# LLM Backend Configuration
+llmBackends:
+  aicore:
+    endpoint: "http://localhost:9140/mcp"
+    models:
+      - "anthropic-claude"
+    forSecurityClass: ["public", "internal"]
+  
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "codellama-34b"
+    forSecurityClass: ["confidential", "restricted"]

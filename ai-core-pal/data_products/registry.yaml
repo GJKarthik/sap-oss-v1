@@ -1,0 +1,28 @@
+# =============================================================================
+# AI Core PAL - Data Product Registry (ODPS 4.1)
+# MCP Integration with SAP HANA Predictive Analysis Library
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "aicore-pal-catalog"
+  name: "AI Core PAL Data Product Catalog"
+  description: "MCP integration for SAP HANA PAL predictive analytics"
+
+products:
+  - ref: "aicore_pal_service.yaml"
+
+# Global policies - HANA data is confidential, always vLLM
+globalPolicies:
+  defaultSecurityClass: "confidential"
+  defaultLLMRouting: "vllm-only"
+  auditEnabled: true
+  
+# LLM Backend Configuration - vLLM only for HANA PAL data
+llmBackends:
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+      - "codellama-34b"
+    forSecurityClass: ["internal", "confidential", "restricted"]

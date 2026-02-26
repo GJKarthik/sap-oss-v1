@@ -52,6 +52,7 @@
     "@tauri-apps/cli": "^2.10.0",
     "@types/d3": "^7.4.3",
     "@types/maplibre-gl": "^1.13.2",
+    "@types/node": "^25.3.0",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
     "esbuild": "^0.27.3",

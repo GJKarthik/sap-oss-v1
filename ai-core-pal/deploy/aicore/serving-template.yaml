@@ -1,0 +1,74 @@
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: mesh-gateway
+  annotations:
+    scenarios.ai.sap.com/description: "MCP PAL Mesh Gateway with LLM routing"
+    scenarios.ai.sap.com/name: "mesh-gateway"
+    executables.ai.sap.com/description: "API mesh gateway with AI-powered routing"
+    executables.ai.sap.com/name: "mesh-gateway-exec"
+  labels:
+    scenarios.ai.sap.com/id: "mesh-gateway"
+    executables.ai.sap.com/id: "mesh-gateway-exec"
+    ai.sap.com/version: "1.0.0"
+spec:
+  inputs:
+    parameters:
+      - name: MODEL_PATH
+        type: string
+        default: "/app/models"
+      - name: LLAMA_ENABLED
+        type: string
+        default: "true"
+  template:
+    apiVersion: serving.kserve.io/v1beta1
+    metadata:
+      annotations:
+        autoscaling.knative.dev/metric: "concurrency"
+        autoscaling.knative.dev/target: "10"
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "4"
+      labels:
+        ai.sap.com/resourcePlan: "infer.s"
+    spec:
+      predictor:
+        imagePullSecrets:
+          - name: docker-registry-secret
+        minReplicas: 1
+        maxReplicas: 4
+        containers:
+          - name: kserve-container
+            image: "{{DOCKER_REGISTRY}}/mesh-gateway:{{VERSION}}"
+            ports:
+              - containerPort: 8080
+                protocol: TCP
+            env:
+              - name: MODEL_PATH
+                value: "{{MODEL_PATH}}"
+              - name: LLAMA_ENABLED
+                value: "{{LLAMA_ENABLED}}"
+              - name: HOST
+                value: "0.0.0.0"
+              - name: PORT
+                value: "8080"
+            resources:
+              requests:
+                memory: "4Gi"
+                cpu: "2"
+                nvidia.com/gpu: "1"
+              limits:
+                memory: "8Gi"
+                cpu: "4"
+                nvidia.com/gpu: "1"
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 30
+              periodSeconds: 30
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 10
+              periodSeconds: 10

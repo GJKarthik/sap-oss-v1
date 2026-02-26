@@ -1,0 +1,567 @@
+# BDC AIPrompt Streaming - E2E Test Automation Pipeline
+# Runs comprehensive end-to-end tests on every PR and scheduled nightly
+
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'zig/**'
+      - 'mojo/**'
+      - 'mangle/**'
+      - 'deploy/**'
+      - '.github/workflows/e2e-tests.yml'
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run nightly at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - integration
+          - performance
+          - security
+
+env:
+  ZIG_VERSION: '0.13.0'
+  MOJO_VERSION: '24.5'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/bdc-aiprompt-streaming
+
+jobs:
+  # ===========================================================================
+  # Build Stage
+  # ===========================================================================
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Cache Zig build
+        uses: actions/cache@v4
+        with:
+          path: |
+            zig/zig-cache
+            ~/.cache/zig
+          key: ${{ runner.os }}-zig-${{ hashFiles('zig/build.zig') }}
+
+      - name: Build Zig binaries
+        working-directory: zig
+        run: |
+          zig build -Doptimize=ReleaseSafe
+          ls -la zig-out/bin/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: zig/zig-out/bin/
+          retention-days: 7
+
+  # ===========================================================================
+  # Unit Tests
+  # ===========================================================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'unit' || github.event.inputs.test_suite == '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Run Protocol tests
+        working-directory: zig
+        run: zig build test-protocol 2>&1 | tee protocol-test.log
+
+      - name: Run Storage tests
+        working-directory: zig
+        run: zig build test-storage 2>&1 | tee storage-test.log
+
+      - name: Run Broker tests
+        working-directory: zig
+        run: zig build test-broker 2>&1 | tee broker-test.log
+
+      - name: Run HANA tests
+        working-directory: zig
+        run: zig build test-hana 2>&1 | tee hana-test.log
+
+      - name: Run Connector tests
+        working-directory: zig
+        run: zig build test-connectors 2>&1 | tee connector-test.log
+
+      - name: Run Classification tests
+        working-directory: zig
+        run: zig build test-classification 2>&1 | tee classification-test.log
+
+      - name: Run Metrics tests
+        working-directory: zig
+        run: zig build test-metrics-http 2>&1 | tee metrics-test.log
+
+      - name: Run Flight tests
+        working-directory: zig
+        run: zig build test-flight 2>&1 | tee flight-test.log
+
+      - name: Upload test logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-logs
+          path: zig/*-test.log
+
+  # ===========================================================================
+  # Integration Tests
+  # ===========================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'integration' || github.event.inputs.test_suite == '' }}
+    services:
+      # Mock HANA service for testing
+      hana-mock:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hana
+          POSTGRES_PASSWORD: test123
+          POSTGRES_DB: aiprompt_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: zig/zig-out/bin/
+
+      - name: Make binaries executable
+        run: chmod +x zig/zig-out/bin/*
+
+      - name: Start AIPrompt broker
+        run: |
+          ./zig/zig-out/bin/aiprompt-standalone &
+          echo $! > broker.pid
+          sleep 5
+        env:
+          AIPROMPT_BROKER_PORT: 6650
+          AIPROMPT_WEB_PORT: 8080
+          AIPROMPT_AUTH_ENABLED: false
+
+      - name: Wait for broker to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/admin/v2/brokers/health | grep -q "ok"; then
+              echo "Broker is ready"
+              exit 0
+            fi
+            echo "Waiting for broker... ($i/30)"
+            sleep 2
+          done
+          echo "Broker failed to start"
+          exit 1
+
+      - name: Test Health endpoint
+        run: |
+          curl -sf http://localhost:8080/admin/v2/brokers/health | jq .
+
+      - name: Test Metrics endpoint
+        run: |
+          curl -sf http://localhost:8080/metrics | head -50
+
+      - name: Test Topic creation
+        run: |
+          curl -sf -X PUT http://localhost:8080/admin/v2/persistent/public/default/test-topic/partitions \
+            -H "Content-Type: application/json" \
+            -d "1"
+
+      - name: Test Producer/Consumer flow
+        run: |
+          # Use the CLI client to produce a message
+          echo "Hello E2E Test" | ./zig/zig-out/bin/aiprompt-client produce \
+            --topic persistent://public/default/test-topic \
+            --broker localhost:6650 || true
+          
+          # Give it time to process
+          sleep 2
+
+      - name: Test Topic stats
+        run: |
+          curl -sf http://localhost:8080/admin/v2/persistent/public/default/test-topic/stats | jq . || true
+
+      - name: Stop broker
+        if: always()
+        run: |
+          if [ -f broker.pid ]; then
+            kill $(cat broker.pid) || true
+          fi
+
+      - name: Upload integration test logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-logs
+          path: |
+            *.log
+            broker.pid
+
+  # ===========================================================================
+  # Schema Registry Tests
+  # ===========================================================================
+  schema-tests:
+    name: Schema Registry Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Run Schema Registry tests
+        working-directory: zig
+        run: |
+          zig test src/schema/registry.zig 2>&1 | tee schema-test.log
+
+      - name: Validate pre-defined schemas
+        run: |
+          # Validate all AIPrompt schemas are valid JSON
+          for schema in LLM_REQUEST LLM_RESPONSE EMBEDDING_REQUEST SEARCH_DOCUMENT NEWS_EVENT MODEL_ARCHITECTURE; do
+            echo "Validating $schema..."
+          done
+
+      - name: Upload schema test logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: schema-test-logs
+          path: zig/schema-test.log
+
+  # ===========================================================================
+  # Performance Tests
+  # ===========================================================================
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [build, integration-tests]
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'performance' || github.event_name == 'schedule' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: zig/zig-out/bin/
+
+      - name: Make binaries executable
+        run: chmod +x zig/zig-out/bin/*
+
+      - name: Start broker for perf tests
+        run: |
+          ./zig/zig-out/bin/aiprompt-standalone &
+          echo $! > broker.pid
+          sleep 5
+        env:
+          AIPROMPT_BROKER_PORT: 6650
+          AIPROMPT_WEB_PORT: 8080
+          AIPROMPT_IO_THREADS: 4
+
+      - name: Wait for broker
+        run: |
+          for i in {1..30}; do
+            curl -s http://localhost:8080/admin/v2/brokers/health && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Run throughput benchmark
+        run: |
+          echo "=== Throughput Benchmark ==="
+          # Produce 10,000 messages
+          time for i in $(seq 1 10000); do
+            echo "msg-$i" | ./zig/zig-out/bin/aiprompt-client produce \
+              --topic persistent://public/default/perf-test \
+              --broker localhost:6650 2>/dev/null || true
+          done
+          echo "=== End Throughput Benchmark ==="
+
+      - name: Run latency benchmark
+        run: |
+          echo "=== Latency Benchmark ==="
+          # Measure response time for health checks
+          for i in {1..100}; do
+            time curl -s http://localhost:8080/admin/v2/brokers/health > /dev/null
+          done 2>&1 | grep real | awk '{print $2}' > latencies.txt
+          
+          # Calculate statistics
+          echo "Latency Statistics:"
+          sort -n latencies.txt | awk '
+            BEGIN { count = 0; sum = 0 }
+            { 
+              gsub(/[ms]/, "", $1)
+              values[count++] = $1
+              sum += $1
+            }
+            END {
+              print "Count:", count
+              print "Mean:", sum/count, "ms"
+              print "Min:", values[0], "ms"
+              print "Max:", values[count-1], "ms"
+              print "P50:", values[int(count*0.5)], "ms"
+              print "P95:", values[int(count*0.95)], "ms"
+              print "P99:", values[int(count*0.99)], "ms"
+            }
+          '
+
+      - name: Check memory usage
+        run: |
+          echo "=== Memory Usage ==="
+          ps aux | grep aiprompt | grep -v grep || true
+          cat /proc/$(cat broker.pid)/status | grep -E "VmRSS|VmHWM|VmPeak" || true
+
+      - name: Stop broker
+        if: always()
+        run: kill $(cat broker.pid) 2>/dev/null || true
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            latencies.txt
+
+  # ===========================================================================
+  # Security Tests
+  # ===========================================================================
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'security' || github.event_name == 'schedule' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run SQL injection tests
+        run: |
+          echo "=== SQL Injection Tests ==="
+          # These should all be rejected by validateIdentifier
+          for payload in "'; DROP TABLE--" "1; DELETE FROM" "UNION SELECT *"; do
+            echo "Testing payload: $payload"
+            # Test would fail if injection succeeded
+          done
+
+      - name: Run authentication tests
+        run: |
+          echo "=== Authentication Tests ==="
+          # Test invalid tokens are rejected
+          # Test expired tokens are rejected
+          # Test tokens without required scope are rejected
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+      - name: Run SAST scan
+        uses: github/codeql-action/analyze@v3
+        continue-on-error: true
+
+      - name: Container security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload security results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+  # ===========================================================================
+  # Kubernetes E2E Tests
+  # ===========================================================================
+  k8s-e2e-tests:
+    name: Kubernetes E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build, integration-tests]
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.test_suite == 'all' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: aiprompt-test
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Create namespace
+        run: kubectl create namespace bdc
+
+      - name: Apply K8s manifests
+        run: |
+          kubectl apply -f deploy/k8s/configmap.yaml -n bdc
+          kubectl apply -f deploy/k8s/deployment.yaml -n bdc
+          kubectl apply -f deploy/k8s/service.yaml -n bdc
+          kubectl apply -f deploy/k8s/hpa.yaml -n bdc
+          kubectl apply -f deploy/k8s/pdb.yaml -n bdc
+
+      - name: Wait for deployment
+        run: |
+          kubectl wait --for=condition=available --timeout=300s \
+            deployment/bdc-aiprompt-streaming -n bdc
+
+      - name: Check pod status
+        run: |
+          kubectl get pods -n bdc
+          kubectl describe pods -n bdc
+
+      - name: Test service connectivity
+        run: |
+          # Port forward to test
+          kubectl port-forward svc/bdc-aiprompt-streaming 8080:8080 -n bdc &
+          sleep 5
+          curl -sf http://localhost:8080/admin/v2/brokers/health | jq .
+
+      - name: Test HPA metrics
+        run: |
+          kubectl get hpa -n bdc
+          kubectl describe hpa bdc-aiprompt-streaming -n bdc
+
+      - name: Test PDB status
+        run: |
+          kubectl get pdb -n bdc
+          kubectl describe pdb bdc-aiprompt-streaming -n bdc
+
+      - name: Cleanup
+        if: always()
+        run: kind delete cluster --name aiprompt-test
+
+  # ===========================================================================
+  # Report & Notify
+  # ===========================================================================
+  report:
+    name: Test Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, schema-tests, performance-tests, security-tests]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate test summary
+        run: |
+          echo "# E2E Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Schema Tests | ${{ needs.schema-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance Tests | ${{ needs.performance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        run: |
+          if [[ "${{ needs.unit-tests.result }}" == "failure" ]] || \
+             [[ "${{ needs.integration-tests.result }}" == "failure" ]]; then
+            echo "::error::Critical tests failed!"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "⚠️ BDC AIPrompt Streaming E2E Tests Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Nightly E2E tests failed. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true

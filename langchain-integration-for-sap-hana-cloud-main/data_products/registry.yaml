@@ -1,0 +1,33 @@
+# =============================================================================
+# LangChain HANA Cloud Integration - Data Product Registry (ODPS 4.1)
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "langchain-hana-catalog"
+  name: "LangChain HANA Cloud Data Product Catalog"
+  description: "Data products for LangChain integration with SAP HANA Cloud"
+
+products:
+  - ref: "hana_vector_store.yaml"
+
+# Global policies - HANA data is typically confidential
+globalPolicies:
+  defaultSecurityClass: "confidential"
+  defaultLLMRouting: "vllm-only"
+  auditEnabled: true
+  
+# LLM Backend Configuration
+llmBackends:
+  aicore:
+    endpoint: "http://localhost:9140/mcp"
+    models:
+      - "anthropic-claude"
+    forSecurityClass: ["public"]
+  
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+      - "mistral-7b"
+    forSecurityClass: ["internal", "confidential", "restricted"]

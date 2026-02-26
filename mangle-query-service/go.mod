@@ -5,6 +5,7 @@ go 1.24.0
 replace github.com/google/mangle => ../mangle-main
 
 require (
+	github.com/elastic/go-elasticsearch/v8 v8.19.3
 	github.com/google/mangle v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
@@ -16,7 +17,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.8.0 // indirect
-	github.com/elastic/go-elasticsearch/v8 v8.19.3 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

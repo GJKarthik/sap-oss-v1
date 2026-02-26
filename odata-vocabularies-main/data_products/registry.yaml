@@ -1,0 +1,33 @@
+# =============================================================================
+# OData Vocabularies - Data Product Registry (ODPS 4.1)
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "odata-vocabularies-catalog"
+  name: "OData Vocabularies Data Product Catalog"
+  description: "Data products for OData vocabulary annotations and metadata"
+
+products:
+  - ref: "odata_vocabulary_service.yaml"
+
+# Global policies - Vocabularies are public documentation
+globalPolicies:
+  defaultSecurityClass: "public"
+  defaultLLMRouting: "aicore-ok"
+  auditEnabled: true
+  
+# LLM Backend Configuration
+llmBackends:
+  aicore:
+    endpoint: "http://localhost:9150/mcp"
+    models:
+      - "anthropic-claude"
+      - "azure-openai"
+    forSecurityClass: ["public", "internal"]
+  
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+    forSecurityClass: ["confidential", "restricted"]

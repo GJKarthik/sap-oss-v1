@@ -28,7 +28,7 @@ describe("E2E Error Response Format", () => {
     BASE = "http://localhost:" + server.address().port;
   });
 
-  afterAll((done) => server.close(done));
+  afterAll((done) => { server.close(done); });
 
   async function post(path, body) {
     const res = await fetch(BASE + path, {

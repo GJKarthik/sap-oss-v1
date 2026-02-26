@@ -1,0 +1,119 @@
+# ============================================================================
+# AI Core Streaming - Agent Domain Rules
+# Integrates with regulations/mangle for governance
+# ============================================================================
+
+# Import regulations knowledge base
+include "../../../regulations/mangle/rules.mg".
+
+# Import ODPS-generated data product rules
+include "data_products.mg".
+
+# =============================================================================
+# AGENT CONFIGURATION - External AI Core Backend
+# =============================================================================
+
+agent_config("aicore-streaming-agent", "autonomy_level", "L2").
+agent_config("aicore-streaming-agent", "service_name", "aicore-streaming").
+agent_config("aicore-streaming-agent", "mcp_endpoint", "http://localhost:9190/mcp").
+agent_config("aicore-streaming-agent", "default_backend", "aicore").
+
+# =============================================================================
+# TOOL PERMISSIONS
+# =============================================================================
+
+agent_can_use("aicore-streaming-agent", "stream_complete").
+agent_can_use("aicore-streaming-agent", "batch_complete").
+agent_can_use("aicore-streaming-agent", "health_check").
+agent_can_use("aicore-streaming-agent", "list_models").
+agent_can_use("aicore-streaming-agent", "mangle_query").
+
+agent_requires_approval("aicore-streaming-agent", "change_config").
+agent_requires_approval("aicore-streaming-agent", "update_credentials").
+
+# =============================================================================
+# ROUTING RULES - Security class based
+# =============================================================================
+
+# AI Core for public data
+route_to_aicore(Request) :-
+    is_public_request(Request).
+
+route_to_aicore(Request) :-
+    is_internal_request(Request).
+
+# vLLM for confidential data
+route_to_vllm(Request) :-
+    is_confidential_request(Request).
+
+# Block restricted data entirely
+block_request(Request) :-
+    is_restricted_request(Request).
+
+# Request classification
+is_public_request(Request) :-
+    not contains_internal_data(Request),
+    not contains_confidential_data(Request).
+
+is_internal_request(Request) :-
+    contains_internal_data(Request),
+    not contains_confidential_data(Request).
+
+is_confidential_request(Request) :-
+    contains_confidential_data(Request).
+
+is_restricted_request(Request) :-
+    contains_restricted_data(Request).
+
+# Data classification
+contains_internal_data(Request) :-
+    fn:contains(fn:lower(Request), "internal").
+
+contains_confidential_data(Request) :-
+    fn:contains(fn:lower(Request), "confidential").
+
+contains_confidential_data(Request) :-
+    fn:contains(fn:lower(Request), "customer").
+
+contains_confidential_data(Request) :-
+    fn:contains(fn:lower(Request), "personal").
+
+contains_restricted_data(Request) :-
+    fn:contains(fn:lower(Request), "restricted").
+
+contains_restricted_data(Request) :-
+    fn:contains(fn:lower(Request), "classified").
+
+# =============================================================================
+# GOVERNANCE RULES
+# =============================================================================
+
+requires_human_review(Action) :-
+    agent_requires_approval("aicore-streaming-agent", Action).
+
+# =============================================================================
+# SAFETY CONTROLS
+# =============================================================================
+
+safety_check_passed(Tool) :-
+    agent_can_use("aicore-streaming-agent", Tool).
+
+guardrails_active("stream_complete").
+guardrails_active("batch_complete").
+
+# =============================================================================
+# AUTONOMY LEVEL RULES
+# =============================================================================
+
+autonomy_allows(Action) :-
+    agent_config("aicore-streaming-agent", "autonomy_level", "L2"),
+    not agent_requires_approval("aicore-streaming-agent", Action).
+
+# =============================================================================
+# AUDIT REQUIREMENTS
+# =============================================================================
+
+requires_audit("aicore-streaming-agent", Action) :-
+    agent_can_use("aicore-streaming-agent", Action).
+
+audit_level("aicore-streaming-agent", "standard").

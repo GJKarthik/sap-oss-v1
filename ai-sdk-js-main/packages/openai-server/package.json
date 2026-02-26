@@ -1,0 +1,43 @@
+{
+  "name": "@sap-ai-sdk/openai-server",
+  "version": "1.0.0",
+  "description": "OpenAI-compatible HTTP server that proxies to SAP AI Core",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "sap-openai-server": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "ts-node src/cli.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "sap",
+    "ai-core",
+    "openai",
+    "api",
+    "server",
+    "proxy",
+    "llm",
+    "claude",
+    "anthropic"
+  ],
+  "author": "SAP",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}

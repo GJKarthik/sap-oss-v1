@@ -1,0 +1,250 @@
+# =============================================================================
+# SAP OSS Service Mesh - Central Service Registry
+# OpenAI-Compatible API Gateway with Governance-Based Routing
+# =============================================================================
+
+version: "1.0.0"
+mesh:
+  id: "sap-oss-mesh"
+  name: "SAP OSS Service Mesh"
+  description: "Central registry for all 12 SAP OSS AI services with OpenAI-compatible APIs"
+  
+  # OpenAI-Compatible API Endpoints
+  api:
+    version: "v1"
+    base_url: "http://localhost:9190"
+    endpoints:
+      - path: "/v1/chat/completions"
+        method: "POST"
+        description: "OpenAI-compatible chat completions"
+      - path: "/v1/completions"
+        method: "POST"
+        description: "OpenAI-compatible text completions"
+      - path: "/v1/embeddings"
+        method: "POST"
+        description: "OpenAI-compatible embeddings"
+      - path: "/v1/models"
+        method: "GET"
+        description: "List available models"
+
+# =============================================================================
+# REGISTERED SERVICES
+# =============================================================================
+
+services:
+  # Infrastructure Backends
+  - id: "vllm"
+    name: "vLLM On-Premise"
+    type: "llm-backend"
+    endpoint: "http://localhost:9180"
+    mcp_endpoint: "http://localhost:9180/mcp"
+    health_check: "http://localhost:9180/health"
+    security_class: "restricted"
+    routing: "local-only"
+    capabilities:
+      - "chat-completions"
+      - "completions"
+      - "embeddings"
+    models:
+      - "llama-3.1-70b"
+      - "codellama-34b"
+      - "mistral-7b"
+    
+  - id: "ai-core-streaming"
+    name: "AI Core Streaming"
+    type: "llm-backend"
+    endpoint: "http://localhost:9190"
+    mcp_endpoint: "http://localhost:9190/mcp"
+    health_check: "http://localhost:9190/health"
+    security_class: "public"
+    routing: "external"
+    capabilities:
+      - "chat-completions"
+      - "completions"
+      - "streaming"
+    models:
+      - "gpt-4"
+      - "gpt-4-turbo"
+      - "claude-3-sonnet"
+      - "anthropic-claude-3"
+
+  # SAP AI Services
+  - id: "ai-sdk-js"
+    name: "SAP AI SDK for JavaScript"
+    type: "sdk"
+    endpoint: "http://localhost:8080"
+    mcp_endpoint: "http://localhost:8080/mcp"
+    health_check: "http://localhost:8080/health"
+    security_class: "internal"
+    routing: "hybrid"
+    capabilities:
+      - "ai-core-integration"
+      - "foundation-models"
+      - "orchestration"
+
+  - id: "cap-llm-plugin"
+    name: "CAP LLM Plugin"
+    type: "framework-plugin"
+    endpoint: "http://localhost:8081"
+    mcp_endpoint: "http://localhost:8081/mcp"
+    health_check: "http://localhost:8081/health"
+    security_class: "internal"
+    routing: "hybrid"
+    capabilities:
+      - "cap-integration"
+      - "cds-entities"
+      - "chat-completions"
+
+  - id: "langchain-hana"
+    name: "LangChain HANA Integration"
+    type: "vector-store"
+    endpoint: "http://localhost:8082"
+    mcp_endpoint: "http://localhost:8082/mcp"
+    health_check: "http://localhost:8082/health"
+    security_class: "confidential"
+    routing: "schema-based"
+    capabilities:
+      - "vector-search"
+      - "embeddings"
+      - "similarity-search"
+
+  - id: "gen-ai-toolkit-hana"
+    name: "Gen AI Toolkit for HANA"
+    type: "ai-toolkit"
+    endpoint: "http://localhost:8083"
+    mcp_endpoint: "http://localhost:8083/mcp"
+    health_check: "http://localhost:8083/health"
+    security_class: "confidential"
+    routing: "vllm-only"
+    capabilities:
+      - "hana-ml"
+      - "rag"
+      - "agents"
+
+  - id: "ai-core-pal"
+    name: "AI Core PAL"
+    type: "ml-analytics"
+    endpoint: "http://localhost:8084"
+    mcp_endpoint: "http://localhost:8084/mcp"
+    health_check: "http://localhost:8084/health"
+    security_class: "confidential"
+    routing: "vllm-only"
+    capabilities:
+      - "classification"
+      - "regression"
+      - "clustering"
+      - "forecasting"
+      - "anomaly-detection"
+
+  - id: "data-cleaning-copilot"
+    name: "Data Cleaning Copilot"
+    type: "data-processing"
+    endpoint: "http://localhost:8085"
+    mcp_endpoint: "http://localhost:8085/mcp"
+    health_check: "http://localhost:8085/health"
+    security_class: "confidential"
+    routing: "vllm-only"
+    capabilities:
+      - "data-profiling"
+      - "data-cleaning"
+      - "pii-detection"
+
+  - id: "elasticsearch"
+    name: "Elasticsearch Integration"
+    type: "search"
+    endpoint: "http://localhost:8086"
+    mcp_endpoint: "http://localhost:8086/mcp"
+    health_check: "http://localhost:8086/health"
+    security_class: "internal"
+    routing: "index-based"
+    capabilities:
+      - "full-text-search"
+      - "vector-search"
+      - "analytics"
+
+  - id: "odata-vocabularies"
+    name: "OData Vocabularies"
+    type: "metadata"
+    endpoint: "http://localhost:8087"
+    mcp_endpoint: "http://localhost:8087/mcp"
+    health_check: "http://localhost:8087/health"
+    security_class: "public"
+    routing: "aicore-default"
+    capabilities:
+      - "vocabulary-lookup"
+      - "annotation-generation"
+
+  - id: "ui5-webcomponents-ngx"
+    name: "UI5 Web Components Angular"
+    type: "frontend"
+    endpoint: "http://localhost:8088"
+    mcp_endpoint: "http://localhost:8088/mcp"
+    health_check: "http://localhost:8088/health"
+    security_class: "public"
+    routing: "aicore-default"
+    capabilities:
+      - "component-generation"
+      - "ui-assistance"
+
+  - id: "world-monitor"
+    name: "World Monitor"
+    type: "external-data"
+    endpoint: "http://localhost:8089"
+    mcp_endpoint: "http://localhost:8089/mcp"
+    health_check: "http://localhost:8089/health"
+    security_class: "public"
+    routing: "content-based"
+    capabilities:
+      - "news-monitoring"
+      - "event-detection"
+
+# =============================================================================
+# ROUTING POLICIES
+# =============================================================================
+
+routing:
+  default_backend: "ai-core-streaming"
+  confidential_backend: "vllm"
+  
+  rules:
+    - name: "public-to-aicore"
+      condition: "security_class == 'public'"
+      backend: "ai-core-streaming"
+      
+    - name: "internal-to-aicore"
+      condition: "security_class == 'internal'"
+      backend: "ai-core-streaming"
+      
+    - name: "confidential-to-vllm"
+      condition: "security_class == 'confidential'"
+      backend: "vllm"
+      
+    - name: "restricted-to-vllm"
+      condition: "security_class == 'restricted'"
+      backend: "vllm"
+      
+    - name: "restricted-block-external"
+      condition: "security_class == 'restricted' && request.routing == 'external'"
+      action: "block"
+
+# =============================================================================
+# GOVERNANCE
+# =============================================================================
+
+governance:
+  frameworks:
+    - "MGF-Agentic-AI"
+    - "AI-Agent-Index"
+    - "GDPR-Data-Processing"
+  
+  autonomy_levels:
+    L1: "Lowest - Human approval for all actions"
+    L2: "Standard - Human approval for sensitive actions"
+    L3: "Higher - Autonomous with monitoring"
+    L4: "Highest - Full autonomy"
+  
+  audit:
+    enabled: true
+    log_requests: true
+    log_responses: false
+    retention_days: 90

@@ -41,3 +41,9 @@ export {
 
 // ── Error response types ─────────────────────────────────────────────
 export type { LLMErrorDetail, LLMErrorResponse } from "./errors";
+
+// ── Telemetry ────────────────────────────────────────────────────────
+export { getTracer, SpanStatusCode, _resetTracerCache } from "./telemetry/tracer";
+export type { PluginSpan, PluginTracer, SpanStatusCodeValue } from "./telemetry/tracer";
+export { createOtelMiddleware } from "./telemetry/ai-sdk-middleware";
+export type { OtelMiddlewareOptions, AiSdkMiddleware } from "./telemetry/ai-sdk-middleware";

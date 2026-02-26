@@ -1,0 +1,15 @@
+{
+  "name": "mesh-gateway",
+  "executableId": "mesh-gateway-exec",
+  "scenarioId": "mesh-gateway",
+  "versionId": "1.0.0",
+  "description": "MCP Mesh Gateway with LLM enhancement via llama SDK",
+  "labels": [
+    {"key": "ai.sap.com/version", "value": "1.0.0"},
+    {"key": "scenarios.ai.sap.com/id", "value": "mesh-gateway"}
+  ],
+  "resourcePlans": [
+    {"id": "starter", "cpu": "2", "memory": "4Gi", "gpuType": "", "gpu": ""},
+    {"id": "infer.s", "cpu": "4", "memory": "8Gi", "gpuType": "nvidia-t4", "gpu": "1"}
+  ]
+}

@@ -322,11 +322,21 @@ async function testAICore() {
   // Test embedding (if deployment configured)
   if (AICORE_EMBEDDING_DEPLOYMENT_ID && !AICORE_EMBEDDING_DEPLOYMENT_ID.includes('xxx')) {
     await test('AI Core: Generate embedding', async () => {
-      const result = await aiCoreRequest('POST', `/v2/inference/deployments/${AICORE_EMBEDDING_DEPLOYMENT_ID}/embeddings`, {
-        input: 'Hello, world!'
-      });
-      if (result.data && result.data[0] && result.data[0].embedding) {
-        log(`   Embedding dimensions: ${result.data[0].embedding.length}`);
+      // Try text-embedding-ada-002 style first
+      try {
+        const result = await aiCoreRequest('POST', `/v2/inference/deployments/${AICORE_EMBEDDING_DEPLOYMENT_ID}/embeddings`, {
+          input: 'Hello, world!'
+        });
+        if (result.data && result.data[0] && result.data[0].embedding) {
+          log(`   Embedding dimensions: ${result.data[0].embedding.length}`);
+          return;
+        }
+      } catch (e) {
+        // Try alternative format
+        const result = await aiCoreRequest('POST', `/v2/inference/deployments/${AICORE_EMBEDDING_DEPLOYMENT_ID}/invoke`, {
+          input: 'Hello, world!'
+        });
+        log(`   Response: ${JSON.stringify(result).slice(0, 100)}...`);
       }
     });
   } else {
@@ -335,15 +345,38 @@ async function testAICore() {
 
   // Test chat (if deployment configured)
   if (AICORE_CHAT_DEPLOYMENT_ID && !AICORE_CHAT_DEPLOYMENT_ID.includes('xxx')) {
+    // Check if it's an Anthropic model
+    const isAnthropic = deployments.some(d => 
+      d.id === AICORE_CHAT_DEPLOYMENT_ID && 
+      (d.details?.resources?.backend_details?.model?.name || '').includes('anthropic')
+    );
+
     await test('AI Core: Chat completion', async () => {
-      const result = await aiCoreRequest('POST', `/v2/inference/deployments/${AICORE_CHAT_DEPLOYMENT_ID}/chat/completions`, {
-        messages: [
-          { role: 'user', content: 'Say hello in 3 words.' }
-        ],
-        max_tokens: 50
-      });
-      if (result.choices && result.choices[0]) {
-        log(`   Response: ${result.choices[0].message.content.slice(0, 50)}...`);
+      if (isAnthropic) {
+        // Anthropic Claude format
+        const result = await aiCoreRequest('POST', `/v2/inference/deployments/${AICORE_CHAT_DEPLOYMENT_ID}/invoke`, {
+          anthropic_version: "bedrock-2023-05-31",
+          max_tokens: 50,
+          messages: [
+            { role: 'user', content: 'Say hello in 3 words.' }
+          ]
+        });
+        if (result.content && result.content[0]) {
+          log(`   Response: ${result.content[0].text.slice(0, 50)}...`);
+        } else {
+          log(`   Response: ${JSON.stringify(result).slice(0, 100)}`);
+        }
+      } else {
+        // OpenAI format
+        const result = await aiCoreRequest('POST', `/v2/inference/deployments/${AICORE_CHAT_DEPLOYMENT_ID}/chat/completions`, {
+          messages: [
+            { role: 'user', content: 'Say hello in 3 words.' }
+          ],
+          max_tokens: 50
+        });
+        if (result.choices && result.choices[0]) {
+          log(`   Response: ${result.choices[0].message.content.slice(0, 50)}...`);
+        }
       }
     });
   } else {

@@ -1,0 +1,33 @@
+# =============================================================================
+# Elasticsearch - Data Product Registry (ODPS 4.1)
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "elasticsearch-catalog"
+  name: "Elasticsearch Data Product Catalog"
+  description: "Data products for Elasticsearch search and analytics"
+
+products:
+  - ref: "elasticsearch_search_service.yaml"
+
+# Global policies - Search indices contain business data
+globalPolicies:
+  defaultSecurityClass: "confidential"
+  defaultLLMRouting: "hybrid"
+  auditEnabled: true
+  
+# LLM Backend Configuration
+llmBackends:
+  aicore:
+    endpoint: "http://localhost:9120/mcp"
+    models:
+      - "anthropic-claude"
+    forSecurityClass: ["public"]
+  
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+      - "codellama-34b"
+    forSecurityClass: ["internal", "confidential", "restricted"]

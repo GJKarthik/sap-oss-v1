@@ -1,0 +1,103 @@
+# =============================================================================
+# OData Vocabulary Service Data Product (ODPS 4.1)
+# =============================================================================
+
+dataProduct:
+  id: "odata-vocabulary-service-v1"
+  version: "1.0.0"
+  name: "OData Vocabulary Service Data Product"
+  description: "OData vocabulary annotations, terms, and metadata documentation"
+  
+  # ODPS 4.1 Standard Fields - Vocabularies are public specs
+  dataSecurityClass: "public"
+  dataGovernanceClass: "documentation"
+  
+  # Data Owner
+  owner:
+    name: "API Standards Team"
+    team: "Enterprise Architecture"
+    contact: "api-standards@company.com"
+  
+  # Extension: LLM Routing Policy - AI Core OK for public docs
+  x-llm-policy:
+    routing: "aicore-ok"
+    defaultBackend: "aicore"
+    auditLevel: "basic"
+    retentionPolicy: "standard"
+    
+    routingRules:
+      - condition: "vocabulary_query"
+        backend: "aicore"
+        reason: "Vocabulary definitions are public documentation"
+      - condition: "annotation_help"
+        backend: "aicore"
+        reason: "Annotation assistance uses public specs"
+      - condition: "entity_data_example"
+        backend: "vllm"
+        reason: "Examples with actual data must stay on-premise"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are an OData vocabulary expert assistant.
+      Help users understand OData annotations, terms, and vocabulary usage.
+      Provide examples and best practices for OData API design.
+      Reference SAP vocabulary extensions when appropriate.
+    maxTokens: 2048
+    temperature: 0.5
+    responseFormat: "text"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+    autonomyLevel: "L3"
+    requiresHumanOversight: false
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+  
+  # Output Ports
+  outputPort:
+    - id: "vocabulary-lookup"
+      name: "Vocabulary Lookup API"
+      description: "Look up OData vocabulary terms and definitions"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+    
+    - id: "annotation-generator"
+      name: "Annotation Generator API"
+      description: "Generate OData annotations for entities"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+    
+    - id: "validation"
+      name: "Annotation Validation API"
+      description: "Validate OData annotations against vocabularies"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Input Ports
+  inputPort:
+    - id: "csdl-schema"
+      name: "CSDL Schema Input"
+      description: "OData CSDL schema definitions"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "hybrid"
+    
+    - id: "vocabulary-files"
+      name: "Vocabulary Files"
+      description: "OData vocabulary XML files"
+      dataSecurityClass: "public"
+      x-llm-policy:
+        routing: "aicore-ok"
+  
+  # Quality Metrics
+  quality:
+    availability: "99.9%"
+    latencyP95: "1000ms"
+    throughput: "500 req/min"

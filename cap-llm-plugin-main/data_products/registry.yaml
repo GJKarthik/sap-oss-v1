@@ -1,0 +1,34 @@
+# =============================================================================
+# CAP LLM Plugin - Data Product Registry (ODPS 4.1)
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "cap-llm-plugin-catalog"
+  name: "CAP LLM Plugin Data Product Catalog"
+  description: "Data products for CAP application LLM integration"
+
+products:
+  - ref: "cap_llm_service.yaml"
+
+# Global policies
+globalPolicies:
+  defaultSecurityClass: "internal"
+  defaultLLMRouting: "hybrid"
+  auditEnabled: true
+  
+# LLM Backend Configuration
+llmBackends:
+  aicore:
+    endpoint: "http://localhost:9100/mcp"
+    models:
+      - "anthropic-claude"
+      - "azure-openai"
+    forSecurityClass: ["public", "internal"]
+  
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+      - "mistral-7b"
+    forSecurityClass: ["confidential", "restricted"]

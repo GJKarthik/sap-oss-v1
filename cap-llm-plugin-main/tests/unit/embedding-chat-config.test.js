@@ -103,8 +103,11 @@ describe("getEmbeddingWithConfig", () => {
       const ctorArgs = MockOrchestrationEmbeddingClient.mock.calls[0];
       expect(ctorArgs[0]).toEqual({ embeddings: { model: { name: "text-embedding-ada-002" } } });
       expect(ctorArgs[1]).toEqual({ resourceGroup: "default" });
-      // Verify embed was called with input
-      expect(mockEmbed).toHaveBeenCalledWith({ input: "Hello world" });
+      // Verify embed was called with input (second arg is OTel middleware requestConfig)
+      expect(mockEmbed).toHaveBeenCalledWith(
+        { input: "Hello world" },
+        expect.objectContaining({ middleware: expect.any(Array) })
+      );
     });
 
     test("works with text-embedding-3-small model", async () => {
@@ -137,7 +140,10 @@ describe("getEmbeddingWithConfig", () => {
       const plugin = createPlugin();
       await plugin.getEmbeddingWithConfig(VALID_GPT_EMBEDDING_CONFIG, ["text1", "text2"]);
 
-      expect(mockEmbed).toHaveBeenCalledWith({ input: ["text1", "text2"] });
+      expect(mockEmbed).toHaveBeenCalledWith(
+        { input: ["text1", "text2"] },
+        expect.objectContaining({ middleware: expect.any(Array) })
+      );
     });
 
     test("does not call CDS destination (SDK handles connectivity)", async () => {
@@ -242,10 +248,11 @@ describe("getChatCompletionWithConfig", () => {
         promptTemplating: { model: { name: "gpt-4o" } },
       });
       expect(ctorArgs[1]).toEqual({ resourceGroup: "default" });
-      // Verify chatCompletion was called with messages
-      expect(mockChatCompletion).toHaveBeenCalledWith({
-        messages: [{ role: "user", content: "Hello" }],
-      });
+      // Verify chatCompletion was called with messages (second arg is OTel middleware requestConfig)
+      expect(mockChatCompletion).toHaveBeenCalledWith(
+        { messages: [{ role: "user", content: "Hello" }] },
+        expect.objectContaining({ middleware: expect.any(Array) })
+      );
     });
 
     test("works with gpt-4 model", async () => {
@@ -300,7 +307,10 @@ describe("getChatCompletionWithConfig", () => {
       const plugin = createPlugin();
       await plugin.getChatCompletionWithConfig(VALID_GPT_CHAT_CONFIG, {});
 
-      expect(mockChatCompletion).toHaveBeenCalledWith({ messages: [] });
+      expect(mockChatCompletion).toHaveBeenCalledWith(
+        { messages: [] },
+        expect.objectContaining({ middleware: expect.any(Array) })
+      );
     });
   });
 

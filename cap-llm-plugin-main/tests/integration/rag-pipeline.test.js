@@ -149,7 +149,10 @@ describe("RAG pipeline integration", () => {
       expect(MockOrchestrationEmbeddingClient.mock.calls[0][0]).toEqual({
         embeddings: { model: { name: "text-embedding-ada-002" } },
       });
-      expect(mockEmbed).toHaveBeenCalledWith({ input: "What is SAP HANA?" });
+      expect(mockEmbed).toHaveBeenCalledWith(
+        { input: "What is SAP HANA?" },
+        expect.objectContaining({ middleware: expect.any(Array) })
+      );
     });
 
     test("similarity search SQL uses embedding vector from SDK response", async () => {

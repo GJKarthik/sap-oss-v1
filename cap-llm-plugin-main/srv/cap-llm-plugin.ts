@@ -5,6 +5,8 @@ import * as legacy from "./legacy";
 import { AnonymizationError } from "../src/errors/AnonymizationError";
 import { EmbeddingError } from "../src/errors/EmbeddingError";
 import { ChatCompletionError } from "../src/errors/ChatCompletionError";
+import { getTracer, SpanStatusCode } from "../src/telemetry/tracer";
+import { createOtelMiddleware } from "../src/telemetry/ai-sdk-middleware";
 
 const LOG = (cds as any).log("cap-llm-plugin") as {
   debug: (...args: unknown[]) => void;
@@ -124,6 +126,10 @@ class CAPLLMPlugin extends cds.Service {
    * ```
    */
   async getAnonymizedData(entityName: string, sequenceIds: (string | number)[] = []): Promise<unknown> {
+    const span = getTracer().startSpan("cap-llm-plugin.getAnonymizedData");
+    span.setAttribute("anonymization.entity", entityName);
+    span.setAttribute("anonymization.sequence_id_count", sequenceIds.length);
+
     try {
       let [entityService, serviceEntity] = entityName.split(".");
       const entity = (cds as any)?.services?.[entityService]?.entities?.[serviceEntity];
@@ -175,13 +181,20 @@ class CAPLLMPlugin extends cds.Service {
       }
 
       const query = `SELECT * FROM "${viewName}"`;
-      return await cds.db.run(query);
+      const result = await cds.db.run(query);
+      span.addEvent("anonymized_data_fetched");
+      span.setStatus({ code: SpanStatusCode.OK });
+      return result;
     } catch (e) {
       LOG.error(
         `Retrieving anonymized data from SAP HANA Cloud failed. Ensure that the entityName passed exactly matches the format "<service_name>.<entity_name>". Error: `,
         e
       );
+      span.recordException(e as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (e as Error).message });
       throw e;
+    } finally {
+      span.end();
     }
   }
 
@@ -213,19 +226,23 @@ class CAPLLMPlugin extends cds.Service {
    * ```
    */
   async getEmbeddingWithConfig(config: EmbeddingConfig, input: unknown): Promise<unknown> {
-    // Validate mandatory config params needed by the SDK
-    if (!config?.modelName) {
-      throw new EmbeddingError(`The config is missing the parameter: "modelName".`, "EMBEDDING_CONFIG_INVALID", {
-        missingField: "modelName",
-      });
-    }
-    if (!config?.resourceGroup) {
-      throw new EmbeddingError(`The config is missing the parameter: "resourceGroup".`, "EMBEDDING_CONFIG_INVALID", {
-        missingField: "resourceGroup",
-      });
-    }
+    const span = getTracer().startSpan("cap-llm-plugin.getEmbeddingWithConfig");
+    span.setAttribute("llm.embedding.model", config?.modelName ?? "");
+    span.setAttribute("llm.resource_group", config?.resourceGroup ?? "");
 
     try {
+      // Validate mandatory config params needed by the SDK
+      if (!config?.modelName) {
+        throw new EmbeddingError(`The config is missing the parameter: "modelName".`, "EMBEDDING_CONFIG_INVALID", {
+          missingField: "modelName",
+        });
+      }
+      if (!config?.resourceGroup) {
+        throw new EmbeddingError(`The config is missing the parameter: "resourceGroup".`, "EMBEDDING_CONFIG_INVALID", {
+          missingField: "resourceGroup",
+        });
+      }
+
       const { OrchestrationEmbeddingClient } = await import("@sap-ai-sdk/orchestration");
 
       const client = new OrchestrationEmbeddingClient(
@@ -233,15 +250,32 @@ class CAPLLMPlugin extends cds.Service {
         { resourceGroup: config.resourceGroup }
       );
 
-      const response = await client.embed({ input: input as string | string[] });
+      const response = await client.embed(
+        { input: input as string | string[] },
+        {
+          middleware: [
+            createOtelMiddleware({
+              endpoint: "/embeddings",
+              resourceGroup: config.resourceGroup,
+            }),
+          ],
+        }
+      );
+      span.addEvent("embedding_response_received");
+      span.setStatus({ code: SpanStatusCode.OK });
       return response;
     } catch (e) {
+      span.recordException(e as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (e as Error).message });
       if (e instanceof EmbeddingError) throw e;
       throw new EmbeddingError(`Embedding request failed: ${(e as Error).message}`, "EMBEDDING_REQUEST_FAILED", {
         modelName: config.modelName,
         resourceGroup: config.resourceGroup,
+        ...(config.deploymentUrl ? { deploymentUrl: config.deploymentUrl } : {}),
         cause: (e as Error).message,
       });
+    } finally {
+      span.end();
     }
   }
 
@@ -263,19 +297,23 @@ class CAPLLMPlugin extends cds.Service {
    * ```
    */
   async getChatCompletionWithConfig(config: ChatConfig, payload: unknown): Promise<unknown> {
-    // Validate mandatory config params needed by the SDK
-    if (!config?.modelName) {
-      throw new ChatCompletionError(`The config is missing parameter: "modelName".`, "CHAT_CONFIG_INVALID", {
-        missingField: "modelName",
-      });
-    }
-    if (!config?.resourceGroup) {
-      throw new ChatCompletionError(`The config is missing parameter: "resourceGroup".`, "CHAT_CONFIG_INVALID", {
-        missingField: "resourceGroup",
-      });
-    }
+    const span = getTracer().startSpan("cap-llm-plugin.getChatCompletionWithConfig");
+    span.setAttribute("llm.chat.model", config?.modelName ?? "");
+    span.setAttribute("llm.resource_group", config?.resourceGroup ?? "");
 
     try {
+      // Validate mandatory config params needed by the SDK
+      if (!config?.modelName) {
+        throw new ChatCompletionError(`The config is missing parameter: "modelName".`, "CHAT_CONFIG_INVALID", {
+          missingField: "modelName",
+        });
+      }
+      if (!config?.resourceGroup) {
+        throw new ChatCompletionError(`The config is missing parameter: "resourceGroup".`, "CHAT_CONFIG_INVALID", {
+          missingField: "resourceGroup",
+        });
+      }
+
       const { OrchestrationClient } = await import("@sap-ai-sdk/orchestration");
 
       const client = new OrchestrationClient(
@@ -290,15 +328,36 @@ class CAPLLMPlugin extends cds.Service {
       const chatPayload = payload as Record<string, unknown>;
       const messages = (chatPayload?.messages as any[]) ?? []; // SDK expects ChatMessage[] — caller provides untyped payload
 
-      const response = await client.chatCompletion({ messages });
+      const response = await client.chatCompletion(
+        { messages },
+        {
+          middleware: [
+            createOtelMiddleware({
+              endpoint: "/chat/completions",
+              resourceGroup: config.resourceGroup,
+            }),
+          ],
+        }
+      );
+      span.addEvent("chat_completion_response_received");
+      span.setStatus({ code: SpanStatusCode.OK });
       return response;
     } catch (e) {
+      span.recordException(e as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (e as Error).message });
       if (e instanceof ChatCompletionError) throw e;
       throw new ChatCompletionError(
         `Chat completion request failed: ${(e as Error).message}`,
         "CHAT_COMPLETION_REQUEST_FAILED",
-        { modelName: config.modelName, resourceGroup: config.resourceGroup, cause: (e as Error).message }
+        {
+          modelName: config.modelName,
+          resourceGroup: config.resourceGroup,
+          ...(config.deploymentUrl ? { deploymentUrl: config.deploymentUrl } : {}),
+          cause: (e as Error).message,
+        }
       );
+    } finally {
+      span.end();
     }
   }
 
@@ -363,12 +422,21 @@ class CAPLLMPlugin extends cds.Service {
     algoName: string = "COSINE_SIMILARITY",
     chatParams?: Record<string, unknown>
   ): Promise<RagResponse> {
+    const span = getTracer().startSpan("cap-llm-plugin.getRagResponseWithConfig");
+    span.setAttribute("llm.embedding.model", embeddingConfig.modelName ?? "");
+    span.setAttribute("llm.chat.model", chatConfig.modelName ?? "");
+    span.setAttribute("db.hana.table", tableName);
+    span.setAttribute("db.hana.algo", algoName);
+    span.setAttribute("llm.rag.top_k", topK);
+
     try {
       //get the embeddings for the user query via SDK
       const embeddingResponse = (await this.getEmbeddingWithConfig(embeddingConfig, input)) as {
         getEmbeddings: () => Array<{ embedding: number[] }>;
       };
       const queryEmbedding: number[] = embeddingResponse.getEmbeddings()[0].embedding;
+
+      span.addEvent("embedding_generated", { "embedding.dimensions": queryEmbedding.length });
 
       //perform similarity search on the vector db
       const similaritySearchResults = await this.similaritySearch(
@@ -382,6 +450,10 @@ class CAPLLMPlugin extends cds.Service {
       const similarContent = (similaritySearchResults as SimilaritySearchResult[]).map(
         (obj: SimilaritySearchResult) => obj.PAGE_CONTENT
       );
+
+      span.addEvent("similarity_search_completed", {
+        "search.result_count": (similaritySearchResults as SimilaritySearchResult[]).length,
+      });
 
       //system prompt for the RagResponse.
       const systemPrompt = ` ${chatInstruction} \`\`\` ${similarContent} \`\`\` `;
@@ -401,17 +473,24 @@ class CAPLLMPlugin extends cds.Service {
       //retrieve the chat completion response via SDK
       const chatCompletionResp = await this.getChatCompletionWithConfig(chatConfig, { messages });
 
+      span.addEvent("chat_completion_received");
+
       //construct the final response payload
       const ragResponse: RagResponse = {
         completion: chatCompletionResp, //complete response from chat completion model
         additionalContents: similaritySearchResults as SimilaritySearchResult[], //complete similarity search results
       };
 
+      span.setStatus({ code: SpanStatusCode.OK });
       return ragResponse;
     } catch (error) {
       // Handle any errors that occur during the execution
       LOG.error("Error while retrieving RAG response:", error);
+      span.recordException(error as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
       throw error;
+    } finally {
+      span.end();
     }
   }
 
@@ -481,6 +560,12 @@ class CAPLLMPlugin extends cds.Service {
     algoName: string,
     topK: number
   ): Promise<SimilaritySearchResult[] | undefined> {
+    const span = getTracer().startSpan("cap-llm-plugin.similaritySearch");
+    span.setAttribute("db.hana.table", tableName);
+    span.setAttribute("db.hana.algo", algoName);
+    span.setAttribute("db.hana.top_k", topK);
+    span.setAttribute("db.hana.embedding_dims", embedding?.length ?? 0);
+
     try {
       // Validate all inputs before constructing SQL
       validateSqlIdentifier(tableName, "tableName");
@@ -509,14 +594,23 @@ class CAPLLMPlugin extends cds.Service {
       const selectStmt = `SELECT TOP ${Number(topK)} *,TO_NVARCHAR("${contentColumn}") as PAGE_CONTENT,${algoName}("${embeddingColumnName}", TO_REAL_VECTOR(${embeddingStr})) as SCORE FROM "${tableName}" ORDER BY SCORE ${sortDirection}`;
       const db = (await cds.connect.to("db")) as any;
       const result = await db.run(selectStmt);
-      if (result) return result;
+      if (result) {
+        span.addEvent("similarity_search_completed", { "search.result_count": result.length });
+        span.setStatus({ code: SpanStatusCode.OK });
+        return result;
+      }
+      span.setStatus({ code: SpanStatusCode.OK });
     } catch (e) {
+      span.recordException(e as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (e as Error).message });
       if (e instanceof InvalidSimilaritySearchAlgoNameError) {
         throw e;
       } else {
         LOG.error(`Similarity Search failed for entity ${tableName} on attribute ${embeddingColumnName}`, e);
         throw e;
       }
+    } finally {
+      span.end();
     }
   }
 
@@ -553,6 +647,11 @@ class CAPLLMPlugin extends cds.Service {
     getTokenUsage = false,
     getFinishReason = false,
   }: HarmonizedChatCompletionParams): Promise<unknown> {
+    const span = getTracer().startSpan("cap-llm-plugin.getHarmonizedChatCompletion");
+    span.setAttribute("llm.harmonized.get_content", getContent);
+    span.setAttribute("llm.harmonized.get_token_usage", getTokenUsage);
+    span.setAttribute("llm.harmonized.get_finish_reason", getFinishReason);
+
     try {
       const { OrchestrationClient } = await import("@sap-ai-sdk/orchestration");
 
@@ -561,6 +660,9 @@ class CAPLLMPlugin extends cds.Service {
 
       // Call the chatCompletion method with the provided chat completion configuration
       const response = await orchestrationClient.chatCompletion(chatCompletionConfig as any);
+
+      span.addEvent("harmonized_chat_completion_received");
+      span.setStatus({ code: SpanStatusCode.OK });
 
       // Extract the desired content from the response based on the flags
       switch (true) {
@@ -574,12 +676,16 @@ class CAPLLMPlugin extends cds.Service {
           return response;
       }
     } catch (e) {
+      span.recordException(e as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (e as Error).message });
       if (e instanceof ChatCompletionError) throw e;
       throw new ChatCompletionError(
         `Harmonized chat completion failed: ${(e as Error).message}`,
         "HARMONIZED_CHAT_FAILED",
         { cause: (e as Error).message }
       );
+    } finally {
+      span.end();
     }
   }
 
@@ -603,25 +709,39 @@ class CAPLLMPlugin extends cds.Service {
    */
 
   async getContentFilters({ type, config }: ContentFilterParams): Promise<unknown> {
+    const span = getTracer().startSpan("cap-llm-plugin.getContentFilters");
+    span.setAttribute("content_filter.type", type);
+
     // If the 'type' is not 'azure', throw an error with a helpful message
     if (type.toLowerCase() !== "azure") {
-      throw new ChatCompletionError(
+      const err = new ChatCompletionError(
         `Unsupported type ${type}. The currently supported type is 'azure'.`,
         "UNSUPPORTED_FILTER_TYPE",
         { type, supportedTypes: ["azure"] }
       );
+      span.recordException(err);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      span.end();
+      throw err;
     }
 
     try {
       const { buildAzureContentSafetyFilter } = await import("@sap-ai-sdk/orchestration");
-      return buildAzureContentSafetyFilter(config as any);
+      const result = buildAzureContentSafetyFilter(config as any);
+      span.addEvent("content_filter_built");
+      span.setStatus({ code: SpanStatusCode.OK });
+      return result;
     } catch (e) {
+      span.recordException(e as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: (e as Error).message });
       if (e instanceof ChatCompletionError) throw e;
       throw new ChatCompletionError(
         `Content filter construction failed: ${(e as Error).message}`,
         "CONTENT_FILTER_FAILED",
         { type, cause: (e as Error).message }
       );
+    } finally {
+      span.end();
     }
   }
 }

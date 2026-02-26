@@ -1,0 +1,104 @@
+# =============================================================================
+# Data Cleaning Service Data Product (ODPS 4.1)
+# =============================================================================
+
+dataProduct:
+  id: "data-cleaning-service-v1"
+  version: "1.0.0"
+  name: "Data Cleaning Service Data Product"
+  description: "AI-assisted data cleaning, validation, and transformation service"
+  
+  # ODPS 4.1 Standard Fields - Default to confidential since we process raw data
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "data-processing"
+  
+  # Data Owner
+  owner:
+    name: "Data Engineering Team"
+    team: "Data Platform"
+    contact: "data-engineering@company.com"
+  
+  # Extension: LLM Routing Policy - vLLM only since we process actual data
+  x-llm-policy:
+    routing: "vllm-only"
+    defaultBackend: "vllm"
+    confidentialBackend: "vllm"
+    auditLevel: "full"
+    retentionPolicy: "no-storage"
+    
+    routingRules:
+      - condition: "always"
+        backend: "vllm"
+        reason: "Data cleaning processes raw financial data - must stay on-premise"
+  
+  # Extension: Prompting Policy
+  x-prompting-policy:
+    systemPrompt: |
+      You are a data cleaning and validation assistant.
+      Analyze data quality issues and suggest transformations.
+      Never expose raw data values in responses.
+      Focus on patterns and structural recommendations.
+      All data processing must remain on-premise.
+    maxTokens: 4096
+    temperature: 0.3
+    responseFormat: "structured"
+    
+  # Extension: Regulatory Compliance
+  x-regulatory-compliance:
+    frameworks:
+      - "MGF-Agentic-AI"
+      - "AI-Agent-Index"
+      - "GDPR-Data-Processing"
+    autonomyLevel: "L2"
+    requiresHumanOversight: true
+    safetyControls:
+      - "guardrails"
+      - "monitoring"
+      - "audit-logging"
+      - "data-masking"
+  
+  # Output Ports
+  outputPort:
+    - id: "cleaning-suggestions"
+      name: "Data Cleaning Suggestions API"
+      description: "AI-generated data cleaning recommendations"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "vllm-only"
+    
+    - id: "validation-rules"
+      name: "Validation Rules API"
+      description: "Generate data validation rules"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "vllm-only"
+    
+    - id: "transformation-code"
+      name: "Transformation Code Generator"
+      description: "Generate data transformation scripts"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "vllm-only"
+  
+  # Input Ports - ALL confidential since raw data
+  inputPort:
+    - id: "raw-data"
+      name: "Raw Data Input"
+      description: "Raw financial/business data for cleaning"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+        allowTokenization: false
+    
+    - id: "data-profile"
+      name: "Data Profile Input"
+      description: "Statistical profile of data (no raw values)"
+      dataSecurityClass: "internal"
+      x-llm-policy:
+        routing: "vllm-only"
+  
+  # Quality Metrics
+  quality:
+    availability: "99.5%"
+    latencyP95: "5000ms"
+    throughput: "100 req/min"
