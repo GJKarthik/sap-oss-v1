@@ -18,7 +18,7 @@ func TestResolveWithMockFacts(t *testing.T) {
 		t.Fatalf("failed to create engine: %v", err)
 	}
 
-	err = eng.DefineFact(`es_cache_lookup("what is our return policy", "Our return policy allows 30-day returns.", 0.97).`)
+	err = eng.DefineFact(`es_cache_lookup("what is our return policy", "Our return policy allows 30-day returns.", 97).`)
 	if err != nil {
 		t.Fatalf("failed to define fact: %v", err)
 	}
