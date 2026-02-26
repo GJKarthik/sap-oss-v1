@@ -1,0 +1,1 @@
+"""Unit tests for OData Vocabularies Universal Dictionary"""
