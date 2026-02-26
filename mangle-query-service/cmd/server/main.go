@@ -11,6 +11,7 @@ import (
 
 	pb "github.com/sap-oss/mangle-query-service/api/gen"
 	"github.com/sap-oss/mangle-query-service/internal/config"
+	"github.com/sap-oss/mangle-query-service/internal/es"
 	"github.com/sap-oss/mangle-query-service/internal/server"
 )
 
@@ -29,7 +30,13 @@ func main() {
 		log.Println("No MQS_CONFIG set, using default configuration")
 	}
 
-	srv, err := server.NewGRPCServer(cfg.RulesDir)
+	// Create ES client
+	esClient, err := es.NewClient(cfg.ESAddress)
+	if err != nil {
+		log.Fatalf("failed to create ES client: %v", err)
+	}
+
+	srv, err := server.NewGRPCServer(cfg.RulesDir, esClient.Raw())
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
 	}

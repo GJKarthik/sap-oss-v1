@@ -8,7 +8,7 @@ import (
 )
 
 func TestResolveRPC(t *testing.T) {
-	srv, err := NewGRPCServer("../../rules/")
+	srv, err := NewGRPCServer("../../rules/", nil)
 	if err != nil {
 		t.Fatalf("failed to create server: %v", err)
 	}
@@ -29,7 +29,7 @@ func TestResolveRPC(t *testing.T) {
 }
 
 func TestHealthRPC(t *testing.T) {
-	srv, err := NewGRPCServer("../../rules/")
+	srv, err := NewGRPCServer("../../rules/", nil)
 	if err != nil {
 		t.Fatalf("failed to create server: %v", err)
 	}

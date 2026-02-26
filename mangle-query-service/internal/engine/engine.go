@@ -1,3 +1,4 @@
+// Package engine wraps the Mangle Datalog interpreter for query resolution.
 package engine
 
 import (
@@ -7,12 +8,17 @@ import (
 	"path/filepath"
 	"sync"
 
+	"strings"
+
+	"github.com/google/mangle/analysis"
 	"github.com/google/mangle/ast"
+	mangleEngine "github.com/google/mangle/engine"
+	"github.com/google/mangle/factstore"
 	"github.com/google/mangle/interpreter"
 	"github.com/google/mangle/parse"
 )
 
-// Resolution holds the result of a Mangle rule evaluation.
+// Resolution holds the result of a Mangle query evaluation.
 type Resolution struct {
 	Answer     string
 	Path       string
@@ -38,15 +44,20 @@ type MangleEngine struct {
 	rulesContent string
 	// facts holds ground facts that are defined before rules are loaded.
 	facts []string
+	// External predicates for production use (ES, MCP, etc.)
+	extPredicates map[ast.PredicateSym]mangleEngine.ExternalPredicateCallback
+	// store and programInfo for engine-direct mode (when external predicates are used)
+	store       factstore.FactStoreWithRemove
+	programInfo *analysis.ProgramInfo
 }
 
 // New creates a new MangleEngine, loading rules from the given directory.
 func New(rulesDir string) (*MangleEngine, error) {
 	eng := &MangleEngine{
-		rulesDir: rulesDir,
+		rulesDir:      rulesDir,
+		extPredicates: make(map[ast.PredicateSym]mangleEngine.ExternalPredicateCallback),
 	}
 
-	// Read and cache the rules file content.
 	rulesPath := filepath.Join(rulesDir, "routing.mg")
 	content, err := os.ReadFile(rulesPath)
 	if err != nil {
@@ -60,14 +71,32 @@ func New(rulesDir string) (*MangleEngine, error) {
 	return eng, nil
 }
 
-// reload creates a fresh interpreter and loads all facts and rules together
-// in a single Define call so that bottom-up evaluation derives all
-// intensional predicates from the current set of facts.
+// RegisterPredicate adds an external predicate callback. Must be called
+// before DefineFact or Resolve. Call Reload after registering all predicates.
+func (e *MangleEngine) RegisterPredicate(name string, arity int, cb mangleEngine.ExternalPredicateCallback) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.extPredicates[ast.PredicateSym{Symbol: name, Arity: arity}] = cb
+}
+
+// Reload re-parses rules and re-evaluates with current facts and predicates.
+func (e *MangleEngine) Reload() error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.reload()
+}
+
 func (e *MangleEngine) reload() error {
+	if len(e.extPredicates) > 0 {
+		return e.reloadWithEngine()
+	}
+	return e.reloadWithInterpreter()
+}
+
+// reloadWithInterpreter uses the Mangle interpreter (for tests with DefineFact).
+func (e *MangleEngine) reloadWithInterpreter() error {
 	e.interp = interpreter.New(io.Discard, e.rulesDir, nil)
 
-	// Build a combined source: facts first, then rules.
-	// This ensures the facts are present when rules are evaluated.
 	combined := ""
 	for _, fact := range e.facts {
 		combined += fact + "\n"
@@ -77,6 +106,48 @@ func (e *MangleEngine) reload() error {
 	if err := e.interp.Define(combined); err != nil {
 		return fmt.Errorf("failed to define facts and rules: %w", err)
 	}
+	return nil
+}
+
+// reloadWithEngine uses the Mangle engine directly (supports external predicates).
+func (e *MangleEngine) reloadWithEngine() error {
+	combined := ""
+	for _, fact := range e.facts {
+		combined += fact + "\n"
+	}
+	combined += e.rulesContent
+
+	unit, err := parse.Unit(strings.NewReader(combined))
+	if err != nil {
+		return fmt.Errorf("failed to parse rules: %w", err)
+	}
+
+	// Build known predicates from external predicate registrations.
+	knownPredicates := make(map[ast.PredicateSym]ast.Decl)
+	for sym := range e.extPredicates {
+		knownPredicates[sym] = ast.Decl{DeclaredAtom: ast.NewAtom(sym.Symbol)}
+	}
+
+	programInfo, err := analysis.AnalyzeOneUnit(unit, knownPredicates)
+	if err != nil {
+		return fmt.Errorf("failed to analyze rules: %w", err)
+	}
+
+	e.store = factstore.NewSimpleInMemoryStore()
+	e.programInfo = programInfo
+
+	if err := mangleEngine.EvalProgram(programInfo, e.store,
+		mangleEngine.WithExternalPredicates(e.extPredicates)); err != nil {
+		return fmt.Errorf("failed to evaluate rules: %w", err)
+	}
+
+	// Also set up interpreter for Query support
+	e.interp = interpreter.New(io.Discard, e.rulesDir, nil)
+	if err := e.interp.Define(combined); err != nil {
+		// Non-fatal: query may still work through store
+		_ = err
+	}
+
 	return nil
 }
 
@@ -109,7 +180,6 @@ func (e *MangleEngine) Resolve(query string) (*Resolution, error) {
 		return &Resolution{Path: "no_match", Confidence: 0}, nil
 	}
 
-	// Extract first result -- Query returns []ast.Term, each being an ast.Atom.
 	res := &Resolution{}
 	for _, term := range results {
 		if a, ok := term.(ast.Atom); ok {
@@ -138,7 +208,6 @@ func extractFloat(t ast.BaseTerm) float64 {
 		if f, err := c.Float64Value(); err == nil {
 			return f
 		}
-		// Try int64 conversion
 		if n, err := c.NumberValue(); err == nil {
 			return float64(n)
 		}

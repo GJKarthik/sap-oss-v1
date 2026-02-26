@@ -5,8 +5,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v8"
+
 	pb "github.com/sap-oss/mangle-query-service/api/gen"
 	"github.com/sap-oss/mangle-query-service/internal/engine"
+	"github.com/sap-oss/mangle-query-service/internal/predicates"
 )
 
 // GRPCServer implements the QueryService gRPC interface.
@@ -16,11 +19,22 @@ type GRPCServer struct {
 }
 
 // NewGRPCServer creates a GRPCServer backed by a MangleEngine loaded from rulesDir.
-func NewGRPCServer(rulesDir string) (*GRPCServer, error) {
+// If esClient is non-nil, ES predicates are registered as external callbacks.
+func NewGRPCServer(rulesDir string, esClient *elasticsearch.Client) (*GRPCServer, error) {
 	eng, err := engine.New(rulesDir)
 	if err != nil {
 		return nil, err
 	}
+
+	if esClient != nil {
+		eng.RegisterPredicate("es_cache_lookup", 3, &predicates.ESCachePredicate{ES: esClient})
+		eng.RegisterPredicate("es_hybrid_search", 3, &predicates.ESHybridPredicate{ES: esClient})
+		eng.RegisterPredicate("es_search", 4, &predicates.ESBusinessPredicate{ES: esClient})
+		if err := eng.Reload(); err != nil {
+			return nil, err
+		}
+	}
+
 	return &GRPCServer{engine: eng}, nil
 }
 
