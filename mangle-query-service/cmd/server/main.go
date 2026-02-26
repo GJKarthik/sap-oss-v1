@@ -4,9 +4,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 
+	"google.golang.org/grpc"
+
+	pb "github.com/sap-oss/mangle-query-service/api/gen"
 	"github.com/sap-oss/mangle-query-service/internal/config"
+	"github.com/sap-oss/mangle-query-service/internal/server"
 )
 
 func main() {
@@ -24,6 +29,21 @@ func main() {
 		log.Println("No MQS_CONFIG set, using default configuration")
 	}
 
-	fmt.Printf("Mangle Query Service starting — gRPC :%d  HTTP :%d  rules=%s\n",
-		cfg.GRPCPort, cfg.HTTPPort, cfg.RulesDir)
+	srv, err := server.NewGRPCServer(cfg.RulesDir)
+	if err != nil {
+		log.Fatalf("failed to create server: %v", err)
+	}
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	pb.RegisterQueryServiceServer(grpcServer, srv)
+
+	log.Printf("Mangle Query Service listening on gRPC port %d", cfg.GRPCPort)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
