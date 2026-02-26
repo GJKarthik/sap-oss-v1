@@ -36,7 +36,11 @@ func main() {
 		log.Fatalf("failed to create ES client: %v", err)
 	}
 
-	srv, err := server.NewGRPCServer(cfg.RulesDir, esClient.Raw())
+	srv, err := server.NewGRPCServer(cfg.RulesDir, &server.ServerOptions{
+		ESClient:   esClient.Raw(),
+		MCPAddress: cfg.MCPAddress,
+		MCPToken:   cfg.MCPAuthToken,
+	})
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
 	}

@@ -18,18 +18,42 @@ type GRPCServer struct {
 	engine *engine.MangleEngine
 }
 
+// ServerOptions holds optional dependencies for GRPCServer.
+type ServerOptions struct {
+	ESClient   *elasticsearch.Client
+	MCPAddress string
+	MCPToken   string
+}
+
 // NewGRPCServer creates a GRPCServer backed by a MangleEngine loaded from rulesDir.
-// If esClient is non-nil, ES predicates are registered as external callbacks.
-func NewGRPCServer(rulesDir string, esClient *elasticsearch.Client) (*GRPCServer, error) {
+func NewGRPCServer(rulesDir string, opts *ServerOptions) (*GRPCServer, error) {
 	eng, err := engine.New(rulesDir)
 	if err != nil {
 		return nil, err
 	}
 
-	if esClient != nil {
-		eng.RegisterPredicate("es_cache_lookup", 3, &predicates.ESCachePredicate{ES: esClient})
-		eng.RegisterPredicate("es_hybrid_search", 3, &predicates.ESHybridPredicate{ES: esClient})
-		eng.RegisterPredicate("es_search", 4, &predicates.ESBusinessPredicate{ES: esClient})
+	if opts != nil {
+		// Register ES predicates
+		if opts.ESClient != nil {
+			eng.RegisterPredicate("es_cache_lookup", 3, &predicates.ESCachePredicate{ES: opts.ESClient})
+			eng.RegisterPredicate("es_hybrid_search", 3, &predicates.ESHybridPredicate{ES: opts.ESClient})
+			eng.RegisterPredicate("es_search", 4, &predicates.ESBusinessPredicate{ES: opts.ESClient})
+		}
+
+		// Register MCP predicates (heuristic fallback if no MCP address)
+		eng.RegisterPredicate("classify_query", 3, &predicates.MCPClassifyPredicate{
+			MCPAddress: opts.MCPAddress, AuthToken: opts.MCPToken,
+		})
+		eng.RegisterPredicate("extract_entities", 3, &predicates.MCPEntitiesPredicate{
+			MCPAddress: opts.MCPAddress, AuthToken: opts.MCPToken,
+		})
+		eng.RegisterPredicate("rerank", 3, &predicates.MCPRerankPredicate{
+			MCPAddress: opts.MCPAddress, AuthToken: opts.MCPToken,
+		})
+		eng.RegisterPredicate("llm_generate", 3, &predicates.MCPLLMPredicate{
+			MCPAddress: opts.MCPAddress, AuthToken: opts.MCPToken,
+		})
+
 		if err := eng.Reload(); err != nil {
 			return nil, err
 		}
