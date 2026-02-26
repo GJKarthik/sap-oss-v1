@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -10,6 +11,7 @@ import (
 	pb "github.com/sap-oss/mangle-query-service/api/gen"
 	"github.com/sap-oss/mangle-query-service/internal/engine"
 	"github.com/sap-oss/mangle-query-service/internal/predicates"
+	"github.com/sap-oss/mangle-query-service/internal/resilience"
 	"github.com/sap-oss/mangle-query-service/internal/sync"
 )
 
@@ -19,6 +21,8 @@ type GRPCServer struct {
 	engine       *engine.MangleEngine
 	cdcListener  *sync.CDCListener
 	cacheManager *sync.CacheManager
+	breakers     *resilience.BreakerRegistry
+	metrics      *resilience.Metrics
 }
 
 // ServerOptions holds optional dependencies for GRPCServer.
@@ -35,7 +39,11 @@ func NewGRPCServer(rulesDir string, opts *ServerOptions) (*GRPCServer, error) {
 		return nil, err
 	}
 
-	srv := &GRPCServer{engine: eng}
+	srv := &GRPCServer{
+		engine:   eng,
+		breakers: resilience.NewBreakerRegistry(),
+		metrics:  resilience.NewMetrics(),
+	}
 
 	if opts != nil {
 		// Register ES predicates
@@ -73,10 +81,23 @@ func NewGRPCServer(rulesDir string, opts *ServerOptions) (*GRPCServer, error) {
 func (s *GRPCServer) Resolve(ctx context.Context, req *pb.ResolveRequest) (*pb.ResolveResponse, error) {
 	start := time.Now()
 
+	// Check circuit breaker for the resolve path
+	cb := s.breakers.Get("resolve")
+	if !cb.Allow() {
+		s.metrics.RecordError()
+		return nil, fmt.Errorf("circuit breaker open: resolve path unavailable")
+	}
+
 	result, err := s.engine.Resolve(req.Query)
 	if err != nil {
+		cb.RecordFailure()
+		s.metrics.RecordError()
 		return nil, err
 	}
+	cb.RecordSuccess()
+
+	latencyMs := time.Since(start).Milliseconds()
+	s.metrics.RecordResolve(result.Path, latencyMs)
 
 	sources := make([]*pb.Source, len(result.Sources))
 	for i, src := range result.Sources {
@@ -98,17 +119,38 @@ func (s *GRPCServer) Resolve(ctx context.Context, req *pb.ResolveRequest) (*pb.R
 		Path:          result.Path,
 		Confidence:    float32(result.Confidence),
 		Sources:       sources,
-		LatencyMs:     time.Since(start).Milliseconds(),
+		LatencyMs:     latencyMs,
 		CorrelationId: req.CorrelationId,
 	}, nil
 }
 
 func (s *GRPCServer) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+	components := map[string]string{
+		"mangle_engine": "healthy",
+	}
+
+	// Report circuit breaker states
+	for _, cb := range s.breakers.All() {
+		components["breaker_"+cb.Name()] = cb.GetState().String()
+	}
+
+	// Report key metrics
+	snap := s.metrics.Snapshot()
+	for k, v := range snap {
+		components["metric_"+k] = fmt.Sprintf("%.2f", v)
+	}
+
+	status := "healthy"
+	for _, cb := range s.breakers.All() {
+		if cb.GetState() == resilience.StateOpen {
+			status = "degraded"
+			break
+		}
+	}
+
 	return &pb.HealthResponse{
-		Status: "healthy",
-		Components: map[string]string{
-			"mangle_engine": "healthy",
-		},
+		Status:     status,
+		Components: components,
 	}, nil
 }
 
