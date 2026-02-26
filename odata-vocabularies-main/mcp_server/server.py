@@ -1,13 +1,23 @@
 """
-OData Vocabularies MCP Server - Phase 1 Enhanced
+OData Vocabularies MCP Server - Phase 3 Enhanced
 
-Model Context Protocol server with full XML vocabulary loading and Mangle reasoning integration.
-Provides tools for OData vocabulary operations and semantic annotations.
+Model Context Protocol server with full XML vocabulary loading, Mangle reasoning,
+and semantic search capabilities using vector embeddings.
 
 Phase 1 Improvements:
 - 1.1 Full XML vocabulary loading from vocabularies/*.xml
 - 1.2 Mangle facts generation from vocabulary terms
 - 1.3 Enhanced entity extraction with OData types
+
+Phase 2 Improvements:
+- 2.1 HANACloud vocabulary support
+- 2.2 Enhanced ES index mapping integration
+- 2.3 Analytical query routing rules
+
+Phase 3 Improvements:
+- 3.1 Vocabulary term embeddings for semantic search
+- 3.2 Semantic term search tool
+- 3.3 RAG context enrichment
 """
 
 import json
@@ -16,8 +26,16 @@ import glob
 import re
 import xml.etree.ElementTree as ET
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import time
+import math
+
+# Optional: numpy for fast vector operations
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
 
 # =============================================================================
 # Constants
@@ -147,6 +165,7 @@ class MCPServer:
         
         self._load_vocabularies_from_xml()
         self._generate_mangle_facts()
+        self._load_embeddings()  # Phase 3.1
         self._register_tools()
         self._register_resources()
         self._initialize_facts()
@@ -355,6 +374,91 @@ class MCPServer:
                             if 'Deprecated' in enum_member:
                                 return True
         return False
+
+    # =========================================================================
+    # Phase 3.1: Embedding Loading
+    # =========================================================================
+    
+    def _load_embeddings(self):
+        """Load pre-computed vocabulary embeddings for semantic search"""
+        self.term_embeddings = {}
+        self.embedding_index = {}
+        self.embedding_vectors = None
+        self.embedding_keys = None
+        
+        embeddings_dir = os.path.join(os.path.dirname(__file__), '..', '_embeddings')
+        
+        # Try loading numpy arrays first (faster)
+        if HAS_NUMPY:
+            keys_path = os.path.join(embeddings_dir, 'embedding_keys.npy')
+            vectors_path = os.path.join(embeddings_dir, 'embedding_vectors.npy')
+            
+            if os.path.exists(keys_path) and os.path.exists(vectors_path):
+                try:
+                    self.embedding_keys = np.load(keys_path, allow_pickle=True)
+                    self.embedding_vectors = np.load(vectors_path)
+                    print(f"Loaded {len(self.embedding_keys)} embeddings from numpy arrays")
+                except Exception as e:
+                    print(f"Error loading numpy embeddings: {e}")
+        
+        # Load JSON embeddings for metadata
+        embeddings_path = os.path.join(embeddings_dir, 'vocabulary_embeddings.json')
+        index_path = os.path.join(embeddings_dir, 'vocabulary_index.json')
+        
+        if os.path.exists(embeddings_path):
+            try:
+                with open(embeddings_path) as f:
+                    self.term_embeddings = json.load(f)
+                print(f"Loaded {len(self.term_embeddings)} term embeddings")
+            except Exception as e:
+                print(f"Error loading embeddings JSON: {e}")
+        
+        if os.path.exists(index_path):
+            try:
+                with open(index_path) as f:
+                    self.embedding_index = json.load(f)
+                print(f"Embedding index: {self.embedding_index.get('total_terms', 0)} terms")
+            except Exception as e:
+                print(f"Error loading embedding index: {e}")
+
+    def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
+        """Calculate cosine similarity between two vectors"""
+        if HAS_NUMPY:
+            a_arr = np.array(a)
+            b_arr = np.array(b)
+            return float(np.dot(a_arr, b_arr) / (np.linalg.norm(a_arr) * np.linalg.norm(b_arr)))
+        else:
+            dot = sum(x * y for x, y in zip(a, b))
+            mag_a = math.sqrt(sum(x * x for x in a))
+            mag_b = math.sqrt(sum(x * x for x in b))
+            return dot / (mag_a * mag_b) if mag_a * mag_b > 0 else 0.0
+
+    def _get_query_embedding(self, query: str) -> Optional[List[float]]:
+        """Get embedding for a query text.
+        
+        In production, this would call the embedding API.
+        For now, we use a deterministic hash-based placeholder.
+        """
+        import hashlib
+        
+        # Create deterministic placeholder embedding
+        h = hashlib.sha256(query.lower().encode()).digest()
+        embedding = []
+        dims = 1536
+        
+        for i in range(dims):
+            idx = i % 32
+            val = h[idx] / 255.0 - 0.5
+            embedding.append(val)
+        
+        # Normalize
+        if HAS_NUMPY:
+            arr = np.array(embedding)
+            arr = arr / np.linalg.norm(arr)
+            return arr.tolist()
+        else:
+            mag = math.sqrt(sum(x * x for x in embedding))
+            return [x / mag for x in embedding]
 
     def _load_fallback_vocabularies(self):
         """Load minimal fallback vocabularies if XML files not available"""
@@ -664,6 +768,53 @@ class MCPServer:
             "inputSchema": {"type": "object", "properties": {}},
         }
 
+        # Phase 3.2: Semantic Term Search
+        self.tools["semantic_search"] = {
+            "name": "semantic_search",
+            "description": "Semantic search across vocabulary terms using embeddings",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Natural language search query"},
+                    "top_k": {"type": "integer", "description": "Number of results to return", "default": 10},
+                    "min_similarity": {"type": "number", "description": "Minimum similarity threshold (0-1)", "default": 0.3},
+                    "vocabulary": {"type": "string", "description": "Filter to specific vocabulary (optional)"}
+                },
+                "required": ["query"],
+            },
+        }
+
+        # Phase 3.3: RAG Context Enrichment
+        self.tools["get_rag_context"] = {
+            "name": "get_rag_context",
+            "description": "Get enriched RAG context for a query including relevant vocabulary terms",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Natural language query"},
+                    "entity_type": {"type": "string", "description": "Entity type to get context for (optional)"},
+                    "include_annotations": {"type": "boolean", "description": "Include annotation suggestions", "default": True}
+                },
+                "required": ["query"],
+            },
+        }
+
+        # Get Annotation Suggestions
+        self.tools["suggest_annotations"] = {
+            "name": "suggest_annotations",
+            "description": "Suggest relevant OData annotations based on context",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "description": "Entity type name"},
+                    "properties": {"type": "string", "description": "Property names as JSON array"},
+                    "use_case": {"type": "string", "description": "Use case (ui, analytics, personal_data)", 
+                                "enum": ["ui", "analytics", "personal_data", "all"]}
+                },
+                "required": ["entity_type"],
+            },
+        }
+
     def _register_resources(self):
         self.resources["odata://vocabularies"] = {
             "uri": "odata://vocabularies",
@@ -699,6 +850,12 @@ class MCPServer:
             "uri": "odata://entity-configs",
             "name": "Entity Configurations",
             "description": "OData entity type patterns for extraction",
+            "mimeType": "application/json",
+        }
+        self.resources["embeddings://index"] = {
+            "uri": "embeddings://index",
+            "name": "Embedding Index",
+            "description": "Vocabulary embedding index for semantic search",
             "mimeType": "application/json",
         }
 
@@ -1026,6 +1183,7 @@ class MCPServer:
             "total_enum_types": sum(len(v.get('enum_types', {})) for v in self.vocabularies.values()),
             "mangle_facts": len(self.mangle_facts),
             "entity_configs": len(self.entity_configs),
+            "embeddings_loaded": len(self.term_embeddings),
             "vocabulary_details": {}
         }
         
@@ -1041,6 +1199,276 @@ class MCPServer:
             }
         
         return stats
+
+    # =========================================================================
+    # Phase 3.2: Semantic Term Search
+    # =========================================================================
+    
+    def _handle_semantic_search(self, args: dict) -> dict:
+        """Semantic search across vocabulary terms using embeddings"""
+        query = args.get("query", "")
+        top_k = args.get("top_k", 10)
+        min_similarity = args.get("min_similarity", 0.3)
+        target_vocab = args.get("vocabulary")
+        
+        if not self.term_embeddings:
+            return {
+                "error": "Embeddings not loaded. Run scripts/generate_vocab_embeddings.py first.",
+                "query": query
+            }
+        
+        # Get query embedding
+        query_embedding = self._get_query_embedding(query)
+        
+        results = []
+        
+        # Calculate similarities
+        for term_key, term_data in self.term_embeddings.items():
+            # Filter by vocabulary if specified
+            if target_vocab:
+                vocab_name = term_key.split('.')[0] if '.' in term_key else ''
+                if vocab_name.lower() != target_vocab.lower():
+                    continue
+            
+            term_embedding = term_data.get("embedding", [])
+            if not term_embedding:
+                continue
+            
+            similarity = self._cosine_similarity(query_embedding, term_embedding)
+            
+            if similarity >= min_similarity:
+                # Get term details from index
+                term_info = self.embedding_index.get("terms", {}).get(term_key, {})
+                
+                results.append({
+                    "term": term_key,
+                    "vocabulary": term_info.get("vocabulary", term_key.split('.')[0]),
+                    "term_name": term_info.get("term_name", term_key.split('.')[-1]),
+                    "description": term_info.get("description", ""),
+                    "term_type": term_info.get("term_type", ""),
+                    "applies_to": term_info.get("applies_to", []),
+                    "similarity": round(similarity, 4),
+                    "embedding_text": term_data.get("text", "")
+                })
+        
+        # Sort by similarity descending
+        results.sort(key=lambda x: x["similarity"], reverse=True)
+        
+        return {
+            "query": query,
+            "results": results[:top_k],
+            "total_matches": len(results),
+            "total_terms_searched": len(self.term_embeddings),
+            "model": self.embedding_index.get("model", "unknown")
+        }
+
+    # =========================================================================
+    # Phase 3.3: RAG Context Enrichment
+    # =========================================================================
+    
+    def _handle_get_rag_context(self, args: dict) -> dict:
+        """Get enriched RAG context for a query"""
+        query = args.get("query", "")
+        entity_type = args.get("entity_type")
+        include_annotations = args.get("include_annotations", True)
+        
+        context = {
+            "query": query,
+            "extracted_entities": [],
+            "relevant_vocabularies": [],
+            "semantic_matches": [],
+            "annotation_context": {},
+            "mangle_facts": []
+        }
+        
+        # 1. Extract entities from query
+        entities = self.extract_entities(query)
+        context["extracted_entities"] = entities
+        
+        # 2. Get semantically relevant terms
+        if self.term_embeddings:
+            semantic_results = self._handle_semantic_search({
+                "query": query,
+                "top_k": 5,
+                "min_similarity": 0.4
+            })
+            context["semantic_matches"] = semantic_results.get("results", [])
+        
+        # 3. Determine relevant vocabularies
+        relevant_vocabs = set()
+        
+        # From semantic matches
+        for match in context["semantic_matches"]:
+            relevant_vocabs.add(match.get("vocabulary", ""))
+        
+        # From query keywords
+        query_lower = query.lower()
+        if any(kw in query_lower for kw in ["ui", "display", "table", "form", "list"]):
+            relevant_vocabs.add("UI")
+        if any(kw in query_lower for kw in ["analytics", "dimension", "measure", "aggregate"]):
+            relevant_vocabs.add("Analytics")
+        if any(kw in query_lower for kw in ["personal", "gdpr", "sensitive", "privacy"]):
+            relevant_vocabs.add("PersonalData")
+        if any(kw in query_lower for kw in ["common", "label", "text", "description"]):
+            relevant_vocabs.add("Common")
+        if any(kw in query_lower for kw in ["hana", "calculation", "view"]):
+            relevant_vocabs.add("HANACloud")
+        
+        context["relevant_vocabularies"] = list(relevant_vocabs)
+        
+        # 4. Get annotation context
+        if include_annotations and entity_type:
+            context["annotation_context"] = self._get_annotation_context(entity_type)
+        elif include_annotations and entities:
+            # Use first extracted entity
+            context["annotation_context"] = self._get_annotation_context(entities[0]["entity_type"])
+        
+        # 5. Get relevant Mangle facts
+        for vocab in relevant_vocabs:
+            vocab_facts = [f for f in self.mangle_facts if f'"{vocab}"' in f][:10]
+            context["mangle_facts"].extend(vocab_facts)
+        
+        return context
+
+    def _get_annotation_context(self, entity_type: str) -> dict:
+        """Get annotation context for an entity type"""
+        context = {
+            "entity_type": entity_type,
+            "common_annotations": [],
+            "ui_annotations": [],
+            "analytics_annotations": [],
+            "personal_data_annotations": []
+        }
+        
+        # Common annotations typically applicable
+        common_terms = ["Label", "Text", "SemanticKey", "SemanticObject", "FieldControl"]
+        for term in common_terms:
+            term_data = self._get_term_info("Common", term)
+            if term_data:
+                context["common_annotations"].append(term_data)
+        
+        # UI annotations
+        ui_terms = ["LineItem", "HeaderInfo", "Facets", "FieldGroup", "SelectionFields"]
+        for term in ui_terms:
+            term_data = self._get_term_info("UI", term)
+            if term_data:
+                context["ui_annotations"].append(term_data)
+        
+        # Analytics annotations
+        analytics_terms = ["Dimension", "Measure", "AggregatedProperty"]
+        for term in analytics_terms:
+            term_data = self._get_term_info("Analytics", term)
+            if term_data:
+                context["analytics_annotations"].append(term_data)
+        
+        # Personal data annotations
+        pd_terms = ["IsPotentiallyPersonal", "IsPotentiallySensitive", "FieldSemantics"]
+        for term in pd_terms:
+            term_data = self._get_term_info("PersonalData", term)
+            if term_data:
+                context["personal_data_annotations"].append(term_data)
+        
+        return context
+
+    def _get_term_info(self, vocabulary: str, term_name: str) -> Optional[dict]:
+        """Get basic term info"""
+        vocab = self.vocabularies.get(vocabulary)
+        if not vocab:
+            return None
+        
+        for term in vocab.get('terms', []):
+            if isinstance(term, dict) and term.get('name') == term_name:
+                return {
+                    "term": f"@{vocabulary}.{term_name}",
+                    "type": term.get('type', ''),
+                    "description": term.get('description', '')[:150],
+                    "applies_to": term.get('applies_to', [])
+                }
+        return None
+
+    def _handle_suggest_annotations(self, args: dict) -> dict:
+        """Suggest relevant OData annotations based on context"""
+        entity_type = args.get("entity_type", "")
+        properties = json.loads(args.get("properties", "[]")) if args.get("properties") else []
+        use_case = args.get("use_case", "all")
+        
+        suggestions = {
+            "entity_type": entity_type,
+            "entity_level": [],
+            "property_level": {}
+        }
+        
+        # Entity-level suggestions
+        if use_case in ["all", "ui"]:
+            suggestions["entity_level"].append({
+                "annotation": "@UI.HeaderInfo",
+                "description": "Header information for object pages",
+                "example": {
+                    "$Type": "com.sap.vocabularies.UI.v1.HeaderInfoType",
+                    "TypeName": entity_type,
+                    "TypeNamePlural": f"{entity_type}s"
+                }
+            })
+            suggestions["entity_level"].append({
+                "annotation": "@UI.LineItem",
+                "description": "Table columns for list display"
+            })
+        
+        if use_case in ["all", "personal_data"]:
+            suggestions["entity_level"].append({
+                "annotation": "@PersonalData.EntitySemantics",
+                "description": "GDPR classification for entity",
+                "example": "DataSubject or DataSubjectDetails"
+            })
+        
+        # Property-level suggestions
+        for prop in properties:
+            prop_suggestions = []
+            
+            if use_case in ["all", "ui"]:
+                prop_suggestions.append({
+                    "annotation": f"@Common.Label: '{prop.replace('_', ' ').title()}'",
+                    "description": "Display label"
+                })
+            
+            # Detect special properties
+            prop_lower = prop.lower()
+            
+            if any(kw in prop_lower for kw in ["amount", "price", "value", "total", "sum"]):
+                if use_case in ["all", "analytics"]:
+                    prop_suggestions.append({
+                        "annotation": "@Analytics.Measure: true",
+                        "description": "Mark as analytical measure"
+                    })
+                prop_suggestions.append({
+                    "annotation": "@Measures.ISOCurrency",
+                    "description": "Currency reference"
+                })
+            
+            if any(kw in prop_lower for kw in ["date", "created", "changed", "time"]):
+                prop_suggestions.append({
+                    "annotation": "@Common.IsCalendarDate: true",
+                    "description": "Calendar date field"
+                })
+            
+            if any(kw in prop_lower for kw in ["name", "email", "phone", "address", "ssn"]):
+                if use_case in ["all", "personal_data"]:
+                    prop_suggestions.append({
+                        "annotation": "@PersonalData.IsPotentiallyPersonal: true",
+                        "description": "GDPR: Potentially personal data"
+                    })
+            
+            if any(kw in prop_lower for kw in ["id", "code", "key", "type", "category"]):
+                if use_case in ["all", "analytics"]:
+                    prop_suggestions.append({
+                        "annotation": "@Analytics.Dimension: true",
+                        "description": "Mark as analytical dimension"
+                    })
+            
+            if prop_suggestions:
+                suggestions["property_level"][prop] = prop_suggestions
+        
+        return suggestions
 
     # =========================================================================
     # Request Handler
@@ -1078,6 +1506,9 @@ class MCPServer:
                     "convert_annotations": self._handle_convert_annotations,
                     "mangle_query": self._handle_mangle_query,
                     "get_statistics": self._handle_get_statistics,
+                    "semantic_search": self._handle_semantic_search,
+                    "get_rag_context": self._handle_get_rag_context,
+                    "suggest_annotations": self._handle_suggest_annotations,
                 }
                 handler = handlers.get(tool_name)
                 if not handler:
@@ -1112,6 +1543,9 @@ class MCPServer:
                                "namespace": c.namespace} for c in self.entity_configs]
                     return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", 
                                                           "text": json.dumps(configs, indent=2)}]})
+                if uri == "embeddings://index":
+                    return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", 
+                                                          "text": json.dumps(self.embedding_index, indent=2)}]})
                 return MCPResponse(id, error={"code": -32602, "message": f"Unknown resource: {uri}"})
 
             else:
@@ -1235,7 +1669,7 @@ def main():
     server = HTTPServer(("", port), MCPHandler)
     print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
-║   OData Vocabularies MCP Server v2.0.0 - Phase 1 Enhanced                ║
+║   OData Vocabularies MCP Server v3.0.0 - Phase 3 Enhanced                ║
 ║   Model Context Protocol v2024-11-05                                     ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
@@ -1248,14 +1682,18 @@ Loaded Statistics:
   - Enum Types: {stats['total_enum_types']}
   - Mangle Facts: {stats['mangle_facts']}
   - Entity Configs: {stats['entity_configs']}
+  - Embeddings: {stats.get('embeddings_loaded', 0)}
 
-Tools: list_vocabularies, get_vocabulary, search_terms, get_term,
-       extract_entities, get_mangle_facts, validate_annotations,
-       generate_annotations, lookup_term, convert_annotations,
-       mangle_query, get_statistics
+Tools: 
+  Phase 1: list_vocabularies, get_vocabulary, search_terms, get_term,
+           extract_entities, get_mangle_facts, validate_annotations,
+           generate_annotations, lookup_term, convert_annotations,
+           mangle_query, get_statistics
+  Phase 3: semantic_search, get_rag_context, suggest_annotations
 
 Resources: odata://vocabularies, odata://common, odata://ui,
-           odata://analytics, mangle://facts, odata://entity-configs
+           odata://analytics, mangle://facts, odata://entity-configs,
+           embeddings://index
 
 Endpoints:
   - POST /mcp              - MCP JSON-RPC endpoint

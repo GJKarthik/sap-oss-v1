@@ -1,0 +1,4551 @@
+{
+  "version": "1.0.0",
+  "model": "text-embedding-3-small",
+  "total_terms": 398,
+  "vocabularies": {
+    "Analytics": 15,
+    "CodeList": 6,
+    "Common": 136,
+    "Communication": 21,
+    "DataIntegration": 7,
+    "DirectEdit": 2,
+    "EntityRelationship": 19,
+    "Graph": 4,
+    "HANACloud": 21,
+    "HTML5": 4,
+    "Hierarchy": 8,
+    "ILM": 3,
+    "ODM": 6,
+    "Offline": 3,
+    "PDF": 2,
+    "PersonalData": 6,
+    "Session": 2,
+    "Support": 3,
+    "UI": 130
+  },
+  "embedding_dimensions": 1536,
+  "created_at": "2026-02-26T09:38:30.058809",
+  "terms": {
+    "Analytics.Dimension": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "Dimension",
+      "term_type": "Core.Tag",
+      "description": "A property holding the key of a dimension in an analytical context",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "365a17c6dc620b89"
+    },
+    "Analytics.Measure": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "Measure",
+      "term_type": "Core.Tag",
+      "description": "A property holding the numeric value of a measure in an analytical context",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "35b4f0d0ee1b90a8"
+    },
+    "Analytics.AccumulativeMeasure": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "AccumulativeMeasure",
+      "term_type": "Core.Tag",
+      "description": "The measure has non-negative and additive values; it can be used in whole-part charts, e.g. the Donut",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "72cf5adcecd76266"
+    },
+    "Analytics.RolledUpPropertyCount": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "RolledUpPropertyCount",
+      "term_type": "Edm.Int16",
+      "description": "Number of properties in the entity instance that have been aggregated away",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "45a6cf422e6f533b"
+    },
+    "Analytics.DrillURL": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "DrillURL",
+      "term_type": "Edm.String",
+      "description": "",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "37ee23ea896d8343"
+    },
+    "Analytics.PlanningAction": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "PlanningAction",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "ActionImport"
+      ],
+      "is_experimental": true,
+      "content_hash": "3aacd65793b3fbf5"
+    },
+    "Analytics.AggregatedProperties": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "AggregatedProperties",
+      "term_type": "Collection(Analytics.AggregatedPropertyType)",
+      "description": "Dynamic properties for aggregate expressions with specified aggregation method defined on the annotated entity type.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "b34e840f0797ab3e"
+    },
+    "Analytics.AggregatedProperty": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "AggregatedProperty",
+      "term_type": "Analytics.AggregatedPropertyType",
+      "description": "Dynamic property for aggregate expression with specified aggregation method defined on the annotated entity type.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "4b75bfa103eaf9ed"
+    },
+    "Analytics.AnalyticalContext": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "AnalyticalContext",
+      "term_type": "Collection(Analytics.AnalyticalContextType)",
+      "description": "Collection of properties that define an analytical context",
+      "applies_to": [
+        "Collection"
+      ],
+      "is_experimental": false,
+      "content_hash": "c9cf5d1102338225"
+    },
+    "Analytics.LevelInformation": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "LevelInformation",
+      "term_type": "Hierarchy.HierarchyType",
+      "description": "Information about grouping levels in the result set of a request including the [`MultiLevelExpand`](#MultiLevelExpand) transformation",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "1442dbd3667cc620"
+    },
+    "Analytics.AggregatedPropertyType": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "AggregatedPropertyType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Name:Core.SimpleIdentifier, AggregationMethod:Aggregation.AggregationMethod, AggregatableProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8e18c385ba4d720a"
+    },
+    "Analytics.AnalyticalContextType": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "AnalyticalContextType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Property:Edm.PropertyPath, DynamicProperty:Edm.AnnotationPath, Dimension:Core.Tag, Measure:Core.Tag, AccumulativeMeasure:Core.Tag",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "10e48d0f09e41663"
+    },
+    "Analytics.MultiLevelExpandLevel": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "MultiLevelExpandLevel",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: DimensionProperties:Collection(Edm.String), AdditionalProperties:Collection(Edm.String)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "017363697e298b89"
+    },
+    "Analytics.MultiLevelExpandSiblingOrder": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "MultiLevelExpandSiblingOrder",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Property:Edm.String, Descending:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ea17dba661d84925"
+    },
+    "Analytics.MultiLevelExpandEntry": {
+      "vocabulary": "Analytics",
+      "namespace": "com.sap.vocabularies.Analytics.v1",
+      "term_name": "MultiLevelExpandEntry",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Entry:Collection(Edm.String), Levels:Edm.Int64",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8df75c603f044338"
+    },
+    "CodeList.CurrencyCodes": {
+      "vocabulary": "CodeList",
+      "namespace": "com.sap.vocabularies.CodeList.v1",
+      "term_name": "CurrencyCodes",
+      "term_type": "CodeList.CodeListSource",
+      "description": "An entity set containing the code list for currencies",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": false,
+      "content_hash": "2543b7ecb2edc672"
+    },
+    "CodeList.UnitsOfMeasure": {
+      "vocabulary": "CodeList",
+      "namespace": "com.sap.vocabularies.CodeList.v1",
+      "term_name": "UnitsOfMeasure",
+      "term_type": "CodeList.CodeListSource",
+      "description": "An entity set containing the code list for units of measure",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": false,
+      "content_hash": "bc863f13616b16c9"
+    },
+    "CodeList.StandardCode": {
+      "vocabulary": "CodeList",
+      "namespace": "com.sap.vocabularies.CodeList.v1",
+      "term_name": "StandardCode",
+      "term_type": "Edm.PropertyPath",
+      "description": "Property containing standard code values",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "66d31f1698479cf7"
+    },
+    "CodeList.ExternalCode": {
+      "vocabulary": "CodeList",
+      "namespace": "com.sap.vocabularies.CodeList.v1",
+      "term_name": "ExternalCode",
+      "term_type": "Edm.PropertyPath",
+      "description": "Property containing code values that can be used for visualization",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "83531f8876ddafc1"
+    },
+    "CodeList.IsConfigurationDeprecationCode": {
+      "vocabulary": "CodeList",
+      "namespace": "com.sap.vocabularies.CodeList.v1",
+      "term_name": "IsConfigurationDeprecationCode",
+      "term_type": "Edm.Boolean",
+      "description": "Property contains a Configuration Deprecation Code",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "e1de0d4976521097"
+    },
+    "CodeList.CodeListSource": {
+      "vocabulary": "CodeList",
+      "namespace": "com.sap.vocabularies.CodeList.v1",
+      "term_name": "CodeListSource",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Url:Edm.String, CollectionPath:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "da0c773ee6b6731e"
+    },
+    "Common.Experimental": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Experimental",
+      "term_type": "Edm.String",
+      "description": "",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "43adc4247b729162"
+    },
+    "Common.ServiceVersion": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ServiceVersion",
+      "term_type": "Edm.Int32",
+      "description": "1 for first version of a service, incremented when schema changes incompatibly and service is published with a different URI",
+      "applies_to": [
+        "Schema"
+      ],
+      "is_experimental": false,
+      "content_hash": "24ecc1f3e1abef84"
+    },
+    "Common.ServiceSchemaVersion": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ServiceSchemaVersion",
+      "term_type": "Edm.Int32",
+      "description": "0 for first schema version within a service version, incremented when schema changes compatibly",
+      "applies_to": [
+        "Schema"
+      ],
+      "is_experimental": false,
+      "content_hash": "1d832233c125a9a8"
+    },
+    "Common.Label": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Label",
+      "term_type": "Edm.String",
+      "description": "A short, human-readable text suitable for labels and captions in UIs",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "78c7bb9fce363492"
+    },
+    "Common.Heading": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Heading",
+      "term_type": "Edm.String",
+      "description": "A short, human-readable text suitable for column headings in UIs",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ec28a7651d037cbb"
+    },
+    "Common.QuickInfo": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "QuickInfo",
+      "term_type": "Edm.String",
+      "description": "A short, human-readable text suitable for tool tips in UIs",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ecb5155137631c9b"
+    },
+    "Common.DocumentationRef": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DocumentationRef",
+      "term_type": "Edm.String",
+      "description": "A URI referencing language-dependent documentation for the annotated model element",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "e4e3572d0a721bc3"
+    },
+    "Common.Text": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Text",
+      "term_type": "Edm.String",
+      "description": "A descriptive text for values of the annotated property. Value MUST be a dynamic expression when used as metadata annotation.",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "eae0f3ed5d5e227f"
+    },
+    "Common.TextFor": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "TextFor",
+      "term_type": "Edm.PropertyPath",
+      "description": "The annotated property contains a descriptive text for values of the referenced property.",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "1e6a3202fe8de182"
+    },
+    "Common.ExternalID": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ExternalID",
+      "term_type": "Edm.PrimitiveType",
+      "description": "A human readable identifier for values of the annotated property or parameter. Value MUST be a dynamic expression when used as metadata annotation.",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": true,
+      "content_hash": "0a8e0594950b0d87"
+    },
+    "Common.IsLanguageIdentifier": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsLanguageIdentifier",
+      "term_type": "Core.Tag",
+      "description": "An identifier to distinguish multiple texts in different languages for the same entity",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "8d91819ee387267c"
+    },
+    "Common.TextFormat": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "TextFormat",
+      "term_type": "Common.TextFormatType",
+      "description": "The annotated property, parameter, or return type contains human-readable text that may contain formatting information",
+      "applies_to": [
+        "Property",
+        "Parameter",
+        "ReturnType"
+      ],
+      "is_experimental": false,
+      "content_hash": "4ca74d3da5a72f9a"
+    },
+    "Common.Timezone": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Timezone",
+      "term_type": "Edm.String",
+      "description": "The point in time represented by the annotated property or parameter shall be interpreted in the given time zone",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "6da472444b67104e"
+    },
+    "Common.IsTimezone": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsTimezone",
+      "term_type": "Core.Tag",
+      "description": "Annotated property or parameter is a time zone",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "724fe8ec3c00bf02"
+    },
+    "Common.IsDigitSequence": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsDigitSequence",
+      "term_type": "Core.Tag",
+      "description": "Contains only digits",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "5e99b2f9b097b824"
+    },
+    "Common.IsUpperCase": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsUpperCase",
+      "term_type": "Core.Tag",
+      "description": "Contains just uppercase characters",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "b2311f1c141163ed"
+    },
+    "Common.IsCurrency": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCurrency",
+      "term_type": "Core.Tag",
+      "description": "Annotated property or parameter is a currency code",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "43a182006eefcc68"
+    },
+    "Common.IsUnit": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsUnit",
+      "term_type": "Core.Tag",
+      "description": "Annotated property or parameter is a unit of measure",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "db2a6803af108af5"
+    },
+    "Common.UnitSpecificScale": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "UnitSpecificScale",
+      "term_type": "Edm.PrimitiveType",
+      "description": "The number of fractional decimal digits of a currency amount or measured quantity",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "9fdb3d9822989c31"
+    },
+    "Common.UnitSpecificPrecision": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "UnitSpecificPrecision",
+      "term_type": "Edm.PrimitiveType",
+      "description": "The number of significant decimal digits of a currency amount or measured quantity",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "e7b85050d4f91777"
+    },
+    "Common.SecondaryKey": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SecondaryKey",
+      "term_type": "Collection(Edm.PropertyPath)",
+      "description": "The listed properties form a secondary key",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "6869b0888deba3be"
+    },
+    "Common.MinOccurs": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "MinOccurs",
+      "term_type": "Edm.Int64",
+      "description": "The annotated set or collection contains at least this number of items",
+      "applies_to": [
+        "NavigationProperty",
+        "Property",
+        "EntitySet",
+        "Term",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "6d7ba0a4ac226ecd"
+    },
+    "Common.MaxOccurs": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "MaxOccurs",
+      "term_type": "Edm.Int64",
+      "description": "The annotated set or collection contains at most this number of items",
+      "applies_to": [
+        "NavigationProperty",
+        "Property",
+        "EntitySet",
+        "Term",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "0f7f4ac7505b4ad1"
+    },
+    "Common.AssociationEntity": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "AssociationEntity",
+      "term_type": "Collection(Edm.NavigationPropertyPath)",
+      "description": "",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "a31ea8b617a7691e"
+    },
+    "Common.DerivedNavigation": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DerivedNavigation",
+      "term_type": "Edm.NavigationPropertyPath",
+      "description": "",
+      "applies_to": [
+        "NavigationProperty"
+      ],
+      "is_experimental": false,
+      "content_hash": "843406ff74ba4cde"
+    },
+    "Common.Masked": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Masked",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "602ffa2ba46dfac0"
+    },
+    "Common.MaskedValue": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "MaskedValue",
+      "term_type": "Edm.String",
+      "description": "Property contains sensitive data that is by default not transferred",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "d252f4a52c8136fe"
+    },
+    "Common.RevealOnDemand": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "RevealOnDemand",
+      "term_type": "Edm.Boolean",
+      "description": "Unmasked data for this property can be requested with custom query option `masked-values=false`",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "0fe63a51b739b981"
+    },
+    "Common.SemanticObject": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticObject",
+      "term_type": "Edm.String",
+      "description": "Name of the Semantic Object represented as this entity type or identified by this property",
+      "applies_to": [
+        "EntitySet",
+        "EntityType",
+        "Property",
+        "NavigationProperty"
+      ],
+      "is_experimental": false,
+      "content_hash": "e7d86a97075bc9b5"
+    },
+    "Common.SemanticObjectMapping": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticObjectMapping",
+      "term_type": "Collection(Common.SemanticObjectMappingAbstract)",
+      "description": "Maps properties of the annotated entity type or sibling properties of the annotated property to properties of the Semantic Object",
+      "applies_to": [
+        "EntitySet",
+        "EntityType",
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "582c159cc844b5dc"
+    },
+    "Common.SemanticObjectUnavailableActions": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticObjectUnavailableActions",
+      "term_type": "Collection(Edm.String)",
+      "description": "List of actions that are not available in the current state of the instance of the Semantic Object",
+      "applies_to": [
+        "EntitySet",
+        "EntityType",
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "48fcc6aa87aceea0"
+    },
+    "Common.IsInstanceAnnotation": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsInstanceAnnotation",
+      "term_type": "Core.Tag",
+      "description": "Term can also be used as instance annotation; AppliesTo of this term specifies where it can be applied",
+      "applies_to": [
+        "Term"
+      ],
+      "is_experimental": false,
+      "content_hash": "93c73a2085551ce3"
+    },
+    "Common.FilterExpressionRestrictions": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FilterExpressionRestrictions",
+      "term_type": "Collection(Common.FilterExpressionRestrictionType)",
+      "description": "These properties only allow a subset of expressions",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "9d35a0ef2e8aeed4"
+    },
+    "Common.FieldControl": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FieldControl",
+      "term_type": "Common.FieldControlType",
+      "description": "Control state of a property, parameter, or the media stream of a media entity",
+      "applies_to": [
+        "Property",
+        "Parameter",
+        "Record",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "80560096ac2d1159"
+    },
+    "Common.ExceptionCategory": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ExceptionCategory",
+      "term_type": "Edm.String",
+      "description": "A machine-readable exception category",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "64543b79700d328b"
+    },
+    "Common.Application": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Application",
+      "term_type": "Common.ApplicationType",
+      "description": "...",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "f4e737ebab949d8f"
+    },
+    "Common.Timestamp": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Timestamp",
+      "term_type": "Edm.DateTimeOffset",
+      "description": "...",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "7dfe195bd5c11025"
+    },
+    "Common.TransactionId": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "TransactionId",
+      "term_type": "Edm.String",
+      "description": "...",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "8d355f3373cda280"
+    },
+    "Common.ErrorResolution": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ErrorResolution",
+      "term_type": "Common.ErrorResolutionType",
+      "description": "Hints for resolving this error",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "4970e13277e1c7cb"
+    },
+    "Common.Messages": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Messages",
+      "term_type": "Collection(Edm.ComplexType)",
+      "description": "Collection of end-user messages",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "4be2e86df52f49f5"
+    },
+    "Common.additionalTargets": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "additionalTargets",
+      "term_type": "Collection(Edm.String)",
+      "description": "Additional targets for the message",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": true,
+      "content_hash": "953cd49210ce4163"
+    },
+    "Common.longtextUrl": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "longtextUrl",
+      "term_type": "Edm.String",
+      "description": "Location of the message long text",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "6bf7eeb119642e6a"
+    },
+    "Common.numericSeverity": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "numericSeverity",
+      "term_type": "Common.NumericMessageSeverityType",
+      "description": "Classifies an end-user message as info, success, warning, or error",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "17c01d4bfc4d86b0"
+    },
+    "Common.MaximumNumericMessageSeverity": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "MaximumNumericMessageSeverity",
+      "term_type": "Common.NumericMessageSeverityType",
+      "description": "The maximum severity of all end-user messages attached to an entity, null if no messages are attached",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "f305ccc6d5e948ee"
+    },
+    "Common.IsActionCritical": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsActionCritical",
+      "term_type": "Edm.Boolean",
+      "description": "Criticality of the function or action to enforce a warning or similar before it's executed",
+      "applies_to": [
+        "Action",
+        "Function",
+        "ActionImport",
+        "FunctionImport"
+      ],
+      "is_experimental": false,
+      "content_hash": "bae65e57bb5a94fb"
+    },
+    "Common.Attributes": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Attributes",
+      "term_type": "Collection(Edm.PropertyPath)",
+      "description": "Attributes related to this property, which may occur in denormalized entity types",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "69be22f43176f8ce"
+    },
+    "Common.RelatedRecursiveHierarchy": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "RelatedRecursiveHierarchy",
+      "term_type": "Edm.AnnotationPath",
+      "description": "A recursive hierarchy related to this property. The annotation path must end in Aggregation.RecursiveHierarchy.",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "4e6a04c76c686819"
+    },
+    "Common.Interval": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Interval",
+      "term_type": "Common.IntervalType",
+      "description": "An interval with lower and upper boundaries described by two properties",
+      "applies_to": [
+        "EntityType",
+        "ComplexType"
+      ],
+      "is_experimental": false,
+      "content_hash": "3a404582fd098ae9"
+    },
+    "Common.ResultContext": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ResultContext",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "f04f8a5d428335da"
+    },
+    "Common.SAPObjectNodeType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SAPObjectNodeType",
+      "term_type": "Common.SAPObjectNodeTypeType",
+      "description": "The SAP Object Node Type represented by the annotated entity type",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "2596c930d8b5bac6"
+    },
+    "Common.Composition": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "Composition",
+      "term_type": "Core.Tag",
+      "description": "The annotated navigation property represents a logical composition, even though it is non-containment",
+      "applies_to": [
+        "NavigationProperty"
+      ],
+      "is_experimental": true,
+      "content_hash": "34c6e0916ef33204"
+    },
+    "Common.SAPObjectNodeTypeReference": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SAPObjectNodeTypeReference",
+      "term_type": "Edm.String",
+      "description": "The entity referenced by the annotated property has the [`SAPObjectNodeType`](#SAPObjectNodeType) with this name",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "03201da930fc2c10"
+    },
+    "Common.IsNaturalPerson": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsNaturalPerson",
+      "term_type": "Core.Tag",
+      "description": "The annotated entity type (e.g. `Employee`) or annotation (e.g. `IsImageUrl`) represents a natural person",
+      "applies_to": [
+        "EntityType",
+        "Annotation"
+      ],
+      "is_experimental": false,
+      "content_hash": "0f3704e2fc097073"
+    },
+    "Common.ValueList": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueList",
+      "term_type": "Common.ValueListType",
+      "description": "Specifies how to get a list of acceptable values for a property or parameter",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "a17e74d3b7e639aa"
+    },
+    "Common.ValueListRelevantQualifiers": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListRelevantQualifiers",
+      "term_type": "Collection(Core.SimpleIdentifier)",
+      "description": "List of qualifiers of relevant ValueList annotations",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6364bc0e71ba5715"
+    },
+    "Common.ValueListWithFixedValues": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListWithFixedValues",
+      "term_type": "Core.Tag",
+      "description": "If specified as true, there's only one value list mapping and its value list consists of a small number of fixed values",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "04cc7bd94a283166"
+    },
+    "Common.ValueListShowValuesImmediately": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListShowValuesImmediately",
+      "term_type": "Core.Tag",
+      "description": "A value list with a very small number of fixed values, can decide to show all values immediately",
+      "applies_to": [
+        "Annotation"
+      ],
+      "is_experimental": true,
+      "content_hash": "d789f4932ab05cc9"
+    },
+    "Common.ValueListForValidation": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListForValidation",
+      "term_type": "Edm.String",
+      "description": "Contains the qualifier of the ValueList or ValueListMapping that should be used for validation",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "1a4ccda43808c26d"
+    },
+    "Common.ValueListReferences": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListReferences",
+      "term_type": "Collection(Edm.String)",
+      "description": "A list of URLs of CSDL documents containing value list mappings for this parameter or property",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "6828a5978c57319d"
+    },
+    "Common.ValueListMapping": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListMapping",
+      "term_type": "Common.ValueListMappingType",
+      "description": "Specifies the mapping between data service properties and value list properties",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "73c6c693f029de51"
+    },
+    "Common.IsCalendarYear": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarYear",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "a0a6ff1bc03e1ee7"
+    },
+    "Common.IsCalendarHalfyear": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarHalfyear",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "fe6092a7fb7320d6"
+    },
+    "Common.IsCalendarQuarter": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarQuarter",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "db1543cc7674b78a"
+    },
+    "Common.IsCalendarMonth": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarMonth",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "8abda718291f2801"
+    },
+    "Common.IsCalendarWeek": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarWeek",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "901d11caa4ea33f6"
+    },
+    "Common.IsDayOfCalendarMonth": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsDayOfCalendarMonth",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "7dbe87dba8fe60a8"
+    },
+    "Common.IsDayOfCalendarYear": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsDayOfCalendarYear",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "36cf97b8304a7b46"
+    },
+    "Common.IsCalendarYearHalfyear": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarYearHalfyear",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "b07d06fcb2210ed9"
+    },
+    "Common.IsCalendarYearQuarter": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarYearQuarter",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "d3e17023fbbdfe31"
+    },
+    "Common.IsCalendarYearMonth": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarYearMonth",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "45ee9d9ab260f300"
+    },
+    "Common.IsCalendarYearWeek": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarYearWeek",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "0e5ce5c79640a3e2"
+    },
+    "Common.IsCalendarDate": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsCalendarDate",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "e9dbe389422c75ce"
+    },
+    "Common.IsFiscalYear": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalYear",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "f47309f7f75db439"
+    },
+    "Common.IsFiscalPeriod": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalPeriod",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "b0c419e8ee76d45e"
+    },
+    "Common.IsFiscalYearPeriod": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalYearPeriod",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "650a541010828f1e"
+    },
+    "Common.IsFiscalQuarter": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalQuarter",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "76d9d612fd966e78"
+    },
+    "Common.IsFiscalYearQuarter": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalYearQuarter",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "b7609dba4be471fd"
+    },
+    "Common.IsFiscalWeek": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalWeek",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "148913e4d163ac25"
+    },
+    "Common.IsFiscalYearWeek": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalYearWeek",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "412dbe09ab6a7177"
+    },
+    "Common.IsDayOfFiscalYear": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsDayOfFiscalYear",
+      "term_type": "Core.Tag",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "c6f436292b8aa82e"
+    },
+    "Common.IsFiscalYearVariant": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IsFiscalYearVariant",
+      "term_type": "Core.Tag",
+      "description": "Property encodes a fiscal year variant",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "3a41ae467bc78229"
+    },
+    "Common.MutuallyExclusiveTerm": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "MutuallyExclusiveTerm",
+      "term_type": "Core.Tag",
+      "description": "Only one term of the group identified with the Qualifier attribute can be applied",
+      "applies_to": [
+        "Term"
+      ],
+      "is_experimental": false,
+      "content_hash": "bf24abc247fcaace"
+    },
+    "Common.OperationTemplate": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "OperationTemplate",
+      "term_type": "Common.QualifiedName",
+      "description": "Qualified name of an operation that serves as template for the operation described by the annotated term or term property",
+      "applies_to": [
+        "Term",
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "bffd6acf9df4c048"
+    },
+    "Common.DraftRoot": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DraftRoot",
+      "term_type": "Common.DraftRootType",
+      "description": "",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "2ec392758610f6b1"
+    },
+    "Common.DraftNode": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DraftNode",
+      "term_type": "Common.DraftNodeType",
+      "description": "",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "a885c1830cdf07b9"
+    },
+    "Common.DraftActivationVia": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DraftActivationVia",
+      "term_type": "Core.SimpleIdentifier",
+      "description": "Draft entities in this set are indirectly activated via draft entities in the referenced entity set",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "6c021b97c72c26e7"
+    },
+    "Common.EditableFieldFor": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "EditableFieldFor",
+      "term_type": "Edm.PropertyPath",
+      "description": "The annotated property is an editable field for the referenced key property",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "f479d9a2dfd1f9ba"
+    },
+    "Common.SemanticKey": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticKey",
+      "term_type": "Collection(Edm.PropertyPath)",
+      "description": "The listed properties form the semantic key, i.e. they are unique modulo IsActiveEntity",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "b2f868853a977369"
+    },
+    "Common.SideEffects": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SideEffects",
+      "term_type": "Common.SideEffectsType",
+      "description": "Describes side-effects of modification operations",
+      "applies_to": [
+        "EntitySet",
+        "EntityType",
+        "ComplexType",
+        "Action"
+      ],
+      "is_experimental": false,
+      "content_hash": "e784a54cc07af0b2"
+    },
+    "Common.DefaultValuesFunction": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DefaultValuesFunction",
+      "term_type": "Common.QualifiedName",
+      "description": "",
+      "applies_to": [
+        "EntitySet",
+        "NavigationProperty",
+        "Action",
+        "Function"
+      ],
+      "is_experimental": false,
+      "content_hash": "e79b6f10c0ee4b30"
+    },
+    "Common.DerivedDefaultValue": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DerivedDefaultValue",
+      "term_type": "Edm.String",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "ff43d2d613e421a1"
+    },
+    "Common.FilterDefaultValue": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FilterDefaultValue",
+      "term_type": "Edm.PrimitiveType",
+      "description": "A default value for the property to be used in filter expressions.",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "7c5052a9ab4fd3d9"
+    },
+    "Common.FilterDefaultValueHigh": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FilterDefaultValueHigh",
+      "term_type": "Edm.PrimitiveType",
+      "description": "A default upper limit for the property to be used in 'less than or equal' filter expressions.",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "9faab5d8e27da0ef"
+    },
+    "Common.DerivedFilterDefaultValue": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DerivedFilterDefaultValue",
+      "term_type": "Edm.String",
+      "description": "",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "bc84196bd72853ae"
+    },
+    "Common.SortOrder": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SortOrder",
+      "term_type": "Collection(Common.SortOrderType)",
+      "description": "List of sort criteria",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "e7c8bb47689b7be0"
+    },
+    "Common.RecursiveHierarchy": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "RecursiveHierarchy",
+      "term_type": "Common.RecursiveHierarchyType",
+      "description": "",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e4891f8168de1966"
+    },
+    "Common.CreatedAt": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "CreatedAt",
+      "term_type": "Edm.DateTimeOffset",
+      "description": "Creation timestamp",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "dc9305b366e6cb3e"
+    },
+    "Common.CreatedBy": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "CreatedBy",
+      "term_type": "Common.UserID",
+      "description": "First editor",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "d9e3c0f62fa4b8b3"
+    },
+    "Common.ChangedAt": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ChangedAt",
+      "term_type": "Edm.DateTimeOffset",
+      "description": "Last modification timestamp",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "370606749416793b"
+    },
+    "Common.ChangedBy": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ChangedBy",
+      "term_type": "Common.UserID",
+      "description": "Last editor",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "69b82d3717697dda"
+    },
+    "Common.OriginalProtocolVersion": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "OriginalProtocolVersion",
+      "term_type": "Edm.String",
+      "description": "Original protocol version of a converted (V4) CSDL document, allowed values `2.0` and `3.0`",
+      "applies_to": [
+        "Schema"
+      ],
+      "is_experimental": false,
+      "content_hash": "42c9a94bd20a121b"
+    },
+    "Common.ApplyMultiUnitBehaviorForSortingAndFiltering": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ApplyMultiUnitBehaviorForSortingAndFiltering",
+      "term_type": "Core.Tag",
+      "description": "Sorting and filtering of amounts in multiple currencies needs special consideration",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": false,
+      "content_hash": "aa1aa6c592450cbf"
+    },
+    "Common.mediaUploadLink": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "mediaUploadLink",
+      "term_type": "Edm.String",
+      "description": "URL for uploading new media content to a Document Management Service",
+      "applies_to": [
+        "Property",
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "efac99d20949be65"
+    },
+    "Common.PrimitivePropertyPath": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "PrimitivePropertyPath",
+      "term_type": "Core.Tag",
+      "description": "A term or term property with this tag whose type is (a collection of) `Edm.PropertyPath` MUST resolve to a primitive structural property",
+      "applies_to": [
+        "Term",
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "381fd7d0196b8f85"
+    },
+    "Common.WebSocketBaseURL": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "WebSocketBaseURL",
+      "term_type": "Edm.String",
+      "description": "Base URL for WebSocket connections",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": true,
+      "content_hash": "e41431b32870d803"
+    },
+    "Common.WebSocketChannel": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "WebSocketChannel",
+      "term_type": "Edm.String",
+      "description": "Channel for WebSocket connections",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": true,
+      "content_hash": "4954694c35073a4b"
+    },
+    "Common.AddressViaNavigationPath": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "AddressViaNavigationPath",
+      "term_type": "Core.Tag",
+      "description": "Service prefers requests to use a resource path with navigation properties",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": false,
+      "content_hash": "e61f9b6808666f88"
+    },
+    "Common.ReferentialConstraint": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ReferentialConstraint",
+      "term_type": "Collection(Common.ReferentialConstraintType)",
+      "description": "[Referential constraints](https://oasis-tcs.github.io/odata-specs/odata-csdl-xml/odata-csdl-xml.html#ReferentialConstraint) without nullability requirement",
+      "applies_to": [
+        "NavigationProperty"
+      ],
+      "is_experimental": true,
+      "content_hash": "d1e1171c99730a34"
+    },
+    "Common.SemanticObjectMappingAbstract": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticObjectMappingAbstract",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: SemanticObjectProperty:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e8e1a9308f17aff5"
+    },
+    "Common.SemanticObjectMappingType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticObjectMappingType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: LocalProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "330f824765bd4087"
+    },
+    "Common.SemanticObjectMappingConstant": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SemanticObjectMappingConstant",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Constant:Edm.PrimitiveType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "21e097a7f29997d9"
+    },
+    "Common.FilterExpressionRestrictionType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FilterExpressionRestrictionType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Property:Edm.PropertyPath, AllowedExpressions:Common.FilterExpressionType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "0c86fe434eb50791"
+    },
+    "Common.ApplicationType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ApplicationType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Component:Edm.String, ServiceRepository:Edm.String, ServiceId:Edm.String, ServiceVersion:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "a60e79dca9ffec3e"
+    },
+    "Common.ErrorResolutionType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ErrorResolutionType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Analysis:Edm.String, Note:Edm.String, AdditionalNote:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c0557f016b6c399a"
+    },
+    "Common.IntervalType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "IntervalType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, LowerBoundary:Edm.PropertyPath, LowerBoundaryIncluded:Edm.Boolean, UpperBoundary:Edm.PropertyPath, UpperBoundaryIncluded:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "29b2d440a6d42d67"
+    },
+    "Common.SAPObjectNodeTypeType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SAPObjectNodeTypeType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Name:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "cea47f3d43d4f2c1"
+    },
+    "Common.ValueListType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, CollectionPath:Edm.String, RelativeCollectionPath:Edm.NavigationPropertyPath, CollectionRoot:Edm.String, DistinctValuesSupported:Edm.Boolean, SearchSupported:Edm.Boolean, FetchValues:Common.FetchValuesType, PresentationVariantQualifier:Core.SimpleIdentifier, SelectionVariantQualifier:Core.SimpleIdentifier, Parameters:Collection(Common.ValueListParameter)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6e97a89683fda3ba"
+    },
+    "Common.ValueListMappingType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListMappingType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, CollectionPath:Edm.String, DistinctValuesSupported:Edm.Boolean, FetchValues:Common.FetchValuesType, PresentationVariantQualifier:Core.SimpleIdentifier, SelectionVariantQualifier:Core.SimpleIdentifier, Parameters:Collection(Common.ValueListParameter)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "05f128bb23b34a9a"
+    },
+    "Common.ValueListParameter": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameter",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ValueListProperty:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6dbad562b692043f"
+    },
+    "Common.ValueListParameterIn": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterIn",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: LocalDataProperty:Edm.PropertyPath, InitialValueIsSignificant:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "d96a0cff0aa42b49"
+    },
+    "Common.ValueListParameterConstant": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterConstant",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Constant:Edm.PrimitiveType, InitialValueIsSignificant:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "4935cffd77965ddf"
+    },
+    "Common.ValueListParameterConstants": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterConstants",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Constants:Collection(Edm.PrimitiveType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "3342908934ad08d2"
+    },
+    "Common.ValueListParameterInOut": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterInOut",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: LocalDataProperty:Edm.PropertyPath, InitialValueIsSignificant:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "26177c1b57aecd97"
+    },
+    "Common.ValueListParameterOut": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterOut",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: LocalDataProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "3fd8dd3b8ef58d20"
+    },
+    "Common.ValueListParameterDisplayOnly": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterDisplayOnly",
+      "term_type": "ComplexType",
+      "description": "",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "25dd5a46a99c9eff"
+    },
+    "Common.ValueListParameterFilterOnly": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ValueListParameterFilterOnly",
+      "term_type": "ComplexType",
+      "description": "",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "5af6d563708f1d1f"
+    },
+    "Common.DraftRootType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DraftRootType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: PreparationAction:Common.QualifiedName, ActivationAction:Common.QualifiedName, DiscardAction:Common.QualifiedName, EditAction:Common.QualifiedName, ResumeAction:Common.QualifiedName, NewAction:Common.QualifiedName, AdditionalNewActions:Collection(Common.QualifiedName), ShareAction:Common.QualifiedName",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "78b18dfe4fb474ce"
+    },
+    "Common.DraftNodeType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "DraftNodeType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: PreparationAction:Common.QualifiedName, ValidationFunction:Common.QualifiedName",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ff64e1c3f686d64e"
+    },
+    "Common.SideEffectsType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SideEffectsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: SourceProperties:Collection(Edm.PropertyPath), SourceEntities:Collection(Edm.NavigationPropertyPath), SourceEvents:Collection(Edm.String), TargetProperties:Collection(Edm.String), TargetEntities:Collection(Edm.NavigationPropertyPath), EffectTypes:Common.EffectType, TriggerAction:Common.QualifiedName, Discretionary:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "20a108116bd2f227"
+    },
+    "Common.SortOrderType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "SortOrderType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Property:Edm.PropertyPath, DynamicProperty:Edm.AnnotationPath, Expression:Edm.PrimitiveType, Descending:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "00fb015f63e90e14"
+    },
+    "Common.RecursiveHierarchyType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "RecursiveHierarchyType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ExternalNodeKeyProperty:Edm.PropertyPath, NodeDescendantCountProperty:Edm.PropertyPath, NodeDrillStateProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "7ce57eb039e0d341"
+    },
+    "Common.ReferentialConstraintType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "ReferentialConstraintType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Property:Edm.PropertyPath, ReferencedProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8de6f25b7e64a2e3"
+    },
+    "Common.TextFormatType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "TextFormatType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: plain, html",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "87f69f74b699b2fb"
+    },
+    "Common.FilterExpressionType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FilterExpressionType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: SingleValue, MultiValue, SingleInterval",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e7947d26cdcaf033"
+    },
+    "Common.FieldControlType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "FieldControlType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Mandatory, Optional, ReadOnly, Inapplicable, Hidden",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "5ee04f26f6867d9e"
+    },
+    "Common.EffectType": {
+      "vocabulary": "Common",
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "term_name": "EffectType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: ValidationMessage, ValueChange, FieldControlChange",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "de0733bb560e19a0"
+    },
+    "Communication.Contact": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "Contact",
+      "term_type": "Communication.ContactType",
+      "description": "Address book entry",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "e7ac8ecf3b9a3d23"
+    },
+    "Communication.Address": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "Address",
+      "term_type": "Communication.AddressType",
+      "description": "Address",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "ed7fd698ddb2e5a0"
+    },
+    "Communication.IsEmailAddress": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "IsEmailAddress",
+      "term_type": "Core.Tag",
+      "description": "Property contains an email address",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "b4c4263491dddc5e"
+    },
+    "Communication.IsPhoneNumber": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "IsPhoneNumber",
+      "term_type": "Core.Tag",
+      "description": "Property contains a phone number",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "067d521fc4a1c434"
+    },
+    "Communication.Event": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "Event",
+      "term_type": "Communication.EventData",
+      "description": "Calendar entry",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "59b788eed4ceef3d"
+    },
+    "Communication.Task": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "Task",
+      "term_type": "Communication.TaskData",
+      "description": "Task list entry",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "b51c99847f305184"
+    },
+    "Communication.Message": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "Message",
+      "term_type": "Communication.MessageData",
+      "description": "Email message",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "3e5dc2bbc2fac150"
+    },
+    "Communication.ContactType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "ContactType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: fn:Edm.String, n:Communication.NameType, nickname:Edm.String, photo:Edm.String, bday:Edm.Date, anniversary:Edm.Date, gender:Communication.GenderType, title:Edm.String, role:Edm.String, org:Edm.String, orgunit:Edm.String, kind:Communication.KindType, note:Edm.String, adr:Collection(Communication.AddressType), tel:Collection(Communication.PhoneNumberType), email:Collection(Communication.EmailAddressType), geo:Collection(Communication.GeoDataType), url:Collection(Communication.UrlType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "25098faa6dc101fb"
+    },
+    "Communication.NameType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "NameType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: surname:Edm.String, given:Edm.String, additional:Edm.String, prefix:Edm.String, suffix:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "591d536b950b2308"
+    },
+    "Communication.AddressType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "AddressType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: building:Edm.String, street:Edm.String, district:Edm.String, locality:Edm.String, region:Edm.String, code:Edm.String, country:Edm.String, pobox:Edm.String, ext:Edm.String, careof:Edm.String, label:Edm.String, type:Communication.ContactInformationType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "5d211962fbee69ad"
+    },
+    "Communication.PhoneNumberType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "PhoneNumberType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: uri:Edm.String, type:Communication.PhoneType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "05a380431963482b"
+    },
+    "Communication.EmailAddressType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "EmailAddressType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: address:Edm.String, type:Communication.ContactInformationType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e600c297609fe92b"
+    },
+    "Communication.GeoDataType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "GeoDataType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: uri:Edm.String, type:Communication.ContactInformationType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "0f4f9bd048fbd6e8"
+    },
+    "Communication.UrlType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "UrlType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: uri:Edm.String, type:Communication.ContactInformationType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "89c597ab8058f5e2"
+    },
+    "Communication.EventData": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "EventData",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: summary:Edm.String, description:Edm.String, categories:Collection(Edm.String), dtstart:Edm.DateTimeOffset, dtend:Edm.DateTimeOffset, duration:Edm.Duration, class:Edm.String, status:Edm.String, location:Edm.String, transp:Edm.Boolean, wholeday:Edm.Boolean, fbtype:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "4716131dad6ab565"
+    },
+    "Communication.TaskData": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "TaskData",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: summary:Edm.String, description:Edm.String, due:Edm.DateTimeOffset, completed:Edm.DateTimeOffset, percentcomplete:Edm.Byte, priority:Edm.Byte",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "48563dab969659a1"
+    },
+    "Communication.MessageData": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "MessageData",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: from:Edm.String, sender:Edm.String, to:Collection(Edm.String), cc:Collection(Edm.String), bcc:Collection(Edm.String), subject:Edm.String, body:Edm.String, keywords:Collection(Edm.String), received:Edm.DateTimeOffset",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "af309e668540788b"
+    },
+    "Communication.KindType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "KindType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: individual, group, org, location",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "490f200fcba4e37d"
+    },
+    "Communication.ContactInformationType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "ContactInformationType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: work, home, preferred",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "10be11a72788035b"
+    },
+    "Communication.PhoneType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "PhoneType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: work, home, preferred, voice, cell, fax, video",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "43ee171dce8ef5e9"
+    },
+    "Communication.GenderType": {
+      "vocabulary": "Communication",
+      "namespace": "com.sap.vocabularies.Communication.v1",
+      "term_name": "GenderType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: M, F, O, N, U",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "4ad9008b5d72c601"
+    },
+    "DataIntegration.Extractable": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "Extractable",
+      "term_type": "Edm.Boolean",
+      "description": "Defines if entity set is extractable",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "9d46a6b9aa1a78bd"
+    },
+    "DataIntegration.OriginalDataType": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "OriginalDataType",
+      "term_type": "Edm.String",
+      "description": "Original data type of the annotated property in its source system",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "2aa375e6f6503238"
+    },
+    "DataIntegration.OriginalName": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "OriginalName",
+      "term_type": "Edm.String",
+      "description": "Original name of the annotated model element in its source model",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ccd716f0258ec3ea"
+    },
+    "DataIntegration.ConversionExit": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "ConversionExit",
+      "term_type": "Edm.String",
+      "description": "Identifier that describes the special output conversion of the annotated property in the source system",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "f8e08b3524357b7b"
+    },
+    "DataIntegration.SourceSystem": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "SourceSystem",
+      "term_type": "Edm.String",
+      "description": "Identifier that classifies the type of the source system",
+      "applies_to": [
+        "Container"
+      ],
+      "is_experimental": false,
+      "content_hash": "ddb1a67d9239a3ea"
+    },
+    "DataIntegration.DeltaMethod": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "DeltaMethod",
+      "term_type": "DataIntegration.DeltaMethodType",
+      "description": "Defines which delta method the entity set supports. Only evaluated if Capabilities.ChangeTracking/Supported is true",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "9cd26d15e335abc7"
+    },
+    "DataIntegration.DeltaMethodType": {
+      "vocabulary": "DataIntegration",
+      "namespace": "com.sap.vocabularies.DataIntegration.v1",
+      "term_name": "DeltaMethodType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: INSERT, UPDATE, DELETE",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "9ac802a58f12648e"
+    },
+    "DirectEdit.SideEffects": {
+      "vocabulary": "DirectEdit",
+      "namespace": "com.sap.vocabularies.DirectEdit.v1",
+      "term_name": "SideEffects",
+      "term_type": "DirectEdit.SideEffectsType",
+      "description": "Determine side effects of client-side data modification",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": true,
+      "content_hash": "e126cf5599f43577"
+    },
+    "DirectEdit.SideEffectsType": {
+      "vocabulary": "DirectEdit",
+      "namespace": "com.sap.vocabularies.DirectEdit.v1",
+      "term_name": "SideEffectsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Triggers:Collection(Edm.String), CalculationFunction:Common.QualifiedName",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c97c14273d4d667e"
+    },
+    "EntityRelationship.entityType": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "entityType",
+      "term_type": "Edm.String",
+      "description": "",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "f24b24fe6d308c56"
+    },
+    "EntityRelationship.propertyType": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "propertyType",
+      "term_type": "Edm.String",
+      "description": "Logical property type of a property",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "5519497701873504"
+    },
+    "EntityRelationship.entityIds": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "entityIds",
+      "term_type": "Collection(EntityRelationship.entityId)",
+      "description": "The annotated entity type represents an ODM root entity",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "cc99f7212a6f89c6"
+    },
+    "EntityRelationship.reference": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "reference",
+      "term_type": "EntityRelationship.singleReference",
+      "description": "Defines references to other Entity Types based on a single ID.",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "e0324003d8ecc4bf"
+    },
+    "EntityRelationship.compositeReferences": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "compositeReferences",
+      "term_type": "Collection(EntityRelationship.compositeReference)",
+      "description": " Defines one or many references to other Entity Types based on a composite IDs.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "de54714230039b1d"
+    },
+    "EntityRelationship.temporalIds": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalIds",
+      "term_type": "Collection(EntityRelationship.temporalId)",
+      "description": "Defines a list of temporal IDs.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "8a5489f58da2f015"
+    },
+    "EntityRelationship.temporalReferences": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalReferences",
+      "term_type": "Collection(EntityRelationship.temporalReference)",
+      "description": "Defines a list of temporal references.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "69822ff53acc6ad1"
+    },
+    "EntityRelationship.referencesWithConstantIds": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "referencesWithConstantIds",
+      "term_type": "Collection(EntityRelationship.referenceWithConstantId)",
+      "description": "Defines one or many references to other Entity Types based on a composite IDs where some properties of the references are constant values.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "8fd366a4b5fafa6d"
+    },
+    "EntityRelationship.singleReference": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "singleReference",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: name:Edm.String, referencedEntityType:EntityRelationship.entityTypeID, referencedPropertyType:EntityRelationship.propertyTypeID",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "1ee4c63620aaff95"
+    },
+    "EntityRelationship.entityId": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "entityId",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: name:Edm.String, description:Edm.String, propertyTypes:Collection(EntityRelationship.propertyTypeID)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "f9e5ee43b7686237"
+    },
+    "EntityRelationship.compositeReference": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "compositeReference",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: name:Edm.String, referencedEntityType:EntityRelationship.entityTypeID, referencedPropertyType:Collection(EntityRelationship.referencedPropertyType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "be90a2b0c6c6ba80"
+    },
+    "EntityRelationship.referencedPropertyType": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "referencedPropertyType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: referencedPropertyType:EntityRelationship.propertyTypeID, localPropertyName:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "cb675ff4256235c3"
+    },
+    "EntityRelationship.temporalId": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalId",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: name:Edm.String, description:Edm.String, propertyTypes:Collection(EntityRelationship.propertyTypeID), temporalIntervalType:EntityRelationship.temporalIntervalTypeEnum, temporalType:EntityRelationship.temporalTypeEnum, temporalIntervalStartProperty:Edm.PropertyPath, temporalIntervalEndProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "121de5c7e7040a51"
+    },
+    "EntityRelationship.temporalReference": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalReference",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: name:Edm.String, referencedEntityType:EntityRelationship.entityTypeID, referencedPropertyType:Collection(EntityRelationship.referencedPropertyType), category:EntityRelationship.temporalCategoryEnum, selectionDateProperty:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "2b5adbee3cdc785b"
+    },
+    "EntityRelationship.referenceWithConstantId": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "referenceWithConstantId",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: name:Edm.String, referencedEntityType:EntityRelationship.entityTypeID, referencedPropertyType:Collection(EntityRelationship.referencedPropertyTypeWithConstantId)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "59b563717d76ae63"
+    },
+    "EntityRelationship.referencedPropertyTypeWithConstantId": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "referencedPropertyTypeWithConstantId",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: referencedPropertyType:EntityRelationship.propertyTypeID, localPropertyName:Edm.PropertyPath, constantValue:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c7a92d6e78817b52"
+    },
+    "EntityRelationship.temporalIntervalTypeEnum": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalIntervalTypeEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: CLOSED_CLOSED, OPEN_OPEN, OPEN_CLOSED, CLOSED_OPEN",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "d9a872918c4c0325"
+    },
+    "EntityRelationship.temporalTypeEnum": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalTypeEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: DATE, DATETIME",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "07ad4d82fd11850f"
+    },
+    "EntityRelationship.temporalCategoryEnum": {
+      "vocabulary": "EntityRelationship",
+      "namespace": "com.sap.vocabularies.EntityRelationship.v1",
+      "term_name": "temporalCategoryEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: TEMPORAL_DATE",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "028551e2a70f4efc"
+    },
+    "Graph.traceId": {
+      "vocabulary": "Graph",
+      "namespace": "com.sap.vocabularies.Graph.v1",
+      "term_name": "traceId",
+      "term_type": "Edm.String",
+      "description": "The traceId contains a unique string that is preserved across multiple requests and log files. It is used in error responses to help diagnose problems by correlating log entries.",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "fd8cdbe0c0050b3a"
+    },
+    "Graph.Details": {
+      "vocabulary": "Graph",
+      "namespace": "com.sap.vocabularies.Graph.v1",
+      "term_name": "Details",
+      "term_type": "Graph.DetailsType",
+      "description": "Graph-specific details for error responses",
+      "applies_to": [],
+      "is_experimental": true,
+      "content_hash": "a0d473b43f177050"
+    },
+    "Graph.CompositionRoot": {
+      "vocabulary": "Graph",
+      "namespace": "com.sap.vocabularies.Graph.v1",
+      "term_name": "CompositionRoot",
+      "term_type": "Core.Tag",
+      "description": "The annotated entity type is the root type of a composition tree.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "bc9d16dd8d3f31e0"
+    },
+    "Graph.DetailsType": {
+      "vocabulary": "Graph",
+      "namespace": "com.sap.vocabularies.Graph.v1",
+      "term_name": "DetailsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: url:Edm.String, body:JSON.JSON",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "2e8e1765adc47873"
+    },
+    "HANACloud.CalculationView": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "CalculationView",
+      "term_type": "HANACloud.CalculationViewType",
+      "description": "Reference to a HANA calculation view that backs this entity",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "16382b5dc94f5796"
+    },
+    "HANACloud.ColumnMapping": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "ColumnMapping",
+      "term_type": "HANACloud.ColumnMappingType",
+      "description": "Mapping between OData property and HANA column",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "a7c9f0edf8e1b036"
+    },
+    "HANACloud.InputParameter": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "InputParameter",
+      "term_type": "HANACloud.InputParameterType",
+      "description": "HANA calculation view input parameter",
+      "applies_to": [
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "8fb3a34ce7f906d8"
+    },
+    "HANACloud.InputParameters": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "InputParameters",
+      "term_type": "Collection(HANACloud.InputParameterType)",
+      "description": "List of input parameters for the underlying calculation view",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "a1844320f63c669c"
+    },
+    "HANACloud.HierarchyDefinition": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "HierarchyDefinition",
+      "term_type": "HANACloud.HierarchyDefinitionType",
+      "description": "HANA parent-child hierarchy configuration",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "b972b237edb765b1"
+    },
+    "HANACloud.DeltaTracking": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "DeltaTracking",
+      "term_type": "HANACloud.DeltaTrackingType",
+      "description": "Change data capture configuration for HANA sync",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "697298eaea60ef39"
+    },
+    "HANACloud.AnalyticalSemantics": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "AnalyticalSemantics",
+      "term_type": "HANACloud.AnalyticalSemanticsType",
+      "description": "HANA-specific analytical semantics for a property",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "ffaa76946f849f93"
+    },
+    "HANACloud.QueryPushdown": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "QueryPushdown",
+      "term_type": "HANACloud.QueryPushdownType",
+      "description": "Hints for query pushdown optimization",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "044eea55a82ed63a"
+    },
+    "HANACloud.HANAConnection": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "HANAConnection",
+      "term_type": "HANACloud.HANAConnectionType",
+      "description": "HANA database connection information",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": false,
+      "content_hash": "221a8a9621b49f9e"
+    },
+    "HANACloud.CalculationViewType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "CalculationViewType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: SchemaName:Edm.String, ViewName:Edm.String, PackagePath:Edm.String, ViewType:HANACloud.ViewTypeEnum, IsAnalytical:Edm.Boolean, SupportsHierarchies:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "368922bd196e360a"
+    },
+    "HANACloud.ColumnMappingType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "ColumnMappingType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: HANAColumnName:Edm.String, HANADataType:Edm.String, Precision:Edm.Int32, Scale:Edm.Int32, Length:Edm.Int32, IsCalculated:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "396df19a91a08ffd"
+    },
+    "HANACloud.InputParameterType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "InputParameterType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ParameterName:Edm.String, DataType:Edm.String, Mandatory:Edm.Boolean, DefaultValue:Edm.String, Description:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "883b91faab4a93c5"
+    },
+    "HANACloud.HierarchyDefinitionType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "HierarchyDefinitionType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: HierarchyName:Edm.String, NodeColumn:Edm.String, ParentColumn:Edm.String, LevelColumn:Edm.String, DescendantCountColumn:Edm.String, DrillStateColumn:Edm.String, IsLeveledHierarchy:Edm.Boolean, MaxLevels:Edm.Int32",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e0bac73bd2a438c2"
+    },
+    "HANACloud.DeltaTrackingType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "DeltaTrackingType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Method:HANACloud.DeltaMethodEnum, TimestampColumn:Edm.String, ChangeTypeColumn:Edm.String, VersionColumn:Edm.String, SoftDeleteColumn:Edm.String, RetentionDays:Edm.Int32",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "a91d0b29a3affa10"
+    },
+    "HANACloud.AnalyticalSemanticsType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "AnalyticalSemanticsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: SemanticType:HANACloud.SemanticTypeEnum, AggregationType:HANACloud.AggregationTypeEnum, CurrencyProperty:Edm.PropertyPath, UnitProperty:Edm.PropertyPath, ExceptionAggregationType:HANACloud.AggregationTypeEnum, ExceptionAggregationDimension:Edm.PropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "5990d05ca7027220"
+    },
+    "HANACloud.QueryPushdownType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "QueryPushdownType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: PreferPushdown:Edm.Boolean, SupportedOperations:Collection(Edm.String), EstimatedRowCount:Edm.Int64, LastAnalyzed:Edm.DateTimeOffset",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c80d7d22e807dada"
+    },
+    "HANACloud.HANAConnectionType": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "HANAConnectionType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: InstanceID:Edm.String, Host:Edm.String, Port:Edm.Int32, Schema:Edm.String, UseTLS:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "5ed3ceaf95cfabc3"
+    },
+    "HANACloud.ViewTypeEnum": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "ViewTypeEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: CalculationView, AttributeView, AnalyticView, Table, SQLView, VirtualTable",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "eee10e7c25987359"
+    },
+    "HANACloud.DeltaMethodEnum": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "DeltaMethodEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Timestamp, CDCTable, Version, FullLoad, TriggerBased",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "9df1c6066346132f"
+    },
+    "HANACloud.SemanticTypeEnum": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "SemanticTypeEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Amount, Quantity, Date, Time, DateTime, CurrencyCode, UnitOfMeasure, GeoLocation, Text",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "beef984502ebd8a9"
+    },
+    "HANACloud.AggregationTypeEnum": {
+      "vocabulary": "HANACloud",
+      "namespace": "com.sap.vocabularies.HANACloud.v1",
+      "term_name": "AggregationTypeEnum",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: SUM, MIN, MAX, COUNT, AVG, FIRST, LAST, NOP",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "79780da9ac3314bd"
+    },
+    "HTML5.CssDefaults": {
+      "vocabulary": "HTML5",
+      "namespace": "com.sap.vocabularies.HTML5.v1",
+      "term_name": "CssDefaults",
+      "term_type": "HTML5.CssDefaultsType",
+      "description": "CSS definitions that may be used as defaults",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "1334f7f7f64af4d0"
+    },
+    "HTML5.LinkTarget": {
+      "vocabulary": "HTML5",
+      "namespace": "com.sap.vocabularies.HTML5.v1",
+      "term_name": "LinkTarget",
+      "term_type": "HTML5.LinkTargetType",
+      "description": "Where to open a link for the annotated [URL](https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.html#IsURL)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "7c757ab406a70c9b"
+    },
+    "HTML5.RowSpanForDuplicateValues": {
+      "vocabulary": "HTML5",
+      "namespace": "com.sap.vocabularies.HTML5.v1",
+      "term_name": "RowSpanForDuplicateValues",
+      "term_type": "Core.Tag",
+      "description": "The annotated data field might use a rowSpan for adjacent duplicate values if used in a table.",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": true,
+      "content_hash": "606597614222b9c2"
+    },
+    "HTML5.CssDefaultsType": {
+      "vocabulary": "HTML5",
+      "namespace": "com.sap.vocabularies.HTML5.v1",
+      "term_name": "CssDefaultsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: width:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "0ce6b2e254316bbc"
+    },
+    "Hierarchy.RecursiveHierarchy": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "RecursiveHierarchy",
+      "term_type": "Hierarchy.RecursiveHierarchyType",
+      "description": "Hierarchy-specific information in the result set of a hierarchical request",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "40862ed4d82a76e6"
+    },
+    "Hierarchy.RecursiveHierarchyActions": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "RecursiveHierarchyActions",
+      "term_type": "Hierarchy.RecursiveHierarchyActionsType",
+      "description": "Actions for maintaining the recursive hierarchy defined by the [base term](https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Aggregation.V1.html#RecursiveHierarchy)",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "70969c7a9a9f8ee6"
+    },
+    "Hierarchy.MatchCount": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "MatchCount",
+      "term_type": "Edm.Int64",
+      "description": "Instance annotation on the result of an `$apply` query option containing the number of matching nodes after hierarchical transformations",
+      "applies_to": [
+        "Collection"
+      ],
+      "is_experimental": true,
+      "content_hash": "ce3dcd32a115c148"
+    },
+    "Hierarchy.RecursiveHierarchySupported": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "RecursiveHierarchySupported",
+      "term_type": "Core.Tag",
+      "description": "Whether the annotated collection acts as a [`RecursiveHierarchy`](#RecursiveHierarchy) with the given qualifier",
+      "applies_to": [
+        "Collection"
+      ],
+      "is_experimental": true,
+      "content_hash": "c7b1dae6522983b4"
+    },
+    "Hierarchy.HierarchyType": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "HierarchyType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: LimitedDescendantCount:Edm.Int64, DrillState:Edm.String, DistanceFromRoot:Edm.Int64",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8c879af93cc058a4"
+    },
+    "Hierarchy.RecursiveHierarchyType": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "RecursiveHierarchyType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ExternalKey:Edm.String, NodeType:Edm.String, LimitedDescendantCount:Edm.Int64, DrillState:Edm.String, DistanceFromRoot:Edm.Int64, ChildCount:Edm.Int64, DescendantCount:Edm.Int64, LimitedRank:Edm.Int64, SiblingRank:Edm.Int64, Matched:Edm.Boolean, MatchedDescendantCount:Edm.Int64",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "b25ad163e38eb4fa"
+    },
+    "Hierarchy.RecursiveHierarchyActionsType": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "RecursiveHierarchyActionsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ChangeNextSiblingAction:Common.QualifiedName, ChangeSiblingForRootsSupported:Edm.Boolean, CopyAction:Common.QualifiedName",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "3527842c49b0ce70"
+    },
+    "Hierarchy.TopLevelsExpandType": {
+      "vocabulary": "Hierarchy",
+      "namespace": "com.sap.vocabularies.Hierarchy.v1",
+      "term_name": "TopLevelsExpandType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: NodeID:Edm.String, Levels:Edm.Int64",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "fac838d951c1d460"
+    },
+    "ILM.BlockingEnabled": {
+      "vocabulary": "ILM",
+      "namespace": "com.sap.vocabularies.ILM.v1",
+      "term_name": "BlockingEnabled",
+      "term_type": "Core.Tag",
+      "description": "Entity can be blocked by ILM",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "4ef66562f0a7981c"
+    },
+    "ILM.ArchivingEnabled": {
+      "vocabulary": "ILM",
+      "namespace": "com.sap.vocabularies.ILM.v1",
+      "term_name": "ArchivingEnabled",
+      "term_type": "Core.Tag",
+      "description": "Entity can be blocked by ILM",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "e392140d0b967d58"
+    },
+    "ILM.FieldSemantics": {
+      "vocabulary": "ILM",
+      "namespace": "com.sap.vocabularies.ILM.v1",
+      "term_name": "FieldSemantics",
+      "term_type": "ILM.FieldSemanticsType",
+      "description": "Primary meaning for the Information Lifecycle contained in the annotated property",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "6e76897df53637d2"
+    },
+    "ODM.codeList": {
+      "vocabulary": "ODM",
+      "namespace": "com.sap.vocabularies.ODM.v1",
+      "term_name": "codeList",
+      "term_type": "Core.Tag",
+      "description": "The annotated entity set represents a list of code values, the annotated entity type represents an entry in a code list",
+      "applies_to": [
+        "EntityType",
+        "EntitySet"
+      ],
+      "is_experimental": true,
+      "content_hash": "5e49a7c5e47fc113"
+    },
+    "ODM.root": {
+      "vocabulary": "ODM",
+      "namespace": "com.sap.vocabularies.ODM.v1",
+      "term_name": "root",
+      "term_type": "Core.Tag",
+      "description": "The annotated entity type represents an ODM root entity",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "cc573dad0395966e"
+    },
+    "ODM.oid": {
+      "vocabulary": "ODM",
+      "namespace": "com.sap.vocabularies.ODM.v1",
+      "term_name": "oid",
+      "term_type": "Edm.PropertyPath",
+      "description": "The named field is an OID (ODM identifier), and it uniquely identifies an ODM root entity in a customer landscape.",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "d014373c589cebe2"
+    },
+    "ODM.entityName": {
+      "vocabulary": "ODM",
+      "namespace": "com.sap.vocabularies.ODM.v1",
+      "term_name": "entityName",
+      "term_type": "Edm.String",
+      "description": "Name of an ODM entity as a general concept, not a concrete version thereof",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "040b0e9812896310"
+    },
+    "ODM.oidReference": {
+      "vocabulary": "ODM",
+      "namespace": "com.sap.vocabularies.ODM.v1",
+      "term_name": "oidReference",
+      "term_type": "ODM.oidReferenceType",
+      "description": "Specification of a referenced entity",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "803ffd48e912758c"
+    },
+    "ODM.oidReferenceType": {
+      "vocabulary": "ODM",
+      "namespace": "com.sap.vocabularies.ODM.v1",
+      "term_name": "oidReferenceType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: entityName:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "474be4d2c14a1047"
+    },
+    "Offline.ClientOnly": {
+      "vocabulary": "Offline",
+      "namespace": "com.sap.vocabularies.Offline.v1",
+      "term_name": "ClientOnly",
+      "term_type": "Offline.ClientOnlyType",
+      "description": "The annotated model element exists only on client devices",
+      "applies_to": [
+        "EntityType",
+        "EntitySet",
+        "EnumType",
+        "ComplexType",
+        "TypeDefinition"
+      ],
+      "is_experimental": true,
+      "content_hash": "d71dbc0191eaf95f"
+    },
+    "Offline.ClientOnlyType": {
+      "vocabulary": "Offline",
+      "namespace": "com.sap.vocabularies.Offline.v1",
+      "term_name": "ClientOnlyType",
+      "term_type": "ComplexType",
+      "description": "",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "0455baa43ef25368"
+    },
+    "Offline.LocalDraft": {
+      "vocabulary": "Offline",
+      "namespace": "com.sap.vocabularies.Offline.v1",
+      "term_name": "LocalDraft",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ActiveEntitySet:Core.SimpleIdentifier",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "bf1e9871e1e13970"
+    },
+    "PDF.Features": {
+      "vocabulary": "PDF",
+      "namespace": "com.sap.vocabularies.PDF.v1",
+      "term_name": "Features",
+      "term_type": "PDF.FeaturesType",
+      "description": "Features for the PDF",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": false,
+      "content_hash": "10ddd4f83c2fb260"
+    },
+    "PDF.FeaturesType": {
+      "vocabulary": "PDF",
+      "namespace": "com.sap.vocabularies.PDF.v1",
+      "term_name": "FeaturesType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: DocumentDescriptionReference:Edm.String, DocumentDescriptionCollection:Edm.String, ArchiveFormat:Edm.Boolean, Signature:Edm.Boolean, CoverPage:Edm.Boolean, FontName:Edm.Boolean, FontSize:Edm.Boolean, Margin:Edm.Boolean, Border:Edm.Boolean, FitToPage:Edm.Boolean, Padding:Edm.Boolean, HeaderFooter:Edm.Boolean, ResultSizeDefault:Edm.Int32, ResultSizeMaximum:Edm.Int32, IANATimezoneFormat:Edm.Boolean, Treeview:Edm.Boolean, TextDirectionLayout:Edm.Boolean, UploadToFileShare:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "a92dd2eb40801a77"
+    },
+    "PersonalData.EntitySemantics": {
+      "vocabulary": "PersonalData",
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "term_name": "EntitySemantics",
+      "term_type": "PersonalData.EntitySemanticsType",
+      "description": "Primary meaning of the entities in the annotated entity set",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "56edf4f54e37a5f0"
+    },
+    "PersonalData.DataSubjectRole": {
+      "vocabulary": "PersonalData",
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "term_name": "DataSubjectRole",
+      "term_type": "Edm.String",
+      "description": "Role of the data subjects in this set (e.g. employee, customer)",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "4783f715b68c90bf"
+    },
+    "PersonalData.DataSubjectRoleDescription": {
+      "vocabulary": "PersonalData",
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "term_name": "DataSubjectRoleDescription",
+      "term_type": "Edm.String",
+      "description": "Language-dependent description of the role of the data subjects in this set (e.g. employee, customer)",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "0fa2901b7d9c180c"
+    },
+    "PersonalData.FieldSemantics": {
+      "vocabulary": "PersonalData",
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "term_name": "FieldSemantics",
+      "term_type": "PersonalData.FieldSemanticsType",
+      "description": "Primary meaning of the personal data contained in the annotated property",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "59701c2bd4f13bc9"
+    },
+    "PersonalData.IsPotentiallyPersonal": {
+      "vocabulary": "PersonalData",
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "term_name": "IsPotentiallyPersonal",
+      "term_type": "Core.Tag",
+      "description": "Property contains potentially personal data",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "53438beb7ef4cc16"
+    },
+    "PersonalData.IsPotentiallySensitive": {
+      "vocabulary": "PersonalData",
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "term_name": "IsPotentiallySensitive",
+      "term_type": "Core.Tag",
+      "description": "Property contains potentially sensitive personal data",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "b69a31d3ff6a48e6"
+    },
+    "Session.StickySessionSupported": {
+      "vocabulary": "Session",
+      "namespace": "com.sap.vocabularies.Session.v1",
+      "term_name": "StickySessionSupported",
+      "term_type": "Session.StickySessionSupportedType",
+      "description": "The annotated entity set allows data modification only within a sticky session",
+      "applies_to": [
+        "EntitySet"
+      ],
+      "is_experimental": false,
+      "content_hash": "335f055f58d06496"
+    },
+    "Session.StickySessionSupportedType": {
+      "vocabulary": "Session",
+      "namespace": "com.sap.vocabularies.Session.v1",
+      "term_name": "StickySessionSupportedType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: NewAction:Common.QualifiedName, AdditionalNewActions:Collection(Common.QualifiedName), EditAction:Common.QualifiedName, SaveAction:Common.QualifiedName, DiscardAction:Core.SimpleIdentifier",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "2f9cdd4acfe5105f"
+    },
+    "Support.TechnicalInfoLinks": {
+      "vocabulary": "Support",
+      "namespace": "com.sap.vocabularies.Support.v1",
+      "term_name": "TechnicalInfoLinks",
+      "term_type": "Support.TechnicalInfoLinksType",
+      "description": "How to retrieve links to technical information about the service",
+      "applies_to": [
+        "Schema"
+      ],
+      "is_experimental": false,
+      "content_hash": "6331e362f4df0412"
+    },
+    "Support.TechnicalInfoLinksType": {
+      "vocabulary": "Support",
+      "namespace": "com.sap.vocabularies.Support.v1",
+      "term_name": "TechnicalInfoLinksType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Url:Edm.String, FunctionImport:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ba6767a73c9ca394"
+    },
+    "Support.TechnicalInfoLink": {
+      "vocabulary": "Support",
+      "namespace": "com.sap.vocabularies.Support.v1",
+      "term_name": "TechnicalInfoLink",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Text:Edm.String, Url:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ef97daf2fd652a1b"
+    },
+    "UI.HeaderInfo": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "HeaderInfo",
+      "term_type": "UI.HeaderInfoType",
+      "description": "Information for the header area of an entity representation. HeaderInfo is mandatory for main entity types of the model",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "890fd207848f42e7"
+    },
+    "UI.Identification": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Identification",
+      "term_type": "Collection(UI.DataFieldAbstract)",
+      "description": "Collection of fields identifying the object",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "9fe5676249c186c7"
+    },
+    "UI.Badge": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Badge",
+      "term_type": "UI.BadgeType",
+      "description": "Information usually displayed in the form of a business card",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "dc464b2ac4ba5cab"
+    },
+    "UI.LineItem": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "LineItem",
+      "term_type": "Collection(UI.DataFieldAbstract)",
+      "description": "Collection of data fields for representation in a table or list",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "e353714c36660580"
+    },
+    "UI.StatusInfo": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "StatusInfo",
+      "term_type": "Collection(UI.DataFieldAbstract)",
+      "description": "Collection of data fields describing the status of an entity",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "3e63dd0eee84ecf9"
+    },
+    "UI.FieldGroup": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "FieldGroup",
+      "term_type": "UI.FieldGroupType",
+      "description": "Group of fields with an optional label",
+      "applies_to": [
+        "EntityType",
+        "Action",
+        "Function",
+        "ActionImport",
+        "FunctionImport"
+      ],
+      "is_experimental": false,
+      "content_hash": "3d2a5dd60baf8319"
+    },
+    "UI.ConnectedFields": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ConnectedFields",
+      "term_type": "UI.ConnectedFieldsType",
+      "description": "Group of semantically connected fields with a representation template and an optional label",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "dda2b0c63b8f6596"
+    },
+    "UI.GeoLocations": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "GeoLocations",
+      "term_type": "Collection(UI.GeoLocationType)",
+      "description": "Collection of geographic locations",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "17e07dc7c2dff659"
+    },
+    "UI.GeoLocation": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "GeoLocation",
+      "term_type": "UI.GeoLocationType",
+      "description": "Geographic location",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "e5d492ec3db8b67f"
+    },
+    "UI.Contacts": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Contacts",
+      "term_type": "Collection(Edm.AnnotationPath)",
+      "description": "Collection of contacts",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "d9cd1241f2500a2d"
+    },
+    "UI.MediaResource": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "MediaResource",
+      "term_type": "UI.MediaResourceType",
+      "description": "Properties that describe a media resource",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "625d9169e3daa5ca"
+    },
+    "UI.DataPoint": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataPoint",
+      "term_type": "UI.DataPointType",
+      "description": "Visualization of a single point of data, typically a number; may also be textual, e.g. a status value",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "2673132f68e1f56f"
+    },
+    "UI.KPI": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "KPI",
+      "term_type": "UI.KPIType",
+      "description": "",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "59bd658bddd39e7c"
+    },
+    "UI.Chart": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Chart",
+      "term_type": "UI.ChartDefinitionType",
+      "description": "Visualization of multiple data points",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "1d5c8149d9d1188d"
+    },
+    "UI.ValueCriticality": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ValueCriticality",
+      "term_type": "Collection(UI.ValueCriticalityType)",
+      "description": "Assign criticalities to primitive values. This information can be used for semantic coloring.",
+      "applies_to": [
+        "Property",
+        "TypeDefinition"
+      ],
+      "is_experimental": true,
+      "content_hash": "8d4d480afffe8671"
+    },
+    "UI.CriticalityLabels": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityLabels",
+      "term_type": "Collection(UI.CriticalityLabelType)",
+      "description": "",
+      "applies_to": [
+        "Property",
+        "EntityType",
+        "TypeDefinition"
+      ],
+      "is_experimental": true,
+      "content_hash": "5b53a40f46656016"
+    },
+    "UI.SelectionFields": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionFields",
+      "term_type": "Collection(Edm.PropertyPath)",
+      "description": "Properties that might be relevant for filtering a collection of entities of this type",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "2761bba8ed80aea9"
+    },
+    "UI.Facets": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Facets",
+      "term_type": "Collection(UI.Facet)",
+      "description": "Collection of facets",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "a7c66bd229a34ea9"
+    },
+    "UI.HeaderFacets": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "HeaderFacets",
+      "term_type": "Collection(UI.Facet)",
+      "description": "Facets for additional object header information",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "329f2f99aeeeb100"
+    },
+    "UI.QuickViewFacets": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "QuickViewFacets",
+      "term_type": "Collection(UI.Facet)",
+      "description": "Facets that may be used for a quick overview of the object",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "7d8500eed379221f"
+    },
+    "UI.QuickCreateFacets": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "QuickCreateFacets",
+      "term_type": "Collection(UI.Facet)",
+      "description": "Facets that may be used for a (quick) create of the object",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "03f5f87656a5d9e4"
+    },
+    "UI.FilterFacets": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "FilterFacets",
+      "term_type": "Collection(UI.ReferenceFacet)",
+      "description": "Facets that reference UI.FieldGroup annotations to group filterable fields",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "56a7da060588c7b8"
+    },
+    "UI.OperationParameterFacets": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "OperationParameterFacets",
+      "term_type": "Collection(UI.ReferenceFacet)",
+      "description": "Facets that reference UI.FieldGroup annotations to group action or function parameters",
+      "applies_to": [
+        "Action",
+        "Function",
+        "ActionImport",
+        "FunctionImport"
+      ],
+      "is_experimental": false,
+      "content_hash": "617033767a98432b"
+    },
+    "UI.SelectionPresentationVariant": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionPresentationVariant",
+      "term_type": "UI.SelectionPresentationVariantType",
+      "description": "",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "318bf768f8d55d8b"
+    },
+    "UI.PresentationVariant": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "PresentationVariant",
+      "term_type": "UI.PresentationVariantType",
+      "description": "",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "e74bc6f8de3edf57"
+    },
+    "UI.SelectionVariant": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionVariant",
+      "term_type": "UI.SelectionVariantType",
+      "description": "",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "832623358154d5ee"
+    },
+    "UI.ThingPerspective": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ThingPerspective",
+      "term_type": "Core.Tag",
+      "description": "The annotated term is a Thing Perspective",
+      "applies_to": [
+        "Term"
+      ],
+      "is_experimental": false,
+      "content_hash": "1d3584e9b6fc84e7"
+    },
+    "UI.IsSummary": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "IsSummary",
+      "term_type": "Core.Tag",
+      "description": "This Facet and all included Facets are the summary of the thing. At most one Facet of a thing can be tagged with this term",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "c010a6dd5c5261b5"
+    },
+    "UI.PartOfPreview": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "PartOfPreview",
+      "term_type": "Core.Tag",
+      "description": "This record and all included structural elements are part of the Thing preview",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "0547f32d3efdfccc"
+    },
+    "UI.Map": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Map",
+      "term_type": "Core.Tag",
+      "description": "Target MUST reference a UI.GeoLocation, Communication.Address or a collection of these",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "7deb8ccaa3bb1720"
+    },
+    "UI.Gallery": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Gallery",
+      "term_type": "Core.Tag",
+      "description": "Target MUST reference a UI.MediaResource",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "8562870211f7fb74"
+    },
+    "UI.IsImageURL": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "IsImageURL",
+      "term_type": "Core.Tag",
+      "description": "Properties and terms annotated with this term MUST contain a valid URL referencing an resource with a MIME type image",
+      "applies_to": [
+        "Property",
+        "Term",
+        "TypeDefinition"
+      ],
+      "is_experimental": false,
+      "content_hash": "7577f78232d54c1d"
+    },
+    "UI.IsImage": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "IsImage",
+      "term_type": "Core.Tag",
+      "description": "Properties annotated with this term MUST be a stream property annotated with a MIME type image. Entity types annotated with this term MUST be a media entity type annotated with a MIME type image.",
+      "applies_to": [
+        "Property",
+        "EntityType",
+        "TypeDefinition"
+      ],
+      "is_experimental": true,
+      "content_hash": "04461dfcf2db637b"
+    },
+    "UI.MultiLineText": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "MultiLineText",
+      "term_type": "Core.Tag",
+      "description": "Properties and parameters annotated with this annotation should be rendered as multi-line text (e.g. text area)",
+      "applies_to": [
+        "Property",
+        "PropertyValue",
+        "Parameter",
+        "TypeDefinition"
+      ],
+      "is_experimental": false,
+      "content_hash": "a8d5ee7496635bde"
+    },
+    "UI.Placeholder": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Placeholder",
+      "term_type": "Edm.String",
+      "description": "A short, human-readable text that gives a hint or an example to help the user with data entry",
+      "applies_to": [
+        "Property",
+        "Parameter",
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "8bc7d6d2c643602b"
+    },
+    "UI.InputMask": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "InputMask",
+      "term_type": "UI.InputMaskType",
+      "description": "Properties or parameters annotated with this term will get a mask in edit mode",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": true,
+      "content_hash": "3d404f17b0e7584b"
+    },
+    "UI.TextArrangement": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "TextArrangement",
+      "term_type": "UI.TextArrangementType",
+      "description": "Describes the arrangement of a code or ID value and its text",
+      "applies_to": [
+        "Annotation",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "45470aab2484880a"
+    },
+    "UI.DateTimeStyle": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DateTimeStyle",
+      "term_type": "Edm.String",
+      "description": "The temporal value represented by the annotated property or parameter shall be shown on the UI in the given style",
+      "applies_to": [
+        "Property",
+        "Parameter"
+      ],
+      "is_experimental": true,
+      "content_hash": "caf195e079eaa2e8"
+    },
+    "UI.Note": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Note",
+      "term_type": "UI.NoteType",
+      "description": "Visualization of a note attached to an entity",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "79254b8e993baedb"
+    },
+    "UI.Importance": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Importance",
+      "term_type": "UI.ImportanceType",
+      "description": "Expresses the importance of e.g. a DataField or an annotation",
+      "applies_to": [
+        "Annotation",
+        "Record"
+      ],
+      "is_experimental": false,
+      "content_hash": "55a2f70283c4e146"
+    },
+    "UI.Hidden": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Hidden",
+      "term_type": "Core.Tag",
+      "description": "Properties or facets (see UI.Facet) annotated with this term will not be rendered if the annotation evaluates to true.",
+      "applies_to": [
+        "Property",
+        "NavigationProperty",
+        "Record",
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "89d7d2dbfd8d1a18"
+    },
+    "UI.IsCopyAction": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "IsCopyAction",
+      "term_type": "Core.Tag",
+      "description": "The annotated [`DataFieldForAction`](#DataFieldForAction) record references an action that deep-copies an instance of the annotated entity type",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": true,
+      "content_hash": "6b76bcb16400f93b"
+    },
+    "UI.IsAIOperation": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "IsAIOperation",
+      "term_type": "Core.Tag",
+      "description": "The annotated operation is powered by AI",
+      "applies_to": [
+        "Action",
+        "Function",
+        "ActionImport",
+        "FunctionImport"
+      ],
+      "is_experimental": true,
+      "content_hash": "4cf16ca89227f9e7"
+    },
+    "UI.CreateHidden": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CreateHidden",
+      "term_type": "Core.Tag",
+      "description": "EntitySets annotated with this term can control the visibility of the Create operation dynamically",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "075aa7c1c67705c0"
+    },
+    "UI.UpdateHidden": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "UpdateHidden",
+      "term_type": "Core.Tag",
+      "description": "EntitySets annotated with this term can control the visibility of the Edit/Save operation dynamically",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "f9d59c67dff7d2ec"
+    },
+    "UI.DeleteHidden": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DeleteHidden",
+      "term_type": "Core.Tag",
+      "description": "EntitySets annotated with this term can control the visibility of the Delete operation dynamically",
+      "applies_to": [
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": false,
+      "content_hash": "1c9015ab9c1071c4"
+    },
+    "UI.HiddenFilter": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "HiddenFilter",
+      "term_type": "Core.Tag",
+      "description": "Properties annotated with this term will not be rendered as filter criteria if the annotation evaluates to true.",
+      "applies_to": [
+        "Property",
+        "NavigationProperty"
+      ],
+      "is_experimental": false,
+      "content_hash": "e0e02927d927ecba"
+    },
+    "UI.AdaptationHidden": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "AdaptationHidden",
+      "term_type": "Core.Tag",
+      "description": "Properties or entities annotated with this term can't be used for UI adaptation/configuration/personalization",
+      "applies_to": [
+        "Property",
+        "EntitySet",
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "e51488a4bc0c8676"
+    },
+    "UI.DataFieldDefault": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldDefault",
+      "term_type": "UI.DataFieldAbstract",
+      "description": "Default representation of a property as a datafield, e.g. when the property is added as a table column or form field via personalization",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "70be1fad12769e5d"
+    },
+    "UI.Criticality": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Criticality",
+      "term_type": "UI.CriticalityType",
+      "description": "Service-calculated criticality, alternative to UI.CriticalityCalculation",
+      "applies_to": [
+        "Annotation"
+      ],
+      "is_experimental": false,
+      "content_hash": "02e7835b76b6420d"
+    },
+    "UI.CriticalityCalculation": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityCalculation",
+      "term_type": "UI.CriticalityCalculationType",
+      "description": "Parameters for client-calculated criticality, alternative to UI.Criticality",
+      "applies_to": [
+        "Annotation"
+      ],
+      "is_experimental": false,
+      "content_hash": "1cb131a38393ba7f"
+    },
+    "UI.Emphasized": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Emphasized",
+      "term_type": "Core.Tag",
+      "description": "Highlight something that is of special interest",
+      "applies_to": [
+        "Record"
+      ],
+      "is_experimental": true,
+      "content_hash": "de4db1462a3fe5e7"
+    },
+    "UI.OrderBy": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "OrderBy",
+      "term_type": "Edm.PropertyPath",
+      "description": "Sort by the referenced property instead of by the annotated property",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": true,
+      "content_hash": "0558195bac72a95d"
+    },
+    "UI.ParameterDefaultValue": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ParameterDefaultValue",
+      "term_type": "Edm.PrimitiveType",
+      "description": "Define default values for action parameters",
+      "applies_to": [
+        "Parameter"
+      ],
+      "is_experimental": false,
+      "content_hash": "7f50ed065d20a198"
+    },
+    "UI.RecommendationState": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "RecommendationState",
+      "term_type": "UI.RecommendationStateType",
+      "description": "Indicates whether a field contains or has a recommended value",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ad3223cb2e70cc9f"
+    },
+    "UI.RecommendationList": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "RecommendationList",
+      "term_type": "UI.RecommendationListType",
+      "description": "Specifies how to get a list of recommended values for a property or parameter",
+      "applies_to": [
+        "Property",
+        "Parameter",
+        "TypeDefinition"
+      ],
+      "is_experimental": false,
+      "content_hash": "48fb3e2d4fc7de70"
+    },
+    "UI.Recommendations": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Recommendations",
+      "term_type": "Edm.Untyped",
+      "description": "Recommendations for an entity",
+      "applies_to": [
+        "EntityType"
+      ],
+      "is_experimental": true,
+      "content_hash": "e26121adbec2318e"
+    },
+    "UI.ExcludeFromNavigationContext": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ExcludeFromNavigationContext",
+      "term_type": "Core.Tag",
+      "description": "The contents of this property must not be propagated to the app-to-app navigation context",
+      "applies_to": [
+        "Property"
+      ],
+      "is_experimental": false,
+      "content_hash": "953bd5c6e0a34354"
+    },
+    "UI.DoNotCheckScaleOfMeasuredQuantity": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DoNotCheckScaleOfMeasuredQuantity",
+      "term_type": "Edm.Boolean",
+      "description": "Do not check the number of fractional digits of the annotated measured quantity",
+      "applies_to": [
+        "Property",
+        "TypeDefinition"
+      ],
+      "is_experimental": true,
+      "content_hash": "e51097f775aea3a3"
+    },
+    "UI.LeadingEntitySet": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "LeadingEntitySet",
+      "term_type": "Edm.String",
+      "description": "The referenced entity set is the preferred starting point for UIs using this service",
+      "applies_to": [
+        "EntityContainer"
+      ],
+      "is_experimental": true,
+      "content_hash": "0b19e516697f54f1"
+    },
+    "UI.HeaderInfoType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "HeaderInfoType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: TypeName:Edm.String, TypeNamePlural:Edm.String, Title:UI.DataFieldAbstract, Description:UI.DataFieldAbstract, Image:Edm.Stream, ImageUrl:Edm.String, TypeImageUrl:Edm.String, Initials:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "09b79b1ddbeb9fd6"
+    },
+    "UI.BadgeType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "BadgeType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: HeadLine:UI.DataField, Title:UI.DataField, ImageUrl:Edm.String, TypeImageUrl:Edm.String, MainInfo:UI.DataField, SecondaryInfo:UI.DataField",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "fa6e54da364faf8e"
+    },
+    "UI.FieldGroupType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "FieldGroupType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, Data:Collection(UI.DataFieldAbstract)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "13e006634aa80010"
+    },
+    "UI.ConnectedFieldsType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ConnectedFieldsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, Template:Edm.String, Data:Core.Dictionary",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "7be61d6a057e72a7"
+    },
+    "UI.GeoLocationType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "GeoLocationType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Latitude:Edm.Double, Longitude:Edm.Double, Location:Edm.GeographyPoint, Address:Communication.AddressType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "7b268586f621da11"
+    },
+    "UI.MediaResourceType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "MediaResourceType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Url:Edm.String, Stream:Edm.Stream, ContentType:Edm.String, ByteSize:Edm.Int64, ChangedAt:Edm.DateTimeOffset, Thumbnail:UI.ImageType, Title:UI.DataField, Description:UI.DataField",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e452a7bbdba6288f"
+    },
+    "UI.ImageType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ImageType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Url:Edm.String, Stream:Edm.Stream, Width:Edm.String, Height:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6cd4e6ba620fcb07"
+    },
+    "UI.DataPointType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataPointType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Title:Edm.String, Description:Edm.String, LongDescription:Edm.String, Value:Edm.PrimitiveType, TargetValue:Edm.PrimitiveType, ForecastValue:Edm.PrimitiveType, MinimumValue:Edm.Decimal, MaximumValue:Edm.Decimal, ValueFormat:UI.NumberFormat, Visualization:UI.VisualizationType, SampleSize:Edm.PrimitiveType, ReferencePeriod:UI.ReferencePeriod, Criticality:UI.CriticalityType, CriticalityLabels:Edm.AnnotationPath, CriticalityRepresentation:UI.CriticalityRepresentationType, CriticalityCalculation:UI.CriticalityCalculationType, Trend:UI.TrendType, TrendCalculation:UI.TrendCalculationType, Responsible:Communication.ContactType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "44fc78ece612b705"
+    },
+    "UI.NumberFormat": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "NumberFormat",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ScaleFactor:Edm.Decimal, NumberOfFractionalDigits:Edm.Byte",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "25a32c4e1f06cf11"
+    },
+    "UI.ReferencePeriod": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ReferencePeriod",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Description:Edm.String, Start:Edm.DateTimeOffset, End:Edm.DateTimeOffset",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "4bab3aef23127a8e"
+    },
+    "UI.CriticalityCalculationType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityCalculationType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ReferenceValue:Edm.PrimitiveType, IsRelativeDifference:Edm.Boolean, ImprovementDirection:UI.ImprovementDirectionType, ConstantThresholds:Collection(UI.LevelThresholdsType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "f86fcdb02e6f855b"
+    },
+    "UI.CriticalityThresholdsType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityThresholdsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: AcceptanceRangeLowValue:Edm.PrimitiveType, AcceptanceRangeHighValue:Edm.PrimitiveType, ToleranceRangeLowValue:Edm.PrimitiveType, ToleranceRangeHighValue:Edm.PrimitiveType, DeviationRangeLowValue:Edm.PrimitiveType, DeviationRangeHighValue:Edm.PrimitiveType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "df20aa1a38dd0614"
+    },
+    "UI.LevelThresholdsType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "LevelThresholdsType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: AggregationLevel:Collection(Edm.PropertyPath)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "dcf14f219a7347c3"
+    },
+    "UI.TrendCalculationType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "TrendCalculationType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ReferenceValue:Edm.PrimitiveType, IsRelativeDifference:Edm.Boolean, UpDifference:Edm.Decimal, StrongUpDifference:Edm.Decimal, DownDifference:Edm.Decimal, StrongDownDifference:Edm.Decimal",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "90ffbb543bce184d"
+    },
+    "UI.KPIType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "KPIType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ID:Edm.String, ShortDescription:Edm.String, SelectionVariant:UI.SelectionVariantType, DataPoint:UI.DataPointType, AdditionalDataPoints:Collection(UI.DataPointType), Detail:UI.KPIDetailType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8fb6c51550054063"
+    },
+    "UI.KPIDetailType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "KPIDetailType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: DefaultPresentationVariant:UI.PresentationVariantType, AlternativePresentationVariants:Collection(UI.PresentationVariantType), SemanticObject:Edm.String, Action:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6d577d89be86e59a"
+    },
+    "UI.ChartDefinitionType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartDefinitionType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Title:Edm.String, Description:Edm.String, ChartType:UI.ChartType, AxisScaling:UI.ChartAxisScalingType, Measures:Collection(Edm.PropertyPath), DynamicMeasures:Collection(Edm.AnnotationPath), MeasureAttributes:Collection(UI.ChartMeasureAttributeType), Dimensions:Collection(Edm.PropertyPath), DimensionAttributes:Collection(UI.ChartDimensionAttributeType), Actions:Collection(UI.DataFieldAbstract)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6bbfc420ea799344"
+    },
+    "UI.ChartAxisScalingType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartAxisScalingType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ScaleBehavior:UI.ChartAxisScaleBehaviorType, AutoScaleBehavior:UI.ChartAxisAutoScaleBehaviorType, FixedScaleMultipleStackedMeasuresBoundaryValues:UI.FixedScaleMultipleStackedMeasuresBoundaryValuesType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "74b358228a56c12f"
+    },
+    "UI.ChartAxisAutoScaleBehaviorType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartAxisAutoScaleBehaviorType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ZeroAlwaysVisible:Edm.Boolean, DataScope:UI.ChartAxisAutoScaleDataScopeType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "3f029897fec7595e"
+    },
+    "UI.FixedScaleMultipleStackedMeasuresBoundaryValuesType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "FixedScaleMultipleStackedMeasuresBoundaryValuesType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: MinimumValue:Edm.Decimal, MaximumValue:Edm.Decimal",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c8b9399a8ab434bc"
+    },
+    "UI.ChartDimensionAttributeType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartDimensionAttributeType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Dimension:Edm.PropertyPath, Role:UI.ChartDimensionRoleType, HierarchyLevel:Edm.Int32, ValuesForSequentialColorLevels:Collection(Edm.String), EmphasizedValues:Collection(Edm.String), EmphasisLabels:UI.EmphasisLabelType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "b1cd004539d61657"
+    },
+    "UI.ChartMeasureAttributeType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartMeasureAttributeType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Measure:Edm.PropertyPath, DynamicMeasure:Edm.AnnotationPath, Role:UI.ChartMeasureRoleType, DataPoint:Edm.AnnotationPath, UseSequentialColorLevels:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "158eec8cb52012bd"
+    },
+    "UI.EmphasisLabelType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "EmphasisLabelType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: EmphasizedValuesLabel:Edm.String, NonEmphasizedValuesLabel:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "37c004a25d78f8f8"
+    },
+    "UI.ValueCriticalityType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ValueCriticalityType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.PrimitiveType, Criticality:UI.CriticalityType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "973ecc2a07a1600b"
+    },
+    "UI.CriticalityLabelType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityLabelType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Criticality:UI.CriticalityType, Label:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "882d31f0de1c5932"
+    },
+    "UI.Facet": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Facet",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, ID:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "eaeddaa6bc74b867"
+    },
+    "UI.CollectionFacet": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CollectionFacet",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Facets:Collection(UI.Facet)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "5d8f17b939874f1c"
+    },
+    "UI.ReferenceFacet": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ReferenceFacet",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Target:Edm.AnnotationPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "f4686db13d77cd2a"
+    },
+    "UI.ReferenceURLFacet": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ReferenceURLFacet",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Url:Edm.String, UrlContentType:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "4e8477bf723cb185"
+    },
+    "UI.SelectionPresentationVariantType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionPresentationVariantType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ID:Edm.String, Text:Edm.String, SelectionVariant:UI.SelectionVariantType, PresentationVariant:UI.PresentationVariantType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "9e34d048f5dcf11f"
+    },
+    "UI.PresentationVariantType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "PresentationVariantType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ID:Edm.String, Text:Edm.String, MaxItems:Edm.Int32, SortOrder:Collection(Common.SortOrderType), GroupBy:Collection(Edm.PropertyPath), TotalBy:Collection(Edm.PropertyPath), Total:Collection(Edm.PropertyPath), DynamicTotal:Collection(Edm.AnnotationPath), IncludeGrandTotal:Edm.Boolean, InitialExpansionLevel:Edm.Int32, Visualizations:Collection(Edm.AnnotationPath), RecursiveHierarchyQualifier:Aggregation.HierarchyQualifier, RequestAtLeast:Collection(Edm.PropertyPath), SelectionFields:Collection(Edm.PropertyPath)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8a1ae2c860710b16"
+    },
+    "UI.SelectionVariantType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionVariantType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ID:Edm.String, Text:Edm.String, Parameters:Collection(UI.ParameterAbstract), FilterExpression:Edm.String, SelectOptions:Collection(UI.SelectOptionType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "418f6f0c3a831431"
+    },
+    "UI.ParameterAbstract": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ParameterAbstract",
+      "term_type": "ComplexType",
+      "description": "",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8c5fe2037c58921f"
+    },
+    "UI.Parameter": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "Parameter",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: PropertyName:Edm.PropertyPath, PropertyValue:Edm.PrimitiveType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "7978977a750a9560"
+    },
+    "UI.IntervalParameter": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "IntervalParameter",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: PropertyNameFrom:Edm.PropertyPath, PropertyValueFrom:Edm.PrimitiveType, PropertyNameTo:Edm.PropertyPath, PropertyValueTo:Edm.PrimitiveType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "0656e1ef45d53d26"
+    },
+    "UI.SelectOptionType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectOptionType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: PropertyName:Edm.PropertyPath, DynamicPropertyName:Edm.AnnotationPath, Ranges:Collection(UI.SelectionRangeType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "387940cc793be88f"
+    },
+    "UI.SelectionRangeType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionRangeType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Sign:UI.SelectionRangeSignType, Option:UI.SelectionRangeOptionType, Low:Edm.PrimitiveType, High:Edm.PrimitiveType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "67113428f373a6d9"
+    },
+    "UI.InputMaskType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "InputMaskType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Mask:Edm.String, PlaceholderSymbol:Edm.String, Rules:Collection(UI.InputMaskRuleType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "d99cce4ad6fb0c52"
+    },
+    "UI.InputMaskRuleType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "InputMaskRuleType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: MaskSymbol:Edm.String, RegExp:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "17993bba447a6eb7"
+    },
+    "UI.NoteType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "NoteType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Title:Edm.String, Content:Edm.String, Type:Edm.String, MaximalLength:Edm.Int32, MultipleNotes:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "a1f47a61756a3f0b"
+    },
+    "UI.DataFieldAbstract": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldAbstract",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Label:Edm.String, Criticality:UI.CriticalityType, CriticalityRepresentation:UI.CriticalityRepresentationType, IconUrl:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "35ffad47dcb8f0f7"
+    },
+    "UI.DataFieldForAnnotation": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldForAnnotation",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Target:Edm.AnnotationPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c767c7208a4f0a6d"
+    },
+    "UI.DataFieldForActionAbstract": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldForActionAbstract",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Inline:Edm.Boolean, Determining:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "3dc3cbbd03c83123"
+    },
+    "UI.DataFieldForAction": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldForAction",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Action:UI.ActionName, InvocationGrouping:UI.OperationGroupingType",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "daf782e9ea01eda7"
+    },
+    "UI.DataFieldForIntentBasedNavigation": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldForIntentBasedNavigation",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: SemanticObject:Edm.String, Action:Edm.String, NavigationAvailable:Edm.Boolean, RequiresContext:Edm.Boolean, Mapping:Collection(Common.SemanticObjectMappingType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "346fc9abc2afc3a1"
+    },
+    "UI.DataFieldForActionGroup": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldForActionGroup",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: ID:Edm.String, Actions:Collection(UI.DataFieldForActionAbstract)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "b7aa4037df0ae57a"
+    },
+    "UI.DataField": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataField",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.Untyped",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "42ded658679862aa"
+    },
+    "UI.DataFieldWithAction": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldWithAction",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.PrimitiveType, Action:UI.ActionName",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "b9c6ee390e8cdaee"
+    },
+    "UI.DataFieldWithIntentBasedNavigation": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldWithIntentBasedNavigation",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.PrimitiveType, SemanticObject:Edm.String, Action:Edm.String, Mapping:Collection(Common.SemanticObjectMappingType)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "9c293edd13ed7f22"
+    },
+    "UI.DataFieldWithNavigationPath": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldWithNavigationPath",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.PrimitiveType, Target:Edm.NavigationPropertyPath",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "6e48a6d614fcd71c"
+    },
+    "UI.DataFieldWithUrl": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldWithUrl",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.PrimitiveType, Url:Edm.String, UrlContentType:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "a134eaa321099a04"
+    },
+    "UI.DataFieldWithActionGroup": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "DataFieldWithActionGroup",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: Value:Edm.PrimitiveType, Actions:Collection(UI.DataField)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "9aa21e8e857aca54"
+    },
+    "UI.RecommendationListType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "RecommendationListType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: CollectionPath:Edm.String, RankProperty:Edm.String, Binding:Collection(UI.RecommendationBinding)",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "f327587d539f6008"
+    },
+    "UI.RecommendationBinding": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "RecommendationBinding",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: LocalDataProperty:Edm.PropertyPath, ValueListProperty:Edm.String",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ab7c72b16855b58b"
+    },
+    "UI.PropertyRecommendationType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "PropertyRecommendationType",
+      "term_type": "ComplexType",
+      "description": "Complex type with properties: RecommendedFieldValue:Edm.PrimitiveType, RecommendedFieldDescription:Edm.String, RecommendedFieldScoreValue:Edm.Decimal, RecommendedFieldIsSuggestion:Edm.Boolean",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "dd23f1e3ca964a19"
+    },
+    "UI.VisualizationType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "VisualizationType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Number, BulletChart, Progress, Rating, Donut, DeltaBulletChart",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8e9747aba6168c4d"
+    },
+    "UI.CriticalityType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: VeryNegative, Neutral, Negative, Critical, Positive, VeryPositive, Information",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "d6c3f46884dd2830"
+    },
+    "UI.ImprovementDirectionType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ImprovementDirectionType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Minimize, Target, Maximize",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "e0648950a1bb39fe"
+    },
+    "UI.TrendType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "TrendType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: StrongUp, Up, Sideways, Down, StrongDown",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "7508bb611ba6b0b4"
+    },
+    "UI.ChartType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Column, ColumnStacked, ColumnDual, ColumnStackedDual, ColumnStacked100, ColumnStackedDual100, Bar, BarStacked, BarDual, BarStackedDual, BarStacked100, BarStackedDual100, Area, AreaStacked, AreaStacked100, HorizontalArea, HorizontalAreaStacked, HorizontalAreaStacked100, Line, LineDual, Combination, CombinationStacked, CombinationDual, CombinationStackedDual, HorizontalCombinationStacked, Pie, Donut, Scatter, Bubble, Radar, HeatMap, TreeMap, Waterfall, Bullet, VerticalBullet, HorizontalWaterfall, HorizontalCombinationDual, HorizontalCombinationStackedDual, Donut100",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "ce7d53f1fe79ded3"
+    },
+    "UI.ChartAxisScaleBehaviorType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartAxisScaleBehaviorType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: AutoScale, FixedScale",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "c43c4868371924d9"
+    },
+    "UI.ChartAxisAutoScaleDataScopeType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartAxisAutoScaleDataScopeType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: DataSet, VisibleData",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "8f19f64f138742ad"
+    },
+    "UI.ChartDimensionRoleType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartDimensionRoleType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Category, Series, Category2",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "57f3637008d11799"
+    },
+    "UI.ChartMeasureRoleType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ChartMeasureRoleType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Axis1, Axis2, Axis3",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "187c2929fac3a276"
+    },
+    "UI.SelectionRangeSignType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionRangeSignType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: I, E",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "658adb6627f0f119"
+    },
+    "UI.SelectionRangeOptionType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "SelectionRangeOptionType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: EQ, BT, CP, LE, GE, NE, NB, NP, GT, LT",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "d977d27e78b411e2"
+    },
+    "UI.TextArrangementType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "TextArrangementType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: TextFirst, TextLast, TextSeparate, TextOnly",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "fd63e397d8317f54"
+    },
+    "UI.ImportanceType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "ImportanceType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: High, Medium, Low",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "553557fff6b09c81"
+    },
+    "UI.CriticalityRepresentationType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "CriticalityRepresentationType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: WithIcon, WithoutIcon, OnlyIcon",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "1a8e11af3fc1da4a"
+    },
+    "UI.OperationGroupingType": {
+      "vocabulary": "UI",
+      "namespace": "com.sap.vocabularies.UI.v1",
+      "term_name": "OperationGroupingType",
+      "term_type": "EnumType",
+      "description": "Enumeration with values: Isolated, ChangeSet",
+      "applies_to": [],
+      "is_experimental": false,
+      "content_hash": "f8a73334ea14b741"
+    }
+  }
+}
