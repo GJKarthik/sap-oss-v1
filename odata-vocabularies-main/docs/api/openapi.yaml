@@ -1,0 +1,948 @@
+openapi: 3.1.0
+info:
+  title: OData Vocabularies Universal Dictionary API
+  description: |
+    MCP Server API for SAP OData vocabulary operations.
+    
+    This API provides comprehensive access to SAP OData vocabularies including:
+    - Term search and discovery
+    - Semantic (vector) search
+    - Entity annotation
+    - Code generation (CDS, GraphQL, SQL)
+    - GDPR compliance classification
+    - HANA Cloud integration
+    
+    ## Authentication
+    
+    The API supports multiple authentication methods:
+    - **API Key**: Pass via `X-API-Key` header or `Authorization: ApiKey {key}`
+    - **JWT**: Pass via `Authorization: Bearer {token}`
+    
+    ## Rate Limiting
+    
+    Default: 100 requests per 60 seconds per client.
+    Rate limit headers included in responses:
+    - `X-RateLimit-Limit`
+    - `X-RateLimit-Remaining`
+    - `X-RateLimit-Reset`
+    
+  version: 3.0.0
+  contact:
+    name: SAP OData Vocabularies Team
+    url: https://github.com/SAP/odata-vocabularies
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:9150
+    description: Local development server
+  - url: https://odata-vocab.sap.cloud
+    description: Production server
+
+tags:
+  - name: Vocabulary Discovery
+    description: Search and explore vocabulary terms
+  - name: Semantic Search
+    description: AI-powered similarity search
+  - name: Entity Operations
+    description: Entity annotation and analysis
+  - name: Code Generation
+    description: Generate CDS, GraphQL, SQL from entities
+  - name: GDPR Compliance
+    description: Personal data classification
+  - name: HANA Integration
+    description: SAP HANA Cloud operations
+  - name: System
+    description: Health checks and statistics
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Returns server health status and statistics
+      operationId: getHealth
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                version: 3.0.0
+                vocabularies: 19
+                terms: 398
+                embeddings_loaded: true
+                uptime_seconds: 3600
+
+  /mcp/tools/search_terms:
+    post:
+      tags:
+        - Vocabulary Discovery
+      summary: Search vocabulary terms
+      description: |
+        Search for vocabulary terms by name, description, or qualified name.
+        Returns matching terms with their definitions and usage examples.
+      operationId: searchTerms
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchTermsRequest'
+            examples:
+              simple:
+                summary: Simple search
+                value:
+                  query: LineItem
+              filtered:
+                summary: Filtered search
+                value:
+                  query: LineItem
+                  vocabulary: UI
+                  limit: 10
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchTermsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /mcp/tools/semantic_search:
+    post:
+      tags:
+        - Semantic Search
+      summary: Semantic similarity search
+      description: |
+        Search vocabulary terms using natural language.
+        Uses vector embeddings to find semantically similar terms.
+      operationId: semanticSearch
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemanticSearchRequest'
+            examples:
+              natural:
+                summary: Natural language query
+                value:
+                  query: display customer information in a list
+                  limit: 10
+              use_case:
+                summary: Use case query
+                value:
+                  query: annotations for analytics reports
+                  limit: 5
+      responses:
+        '200':
+          description: Semantic search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemanticSearchResponse'
+
+  /mcp/tools/get_vocabulary:
+    post:
+      tags:
+        - Vocabulary Discovery
+      summary: Get vocabulary details
+      description: Returns complete vocabulary definition with all terms
+      operationId: getVocabulary
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetVocabularyRequest'
+            example:
+              vocabulary: UI
+      responses:
+        '200':
+          description: Vocabulary details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VocabularyResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /mcp/tools/list_vocabularies:
+    post:
+      tags:
+        - Vocabulary Discovery
+      summary: List all vocabularies
+      description: Returns list of all available vocabularies with term counts
+      operationId: listVocabularies
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of vocabularies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VocabularyListResponse'
+
+  /mcp/tools/get_term_definition:
+    post:
+      tags:
+        - Vocabulary Discovery
+      summary: Get term definition
+      description: Returns detailed definition for a specific term
+      operationId: getTermDefinition
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetTermRequest'
+            example:
+              qualified_name: UI.LineItem
+      responses:
+        '200':
+          description: Term definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermDefinitionResponse'
+
+  /mcp/tools/suggest_annotations:
+    post:
+      tags:
+        - Entity Operations
+      summary: Suggest entity annotations
+      description: |
+        Analyzes entity properties and suggests appropriate OData annotations.
+        Includes UI, Common, Analytics, and PersonalData annotations.
+      operationId: suggestAnnotations
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestAnnotationsRequest'
+            example:
+              entity:
+                name: SalesOrder
+                properties:
+                  - name: SalesOrderID
+                    type: Edm.String
+                    nullable: false
+                  - name: CustomerName
+                    type: Edm.String
+                    nullable: true
+                  - name: TotalAmount
+                    type: Edm.Decimal
+                    nullable: true
+      responses:
+        '200':
+          description: Suggested annotations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnotationSuggestionsResponse'
+
+  /mcp/tools/classify_personal_data:
+    post:
+      tags:
+        - GDPR Compliance
+      summary: Classify personal data
+      description: |
+        Analyzes entity properties for GDPR compliance.
+        Identifies potentially personal and sensitive data.
+      operationId: classifyPersonalData
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassifyPersonalDataRequest'
+      responses:
+        '200':
+          description: Personal data classification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalDataClassificationResponse'
+
+  /mcp/tools/generate_cds:
+    post:
+      tags:
+        - Code Generation
+      summary: Generate CAP CDS
+      description: Generates SAP CAP CDS entity definition with annotations
+      operationId: generateCDS
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateCDSRequest'
+      responses:
+        '200':
+          description: Generated CDS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedCodeResponse'
+
+  /mcp/tools/generate_graphql:
+    post:
+      tags:
+        - Code Generation
+      summary: Generate GraphQL schema
+      description: Generates GraphQL type definition from entity
+      operationId: generateGraphQL
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateGraphQLRequest'
+      responses:
+        '200':
+          description: Generated GraphQL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedCodeResponse'
+
+  /mcp/tools/generate_sql:
+    post:
+      tags:
+        - Code Generation
+      summary: Generate SQL DDL
+      description: Generates SQL CREATE TABLE statement for HANA Cloud
+      operationId: generateSQL
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSQLRequest'
+      responses:
+        '200':
+          description: Generated SQL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedCodeResponse'
+
+  /mcp/tools/discover_hana_tables:
+    post:
+      tags:
+        - HANA Integration
+      summary: Discover HANA tables
+      description: Lists tables and views from connected HANA Cloud instance
+      operationId: discoverHANATables
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverHANARequest'
+      responses:
+        '200':
+          description: HANA table list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HANATablesResponse'
+
+  /mcp/tools/get_hana_metadata:
+    post:
+      tags:
+        - HANA Integration
+      summary: Get HANA table metadata
+      description: Returns column definitions with suggested annotations
+      operationId: getHANAMetadata
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetHANAMetadataRequest'
+      responses:
+        '200':
+          description: Table metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HANAMetadataResponse'
+
+  /mcp/tools/audit_personal_data:
+    post:
+      tags:
+        - GDPR Compliance
+      summary: Audit personal data access
+      description: Records personal data access for GDPR compliance
+      operationId: auditPersonalData
+      security:
+        - ApiKey: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditRequest'
+      responses:
+        '200':
+          description: Audit recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditResponse'
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  schemas:
+    # Request Schemas
+    SearchTermsRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Search query
+          example: LineItem
+        vocabulary:
+          type: string
+          description: Filter by vocabulary
+          example: UI
+        limit:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+          description: Maximum results to return
+
+    SemanticSearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Natural language query
+          example: display customer information in a list
+        limit:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 50
+
+    GetVocabularyRequest:
+      type: object
+      required:
+        - vocabulary
+      properties:
+        vocabulary:
+          type: string
+          description: Vocabulary name or alias
+          example: UI
+
+    GetTermRequest:
+      type: object
+      required:
+        - qualified_name
+      properties:
+        qualified_name:
+          type: string
+          description: Fully qualified term name
+          example: UI.LineItem
+
+    SuggestAnnotationsRequest:
+      type: object
+      required:
+        - entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityDefinition'
+
+    ClassifyPersonalDataRequest:
+      type: object
+      required:
+        - entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityDefinition'
+
+    GenerateCDSRequest:
+      type: object
+      required:
+        - entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityDefinition'
+        include_annotations:
+          type: boolean
+          default: true
+
+    GenerateGraphQLRequest:
+      type: object
+      required:
+        - entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityDefinition'
+
+    GenerateSQLRequest:
+      type: object
+      required:
+        - entity
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityDefinition'
+        dialect:
+          type: string
+          enum: [HANA, PostgreSQL, MySQL]
+          default: HANA
+
+    DiscoverHANARequest:
+      type: object
+      properties:
+        schema:
+          type: string
+          description: Schema name filter
+        table_pattern:
+          type: string
+          description: Table name pattern (SQL LIKE)
+
+    GetHANAMetadataRequest:
+      type: object
+      required:
+        - table_name
+      properties:
+        table_name:
+          type: string
+          description: Table or view name
+        schema:
+          type: string
+          description: Schema name
+
+    AuditRequest:
+      type: object
+      required:
+        - entity
+        - fields
+        - purpose
+      properties:
+        entity:
+          type: string
+          description: Entity name accessed
+        fields:
+          type: array
+          items:
+            type: string
+          description: Fields accessed
+        purpose:
+          type: string
+          description: Access purpose
+        user_id:
+          type: string
+          description: User performing access
+
+    # Response Schemas
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        vocabularies:
+          type: integer
+        terms:
+          type: integer
+        embeddings_loaded:
+          type: boolean
+        uptime_seconds:
+          type: integer
+
+    SearchTermsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermResult'
+        total:
+          type: integer
+        query:
+          type: string
+
+    SemanticSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SemanticResult'
+        total:
+          type: integer
+
+    VocabularyResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        alias:
+          type: string
+        description:
+          type: string
+        terms:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermDefinition'
+        complex_types:
+          type: array
+          items:
+            type: object
+        enum_types:
+          type: array
+          items:
+            type: object
+
+    VocabularyListResponse:
+      type: object
+      properties:
+        vocabularies:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              alias:
+                type: string
+              term_count:
+                type: integer
+        total:
+          type: integer
+
+    TermDefinitionResponse:
+      type: object
+      properties:
+        term:
+          $ref: '#/components/schemas/TermDefinition'
+
+    AnnotationSuggestionsResponse:
+      type: object
+      properties:
+        entity:
+          type: string
+        annotations:
+          type: object
+          additionalProperties:
+            type: object
+        properties:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              annotations:
+                type: object
+
+    PersonalDataClassificationResponse:
+      type: object
+      properties:
+        entity:
+          type: string
+        has_personal_data:
+          type: boolean
+        has_sensitive_data:
+          type: boolean
+        personal_fields:
+          type: array
+          items:
+            type: string
+        sensitive_fields:
+          type: array
+          items:
+            type: string
+        classification:
+          type: object
+
+    GeneratedCodeResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        language:
+          type: string
+        entity:
+          type: string
+
+    HANATablesResponse:
+      type: object
+      properties:
+        tables:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              schema:
+                type: string
+              type:
+                type: string
+                enum: [TABLE, VIEW, CALCULATION_VIEW]
+        total:
+          type: integer
+
+    HANAMetadataResponse:
+      type: object
+      properties:
+        table_name:
+          type: string
+        schema:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnMetadata'
+        suggested_annotations:
+          type: object
+
+    AuditResponse:
+      type: object
+      properties:
+        audit_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    # Shared Schemas
+    EntityDefinition:
+      type: object
+      required:
+        - name
+        - properties
+      properties:
+        name:
+          type: string
+          description: Entity name
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropertyDefinition'
+
+    PropertyDefinition:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          description: OData EDM type
+          example: Edm.String
+        nullable:
+          type: boolean
+          default: true
+        isKey:
+          type: boolean
+          default: false
+        maxLength:
+          type: integer
+
+    TermDefinition:
+      type: object
+      properties:
+        name:
+          type: string
+        qualified_name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        applies_to:
+          type: array
+          items:
+            type: string
+        default_value:
+          type: string
+
+    TermResult:
+      type: object
+      properties:
+        name:
+          type: string
+        vocabulary:
+          type: string
+        qualified_name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        relevance:
+          type: number
+
+    SemanticResult:
+      type: object
+      properties:
+        term:
+          type: string
+        vocabulary:
+          type: string
+        description:
+          type: string
+        similarity:
+          type: number
+          description: Cosine similarity score (0-1)
+
+    ColumnMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+        hana_type:
+          type: string
+        odata_type:
+          type: string
+        nullable:
+          type: boolean
+        is_key:
+          type: boolean
+        suggested_annotations:
+          type: object
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: bad_request
+            message: Invalid query parameter
+            code: INVALID_QUERY
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: unauthorized
+            message: Invalid or missing API key
+            code: AUTH_REQUIRED
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: not_found
+            message: Vocabulary not found
+            code: NOT_FOUND
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: rate_limited
+            message: Rate limit exceeded. Try again in 30 seconds.
+            code: RATE_LIMITED
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix timestamp when limit resets
