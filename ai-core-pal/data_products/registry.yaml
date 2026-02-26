@@ -26,3 +26,37 @@ llmBackends:
       - "llama-3.1-70b"
       - "codellama-34b"
     forSecurityClass: ["internal", "confidential", "restricted"]
+
+# =============================================================================
+# OData Vocabularies Integration - Analytics Vocabulary for PAL
+# =============================================================================
+dependencies:
+  vocabularyService:
+    name: "OData Vocabularies"
+    endpoint: "http://localhost:9150/mcp"
+    openaiEndpoint: "http://localhost:9150/v1"
+    description: "Universal dictionary for OData annotations"
+    capabilities:
+      - "annotation-lookup"
+      - "analytics-vocabulary"
+      - "measure-annotation"
+      - "dimension-annotation"
+    vocabularies:
+      - name: "Analytics"
+        namespace: "com.sap.vocabularies.Analytics.v1"
+        usage: "KPI and measure annotations for PAL output"
+      - name: "Common"
+        namespace: "com.sap.vocabularies.Common.v1"
+        usage: "Labels and semantic keys"
+      - name: "Aggregation"
+        namespace: "Org.OData.Aggregation.V1"
+        usage: "Aggregation functions for measures"
+    models:
+      - id: "odata-vocab-annotator"
+        purpose: "Suggest Analytics annotations for PAL columns"
+      - id: "odata-vocab-search"
+        purpose: "Search Analytics vocabulary terms"
+    integrationPoints:
+      - palOutputAnnotation: "Annotate PAL output columns with Analytics.Measure/Dimension"
+      - kpiTemplates: "Generate KPI annotation templates"
+      - termLookup: "Look up Analytics vocabulary term definitions"
