@@ -34,3 +34,43 @@ llmBackends:
       - "llama-3.1-70b"
       - "mistral-7b"
     forSecurityClass: ["confidential", "restricted"]
+
+# =============================================================================
+# OData Vocabularies Integration
+# =============================================================================
+dependencies:
+  vocabularyService:
+    name: "OData Vocabularies"
+    endpoint: "http://localhost:9150/mcp"
+    openaiEndpoint: "http://localhost:9150/v1"
+    description: "Universal dictionary for OData annotations and type generation"
+    capabilities:
+      - "term-lookup"
+      - "term-search"
+      - "annotation-suggestion"
+      - "typescript-generation"
+      - "annotation-validation"
+    vocabularies:
+      - name: "UI"
+        namespace: "com.sap.vocabularies.UI.v1"
+        usage: "Fiori Elements UI annotations - LineItem, HeaderInfo, Chart"
+      - name: "Common"
+        namespace: "com.sap.vocabularies.Common.v1"
+        usage: "Labels, semantic keys, value lists"
+      - name: "Analytics"
+        namespace: "com.sap.vocabularies.Analytics.v1"
+        usage: "Measures and dimensions for analytical apps"
+      - name: "PersonalData"
+        namespace: "com.sap.vocabularies.PersonalData.v1"
+        usage: "GDPR data classification"
+    models:
+      - id: "odata-vocab-annotator"
+        purpose: "Suggest and generate OData annotations"
+      - id: "odata-vocab-search"
+        purpose: "Search vocabulary terms"
+    integrationPoints:
+      - typescriptGeneration: "Generate TS types from vocabulary definitions"
+      - annotationSuggestion: "Suggest annotations for entity types"
+      - termLookup: "Look up specific vocabulary terms"
+      - annotationValidation: "Validate OData annotations"
+    typesPackage: "@sap-ai-sdk/types/vocabulary"

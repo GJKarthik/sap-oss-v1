@@ -13,6 +13,10 @@ service_registry("hana-vector",     "http://localhost:9090/mcp",     "hana-cloud
 service_registry("orchestration",   "http://localhost:9090/mcp",     "orchestration-v1").
 service_registry("openai-compat",   "http://localhost:8080/v1",      "openai-compatible").
 
+# OData Vocabularies Service - Universal Dictionary for annotations
+service_registry("odata-vocab",     "http://localhost:9150/mcp",     "odata-vocab-annotator").
+service_registry("odata-vocab-api", "http://localhost:9150/v1",      "odata-vocab-search").
+
 # 2. Deployment Registry
 # Maps deployment IDs to models and capabilities
 Decl deployment(
@@ -49,6 +53,18 @@ resolve_service_for_intent(/orchestrate, URL) :-
     service_registry("orchestration", BaseURL, _),
     URL = BaseURL.
 
+resolve_service_for_intent(/vocabulary_lookup, URL) :-
+    service_registry("odata-vocab", BaseURL, _),
+    URL = BaseURL.
+
+resolve_service_for_intent(/annotation_suggest, URL) :-
+    service_registry("odata-vocab-api", BaseURL, _),
+    URL = BaseURL.
+
+resolve_service_for_intent(/vocabulary_search, URL) :-
+    service_registry("odata-vocab-api", BaseURL, _),
+    URL = BaseURL.
+
 # 5. Tool Routing
 # Maps tool names to service endpoints
 
@@ -58,6 +74,14 @@ tool_service("hana_vector_search", "hana-vector").
 tool_service("list_deployments", "ai-core-chat").
 tool_service("orchestration_run", "orchestration").
 tool_service("mangle_query", "ai-core-chat").
+
+# OData Vocabulary Tools
+tool_service("lookup_vocabulary_term", "odata-vocab").
+tool_service("search_vocabulary", "odata-vocab").
+tool_service("suggest_annotations", "odata-vocab").
+tool_service("generate_typescript_types", "odata-vocab").
+tool_service("get_annotation_schema", "odata-vocab").
+tool_service("validate_annotations", "odata-vocab").
 
 # 6. Response Processing
 # Rules for handling responses
@@ -73,3 +97,31 @@ optimization_hint("Use text-embedding for semantic search") :-
 optimization_hint("Use HANA vector for production workloads") :-
     api_response(_, Content),
     fn:contains(Content, "large scale search").
+
+# 7. OData Vocabulary Integration Rules
+# TypeScript type generation from vocabulary terms
+
+# Generate TypeScript interface from vocabulary term
+generate_ts_interface(VocabTerm, TSInterface) :-
+    mcp_tool_request("odata-vocab", "get_term", 
+        fn:format('{"vocabulary": "%s", "term": "%s"}', "UI", VocabTerm), _),
+    TSInterface = fn:format("export interface %s { ... }", VocabTerm).
+
+# Infer SDK types from vocabulary
+infer_sdk_types(EntityType, TypeDef) :-
+    service_registry("odata-vocab", _, _),
+    mcp_tool_request("odata-vocab", "search_terms",
+        fn:format('{"query": "%s"}', EntityType), _),
+    TypeDef = "VocabularyType".
+
+# Annotation schema generation
+get_annotation_schema_for_entity(Entity, Schema) :-
+    service_registry("odata-vocab-api", URL, _),
+    Schema = {"entity": Entity, "vocabularies": ["UI", "Common", "Analytics"]}.
+
+# Vocabulary-aware type validation
+validate_annotation_type(Annotation, Valid) :-
+    fn:starts_with(Annotation, "@"),
+    mcp_tool_request("odata-vocab", "validate_annotations",
+        fn:format('{"annotation": "%s"}', Annotation), _),
+    Valid = true.

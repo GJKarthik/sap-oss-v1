@@ -13,6 +13,102 @@ import sys
 import urllib.request
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+import asyncio
+
+# =============================================================================
+# OData Vocabulary Client
+# =============================================================================
+
+class VocabularyClient:
+    """Client for OData Vocabularies service - Type generation and annotation lookup."""
+    
+    def __init__(self, endpoint: str = "http://localhost:9150"):
+        self.endpoint = endpoint
+        self.openai_endpoint = f"{endpoint}/v1"
+    
+    async def search_terms(self, query: str, vocabulary: str = None) -> Dict:
+        """Search vocabulary terms."""
+        params = {"query": query}
+        if vocabulary:
+            params["vocabulary"] = vocabulary
+        return await self._call_tool("search_terms", params)
+    
+    async def get_term(self, vocabulary: str, term: str) -> Dict:
+        """Get a specific vocabulary term definition."""
+        return await self._call_tool("get_term", {
+            "vocabulary": vocabulary,
+            "term": term
+        })
+    
+    async def suggest_annotations(self, entity_type: str, properties: List[Dict]) -> Dict:
+        """Suggest annotations for an entity type and its properties."""
+        return await self._chat_completion(
+            model="odata-vocab-annotator",
+            content=f"Suggest OData annotations for entity '{entity_type}' with properties: {properties}"
+        )
+    
+    async def generate_typescript_types(self, vocabulary: str, terms: List[str] = None) -> Dict:
+        """Generate TypeScript types from vocabulary terms."""
+        return await self._chat_completion(
+            model="odata-vocab-annotator",
+            content=f"Generate TypeScript interfaces for vocabulary '{vocabulary}' terms: {terms or 'all main terms'}"
+        )
+    
+    async def validate_annotations(self, annotations: List[str]) -> Dict:
+        """Validate OData annotations."""
+        return await self._call_tool("validate_annotations", {
+            "annotations": annotations
+        })
+    
+    async def get_ui_vocabulary_terms(self) -> Dict:
+        """Get UI vocabulary terms for Fiori Elements."""
+        return await self._call_tool("search_terms", {
+            "query": "UI",
+            "vocabulary": "UI"
+        })
+    
+    async def _chat_completion(self, model: str, content: str) -> Dict:
+        """Call OpenAI-compatible chat endpoint."""
+        request_data = {
+            "model": model,
+            "messages": [{"role": "user", "content": content}]
+        }
+        
+        try:
+            req = urllib.request.Request(
+                f"{self.openai_endpoint}/chat/completions",
+                data=json.dumps(request_data).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode())
+        except Exception as e:
+            return {"error": str(e), "status": "failed"}
+    
+    async def _call_tool(self, tool_name: str, args: Dict) -> Dict:
+        """Call MCP tool."""
+        request_data = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": tool_name, "arguments": args}
+        }
+        
+        try:
+            req = urllib.request.Request(
+                f"{self.endpoint}/mcp",
+                data=json.dumps(request_data).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode())
+        except Exception as e:
+            return {"error": str(e), "status": "failed"}
+
 
 # =============================================================================
 # Mangle Engine (Simulated)
@@ -157,6 +253,7 @@ class AISdkAgent:
         ])
         self.mcp_endpoint = "http://localhost:9090/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
+        self.vocab_client = VocabularyClient("http://localhost:9150")
         self.audit_log: List[Dict] = []
     
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
@@ -305,8 +402,102 @@ class AISdkAgent:
             },
             "autonomy_level": autonomy[0]["level"] if autonomy else "L2",
             "prompting_policy": prompting[0] if prompting else {},
-            "data_product": "ai-core-inference-v1"
+            "data_product": "ai-core-inference-v1",
+            "vocabulary_integration": {
+                "service": "odata-vocabularies",
+                "endpoint": "http://localhost:9150",
+                "capabilities": ["type_generation", "annotation_suggestion", "term_lookup"]
+            }
         }
+    
+    # =========================================================================
+    # OData Vocabulary Integration Methods
+    # =========================================================================
+    
+    async def search_vocabulary(self, query: str, vocabulary: str = None) -> Dict[str, Any]:
+        """
+        Search OData vocabulary terms.
+        
+        Args:
+            query: Search query
+            vocabulary: Filter by vocabulary (UI, Common, Analytics, etc.)
+        
+        Returns:
+            Search results with matching terms
+        """
+        result = await self.vocab_client.search_terms(query, vocabulary)
+        self._log_audit("vocab_search", "search_terms", "odata-vocab", query)
+        return result
+    
+    async def get_vocabulary_term(self, vocabulary: str, term: str) -> Dict[str, Any]:
+        """
+        Get a specific vocabulary term definition.
+        
+        Args:
+            vocabulary: Vocabulary name (e.g., "UI", "Common")
+            term: Term name (e.g., "LineItem", "Label")
+        
+        Returns:
+            Term definition with type, description, and applicability
+        """
+        result = await self.vocab_client.get_term(vocabulary, term)
+        self._log_audit("vocab_get", "get_term", "odata-vocab", f"{vocabulary}.{term}")
+        return result
+    
+    async def suggest_entity_annotations(self, entity_name: str, properties: List[Dict]) -> Dict[str, Any]:
+        """
+        Suggest OData annotations for an entity type.
+        
+        Args:
+            entity_name: Entity type name
+            properties: List of property definitions with name and type
+        
+        Returns:
+            Suggested annotations for entity and properties
+        """
+        result = await self.vocab_client.suggest_annotations(entity_name, properties)
+        self._log_audit("vocab_suggest", "suggest_annotations", "odata-vocab", entity_name)
+        return result
+    
+    async def generate_typescript_from_vocabulary(self, vocabulary: str, terms: List[str] = None) -> Dict[str, Any]:
+        """
+        Generate TypeScript types from vocabulary terms.
+        
+        Args:
+            vocabulary: Vocabulary name
+            terms: Specific terms to generate (or all if None)
+        
+        Returns:
+            TypeScript interface definitions
+        """
+        result = await self.vocab_client.generate_typescript_types(vocabulary, terms)
+        self._log_audit("vocab_typegen", "generate_typescript_types", "odata-vocab", vocabulary)
+        return result
+    
+    async def validate_odata_annotations(self, annotations: List[str]) -> Dict[str, Any]:
+        """
+        Validate OData annotations for correctness.
+        
+        Args:
+            annotations: List of annotation strings to validate
+        
+        Returns:
+            Validation results with any errors
+        """
+        result = await self.vocab_client.validate_annotations(annotations)
+        self._log_audit("vocab_validate", "validate_annotations", "odata-vocab", str(len(annotations)))
+        return result
+    
+    async def get_ui_annotations(self) -> Dict[str, Any]:
+        """
+        Get UI vocabulary annotations for Fiori Elements development.
+        
+        Returns:
+            UI vocabulary terms and usage examples
+        """
+        result = await self.vocab_client.get_ui_vocabulary_terms()
+        self._log_audit("vocab_ui", "get_ui_terms", "odata-vocab", "UI")
+        return result
 
 
 # =============================================================================
@@ -349,7 +540,41 @@ def main():
     print(f"Status: {result['status']}")
     print(f"Message: {result.get('message', '')}")
     
-    # Test 5: Audit log
+    # Test 5: Vocabulary Search
+    print("\n--- Test 5: Vocabulary Search ---")
+    result = asyncio.run(agent.search_vocabulary("LineItem", "UI"))
+    print(f"Search result: {result.get('status', 'executed')}")
+    
+    # Test 6: Get UI Term
+    print("\n--- Test 6: Get UI.LineItem Term ---")
+    result = asyncio.run(agent.get_vocabulary_term("UI", "LineItem"))
+    print(f"Term lookup: {result.get('status', 'executed')}")
+    
+    # Test 7: Suggest Annotations
+    print("\n--- Test 7: Suggest Entity Annotations ---")
+    properties = [
+        {"name": "ID", "type": "Edm.Guid"},
+        {"name": "Name", "type": "Edm.String"},
+        {"name": "Amount", "type": "Edm.Decimal"}
+    ]
+    result = asyncio.run(agent.suggest_entity_annotations("SalesOrder", properties))
+    print(f"Annotation suggestions: {result.get('status', 'executed')}")
+    
+    # Test 8: Generate TypeScript
+    print("\n--- Test 8: Generate TypeScript Types ---")
+    result = asyncio.run(agent.generate_typescript_from_vocabulary("UI", ["LineItem", "HeaderInfo"]))
+    print(f"TypeScript generation: {result.get('status', 'executed')}")
+    
+    # Test 9: Validate Annotations
+    print("\n--- Test 9: Validate Annotations ---")
+    annotations = [
+        "@UI.LineItem: [{Value: Name}]",
+        "@Common.Label: 'Sales Order'"
+    ]
+    result = asyncio.run(agent.validate_odata_annotations(annotations))
+    print(f"Validation result: {result.get('status', 'executed')}")
+    
+    # Test 10: Audit log
     print("\n--- Audit Log ---")
     for entry in agent.get_audit_log():
         print(f"  [{entry['timestamp']}] {entry['status']} - {entry['tool']} via {entry['backend']}")
