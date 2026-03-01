@@ -1,0 +1,105 @@
+# Dockerfile for SAP Elasticsearch Components
+# Includes: MCP Server, OpenAI Server, Agent
+#
+# Build: docker build -f Dockerfile.sap -t sap-elasticsearch:latest .
+# Run:   docker run -p 9120:9120 -p 9201:9201 sap-elasticsearch:latest
+
+FROM python:3.11-slim AS base
+
+# Set labels for SBOM and governance
+LABEL org.opencontainers.image.title="SAP Elasticsearch Integration"
+LABEL org.opencontainers.image.description="MCP Server and OpenAI-compatible API for Elasticsearch"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.vendor="SAP"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/SAP/elasticsearch-main"
+LABEL ai.sap.component.type="mcp-server"
+LABEL ai.sap.governance.level="L2"
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create non-root user for security
+RUN groupadd -r sap && useradd -r -g sap sap
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# ---------------------------------------------------------------------------
+# Build stage: Install Python dependencies
+# ---------------------------------------------------------------------------
+FROM base AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    fastapi==0.109.0 \
+    uvicorn==0.27.0 \
+    pydantic==2.5.3 \
+    elasticsearch==8.12.0 \
+    httpx==0.26.0 \
+    python-dotenv==1.0.0 \
+    opentelemetry-api==1.22.0 \
+    opentelemetry-sdk==1.22.0 \
+    opentelemetry-instrumentation-fastapi==0.43b0 \
+    prometheus-client==0.19.0
+
+# ---------------------------------------------------------------------------
+# Production stage
+# ---------------------------------------------------------------------------
+FROM base AS production
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
+COPY mcp_server/ /app/mcp_server/
+COPY sap_openai_server/ /app/sap_openai_server/
+COPY agent/ /app/agent/
+COPY middleware/ /app/middleware/
+COPY mangle/ /app/mangle/
+COPY data_products/ /app/data_products/
+COPY scripts/entrypoint.sh /app/entrypoint.sh
+
+# Create middleware __init__.py if missing
+RUN touch /app/middleware/__init__.py
+
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
+
+# Set ownership
+RUN chown -R sap:sap /app
+
+# Switch to non-root user
+USER sap
+
+# Expose ports
+# 9120: MCP Server
+# 9201: OpenAI-compatible Server
+EXPOSE 9120 9201
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${MCP_PORT:-9120}/health || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Default command (run MCP server)
+CMD []

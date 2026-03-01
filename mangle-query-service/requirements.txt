@@ -1,0 +1,39 @@
+# Mangle Query Service - Python Dependencies
+# OpenAI-compatible HTTP API
+
+# Web framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# HTTP client
+httpx>=0.28.0
+
+# Data validation
+pydantic>=2.10.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# JSON handling (already included in stdlib, but explicit)
+# Async support
+anyio>=4.8.0
+
+# Logging
+structlog>=24.4.0
+
+# SSE Streaming
+sse-starlette>=1.6.0
+
+# SAP HANA Cloud (optional - for HANA_ANALYTICAL path)
+hdbcli>=2.19.0
+
+# Phase 1: Intelligence & Efficiency Improvements
+# Redis client for fast-path cache (optional)
+redis>=5.0.0
+
+# For semantic cache hit count updates (already using httpx)
+# No additional dependencies needed
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.24.0

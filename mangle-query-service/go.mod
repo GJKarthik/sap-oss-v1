@@ -2,8 +2,7 @@ module github.com/sap-oss/mangle-query-service
 
 go 1.24.0
 
-replace github.com/google/mangle => ../mangle-main
-
+// Vendored mangle core - no longer using replace directive
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.19.3
 	github.com/google/mangle v0.0.0-00010101000000-000000000000
