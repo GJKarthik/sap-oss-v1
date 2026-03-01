@@ -1,0 +1,150 @@
+# Docker Compose for HANA Integration Development/Testing
+# 
+# Usage:
+#   docker-compose up -d
+#   docker-compose logs -f mangle-query-service
+#   docker-compose down
+
+version: '3.8'
+
+services:
+  # Main Mangle Query Service
+  mangle-query-service:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: mangle-query-service
+    ports:
+      - "8080:8080"       # HTTP API
+      - "9090:9090"       # Prometheus metrics
+      - "9150:9150"       # MCP Server
+    environment:
+      # HANA Connection
+      - HANA_HOST=${HANA_HOST:-}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER=${HANA_USER:-}
+      - HANA_PASSWORD=${HANA_PASSWORD:-}
+      - HANA_ENCRYPT=true
+      - HANA_INTERNAL_EMBEDDING_MODEL=SAP_NEB_V2
+      
+      # Elasticsearch
+      - ES_URL=${ES_URL:-http://elasticsearch:9200}
+      - ES_INDEX_PREFIX=mangle
+      
+      # MCP Server
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=9150
+      
+      # Cache Settings
+      - HANA_CACHE_MAX_SIZE=10000
+      - HANA_CACHE_TTL_SECONDS=3600
+      - SEMANTIC_SIMILARITY_THRESHOLD=0.92
+      
+      # Embedding Batcher
+      - HANA_EMBEDDING_BATCH_SIZE=32
+      - HANA_EMBEDDING_BATCH_TIMEOUT_MS=50
+      
+      # Speculative Execution
+      - SPECULATIVE_PATHS=2
+      - SPECULATION_TIMEOUT_SECONDS=5.0
+      
+      # Circuit Breaker
+      - HANA_CB_FAILURE_THRESHOLD=5
+      - HANA_CB_RECOVERY_TIMEOUT=30.0
+      
+      # Retry Settings
+      - RETRY_MAX_RETRIES=3
+      - RETRY_BASE_DELAY_MS=100
+      
+      # Adaptive Routing
+      - ROUTING_EXPLORATION_RATE=0.1
+      - ROUTING_LEARNING_RATE=0.1
+      
+      # Observability
+      - OTEL_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+      - LOG_LEVEL=INFO
+      
+    volumes:
+      - ../:/app
+      - router_models:/app/data/models
+    depends_on:
+      - elasticsearch
+      - jaeger
+      - prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Elasticsearch for hybrid search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    container_name: jaeger
+    ports:
+      - "16686:16686"     # UI
+      - "4317:4317"       # OTLP gRPC
+      - "4318:4318"       # OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+
+volumes:
+  es_data:
+  prometheus_data:
+  grafana_data:
+  router_models:
+
+networks:
+  default:
+    name: hana-integration

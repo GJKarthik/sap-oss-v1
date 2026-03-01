@@ -1,614 +1,302 @@
 """
-Configuration Management for Mangle Query Service
+Configuration Management with Validation.
 
-Day 5 Deliverable: Centralized configuration with environment variable support
-- Pydantic-style settings with validation
+Production-ready configuration with:
 - Environment variable loading
-- Environment-specific presets (dev, staging, prod)
-- Secure secret handling
-
-Usage:
-    from config.settings import get_settings
-    
-    settings = get_settings()
-    print(settings.elasticsearch_url)
+- Type validation
+- Secrets handling
+- Configuration validation on startup
 """
 
 import os
-import json
 import logging
-from typing import Optional, Dict, Any, List, Set
 from dataclasses import dataclass, field
-from enum import Enum
-from pathlib import Path
-import re
+from typing import Any, Dict, List, Optional, Set
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
 
-# ========================================
-# Environment Enum
-# ========================================
-
-class Environment(str, Enum):
-    """Deployment environment."""
-    
-    DEVELOPMENT = "development"
-    STAGING = "staging"
-    PRODUCTION = "production"
-    TEST = "test"
+def get_env(key: str, default: Any = None, required: bool = False) -> str:
+    """Get environment variable with validation."""
+    value = os.getenv(key, default)
+    if required and value is None:
+        raise ConfigurationError(f"Required environment variable {key} is not set")
+    return value
 
 
-# ========================================
-# Configuration Sections
-# ========================================
-
-@dataclass
-class ServerConfig:
-    """HTTP server configuration."""
-    
-    host: str = "0.0.0.0"
-    port: int = 8080
-    workers: int = 4
-    debug: bool = False
-    log_level: str = "INFO"
-    cors_origins: List[str] = field(default_factory=lambda: ["*"])
-    request_timeout: float = 60.0
+def get_env_int(key: str, default: int = 0, required: bool = False) -> int:
+    """Get integer environment variable."""
+    value = get_env(key, str(default), required)
+    try:
+        return int(value)
+    except ValueError:
+        raise ConfigurationError(f"Environment variable {key} must be an integer, got: {value}")
 
 
-@dataclass
-class ElasticsearchConfig:
-    """Elasticsearch configuration."""
-    
-    url: str = "http://localhost:9200"
-    index_prefix: str = "mangle"
-    username: Optional[str] = None
-    password: Optional[str] = None
-    api_key: Optional[str] = None
-    ca_cert_path: Optional[str] = None
-    timeout: float = 30.0
-    max_retries: int = 3
-    pool_size: int = 10
-    
-    @property
-    def has_auth(self) -> bool:
-        """Check if authentication is configured."""
-        return bool(self.username or self.api_key)
+def get_env_float(key: str, default: float = 0.0, required: bool = False) -> float:
+    """Get float environment variable."""
+    value = get_env(key, str(default), required)
+    try:
+        return float(value)
+    except ValueError:
+        raise ConfigurationError(f"Environment variable {key} must be a float, got: {value}")
+
+
+def get_env_bool(key: str, default: bool = False) -> bool:
+    """Get boolean environment variable."""
+    value = get_env(key, str(default)).lower()
+    return value in ("true", "1", "yes", "on")
+
+
+def get_env_list(key: str, default: str = "", separator: str = ",") -> List[str]:
+    """Get list environment variable."""
+    value = get_env(key, default)
+    if not value:
+        return []
+    return [item.strip() for item in value.split(separator) if item.strip()]
+
+
+class ConfigurationError(Exception):
+    """Configuration validation error."""
+    pass
 
 
 @dataclass
-class HANAConfig:
-    """SAP HANA Cloud configuration."""
+class HANASettings:
+    """HANA connection settings."""
+    host: str = field(default_factory=lambda: get_env("HANA_HOST", ""))
+    port: int = field(default_factory=lambda: get_env_int("HANA_PORT", 443))
+    user: str = field(default_factory=lambda: get_env("HANA_USER", ""))
+    password: str = field(default_factory=lambda: get_env("HANA_PASSWORD", ""))
+    encrypt: bool = field(default_factory=lambda: get_env_bool("HANA_ENCRYPT", True))
+    internal_embedding_model: str = field(
+        default_factory=lambda: get_env("HANA_INTERNAL_EMBEDDING_MODEL", "SAP_NEB_V2")
+    )
+    default_table: str = field(
+        default_factory=lambda: get_env("HANA_DEFAULT_TABLE", "VECTOR_STORE")
+    )
     
-    host: str = ""
-    port: int = 443
-    user: str = ""
-    password: str = ""
-    schema: str = ""
-    encrypt: bool = True
-    ssl_trust_store: Optional[str] = None
-    connection_pool_size: int = 5
-    statement_timeout: int = 300
-    
-    @property
     def is_configured(self) -> bool:
         """Check if HANA is configured."""
-        return bool(self.host and self.user and self.password)
+        return bool(self.host and self.user)
     
-    @property
-    def connection_string(self) -> str:
-        """Get connection string (without password)."""
-        if not self.is_configured:
-            return ""
-        return f"hana://{self.user}@{self.host}:{self.port}/{self.schema}"
+    def get_connection_string(self) -> str:
+        """Get HANA connection string (without password)."""
+        return f"hdbcli://{self.user}@{self.host}:{self.port}"
+    
+    def validate(self) -> List[str]:
+        """Validate HANA settings."""
+        errors = []
+        if self.host and not self.user:
+            errors.append("HANA_USER is required when HANA_HOST is set")
+        if self.host and not self.password:
+            errors.append("HANA_PASSWORD is required when HANA_HOST is set")
+        if self.port < 1 or self.port > 65535:
+            errors.append(f"HANA_PORT must be 1-65535, got: {self.port}")
+        return errors
 
 
 @dataclass
-class LLMBackendConfig:
-    """LLM backend configuration."""
+class ElasticsearchSettings:
+    """Elasticsearch settings."""
+    url: str = field(default_factory=lambda: get_env("ES_URL", "http://localhost:9200"))
+    index_prefix: str = field(default_factory=lambda: get_env("ES_INDEX_PREFIX", "mangle"))
+    username: str = field(default_factory=lambda: get_env("ES_USERNAME", ""))
+    password: str = field(default_factory=lambda: get_env("ES_PASSWORD", ""))
+    timeout: int = field(default_factory=lambda: get_env_int("ES_TIMEOUT", 30))
     
-    base_url: str = "http://localhost:8000/v1"
-    api_key: Optional[str] = None
-    model: str = "gpt-4"
-    default_temperature: float = 0.7
-    max_tokens: int = 4096
-    timeout: float = 120.0
-    retry_count: int = 2
+    def validate(self) -> List[str]:
+        errors = []
+        if not self.url.startswith(("http://", "https://")):
+            errors.append(f"ES_URL must start with http:// or https://, got: {self.url}")
+        return errors
 
 
 @dataclass
-class AICoreSteamingConfig:
-    """SAP AI Core streaming configuration."""
+class CacheSettings:
+    """Cache settings."""
+    max_size: int = field(default_factory=lambda: get_env_int("HANA_CACHE_MAX_SIZE", 10000))
+    ttl_seconds: int = field(default_factory=lambda: get_env_int("HANA_CACHE_TTL_SECONDS", 3600))
+    similarity_threshold: float = field(
+        default_factory=lambda: get_env_float("SEMANTIC_SIMILARITY_THRESHOLD", 0.92)
+    )
     
-    base_url: str = ""
-    client_id: str = ""
-    client_secret: str = ""
-    token_url: str = ""
-    deployment_id: str = ""
-    resource_group: str = "default"
-    timeout: float = 120.0
-    
-    @property
-    def is_configured(self) -> bool:
-        """Check if AI Core is configured."""
-        return bool(self.base_url and self.client_id and self.client_secret)
+    def validate(self) -> List[str]:
+        errors = []
+        if self.max_size < 0:
+            errors.append(f"HANA_CACHE_MAX_SIZE must be >= 0, got: {self.max_size}")
+        if self.ttl_seconds < 0:
+            errors.append(f"HANA_CACHE_TTL_SECONDS must be >= 0, got: {self.ttl_seconds}")
+        if not 0 <= self.similarity_threshold <= 1:
+            errors.append(f"SEMANTIC_SIMILARITY_THRESHOLD must be 0-1, got: {self.similarity_threshold}")
+        return errors
 
 
 @dataclass
-class CacheConfig:
-    """Caching configuration."""
+class CircuitBreakerSettings:
+    """Circuit breaker settings."""
+    failure_threshold: int = field(default_factory=lambda: get_env_int("HANA_CB_FAILURE_THRESHOLD", 5))
+    recovery_timeout: float = field(default_factory=lambda: get_env_float("HANA_CB_RECOVERY_TIMEOUT", 30.0))
+    half_open_requests: int = field(default_factory=lambda: get_env_int("HANA_CB_HALF_OPEN_REQUESTS", 3))
+    success_threshold: int = field(default_factory=lambda: get_env_int("HANA_CB_SUCCESS_THRESHOLD", 2))
     
-    enabled: bool = True
-    ttl_seconds: int = 3600
-    max_entries: int = 10000
-    semantic_cache_enabled: bool = True
-    similarity_threshold: float = 0.95
+    def validate(self) -> List[str]:
+        errors = []
+        if self.failure_threshold < 1:
+            errors.append(f"HANA_CB_FAILURE_THRESHOLD must be >= 1, got: {self.failure_threshold}")
+        if self.recovery_timeout < 0:
+            errors.append(f"HANA_CB_RECOVERY_TIMEOUT must be >= 0, got: {self.recovery_timeout}")
+        return errors
 
 
 @dataclass
-class ResilienceConfig:
-    """Resilience configuration (retry + circuit breaker)."""
+class RateLimitSettings:
+    """Rate limiting settings."""
+    global_limit: int = field(default_factory=lambda: get_env_int("RATE_LIMIT_GLOBAL", 1000))
+    per_client_limit: int = field(default_factory=lambda: get_env_int("RATE_LIMIT_PER_CLIENT", 100))
+    burst_multiplier: float = field(default_factory=lambda: get_env_float("RATE_LIMIT_BURST_MULTIPLIER", 1.5))
+    adaptive: bool = field(default_factory=lambda: get_env_bool("RATE_LIMIT_ADAPTIVE", True))
     
-    # Retry settings
-    retry_enabled: bool = True
-    max_retries: int = 3
-    retry_base_delay: float = 1.0
-    retry_max_delay: float = 8.0
-    
-    # Circuit breaker settings
-    circuit_breaker_enabled: bool = True
-    cb_failure_threshold: int = 5
-    cb_success_threshold: int = 2
-    cb_recovery_timeout: float = 30.0
-    
-    # Timeout settings
-    default_timeout: float = 30.0
-    llm_timeout: float = 120.0
+    def validate(self) -> List[str]:
+        errors = []
+        if self.global_limit < 1:
+            errors.append(f"RATE_LIMIT_GLOBAL must be >= 1, got: {self.global_limit}")
+        if self.per_client_limit < 1:
+            errors.append(f"RATE_LIMIT_PER_CLIENT must be >= 1, got: {self.per_client_limit}")
+        return errors
 
 
 @dataclass
-class SecurityConfig:
-    """Security configuration."""
+class ObservabilitySettings:
+    """Observability settings."""
+    otel_enabled: bool = field(default_factory=lambda: get_env_bool("OTEL_ENABLED", True))
+    otel_endpoint: str = field(
+        default_factory=lambda: get_env("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
+    )
+    metrics_enabled: bool = field(default_factory=lambda: get_env_bool("METRICS_ENABLED", True))
+    metrics_port: int = field(default_factory=lambda: get_env_int("METRICS_PORT", 9090))
+    log_level: str = field(default_factory=lambda: get_env("LOG_LEVEL", "INFO"))
+    log_format: str = field(default_factory=lambda: get_env("LOG_FORMAT", "json"))
     
-    api_key_header: str = "X-API-Key"
-    api_keys: Set[str] = field(default_factory=set)
-    jwt_enabled: bool = False
-    jwt_secret: Optional[str] = None
-    jwt_algorithm: str = "HS256"
-    rate_limit_enabled: bool = True
-    rate_limit_requests: int = 100
-    rate_limit_window: int = 60
+    def validate(self) -> List[str]:
+        errors = []
+        valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if self.log_level.upper() not in valid_levels:
+            errors.append(f"LOG_LEVEL must be one of {valid_levels}, got: {self.log_level}")
+        return errors
 
 
 @dataclass
-class ObservabilityConfig:
-    """Observability configuration."""
+class ServerSettings:
+    """Server settings."""
+    host: str = field(default_factory=lambda: get_env("HOST", "0.0.0.0"))
+    port: int = field(default_factory=lambda: get_env_int("PORT", 8080))
+    workers: int = field(default_factory=lambda: get_env_int("WORKERS", 1))
+    cors_origins: List[str] = field(default_factory=lambda: get_env_list("CORS_ORIGINS", "*"))
+    mcp_host: str = field(default_factory=lambda: get_env("MCP_HOST", "0.0.0.0"))
+    mcp_port: int = field(default_factory=lambda: get_env_int("MCP_PORT", 9150))
     
-    metrics_enabled: bool = True
-    metrics_port: int = 9090
-    tracing_enabled: bool = False
-    tracing_endpoint: str = ""
-    log_format: str = "json"
-    log_request_body: bool = False
-    log_response_body: bool = False
+    def validate(self) -> List[str]:
+        errors = []
+        if self.port < 1 or self.port > 65535:
+            errors.append(f"PORT must be 1-65535, got: {self.port}")
+        if self.workers < 1:
+            errors.append(f"WORKERS must be >= 1, got: {self.workers}")
+        return errors
 
-
-# ========================================
-# Main Settings Class
-# ========================================
 
 @dataclass
 class Settings:
-    """
-    Main settings container.
+    """Complete application settings."""
+    hana: HANASettings = field(default_factory=HANASettings)
+    elasticsearch: ElasticsearchSettings = field(default_factory=ElasticsearchSettings)
+    cache: CacheSettings = field(default_factory=CacheSettings)
+    circuit_breaker: CircuitBreakerSettings = field(default_factory=CircuitBreakerSettings)
+    rate_limit: RateLimitSettings = field(default_factory=RateLimitSettings)
+    observability: ObservabilitySettings = field(default_factory=ObservabilitySettings)
+    server: ServerSettings = field(default_factory=ServerSettings)
     
-    All configuration for the Mangle Query Service.
-    """
+    # Feature flags
+    query_rewrite_enabled: bool = field(default_factory=lambda: get_env_bool("QUERY_REWRITE_ENABLED", True))
+    rerank_enabled: bool = field(default_factory=lambda: get_env_bool("RERANK_ENABLED", True))
+    speculative_enabled: bool = field(default_factory=lambda: get_env_bool("SPECULATIVE_ENABLED", True))
     
-    # Environment
-    environment: Environment = Environment.DEVELOPMENT
-    service_name: str = "mangle-query-service"
-    version: str = "1.0.0"
+    def validate(self) -> List[str]:
+        """Validate all settings."""
+        errors = []
+        errors.extend(self.hana.validate())
+        errors.extend(self.elasticsearch.validate())
+        errors.extend(self.cache.validate())
+        errors.extend(self.circuit_breaker.validate())
+        errors.extend(self.rate_limit.validate())
+        errors.extend(self.observability.validate())
+        errors.extend(self.server.validate())
+        return errors
     
-    # Sub-configurations
-    server: ServerConfig = field(default_factory=ServerConfig)
-    elasticsearch: ElasticsearchConfig = field(default_factory=ElasticsearchConfig)
-    hana: HANAConfig = field(default_factory=HANAConfig)
-    llm: LLMBackendConfig = field(default_factory=LLMBackendConfig)
-    aicore: AICoreSteamingConfig = field(default_factory=AICoreSteamingConfig)
-    cache: CacheConfig = field(default_factory=CacheConfig)
-    resilience: ResilienceConfig = field(default_factory=ResilienceConfig)
-    security: SecurityConfig = field(default_factory=SecurityConfig)
-    observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
+    def validate_or_raise(self) -> None:
+        """Validate settings and raise if invalid."""
+        errors = self.validate()
+        if errors:
+            for error in errors:
+                logger.error(f"Configuration error: {error}")
+            raise ConfigurationError(f"Configuration validation failed: {errors}")
     
-    @property
-    def is_production(self) -> bool:
-        """Check if running in production."""
-        return self.environment == Environment.PRODUCTION
-    
-    @property
-    def is_development(self) -> bool:
-        """Check if running in development."""
-        return self.environment == Environment.DEVELOPMENT
-    
-    def to_dict(self, mask_secrets: bool = True) -> Dict[str, Any]:
-        """Convert to dictionary, optionally masking secrets."""
+    def to_dict(self, include_secrets: bool = False) -> Dict[str, Any]:
+        """Convert settings to dictionary."""
         result = {
-            "environment": self.environment.value,
-            "service_name": self.service_name,
-            "version": self.version,
-            "server": {
-                "host": self.server.host,
-                "port": self.server.port,
-                "workers": self.server.workers,
-                "debug": self.server.debug,
+            "hana": {
+                "host": self.hana.host,
+                "port": self.hana.port,
+                "user": self.hana.user,
+                "encrypt": self.hana.encrypt,
+                "default_table": self.hana.default_table,
             },
             "elasticsearch": {
                 "url": self.elasticsearch.url,
                 "index_prefix": self.elasticsearch.index_prefix,
-                "has_auth": self.elasticsearch.has_auth,
-            },
-            "hana": {
-                "is_configured": self.hana.is_configured,
-                "connection_string": self.hana.connection_string,
-            },
-            "llm": {
-                "base_url": self.llm.base_url,
-                "model": self.llm.model,
-            },
-            "aicore": {
-                "is_configured": self.aicore.is_configured,
-                "base_url": self.aicore.base_url if not mask_secrets else "***",
             },
             "cache": {
-                "enabled": self.cache.enabled,
+                "max_size": self.cache.max_size,
                 "ttl_seconds": self.cache.ttl_seconds,
+                "similarity_threshold": self.cache.similarity_threshold,
             },
-            "resilience": {
-                "retry_enabled": self.resilience.retry_enabled,
-                "circuit_breaker_enabled": self.resilience.circuit_breaker_enabled,
+            "circuit_breaker": {
+                "failure_threshold": self.circuit_breaker.failure_threshold,
+                "recovery_timeout": self.circuit_breaker.recovery_timeout,
             },
-            "security": {
-                "rate_limit_enabled": self.security.rate_limit_enabled,
-                "jwt_enabled": self.security.jwt_enabled,
+            "rate_limit": {
+                "global_limit": self.rate_limit.global_limit,
+                "per_client_limit": self.rate_limit.per_client_limit,
             },
-            "observability": {
-                "metrics_enabled": self.observability.metrics_enabled,
-                "tracing_enabled": self.observability.tracing_enabled,
+            "server": {
+                "host": self.server.host,
+                "port": self.server.port,
+                "workers": self.server.workers,
             },
+            "features": {
+                "query_rewrite": self.query_rewrite_enabled,
+                "rerank": self.rerank_enabled,
+                "speculative": self.speculative_enabled,
+            }
         }
+        
+        if include_secrets:
+            result["hana"]["password"] = "***REDACTED***"
+            result["elasticsearch"]["password"] = "***REDACTED***" if self.elasticsearch.password else None
+        
         return result
-    
-    def validate(self) -> List[str]:
-        """Validate configuration, return list of errors."""
-        errors = []
-        
-        # Production-specific validations
-        if self.is_production:
-            if self.server.debug:
-                errors.append("Debug mode must be disabled in production")
-            
-            if not self.elasticsearch.has_auth:
-                errors.append("Elasticsearch authentication required in production")
-            
-            if "*" in self.server.cors_origins:
-                errors.append("Wildcard CORS origins not allowed in production")
-            
-            if not self.security.api_keys and not self.security.jwt_enabled:
-                errors.append("API key or JWT authentication required in production")
-            
-            if self.observability.log_request_body or self.observability.log_response_body:
-                errors.append("Request/response body logging not allowed in production")
-        
-        # General validations
-        if self.server.port < 1 or self.server.port > 65535:
-            errors.append(f"Invalid server port: {self.server.port}")
-        
-        if self.resilience.max_retries < 0:
-            errors.append("max_retries cannot be negative")
-        
-        if self.cache.similarity_threshold < 0 or self.cache.similarity_threshold > 1:
-            errors.append("similarity_threshold must be between 0 and 1")
-        
-        return errors
 
 
-# ========================================
-# Environment Variable Loading
-# ========================================
-
-def _get_env(key: str, default: Any = None, cast: type = str) -> Any:
-    """Get environment variable with type casting."""
-    value = os.environ.get(key, default)
-    
-    if value is None:
-        return default
-    
-    if cast == bool:
-        if isinstance(value, bool):
-            return value
-        return value.lower() in ("true", "1", "yes", "on")
-    
-    if cast == list:
-        if isinstance(value, list):
-            return value
-        return [v.strip() for v in value.split(",") if v.strip()]
-    
-    if cast == set:
-        if isinstance(value, set):
-            return value
-        return {v.strip() for v in value.split(",") if v.strip()}
-    
-    try:
-        return cast(value)
-    except (ValueError, TypeError):
-        return default
-
-
-def load_settings_from_env() -> Settings:
-    """Load settings from environment variables."""
-    
-    # Determine environment
-    env_str = _get_env("MANGLE_ENV", "development")
-    try:
-        environment = Environment(env_str.lower())
-    except ValueError:
-        environment = Environment.DEVELOPMENT
-    
-    settings = Settings(
-        environment=environment,
-        service_name=_get_env("SERVICE_NAME", "mangle-query-service"),
-        version=_get_env("SERVICE_VERSION", "1.0.0"),
-        
-        server=ServerConfig(
-            host=_get_env("SERVER_HOST", "0.0.0.0"),
-            port=_get_env("SERVER_PORT", 8080, int),
-            workers=_get_env("SERVER_WORKERS", 4, int),
-            debug=_get_env("DEBUG", False, bool),
-            log_level=_get_env("LOG_LEVEL", "INFO"),
-            cors_origins=_get_env("CORS_ORIGINS", ["*"], list),
-            request_timeout=_get_env("REQUEST_TIMEOUT", 60.0, float),
-        ),
-        
-        elasticsearch=ElasticsearchConfig(
-            url=_get_env("ELASTICSEARCH_URL", "http://localhost:9200"),
-            index_prefix=_get_env("ELASTICSEARCH_INDEX_PREFIX", "mangle"),
-            username=_get_env("ELASTICSEARCH_USERNAME"),
-            password=_get_env("ELASTICSEARCH_PASSWORD"),
-            api_key=_get_env("ELASTICSEARCH_API_KEY"),
-            ca_cert_path=_get_env("ELASTICSEARCH_CA_CERT"),
-            timeout=_get_env("ELASTICSEARCH_TIMEOUT", 30.0, float),
-            max_retries=_get_env("ELASTICSEARCH_MAX_RETRIES", 3, int),
-            pool_size=_get_env("ELASTICSEARCH_POOL_SIZE", 10, int),
-        ),
-        
-        hana=HANAConfig(
-            host=_get_env("HANA_HOST", ""),
-            port=_get_env("HANA_PORT", 443, int),
-            user=_get_env("HANA_USER", ""),
-            password=_get_env("HANA_PASSWORD", ""),
-            schema=_get_env("HANA_SCHEMA", ""),
-            encrypt=_get_env("HANA_ENCRYPT", True, bool),
-            ssl_trust_store=_get_env("HANA_SSL_TRUST_STORE"),
-            connection_pool_size=_get_env("HANA_POOL_SIZE", 5, int),
-            statement_timeout=_get_env("HANA_STATEMENT_TIMEOUT", 300, int),
-        ),
-        
-        llm=LLMBackendConfig(
-            base_url=_get_env("LLM_BASE_URL", "http://localhost:8000/v1"),
-            api_key=_get_env("LLM_API_KEY"),
-            model=_get_env("LLM_MODEL", "gpt-4"),
-            default_temperature=_get_env("LLM_TEMPERATURE", 0.7, float),
-            max_tokens=_get_env("LLM_MAX_TOKENS", 4096, int),
-            timeout=_get_env("LLM_TIMEOUT", 120.0, float),
-            retry_count=_get_env("LLM_RETRY_COUNT", 2, int),
-        ),
-        
-        aicore=AICoreSteamingConfig(
-            base_url=_get_env("AICORE_BASE_URL", ""),
-            client_id=_get_env("AICORE_CLIENT_ID", ""),
-            client_secret=_get_env("AICORE_CLIENT_SECRET", ""),
-            token_url=_get_env("AICORE_TOKEN_URL", ""),
-            deployment_id=_get_env("AICORE_DEPLOYMENT_ID", ""),
-            resource_group=_get_env("AICORE_RESOURCE_GROUP", "default"),
-            timeout=_get_env("AICORE_TIMEOUT", 120.0, float),
-        ),
-        
-        cache=CacheConfig(
-            enabled=_get_env("CACHE_ENABLED", True, bool),
-            ttl_seconds=_get_env("CACHE_TTL", 3600, int),
-            max_entries=_get_env("CACHE_MAX_ENTRIES", 10000, int),
-            semantic_cache_enabled=_get_env("SEMANTIC_CACHE_ENABLED", True, bool),
-            similarity_threshold=_get_env("SEMANTIC_CACHE_THRESHOLD", 0.95, float),
-        ),
-        
-        resilience=ResilienceConfig(
-            retry_enabled=_get_env("RETRY_ENABLED", True, bool),
-            max_retries=_get_env("MAX_RETRIES", 3, int),
-            retry_base_delay=_get_env("RETRY_BASE_DELAY", 1.0, float),
-            retry_max_delay=_get_env("RETRY_MAX_DELAY", 8.0, float),
-            circuit_breaker_enabled=_get_env("CIRCUIT_BREAKER_ENABLED", True, bool),
-            cb_failure_threshold=_get_env("CB_FAILURE_THRESHOLD", 5, int),
-            cb_success_threshold=_get_env("CB_SUCCESS_THRESHOLD", 2, int),
-            cb_recovery_timeout=_get_env("CB_RECOVERY_TIMEOUT", 30.0, float),
-            default_timeout=_get_env("DEFAULT_TIMEOUT", 30.0, float),
-            llm_timeout=_get_env("LLM_TIMEOUT", 120.0, float),
-        ),
-        
-        security=SecurityConfig(
-            api_key_header=_get_env("API_KEY_HEADER", "X-API-Key"),
-            api_keys=_get_env("API_KEYS", set(), set),
-            jwt_enabled=_get_env("JWT_ENABLED", False, bool),
-            jwt_secret=_get_env("JWT_SECRET"),
-            jwt_algorithm=_get_env("JWT_ALGORITHM", "HS256"),
-            rate_limit_enabled=_get_env("RATE_LIMIT_ENABLED", True, bool),
-            rate_limit_requests=_get_env("RATE_LIMIT_REQUESTS", 100, int),
-            rate_limit_window=_get_env("RATE_LIMIT_WINDOW", 60, int),
-        ),
-        
-        observability=ObservabilityConfig(
-            metrics_enabled=_get_env("METRICS_ENABLED", True, bool),
-            metrics_port=_get_env("METRICS_PORT", 9090, int),
-            tracing_enabled=_get_env("TRACING_ENABLED", False, bool),
-            tracing_endpoint=_get_env("TRACING_ENDPOINT", ""),
-            log_format=_get_env("LOG_FORMAT", "json"),
-            log_request_body=_get_env("LOG_REQUEST_BODY", False, bool),
-            log_response_body=_get_env("LOG_RESPONSE_BODY", False, bool),
-        ),
-    )
-    
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Get cached settings singleton."""
+    settings = Settings()
+    settings.validate_or_raise()
     return settings
 
 
-# ========================================
-# Environment Presets
-# ========================================
-
-def get_development_settings() -> Settings:
-    """Get development environment settings."""
-    return Settings(
-        environment=Environment.DEVELOPMENT,
-        server=ServerConfig(
-            debug=True,
-            log_level="DEBUG",
-            workers=1,
-        ),
-        cache=CacheConfig(
-            enabled=False,
-            ttl_seconds=60,
-        ),
-        resilience=ResilienceConfig(
-            circuit_breaker_enabled=False,
-            max_retries=1,
-        ),
-        security=SecurityConfig(
-            rate_limit_enabled=False,
-        ),
-        observability=ObservabilityConfig(
-            log_format="text",
-            log_request_body=True,
-            log_response_body=True,
-        ),
-    )
-
-
-def get_staging_settings() -> Settings:
-    """Get staging environment settings."""
-    return Settings(
-        environment=Environment.STAGING,
-        server=ServerConfig(
-            debug=False,
-            log_level="INFO",
-            workers=2,
-        ),
-        cache=CacheConfig(
-            enabled=True,
-            ttl_seconds=1800,
-        ),
-        resilience=ResilienceConfig(
-            circuit_breaker_enabled=True,
-            cb_failure_threshold=10,
-        ),
-        observability=ObservabilityConfig(
-            tracing_enabled=True,
-        ),
-    )
-
-
-def get_production_settings() -> Settings:
-    """Get production environment settings."""
-    return Settings(
-        environment=Environment.PRODUCTION,
-        server=ServerConfig(
-            debug=False,
-            log_level="WARNING",
-            workers=4,
-            cors_origins=[],
-        ),
-        cache=CacheConfig(
-            enabled=True,
-            ttl_seconds=3600,
-            max_entries=50000,
-        ),
-        resilience=ResilienceConfig(
-            circuit_breaker_enabled=True,
-            cb_failure_threshold=5,
-            cb_recovery_timeout=60.0,
-        ),
-        security=SecurityConfig(
-            rate_limit_enabled=True,
-            rate_limit_requests=1000,
-        ),
-        observability=ObservabilityConfig(
-            metrics_enabled=True,
-            tracing_enabled=True,
-            log_format="json",
-            log_request_body=False,
-            log_response_body=False,
-        ),
-    )
-
-
-# ========================================
-# Singleton Pattern
-# ========================================
-
-_settings: Optional[Settings] = None
-
-
-def get_settings(reload: bool = False) -> Settings:
-    """
-    Get application settings (singleton).
-    
-    Args:
-        reload: Force reload from environment
-    
-    Returns:
-        Settings instance
-    """
-    global _settings
-    
-    if _settings is None or reload:
-        _settings = load_settings_from_env()
-        
-        # Validate settings
-        errors = _settings.validate()
-        if errors:
-            for error in errors:
-                logger.warning(f"Configuration warning: {error}")
-            
-            if _settings.is_production:
-                raise ValueError(f"Configuration errors in production: {errors}")
-    
-    return _settings
-
-
-def reset_settings() -> None:
-    """Reset settings singleton (for testing)."""
-    global _settings
-    _settings = None
-
-
-# ========================================
-# Exports
-# ========================================
-
-__all__ = [
-    "Environment",
-    "ServerConfig",
-    "ElasticsearchConfig",
-    "HANAConfig",
-    "LLMBackendConfig",
-    "AICoreSteamingConfig",
-    "CacheConfig",
-    "ResilienceConfig",
-    "SecurityConfig",
-    "ObservabilityConfig",
-    "Settings",
-    "get_settings",
-    "reset_settings",
-    "load_settings_from_env",
-    "get_development_settings",
-    "get_staging_settings",
-    "get_production_settings",
-]
+def reload_settings() -> Settings:
+    """Reload settings (clears cache)."""
+    get_settings.cache_clear()
+    return get_settings()

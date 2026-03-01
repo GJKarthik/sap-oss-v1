@@ -1,39 +1,45 @@
-# Mangle Query Service - Python Dependencies
-# OpenAI-compatible HTTP API
+# Core dependencies for Mangle Query Service with HANA Integration
+
+# HANA Integration
+langchain-hana>=0.1.0
+hdbcli>=2.20.0
+
+# LangChain ecosystem
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-community>=0.0.20
+
+# Vector operations
+numpy>=1.24.0
+
+# Async support
+asyncio-throttle>=1.0.2
+aiohttp>=3.9.0
+httpx>=0.25.0
+
+# Observability
+opentelemetry-api>=1.21.0
+opentelemetry-sdk>=1.21.0
+opentelemetry-exporter-otlp>=1.21.0
+prometheus-client>=0.19.0
+
+# MCP Server
+mcp>=0.1.0
 
 # Web framework
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
+fastapi>=0.108.0
+uvicorn>=0.25.0
 
-# HTTP client
-httpx>=0.28.0
-
-# Data validation
-pydantic>=2.10.0
-
-# Environment variables
+# Configuration
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
 
-# JSON handling (already included in stdlib, but explicit)
-# Async support
-anyio>=4.8.0
+# Utilities
+cachetools>=5.3.0
+tenacity>=8.2.0
 
-# Logging
-structlog>=24.4.0
-
-# SSE Streaming
-sse-starlette>=1.6.0
-
-# SAP HANA Cloud (optional - for HANA_ANALYTICAL path)
-hdbcli>=2.19.0
-
-# Phase 1: Intelligence & Efficiency Improvements
-# Redis client for fast-path cache (optional)
-redis>=5.0.0
-
-# For semantic cache hit count updates (already using httpx)
-# No additional dependencies needed
-
-# Testing
-pytest>=8.0.0
-pytest-asyncio>=0.24.0
+# Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
