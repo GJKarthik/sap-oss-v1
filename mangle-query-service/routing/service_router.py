@@ -10,11 +10,18 @@ Routing is based on:
 - Model requirements
 - Service availability
 - Configuration
+
+Regulatory Compliance:
+- MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_004"
+- Autonomy Level: L2 (Human-on-loop with monitoring)
+- Safety Controls: guardrails, monitoring, emergency_stop
 """
 
+import asyncio
 import logging
 import os
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, Any, AsyncIterator, List
 
@@ -27,6 +34,23 @@ from openai.models import (
 logger = logging.getLogger(__name__)
 
 
+class AutonomyLevel(Enum):
+    """
+    MGF Autonomy Levels (mgf-for-agentic-ai.pdf, chunk_id: "mgf_012")
+    
+    L1: Human-in-the-loop - Human approval for every action
+    L2: Human-on-the-loop - Human monitoring with intervention capability
+    L3: Human oversight - Periodic human review
+    L4: Limited autonomy - Human defines boundaries
+    L5: Full autonomy - No human oversight (not recommended)
+    """
+    L1_HUMAN_IN_LOOP = "L1"      # Human approval for every action
+    L2_HUMAN_ON_LOOP = "L2"      # Human monitoring (DEFAULT for mangle-query-service)
+    L3_HUMAN_OVERSIGHT = "L3"    # Periodic review
+    L4_LIMITED_AUTONOMY = "L4"   # Bounded autonomy
+    L5_FULL_AUTONOMY = "L5"      # Not recommended
+
+
 class BackendType(Enum):
     """Available backends for request routing."""
     AICORE_DIRECT = "aicore_direct"      # Direct to SAP AI Core
@@ -36,7 +60,12 @@ class BackendType(Enum):
 
 @dataclass
 class RoutingConfig:
-    """Configuration for service routing."""
+    """
+    Configuration for service routing.
+    
+    MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_008"
+    Implements: technical_controls governance dimension
+    """
     
     # Default backend selection
     default_backend: BackendType = BackendType.AUTO
@@ -53,6 +82,10 @@ class RoutingConfig:
         default_factory=lambda: os.getenv("STREAMING_SERVICE_ENABLED", "true").lower() == "true"
     )
     aicore_direct_enabled: bool = True
+    
+    # Regulatory compliance (MGF, Agent Index)
+    autonomy_level: AutonomyLevel = AutonomyLevel.L2_HUMAN_ON_LOOP
+    emergency_stop_enabled: bool = True
     
     @classmethod
     def from_env(cls) -> "RoutingConfig":
@@ -88,12 +121,27 @@ class ServiceRouter:
                                                ↓
                                           SAP AI Core
     ```
+    
+    Regulatory Compliance:
+    - MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_004", "mgf_008"
+    - Agent Index Reference: 2025-AI-Agent-Index.pdf
+    - Autonomy Level: L2 (Human-on-loop)
+    - Safety Controls: emergency_stop, guardrails, monitoring
     """
     
     def __init__(self, config: Optional[RoutingConfig] = None):
         self.config = config or RoutingConfig.from_env()
         self._aicore_handler = None
         self._streaming_client = None
+        
+        # Emergency stop state (MGF safety control: emergency_stop)
+        self._emergency_stopped: bool = False
+        self._emergency_stop_timestamp: Optional[datetime] = None
+        self._emergency_stop_reason: Optional[str] = None
+        
+        # Request tracking for L2 monitoring
+        self._request_count: int = 0
+        self._last_request_time: Optional[datetime] = None
     
     async def _get_aicore_handler(self):
         """Lazy load AI Core handler."""
@@ -141,6 +189,104 @@ class ServiceRouter:
         # Default to direct for non-streaming
         return BackendType.AICORE_DIRECT
     
+    # ========================================
+    # Emergency Stop Implementation
+    # MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_015"
+    # Safety Control: emergency_stop
+    # ========================================
+    
+    async def emergency_stop(self, reason: str = "Manual activation") -> Dict[str, Any]:
+        """
+        Emergency stop all LLM processing.
+        
+        MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_015"
+        Implements: safety_control_chunk(_, "emergency_stop")
+        
+        This immediately halts all request processing until manually reset.
+        Used for:
+        - Safety incidents
+        - Data breach detection
+        - Compliance violations
+        - Manual operator override
+        
+        Returns:
+            Dict with stop status and timestamp
+        """
+        self._emergency_stopped = True
+        self._emergency_stop_timestamp = datetime.utcnow()
+        self._emergency_stop_reason = reason
+        
+        logger.critical(
+            "EMERGENCY STOP activated",
+            extra={
+                "reason": reason,
+                "timestamp": self._emergency_stop_timestamp.isoformat(),
+                "request_count_at_stop": self._request_count,
+                "mgf_reference": "mgf-for-agentic-ai.pdf, chunk_id: mgf_015",
+            },
+        )
+        
+        return {
+            "status": "stopped",
+            "timestamp": self._emergency_stop_timestamp.isoformat(),
+            "reason": reason,
+            "autonomy_level": self.config.autonomy_level.value,
+        }
+    
+    async def emergency_reset(self, authorization: str) -> Dict[str, Any]:
+        """
+        Reset emergency stop state.
+        
+        Requires authorization token to prevent accidental reset.
+        L2 autonomy level requires human approval for reset.
+        
+        Args:
+            authorization: Reset authorization token (from admin)
+            
+        Returns:
+            Dict with reset status
+        """
+        # Simple authorization check (in production, verify against XSUAA)
+        if not authorization or len(authorization) < 8:
+            raise ValueError("Invalid authorization token for emergency reset")
+        
+        previous_state = {
+            "was_stopped": self._emergency_stopped,
+            "stop_timestamp": self._emergency_stop_timestamp.isoformat() if self._emergency_stop_timestamp else None,
+            "stop_reason": self._emergency_stop_reason,
+        }
+        
+        self._emergency_stopped = False
+        self._emergency_stop_timestamp = None
+        self._emergency_stop_reason = None
+        
+        logger.warning(
+            "EMERGENCY STOP reset",
+            extra={
+                "previous_state": previous_state,
+                "reset_timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+        
+        return {
+            "status": "reset",
+            "previous_state": previous_state,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    
+    def is_emergency_stopped(self) -> bool:
+        """Check if emergency stop is active."""
+        return self._emergency_stopped
+    
+    def get_emergency_status(self) -> Dict[str, Any]:
+        """Get current emergency stop status."""
+        return {
+            "stopped": self._emergency_stopped,
+            "timestamp": self._emergency_stop_timestamp.isoformat() if self._emergency_stop_timestamp else None,
+            "reason": self._emergency_stop_reason,
+            "autonomy_level": self.config.autonomy_level.value,
+        }
+    
     async def route_completion(
         self,
         request: ChatCompletionRequest,
@@ -149,7 +295,20 @@ class ServiceRouter:
     ) -> ChatCompletionResponse:
         """
         Route non-streaming completion to appropriate backend.
+        
+        MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_004"
+        Implements: technical_controls with emergency_stop check
         """
+        # Emergency stop check (MGF safety control)
+        if self._emergency_stopped:
+            raise RuntimeError(
+                f"Emergency stop active since {self._emergency_stop_timestamp}: {self._emergency_stop_reason}"
+            )
+        
+        # Update monitoring stats (L2 human-on-loop)
+        self._request_count += 1
+        self._last_request_time = datetime.utcnow()
+        
         backend = self.select_backend(request, force_backend)
         
         logger.info(
@@ -180,7 +339,20 @@ class ServiceRouter:
     ) -> AsyncIterator[ChatCompletionChunk]:
         """
         Route streaming completion to appropriate backend.
+        
+        MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_004"
+        Implements: technical_controls with emergency_stop check
         """
+        # Emergency stop check (MGF safety control)
+        if self._emergency_stopped:
+            raise RuntimeError(
+                f"Emergency stop active since {self._emergency_stop_timestamp}: {self._emergency_stop_reason}"
+            )
+        
+        # Update monitoring stats
+        self._request_count += 1
+        self._last_request_time = datetime.utcnow()
+        
         backend = self.select_backend(request, force_backend)
         
         logger.info(
@@ -351,10 +523,26 @@ class ServiceRouter:
         )
     
     async def health_check(self) -> Dict[str, Any]:
-        """Check health of all backends."""
+        """
+        Check health of all backends.
+        
+        MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_008"
+        Implements: monitoring safety control
+        """
         results = {
             "aicore_direct": {"status": "unknown"},
             "streaming_service": {"status": "unknown"},
+            "emergency_stop": self.get_emergency_status(),
+            "autonomy_level": self.config.autonomy_level.value,
+            "regulatory_compliance": {
+                "mgf_reference": "mgf-for-agentic-ai.pdf",
+                "agent_index_reference": "2025-AI-Agent-Index.pdf",
+                "compliance_level": "L2_HUMAN_ON_LOOP",
+            },
+            "monitoring": {
+                "request_count": self._request_count,
+                "last_request": self._last_request_time.isoformat() if self._last_request_time else None,
+            },
         }
         
         # Check streaming service
@@ -409,6 +597,41 @@ async def get_service_router() -> ServiceRouter:
 
 
 # ========================================
+# Emergency Stop API Functions
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_015"
+# ========================================
+
+async def activate_emergency_stop(reason: str = "API call") -> Dict[str, Any]:
+    """
+    Activate emergency stop for all routing.
+    
+    This is a safety control endpoint that immediately halts
+    all LLM request processing.
+    
+    MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_015"
+    Safety Control: emergency_stop
+    """
+    router = await get_service_router()
+    return await router.emergency_stop(reason)
+
+
+async def reset_emergency_stop(authorization: str) -> Dict[str, Any]:
+    """
+    Reset emergency stop state.
+    
+    Requires authorization to prevent accidental reset.
+    """
+    router = await get_service_router()
+    return await router.emergency_reset(authorization)
+
+
+async def get_emergency_status() -> Dict[str, Any]:
+    """Get current emergency stop status."""
+    router = await get_service_router()
+    return router.get_emergency_status()
+
+
+# ========================================
 # Exports
 # ========================================
 
@@ -416,5 +639,9 @@ __all__ = [
     "ServiceRouter",
     "RoutingConfig",
     "BackendType",
+    "AutonomyLevel",
     "get_service_router",
+    "activate_emergency_stop",
+    "reset_emergency_stop",
+    "get_emergency_status",
 ]

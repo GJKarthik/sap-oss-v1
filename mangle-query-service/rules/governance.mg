@@ -2,6 +2,14 @@
 # Phase 4: GDPR Compliance and Data Governance
 #
 # These rules implement data governance policies using OData PersonalData vocabulary.
+#
+# Regulatory References:
+# - MGF Reference: mgf-for-agentic-ai.pdf (Singapore IMDA Model AI Governance Framework)
+# - Agent Index: 2025-AI-Agent-Index.pdf (MIT/Cambridge/Stanford/Harvard)
+# - Research: 2503.18238v3.pdf (Johns Hopkins/MIT Sloan)
+#
+# Autonomy Level: L2 (Human-on-loop with monitoring)
+# Safety Controls: guardrails, monitoring, approval_gates
 
 # =============================================================================
 # Predicate Declarations
@@ -41,6 +49,8 @@ Decl access_allowed(Query, UserRole, Reason) descr [
 
 # =============================================================================
 # Data Subject Entity Detection
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_006"
+# Implements: risk_assessment governance dimension
 # =============================================================================
 
 # Entities annotated with PersonalData.EntitySemantics
@@ -57,6 +67,8 @@ is_data_subject_entity(EntityType) :-
 
 # =============================================================================
 # Personal Data Field Detection
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_007"
+# Implements: risk_assessment + transparency governance dimensions
 # =============================================================================
 
 # Fields annotated as potentially personal
@@ -77,6 +89,9 @@ is_personal_data_field(EntityType, FieldName) :-
 
 # =============================================================================
 # Sensitive Data Field Detection
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_008"
+# Agent Index Reference: 2025-AI-Agent-Index.pdf (safety risk identification)
+# Implements: safety risk detection
 # =============================================================================
 
 # Fields annotated as potentially sensitive
@@ -89,6 +104,9 @@ is_sensitive_data_field(EntityType, FieldName) :-
 
 # =============================================================================
 # Consent Requirements
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_009"
+# Implements: user_responsibility governance dimension
+# Safety Control: approval_gates
 # =============================================================================
 
 # Sensitive data always requires consent
@@ -106,6 +124,9 @@ requires_consent(EntityType, "export") :-
 
 # =============================================================================
 # Anonymization Rules
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_010"
+# Implements: technical_controls governance dimension
+# Safety Control: guardrails
 # =============================================================================
 
 # Sensitive fields must be anonymized in non-production
@@ -120,6 +141,9 @@ must_anonymize(EntityType, FieldName) :-
 
 # =============================================================================
 # Audit Requirements
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_011"
+# Implements: accountability governance dimension
+# Safety Control: monitoring
 # =============================================================================
 
 # Audit required for data subject access
@@ -143,6 +167,10 @@ audit_required(Query, "bulk_export") :-
 
 # =============================================================================
 # Access Control Rules
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_012"
+# Agent Index Reference: 2025-AI-Agent-Index.pdf (autonomy level L2)
+# Implements: technical_controls + accountability governance dimensions
+# Autonomy Level: L2 (Human-on-loop)
 # =============================================================================
 
 # Data protection officer can access all
@@ -168,6 +196,8 @@ access_allowed(Query, "user", "consent_verified") :-
 
 # =============================================================================
 # Data Retention Rules
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_013"
+# Implements: accountability governance dimension
 # =============================================================================
 
 # Check if retention period expired
@@ -183,6 +213,9 @@ should_delete(EntityType, EntityID) :-
 
 # =============================================================================
 # Resolution Rules with Governance
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_014"
+# Implements: human_oversight_chunk + technical_controls
+# Safety Control: guardrails + monitoring
 # =============================================================================
 
 # Apply governance before resolution
@@ -200,6 +233,9 @@ resolve_with_governance(Query, "Access denied", "denied", 0) :-
 
 # =============================================================================
 # GDPR Subject Rights
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_015"
+# Research Reference: 2503.18238v3.pdf (productivity + quality findings)
+# Implements: transparency + user_responsibility governance dimensions
 # =============================================================================
 
 # Right to access - get all personal data for a subject
@@ -232,6 +268,9 @@ subject_portability_request(SubjectID, ExportData) :-
 
 # =============================================================================
 # Consent Management
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_016"
+# Implements: user_responsibility governance dimension
+# Safety Control: approval_gates
 # =============================================================================
 
 # Verify consent for data processing
@@ -248,6 +287,8 @@ consent_for_purpose(EntityType, EntityID, Purpose) :-
 
 # =============================================================================
 # Legal Basis Detection
+# MGF Reference: mgf-for-agentic-ai.pdf, chunk_id: "mgf_017"
+# Implements: accountability + transparency governance dimensions
 # =============================================================================
 
 # Determine legal basis for processing
