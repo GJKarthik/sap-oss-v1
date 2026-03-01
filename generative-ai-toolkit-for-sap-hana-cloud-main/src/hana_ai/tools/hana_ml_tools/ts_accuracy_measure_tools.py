@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 This tool calculates the accuracy measure for the time series forecast.
 It is used to evaluate the performance of the forecast model.

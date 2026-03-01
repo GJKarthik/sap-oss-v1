@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import type { BaseLLMParams } from '@langchain/core/language_models/llms';
 import type {
   BaseChatModelCallOptions,

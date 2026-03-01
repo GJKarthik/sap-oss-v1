@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { createLogger } from '@sap-cloud-sdk/util';
 import { getDeployments } from '@sap-ai-sdk/sample-code';
 import { DeploymentApi } from '@sap-ai-sdk/ai-api';

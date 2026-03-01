@@ -1,0 +1,2 @@
+# For SBOM/lineage scripts. Install: pip install -r scripts/sbom-lineage/requirements.txt
+pyyaml>=6.0

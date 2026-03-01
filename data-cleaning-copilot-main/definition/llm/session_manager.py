@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Simple LLM session manager using boto3 Amazon Bedrock for centralized LLM client management."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { dependencyRelativePath } from './dependency-relative-path';
 import { ParsedPath } from 'path';
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 #this is unittest to test the code template for prediction
 #
 import unittest

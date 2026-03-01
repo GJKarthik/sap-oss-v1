@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Utilities for packaging data‑quality violations as DataFrames."""
 
 from __future__ import annotations

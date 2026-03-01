@@ -1,0 +1,410 @@
+{
+  "service": "odata-vocabularies-main",
+  "total_files": 34,
+  "files_with_spdx": 34,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 32,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BlueOak-1.0.0",
+    "CC0-1.0",
+    "ISC",
+    "MIT",
+    "NOASSERTION",
+    "Python-2.0",
+    "SEE LICENSE IN LICENSE.md"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "BlueOak-1.0.0",
+      "CC0-1.0",
+      "ISC",
+      "MIT",
+      "NOASSERTION",
+      "Python-2.0",
+      "SEE LICENSE IN LICENSE.md"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "03ceef082af7c14ac21f2b8738262b16a4fd2ca133f6bb64ee4d5c1996819e38",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "connectors/elasticsearch.py",
+      "sha256": "5447bb9502bf7576c51931d135be5d93114b63d131cff542f1ce64c12f58be08",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "connectors/hana.py",
+      "sha256": "4543a6d4e7da456382c18aa5f2724e18ed7480bc92b0e7a8d6b44ec5b18360c0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "middleware/auth.py",
+      "sha256": "1c59443aefa931c2739bf5f572fb39b91f3c1d1f297ed33aaf8ba715c26a7355",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "1ff17a9f11794fda5f80d69fbbd7fb80a5ba1e27cca4fbfdd2263f0b0dfb6495",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/odata_vocabulary_service.yaml",
+      "sha256": "ef2368acedb5a999da1a8a697b885f6689833738c5018cfec0c12e7f87a392fd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "sap_openai_server/server.js",
+      "sha256": "ed1234e62e4b10c338738efbea20c71ab133c2f4ab4ab524f1cb885e8461fd44",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "config/settings.py",
+      "sha256": "db835c13695c0f2cfa0504616a99f90541be0a9f2763093843cc04bfdefdf96c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/conftest.py",
+      "sha256": "2ba85384d879ce2a34da2b84f8fb780a8612d153ce5a2093f79129dec6b4ca1a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "33f7ff0a0f2710c465d7ac2dbe53ce822c41beace2a952d7b888d86602d007c3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/odata_vocab_agent.py",
+      "sha256": "2890f351f92c5433fc6875897bdf373e454888f2155ef2ad5075c0a01ad34d03",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/generate_vocab_embeddings.py",
+      "sha256": "94292e287a8a567f8776b59c723089c62902a1710e2ba3300a61e0f85ae117b6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/audit.py",
+      "sha256": "eda3cbede4c6c7754f3ff085017498375c6b79328094a13c5ed0c84b9a68bbc9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/health.py",
+      "sha256": "d6daacbef567292f2c83326be9cb39eb27f3f43849bb1d6fd4402ccec58b724d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/__init__.py",
+      "sha256": "b266b4026dd6c0c6051dc64e1279a2363ceb0f93c34888c616e813db72f6949a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/graphql_generator.py",
+      "sha256": "72fc55f47ba83c92bec040c03fd1d4f42b5def3ef730e4a0d95d647bf368d966",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/personal_data.py",
+      "sha256": "b777804db72138b5c08a3a986e2bf9ea8643116df8f53d73a018b2f61146ed81",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/cds_generator.py",
+      "sha256": "abc5bf956aeb1fd03f23323cb28206b26ce36da763d7f79a6551fc3692c71a97",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "lib/transform.js",
+      "sha256": "59ba2540a2ad33c1fd15f12d0933400273eb3213964045c8121c6bcbbd4c1087",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "mcp_server/server.py",
+      "sha256": "18e72ed743a4fa4824cba282892c8993bbfe46c7410c67ea05e327d42ef01347",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "openai/models.py",
+      "sha256": "775e845e186f3388c18166e858a164f500dbbb8a878c2a2137ac01854d50432f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "openai/__init__.py",
+      "sha256": "216448eed2521d8584923ea8cbb548cccc5d46ed200ebebccc1b102ff1132cc4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "openai/embeddings.py",
+      "sha256": "5359ba55486bd81da68fa23ebbc54b06071425405412c17adf50e0b14c573dda",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "openai/chat_completions.py",
+      "sha256": "33b5f1564d7b5da2878bf7b55fac2cd1cb84e0a6be07b10293db4049b318d794",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "openai/router.py",
+      "sha256": "ab7ed0ca89b9fdd6234ce675e584e7fb8b15be7a7ccf5239014dfc31a1365408",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "53c84b6dc6c95fbe814289e52ea6676c848cf9d4fec897ecf39f6330c0384117",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/openapi.yaml",
+      "sha256": "0c79cdb2035b88850a1202120b575e4ac2b77c2c18bbe81be79832aa41e0181f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/test_vocabularies.py",
+      "sha256": "4f8d61ce34e2b1518930b4dc8413ef9c9cdbf371d93f037e4feede3470188fdb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/test_auth.py",
+      "sha256": "7200d81bd8acb8ef1a5037e67e3a97a4f7e96a9bdd8e02b0b92270080b07ea92",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/__init__.py",
+      "sha256": "9ad2fa764e5ffcfe506eb9dd7d60c491ca4da08dce69c01b676ac32f45d96fe7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/test_personal_data.py",
+      "sha256": "365b422d77ccf52fadd0f4fb93113816e54766ba5357849c8abb208877fb9d56",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/test_health.py",
+      "sha256": "950809d2447942c36c6221e3011ef9998d6db8233b1d1a3a81827d7980c7edf3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/test_connectors.py",
+      "sha256": "98f5b0f6977fb9f0a5a3f8041f5343aaa0c98d00d697cf80f99fab89efd3288a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/test_settings.py",
+      "sha256": "bd268c0f66796ab80b18ebea47685d29247054bb0390f01dea61bcd5cdfc1abc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+      ],
+      "via_reuse_toml": true
+    }
+  ],
+  "discovered_copyrights": [
+    "2016-2025 SAP SE or an SAP affiliate company and SAP/odata-vocabularies contributors"
+  ]
+}

@@ -1,0 +1,47 @@
+# World Monitor - CI: typecheck, unit tests, E2E (runtime)
+# Runs on changes under world-monitor-main/
+
+name: CI (World Monitor)
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['world-monitor-main/**']
+  pull_request:
+    branches: [main]
+    paths: ['world-monitor-main/**']
+
+defaults:
+  run:
+    working-directory: world-monitor-main
+
+jobs:
+  lint-and-test:
+    name: Typecheck & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (data)
+        run: npm run test:data
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E runtime fetch
+        run: npm run test:e2e:runtime
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high || true

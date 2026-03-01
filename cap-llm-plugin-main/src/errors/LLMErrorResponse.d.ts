@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * LLMErrorResponse — The canonical HTTP-level error response shape.
  *

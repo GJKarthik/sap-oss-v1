@@ -1,0 +1,498 @@
+{
+  "generated": "2026-02-28T23:42:31Z",
+  "services": [
+    {
+      "service": "ai-sdk-js-main",
+      "total_files": 1088,
+      "files_with_spdx": 1088,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 819,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "(BSD-2-Clause OR MIT OR Apache-2.0)",
+        "(BSD-3-Clause OR GPL-2.0)",
+        "(MIT OR CC0-1.0)",
+        "(MIT OR WTFPL)",
+        "0BSD",
+        "Apache-2.0",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "BlueOak-1.0.0",
+        "CC-BY-3.0",
+        "CC-BY-4.0",
+        "CC0-1.0",
+        "ISC",
+        "LicenseRef-SAP-DeveloperAgreement",
+        "LicenseRef-SeeFile",
+        "MIT",
+        "NOASSERTION",
+        "Python-2.0",
+        "SEE LICENSE IN LICENSE",
+        "SEE LICENSE IN developer-license-3_2.txt"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "(BSD-2-Clause OR MIT OR Apache-2.0)",
+          "(BSD-3-Clause OR GPL-2.0)",
+          "(MIT OR CC0-1.0)",
+          "(MIT OR WTFPL)",
+          "0BSD",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "BlueOak-1.0.0",
+          "CC-BY-3.0",
+          "CC-BY-4.0",
+          "CC0-1.0",
+          "ISC",
+          "MIT",
+          "NOASSERTION",
+          "Python-2.0",
+          "SEE LICENSE IN LICENSE",
+          "SEE LICENSE IN developer-license-3_2.txt"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "cap-llm-plugin-main",
+      "total_files": 110,
+      "files_with_spdx": 110,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 13,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "(BSD-3-Clause OR GPL-2.0)",
+        "(MIT OR CC0-1.0)",
+        "0BSD",
+        "Apache-2.0",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "BlueOak-1.0.0",
+        "CC-BY-4.0",
+        "ISC",
+        "MIT",
+        "NOASSERTION",
+        "Python-2.0",
+        "SAP DEVELOPER LICENSE AGREEMENT",
+        "SEE LICENSE",
+        "SEE LICENSE IN LICENSE",
+        "SEE LICENSE IN LICENSE file"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "(BSD-3-Clause OR GPL-2.0)",
+          "(MIT OR CC0-1.0)",
+          "0BSD",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "BlueOak-1.0.0",
+          "CC-BY-4.0",
+          "ISC",
+          "MIT",
+          "NOASSERTION",
+          "Python-2.0",
+          "SAP DEVELOPER LICENSE AGREEMENT",
+          "SEE LICENSE",
+          "SEE LICENSE IN LICENSE",
+          "SEE LICENSE IN LICENSE file"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "world-monitor-main",
+      "total_files": 373,
+      "files_with_spdx": 368,
+      "spdx_coverage_pct": 99,
+      "files_with_copyright": 366,
+      "discovered_spdx": [
+        "AGPL-3.0-only"
+      ],
+      "declared_spdx": [
+        "(AFL-2.1 OR BSD-3-Clause)",
+        "(Apache-2.0 AND BSD-3-Clause)",
+        "(BSD-2-Clause OR MIT OR Apache-2.0)",
+        "(MIT AND Zlib)",
+        "(MIT OR Apache-2.0)",
+        "(MIT OR CC0-1.0)",
+        "(MIT OR GPL-3.0-or-later)",
+        "(MIT OR WTFPL)",
+        "(MPL-2.0 OR Apache-2.0)",
+        "0BSD",
+        "AGPL-3.0-only",
+        "Apache-2.0",
+        "Apache-2.0 OR MIT",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "BlueOak-1.0.0",
+        "CC-BY-4.0",
+        "ISC",
+        "MIT",
+        "MPL-2.0",
+        "NOASSERTION",
+        "Python-2.0",
+        "SEE LICENSE IN LICENSE",
+        "SEE LICENSE IN LICENSE.md",
+        "SEE LICENSE IN LICENSE.txt",
+        "SEE LICENSE IN copyright.txt",
+        "SEE LICENSE.md",
+        "Unlicense"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "(AFL-2.1 OR BSD-3-Clause)",
+          "(Apache-2.0 AND BSD-3-Clause)",
+          "(BSD-2-Clause OR MIT OR Apache-2.0)",
+          "(MIT AND Zlib)",
+          "(MIT OR Apache-2.0)",
+          "(MIT OR CC0-1.0)",
+          "(MIT OR GPL-3.0-or-later)",
+          "(MIT OR WTFPL)",
+          "(MPL-2.0 OR Apache-2.0)",
+          "0BSD",
+          "Apache-2.0",
+          "Apache-2.0 OR MIT",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "BlueOak-1.0.0",
+          "CC-BY-4.0",
+          "ISC",
+          "MIT",
+          "MPL-2.0",
+          "NOASSERTION",
+          "Python-2.0",
+          "SEE LICENSE IN LICENSE",
+          "SEE LICENSE IN LICENSE.md",
+          "SEE LICENSE IN LICENSE.txt",
+          "SEE LICENSE IN copyright.txt",
+          "SEE LICENSE.md",
+          "Unlicense"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "ui5-webcomponents-ngx-main",
+      "total_files": 348,
+      "files_with_spdx": 348,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 10,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "(WTFPL OR MIT)",
+        "0BSD",
+        "Apache-2.0",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "BlueOak-1.0.0",
+        "CC-BY-3.0",
+        "CC-BY-4.0",
+        "CC0-1.0",
+        "ISC",
+        "LGPL-3.0-only",
+        "MIT",
+        "MIT-0",
+        "NOASSERTION",
+        "Python-2.0",
+        "Unlicense"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "(WTFPL OR MIT)",
+          "0BSD",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "BlueOak-1.0.0",
+          "CC-BY-3.0",
+          "CC-BY-4.0",
+          "CC0-1.0",
+          "ISC",
+          "LGPL-3.0-only",
+          "MIT",
+          "MIT-0",
+          "NOASSERTION",
+          "Python-2.0",
+          "Unlicense"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "odata-vocabularies-main",
+      "total_files": 34,
+      "files_with_spdx": 34,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 32,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "Apache-2.0",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "BlueOak-1.0.0",
+        "CC0-1.0",
+        "ISC",
+        "MIT",
+        "NOASSERTION",
+        "Python-2.0",
+        "SEE LICENSE IN LICENSE.md"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "BlueOak-1.0.0",
+          "CC0-1.0",
+          "ISC",
+          "MIT",
+          "NOASSERTION",
+          "Python-2.0",
+          "SEE LICENSE IN LICENSE.md"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "data-cleaning-copilot-main",
+      "total_files": 63,
+      "files_with_spdx": 63,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 12,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "Apache-2.0",
+        "BSD-3-Clause",
+        "LicenseRef-SAP-DeveloperAgreement",
+        "MIT"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "BSD-3-Clause",
+          "MIT"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "langchain-integration-for-sap-hana-cloud-main",
+      "total_files": 40,
+      "files_with_spdx": 40,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 5,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "BSD-3-Clause",
+        "LicenseRef-SAP-DeveloperAgreement",
+        "MIT"
+      ],
+      "comparison": {
+        "extra_in_source": [
+          "Apache-2.0"
+        ],
+        "missing_in_source": [
+          "BSD-3-Clause",
+          "MIT"
+        ],
+        "verdict": "MISMATCH"
+      }
+    },
+    {
+      "service": "generative-ai-toolkit-for-sap-hana-cloud-main",
+      "total_files": 114,
+      "files_with_spdx": 114,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 7,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "Apache-2.0",
+        "BSD-3-Clause",
+        "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+        "LicenseRef-SAP-DeveloperAgreement",
+        "MIT"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "BSD-3-Clause",
+          "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+          "MIT"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "vllm-main",
+      "total_files": 2893,
+      "files_with_spdx": 2393,
+      "spdx_coverage_pct": 83,
+      "files_with_copyright": 2395,
+      "discovered_spdx": [
+        "Apache-2.0",
+        "BSD-3-Clause"
+      ],
+      "declared_spdx": [
+        "Apache-2.0",
+        "Apache-2.0 OR MIT",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "CC0-1.0",
+        "GPL-3.0-or-later",
+        "ISC",
+        "LGPL-2.1-or-later",
+        "LicenseRef-Commercial",
+        "LicenseRef-Intel-EULA",
+        "LicenseRef-NVIDIA-SOFTWARE-LICENSE",
+        "LicenseRef-Proprietary",
+        "MIT",
+        "MIT AND Apache-2.0",
+        "MIT AND BSD-3-Clause",
+        "MIT AND Python-2.0",
+        "MIT OR Apache-2.0",
+        "MPL-2.0",
+        "NOASSERTION",
+        "PSF-2.0",
+        "Unlicense"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "Apache-2.0 OR MIT",
+          "BSD-2-Clause",
+          "CC0-1.0",
+          "GPL-3.0-or-later",
+          "ISC",
+          "LGPL-2.1-or-later",
+          "MIT",
+          "MIT AND Apache-2.0",
+          "MIT AND BSD-3-Clause",
+          "MIT AND Python-2.0",
+          "MIT OR Apache-2.0",
+          "MPL-2.0",
+          "NOASSERTION",
+          "PSF-2.0",
+          "Unlicense"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "mangle-main",
+      "total_files": 133,
+      "files_with_spdx": 133,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 133,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "Apache-2.0",
+        "BSD-3-Clause",
+        "MIT"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "BSD-3-Clause",
+          "MIT"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "mangle-query-service",
+      "total_files": 38,
+      "files_with_spdx": 30,
+      "spdx_coverage_pct": 79,
+      "files_with_copyright": 0,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [
+        "Apache-2.0",
+        "BSD-3-Clause"
+      ],
+      "comparison": {
+        "extra_in_source": [],
+        "missing_in_source": [
+          "BSD-3-Clause"
+        ],
+        "verdict": "OK"
+      }
+    },
+    {
+      "service": "elasticsearch-main",
+      "total_files": 31121,
+      "files_with_spdx": 11542,
+      "spdx_coverage_pct": 37,
+      "files_with_copyright": 26855,
+      "discovered_spdx": [
+        "AGPL-3.0-only",
+        "Apache-2.0"
+      ],
+      "declared_spdx": [],
+      "comparison": {
+        "extra_in_source": [
+          "AGPL-3.0-only",
+          "Apache-2.0"
+        ],
+        "missing_in_source": [],
+        "verdict": "MISMATCH"
+      }
+    },
+    {
+      "service": "ai-core-pal",
+      "total_files": 10,
+      "files_with_spdx": 10,
+      "spdx_coverage_pct": 100,
+      "files_with_copyright": 10,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [],
+      "comparison": {
+        "extra_in_source": [
+          "Apache-2.0"
+        ],
+        "missing_in_source": [],
+        "verdict": "MISMATCH"
+      }
+    },
+    {
+      "service": "ai-core-streaming",
+      "total_files": 23,
+      "files_with_spdx": 22,
+      "spdx_coverage_pct": 96,
+      "files_with_copyright": 22,
+      "discovered_spdx": [
+        "Apache-2.0"
+      ],
+      "declared_spdx": [],
+      "comparison": {
+        "extra_in_source": [
+          "Apache-2.0"
+        ],
+        "missing_in_source": [],
+        "verdict": "MISMATCH"
+      }
+    }
+  ]
+}

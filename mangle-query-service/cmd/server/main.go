@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 // Package main is the entry point for the Mangle Query Service server.
 package main
 

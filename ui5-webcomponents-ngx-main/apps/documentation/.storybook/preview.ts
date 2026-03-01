@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import '@ui5/webcomponents-icons/dist/AllIcons';
 import '@ui5/webcomponents-fiori/dist/illustrations/AllIllustrations.js';
 import "@ui5/webcomponents/dist/dynamic-date-range-options/Today.js";

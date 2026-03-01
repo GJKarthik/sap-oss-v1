@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 /**
  * Request and response transformers for vLLM API.
  * Converts between SDK format (camelCase) and API format (snake_case).

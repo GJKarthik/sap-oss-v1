@@ -43,6 +43,10 @@ except ImportError:
 
 EDM_NS = "{http://docs.oasis-open.org/odata/ns/edm}"
 EDMX_NS = "{http://docs.oasis-open.org/odata/ns/edmx}"
+MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
+MAX_SEARCH_RESULTS = int(os.environ.get("MCP_MAX_SEARCH_RESULTS", "500"))
+MAX_QUERY_LENGTH = int(os.environ.get("MCP_MAX_QUERY_LENGTH", "500"))
+MAX_PROPERTIES_PER_REQUEST = int(os.environ.get("MCP_MAX_PROPERTIES_PER_REQUEST", "500"))
 
 # =============================================================================
 # Types
@@ -70,6 +74,39 @@ class MCPResponse:
         else:
             d["result"] = self.result
         return d
+
+
+def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def clamp_float(value: Any, default: float, min_value: float, max_value: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def parse_json_arg(value: Any, fallback: Any):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return fallback
+    return value if value is not None else fallback
 
 
 # =============================================================================
@@ -933,7 +970,7 @@ class MCPServer:
         }
 
     def _handle_search_terms(self, args: dict) -> dict:
-        query = args.get("query", "").lower()
+        query = str(args.get("query", "") or "").lower()[:MAX_QUERY_LENGTH]
         target_vocab = args.get("vocabulary")
         include_deprecated = args.get("include_deprecated", False)
         
@@ -976,7 +1013,7 @@ class MCPServer:
                             "namespace": vocab.get('namespace', '')
                         })
         
-        return {"query": query, "results": results, "count": len(results)}
+        return {"query": query, "results": results[:MAX_SEARCH_RESULTS], "count": len(results)}
 
     def _handle_get_term(self, args: dict) -> dict:
         vocabulary = args.get("vocabulary", "")
@@ -1091,7 +1128,10 @@ class MCPServer:
 
     def _handle_generate_annotations(self, args: dict) -> dict:
         entity_type = args.get("entity_type", "")
-        properties = json.loads(args.get("properties", "[]"))
+        properties = parse_json_arg(args.get("properties", "[]"), [])
+        if not isinstance(properties, list):
+            properties = []
+        properties = [str(p) for p in properties[:MAX_PROPERTIES_PER_REQUEST] if p is not None]
         vocabulary = args.get("vocabulary", "UI")
         
         annotations = {}
@@ -1152,7 +1192,9 @@ class MCPServer:
 
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
-        query_args = json.loads(args.get("args", "[]"))
+        query_args = parse_json_arg(args.get("args", "[]"), [])
+        if not isinstance(query_args, list):
+            query_args = []
         
         # Search in generated facts
         results = []
@@ -1206,9 +1248,9 @@ class MCPServer:
     
     def _handle_semantic_search(self, args: dict) -> dict:
         """Semantic search across vocabulary terms using embeddings"""
-        query = args.get("query", "")
-        top_k = args.get("top_k", 10)
-        min_similarity = args.get("min_similarity", 0.3)
+        query = str(args.get("query", "") or "")[:MAX_QUERY_LENGTH]
+        top_k = clamp_int(args.get("top_k", 10), 10, 1, MAX_SEARCH_RESULTS)
+        min_similarity = clamp_float(args.get("min_similarity", 0.3), 0.3, 0.0, 1.0)
         target_vocab = args.get("vocabulary")
         
         if not self.term_embeddings:
@@ -1389,7 +1431,8 @@ class MCPServer:
     def _handle_suggest_annotations(self, args: dict) -> dict:
         """Suggest relevant OData annotations based on context"""
         entity_type = args.get("entity_type", "")
-        properties = json.loads(args.get("properties", "[]")) if args.get("properties") else []
+        raw_properties = parse_json_arg(args.get("properties", "[]"), []) if args.get("properties") else []
+        properties = [str(p) for p in raw_properties[:MAX_PROPERTIES_PER_REQUEST] if p is not None] if isinstance(raw_properties, list) else []
         use_case = args.get("use_case", "all")
         
         suggestions = {
@@ -1480,6 +1523,11 @@ class MCPServer:
         id = request.id
 
         try:
+            if request.jsonrpc != "2.0":
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: jsonrpc must be '2.0'"})
+            if not isinstance(params, dict):
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: params must be an object"})
+
             if method == "initialize":
                 return MCPResponse(id, {
                     "protocolVersion": "2024-11-05",
@@ -1493,6 +1541,10 @@ class MCPServer:
             elif method == "tools/call":
                 tool_name = params.get("name", "")
                 args = params.get("arguments", {})
+                if args is None:
+                    args = {}
+                if not isinstance(args, dict):
+                    return MCPResponse(id, error={"code": -32602, "message": "Invalid params: arguments must be an object"})
                 handlers = {
                     "list_vocabularies": self._handle_list_vocabularies,
                     "get_vocabulary": self._handle_get_vocabulary,
@@ -1561,23 +1613,43 @@ class MCPServer:
 # HTTP Server
 # =============================================================================
 
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if o.strip()
+]
+
+
+def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
+    origin = (handler.headers.get("Origin") or "").strip()
+    if origin and origin in CORS_ALLOWED_ORIGINS:
+        return origin
+    return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
+
+
 mcp_server = MCPServer()
 
 
 class MCPHandler(BaseHTTPRequestHandler):
+    def _write_json(self, status_code: int, payload: dict):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
             from datetime import datetime, timezone
             stats = mcp_server._handle_get_statistics({})
             response = {
@@ -1589,69 +1661,70 @@ class MCPHandler(BaseHTTPRequestHandler):
                 "total_terms": stats["total_terms"],
                 "mangle_facts": stats["mangle_facts"]
             }
-            self.wfile.write(json.dumps(response).encode())
+            self._write_json(200, response)
         elif self.path == "/stats":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
             stats = mcp_server._handle_get_statistics({})
-            self.wfile.write(json.dumps(stats, indent=2).encode())
+            self._write_json(200, stats)
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
         if self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode()
+            if content_length <= 0:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})
+                return
+            if content_length > MAX_REQUEST_BYTES:
+                self._write_json(413, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Request too large"}})
+                return
+
+            raw_body = self.rfile.read(content_length)
             try:
+                body = raw_body.decode("utf-8")
                 data = json.loads(body)
+                if not isinstance(data, dict):
+                    self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}})
+                    return
                 request = MCPRequest(data)
                 response = mcp_server.handle_request(request)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps(response.to_dict()).encode())
+                self._write_json(200, response.to_dict())
+            except UnicodeDecodeError:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Invalid UTF-8 body"}})
             except json.JSONDecodeError:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}).encode())
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
         elif self.path == "/mcp/tools/extract_entities":
             # Direct endpoint for entity extraction
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode()
+            if content_length <= 0:
+                self._write_json(400, {"error": "Invalid Request: empty body"})
+                return
+            if content_length > MAX_REQUEST_BYTES:
+                self._write_json(413, {"error": "Request too large"})
+                return
+
+            raw_body = self.rfile.read(content_length)
             try:
+                body = raw_body.decode("utf-8")
                 data = json.loads(body)
+                if not isinstance(data, dict):
+                    self._write_json(400, {"error": "Invalid JSON payload"})
+                    return
                 query = data.get("query", "")
                 entities = mcp_server.extract_entities(query)
-                
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                
+
                 # Return first entity if found
                 if entities:
                     result = {"entity_type": entities[0]["entity_type"], "entity_id": entities[0]["entity_id"]}
                 else:
                     result = {"entity_type": "", "entity_id": ""}
-                
-                self.wfile.write(json.dumps(result).encode())
+
+                self._write_json(200, result)
+            except UnicodeDecodeError:
+                self._write_json(400, {"error": "Invalid UTF-8 body"})
             except json.JSONDecodeError:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode())
+                self._write_json(400, {"error": "Invalid JSON"})
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def log_message(self, format, *args):
         pass

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 const mockCreateAnonymizedView = jest.fn();
 
 jest.mock("../../lib/anonymization-helper.js", () => ({
@@ -40,16 +42,13 @@ beforeEach(() => {
 });
 
 function loadPlugin() {
-  // Reset module cache so cds-plugin.js re-executes
-  jest.resetModules();
-
-  // Re-mock before requiring
-  jest.mock("@sap/cds", () => mockCds, { virtual: true });
-  jest.mock("../../lib/anonymization-helper.js", () => ({
-    createAnonymizedView: mockCreateAnonymizedView,
-  }));
-
-  require("../../cds-plugin.js");
+  jest.isolateModules(() => {
+    jest.mock("@sap/cds", () => mockCds, { virtual: true });
+    jest.mock("../../lib/anonymization-helper.js", () => ({
+      createAnonymizedView: mockCreateAnonymizedView,
+    }));
+    require("../../cds-plugin.js");
+  });
 }
 
 describe("cds-plugin.js", () => {

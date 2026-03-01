@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Integration tests verifying that typed errors are thrown with
  * correct class, code, message, and details.
@@ -15,16 +17,10 @@ const { EmbeddingError } = require("../../src/errors/EmbeddingError");
 const { ChatCompletionError } = require("../../src/errors/ChatCompletionError");
 const { CAPLLMPluginError } = require("../../src/errors/CAPLLMPluginError");
 
-// ── SDK mocks ────────────────────────────────────────────────────────
+// ── Mock handles ───────────────────────────────────────────────────────
 const mockEmbed = jest.fn();
 const mockChatCompletion = jest.fn();
 const mockBuildFilter = jest.fn();
-
-jest.mock("@sap-ai-sdk/orchestration", () => ({
-  OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: mockEmbed })),
-  OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: mockChatCompletion })),
-  buildAzureContentSafetyFilter: mockBuildFilter,
-}));
 
 const mockCds = {
   db: { run: jest.fn(), kind: "hana" },
@@ -33,12 +29,15 @@ const mockCds = {
   log: jest.fn(() => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() })),
   env: { requires: {} },
   requires: {},
-  Service: class MockService {
-    async init() {}
-  },
+  Service: class MockService { async init() {} },
   once: jest.fn(),
 };
 
+jest.mock("@sap-ai-sdk/orchestration", () => ({
+  OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: mockEmbed })),
+  OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: mockChatCompletion })),
+  buildAzureContentSafetyFilter: mockBuildFilter,
+}));
 jest.mock("@sap/cds", () => mockCds, { virtual: true });
 
 const CAPLLMPlugin = require("../../srv/cap-llm-plugin");

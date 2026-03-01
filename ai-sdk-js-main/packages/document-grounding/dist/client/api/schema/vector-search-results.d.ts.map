@@ -1,0 +1,1 @@
+{"version":3,"file":"vector-search-results.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/vector-search-results.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,2BAA2B,EAAE,MAAM,sCAAsC,CAAC;AACxF;;GAEG;AACH,MAAM,MAAM,mBAAmB,GAAG;IAChC;;OAEG;IACH,OAAO,EAAE,2BAA2B,EAAE,CAAC;CACxC,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

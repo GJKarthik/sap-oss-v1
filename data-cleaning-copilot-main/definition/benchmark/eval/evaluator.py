@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Evaluation module for benchmarking error detection performance."""
 
 import pandas as pd

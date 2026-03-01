@@ -1,0 +1,27 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0396d943-6c9d-4c13-99a3-a976b1863d8e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "AI Core PAL (Zig/Mojo)",
+      "version": "0.0.0",
+      "purl": "pkg:generic/ai core pal (zig/mojo)@0.0.0"
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

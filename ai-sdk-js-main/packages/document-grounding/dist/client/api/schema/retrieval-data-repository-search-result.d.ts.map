@@ -1,0 +1,1 @@
+{"version":3,"file":"retrieval-data-repository-search-result.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/retrieval-data-repository-search-result.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,2BAA2B,EAAE,MAAM,qCAAqC,CAAC;AACvF;;GAEG;AACH,MAAM,MAAM,mCAAmC,GAAG;IAChD,cAAc,EAAE,2BAA2B,CAAC;CAC7C,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

@@ -1,0 +1,1398 @@
+{
+  "service": "mangle-main",
+  "total_files": 133,
+  "files_with_spdx": 133,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 133,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "MIT"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "BSD-3-Clause",
+      "MIT"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "20238af919ccd5eae14597918bc0a6ee67ad48e0eef3582c4cdc4c5d67f1daa7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "generate_parser.sh",
+      "sha256": "0f12558687710ec65aa97c71967bf8e74cf95f0b9d30d22c195a4b1d77828186",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": ".readthedocs.yaml",
+      "sha256": "8a8d1cbd26b62083211a8783a07b18d90f7d7cd9304a3c184a33b32a9136b03f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "interpreter/interpreter_temporal_test.go",
+      "sha256": "dc909fdaac4f947620ad9cdff7a506472dc4917c27e51ef9372ac9bede8da77c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "interpreter/interpreter.go",
+      "sha256": "7578d470bd8b68362f94a8d43ab8840f9915b181c1343d0a1f8ad311f14f4667",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "interpreter/interpreter_test.go",
+      "sha256": "116ebd833b57df650fd8ecc894e1a9708b91a8b932e651733d10d8ee9f207f13",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rewrite/rewrite_test.go",
+      "sha256": "329326826e57fe5d7ea65f86a54eadf45d3ba93904bc376a7e727ba62172d8a6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "rewrite/rewrite.go",
+      "sha256": "af5330248431f5b35b6aa3f30e0a2f1e10d5610d52d28ea1dae5413509eeccc0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/simplecolumn.go",
+      "sha256": "7eaebf7bc15904ec53b518094a0f03d94d0bc5dd5e142d1fd9561c6e4e676cab",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/factstore.go",
+      "sha256": "4fd1e51e0bf5632031407c255e7d2ed50241847aaff327070208f630dbce5d81",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/temporal.go",
+      "sha256": "65e88b955d2fa6d1fdba57f7172f5583edd1de4109994b9b42f9b94e66617a07",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/interval_tree_test.go",
+      "sha256": "de5961d7301ed95b96981d3198ca2d02fc053aa37a59477e7ce787d0ff04c271",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/factstore_test.go",
+      "sha256": "38ccbd94b5acabd58b4190b8d126535003649d231589a670db483ba9c75645db",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/temporal_test.go",
+      "sha256": "a1e12bd1799baedc32b621d2ea3797c4ce7695e8f4f7b3b6723640cd5c0a1f56",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/interval_tree.go",
+      "sha256": "1ec7abb365d69ca434dac025aaec082ae638035d40d9de3c271fa24d68013384",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "factstore/simplecolumn_test.go",
+      "sha256": "15272224041f1cd546f5f030010a387c895af0ac1bb2437b97146529c81cf885",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "analysis/stratification.go",
+      "sha256": "de22f9788ac1e955ca2e7f1f06c049f6a822be10775010bb7823e6a664460749",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/declcheck.go",
+      "sha256": "0489c1c1376b6d429534e624570a12cf209e38e43e0fe06a46f66761fa9728a2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/temporal_validation_test.go",
+      "sha256": "07e06bbd6fd5afeb64054b73d323e4287eb4864728c8411e23bbb026af6d1349",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "analysis/temporal.go",
+      "sha256": "ad2bc39375a88230403f3270033e7a444aca80605643771fb66cf121c704a39b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/stratification_test.go",
+      "sha256": "eafa62ea41d04449507637b49ff648c7d8f832dd66d14e44de961516d899d64f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/rewriteclause.go",
+      "sha256": "fa81e0380d3848947cecb4b54e7349bd14c73752c84c04df814afb70286b3246",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/infercontext.go",
+      "sha256": "caa3e8449b0c81fa61734333c745bf5b3281cd78a28e6f6670ce3f5668a8557b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "analysis/temporal_test.go",
+      "sha256": "9ead1778b6b79cb893d80b4c64600dcf5b87af3a7be5d2042d9f6b45ad55e202",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/rectify_test.go",
+      "sha256": "ad0d92414400e5d15b065f9c4a006afd3e0f2fbb3eb1b5b98c015bea260be2e8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/validation.go",
+      "sha256": "044bc371aef0918729c3528598e0838755b2d8fddf3dd07a7cc1f1f87807d0c4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/varlist_test.go",
+      "sha256": "0746fe357283f32a44e9dd22352281b523a8c9c0c6d565a92599272845926a75",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/varlist.go",
+      "sha256": "15642d13a13e5e1b613009f7b14642f796f9e0e2b5f4fb0de7ee8e62916d7269",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/rectify.go",
+      "sha256": "3643e395c869fde0788f443a5dc5076810a4f13a055990672c75ad9cee252389",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "analysis/rewriteclause_test.go",
+      "sha256": "ab6a849e812b38f7cf34d722ff35e17eeff9567cbb33c9a551fb49919fa651bf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/declcheck_test.go",
+      "sha256": "ec6f1331e873bf987ab12783bef4ff6dcc9a868bdf612b16dbf294c8e956ddd7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "analysis/validation_test.go",
+      "sha256": "2f71c4084b9e1a4b653bf11c45c77360db0774b629a6b419b86451a76f834635",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "unionfind/unionfind_test.go",
+      "sha256": "5afa96eba1cc10e3ed4e5d7994a459c10d6a76be8c7e32607e591e3b12320ea1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "unionfind/unifytypeexpr.go",
+      "sha256": "cc187f53a4c978490605e955eda43b3fbad5fad3d63f92e9a615797c4bcee98e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "unionfind/unionfind.go",
+      "sha256": "7fd060375aff0e90b7de054d7ec4e28a9529e1c2105c8db8879bc6580ab542c9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "sha256": "15610bde5ac67e2f463b654749079d79cc56227efaa2fe10d1f5119ea0c36774",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "parse/parse_strings_test.go",
+      "sha256": "3917de6dd4062753a164a1bcfd27727ca5dca7e517f6e474bbccd29a559dadbf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "parse/parse_test.go",
+      "sha256": "073383cc9c3e1997289d58e5efbe4d4441ede5670f0b4c3bf693761154153527",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "parse/temporal_test.go",
+      "sha256": "009cf9d205edad2f360ed0fe050ce77ba6922c682bef5cae78b1fe6014c0b497",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "parse/parse.go",
+      "sha256": "f9c0ecb89868d3592c763566182ce86a1c26e5372a4655abfeeb4ce9e55e412d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "proto2struct/proto2struct.go",
+      "sha256": "aa6f000cb00c20be448ad74b869068cb01c81bd45135aecaf7cdaf4a8d1cec55",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "readthedocs/conf.py",
+      "sha256": "1607709576ce05448eb5f4ba6821e492d845b34bc35b6435c44017a91034e5e6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "examples/examples_test.go",
+      "sha256": "6df95e6ea3b5cca7f11d6d6aaae7f1bbe73703cb00beab8fe4a85352bd6041e1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "packages/packages.go",
+      "sha256": "7347e86d3d3cceae5c976dba034608587a59c68ab5890a06738ce307f4959ca8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "packages/packages_test.go",
+      "sha256": "8a6e059415046d23550fd34803cf5e741ef53853763ce2aa71f1d51998bb0da3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/symbols_test.go",
+      "sha256": "742a8065fdbdcd4b87d7ae646fd20d198fb4deda601a685d70f3b3a38c054988",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/decldesugar_test.go",
+      "sha256": "ce9ddcf19d071b4fa7cea47fe8c3150c6fe752632a3c30956f4dc122b76e380d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/nametrie.go",
+      "sha256": "a43de606a1985e33fd4b89563d47d73a1425e1ff3fe1e765443f945fc86f2b65",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/nametrie_test.go",
+      "sha256": "fa3585f56950a5ce7c2f25323cc96a45b5e93fe5066bf7d7244a94994fea2a5e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/symbols.go",
+      "sha256": "03a402cc400ba94706f24c79edebb7373ec34c0cf6661a74fae9a65d23832e12",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/decldesugar.go",
+      "sha256": "c5a373e171ed3783e550149b0c7e927fe0cea8a8cee7c912f903ddd6a28238a2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "symbols/typeexprs.go",
+      "sha256": "f706bf5aa04df43d39df0fc1b12379347eedfa4e9f07694ffee4dd16b8004a0e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "ast/temporal_string_test.go",
+      "sha256": "8b7d200ae5558c80c0294cfbfe3fd44e87769fd9b2be0189750bbbe76e48764b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "ast/temporal.go",
+      "sha256": "bfab9333b87e47c0f6759922f511dedc6eb7195ec24eb2edf091a28f28242f7a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "ast/serde_test.go",
+      "sha256": "3739b76163d9f856f710f58598a8222cb74da798603b3207ddda7d2969b8e628",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "ast/serde.go",
+      "sha256": "23dab13468980c9fc3bd7ca06b22de4067d83674db9b51d240bc7e7b29d6a00a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "ast/ast_test.go",
+      "sha256": "ad51b505724143fd25ba2a57aefac61d1503a27c6ce770c5012999ca6380beab",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "ast/ast.go",
+      "sha256": "06d42f2110cc61044bcab0c60ac7fe75ad4c9e714c39e34d03b2c873078d55e5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "ast/temporal_test.go",
+      "sha256": "104ff3730dd00401b91a7deffcc6b97c12ea29251567b49e6c6571651bf1a147",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "ast/decl_test.go",
+      "sha256": "c1ae687d9cce340db83d93140f0d25a8f2e466c80c1ed6f0a949b900ae3bc49a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "ast/decl.go",
+      "sha256": "b0a352d88afece313d5801d2ec97b00a1cb306cb9622fa12096da8b147607b4d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "json2struct/json2struct.go",
+      "sha256": "ad41fbfde4b8ddec1486b7b2b88bb9dd972dbb8e244bce8cf1d4f6badf674c60",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "json2struct/json2struct_test.go",
+      "sha256": "89d30a37242df9b1c5681e64bd367721ac03c0cf4db40c22732cb5e2995acfe8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/topdown_test.go",
+      "sha256": "9b848a4bcd335c11bb1ce97cfafd59238d66a0b700ca088e5392ed02a55529e3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/temporal_integration_test.go",
+      "sha256": "89d5bdfa9f985024d269608ac67e4352bdb20e8592de341ab8ab613605c58bc7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/inclusioncheck_test.go",
+      "sha256": "7978659855e5f6e26627181ac2f5670befb32d5744509f7ed071e77f466696fc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/transformer_test.go",
+      "sha256": "e29ad3c015c507dd1a77531b479834aa1af02ec24c03e6187ff0239433e6477b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/temporal.go",
+      "sha256": "a2c3e9132939dc4688b81654519ed3142d3b3326067466622586b98d0125753d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/inclusioncheck.go",
+      "sha256": "9c1acda5a124332d962f3031f96778aec2017a22ad2c5e41b5d265a73154d52e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/naivebottomup.go",
+      "sha256": "6028c8195135816e8206733c5245f05d0d180cd440e02e13412426ddb6e04066",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/map_lattice_test.go",
+      "sha256": "e2aaef0332df70247986a00fffc91915fb06584355d70f9ca3072d778b2c0585",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/premise.go",
+      "sha256": "5bff54f53c7c26f9d58190f8a7f860f0197c153dc5645aee5a070e4c43387d90",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/seminaivebottomup_test.go",
+      "sha256": "f262f4c64253e6f30fdcca011f44776774ffa77634ef4f06179deca82f13228b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/temporal_test.go",
+      "sha256": "141fbbacae1468446e7d17dd70451b8d49658293c2a7912c6ac9b882dd4c2df0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/topdown.go",
+      "sha256": "64ddb1e54adc02c663fd7289b34fce3df573fd3d97ac058d7a4d895d8b8e6018",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/transformer.go",
+      "sha256": "e6eb515f7ea014533043a51e6ade6f0be53a497ae50fc1f1f32f0a342f633fe3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/naivebottomup_test.go",
+      "sha256": "b8b1188d3b16e1d8228109218cc528f34a37fe22836a388d8165cfa9f9fa4e6b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "engine/seminaivebottomup.go",
+      "sha256": "eb56c6975472aa700746e06569ff90ae31c3cc4ff21d18daec9555fec12f2576",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "builtin/temporal.go",
+      "sha256": "8b4fe22efcdf213fb2faa1c93784c89750928defec40831cdcd34f82f06c8101",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "builtin/builtin_test.go",
+      "sha256": "c84596ca675b32e253f7e06739f7ce75ad968736322c18843fcbeddc9f1e281f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "builtin/temporal_test.go",
+      "sha256": "6b5b9061b4983976ce3a286967e945c2811d69dabfbfff8b2beab211211de50e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "builtin/builtin.go",
+      "sha256": "960331c0d5ecabef9f7360a7f04f23c31e2fe51898dfda783f91c1baa20c1841",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "functional/functional_test.go",
+      "sha256": "99fb4a9c29b6ff77edd491bf902d559b08f5b0565221f8e3a0ba416b9ab663d5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "functional/temporal_test.go",
+      "sha256": "5cdfb44d4e595fb9227f3e295d30853a54984a5f0d1a94aa0f94485be373179c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    },
+    {
+      "path": "functional/functional.go",
+      "sha256": "a8eaddaa9becd1ee48916572743e39a5041dd0aeae8f85c5a8729236707cb306",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "parse/gen/mangle_base_visitor.go",
+      "sha256": "6462afc3dc4cec64d3bb883ea07053718e7f1ed001160f307d54095661f703db",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "parse/gen/mangle_listener.go",
+      "sha256": "e8e36580d3bac7944f85579c93fc7591af82e23c5982f74aad893c34c1638aae",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "parse/gen/mangle_parser.go",
+      "sha256": "5f79b878c8b4ea1889003193f2928ebe51d58eac3a22f79ab387af1c0c6a2c55",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "parse/gen/mangle_visitor.go",
+      "sha256": "4d3e93357b9cb94d238d3e25484fba862092d1c566c7054cc0c16bbc19355d4e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "parse/gen/mangle_base_listener.go",
+      "sha256": "d83d222a53e88b4f3279010129f7cf294b97cf5254ad649ca6d5b3a8ee8297ab",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "parse/gen/mangle_lexer.go",
+      "sha256": "87bfa557f432a70e946c036467bb790f82e3259677415ad20cd12235ba9ae312",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/interpreter/Cargo.toml",
+      "sha256": "7b7a864f2baed23dfb8af0e98a264878585db82373d33aff1d57ce7c682d7106",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/factstore/Cargo.toml",
+      "sha256": "f7f877bc91b056040303a2e8b1dda2907cca17cdc71821c4fc171df244a438d9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/analysis/Cargo.toml",
+      "sha256": "e58e61158a3263ea579d35c70fb90a28a56562b92653a9b16502ec7fdda5877d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/ir/Cargo.toml",
+      "sha256": "535701e5fa90b989eb32c9bff7ac051c2751908e67cecf45b4dd3c89ce10a44d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/driver/Cargo.toml",
+      "sha256": "e304b406f29f70f2107f64f9572d139058e0bce2e9ad76ef3f2796f7c007eadc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/parse/Cargo.toml",
+      "sha256": "80b2fe4488f6db49ad287d9f0b5ccd4403b7133c854125ccbfc80795c6bfcf04",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/codegen/Cargo.toml",
+      "sha256": "777b7d1590c78e1b3238445be840def4efc34f7f002e0350f4a740359d070e79",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/vm/Cargo.toml",
+      "sha256": "8804f1e681966594567f284524cb37e416c26021d15cd700a0eb643173a0157c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/simplecolumn/Cargo.toml",
+      "sha256": "f226ff8bf3e38c73d3a348d980141d78c892dd80afafbfe179c7704bdc0a2210",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/ast/Cargo.toml",
+      "sha256": "86157faebb457950c35fa1d6e14cf8321b8fd5bf89dc1dd15a04ab8090ea3d9e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/engine/Cargo.toml",
+      "sha256": "846aa4c11b14cca8fab0839ab9921353c3183b6d31f67a82c417eb2e832e4f61",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/engine/src/naive.rs",
+      "sha256": "3fa018ce467549d68814142218ab78fb61814a1dadcdf86282e0951d44f6c90c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/engine/src/lib.rs",
+      "sha256": "e1a19cbdfac03eb6111c3bff3dfb884caf78149b8cecd7d77fa8eb5db5645f9c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/ast/src/lib.rs",
+      "sha256": "4aa6bcabf9b4e077757ba5a6df76c0ab06076ce7542bfdc6eb2a255ede138051",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/ast/src/pretty.rs",
+      "sha256": "91742d17ad20e0132cacd7d6930c09db2a74bf5153b6cf095ec003f5552fa0ac",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/simplecolumn/src/lib.rs",
+      "sha256": "ca008adf8d0f7d69dcbfc8e94abf1dea0a493eed0e485ac9cb56a5167fad5b96",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/vm/tests/e2e.rs",
+      "sha256": "502f3943eabc62c44e5e7b1fd5ecaf9b37d8d479fb367c5cce9842f7b8f57be0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/vm/tests/reachability.rs",
+      "sha256": "8817629ab220fc3fc58220999179ff9a56bb3fe0946beb3e747a90b5cce834b1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/vm/src/composite_host.rs",
+      "sha256": "48c58d9f2168409ba06bbe60fdc704aa8a58b0154004e6b18085221810b28c5b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/vm/src/lib.rs",
+      "sha256": "0112b826dc2c5e1a6e10a447474c1f556ed57ff0f224e41cb571747f40b88db7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/vm/src/csv_host.rs",
+      "sha256": "c13c738db0959d362953690b31102c9b29bb152dc8a19bbef8e41c6ce157acbb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/codegen/src/lib.rs",
+      "sha256": "f6ea4fe91383b74a66b0877e35984f12a035edbb6da27ab3ce2de17f4ad8a0c3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/parse/src/quote.rs",
+      "sha256": "190bcc6077cb6a39cd663a1800aeb0c7705951219808b3791195f1657cce07da",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2023 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/parse/src/error.rs",
+      "sha256": "5b49c7e6a701b3da55258747bbbae2012ca7387435997af7a471befae6758d6b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/parse/src/token.rs",
+      "sha256": "c3ead34312f53d01a285aada0cdcbf0cf2e026a8ca3944ee0210da4d097943ae",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/parse/src/lib.rs",
+      "sha256": "0ea4fb34d73241760f6ad839fba071c9c9227d9ad25bddddce55d2c1df780dfe",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/parse/src/scan.rs",
+      "sha256": "b1bad2ccff7c5e9475f6115458b8eb040e42c69ddf6f146d2125a17f1c43e6e4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/driver/src/lib.rs",
+      "sha256": "f34f20b1ab8f70ccc218c3cfc528251f41c0a494942c872ffb0c933d4bc12436",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/ir/src/lib.rs",
+      "sha256": "d1e9149a900fe7e1d618a138343ce075b945c80cc69835758beb259ed7d54542",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/ir/src/physical.rs",
+      "sha256": "37f2ea82e51a4178e44d8f484f3db55fa330cddc8e13129c2f83ce60fdeb200b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/ir/src/compat_test.rs",
+      "sha256": "ac020d03b3f37a557b4b263f1f2bb1071f9342ed9d91fc27e5493ab431edf087",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022 Google LLC"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "rust/analysis/src/lowering.rs",
+      "sha256": "6720568f2ee0e2867ba5f0478f492ec115a3a698eff9172ff2c2578c0c04a5e4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/analysis/src/lib.rs",
+      "sha256": "c54206d56d4f890a232e385f3cbcb21bcb2fb9d8ff1553a928cb7144b3ce5bd7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/analysis/src/rename.rs",
+      "sha256": "b7f9281426138224ecfb454fb730a9ace738568db494031c6f0b74b04eb2b37c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/analysis/src/stratification.rs",
+      "sha256": "1b5d2a06f65be7cd53175db1c51774922c77b2fdc2eb694fb341a74c8809d4c3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/analysis/src/planner.rs",
+      "sha256": "36c7327a9a51de40c3deadc04f9421b47cd1feb174037b4c244b6f8dae8d3bbc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/analysis/src/tests.rs",
+      "sha256": "cc60d058a48b4a5b08bbddecd2ad4556405e79b6c0da03458b8a4e521080bdc9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/analysis/src/type_check.rs",
+      "sha256": "c70da0fd26be957d31c95d05eaee940bc29fa16c38d1abe48c59f1e4bf3edaa0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/factstore/src/lib.rs",
+      "sha256": "e09ce722b0bc237017b1691f13c9198e0a63160d11a1690592e0d8b03b2de811",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/factstore/src/tablestore.rs",
+      "sha256": "10f423f27e66c65f54c8df48811feeeddf6b43364eea59a2cd1e2b889febe6ba",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2024 Google LLC"
+      ]
+    },
+    {
+      "path": "rust/interpreter/src/lib.rs",
+      "sha256": "141d690796f2e5569f505a838bf10a0dcf8231280e915282f25e52fb0667cdd2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2025 Google LLC"
+      ]
+    },
+    {
+      "path": "interpreter/mg/mg.go",
+      "sha256": "a9bb5d79842ce70ad4833ec097dd1623aadad522bb7c838366b8b648732ca14e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright 2022 Google LLC"
+      ]
+    }
+  ],
+  "discovered_copyrights": [
+    "2022 Google LLC",
+    "Copyright 2022 Google LLC",
+    "Copyright 2023 Google LLC",
+    "Copyright 2024 Google LLC",
+    "Copyright 2025 Google LLC"
+  ]
+}

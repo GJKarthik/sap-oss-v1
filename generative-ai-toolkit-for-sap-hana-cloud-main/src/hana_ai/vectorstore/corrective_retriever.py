@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 This module uses llm to grade the retrieved doc and find the most relevant ones.
 

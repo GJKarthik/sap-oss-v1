@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * E2E Test — Standardized Error Response Format (Day 47)
  *

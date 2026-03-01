@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import flatConfig from '@sap-cloud-sdk/eslint-config/flat-config.js';
 export default [
   ...flatConfig,

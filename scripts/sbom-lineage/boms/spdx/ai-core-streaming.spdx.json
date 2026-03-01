@@ -1,0 +1,45 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "ai-core-streaming",
+  "documentNamespace": "https://spdx.org/spdxdocs/ai-core-streaming-35ea06e8-175a-4a0d-a4c3-2fb9f8e1cad9",
+  "creationInfo": {
+    "created": "2026-02-28T09:52:34Z",
+    "creators": [
+      "Tool: SAP-OSS-SBOM-Pipeline-1.0",
+      "Organization: SAP SE"
+    ],
+    "licenseListVersion": "3.24"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-root-component",
+      "name": "AI Core Streaming (Zig/Mojo)",
+      "versionInfo": "0.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/ai core streaming (zig/mojo)@0.0.0"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-root-component"
+    }
+  ],
+  "documentDescribes": [
+    "SPDXRef-root-component"
+  ]
+}

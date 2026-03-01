@@ -1,0 +1,27 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:11814852-7b60-462e-88a0-b426b9469206",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "Generative AI Toolkit for SAP HANA Cloud",
+      "version": "1.0.26021200",
+      "purl": "pkg:pypi/generative ai toolkit for sap hana cloud@1.0.26021200"
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

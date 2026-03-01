@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Inject, Injectable, isDevMode} from "@angular/core";
 import {Ui5AngularSelectedIconsToLoad} from "./icons.tokens";
 

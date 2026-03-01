@@ -1,0 +1,365 @@
+{
+  "service": "langchain-integration-for-sap-hana-cloud-main",
+  "total_files": 40,
+  "files_with_spdx": 40,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 5,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "BSD-3-Clause",
+    "LicenseRef-SAP-DeveloperAgreement",
+    "MIT"
+  ],
+  "comparison": {
+    "extra_in_source": [
+      "Apache-2.0"
+    ],
+    "missing_in_source": [
+      "BSD-3-Clause",
+      "MIT"
+    ],
+    "verdict": "MISMATCH"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "7219c2dbee57dbba4611b10758f910e5620eb6586783d2738919fcdee3f00db0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and langchain-integration-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "b4097f4ba9391de9c26bdb6e2c6ca9459c39633c227d663bea8a5c40bceef15a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and langchain-integration-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "d5be510d8f1aef41851761f96d966c0a47df65160f49c2a45d034e1fcba97c90",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and langchain-integration-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/hana_vector_store.yaml",
+      "sha256": "8141eb1f02a0cab09d710668d16c9d28195f511f329de45b9a3b0751deb88ec8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and langchain-integration-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "sap_openai_server/server.py",
+      "sha256": "fb686b264d7d78dbc5c68b5c2caae8ae312a0af0a890d53729360720f13a9a4a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "sap_openai_server/__init__.py",
+      "sha256": "be8de4d5c09f0c334a82df51339d5c6e473d2072a71f1981d8b8f8f2f951c85c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/__init__.py",
+      "sha256": "7a2a1087e8f4d21c26369100f8a76a825963b34064ce2f9b52d4b5046d0dd30c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "47e3c4f3116b9e8f44cb7116652654de09f79ee1e0e9e7ea18e6298d6d418449",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "agent/langchain_hana_agent.py",
+      "sha256": "52de24f2940f6bcb8dbb4cf5e4b961ff1ea608076de46ec109a6f51239c15c34",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "scripts/lint_imports.sh",
+      "sha256": "ebfdc096c0fd83a2fefcccb02decd658287b50b10f00c5a6bd2bddab97c12c88",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and langchain-integration-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/check_imports.py",
+      "sha256": "53552b499bd1211dfe218ad21d843ad8a3001fd9803068a255bba152ff96d573",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/__init__.py",
+      "sha256": "724ba5ea44d84dbc601a8c4a2f924114a6fcccd237984a8692822f73dd2c767e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/utils.py",
+      "sha256": "01778d0c274f39fe55a89c8acea960eac7f97c895a75d178234de08177a99959",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "mcp_server/server.py",
+      "sha256": "293e33d5320a836f2038dbc81207b63c006e233b9dd1747020d164c13006faa3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/structured_query/__init__.py",
+      "sha256": "86d93a756a5872853ef713c61ac0fe02c607c5080ddb70f13ec54ca68039fc40",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/structured_query/hana_translator.py",
+      "sha256": "abe8b4568e2f186fb9535d3e5e2c51a34a9937f6826c94aaa9f918d488ce5dcf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/embeddings/hana_internal_embeddings.py",
+      "sha256": "1de1f5988d8f690fd10fcc120c916635b7f6c8f51a44db2c71b8f7f0d79eacbe",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/embeddings/__init__.py",
+      "sha256": "c60292752a71c5eb464edbe737b9c14ac7e961b481dcbf61fdb1997366ff18dc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/vectorstores/hana_db.py",
+      "sha256": "8120db909d5d330ac97337631814c641c3853da3c3f450d66f9a72d2260ddec0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/vectorstores/__init__.py",
+      "sha256": "eb2417df9efd5580d5b0f26ecaf82aa92f28e42f66fe7b0d27847d0e6a15a24d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/vectorstores/create_where_clause.py",
+      "sha256": "e0c711dda1deb2c94f1c776aae89733682f134375b70de656ec104f3305e8ade",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/graphs/__init__.py",
+      "sha256": "95f53e5b2a1ef527549baeec34c1a55eb4b730dd4a127fa95898af214338cb2e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/graphs/hana_rdf_graph.py",
+      "sha256": "92d9917faddec3e9cd74761f17accd36da92a92dcb871a493cb09515c88ddbcb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/chains/__init__.py",
+      "sha256": "f0bd7d34aa7d09e3b6274a751d232d44d644d281f74ba9e4c63dbb5d04cea69f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/chains/graph_qa/__init__.py",
+      "sha256": "4a3dfafc916be49509dab906b9abb77f573df5f573c7e1a0bcc00be98b4f18dd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/chains/graph_qa/prompts.py",
+      "sha256": "56d81ac9d57e1434a043eb407d450ec52f03f1316571c18939021f84cb6c37ba",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "langchain_hana/chains/graph_qa/hana_sparql_qa_chain.py",
+      "sha256": "2b6d0519c651ba18e3a7bd605fba325e00f48eb536323313bdeac38e31ba6d35",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit_tests/test_hana_rdf_graph.py",
+      "sha256": "6366063df4507724aea440dba4dcd633208f809b9cb8371e15c9c34d507e3672",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit_tests/test_hana_translator.py",
+      "sha256": "6512ee7cbcb58aa8bf7ed1a47b3ba1bd679082722e3725728ace76447062789f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit_tests/test_hana_db.py",
+      "sha256": "aebd128a631e47574a6dd31062ca740c84ce286455accd54c25ade990ad65c79",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit_tests/test_hana_sparql_qa_chain.py",
+      "sha256": "e863958132e7af8411af73274e143565a1c6d223feaa9c21748c45595669dc7a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit_tests/__init__.py",
+      "sha256": "7a2a1087e8f4d21c26369100f8a76a825963b34064ce2f9b52d4b5046d0dd30c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit_tests/test_create_where_clause.py",
+      "sha256": "3aaf261cb857503a65e57307bd1bf1b1c42bf05f2cfdacc45c80ffce1d3f0e46",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/test_hana_rdf_graph.py",
+      "sha256": "11f3528336f693b4120991b8219b300134877b4efa79e6357e046c1cf5fa154d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/test_hana_db.py",
+      "sha256": "c5e8d2d4ee0fa6733a97d1930147f0864f8c627eb66c5560371a357bc658a830",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/hana_test_utils.py",
+      "sha256": "84d5f0791488d5ac4ce9f15ba0a638e2a5affb79f3395d507d56f649e9ea80e7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/__init__.py",
+      "sha256": "7a2a1087e8f4d21c26369100f8a76a825963b34064ce2f9b52d4b5046d0dd30c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/test_hana_db_internal_embeddings.py",
+      "sha256": "6419f488167771453e079dd2e19863085946aca690a00d5ee5c44221085a6d18",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/hana_test_constants.py",
+      "sha256": "3ad4035feaab9c07bfa31d228dbe783afb2fd72cc1a0dc503556ec96b66023ed",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration_tests/fixtures/filtering_test_cases.py",
+      "sha256": "f580fa5ae5902f368461ed26e68c752226992c54c450b5f018efafb29db9cb9b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    }
+  ],
+  "discovered_copyrights": [
+    "2025 SAP SE or an SAP affiliate company and langchain-integration-for-sap-hana-cloud contributors"
+  ]
+}

@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { jest } from '@jest/globals';
 import { createLogger } from '@sap-cloud-sdk/util';
-import { parseMockResponse } from '../../../test-util/mock-http.js';
+import { parseMockResponse } from '../../../test-util/fixtures.js';
 import { OrchestrationStreamResponse } from './orchestration-stream-response.js';
 import type { HttpResponse } from '@sap-cloud-sdk/http-client';
 

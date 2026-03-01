@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {ModuleWithProviders, NgModule} from "@angular/core";
 import {Ui5WebcomponentsThemingService} from "./theming.service";
 

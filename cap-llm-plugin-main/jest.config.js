@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 module.exports = {
   projects: [
     {
@@ -18,8 +20,8 @@ module.exports = {
       displayName: "e2e",
       testEnvironment: "node",
       testMatch: ["**/tests/e2e/**/*.test.js"],
-      // Retry flaky network/port tests up to 2 times before failing
-      retryTimes: 2,
+      // Single retry only; prefer fixing flaky tests over masking with retries
+      retryTimes: 1,
       testTimeout: 15000,
     },
   ],

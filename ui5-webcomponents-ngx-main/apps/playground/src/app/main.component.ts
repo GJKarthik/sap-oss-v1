@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Component, ViewChild} from "@angular/core";
 import {ButtonComponent} from "@ui5/webcomponents-ngx/main/button";
 

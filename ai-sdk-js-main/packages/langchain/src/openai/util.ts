@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { AIMessage, AIMessageChunk } from '@langchain/core/messages';
 import { v4 as uuidv4 } from 'uuid';
 import { isInteropZodSchema } from '@langchain/core/utils/types';

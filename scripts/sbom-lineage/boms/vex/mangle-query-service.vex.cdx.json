@@ -1,0 +1,27 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:ba443b0b-9dc8-4957-a524-5723ae6bfe5b",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "Mangle Query Service",
+      "version": "0.1.0",
+      "purl": "pkg:golang/github.com/sap-oss/mangle-query-service@0.1.0"
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

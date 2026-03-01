@@ -1,0 +1,356 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:7fede9e7-0d58-4855-878d-22dc920a6712",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T10:30:23Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "bom-ref": "pkg:pypi/sap-oss-build-cyclonedx@1.0",
+          "author": "SAP SE",
+          "name": "build_cyclonedx.py",
+          "version": "1.0",
+          "description": "SAP OSS SBOM generator script"
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE",
+        "url": "https://sap.com"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "Generative AI Toolkit for SAP HANA Cloud",
+      "version": "1.0.26021200",
+      "purl": "pkg:pypi/generative ai toolkit for sap hana cloud@1.0.26021200"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-community@0",
+      "name": "langchain-community",
+      "version": "0",
+      "purl": "pkg:pypi/langchain-community@0",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-community/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2135abb2c7748a35c84613108f7ebf30f8505b18c3c18305ffaecfc7651f6c6a"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-text-splitters@0",
+      "name": "langchain-text-splitters",
+      "version": "0",
+      "purl": "pkg:pypi/langchain-text-splitters@0",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-text-splitters/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5ed0d7bf314ba925041e7d7d17cd8b10f688300d5415fb26c29442f061e329dc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/numpy@0",
+      "name": "numpy",
+      "version": "0",
+      "purl": "pkg:pypi/numpy@0",
+      "supplier": {
+        "name": "Travis E. Oliphant et al.",
+        "url": "https://pypi.org/project/numpy/"
+      },
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e7e88598032542bd49af7c4747541422884219056c268823ef6e5e89851c8825"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pandas@0",
+      "name": "pandas",
+      "version": "0",
+      "purl": "pkg:pypi/pandas@0",
+      "supplier": {
+        "name": "The Pandas Development Team",
+        "url": "https://pypi.org/project/pandas/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "de09668c1bf3b925c07e5762291602f0d789eca1b3a781f99c1c78f6cac0e7ea"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/hana-ml@2.27.26020601",
+      "name": "hana-ml",
+      "version": "2.27.26020601",
+      "purl": "pkg:pypi/hana-ml@2.27.26020601",
+      "supplier": {
+        "name": "SAP SE",
+        "url": "https://pypi.org/project/hana-ml/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "LicenseRef-SAP-DeveloperAgreement"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fe0a545dc045e8c33b5c644f0c1ae371648adfd0f76f96b083090200994403e8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pydantic@2.11",
+      "name": "pydantic",
+      "version": "2.11",
+      "purl": "pkg:pypi/pydantic@2.11",
+      "supplier": {
+        "name": "Samuel Colvin",
+        "url": "https://pypi.org/project/pydantic/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d52535bb7aba33c2af820eaefd866f3322daf39319d03374921cd17fbbdf28f9"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/sap-ai-sdk-gen@0",
+      "name": "sap-ai-sdk-gen",
+      "version": "0",
+      "purl": "pkg:pypi/sap-ai-sdk-gen@0",
+      "supplier": {
+        "name": "SAP SE",
+        "url": "https://pypi.org/project/sap-ai-sdk-gen/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "LicenseRef-SAP-DeveloperAgreement"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "82be3d1286f797366860a6fe340462e4567b4218b257f1b863a2da9e6e98f246"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-hana@0",
+      "name": "langchain-hana",
+      "version": "0",
+      "purl": "pkg:pypi/langchain-hana@0",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-hana/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d1734f2af225b472e6233aa18973fe821f232d7a07644d5d8d4758486c86aec9"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/fastmcp@2.0",
+      "name": "fastmcp",
+      "version": "2.0",
+      "purl": "pkg:pypi/fastmcp@2.0",
+      "supplier": {
+        "name": "Jeremiah Lowin",
+        "url": "https://pypi.org/project/fastmcp/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d5c4111233a6a29fa92ed5acdbfe4feae922191a1d1c1543f0a85efeef31fbb9"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "root-component",
+      "dependsOn": [
+        "pkg:pypi/langchain-community@0",
+        "pkg:pypi/langchain-text-splitters@0",
+        "pkg:pypi/numpy@0",
+        "pkg:pypi/pandas@0",
+        "pkg:pypi/hana-ml@2.27.26020601",
+        "pkg:pypi/pydantic@2.11",
+        "pkg:pypi/sap-ai-sdk-gen@0",
+        "pkg:pypi/langchain-hana@0",
+        "pkg:pypi/fastmcp@2.0"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/langchain-community@0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain-text-splitters@0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/numpy@0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pandas@0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/hana-ml@2.27.26020601",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pydantic@2.11",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/sap-ai-sdk-gen@0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain-hana@0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/fastmcp@2.0",
+      "dependsOn": []
+    }
+  ],
+  "formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "SAP HANA ML",
+              "version": "2.27.26020601",
+              "supplier": {
+                "name": "SAP SE"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "LicenseRef-SAP-Proprietary"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/hana-ml@2.27.26020601"
+            },
+            {
+              "type": "machine-learning-model",
+              "name": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+              "description": "HuggingFace base model — cross-encoder/ms-marco-MiniLM-L-6-v2",
+              "externalReferences": [
+                {
+                  "type": "website",
+                  "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2"
+                }
+              ],
+              "licenses": [
+                {
+                  "license": {
+                    "id": "NOASSERTION"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": []
+}

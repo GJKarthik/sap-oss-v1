@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 SAP SE
 import pytest
 from typing import List, Dict, Any
 from langchain_hana.vectorstores.create_where_clause import CreateWhereClause 

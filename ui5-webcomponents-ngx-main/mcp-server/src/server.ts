@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * UI5 Web Components Angular MCP Server
  * 
@@ -7,6 +9,10 @@
 
 import express, { Request, Response } from 'express';
 import { createServer } from 'http';
+
+const MAX_JSON_BODY_BYTES = 1024 * 1024;
+const MAX_COMPONENTS_PER_REQUEST = 64;
+const MAX_SEARCH_QUERY_LENGTH = 200;
 
 // =============================================================================
 // Types
@@ -30,6 +36,29 @@ interface Tool {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+}
+
+function parseJsonArrayArg(value: unknown): string[] {
+  const normalize = (items: unknown[]) =>
+    items.filter((v): v is string => typeof v === "string").slice(0, MAX_COMPONENTS_PER_REQUEST);
+
+  if (Array.isArray(value)) {
+    return normalize(value);
+  }
+  if (typeof value !== "string") return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return normalize(parsed);
+  } catch {
+    return [];
+  }
+}
+
+function isValidJsonRpcRequest(value: unknown): value is MCPRequest {
+  if (!value || typeof value !== "object") return false;
+  const req = value as Partial<MCPRequest>;
+  return req.jsonrpc === "2.0" && typeof req.method === "string";
 }
 
 // =============================================================================
@@ -182,7 +211,7 @@ class MCPServer {
   }
 
   private handleGenerateAngularTemplate(args: Record<string, unknown>): Record<string, unknown> {
-    const components = JSON.parse(args.components as string || "[]");
+    const components = parseJsonArrayArg(args.components).filter(c => !!this.components[c]);
     const layout = args.layout as string || "default";
     
     let template = "";
@@ -208,7 +237,7 @@ class MCPServer {
   }
 
   private handleGenerateModuleImports(args: Record<string, unknown>): Record<string, unknown> {
-    const components = JSON.parse(args.components as string || "[]");
+    const components = parseJsonArrayArg(args.components).filter(c => !!this.components[c]);
     const imports: string[] = [];
     const modules: string[] = [];
     
@@ -228,7 +257,7 @@ class MCPServer {
   }
 
   private handleSearchComponents(args: Record<string, unknown>): Record<string, unknown> {
-    const query = (args.query as string || "").toLowerCase();
+    const query = String(args.query || "").slice(0, MAX_SEARCH_QUERY_LENGTH).toLowerCase();
     const results = Object.entries(this.components)
       .filter(([name]) => name.toLowerCase().includes(query))
       .map(([name, details]) => ({ name, ...details }));
@@ -270,7 +299,14 @@ class MCPServer {
   }
 
   handleRequest(request: MCPRequest): MCPResponse {
+    if (!isValidJsonRpcRequest(request)) {
+      return { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } };
+    }
+
     const { method, params = {}, id } = request;
+    if (params !== null && typeof params !== "object") {
+      return { jsonrpc: "2.0", id, error: { code: -32600, message: "Invalid Request: params must be an object" } };
+    }
 
     try {
       if (method === "initialize") {
@@ -291,6 +327,12 @@ class MCPServer {
 
       if (method === "tools/call") {
         const toolName = params.name as string;
+        if (typeof toolName !== "string") {
+          return { jsonrpc: "2.0", id, error: { code: -32602, message: 'tools/call requires string param "name"' } };
+        }
+        if (params.arguments !== undefined && (params.arguments === null || typeof params.arguments !== "object" || Array.isArray(params.arguments))) {
+          return { jsonrpc: "2.0", id, error: { code: -32602, message: 'tools/call param "arguments" must be an object' } };
+        }
         const args = (params.arguments || {}) as Record<string, unknown>;
         const handlers: Record<string, (args: Record<string, unknown>) => Record<string, unknown>> = {
           list_components: () => this.handleListComponents(),
@@ -338,10 +380,20 @@ class MCPServer {
 
 const mcpServer = new MCPServer();
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: `${MAX_JSON_BODY_BYTES}b` }));
 
-app.use((_req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "http://localhost:3000,http://127.0.0.1:3000")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+const getCorsOrigin = (req: Request): string | undefined => {
+  const origin = req.headers.origin;
+  if (origin && corsAllowedOrigins.includes(origin)) return origin;
+  return corsAllowedOrigins[0];
+};
+app.use((req, res, next) => {
+  const corsOrigin = getCorsOrigin(req);
+  if (corsOrigin) res.header("Access-Control-Allow-Origin", corsOrigin);
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   next();
@@ -349,16 +401,35 @@ app.use((_req, res, next) => {
 
 app.options("*", (_req, res) => res.sendStatus(204));
 
+app.use((err: unknown, _req: Request, res: Response, next: (err?: unknown) => void) => {
+  if (err && typeof err === "object" && "type" in err && (err as { type?: string }).type === "entity.parse.failed") {
+    return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
+  }
+  if (err && typeof err === "object" && "type" in err && (err as { type?: string }).type === "entity.too.large") {
+    return res.status(413).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Request too large" } });
+  }
+  return next(err);
+});
+
 app.get("/health", (_req: Request, res: Response) => {
-  res.json({ status: "healthy", service: "ui5-webcomponents-ngx-mcp", timestamp: new Date().toISOString() });
+  res.json({
+    status: "healthy",
+    service: "ui5-webcomponents-ngx-mcp",
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.round(process.uptime()),
+  });
 });
 
 app.post("/mcp", (req: Request, res: Response) => {
+  if (!isValidJsonRpcRequest(req.body)) {
+    return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } });
+  }
   const response = mcpServer.handleRequest(req.body);
-  res.json(response);
+  return res.json(response);
 });
 
-const port = parseInt(process.argv.find(a => a.startsWith("--port="))?.split("=")[1] || "9160");
+const requestedPort = parseInt(process.argv.find(a => a.startsWith("--port="))?.split("=")[1] || "9160", 10);
+const port = Number.isInteger(requestedPort) && requestedPort > 0 && requestedPort <= 65535 ? requestedPort : 9160;
 createServer(app).listen(port, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════╗

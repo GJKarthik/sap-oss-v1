@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { type AiDeployment } from '../client/AI_CORE_API';
 import { deploymentCache } from './deployment-cache.js';
 import type { FoundationModel } from './model.js';

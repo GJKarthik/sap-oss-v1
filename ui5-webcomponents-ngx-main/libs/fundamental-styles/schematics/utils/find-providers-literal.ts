@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import * as ts from "typescript";
 
 /** Finds the `providers` array literal within a `bootstrapApplication` call. */

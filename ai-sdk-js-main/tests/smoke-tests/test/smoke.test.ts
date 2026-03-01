@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 const smokeTestRoute =
   'https://smoke-test-app.cfapps.eu12-001.hana.ondemand.com';
 describe('Smoke Test', () => {

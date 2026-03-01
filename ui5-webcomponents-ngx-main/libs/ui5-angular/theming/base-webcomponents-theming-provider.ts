@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {inject, Injectable, OnDestroy} from "@angular/core";
 import {Ui5ThemingProvider, Ui5ThemingService} from "@ui5/theming-ngx";
 import {BehaviorSubject, map, Observable, of, switchMap} from "rxjs";

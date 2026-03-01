@@ -492,9 +492,17 @@ fn handleConnection(allocator: std.mem.Allocator, stream: std.net.Stream) !void 
 }
 
 fn handleHealth(request: *std.http.Server.Request) !void {
-    const body =
-        \\{"status":"ok","service":"mcppal-mesh-gateway","version":"1.0.0","algorithms":162,"categories":13}
-    ;
+    const config_ready = global_config.hana_host.len > 0 and global_config.hana_user.len > 0 and global_config.hana_password.len > 0;
+    var body_buf: [512]u8 = undefined;
+    const body = std.fmt.bufPrint(&body_buf,
+        \\{{"status":"{s}","service":"mcppal-mesh-gateway","version":"1.0.0","algorithms":{d},"categories":{d},"config_ready":{s}}}
+    , .{
+        if (config_ready) "ok" else "degraded",
+        global_catalog.algorithms.items.len,
+        global_catalog.categories.items.len,
+        if (config_ready) "true" else "false",
+    }) catch "{\"status\":\"degraded\",\"service\":\"mcppal-mesh-gateway\"}";
+
     try request.respond(body, .{
         .extra_headers = &.{.{ .name = "content-type", .value = "application/json" }},
     });

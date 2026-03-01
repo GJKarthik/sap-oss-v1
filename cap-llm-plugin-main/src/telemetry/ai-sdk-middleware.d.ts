@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /** Minimal local mirror of @sap-cloud-sdk/http-client HttpMiddlewareContext. */
 export interface HttpMiddlewareContext {
     readonly tenantId?: string;

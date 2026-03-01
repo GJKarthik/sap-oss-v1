@@ -262,9 +262,27 @@ pub const Model = struct {
 
             // QKV projections
             if (layer.wqkv) |wqkv| {
-                // Fused QKV (phi2)
-                _ = wqkv;
-                // TODO: Implement fused QKV
+                // Fused QKV projection (phi2 style)
+                // wqkv has shape [3 * dim, dim] where the output is packed as [Q, K, V]
+                // This is more efficient as it only requires one GEMV instead of three
+                const qkv_dim = n_heads * head_dim + 2 * n_kv_heads * head_dim;
+                
+                // Allocate temporary buffer for fused QKV output
+                // Note: In production, this should be pre-allocated
+                var qkv_buf: [3 * 4096]f32 = undefined; // Max supported dim
+                const qkv_out = qkv_buf[0..qkv_dim];
+                
+                // Single matrix-vector multiplication for Q, K, V together
+                kernels.matvec(qkv_out, wqkv, self.xb, qkv_dim, dim);
+                
+                // Split the output into Q, K, V
+                const q_size = n_heads * head_dim;
+                const k_size = n_kv_heads * head_dim;
+                const v_size = n_kv_heads * head_dim;
+                
+                @memcpy(self.q, qkv_out[0..q_size]);
+                @memcpy(self.k, qkv_out[q_size..q_size + k_size]);
+                @memcpy(self.v, qkv_out[q_size + k_size..q_size + k_size + v_size]);
             } else {
                 // Separate Q, K, V
                 kernels.matvec(self.q, layer.wq, self.xb, n_heads * head_dim, dim);

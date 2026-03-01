@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { setFetchDefaultLanguage, setLanguage } from "@ui5/webcomponents-base/dist/config/Language.js";
 import { I18nConfig } from "./i18n.types";
 import { I18N_NAMESPACE, I18N_ROOT_CONFIG } from "./i18n.tokens";

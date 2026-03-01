@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {AngularGeneratedFile} from "../angular-generated-file";
 import {AngularGeneratorOptions} from "../angular-generator-options";
 import {format} from "prettier";

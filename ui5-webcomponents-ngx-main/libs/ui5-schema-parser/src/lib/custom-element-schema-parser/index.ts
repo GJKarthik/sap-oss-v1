@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { ComponentData, ImportData, InputType, MethodType, OutputType } from "@ui5/webcomponents-transformer";
 import { ParserConfiguration } from "../parser-configuration";
 import { readFileSync } from "fs";

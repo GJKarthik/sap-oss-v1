@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { executeRequest } from '@sap-ai-sdk/core';
 import { getOrchestrationDeploymentId } from '@sap-ai-sdk/ai-api/internal.js';
 import { OrchestrationEmbeddingResponse } from './orchestration-embedding-response.js';

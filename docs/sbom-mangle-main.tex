@@ -1,0 +1,89 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\geometry{margin=2cm,top=2.5cm,bottom=2.5cm}
+\definecolor{sbomhdr}{RGB}{220,230,242}
+\definecolor{depgraphbg}{RGB}{248,248,248}
+\setlength{\LTcapwidth}{\textwidth}
+\lstdefinestyle{depgraph}{
+  backgroundcolor=\color{depgraphbg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakindent=2em,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!70!black}
+\title{\textbf{Software Bill of Materials (CycloneDX) and Change Lineage}}
+\author{Generated from CycloneDX SBOM and git lineage}
+\date{\today}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{SAP OSS — SBOM \& Lineage Report}}
+\fancyhead[R]{\small\today}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Software Bill of Materials (CycloneDX)}
+Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license, dependency graph). Package URLs (purls) follow the \href{https://github.com/package-url/purl-spec}{PURL spec}.
+
+\subsection{Mangle Main}
+\textbf{Path:} \texttt{mangle-main}
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:750794ff-b7ed-42ed-97f3-511f4ab4d5bd...}
+\\ \textbf{Generated:} 2026-02-28T09:24:15Z
+\\ \textbf{Tool:} build\_cyclonedx.py
+
+\subsubsection*{Components}
+\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\raggedright bitbucket.org/creachadair/stringset & 0.0.11 & library & \small\texttt{pkg:golang/bitbucket.org/creachadair/stringset@0.0.11} & — & \small — \\
+\raggedright github.com/antlr4-go/antlr/v4 & 4.13.1 & library & \small\texttt{pkg:golang/github.com/antlr4-go/antlr/v4@4.13.1} & — & \small — \\
+\raggedright github.com/chzyer/readline & 1.5.1 & library & \small\texttt{pkg:golang/github.com/chzyer/readline@1.5.1} & — & \small — \\
+\raggedright github.com/golang/glog & 1.2.4 & library & \small\texttt{pkg:golang/github.com/golang/glog@1.2.4} & — & \small — \\
+\raggedright github.com/google/go-cmp & 0.6.0 & library & \small\texttt{pkg:golang/github.com/google/go-cmp@0.6.0} & — & \small — \\
+\raggedright go.uber.org/multierr & 1.11.0 & library & \small\texttt{pkg:golang/go.uber.org/multierr@1.11.0} & — & \small — \\
+\raggedright google.golang.org/protobuf & 1.34.0 & library & \small\texttt{pkg:golang/google.golang.org/protobuf@1.34.0} & — & \small — \\
+\end{longtable}
+
+\subsubsection*{Dependency graph (top-level refs)}
+\begin{lstlisting}[style=depgraph]
+  root-component
+    -> pkg:golang/bitbucket.org/creachadair/stringset@0.0.11, pkg:golang/github.com/antlr4-go/antlr/v4@4.13.1, pkg:golang/github.com/chzyer/readline@1.5.1, pkg:golang/github.com/golang/glog@1.2.4, pkg:golang/github.com/google/go-cmp@0.6.0...
+\end{lstlisting}
+
+\newpage
+\section{Change Lineage from Original Software}
+
+\end{document}

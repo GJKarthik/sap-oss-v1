@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { CommonCssParts } from "./config";
 import { Schema } from "./schema";
 import { askQuestion } from './utils/promt';

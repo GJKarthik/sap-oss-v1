@@ -1,0 +1,1 @@
+{"version":3,"file":"azure-openai-service.d.ts","sourceRoot":"","sources":["../../../../srv/foundation-models/azure-openai-service.ts"],"names":[],"mappings":"AAOA,UAAU,qBAAqB;IAC7B,IAAI,CAAC,EAAE;QACL,QAAQ,CAAC,EAAE,OAAO,CAAC;KACpB,CAAC;CACH;AAKD,MAAM,CAAC,OAAO,OAAO,kBAAkB;IAC/B,cAAc,CAAC,GAAG,EAAE,qBAAqB;CA8ChD"}

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { updateWorkspace } from '@schematics/angular/utility/workspace';
 import { Change, InsertChange } from '@schematics/angular/utility/change';
 import { Rule } from '@angular-devkit/schematics';

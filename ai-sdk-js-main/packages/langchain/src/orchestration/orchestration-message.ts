@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { AIMessage } from '@langchain/core/messages';
 import type { AIMessageFields } from '@langchain/core/messages';
 import type { ModuleResults } from '@sap-ai-sdk/orchestration/internal.js';

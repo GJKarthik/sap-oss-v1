@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {AngularGeneratedFile} from "./angular-generated-file";
 import {GeneratedFile} from "@ui5/webcomponents-transformer";
 

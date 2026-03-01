@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {ParserConfiguration} from "../parser-configuration";
 import {SymbolObject} from "./symbol-types";
 import {readFileSync} from "fs";

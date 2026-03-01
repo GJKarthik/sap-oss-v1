@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Integration tests for the full RAG pipeline.
  *
@@ -12,9 +14,13 @@
  * internal wiring between methods is exercised as a connected unit.
  */
 
-// ── DB mock ──────────────────────────────────────────────────────────
+// ── Mock handles ───────────────────────────────────────────────────────
 const mockDbRun = jest.fn(() => Promise.resolve([]));
 const mockDbConnect = jest.fn(() => Promise.resolve({ run: mockDbRun }));
+const mockEmbed = jest.fn();
+const MockOrchestrationEmbeddingClient = jest.fn().mockImplementation(() => ({ embed: mockEmbed }));
+const mockChatCompletion = jest.fn();
+const MockOrchestrationClient = jest.fn().mockImplementation(() => ({ chatCompletion: mockChatCompletion }));
 
 const mockCds = {
   db: { run: mockDbRun, kind: "hana" },
@@ -23,25 +29,11 @@ const mockCds = {
   log: jest.fn(() => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() })),
   env: { requires: {} },
   requires: {},
-  Service: class MockService {
-    async init() {}
-  },
+  Service: class MockService { async init() {} },
   once: jest.fn(),
 };
 
 jest.mock("@sap/cds", () => mockCds, { virtual: true });
-
-// ── SDK mocks ────────────────────────────────────────────────────────
-const mockEmbed = jest.fn();
-const MockOrchestrationEmbeddingClient = jest.fn().mockImplementation(() => ({
-  embed: mockEmbed,
-}));
-
-const mockChatCompletion = jest.fn();
-const MockOrchestrationClient = jest.fn().mockImplementation(() => ({
-  chatCompletion: mockChatCompletion,
-}));
-
 jest.mock("@sap-ai-sdk/orchestration", () => ({
   OrchestrationEmbeddingClient: MockOrchestrationEmbeddingClient,
   OrchestrationClient: MockOrchestrationClient,

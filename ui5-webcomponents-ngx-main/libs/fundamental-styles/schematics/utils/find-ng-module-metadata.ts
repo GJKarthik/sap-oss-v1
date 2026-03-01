@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import ts from "typescript";
 import {isNgModuleCallExpression} from "./is-ng-module-expression";
 

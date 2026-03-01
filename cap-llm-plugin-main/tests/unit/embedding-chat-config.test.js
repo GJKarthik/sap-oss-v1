@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 const mockSend = jest.fn(() => Promise.resolve({}));
 const mockConnectTo = jest.fn(() => Promise.resolve({ run: jest.fn(), send: mockSend }));
 

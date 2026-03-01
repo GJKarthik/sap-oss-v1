@@ -1,0 +1,81 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:9676eee9-0ff7-4917-9b72-03834f562c97",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "name": "sap-ai-sdk",
+      "group": "",
+      "version": "2.7.0",
+      "description": "",
+      "purl": "pkg:npm/sap-ai-sdk@2.7.0",
+      "bom-ref": "pkg:npm/sap-ai-sdk@2.7.0",
+      "type": "application",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "url": "https://opensource.org/licenses/Apache-2.0"
+          }
+        }
+      ],
+      "components": [
+        {
+          "group": "",
+          "name": "btp-integration-tests",
+          "version": "1.0.0",
+          "purl": "pkg:npm/btp-integration-tests@1.0.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/btp-integration-tests@1.0.0"
+        },
+        {
+          "author": "SAP",
+          "group": "@sap-ai-sdk",
+          "name": "openai-server",
+          "version": "1.0.0",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0",
+                "url": "https://opensource.org/licenses/Apache-2.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40sap-ai-sdk/openai-server@1.0.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/@sap-ai-sdk/openai-server@1.0.0"
+        },
+        {
+          "author": "SAP",
+          "group": "@sap-ai-sdk",
+          "name": "mcp-server",
+          "version": "1.0.0",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0",
+                "url": "https://opensource.org/licenses/Apache-2.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40sap-ai-sdk/mcp-server@1.0.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/@sap-ai-sdk/mcp-server@1.0.0"
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

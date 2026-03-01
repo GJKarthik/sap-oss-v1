@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 Unittest: Stop MCP server (HTTP) using TestML_BaseTestClass and verify registry cleanup; optional client check.
 """

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * E2E Test Server
  *
@@ -99,8 +101,32 @@ function createApp(plugin) {
     }
   });
 
+  app.post("/api/stream", async (req, res) => {
+    const { clientConfig, chatCompletionConfig, abortOnFilterViolation } = req.body;
+    // The plugin expects clientConfig / chatCompletionConfig as JSON strings
+    // (it calls JSON.parse internally, matching the CDS action wire format).
+    const cdsReq = { http: { res } };
+    try {
+      await plugin.streamChatCompletion(
+        {
+          clientConfig: JSON.stringify(clientConfig),
+          chatCompletionConfig: JSON.stringify(chatCompletionConfig),
+          abortOnFilterViolation,
+        },
+        cdsReq,
+      );
+    } catch (err) {
+      // streamChatCompletion writes its own error frame and calls res.end()
+      // in SSE mode, so this catch is only hit if headers were never sent
+      if (!res.headersSent) {
+        const { httpStatus, body } = toErrorResponse(err);
+        res.status(httpStatus).json(body);
+      }
+    }
+  });
+
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", endpoints: ["/api/chat", "/api/rag", "/api/embedding", "/api/search", "/api/harmonized", "/api/filters"] });
+    res.json({ status: "ok", endpoints: ["/api/chat", "/api/rag", "/api/embedding", "/api/search", "/api/harmonized", "/api/filters", "/api/stream"] });
   });
 
   return app;

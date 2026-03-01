@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package sync
 
 import (
@@ -24,6 +26,10 @@ func NewCacheManager(es *elasticsearch.Client) *CacheManager {
 
 // StoreAnswer caches a resolved Q&A pair in ES.
 func (c *CacheManager) StoreAnswer(ctx context.Context, query, answer, sourcePath string) error {
+	if c.ES == nil {
+		return fmt.Errorf("cache manager is not configured")
+	}
+
 	doc := map[string]interface{}{
 		"query_text":   query,
 		"answer_text":  answer,
@@ -34,7 +40,10 @@ func (c *CacheManager) StoreAnswer(ctx context.Context, query, answer, sourcePat
 		"ttl_expires":  time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339),
 	}
 
-	body, _ := json.Marshal(doc)
+	body, err := json.Marshal(doc)
+	if err != nil {
+		return fmt.Errorf("cache store failed: encode document: %w", err)
+	}
 	res, err := c.ES.Index(c.Index, bytes.NewReader(body), c.ES.Index.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("cache store failed: %w", err)
@@ -53,6 +62,9 @@ func (c *CacheManager) StoreAnswer(ctx context.Context, query, answer, sourcePat
 func (c *CacheManager) InvalidateByEntity(ctx context.Context, entityRefs []string) (int, error) {
 	if len(entityRefs) == 0 {
 		return 0, nil
+	}
+	if c.ES == nil {
+		return 0, fmt.Errorf("cache manager is not configured")
 	}
 
 	// Delete by query: find cached answers whose source_path matches any entity ref
@@ -73,7 +85,10 @@ func (c *CacheManager) InvalidateByEntity(ctx context.Context, entityRefs []stri
 		},
 	}
 
-	body, _ := json.Marshal(query)
+	body, err := json.Marshal(query)
+	if err != nil {
+		return 0, fmt.Errorf("cache invalidation failed: encode query: %w", err)
+	}
 	res, err := c.ES.DeleteByQuery(
 		[]string{c.Index},
 		bytes.NewReader(body),
@@ -83,11 +98,16 @@ func (c *CacheManager) InvalidateByEntity(ctx context.Context, entityRefs []stri
 		return 0, fmt.Errorf("cache invalidation failed: %w", err)
 	}
 	defer res.Body.Close()
+	if res.IsError() {
+		return 0, fmt.Errorf("cache invalidation failed: %s", res.String())
+	}
 
 	var result struct {
 		Deleted int `json:"deleted"`
 	}
-	json.NewDecoder(res.Body).Decode(&result)
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return 0, fmt.Errorf("cache invalidation failed: decode response: %w", err)
+	}
 
 	if result.Deleted > 0 {
 		log.Printf("Cache: invalidated %d entries for entities %v", result.Deleted, entityRefs)
@@ -97,6 +117,10 @@ func (c *CacheManager) InvalidateByEntity(ctx context.Context, entityRefs []stri
 
 // InvalidateExpired removes cached answers past their TTL.
 func (c *CacheManager) InvalidateExpired(ctx context.Context) (int, error) {
+	if c.ES == nil {
+		return 0, fmt.Errorf("cache manager is not configured")
+	}
+
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"range": map[string]interface{}{
@@ -107,7 +131,10 @@ func (c *CacheManager) InvalidateExpired(ctx context.Context) (int, error) {
 		},
 	}
 
-	body, _ := json.Marshal(query)
+	body, err := json.Marshal(query)
+	if err != nil {
+		return 0, fmt.Errorf("TTL cleanup failed: encode query: %w", err)
+	}
 	res, err := c.ES.DeleteByQuery(
 		[]string{c.Index},
 		bytes.NewReader(body),
@@ -117,11 +144,16 @@ func (c *CacheManager) InvalidateExpired(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("TTL cleanup failed: %w", err)
 	}
 	defer res.Body.Close()
+	if res.IsError() {
+		return 0, fmt.Errorf("TTL cleanup failed: %s", res.String())
+	}
 
 	var result struct {
 		Deleted int `json:"deleted"`
 	}
-	json.NewDecoder(res.Body).Decode(&result)
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return 0, fmt.Errorf("TTL cleanup failed: decode response: %w", err)
+	}
 
 	if result.Deleted > 0 {
 		log.Printf("Cache: expired %d TTL entries", result.Deleted)

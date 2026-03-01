@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { parse, ParsedPath } from 'path';
 import { ExportData, ExportSpecifier, isExportData } from './export-data';
 import {

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 Unittest: Stdio/SSE mode validation using TestML_BaseTestClass (using SSE to avoid stdio issues).
 """

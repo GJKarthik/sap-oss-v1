@@ -112,6 +112,9 @@ pub const SchedulerConfig = struct {
     /// Maximum number of sequences in a batch
     max_num_seqs: u32 = 256,
 
+    /// Maximum number of concurrently running requests
+    max_running_requests: u32 = 32,
+
     /// Maximum number of tokens per iteration
     max_num_batched_tokens: ?u32 = null,
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import * as cds from "@sap/cds";
 import InvalidSimilaritySearchAlgoNameError = require("./errors/InvalidSimilaritySearchAlgoNameError");
 import { validateSqlIdentifier, validatePositiveInteger, validateEmbeddingVector } from "../lib/validation-utils";
@@ -98,6 +100,13 @@ export interface HarmonizedChatCompletionParams {
 export interface ContentFilterParams {
   type: string;
   config: unknown;
+}
+
+/** Params for streamChatCompletion. */
+export interface StreamChatParams {
+  clientConfig: string;
+  chatCompletionConfig: string;
+  abortOnFilterViolation?: boolean;
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -684,6 +693,143 @@ class CAPLLMPlugin extends cds.Service {
         "HARMONIZED_CHAT_FAILED",
         { cause: (e as Error).message }
       );
+    } finally {
+      span.end();
+    }
+  }
+
+  /**
+   * Stream chat completion tokens as Server-Sent Events (SSE).
+   *
+   * When called via HTTP (e.g. from an Angular front-end), writes SSE frames
+   * directly to `req.http.res` and returns an empty string. When called
+   * programmatically without an HTTP response (e.g. unit tests), returns the
+   * fully accumulated content string instead.
+   *
+   * SSE frame format:
+   *   delta frame  — `data: {"delta":"<token>","index":0}\n\n`
+   *   done frame   — `data: {"finishReason":"stop","totalTokens":42}\n\n`
+   *   sentinel     — `data: [DONE]\n\n`
+   *   error frame  — `event: error\ndata: {"code":"...","message":"..."}\n\n`
+   *
+   * Client disconnect is detected via the `close` event on the HTTP response,
+   * which aborts the upstream AI Core stream via `AbortController`.
+   *
+   * @param params - {@link StreamChatParams} with `clientConfig` and `chatCompletionConfig`.
+   * @param req - Optional CDS request (provides `req.http.res` for SSE output).
+   * @returns Empty string (SSE mode) or full accumulated content (non-SSE mode).
+   * @throws {ChatCompletionError} If streaming fails and SSE is not active.
+   */
+  async streamChatCompletion(params: StreamChatParams, req?: unknown): Promise<string> {
+    const span = getTracer().startSpan("cap-llm-plugin.streamChatCompletion");
+
+    const httpRes = (req as any)?.http?.res as import("http").ServerResponse | undefined;
+    const isStreaming = !!(httpRes && !httpRes.headersSent);
+
+    if (isStreaming) {
+      httpRes!.setHeader("Content-Type", "text/event-stream");
+      httpRes!.setHeader("Cache-Control", "no-cache");
+      httpRes!.setHeader("X-Accel-Buffering", "no");
+      httpRes!.setHeader("Connection", "keep-alive");
+      httpRes!.flushHeaders();
+    }
+
+    const controller = new AbortController();
+
+    if (isStreaming) {
+      httpRes!.on("close", () => { controller.abort(); });
+    }
+
+    let clientConfig: unknown;
+    let chatCompletionConfig: unknown;
+
+    try {
+      clientConfig = JSON.parse(params.clientConfig);
+      chatCompletionConfig = JSON.parse(params.chatCompletionConfig);
+    } catch (parseErr) {
+      const err = new ChatCompletionError(
+        `streamChatCompletion: invalid JSON in params — ${(parseErr as Error).message}`,
+        "STREAM_CHAT_PARAMS_INVALID",
+        { cause: (parseErr as Error).message }
+      );
+      span.recordException(err);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      span.end();
+      throw err;
+    }
+
+    try {
+      const { OrchestrationClient } = await import("@sap-ai-sdk/orchestration");
+      const client = new OrchestrationClient(clientConfig as any);
+
+      const streamResponse = await client.stream(
+        chatCompletionConfig as any,
+        controller.signal,
+        undefined,
+        {
+          middleware: [
+            createOtelMiddleware({ endpoint: "/chat/completions" }),
+          ],
+        }
+      );
+
+      span.addEvent("stream_started");
+
+      let fullContent = "";
+
+      for await (const chunk of streamResponse.stream) {
+        const delta = chunk.getDeltaContent();
+        if (!delta) continue;
+        fullContent += delta;
+
+        if (isStreaming) {
+          const frame = JSON.stringify({ delta, index: 0 });
+          httpRes!.write(`data: ${frame}\n\n`);
+        }
+      }
+
+      const finishReason = streamResponse.getFinishReason();
+      const totalTokens = streamResponse.getTokenUsage()?.total_tokens;
+
+      span.addEvent("stream_completed", {
+        ...(finishReason ? { "stream.finish_reason": finishReason } : {}),
+        ...(totalTokens !== undefined ? { "stream.total_tokens": totalTokens } : {}),
+      });
+      span.setStatus({ code: SpanStatusCode.OK });
+
+      if (isStreaming) {
+        const doneFrame = JSON.stringify({ finishReason, totalTokens });
+        httpRes!.write(`data: ${doneFrame}\n\n`);
+        httpRes!.write("data: [DONE]\n\n");
+        httpRes!.end();
+        return "";
+      }
+
+      return fullContent;
+
+    } catch (e) {
+      const err = e as Error;
+      span.recordException(err);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+
+      if (isStreaming) {
+        const errFrame = JSON.stringify({ code: "CHAT_STREAM_FAILED", message: err.message });
+        try {
+          httpRes!.write(`event: error\ndata: ${errFrame}\n\n`);
+          httpRes!.end();
+        } catch {
+          // socket already closed — ignore write errors
+        }
+        return "";
+      }
+
+      if (e instanceof ChatCompletionError) throw e;
+      throw new ChatCompletionError(
+        `streamChatCompletion failed: ${err.message}`,
+        "CHAT_STREAM_FAILED",
+        { cause: err.message }
+      );
+
     } finally {
       span.end();
     }

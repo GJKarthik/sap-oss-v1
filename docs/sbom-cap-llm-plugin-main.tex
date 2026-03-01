@@ -1,0 +1,665 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\title{Software Bill of Materials (CycloneDX) and Change Lineage}
+\author{Generated from CycloneDX SBOM and git lineage}
+\date{\today}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Software Bill of Materials (CycloneDX)}
+Each subsection is generated from a CycloneDX 1.5 BOM (components, purl, license, dependency graph).
+
+\subsection{CAP LLM Plugin}
+\textbf{Path:} \texttt{cap-llm-plugin-main}
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:045b3255-a437-46c8-965f-d044d1ebf1cc...}
+\\ \textbf{Generated:} 2026-02-28T08:39:11Z
+\\ \textbf{Tool:} components
+
+\subsubsection*{Components}
+\begin{longtable}{|l|l|l|p{2.2cm}|l|p{4cm}|}
+\hline
+\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\hline
+\endhead
+orchestration & 2.7.0 & framework & \texttt{pkg:npm/\%40sap-ai-sdk/orchestration@2.7.0} & Apache-2.0 & — \\
+ai-api & 2.7.0 & framework & \texttt{pkg:npm/\%40sap-ai-sdk/ai-api@2.7.0} & Apache-2.0 & — \\
+core & 2.7.0 & framework & \texttt{pkg:npm/\%40sap-ai-sdk/core@2.7.0} & Apache-2.0 & — \\
+connectivity & 4.4.0 & framework & \texttt{pkg:npm/\%40sap-cloud-sdk/connectivity@4.4.0} & Apache-2.0 & — \\
+resilience & 4.4.0 & framework & \texttt{pkg:npm/\%40sap-cloud-sdk/resilience@4.4.0} & Apache-2.0 & — \\
+util & 4.4.0 & framework & \texttt{pkg:npm/\%40sap-cloud-sdk/util@4.4.0} & Apache-2.0 & — \\
+axios & 1.13.5 & library & \texttt{pkg:npm/axios@1.13.5} & MIT & — \\
+follow-redirects & 1.15.11 & library & \texttt{pkg:npm/follow-redirects@1.15.11} & MIT & — \\
+form-data & 4.0.5 & library & \texttt{pkg:npm/form-data@4.0.5} & MIT & — \\
+asynckit & 0.4.0 & library & \texttt{pkg:npm/asynckit@0.4.0} & MIT & — \\
+combined-stream & 1.0.8 & library & \texttt{pkg:npm/combined-stream@1.0.8} & MIT & — \\
+delayed-stream & 1.0.0 & library & \texttt{pkg:npm/delayed-stream@1.0.0} & MIT & — \\
+es-set-tostringtag & 2.1.0 & library & \texttt{pkg:npm/es-set-tostringtag@2.1.0} & MIT & — \\
+es-errors & 1.3.0 & library & \texttt{pkg:npm/es-errors@1.3.0} & MIT & — \\
+get-intrinsic & 1.3.0 & library & \texttt{pkg:npm/get-intrinsic@1.3.0} & MIT & — \\
+call-bind-apply-helpers & 1.0.2 & library & \texttt{pkg:npm/call-bind-apply-helpers@1.0.2} & MIT & — \\
+function-bind & 1.1.2 & library & \texttt{pkg:npm/function-bind@1.1.2} & MIT & — \\
+es-define-property & 1.0.1 & library & \texttt{pkg:npm/es-define-property@1.0.1} & MIT & — \\
+es-object-atoms & 1.1.1 & library & \texttt{pkg:npm/es-object-atoms@1.1.1} & MIT & — \\
+get-proto & 1.0.1 & library & \texttt{pkg:npm/get-proto@1.0.1} & MIT & — \\
+dunder-proto & 1.0.1 & library & \texttt{pkg:npm/dunder-proto@1.0.1} & MIT & — \\
+gopd & 1.2.0 & library & \texttt{pkg:npm/gopd@1.2.0} & MIT & — \\
+has-symbols & 1.1.0 & library & \texttt{pkg:npm/has-symbols@1.1.0} & MIT & — \\
+hasown & 2.0.2 & library & \texttt{pkg:npm/hasown@2.0.2} & MIT & — \\
+math-intrinsics & 1.1.0 & library & \texttt{pkg:npm/math-intrinsics@1.1.0} & MIT & — \\
+has-tostringtag & 1.0.2 & library & \texttt{pkg:npm/has-tostringtag@1.0.2} & MIT & — \\
+mime-types & 2.1.35 & library & \texttt{pkg:npm/mime-types@2.1.35} & MIT & — \\
+mime-db & 1.52.0 & library & \texttt{pkg:npm/mime-db@1.52.0} & MIT & — \\
+proxy-from-env & 1.1.0 & library & \texttt{pkg:npm/proxy-from-env@1.1.0} & MIT & — \\
+chalk & 4.1.2 & library & \texttt{pkg:npm/chalk@4.1.2} & MIT & — \\
+ansi-styles & 4.3.0 & library & \texttt{pkg:npm/ansi-styles@4.3.0} & MIT & — \\
+color-convert & 2.0.1 & library & \texttt{pkg:npm/color-convert@2.0.1} & MIT & — \\
+color-name & 1.1.4 & library & \texttt{pkg:npm/color-name@1.1.4} & MIT & — \\
+supports-color & 7.2.0 & library & \texttt{pkg:npm/supports-color@7.2.0} & MIT & — \\
+has-flag & 4.0.0 & library & \texttt{pkg:npm/has-flag@4.0.0} & MIT & — \\
+logform & 2.7.0 & library & \texttt{pkg:npm/logform@2.7.0} & MIT & — \\
+colors & 1.6.0 & library & \texttt{pkg:npm/\%40colors/colors@1.6.0} & MIT & — \\
+triple-beam & 1.3.5 & library & \texttt{pkg:npm/\%40types/triple-beam@1.3.5} & MIT & — \\
+fecha & 4.2.3 & library & \texttt{pkg:npm/fecha@4.2.3} & MIT & — \\
+ms & 2.1.3 & library & \texttt{pkg:npm/ms@2.1.3} & MIT & — \\
+safe-stable-stringify & 2.5.0 & library & \texttt{pkg:npm/safe-stable-stringify@2.5.0} & MIT & — \\
+triple-beam & 1.4.1 & library & \texttt{pkg:npm/triple-beam@1.4.1} & MIT & — \\
+voca & 1.4.1 & library & \texttt{pkg:npm/voca@1.4.1} & MIT & — \\
+winston & 3.19.0 & library & \texttt{pkg:npm/winston@3.19.0} & MIT & — \\
+diagnostics & 2.0.8 & library & \texttt{pkg:npm/\%40dabh/diagnostics@2.0.8} & MIT & — \\
+colorspace & 1.1.6 & library & \texttt{pkg:npm/\%40so-ric/colorspace@1.1.6} & MIT & — \\
+color & 5.0.3 & library & \texttt{pkg:npm/color@5.0.3} & MIT & — \\
+color-convert & 3.1.3 & library & \texttt{pkg:npm/color-convert@3.1.3} & MIT & — \\
+color-name & 2.1.0 & library & \texttt{pkg:npm/color-name@2.1.0} & MIT & — \\
+color-string & 2.1.4 & library & \texttt{pkg:npm/color-string@2.1.4} & MIT & — \\
+text-hex & 1.0.0 & library & \texttt{pkg:npm/text-hex@1.0.0} & MIT & — \\
+enabled & 2.0.0 & library & \texttt{pkg:npm/enabled@2.0.0} & MIT & — \\
+kuler & 2.0.0 & library & \texttt{pkg:npm/kuler@2.0.0} & MIT & — \\
+async & 3.2.6 & library & \texttt{pkg:npm/async@3.2.6} & MIT & — \\
+is-stream & 2.0.1 & library & \texttt{pkg:npm/is-stream@2.0.1} & MIT & — \\
+one-time & 1.0.0 & library & \texttt{pkg:npm/one-time@1.0.0} & MIT & — \\
+fn.name & 1.1.0 & library & \texttt{pkg:npm/fn.name@1.1.0} & MIT & — \\
+readable-stream & 3.6.2 & library & \texttt{pkg:npm/readable-stream@3.6.2} & MIT & — \\
+inherits & 2.0.4 & library & \texttt{pkg:npm/inherits@2.0.4} & ISC & — \\
+string\_decoder & 1.3.0 & library & \texttt{pkg:npm/string\_decoder@1.3.0} & MIT & — \\
+safe-buffer & 5.2.1 & library & \texttt{pkg:npm/safe-buffer@5.2.1} & MIT & — \\
+util-deprecate & 1.0.2 & library & \texttt{pkg:npm/util-deprecate@1.0.2} & MIT & — \\
+stack-trace & 0.0.10 & library & \texttt{pkg:npm/stack-trace@0.0.10} & MIT & — \\
+winston-transport & 4.9.0 & library & \texttt{pkg:npm/winston-transport@4.9.0} & MIT & — \\
+async-retry & 1.3.3 & library & \texttt{pkg:npm/async-retry@1.3.3} & MIT & — \\
+retry & 0.13.1 & library & \texttt{pkg:npm/retry@0.13.1} & MIT & — \\
+opossum & 9.0.0 & library & \texttt{pkg:npm/opossum@9.0.0} & Apache-2.0 & — \\
+xsenv & 6.1.0 & library & \texttt{pkg:npm/\%40sap/xsenv@6.1.0} & — & — \\
+debug & 4.4.3 & library & \texttt{pkg:npm/debug@4.4.3} & MIT & — \\
+node-cache & 5.1.2 & library & \texttt{pkg:npm/node-cache@5.1.2} & MIT & — \\
+clone & 2.1.2 & library & \texttt{pkg:npm/clone@2.1.2} & MIT & — \\
+verror & 1.10.1 & library & \texttt{pkg:npm/verror@1.10.1} & MIT & — \\
+assert-plus & 1.0.0 & library & \texttt{pkg:npm/assert-plus@1.0.0} & MIT & — \\
+core-util-is & 1.0.2 & library & \texttt{pkg:npm/core-util-is@1.0.2} & MIT & — \\
+extsprintf & 1.4.1 & library & \texttt{pkg:npm/extsprintf@1.4.1} & MIT & — \\
+xssec & 4.12.2 & library & \texttt{pkg:npm/\%40sap/xssec@4.12.2} & — & — \\
+jwt-decode & 4.0.0 & library & \texttt{pkg:npm/jwt-decode@4.0.0} & MIT & — \\
+jks-js & 1.1.5 & library & \texttt{pkg:npm/jks-js@1.1.5} & MIT & — \\
+node-forge & 1.3.3 & library & \texttt{pkg:npm/node-forge@1.3.3} & — & — \\
+node-int64 & 0.4.0 & library & \texttt{pkg:npm/node-int64@0.4.0} & MIT & — \\
+node-rsa & 1.1.1 & library & \texttt{pkg:npm/node-rsa@1.1.1} & MIT & — \\
+asn1 & 0.2.6 & library & \texttt{pkg:npm/asn1@0.2.6} & MIT & — \\
+safer-buffer & 2.1.2 & library & \texttt{pkg:npm/safer-buffer@2.1.2} & MIT & — \\
+jsonwebtoken & 9.0.3 & library & \texttt{pkg:npm/jsonwebtoken@9.0.3} & MIT & — \\
+jws & 4.0.1 & library & \texttt{pkg:npm/jws@4.0.1} & MIT & — \\
+jwa & 2.0.1 & library & \texttt{pkg:npm/jwa@2.0.1} & MIT & — \\
+buffer-equal-constant-time & 1.0.1 & library & \texttt{pkg:npm/buffer-equal-constant-time@1.0.1} & BSD-3-Clause & — \\
+ecdsa-sig-formatter & 1.0.11 & library & \texttt{pkg:npm/ecdsa-sig-formatter@1.0.11} & Apache-2.0 & — \\
+lodash.includes & 4.3.0 & library & \texttt{pkg:npm/lodash.includes@4.3.0} & MIT & — \\
+lodash.isboolean & 3.0.3 & library & \texttt{pkg:npm/lodash.isboolean@3.0.3} & MIT & — \\
+lodash.isinteger & 4.0.4 & library & \texttt{pkg:npm/lodash.isinteger@4.0.4} & MIT & — \\
+lodash.isnumber & 3.0.3 & library & \texttt{pkg:npm/lodash.isnumber@3.0.3} & MIT & — \\
+lodash.isplainobject & 4.0.6 & library & \texttt{pkg:npm/lodash.isplainobject@4.0.6} & MIT & — \\
+lodash.isstring & 4.0.1 & library & \texttt{pkg:npm/lodash.isstring@4.0.1} & MIT & — \\
+lodash.once & 4.1.1 & library & \texttt{pkg:npm/lodash.once@4.1.1} & MIT & — \\
+semver & 7.7.4 & library & \texttt{pkg:npm/semver@7.7.4} & ISC & — \\
+http-client & 4.4.0 & framework & \texttt{pkg:npm/\%40sap-cloud-sdk/http-client@4.4.0} & Apache-2.0 & — \\
+openapi & 4.4.0 & framework & \texttt{pkg:npm/\%40sap-cloud-sdk/openapi@4.4.0} & Apache-2.0 & — \\
+prompt-registry & 2.7.0 & framework & \texttt{pkg:npm/\%40sap-ai-sdk/prompt-registry@2.7.0} & Apache-2.0 & — \\
+zod & 4.3.6 & library & \texttt{pkg:npm/zod@4.3.6} & MIT & — \\
+yaml & 2.8.2 & library & \texttt{pkg:npm/yaml@2.8.2} & ISC & — \\
+cds & 9.7.1 & library & \texttt{pkg:npm/\%40sap/cds@9.7.1} & — & — \\
+js & 9.39.3 & library & \texttt{pkg:npm/\%40eslint/js@9.39.3} & MIT & — \\
+cds-compiler & 6.7.3 & library & \texttt{pkg:npm/\%40sap/cds-compiler@6.7.3} & — & — \\
+cds-fiori & 2.2.0 & library & \texttt{pkg:npm/\%40sap/cds-fiori@2.2.0} & — & — \\
+express & 5.2.1 & framework & \texttt{pkg:npm/express@5.2.1} & MIT & — \\
+accepts & 2.0.0 & library & \texttt{pkg:npm/accepts@2.0.0} & MIT & — \\
+mime-types & 3.0.2 & library & \texttt{pkg:npm/mime-types@3.0.2} & MIT & — \\
+mime-db & 1.54.0 & library & \texttt{pkg:npm/mime-db@1.54.0} & MIT & — \\
+negotiator & 1.0.0 & library & \texttt{pkg:npm/negotiator@1.0.0} & MIT & — \\
+body-parser & 2.2.2 & library & \texttt{pkg:npm/body-parser@2.2.2} & MIT & — \\
+bytes & 3.1.2 & library & \texttt{pkg:npm/bytes@3.1.2} & MIT & — \\
+content-type & 1.0.5 & library & \texttt{pkg:npm/content-type@1.0.5} & MIT & — \\
+http-errors & 2.0.1 & library & \texttt{pkg:npm/http-errors@2.0.1} & MIT & — \\
+depd & 2.0.0 & library & \texttt{pkg:npm/depd@2.0.0} & MIT & — \\
+setprototypeof & 1.2.0 & library & \texttt{pkg:npm/setprototypeof@1.2.0} & ISC & — \\
+statuses & 2.0.2 & library & \texttt{pkg:npm/statuses@2.0.2} & MIT & — \\
+toidentifier & 1.0.1 & library & \texttt{pkg:npm/toidentifier@1.0.1} & MIT & — \\
+iconv-lite & 0.7.2 & library & \texttt{pkg:npm/iconv-lite@0.7.2} & MIT & — \\
+on-finished & 2.4.1 & library & \texttt{pkg:npm/on-finished@2.4.1} & MIT & — \\
+ee-first & 1.1.1 & library & \texttt{pkg:npm/ee-first@1.1.1} & MIT & — \\
+qs & 6.15.0 & library & \texttt{pkg:npm/qs@6.15.0} & BSD-3-Clause & — \\
+side-channel & 1.1.0 & library & \texttt{pkg:npm/side-channel@1.1.0} & MIT & — \\
+object-inspect & 1.13.4 & library & \texttt{pkg:npm/object-inspect@1.13.4} & MIT & — \\
+side-channel-list & 1.0.0 & library & \texttt{pkg:npm/side-channel-list@1.0.0} & MIT & — \\
+side-channel-map & 1.0.1 & library & \texttt{pkg:npm/side-channel-map@1.0.1} & MIT & — \\
+call-bound & 1.0.4 & library & \texttt{pkg:npm/call-bound@1.0.4} & MIT & — \\
+side-channel-weakmap & 1.0.2 & library & \texttt{pkg:npm/side-channel-weakmap@1.0.2} & MIT & — \\
+raw-body & 3.0.2 & library & \texttt{pkg:npm/raw-body@3.0.2} & MIT & — \\
+unpipe & 1.0.0 & library & \texttt{pkg:npm/unpipe@1.0.0} & MIT & — \\
+type-is & 2.0.1 & library & \texttt{pkg:npm/type-is@2.0.1} & MIT & — \\
+media-typer & 1.1.0 & library & \texttt{pkg:npm/media-typer@1.1.0} & MIT & — \\
+content-disposition & 1.0.1 & library & \texttt{pkg:npm/content-disposition@1.0.1} & MIT & — \\
+cookie & 0.7.2 & library & \texttt{pkg:npm/cookie@0.7.2} & MIT & — \\
+cookie-signature & 1.2.2 & library & \texttt{pkg:npm/cookie-signature@1.2.2} & MIT & — \\
+encodeurl & 2.0.0 & library & \texttt{pkg:npm/encodeurl@2.0.0} & MIT & — \\
+escape-html & 1.0.3 & library & \texttt{pkg:npm/escape-html@1.0.3} & MIT & — \\
+etag & 1.8.1 & library & \texttt{pkg:npm/etag@1.8.1} & MIT & — \\
+finalhandler & 2.1.1 & library & \texttt{pkg:npm/finalhandler@2.1.1} & MIT & — \\
+parseurl & 1.3.3 & library & \texttt{pkg:npm/parseurl@1.3.3} & MIT & — \\
+fresh & 2.0.0 & library & \texttt{pkg:npm/fresh@2.0.0} & MIT & — \\
+merge-descriptors & 2.0.0 & library & \texttt{pkg:npm/merge-descriptors@2.0.0} & MIT & — \\
+once & 1.4.0 & library & \texttt{pkg:npm/once@1.4.0} & ISC & — \\
+wrappy & 1.0.2 & library & \texttt{pkg:npm/wrappy@1.0.2} & ISC & — \\
+proxy-addr & 2.0.7 & library & \texttt{pkg:npm/proxy-addr@2.0.7} & MIT & — \\
+forwarded & 0.2.0 & library & \texttt{pkg:npm/forwarded@0.2.0} & MIT & — \\
+ipaddr.js & 1.9.1 & library & \texttt{pkg:npm/ipaddr.js@1.9.1} & MIT & — \\
+range-parser & 1.2.1 & library & \texttt{pkg:npm/range-parser@1.2.1} & MIT & — \\
+router & 2.2.0 & library & \texttt{pkg:npm/router@2.2.0} & MIT & — \\
+is-promise & 4.0.0 & library & \texttt{pkg:npm/is-promise@4.0.0} & MIT & — \\
+path-to-regexp & 8.3.0 & library & \texttt{pkg:npm/path-to-regexp@8.3.0} & MIT & — \\
+send & 1.2.1 & library & \texttt{pkg:npm/send@1.2.1} & MIT & — \\
+serve-static & 2.2.1 & library & \texttt{pkg:npm/serve-static@2.2.1} & MIT & — \\
+vary & 1.1.2 & library & \texttt{pkg:npm/vary@1.1.2} & MIT & — \\
+js-yaml & 4.1.1 & library & \texttt{pkg:npm/js-yaml@4.1.1} & MIT & — \\
+argparse & 2.0.1 & library & \texttt{pkg:npm/argparse@2.0.1} & Python-2.0 & — \\
+cds-hana & 2.1.0 & library & \texttt{pkg:npm/\%40sap/cds-hana@2.1.0} & — & — \\
+hdb & 2.27.1 & library & \texttt{pkg:npm/hdb@2.27.1} & Apache-2.0 & — \\
+iconv-lite & 0.7.0 & library & \texttt{pkg:npm/iconv-lite@0.7.0} & MIT & — \\
+lz4-wasm-nodejs & 0.9.2 & library & \texttt{pkg:npm/lz4-wasm-nodejs@0.9.2} & MIT & — \\
+plugin-transform-dynamic-import & 7.27.1 & library & \texttt{pkg:npm/\%40babel/plugin-transform-dynamic-import@7} & MIT & — \\
+core & 7.29.0 & library & \texttt{pkg:npm/\%40babel/core@7.29.0} & MIT & — \\
+code-frame & 7.29.0 & library & \texttt{pkg:npm/\%40babel/code-frame@7.29.0} & MIT & — \\
+helper-validator-identifier & 7.28.5 & library & \texttt{pkg:npm/\%40babel/helper-validator-identifier@7.28.} & MIT & — \\
+js-tokens & 4.0.0 & library & \texttt{pkg:npm/js-tokens@4.0.0} & MIT & — \\
+picocolors & 1.1.1 & library & \texttt{pkg:npm/picocolors@1.1.1} & ISC & — \\
+generator & 7.29.1 & library & \texttt{pkg:npm/\%40babel/generator@7.29.1} & MIT & — \\
+parser & 7.29.0 & library & \texttt{pkg:npm/\%40babel/parser@7.29.0} & MIT & — \\
+types & 7.29.0 & library & \texttt{pkg:npm/\%40babel/types@7.29.0} & MIT & — \\
+helper-string-parser & 7.27.1 & library & \texttt{pkg:npm/\%40babel/helper-string-parser@7.27.1} & MIT & — \\
+gen-mapping & 0.3.13 & library & \texttt{pkg:npm/\%40jridgewell/gen-mapping@0.3.13} & MIT & — \\
+sourcemap-codec & 1.5.5 & library & \texttt{pkg:npm/\%40jridgewell/sourcemap-codec@1.5.5} & MIT & — \\
+trace-mapping & 0.3.31 & library & \texttt{pkg:npm/\%40jridgewell/trace-mapping@0.3.31} & MIT & — \\
+resolve-uri & 3.1.2 & library & \texttt{pkg:npm/\%40jridgewell/resolve-uri@3.1.2} & MIT & — \\
+jsesc & 3.1.0 & library & \texttt{pkg:npm/jsesc@3.1.0} & MIT & — \\
+helper-compilation-targets & 7.28.6 & library & \texttt{pkg:npm/\%40babel/helper-compilation-targets@7.28.6} & MIT & — \\
+compat-data & 7.29.0 & library & \texttt{pkg:npm/\%40babel/compat-data@7.29.0} & MIT & — \\
+helper-validator-option & 7.27.1 & library & \texttt{pkg:npm/\%40babel/helper-validator-option@7.27.1} & MIT & — \\
+browserslist & 4.28.1 & library & \texttt{pkg:npm/browserslist@4.28.1} & MIT & — \\
+baseline-browser-mapping & 2.10.0 & library & \texttt{pkg:npm/baseline-browser-mapping@2.10.0} & Apache-2.0 & — \\
+caniuse-lite & 1.0.30001774 & library & \texttt{pkg:npm/caniuse-lite@1.0.30001774} & CC-BY-4.0 & — \\
+electron-to-chromium & 1.5.302 & library & \texttt{pkg:npm/electron-to-chromium@1.5.302} & ISC & — \\
+node-releases & 2.0.27 & library & \texttt{pkg:npm/node-releases@2.0.27} & MIT & — \\
+update-browserslist-db & 1.2.3 & library & \texttt{pkg:npm/update-browserslist-db@1.2.3} & MIT & — \\
+escalade & 3.2.0 & library & \texttt{pkg:npm/escalade@3.2.0} & MIT & — \\
+lru-cache & 5.1.1 & library & \texttt{pkg:npm/lru-cache@5.1.1} & ISC & — \\
+yallist & 3.1.1 & library & \texttt{pkg:npm/yallist@3.1.1} & ISC & — \\
+semver & 6.3.1 & library & \texttt{pkg:npm/semver@6.3.1} & ISC & — \\
+helper-module-transforms & 7.28.6 & library & \texttt{pkg:npm/\%40babel/helper-module-transforms@7.28.6} & MIT & — \\
+helper-module-imports & 7.28.6 & library & \texttt{pkg:npm/\%40babel/helper-module-imports@7.28.6} & MIT & — \\
+traverse & 7.29.0 & library & \texttt{pkg:npm/\%40babel/traverse@7.29.0} & MIT & — \\
+helper-globals & 7.28.0 & library & \texttt{pkg:npm/\%40babel/helper-globals@7.28.0} & MIT & — \\
+template & 7.28.6 & library & \texttt{pkg:npm/\%40babel/template@7.28.6} & MIT & — \\
+helpers & 7.28.6 & library & \texttt{pkg:npm/\%40babel/helpers@7.28.6} & MIT & — \\
+remapping & 2.3.5 & library & \texttt{pkg:npm/\%40jridgewell/remapping@2.3.5} & MIT & — \\
+convert-source-map & 2.0.0 & library & \texttt{pkg:npm/convert-source-map@2.0.0} & MIT & — \\
+gensync & 1.0.0-beta.2 & library & \texttt{pkg:npm/gensync@1.0.0-beta.2} & MIT & — \\
+json5 & 2.2.3 & library & \texttt{pkg:npm/json5@2.2.3} & MIT & — \\
+helper-plugin-utils & 7.28.6 & library & \texttt{pkg:npm/\%40babel/helper-plugin-utils@7.28.6} & MIT & — \\
+plugin-transform-modules-commonjs & 7.28.6 & library & \texttt{pkg:npm/\%40babel/plugin-transform-modules-commonjs} & MIT & — \\
+api & 1.9.0 & library & \texttt{pkg:npm/\%40opentelemetry/api@1.9.0} & Apache-2.0 & — \\
+node & 25.3.0 & library & \texttt{pkg:npm/\%40types/node@25.3.0} & MIT & — \\
+undici-types & 7.18.2 & library & \texttt{pkg:npm/undici-types@7.18.2} & MIT & — \\
+eslint & 9.39.3 & library & \texttt{pkg:npm/eslint@9.39.3} & MIT & — \\
+eslint-utils & 4.9.1 & library & \texttt{pkg:npm/\%40eslint-community/eslint-utils@4.9.1} & MIT & — \\
+eslint-visitor-keys & 3.4.3 & library & \texttt{pkg:npm/eslint-visitor-keys@3.4.3} & Apache-2.0 & — \\
+regexpp & 4.12.2 & library & \texttt{pkg:npm/\%40eslint-community/regexpp@4.12.2} & MIT & — \\
+config-array & 0.21.1 & library & \texttt{pkg:npm/\%40eslint/config-array@0.21.1} & Apache-2.0 & — \\
+object-schema & 2.1.7 & library & \texttt{pkg:npm/\%40eslint/object-schema@2.1.7} & Apache-2.0 & — \\
+minimatch & 3.1.4 & library & \texttt{pkg:npm/minimatch@3.1.4} & ISC & — \\
+brace-expansion & 1.1.12 & library & \texttt{pkg:npm/brace-expansion@1.1.12} & MIT & — \\
+balanced-match & 1.0.2 & library & \texttt{pkg:npm/balanced-match@1.0.2} & MIT & — \\
+concat-map & 0.0.1 & library & \texttt{pkg:npm/concat-map@0.0.1} & MIT & — \\
+config-helpers & 0.4.2 & library & \texttt{pkg:npm/\%40eslint/config-helpers@0.4.2} & Apache-2.0 & — \\
+core & 0.17.0 & library & \texttt{pkg:npm/\%40eslint/core@0.17.0} & Apache-2.0 & — \\
+json-schema & 7.0.15 & library & \texttt{pkg:npm/\%40types/json-schema@7.0.15} & MIT & — \\
+eslintrc & 3.3.4 & library & \texttt{pkg:npm/\%40eslint/eslintrc@3.3.4} & MIT & — \\
+ajv & 6.14.0 & library & \texttt{pkg:npm/ajv@6.14.0} & MIT & — \\
+fast-deep-equal & 3.1.3 & library & \texttt{pkg:npm/fast-deep-equal@3.1.3} & MIT & — \\
+fast-json-stable-stringify & 2.1.0 & library & \texttt{pkg:npm/fast-json-stable-stringify@2.1.0} & MIT & — \\
+json-schema-traverse & 0.4.1 & library & \texttt{pkg:npm/json-schema-traverse@0.4.1} & MIT & — \\
+uri-js & 4.4.1 & library & \texttt{pkg:npm/uri-js@4.4.1} & BSD-2-Clause & — \\
+punycode & 2.3.1 & library & \texttt{pkg:npm/punycode@2.3.1} & MIT & — \\
+espree & 10.4.0 & library & \texttt{pkg:npm/espree@10.4.0} & BSD-2-Clause & — \\
+acorn & 8.16.0 & library & \texttt{pkg:npm/acorn@8.16.0} & MIT & — \\
+acorn-jsx & 5.3.2 & library & \texttt{pkg:npm/acorn-jsx@5.3.2} & MIT & — \\
+eslint-visitor-keys & 4.2.1 & library & \texttt{pkg:npm/eslint-visitor-keys@4.2.1} & Apache-2.0 & — \\
+globals & 14.0.0 & library & \texttt{pkg:npm/globals@14.0.0} & MIT & — \\
+ignore & 5.3.2 & library & \texttt{pkg:npm/ignore@5.3.2} & MIT & — \\
+import-fresh & 3.3.1 & library & \texttt{pkg:npm/import-fresh@3.3.1} & MIT & — \\
+parent-module & 1.0.1 & library & \texttt{pkg:npm/parent-module@1.0.1} & MIT & — \\
+callsites & 3.1.0 & library & \texttt{pkg:npm/callsites@3.1.0} & MIT & — \\
+resolve-from & 4.0.0 & library & \texttt{pkg:npm/resolve-from@4.0.0} & MIT & — \\
+strip-json-comments & 3.1.1 & library & \texttt{pkg:npm/strip-json-comments@3.1.1} & MIT & — \\
+plugin-kit & 0.4.1 & library & \texttt{pkg:npm/\%40eslint/plugin-kit@0.4.1} & Apache-2.0 & — \\
+levn & 0.4.1 & library & \texttt{pkg:npm/levn@0.4.1} & MIT & — \\
+prelude-ls & 1.2.1 & library & \texttt{pkg:npm/prelude-ls@1.2.1} & MIT & — \\
+type-check & 0.4.0 & library & \texttt{pkg:npm/type-check@0.4.0} & MIT & — \\
+node & 0.16.7 & library & \texttt{pkg:npm/\%40humanfs/node@0.16.7} & Apache-2.0 & — \\
+core & 0.19.1 & library & \texttt{pkg:npm/\%40humanfs/core@0.19.1} & Apache-2.0 & — \\
+retry & 0.4.3 & library & \texttt{pkg:npm/\%40humanwhocodes/retry@0.4.3} & Apache-2.0 & — \\
+module-importer & 1.0.1 & library & \texttt{pkg:npm/\%40humanwhocodes/module-importer@1.0.1} & Apache-2.0 & — \\
+estree & 1.0.8 & library & \texttt{pkg:npm/\%40types/estree@1.0.8} & MIT & — \\
+cross-spawn & 7.0.6 & library & \texttt{pkg:npm/cross-spawn@7.0.6} & MIT & — \\
+path-key & 3.1.1 & library & \texttt{pkg:npm/path-key@3.1.1} & MIT & — \\
+shebang-command & 2.0.0 & library & \texttt{pkg:npm/shebang-command@2.0.0} & MIT & — \\
+shebang-regex & 3.0.0 & library & \texttt{pkg:npm/shebang-regex@3.0.0} & MIT & — \\
+which & 2.0.2 & library & \texttt{pkg:npm/which@2.0.2} & ISC & — \\
+isexe & 2.0.0 & library & \texttt{pkg:npm/isexe@2.0.0} & ISC & — \\
+escape-string-regexp & 4.0.0 & library & \texttt{pkg:npm/escape-string-regexp@4.0.0} & MIT & — \\
+eslint-scope & 8.4.0 & library & \texttt{pkg:npm/eslint-scope@8.4.0} & BSD-2-Clause & — \\
+esrecurse & 4.3.0 & library & \texttt{pkg:npm/esrecurse@4.3.0} & BSD-2-Clause & — \\
+estraverse & 5.3.0 & library & \texttt{pkg:npm/estraverse@5.3.0} & BSD-2-Clause & — \\
+esquery & 1.7.0 & library & \texttt{pkg:npm/esquery@1.7.0} & BSD-3-Clause & — \\
+esutils & 2.0.3 & library & \texttt{pkg:npm/esutils@2.0.3} & BSD-2-Clause & — \\
+file-entry-cache & 8.0.0 & library & \texttt{pkg:npm/file-entry-cache@8.0.0} & MIT & — \\
+flat-cache & 4.0.1 & library & \texttt{pkg:npm/flat-cache@4.0.1} & MIT & — \\
+flatted & 3.3.3 & library & \texttt{pkg:npm/flatted@3.3.3} & ISC & — \\
+keyv & 4.5.4 & library & \texttt{pkg:npm/keyv@4.5.4} & MIT & — \\
+json-buffer & 3.0.1 & library & \texttt{pkg:npm/json-buffer@3.0.1} & MIT & — \\
+find-up & 5.0.0 & library & \texttt{pkg:npm/find-up@5.0.0} & MIT & — \\
+locate-path & 6.0.0 & library & \texttt{pkg:npm/locate-path@6.0.0} & MIT & — \\
+p-locate & 5.0.0 & library & \texttt{pkg:npm/p-locate@5.0.0} & MIT & — \\
+p-limit & 3.1.0 & library & \texttt{pkg:npm/p-limit@3.1.0} & MIT & — \\
+yocto-queue & 0.1.0 & library & \texttt{pkg:npm/yocto-queue@0.1.0} & MIT & — \\
+path-exists & 4.0.0 & library & \texttt{pkg:npm/path-exists@4.0.0} & MIT & — \\
+glob-parent & 6.0.2 & library & \texttt{pkg:npm/glob-parent@6.0.2} & ISC & — \\
+is-glob & 4.0.3 & library & \texttt{pkg:npm/is-glob@4.0.3} & MIT & — \\
+is-extglob & 2.1.1 & library & \texttt{pkg:npm/is-extglob@2.1.1} & MIT & — \\
+imurmurhash & 0.1.4 & library & \texttt{pkg:npm/imurmurhash@0.1.4} & MIT & — \\
+json-stable-stringify-without-jsonify & 1.0.1 & library & \texttt{pkg:npm/json-stable-stringify-without-jsonify@1.0.} & MIT & — \\
+lodash.merge & 4.6.2 & library & \texttt{pkg:npm/lodash.merge@4.6.2} & MIT & — \\
+natural-compare & 1.4.0 & library & \texttt{pkg:npm/natural-compare@1.4.0} & MIT & — \\
+optionator & 0.9.4 & library & \texttt{pkg:npm/optionator@0.9.4} & MIT & — \\
+deep-is & 0.1.4 & library & \texttt{pkg:npm/deep-is@0.1.4} & MIT & — \\
+fast-levenshtein & 2.0.6 & library & \texttt{pkg:npm/fast-levenshtein@2.0.6} & MIT & — \\
+word-wrap & 1.2.5 & library & \texttt{pkg:npm/word-wrap@1.2.5} & MIT & — \\
+eslint-config-prettier & 10.1.8 & library & \texttt{pkg:npm/eslint-config-prettier@10.1.8} & MIT & — \\
+jest & 30.2.0 & library & \texttt{pkg:npm/jest@30.2.0} & MIT & — \\
+core & 30.2.0 & library & \texttt{pkg:npm/\%40jest/core@30.2.0} & MIT & — \\
+console & 30.2.0 & library & \texttt{pkg:npm/\%40jest/console@30.2.0} & MIT & — \\
+types & 30.2.0 & library & \texttt{pkg:npm/\%40jest/types@30.2.0} & MIT & — \\
+pattern & 30.0.1 & library & \texttt{pkg:npm/\%40jest/pattern@30.0.1} & MIT & — \\
+jest-regex-util & 30.0.1 & library & \texttt{pkg:npm/jest-regex-util@30.0.1} & MIT & — \\
+schemas & 30.0.5 & library & \texttt{pkg:npm/\%40jest/schemas@30.0.5} & MIT & — \\
+typebox & 0.34.48 & library & \texttt{pkg:npm/\%40sinclair/typebox@0.34.48} & MIT & — \\
+istanbul-lib-coverage & 2.0.6 & library & \texttt{pkg:npm/\%40types/istanbul-lib-coverage@2.0.6} & MIT & — \\
+istanbul-reports & 3.0.4 & library & \texttt{pkg:npm/\%40types/istanbul-reports@3.0.4} & MIT & — \\
+istanbul-lib-report & 3.0.3 & library & \texttt{pkg:npm/\%40types/istanbul-lib-report@3.0.3} & MIT & — \\
+yargs & 17.0.35 & library & \texttt{pkg:npm/\%40types/yargs@17.0.35} & MIT & — \\
+yargs-parser & 21.0.3 & library & \texttt{pkg:npm/\%40types/yargs-parser@21.0.3} & MIT & — \\
+jest-message-util & 30.2.0 & library & \texttt{pkg:npm/jest-message-util@30.2.0} & MIT & — \\
+stack-utils & 2.0.3 & library & \texttt{pkg:npm/\%40types/stack-utils@2.0.3} & MIT & — \\
+graceful-fs & 4.2.11 & library & \texttt{pkg:npm/graceful-fs@4.2.11} & ISC & — \\
+micromatch & 4.0.8 & library & \texttt{pkg:npm/micromatch@4.0.8} & MIT & — \\
+braces & 3.0.3 & library & \texttt{pkg:npm/braces@3.0.3} & MIT & — \\
+fill-range & 7.1.1 & library & \texttt{pkg:npm/fill-range@7.1.1} & MIT & — \\
+to-regex-range & 5.0.1 & library & \texttt{pkg:npm/to-regex-range@5.0.1} & MIT & — \\
+is-number & 7.0.0 & library & \texttt{pkg:npm/is-number@7.0.0} & MIT & — \\
+picomatch & 2.3.1 & library & \texttt{pkg:npm/picomatch@2.3.1} & MIT & — \\
+pretty-format & 30.2.0 & library & \texttt{pkg:npm/pretty-format@30.2.0} & MIT & — \\
+ansi-styles & 5.2.0 & library & \texttt{pkg:npm/ansi-styles@5.2.0} & MIT & — \\
+react-is & 18.3.1 & framework & \texttt{pkg:npm/react-is@18.3.1} & MIT & — \\
+slash & 3.0.0 & library & \texttt{pkg:npm/slash@3.0.0} & MIT & — \\
+stack-utils & 2.0.6 & library & \texttt{pkg:npm/stack-utils@2.0.6} & MIT & — \\
+escape-string-regexp & 2.0.0 & library & \texttt{pkg:npm/escape-string-regexp@2.0.0} & MIT & — \\
+jest-util & 30.2.0 & library & \texttt{pkg:npm/jest-util@30.2.0} & MIT & — \\
+ci-info & 4.4.0 & library & \texttt{pkg:npm/ci-info@4.4.0} & MIT & — \\
+picomatch & 4.0.3 & library & \texttt{pkg:npm/picomatch@4.0.3} & MIT & — \\
+reporters & 30.2.0 & library & \texttt{pkg:npm/\%40jest/reporters@30.2.0} & MIT & — \\
+v8-coverage & 0.2.3 & library & \texttt{pkg:npm/\%40bcoe/v8-coverage@0.2.3} & MIT & — \\
+test-result & 30.2.0 & library & \texttt{pkg:npm/\%40jest/test-result@30.2.0} & MIT & — \\
+collect-v8-coverage & 1.0.3 & library & \texttt{pkg:npm/collect-v8-coverage@1.0.3} & MIT & — \\
+transform & 30.2.0 & library & \texttt{pkg:npm/\%40jest/transform@30.2.0} & MIT & — \\
+babel-plugin-istanbul & 7.0.1 & library & \texttt{pkg:npm/babel-plugin-istanbul@7.0.1} & BSD-3-Clause & — \\
+load-nyc-config & 1.1.0 & library & \texttt{pkg:npm/\%40istanbuljs/load-nyc-config@1.1.0} & ISC & — \\
+camelcase & 5.3.1 & library & \texttt{pkg:npm/camelcase@5.3.1} & MIT & — \\
+find-up & 4.1.0 & library & \texttt{pkg:npm/find-up@4.1.0} & MIT & — \\
+locate-path & 5.0.0 & library & \texttt{pkg:npm/locate-path@5.0.0} & MIT & — \\
+p-locate & 4.1.0 & library & \texttt{pkg:npm/p-locate@4.1.0} & MIT & — \\
+p-limit & 2.3.0 & library & \texttt{pkg:npm/p-limit@2.3.0} & MIT & — \\
+p-try & 2.2.0 & library & \texttt{pkg:npm/p-try@2.2.0} & MIT & — \\
+get-package-type & 0.1.0 & library & \texttt{pkg:npm/get-package-type@0.1.0} & MIT & — \\
+js-yaml & 3.14.2 & library & \texttt{pkg:npm/js-yaml@3.14.2} & MIT & — \\
+argparse & 1.0.10 & library & \texttt{pkg:npm/argparse@1.0.10} & MIT & — \\
+sprintf-js & 1.0.3 & library & \texttt{pkg:npm/sprintf-js@1.0.3} & BSD-3-Clause & — \\
+esprima & 4.0.1 & library & \texttt{pkg:npm/esprima@4.0.1} & BSD-2-Clause & — \\
+resolve-from & 5.0.0 & library & \texttt{pkg:npm/resolve-from@5.0.0} & MIT & — \\
+schema & 0.1.3 & library & \texttt{pkg:npm/\%40istanbuljs/schema@0.1.3} & MIT & — \\
+istanbul-lib-instrument & 6.0.3 & library & \texttt{pkg:npm/istanbul-lib-instrument@6.0.3} & BSD-3-Clause & — \\
+istanbul-lib-coverage & 3.2.2 & library & \texttt{pkg:npm/istanbul-lib-coverage@3.2.2} & BSD-3-Clause & — \\
+test-exclude & 6.0.0 & library & \texttt{pkg:npm/test-exclude@6.0.0} & ISC & — \\
+glob & 7.2.3 & library & \texttt{pkg:npm/glob@7.2.3} & ISC & — \\
+fs.realpath & 1.0.0 & library & \texttt{pkg:npm/fs.realpath@1.0.0} & ISC & — \\
+inflight & 1.0.6 & library & \texttt{pkg:npm/inflight@1.0.6} & ISC & — \\
+path-is-absolute & 1.0.1 & library & \texttt{pkg:npm/path-is-absolute@1.0.1} & MIT & — \\
+jest-haste-map & 30.2.0 & library & \texttt{pkg:npm/jest-haste-map@30.2.0} & MIT & — \\
+anymatch & 3.1.3 & library & \texttt{pkg:npm/anymatch@3.1.3} & ISC & — \\
+normalize-path & 3.0.0 & library & \texttt{pkg:npm/normalize-path@3.0.0} & MIT & — \\
+fb-watchman & 2.0.2 & library & \texttt{pkg:npm/fb-watchman@2.0.2} & Apache-2.0 & — \\
+bser & 2.1.1 & library & \texttt{pkg:npm/bser@2.1.1} & Apache-2.0 & — \\
+jest-worker & 30.2.0 & library & \texttt{pkg:npm/jest-worker@30.2.0} & MIT & — \\
+structured-clone & 1.3.0 & library & \texttt{pkg:npm/\%40ungap/structured-clone@1.3.0} & ISC & — \\
+merge-stream & 2.0.0 & library & \texttt{pkg:npm/merge-stream@2.0.0} & MIT & — \\
+supports-color & 8.1.1 & library & \texttt{pkg:npm/supports-color@8.1.1} & MIT & — \\
+walker & 1.0.8 & library & \texttt{pkg:npm/walker@1.0.8} & Apache-2.0 & — \\
+makeerror & 1.0.12 & library & \texttt{pkg:npm/makeerror@1.0.12} & BSD-3-Clause & — \\
+tmpl & 1.0.5 & library & \texttt{pkg:npm/tmpl@1.0.5} & BSD-3-Clause & — \\
+fsevents & 2.3.3 & library & \texttt{pkg:npm/fsevents@2.3.3} & MIT & — \\
+pirates & 4.0.7 & library & \texttt{pkg:npm/pirates@4.0.7} & MIT & — \\
+write-file-atomic & 5.0.1 & library & \texttt{pkg:npm/write-file-atomic@5.0.1} & ISC & — \\
+signal-exit & 4.1.0 & library & \texttt{pkg:npm/signal-exit@4.1.0} & ISC & — \\
+exit-x & 0.2.2 & library & \texttt{pkg:npm/exit-x@0.2.2} & MIT & — \\
+glob & 10.5.0 & library & \texttt{pkg:npm/glob@10.5.0} & ISC & — \\
+foreground-child & 3.3.1 & library & \texttt{pkg:npm/foreground-child@3.3.1} & ISC & — \\
+jackspeak & 3.4.3 & library & \texttt{pkg:npm/jackspeak@3.4.3} & BlueOak-1.0.0 & — \\
+cliui & 8.0.2 & library & \texttt{pkg:npm/\%40isaacs/cliui@8.0.2} & ISC & — \\
+string-width & 5.1.2 & library & \texttt{pkg:npm/string-width@5.1.2} & MIT & — \\
+eastasianwidth & 0.2.0 & library & \texttt{pkg:npm/eastasianwidth@0.2.0} & MIT & — \\
+emoji-regex & 9.2.2 & library & \texttt{pkg:npm/emoji-regex@9.2.2} & MIT & — \\
+strip-ansi & 7.1.2 & library & \texttt{pkg:npm/strip-ansi@7.1.2} & MIT & — \\
+ansi-regex & 6.2.2 & library & \texttt{pkg:npm/ansi-regex@6.2.2} & MIT & — \\
+string-width & 4.2.3 & library & \texttt{pkg:npm/string-width@4.2.3} & MIT & — \\
+emoji-regex & 8.0.0 & library & \texttt{pkg:npm/emoji-regex@8.0.0} & MIT & — \\
+is-fullwidth-code-point & 3.0.0 & library & \texttt{pkg:npm/is-fullwidth-code-point@3.0.0} & MIT & — \\
+strip-ansi & 6.0.1 & library & \texttt{pkg:npm/strip-ansi@6.0.1} & MIT & — \\
+ansi-regex & 5.0.1 & library & \texttt{pkg:npm/ansi-regex@5.0.1} & MIT & — \\
+wrap-ansi & 8.1.0 & library & \texttt{pkg:npm/wrap-ansi@8.1.0} & MIT & — \\
+ansi-styles & 6.2.3 & library & \texttt{pkg:npm/ansi-styles@6.2.3} & MIT & — \\
+wrap-ansi & 7.0.0 & library & \texttt{pkg:npm/wrap-ansi@7.0.0} & MIT & — \\
+parseargs & 0.11.0 & library & \texttt{pkg:npm/\%40pkgjs/parseargs@0.11.0} & MIT & — \\
+minimatch & 9.0.7 & library & \texttt{pkg:npm/minimatch@9.0.7} & ISC & — \\
+brace-expansion & 5.0.3 & library & \texttt{pkg:npm/brace-expansion@5.0.3} & MIT & — \\
+balanced-match & 4.0.4 & library & \texttt{pkg:npm/balanced-match@4.0.4} & MIT & — \\
+minipass & 7.1.3 & library & \texttt{pkg:npm/minipass@7.1.3} & BlueOak-1.0.0 & — \\
+package-json-from-dist & 1.0.1 & library & \texttt{pkg:npm/package-json-from-dist@1.0.1} & BlueOak-1.0.0 & — \\
+path-scurry & 1.11.1 & library & \texttt{pkg:npm/path-scurry@1.11.1} & BlueOak-1.0.0 & — \\
+lru-cache & 10.4.3 & library & \texttt{pkg:npm/lru-cache@10.4.3} & ISC & — \\
+istanbul-lib-report & 3.0.1 & library & \texttt{pkg:npm/istanbul-lib-report@3.0.1} & BSD-3-Clause & — \\
+make-dir & 4.0.0 & library & \texttt{pkg:npm/make-dir@4.0.0} & MIT & — \\
+istanbul-lib-source-maps & 5.0.6 & library & \texttt{pkg:npm/istanbul-lib-source-maps@5.0.6} & BSD-3-Clause & — \\
+istanbul-reports & 3.2.0 & library & \texttt{pkg:npm/istanbul-reports@3.2.0} & BSD-3-Clause & — \\
+html-escaper & 2.0.2 & library & \texttt{pkg:npm/html-escaper@2.0.2} & MIT & — \\
+string-length & 4.0.2 & library & \texttt{pkg:npm/string-length@4.0.2} & MIT & — \\
+char-regex & 1.0.2 & library & \texttt{pkg:npm/char-regex@1.0.2} & MIT & — \\
+v8-to-istanbul & 9.3.0 & library & \texttt{pkg:npm/v8-to-istanbul@9.3.0} & ISC & — \\
+ansi-escapes & 4.3.2 & library & \texttt{pkg:npm/ansi-escapes@4.3.2} & MIT & — \\
+type-fest & 0.21.3 & library & \texttt{pkg:npm/type-fest@0.21.3} & — & — \\
+jest-changed-files & 30.2.0 & library & \texttt{pkg:npm/jest-changed-files@30.2.0} & MIT & — \\
+execa & 5.1.1 & library & \texttt{pkg:npm/execa@5.1.1} & MIT & — \\
+get-stream & 6.0.1 & library & \texttt{pkg:npm/get-stream@6.0.1} & MIT & — \\
+human-signals & 2.1.0 & library & \texttt{pkg:npm/human-signals@2.1.0} & Apache-2.0 & — \\
+npm-run-path & 4.0.1 & library & \texttt{pkg:npm/npm-run-path@4.0.1} & MIT & — \\
+onetime & 5.1.2 & library & \texttt{pkg:npm/onetime@5.1.2} & MIT & — \\
+mimic-fn & 2.1.0 & library & \texttt{pkg:npm/mimic-fn@2.1.0} & MIT & — \\
+signal-exit & 3.0.7 & library & \texttt{pkg:npm/signal-exit@3.0.7} & ISC & — \\
+strip-final-newline & 2.0.0 & library & \texttt{pkg:npm/strip-final-newline@2.0.0} & MIT & — \\
+jest-config & 30.2.0 & library & \texttt{pkg:npm/jest-config@30.2.0} & MIT & — \\
+get-type & 30.1.0 & library & \texttt{pkg:npm/\%40jest/get-type@30.1.0} & MIT & — \\
+test-sequencer & 30.2.0 & library & \texttt{pkg:npm/\%40jest/test-sequencer@30.2.0} & MIT & — \\
+babel-jest & 30.2.0 & library & \texttt{pkg:npm/babel-jest@30.2.0} & MIT & — \\
+babel\_\_core & 7.20.5 & library & \texttt{pkg:npm/\%40types/babel\_\_core@7.20.5} & MIT & — \\
+babel\_\_generator & 7.27.0 & library & \texttt{pkg:npm/\%40types/babel\_\_generator@7.27.0} & MIT & — \\
+babel\_\_template & 7.4.4 & library & \texttt{pkg:npm/\%40types/babel\_\_template@7.4.4} & MIT & — \\
+babel\_\_traverse & 7.28.0 & library & \texttt{pkg:npm/\%40types/babel\_\_traverse@7.28.0} & MIT & — \\
+babel-preset-jest & 30.2.0 & library & \texttt{pkg:npm/babel-preset-jest@30.2.0} & MIT & — \\
+babel-plugin-jest-hoist & 30.2.0 & library & \texttt{pkg:npm/babel-plugin-jest-hoist@30.2.0} & MIT & — \\
+babel-preset-current-node-syntax & 1.2.0 & library & \texttt{pkg:npm/babel-preset-current-node-syntax@1.2.0} & MIT & — \\
+plugin-syntax-async-generators & 7.8.4 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-async-generators@7.} & MIT & — \\
+plugin-syntax-bigint & 7.8.3 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-bigint@7.8.3} & MIT & — \\
+plugin-syntax-class-properties & 7.12.13 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-class-properties@7.} & MIT & — \\
+plugin-syntax-class-static-block & 7.14.5 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-class-static-block@} & MIT & — \\
+plugin-syntax-import-attributes & 7.28.6 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-import-attributes@7} & MIT & — \\
+plugin-syntax-import-meta & 7.10.4 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-import-meta@7.10.4} & MIT & — \\
+plugin-syntax-json-strings & 7.8.3 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-json-strings@7.8.3} & MIT & — \\
+plugin-syntax-logical-assignment-operators & 7.10.4 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-logical-assignment-} & MIT & — \\
+plugin-syntax-nullish-coalescing-operator & 7.8.3 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-nullish-coalescing-} & MIT & — \\
+plugin-syntax-numeric-separator & 7.10.4 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-numeric-separator@7} & MIT & — \\
+plugin-syntax-object-rest-spread & 7.8.3 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-object-rest-spread@} & MIT & — \\
+plugin-syntax-optional-catch-binding & 7.8.3 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-optional-catch-bind} & MIT & — \\
+plugin-syntax-optional-chaining & 7.8.3 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-optional-chaining@7} & MIT & — \\
+plugin-syntax-private-property-in-object & 7.14.5 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-private-property-in} & MIT & — \\
+plugin-syntax-top-level-await & 7.14.5 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-top-level-await@7.1} & MIT & — \\
+deepmerge & 4.3.1 & library & \texttt{pkg:npm/deepmerge@4.3.1} & MIT & — \\
+jest-circus & 30.2.0 & library & \texttt{pkg:npm/jest-circus@30.2.0} & MIT & — \\
+environment & 30.2.0 & library & \texttt{pkg:npm/\%40jest/environment@30.2.0} & MIT & — \\
+fake-timers & 30.2.0 & library & \texttt{pkg:npm/\%40jest/fake-timers@30.2.0} & MIT & — \\
+fake-timers & 13.0.5 & library & \texttt{pkg:npm/\%40sinonjs/fake-timers@13.0.5} & BSD-3-Clause & — \\
+commons & 3.0.1 & library & \texttt{pkg:npm/\%40sinonjs/commons@3.0.1} & BSD-3-Clause & — \\
+type-detect & 4.0.8 & library & \texttt{pkg:npm/type-detect@4.0.8} & MIT & — \\
+jest-mock & 30.2.0 & library & \texttt{pkg:npm/jest-mock@30.2.0} & MIT & — \\
+expect & 30.2.0 & library & \texttt{pkg:npm/\%40jest/expect@30.2.0} & MIT & — \\
+expect & 30.2.0 & library & \texttt{pkg:npm/expect@30.2.0} & MIT & — \\
+expect-utils & 30.2.0 & library & \texttt{pkg:npm/\%40jest/expect-utils@30.2.0} & MIT & — \\
+jest-matcher-utils & 30.2.0 & library & \texttt{pkg:npm/jest-matcher-utils@30.2.0} & MIT & — \\
+jest-diff & 30.2.0 & library & \texttt{pkg:npm/jest-diff@30.2.0} & MIT & — \\
+diff-sequences & 30.0.1 & library & \texttt{pkg:npm/\%40jest/diff-sequences@30.0.1} & MIT & — \\
+jest-snapshot & 30.2.0 & library & \texttt{pkg:npm/jest-snapshot@30.2.0} & MIT & — \\
+plugin-syntax-jsx & 7.28.6 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-jsx@7.28.6} & MIT & — \\
+plugin-syntax-typescript & 7.28.6 & library & \texttt{pkg:npm/\%40babel/plugin-syntax-typescript@7.28.6} & MIT & — \\
+snapshot-utils & 30.2.0 & library & \texttt{pkg:npm/\%40jest/snapshot-utils@30.2.0} & MIT & — \\
+synckit & 0.11.12 & library & \texttt{pkg:npm/synckit@0.11.12} & MIT & — \\
+core & 0.2.9 & library & \texttt{pkg:npm/\%40pkgr/core@0.2.9} & MIT & — \\
+co & 4.6.0 & library & \texttt{pkg:npm/co@4.6.0} & MIT & — \\
+dedent & 1.7.1 & library & \texttt{pkg:npm/dedent@1.7.1} & MIT & — \\
+is-generator-fn & 2.1.0 & library & \texttt{pkg:npm/is-generator-fn@2.1.0} & MIT & — \\
+jest-each & 30.2.0 & library & \texttt{pkg:npm/jest-each@30.2.0} & MIT & — \\
+jest-runtime & 30.2.0 & library & \texttt{pkg:npm/jest-runtime@30.2.0} & MIT & — \\
+globals & 30.2.0 & library & \texttt{pkg:npm/\%40jest/globals@30.2.0} & MIT & — \\
+source-map & 30.0.1 & library & \texttt{pkg:npm/\%40jest/source-map@30.0.1} & MIT & — \\
+cjs-module-lexer & 2.2.0 & library & \texttt{pkg:npm/cjs-module-lexer@2.2.0} & MIT & — \\
+jest-resolve & 30.2.0 & library & \texttt{pkg:npm/jest-resolve@30.2.0} & MIT & — \\
+jest-pnp-resolver & 1.2.3 & library & \texttt{pkg:npm/jest-pnp-resolver@1.2.3} & MIT & — \\
+jest-validate & 30.2.0 & library & \texttt{pkg:npm/jest-validate@30.2.0} & MIT & — \\
+camelcase & 6.3.0 & library & \texttt{pkg:npm/camelcase@6.3.0} & MIT & — \\
+leven & 3.1.0 & library & \texttt{pkg:npm/leven@3.1.0} & MIT & — \\
+unrs-resolver & 1.11.1 & library & \texttt{pkg:npm/unrs-resolver@1.11.1} & MIT & — \\
+napi-postinstall & 0.3.4 & library & \texttt{pkg:npm/napi-postinstall@0.3.4} & MIT & — \\
+resolver-binding-android-arm-eabi & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-android-arm-eabi@} & MIT & — \\
+resolver-binding-android-arm64 & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-android-arm64@1.1} & MIT & — \\
+resolver-binding-darwin-arm64 & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-darwin-arm64@1.11} & MIT & — \\
+resolver-binding-darwin-x64 & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-darwin-x64@1.11.1} & MIT & — \\
+resolver-binding-freebsd-x64 & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-freebsd-x64@1.11.} & MIT & — \\
+resolver-binding-linux-arm-gnueabihf & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-arm-gnueabi} & MIT & — \\
+resolver-binding-linux-arm-musleabihf & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-arm-musleab} & MIT & — \\
+resolver-binding-linux-arm64-gnu & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-arm64-gnu@1} & MIT & — \\
+resolver-binding-linux-arm64-musl & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-arm64-musl@} & MIT & — \\
+resolver-binding-linux-ppc64-gnu & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-ppc64-gnu@1} & MIT & — \\
+resolver-binding-linux-riscv64-gnu & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-riscv64-gnu} & MIT & — \\
+resolver-binding-linux-riscv64-musl & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-riscv64-mus} & MIT & — \\
+resolver-binding-linux-s390x-gnu & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-s390x-gnu@1} & MIT & — \\
+resolver-binding-linux-x64-gnu & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-x64-gnu@1.1} & MIT & — \\
+resolver-binding-linux-x64-musl & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-linux-x64-musl@1.} & MIT & — \\
+resolver-binding-wasm32-wasi & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-wasm32-wasi@1.11.} & MIT & — \\
+wasm-runtime & 0.2.12 & library & \texttt{pkg:npm/\%40napi-rs/wasm-runtime@0.2.12} & MIT & — \\
+core & 1.8.1 & library & \texttt{pkg:npm/\%40emnapi/core@1.8.1} & MIT & — \\
+wasi-threads & 1.1.0 & library & \texttt{pkg:npm/\%40emnapi/wasi-threads@1.1.0} & MIT & — \\
+tslib & 2.8.1 & library & \texttt{pkg:npm/tslib@2.8.1} & 0BSD & — \\
+runtime & 1.8.1 & library & \texttt{pkg:npm/\%40emnapi/runtime@1.8.1} & MIT & — \\
+wasm-util & 0.10.1 & library & \texttt{pkg:npm/\%40tybys/wasm-util@0.10.1} & MIT & — \\
+resolver-binding-win32-arm64-msvc & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-win32-arm64-msvc@} & MIT & — \\
+resolver-binding-win32-ia32-msvc & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-win32-ia32-msvc@1} & MIT & — \\
+resolver-binding-win32-x64-msvc & 1.11.1 & library & \texttt{pkg:npm/\%40unrs/resolver-binding-win32-x64-msvc@1.} & MIT & — \\
+strip-bom & 4.0.0 & library & \texttt{pkg:npm/strip-bom@4.0.0} & MIT & — \\
+pure-rand & 7.0.1 & library & \texttt{pkg:npm/pure-rand@7.0.1} & MIT & — \\
+jest-docblock & 30.2.0 & library & \texttt{pkg:npm/jest-docblock@30.2.0} & MIT & — \\
+detect-newline & 3.1.0 & library & \texttt{pkg:npm/detect-newline@3.1.0} & MIT & — \\
+jest-environment-node & 30.2.0 & library & \texttt{pkg:npm/jest-environment-node@30.2.0} & MIT & — \\
+jest-runner & 30.2.0 & library & \texttt{pkg:npm/jest-runner@30.2.0} & MIT & — \\
+emittery & 0.13.1 & library & \texttt{pkg:npm/emittery@0.13.1} & MIT & — \\
+jest-leak-detector & 30.2.0 & library & \texttt{pkg:npm/jest-leak-detector@30.2.0} & MIT & — \\
+jest-watcher & 30.2.0 & library & \texttt{pkg:npm/jest-watcher@30.2.0} & MIT & — \\
+source-map-support & 0.5.13 & library & \texttt{pkg:npm/source-map-support@0.5.13} & MIT & — \\
+buffer-from & 1.1.2 & library & \texttt{pkg:npm/buffer-from@1.1.2} & MIT & — \\
+source-map & 0.6.1 & library & \texttt{pkg:npm/source-map@0.6.1} & BSD-3-Clause & — \\
+parse-json & 5.2.0 & library & \texttt{pkg:npm/parse-json@5.2.0} & MIT & — \\
+error-ex & 1.3.4 & library & \texttt{pkg:npm/error-ex@1.3.4} & MIT & — \\
+is-arrayish & 0.2.1 & library & \texttt{pkg:npm/is-arrayish@0.2.1} & MIT & — \\
+json-parse-even-better-errors & 2.3.1 & library & \texttt{pkg:npm/json-parse-even-better-errors@2.3.1} & MIT & — \\
+lines-and-columns & 1.2.4 & library & \texttt{pkg:npm/lines-and-columns@1.2.4} & MIT & — \\
+jest-resolve-dependencies & 30.2.0 & library & \texttt{pkg:npm/jest-resolve-dependencies@30.2.0} & MIT & — \\
+import-local & 3.2.0 & library & \texttt{pkg:npm/import-local@3.2.0} & MIT & — \\
+pkg-dir & 4.2.0 & library & \texttt{pkg:npm/pkg-dir@4.2.0} & MIT & — \\
+resolve-cwd & 3.0.0 & library & \texttt{pkg:npm/resolve-cwd@3.0.0} & MIT & — \\
+jest-cli & 30.2.0 & library & \texttt{pkg:npm/jest-cli@30.2.0} & MIT & — \\
+yargs & 17.7.2 & library & \texttt{pkg:npm/yargs@17.7.2} & MIT & — \\
+cliui & 8.0.1 & library & \texttt{pkg:npm/cliui@8.0.1} & ISC & — \\
+get-caller-file & 2.0.5 & library & \texttt{pkg:npm/get-caller-file@2.0.5} & ISC & — \\
+require-directory & 2.1.1 & library & \texttt{pkg:npm/require-directory@2.1.1} & MIT & — \\
+y18n & 5.0.8 & library & \texttt{pkg:npm/y18n@5.0.8} & ISC & — \\
+yargs-parser & 21.1.1 & library & \texttt{pkg:npm/yargs-parser@21.1.1} & ISC & — \\
+jest-junit & 16.0.0 & library & \texttt{pkg:npm/jest-junit@16.0.0} & Apache-2.0 & — \\
+mkdirp & 1.0.4 & library & \texttt{pkg:npm/mkdirp@1.0.4} & MIT & — \\
+uuid & 8.3.2 & library & \texttt{pkg:npm/uuid@8.3.2} & MIT & — \\
+xml & 1.0.1 & library & \texttt{pkg:npm/xml@1.0.1} & MIT & — \\
+prettier & 3.8.1 & library & \texttt{pkg:npm/prettier@3.8.1} & MIT & — \\
+typescript & 5.9.3 & library & \texttt{pkg:npm/typescript@5.9.3} & Apache-2.0 & — \\
+express & 4.22.1 & framework & \texttt{pkg:npm/express@4.22.1} & MIT & — \\
+accepts & 1.3.8 & library & \texttt{pkg:npm/accepts@1.3.8} & MIT & — \\
+negotiator & 0.6.3 & library & \texttt{pkg:npm/negotiator@0.6.3} & MIT & — \\
+array-flatten & 1.1.1 & library & \texttt{pkg:npm/array-flatten@1.1.1} & MIT & — \\
+body-parser & 1.20.4 & library & \texttt{pkg:npm/body-parser@1.20.4} & MIT & — \\
+debug & 2.6.9 & library & \texttt{pkg:npm/debug@2.6.9} & MIT & — \\
+ms & 2.0.0 & library & \texttt{pkg:npm/ms@2.0.0} & MIT & — \\
+destroy & 1.2.0 & library & \texttt{pkg:npm/destroy@1.2.0} & MIT & — \\
+iconv-lite & 0.4.24 & library & \texttt{pkg:npm/iconv-lite@0.4.24} & MIT & — \\
+qs & 6.14.2 & library & \texttt{pkg:npm/qs@6.14.2} & BSD-3-Clause & — \\
+raw-body & 2.5.3 & library & \texttt{pkg:npm/raw-body@2.5.3} & MIT & — \\
+type-is & 1.6.18 & library & \texttt{pkg:npm/type-is@1.6.18} & MIT & — \\
+media-typer & 0.3.0 & library & \texttt{pkg:npm/media-typer@0.3.0} & MIT & — \\
+content-disposition & 0.5.4 & library & \texttt{pkg:npm/content-disposition@0.5.4} & MIT & — \\
+cookie-signature & 1.0.7 & library & \texttt{pkg:npm/cookie-signature@1.0.7} & MIT & — \\
+finalhandler & 1.3.2 & library & \texttt{pkg:npm/finalhandler@1.3.2} & MIT & — \\
+fresh & 0.5.2 & library & \texttt{pkg:npm/fresh@0.5.2} & MIT & — \\
+merge-descriptors & 1.0.3 & library & \texttt{pkg:npm/merge-descriptors@1.0.3} & MIT & — \\
+methods & 1.1.2 & library & \texttt{pkg:npm/methods@1.1.2} & MIT & — \\
+path-to-regexp & 0.1.12 & library & \texttt{pkg:npm/path-to-regexp@0.1.12} & MIT & — \\
+send & 0.19.2 & library & \texttt{pkg:npm/send@0.19.2} & MIT & — \\
+mime & 1.6.0 & library & \texttt{pkg:npm/mime@1.6.0} & MIT & — \\
+serve-static & 1.16.3 & library & \texttt{pkg:npm/serve-static@1.16.3} & MIT & — \\
+utils-merge & 1.0.1 & library & \texttt{pkg:npm/utils-merge@1.0.1} & MIT & — \\
+ws & 8.19.0 & library & \texttt{pkg:npm/ws@8.19.0} & MIT & — \\
+dotenv & 16.6.1 & library & \texttt{pkg:npm/dotenv@16.6.1} & BSD-2-Clause & — \\
+uuid & 9.0.1 & library & \texttt{pkg:npm/uuid@9.0.1} & MIT & — \\
+express & 4.17.25 & library & \texttt{pkg:npm/\%40types/express@4.17.25} & MIT & — \\
+body-parser & 1.19.6 & library & \texttt{pkg:npm/\%40types/body-parser@1.19.6} & MIT & — \\
+connect & 3.4.38 & library & \texttt{pkg:npm/\%40types/connect@3.4.38} & MIT & — \\
+node & 20.19.33 & library & \texttt{pkg:npm/\%40types/node@20.19.33} & MIT & — \\
+undici-types & 6.21.0 & library & \texttt{pkg:npm/undici-types@6.21.0} & MIT & — \\
+express-serve-static-core & 4.19.8 & library & \texttt{pkg:npm/\%40types/express-serve-static-core@4.19.8} & MIT & — \\
+qs & 6.14.0 & library & \texttt{pkg:npm/\%40types/qs@6.14.0} & MIT & — \\
+range-parser & 1.2.7 & library & \texttt{pkg:npm/\%40types/range-parser@1.2.7} & MIT & — \\
+send & 1.2.1 & library & \texttt{pkg:npm/\%40types/send@1.2.1} & MIT & — \\
+serve-static & 1.15.10 & library & \texttt{pkg:npm/\%40types/serve-static@1.15.10} & MIT & — \\
+http-errors & 2.0.5 & library & \texttt{pkg:npm/\%40types/http-errors@2.0.5} & MIT & — \\
+send & 0.17.6 & library & \texttt{pkg:npm/\%40types/send@0.17.6} & MIT & — \\
+mime & 1.3.5 & library & \texttt{pkg:npm/\%40types/mime@1.3.5} & MIT & — \\
+ws & 8.18.1 & library & \texttt{pkg:npm/\%40types/ws@8.18.1} & MIT & — \\
+uuid & 9.0.8 & library & \texttt{pkg:npm/\%40types/uuid@9.0.8} & MIT & — \\
+ts-node & 10.9.2 & library & \texttt{pkg:npm/ts-node@10.9.2} & MIT & — \\
+source-map-support & 0.8.1 & library & \texttt{pkg:npm/\%40cspotcode/source-map-support@0.8.1} & MIT & — \\
+trace-mapping & 0.3.9 & library & \texttt{pkg:npm/\%40jridgewell/trace-mapping@0.3.9} & MIT & — \\
+node10 & 1.0.12 & library & \texttt{pkg:npm/\%40tsconfig/node10@1.0.12} & MIT & — \\
+node12 & 1.0.11 & library & \texttt{pkg:npm/\%40tsconfig/node12@1.0.11} & MIT & — \\
+node14 & 1.0.3 & library & \texttt{pkg:npm/\%40tsconfig/node14@1.0.3} & MIT & — \\
+node16 & 1.0.4 & library & \texttt{pkg:npm/\%40tsconfig/node16@1.0.4} & MIT & — \\
+acorn-walk & 8.3.5 & library & \texttt{pkg:npm/acorn-walk@8.3.5} & MIT & — \\
+arg & 4.1.3 & library & \texttt{pkg:npm/arg@4.1.3} & MIT & — \\
+create-require & 1.1.1 & library & \texttt{pkg:npm/create-require@1.1.1} & MIT & — \\
+diff & 4.0.4 & library & \texttt{pkg:npm/diff@4.0.4} & BSD-3-Clause & — \\
+make-error & 1.3.6 & library & \texttt{pkg:npm/make-error@1.3.6} & ISC & — \\
+v8-compile-cache-lib & 3.0.1 & library & \texttt{pkg:npm/v8-compile-cache-lib@3.0.1} & MIT & — \\
+yn & 3.1.1 & library & \texttt{pkg:npm/yn@3.1.1} & MIT & — \\
+checkout & v4 & application & \texttt{pkg:github/actions/checkout@v4} & — & — \\
+setup-node & v4 & application & \texttt{pkg:github/actions/setup-node@v4} & — & — \\
+test-reporter & v1 & application & \texttt{pkg:github/dorny/test-reporter@v1} & — & — \\
+upload-artifact & v4 & application & \texttt{pkg:github/actions/upload-artifact@v4} & — & — \\
+\hline
+\end{longtable}
+
+\subsubsection*{Dependency graph (refs)}
+\begin{verbatim}
+  pkg:npm/follow-redirects@1.15.11 -> 
+  pkg:npm/asynckit@0.4.0 -> 
+  pkg:npm/delayed-stream@1.0.0 -> 
+  pkg:npm/combined-stream@1.0.8 -> pkg:npm/delayed-stream@1.0.0
+  pkg:npm/es-errors@1.3.0 -> 
+  pkg:npm/function-bind@1.1.2 -> 
+  pkg:npm/call-bind-apply-helpers@1.0.2 -> pkg:npm/es-errors@1.3.0, pkg:npm/function-bind@1.1.2
+  pkg:npm/es-define-property@1.0.1 -> 
+  pkg:npm/es-object-atoms@1.1.1 -> pkg:npm/es-errors@1.3.0
+  pkg:npm/gopd@1.2.0 -> 
+  pkg:npm/dunder-proto@1.0.1 -> pkg:npm/call-bind-apply-helpers@1.0.2, pkg:npm/es-errors@1.3.0, pkg:npm/gopd@1.2.0
+  pkg:npm/get-proto@1.0.1 -> pkg:npm/dunder-proto@1.0.1, pkg:npm/es-object-atoms@1.1.1
+  pkg:npm/has-symbols@1.1.0 -> 
+  pkg:npm/hasown@2.0.2 -> pkg:npm/function-bind@1.1.2
+  pkg:npm/math-intrinsics@1.1.0 -> 
+  pkg:npm/get-intrinsic@1.3.0 -> pkg:npm/call-bind-apply-helpers@1.0.2, pkg:npm/es-define-property@1.0.1, pkg:npm/es-errors@1.3.0, pkg:npm/es-object-atoms@1.1.1, pkg:npm/function-bind@1.1.2...
+  pkg:npm/has-tostringtag@1.0.2 -> pkg:npm/has-symbols@1.1.0
+  pkg:npm/es-set-tostringtag@2.1.0 -> pkg:npm/es-errors@1.3.0, pkg:npm/get-intrinsic@1.3.0, pkg:npm/has-tostringtag@1.0.2, pkg:npm/hasown@2.0.2
+  pkg:npm/mime-db@1.52.0 -> 
+  pkg:npm/mime-types@2.1.35 -> pkg:npm/mime-db@1.52.0
+  pkg:npm/form-data@4.0.5 -> pkg:npm/asynckit@0.4.0, pkg:npm/combined-stream@1.0.8, pkg:npm/es-set-tostringtag@2.1.0, pkg:npm/hasown@2.0.2, pkg:npm/mime-types@2.1.35
+  pkg:npm/proxy-from-env@1.1.0 -> 
+  pkg:npm/axios@1.13.5 -> pkg:npm/follow-redirects@1.15.11, pkg:npm/form-data@4.0.5, pkg:npm/proxy-from-env@1.1.0
+  pkg:npm/color-name@1.1.4 -> 
+  pkg:npm/color-convert@2.0.1 -> pkg:npm/color-name@1.1.4
+  pkg:npm/ansi-styles@4.3.0 -> pkg:npm/color-convert@2.0.1
+  pkg:npm/has-flag@4.0.0 -> 
+  pkg:npm/supports-color@7.2.0 -> pkg:npm/has-flag@4.0.0
+  pkg:npm/chalk@4.1.2 -> pkg:npm/ansi-styles@4.3.0, pkg:npm/supports-color@7.2.0
+  pkg:npm/@colors/colors@1.6.0 -> 
+\end{verbatim}
+
+\newpage
+\section{Change Lineage from Original Software}
+
+\subsection{CAP LLM Plugin}
+\textbf{Path:} \texttt{cap-llm-plugin-main}
+
+\textbf{Changes (from git history):}
+\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
+\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
+\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
+\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
+\texttt{2903724fb841} & 2026-02-26 02:55:18 +0800 & plturrell & feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-c \\
+\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
+\hline
+\end{longtable}
+\textit{Full:} \texttt{git log --follow -- cap-llm-plugin-main}
+
+\end{document}

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 Unittest: HTTP transport MCP server tool schema validation using TestML_BaseTestClass.
 - Start server with only `fetch_data` tool

@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package predicates
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/google/mangle/ast"
 )
@@ -52,28 +51,28 @@ func (p *MCPLLMPredicate) generate(query, context string) string {
 }
 
 func (p *MCPLLMPredicate) callMCP(query, context string) (string, error) {
-	body, _ := json.Marshal(map[string]string{"query": query, "context": context})
-	req, err := http.NewRequest("POST", p.MCPAddress+"/mcp/tools/llm_generate", bytes.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.AuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+p.AuthToken)
+	mcpResult, err := callMCPTool(p.MCPAddress, p.AuthToken, "llm_generate", map[string]any{
+		"query":   query,
+		"context": context,
+	})
+	if err == nil {
+		answer := stringField(mcpResult, "answer", "content", "text")
+		if answer != "" {
+			return answer, nil
+		}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
+	legacyBody, _ := json.Marshal(map[string]string{"query": query, "context": context})
+	legacyResult, legacyErr := legacyMCPHTTPCall(p.MCPAddress, p.AuthToken, "/mcp/tools/llm_generate", legacyBody)
+	if legacyErr != nil {
+		if err != nil {
+			return "", err
+		}
+		return "", legacyErr
 	}
-	defer resp.Body.Close()
-
-	data, _ := io.ReadAll(resp.Body)
-	var result struct {
-		Answer string `json:"answer"`
+	answer := stringField(legacyResult, "answer", "content", "text")
+	if answer == "" {
+		return "", fmt.Errorf("mcp llm_generate response missing answer")
 	}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
-	}
-	return result.Answer, nil
+	return answer, nil
 }

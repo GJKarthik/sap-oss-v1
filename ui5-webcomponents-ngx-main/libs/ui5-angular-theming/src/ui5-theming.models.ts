@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { InjectionToken } from '@angular/core';
 import { Observable } from 'rxjs';
 export interface ThemingConfig {

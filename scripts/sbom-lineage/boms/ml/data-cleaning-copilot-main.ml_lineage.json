@@ -1,0 +1,174 @@
+{
+  "service": "data-cleaning-copilot-main",
+  "ml_frameworks": [
+    "langchain",
+    "langchain_core",
+    "pandera",
+    "relbench"
+  ],
+  "hardware_targets": [
+    "CPU (no accelerator)"
+  ],
+  "model_refs": [],
+  "dataset_refs": [],
+  "model_card": {
+    "schema_version": "1.0",
+    "model_card_format": "HuggingFace-v0.2 / EU-AI-Act-Annex-IV",
+    "generated": "2026-02-28T11:32:48Z",
+    "model_details": {
+      "name": "Data Cleaning Copilot",
+      "description": "SAP OSS service: Data Cleaning Copilot",
+      "version": "NOASSERTION",
+      "license": "LicenseRef-SAP-Proprietary",
+      "contact": "SAP SE — AI & Open-Source Office",
+      "upstream": ""
+    },
+    "intended_use": {
+      "primary_uses": [
+        "Enterprise AI / ML inference",
+        "Data processing"
+      ],
+      "out_of_scope": [
+        "Safety-critical systems without additional validation"
+      ]
+    },
+    "technical_specifications": {
+      "ml_frameworks": [
+        "LangChain 0.3.27",
+        "LangChain Core 0.3.73",
+        "Pandera 0.25.0",
+        "RelBench 1.1.0"
+      ],
+      "hardware_requirements": [
+        "CPU (no accelerator)"
+      ],
+      "referenced_base_models": [],
+      "referenced_datasets": []
+    },
+    "provenance": {
+      "framework_components": [
+        {
+          "name": "LangChain",
+          "vendor": "LangChain Inc.",
+          "version": "0.3.27",
+          "license": "MIT",
+          "purl": "pkg:pypi/langchain@0.3.27"
+        },
+        {
+          "name": "LangChain Core",
+          "vendor": "LangChain Inc.",
+          "version": "0.3.73",
+          "license": "MIT",
+          "purl": "pkg:pypi/langchain-core@0.3.73"
+        },
+        {
+          "name": "Pandera",
+          "vendor": "Union.ai",
+          "version": "0.25.0",
+          "license": "MIT",
+          "purl": "pkg:pypi/pandera@0.25.0"
+        },
+        {
+          "name": "RelBench",
+          "vendor": "Stanford SNAP",
+          "version": "1.1.0",
+          "license": "MIT",
+          "purl": "pkg:pypi/relbench@1.1.0"
+        }
+      ],
+      "base_model_sources": [],
+      "dataset_sources": []
+    },
+    "eu_ai_act": {
+      "risk_category": "Limited risk (Article 52) — requires transparency notification",
+      "transparency_obligations": [
+        "Users must be informed they are interacting with an AI system",
+        "Training data must be documented for high-risk use cases"
+      ],
+      "conformity_assessment": "pending"
+    },
+    "data_governance": {
+      "training_data_documented": false,
+      "privacy_impact_assessed": false,
+      "data_retention_policy": "Not specified — consult SAP Data Governance team"
+    }
+  },
+  "cdx_formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "LangChain",
+              "version": "0.3.27",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain@0.3.27"
+            },
+            {
+              "type": "library",
+              "name": "LangChain Core",
+              "version": "0.3.73",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain-core@0.3.73"
+            },
+            {
+              "type": "library",
+              "name": "Pandera",
+              "version": "0.25.0",
+              "supplier": {
+                "name": "Union.ai"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/pandera@0.25.0"
+            },
+            {
+              "type": "library",
+              "name": "RelBench",
+              "version": "1.1.0",
+              "supplier": {
+                "name": "Stanford SNAP"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/relbench@1.1.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

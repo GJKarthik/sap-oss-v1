@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 SAP SE
 """Test HANA vectorstore functionality."""
 
 import os
@@ -8,7 +10,27 @@ import pytest
 
 from langchain_hana.utils import DistanceStrategy
 from langchain_hana import HanaDB
-from tests.integration_tests.fake_embeddings import ConsistentFakeEmbeddings
+import hashlib
+
+from langchain_core.embeddings import Embeddings
+
+
+class ConsistentFakeEmbeddings(Embeddings):
+    """Deterministic fake embeddings — same text always produces the same vector."""
+
+    def __init__(self, size: int = 10) -> None:
+        self.size = size
+
+    def _vector_for(self, text: str) -> List[float]:
+        seed = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**32)
+        rng = np.random.default_rng(seed)
+        return rng.random(self.size).tolist()
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self._vector_for(t) for t in texts]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self._vector_for(text)
 from tests.integration_tests.fixtures.filtering_test_cases import (
     DOCUMENTS,
     FILTERING_TEST_CASES,

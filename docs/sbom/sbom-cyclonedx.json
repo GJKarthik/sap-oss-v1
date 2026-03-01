@@ -1,0 +1,305 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-03-01T04:22:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "sbom-generator",
+          "version": "1.0.0",
+          "supplier": { "name": "SAP SE" }
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "sap-ai-platform",
+      "version": "2.0.0",
+      "description": "SAP AI Platform - Enterprise AI Infrastructure",
+      "supplier": {
+        "name": "SAP SE",
+        "url": ["https://www.sap.com"]
+      },
+      "licenses": [
+        { "license": { "id": "Apache-2.0" } }
+      ],
+      "purl": "pkg:generic/sap/ai-platform@2.0.0"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:generic/sap/ai-core-streaming@2.0.0",
+      "name": "ai-core-streaming",
+      "version": "2.0.0",
+      "description": "Real-time AI inference streaming service with Pulsar protocol",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:generic/sap/ai-core-streaming@2.0.0",
+      "properties": [
+        { "name": "language", "value": "Zig" },
+        { "name": "runtime", "value": "Native" }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:generic/sap/ai-core-pal@1.0.0",
+      "name": "ai-core-pal",
+      "version": "1.0.0",
+      "description": "Platform Abstraction Layer for AI Core",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:generic/sap/ai-core-pal@1.0.0",
+      "properties": [
+        { "name": "language", "value": "Zig, Mojo" }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:pypi/vllm@0.9.0",
+      "name": "vllm-main",
+      "version": "0.9.0",
+      "description": "High-throughput LLM inference engine",
+      "supplier": { "name": "vLLM Project" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:pypi/vllm@0.9.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/vllm-project/vllm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/hana-ai@1.2.0",
+      "name": "generative-ai-toolkit-for-sap-hana-cloud",
+      "version": "1.2.0",
+      "description": "Generative AI toolkit for SAP HANA Cloud",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:pypi/hana-ai@1.2.0"
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:golang/sap/mangle-query-service@1.0.0",
+      "name": "mangle-query-service",
+      "version": "1.0.0",
+      "description": "Query service for Mangle semantic data model",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:golang/sap/mangle-query-service@1.0.0",
+      "properties": [
+        { "name": "go.version", "value": "1.22" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@sap/cap-llm-plugin@1.8.0",
+      "name": "cap-llm-plugin",
+      "version": "1.8.0",
+      "description": "CAP LLM Plugin for SAP Cloud Application Programming Model",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:npm/@sap/cap-llm-plugin@1.8.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@sap-ai-sdk/core@1.5.0",
+      "name": "ai-sdk-js",
+      "version": "1.5.0",
+      "description": "SAP AI SDK for JavaScript/TypeScript",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:npm/@sap-ai-sdk/core@1.5.0"
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:maven/org.elasticsearch/elasticsearch@9.4.0",
+      "name": "elasticsearch",
+      "version": "9.4.0",
+      "description": "Elasticsearch search and analytics engine",
+      "supplier": { "name": "Elastic NV" },
+      "licenses": [
+        { "license": { "id": "LicenseRef-Elastic-2.0" } }
+      ],
+      "purl": "pkg:maven/org.elasticsearch/elasticsearch@9.4.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.elastic.co/elasticsearch"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-hana@0.5.0",
+      "name": "langchain-integration-for-sap-hana-cloud",
+      "version": "0.5.0",
+      "description": "LangChain integration for SAP HANA Cloud vector store",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:pypi/langchain-hana@0.5.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/sap/odata-vocabularies@1.0.0",
+      "name": "odata-vocabularies",
+      "version": "1.0.0",
+      "description": "OData vocabulary definitions and tooling",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:generic/sap/odata-vocabularies@1.0.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@pds/ui5-angular@0.4.0",
+      "name": "ui5-webcomponents-ngx",
+      "version": "0.4.0",
+      "description": "UI5 Web Components for Angular",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:npm/@pds/ui5-angular@0.4.0"
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:pypi/world-monitor@1.0.0",
+      "name": "world-monitor",
+      "version": "1.0.0",
+      "description": "Global monitoring and observability service",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "purl": "pkg:pypi/world-monitor@1.0.0"
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:pypi/data-cleaning-copilot@1.0.0",
+      "name": "data-cleaning-copilot",
+      "version": "1.0.0",
+      "description": "AI-powered data cleaning assistant",
+      "supplier": { "name": "SAP SE" },
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:pypi/data-cleaning-copilot@1.0.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/torch@2.5.0",
+      "group": "pytorch",
+      "name": "torch",
+      "version": "2.5.0",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "purl": "pkg:pypi/torch@2.5.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/transformers@4.46.0",
+      "group": "huggingface",
+      "name": "transformers",
+      "version": "4.46.0",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:pypi/transformers@4.46.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/fastapi@0.115.0",
+      "name": "fastapi",
+      "version": "0.115.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "purl": "pkg:pypi/fastapi@0.115.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain@0.3.0",
+      "name": "langchain",
+      "version": "0.3.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "purl": "pkg:pypi/langchain@0.3.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:golang/github.com/elastic/go-elasticsearch/v8@8.15.0",
+      "name": "go-elasticsearch",
+      "version": "8.15.0",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:golang/github.com/elastic/go-elasticsearch/v8@8.15.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:golang/github.com/SAP/go-hdb@1.12.0",
+      "name": "go-hdb",
+      "version": "1.12.0",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:golang/github.com/SAP/go-hdb@1.12.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@angular/core@18.2.0",
+      "name": "@angular/core",
+      "version": "18.2.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "purl": "pkg:npm/@angular/core@18.2.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/@ui5/webcomponents@2.5.0",
+      "name": "@ui5/webcomponents",
+      "version": "2.5.0",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:npm/@ui5/webcomponents@2.5.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.apache.lucene/lucene-core@10.3.2",
+      "name": "lucene-core",
+      "version": "10.3.2",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:maven/org.apache.lucene/lucene-core@10.3.2"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/sap/ai-core-streaming@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/vllm@0.9.0",
+      "dependsOn": [
+        "pkg:pypi/torch@2.5.0",
+        "pkg:pypi/transformers@4.46.0",
+        "pkg:pypi/fastapi@0.115.0"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/langchain-hana@0.5.0",
+      "dependsOn": [
+        "pkg:pypi/langchain@0.3.0"
+      ]
+    },
+    {
+      "ref": "pkg:golang/sap/mangle-query-service@1.0.0",
+      "dependsOn": [
+        "pkg:golang/github.com/elastic/go-elasticsearch/v8@8.15.0",
+        "pkg:golang/github.com/SAP/go-hdb@1.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/@pds/ui5-angular@0.4.0",
+      "dependsOn": [
+        "pkg:npm/@angular/core@18.2.0",
+        "pkg:npm/@ui5/webcomponents@2.5.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.elasticsearch/elasticsearch@9.4.0",
+      "dependsOn": [
+        "pkg:maven/org.apache.lucene/lucene-core@10.3.2"
+      ]
+    }
+  ],
+  "vulnerabilities": []
+}

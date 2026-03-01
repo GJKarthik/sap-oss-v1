@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import {
   mockClientCredentialsGrantCall,
-  mockInference,
-  parseMockResponse
-} from '../../../../test-util/mock-http.js';
+  mockInference
+} from '../../../../test-util/interceptors.js';
+import { parseMockResponse } from '../../../../test-util/fixtures.js';
 import { AzureOpenAiEmbeddingClient } from './azure-openai-embedding-client.js';
 import { apiVersion } from './model-types.js';
 import type {

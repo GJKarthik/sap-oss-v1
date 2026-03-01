@@ -16,6 +16,7 @@ const RequestState = types.RequestState;
 const SamplingParams = types.SamplingParams;
 const RequestOutput = types.RequestOutput;
 const EngineConfig = config.EngineConfig;
+const SchedulerConfig = config.SchedulerConfig;
 
 const log = logging.scoped(.engine);
 
@@ -63,6 +64,9 @@ pub const EngineCore = struct {
     /// Engine configuration
     config: EngineConfig,
 
+    /// Scheduler configuration
+    scheduler_config: SchedulerConfig,
+
     /// Current engine state
     state: EngineState = .initializing,
 
@@ -91,15 +95,22 @@ pub const EngineCore = struct {
 
     /// Initialize the engine
     pub fn init(allocator: std.mem.Allocator, engine_config: EngineConfig) !*Self {
-        log.info("Initializing EngineCore...", .{});
+        return initWithScheduler(allocator, engine_config, .{});
+    }
+
+    /// Initialize the engine with custom scheduler config
+    pub fn initWithScheduler(allocator: std.mem.Allocator, engine_config: EngineConfig, sched_config: SchedulerConfig) !*Self {
+        log.info("Initializing EngineCore with max_running_requests={}...", .{sched_config.max_running_requests});
 
         // Validate configuration
         try engine_config.validate();
+        try sched_config.validate();
 
         var self = try allocator.create(Self);
         self.* = Self{
             .allocator = allocator,
             .config = engine_config,
+            .scheduler_config = sched_config,
             .request_queue = std.ArrayList(*Request).init(allocator),
             .running_requests = std.ArrayList(*Request).init(allocator),
             .completed_requests = std.AutoHashMap(types.RequestId, *Request).init(allocator),
@@ -302,7 +313,7 @@ pub const EngineCore = struct {
         // Simple FCFS scheduling for now
         // TODO: Integrate with Mangle rules for priority scheduling
 
-        const max_running = 32; // TODO: Make configurable
+        const max_running = self.scheduler_config.max_running_requests;
 
         while (self.request_queue.items.len > 0 and
             self.running_requests.items.len < max_running)

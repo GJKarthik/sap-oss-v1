@@ -1,0 +1,80 @@
+# Snyk: dependency and code security scanning
+# Requires repository secret: SNYK_TOKEN (https://app.snyk.io/account)
+# Aligns with workspace rule: run Snyk for new first-party code
+
+name: Snyk Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 06:00 UTC
+
+jobs:
+  snyk-dependency-scan:
+    name: Snyk (dependencies)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Snyk (npm - ai-sdk-js)
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=ai-sdk-js-main/package.json --dir=ai-sdk-js-main
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+
+      - name: Run Snyk (npm - cap-llm-plugin)
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=cap-llm-plugin-main/package.json --dir=cap-llm-plugin-main
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+
+      - name: Run Snyk (npm - world-monitor)
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=world-monitor-main/package.json --dir=world-monitor-main
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+
+      - name: Run Snyk (Python - data-cleaning-copilot)
+        uses: snyk/actions/python-3.12@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=data-cleaning-copilot-main/pyproject.toml --dir=data-cleaning-copilot-main
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+
+  snyk-code-scan:
+    name: Snyk Code
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Snyk Code
+        uses: snyk/actions/code@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+        if: secrets.SNYK_TOKEN != ''
+    if: github.event_name == 'push' || github.event_name == 'pull_request'

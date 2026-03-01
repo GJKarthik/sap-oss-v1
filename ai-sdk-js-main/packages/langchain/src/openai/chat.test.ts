@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import { apiVersion } from '@sap-ai-sdk/foundation-models/internal.js';
 import { toJsonSchema } from '@langchain/core/utils/json_schema';
@@ -13,9 +15,9 @@ import { addNumbersTool, joke } from '../../../../test-util/tools.js';
 import {
   mockClientCredentialsGrantCall,
   mockDeploymentsList,
-  mockInference,
-  parseFileToString
-} from '../../../../test-util/mock-http.js';
+  mockInference
+} from '../../../../test-util/interceptors.js';
+import { parseFileToString } from '../../../../test-util/fixtures.js';
 import { AzureOpenAiChatClient } from './chat.js';
 import type { AzureOpenAiFunctionObject } from '@sap-ai-sdk/foundation-models/internal.js';
 import type { AIMessageChunk } from '@langchain/core/messages';

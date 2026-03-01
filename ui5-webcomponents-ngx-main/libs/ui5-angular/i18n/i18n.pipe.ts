@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {ChangeDetectorRef, OnDestroy, Pipe, PipeTransform} from "@angular/core";
 import {I18nService} from "./i18n.service";
 import {distinctUntilChanged, Subject, Subscription, takeUntil} from "rxjs";

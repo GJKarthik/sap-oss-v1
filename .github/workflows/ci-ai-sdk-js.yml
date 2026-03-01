@@ -1,0 +1,58 @@
+# SAP AI SDK (JS) - CI: lint, unit tests, coverage
+# Runs on changes under ai-sdk-js-main/
+
+name: CI (AI SDK JS)
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['ai-sdk-js-main/**']
+  pull_request:
+    branches: [main]
+    paths: ['ai-sdk-js-main/**']
+
+defaults:
+  run:
+    working-directory: ai-sdk-js-main
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: ai-sdk-js-main/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm compile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests with coverage
+        run: pnpm run test:unit -- --coverage --coverageReporters=text --coverageReporters=lcov
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high || true
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-ai-sdk-js
+          path: ai-sdk-js-main/coverage/
+          retention-days: 14
+        if: always()

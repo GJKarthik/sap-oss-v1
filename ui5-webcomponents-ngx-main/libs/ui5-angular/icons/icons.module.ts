@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {isDevMode, ModuleWithProviders, NgModule} from "@angular/core";
 import {IconsProvider} from "./icons.provider";
 import {Ui5AngularSelectedIconsToLoad} from "./icons.tokens";

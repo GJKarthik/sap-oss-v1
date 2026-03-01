@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 test for hana_ai.tools.hana_ml_tools.ts_make_predict_table module.
 """

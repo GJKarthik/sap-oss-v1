@@ -1,0 +1,1 @@
+{"version":3,"file":"sdm-pipeline-create-request.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/sdm-pipeline-create-request.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,gBAAgB,CAAC;AAC/C;;GAEG;AACH,MAAM,MAAM,wBAAwB,GAAG;IACrC,IAAI,EAAE,KAAK,CAAC;IACZ,QAAQ,EAAE,QAAQ,CAAC;CACpB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

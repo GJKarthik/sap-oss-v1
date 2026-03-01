@@ -1,0 +1,48 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:a50fb951-5e1b-481d-b26a-56f63b67882a",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "name": "mcp-server",
+      "group": "@ui5-webcomponents-ngx",
+      "version": "1.0.0",
+      "description": "UI5 Web Components Angular MCP Server with Mangle reasoning",
+      "purl": "pkg:npm/%40ui5-webcomponents-ngx/mcp-server@1.0.0",
+      "bom-ref": "pkg:npm/@ui5-webcomponents-ngx/mcp-server@1.0.0",
+      "type": "application",
+      "components": [
+        {
+          "author": "SAP SE (https://www.sap.com)",
+          "group": "",
+          "name": "ui5-webcomponents-ngx",
+          "version": "0.0.0",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0",
+                "url": "https://opensource.org/licenses/Apache-2.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/ui5-webcomponents-ngx@0.0.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/ui5-webcomponents-ngx@0.0.0"
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

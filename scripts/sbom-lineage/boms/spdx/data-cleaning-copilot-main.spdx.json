@@ -1,0 +1,770 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "data-cleaning-copilot-main",
+  "documentNamespace": "https://spdx.org/spdxdocs/data-cleaning-copilot-main-57fa1e30-308f-4aee-ad3b-457732f38df6",
+  "creationInfo": {
+    "created": "2026-02-28T10:30:18Z",
+    "creators": [
+      "Tool: SAP-OSS-SBOM-Pipeline-1.0",
+      "Organization: SAP SE"
+    ],
+    "licenseListVersion": "3.24"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-root-component",
+      "name": "Data Cleaning Copilot",
+      "versionInfo": "0.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/data cleaning copilot@0.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-aioboto3-15.0.0",
+      "name": "aioboto3",
+      "versionInfo": "15.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Terri Cain",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/aioboto3@15.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9cf54b3627c8b34bb82eaf43ab327e7027e37f92b1e10dd5cfe343cd512568d0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-black-25.1.0",
+      "name": "black",
+      "versionInfo": "25.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Łukasz Langa",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/black@25.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "759e7ec1e050a15f89b770cefbf91ebee8917aac5c20483bc2d80a6c3a04df32"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-boto3-1.38.27",
+      "name": "boto3",
+      "versionInfo": "1.38.27",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Amazon Web Services",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/boto3@1.38.27"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "95f5fe688795303a8a15e8b7e7f255cadab35eae459d00cc281a4fd77252ea80"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-frictionless-5.18.1",
+      "name": "frictionless",
+      "versionInfo": "5.18.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Open Knowledge Foundation",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/frictionless@5.18.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3f4c87469a89bdb88e9cc318088553a26f3d14839098f95c183ea01fc89628dd"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-gradio-5.42.0",
+      "name": "gradio",
+      "versionInfo": "5.42.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Abubakar Abid",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/gradio@5.42.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3e11c076f4eaa2d545fb176551a2a72e951374882b8543aeebd45739085da5d2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-instructor-1.10.0",
+      "name": "instructor",
+      "versionInfo": "1.10.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jason Liu",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/instructor@1.10.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9c789f0fce915d5498059afb5314530c8a5b22b0283302679148ddae98f732b0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-ipykernel-6.30.0",
+      "name": "ipykernel",
+      "versionInfo": "6.30.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: IPython Development Team",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/ipykernel@6.30.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fd2936e55c4a1c2ee8b1e5fa6a372b8eecc0ab1338750dee76f48fa5cca1301e"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-0.3.27",
+      "name": "langchain",
+      "versionInfo": "0.3.27",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain@0.3.27"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7b20c4f338826acb148d885b20a73a16e410ede9ee4f19bb02011852d5f98798"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-aws-0.2.27",
+      "name": "langchain-aws",
+      "versionInfo": "0.2.27",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain-aws@0.2.27"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d2912c4488ff5ef0361661c1a42476b3586c27c8e86c0c7e3a198e5dc9b8ae6f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-community-0.3.27",
+      "name": "langchain-community",
+      "versionInfo": "0.3.27",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain-community@0.3.27"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "581f97b795f9633da738ea95da9cb78f8879b538090c9b7a68c0aed49c828f0d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-core-0.3.73",
+      "name": "langchain-core",
+      "versionInfo": "0.3.73",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain-core@0.3.73"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "90c64e13d5a213b0642eab29831b011a3592e57f20f34cac8c0bf9a6e4f563bc"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-loguru-0.7.3",
+      "name": "loguru",
+      "versionInfo": "0.7.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Delgan",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/loguru@0.7.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-networkx-3.3",
+      "name": "networkx",
+      "versionInfo": "3.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Aric Hagberg",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/networkx@3.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "28575580c6ebdaf4505b22c6256a2b9de86b316dc63ba9e93abde3d78dfdbcf2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-numpy-2.1.0",
+      "name": "numpy",
+      "versionInfo": "2.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Travis E. Oliphant et al.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/numpy@2.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6326ab99b52fafdcdeccf602d6286191a79fe2fda0ae90573c5814cd2b0bc1b8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-pandas-2.2.02.3",
+      "name": "pandas",
+      "versionInfo": "2.2.02.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: The Pandas Development Team",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pandas@2.2.02.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "de09668c1bf3b925c07e5762291602f0d789eca1b3a781f99c1c78f6cac0e7ea"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-pandera-0.25.0",
+      "name": "pandera",
+      "versionInfo": "0.25.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Niels Bantilan",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pandera@0.25.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "365a555accc46404466641203e297722d424d74a1315f077ab899e1344f82303"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-python-dotenv-1.1.1",
+      "name": "python-dotenv",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Saurabh Kumar",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/python-dotenv@1.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-pyyaml-6.0.2",
+      "name": "pyyaml",
+      "versionInfo": "6.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Kirill Simonov",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pyyaml@6.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0a9a2848a5b7feac301353437eb7d5957887edbf81d56e903999a75a3d743086"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-relbench-1.1.0",
+      "name": "relbench",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: RelBench Team",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/relbench@1.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "41d0b697380d2980fe99532f4766a6f2bb9f6972e4e72f49d783f7f775bacae8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-ruff-0.12.3",
+      "name": "ruff",
+      "versionInfo": "0.12.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Charlie Marsh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/ruff@0.12.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "47552138f7206454eaf0c4fe827e546e9ddac62c2a3d2585ca54d29a890137a2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-sap-ai-sdk-gen-5.4.5",
+      "name": "sap-ai-sdk-gen",
+      "versionInfo": "5.4.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LicenseRef-SAP-DeveloperAgreement",
+      "licenseDeclared": "LicenseRef-SAP-DeveloperAgreement",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: SAP SE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/sap-ai-sdk-gen@5.4.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c8cd5a0c1c4fc7488ec05de06239ae60a54fe3d2b26e30f8e6256a25c16c51ad"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-setuptools-80.9.0",
+      "name": "setuptools",
+      "versionInfo": "80.9.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Python Packaging Authority",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/setuptools@80.9.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-sqlalchemy-2.0.41",
+      "name": "sqlalchemy",
+      "versionInfo": "2.0.41",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Mike Bayer",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/sqlalchemy@2.0.41"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b1f09b6821406ea1f94053f346f28f8215e293344209129a9c0fcc3578598d7b"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-tabulate-0.9.0",
+      "name": "tabulate",
+      "versionInfo": "0.9.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sergey Astanin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/tabulate@0.9.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-ydata-profiling-4.15.1",
+      "name": "ydata-profiling",
+      "versionInfo": "4.15.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: YData Labs Inc",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/ydata-profiling@4.15.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ba0956438fd3e9148ba274d694856dcf4a8bbe74c34cb545cd26f4e525d31d69"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-root-component"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-aioboto3-15.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-black-25.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-boto3-1.38.27"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-frictionless-5.18.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-gradio-5.42.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-instructor-1.10.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-ipykernel-6.30.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-0.3.27"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-aws-0.2.27"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-community-0.3.27"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-core-0.3.73"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-loguru-0.7.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-networkx-3.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-numpy-2.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-pandas-2.2.02.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-pandera-0.25.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-python-dotenv-1.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-pyyaml-6.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-relbench-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-ruff-0.12.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-sap-ai-sdk-gen-5.4.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-setuptools-80.9.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-sqlalchemy-2.0.41"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-tabulate-0.9.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-ydata-profiling-4.15.1"
+    }
+  ],
+  "documentDescribes": [
+    "SPDXRef-root-component"
+  ]
+}

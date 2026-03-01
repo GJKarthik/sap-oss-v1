@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 export * from './azure-openai-chat-client.js';
 export * from './azure-openai-chat-completion-response.js';
 export * from './azure-openai-chat-completion-stream-chunk-response.js';

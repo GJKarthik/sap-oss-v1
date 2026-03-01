@@ -238,11 +238,21 @@ class PackedLoRALayerWeights(LoRALayerWeights):
 
     @property
     def input_dim(self) -> int:
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.input_dim is not supported for packed "
+            "LoRA layers because they contain multiple sublayers with different "
+            "dimensions. Access individual sublayer dimensions via lora_a[i].shape[1] "
+            "or use the unpacked LoRALayerWeights.input_dim instead."
+        )
 
     @property
     def output_dim(self) -> int:
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.output_dim is not supported for packed "
+            "LoRA layers because they contain multiple sublayers with different "
+            "dimensions. Access individual sublayer dimensions via lora_b[i].shape[0] "
+            "or use the unpacked LoRALayerWeights.output_dim instead."
+        )
 
     @property
     def is_packed(self) -> bool:

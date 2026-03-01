@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { FileSystemInterface } from '@ui5/webcomponents-transformer';
 import { fundamentalGenerator } from '@ui5/webcomponents-ngx-generator';
 import { join } from 'path';

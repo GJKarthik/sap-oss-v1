@@ -1,0 +1,1 @@
+{"version":3,"file":"get-pipelines.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/get-pipelines.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,mBAAmB,CAAC;AACrD;;GAEG;AACH,MAAM,MAAM,YAAY,GAAG;IACzB,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,SAAS,EAAE,WAAW,EAAE,CAAC;CAC1B,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

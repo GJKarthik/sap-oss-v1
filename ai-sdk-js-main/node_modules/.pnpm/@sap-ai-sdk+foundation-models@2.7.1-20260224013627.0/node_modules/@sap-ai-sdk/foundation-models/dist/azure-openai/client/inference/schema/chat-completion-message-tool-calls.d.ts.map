@@ -1,0 +1,1 @@
+{"version":3,"file":"chat-completion-message-tool-calls.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/chat-completion-message-tool-calls.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,wCAAwC,EAAE,MAAM,wCAAwC,CAAC;AACvG;;GAEG;AACH,MAAM,MAAM,yCAAyC,GACnD,wCAAwC,EAAE,CAAC"}

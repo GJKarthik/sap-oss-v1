@@ -1,0 +1,5718 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "odata-vocabularies-main",
+  "documentNamespace": "https://spdx.org/spdxdocs/odata-vocabularies-main-b1f4778e-4f67-4746-8e1a-0eaa5280d0e4",
+  "creationInfo": {
+    "created": "2026-02-28T09:52:33Z",
+    "creators": [
+      "Tool: SAP-OSS-SBOM-Pipeline-1.0",
+      "Organization: SAP SE"
+    ],
+    "licenseListVersion": "3.24"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-pkg-npm-sap-vocabularies-0.5.2",
+      "name": "sap-vocabularies",
+      "versionInfo": "0.5.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/sap-vocabularies@0.5.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-colors-1.4.0",
+      "name": "colors",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Marak Squires",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/colors@1.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6be52a4e1e2481983f4a51af7dbcc31e9811bbb00040e9a6a911c99f185164808a1544fdd5bad584d36de7c08c594f4fb016efdcf0c26541db571b83887da6b4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-odata-csdl-0.11.1",
+      "name": "odata-csdl",
+      "versionInfo": "0.11.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "(SEE LICENSE IN LICENSE.md)",
+      "licenseDeclared": "(SEE LICENSE IN LICENSE.md)",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: heikotheissen",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/odata-csdl@0.11.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d48929cba53641e27c3b8421813d21e3cdf3b1dbafaa6b364151cda8b31856b0fec2ee9099d1d3c93ea7a691955a9091860591aa789cf59210876f5b463b8813"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-sax-1.4.3",
+      "name": "sax",
+      "versionInfo": "1.4.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BlueOak-1.0.0",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/sax@1.4.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "caa627d4984f7338a017de03312fac8620cc8c3a3060eeb2f7ec01ff85a03b4635f63598934950e2db86e4a23b923e054e9d70c4f8f92057dcaf3fecd5cde38d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-odata-vocabularies-0.5.2",
+      "name": "odata-vocabularies",
+      "versionInfo": "0.5.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: SAP SE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/odata-vocabularies@0.5.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-odata-csdl-0.9.5",
+      "name": "odata-csdl",
+      "versionInfo": "0.9.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "(SEE LICENSE IN LICENSE.md)",
+      "licenseDeclared": "(SEE LICENSE IN LICENSE.md)",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: heikotheissen",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/odata-csdl@0.9.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e03c7d0aabb31594b77e32f5d17657431b4fb8134f2d869a3229bac98e783549940efd6410ea7951526c4a56815eb12e9983b38dfedfdd7559344c6751b6cbda"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-pandoc-filter-2.2.0",
+      "name": "pandoc-filter",
+      "versionInfo": "2.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Mike Henderson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/pandoc-filter@2.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "9ad8d97da8b238d8cdf078a05355c2a060dc69d32607062d8c02f6a25d2f698e2a88e5a6b4269518921ad608252a4ed54b06200047ee13ee67be3fc6de32d106"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-get-stdin-7.0.0",
+      "name": "get-stdin",
+      "versionInfo": "7.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/get-stdin@7.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cd129ccb0beb5e55ec034bf48bd228e0a0d1680c3bf9ad59a6347097d5a8c7c3c59550821eb6bb13d73892a5c2a0233d9d1e6d0646934d9441a029bad1b16a4d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "name": "eslint",
+      "versionInfo": "8.56.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nicholas C. Zakas",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/eslint@8.56.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1a8d7dc4ce93f69b823969ed89ed7f3fdf7b697c45b0e8b7ec9207456239d781dce999da1c6298f71161ad4eb9453e82701133668186d5ee8dabe0d3d3866d65"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--eslint-community-eslint-utils-4.4.0",
+      "name": "eslint-utils",
+      "versionInfo": "4.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Toru Nagashima",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40eslint-community/eslint-utils@4.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d7fb00e1dc2bcc1032794a10ea8c5a8472a6ad9bec9cb0a0e117f15b76451869909123503c534b57d09410540fd71f446171d3a39a7ac5d85933535ef69fc07c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-eslint-visitor-keys-3.4.3",
+      "name": "eslint-visitor-keys",
+      "versionInfo": "3.4.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Toru Nagashima",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/eslint-visitor-keys@3.4.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c2973e2d77a2ca28acc4f944914cd4eacbf24b57eb20edcc8318f57ddcbb3e6f1883382e6b1d8ddc56bf0ff6a0d56a9b3a9add23eb98eb031497cfdad86fa26a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--eslint-community-regexpp-4.10.0",
+      "name": "regexpp",
+      "versionInfo": "4.10.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Toru Nagashima",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40eslint-community/regexpp@4.10.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0aef7a49dd81cbd982353c768b228e9aad74bf6da351542fd25427946372d7aa04f79f3dc84f900033dbacc182900e7570a6528373eefda4c955319f2ffaa350"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "name": "eslintrc",
+      "versionInfo": "2.1.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nicholas C. Zakas",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40eslint/eslintrc@2.1.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "dbaf59dfd312eb0549b6ca14975d0beb459d92125574f1b6e10e1e6531f79e717a969bd24a110adf04230d7f494560143ef3e1ec23a8b8fa54f48aea69916fb5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ajv-6.12.6",
+      "name": "ajv",
+      "versionInfo": "6.12.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Evgeny Poberezkin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ajv@6.12.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "8f77d52e0bd3a39dbb6a7c98c893864d825b1bebe79d062f1349b99a691cd532be9f1029a6408b3082f4699e1d6e55423681928619be933138654ca4068320e2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-fast-deep-equal-3.1.3",
+      "name": "fast-deep-equal",
+      "versionInfo": "3.1.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Evgeny Poberezkin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fast-deep-equal@3.1.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "7f7a90f68432f63d808417bf1fd542f75c0b98a042094fe00ce9ca340606e61b303bb04b2a3d3d1dce4760dcfd70623efb19690c22200da8ad56cd3701347ce1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-fast-json-stable-stringify-2.1.0",
+      "name": "fast-json-stable-stringify",
+      "versionInfo": "2.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: James Halliday",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fast-json-stable-stringify@2.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "96177fc05f8b93df076684c2b6556b687b5f8795d88a32236a55dc93bb1a52db9a9d20f22ccc671e149710326a1f10fb9ac47c0f4b829aa964c23095f31bf01f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-json-schema-traverse-0.4.1",
+      "name": "json-schema-traverse",
+      "versionInfo": "0.4.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Evgeny Poberezkin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/json-schema-traverse@0.4.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c5b6c21f9742614e53f0b704861ba1ec727cf075ee5b7aac237634cce64529f6441dca5688753f271ce4eb6f41aec69bfe63221d0b62f7030ffbce3944f7b756"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-uri-js-4.4.1",
+      "name": "uri-js",
+      "versionInfo": "4.4.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Gary Court",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/uri-js@4.4.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "eeb294cb2df7435c9cf7ca50d430262edc17d74f45ed321f5a55b561da3c5a5d628b549e1e279e8741c77cf78bd9f3172bacf4b3c79c2acf5fac2b8b26f9dd06"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-punycode-2.3.1",
+      "name": "punycode",
+      "versionInfo": "2.3.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Mathias Bynens",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/punycode@2.3.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bd8b7b503d54f5683ad77f2c84bb4b3af740bbef03b02fe2945b44547707fb0c9d712a4d136d007d239db9fe8c91115a84be4563b5f5a14ee7295645b5fabc16"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-debug-4.3.4",
+      "name": "debug",
+      "versionInfo": "4.3.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Josh Junon",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/debug@4.3.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3d15851ee494dde0ed4093ef9cd63b25c91eb758f4b793ae3ac1733cfcec7a40f9d9997ca947c520f122b305ea22f1d61951ce817fbb1bfbc234d85e870c5f91"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ms-2.1.2",
+      "name": "ms",
+      "versionInfo": "2.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: elsigh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ms@2.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b0690fc7e56332d980e8c5f6ee80381411442c50996784b85ea7863970afebcb53fa36f7be4fd1c9a2963f43d32b25ad98b48cd1bf9a7544c4bdbb353c4687db"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-espree-9.6.1",
+      "name": "espree",
+      "versionInfo": "9.6.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nicholas C. Zakas",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/espree@9.6.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a2bb99685923a2b4e9177da40d2239ffbe558b019e6608a7186cb636839283743d6e7c259e60e6e072e7925d111379fe9e30d7474dfb698d7ec79f19ff315dc1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-acorn-8.11.3",
+      "name": "acorn",
+      "versionInfo": "8.11.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: marijn",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/acorn@8.11.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "63dad17c91b98dc28e13408b8ac61ba2352322b20413b00633303f4a6e01b2500d85b4be70332980175c3d3f75a09eceb89f61609071e7d4636e1c559eb17c5e"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-acorn-jsx-5.3.2",
+      "name": "acorn-jsx",
+      "versionInfo": "5.3.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: marijn",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/acorn-jsx@5.3.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "aeaf6cf893617f4202863b435f196527b838d68664e52957b69d0b1f0c80e5c7a3c27eef2a62a9e293eb8ba60478fbf63d4eb9b00b1e81b5ed2229e60c50d781"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-globals-13.24.0",
+      "name": "globals",
+      "versionInfo": "13.24.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/globals@13.24.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0213b9414723f2596b6c6d3d89684f536076d38275c673de2fc910995a2b4accbe4a38f5b24f2023287a714a1c1a61f82f452e840272fa124c440e26800e2615"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-type-fest-0.20.2",
+      "name": "type-fest",
+      "versionInfo": "0.20.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "CC0-1.0",
+      "licenseDeclared": "CC0-1.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/type-fest@0.20.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "35ef9e138af4fe25a7a40c43f39db3dc0f8dd01b7944dfff36327045dd95147126af2c317f9bec66587847a962c65e81fb0cfff1dfa669348090dd452242372d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ignore-5.3.1",
+      "name": "ignore",
+      "versionInfo": "5.3.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: kael",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ignore@5.3.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e45cadcff22b68c8eaa707dddf891edbc3d354c8d98c91b630f9f9b7b384e1e50250d7fc0406bb6f95944bdfd0bebea6c0e412ecc93abddb0c9e8e617be4fc5f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-import-fresh-3.3.0",
+      "name": "import-fresh",
+      "versionInfo": "3.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/import-fresh@3.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bde6188506be0f54012b39ef8541f16fc7dac65af0527c6c78301b029e39ec4d302cd8a8d9b3922a78d80e1323f98880abad71acc1a1424f625d593917381033"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-parent-module-1.0.1",
+      "name": "parent-module",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/parent-module@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "190d84591a5057cfe8f80c3c62ab5f6593df3515996246e2744f64e6ba65fe10b7bed1c705f1a6d887e2eaa595f9ca031a4ad42990311372e8b7991cb11961fa"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-callsites-3.1.0",
+      "name": "callsites",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/callsites@3.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3fc06302c5ef652f95203508d7584709012fef8613ebb6148b924914d588a8bdb7e6c0668d7e3eab1f4cbaf96ce62bf234435cb71e3ac502d0dda4ee13bb2c69"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-resolve-from-4.0.0",
+      "name": "resolve-from",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/resolve-from@4.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a5bfcc6265ecb40932b11171f2988d235b4614d408140def904dc6ab812e035745ea01e9ffebe066ab021896a9bf2f0ddd0fb8a3b170beab8f25c9d9ed1632e2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-js-yaml-4.1.1",
+      "name": "js-yaml",
+      "versionInfo": "4.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Vladimir Zapparov",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/js-yaml@4.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a90293e334315e5f252f006d1cc5b06937067c5399be23897addcecbfc661a4da0647ebbec224cf44bed7dd4a48167004d9863ff9e49674ae6cb79b2093e65b0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-argparse-2.0.1",
+      "name": "argparse",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Python-2.0",
+      "licenseDeclared": "Python-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: vitaly",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/argparse@2.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f3ef56a9e6db173a57f4e47e59ae8edbd6ac22881e44ccdc1ad00835da4c1c7c80835d1fd3969215505b704a867ff3d7c35123019faadbf6c4060dc3beeacadd"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-minimatch-3.1.2",
+      "name": "minimatch",
+      "versionInfo": "3.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BlueOak-1.0.0",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/minimatch@3.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "27ba7ade1462023c35343130c355bb8b7efe07222b3963b95d0400cd9dd539c2f43cdc9bc297e657f374e73140cf043d512c84717eaddd43be2b96aa0503881f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-brace-expansion-1.1.12",
+      "name": "brace-expansion",
+      "versionInfo": "1.1.12",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: juliangruber",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/brace-expansion@1.1.12"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f53f548d6debd145b973543b193c25969b57c21bd8984cc587331f67d1fb1505adfae65e3e364f8c13ff5b5644c99d6dc065a89b9ff9e9317894f72a8e70c772"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-balanced-match-1.0.2",
+      "name": "balanced-match",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: juliangruber",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/balanced-match@1.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "de849e50ed13315ebb84dd4099b5ec2b8c9aa94eed8e21e56f144364ea47d0a5bdf82797e1b440697d009f1b74b71d8cae94695b041a3f02252121098585393f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-concat-map-0.0.1",
+      "name": "concat-map",
+      "versionInfo": "0.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: James Halliday",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/concat-map@0.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fd2aefe1db30c903417e8846a73f68e986f71b3dd2ad40ea047e6b4ee84647b6a1b656d82a7571c366c214c4658da03b1171da5d9f30b07768745bdb9212a6aa"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-strip-json-comments-3.1.1",
+      "name": "strip-json-comments",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/strip-json-comments@3.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e9f3dcf91e22870a8fe8dfda22fd9fd60307f25395b56407a2a0b8c8aea8483555a1cba602c7c2aa39179ea89832198cc12fe61072e9ed57a196ddea97a9448a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--eslint-js-8.56.0",
+      "name": "js",
+      "versionInfo": "8.56.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: openjsfoundation",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40eslint/js@8.56.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "80cb157a5f43edfd872e40666bd55bb736517a146881545f6ebfbe7f4ea72f6be708608d973383fbf314a2ffc5e29f26cb2007b291215686e08e95fae2ae66e8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--humanwhocodes-config-array-0.11.14",
+      "name": "config-array",
+      "versionInfo": "0.11.14",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nicholas C. Zakas",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40humanwhocodes/config-array@0.11.14"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "dd3f0b90e9a0e39055e452026f5e5040cb325125ab43c0328157c2ed91b7db339a967aab8a59b4d7c6550b0d1e6a95eec7c16d037deaf0f4914acb6379ede34a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--humanwhocodes-object-schema-2.0.2",
+      "name": "object-schema",
+      "versionInfo": "2.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nicholas C. Zakas",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40humanwhocodes/object-schema@2.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e84c224a3c1660fee94dc906e88e5ec8500d8cf8663e3517f4944b5127cd3c2ec55fbccaf60c9901f50468408be802d3a465f90239c1ab70bd5e65563e2b4da7"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--humanwhocodes-module-importer-1.0.1",
+      "name": "module-importer",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nicholas C. Zaks",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40humanwhocodes/module-importer@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6f1bde57857cbf961be277054d3deb3d281904ea429237cad32e28555549c08b8354144c0d7acfc9744bf7cf22e5aa7d9bd6e7c8412359f9b95a4066b5f7cb7c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--nodelib-fs.walk-1.2.8",
+      "name": "fs.walk",
+      "versionInfo": "1.2.8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: mrmlnc",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40nodelib/fs.walk@1.2.8"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a0607e53196059c810920c28f067041b07a6a1316ddc520ef5a6da6c199a1b05c8a01299f864f2d293f5f396de1a0ecb96287f3521d25765c0b35967ce7a1c4a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--nodelib-fs.scandir-2.1.5",
+      "name": "fs.scandir",
+      "versionInfo": "2.1.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: mrmlnc",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40nodelib/fs.scandir@2.1.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "beadb806adf29b91c4426d8d282af7c970f08dceef4ec1138510e7929d832bda75baa2d1f831eeae6fcd393a34286ec760753b7a9a4a663dcccaa62e3017fada"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--nodelib-fs.stat-2.0.5",
+      "name": "fs.stat",
+      "versionInfo": "2.0.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: mrmlnc",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40nodelib/fs.stat@2.0.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "46484f3e9db3aea0c0400ff68cd867ced70f025bfae17761229edaef8e78039a2f23b06e93182decc5fbb9dc00bb7ce0d437293d4d2bcf7555d5279aaaf638f8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-run-parallel-1.2.0",
+      "name": "run-parallel",
+      "versionInfo": "1.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Feross Aboukhadijeh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/run-parallel@1.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e65e15c9947ce8b67f943c594d1ea3a8bf00144d92d0814b30fdba01b8ec2d5003c4776107f734194b07fb2dfd51f0a2dddcf3f0e950b8f9a768938ca031d004"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-queue-microtask-1.2.3",
+      "name": "queue-microtask",
+      "versionInfo": "1.2.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Feross Aboukhadijeh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/queue-microtask@1.2.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "36e68d49ae9f94a4f925a498433268934e09cd32f5080e9a1a1bf9adf2d6dcf82a03e3360a1a59427002f21f22e19164052f17e51aa40c11c0eebe217a3dcaf4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-fastq-1.17.1",
+      "name": "fastq",
+      "versionInfo": "1.17.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Matteo Collina",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fastq@1.17.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b11543de55952175a0e81cbaf1937bbe1a3d6b5a5070dfd604568002c0c31739498efa06c743fccfb575b7bda0ac525f261bb760f641baedb97fb29ac368cdd7"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-reusify-1.0.4",
+      "name": "reusify",
+      "versionInfo": "1.0.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Matteo Collina",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/reusify@1.0.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "53d9c7f3c6b77dcfde902175974fd43f5228b22b888f24e1ee106f5d530762055c7c6bedf3ded782e8f650e2c3788e411b69bbfeec3268b553e9f6ed0b04f2cf"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--ungap-structured-clone-1.2.0",
+      "name": "structured-clone",
+      "versionInfo": "1.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Andrea Giammarchi",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40ungap/structured-clone@1.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cee55d16b3098ae083414302cd0683e8a2f6f0c8e7aaa37c5e702a884abd3cd9bf8423d34867eb5c239fc23d68c382c56ffb4dca624fc2c35b55e3dcd7116aad"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-chalk-4.1.2",
+      "name": "chalk",
+      "versionInfo": "4.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: sindresorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/chalk@4.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a0a9db845c91217a54b9ecfc881326c846b89db8f820e432ba173fc32f6463bfd654f73020ef5503aebc3eef1190eefed06efa48b44e7b2c3d0a9434eb58b898"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ansi-styles-4.3.0",
+      "name": "ansi-styles",
+      "versionInfo": "4.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ansi-styles@4.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cdb07dac22404f5adb8e25436f686a2851cd60bc60b64f0d511c59dc86700f717a36dc5b5d94029e74a2d4b931f880e885d3e5169db6db05402c885e64941212"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-color-convert-2.0.1",
+      "name": "color-convert",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Josh Junon",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/color-convert@2.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4511023ec8fb8aeff16f9a0a61cb051d2a6914d9ec8ffe763954d129be333f9a275f0545df3566993a0d70e7c60be0910e97cafd4e7ce1f320dfc64709a12529"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-color-name-1.1.4",
+      "name": "color-name",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Dmitry Iv",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/color-name@1.1.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "74ecbedc0b96ddadb035b64722e319a537208c6b8b53fb812ffb9b71917d3976c3a3c7dfe0ef32569e417f479f4bcb84a18a39ab8171edd63d3a04065e002c40"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-supports-color-7.2.0",
+      "name": "supports-color",
+      "versionInfo": "7.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/supports-color@7.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "aa9080bd197db2db8e1ef78ab27ec79dc251befe74d6a21a70acd094effe2f0c5cf7ed2adb02f2bf80dfbedf34fc33e7da9a8e06c25d0e2a205c647df8ebf047"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-has-flag-4.0.0",
+      "name": "has-flag",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/has-flag@4.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1329094ff4352a34d672da698080207d23b4b4a56e6548e180caf5ee4a93ba6325e807efdc421295e53ba99533a170c54c01d30c2e0d3a81bf67153712f94c3d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-cross-spawn-7.0.6",
+      "name": "cross-spawn",
+      "versionInfo": "7.0.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: André Cruz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/cross-spawn@7.0.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b95d903963f69d6ceccb668ca7c69189b862f5d9731791e0879487681f4e893184c834e2249cb1d2ecb9d505ddc966ed00736e6b85c9cd429c6b73b3294777bc"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-path-key-3.1.1",
+      "name": "path-key",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/path-key@3.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a2399e374a9dfb2d23b3312da18e3caf43deab97703049089423aee90e5fe3595f92cc17b8ab58ae18284e92e7c887079b6e1486ac7ee53aa6d889d2c0b844e9"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-shebang-command-2.0.0",
+      "name": "shebang-command",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Kevin Mårtensson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/shebang-command@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "907c6bdb366962d766acdd6a0e3aeb5ff675ad1d641bc0f1fa09292b51b87979af5ecc26704d614d6056614ce5ada630d7fc99a7a62e0d8efb62dbdb3747660c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-shebang-regex-3.0.0",
+      "name": "shebang-regex",
+      "versionInfo": "3.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/shebang-regex@3.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "efef9d161b5cc77df9dee05aabc0c347836ec417ad0730bb6503a19934089c711de9b4ab5dd884cb30af1b4ed9e3851874b4a1594c97b7933fca1cfc7a471bd4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-which-2.0.2",
+      "name": "which",
+      "versionInfo": "2.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: GitHub Inc.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/which@2.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "04b2374e5d535b73ef97bd25df2ab763ae22f9ac29c17aac181616924a8cb676d782b303fb28fbae15b492e103c7325a6171a3116e6881aa4a34c10a34c8e26c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-isexe-2.0.0",
+      "name": "isexe",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BlueOak-1.0.0",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/isexe@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "447c4c2e9f659ca1c61d19e0f5016144231b600715a67ebdb2648672addfdfac638155564e18f8aaa2db4cb96aed2b23f01f9f210d44b8210623694ab3241e23"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-doctrine-3.0.0",
+      "name": "doctrine",
+      "versionInfo": "3.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: constellation",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/doctrine@3.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c92f90e62de105fec6064778286f1aede04d3563462d3684c306165228c860cef3ae56033340455c78e33d6956675460ed469d7597880e68bd8c5dc79aa890db"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-esutils-2.0.3",
+      "name": "esutils",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: constellation",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/esutils@2.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "915b1ca97938382a7af126747648042958baffc8a3df4d0a0564c9ab7d8ffdd61e5934b02b8d56c93c5a94dd5e46603967d514fcb5fd0fb1564a657d480631ea"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-escape-string-regexp-4.0.0",
+      "name": "escape-string-regexp",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/escape-string-regexp@4.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4eda5c349dd7033c771aaf2c591cc96956a346cd2e57103660091d6f58e6d9890fcf81ba7a05050320379f9bed10865e7cf93959ae145db2ae4b97ca90959d80"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-eslint-scope-7.2.2",
+      "name": "eslint-scope",
+      "versionInfo": "7.2.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: openjsfoundation",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/eslint-scope@7.2.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "74eb76d4eee54cc84333e5fd981e065fe0d9ad9b425093cbff095c4eac72af1e48bced0862d20b76dad0190a7ef27e52d20c1256639ff4d42b8cc3a07d066522"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-esrecurse-4.3.0",
+      "name": "esrecurse",
+      "versionInfo": "4.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: constellation",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/esrecurse@4.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "2a67ca2f76fa1be457bcff0dd6faf74ead642ffa021609f63585c4b6a3fcfcbde929aa540381bc70555aa05dd2537db7083e17ca947f7df8a81e692d8bafd36a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-estraverse-5.3.0",
+      "name": "estraverse",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: nzakas",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/estraverse@5.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "30c74046e54443388d4de243f0380caa6870475d41450fdc04ffa92ed61d4939dfdcc20ef1f15e8883446d7dfa65d3657d4ffb03d7f7814c38f41de842cbf004"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-esquery-1.5.0",
+      "name": "esquery",
+      "versionInfo": "1.5.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Joel Feenstra",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/esquery@1.5.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6102d7529940c09802c9d43bf08309cb064271ea2a935a07d3538445d48025cffb5360329708e14822c312dab083cd7589d212ffd7c85391a31bbdc882328c56"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-file-entry-cache-6.0.1",
+      "name": "file-entry-cache",
+      "versionInfo": "6.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jared Wray",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/file-entry-cache@6.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "ec6a6cfd75b299b2e4d902d82b8373a4c3ab623321748c57b88bf2d9006c2c4ea58eea1d2af7645acfdca72249dc25485691f43a2d47be0d68bdb3332dd14106"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-flat-cache-3.2.0",
+      "name": "flat-cache",
+      "versionInfo": "3.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jared Wray",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/flat-cache@3.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "09870435af85b5c50a2e6861ab272da5c96cabb405dfca4a8d91ec18d892405e6be05b6828359a6c50e5de1cda11032f4f52c7132b30e6dc202efa5861be2f6f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-flatted-3.2.9",
+      "name": "flatted",
+      "versionInfo": "3.2.9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Andrea Giammarchi",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/flatted@3.2.9"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "dfacb10e7e47ece1594256b4fe314999b20a4dd6404079e009e746c62326a4d7c464cd2c744793f967332d0ae32ba0fba366a2c8b6039e4c3447724ad10bf545"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-keyv-4.5.4",
+      "name": "keyv",
+      "versionInfo": "4.5.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jared Wray",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/keyv@4.5.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a3154790747f1097f608d5e75b144b5ba9a0ec9c82094706d03b441a62f672d528d4f3538a7d4f52297eafffb8af93295600bf7e7d648ecc7b9a34ae8caa88a7"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-json-buffer-3.0.1",
+      "name": "json-buffer",
+      "versionInfo": "3.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Dominic Tarr",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/json-buffer@3.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e1b57905f4769aa7d04c99be579b4f3dd7fe669ba1888bd3b8007983c91cad7399a534ff430c15456072c17d68cebea512e3dd6c7c70689966f46ea6236b1f49"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-rimraf-3.0.2",
+      "name": "rimraf",
+      "versionInfo": "3.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BlueOak-1.0.0",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/rimraf@3.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "25990931990018514f3f662a5d95cf6cc94c060b31cc4f082ece253085ffda8d0bf54070f4efd8de8eb0170fe2f582daa5c5095b0a9b8b791dc483dd0bad9320"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-glob-7.2.3",
+      "name": "glob",
+      "versionInfo": "7.2.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BlueOak-1.0.0",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/glob@7.2.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "9c5474ccba54d9809a471c28089bcbe94bc21f6245c85548bf04cbb087f6d40b8794cb240358614dd93e2e5609b4e958b7dbfa76fb330f604646a04bfa240af5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-fs.realpath-1.0.0",
+      "name": "fs.realpath",
+      "versionInfo": "1.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fs.realpath@1.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "38ed291f694ae9ad2166701d6aee48b731cf23aa5496f23b8cc567c54411b70e28c05db093c94e49a6ed1830933f81a0ae0d8c6c69d63bd5fc2b5b78f9f18c0f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-inflight-1.0.6",
+      "name": "inflight",
+      "versionInfo": "1.0.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/inflight@1.0.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "93dd88fdbd3cab8c2f16c71708bbea7ec1c2ae3ac5ef2897b10b8856f544ecdf365b7f9aaa9cee51d05b7e159ccbf159477ff82207e532028b3acbcf0eb18224"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-once-1.4.0",
+      "name": "once",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/once@1.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "94d689808fb643951140191c7042874d038f697754c67659125413658d0c15402e684a9ed44f8dcaf81dcff688c8d8ba67d3333b976fd47f27e7cfc610ba77fb"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-wrappy-1.0.2",
+      "name": "wrappy",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Isaac Z. Schlueter",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/wrappy@1.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "9784a9fc346c7a8afdc0be84bd5dbe4ee427eb774c90f8d9feca7d5e48214c46d5f4a94f4b5c54b19deeeff2103b8c31b5c141e1b82940f45c477402bdeccf71"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-inherits-2.0.4",
+      "name": "inherits",
+      "versionInfo": "2.0.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: isaacs",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/inherits@2.0.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "93fbc6697e3f6256b75b3c8c0af4d039761e207bea38ab67a8176ecd31e9ce9419cc0b2428c859d8af849c189233dcc64a820578ca572b16b8758799210a9ec1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-path-is-absolute-1.0.1",
+      "name": "path-is-absolute",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/path-is-absolute@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0156f0dd42767bd6eaeb8bd2692f409b47e37b53daf296c6a934ec9977da2223299ebe4394385f24eb8b8fd49ff7964f5430147ab0df124f3c30f98f7bb50242"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-find-up-5.0.0",
+      "name": "find-up",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/find-up@5.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "efcfcf5d3d7094b2c3813cc3b3bb23abd873cf4bd70fece7fbbc32a447b87d74310a6766a9f1ac10f4319a2092408dda8c557dd5b552b2f36dac94625ba9c69e"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-locate-path-6.0.0",
+      "name": "locate-path",
+      "versionInfo": "6.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/locate-path@6.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "88f64ae9e6236f146edee078fd667712c10830914ca80a28a65dd1fb3baad148dc026fcc3ba282c1e0e03df3f77a54f3b6828fdcab67547c539f63470520d553"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-p-locate-5.0.0",
+      "name": "p-locate",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/p-locate@5.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "2da363b51594058fbecc1e6713f37071aa0cca548f93e4be647341d53cdd6cc24c9f2e9dca7a401aded7fed97f418ab74c8784ea7c47a696e8d8b1b29ab1b93f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-p-limit-3.1.0",
+      "name": "p-limit",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/p-limit@3.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4d839a9ccdf01b0346b193767154d83c0af0e39e319d78f9aa6585d5b12801ce3e714fe897b19587ba1d7af8e9d4534776e1dcdca64c70576ec54e5773ab8945"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-yocto-queue-0.1.0",
+      "name": "yocto-queue",
+      "versionInfo": "0.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/yocto-queue@0.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "ad592cbec9cd09d27fa2119ceb180fc3237c7a1782c6c88b33c9b1b84fedfe6395a897b03ee3b59a22e94c74224604ca08b7b12f831e00555a82db3b1e6359d9"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-path-exists-4.0.0",
+      "name": "path-exists",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/path-exists@4.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6a4f50cb943b8d86f65b071ecb9169be0d8aa0073f64884b48b392066466ca03ec1b091556dd1f65ad2aaed333fa6ead2530077d943c167981e0c1b82d6cbbff"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-glob-parent-6.0.2",
+      "name": "glob-parent",
+      "versionInfo": "6.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Gulp Team",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/glob-parent@6.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5f1c08f043a1550816a7a8832feddbd2bf3a7f877a017eb3494e791df078c9d084b972d773915c61e3aefa79c67ed4b84c48eeff5d6bb782893d33206df9afe0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-is-glob-4.0.3",
+      "name": "is-glob",
+      "versionInfo": "4.0.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jon Schlinkert",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/is-glob@4.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c5e9526b21c7dfa66013b6568658bba56df884d6cd97c3a3bf92959a4243e2105d0f7b61f137e4f6f61ab0b33e99758e6611648197f184b4a7af046be1e9524a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-is-extglob-2.1.1",
+      "name": "is-extglob",
+      "versionInfo": "2.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jon Schlinkert",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/is-extglob@2.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "49b29b00d90deb4dd58b88c466fe3d2de549327e321b0b1bcd9c28ac4a32122badb0dde725875b3b7eb37e1189e90103a4e6481640ed9eae494719af9778eca1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-graphemer-1.4.0",
+      "name": "graphemer",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Matt Davies",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/graphemer@1.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "12d2b0a0eea4c422fd58ee718a98874d9952cc19bb58b4fadbb4ea0bfb9545dd072a6abc357c9e6e7358c43a018bbc2df1e4d6ad4aca5c2395685abdc759206a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-imurmurhash-0.1.4",
+      "name": "imurmurhash",
+      "versionInfo": "0.1.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jens Taylor",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/imurmurhash@0.1.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "2665cc67ac2ebc398b88712697dca4cea3ba97015ba1fd061b822470668435d0910c398c5679f2eece47b0880709b6aad30d8cc8f843aa48535204b62d4d8f1c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-is-path-inside-3.0.3",
+      "name": "is-path-inside",
+      "versionInfo": "3.0.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/is-path-inside@3.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "15de200016fec9c18098aa2ef1e31fb42ba94a2af9951c6a7f8683fef774703daa7381cbd3b3a309eb8732bf11a380a831a782283074fc40813955a34f052f3d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-json-stable-stringify-without-jsonify-1.0.1",
+      "name": "json-stable-stringify-without-jsonify",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: James Halliday",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/json-stable-stringify-without-jsonify@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "05d6e8cbe97bb40dce196e858f21475a43f92ee0728f54e4df72e3caad1ac72cdd93dfff2528b6bb77cfd504a677528dc2ae9538a606940bbcec28ac562afa3f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-levn-0.4.1",
+      "name": "levn",
+      "versionInfo": "0.4.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: George Zahariev",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/levn@0.4.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f9b4f6b87e04e4b184ee1fe7ddebdc4bfb109495c2a48a7aca6f0e589e5e57afbaec3b2a97f2da693eea24102ddabcdfa1aff94011818710e2c7574cb7691029"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-prelude-ls-1.2.1",
+      "name": "prelude-ls",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: George Zahariev",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/prelude-ls@1.2.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "be47033eb459a354192db9f944b18fa60fd698843ae6aa165a170629ffdbe5ea659246ab5f49bdcfca6909ab789a53aa52c5a9c8db9880edd5472ad81d2cd7e6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-type-check-0.4.0",
+      "name": "type-check",
+      "versionInfo": "0.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: George Zahariev",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/type-check@0.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5e5794a1cf6ec065ea8d6c176944d9026ccc705679f39f10036befc7552be7121c8b15c83fef0b9c50e0469954df4bacead7aa765b2415fbbe69ee0aefd3a87b"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-lodash.merge-4.6.2",
+      "name": "lodash.merge",
+      "versionInfo": "4.6.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: John-David Dalton",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lodash.merge@4.6.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d0aa63a97455beb6320ac5f5b3047f5d32b4bdae9542440ce8c368ecfa96efb0728c086801103c11facfd4de3e2a52a3f184b46540ad453fd852e872603ba321"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-natural-compare-1.4.0",
+      "name": "natural-compare",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Lauri Rooden",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/natural-compare@1.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "396343f1e8b756d342f61ed5eb4a9f7f7495a1b1ebf7de824f0831b9b832418129836f7487d2746eec8408d3497b19059b9b0e6a38791b5d7a45803573c64c4b"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "name": "optionator",
+      "versionInfo": "0.9.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: George Zahariev",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/optionator@0.9.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "2630a8ca9a7e8ca9f5b6d105131c617ad08a789b7dce102002f7b91571e2c53bc50d6ff968492d5fd6ee7c128b45131d53b6cdb692df706bbde01ddc7442608e"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm--aashutoshrathi-word-wrap-1.2.6",
+      "name": "word-wrap",
+      "versionInfo": "1.2.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jon Schlinkert",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40aashutoshrathi/word-wrap@1.2.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d588ecd92bccf137e5111fce0f770e8e15963996f9f00dadef0a44d92f577c161388897e5c58501b66e3cb83eed48f8402508d533443603745c056142af5dc20"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-deep-is-0.1.4",
+      "name": "deep-is",
+      "versionInfo": "0.1.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Thorsten Lorenz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/deep-is@0.1.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a083f392c993838fccae289a6063bea245c34fbced9ffc37129b6fffe81221d31d2ac268d2ee027d834524fcbee1228cb82a86c36c319c0f9444c837b7c6bf6d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-fast-levenshtein-2.0.6",
+      "name": "fast-levenshtein",
+      "versionInfo": "2.0.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Ramesh Nair",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fast-levenshtein@2.0.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0c25eee887e1a9c92ced364a6371f1a77cbaaa9858e522599ab58c0eb29c11148e5d641d32153d220fcf62bcf2c3fba5f63388ca1d0de0cd2d6c2e61a1d83c77"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-strip-ansi-6.0.1",
+      "name": "strip-ansi",
+      "versionInfo": "6.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/strip-ansi@6.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "637f153d21dcaa416b0a916743dbee4979aabaebf9a1738aa46793e9a1abaf7a3719cf409556ba2417d448e0a76f1186645fbfd28a08ecaacfb944b3b54754e4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ansi-regex-5.0.1",
+      "name": "ansi-regex",
+      "versionInfo": "5.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Sindre Sorhus",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ansi-regex@5.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "aae2505e54d25062f62c7f52517a3c570b18e2ca1a9e1828e8b3529bce04d4b05c13cb373b4c29762473c91f73fd9649325316bf7eea38e6fda5d26531410a15"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-text-table-0.2.0",
+      "name": "text-table",
+      "versionInfo": "0.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: James Halliday",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/text-table@0.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "37ef148ac0170c693c3c55cfe07033551f676df995277cd82c05a24c8a2a0b9bf98ac8a786bfabe6e68ef3eeebdc131fb8d22e7c8b00ed176956069c0b6712a7"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-express-4.22.1",
+      "name": "express",
+      "versionInfo": "4.22.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: TJ Holowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/express@4.22.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1765fc83d3f55fbb823d9300dcc55ff70713aa5c8da7b2211f9a8f088d22ce168e2185da5bd2f9df9b46037aa68d1ce91fe6d9733aaaee154ac534783569eefa"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-accepts-1.3.8",
+      "name": "accepts",
+      "versionInfo": "1.3.8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: dougwilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/accepts@1.3.8"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3d802d8536b69b654ac6ebd20f70cf0bf1b2f94fac380d4b02e4fc9a4991bafc3e34009269e5c443e34771517bace365eaa71ac55dd4b9e9b06b093eefe4892f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-mime-types-2.1.35",
+      "name": "mime-types",
+      "versionInfo": "2.1.35",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: blakeembrey",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/mime-types@2.1.35"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "64363e6cf9b9cd34c5f98a42ac053d9cad148080983d3d10b53d4d65616fe2cfbe4cd91c815693d20ebee11dae238323423cf2b07075cf1b962f9d21cda7978b"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-mime-db-1.52.0",
+      "name": "mime-db",
+      "versionInfo": "1.52.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: blakeembrey",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/mime-db@1.52.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b0f538b95edd625bed589c70c311c3d0fba285536213b4f201b439496c43081f66518bce82ba103b061040e28f27c0886c4fb51135653a82b5502da7537818be"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-negotiator-0.6.3",
+      "name": "negotiator",
+      "versionInfo": "0.6.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: wesleytodd",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/negotiator@0.6.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f8452ca863cbb0cfa3ff37428598ec9d7e758385eb1c53885f07e70953c695093f9398226a470ab2ec4239b051bba0d29bda29c3f3bab2559b25d82140ce1b06"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-array-flatten-1.1.1",
+      "name": "array-flatten",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Blake Embrey",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/array-flatten@1.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3c254042cc167a6bba51dc6c0c5157ffe815798a8a0287770f75159bdd631f0ca782e3b002f60f871f2736533ef8da9170ae82c71a5469f8e684874a88789baa"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "name": "body-parser",
+      "versionInfo": "1.20.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: dougwilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/body-parser@1.20.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "65381860b30e5d8f6a294ff9ec5028f05f870367465fb6ea19cef5b710d10b5ad2e1fadd148e51ecd865b87c47e8cd1822d00fd2c1c1e2ea8039c60ac4eeae18"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-bytes-3.1.2",
+      "name": "bytes",
+      "versionInfo": "3.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: TJ Holowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/bytes@3.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fcd7fb4f2cd3c7a4b7c9124e6ce015efde7aafc72bdbe3a3f000b976df3048fdc1400a1e5f9f0da07c8253c3fccc690d5d2b634d28ba7f33ba174a4175c61b12"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-content-type-1.0.5",
+      "name": "content-type",
+      "versionInfo": "1.0.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/content-type@1.0.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "9d38ea7dc045122a4a7570afe180d05827e670b64a9bcd65745d29028a53bf2ac51956dc47a3ff54001de46ecdfb4b53afc42a894d2d15a743e852b836d27038"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-debug-2.6.9",
+      "name": "debug",
+      "versionInfo": "2.6.9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Josh Junon",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/debug@2.6.9"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6c2ec496b7496899cf6c03fed44a2d62fa99b1bdde725e708ba05f8ba0494d470da30a7a72fb298348d7ce74532838e6fc4ec076014155e00f54c35c286b0730"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ms-2.0.0",
+      "name": "ms",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: elsigh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ms@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4e9a7ad0fe885090d3b8eabfe59f1c76c93326e8dfc2a7ce4e4af02308fb211212a679099d3e92c89e0f08f9c63281630bd75d85a979295218b40b7dee2c74e4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-depd-2.0.0",
+      "name": "depd",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/depd@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "83b9c7e8fe9dc838a8268800006a6b1a90ad5489898693e4feba02cdd6f77c887ad7fb3f9cfb1f47aa27c8cc2408047f3a50b7c810b49444af52840402cb08af"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-destroy-1.2.0",
+      "name": "destroy",
+      "versionInfo": "1.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jonathan Ong",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/destroy@1.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "dac246253697208691d70e22252368374867318ec6a5cfe7f03e2a482270f10a855977fb72e0209c41f1069c1e69570f7af0b69772a98d80b1dcdca941081a26"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-http-errors-2.0.1",
+      "name": "http-errors",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jonathan Ong",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/http-errors@2.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e056d17405fe6d2766a3801416e4b458d88fcfc36016dfabf138603569a5ae3423b7543b651f7ecd395c7b6f39f71e0a497af022c69e4ea0e82909ad3fca4b99"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-setprototypeof-1.2.0",
+      "name": "setprototypeof",
+      "versionInfo": "1.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Wes Todd",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/setprototypeof@1.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1392c35fb5aba7ce4a8a5e5b859bf8ea3f2339e6e82aae4932660cde05467461fcc45a4f59750cb0dae53830ab928c4c11e362fd7648c2e46f6385cdc18309a7"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-statuses-2.0.2",
+      "name": "statuses",
+      "versionInfo": "2.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: ulisesgascon",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/statuses@2.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0ef132e795770c1eee927468fb888e193e5f3f5b2547cc10a2155d9278a064f32932cb5a289416870898040089137525da94e70138a18416274616501c606247"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-toidentifier-1.0.1",
+      "name": "toidentifier",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/toidentifier@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a39b123ca12483f0c840d987e37574fee7ab2eba7355e764521f2d18dbda797a5fa6ec2329e9e54a8c7fd8efc14e5654b447be246eece58844cfad3c3e500744"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-iconv-lite-0.4.24",
+      "name": "iconv-lite",
+      "versionInfo": "0.4.24",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Alexander Shtuchkin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/iconv-lite@0.4.24"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bf73179d901cbe7cb091350466898801cb657bb4575de79d391df5c3097b565ca85cee108bd6abbd27a73505a77b54dc4708422f51f02c8db56c4a9da63f3fac"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-safer-buffer-2.1.2",
+      "name": "safer-buffer",
+      "versionInfo": "2.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Nikita Skovoroda",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/safer-buffer@2.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "619a372bcd920fb462ca2d04d4440fa232f3ee4a5ea6749023d2323db1c78355d75debdbe5d248eeda72376003c467106c71bbbdcc911e4d1c6f0a9c42b894b6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-on-finished-2.4.1",
+      "name": "on-finished",
+      "versionInfo": "2.4.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: dougwilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/on-finished@2.4.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a15973920dc4340842936cddbfb209c1dfd0503e33d91c51c2991c198f29b0255c09864dab8c189d55802c733e6ebb6e26378f5a2605fc2966b83afc0a1e7e92"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ee-first-1.1.1",
+      "name": "ee-first",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jonathan Ong",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ee-first@1.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "58cc26f4b851528f9651a44dfaf46e113a86f3d22066985548d91d16079beac4bf1383ab0c837bb78f0201ec121d773a0bc95e7c3f0a29faf9bd8eb56eb425a3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-qs-6.14.2",
+      "name": "qs",
+      "versionInfo": "6.14.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: nlf",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/qs@6.14.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "57fc825934c5ed527d848875f1482bdb384930fd35318edce6487827cef42fb8a69bafc323306c34b4d7cccc14037c99e5bfca06a2f1f0aa77b91bddef149edd"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-side-channel-1.1.0",
+      "name": "side-channel",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/side-channel@1.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "657f7d7bab51c1ea145ea47e541aec96175ae75361e4c4d0c28bb9b6750381bb723347418268440ed5863ffc5b2a7ea1a9f3d11ee8d4370cf97f2ff06db867a7"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-es-errors-1.3.0",
+      "name": "es-errors",
+      "versionInfo": "1.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/es-errors@1.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "65fe47d8ac6ddb18d3bdb26f3f66562c4202c40ea3fa1026333225ca9cb8c5c060d6f2959f1f3d5b2d066d2fa47f9730095145cdd0858765d20853542d2e9cb3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-object-inspect-1.13.4",
+      "name": "object-inspect",
+      "versionInfo": "1.13.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: James Halliday",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/object-inspect@1.13.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5baee22e5e09d845c41936df78709f7eb8c37e2b6f2c0360d14957df01545124f1f762974457a0307515812a84fb0be101b8b85aa8c683d733cac4d5d84a5b7b"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-side-channel-list-1.0.0",
+      "name": "side-channel-list",
+      "versionInfo": "1.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/side-channel-list@1.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1422c7b510ff827a428821c48892cec1d9853fec330a60c491cf72ecdb18c5e178bbb06db27d59bb0830246c4898898789c240acb3f8474c97e1cd8a0ab32b4c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-side-channel-map-1.0.1",
+      "name": "side-channel-map",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/side-channel-map@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5428c235f80cb1bcb7b53768d369db8ed33f7b0adaea33c79a94e17a7913621f291bdb9c67fd4ff12a38bb814605e93f063a4e56c0c23282c0fe2b8128815744"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-call-bound-1.0.4",
+      "name": "call-bound",
+      "versionInfo": "1.0.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/call-bound@1.0.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fb2b3df7b53dea9a382b1fc0069042aa103d12ec49690583420ef6f791f8841a61bf72198346e804abb0629b78617a7a319e4099942753fb72313951a5a49e8e"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-call-bind-apply-helpers-1.0.2",
+      "name": "call-bind-apply-helpers",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/call-bind-apply-helpers@1.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4a9d5a6e52748af0e44b38dc68977112e9cde7f5ef92c149dac30115fabac74af285057fd9bfcac057b6d5c329987b4f3928a3f0af7dff049fa04b9339b9ae31"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-function-bind-1.1.2",
+      "name": "function-bind",
+      "versionInfo": "1.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Raynos",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/function-bind@1.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "ed71cdc47eea5fdc46e66230c6486e993a31fcc21135c3a00ebc56b0cb76a40af6dd61e9e8cad194dec50521690a9afea153b417be38894811f369c931f1b648"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "name": "get-intrinsic",
+      "versionInfo": "1.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/get-intrinsic@1.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f5f4a349aa2cfdf448548a7ec5226513a95fc21112ecb36d29a08121a987b23af69dad418800493e8d263a38f3f062435116ab9823c6a9a89583999f8dbf7c09"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-es-define-property-1.0.1",
+      "name": "es-define-property",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/es-define-property@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "7b79d17e07d4678acd18bdb7da05205f4e90372c9ecf4e0a76316b17e2d34683979ab3a014a0e0e0109db235bc1274faf5ea9d606991a49c223d560dac2696de"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-es-object-atoms-1.1.1",
+      "name": "es-object-atoms",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/es-object-atoms@1.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "146807da1f3328d8a6f658e3edd6a79053dc20220af42a796e6f9cda041261e3e1a5a1b9f9eb2b2ce0e2848a2b9fe3dee85189cd6857428b4fbfbde34da95d5c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-get-proto-1.0.1",
+      "name": "get-proto",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/get-proto@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b1349f063a17069f3d26f20a21e7eac3b53608279bb1cef892263a6b0886a202ada1219b823604fc6ffe97db05dcc5853cd73d21ca0e0b83837ca1dfc459a9d2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-dunder-proto-1.0.1",
+      "name": "dunder-proto",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/dunder-proto@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "28837f9c3241411717c3430b561644f62407986ebca80548060f42aa65188e64088608a3f54e4c16faea9142f915bb72cb366e39e3add3375e45ee1463b72df8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-gopd-1.2.0",
+      "name": "gopd",
+      "versionInfo": "1.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/gopd@1.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "65429187afe4505a0089302d4d83d9277870f70371c7e04804e8a39e51bd3e7ac9b027128ecd70cb20fabc9a5a62d827cc3aca6114aa7f738ee917daf77c6c46"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-has-symbols-1.1.0",
+      "name": "has-symbols",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/has-symbols@1.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d5c0cd77027625aa2199bdec8383a629a301c2e0b8f2c6278b91d4c360efb02f0b8c64cb2bd87e79bd57e91cae3877b8853d142c25baf22a26863528294aa53d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-hasown-2.0.2",
+      "name": "hasown",
+      "versionInfo": "2.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/hasown@2.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d21254f5208fbe633320175916a34f5d66ba76a87b59d1f470823dcbe0b24bcac6de72f8f01725adaf4798a8555541f23d6347e58ef10f0001edb7e04a391431"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-math-intrinsics-1.1.0",
+      "name": "math-intrinsics",
+      "versionInfo": "1.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/math-intrinsics@1.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fc85ed6f0124e474cfc84c32297ea11a4617c4cf676e3eb807e8a55499c2fd1e81d291f91b85776f4a556cbec3063e2d921040a696d05257fa17a5e5f4b1eed6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2",
+      "name": "side-channel-weakmap",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jordan Harband",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/side-channel-weakmap@1.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "58f4bf1ef1d04d89c78ac2e8f4c72a0473899361641cefed969be5772ae77a6e1a790a7885a8b7832b61b3083aa74d684a84e5e7cadca621408c5d9baf6024d8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-raw-body-2.5.3",
+      "name": "raw-body",
+      "versionInfo": "2.5.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jonathan Ong",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/raw-body@2.5.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b3855239feb2374aef6d1646c6cf0e9b90968fab1e9de3302b7a036f89560c7d143e159cc70396c39faa936e1bc6af3bb335f5c9daf0ca520ea76b86d688d4a4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-unpipe-1.0.0",
+      "name": "unpipe",
+      "versionInfo": "1.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/unpipe@1.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a63cb66d8852b2e7f05a52b03dcfa5ddc37bfb0b8994aeaecf461d2443a54036e5ea3a3f6253e2e266fc6a0524542f0117b57c36ecdec8f36a464b00de1ced29"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-type-is-1.6.18",
+      "name": "type-is",
+      "versionInfo": "1.6.18",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: blakeembrey",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/type-is@1.6.18"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4e444aafdb144f1107f0c75fb8248fed58b3272cd134c8e3d89d9da3626bdcaca6e7df0955d124b2eccf4029e514f5b8932f50fa203e99af411a6d3a5d0072f2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-media-typer-0.3.0",
+      "name": "media-typer",
+      "versionInfo": "0.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/media-typer@0.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "76afaa7a543d6a41e970e97f8145514f15483a4009d70477400bdbe11b158d2f285681630c64dcebbf702589949a49d41791f030b3a06f93be6b72b17d66a93d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-content-disposition-0.5.4",
+      "name": "content-disposition",
+      "versionInfo": "0.5.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/content-disposition@0.5.4"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "16f7994cdb86c34e1cc6502259bce2eb34c02ff9617a16966d3b6096e261e3f13de43a8cc139a16b7299375680580f1c148847ccc654bcb7af930e51aa4fad49"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-safe-buffer-5.2.1",
+      "name": "safe-buffer",
+      "versionInfo": "5.2.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Feross Aboukhadijeh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/safe-buffer@5.2.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "ae9dd2a34eca71d9a629b1af81a37141226bedb1954959394bd12ad45fa9a5b468ef4f9879a0f1930e4377c34f37e183e9b8e7626d95b8fb825e6a6e62f9825d"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-cookie-0.7.1",
+      "name": "cookie",
+      "versionInfo": "0.7.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Roman Shtylman",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/cookie@0.7.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e839c89e9c7b489d802b7f824d413f64cd2f59351ba1909e831842db1888c9d1d1f6336e4c001206b7c4a4786218e670fe75f9d5b1ede98425f23b06a38cbfd3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-cookie-signature-1.0.6",
+      "name": "cookie-signature",
+      "versionInfo": "1.0.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: TJ Holowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/cookie-signature@1.0.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4000f395a1dcf22715f08eef6da257270a1df47598a7cb82a9fd716b839f36ed53ec9571408ad480e5ad1dd343b4f8b2c2615b892d76563a2d2172eb28cde8ad"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-encodeurl-2.0.0",
+      "name": "encodeurl",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: blakeembrey",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/encodeurl@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4349fd1d18b89ba26e188575785966bc907b644571bbddc8accca232c182d25acc24c5b3460c7a586aaec9f4206556f7d6f8468179df98f34d5e6c673a4441ae"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-escape-html-1.0.3",
+      "name": "escape-html",
+      "versionInfo": "1.0.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: tjholowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/escape-html@1.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3624aea59e0e7ae1b0afaf251887b29bf92c219309a1d506392099fc54a74f172b7a46efaab81d53194938ca628da299563009ad6ac6b3fe89cbc38cbb28fda3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-etag-1.8.1",
+      "name": "etag",
+      "versionInfo": "1.8.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: dougwilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/etag@1.8.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6882f9171ee66b055adf4d1a976067104e2236fa35a844f12eb3c8fe8d392fbcfa828edf0b0d49e844266cae05989d804bb920545fca1195ae7c17dd0a531c3e"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "name": "finalhandler",
+      "versionInfo": "1.3.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/finalhandler@1.3.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e8137db6b1fb6e9deabe7ad1cb3b01cfe837959c533594db54ed84575092d1621c0db6b0615758bc67e5304ffd40fd21d296250830424e361af67673303a72c5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-parseurl-1.3.3",
+      "name": "parseurl",
+      "versionInfo": "1.3.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: dougwilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/parseurl@1.3.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0a2c9e3b1153fc96723799b4cfd3df5f0e1208127a4b2833d43a65d30aa39610c418604fd469ec51510bd29eb78681b57dc8f77c7ca75e2f4d60ee2758e2fea9"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-statuses-2.0.1",
+      "name": "statuses",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: ulisesgascon",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/statuses@2.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "470340f59ffb3eb2b4eab60b23314c95a17e97bde2c29ceca9120581b30b6d370b0fa70e6a8f364da59e7cf5d0bc1d9f382e008ee612127752ecdfe64c26e475"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-fresh-0.5.2",
+      "name": "fresh",
+      "versionInfo": "0.5.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: TJ Holowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fresh@0.5.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cc9da6418335f2b1053ae75e57819285318843b45bcc0ee8cdb53d23f5c1a66ee4aa0332c209b294cc171f16499a45686249daf5dda95575573dd6133fd7a3f1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-http-errors-2.0.0",
+      "name": "http-errors",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jonathan Ong",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/http-errors@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "16dc2b1bf7ae0736848d8791a8e825cbb1b4aaf8a25e82569ef107d99d6994175781bca3bf7e291d349bf73a1e1ccc83cb7dfe0d6cb95adf56a3e4d446d39849"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-merge-descriptors-1.0.3",
+      "name": "merge-descriptors",
+      "versionInfo": "1.0.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: juliangruber",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/merge-descriptors@1.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "81a36f012ed367cf7bfeb55a6749ccb40cb13728bfa5d6e36c0c14a4542937bd06aa755f3a25e979450c291066cd769243c0dd4d7e3fd26b3adabd8afa113a99"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-methods-1.1.2",
+      "name": "methods",
+      "versionInfo": "1.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: tjholowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/methods@1.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "89c9401de36a366ebccc5b676747bed4bdb250876fccda1ab8a53858103756f1ffbcf162785eea7d197051953e0c0f4ff5b3d7212f74ba5c68528087db7b15db"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-path-to-regexp-0.1.12",
+      "name": "path-to-regexp",
+      "versionInfo": "0.1.12",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: ulisesgascon",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/path-to-regexp@0.1.12"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "440d468d454c9ef605c6eaa8beb12a668c715b935466a6f02ad633fd3b7b9d77ab9342db2db9509abb2075e3b15794851dfd140e08234bf6d278e670b75a6611"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-proxy-addr-2.0.7",
+      "name": "proxy-addr",
+      "versionInfo": "2.0.7",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/proxy-addr@2.0.7"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "96542c30b4940d43d3e388ddad4fcedfbaa59e27e2b433fe670ae699972848ac8b2afb59c69c95d27dbf6c3fcde2d040019fe024475953b28cadaa0ad7e5d802"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-forwarded-0.2.0",
+      "name": "forwarded",
+      "versionInfo": "0.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: dougwilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/forwarded@0.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6ee446d1fa41b511d24c238049eea10f6e7cb44b9b16844b6f864d03a3713151cdc3680e7301e8f70c9a6e5ccccce039cfdc40f4bd4a36393f36de8c4fd698a3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ipaddr.js-1.9.1",
+      "name": "ipaddr.js",
+      "versionInfo": "1.9.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: whitequark",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ipaddr.js@1.9.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d0a23feb4ef1a31493a07ec68cdd457d26cba14d3e6ed4e2723b1049642587f859ca437c2a998c7fbb98c0f5b747e6a467a47fc35f199574870585e26143cede"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-range-parser-1.2.1",
+      "name": "range-parser",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: TJ Holowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/range-parser@1.2.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1eb82cc7ea2baa8ca09e68456ca68713a736f7a27e1d30105e8c4417a80dba944e9a6189468cb37c6ddc700bdea8206bc2bff6cb143905577f1939796a03b04a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-send-0.19.0",
+      "name": "send",
+      "versionInfo": "0.19.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: TJ Holowaychuk",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/send@0.19.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "756e35bb955f2d7bbc4898796f0466c9851b028481ddcf6e421e8bf21fcab6c15110f5a96d7d65ae58c9a35f3a25ce2799c8bfb06519f5ad1ad09db381fab687"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-encodeurl-1.0.2",
+      "name": "encodeurl",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: blakeembrey",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/encodeurl@1.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4cf257abc26a15a5589b609698fbe73f6232a3865233bfd029c4a6b8c2c339b7e91f97e2ed150699dfeb4c37feaeeb7fb1a88389011e5533600262447403b1d3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-mime-1.6.0",
+      "name": "mime",
+      "versionInfo": "1.6.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Robert Kieffer",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/mime@1.6.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c74567f2ca48fb0b89d4ee92ee09db69083c3f187834d1dbeca4883661162a23c4e1128ea65be28e7f8d92662699180febc99cef48f611b793151b2bb306907a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-ms-2.1.3",
+      "name": "ms",
+      "versionInfo": "2.1.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: elsigh",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ms@2.1.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e85973b9b4cb646dc9d9afcd542025784863ceae68c601f268253dc985ef70bb2fa1568726afece715c8ebf5d73fab73ed1f7100eb479d23bfb57b45dd645394"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-serve-static-1.16.2",
+      "name": "serve-static",
+      "versionInfo": "1.16.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/serve-static@1.16.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "56aa6325929a75007f3c46c4c2f15d3b8dc0c79745059d94102b33cfc6d0ee98bbc2dfff3d67b53fa30dede0a78ec6ad62d053e84ba20a56e34963f65ab2284f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-utils-merge-1.0.1",
+      "name": "utils-merge",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jared Hanson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/utils-merge@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a4c653bc8913d5df93146bc33aaa1d39c971d105a49208ba4dda1af200bc7df18002acfda733d36560326dbb071e8103ff3b4cb64bff5686136324a1527f3584"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-vary-1.1.2",
+      "name": "vary",
+      "versionInfo": "1.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Douglas Christopher Wilson",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/vary@1.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "04d19b58b7ddd1e50f69b8645d4566d23f2ebaf444c93879a2f45afddca8c3f06a01b649c82fb97d4f88cd03b39802b362a6110084a8461750af778867f3d7aa"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-npm-prettier-3.2.5",
+      "name": "prettier",
+      "versionInfo": "3.2.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: James Long",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/prettier@3.2.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "dff1966bd68e0b461e0fb2d47ef386d8d883ca139646fb7593eadc2a13ae627318db88a20a98609de51f243c855ddeab642027b8b06fe9478050bb6b853fc5e0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-actions-checkout-v4",
+      "name": "checkout",
+      "versionInfo": "v4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: GitHub, Inc.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/checkout@v4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-actions-setup-python-v5",
+      "name": "setup-python",
+      "versionInfo": "v5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: GitHub, Inc.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/setup-python@v5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-codecov-codecov-action-v4",
+      "name": "codecov-action",
+      "versionInfo": "v4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/codecov/codecov-action@v4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-actions-upload-artifact-v4",
+      "name": "upload-artifact",
+      "versionInfo": "v4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: GitHub, Inc.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/upload-artifact@v4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-docker-setup-buildx-action-v3",
+      "name": "setup-buildx-action",
+      "versionInfo": "v3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/docker/setup-buildx-action@v3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-docker-build-push-action-v5",
+      "name": "build-push-action",
+      "versionInfo": "v5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/docker/build-push-action@v5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-github-actions-github-script-v7",
+      "name": "github-script",
+      "versionInfo": "v7",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: GitHub, Inc.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/github-script@v7"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-sap-vocabularies-0.5.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-csdl-0.11.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-colors-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-csdl-0.11.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-sax-1.4.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-csdl-0.9.5",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-colors-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-csdl-0.9.5",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-sax-1.4.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-pandoc-filter-2.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-get-stdin-7.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-vocabularies-0.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-colors-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-vocabularies-0.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-odata-csdl-0.9.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-odata-vocabularies-0.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-pandoc-filter-2.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-community-eslint-utils-4.4.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-eslint-visitor-keys-3.4.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-community-eslint-utils-4.4.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-eslint-8.56.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-uri-js-4.4.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-punycode-2.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-ajv-6.12.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fast-deep-equal-3.1.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-ajv-6.12.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fast-json-stable-stringify-2.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-ajv-6.12.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-json-schema-traverse-0.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-ajv-6.12.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-uri-js-4.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-debug-4.3.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ms-2.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-acorn-jsx-5.3.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-acorn-8.11.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-espree-9.6.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-acorn-jsx-5.3.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-espree-9.6.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-acorn-8.11.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-espree-9.6.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-eslint-visitor-keys-3.4.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-globals-13.24.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-type-fest-0.20.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-parent-module-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-callsites-3.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-import-fresh-3.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-parent-module-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-import-fresh-3.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-resolve-from-4.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-js-yaml-4.1.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-argparse-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-brace-expansion-1.1.12",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-balanced-match-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-brace-expansion-1.1.12",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-concat-map-0.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-minimatch-3.1.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-brace-expansion-1.1.12"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ajv-6.12.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-4.3.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-espree-9.6.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-globals-13.24.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ignore-5.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-import-fresh-3.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-js-yaml-4.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-minimatch-3.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-strip-json-comments-3.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--humanwhocodes-config-array-0.11.14",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--humanwhocodes-object-schema-2.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--humanwhocodes-config-array-0.11.14",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-4.3.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--humanwhocodes-config-array-0.11.14",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-minimatch-3.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-run-parallel-1.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-queue-microtask-1.2.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--nodelib-fs.scandir-2.1.5",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--nodelib-fs.stat-2.0.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--nodelib-fs.scandir-2.1.5",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-run-parallel-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-fastq-1.17.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-reusify-1.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--nodelib-fs.walk-1.2.8",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--nodelib-fs.scandir-2.1.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm--nodelib-fs.walk-1.2.8",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fastq-1.17.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-color-convert-2.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-color-name-1.1.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-ansi-styles-4.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-color-convert-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-supports-color-7.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-has-flag-4.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-chalk-4.1.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ansi-styles-4.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-chalk-4.1.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-supports-color-7.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-shebang-command-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-shebang-regex-3.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-which-2.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-isexe-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-cross-spawn-7.0.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-path-key-3.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-cross-spawn-7.0.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-shebang-command-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-cross-spawn-7.0.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-which-2.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-doctrine-3.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-esutils-2.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-esrecurse-4.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-estraverse-5.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-scope-7.2.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-esrecurse-4.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-scope-7.2.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-estraverse-5.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-esquery-1.5.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-estraverse-5.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-keyv-4.5.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-json-buffer-3.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-once-1.4.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-wrappy-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-inflight-1.0.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-once-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-inflight-1.0.6",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-wrappy-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-7.2.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fs.realpath-1.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-7.2.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-inflight-1.0.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-7.2.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-inherits-2.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-7.2.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-minimatch-3.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-7.2.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-once-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-7.2.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-path-is-absolute-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-rimraf-3.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-glob-7.2.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-flat-cache-3.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-flatted-3.2.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-flat-cache-3.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-keyv-4.5.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-flat-cache-3.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-rimraf-3.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-file-entry-cache-6.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-flat-cache-3.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-p-limit-3.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-yocto-queue-0.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-p-locate-5.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-p-limit-3.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-locate-path-6.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-p-locate-5.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-find-up-5.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-locate-path-6.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-find-up-5.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-path-exists-4.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-is-glob-4.0.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-is-extglob-2.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-glob-parent-6.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-is-glob-4.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-type-check-0.4.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-prelude-ls-1.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-levn-0.4.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-prelude-ls-1.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-levn-0.4.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-type-check-0.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--aashutoshrathi-word-wrap-1.2.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-deep-is-0.1.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fast-levenshtein-2.0.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-levn-0.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-prelude-ls-1.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-optionator-0.9.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-type-check-0.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-strip-ansi-6.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ansi-regex-5.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--eslint-community-eslint-utils-4.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--eslint-community-regexpp-4.10.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--eslint-eslintrc-2.1.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--eslint-js-8.56.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--humanwhocodes-config-array-0.11.14"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--humanwhocodes-module-importer-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--nodelib-fs.walk-1.2.8"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm--ungap-structured-clone-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ajv-6.12.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-chalk-4.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-cross-spawn-7.0.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-4.3.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-doctrine-3.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-escape-string-regexp-4.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-eslint-scope-7.2.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-eslint-visitor-keys-3.4.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-espree-9.6.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-esquery-1.5.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-esutils-2.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fast-deep-equal-3.1.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-file-entry-cache-6.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-find-up-5.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-glob-parent-6.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-globals-13.24.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-graphemer-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ignore-5.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-imurmurhash-0.1.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-is-glob-4.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-is-path-inside-3.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-js-yaml-4.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-json-stable-stringify-without-jsonify-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-levn-0.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-lodash.merge-4.6.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-minimatch-3.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-natural-compare-1.4.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-optionator-0.9.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-strip-ansi-6.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-eslint-8.56.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-text-table-0.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-mime-types-2.1.35",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-mime-db-1.52.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-accepts-1.3.8",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-mime-types-2.1.35"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-accepts-1.3.8",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-negotiator-0.6.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-debug-2.6.9",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ms-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-depd-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-inherits-2.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-setprototypeof-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-statuses-2.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-toidentifier-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-iconv-lite-0.4.24",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-safer-buffer-2.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-on-finished-2.4.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ee-first-1.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-list-1.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-list-1.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-object-inspect-1.13.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-call-bind-apply-helpers-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-call-bind-apply-helpers-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-function-bind-1.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-es-object-atoms-1.1.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-dunder-proto-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-call-bind-apply-helpers-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-dunder-proto-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-dunder-proto-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-gopd-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-proto-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-dunder-proto-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-proto-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-object-atoms-1.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-hasown-2.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-function-bind-1.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-call-bind-apply-helpers-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-define-property-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-object-atoms-1.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-function-bind-1.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-get-proto-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-gopd-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-has-symbols-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-hasown-2.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-get-intrinsic-1.3.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-math-intrinsics-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-call-bound-1.0.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-call-bind-apply-helpers-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-call-bound-1.0.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-get-intrinsic-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-map-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-call-bound-1.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-map-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-map-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-get-intrinsic-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-map-1.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-object-inspect-1.13.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-call-bound-1.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-get-intrinsic-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-object-inspect-1.13.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-side-channel-map-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-1.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-es-errors-1.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-1.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-object-inspect-1.13.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-1.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-side-channel-list-1.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-1.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-side-channel-map-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-side-channel-1.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-side-channel-weakmap-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-qs-6.14.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-side-channel-1.1.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-raw-body-2.5.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-bytes-3.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-raw-body-2.5.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-http-errors-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-raw-body-2.5.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-iconv-lite-0.4.24"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-raw-body-2.5.3",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-unpipe-1.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-type-is-1.6.18",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-media-typer-0.3.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-type-is-1.6.18",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-mime-types-2.1.35"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-bytes-3.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-content-type-1.0.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-2.6.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-depd-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-destroy-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-http-errors-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-iconv-lite-0.4.24"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-on-finished-2.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-qs-6.14.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-raw-body-2.5.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-type-is-1.6.18"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-body-parser-1.20.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-unpipe-1.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-content-disposition-0.5.4",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-safe-buffer-5.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-2.6.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-encodeurl-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-escape-html-1.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-on-finished-2.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-parseurl-1.3.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-statuses-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-finalhandler-1.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-unpipe-1.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-depd-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-inherits-2.0.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-setprototypeof-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-statuses-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-http-errors-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-toidentifier-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-proxy-addr-2.0.7",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-forwarded-0.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-proxy-addr-2.0.7",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ipaddr.js-1.9.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-2.6.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-depd-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-destroy-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-encodeurl-1.0.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-escape-html-1.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-etag-1.8.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fresh-0.5.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-http-errors-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-mime-1.6.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-ms-2.1.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-on-finished-2.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-range-parser-1.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-send-0.19.0",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-statuses-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-serve-static-1.16.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-encodeurl-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-serve-static-1.16.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-escape-html-1.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-serve-static-1.16.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-parseurl-1.3.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-serve-static-1.16.2",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-send-0.19.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-accepts-1.3.8"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-array-flatten-1.1.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-body-parser-1.20.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-content-disposition-0.5.4"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-content-type-1.0.5"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-cookie-signature-1.0.6"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-cookie-0.7.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-debug-2.6.9"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-depd-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-encodeurl-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-escape-html-1.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-etag-1.8.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-finalhandler-1.3.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-fresh-0.5.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-http-errors-2.0.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-merge-descriptors-1.0.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-methods-1.1.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-on-finished-2.4.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-parseurl-1.3.3"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-path-to-regexp-0.1.12"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-proxy-addr-2.0.7"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-qs-6.14.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-range-parser-1.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-safe-buffer-5.2.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-send-0.19.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-serve-static-1.16.2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-setprototypeof-1.2.0"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-statuses-2.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-type-is-1.6.18"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-utils-merge-1.0.1"
+    },
+    {
+      "spdxElementId": "SPDXRef-pkg-npm-express-4.22.1",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-npm-vary-1.1.2"
+    }
+  ],
+  "documentDescribes": [
+    "SPDXRef-pkg-npm-sap-vocabularies-0.5.2"
+  ]
+}

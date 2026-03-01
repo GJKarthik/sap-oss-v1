@@ -1,0 +1,964 @@
+{
+  "service": "generative-ai-toolkit-for-sap-hana-cloud-main",
+  "total_files": 114,
+  "files_with_spdx": 114,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 7,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+    "LicenseRef-SAP-DeveloperAgreement",
+    "MIT"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "BSD-3-Clause",
+      "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "MIT"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "033998a83f8e5894f7ed4699ed2922a4ca2cf5a3b6df69736488952604d4b617",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "3ba3e2c9d48fbd181460d712508473890749852d00f8309b0d260242802b890c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "8f5a43d5ba1d40dcc3ba2e1cfc4571b77b194034a51ed91997f27aebc324e24e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/gen_ai_hana_service.yaml",
+      "sha256": "de1a4e774012a9ea667e94f537067ba70869f3c9c17b2a66692f1e3f5d28a368",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "sap_openai_server/server.py",
+      "sha256": "2cfea1154d04cb54134bd5df864b2ca863fc10e51d31071df8c19d5afd1d4b07",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "sap_openai_server/__init__.py",
+      "sha256": "3a3148ef23c8e17eb2dae704667946523061224f6c98323ee861dcb2762525ab",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "agent/gen_ai_toolkit_agent.py",
+      "sha256": "062a200d21bbfa628c0c08924673932595bba3d11374c63cd8c01b3cb0021dcd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "19b3ac26678633f911e762acc05e79674d68848220e85a01949da1252137e7e1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/mcp_http_server.py",
+      "sha256": "2097ef1c770362b98c55c2f2a10a9162e4417467e7b9d0e9a1ddf17fb1338534",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/mcp_http_client.py",
+      "sha256": "fd82f00003fa45607a9931e36eb84535223aef74871ff665c72444fb10d4a9b7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "scripts/test_mcp_client.py",
+      "sha256": "ccb48416a8e5763e493a6ade80969fdf01580dac5edaf74192e954baf6e17cd1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "scripts/start_mcp_server.py",
+      "sha256": "d36918c774ac90bdc48b247acafa6d8d5d08975249f64dd3f736fed231034022",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "doc/conf.py",
+      "sha256": "a28c14e6a0babf73085b8da539f63090a7bb66bc2f8593be6bbd0c59417f99c1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "copyright = '2026, SAP'"
+      ]
+    },
+    {
+      "path": "mcp_server/server.py",
+      "sha256": "0fb5dafcfcb6e495600849197b588163bda1d89521a92e5978f487500602986c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/utility.py",
+      "sha256": "1887fc4279b3094c17849834f9496fbf8dff38fac7149f5f7ba68dd719b5bab4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/__init__.py",
+      "sha256": "0fdd2134deac892bd1586dfe3f20f3172b9a4de5a30f4a39bdeb001157f1a552",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/langchain_compat.py",
+      "sha256": "5ce3d1ad18c4014fdcc9c9ff167c7a10e90c3105b2290301cf3be0b0b3f2ec8f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/smart_dataframe.py",
+      "sha256": "866c556e20798cca2722e07461acb3600a47d0e7f28e150232e78daa52abe905",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/agent_as_a_tool.py",
+      "sha256": "2932b94da51d03b1b3ccba329307b2e0ffd0d60f2cac513116ae374ed4b2f060",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/toolkit.py",
+      "sha256": "5b750aee7b58668f0d36bd4ddbb6304bd8d9a9bf54486fb3e559c07862bdfc76",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/code_template_tools.py",
+      "sha256": "34a9b88ac5b8ff0630a665befcc2ce7c297656be870040ef861d0295a1816b5d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_dataframe_agent.py",
+      "sha256": "b683369dd53803286b311c751781890032d31526d8a1ca6fd8d749de97f5db52",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hanaml_rag_agent.py",
+      "sha256": "68664966a8c0e73e3fa262df29642817716d738273ee8b87db9325edb2473efc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_sql_agent.py",
+      "sha256": "b39abe6108931cef7802f6179304aee1b58f98ea0eca616d6dda8937d5cc2636",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_dataframe_prompt.py",
+      "sha256": "f7490fce1d7049a90f2d3d57440b4f4d897feec077d52761c9794092f4acf303",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hanaml_agent_with_memory.py",
+      "sha256": "89548110998acbfcdba91f398d4cbfd9992624914a5173eb99fca5d253b81139",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/mem0_hana_agent.py",
+      "sha256": "70d9fb2cfb4541bcd9501f5f49466e04d4424cdd4baf20aa5e4ac6a09ca118fd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/utilities.py",
+      "sha256": "937770d143807e4bad94c2332d881ba9ce274ed19426e8696c3dd93c044f8078",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/mem0/memory_manager.py",
+      "sha256": "c4cb307bf12c6fca1485943848803e2399c486546b137bae6e0f561671fc8a78",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/mem0/memory_entity_extractor.py",
+      "sha256": "b0bdab75e1ff7130c171b08c77935cd9a7de856c75f40a0b12675221a46eb30f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/mem0/memory_classifier.py",
+      "sha256": "2289df527179c7973253630940ad1c65c42cc2bab4ea35d9f4ccaf6cf0ba1c53",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/mem0/hana_mem0_adapter.py",
+      "sha256": "60759b6ba84030ab2873f615af362eef064802988074b4fa296e3c8acaa1602c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/client/mcp_client.py",
+      "sha256": "a00df51368a1c33b6cada0d5a4e73ea35f91da9712a7ce6589a7332fb40ebddd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/embedding_service.py",
+      "sha256": "e4e4b6627c2153e8f511a91e01bda4c7552072d8fdf738231808badd74ff3a11",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/hana_vector_engine.py",
+      "sha256": "4c1117bcd0b3c7f067de78b76d524366a002cd2a066f3bcfebf3bdd77be43c84",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/corrective_retriever.py",
+      "sha256": "437ee4ef0432dc3a905bf80ccd84629660c8a3d2fc8c690d5d5085e82553675a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/pal_cross_encoder.py",
+      "sha256": "8ec2604ba92f5efef0b8781549079d8d5db3b97e08b29f5170ec26a38590ea38",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/code_templates.py",
+      "sha256": "91e8923dd189649bd31460e022e31abf8dc9724772239621bd34120a26e3ed2d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/union_vector_stores.py",
+      "sha256": "a028506ae87953094a3bbc559ef60eafa1287a04e8abd3e3f646f264ee8c374c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/vectorstore/knowledge_base/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_agent/agent_base.py",
+      "sha256": "6a17c0d579991ad5a33d4b4b7d5b0ef23ff4a606749232d94b2c7162278fc4b9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_agent/utility.py",
+      "sha256": "0a21d86e8c4d1f3cf7cf9838cf884aaa977fd2afd49e15f6503bf64e58481896",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_agent/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_agent/discovery_agent.py",
+      "sha256": "5f307ee297f44473ece2db4d2c2943fdddd26aea08404ffa97aaf72972a8d00e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_agent/data_agent.py",
+      "sha256": "6ba8faaae71853965f1219391b36970d14f177b7837c2899245906aae89df302",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/agents/hana_agent/progress_monitor.py",
+      "sha256": "56d84ed00280e9d85b0799fdfd75dba497c1d76dd4367e08e64c00a843eb6446",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/massive_automatic_timeseries_tools.py",
+      "sha256": "de305117f1bff63c066295484de6511254146433916166d55dcc661cb85b2227",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/intermittent_forecast_tools.py",
+      "sha256": "2070b80366d0170173e5560d2680c8c78fcb605719679f2f65c5b6cf5c4296f7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/additive_model_forecast_tools.py",
+      "sha256": "0e5a8487ffa56e1b3642e3912bb29e01662964f3be7a2e5d7535310c9479fb94",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/hdi_artifacts_tools.py",
+      "sha256": "6ae6a05130628a3af695f1c19848057715f562997d8782ae7b68aa6dd9040376",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/model_storage_tools.py",
+      "sha256": "73bc6fada1f5117fcb88edc2b3dfd203d80e8091046c37a3b35533db22e3b2c6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/ts_make_predict_table.py",
+      "sha256": "c9d839050124b327d5d591f6511ce34d1f9c98feae5529f296657a7b274b8f39",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/utility.py",
+      "sha256": "1ec9acec5066710ca5b837610397950493e457247d751b364efc6977b2b59394",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/unsupported_tools.py",
+      "sha256": "a522bf3a5366f6f3b012befe4439c5ebab255e80ce7740211abd10879c6a236b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/automatic_timeseries_tools.py",
+      "sha256": "ab8d84bfbf83a73296cad03990f11fd8a6a30d7d65af9a7e19f706db8f701b3f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/cap_artifacts_tools.py",
+      "sha256": "8624770dc72270b1c1cfd81e01f711aae5e941877d0d3e8b97311dab6b309bb5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/ts_outlier_detection_tools.py",
+      "sha256": "c36c9ff53a39d08eac3a7c58d4a28622eb4559c8e570dc4afc68391058481560",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/select_statement_to_table_tools.py",
+      "sha256": "4aa14f3ba2e3aeee8ddf94aa4eb0c1057af89f6101a3d5afc1aba119449473c9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/graph_tools.py",
+      "sha256": "8d79dfe6dbda95ac5ec8d2b60ecb72b82a399e4a327692fee476553fc2e402b5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/ts_check_tools.py",
+      "sha256": "26c13b2307cf6a8441069e752f473159027d32bb16d303e27e435cca2c1ec5c5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/ts_visualizer_tools.py",
+      "sha256": "92a871653c1cd2653f3b18e31996ce2427f339653aa34463d1207466b38e194b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/ts_accuracy_measure_tools.py",
+      "sha256": "7f9617245c1120cccfce4d136c4638b069127bc21f78a7c926d4eb26b7087bdb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/massive_ts_outlier_detection_tools.py",
+      "sha256": "3ba6407c655be2dbd2fbd3112bfac4eaa2255e7d77a721bba2a65fb7a6b4bd28",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/hana_ml_tools/fetch_tools.py",
+      "sha256": "291ffb085c576f97e717703ac4db8ee561e968caf8f1dbf4188ca35be7f6b0ce",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/intermittent_forecast_tools.py",
+      "sha256": "5ca10a28f82247fdf8467d8a799da004f7e061cb75313116ae1f432783bea590",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/additive_model_forecast_tools.py",
+      "sha256": "3dcf1c607063e6ac268ccaeb2f8f19c23618de098f9bd6fd5fa8bbea9bc4c31c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/__init__.py",
+      "sha256": "ce9837161df6b6a0b280901a9fb643b78589c1e6b8e3c3a58b11c13457ed4ded",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/automatic_timeseries_tools.py",
+      "sha256": "4fdf1a51213d6d8c5faa8f138a0f87af11b79c35f89547d4b9d8200beb70b6c5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/ts_outlier_detection_tools.py",
+      "sha256": "afc1ed83ea46b75bc94d9e8f78497459b76fce15ba179254e3ef87950c06dcb0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/ts_visualizer_tools.py",
+      "sha256": "7ac4a33b1375ab7d78faf0af4c4add20ba7504d488a3e6d7ace5e924ab21c3e5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/hana_ai/tools/df_tools/fetch_tools.py",
+      "sha256": "cf0e8cf28ecc8365c9f0e1c2db1f05de609a23429bdc0852641f13e4c6021e58",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/testML_BaseTestClass.py",
+      "sha256": "a7d0f0bde769c426b86c9ad85fae89376e38fa9a2911df3dbece2d3d92184cfa",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/test_mem0_hana_agent.py",
+      "sha256": "6936f9db0a45ce0950541737c56ffaa41ae45a0cae46e7c67b64f0a0a567d8d2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/test_hana_mem0_adapter.py",
+      "sha256": "4b72955920fd3c47df65a201480f8a7c9b611dabb17c3e5d531060f9f624c072",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_model_storage_tools.py",
+      "sha256": "85b5fa3753f088c1ca7202ce1edab384b3e606cc85718d513d8ee5bf6b823c90",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_mcp_server_tool_schema.py",
+      "sha256": "f7c6fd93b5e1caf188859c992a30cccf79a9ea751f482b514519bfcf3ad799fe",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_ts_check_tools.py",
+      "sha256": "91b74952c53659770b81e931787cdc76abe84a38769b40faec66c20ef8795dd1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_mcp_server_tool_schema_sse.py",
+      "sha256": "7348ee07ca7a23a679c7b02ec9243eaa6572e15b5970f78a0a9f223e0d2db7d2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_automatic_timeseries_df_tools.py",
+      "sha256": "8eb657cf90de35efe57d0f5eccac35278a7198948ddda864a240f85f78bd3927",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_massive_automatic_timeseries_tools.py",
+      "sha256": "b67304e7741c4c86eecf72f1d9c671e2c0f1c36fad5f244268a2e8eaa1f7bb07",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_cap_artifacts_tools.py",
+      "sha256": "ad86b1fa4e15d4f31ec8fb7d5c92b2beea50cf938975d977d9cfc350a5637ae0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_make_predict_table.py",
+      "sha256": "c147bb4a14e1a6b18d02bd3255d1211aa0990444355bcc810b5609ae57fff0bc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_massive_ts_check_tools.py",
+      "sha256": "93094d6ced517c093a7095ee9d75bc93675c384d584ea087c531c6618bd51fde",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_ts_accuracy_measure_tools.py",
+      "sha256": "fb5c9855fa97f525b89e7d00a7ccc4c43a2e0b7fc90191dc789b2709f61e7f26",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_intermittent_forecast_tools.py",
+      "sha256": "1b71a6bfe09341b206d6a9c5a6716925ca220fe60306727fe7bc3ba99363bdb0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_ts_outlier_detection_tools.py",
+      "sha256": "5cd131e5faa2df6f9c695b7a58e09055ad30aa1389fecdf9d0cdb3c02a1f8405",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_mcp_server_stop_sse.py",
+      "sha256": "0d3cac2775a2b312890c436c3dfc178296ab4e0b1027a0fca68168b859cb0e10",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_intermittent_forecast_df_tools.py",
+      "sha256": "67abcae569ba59da04563e202a6140fc6c1463e3c9a80f74e15b780d96287196",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_forecast_line_plot_tools.py",
+      "sha256": "998ccceea7910f915a4ada25bebab539829a20fc8383ea17b0d8a359044b2233",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_mcp_server_stop_all.py",
+      "sha256": "b54deb2b9a1812126fe538c9da69a3620b48d7752e61479d9de7ce608c4d87d8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_graph_tools_reset_tools.py",
+      "sha256": "d1892190acb2bae2e93740c81e299f771dbceeaa35f910c26b0d007da3994077",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_hdi_artifacts_tools.py",
+      "sha256": "17fbc0da8c096a53fa99168b7391a0b53d4727f68092f4083a4ea1a7e51b1a01",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_automatic_timeseries_tools.py",
+      "sha256": "963c1adffd1ccc88f20d897e9350a346c68c7ce13270f62c0fdac99dfa999c96",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_mcp_server_stop_http.py",
+      "sha256": "b83eaf50f4dce715dbb74a86b3a72bef27cce39e1b2f9932c7e6d87731bf707e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_additive_model_forecast_df_tools.py",
+      "sha256": "8a1430754a37466da7d28c45862c2a8f0cf99de8fb574ea6f6dedc6639b702d5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_additive_model_forecast_tools.py",
+      "sha256": "a21487117467bd7e3b5befc87b6fe0e420f55a8ef4cdbeacbc96cd2060481d2e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_massive_ts_outlier_detection_tools.py",
+      "sha256": "1db1836d3db2b82ec2305a6bf16bb8c4f89f5cdfed830a1b70871b7a56df52ba",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_hana_agent_tool.py",
+      "sha256": "e3df7e0ff49f4d96b332eb773789786e0fc3520f1064ac820e78e9b29b35be0a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/tools/test_mcp_server_tool_schema_stdio.py",
+      "sha256": "5d9e390bad19909df78a9b79516ca1aa45ddc7997df9f537b249ffcd558b58a4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/bas/qa_bot.py",
+      "sha256": "9f1e97b20cfa2494b63bcd04899c498eafad75fa2ee696a3e71b38639651cbb2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/smart_dataframe/test_ts_visualizer.py",
+      "sha256": "f004fb6ca4b981aa434f3e498134483405d509473c48bcafd9f366e57f283734",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/vectorstore/test_code_template.py",
+      "sha256": "e5bfffbbc59022e30f5bc3b8ac52e80a47fdbf36c7000debb7c98aa5b180ccb4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/vectorstore/test_hana_vector_engine.py",
+      "sha256": "379fa3cd5d5baeb8005c8bf8672fe5c7fcfd09a09eefbb338e6163ba0de98c57",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/vectorstore/test_embedding_service.py",
+      "sha256": "3ff57a22e0090e3248ee28bbd38bbce83b701d4f02dcf006ea4d1805d156817a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/smart_dataframe/notebooks/test_ts_outlier_detection_tools.py",
+      "sha256": "74499e5215f4103d6dd71224c1eb3fd4a2d9464fd5261cc6bcac3bf12bb44d37",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/bas/src/qa_bot.ts",
+      "sha256": "b0f74e83fd479cc0d54e94fad634313cb8cf8cceaa48cd2aa1b04a4f301a4b56",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "nutest/testscripts/bas/src/test.ts",
+      "sha256": "cffd873004853dacf76541846ad443f181cbac5361442b4977bae6c01acad4db",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "nutest/testscripts/demo/e2e_scenarios/mem0_hana_agent_demo.py",
+      "sha256": "86466ad795282b90ef6f40fc9174c81f94149497b5386201d88c68bf84515a5d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/demo/e2e_scenarios/chatbot_service.py",
+      "sha256": "d271b7a3099e6e95cfcb54f4b483954636551ad0a4556a17d742305d2bd8585d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "nutest/testscripts/demo/e2e_scenarios/hanaml_rag_agent_demo.py",
+      "sha256": "9f3289b62d165bfffbb83e5acb331e4f35d2e5365e92e4d5412412e36c8a420f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    }
+  ],
+  "discovered_copyrights": [
+    "2024 SAP SE or an SAP affiliate company and generative-ai-toolkit-for-sap-hana-cloud contributors",
+    "copyright = '2026, SAP'"
+  ]
+}

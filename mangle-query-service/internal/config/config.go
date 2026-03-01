@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 // Package config provides configuration loading for the Mangle Query Service.
 package config
 

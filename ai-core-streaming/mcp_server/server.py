@@ -12,6 +12,44 @@ from typing import Any
 import urllib.request
 import base64
 
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if o.strip()
+]
+
+
+def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
+    origin = (handler.headers.get("Origin") or "").strip()
+    if origin and origin in CORS_ALLOWED_ORIGINS:
+        return origin
+    return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
+
+
+MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
+MAX_TOOL_TOKENS = int(os.environ.get("MCP_MAX_TOOL_TOKENS", "8192"))
+MAX_STREAM_EVENTS = int(os.environ.get("MCP_MAX_STREAM_EVENTS", "1000"))
+
+
+def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def parse_json_arg(value: Any, default: Any):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return default
+    return value if value is not None else default
+
 # =============================================================================
 # Types
 # =============================================================================
@@ -52,6 +90,10 @@ def get_config() -> dict:
         "base_url": os.environ.get("AICORE_BASE_URL", os.environ.get("AICORE_SERVICE_URL", "")),
         "resource_group": os.environ.get("AICORE_RESOURCE_GROUP", "default"),
     }
+
+
+def config_ready(config: dict) -> bool:
+    return all(config.get(k) for k in ("client_id", "client_secret", "auth_url", "base_url"))
 
 
 _cached_token = {"token": None, "expires_at": 0}
@@ -252,7 +294,10 @@ class MCPServer:
     # Tool Handlers
     def _handle_streaming_chat(self, args: dict) -> dict:
         config = get_config()
-        messages = json.loads(args.get("messages", "[]"))
+        messages = parse_json_arg(args.get("messages", "[]"), [])
+        if not isinstance(messages, list) or len(messages) == 0:
+            return {"error": "messages must be a non-empty JSON array"}
+        max_tokens = clamp_int(args.get("max_tokens", 1024), 1024, 1, MAX_TOOL_TOKENS)
         deployments = aicore_request(config, "GET", "/v2/lm/deployments")
         resources = deployments.get("resources", [])
         if not resources:
@@ -264,22 +309,30 @@ class MCPServer:
         if is_anthropic:
             result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/invoke", {
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": args.get("max_tokens", 1024),
+                "max_tokens": max_tokens,
                 "messages": messages,
                 "stream": True,
             })
             return {"content": result.get("content", [{}])[0].get("text", ""), "model": deployment["id"], "streaming": True}
-        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/chat/completions", {"messages": messages, "stream": True})
+        return aicore_request(
+            config,
+            "POST",
+            f"/v2/inference/deployments/{deployment['id']}/chat/completions",
+            {"messages": messages, "stream": True, "max_tokens": max_tokens},
+        )
 
     def _handle_streaming_generate(self, args: dict) -> dict:
         config = get_config()
-        prompt = args.get("prompt", "")
+        prompt = str(args.get("prompt", "") or "")
+        if prompt.strip() == "":
+            return {"error": "prompt is required"}
+        max_tokens = clamp_int(args.get("max_tokens", 256), 256, 1, MAX_TOOL_TOKENS)
         deployments = aicore_request(config, "GET", "/v2/lm/deployments")
         resources = deployments.get("resources", [])
         if not resources:
             return {"error": "No deployment available"}
         deployment = resources[0]
-        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/completions", {"prompt": prompt, "stream": True, "max_tokens": args.get("max_tokens", 256)})
+        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/completions", {"prompt": prompt, "stream": True, "max_tokens": max_tokens})
 
     def _handle_list_deployments(self, args: dict) -> dict:
         config = get_config()
@@ -298,7 +351,9 @@ class MCPServer:
         import time
         import uuid
         stream_id = str(uuid.uuid4())[:8]
-        config = json.loads(args.get("config", "{}"))
+        config = parse_json_arg(args.get("config", "{}"), {})
+        if not isinstance(config, dict):
+            return {"error": "config must be a JSON object"}
         self.streams[stream_id] = {
             "deployment_id": args.get("deployment_id", ""),
             "config": config,
@@ -323,9 +378,14 @@ class MCPServer:
         stream_id = args.get("stream_id", "")
         if stream_id not in self.streams:
             return {"error": f"Stream {stream_id} not found"}
+        data = parse_json_arg(args.get("data", "{}"), {})
+        if not isinstance(data, dict):
+            return {"error": "data must be a JSON object"}
+        if len(self.streams[stream_id]["events"]) >= MAX_STREAM_EVENTS:
+            return {"error": f"Stream {stream_id} reached max events limit ({MAX_STREAM_EVENTS})"}
         event = {
             "type": args.get("event_type", ""),
-            "data": json.loads(args.get("data", "{}")),
+            "data": data,
             "timestamp": time.time(),
         }
         self.streams[stream_id]["events"].append(event)
@@ -344,6 +404,11 @@ class MCPServer:
         id = request.id
 
         try:
+            if request.jsonrpc != "2.0":
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: jsonrpc must be '2.0'"})
+            if not isinstance(params, dict):
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: params must be an object"})
+
             if method == "initialize":
                 return MCPResponse(id, {
                     "protocolVersion": "2024-11-05",
@@ -357,6 +422,10 @@ class MCPServer:
             elif method == "tools/call":
                 tool_name = params.get("name", "")
                 args = params.get("arguments", {})
+                if args is None:
+                    args = {}
+                if not isinstance(args, dict):
+                    return MCPResponse(id, error={"code": -32602, "message": "Invalid params: arguments must be an object"})
                 handlers = {
                     "streaming_chat": self._handle_streaming_chat,
                     "streaming_generate": self._handle_streaming_generate,
@@ -401,51 +470,67 @@ mcp_server = MCPServer()
 
 
 class MCPHandler(BaseHTTPRequestHandler):
+    def _write_json(self, status_code: int, payload: dict):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
             from datetime import datetime, timezone
-            response = {"status": "healthy", "service": "ai-core-streaming-mcp", "timestamp": datetime.now(timezone.utc).isoformat()}
-            self.wfile.write(json.dumps(response).encode())
+            cfg = get_config()
+            ready = config_ready(cfg)
+            response = {
+                "status": "healthy" if ready else "degraded",
+                "service": "ai-core-streaming-mcp",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "config_ready": ready,
+            }
+            if not ready:
+                response["config_error"] = "Missing one or more required AI Core environment variables"
+            self._write_json(200, response)
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
         if self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode()
+            if content_length <= 0:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})
+                return
+            if content_length > MAX_REQUEST_BYTES:
+                self._write_json(413, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Request too large"}})
+                return
+
+            raw_body = self.rfile.read(content_length)
             try:
+                body = raw_body.decode("utf-8")
                 data = json.loads(body)
+                if not isinstance(data, dict):
+                    self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}})
+                    return
                 request = MCPRequest(data)
                 response = mcp_server.handle_request(request)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps(response.to_dict()).encode())
+                self._write_json(200, response.to_dict())
+            except UnicodeDecodeError:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Invalid UTF-8 body"}})
             except json.JSONDecodeError:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}).encode())
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def log_message(self, format, *args):
         pass

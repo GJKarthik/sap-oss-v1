@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 MCP client for connecting to HANA ML MCP server
 """
@@ -8,6 +10,7 @@ from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
 from contextlib import asynccontextmanager
+import asyncio
 import aiohttp
 import httpx
 
@@ -313,29 +316,201 @@ class StdioMCPClient(MCPClient):
         self,
         command: str = "python",
         args: List[str] = None,
-        server_name: str = "hana-ml-tools"
+        server_name: str = "hana-ml-tools",
+        env: Optional[Dict[str, str]] = None
     ):
         super().__init__(server_name)
         self.command = command
         self.args = args or []
-        self._process = None
+        self.env = env
+        self._process: Optional[asyncio.subprocess.Process] = None
+        self._request_id = 0
+        self._reader_task: Optional[asyncio.Task] = None
+        self._pending_responses: Dict[int, asyncio.Future] = {}
+        self._lock = asyncio.Lock()
+
+    def _next_request_id(self) -> int:
+        """Generate next request ID"""
+        self._request_id += 1
+        return self._request_id
 
     async def initialize(self) -> None:
-        """Initialize Stdio client"""
-        # Stdio communication needs to be implemented
-        # Only basic structure provided here
-        pass
+        """Initialize Stdio client - start subprocess and handshake"""
+        import asyncio
+        import os
+
+        # Merge environment with custom env vars
+        process_env = os.environ.copy()
+        if self.env:
+            process_env.update(self.env)
+
+        # Start the MCP server subprocess
+        self._process = await asyncio.create_subprocess_exec(
+            self.command,
+            *self.args,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=process_env
+        )
+
+        # Start background reader task
+        self._reader_task = asyncio.create_task(self._read_responses())
+
+        # Send initialize request
+        init_result = await self._send_request("initialize", {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "hana-ai-client", "version": "0.1"}
+        })
+
+        if init_result:
+            self.session_id = init_result.get("sessionId")
+
+        # Fetch tool list
+        await self._refresh_tools()
+
+    async def _read_responses(self) -> None:
+        """Background task to read JSON-RPC responses from stdout"""
+        import json
+
+        if not self._process or not self._process.stdout:
+            return
+
+        while True:
+            try:
+                line = await self._process.stdout.readline()
+                if not line:
+                    break
+
+                line_str = line.decode('utf-8').strip()
+                if not line_str:
+                    continue
+
+                try:
+                    response = json.loads(line_str)
+                    request_id = response.get("id")
+                    if request_id and request_id in self._pending_responses:
+                        future = self._pending_responses.pop(request_id)
+                        if not future.done():
+                            if "error" in response:
+                                future.set_exception(Exception(str(response["error"])))
+                            else:
+                                future.set_result(response.get("result"))
+                except json.JSONDecodeError:
+                    continue
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                continue
+
+    async def _send_request(self, method: str, params: Dict[str, Any]) -> Any:
+        """Send JSON-RPC request and wait for response"""
+        import json
+
+        if not self._process or not self._process.stdin:
+            raise RuntimeError("Stdio client not initialized. Call initialize() first.")
+
+        async with self._lock:
+            request_id = self._next_request_id()
+            request = {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "method": method,
+                "params": params
+            }
+
+            # Create future for response
+            future: asyncio.Future = asyncio.get_event_loop().create_future()
+            self._pending_responses[request_id] = future
+
+            # Send request
+            request_line = json.dumps(request) + "\n"
+            self._process.stdin.write(request_line.encode('utf-8'))
+            await self._process.stdin.drain()
+
+        # Wait for response with timeout
+        try:
+            return await asyncio.wait_for(future, timeout=30.0)
+        except asyncio.TimeoutError:
+            self._pending_responses.pop(request_id, None)
+            raise TimeoutError(f"Request {method} timed out")
+
+    async def _refresh_tools(self) -> None:
+        """Fetch available tools from server"""
+        try:
+            result = await self._send_request("tools/list", {})
+            tools_data = result.get("tools", []) if result else []
+            self.tools.clear()
+
+            for tool_data in tools_data:
+                tool = MCPTool(
+                    name=tool_data.get("name"),
+                    description=tool_data.get("description", ""),
+                    inputSchema=tool_data.get("inputSchema", {}),
+                    metadata=tool_data.get("metadata", {})
+                )
+                self.tools[tool.name] = tool
+        except Exception as e:
+            print(f"Warning: Failed to fetch tool list via stdio: {e}")
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> MCPCallResult:
-        """Call MCP tool (Stdio transport)"""
-        # Implement stdio communication logic
-        # Usually involves starting subprocess and JSON-RPC communication
-        raise NotImplementedError("Stdio客户端待实现")
+        """Call MCP tool via Stdio transport"""
+        if not self._process:
+            await self.initialize()
+
+        try:
+            result = await self._send_request("tools/call", {
+                "name": tool_name,
+                "arguments": arguments
+            })
+
+            # Parse MCP tool result
+            content = result.get("content", []) if result else []
+            if content and isinstance(content, list):
+                text_content = [
+                    item.get("text", "") 
+                    for item in content 
+                    if isinstance(item, dict) and item.get("type") == "text"
+                ]
+                data = "\n".join([t for t in text_content if t])
+            else:
+                data = str(result) if result else ""
+
+            return MCPCallResult(success=True, data=data)
+
+        except Exception as e:
+            return MCPCallResult(
+                success=False, 
+                data=None, 
+                error=f"Stdio tool call failed: {str(e)}"
+            )
 
     async def list_tools(self) -> List[MCPTool]:
         """List all available tools"""
-        # Implement stdio tool list fetching
-        raise NotImplementedError("Stdio客户端待实现")
+        if not self.tools:
+            await self._refresh_tools()
+        return list(self.tools.values())
+
+    async def close(self) -> None:
+        """Close client connection and terminate subprocess"""
+        if self._reader_task:
+            self._reader_task.cancel()
+            try:
+                await self._reader_task
+            except asyncio.CancelledError:
+                pass
+            self._reader_task = None
+
+        if self._process:
+            self._process.terminate()
+            try:
+                await asyncio.wait_for(self._process.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                self._process.kill()
+            self._process = None
+
+        self._pending_responses.clear()
 
 
 class MCPClientFactory:

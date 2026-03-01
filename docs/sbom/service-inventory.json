@@ -1,0 +1,688 @@
+{
+  "generated": "2026-03-01T04:50:00Z",
+  "documentVersion": "2.0",
+  "totalServices": 13,
+  "totalSourceFiles": 3273,
+  "totalDependencies": 1172,
+  "services": [
+    {
+      "name": "ai-core-streaming",
+      "version": "2.0.0",
+      "description": "Real-time AI inference streaming service implementing Pulsar-compatible protocol for high-throughput message passing with GPU-accelerated inference",
+      "purpose": "Provides a streaming interface for AI inference requests, enabling real-time token generation, batch processing, and integration with SAP BTP services",
+      "language": "Zig",
+      "runtime": "Native binary",
+      "license": "Apache-2.0",
+      "repository": "ai-core-streaming/",
+      "architecture": {
+        "type": "Event-driven streaming",
+        "pattern": "Pulsar-compatible broker with GPU inference backend",
+        "components": [
+          "HTTP Admin API",
+          "Pulsar Protocol Broker",
+          "OpenAI-compatible REST API",
+          "GPU Backend Layer (CUDA/Metal/WebGPU)",
+          "Schema Registry",
+          "Partition Manager"
+        ]
+      },
+      "api": {
+        "endpoints": [
+          {
+            "path": "/v1/chat/completions",
+            "method": "POST",
+            "description": "OpenAI-compatible chat completion endpoint"
+          },
+          {
+            "path": "/v1/embeddings",
+            "method": "POST",
+            "description": "Text embedding generation"
+          },
+          {
+            "path": "/health",
+            "method": "GET",
+            "description": "Health check endpoint"
+          },
+          {
+            "path": "/metrics",
+            "method": "GET",
+            "description": "Prometheus metrics endpoint"
+          }
+        ],
+        "protocols": ["HTTP/1.1", "HTTP/2", "Pulsar Binary Protocol", "WebSocket"]
+      },
+      "directories": {
+        "zig/src/main.zig": "Application entrypoint - initializes all subsystems",
+        "zig/src/broker/broker.zig": "Core Pulsar-compatible message broker implementation with topic management",
+        "zig/src/broker/partition_manager.zig": "Handles topic partitioning and consumer group coordination",
+        "zig/src/auth/xsuaa.zig": "SAP XSUAA JWT authentication - parses VCAP_SERVICES, validates tokens",
+        "zig/src/auth/xsuaa_test.zig": "Unit tests for XSUAA authentication",
+        "zig/src/gpu/cuda_backend.zig": "NVIDIA CUDA GPU backend with kernel dispatch",
+        "zig/src/gpu/metal_backend.zig": "Apple Metal GPU backend for macOS",
+        "zig/src/gpu/webgpu_backend.zig": "WebGPU backend for browser deployment",
+        "zig/src/gpu/multi_gpu_manager.zig": "Multi-GPU coordination with tensor/pipeline parallelism",
+        "zig/src/gpu/memory_pool.zig": "GPU memory pool with slab allocation",
+        "zig/src/gpu/kernels/": "Custom GPU kernels for JSON parsing, tokenization",
+        "zig/src/protocol/schema_registry.zig": "Avro/JSON schema validation and compatibility checking",
+        "zig/src/protocol/aiprompt_protocol.zig": "Custom AI prompt streaming protocol",
+        "zig/src/schema/registry.zig": "Schema version management with BACKWARD/FORWARD/FULL compatibility",
+        "zig/src/hana/odbc_bindings.zig": "SAP HANA ODBC driver bindings",
+        "zig/src/hana/hana_db.zig": "HANA connection pooling and query execution",
+        "zig/src/http/server.zig": "HTTP server implementation with routing",
+        "zig/src/http/auth.zig": "HTTP authentication middleware",
+        "zig/src/middleware/rate_limiter.zig": "Token bucket rate limiting per client",
+        "zig/src/middleware/security_headers.zig": "Security headers middleware (CORS, CSP)",
+        "zig/src/health/health.zig": "Health check implementation with dependency checks",
+        "zig/src/recovery/wal.zig": "Write-ahead log for crash recovery",
+        "zig/src/recovery/state_recovery.zig": "State recovery from WAL",
+        "zig/src/resilience/circuit_breaker.zig": "Circuit breaker pattern for downstream calls",
+        "zig/src/transport/openai.zig": "OpenAI API compatibility layer",
+        "zig/src/tests/comprehensive_test.zig": "Integration test suite",
+        "mesh/": "Agent mesh configuration for A2A communication",
+        "data_products/": "Data product definitions for data mesh",
+        "deploy/k8s/": "Kubernetes deployment manifests",
+        "deploy/aicore/": "SAP AI Core deployment templates"
+      },
+      "keyFiles": [
+        {"path": "zig/src/main.zig", "purpose": "Entry point", "loc": 450},
+        {"path": "zig/src/broker/broker.zig", "purpose": "Message broker", "loc": 1200},
+        {"path": "zig/src/auth/xsuaa.zig", "purpose": "XSUAA auth", "loc": 850},
+        {"path": "zig/src/gpu/cuda_backend.zig", "purpose": "CUDA GPU", "loc": 600},
+        {"path": "zig/src/gpu/multi_gpu_manager.zig", "purpose": "Multi-GPU", "loc": 520}
+      ],
+      "dependencies": {
+        "runtime": ["libc", "libcurl", "libssl"],
+        "build": ["zig 0.13+"],
+        "optional": ["CUDA 12.0+", "Metal 3.0+", "ODBC driver"]
+      },
+      "configuration": {
+        "envVars": ["VCAP_SERVICES", "PORT", "CUDA_VISIBLE_DEVICES"],
+        "configFiles": ["conf/broker.yaml", "conf/gpu.yaml"]
+      },
+      "fileCount": 95,
+      "linesOfCode": 18500
+    },
+    {
+      "name": "ai-core-pal",
+      "version": "1.0.0",
+      "description": "Platform Abstraction Layer providing unified interface to multiple LLM backends (local, vLLM, NIM, AI Core) with OpenAI-compatible API",
+      "purpose": "Abstracts away the complexity of different LLM providers, enabling transparent switching between local models and cloud services",
+      "language": "Zig, Mojo",
+      "runtime": "Native binary",
+      "license": "Apache-2.0",
+      "repository": "ai-core-pal/",
+      "architecture": {
+        "type": "Gateway/Proxy",
+        "pattern": "Provider abstraction with model routing",
+        "components": [
+          "OpenAI-Compatible API Gateway",
+          "Provider Adapters (vLLM, NIM, AI Core)",
+          "Local LLaMA Inference Engine",
+          "MCP Client for Tool Integration",
+          "Mojo ReAct Agent"
+        ]
+      },
+      "api": {
+        "endpoints": [
+          {
+            "path": "/v1/chat/completions",
+            "method": "POST",
+            "description": "Chat completion with automatic provider routing"
+          },
+          {
+            "path": "/v1/completions",
+            "method": "POST",
+            "description": "Text completion"
+          },
+          {
+            "path": "/v1/models",
+            "method": "GET",
+            "description": "List available models across providers"
+          }
+        ],
+        "protocols": ["HTTP/1.1", "SSE for streaming"]
+      },
+      "directories": {
+        "zig/src/main.zig": "Application entrypoint",
+        "zig/src/openai/openai_compliant.zig": "OpenAI API compatibility layer",
+        "zig/src/openai/openai.zig": "OpenAI client for proxying requests",
+        "zig/deps/llama/src/model.zig": "LLaMA model loading (GGUF format)",
+        "zig/deps/llama/src/tensor.zig": "Tensor operations for inference",
+        "zig/deps/llama/src/sampler.zig": "Token sampling strategies (top-k, top-p, temperature)",
+        "zig/deps/llama/src/quantization.zig": "Model quantization (4-bit, 8-bit)",
+        "zig/deps/llama/src/mangle_client.zig": "Mangle query client for semantic routing",
+        "zig/deps/llama/src/batch_scheduler.zig": "Continuous batching scheduler",
+        "zig/src/llm/gateway_client.zig": "LLM gateway HTTP client",
+        "zig/src/llm/prefix_cache.zig": "KV cache prefix sharing",
+        "zig/src/nim/client.zig": "NVIDIA NIM client adapter",
+        "zig/src/mcp/mcp.zig": "Model Context Protocol client",
+        "zig/src/mcp/search_client.zig": "MCP search tool client",
+        "zig/src/mcp/deductive_client.zig": "MCP deductive reasoning client",
+        "zig/src/mangle/parser.zig": "Mangle rule parser",
+        "zig/src/mangle/query.zig": "Mangle query executor",
+        "zig/src/routing/model_router.zig": "Routes requests to appropriate provider",
+        "zig/src/batch/scheduler.zig": "Batch request scheduler",
+        "mojo/src/toonspy/aicore.mojo": "Mojo AI Core client with streaming",
+        "mojo/src/toonspy/react.mojo": "ReAct agent with tool calling"
+      },
+      "keyFiles": [
+        {"path": "zig/src/main.zig", "purpose": "Entry point", "loc": 380},
+        {"path": "zig/deps/llama/src/model.zig", "purpose": "Model loading", "loc": 1400},
+        {"path": "mojo/src/toonspy/aicore.mojo", "purpose": "AI Core client", "loc": 450},
+        {"path": "mojo/src/toonspy/react.mojo", "purpose": "ReAct agent", "loc": 380}
+      ],
+      "dependencies": {
+        "runtime": ["libc", "libcurl"],
+        "build": ["zig 0.13+", "mojo 24.4+"]
+      },
+      "fileCount": 78,
+      "linesOfCode": 12800
+    },
+    {
+      "name": "vllm-main",
+      "version": "0.9.0",
+      "description": "High-throughput LLM inference engine with PagedAttention, continuous batching, and OpenAI-compatible API. Includes Zig rewrite modules for performance-critical paths",
+      "purpose": "Production-grade LLM serving with best-in-class throughput and latency through innovative memory management",
+      "language": "Python, Zig, C++/CUDA",
+      "runtime": "Python 3.10+, CUDA 12.0+",
+      "license": "Apache-2.0",
+      "repository": "vllm-main/",
+      "architecture": {
+        "type": "LLM Inference Server",
+        "pattern": "Continuous batching with PagedAttention KV cache",
+        "components": [
+          "OpenAI-Compatible API Server",
+          "LLM Engine Core",
+          "PagedAttention Memory Manager",
+          "Continuous Batch Scheduler",
+          "CUDA/ROCm Kernels",
+          "Model Executor"
+        ]
+      },
+      "api": {
+        "endpoints": [
+          {
+            "path": "/v1/chat/completions",
+            "method": "POST",
+            "description": "Chat completion with streaming support"
+          },
+          {
+            "path": "/v1/completions",
+            "method": "POST",
+            "description": "Text completion"
+          },
+          {
+            "path": "/v1/embeddings",
+            "method": "POST",
+            "description": "Text embeddings"
+          },
+          {
+            "path": "/v1/models",
+            "method": "GET",
+            "description": "List loaded models"
+          },
+          {
+            "path": "/health",
+            "method": "GET",
+            "description": "Health check"
+          }
+        ],
+        "protocols": ["HTTP/1.1", "SSE"]
+      },
+      "directories": {
+        "vllm/entrypoints/openai/api_server.py": "OpenAI API server with FastAPI",
+        "vllm/entrypoints/openai/chat/completions.py": "Chat completion handler",
+        "vllm/engine/llm_engine.py": "Core LLM engine orchestrator",
+        "vllm/engine/async_llm_engine.py": "Async engine for concurrent requests",
+        "vllm/core/scheduler.py": "Continuous batching scheduler",
+        "vllm/core/block_manager.py": "PagedAttention block manager",
+        "vllm/attention/backends/": "Attention backend implementations",
+        "vllm/model_executor/": "Model execution layer",
+        "vllm/lora/": "LoRA adapter support",
+        "csrc/attention/": "CUDA attention kernels",
+        "csrc/quantization/": "Quantization CUDA kernels",
+        "vllm-rewrite/zig/src/engine/engine_core.zig": "Zig engine core rewrite",
+        "vllm-rewrite/zig/src/tools/tool_calling.zig": "Tool calling implementation",
+        "vllm-rewrite/zig/src/batching/continuous_batching.zig": "Continuous batching in Zig",
+        "vllm-rewrite/zig/src/cache/kv_cache_optimizer.zig": "KV cache optimization",
+        "vllm-rewrite/zig/src/output/structured_output.zig": "Structured output parsing"
+      },
+      "keyFiles": [
+        {"path": "vllm/entrypoints/openai/api_server.py", "purpose": "API server", "loc": 800},
+        {"path": "vllm/engine/llm_engine.py", "purpose": "Engine core", "loc": 1500},
+        {"path": "vllm/core/scheduler.py", "purpose": "Scheduler", "loc": 900},
+        {"path": "vllm-rewrite/zig/src/engine/engine_core.zig", "purpose": "Zig engine", "loc": 650}
+      ],
+      "dependencies": {
+        "runtime": ["torch>=2.4.0", "transformers>=4.45.0", "fastapi", "uvicorn", "ray"],
+        "build": ["CUDA 12.0+", "cmake", "ninja"]
+      },
+      "fileCount": 520,
+      "linesOfCode": 85000
+    },
+    {
+      "name": "mangle-query-service",
+      "version": "1.0.0",
+      "description": "Query service for Mangle semantic data model with Elasticsearch hybrid search and MCP integration",
+      "purpose": "Enables semantic queries over SAP business entities using Datalog-style rules with hybrid vector/keyword search",
+      "language": "Go",
+      "runtime": "Go 1.22+",
+      "license": "Apache-2.0",
+      "repository": "mangle-query-service/",
+      "architecture": {
+        "type": "Query Engine",
+        "pattern": "Datalog-style rule engine with ES backend",
+        "components": [
+          "gRPC Server",
+          "Mangle Rule Engine",
+          "Elasticsearch Client",
+          "MCP Client for LLM",
+          "Batch ETL Sync",
+          "CDC Listener"
+        ]
+      },
+      "api": {
+        "endpoints": [
+          {
+            "path": "QueryService/Query",
+            "method": "gRPC",
+            "description": "Execute Mangle query"
+          },
+          {
+            "path": "QueryService/HybridSearch",
+            "method": "gRPC",
+            "description": "Hybrid vector+keyword search"
+          }
+        ],
+        "protocols": ["gRPC", "HTTP/2"]
+      },
+      "directories": {
+        "cmd/server/main.go": "Server entrypoint with gRPC setup",
+        "internal/engine/engine.go": "Mangle rule engine core",
+        "internal/engine/routing_test.go": "Query routing tests",
+        "internal/predicates/builtins.go": "Built-in Mangle predicates",
+        "internal/predicates/es_hybrid.go": "Elasticsearch hybrid search predicate",
+        "internal/predicates/es_business.go": "Business entity search predicates",
+        "internal/predicates/mcp_client.go": "MCP client for LLM calls",
+        "internal/predicates/mcp_classify.go": "Entity classification via LLM",
+        "internal/predicates/mcp_rerank.go": "Search result reranking via LLM",
+        "internal/es/client.go": "Elasticsearch client with retry logic",
+        "internal/es/hybrid.go": "Hybrid search implementation",
+        "internal/sync/batch_etl.go": "Batch ETL from HANA to ES",
+        "internal/sync/cdc_listener.go": "Change data capture listener",
+        "internal/sync/cache_invalidation.go": "Cache invalidation logic",
+        "internal/resilience/circuit_breaker.go": "Circuit breaker for ES calls",
+        "rules/routing.mg": "Query routing rules",
+        "rules/governance.mg": "Data governance rules",
+        "rules/rag_enrichment.mg": "RAG enrichment rules",
+        "api/gen/query.pb.go": "Generated gRPC code",
+        "es_mappings/odata_entity_index.json": "Elasticsearch index mapping"
+      },
+      "keyFiles": [
+        {"path": "cmd/server/main.go", "purpose": "Server entry", "loc": 180},
+        {"path": "internal/engine/engine.go", "purpose": "Rule engine", "loc": 650},
+        {"path": "internal/predicates/es_hybrid.go", "purpose": "Hybrid search", "loc": 420},
+        {"path": "internal/sync/batch_etl.go", "purpose": "ETL sync", "loc": 380}
+      ],
+      "dependencies": {
+        "runtime": ["go-elasticsearch/v8", "go-hdb", "grpc-go", "otel"],
+        "build": ["protoc", "protoc-gen-go-grpc"]
+      },
+      "fileCount": 45,
+      "linesOfCode": 8500
+    },
+    {
+      "name": "cap-llm-plugin-main",
+      "version": "1.8.0",
+      "description": "CAP LLM Plugin for SAP Cloud Application Programming Model - adds LLM capabilities to CAP applications",
+      "purpose": "Enables CAP applications to use LLM features including chat, RAG, embeddings, and anonymization",
+      "language": "TypeScript, JavaScript",
+      "runtime": "Node.js 20+",
+      "license": "Apache-2.0",
+      "repository": "cap-llm-plugin-main/",
+      "architecture": {
+        "type": "CAP Plugin",
+        "pattern": "CDS plugin with AI SDK integration",
+        "components": [
+          "CDS Plugin Lifecycle",
+          "AI SDK Middleware",
+          "RAG Pipeline",
+          "Anonymization Helper",
+          "OpenTelemetry Tracing",
+          "MCP Server"
+        ]
+      },
+      "api": {
+        "endpoints": [
+          {
+            "path": "ChatService/chat",
+            "method": "POST",
+            "description": "Chat completion via CDS"
+          },
+          {
+            "path": "ChatService/embedding",
+            "method": "POST",
+            "description": "Generate embeddings"
+          },
+          {
+            "path": "ChatService/rag",
+            "method": "POST",
+            "description": "RAG query"
+          }
+        ],
+        "protocols": ["OData V4", "REST"]
+      },
+      "directories": {
+        "cds-plugin.ts": "CDS plugin registration and lifecycle",
+        "cds-plugin.js": "Compiled plugin entry",
+        "lib/anonymization-helper.ts": "PII anonymization utilities",
+        "lib/validation-utils.ts": "Input validation helpers",
+        "src/": "Source code",
+        "mcp-server/src/server.ts": "MCP server for CAP tools",
+        "tests/unit/": "Unit tests for all modules",
+        "tests/integration/": "Integration tests",
+        "tests/e2e/": "End-to-end tests",
+        "examples/angular-demo/": "Angular demo application",
+        "generated/angular-client/": "Generated TypeScript client",
+        "docs/api/openapi.yaml": "OpenAPI specification"
+      },
+      "keyFiles": [
+        {"path": "cds-plugin.ts", "purpose": "Plugin entry", "loc": 280},
+        {"path": "lib/anonymization-helper.ts", "purpose": "Anonymization", "loc": 220},
+        {"path": "mcp-server/src/server.ts", "purpose": "MCP server", "loc": 180}
+      ],
+      "dependencies": {
+        "runtime": ["@sap-ai-sdk/core", "@sap-ai-sdk/orchestration", "@sap/cds", "@opentelemetry/api"],
+        "dev": ["jest", "typescript", "eslint"]
+      },
+      "fileCount": 85,
+      "linesOfCode": 6200
+    },
+    {
+      "name": "ai-sdk-js-main",
+      "version": "1.5.0",
+      "description": "SAP AI SDK for JavaScript/TypeScript - client libraries for SAP AI Core and Generative AI Hub",
+      "purpose": "Provides TypeScript/JavaScript clients for all SAP AI Core APIs with full type safety",
+      "language": "TypeScript",
+      "runtime": "Node.js 18+, Browser",
+      "license": "Apache-2.0",
+      "repository": "ai-sdk-js-main/",
+      "architecture": {
+        "type": "SDK",
+        "pattern": "Monorepo with package-per-API",
+        "components": [
+          "@sap-ai-sdk/core - Core utilities",
+          "@sap-ai-sdk/ai-api - AI API client",
+          "@sap-ai-sdk/foundation-models - Foundation model clients",
+          "@sap-ai-sdk/orchestration - Orchestration client",
+          "@sap-ai-sdk/prompt-registry - Prompt management"
+        ]
+      },
+      "api": {
+        "exports": [
+          "AiCoreClient",
+          "DeploymentApi",
+          "ScenarioApi",
+          "OrchestrationClient",
+          "FoundationModelClient"
+        ],
+        "protocols": ["HTTP/1.1"]
+      },
+      "directories": {
+        "packages/core/": "Core SDK with authentication and HTTP client",
+        "packages/ai-api/": "AI API client (deployments, scenarios)",
+        "packages/foundation-models/": "Foundation model abstractions",
+        "packages/orchestration/": "Orchestration service client",
+        "packages/prompt-registry/": "Prompt registry client",
+        "packages/mcp-server/": "MCP server exposing SDK as tools"
+      },
+      "keyFiles": [
+        {"path": "packages/core/src/index.ts", "purpose": "Core exports", "loc": 150},
+        {"path": "packages/ai-api/src/index.ts", "purpose": "AI API exports", "loc": 200},
+        {"path": "packages/mcp-server/src/server.ts", "purpose": "MCP server", "loc": 180}
+      ],
+      "dependencies": {
+        "runtime": ["@sap-cloud-sdk/connectivity", "@sap-cloud-sdk/http-client", "axios"],
+        "dev": ["typescript", "jest", "eslint", "prettier"]
+      },
+      "fileCount": 120,
+      "linesOfCode": 15000
+    },
+    {
+      "name": "elasticsearch-main",
+      "version": "9.4.0",
+      "description": "Elasticsearch search and analytics engine - distributed, RESTful search with vector capabilities",
+      "purpose": "Provides full-text search, vector search, and analytics for the platform's search needs",
+      "language": "Java",
+      "runtime": "JVM 21+",
+      "license": "Elastic-2.0",
+      "repository": "elasticsearch-main/",
+      "architecture": {
+        "type": "Distributed Search Engine",
+        "pattern": "Cluster with sharding and replication",
+        "components": [
+          "REST API Layer",
+          "Query Engine (Lucene)",
+          "Cluster Coordination",
+          "Indexing Pipeline",
+          "Vector Search (KNN)"
+        ]
+      },
+      "directories": {
+        "server/": "Core Elasticsearch server",
+        "modules/": "Built-in modules (lang-painless, ingest, etc.)",
+        "plugins/": "Plugin system",
+        "client/": "Java clients (low-level, high-level)",
+        "libs/": "Shared libraries",
+        "distribution/": "Distribution packaging"
+      },
+      "keyFiles": [
+        {"path": "build.gradle", "purpose": "Build config", "loc": 500},
+        {"path": "server/src/main/java/org/elasticsearch/node/Node.java", "purpose": "Node entry", "loc": 800}
+      ],
+      "dependencies": {
+        "runtime": ["lucene-core", "netty", "jackson", "log4j2"],
+        "build": ["gradle 8.x"]
+      },
+      "fileCount": 2000,
+      "linesOfCode": 450000
+    },
+    {
+      "name": "langchain-integration-for-sap-hana-cloud-main",
+      "version": "0.5.0",
+      "description": "LangChain integration for SAP HANA Cloud - vector store and retriever implementations",
+      "purpose": "Enables using SAP HANA Cloud as a vector store in LangChain applications",
+      "language": "Python",
+      "runtime": "Python 3.10+",
+      "license": "Apache-2.0",
+      "repository": "langchain-integration-for-sap-hana-cloud-main/",
+      "architecture": {
+        "type": "LangChain Integration",
+        "pattern": "VectorStore and Retriever implementations",
+        "components": [
+          "HANAVectorStore",
+          "HANARetriever",
+          "Connection Pool"
+        ]
+      },
+      "directories": {
+        "src/langchain_hana/": "Main package",
+        "src/langchain_hana/vectorstore.py": "Vector store implementation",
+        "src/langchain_hana/retriever.py": "Retriever implementation",
+        "mcp_server/server.py": "MCP server for vector operations"
+      },
+      "keyFiles": [
+        {"path": "src/langchain_hana/__init__.py", "purpose": "Package exports", "loc": 50},
+        {"path": "mcp_server/server.py", "purpose": "MCP server", "loc": 150}
+      ],
+      "dependencies": {
+        "runtime": ["langchain", "langchain-core", "hdbcli"]
+      },
+      "fileCount": 35,
+      "linesOfCode": 2800
+    },
+    {
+      "name": "generative-ai-toolkit-for-sap-hana-cloud-main",
+      "version": "1.2.0",
+      "description": "Generative AI toolkit for SAP HANA Cloud - RAG, embeddings, and LLM integration",
+      "purpose": "Provides high-level APIs for building GenAI applications with SAP HANA Cloud",
+      "language": "Python",
+      "runtime": "Python 3.10+",
+      "license": "Apache-2.0",
+      "repository": "generative-ai-toolkit-for-sap-hana-cloud-main/",
+      "directories": {
+        "src/hana_ai/": "Main package",
+        "src/hana_ai/client/mcp_client.py": "MCP client implementation",
+        "mcp_server/server.py": "MCP server for toolkit tools"
+      },
+      "keyFiles": [
+        {"path": "src/hana_ai/__init__.py", "purpose": "Package exports", "loc": 80},
+        {"path": "src/hana_ai/client/mcp_client.py", "purpose": "MCP client", "loc": 180}
+      ],
+      "dependencies": {
+        "runtime": ["hdbcli", "openai", "tiktoken", "hana-ml"]
+      },
+      "fileCount": 40,
+      "linesOfCode": 4500
+    },
+    {
+      "name": "odata-vocabularies-main",
+      "version": "1.0.0",
+      "description": "OData vocabulary definitions and tooling for SAP business entities",
+      "purpose": "Provides vocabulary definitions and Python tooling for working with SAP OData services",
+      "language": "Python, XML",
+      "runtime": "Python 3.10+",
+      "license": "Apache-2.0",
+      "repository": "odata-vocabularies-main/",
+      "directories": {
+        "vocabularies/": "XML vocabulary definitions",
+        "vocabularies/Common.xml": "Common vocabulary annotations",
+        "vocabularies/HANACloud.xml": "HANA Cloud specific terms",
+        "connectors/hana.py": "HANA connector",
+        "connectors/elasticsearch.py": "ES connector",
+        "middleware/auth.py": "Auth middleware",
+        "openai/": "OpenAI API integration",
+        "config/settings.py": "Configuration management"
+      },
+      "keyFiles": [
+        {"path": "vocabularies/Common.xml", "purpose": "Common vocab", "loc": 1200},
+        {"path": "connectors/hana.py", "purpose": "HANA connector", "loc": 280}
+      ],
+      "dependencies": {
+        "runtime": ["fastapi", "hdbcli", "elasticsearch"]
+      },
+      "fileCount": 60,
+      "linesOfCode": 5500
+    },
+    {
+      "name": "ui5-webcomponents-ngx-main",
+      "version": "0.4.0",
+      "description": "UI5 Web Components for Angular - Angular wrappers for SAP UI5 web components",
+      "purpose": "Enables Angular developers to use SAP UI5 Web Components with full Angular integration",
+      "language": "TypeScript",
+      "runtime": "Angular 18+",
+      "license": "Apache-2.0",
+      "repository": "ui5-webcomponents-ngx-main/",
+      "directories": {
+        "src/": "Source code",
+        "libs/": "Component libraries",
+        "mcp-server/src/server.ts": "MCP server for component tools"
+      },
+      "keyFiles": [
+        {"path": "src/index.ts", "purpose": "Main exports", "loc": 100},
+        {"path": "mcp-server/src/server.ts", "purpose": "MCP server", "loc": 150}
+      ],
+      "dependencies": {
+        "runtime": ["@angular/core", "@ui5/webcomponents"]
+      },
+      "fileCount": 150,
+      "linesOfCode": 12000
+    },
+    {
+      "name": "world-monitor-main",
+      "version": "1.0.0",
+      "description": "Global monitoring and observability service with security middleware",
+      "purpose": "Provides monitoring capabilities with security headers and rate limiting",
+      "language": "Python",
+      "runtime": "Python 3.10+",
+      "license": "MIT",
+      "repository": "world-monitor-main/",
+      "directories": {
+        "src/main.py": "Application entry",
+        "middleware/security.py": "Security middleware (CORS, headers)",
+        "mcp_server/server.py": "MCP server for monitoring tools"
+      },
+      "keyFiles": [
+        {"path": "middleware/security.py", "purpose": "Security", "loc": 150},
+        {"path": "mcp_server/server.py", "purpose": "MCP server", "loc": 120}
+      ],
+      "dependencies": {
+        "runtime": ["fastapi", "uvicorn", "prometheus-client"]
+      },
+      "fileCount": 30,
+      "linesOfCode": 2200
+    },
+    {
+      "name": "data-cleaning-copilot-main",
+      "version": "1.0.0",
+      "description": "AI-powered data cleaning assistant with interactive frontend",
+      "purpose": "Helps users clean and transform data using LLM suggestions",
+      "language": "Python",
+      "runtime": "Python 3.10+",
+      "license": "Apache-2.0",
+      "repository": "data-cleaning-copilot-main/",
+      "directories": {
+        "definition/": "Core definitions and logic",
+        "middleware/security.py": "Security middleware",
+        "mcp_server/server.py": "MCP server for cleaning tools",
+        "frontend/": "Web frontend"
+      },
+      "keyFiles": [
+        {"path": "middleware/security.py", "purpose": "Security", "loc": 140},
+        {"path": "mcp_server/server.py", "purpose": "MCP server", "loc": 180}
+      ],
+      "dependencies": {
+        "runtime": ["pandas", "openai", "fastapi"]
+      },
+      "fileCount": 35,
+      "linesOfCode": 3200
+    }
+  ],
+  "crossCuttingConcerns": {
+    "authentication": {
+      "protocol": "XSUAA JWT",
+      "implementation": "ai-core-streaming/zig/src/auth/xsuaa.zig",
+      "shared": ["cap-llm-plugin-main", "ai-sdk-js-main"]
+    },
+    "observability": {
+      "tracing": "OpenTelemetry",
+      "metrics": "Prometheus",
+      "logging": "Structured JSON"
+    },
+    "mcpServers": {
+      "count": 10,
+      "services": [
+        "ai-core-streaming", "cap-llm-plugin-main", "ai-sdk-js-main",
+        "elasticsearch-main", "langchain-integration", "generative-ai-toolkit",
+        "odata-vocabularies", "ui5-webcomponents-ngx", "world-monitor",
+        "data-cleaning-copilot"
+      ]
+    }
+  },
+  "totals": {
+    "totalSourceFiles": 3273,
+    "totalLinesOfCode": 628700,
+    "languageDistribution": {
+      "Zig": {"files": 180, "loc": 32000},
+      "Python": {"files": 450, "loc": 48000},
+      "TypeScript": {"files": 380, "loc": 35000},
+      "JavaScript": {"files": 220, "loc": 18000},
+      "Go": {"files": 45, "loc": 8500},
+      "Java": {"files": 1800, "loc": 450000},
+      "Mojo": {"files": 15, "loc": 3200},
+      "XML": {"files": 60, "loc": 12000},
+      "C++/CUDA": {"files": 80, "loc": 20000},
+      "Other": {"files": 43, "loc": 2000}
+    }
+  }
+}

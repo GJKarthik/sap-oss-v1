@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:db5c876d-c994-4c66-96db-1ec67c36feed",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "name": "cap-llm-plugin",
+      "group": "",
+      "version": "1.5.0",
+      "description": "CAP LLM Plugin helps developers create tailored Generative AI based CAP applications",
+      "purl": "pkg:npm/cap-llm-plugin@1.5.0",
+      "bom-ref": "pkg:npm/cap-llm-plugin@1.5.0",
+      "author": "SAP SE",
+      "type": "application",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "url": "https://opensource.org/licenses/Apache-2.0"
+          }
+        }
+      ],
+      "components": [
+        {
+          "author": "SAP",
+          "group": "@cap-llm-plugin",
+          "name": "mcp-server",
+          "version": "1.0.0",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0",
+                "url": "https://opensource.org/licenses/Apache-2.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40cap-llm-plugin/mcp-server@1.0.0",
+          "type": "application",
+          "bom-ref": "pkg:npm/@cap-llm-plugin/mcp-server@1.0.0"
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

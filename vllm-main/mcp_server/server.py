@@ -11,6 +11,56 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
 import urllib.request
 
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if o.strip()
+]
+
+
+def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
+    origin = (handler.headers.get("Origin") or "").strip()
+    if origin and origin in CORS_ALLOWED_ORIGINS:
+        return origin
+    return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
+
+
+MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
+MAX_TOOL_TOKENS = int(os.environ.get("MCP_MAX_TOOL_TOKENS", "8192"))
+MAX_BATCH_SIZE = int(os.environ.get("MCP_MAX_BATCH_SIZE", "64"))
+
+
+def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def clamp_float(value: Any, default: float, min_value: float, max_value: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def parse_json_arg(value: Any, fallback: Any):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return fallback
+    return value if value is not None else fallback
+
 # =============================================================================
 # Types
 # =============================================================================
@@ -48,6 +98,10 @@ def get_vllm_config() -> dict:
         "base_url": os.environ.get("VLLM_BASE_URL", "http://localhost:8000"),
         "api_key": os.environ.get("VLLM_API_KEY", ""),
     }
+
+
+def config_ready(config: dict) -> bool:
+    return bool(config.get("base_url"))
 
 
 def vllm_request(method: str, path: str, body: dict = None) -> Any:
@@ -211,26 +265,28 @@ class MCPServer:
 
     # Tool Handlers
     def _handle_vllm_chat(self, args: dict) -> dict:
-        messages = json.loads(args.get("messages", "[]"))
+        messages = parse_json_arg(args.get("messages", "[]"), [])
+        if not isinstance(messages, list) or len(messages) == 0:
+            return {"error": "messages must be a non-empty JSON array"}
         body = {
             "model": args.get("model", "default"),
             "messages": messages,
-            "max_tokens": args.get("max_tokens", 1024),
+            "max_tokens": clamp_int(args.get("max_tokens", 1024), 1024, 1, MAX_TOOL_TOKENS),
         }
         if args.get("temperature"):
-            body["temperature"] = args["temperature"]
+            body["temperature"] = clamp_float(args["temperature"], 0.7, 0.0, 2.0)
         return vllm_request("POST", "/v1/chat/completions", body)
 
     def _handle_vllm_generate(self, args: dict) -> dict:
         body = {
             "model": args.get("model", "default"),
             "prompt": args.get("prompt", ""),
-            "max_tokens": args.get("max_tokens", 256),
+            "max_tokens": clamp_int(args.get("max_tokens", 256), 256, 1, MAX_TOOL_TOKENS),
         }
         if args.get("temperature"):
-            body["temperature"] = args["temperature"]
+            body["temperature"] = clamp_float(args["temperature"], 0.7, 0.0, 2.0)
         if args.get("n"):
-            body["n"] = args["n"]
+            body["n"] = clamp_int(args["n"], 1, 1, 16)
         return vllm_request("POST", "/v1/completions", body)
 
     def _handle_vllm_list_models(self, args: dict) -> dict:
@@ -241,23 +297,27 @@ class MCPServer:
         return vllm_request("GET", f"/v1/models/{model}")
 
     def _handle_vllm_batch(self, args: dict) -> dict:
-        prompts = json.loads(args.get("prompts", "[]"))
+        prompts = parse_json_arg(args.get("prompts", "[]"), [])
+        if not isinstance(prompts, list):
+            return {"error": "prompts must be a JSON array"}
+        prompts = prompts[:MAX_BATCH_SIZE]
         results = []
         for prompt in prompts:
             body = {
                 "model": args.get("model", "default"),
                 "prompt": prompt,
-                "max_tokens": args.get("max_tokens", 256),
+                "max_tokens": clamp_int(args.get("max_tokens", 256), 256, 1, MAX_TOOL_TOKENS),
             }
             results.append(vllm_request("POST", "/v1/completions", body))
         return {"results": results, "count": len(results)}
 
     def _handle_vllm_embed(self, args: dict) -> dict:
-        input_data = args.get("input", "")
-        try:
-            input_data = json.loads(input_data)
-        except:
+        input_data = parse_json_arg(args.get("input", ""), [args.get("input", "")])
+        if isinstance(input_data, str):
             input_data = [input_data]
+        if not isinstance(input_data, list):
+            return {"error": "input must be a string or JSON array"}
+        input_data = input_data[:MAX_BATCH_SIZE]
         body = {"model": args.get("model", "default"), "input": input_data}
         return vllm_request("POST", "/v1/embeddings", body)
 
@@ -277,6 +337,11 @@ class MCPServer:
         id = request.id
 
         try:
+            if request.jsonrpc != "2.0":
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: jsonrpc must be '2.0'"})
+            if not isinstance(params, dict):
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: params must be an object"})
+
             if method == "initialize":
                 return MCPResponse(id, {
                     "protocolVersion": "2024-11-05",
@@ -290,6 +355,10 @@ class MCPServer:
             elif method == "tools/call":
                 tool_name = params.get("name", "")
                 args = params.get("arguments", {})
+                if args is None:
+                    args = {}
+                if not isinstance(args, dict):
+                    return MCPResponse(id, error={"code": -32602, "message": "Invalid params: arguments must be an object"})
                 handlers = {
                     "vllm_chat": self._handle_vllm_chat,
                     "vllm_generate": self._handle_vllm_generate,
@@ -335,51 +404,65 @@ mcp_server = MCPServer()
 
 
 class MCPHandler(BaseHTTPRequestHandler):
+    def _write_json(self, status_code: int, payload: dict):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
             from datetime import datetime, timezone
-            response = {"status": "healthy", "service": "vllm-mcp", "timestamp": datetime.now(timezone.utc).isoformat()}
-            self.wfile.write(json.dumps(response).encode())
+            cfg = get_vllm_config()
+            ready = config_ready(cfg)
+            response = {
+                "status": "healthy" if ready else "degraded",
+                "service": "vllm-mcp",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "config_ready": ready,
+            }
+            self._write_json(200, response)
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
         if self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode()
+            if content_length <= 0:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})
+                return
+            if content_length > MAX_REQUEST_BYTES:
+                self._write_json(413, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Request too large"}})
+                return
+
+            raw_body = self.rfile.read(content_length)
             try:
+                body = raw_body.decode("utf-8")
                 data = json.loads(body)
+                if not isinstance(data, dict):
+                    self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}})
+                    return
                 request = MCPRequest(data)
                 response = mcp_server.handle_request(request)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps(response.to_dict()).encode())
+                self._write_json(200, response.to_dict())
+            except UnicodeDecodeError:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Invalid UTF-8 body"}})
             except json.JSONDecodeError:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}).encode())
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def log_message(self, format, *args):
         pass

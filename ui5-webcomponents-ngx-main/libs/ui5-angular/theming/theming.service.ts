@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Injectable} from "@angular/core";
 import {WebcomponentsThemingProvider} from "./base-webcomponents-theming-provider";
 

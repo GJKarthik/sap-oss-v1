@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * This file decorates the Angular CLI with the Nx CLI to enable features such as computation caching
  * and faster execution of tasks.

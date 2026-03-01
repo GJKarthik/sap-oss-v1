@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """LangChain compatibility helpers for old and new APIs."""
 
 #pylint: disable=import-error,no-name-in-module,missing-function-docstring,ungrouped-imports,unused-import

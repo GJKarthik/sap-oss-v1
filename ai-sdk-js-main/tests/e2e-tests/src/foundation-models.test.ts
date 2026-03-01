@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { chatCompletion, computeEmbedding } from '@sap-ai-sdk/sample-code';
 import { AzureOpenAiChatClient } from '@sap-ai-sdk/foundation-models';
 import { addNumbersTool } from '../../../test-util/tools.js';

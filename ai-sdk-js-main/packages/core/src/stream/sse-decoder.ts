@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 /**
  * @internal
  * Server-Sent Event, see {@link https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events}.

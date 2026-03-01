@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { resolve } from 'path';
 import mock from 'mock-fs';
 import { getPackageVersion } from './get-package-version.js';

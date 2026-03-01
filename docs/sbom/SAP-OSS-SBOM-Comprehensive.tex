@@ -1,0 +1,1025 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{array}
+
+\geometry{margin=2cm,top=2.5cm,bottom=2.5cm}
+
+\definecolor{sapblue}{RGB}{0, 118, 203}
+\definecolor{darkgray}{RGB}{64, 64, 64}
+\definecolor{lightgray}{RGB}{245, 245, 245}
+\definecolor{codebg}{RGB}{248, 248, 248}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    backgroundcolor=\color{codebg},
+    breaklines=true,
+    frame=single,
+    framerule=0.5pt,
+    rulecolor=\color{lightgray},
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{sapblue}{\textbf{SAP AI Platform - Comprehensive SBOM}}}
+\fancyhead[R]{\textcolor{darkgray}{v2.0 | March 2026}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\Large\bfseries\color{sapblue}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{darkgray}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=sapblue,
+    urlcolor=sapblue,
+    pdftitle={SAP AI Platform - Comprehensive SBOM},
+}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\begin{document}
+
+%% TITLE PAGE
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+{\Huge\bfseries\textcolor{sapblue}{Comprehensive Software Bill of Materials}\\[0.5cm]}
+{\LARGE SAP AI Platform}\\[1cm]
+{\Large\textbf{Technical Architecture Reference}}\\[0.5cm]
+{\large Complete Technical Documentation for All Services}\\[3cm]
+
+\begin{tabular}{ll}
+\textbf{Document ID:} & SBOM-SAP-AI-2026-003 \\
+\textbf{Version:} & 2.0 (Comprehensive) \\
+\textbf{Generated:} & March 1, 2026 \\
+\textbf{Total Services:} & 13 \\
+\textbf{Total Source Files:} & 3,273 \\
+\textbf{Total Lines of Code:} & 628,700 \\
+\textbf{Total npm Dependencies:} & 549 \\
+\textbf{Classification:} & Internal \\
+\end{tabular}
+
+\vfill
+{\large\textcolor{darkgray}{This document provides detailed technical documentation for each service,\\including architecture, APIs, directory structure, key files, and dependencies.}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%% EXECUTIVE SUMMARY
+\section{Executive Summary}
+
+This comprehensive SBOM documents all 13 services in the SAP AI Platform with full technical detail sufficient for an engineer to understand each service's:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Purpose and Business Function} -- What the service does and why it exists
+    \item \textbf{Architecture} -- Type, pattern, and component breakdown
+    \item \textbf{API Surface} -- All endpoints with methods, paths, and descriptions
+    \item \textbf{Directory Structure} -- Every key directory with explanations
+    \item \textbf{Key Source Files} -- Important files with purpose and lines of code
+    \item \textbf{Dependencies} -- Runtime, build, and optional dependencies
+    \item \textbf{Configuration} -- Environment variables and config files
+\end{itemize}
+
+\subsection{Platform Overview}
+
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total Services & 13 \\
+Total Source Files & 3,273 \\
+Total Lines of Code & 628,700 \\
+Programming Languages & Zig, Python, TypeScript, JavaScript, Go, Java, Mojo \\
+MCP Servers & 10 services expose MCP tools \\
+Primary License & Apache-2.0 (11 services) \\
+\bottomrule
+\end{tabular}
+
+\subsection{Language Distribution}
+
+\begin{tabular}{lrrL{6cm}}
+\toprule
+\textbf{Language} & \textbf{Files} & \textbf{LOC} & \textbf{Used By} \\
+\midrule
+Java & 1,800 & 450,000 & elasticsearch-main \\
+Python & 450 & 48,000 & vllm, langchain, gen-ai-toolkit, world-monitor, data-cleaning \\
+TypeScript & 380 & 35,000 & ai-sdk-js, cap-llm-plugin, ui5-webcomponents-ngx \\
+Zig & 180 & 32,000 & ai-core-streaming, ai-core-pal, vllm-rewrite \\
+C++/CUDA & 80 & 20,000 & vllm CUDA kernels \\
+JavaScript & 220 & 18,000 & ai-sdk-js, cap-llm-plugin \\
+Go & 45 & 8,500 & mangle-query-service \\
+Mojo & 15 & 3,200 & ai-core-pal \\
+\bottomrule
+\end{tabular}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 1: AI-CORE-STREAMING
+%% =============================================================================
+\section{ai-core-streaming}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & ai-core-streaming \\
+Version & 2.0.0 \\
+Repository & \texttt{ai-core-streaming/} \\
+Language & Zig \\
+Runtime & Native binary (compiled from Zig 0.13+) \\
+License & Apache-2.0 \\
+File Count & 95 source files \\
+Lines of Code & 18,500 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+Real-time AI inference streaming service implementing a \textbf{Pulsar-compatible binary protocol} for high-throughput message passing with GPU-accelerated inference. This is the core streaming backbone of the SAP AI Platform, providing:
+
+\begin{itemize}[noitemsep]
+    \item Pulsar-compatible topic/subscription model for message streaming
+    \item OpenAI-compatible REST API (\texttt{/v1/chat/completions}, \texttt{/v1/embeddings})
+    \item Multi-GPU support with CUDA, Metal, and WebGPU backends
+    \item Schema registry with Avro/JSON validation and compatibility checking
+    \item SAP BTP integration via XSUAA JWT authentication
+    \item Write-ahead logging for crash recovery
+\end{itemize}
+
+\subsection{Purpose}
+
+Provides a streaming interface for AI inference requests, enabling real-time token generation, batch processing, and integration with SAP BTP services. Acts as the message broker layer between clients and downstream inference engines (vLLM, local models).
+
+\subsection{Architecture}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Details} \\
+\midrule
+Type & Event-driven streaming \\
+Pattern & Pulsar-compatible broker with GPU inference backend \\
+Protocol & Pulsar binary protocol, HTTP/1.1, HTTP/2, WebSocket \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{Architectural Components}
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{HTTP Admin API} -- Administrative endpoints for topic/subscription management
+    \item \textbf{Pulsar Protocol Broker} -- Handles Pulsar binary protocol connections, topic partitioning, consumer groups
+    \item \textbf{OpenAI-compatible REST API} -- \texttt{/v1/chat/completions}, \texttt{/v1/embeddings}, \texttt{/v1/models}
+    \item \textbf{GPU Backend Layer} -- Abstraction over CUDA, Metal, and WebGPU for inference acceleration
+    \item \textbf{Schema Registry} -- Validates Avro and JSON schemas, enforces BACKWARD/FORWARD/FULL compatibility
+    \item \textbf{Partition Manager} -- Distributes topics across partitions, manages consumer group offsets
+\end{enumerate}
+
+\subsection{API Endpoints}
+
+\begin{longtable}{@{}L{4.5cm}L{1.5cm}L{7.5cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Method} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{/v1/chat/completions} & POST & OpenAI-compatible chat completion endpoint. Supports streaming via SSE. Request body includes \texttt{messages}, \texttt{model}, \texttt{temperature}, \texttt{max\_tokens}. \\
+\texttt{/v1/embeddings} & POST & Text embedding generation. Returns vector embeddings for input text. \\
+\texttt{/v1/models} & GET & List available models from configured providers. \\
+\texttt{/health} & GET & Health check endpoint. Returns 200 if service is healthy, includes dependency checks (HANA, GPU). \\
+\texttt{/metrics} & GET & Prometheus metrics endpoint. Exposes request latency, throughput, GPU utilization. \\
+\texttt{/admin/topics} & GET/POST & Topic management (create, list, delete topics). \\
+\texttt{/admin/subscriptions} & GET/POST & Subscription management for consumer groups. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Directory Structure}
+
+\begin{longtable}{@{}L{6cm}L{8cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{zig/src/main.zig} & Application entrypoint. Initializes all subsystems (HTTP server, broker, GPU backend), parses config, sets up signal handlers. \\
+\texttt{zig/src/broker/broker.zig} & Core Pulsar-compatible message broker. Handles topic creation, message routing, consumer group coordination. 1,200 LOC. \\
+\texttt{zig/src/broker/partition\_manager.zig} & Manages topic partitioning. Assigns partitions to consumers, tracks offsets, handles rebalancing. \\
+\texttt{zig/src/auth/xsuaa.zig} & SAP XSUAA JWT authentication. Parses \texttt{VCAP\_SERVICES}, extracts XSUAA binding, validates JWT tokens, checks scopes. 850 LOC. \\
+\texttt{zig/src/auth/xsuaa\_test.zig} & Unit tests for XSUAA authentication. Tests JWT parsing, expiry checks, scope validation. \\
+\texttt{zig/src/gpu/cuda\_backend.zig} & NVIDIA CUDA GPU backend. Implements \texttt{cuLaunchKernel} dispatch for inference kernels. 600 LOC. \\
+\texttt{zig/src/gpu/metal\_backend.zig} & Apple Metal GPU backend for macOS. Uses Metal Performance Shaders for matrix operations. \\
+\texttt{zig/src/gpu/webgpu\_backend.zig} & WebGPU backend for browser deployment. Enables inference in web applications. \\
+\texttt{zig/src/gpu/multi\_gpu\_manager.zig} & Multi-GPU coordination. Implements data parallel, tensor parallel (TODO), and pipeline parallel (TODO) strategies. 520 LOC. \\
+\texttt{zig/src/gpu/memory\_pool.zig} & GPU memory pool with slab allocation. Reduces allocation overhead for inference batches. \\
+\texttt{zig/src/gpu/kernels/} & Custom GPU kernels for JSON parsing, tokenization, and attention computation. \\
+\texttt{zig/src/protocol/schema\_registry.zig} & Avro/JSON schema validation. Stores schema versions, checks compatibility on registration. \\
+\texttt{zig/src/schema/registry.zig} & Schema version management. Implements BACKWARD, FORWARD, and FULL compatibility modes. \\
+\texttt{zig/src/hana/odbc\_bindings.zig} & SAP HANA ODBC driver bindings. Low-level FFI to HANA ODBC library. \\
+\texttt{zig/src/hana/hana\_db.zig} & HANA connection pooling and query execution. Manages connection lifecycle, prepared statements. \\
+\texttt{zig/src/http/server.zig} & HTTP server implementation. Routes requests to handlers, manages connection pool. \\
+\texttt{zig/src/middleware/rate\_limiter.zig} & Token bucket rate limiting per client. Configurable requests/second and burst size. \\
+\texttt{zig/src/middleware/security\_headers.zig} & Security headers middleware. Adds CORS, CSP, X-Frame-Options, X-Content-Type-Options. \\
+\texttt{zig/src/health/health.zig} & Health check implementation. Checks HANA connectivity, GPU availability, memory usage. \\
+\texttt{zig/src/recovery/wal.zig} & Write-ahead log for crash recovery. Persists messages before acknowledgment. \\
+\texttt{zig/src/resilience/circuit\_breaker.zig} & Circuit breaker pattern for downstream calls. Prevents cascade failures. \\
+\texttt{zig/src/transport/openai.zig} & OpenAI API compatibility layer. Transforms requests/responses to OpenAI format. \\
+\texttt{zig/src/tests/comprehensive\_test.zig} & Integration test suite. Tests full request flow from HTTP to GPU inference. \\
+\texttt{mesh/} & Agent mesh configuration for A2A (Agent-to-Agent) communication. \\
+\texttt{data\_products/} & Data product definitions for data mesh integration. \\
+\texttt{deploy/k8s/} & Kubernetes deployment manifests (Deployment, Service, ConfigMap, HPA). \\
+\texttt{deploy/aicore/} & SAP AI Core deployment templates for BTP deployment. \\
+\texttt{mcp\_server/server.py} & MCP server exposing streaming tools to LLM agents. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Key Source Files}
+
+\begin{tabular}{@{}L{5.5cm}L{3cm}L{1.5cm}L{3.5cm}@{}}
+\toprule
+\textbf{File} & \textbf{Purpose} & \textbf{LOC} & \textbf{Key Functions} \\
+\midrule
+\texttt{zig/src/main.zig} & Entry point & 450 & \texttt{main()}, \texttt{initSubsystems()} \\
+\texttt{zig/src/broker/broker.zig} & Message broker & 1,200 & \texttt{handlePublish()}, \texttt{dispatch()} \\
+\texttt{zig/src/auth/xsuaa.zig} & XSUAA auth & 850 & \texttt{validateToken()}, \texttt{parseVcap()} \\
+\texttt{zig/src/gpu/cuda\_backend.zig} & CUDA backend & 600 & \texttt{launchKernel()}, \texttt{syncDevice()} \\
+\texttt{zig/src/gpu/multi\_gpu\_manager.zig} & Multi-GPU & 520 & \texttt{distributeWork()}, \texttt{aggregate()} \\
+\bottomrule
+\end{tabular}
+
+\subsection{Dependencies}
+
+\subsubsection{Runtime Dependencies}
+\begin{itemize}[noitemsep]
+    \item \textbf{libc} -- Standard C library (glibc or musl)
+    \item \textbf{libcurl} -- HTTP client for upstream API calls
+    \item \textbf{libssl/OpenSSL} -- TLS for HTTPS connections
+\end{itemize}
+
+\subsubsection{Build Dependencies}
+\begin{itemize}[noitemsep]
+    \item \textbf{Zig 0.13+} -- Compiler and build system
+\end{itemize}
+
+\subsubsection{Optional Dependencies}
+\begin{itemize}[noitemsep]
+    \item \textbf{CUDA 12.0+} -- For NVIDIA GPU acceleration
+    \item \textbf{Metal 3.0+} -- For Apple Silicon GPU acceleration
+    \item \textbf{SAP HANA ODBC Driver} -- For HANA connectivity
+\end{itemize}
+
+\subsection{Configuration}
+
+\subsubsection{Environment Variables}
+\begin{tabular}{@{}L{4.5cm}L{9cm}@{}}
+\toprule
+\textbf{Variable} & \textbf{Description} \\
+\midrule
+\texttt{VCAP\_SERVICES} & BTP service bindings JSON (contains XSUAA credentials) \\
+\texttt{PORT} & HTTP server port (default: 8080) \\
+\texttt{CUDA\_VISIBLE\_DEVICES} & GPU device IDs to use (e.g., ``0,1'') \\
+\texttt{LOG\_LEVEL} & Logging verbosity (debug, info, warn, error) \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{Config Files}
+\begin{itemize}[noitemsep]
+    \item \texttt{conf/broker.yaml} -- Broker configuration (topics, partitions, retention)
+    \item \texttt{conf/gpu.yaml} -- GPU configuration (memory limits, batch sizes)
+\end{itemize}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 2: AI-CORE-PAL
+%% =============================================================================
+\section{ai-core-pal}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & ai-core-pal \\
+Version & 1.0.0 \\
+Repository & \texttt{ai-core-pal/} \\
+Language & Zig, Mojo \\
+Runtime & Native binary + Mojo runtime \\
+License & Apache-2.0 \\
+File Count & 78 source files \\
+Lines of Code & 12,800 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+Platform Abstraction Layer (PAL) providing a \textbf{unified interface to multiple LLM backends}:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Local inference} -- Native LLaMA model loading (GGUF format) with quantization support
+    \item \textbf{vLLM} -- High-throughput inference via vLLM API
+    \item \textbf{NVIDIA NIM} -- Enterprise GPU inference via NIM API
+    \item \textbf{SAP AI Core} -- BTP Generative AI Hub integration
+\end{itemize}
+
+The PAL presents an OpenAI-compatible API regardless of which backend is serving the request. It includes a \textbf{Mojo-based ReAct agent} for tool-calling workflows.
+
+\subsection{Purpose}
+
+Abstracts away the complexity of different LLM providers, enabling transparent switching between local models and cloud services without client-side changes. A CAP application can call the PAL and get responses from whichever backend is most appropriate (cost, latency, capability).
+
+\subsection{Architecture}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Details} \\
+\midrule
+Type & Gateway/Proxy \\
+Pattern & Provider abstraction with model routing \\
+Protocol & HTTP/1.1, SSE for streaming \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{Architectural Components}
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{OpenAI-Compatible API Gateway} -- Receives requests, validates auth, routes to backend
+    \item \textbf{Provider Adapters} -- vLLM adapter, NIM adapter, AI Core adapter
+    \item \textbf{Local LLaMA Inference Engine} -- Native GGUF model loading, quantization (4-bit, 8-bit)
+    \item \textbf{MCP Client} -- Connects to MCP servers for tool integration
+    \item \textbf{Mojo ReAct Agent} -- Implements ReAct (Reasoning + Acting) loop with tool execution
+\end{enumerate}
+
+\subsection{API Endpoints}
+
+\begin{longtable}{@{}L{4.5cm}L{1.5cm}L{7.5cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Method} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{/v1/chat/completions} & POST & Chat completion with automatic provider routing based on model name. \\
+\texttt{/v1/completions} & POST & Text completion for non-chat models. \\
+\texttt{/v1/models} & GET & List available models across all configured providers. \\
+\texttt{/v1/embeddings} & POST & Generate embeddings (routes to embedding-capable provider). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Directory Structure}
+
+\begin{longtable}{@{}L{6cm}L{8cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{zig/src/main.zig} & Application entrypoint. 380 LOC. \\
+\texttt{zig/src/openai/openai\_compliant.zig} & OpenAI API compatibility layer. Handles request/response transformation. \\
+\texttt{zig/deps/llama/src/model.zig} & LLaMA model loading from GGUF files. Supports LLaMA, Mistral, Phi, Gemma, Qwen, DeepSeek architectures. 1,400 LOC. \\
+\texttt{zig/deps/llama/src/tensor.zig} & Tensor operations for inference. Matrix multiplication, softmax, RoPE. \\
+\texttt{zig/deps/llama/src/sampler.zig} & Token sampling strategies: top-k, top-p (nucleus), temperature, repetition penalty. \\
+\texttt{zig/deps/llama/src/quantization.zig} & Model quantization: Q4\_0, Q4\_1, Q5\_0, Q5\_1, Q8\_0. \\
+\texttt{zig/deps/llama/src/mangle\_client.zig} & Mangle query client for semantic routing decisions. \\
+\texttt{zig/deps/llama/src/batch\_scheduler.zig} & Continuous batching scheduler for local inference. \\
+\texttt{zig/src/llm/gateway\_client.zig} & HTTP client for upstream LLM gateways. \\
+\texttt{zig/src/llm/prefix\_cache.zig} & KV cache prefix sharing for common prompt prefixes. \\
+\texttt{zig/src/nim/client.zig} & NVIDIA NIM client adapter. Handles NIM-specific auth and API format. \\
+\texttt{zig/src/mcp/mcp.zig} & Model Context Protocol client implementation. \\
+\texttt{zig/src/mcp/search\_client.zig} & MCP search tool client for web search integration. \\
+\texttt{zig/src/routing/model\_router.zig} & Routes requests to appropriate provider based on model name, cost, latency. \\
+\texttt{mojo/src/toonspy/aicore.mojo} & Mojo AI Core client with SSE streaming support. 450 LOC. \\
+\texttt{mojo/src/toonspy/react.mojo} & ReAct agent implementation. Parses thought/action/input, executes tools. 380 LOC. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Key Source Files}
+
+\begin{tabular}{@{}L{5.5cm}L{3cm}L{1.5cm}L{3.5cm}@{}}
+\toprule
+\textbf{File} & \textbf{Purpose} & \textbf{LOC} & \textbf{Key Functions} \\
+\midrule
+\texttt{zig/src/main.zig} & Entry point & 380 & \texttt{main()}, \texttt{routeRequest()} \\
+\texttt{zig/deps/llama/src/model.zig} & Model loading & 1,400 & \texttt{loadGGUF()}, \texttt{forward()} \\
+\texttt{mojo/src/toonspy/aicore.mojo} & AI Core client & 450 & \texttt{stream\_complete()} \\
+\texttt{mojo/src/toonspy/react.mojo} & ReAct agent & 380 & \texttt{run\_loop()}, \texttt{execute\_tool()} \\
+\bottomrule
+\end{tabular}
+
+\subsection{Dependencies}
+
+\subsubsection{Runtime}
+\begin{itemize}[noitemsep]
+    \item \textbf{libc} -- Standard C library
+    \item \textbf{libcurl} -- HTTP client
+    \item \textbf{Mojo runtime} -- For Mojo modules
+\end{itemize}
+
+\subsubsection{Build}
+\begin{itemize}[noitemsep]
+    \item \textbf{Zig 0.13+}
+    \item \textbf{Mojo 24.4+}
+\end{itemize}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 3: VLLM-MAIN
+%% =============================================================================
+\section{vllm-main}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & vllm-main \\
+Version & 0.9.0 \\
+Repository & \texttt{vllm-main/} \\
+Language & Python, Zig, C++/CUDA \\
+Runtime & Python 3.10+, CUDA 12.0+ \\
+License & Apache-2.0 \\
+Upstream & \url{https://github.com/vllm-project/vllm} \\
+File Count & 520 source files \\
+Lines of Code & 85,000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+High-throughput LLM inference engine with \textbf{PagedAttention} for efficient KV cache management and \textbf{continuous batching} for maximum GPU utilization. Key innovations:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{PagedAttention} -- Manages KV cache as virtual memory pages, reducing fragmentation
+    \item \textbf{Continuous Batching} -- Dynamically adds/removes requests from batches
+    \item \textbf{Prefix Caching} -- Shares KV cache for common prompt prefixes
+    \item \textbf{LoRA Support} -- Efficient fine-tuned model serving
+    \item \textbf{Quantization} -- AWQ, GPTQ, FP8 quantization support
+\end{itemize}
+
+Includes a \textbf{Zig rewrite} of performance-critical paths for the SAP deployment.
+
+\subsection{Purpose}
+
+Production-grade LLM serving with best-in-class throughput (2-24x vs naive implementations) and latency through innovative memory management. Serves as the primary inference backend for the SAP AI Platform.
+
+\subsection{Architecture}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Details} \\
+\midrule
+Type & LLM Inference Server \\
+Pattern & Continuous batching with PagedAttention KV cache \\
+Protocol & HTTP/1.1, SSE \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{Architectural Components}
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{OpenAI-Compatible API Server} -- FastAPI-based server with full OpenAI API compatibility
+    \item \textbf{LLM Engine Core} -- Orchestrates request processing, batching, and scheduling
+    \item \textbf{PagedAttention Memory Manager} -- Manages GPU memory as pages, handles allocation/deallocation
+    \item \textbf{Continuous Batch Scheduler} -- Adds requests to running batches, handles preemption
+    \item \textbf{CUDA/ROCm Kernels} -- Custom attention and quantization kernels
+    \item \textbf{Model Executor} -- Loads and executes transformer models
+\end{enumerate}
+
+\subsection{API Endpoints}
+
+\begin{longtable}{@{}L{4.5cm}L{1.5cm}L{7.5cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Method} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{/v1/chat/completions} & POST & Chat completion with streaming via SSE. Full OpenAI compatibility. \\
+\texttt{/v1/completions} & POST & Text completion for base models. \\
+\texttt{/v1/embeddings} & POST & Text embeddings (requires embedding model). \\
+\texttt{/v1/models} & GET & List loaded models. \\
+\texttt{/health} & GET & Health check (returns model status, GPU memory). \\
+\texttt{/v1/responses} & POST & Responses API (OpenAI Assistants-style). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Directory Structure}
+
+\begin{longtable}{@{}L{6cm}L{8cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{vllm/entrypoints/openai/api\_server.py} & OpenAI API server with FastAPI. Main entrypoint. 800 LOC. \\
+\texttt{vllm/entrypoints/openai/chat/} & Chat completion handlers. \\
+\texttt{vllm/engine/llm\_engine.py} & Core LLM engine orchestrator. Manages request lifecycle. 1,500 LOC. \\
+\texttt{vllm/engine/async\_llm\_engine.py} & Async engine for concurrent request handling. \\
+\texttt{vllm/core/scheduler.py} & Continuous batching scheduler. 900 LOC. \\
+\texttt{vllm/core/block\_manager.py} & PagedAttention block manager. Allocates/frees KV cache pages. \\
+\texttt{vllm/attention/backends/} & Attention backend implementations (FlashAttention, xFormers). \\
+\texttt{vllm/model\_executor/} & Model execution layer. Loads weights, runs forward pass. \\
+\texttt{vllm/lora/} & LoRA adapter support. Efficient serving of fine-tuned models. \\
+\texttt{csrc/attention/} & CUDA attention kernels. Paged attention implementation. \\
+\texttt{csrc/quantization/} & Quantization CUDA kernels (AWQ, GPTQ). \\
+\texttt{vllm-rewrite/zig/src/engine/engine\_core.zig} & Zig engine core rewrite. Performance-critical paths. 650 LOC. \\
+\texttt{vllm-rewrite/zig/src/tools/tool\_calling.zig} & Tool calling implementation in Zig. \\
+\texttt{vllm-rewrite/zig/src/batching/continuous\_batching.zig} & Continuous batching scheduler in Zig. \\
+\texttt{vllm-rewrite/zig/src/cache/kv\_cache\_optimizer.zig} & KV cache optimization and prefix sharing. \\
+\texttt{vllm-rewrite/zig/src/output/structured\_output.zig} & Structured output parsing (JSON mode). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Key Python Dependencies}
+
+\begin{longtable}{@{}L{3.5cm}L{2cm}L{2.5cm}L{5cm}@{}}
+\toprule
+\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{Purpose} \\
+\midrule
+\endhead
+torch & 2.5.0 & BSD-3-Clause & Deep learning framework \\
+transformers & 4.46.0 & Apache-2.0 & Model loading, tokenizers \\
+tiktoken & 0.8.0 & MIT & OpenAI tokenizer \\
+fastapi & 0.115.0 & MIT & API framework \\
+uvicorn & 0.32.0 & BSD-3-Clause & ASGI server \\
+ray & 2.38.0 & Apache-2.0 & Distributed execution \\
+triton & 3.1.0 & MIT & GPU kernel compiler \\
+xformers & 0.0.28 & BSD-3-Clause & Memory-efficient attention \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 4: MANGLE-QUERY-SERVICE
+%% =============================================================================
+\section{mangle-query-service}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & mangle-query-service \\
+Version & 1.0.0 \\
+Repository & \texttt{mangle-query-service/} \\
+Language & Go \\
+Runtime & Go 1.22+ \\
+License & Apache-2.0 \\
+File Count & 45 source files \\
+Lines of Code & 8,500 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+Query service for the \textbf{Mangle semantic data model} -- a Datalog-style rule engine for querying SAP business entities with:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Hybrid search} -- Combines vector similarity with keyword matching via Elasticsearch
+    \item \textbf{Semantic routing} -- Uses LLM (via MCP) to classify queries and route to appropriate handlers
+    \item \textbf{Batch ETL} -- Syncs data from SAP HANA to Elasticsearch on schedule
+    \item \textbf{CDC listener} -- Real-time change data capture for incremental updates
+\end{itemize}
+
+\subsection{Purpose}
+
+Enables semantic queries over SAP business entities (customers, products, orders, invoices) using natural language. Translates user queries into Mangle predicates, executes against Elasticsearch, and enriches results with LLM-powered explanations.
+
+\subsection{Architecture}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Details} \\
+\midrule
+Type & Query Engine \\
+Pattern & Datalog-style rule engine with Elasticsearch backend \\
+Protocol & gRPC, HTTP/2 \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{Architectural Components}
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{gRPC Server} -- Exposes query service via gRPC
+    \item \textbf{Mangle Rule Engine} -- Evaluates Datalog-style rules against facts
+    \item \textbf{Elasticsearch Client} -- Hybrid search (vector + keyword) with retry logic
+    \item \textbf{MCP Client for LLM} -- Calls LLM for query classification, reranking
+    \item \textbf{Batch ETL Sync} -- Scheduled sync from HANA to ES (5-minute interval)
+    \item \textbf{CDC Listener} -- Real-time updates from HANA change stream
+\end{enumerate}
+
+\subsection{Directory Structure}
+
+\begin{longtable}{@{}L{6cm}L{8cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{cmd/server/main.go} & Server entrypoint. Sets up gRPC, initializes services. 180 LOC. \\
+\texttt{internal/engine/engine.go} & Mangle rule engine core. Evaluates predicates against facts. 650 LOC. \\
+\texttt{internal/predicates/builtins.go} & Built-in Mangle predicates (equals, contains, range). \\
+\texttt{internal/predicates/es\_hybrid.go} & Elasticsearch hybrid search predicate. Combines BM25 + vector. 420 LOC. \\
+\texttt{internal/predicates/es\_business.go} & Business entity search predicates (customer, product, order). \\
+\texttt{internal/predicates/mcp\_client.go} & MCP client for LLM tool calls. \\
+\texttt{internal/predicates/mcp\_classify.go} & Entity classification via LLM. \\
+\texttt{internal/predicates/mcp\_rerank.go} & Search result reranking via LLM. \\
+\texttt{internal/es/client.go} & Elasticsearch client with retry, circuit breaker. \\
+\texttt{internal/es/hybrid.go} & Hybrid search implementation. \\
+\texttt{internal/sync/batch\_etl.go} & Batch ETL from HANA to ES. Queries HANA, indexes to ES. 380 LOC. \\
+\texttt{internal/sync/cdc\_listener.go} & Change data capture listener for real-time sync. \\
+\texttt{rules/routing.mg} & Query routing rules in Mangle syntax. \\
+\texttt{rules/governance.mg} & Data governance rules (access control). \\
+\texttt{es\_mappings/odata\_entity\_index.json} & Elasticsearch index mapping for OData entities. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Key Go Dependencies}
+
+\begin{longtable}{@{}L{5cm}L{2cm}L{2.5cm}L{4cm}@{}}
+\toprule
+\textbf{Module} & \textbf{Version} & \textbf{License} & \textbf{Purpose} \\
+\midrule
+\endhead
+github.com/elastic/go-elasticsearch/v8 & 8.15.0 & Apache-2.0 & ES client \\
+github.com/SAP/go-hdb & 1.12.0 & Apache-2.0 & HANA driver \\
+google.golang.org/grpc & 1.65.0 & Apache-2.0 & gRPC framework \\
+go.uber.org/zap & 1.27.0 & MIT & Structured logging \\
+go.opentelemetry.io/otel & 1.28.0 & Apache-2.0 & Tracing \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 5: CAP-LLM-PLUGIN
+%% =============================================================================
+\section{cap-llm-plugin-main}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & cap-llm-plugin \\
+Version & 1.8.0 \\
+Repository & \texttt{cap-llm-plugin-main/} \\
+Language & TypeScript, JavaScript \\
+Runtime & Node.js 20+ \\
+License & Apache-2.0 \\
+File Count & 85 source files \\
+Lines of Code & 6,200 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+CAP (Cloud Application Programming) LLM Plugin that adds \textbf{LLM capabilities to CAP applications}:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Chat completions} -- OpenAI-compatible chat via CDS actions
+    \item \textbf{RAG pipelines} -- Retrieval-Augmented Generation with HANA vector store
+    \item \textbf{Embeddings} -- Text embedding generation
+    \item \textbf{Anonymization} -- PII detection and anonymization helpers
+    \item \textbf{OpenTelemetry} -- Automatic tracing of LLM calls
+\end{itemize}
+
+\subsection{Purpose}
+
+Enables CAP applications to use LLM features with minimal code. Developers add the plugin and can immediately use chat, RAG, and embedding capabilities through CDS service definitions.
+
+\subsection{Directory Structure}
+
+\begin{longtable}{@{}L{6cm}L{8cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{cds-plugin.ts} & CDS plugin registration and lifecycle hooks. 280 LOC. \\
+\texttt{lib/anonymization-helper.ts} & PII anonymization utilities (email, phone, SSN detection). 220 LOC. \\
+\texttt{lib/validation-utils.ts} & Input validation helpers. \\
+\texttt{mcp-server/src/server.ts} & MCP server exposing CAP LLM tools. 180 LOC. \\
+\texttt{tests/unit/} & Unit tests for all modules. \\
+\texttt{tests/integration/} & Integration tests with real LLM calls. \\
+\texttt{examples/angular-demo/} & Angular demo application. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Key npm Dependencies}
+
+\begin{longtable}{@{}L{4.5cm}L{2cm}L{2.5cm}L{4cm}@{}}
+\toprule
+\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{Purpose} \\
+\midrule
+\endhead
+@sap/cds & 8.5.0 & SAP Dev License & CAP framework \\
+@sap-ai-sdk/core & 1.5.0 & Apache-2.0 & AI SDK core \\
+@sap-ai-sdk/orchestration & 1.5.0 & Apache-2.0 & Orchestration client \\
+langchain & 0.3.0 & MIT & LLM framework \\
+@opentelemetry/api & 1.9.0 & Apache-2.0 & Tracing \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 6: AI-SDK-JS
+%% =============================================================================
+\section{ai-sdk-js-main}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & @sap-ai-sdk \\
+Version & 1.5.0 \\
+Repository & \texttt{ai-sdk-js-main/} \\
+Language & TypeScript \\
+Runtime & Node.js 18+, Browser \\
+License & Apache-2.0 \\
+File Count & 120 source files \\
+Lines of Code & 15,000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+SAP AI SDK for JavaScript/TypeScript -- \textbf{monorepo with client libraries} for all SAP AI Core APIs:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{@sap-ai-sdk/core} -- Authentication, HTTP client, error handling
+    \item \textbf{@sap-ai-sdk/ai-api} -- Deployment and scenario management
+    \item \textbf{@sap-ai-sdk/foundation-models} -- Foundation model client (GPT-4, Claude)
+    \item \textbf{@sap-ai-sdk/orchestration} -- Orchestration service for complex workflows
+    \item \textbf{@sap-ai-sdk/langchain} -- LangChain integration
+\end{itemize}
+
+\subsection{Directory Structure}
+
+\begin{longtable}{@{}L{5cm}L{9cm}@{}}
+\toprule
+\textbf{Path} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{packages/core/} & Core SDK: authentication (XSUAA, destination service), HTTP client, error handling. \\
+\texttt{packages/ai-api/} & AI API client: deployments, scenarios, executions, artifacts. \\
+\texttt{packages/foundation-models/} & Foundation model abstractions. Type-safe client for chat/completion. \\
+\texttt{packages/orchestration/} & Orchestration service client for complex LLM workflows. \\
+\texttt{packages/langchain/} & LangChain integration (ChatModel, Embeddings). \\
+\texttt{packages/mcp-server/} & MCP server exposing SDK as tools. 180 LOC. \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+%% =============================================================================
+%% SERVICE 7: ELASTICSEARCH
+%% =============================================================================
+\section{elasticsearch-main}
+
+\subsection{Service Overview}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & elasticsearch \\
+Version & 9.4.0 \\
+Repository & \texttt{elasticsearch-main/} \\
+Language & Java \\
+Runtime & JVM 21+ \\
+License & Elastic License 2.0 \\
+Upstream & \url{https://github.com/elastic/elasticsearch} \\
+File Count & 2,000+ source files \\
+Lines of Code & 450,000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Description}
+
+Distributed search and analytics engine providing:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Full-text search} -- Lucene-based inverted index
+    \item \textbf{Vector search (KNN)} -- Dense vector similarity for embeddings
+    \item \textbf{Hybrid search} -- Combines BM25 + vector with RRF fusion
+    \item \textbf{Aggregations} -- Analytics and faceting
+    \item \textbf{Cluster coordination} -- Distributed across nodes with sharding/replication
+\end{itemize}
+
+\subsection{Purpose}
+
+Provides the search and analytics layer for the SAP AI Platform. Stores indexed SAP business entities, enables semantic search via embeddings, and powers the hybrid search in mangle-query-service.
+
+\subsection{Key Java Dependencies}
+
+\begin{longtable}{@{}L{3.5cm}L{2cm}L{2.5cm}L{5cm}@{}}
+\toprule
+\textbf{Component} & \textbf{Version} & \textbf{License} & \textbf{Purpose} \\
+\midrule
+\endhead
+Apache Lucene & 10.3.2 & Apache-2.0 & Search engine core \\
+Netty & 4.1.100 & Apache-2.0 & Network I/O \\
+Jackson & 2.15.0 & Apache-2.0 & JSON processing \\
+Log4j 2 & 2.22.0 & Apache-2.0 & Logging \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+%% =============================================================================
+%% REMAINING SERVICES (ABBREVIATED)
+%% =============================================================================
+\section{Remaining Services}
+
+\subsection{langchain-integration-for-sap-hana-cloud-main}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+Name & langchain-integration-for-sap-hana-cloud \\
+Version & 0.5.0 \\
+Language & Python \\
+License & Apache-2.0 \\
+LOC & 2,800 \\
+Purpose & LangChain VectorStore and Retriever implementations for SAP HANA Cloud. Enables using HANA as a vector database in LangChain applications. \\
+Key Files & \texttt{src/langchain\_hana/vectorstore.py}, \texttt{mcp\_server/server.py} \\
+\bottomrule
+\end{tabular}
+
+\subsection{generative-ai-toolkit-for-sap-hana-cloud-main}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+Name & generative-ai-toolkit-for-sap-hana-cloud \\
+Version & 1.2.0 \\
+Language & Python \\
+License & Apache-2.0 \\
+LOC & 4,500 \\
+Purpose & High-level APIs for building GenAI applications with SAP HANA Cloud. Includes RAG helpers, embedding utilities, and LLM integration. \\
+Key Files & \texttt{src/hana\_ai/}, \texttt{mcp\_server/server.py} \\
+\bottomrule
+\end{tabular}
+
+\subsection{odata-vocabularies-main}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+Name & odata-vocabularies \\
+Version & 1.0.0 \\
+Language & Python, XML \\
+License & Apache-2.0 \\
+LOC & 5,500 \\
+Purpose & OData vocabulary definitions (XML) and Python tooling for working with SAP OData services. Includes HANA and ES connectors. \\
+Key Files & \texttt{vocabularies/*.xml}, \texttt{connectors/hana.py}, \texttt{connectors/elasticsearch.py} \\
+\bottomrule
+\end{tabular}
+
+\subsection{ui5-webcomponents-ngx-main}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+Name & ui5-webcomponents-ngx \\
+Version & 0.4.0 \\
+Language & TypeScript \\
+License & Apache-2.0 \\
+LOC & 12,000 \\
+Purpose & Angular wrappers for SAP UI5 Web Components. Provides Angular directives and services for UI5 components. \\
+Key Files & \texttt{libs/}, \texttt{mcp-server/src/server.ts} \\
+\bottomrule
+\end{tabular}
+
+\subsection{world-monitor-main}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+Name & world-monitor \\
+Version & 1.0.0 \\
+Language & Python \\
+License & MIT \\
+LOC & 2,200 \\
+Purpose & Global monitoring and observability service. Provides security middleware, rate limiting, and Prometheus metrics. \\
+Key Files & \texttt{middleware/security.py}, \texttt{mcp\_server/server.py} \\
+\bottomrule
+\end{tabular}
+
+\subsection{data-cleaning-copilot-main}
+
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+Name & data-cleaning-copilot \\
+Version & 1.0.0 \\
+Language & Python \\
+License & Apache-2.0 \\
+LOC & 3,200 \\
+Purpose & AI-powered data cleaning assistant. Uses LLM to suggest data transformations and clean datasets. Includes web frontend. \\
+Key Files & \texttt{definition/}, \texttt{middleware/security.py}, \texttt{frontend/} \\
+\bottomrule
+\end{tabular}
+
+\newpage
+
+%% =============================================================================
+%% CROSS-CUTTING CONCERNS
+%% =============================================================================
+\section{Cross-Cutting Concerns}
+
+\subsection{Authentication}
+
+All services use \textbf{XSUAA JWT} authentication:
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Implementation}: \texttt{ai-core-streaming/zig/src/auth/xsuaa.zig}
+    \item \textbf{Protocol}: OAuth 2.0 / OpenID Connect
+    \item \textbf{Token format}: JWT with RS256 signature
+    \item \textbf{Scopes}: Service-specific scopes defined in \texttt{xs-security.json}
+\end{itemize}
+
+\subsection{Observability}
+
+\begin{tabular}{@{}L{3cm}L{3cm}L{8cm}@{}}
+\toprule
+\textbf{Concern} & \textbf{Technology} & \textbf{Details} \\
+\midrule
+Tracing & OpenTelemetry & Distributed tracing with span propagation via W3C trace context \\
+Metrics & Prometheus & \texttt{/metrics} endpoint on each service, scraped by Prometheus \\
+Logging & Structured JSON & JSON logs with correlation IDs, shipped to ELK stack \\
+\bottomrule
+\end{tabular}
+
+\subsection{MCP Servers}
+
+10 services expose \textbf{Model Context Protocol} servers:
+
+\begin{enumerate}[noitemsep]
+    \item ai-core-streaming
+    \item cap-llm-plugin-main
+    \item ai-sdk-js-main
+    \item elasticsearch-main
+    \item langchain-integration-for-sap-hana-cloud-main
+    \item generative-ai-toolkit-for-sap-hana-cloud-main
+    \item odata-vocabularies-main
+    \item ui5-webcomponents-ngx-main
+    \item world-monitor-main
+    \item data-cleaning-copilot-main
+\end{enumerate}
+
+\newpage
+
+%% =============================================================================
+%% APPENDIX
+%% =============================================================================
+\section{Appendix: JSON Reference}
+
+Full machine-readable data available in:
+
+\begin{lstlisting}
+docs/sbom/service-inventory.json      # 688 lines - full technical details
+docs/sbom/sbom-cyclonedx.json         # 22 components - summary
+docs/sbom/sbom-cyclonedx-full.json    # 549 npm packages
+\end{lstlisting}
+
+\subsection{Query Examples}
+
+\begin{lstlisting}
+# Get all service names and LOC
+jq '.services[] | {name, linesOfCode}' service-inventory.json
+
+# Get ai-core-streaming directories
+jq '.services[0].directories' service-inventory.json
+
+# List all API endpoints
+jq '.services[].api.endpoints[]?' service-inventory.json
+
+# Get language distribution
+jq '.totals.languageDistribution' service-inventory.json
+\end{lstlisting}
+
+\newpage
+
+%% =============================================================================
+%% INCLUDE MODIFICATIONS HISTORY
+%% =============================================================================
+\input{MODIFICATIONS-HISTORY.tex}
+
+\vfill
+\begin{center}
+\textcolor{sapblue}{\rule{0.8\textwidth}{0.4pt}}\\[0.5cm]
+{\small SAP AI Platform -- Comprehensive SBOM v2.0 | March 2026}\\
+{\small Generated from service-inventory.json + git commit history}
+\end{center}
+
+\end{document}

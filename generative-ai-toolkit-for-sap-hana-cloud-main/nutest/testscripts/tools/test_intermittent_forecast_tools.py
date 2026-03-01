@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 import json
 from hana_ai.tools.hana_ml_tools.intermittent_forecast_tools import IntermittentForecast
 from testML_BaseTestClass import TestML_BaseTestClass

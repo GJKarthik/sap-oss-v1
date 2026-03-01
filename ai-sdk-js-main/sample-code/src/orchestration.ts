@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';

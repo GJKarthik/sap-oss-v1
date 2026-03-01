@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """V2 Check Generation Agent - Iterative generation with tool usage."""
 
 from typing import Dict, Optional, Any

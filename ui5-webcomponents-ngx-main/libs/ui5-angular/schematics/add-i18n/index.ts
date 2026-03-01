@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { Rule, SchematicsException, Tree } from "@angular-devkit/schematics";
 import * as ts from "typescript";
 import { updateWorkspace } from "@schematics/angular/utility/workspace";

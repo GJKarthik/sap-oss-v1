@@ -1,0 +1,1 @@
+{"version":3,"file":"validation-error.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/validation-error.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,eAAe,GAAG;IAC5B,GAAG,EAAE,MAAM,EAAE,CAAC;IACd,GAAG,EAAE,MAAM,CAAC;IACZ,IAAI,EAAE,MAAM,CAAC;CACd,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

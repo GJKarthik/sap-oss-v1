@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Unit tests for src/telemetry/tracer.ts
  *
@@ -45,8 +47,6 @@ describe("getTracer() — no-op fallback when OTel unavailable", () => {
   let restoreRequire;
 
   beforeEach(() => {
-    jest.resetModules();
-
     // Intercept require('@opentelemetry/api') to simulate the package being absent
     const Module = require("module");
     const originalRequire = Module.prototype.require;
@@ -57,15 +57,16 @@ describe("getTracer() — no-op fallback when OTel unavailable", () => {
       return originalRequire.apply(this, arguments);
     };
 
-    const mod = require("../../src/telemetry/tracer");
-    getTracer = mod.getTracer;
-    resetCache = mod._resetTracerCache;
-    resetCache();
+    jest.isolateModules(() => {
+      const mod = require("../../src/telemetry/tracer");
+      getTracer = mod.getTracer;
+      resetCache = mod._resetTracerCache;
+      resetCache();
+    });
   });
 
   afterEach(() => {
     restoreRequire();
-    jest.resetModules();
   });
 
   test("getTracer() returns object with startSpan", () => {
@@ -134,11 +135,13 @@ describe("getTracer() — no-op fallback when OTel unavailable", () => {
 // ════════════════════════════════════════════════════════════════════
 
 describe("getTracer() — caching", () => {
-  beforeEach(() => jest.resetModules());
-  afterEach(() => jest.resetModules());
-
   test("repeated calls return the same tracer instance", () => {
-    const { getTracer: gt, _resetTracerCache: rc } = require("../../src/telemetry/tracer");
+    let gt, rc;
+    jest.isolateModules(() => {
+      const mod = require("../../src/telemetry/tracer");
+      gt = mod.getTracer;
+      rc = mod._resetTracerCache;
+    });
     rc();
     const t1 = gt();
     const t2 = gt();
@@ -146,15 +149,18 @@ describe("getTracer() — caching", () => {
   });
 
   test("_resetTracerCache causes a new tracer to be returned", () => {
-    const { getTracer: gt, _resetTracerCache: rc } = require("../../src/telemetry/tracer");
+    let gt, rc;
+    jest.isolateModules(() => {
+      const mod = require("../../src/telemetry/tracer");
+      gt = mod.getTracer;
+      rc = mod._resetTracerCache;
+    });
     rc();
     const t1 = gt();
     rc();
     const t2 = gt();
-    // After reset, the cache is re-populated — the new tracer is valid
     expect(t2).toBeDefined();
     expect(typeof t2.startSpan).toBe("function");
-    // They are different objects (cache was cleared)
     expect(t1).not.toBe(t2);
   });
 });
@@ -168,14 +174,13 @@ describe("getTracer() — real @opentelemetry/api (devDep is installed)", () => 
   let resetCache;
 
   beforeEach(() => {
-    jest.resetModules();
-    const mod = require("../../src/telemetry/tracer");
-    getTracer = mod.getTracer;
-    resetCache = mod._resetTracerCache;
-    resetCache();
+    jest.isolateModules(() => {
+      const mod = require("../../src/telemetry/tracer");
+      getTracer = mod.getTracer;
+      resetCache = mod._resetTracerCache;
+      resetCache();
+    });
   });
-
-  afterEach(() => jest.resetModules());
 
   test("getTracer() returns an object", () => {
     const tracer = getTracer();

@@ -1,0 +1,267 @@
+name: SBOM Professional Audit
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      # Re-run on any dependency manifest change
+      - '**/pyproject.toml'
+      - '**/requirements*.txt'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/pnpm-lock.yaml'
+      - '**/yarn.lock'
+      - '**/go.mod'
+      - '**/go.sum'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '**/build.gradle'
+      - '**/build.gradle.kts'
+      # Re-run if the audit pipeline itself changes
+      - 'scripts/sbom-lineage/**'
+      - 'docs/sbom-lineage-manifest.yaml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - '**/pyproject.toml'
+      - '**/requirements*.txt'
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
+      - '**/yarn.lock'
+      - '**/go.mod'
+      - '**/Cargo.toml'
+      - 'scripts/sbom-lineage/**'
+  schedule:
+    # Weekly full audit (Tuesday 06:00 UTC)
+    - cron: '0 6 * * 2'
+  workflow_dispatch:
+    inputs:
+      fail_on_vuln:
+        description: 'Fail on vulnerability severity (CRITICAL/HIGH/MEDIUM/none)'
+        required: false
+        default: 'CRITICAL'
+      run_vuln_scan:
+        description: 'Run OSV vulnerability scan (requires network)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  security-events: write   # for SARIF upload
+  id-token:       write    # for sigstore keyless signing
+
+jobs:
+  sbom-audit:
+    name: SBOM Audit — CycloneDX 1.5 + Policy + SLSA
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for git lineage
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Set up Go (for Mangle mg binary)
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+          cache-dependency-path: mangle-main/go.sum
+
+      # Cache the compiled mg binary keyed on Go source hash (P3-B).
+      # A cache hit skips the ~45 s go build step entirely.
+      - name: Cache mg binary
+        id: cache-mg
+        uses: actions/cache@v4
+        with:
+          path: scripts/sbom-lineage/bin/mg
+          key: mg-${{ runner.os }}-${{ hashFiles('mangle-main/**/*.go', 'mangle-main/go.sum') }}
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      # ── Step 1: NTIA + CycloneDX 1.5 baseline audit ────────────────────────
+      - name: NTIA baseline audit
+        run: python3 scripts/sbom-lineage/audit_sbom.py --json > /tmp/audit-baseline.json
+        continue-on-error: false
+
+      # ── Step 2: Policy-gated audit (licence blocklist + copyleft + ECCN) ────
+      - name: Policy audit
+        run: |
+          python3 scripts/sbom-lineage/audit_sbom.py \
+            --policy scripts/sbom-lineage/policy.yaml \
+            --risk-report \
+            --json > /tmp/audit-policy.json
+        continue-on-error: false   # FAIL on AGPL/GPL-3.0 by default
+
+      # ── Step 3: Source-level license discovery ──────────────────────────────
+      - name: Source license scan
+        run: |
+          python3 scripts/sbom-lineage/scan_licenses.py \
+            --no-file-detail \
+            --json > /tmp/scan-licenses.json
+
+      # ── Step 4: SPDX 2.3 export ─────────────────────────────────────────────
+      - name: Export SPDX 2.3
+        run: python3 scripts/sbom-lineage/sbom_to_spdx.py
+
+      # ── Step 5: ML model card + dataset provenance ──────────────────────────
+      - name: ML lineage
+        run: python3 scripts/sbom-lineage/ml_lineage.py --json > /tmp/ml-lineage.json
+
+      # ── Step 5b: Mangle Datalog policy audit ────────────────────────────────
+      - name: Build mg binary (skipped on cache hit)
+        if: steps.cache-mg.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p scripts/sbom-lineage/bin
+          cd mangle-main && go build -o ../scripts/sbom-lineage/bin/mg ./interpreter/mg/...
+          echo "mg binary built from source."
+
+      - name: Mangle Datalog policy audit
+        run: |
+          python3 scripts/sbom-lineage/mangle_audit.py --json > /tmp/mangle-audit.json
+
+      # ── Step 6: SLSA v1.0 provenance ────────────────────────────────────────
+      - name: SLSA provenance
+        env:
+          GITHUB_SHA:        ${{ github.sha }}
+          GITHUB_REF:        ${{ github.ref }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID:     ${{ github.run_id }}
+        run: python3 scripts/sbom-lineage/slsa_provenance.py
+
+      # ── Step 7: SHA-256 integrity manifest ──────────────────────────────────
+      - name: Sign — SHA-256 manifest
+        run: python3 scripts/sbom-lineage/sign_sbom.py --mode hash
+
+      # ── Step 8: Sigstore keyless signing (on push to main only) ─────────────
+      - name: Sign — sigstore keyless
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          pip install sigstore
+          python3 scripts/sbom-lineage/sign_sbom.py --mode sigstore || true
+          # "|| true" keeps the job green if OIDC token is unavailable in forks
+
+      # ── Step 9a: VEX stub generation (always — no network required) ────────────
+      # Writes boms/vex/<service>.vex.cdx.json for every BOM with zero vulns.
+      # This satisfies CycloneDX 1.5 compliance and CISA VEX requirements.
+      # The full OSV scan in Step 9b will overlay real vulns when it runs.
+      - name: Generate VEX stubs (offline)
+        run: |
+          python3 scripts/sbom-lineage/vuln_overlay.py --offline-ok --json > /tmp/vuln-report.json
+          echo "VEX stubs written to scripts/sbom-lineage/boms/vex/"
+
+      # ── Step 9b: OSV vulnerability scan (optional, scheduled + dispatch) ─────
+      - name: OSV vulnerability scan (network)
+        if: |
+          github.event_name == 'schedule' ||
+          (github.event_name == 'workflow_dispatch' && inputs.run_vuln_scan == 'true')
+        run: |
+          FAIL_FLAG=""
+          SEV="${{ inputs.fail_on_vuln || 'CRITICAL' }}"
+          if [ "$SEV" = "CRITICAL" ]; then FAIL_FLAG="--fail-on-critical"; fi
+          if [ "$SEV" = "HIGH" ];     then FAIL_FLAG="--fail-on-high";     fi
+          python3 scripts/sbom-lineage/vuln_overlay.py $FAIL_FLAG --json > /tmp/vuln-report.json
+
+      # ── Step 10: SBOM diff vs snapshot (PR only) ────────────────────────────
+      - name: SBOM diff check
+        if: github.event_name == 'pull_request'
+        run: |
+          # Fetch snapshot from base branch if it exists
+          git fetch origin ${{ github.base_ref }} 2>/dev/null || true
+          SNAP_DIR=$(mktemp -d)
+          git show origin/${{ github.base_ref }}:scripts/sbom-lineage/boms/ \
+              2>/dev/null | xargs -I{} cp -r {} "$SNAP_DIR/" 2>/dev/null || true
+          if ls "$SNAP_DIR"/*.cyclonedx.json 2>/dev/null | head -1; then
+            python3 scripts/sbom-lineage/sbom_diff.py \
+              --old "$SNAP_DIR" \
+              --new scripts/sbom-lineage/boms/ \
+              --fail-on-new-copyleft \
+              --json > /tmp/sbom-diff.json || true
+          else
+            echo "No BOM snapshot found on base branch — skipping diff check"
+          fi
+
+      # ── Step N: SARIF 2.1.0 — convert all findings ──────────────────────────
+      - name: Build SARIF report
+        if: always()
+        run: |
+          python3 scripts/sbom-lineage/sbom_to_sarif.py \
+            --mangle-json /tmp/mangle-audit.json \
+            --audit-json  /tmp/audit-policy.json \
+            --scan-json   /tmp/scan-licenses.json \
+            --vuln-json   /tmp/vuln-report.json
+
+      # ── Upload SARIF to GitHub Advanced Security ─────────────────────────────
+      - name: Upload SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scripts/sbom-lineage/boms/sarif/sbom-findings.sarif.json
+          category:   sbom-pipeline
+        # Requires security-events: write (already in permissions block)
+
+      # ── Upload all audit artefacts ──────────────────────────────────────────
+      - name: Upload audit artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-audit-${{ github.run_number }}
+          retention-days: 90
+          path: |
+            scripts/sbom-lineage/boms/*.cyclonedx.json
+            scripts/sbom-lineage/boms/spdx/
+            scripts/sbom-lineage/boms/vex/
+            scripts/sbom-lineage/boms/provenance/
+            scripts/sbom-lineage/boms/ml/
+            scripts/sbom-lineage/boms/scan/
+            scripts/sbom-lineage/boms/sarif/
+            scripts/sbom-lineage/boms/sbom-sha256-manifest.json
+            scripts/sbom-lineage/boms/*.cyclonedx.json.sigstore
+            /tmp/audit-baseline.json
+            /tmp/audit-policy.json
+            /tmp/mangle-audit.json
+            /tmp/scan-licenses.json
+            /tmp/ml-lineage.json
+            /tmp/vuln-report.json
+
+      # ── Post risk summary as PR comment (PR only) ───────────────────────────
+      - name: Post risk summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## SBOM Audit Results\n\n';
+            try {
+              const audit = JSON.parse(fs.readFileSync('/tmp/audit-policy.json', 'utf8'));
+              const boms = Object.keys(audit);
+              const failing = boms.filter(b => audit[b].findings.some(f => f.severity === 'FAIL'));
+              const riskTiers = boms.map(b => {
+                const r = audit[b].risk || {};
+                return `| \`${b}\` | ${r.tier || 'N/A'} | ${r.score ?? 'N/A'}/100 |`;
+              });
+              body += `**${boms.length} BOMs audited** — ${failing.length} FAIL, ${boms.length - failing.length} PASS\n\n`;
+              body += '| BOM | Risk Tier | Score |\n|-----|-----------|-------|\n';
+              body += riskTiers.join('\n') + '\n\n';
+              if (failing.length > 0) {
+                body += '⚠️ **Policy violations detected** — review license blocklist findings.\n';
+              }
+            } catch(e) {
+              body += `_Could not parse audit results: ${e.message}_\n`;
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+

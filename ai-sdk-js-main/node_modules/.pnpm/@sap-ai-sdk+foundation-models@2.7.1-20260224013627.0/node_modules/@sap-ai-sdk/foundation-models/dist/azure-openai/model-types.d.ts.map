@@ -1,0 +1,1 @@
+{"version":3,"file":"model-types.d.ts","sourceRoot":"","sources":["../../src/azure-openai/model-types.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EACV,oBAAoB,IAAI,wBAAwB,EAChD,yBAAyB,IAAI,6BAA6B,EAC3D,MAAM,kBAAkB,CAAC;AAE1B;;GAEG;AACH,eAAO,MAAM,UAAU,eAAe,CAAC;AACvC;;GAEG;AACH,MAAM,MAAM,oBAAoB,GAAG,wBAAwB,CAAC;AAE5D;;GAEG;AACH,MAAM,MAAM,yBAAyB,GAAG,6BAA6B,CAAC"}

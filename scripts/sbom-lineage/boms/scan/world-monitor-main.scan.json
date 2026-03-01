@@ -1,0 +1,4150 @@
+{
+  "service": "world-monitor-main",
+  "total_files": 373,
+  "files_with_spdx": 368,
+  "spdx_coverage_pct": 99,
+  "files_with_copyright": 366,
+  "discovered_spdx": [
+    "AGPL-3.0-only"
+  ],
+  "declared_spdx": [
+    "(AFL-2.1 OR BSD-3-Clause)",
+    "(Apache-2.0 AND BSD-3-Clause)",
+    "(BSD-2-Clause OR MIT OR Apache-2.0)",
+    "(MIT AND Zlib)",
+    "(MIT OR Apache-2.0)",
+    "(MIT OR CC0-1.0)",
+    "(MIT OR GPL-3.0-or-later)",
+    "(MIT OR WTFPL)",
+    "(MPL-2.0 OR Apache-2.0)",
+    "0BSD",
+    "AGPL-3.0-only",
+    "Apache-2.0",
+    "Apache-2.0 OR MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BlueOak-1.0.0",
+    "CC-BY-4.0",
+    "ISC",
+    "MIT",
+    "MPL-2.0",
+    "NOASSERTION",
+    "Python-2.0",
+    "SEE LICENSE IN LICENSE",
+    "SEE LICENSE IN LICENSE.md",
+    "SEE LICENSE IN LICENSE.txt",
+    "SEE LICENSE IN copyright.txt",
+    "SEE LICENSE.md",
+    "Unlicense"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "(AFL-2.1 OR BSD-3-Clause)",
+      "(Apache-2.0 AND BSD-3-Clause)",
+      "(BSD-2-Clause OR MIT OR Apache-2.0)",
+      "(MIT AND Zlib)",
+      "(MIT OR Apache-2.0)",
+      "(MIT OR CC0-1.0)",
+      "(MIT OR GPL-3.0-or-later)",
+      "(MIT OR WTFPL)",
+      "(MPL-2.0 OR Apache-2.0)",
+      "0BSD",
+      "Apache-2.0",
+      "Apache-2.0 OR MIT",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "BlueOak-1.0.0",
+      "CC-BY-4.0",
+      "ISC",
+      "MIT",
+      "MPL-2.0",
+      "NOASSERTION",
+      "Python-2.0",
+      "SEE LICENSE IN LICENSE",
+      "SEE LICENSE IN LICENSE.md",
+      "SEE LICENSE IN LICENSE.txt",
+      "SEE LICENSE IN copyright.txt",
+      "SEE LICENSE.md",
+      "Unlicense"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "middleware.ts",
+      "sha256": "2d53697ee91a50077aacd5e0d7ef034d3e09871db95bd6c088db20d717742882",
+      "spdx_ids": [],
+      "copyrights": []
+    },
+    {
+      "path": "REUSE.toml",
+      "sha256": "fde51d3e7a0f6880eca728ca20b497487ef5266a48dbe57d79c182e2d95b4968",
+      "spdx_ids": [],
+      "copyrights": []
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "b67c36298714357ffc46e36d45cdfc76f196c442fe662702d3edd08a514a7500",
+      "spdx_ids": [],
+      "copyrights": []
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "d672707110803c9ce5f19a3fb894f0682ac78233f9fa13a303eed8899d51915d",
+      "spdx_ids": [],
+      "copyrights": []
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "00a4571dc6327a83c72e4cb992ab478ffed82b75d5f69d54cc56018a31a7aa74",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/world_monitor_service.yaml",
+      "sha256": "d2ed4e0c2fef82a92ab93752e538364484919ca4d92b32e2788284f625ba01b4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "sap_openai_server/server.ts",
+      "sha256": "92ddd1428492b63351770d7f00951a41b0505e02fcec80f8740ba2f0957ba62e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "proto/buf.yaml",
+      "sha256": "156638e2939fa5e4dfd05a96cbaac6be64523423dcd4dcbb54d69623b7c3f1d4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "proto/buf.gen.yaml",
+      "sha256": "698d535f35b6d79aa1af4658c728a4ceed7872f242c2f65e84bd29733d4d3ecd",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/deploy-config.test.mjs",
+      "sha256": "7ab003a7791d42dd239b36446bfa996bf1609b460d03ae54bae694f1810066a6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/gulf-fdi-data.test.mjs",
+      "sha256": "68f22f9fa3c768d738b644dc18e8e700c5bfcca05be59aa74d44bb500e1e7b7b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/server-handlers.test.mjs",
+      "sha256": "844fee437669c2d7176a49cca01755ea9835fdc9e18129b67715d54baac3cea1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/countries-geojson.test.mjs",
+      "sha256": "2496395efccfaddf4a0ac6276939a46e1da047c5fe411209229e898df8d387ab",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/router.ts",
+      "sha256": "7ba9b1ecd8ebe0c7c86947f34bda93ac2793ec19e01b9f798455b2c3a193efbc",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/error-mapper.ts",
+      "sha256": "02086f79703f67fdfb6bee4361ebad1f6bd20314e8e2991d7c165d24bd41a27e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/cors.ts",
+      "sha256": "c360255187f09209dd974560a8013ad6e6099704b52e3707909506cb3421f5d7",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "dbb0c61885ee192ec3444ac30dd04f433b7eca59d5d51c0a3af4d19b11a58053",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/world_monitor_agent.py",
+      "sha256": "7289f18a56cb45c89a1851c02856de8a2e623975028632c5e139aebc48f3b2b2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "convex/schema.ts",
+      "sha256": "0299d52a5b392ba133213b7fa5872eddaf238023e340f94465545b1e98f20d75",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "convex/registerInterest.ts",
+      "sha256": "0f88f0514eeda477218771857ce50030b8901facb86217c360bdd23e6c89e4f6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/build-sidecar-sebuf.mjs",
+      "sha256": "dc2d3b4f4f2117721acadc0317a80f7f25c18a141a2a08173aa6b456b3758cc4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/sync-desktop-version.mjs",
+      "sha256": "9eb47a3f6a8ffe20e10c50856ef936646a629c43bfb8e8993d64fd65e76b1409",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/download-node.sh",
+      "sha256": "7c062a805e9174a24147f86fbf42766d57d75a55785f283d5568eef87fde9f52",
+      "spdx_ids": [],
+      "copyrights": []
+    },
+    {
+      "path": "scripts/desktop-package.mjs",
+      "sha256": "4f15e03cc26469c631effe4e45b526ced39e795582f3ccaee1380b13bfcad45a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/ais-relay.cjs",
+      "sha256": "147b5cc41f8781342d1fa45f7842d096167a8f5872503aab9a7afe78c15bba02",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src-tauri/Cargo.toml",
+      "sha256": "ea9e83dcd70222add037a31923255e4def0d876ffa06bacbd611b0aa318759c1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src-tauri/build.rs",
+      "sha256": "bcfe4948b45c7e11d9ee28f7775dec6e822ed20f347eb628bbb95f4d3e972c3c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "api/download.js",
+      "sha256": "0aabeb1c77a6d7bb11f3288a860c9270dec05f1aaadf37381292e1c9c6fd2f3f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/og-story.test.mjs",
+      "sha256": "f51bd6b11881b5eeefb00f7daaf52ddfd0df38c6a6277ab0f111e1f3e5530435",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/story.js",
+      "sha256": "a8899e764027cc59c0c5c1850e03074c2535c7994d3212859d1bde2f1dd5aacc",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/version.js",
+      "sha256": "5ca75985473bf0eeb5388689dee57f542a0f3d467e62d427f7a186a8168faff3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/register-interest.js",
+      "sha256": "f6c460dbd84d11119f3ba4c846e95ac4abf0e9df88cace785f1c6cfb70724863",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/og-story.js",
+      "sha256": "89d864c0a7605b7364ecd8fadf42787da90c23bee28f86b7a8412e37f5b3f765",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/_api-key.js",
+      "sha256": "ebd56d60450d4417d91f3f53be790dcf1e62e6ee1bfef9a59cf75b7dc3bf6338",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/_cors.js",
+      "sha256": "b50491c5db5a8e33199c639b3d3ce5fff88ee548ef656f75e5ee0ee1bed3a3cb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/fwdstart.js",
+      "sha256": "faa66c207d529fc77a4d693edca54b844513771f422e3f91a7e026466a4fca41",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/rss-proxy.js",
+      "sha256": "c490ba52c09904da5ab310661eab5c6836a94ccfc817c2ea291a263f4782c141",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/_cors.test.mjs",
+      "sha256": "e1e9d0b0dbbcf6cab7767bde5dc4838e857e6e88f4051d8388da36a8a1d634f9",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "e2e/keyword-spike-flow.spec.ts",
+      "sha256": "bf93bbb16eafb76a712250f5dc5aea6d0ddf3dd63e347557d3bceff262af7678",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "e2e/investments-panel.spec.ts",
+      "sha256": "c855d6eb411aabc0405d610e731c9cd77cae2b030712f0b3ebd446780ab0f9ed",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "e2e/mobile-map-popup.spec.ts",
+      "sha256": "0d1c2e0ed6fcdd28826085071fc6c7cbd270e4b6eed54658a54a3922d133ce85",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "e2e/runtime-fetch.spec.ts",
+      "sha256": "74edffbc7cb712c11a734e607dd2394493f218d706dedd6fe16222bae6caadd6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "e2e/map-harness.spec.ts",
+      "sha256": "df27fe2700f1fab56ae2ce4843301c639e72736145b8eb23fd989cde16d0b8b2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "mcp_server/server.py",
+      "sha256": "e7dd2df7eb54bc3684a994368663e7514c7e50ee5fd60000d3a2a6a0509bca85",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "dcf44ea5c661eaf7ffd1c43bc91aef859ee86e8d4cd2f09a6de9e98aca335231",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/pwa.d.ts",
+      "sha256": "84fabf20d731e8e1fba1448c0107b61e47817d4c511b1614a65a30495125a346",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/App.ts",
+      "sha256": "b490366068eb0b45760deac290dab679582db602388653123a64ecc5060a716c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/settings-main.ts",
+      "sha256": "846a999f9ba3d276d6da0834aa4e702d4bc2b13def9d2c4302b349eaeefca6ef",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "74ace8267b752eed0358913d88c51ca0097b429f08d271c6ffa904a1636129f3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/types/index.ts",
+      "sha256": "fecd5485f6b7996dd6280a9dac47f2d32f89e8bd6d9d4e49e0c6606f7a7eb83e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/zh.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/tr.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/nl.d.ts",
+      "sha256": "fedf23b391c07facef96d79c1bf1e74cf046f7f7bc0dab65d1257a968f142bff",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/ru.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/pl.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/pt.d.ts",
+      "sha256": "22dff8c05a74943dc58a1ce630c2232da7cb666f2204f20210f14170b9fe1785",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/it.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/vi.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/sv.d.ts",
+      "sha256": "9a2a6367b2d13fccf36fcae771292405a1ed0a8d9a8692eb3cae23d08bfd40af",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/th.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/ar.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/locales/es.d.ts",
+      "sha256": "8d7243d9822a7f5be26c1844626c3e741da4bd2294e5dc516d01bbec2e2ac539",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/bootstrap/chunk-reload.ts",
+      "sha256": "de4c24042aeab178c02584098a73f7adfb3a5eda108b84a6636aa18d8343fa2f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/panels.ts",
+      "sha256": "e1f87e3856c037f9672c685c6038bbb308c50d1a350da9c926df18e20dd5722d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/pipelines.ts",
+      "sha256": "903d4b6e342778393ced049785260809e224d1d2a18405df861e3963f571d22f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/variant.ts",
+      "sha256": "db1c615227ba1b279adfe2d7b6f8180c3cf3e189ff57766ec8813bafc18330df",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/ai-regulations.ts",
+      "sha256": "8988bb015a8236a81c28dfb814c3c68892c0c2b94651b4c242edce5eac5d7f09",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/finance-geo.ts",
+      "sha256": "0daeabe94a03cdb151c8f3219b9b34d0374db5e304d51f7dc286ea4da3de9cb4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/entities.ts",
+      "sha256": "d902f3ffcbf4ff7bf7f073af5b5efa67b298d6f31f0633eb305c4a255ffad688",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/gulf-fdi.ts",
+      "sha256": "44f262870487cd7fae2a5659eba60a49ddce584c95d52f499dec28b1fa96eee2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/airports.ts",
+      "sha256": "94f843ed76d7b20418f6e392b013a22ca6509e37ae5cf1340939578808c138d5",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/ml-config.ts",
+      "sha256": "9432c5a744d46a2f50e240cc504ecdf534bb2b4d534095f81e21652887c6221b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/startup-ecosystems.ts",
+      "sha256": "d299416b36db95d22cc4b90f3da8510fbba9391ff5a0166585768c7e117a73fe",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/markets.ts",
+      "sha256": "8324b8a73db7ebfd8d63ad1b04a43db18137c4ea2c2cdf93aea86e73a06c1e90",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/tech-companies.ts",
+      "sha256": "65c78b3db59f7b974284845f0c7a980459373a94bc47cf990666a16b78398989",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/tech-geo.ts",
+      "sha256": "441d502bb9e507c2ba6287de647e5d449af92fdcd08316f6fe52941cba2ee3cb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/ports.ts",
+      "sha256": "2190f2616de8aa524c18353006bc2b73defd15415d2e28d1df6ab7733ae6576d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/bases-expanded.ts",
+      "sha256": "c67f6e91a7c4c697b9bec6182363521fb4cc1339fa86c5f5cd3446c6ab5a0780",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/feeds.ts",
+      "sha256": "c42d6a01f3d6f356709b652fab99d55133765a9b5f41aeac9c166c466e6414b8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/beta.ts",
+      "sha256": "6327aed86025d5aae7d5e250de0e45bccb04ec21fec7178084b43bf1b0253a72",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/military.ts",
+      "sha256": "de16a1eddab936fd9c85d86a87ccce665c7d7c0a3f62162b53fc4f2a79f2a2a3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/index.ts",
+      "sha256": "f541fc1e6cae5bf8eada00f4cb7f93593b08a59d9a4f133fad383611e049bc51",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/ai-research-labs.ts",
+      "sha256": "66413fa336b1dba0fa80b28cfce3009c782d68abf98bba2ed050058a829fd89e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/countries.ts",
+      "sha256": "e7d3b381ffdfd764614a999e9712f253296f01cba9c2e7dd7314970d19a8cd6e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/irradiators.ts",
+      "sha256": "00f2a1d540b0f8de9dbf5971276b7d4771ed498b8420e504963c165b709756dd",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/ai-datacenters.ts",
+      "sha256": "134c5035f146e3a640c4686c28446e7471b95f2255e49a77a4aa727598373768",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/geo.ts",
+      "sha256": "b77d90731288bc3f0fee5b7a84062b3a07ad7e5d5fd77069adc9074def18d77f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/sanitize.ts",
+      "sha256": "c9daeac52e53c917d60c4f2c81f94811c61454a70b314ca63de48b1fba19be71",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/dom-utils.ts",
+      "sha256": "8502462d8ad03f1af74528424337bdf6af1085da53031331dd57f68f0e9e4143",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/theme-manager.ts",
+      "sha256": "f3b7e771065776562f8ba81688ca22abb3a1951bb26f7fa82bf739edaa2d88d4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/reverse-geocode.ts",
+      "sha256": "feaca0121ab74b98403b5a2b9cef77f4e80e207257558daaa629422f7ca36731",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/urlState.ts",
+      "sha256": "8eaf3fb39c0e5a2dce78e090c65deeb267f1045fb08676cd8a047ec07dfaf531",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/circuit-breaker.ts",
+      "sha256": "d593a989aa6cf8ce96360c4e4ae64d75e8f5dd849b43d72a5303b14e2ec1d91d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/export.ts",
+      "sha256": "29063b0a2c0cc6795c1df96815551acd70e0ea44989201dd54bdb863a3564db8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/theme-colors.ts",
+      "sha256": "0078f829c8c68c5f41b1723f94d9efaecb4438d163eda593f7c124a4f6b31796",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/analysis-constants.ts",
+      "sha256": "b4036a1675c8f06b61f41343aead6d907958da14fbbad244c8862e588140b0c8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/proxy.ts",
+      "sha256": "0b5c069bc10443ee2a953344694715bd8f826cd81046c335d8a23c43bdb340fb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/utils/index.ts",
+      "sha256": "908cbb306db8c6b49516d24f4114eda573e2e084cec8fd515ae8d2dd07090218",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/MacroSignalsPanel.ts",
+      "sha256": "86206505c3659c47bf924385755d6d195460e7c0cbe72e633d4c6a2cee33993a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/MonitorPanel.ts",
+      "sha256": "d38f88fe58106b1ee529b74509a59829d67ff77d8bdc3ece16f3adddc053ba5f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/WorldMonitorTab.ts",
+      "sha256": "f3defb8f14ff69153375d7adf3d2940590fb84bc4842e6ee6907153ea2b5a156",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/GdeltIntelPanel.ts",
+      "sha256": "28769d31eaa7a071de88ba6bb8e871e3e895e56d7e32e94fc4f3cdd3ed6f28ae",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/CascadePanel.ts",
+      "sha256": "51680e2bb5a3abf7cdfcc59c7782e6f5cbc372d910cbcf5edf1d277f42d57726",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/GeoHubsPanel.ts",
+      "sha256": "9f2e4797ba2c385a193bd8a32ea11012fe2665ddfda24e4267306ce5dcdd07a5",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/ETFFlowsPanel.ts",
+      "sha256": "d36e75cbb6781704f82c9e32c8fd221c440da54d5bd3804a6a8580c6505f1436",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/RuntimeConfigPanel.ts",
+      "sha256": "e49083800b9062953f95a4105e8ff1154225714f9c07799ab793fe3d1256f3f4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/NewsPanel.ts",
+      "sha256": "e732220573535aca1f48b538f2934a10bfe3571783abf25a81eb284b9e6a5dbf",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/Panel.ts",
+      "sha256": "78adde7af60a313e87ebb24f93223d6df82784016eb149b03538aa9e143a403c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/PlaybackControl.ts",
+      "sha256": "6b3dc14f92026b2989edb692116c145128347d1a697de7aa9d2fcfff1e6d0e4a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/StablecoinPanel.ts",
+      "sha256": "11cd56ad9de099212896afbb500bb41726c71c8a89d7d744d03a3e032bbfbe93",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/IntelligenceGapBadge.ts",
+      "sha256": "7851397e0ca9320bd90670276600afcf524379b96aca603a7a120e0dc5e4aaea",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/DisplacementPanel.ts",
+      "sha256": "2a0f359bb35571e46e66fdbfae19e1a2864b8f0a246b702a34568e7dcc493b1f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/PredictionPanel.ts",
+      "sha256": "fa51708b3cce511de35c32afb54b5a9fc67ae1671f7257a8e87dc0c2a00612f6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/LiveNewsPanel.ts",
+      "sha256": "5fe3bdd10caabeb40ef04cfeb818885ae582c5aebef31f4ac6f120b52856fb76",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/RegulationPanel.ts",
+      "sha256": "d5204f396d6beb336422a40340e84a6b0697fe33d4fea712ab7b58e27e00de4b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/SignalModal.ts",
+      "sha256": "38e52263ddfe93589a59f68da4bd6b10d50d925b09bbd51bb7f4593b6ae695f5",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/DownloadBanner.ts",
+      "sha256": "59af8d01f33abc746d76fad7e93974772b1263429719c1f38698c6a427c3858b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/EconomicPanel.ts",
+      "sha256": "7e02a18de0b9069c508d19ea08ad48675210b0b0040096b2c19bd5a033d6f239",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/DeckGLMap.ts",
+      "sha256": "f9fa9f716479208b083d60dac24c44fb648dd9a3c8e53b788c940225e1e517b9",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/SearchModal.ts",
+      "sha256": "832409bc666fdc4f222e406b888766ee9df1cef5c8c13e57732313b9d5d926e6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/MobileWarningModal.ts",
+      "sha256": "3dbd2b7513872070d43f1576379ef9cfa31cde8a34741f0a0c4118a4624980a3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/Map.ts",
+      "sha256": "267fcce17a057ded73139529f791882db6334f41c6641fc326868af3726f7e73",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/StrategicRiskPanel.ts",
+      "sha256": "593f3a7eca87adca98f241bbfefd7ed86d790c411f3518da70f2d18916d66559",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/MarketPanel.ts",
+      "sha256": "82ad672939241455066c739a58bdb7f9c36897ab320929453c03b114248fa036",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/StrategicPosturePanel.ts",
+      "sha256": "15151934510177f55774d495565da316035c985d9b4737febb7f2a0d5a5c5c4a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/LiveWebcamsPanel.ts",
+      "sha256": "828a3e7933e5df8d832e888e08e06b1fb01fcd78100d2ec26b8366a01931e97c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/MapPopup.ts",
+      "sha256": "dd22da47130816621deb2af3aeaa7c5d05165a3a7037776d60e7a77cfe52df0b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/PopulationExposurePanel.ts",
+      "sha256": "d66ba63601a309ed181c9b549c3eac671793b68d3df182312ecb6aa232c10f86",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/TechReadinessPanel.ts",
+      "sha256": "b4544dc402c7b8e3269615ee752d1a58fb7cf356ebbabc860fbcec8d98704d8f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/InvestmentsPanel.ts",
+      "sha256": "0d80d0f2d0dec91daebea4c4fe5ecd2dd2d48611fdc26fec028ae5745d017d90",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/CommunityWidget.ts",
+      "sha256": "e9d8fa05b8358bc677b5b3e5622f2bd971c57531e40000fd0335987f0b02b812",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/UcdpEventsPanel.ts",
+      "sha256": "b099fdfcf6dd989f4215dddf07d2d6ad8035903bf01802dae4f50d9960f24588",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/CountryIntelModal.ts",
+      "sha256": "340b6299c0cd32b4bbd30559903bd0360646caf4cf43061b5466b457cddf68c7",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/CountryTimeline.ts",
+      "sha256": "2db95a0a6ae06e243e7deb1929105d1df8b8b2993d0d8f00fa7820f0f9c4cf82",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/TechHubsPanel.ts",
+      "sha256": "6c2cc2249951efe20bb7670b30666b3f392b2515b2a19e88798fdf0f6a3c8f8e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/SatelliteFiresPanel.ts",
+      "sha256": "a4b726217a901be46f4c01a8c7cba6d2c6327ba05dede947c0dcc0a1451396cd",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/CIIPanel.ts",
+      "sha256": "69cc96eff6dfafb92d971a93ce77a968bab3ae24670da4b1bea094f348d22ea2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/CountryBriefPage.ts",
+      "sha256": "8bf88b5dbf73e230440fbabd7e48196e83f7fa43dd9a5563938c2a1842d9cc57",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/index.ts",
+      "sha256": "08fee405ff7244a9c6f0ad6e6250b452116000aba9ab62c5a08908346597266f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/ClimateAnomalyPanel.ts",
+      "sha256": "bef2ef5028beea5aac9ca8f0024483644ee4fb33180fd267143817d0a918643b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/StatusPanel.ts",
+      "sha256": "ac3c7ef934c3074332819c356e02b63ec9a9147c61b988b97f6ef7d994484a2e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/PizzIntIndicator.ts",
+      "sha256": "522cac05c5f89fedcb951f4f9bb4f324dd394b7b3813afb792e371e7a2ee67ae",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/VerificationChecklist.ts",
+      "sha256": "499f9dcb8e77af05fa47cc56d8c552419c9017b18d21e5adea620faee153f6ff",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/VirtualList.ts",
+      "sha256": "b7f925615a2450e44a58f20ae43350195ade9ce29fcd91837e6533680029bdec",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/StoryModal.ts",
+      "sha256": "8dcb38dbeb6a3232df2f4e8f0ab6923b23ec29a0fb697e6c154202e5fc257a34",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/LanguageSelector.ts",
+      "sha256": "bfcd1f4109fd3d497e8558d306757bc0ce4da776459eaa4122733431a06e0dcb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/MapContainer.ts",
+      "sha256": "25d88193e9220f1d9827602947bd992baa550b03d2a8e74371842136f5d5813f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/InsightsPanel.ts",
+      "sha256": "a46f4511251e20110fe9d5d3de4076ab6d42301f0343f98227ad6cbebdefe1e8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/TechEventsPanel.ts",
+      "sha256": "c02479d8bf00e26de4b4ac207c8a64195ede6321b8742c073cbc5b8e374516aa",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/components/ServiceStatusPanel.ts",
+      "sha256": "01c3ea8d863e9f44c144925644c62e7ac4b630fda149a771df1f513bf585258f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/workers/analysis.worker.ts",
+      "sha256": "b411fc9723504232a1102eacdc42a7f121dd2b29fcea4e08334420f1ca948a1c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/workers/ml.worker.ts",
+      "sha256": "715e24a36440dfdfe0db49bedbd1cd927245b8893a97af498833f38e505f6777",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/e2e/map-harness.ts",
+      "sha256": "3cd4515932e9aa8043f826afec06b17a0c0c611b7dfe2621ef95928009af933b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/e2e/mobile-map-harness.ts",
+      "sha256": "8049603ca0fe8acc2aa022988b214626e97636eb9453ebc4807fe86286483b7b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/e2e/mobile-map-integration-harness.ts",
+      "sha256": "90bb1ba86ab29ee950e6fd38dea42e09306853e6c9ef7c6fae220eafe7ae5212",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/tech-hub-index.ts",
+      "sha256": "78589be7ccf115bcaa7b664223c388f430bf4e5b6b6e13d2badfcfab1ed4ac54",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/gdelt-intel.ts",
+      "sha256": "2dfb7d88ed3697bffe4b7a3301c930b3d37b6763ab21696e7e289fc03f01669c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/military-surge.ts",
+      "sha256": "755e11500e96bab6e91bc121d921d95a52c9b4186104a89bbb5e3f6a27077442",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/velocity.ts",
+      "sha256": "257784bd5af0479353a418dcee015193d54b6d17148176e3c82bf4ed345a66f1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/ml-worker.ts",
+      "sha256": "9b28e5da350c5bf0c87610d35891129a6375f47231d12f57397d4f1976d9883f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/correlation.ts",
+      "sha256": "abc275cb01d94d353bae5b6dd9a9aae57067f8056388694f026e119f4a87fab3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/tauri-bridge.ts",
+      "sha256": "8248b9a3d2e291a798aa4c7894d1faeaae609d05f5c39b9f9b1278ac83176832",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/story-data.ts",
+      "sha256": "a2ecb011edc0ce62aef41183df050b3ba23a59fb41e748bb3b9b51574b1f1ee4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/wingbits.ts",
+      "sha256": "04f429b38902b59659440a9c4d8f6b29fe5044f0c60355c73b08c38b0ed70726",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/cached-theater-posture.ts",
+      "sha256": "4e54f1c2c553f616234df5b7fa899e69bee4e91d8bf14f260cbbf3c8beabfe90",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/persistent-cache.ts",
+      "sha256": "152a8e77a27f5d43ef59441e9993c81c37eb56d7008494599810842c540af4f0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/cable-health.ts",
+      "sha256": "aa26ca0c1c04dd8d701299c54c5f163bbbb546eb3d8e19f75edfddd215c1b4c9",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/usni-fleet.ts",
+      "sha256": "285865965b4872b63d36327ba1748cef1287b0c736a124fd58cdf0b976580f30",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/analytics.ts",
+      "sha256": "5ba846d978c8a8717461983635c2490e8ba9acde67d916a507e64c9af8c92f94",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/analysis-worker.ts",
+      "sha256": "a45f83928aaf6bdebc39ca98ceadc4af09538d239645420be4f2e9589954f006",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/summarization.ts",
+      "sha256": "26a3b5be57ba2f8ef8657a053c098edfc8f0ddd8439e3cb7c7f337581ee99e28",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/i18n.ts",
+      "sha256": "a57e1705aee79097f01fcfc85446ddbfb8a4b2622f1ece31baa15eafdfb099fb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/earthquakes.ts",
+      "sha256": "8b2a6f97be9939d8d5d15076a6d0905a2ab07982abc4ba805f615787a3f352c6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/focal-point-detector.ts",
+      "sha256": "3961c3d6379a9a04dfa01c67445a4315bb351cbb7420b15b2165ffc6eea92786",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/country-instability.ts",
+      "sha256": "6d9851a9c258f13fd831d78a7d24e9b12292b9b1f67c5285a75541768f0d2d52",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/desktop-readiness.ts",
+      "sha256": "182f124d2a9b613b1e66667ea50f1ea8fcd4fc251bd858308f4a94b270d0936f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/military-flights.ts",
+      "sha256": "825d734969fbd92b94eb6469f9d07dce4efc2aa3bd55d56c82fae005fa8c4b28",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/storage.ts",
+      "sha256": "09531b67f07e7307815e2cd08c4e85283a3fd0b88662dd937aba907a2258daa3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/eonet.ts",
+      "sha256": "05eb5de56d12acd9099db4d7806e776e27143525eb53519219063ceec1d4ab78",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/geo-activity.ts",
+      "sha256": "9c6b87dbb606ea5b51ddbdb44fd252e4f0860e5dbcdc5d9adf58d44897354bd2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/temporal-baseline.ts",
+      "sha256": "9c981e360abc3e754b5815da879ce3a82a1a010197f57af0f0b2b51afd26d4da",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/pizzint.ts",
+      "sha256": "e9a0a3ef0d4ec0fb50d6a383bcd15f1ecf5649f8217b8b81069e63bf15e2024d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/entity-index.ts",
+      "sha256": "d0ddecd891349bad06d72ad069ffcf09dfb22039e4c9463c815fa6cf912a5ef0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/data-freshness.ts",
+      "sha256": "df8dda2b4117a60389488851bb0f68577e4e4b00479f1ee61add45a31c8d7969",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/parallel-analysis.ts",
+      "sha256": "8a170d09a49a54acd12cc20976d65baa57e9ef4aff12044185459adc9e72235e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/country-geometry.ts",
+      "sha256": "cfa50ff53492c65452bc4d41243ee22207a1614ece7d5ef37498dd6671131dea",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/geo-convergence.ts",
+      "sha256": "90925355f4204d40137d162f2fd355b3f71adf71056e8df26467b3f00834e0a5",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/runtime.ts",
+      "sha256": "fe038f79d2e704178202c44988bbf3a982bcaf822471fc7242a37be41298e629",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/story-share.ts",
+      "sha256": "0f90b2505084cab4f8c947c3c4e4c97cf8b92640809eced88b1009d221971e66",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/usa-spending.ts",
+      "sha256": "03c54804aaf6fbe0dcd9de1245149bd9f75247f22316c86d81cef2c61bbb7374",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/weather.ts",
+      "sha256": "8dca4a3071e6f11b138599bfce86c0ad876c055f9c224ab0cbd36e4b13493859",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/signal-aggregator.ts",
+      "sha256": "e8430e674dd8d1bba232fb220abd4dda93ef8c212af34fe954b992ed82307897",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/geo-hub-index.ts",
+      "sha256": "75035f9dafbe5fead72ae154af4a68b336d5292345eec5dc759a5262324c6743",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/activity-tracker.ts",
+      "sha256": "2c7042a982afb528b7e081cf98ae3a1821be5f01d8c02ad7212ac62244717fb4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/meta-tags.ts",
+      "sha256": "580abce9b45de99220e71b8190bf407750172ebe4630e831db9c32af0a69e56d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/population-exposure.ts",
+      "sha256": "fdd8f3a9ef668bcf0b31fe818a74a71199fd7f81682c102b97fc641646c3992f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/entity-extraction.ts",
+      "sha256": "e080dc5b5aee6e23b9848794b5a36135a6f3e6ea55db107c07a9d55b7091f768",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/tech-activity.ts",
+      "sha256": "ed39dc0055743c4cf36cbaa09ff9dd59bf3ce86f037da1f2280edc1e4fba51bc",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/index.ts",
+      "sha256": "4bb16fecdd880ab03a0eedd6f67c2428f1a637fdf4e2a3c7f9d6169240aa1fd9",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/trending-keywords.ts",
+      "sha256": "b6a15aee2474e45b4b568f6feac6863b111cc34ae69938b2e0c7ca1029772c9a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/runtime-config.ts",
+      "sha256": "f18421f4e807a836e29e994525bd1cd6043bd58d388c68cdde32eb1e47b818e4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/hotspot-escalation.ts",
+      "sha256": "75dfa8de7c55831f86be72837244f0c6d526a5ffd231769e2633c62a733271fd",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/ml-capabilities.ts",
+      "sha256": "29069aa51b01f39dc927b04d95a25074b66f65bad27e18c9d12a56f68d4e6912",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/gdacs.ts",
+      "sha256": "81ef3c52fedb923e0c94db6bcb4f5e2ef17b56fb8b3e5e45cd6356a1d8e3b715",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/live-news.ts",
+      "sha256": "ed5a1ce6bea91efd6b2f2a2e0493e928a902ba274b97cb9843194e0bd7d15ab8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/analysis-core.ts",
+      "sha256": "878cf2132702b43ca94d976a3103a03338405483da10f7d3092a9b51b1481d5f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/clustering.ts",
+      "sha256": "e55536b6fe4c3076f9804e95c31efbeb9fe8b6a7a7f161f48990da510d2d2899",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/cross-module-integration.ts",
+      "sha256": "bdb044d9c799d4a7332d96834a469e15e38c604f2465e5a272cf6b23d3d07829",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/infrastructure-cascade.ts",
+      "sha256": "c602ff0920242983f57b7d764f4f2665a952eecb49b9dd134e3fc679497fd077",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/rss.ts",
+      "sha256": "a385b72ee0ea62de66f1e9368815ca9b3ba8dea06db81da2ab0ce70cba096874",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/threat-classifier.ts",
+      "sha256": "a714bae47b9aca1fafa1eabb6e329d6b2cdb7cfd2828d496c19c854b0c5d991c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/story-renderer.ts",
+      "sha256": "63eab7f2fa89a3d715e38cfda697ad655efc07b60c14fc147c26244083643190",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/investments-focus.ts",
+      "sha256": "552100be3cb576fcf2513eec28ce02a7b848f82d916d54ae956300043adc1f65",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/related-assets.ts",
+      "sha256": "dedcaf7415e7dea2bcfd5b0d3ca26d6a1e2f332cd77df0a577c5707fa9725557",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/cached-risk-scores.ts",
+      "sha256": "bdfe4a401d025e6f8d5657802c6f5a6c3933b78d7210af2b2d3e05952202dffd",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/military-vessels.ts",
+      "sha256": "392f20167da110ea06fa546fd719d6656dd03cfd2e201d65e2a973fb2072af1e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/cable-activity.ts",
+      "sha256": "dc09a01df5885e8998f18a64634314beacca5dc591b178dba96ed5881569fd31",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/research/index.ts",
+      "sha256": "8a1d05322d0efaa3e5244c80c660f3fe0a6dca1a06c1d0c9927d1b1b3756fa50",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/maritime/index.ts",
+      "sha256": "3f53f8d196c5c589e1f6c03c342c2e5552c08f72cb858e985756cf421f6355c6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/cyber/index.ts",
+      "sha256": "908adc46f84c3ca0e3393fc91ebf359ad13e35635197a9d1b239cbe38c90866f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/intelligence/index.ts",
+      "sha256": "8dc057962d780c32a8c86da88f9b8d18e53c202a6c65186da61cce4f89b33b27",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/unrest/index.ts",
+      "sha256": "0e84315af0a6702fab6257e443ce1cdb470aa6466d5995f58c011e7c5c3bf9f1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/prediction/index.ts",
+      "sha256": "2ed8f85806c1c76b523b48a220310497ecf875dd0c869ddb5416ea7a79403875",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/economic/index.ts",
+      "sha256": "7808a6aa7e7c2ea1c34eebe6b1800a3e57e5c51bbfe2d27b479388421584b587",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/wildfires/index.ts",
+      "sha256": "ba510dc6070c0502052a3ce91b0938b09e18ed563dcfff09f791d12a9810b4dc",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/displacement/index.ts",
+      "sha256": "a2e712233f5303ec86002a55e53afb72a2795422fc56eea02507d2f2f09b12ad",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/conflict/index.ts",
+      "sha256": "5044cfc7185c70cfb3be3f49801a601c5a8d1cfb39cc8d9dda090f598870aa6c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/military/index.ts",
+      "sha256": "55891ca050eb06b9cc09e63141dc07aa683178a0f1efe1b7dce078b63a9a4d2f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/aviation/index.ts",
+      "sha256": "3cc76a840ab7afce8f18555ac51abea49d78afff6fb2aae8bd8dc8f19316e9ce",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/news/index.ts",
+      "sha256": "f5ffe660e0f1cf8171eada7764bd7ebe916dbfeda2265eb95636d231fec2a613",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/market/index.ts",
+      "sha256": "8f1ed00563a3e736b6f149b8488e427c0007f2efb6f0cca36e2da2a2396747d4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/climate/index.ts",
+      "sha256": "6e47d7a77c13cc76e4dcd6eb0d42d791c9511e247ce8d027aaff562c63d72c0c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/services/infrastructure/index.ts",
+      "sha256": "f1c16c611af6c08e8721c8b662e8461c116fbae47710cedee69cf1418ec23ed6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/variants/base.ts",
+      "sha256": "a5edc309b192dcb66cfabf03c204e9fab7026dfd2e7bc89fff578c81ba9d0398",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/variants/full.ts",
+      "sha256": "4989985d2bb3d5cfa3713ed09e75a2df6a7c2d364867463c37f28be5dba9881d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/variants/tech.ts",
+      "sha256": "4b5b4c5fc7c447b564351dcc21775d2dace8b72ea66fd224cc18b10c453754c0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/config/variants/finance.ts",
+      "sha256": "f5a4cd228746d67c082f209d1835f9c60653d7a333cda5857dee1fa278bfd09d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/seismology/v1/service_client.ts",
+      "sha256": "b59daa9c03ac5c2187018371cf7fdadc88053bd07addc6e0ce1d606fb5fcf776",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/infrastructure/v1/service_client.ts",
+      "sha256": "1b78aa6c0354c49265677f9f97028168d80f13cbf10543e547b6e0c1e7e5bc52",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/climate/v1/service_client.ts",
+      "sha256": "8a8d03ab94894a09b842fc059b602662f37f878bfaf4e969f0395d5f03e93ab0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/market/v1/service_client.ts",
+      "sha256": "9001707756f8a4418c2d994021de4b67447c1be9341d637914c29ab7d81eb7cc",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/news/v1/service_client.ts",
+      "sha256": "82f019707f52a69524b01ceff8b7a128b43aa1003fb596f925b8628c7933e3ae",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/aviation/v1/service_client.ts",
+      "sha256": "fda050511048a2399d3c9b8102fb24e3bbb9dba92bfc9d5e2bfe747ab38a9e93",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/wildfire/v1/service_client.ts",
+      "sha256": "0b8a5f9ae995af5d359edc86d89952ca55fa0f084b7a4ca00a7f4375030ed253",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/military/v1/service_client.ts",
+      "sha256": "48528f9c7eb93c26975ebedc6fe99a2cb5eeed4e725d9464da1fe2f26655f9e0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/conflict/v1/service_client.ts",
+      "sha256": "49e776cd63cb7c9de51a89f6e4424d222df19c6272fef5d94e1a3579487ab7cb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/displacement/v1/service_client.ts",
+      "sha256": "78e62ee3b14a3b27b4208b8a8291826c4691fa88f05c247b010619986df70eb5",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/economic/v1/service_client.ts",
+      "sha256": "7bf27d880249a774721c2559af3979d1cc4bbfd9a69b7e03686f4721f08357d5",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/prediction/v1/service_client.ts",
+      "sha256": "a966220095a56f37fee7d69307e7079fd5582a7344f4d9e2a5b9cfd678105701",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/unrest/v1/service_client.ts",
+      "sha256": "f054c5ec6739ac63d53f9a0bd404fde4c5ca3fcf428bd967c2974c3fa67fd2fb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/intelligence/v1/service_client.ts",
+      "sha256": "9fb5cadc9b47eb698a9605835e0519f96f96d86eefd8f83b4adf1ff737103917",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/cyber/v1/service_client.ts",
+      "sha256": "f4aa4d3605a207c5634d62253ee0d7fd541ded5bca333f6a26e9ac3a217a4026",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/maritime/v1/service_client.ts",
+      "sha256": "413883678834c963d828510770a9394c209281fb89e65060c2d67526261b82e4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/client/worldmonitor/research/v1/service_client.ts",
+      "sha256": "ce209d1fa76dd578dd895cbd7fe9c65ac47bb325afb5b52658053299f5aad502",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/seismology/v1/service_server.ts",
+      "sha256": "ec290acfb0129f4c8b9992ee765df07e0b07f5b09300300c36e666e947e4d550",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/infrastructure/v1/service_server.ts",
+      "sha256": "57c7705e15a70731603a62318d8a019241a02ddf63ce1e3dce07af9c5c89b864",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/climate/v1/service_server.ts",
+      "sha256": "83fdde371a07da234fa200d2585275cfdf940e7004682016e8a64758f828fbf2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/market/v1/service_server.ts",
+      "sha256": "353ff5c2adeaeef77453212f4549775dff70fac1a27b4dd4438a35e6096e2662",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/news/v1/service_server.ts",
+      "sha256": "e24465f1e17bedc65df44a6b8a9f739c6fcd6e6ddbfefe2cc696ed4e76319b4d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/aviation/v1/service_server.ts",
+      "sha256": "de786d0ffa5e0125b496a2387b1cd94b68b3d6d474cdb2824935a579480740b9",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/wildfire/v1/service_server.ts",
+      "sha256": "856943ef7a46832a46a41a9406759c66bb673eed89dfd38911a678dd1d4e6629",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/military/v1/service_server.ts",
+      "sha256": "2b6bb2d3b7d1e7a39c0e93c154c088df8fd8f2ab505db8b960caab68ae6fb8d4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/conflict/v1/service_server.ts",
+      "sha256": "7cf1712164a87ce109e0ca66413845e83b6ea45e17092f6100234ff90fccf883",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/displacement/v1/service_server.ts",
+      "sha256": "c6b3c8dc84cb720f2dda2942665732585f979affc65da08b7c925e94f4a2dd3f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/economic/v1/service_server.ts",
+      "sha256": "ba0184bc13fbd19ae11275abad23aeb3dda930023ef38ed6a7d534b969bd5f56",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/prediction/v1/service_server.ts",
+      "sha256": "58c842d3b86ee1c884403dc37dae6925d256608e334345422bac4ac2e74f28ce",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/unrest/v1/service_server.ts",
+      "sha256": "c0b75cac27b104c5d0969e261771ed05e32478f28f81064818925f9cde4fb562",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/intelligence/v1/service_server.ts",
+      "sha256": "0e4ab6cd98abfed96434a1b9ef121903951769a565e4d49972459e57eff1b7ad",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/cyber/v1/service_server.ts",
+      "sha256": "9804d3726d50b326112d3b7d28508c84c8c1397091151aabe5a0b23c86c83b5c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/maritime/v1/service_server.ts",
+      "sha256": "a379ecf098ad4a0534f5c4bcfe58add6016b7d46242dc6cfb951518986f4de23",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src/generated/server/worldmonitor/research/v1/service_server.ts",
+      "sha256": "67c4f25803a9c4e0d8348d37e7f33b0b9d13157fe6eb0c6541bb94122a7e4387",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/eia/[[...path]].js",
+      "sha256": "a009a0f73eba8b19ef04242723b914ccdf8245105cfdd11f187b172ef4b80972",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/youtube/embed.js",
+      "sha256": "648e37124ce7f69aa9adb3e9ac9409cc1ba5582590aade5470d8c47eef7dfd4b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/youtube/embed.test.mjs",
+      "sha256": "237ea0002893bd75af3d13643f60e2e9084ec670184a8ccbcd042c4f0f5b6887",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/youtube/live.js",
+      "sha256": "ccde587e82a34f71bfd56c5eecbd84ed63e32953d91371e0fef9dcbc95b70d8f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/data/city-coords.ts",
+      "sha256": "888c3948d451cd6da4c8b2163c4e2c238f6e305e13a31ea6ba8f14a613b05c14",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "api/[domain]/v1/[rpc].ts",
+      "sha256": "b46c9389a5686fee8df0b64d3b8f94ec2ee3b1cacfda41a392e8adb275eecc12",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src-tauri/sidecar/local-api-server.mjs",
+      "sha256": "14dc8ff420d58b4f1ed5080183e81f7ce6dd7144d48052da9821428fe02c8b52",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src-tauri/sidecar/local-api-server.test.mjs",
+      "sha256": "a7d219aebfe5f33171cb3034010b3f08cdadf27f4ab34f06c5d4d9abdcf81682",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "src-tauri/src/main.rs",
+      "sha256": "e3cb560683e3f0ecfb2ff6ab5689817fcf43ff67772049041d52904677a93d48",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "docs/api/ResearchService.openapi.yaml",
+      "sha256": "27ce2b4da5d92a0b5aeeb1e22ae279204a4a84fd3b95c22926380d8d20d625cb",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/IntelligenceService.openapi.yaml",
+      "sha256": "0cd5e7d656f0f4b73e77c55f2f765eb2fef75f2e3d20c831d9c460dcf30becc4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/MilitaryService.openapi.yaml",
+      "sha256": "fd5ad81d13b3bceb8f5e45c716c779c67774fecd4fe9c785775fbb450f2be36e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/WildfireService.openapi.yaml",
+      "sha256": "72d845ce06e1af4ce9984e698a9f2873ffc557ed1109dab87d1cfd84e435eaca",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/InfrastructureService.openapi.yaml",
+      "sha256": "699ef3400384c2ca335c5c791dfed88788f8943bd9673df8a9c9524e08c48b4a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/DisplacementService.openapi.yaml",
+      "sha256": "9c2d57aa62fc86b083d9661d67253e8be725530235bb9fa7f9c957447e6d6a8b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/MarketService.openapi.yaml",
+      "sha256": "d6bbf26c968f46851a9558e77e3fae447adfc46f3bfb5dcb6e547d4e7f74aba6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/AviationService.openapi.yaml",
+      "sha256": "6ad4c4a15860b6f8a2aa1ede947d21a2277ac85d782c2066aab30e7a2357b2f2",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/ConflictService.openapi.yaml",
+      "sha256": "24699ef971f3f52501fe1188418d224e570dade2b3fc00c43e74de362606d33e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/PredictionService.openapi.yaml",
+      "sha256": "507035fe92f04179fafc5e3d895721357da65514e8c2dafa29edb0dbd3c83efa",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/UnrestService.openapi.yaml",
+      "sha256": "880a1aac916663c2ce9a42d1a4e81ef6f6c88823fb5c1869c64e08eaa2e3774a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/SeismologyService.openapi.yaml",
+      "sha256": "4ebcdd4fa2b32c57661ea5c28215ca63581f2284dca63c7d121e7f350de9f7b8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/ClimateService.openapi.yaml",
+      "sha256": "6fed9ebcd99381d825d84f8b42cd72f1b9e770729f890aae28bcac39921733ee",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/NewsService.openapi.yaml",
+      "sha256": "87cb1f0c3478534124b137e0740933feec88b485190f5f9b8c78776de60ae7ac",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/MaritimeService.openapi.yaml",
+      "sha256": "d5ad946f2292cddbffd05cb8eda6189aae1fc02b84b138680fa59bbe3045d6f9",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/EconomicService.openapi.yaml",
+      "sha256": "e70b8b99e538b9c67dc79c078ef911d4f03e2ff4c6bed688d04966b592558109",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docs/api/CyberService.openapi.yaml",
+      "sha256": "b389446f3acb2320ea9a70cb031bea4f7b866bfb4b010e55e66d69bb26d74d51",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/_shared/redis.ts",
+      "sha256": "84c7990ee642b785815cea4fc740537d9f411c2d72e0050bc98afe206920d40d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/_shared/hash.ts",
+      "sha256": "ce004a491db9a731d30a2983f296c11ad1c0f74b82e9432831a29fa802a98226",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/_shared/constants.ts",
+      "sha256": "92b6cd259c978c706fe275bf636ef969dfb169b2b50da8c9b1ebf83b049e6021",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/seismology/v1/list-earthquakes.ts",
+      "sha256": "0d39e4be7fbea5ded589b4762ebdaeb42b343be3afc1caf3f688985ece74f8b8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/seismology/v1/handler.ts",
+      "sha256": "9467363e867d4c0044fbb0dabc4348d93996e49a3115dc14e6cc7bd74ee0f3c7",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/get-cable-health.ts",
+      "sha256": "d6fff50064f47c14dc4259f647c8fdc6f7f0847fd4073712ebb136d58da5af4f",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/list-service-statuses.ts",
+      "sha256": "4a3754f9bb737b9101daf53645461d94e91feba297c917dea0956abadf92d092",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/list-internet-outages.ts",
+      "sha256": "218016da611450006500d2a0a1ef81aec23adacfaed89fc39c1101a81e847fe1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/get-temporal-baseline.ts",
+      "sha256": "7b022041141c496c2602de8fe31f86016a75dca8623ab50d560172ac6d8116a4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/_shared.ts",
+      "sha256": "752ed05cbd1eff237d70ec35435a8c8a28e62288a00892403bc2a3a86c9288b7",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/handler.ts",
+      "sha256": "1e8e76bbb6498c80b9527bb330252c60f3f9a77d538e720a879eeaddec688fc3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/infrastructure/v1/record-baseline-snapshot.ts",
+      "sha256": "d4f4e08a25c412394ec9b5daca8c52dcdd2418a3882d49483fa65e177cffc328",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/climate/v1/list-climate-anomalies.ts",
+      "sha256": "fb3a7f9ed417d73f9af3355d522caa8e614c76d0bf0e1aec9ee90f5a7d997f47",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/climate/v1/handler.ts",
+      "sha256": "c5fadf21640c6d7bd5c171c2c671c9af2eeadbf6cdde1e75a99faa1d932647a3",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/get-sector-summary.ts",
+      "sha256": "e34e74db811f3a350870c61e85dc88a72f3862c4a2cf2bb56c2a0e26d4c17f9a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/list-commodity-quotes.ts",
+      "sha256": "7d03cc985b07d8e3e3075f57622b8b48d2a6eabc2cdcf2352d00e36550d26ed4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/list-crypto-quotes.ts",
+      "sha256": "1a4434d377c51cd7d677c55294a0b92c9dae5a71994ece6e4248df74e939310a",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/_shared.ts",
+      "sha256": "cbc01f05fb5d6090f2a6885fd0e8f2817300eda53370f1b2c9f14da42f64c752",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/list-etf-flows.ts",
+      "sha256": "b296f43bb5afc062e96e8a66647a1561d743a10fc9146d43a51e937775a004f6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/list-stablecoin-markets.ts",
+      "sha256": "706947347864eb5d800da105071db923dc4666b74e1f470206b096b0add42a00",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/handler.ts",
+      "sha256": "44bd002199e3c1f7f7e7c045f9a29650c0e7eb0ba7c1bd4148b23ab642e5a365",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/list-market-quotes.ts",
+      "sha256": "7a1fb7447dd1dc55d7d4ebb5e1f033534508cf04e7c39741b3c870a3fa7ad796",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/market/v1/get-country-stock-index.ts",
+      "sha256": "0e0d4bc3a01170e50298b46748f36889946c737e6f732e898827430b3eaa8864",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/news/v1/summarize-article.ts",
+      "sha256": "0e325658e95750b48bd4e7208555c0c5d7f929ac6136e561b9fbc1e0461fbc76",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/news/v1/_shared.ts",
+      "sha256": "6ed5e56c2a618f9fcea531822b235690c7a398062dd4025f7eb4a7c6472f3f87",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/news/v1/dedup.mjs",
+      "sha256": "1a8a0878bb4a83a7fcb2ea839773fe5b5aab50641f7c1d61acc562a9fa288715",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/news/v1/handler.ts",
+      "sha256": "025d652af834633abab3a26adda28b4bd5e2894ca6dc8a34748d6982c51fcc1c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/aviation/v1/list-airport-delays.ts",
+      "sha256": "d1aad95b34fee7af6f3fe61548678e0644df2883199682d364f4605c5635413d",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/aviation/v1/_shared.ts",
+      "sha256": "48dee93cbf1d0222ce551d560332c3023bca5a3eeb7419da352ed0e2cef8ee1c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/aviation/v1/handler.ts",
+      "sha256": "a8b9b7b51748d61f71b4f30354079e45e10723c6cfe7ebc98c01adc69d63a512",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/wildfire/v1/list-fire-detections.ts",
+      "sha256": "f3827d990a8abc9e1f8178de977d1027ea437e843457e76d2ca5cc81a43aa325",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/wildfire/v1/handler.ts",
+      "sha256": "98396d9a0ba5392d68066faae7653d09e5ef5997667ae1ec700719a0c67a0154",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/get-usni-fleet-report.ts",
+      "sha256": "e11d1ab682738d1039cf52d25945193a46a9288c3b99fd6a5e2397ff72524a26",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/get-theater-posture.ts",
+      "sha256": "35d2c8dadcbece37119a880f1d28a92c5dd19f126d31454337e9d57b3e1aa119",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/get-wingbits-status.ts",
+      "sha256": "b730a21f83635b20926d6a42d03abf5c69f797356e09816f9a504a394cd2b03e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/get-aircraft-details-batch.ts",
+      "sha256": "c949913a00735b2943ba436d46ec0a288f8430a5c89b9fb62a81ef58505e3d60",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/get-aircraft-details.ts",
+      "sha256": "a96bf511e37e8d0cdc29b9d70a80d37a189a042892c31f1d25ed84108269fba6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/_shared.ts",
+      "sha256": "2ed37dd6975f8ec1db59b84088530444e8f87d93bd1b2282b90e89210bce5eb1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/list-military-flights.ts",
+      "sha256": "18a03dd618371969b69ee59c27e56d2a75cc8d401d5c8e2fe4869ccc90296763",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/military/v1/handler.ts",
+      "sha256": "740fcba01d80e74a2bae7c0ff9ce9d3c5d0490799d765f75c08d35e88a80f8f6",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/conflict/v1/list-ucdp-events.ts",
+      "sha256": "efe0c23130ab4ea35dfce5ae06907c9c955715e29201c763a96696a71ad508f1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/conflict/v1/list-acled-events.ts",
+      "sha256": "82a432d07e537e2a1f5c1242c3ece7ac58ae30b4b375ad614ca0c6988775f003",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/conflict/v1/get-humanitarian-summary.ts",
+      "sha256": "bdf470168fc7751248cd831b8a6f48158a91730d0ebc3cdc3d559674fd7f7acc",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/conflict/v1/handler.ts",
+      "sha256": "820044a72e6c2eda87cd8d6abb37a0e4a91bc038eb8330d24892bee0423fc23c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/displacement/v1/get-displacement-summary.ts",
+      "sha256": "527666c85dfedbad3c74e2a1734ae5972639307d8a7eed5c4dc7b8e9de1511d4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/displacement/v1/get-population-exposure.ts",
+      "sha256": "a32387a01c993f666e9ecfc3919e27a02f3f2581f9922e1a076fdc3f8842f820",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/displacement/v1/handler.ts",
+      "sha256": "8c7e3daf1edc7e2a6608d49ce2af3f0582cd9d89a8e74b3bacc47f363623a8c8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/economic/v1/get-fred-series.ts",
+      "sha256": "9f75213b3fe58de81ae0534c81ccab9d899e37782f6beb7cff990c69f6e7ee5c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/economic/v1/_shared.ts",
+      "sha256": "feb3bf6eda026f051083b3d9e3db53042bfd39e9b953d2ad6a972fd122e3c3c1",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/economic/v1/get-energy-prices.ts",
+      "sha256": "ba3bd2903d08a191a17a09348b30d28f500ad28326e432c5ece35585c7eac494",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/economic/v1/list-world-bank-indicators.ts",
+      "sha256": "d2a150c4458e4baa84ca084629e2269ac94c2b857c4fad8bf860babe32d8f3ec",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/economic/v1/handler.ts",
+      "sha256": "dbbb4c50ea8461aed9a38b63e4bd9d03e4d27eba73a689caaace44c8a6f6b641",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/economic/v1/get-macro-signals.ts",
+      "sha256": "7ef5e024156009a8d918420386bed3827a222fefde00d88f2cc894814b3d42c8",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/prediction/v1/list-prediction-markets.ts",
+      "sha256": "1831afa64e5f217be28d14d823f939b9c0923379644d91fa1e8be831da65a6d0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/prediction/v1/handler.ts",
+      "sha256": "3f6e2e2349885576355f9d2230a5171b1cad1137db588fae9ce16e418badef98",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/unrest/v1/_shared.ts",
+      "sha256": "daef0d8137bb68b7082c54cabfd901a3b46d630884f820aaaee3f1e5f15901da",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/unrest/v1/list-unrest-events.ts",
+      "sha256": "956500224aaaa793227c2f47b2b738f59966264db61dddf4196e479b8a4bf058",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/unrest/v1/handler.ts",
+      "sha256": "c99ff48aa5f10a28b6b0098068815b95b0297b1700743b14e690e229f7c3af72",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/get-country-intel-brief.ts",
+      "sha256": "f1969e2bb1c6eda52fa9ed7c443ad4dffb44579b79b58071d9c03c65128d58d0",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/get-risk-scores.ts",
+      "sha256": "664418cd2d342980b9daccd8d96a916a359ef6b1914a2bd6bd32f52cc588e804",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/_shared.ts",
+      "sha256": "644edd2c96b31c7cf5c401317ca858ddde9d062100615505e41397508133302c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/search-gdelt-documents.ts",
+      "sha256": "452bb3533a0a5b8f0e4398879c3211d8786a1ef6f99ba0f1c0b796371a17e86b",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/get-pizzint-status.ts",
+      "sha256": "f58666c8649ebbd3cd74a1886e7eccb9192661cbd2692792466930482a5cb65e",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/handler.ts",
+      "sha256": "d69d216341b6fb85d9745230c64239a1ad99994d41922bd8e2d1434afe6a2f10",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/intelligence/v1/classify-event.ts",
+      "sha256": "cbaa46e7be354d20a207ade9bc3f9cc1183afb98f7a0fae2c0786675b8246c6c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/cyber/v1/list-cyber-threats.ts",
+      "sha256": "0b4e35192092c02946b0964153029fec4de1f41825dd88e71f67de66359ea340",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/cyber/v1/_shared.ts",
+      "sha256": "60a905d01f75a7d230891a8c8a8ef8203afdb26ac1061d2e751fa39f26e4b343",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/cyber/v1/handler.ts",
+      "sha256": "63806daa267d656a7f4e8c54a1eab1942ef1f4bde115dfe8d9dab7ca8f224661",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/maritime/v1/list-navigational-warnings.ts",
+      "sha256": "3372c2131bea63270e12deab8ed41aeaa304a790832b5e1cc9a5a393925cc55c",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/maritime/v1/handler.ts",
+      "sha256": "71adf0d06a218dfbfdd3e0baf458c47c2e1c08549874cf5f977c0127076b8afe",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/maritime/v1/get-vessel-snapshot.ts",
+      "sha256": "c1674b8cb6d9dfbe0fc3cc1614bfae6e9d540a9d848e764ad5aec690179db8a4",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/research/v1/list-tech-events.ts",
+      "sha256": "6fdca0821f7ee29b7243607c52620904f2acb7d894bd53c1630b1e1c43a82e17",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/research/v1/list-trending-repos.ts",
+      "sha256": "84f8e48adb68feb19be8d8513f029757f584ac6015f082762a666bfc1d094cac",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/research/v1/handler.ts",
+      "sha256": "5e639a8cf12921124db11929c9c83fa8b1dc508f962d669639883fea732ec307",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/research/v1/list-hackernews-items.ts",
+      "sha256": "737eb45cb013630d95f888e213920b57d2d5ba0edc58d1579a11d0e96f89f868",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "server/worldmonitor/research/v1/list-arxiv-papers.ts",
+      "sha256": "401ada617b83f7ad73cf99388dd485184560994d3a039fdd29f552be32153134",
+      "spdx_ids": [
+        "AGPL-3.0-only"
+      ],
+      "copyrights": [
+        "Elie Habib"
+      ],
+      "via_reuse_toml": true
+    }
+  ],
+  "discovered_copyrights": [
+    "Elie Habib"
+  ]
+}

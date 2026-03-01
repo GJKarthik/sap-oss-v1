@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { expectError, expectType } from 'tsd';
 import { RptClient } from '@sap-ai-sdk/rpt';
 import type { PredictResponsePayload } from '@sap-ai-sdk/rpt';

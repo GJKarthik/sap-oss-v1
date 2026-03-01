@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { JsonOutputKeyToolsParser } from '@langchain/core/output_parsers/openai_tools';
 import {

@@ -1,0 +1,54 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\title{Software Bill of Materials (CycloneDX) and Change Lineage}
+\author{Generated from CycloneDX SBOM and git lineage}
+\date{\today}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Software Bill of Materials (CycloneDX)}
+Each subsection is generated from a CycloneDX 1.5 BOM (components, purl, license, dependency graph).
+
+\subsection{vLLM (inference engine)}
+\textbf{Path:} \texttt{vllm-main}
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:dd4c0bb7-8e30-4cdd-a362-5807f24820ba...}
+\\ \textbf{Generated:} 2026-02-28T08:39:38Z
+\\ \textbf{Tool:} build\_cyclonedx.py
+
+\subsubsection*{Components}
+\begin{longtable}{|l|l|l|p{2.2cm}|l|p{4cm}|}
+\hline
+\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\hline
+\endhead
+\hline
+\end{longtable}
+
+\newpage
+\section{Change Lineage from Original Software}
+
+\subsection{vLLM (inference engine)}
+\textbf{Path:} \texttt{vllm-main}
+\\ \textbf{Upstream:} \url{https://github.com/vllm-project/vllm}
+
+\textbf{Changes (from git history):}
+\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
+\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
+\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
+\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
+\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
+\hline
+\end{longtable}
+\textit{Full:} \texttt{git log --follow -- vllm-main}
+
+\end{document}

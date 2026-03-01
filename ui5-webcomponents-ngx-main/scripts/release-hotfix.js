@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 const currentVersion = require('../.github/actions/helpers/current-version');
 const {execSync} = require('child_process');
 const semver = require('semver');

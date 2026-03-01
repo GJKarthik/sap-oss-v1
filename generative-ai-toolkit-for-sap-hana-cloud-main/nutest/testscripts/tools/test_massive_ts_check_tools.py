@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 import json
 from testML_BaseTestClass import TestML_BaseTestClass
 from hana_ai.tools.hana_ml_tools.ts_check_tools import MassiveTimeSeriesCheck

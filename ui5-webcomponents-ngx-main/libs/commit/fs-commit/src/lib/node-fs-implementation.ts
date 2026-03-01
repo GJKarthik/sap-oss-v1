@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {FileSystemInterface} from "@ui5/webcomponents-transformer";
 import {existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, renameSync, readdirSync} from "fs";
 import {basename, dirname, extname, normalize} from "path";

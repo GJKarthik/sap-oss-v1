@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Minimal type declarations for @sap/cds used by cap-llm-plugin.
  * Expand as more modules are migrated to TypeScript.

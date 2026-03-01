@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {join} from "path";
 import {readdirSync, readFileSync} from "fs";
 import {startCase} from "lodash";

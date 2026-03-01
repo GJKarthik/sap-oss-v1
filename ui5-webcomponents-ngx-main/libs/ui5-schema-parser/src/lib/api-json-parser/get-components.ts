@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {SymbolObject} from "./symbol-types";
 import {camelCase, kebabCase} from 'lodash';
 import {ComponentData} from "@ui5/webcomponents-transformer";

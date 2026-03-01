@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Utility functions for column name mapping and normalization."""
 
 from typing import Dict, Set, Mapping

@@ -1,0 +1,44 @@
+version: "3.9"
+
+# ════════════════════════════════════════════════════════════════════
+# Local OTel Trace Visualisation Stack
+#
+# Starts:
+#   - Jaeger all-in-one  (UI: http://localhost:16686)
+#   - OpenTelemetry Collector (OTLP receiver → Jaeger exporter)
+#
+# Usage:
+#   docker compose -f docker/jaeger/docker-compose.yml up -d
+#
+# Then set in your CAP app / Node.js process:
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+#   OTEL_SERVICE_NAME=cap-llm-plugin
+#
+# View traces at http://localhost:16686
+# ════════════════════════════════════════════════════════════════════
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "14250:14250"   # gRPC (used by OTel Collector → Jaeger)
+      - "4317:4317"     # OTLP gRPC (direct ingest, if not using Collector)
+      - "4318:4318"     # OTLP HTTP (direct ingest, if not using Collector)
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.101.0
+    container_name: otel-collector
+    volumes:
+      - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4319:4318"     # OTLP HTTP receiver (use 4319 to avoid conflict with jaeger's 4318)
+      - "4320:4317"     # OTLP gRPC receiver (use 4320 to avoid conflict with jaeger's 4317)
+      - "8888:8888"     # Prometheus metrics endpoint
+    depends_on:
+      - jaeger
+    restart: unless-stopped

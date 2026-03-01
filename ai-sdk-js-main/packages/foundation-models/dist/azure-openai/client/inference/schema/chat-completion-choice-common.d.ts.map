@@ -1,0 +1,1 @@
+{"version":3,"file":"chat-completion-choice-common.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/chat-completion-choice-common.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,qCAAqC,GAAG;IAClD,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,aAAa,CAAC,EAAE,MAAM,CAAC;CACxB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

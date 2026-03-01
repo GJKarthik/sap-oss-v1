@@ -1,0 +1,1 @@
+{"version":3,"file":"sftp-configuration-minimal.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/sftp-configuration-minimal.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,0BAA0B,CAAC;AAClE;;GAEG;AACH,MAAM,MAAM,wBAAwB,GAAG;IACrC,IAAI,EAAE;QACJ,YAAY,CAAC,EAAE,iBAAiB,CAAC;KAClC,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC;CACzB,CAAC"}

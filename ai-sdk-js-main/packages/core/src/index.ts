@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 export type { CustomRequestConfig, EndpointOptions } from './http-client.js';
 export { executeRequest } from './http-client.js';
 export { getAiCoreDestination } from './context.js';

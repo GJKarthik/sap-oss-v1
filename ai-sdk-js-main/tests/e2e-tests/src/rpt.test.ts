@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { predictWithSchema } from '@sap-ai-sdk/sample-code';
 import { loadEnv } from './utils/load-env.js';
 

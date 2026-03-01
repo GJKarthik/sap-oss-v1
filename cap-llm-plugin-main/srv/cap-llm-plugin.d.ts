@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /** Configuration for an embedding model destination. */
 export interface EmbeddingConfig {
     destinationName: string;
@@ -68,5 +70,11 @@ export interface HarmonizedChatCompletionParams {
 export interface ContentFilterParams {
     type: string;
     config: unknown;
+}
+/** Params for streamChatCompletion. */
+export interface StreamChatParams {
+    clientConfig: string;
+    chatCompletionConfig: string;
+    abortOnFilterViolation?: boolean;
 }
 //# sourceMappingURL=cap-llm-plugin.d.ts.map

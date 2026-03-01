@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Component, inject} from '@angular/core';
 import {I18nService} from "@ui5/webcomponents-ngx/i18n";
 

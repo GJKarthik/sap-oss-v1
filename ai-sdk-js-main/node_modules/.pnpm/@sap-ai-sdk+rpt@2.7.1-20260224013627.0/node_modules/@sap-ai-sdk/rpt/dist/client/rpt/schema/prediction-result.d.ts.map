@@ -1,0 +1,1 @@
+{"version":3,"file":"prediction-result.d.ts","sourceRoot":"","sources":["../../../../src/client/rpt/schema/prediction-result.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,gBAAgB,GAAG;IAC7B;;OAEG;IACH,UAAU,EAAE,MAAM,GAAG,MAAM,CAAC;IAC5B;;OAEG;IACH,UAAU,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CAC5B,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

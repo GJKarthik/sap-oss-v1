@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Method, SymbolObject} from "./symbol-types";
 
 export const combinedMethods = (current: { extends: string; methods: Array<Method>; }, ...bases: Record<SymbolObject['name'], SymbolObject>[]): Method[] => {

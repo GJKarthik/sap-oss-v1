@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import retry from 'async-retry';
 import { DeploymentApi } from '@sap-ai-sdk/ai-api';
 import type { AiDeployment } from '@sap-ai-sdk/ai-api';

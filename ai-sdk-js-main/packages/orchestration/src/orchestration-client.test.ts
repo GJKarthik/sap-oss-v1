@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import { jest } from '@jest/globals';
 import { createLogger } from '@sap-cloud-sdk/util';
@@ -8,10 +10,9 @@ import {
 import {
   mockClientCredentialsGrantCall,
   mockDeploymentsList,
-  mockInference,
-  parseFileToString,
-  parseMockResponse
-} from '../../../test-util/mock-http.js';
+  mockInference
+} from '../../../test-util/interceptors.js';
+import { parseFileToString, parseMockResponse } from '../../../test-util/fixtures.js';
 import {
   addNumbersTool,
   multiplyNumbersTool

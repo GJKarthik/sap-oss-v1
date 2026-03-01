@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * SQL identifier validation regex.
  * Allows: letters, digits, underscores, hyphens.

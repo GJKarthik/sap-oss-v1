@@ -127,6 +127,17 @@ service CAPLLMPluginService {
     getFinishReason      : Boolean default false
   ) returns String; // JSON-serialized response (full, content, usage, or reason)
 
+  /** Stream chat completion tokens as Server-Sent Events (text/event-stream).
+      Each SSE frame: data: {"delta":"...","index":0}
+      Final frames:   data: {"finishReason":"stop","totalTokens":42}
+                      data: [DONE]
+      Error frame:    event: error\ndata: {"code":"...","message":"..."} */
+  action streamChatCompletion(
+    clientConfig           : String  not null, // JSON-serialized OrchestrationModuleConfig
+    chatCompletionConfig   : String  not null, // JSON-serialized ChatCompletionRequest
+    abortOnFilterViolation : Boolean default true
+  ) returns String; // ignored — response delivered via SSE; fallback: full content string
+
   /** Build a content safety filter for use with the Orchestration Service. */
   action getContentFilters(
     type   : String not null,

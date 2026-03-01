@@ -1,0 +1,2866 @@
+{
+  "service": "ui5-webcomponents-ngx-main",
+  "total_files": 348,
+  "files_with_spdx": 348,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 10,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "(WTFPL OR MIT)",
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BlueOak-1.0.0",
+    "CC-BY-3.0",
+    "CC-BY-4.0",
+    "CC0-1.0",
+    "ISC",
+    "LGPL-3.0-only",
+    "MIT",
+    "MIT-0",
+    "NOASSERTION",
+    "Python-2.0",
+    "Unlicense"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "(WTFPL OR MIT)",
+      "0BSD",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "BlueOak-1.0.0",
+      "CC-BY-3.0",
+      "CC-BY-4.0",
+      "CC0-1.0",
+      "ISC",
+      "LGPL-3.0-only",
+      "MIT",
+      "MIT-0",
+      "NOASSERTION",
+      "Python-2.0",
+      "Unlicense"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "jest.preset.js",
+      "sha256": "482f3418db309bdcad4ea0f7e87c8351cbdacf86a7e8f279a7433cf6b062b2e1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "REUSE.toml",
+      "sha256": "7696cc6e2810349178633ff98dec0d0e76d26aa4184d8aaa186471397cd48bf2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": ".yarnrc.yml",
+      "sha256": "292516882f2f4f9819bcf3bc6d86acf6ccddd8e44c227503be9e494b58be1c17",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "decorate-angular-cli.js",
+      "sha256": "5fc1d2195b62885416d3655fe9771bad3d01f3a766b21fbccf610c534a84aa9f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "commitlint.config.js",
+      "sha256": "cf90d0bb52c1d0ca4a7bec83871c1140daf56f8c0035bed8408502e7e31e8ec1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "jest.config.ts",
+      "sha256": "00d219af11a79a67749e2cafd5a177ebc5024e83556be686bc0f7867b7267c52",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "3aa9d6d6c3a564b7757c8ccf4604464d09b28aa83011a5d22f4b2bba47ccc0ee",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/ui5_angular_service.yaml",
+      "sha256": "a0ea15a21d06dd643ba209bdc6aca2cac48caa56495202878cba6ae4cfa8f579",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "ac0eec8ea2bf7454fb7f504ba5dda05f0111c1bb1291ad0452c12dea4be936e0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/ui5_ngx_agent.py",
+      "sha256": "d219068ccff012b11138cc5136c2357bb33090af08e681a69fa8cc78c35bd6bb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/release-hotfix.js",
+      "sha256": "b24509a1640e04e9426ffb52d114ffbfca54abe2278fd4c5dce9a49115482bac",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/api-json.config.ts",
+      "sha256": "346d64c2d3cb456e099fc3b0e314791152aa2875b50d453cb57971c7a1c56dfb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/jest.config.ts",
+      "sha256": "6cf6eeafb6ef010778e96dac5f99cea50cfa68d8f4f98216cd3d8d72db0b64a7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/main.ts",
+      "sha256": "ba51fb34e4a8de6039a9de5cd67c544c25876ebb4592d9015f6b9d31a8ea939e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/test-setup.ts",
+      "sha256": "1a315ede26085b35288047391c74d8cf6d837a794dd39ba2e9a229ad58319796",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/polyfills.ts",
+      "sha256": "701c59f1ee37f9d4dd603d4670737a367fd0a99f6dca33cefda946a74dfeb628",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/app/app.module.ts",
+      "sha256": "38d93fa305419fb086c9db2b882ea98a90547fa8eaa0b59dea747a9df6788c80",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/app/app.component.ts",
+      "sha256": "2bc64d9bcab358fbc50c717be5b7c4547488fdba7102837645bdaef6c7a0d19e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/app/main.component.ts",
+      "sha256": "e05d2fa5e9c04cf89840ee5e1fe1292524fd6f75609d798b17c78ea477ee3603",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/environments/environment.prod.ts",
+      "sha256": "6e9acae4f9d27536afa143b9a7c1f27ce600e75a28b514148e78c73a3909fb9e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/environments/environment.ts",
+      "sha256": "1dbb260c15f2e1393cf059095c2aa8b75ad6a5876cbb9640d668c739e8937d37",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/app/modules/child/child.module.ts",
+      "sha256": "7c16020b96ead16db96cb4c35da1249b50ad1c3ba50dcac33fabe5b54e95895f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/playground/src/app/modules/child/child.component.ts",
+      "sha256": "ff6c754195af9ce99a3fafad773884611867f8f6aca4e2edaccbce210795e76f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/.storybook/main.ts",
+      "sha256": "a8c59e01679f30655aa587fad32c4867f425bfbfa3d8c4076fa561497fd2decf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/.storybook/manager.js",
+      "sha256": "1787893b68ea732c5571d07f52452f0aaf2b888c89b4bce48515abf2ecaa1342",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/.storybook/preview.ts",
+      "sha256": "a182dc338cb740e46cac1fcc5b05dd51c0f04563d454a76283cf8ad5e5477611",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/main.ts",
+      "sha256": "4cfce4072ac6eff743dbc7fe07cbe84e76ac3c2e58e6a67de7426773ac92d0af",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/app.module.ts",
+      "sha256": "30243e883f1ce83237a2a23333198e35654a7297b3f00b96e6543e6aac51ce25",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/app.component.ts",
+      "sha256": "af80efd28656fdc48b9ac63cf279fedd818ef9f6f46a86b01f6fa833a7c256ae",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/arg-type-tools.ts",
+      "sha256": "a968a2c6a31341d1358e02579af46be3973f57bb9accfa43c8c632801af67287",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/user-menu.stories.ts",
+      "sha256": "e0c4f6ab905fefead60b021c611d669633a4a0bc97a3de3e746abff4384ecba1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/timeline-group-line.stories.ts",
+      "sha256": "367cd9de286200b522de696b37e9e74c093c82d3bf2d4591e062dd0b87f76aa9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/barcodescannerdialog.stories.ts",
+      "sha256": "bbb72de21ccfd139afbf9ae23756360d0d41a684ad771306f426f1e8579e78df",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/viewsettingsdialog-sorting-item.stories.ts",
+      "sha256": "0541db9ef3c64cb32d380bd815504247df63dd99a1cc587f474b7dbbdd11e3ea",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/mediagallery-item.stories.ts",
+      "sha256": "dbec392d952775a13b1daff48dae0a8d2048c2227e715a3bb98c5bb93a7b80bf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/sidenavigation-group.stories.ts",
+      "sha256": "721777687f77df44ff29cc0569632390f80d62e10ade4f299a0b07f088165517",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/dynamicpage-header.stories.ts",
+      "sha256": "9d6ba6ec3676570fe3c35c263f2557d80d6030c0e8e6074c5beb2fcafdfac8a9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/illustratedmessage.stories.ts",
+      "sha256": "a2408cd75b04c66cc59036bbda79556c664dee5cedbcc07d0f7ea0e8eeb0a365",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/upload-collection-item.stories.ts",
+      "sha256": "422b3629711dcfa51dbb41f1db906fecbfa84c5e262d48094ae1df06e2572d5f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/search-item.stories.ts",
+      "sha256": "bf3b3b064949aa0b7724a72311bd297c283e927a30e833482a2785d63e6f2ec7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/page.stories.ts",
+      "sha256": "1379dff6376ce1a9ee7e1f6430aa75d6c304870f86adc0081bfabd832d80ba1b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/dynamicsidecontent.stories.ts",
+      "sha256": "6b95e0a2a75732cb79a1fd8d19245675f4d2bace6aca05aaef091c2c4590cbcc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/sidenavigation-item.stories.ts",
+      "sha256": "5805cea0898d101e8806f11351a19d769f2d286bf416fbe7beabb82d78896d75",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/user-menu-item.stories.ts",
+      "sha256": "2e6727b20441d670782ccb52a2b2f4a9b9b39efedb5ad7fb569924eb44dad4cd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/wizard.stories.ts",
+      "sha256": "eab2bf5c2fe9f631039dc86acccd8389b58ea98d95ca32de5a0f0ec523a06a15",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/timeline.stories.ts",
+      "sha256": "3cb439112eb2b47a11749a59e480f9661542c38ac12798cc4637ad5d5fe8fa4a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/notificationlistgroupitem.stories.ts",
+      "sha256": "672b07e7e5ac46a89dc3a1ca1a3081f14eac09a948645843720e9cbecb145f1a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/notificationlistitem.stories.ts",
+      "sha256": "548dccb37a7c5c418527ce3e5c0ce2f64cdc7d1f397777aeea522fc0fa1d070b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/user-settings-view.stories.ts",
+      "sha256": "4eb4d0282ea191ba6265de4de8ee57e14c398b66c52e433b3263c843a4c39cdb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/user-settings-item.stories.ts",
+      "sha256": "b5e4d0acd1498961781664b6b8f8513566309564b5026a1f3b73e1964327abf9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/user-settings-dialog.stories.ts",
+      "sha256": "dd0ae3496dcc7feae7957812abe71eade3fc16d6df6a6a0f961d93fa7a5ab118",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/search-scope.stories.ts",
+      "sha256": "c3365b71817ce85bf5f233d88d5753fa52662a0f3ca5c61762a86deccb5438cd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/mediagallery.stories.ts",
+      "sha256": "a96674c8c570b9ffed8faef385ab9f19a984fbef3faedfdc2500bcd7b4a5a1ce",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/timeline-item.stories.ts",
+      "sha256": "13a290334a08848abfa46acd556611f3a9ef2fa73329a13240741af13c916393",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/viewsettingsdialog.stories.ts",
+      "sha256": "a9768604e0da42c59e654dbbc0b13524e614f6d01fab554fb2501469066ba294",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/viewsettingsdialog-filter-item.stories.ts",
+      "sha256": "e00c2059dd9785f9df775af24dd2ce2e7dc7b29b09277523a904c7ce7119c73c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/shellbar-spacer.stories.ts",
+      "sha256": "a85617c2649c766a33c1f3bece4f96f79af688a9e1943f458f103525d0a91ba7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/dynamicpage.stories.ts",
+      "sha256": "5a98b5ae01835bcc65b8ec735a9d0468fd35ab98f966c049e7d316667f57f0e0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/wizard-step.stories.ts",
+      "sha256": "763ca145a62d92663e620f56fad3a4a3ffbdd023070d1026bf85f7f1da16f3d1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/sidenavigation-subitem.stories.ts",
+      "sha256": "64d3fd65bc6f22c9b490df2dc181bb7e4de57a5908f49556437ae5cacddf73dd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/shellbar-item.stories.ts",
+      "sha256": "91103f3c7ea6b3c6d7dcdcdb61d1c68f161598ebb782696ca6c450008795146d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/sidenavigation.stories.ts",
+      "sha256": "9338f9ed615a87040bba8cfc614e2ee54d6c77537485a9a7df045ec1cea206ed",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/notificationlist.stories.ts",
+      "sha256": "461248cfb39aa5f6a6d0ea2826260036f6b700593d44d60ddbffb05efa0f831b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/flexiblecolumnlayout.stories.ts",
+      "sha256": "f937ef924a616aa5f87988539cab29815d2d437bad53a8661691d2cdc55d535f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/navigation-layout.stories.ts",
+      "sha256": "77957a138442e545e98d247f8bbe834d487c728c2acd380a2d87de019f024da4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/productswitch-item.stories.ts",
+      "sha256": "72d1b9b2cf6ad0935388dd048fb9747ee9f2f150b5ab71e27c48eed409339b9a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/shellbar.stories.ts",
+      "sha256": "7c571a0e4656f6ac79014f1fdf8e5907f8884999b8a462bca7807b11fd6f586d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/shellbar-branding.stories.ts",
+      "sha256": "e5b6aab16689e6e79e7813710414afbd45420d182b3a2d6c2fc0e6ec1505ad63",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/dynamicpage-title.stories.ts",
+      "sha256": "8808ec8f20045bd69574dcd9c208a02b232e275ba9af78c84ed83c9c44e62fb4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/search-message-area.stories.ts",
+      "sha256": "058bf1f900b4696863810a5d210079bf7d719e95ac413999855766ac9666b991",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/productswitch.stories.ts",
+      "sha256": "de843446c2e6779b0af095ef07bc5fc0680748980a09c7bb5814c0456a2d9e6f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/viewsettingsdialog-filter-item-option.stories.ts",
+      "sha256": "2d5d2b4e5ff9588ef8bdf845a3be692cf4db162a1ad5a7964661337178f73977",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/search-item-group.stories.ts",
+      "sha256": "8a987e5c38e91bd69e7c9049782ba0e876daf4fd35b8c2f3b69bc80cb74c7a4f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/search.stories.ts",
+      "sha256": "85fe2c83198c366ec76e42ffc835999d4aceb7f448cf86aaf65845a032bdf6f9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/user-menu-account.stories.ts",
+      "sha256": "83ee17b4a7a58219b796adcd6f39aad3022c207d3caeedd9b68e06f7d09bc98d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/fiori/upload-collection.stories.ts",
+      "sha256": "1a37334964cc6e3c26cb53479ce4c8610812b3c08b6720753aa58e935d37f232",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/ai/button.stories.ts",
+      "sha256": "da4b5fed6698f8fafd9956bcad71f5b4d31dcfe9a9bc063ba2c372a357d45bc6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/ai/ai-button.component.ts",
+      "sha256": "def04af0cf1cad1b225763127d8438e2d9140241b8fe675cefc175a6386ce70c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/ai/prompt-input.stories.ts",
+      "sha256": "8c1f85d60e50e7fc4e0c6455dd407bb9c8940aa88c717c33680304ca506350dc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/icon.stories.ts",
+      "sha256": "2e30705f7431ea330546ec6d599c4deb4cb0795801d0bb957e4d1a25e5a2d674",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/breadcrumbs.stories.ts",
+      "sha256": "a438bba5e02dc745f7f486347e4dac66f280f3857f4fdd3a55ccef5374eb835a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/calendar-legend-item.stories.ts",
+      "sha256": "2654c8cb09792b3fa9b3ee2129341276307a89d911d77f5f164bf279aa7c8405",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/button.stories.ts",
+      "sha256": "5f31e0cd8d1e7bf81c7677f4163bb9e72d474fd62bd6e8e016f5560051f7afbe",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tabcontainer.stories.ts",
+      "sha256": "2ecff04804c5078c2610b20489cf1e416d57a2ae5b3fe150058f3c21dbab5ba4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/panel.stories.ts",
+      "sha256": "e4425af99fef6e8be11830d6a087b9b4f4cfe4547f5e347838f7a912814c115e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/link.stories.ts",
+      "sha256": "ccc444cc118ffb7bea47eab83d5a698ce59109532ea095fdeb8dc0a507a32166",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/slider.stories.ts",
+      "sha256": "5957b1ab1de66aabbf0b5c08e1101b1cb8be45c5005b4988d7749e8d3211c158",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/multicombobox-item.stories.ts",
+      "sha256": "cbff0a6484fc6bf81ec79d03b04020df7247295825477a4e007d0b373ee07aa8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/combobox.stories.ts",
+      "sha256": "423313e8f3080f0ace8fe720064a9e4338ff8dede873c08c142a89e16e04c70a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/dialog.stories.ts",
+      "sha256": "72e370378a702e492cf881a7c80eec30a32177885d69a97f678af78acbbfb87f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/form-group.stories.ts",
+      "sha256": "169c2332c12cbc4e56f60ac634aff4eb6c725c8faec0c656b206ddfd42ce603f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tag.stories.ts",
+      "sha256": "a0156afbe537415c0016fbc270acc59aacc6518811b9726d50a565ee11ae3e6b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-row-action.stories.ts",
+      "sha256": "4f80419b4a6b343490462698215501d990d6dcf5d70b5a489645a197c4509a73",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/card.stories.ts",
+      "sha256": "ef8bf8c8fc53f66b7f029fd8083ab6853dd247c872b60f43a93c379b103db4c8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/progressindicator.stories.ts",
+      "sha256": "9e798661b1a1665307bb2782d739c642a628f6483de7d08908b5722e32b04a2a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/datepicker.stories.ts",
+      "sha256": "510aab91ffe2ce1ade75ba0002aa7fcb0c260671fbd2bf3a9efacecbfb1eca42",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/bar.stories.ts",
+      "sha256": "af9885b1b3f98e537baf32b428fd89ea5fc98fd7a61c3ff2ffeb9b17931d8736",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/suggestion-item-custom.stories.ts",
+      "sha256": "971ab181b55a237645178ffee1a4928871fac5f034981d9f93adae4dcbd8baa6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/busyindicator.stories.ts",
+      "sha256": "e495d26c5c802384365ed9364d0b253f6c7c3957750f3f1c54b0e70a96a90f27",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-row.stories.ts",
+      "sha256": "56393c14d57537ec4c9953646b0df63912c8eb5527de31731feb98caabacd602",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/avatar.stories.ts",
+      "sha256": "cf63525ff7f48f2962924c78e00fc65f4b44f19a8d0534a5756150edf1cea21c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/fileuploader.stories.ts",
+      "sha256": "b40fd025ab6d6d6641439033f0ab13b4de44dce2ee338fd03464cba3a8a4413b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/suggestion-item.stories.ts",
+      "sha256": "49608b7433a9f1b8abdf983aca6f7b9280ecc03c50a641b6d0a1b47e73640a2e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/calendar-date.stories.ts",
+      "sha256": "d3df8979144e7a55488e7e3690f917b98cd2b052ec3ac1c53ef77fed86f0ac8a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-selection-multi.stories.ts",
+      "sha256": "f5b8e7d00a7765acc48ea234135471e0755ef004ecae4e48d1c04352afec3d82",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/colorpicker.stories.ts",
+      "sha256": "1b9d369697fb21d22f77b3da1db0bb689c932ea0294a54fd5242fb8aca529737",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/calendar-legend.stories.ts",
+      "sha256": "acd6c6d3362541fdee740dc4168418b645dd4bc81d9bbb1e6ee08dda69462207",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/select-option-custom.stories.ts",
+      "sha256": "6500e89355915dd77456c4b0c8fbfc088a628e1c184fdb4e5d2d6accf4a31b32",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/timepicker.stories.ts",
+      "sha256": "d189e325fe0c4e0c47b5e5620b13dea8d1efcd9f838b61dacf367a4e2a2de645",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/segmentedbutton.stories.ts",
+      "sha256": "76a6133fade10b7bf5f8b2e97b94a909c5d0373da64cde85a4c09c46ce2f6433",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tabcontainer-separator.stories.ts",
+      "sha256": "3c46e9c0f5f44d877ba6a9ab63661e3b325a02e049978009737f44b17be282da",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/dynamic-date-range.stories.ts",
+      "sha256": "5bbce57acfa5117ef10bca9178f666af1c94e00c2e92a9e0d19f9f06a8c19d8b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/list-item-standard.stories.ts",
+      "sha256": "a6ae3c4e5e8cc510d79f1c8a3d80f61cfc451b524b89f4254a40de7f4cdce4d8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toolbar-separator.stories.ts",
+      "sha256": "7e601f0fcb373558dc1e4aa4026f0501e81ce49f9208e1a8fe6567f8c1016f17",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/card-header.stories.ts",
+      "sha256": "9c9b6f2d823c4cf6cc526dc0d1a4bb5da5007aaf6aa78abc003f7313ef2e1869",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-selection-single.stories.ts",
+      "sha256": "7298e5b8a607662401a42bdaeff00e79f067d7418083cdf9b8655dcd78e89d8b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toast.stories.ts",
+      "sha256": "5fc67ce964faf4ed37116faf2b98ae95e1708f6711d989abb91be51600b8e527",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/form-item.stories.ts",
+      "sha256": "5bf4e9868f29f6f6ef1655b1f0f0d7e6f67a0bd9353cdcbfdefe1bd81ca049bc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/responsivepopover.stories.ts",
+      "sha256": "63a161e5985644729fe166266aa1015d76c6b3e738c3e84853a018f9e7754dd7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/menu-separator.stories.ts",
+      "sha256": "78f491bd31f1986373d09148947c04f68bf6208e43ba8b78aea1493c9a0c8205",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/list.stories.ts",
+      "sha256": "be1a78e834d8e5700e0993128888006018ed32531fa6394b8fdc90db2aef15fd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/expandable-text.stories.ts",
+      "sha256": "7461ae094dbb82e111bd74de280efa3c77a012b61cffd20d10cbdc1ed2d7b38c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/segmentedbutton-item.stories.ts",
+      "sha256": "640e2eeb72eb2513497869e10e3beb31311ef6127b9ad0f6fce54c2316f1f0fb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/select.stories.ts",
+      "sha256": "def46e9ac09b94afff706c91bdd1635dd6db53273cc9b93b8662fca6d2c76f3f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tree-item-custom.stories.ts",
+      "sha256": "d0e399745b282a7630ae352448cefdea77f97e72725152c269730f96079857e4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/calendar.stories.ts",
+      "sha256": "c0d5a0f318ddf0bbae56e40ab985ea051115ffea7abc3f2fe482227ea1823e12",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/breadcrumbs-item.stories.ts",
+      "sha256": "f0292c9e0f23c4c29fe2a45237215b5df984fe20ae51701420f77d96494743c0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/avatargroup.stories.ts",
+      "sha256": "7b8cc33273ab62ff68ea852f133f23897026dc4c5784232910834a84d2d55ecf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-header-row.stories.ts",
+      "sha256": "898acf8be5669c8ab66d9a9304966127fa9128219f78ffc903b9e4b90e08fbdc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/togglebutton.stories.ts",
+      "sha256": "044d05466340f695c34fb58459d8b98367369f68ba32a64e38649fcad08f8516",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/multiinput.stories.ts",
+      "sha256": "c809421a9853bf1f19e69a8b748df92fe5beadc986b2a244463afd7c5f04e586",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/list-item-group.stories.ts",
+      "sha256": "729eaf42f8274ec43872745815ec57eedfe7bc93f7b51d496cbf93edb008a6e5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toolbar-select-option.stories.ts",
+      "sha256": "64e6efdbd8e22e76f1d24cca67794254dd5ff3b8f6bca5b766f0961794d48e9d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/token.stories.ts",
+      "sha256": "0890b74b5324af9403b890b7ba17c8aaeeb5f5d7142582c53a3083b024c8185b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/menu-item.stories.ts",
+      "sha256": "8ce0ec2b3b1e1b03d0cffa6e42f29ea6373014d159cc9b45fa0cbb30c00dc729",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/title.stories.ts",
+      "sha256": "1f657b78ca1ada5fcfb4aa31197ecde5559975c978188e4cc695b15cde14f46e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/select-option.stories.ts",
+      "sha256": "98393d691d18a857d0d3ad84556988014dd012b197bbb6453672188b86cf4582",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table.stories.ts",
+      "sha256": "6d3657abc7e25776dfc6796626875e4fba2add8d2897095c4529a8a0874a168d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toolbar-spacer.stories.ts",
+      "sha256": "896ee5c06ff10420dd36f81620a921d080e74780cea323f971ca4bb966e35a6c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/radiobutton.stories.ts",
+      "sha256": "7bbfb9b0d0c921a86e6ea3618b04af4b9af7594c0c61e624a8f6a9d91a4b089a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-row-action-navigation.stories.ts",
+      "sha256": "a2ab64f0580fae578601f0d7e4214a66a95fb60d53ff255de13cc300604bcf87",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/splitbutton.stories.ts",
+      "sha256": "40cd4904cf6de077f68a9ed3af54cfa63ed93163535fd25e43aef249e74e5612",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/switch.stories.ts",
+      "sha256": "d71c9404d802e60744da9e319301039ffa1318db55af375e12d7b6f1ad8e556f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/menu.stories.ts",
+      "sha256": "8f2c7e7e20c84e9b579768106dfc28b217c2b4d92c474e36e6a9d47673464817",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/combobox-item.stories.ts",
+      "sha256": "42c5b0a05c48e7fa7c83152e298b8d25e0720640336c01063fdd0be06d97da92",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/label.stories.ts",
+      "sha256": "612b232c4171bdc7e5056f39e195fee31c5380801f29934add82810001eb8f5c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tree-item.stories.ts",
+      "sha256": "1801f79364e0870c1449d4ffe6dffde9257f2d6a0f877d0e7f2b3517cc280af3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-virtualizer.stories.ts",
+      "sha256": "4bc0f8cccab1367ad4091c7100c74a53e56378b9884b9c284859688863f27809",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toolbar-select.stories.ts",
+      "sha256": "9a9538244ffae56cbe4add19d77a5f832951949315017bffc58db6ef059715e3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/text.stories.ts",
+      "sha256": "98d3e611f46a715d0c8c6bfbea45a68e65175c62a36febb672948ab2d507f61e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/button-badge.stories.ts",
+      "sha256": "ff88445907e34571a5cf0b4e512c3ee2364f5e902651e5be8a0aa40f87bb4817",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/input.stories.ts",
+      "sha256": "31f438ea901e03a2896f6dbb64533427058ddb4ded4377d715dcead4fa729628",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/ratingindicator.stories.ts",
+      "sha256": "635e33934bdb6f2d66f47c360377888a47a461d706c6f99c9f15759235743ff7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/datetimepicker.stories.ts",
+      "sha256": "9d8fb0f3975151cbec4f65719ef1a1fb4d8e7ea8ccd8ba06f14b7c6f66f124eb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tree.stories.ts",
+      "sha256": "76716e998c1e956bcb01ed63e48834df61c7f1764f3a6df3d71368f35c615af5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toolbar.stories.ts",
+      "sha256": "4aac19ea4f9b935514a4317d745a948ceaee0e1dc91bc2b418ae9d4c0545ef3e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/messagestrip.stories.ts",
+      "sha256": "d020343de10b205bfe9c4c2ff8d46064860434dcdcbcfaf4ad3f9d0cf3e8647b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/stepinput.stories.ts",
+      "sha256": "01dccc8432a646b1be55a5ba10285c48a1a9137c5f16b2e5a9c3757edc614efb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-growing.stories.ts",
+      "sha256": "2a30e43ea3a88c8eb707fa52c511ca757d25f6c1e086bac38697d927903b72eb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-header-cell.stories.ts",
+      "sha256": "4317d70c9dd9716bdd9ba63543ae670ec19baf7ab09422c5077de20c4bb416ec",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tabcontainer-tab.stories.ts",
+      "sha256": "3e8350978d5e50e88d2b62cc162c20deae00dd3f799b65c89ac7b3ceba481f4a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/popover.stories.ts",
+      "sha256": "2a4ed1f18e4426ea4604d3b4ccdd01d9c2ec951358ed4522940036a271682c9a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-header-cell-action-ai.stories.ts",
+      "sha256": "ff10ce0b3e8deeead98129e6295951a2edb5fdb23144a6c06381a47b47c6a6d7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/colorpalette.stories.ts",
+      "sha256": "fafeef0cb8ca05a33c057af780e137dd28c3943b7935690bf6aa207cb7eabe31",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/multicombobox-item-group.stories.ts",
+      "sha256": "5fee88a3c979566ea3ee673072a0611955dbe564edcd7d4259a2b60dfcd2caaa",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/combobox-item-group.stories.ts",
+      "sha256": "5b039b74fff2a92f3e9120f5e972030a889dd99aa5a845b93daf89d9d77407a8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/checkbox.stories.ts",
+      "sha256": "b26b26f30decdb46cdbd857790a66575e21c7ac472a602d2287e9729dbe6bf6b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/toolbar-button.stories.ts",
+      "sha256": "c99ee8e3aada501cb5626726eff7353077029acc6d503ff1367094177f256cc5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/multicombobox.stories.ts",
+      "sha256": "c699372bda25d594daa65c47645ff8e0605301ebbb7c234d25e34b13b42a2778",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/carousel.stories.ts",
+      "sha256": "494b0da809f9d4e064a913904b381646cb32abb042cf17d3b10a6289788e34c0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/rangeslider.stories.ts",
+      "sha256": "0054658cd5813aed95dd8759db766ebcecb793ea61458a255a452540909d8092",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/suggestion-item-group.stories.ts",
+      "sha256": "153e77e2812734a1708b6b6e9ead101c83be7140c82a6c5069dd8ee8b214b44a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/textarea.stories.ts",
+      "sha256": "7d87b522ee03c027d13f3b0c6b613338121e0d47778f220b5c7c339952081b08",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/table-cell.stories.ts",
+      "sha256": "5150b4327f960a184930ed80b6d5d7c65bc0949ada5ad0847c3b4d9ec1cb9459",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/daterangepicker.stories.ts",
+      "sha256": "18bc642701fb07b22a86330cca16ce33f1ad1d1b43cbd36172a42c71b0c9eb96",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/calendar-date-range.stories.ts",
+      "sha256": "b67f440e14731b90fbc34351f43afa279474d486d3c761cd17a7bc85e1e4fa38",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/form.stories.ts",
+      "sha256": "fed4e77f5444c77bf6ca0742052096b508bcd94c2cda3ee6107404647e403233",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/tokenizer.stories.ts",
+      "sha256": "7aa9be76332e90abc4769fa51c295715d69ead2d036efac5aa00fa84f1cfdc37",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/colorpalettepopover.stories.ts",
+      "sha256": "e51f5daf59295896f8638e8ae9be6c939e78b1bce3b6128714e7ebe871dad315",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "apps/documentation/src/app/stories/main/list-item-custom.stories.ts",
+      "sha256": "f6a416609dde1ba1aefb449865596dacd7ca1e3da44227a240c574abe5e706e1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/wrapper.conf.ts",
+      "sha256": "7ecb19136bca2378e68f693b5094f4d0e0eabef0c642ed1037ff3e6c4f8bf783",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/theming.conf.ts",
+      "sha256": "63169a4d7886c755e0cbf91b75b322c27d52289d0bf69aff617a7289c1425ab0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/jest.config.ts",
+      "sha256": "d49244c88ea8162cc1b80921cba4404333c2509d3b66f5a5dba514f70d459b15",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular-theming/jest.config.ts",
+      "sha256": "c85472202c0fbf519816b2b17d4d38868260020dfe660e1fc4d05701d05bcd5e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/jest.config.js",
+      "sha256": "4d2828339df80947bc44caf7855633ad645efd263c58da28975f927a07e90346",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/fiori-snapshot-test.spec.ts",
+      "sha256": "68cd5e12d8bada1e6d4e26961e401131cc0ac4341127a0b2ec1c7a02f2c362eb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/wrapper.conf.ts",
+      "sha256": "cc0adbe9fd91a84076b31239947dd1087040e478675a638a8a76261ab11bdb19",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/jest.config.js",
+      "sha256": "ebfe552360ed4087d2faad491ee84738c3fe2c402162fc7fa02433d6b15226e0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/theming.conf.ts",
+      "sha256": "913ceb999122b2661a1acb839c5d5bb337a4f762ff3a0445960b1f01c9bf1419",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/main-snapshot-test.spec.ts",
+      "sha256": "d4c382362f46e92c4f259ca74f69e77f83324ba4ee11dc68a19c9372f017436e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/openai-server/src/server.ts",
+      "sha256": "aa60c408a4c6cb785cacf0ed9f1b02246cf4eeb659fea77807a818ecfd618739",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/index.ts",
+      "sha256": "4c324f665f6db065f87f5c7d84e5974358acf81e5eb6b113b03dcc9dbb968cdf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/parser-configuration.ts",
+      "sha256": "90cc95847eaffde02c045f3190f4bdbd02c1876fb2c5ae3a6f13e3d1f3b97ae8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/combined-methods.ts",
+      "sha256": "c73eaf323856f7c9a51b37ec7e85d9d9badf9612e02e89f7cd346c282dc25ce8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/getImplementersAndSymbols.ts",
+      "sha256": "47dd61aaea08996298a4edf9b23db0af8ce17efae432d4770ba18b61c0cdd80a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/combined-properties.ts",
+      "sha256": "87345a1594d15f668cacf2d965e63e211aa96392f834ad0d26caf4b485df3577",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/get-components.ts",
+      "sha256": "9f3b86fc6c2b00303f67eacae77794c9a466949f4c3740cb4aadd960ad73e5b7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/combined-slots.ts",
+      "sha256": "59a6b15d9ddcfb1c4b735c0aaa993f769f415b15c7e611b1dc5afc1c0d0b7eef",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/index.ts",
+      "sha256": "5b655a180ebf077914549a3a5effbee3242e08c01100929584cd784315495bd1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/combined-events.ts",
+      "sha256": "f50eafc2f5b0dc8d25c546da3ac6651eafa1ff3b261771faf9e27157d371c641",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/api-json-parser/symbol-types.ts",
+      "sha256": "dd65cc85d11abbf43bfd63e1e98021ecfb4c8d88d390281ebab4735beee308f9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-schema-parser/src/lib/custom-element-schema-parser/index.ts",
+      "sha256": "7bbff0f05591f6852ac4bb970efc26fcf4ea49a20e59a7ca4a40a4bdaadbee86",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/webcomponents-nx/src/index.ts",
+      "sha256": "9deb7b168bb079ac49353e3575f42203240d50f270e298353274e97f5cb7c583",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/webcomponents-nx/src/executors/prepare/executor.ts",
+      "sha256": "acde5a57bfbc479d1c9a1f9ceca401c4f31c2c10c8681dfd34344aa89dc72c66",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/webcomponents-nx/src/executors/prepare/schematicsOptions.ts",
+      "sha256": "ddf70a5449df4dc3c82a0104e049116965810535640bf279f8cedf51fa79a3a8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/webcomponents-nx/src/executors/prepare/copySchematics.ts",
+      "sha256": "2e7c41dc050070f451d341356fa04b1c19cace6d243a99b1ebbc48068e60d004",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/webcomponents-nx/src/executors/prepare/prepareOptions.ts",
+      "sha256": "b185e466cd977d1ff609ee86492c0239f162925cf211ff992be2ee8adc9556f2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/webcomponents-nx/src/executors/sync/executor.ts",
+      "sha256": "182607e1b4926aa6a6339e54ca77a6336bbcb0ef62a0d0570237c7f0655a00b4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/config/index.ts",
+      "sha256": "3279ccb18295eb7b8d2df10e6572a6d51f139bd65f4b6b55ff52b72287e1d056",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/content-density/index.ts",
+      "sha256": "9d7271ddbf24627b440bb0347156a3f326dcc98cb10ae5568c4fdc7d55adc5ea",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/theming/base-webcomponents-theming-provider.ts",
+      "sha256": "05ef218676d5f7aede6eb60acd94049f747004eb2c66ae32a41c5f3e1dc3e4f3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/theming/theming.service.ts",
+      "sha256": "2af058e8fd79f936836eee550fc110792beb2c5c3afcf342fde5eda27cd2291b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/theming/theming.module.ts",
+      "sha256": "5d1dd968450fc2e1c17ede1c29dbd13884f0d9dd406ab13ac8b2adbe8db99fd1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/theming/index.ts",
+      "sha256": "d006412958c5365842235cab9b2c09818de590f187206788d9b29ef34687f914",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/icons/icons.tokens.ts",
+      "sha256": "74f4bd6fd8ee8d255b7d0a483120d555a60821ef868b06d29342bf363a98dd6b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/icons/icons.provider.ts",
+      "sha256": "2b1a0812a8cc2f69a3b40fe426f2fe8711fed42ef7d8dd1c6d347c43b31cc400",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/icons/icons.module.ts",
+      "sha256": "15df9f5d94d39703c72eddd604a176b1cad3c265a528d20aee073e48cb3ba395",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/icons/index.ts",
+      "sha256": "bd9538dd77ce435b4494b9fbb0bbb1bf41e076afbb9fbb35e6eea2f3451efc49",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.types.ts",
+      "sha256": "b5d2c9eec27ccbba34e8e37f1d4747ed3ef8cd8fe725acf7b33b3b9da72a3aab",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.tokens.ts",
+      "sha256": "3b9bf46715ae71ee63d1b9f1070c311c73fc5b2bcb3105e5d8d7331df8ed61bc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.pipe.ts",
+      "sha256": "d8d04b74816afc36de29592260b7250a7a0c98d6c040dccd61f658aa62b4741c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.providers.ts",
+      "sha256": "1fcaef28a7c720affec901be1517d7c82d7aecfd3a51c83b91abe0659473bfa6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.module.ts",
+      "sha256": "9314a78a116c3be8750d416f9737e576f5b73440b6b81a41e0657b58ee13dd12",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.service.ts",
+      "sha256": "86c8265693ce4f191cb6654e23864908aefbb9e90c75e8c838d7c2e5a16e0323",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/index.ts",
+      "sha256": "b5ea7f5fd94e16f2e7efeadd7c22d5b7dbe2fc0c32e78aa0782f9a0b1cee8c0d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/i18n/i18n.utils.ts",
+      "sha256": "c0dc5a1307e574c2098608569202e6034fce5df5d51be041cb71ef52417edbe6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/schema.ts",
+      "sha256": "d3660759555dcbce39d65116fde4107e4becd736d7988e2fd9ecd7b7f868ad86",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/get-config.ts",
+      "sha256": "b7c0c7bd3bea71fdbe7a92f021ac0c9da1a52df2cd1c69e9afbea3d36e34f42c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/types.d.ts",
+      "sha256": "bfcd923bb6b3eb791b42a732350dc4007bf1a922314dfb10bb1fb868b116084f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/get-i18n-config.ts",
+      "sha256": "290169d686f0ad88f25c71e9e8baeadd85e93bc8f9c1429902f6766977f238f8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/config.ts",
+      "sha256": "f253a1c768aca43229e524e2c9ad50cf8a0e7064d1c1c0394e70b82b9ed4ae68",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/add-dependencies/index.ts",
+      "sha256": "2d15f9e44aa3f4595bb61757e926cd4c3cd42af59320a18f90de23bfa81a627f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/add-styles/index.ts",
+      "sha256": "6d789695c4369fd1e3fa9859e5757e97d0f251a37423ff3562e95cf5e8dfd788",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/find-ng-module-metadata.ts",
+      "sha256": "c25a0a344a577b862b250b858881e703c16a8c7801d6c5509e253848c3805430",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/has-module-import.ts",
+      "sha256": "d4d11a12b4c8f476721f2bb523d0f82fad4fd8a739c97ac23ffe97d8dac6f421",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/promt.ts",
+      "sha256": "20b30b9bc34d88171cd708fa3881e54da3a6232f0991d6a47d167e3754f1fddf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/is-ng-module-expression.ts",
+      "sha256": "22ffef4f2e7bbee937336eadf415a960f955c6d479b6b793ce08b781590171c0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/resolve-identifier-of-expression.ts",
+      "sha256": "654b9d7cee16e3bc469dcabf777ac7b66b74e7cdf3c12cbf8d55b1dda58c5012",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/get-project-definition.ts",
+      "sha256": "b5d97d23c13bc2cf268b12d1342b3bced80e2b8933f8b75b848738fc50b744c7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/project-main-file.ts",
+      "sha256": "6a29f7b5a031bffb796a59074ad0a2b3067c82302e9f5fc1883d63e8f97295d6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright Google LLC All Rights Reserved."
+      ]
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/find-providers-literal.ts",
+      "sha256": "43381fe0f6376d7f85613f41d57bd7921969f7e5bbf0e0273949952cf744f4a3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/package-config.ts",
+      "sha256": "64662bb45c68c537bf6a0d4f8ce1bec5c80e008183ad19052c1e447b00be055d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/getModuleDeclaration.ts",
+      "sha256": "9b717b861ec09fefd37b4f247580ad2d938afab7f4081705fd4e6e08572f6956",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/get-project-target.ts",
+      "sha256": "6bf29ad2df45083f6ee640569b4ab0726c2c5dad6186eed125bebf8b0f4d2721",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/find-import-providers-from-call.ts",
+      "sha256": "47c319b6bb923f95033264d874e3d233ba0f6bcdea68f98e65f9c0d34171b08c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/getSourceFile.ts",
+      "sha256": "cbb7d2c5037c24f83165678c3b640ec9584c74b5ede4b4f6aa4d6a3087c14e81",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/utils/find-import-local-name.ts",
+      "sha256": "2889368cd1382af99dded86797755b33e59457101551a0314d1a87460014bf3b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/add-theming/add-theming-module.ts",
+      "sha256": "0e57e44ec527781c2ece8d2f03153ae7f76264b9cc72c700b973d3fbb1417210",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/add-theming/index.ts",
+      "sha256": "20959d7321d42f70286026d1cc2b1f309503cc7bc519241d80b617b3e6726473",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/ng-add/schema.ts",
+      "sha256": "f85a447b16ca1ff8c52bcea4a880eb11586d73d616b0d1bd1f7a4856072fe893",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/ng-add/index.ts",
+      "sha256": "852c33ca7a7cfb30e0ff00e92cd278a5151756b47f46b838c7b03e2db8e3ca23",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/add-i18n/index.ts",
+      "sha256": "2af656dbf91a00b8a5520e9e744718ccf79197be59b10f14f4abd5129cf9a8e1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular/schematics/ng-update/0.2.0-rc.0/index.ts",
+      "sha256": "f951b03125a6262c9a935c6af12195b514e548ef9e7bc7e3d8d37ba584e9bb11",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/index.ts",
+      "sha256": "3dac7de8dfeb73d0bbdce824ed853be7ee4f38e80cfcb69c8bc58c2ed209d739",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/generated-file.spec.ts",
+      "sha256": "ab9f7b6c7842b1b36b52e607821532e5a682fa9a9988649755f903c4eb6ec873",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/transformer.spec.ts",
+      "sha256": "9a1ba82c9e9c903760f46ea6e099b760fd34cf30e2a5d14d8a1960837bc2f49e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/dependency-relative-path.ts",
+      "sha256": "24a50242c9f376e1418a12e5c608c52b2a51f981d5fdf906918ee1c067ed5c53",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/transformer.ts",
+      "sha256": "02e1534cff74c10a37275ec6ee1bd44dc4882106fd3704d51c51f6b97d5ad8ab",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/dependency-relative-path.spec.ts",
+      "sha256": "da6547bb0380fea7bce909692ec7abb73f70d8d3402d0046d0e3d80d5fe08a3e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/export-data.ts",
+      "sha256": "1471e3687cee2c658b5dc9cbb45dbdada5a0387729bd047095f4b5f86d188fd9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/import-data.ts",
+      "sha256": "1827e5821c7ddbd872998982ae26aaba84c374145ddee4b31dc612488c886995",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/generated-file.ts",
+      "sha256": "c0a9406af5b97fca2751f0b9072503f4fe61c90909347342a1c286d6002c875f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/types/fs.ts",
+      "sha256": "b5e3971993ac6d0d47e5ffc534acb2e2c77c1a70201efd28962d8a68a7378179",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/types/transformer-config.ts",
+      "sha256": "b0b8e6b6b41c5daa56f65c176971f3c079ceca86b9126f7cb5da2c1c8dade7da",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/transformer/src/lib/types/component-data.ts",
+      "sha256": "db9ddee7856d48a913fc61d8a7bfc05001f289a113d8f78a8697ddda8f8e830c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular-theming/src/ui5-theming.models.ts",
+      "sha256": "9769b336a52d86183fd214d1c1bea079b3f4a16499788de2c1ab748eece8f128",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular-theming/src/ui5-theming.service.ts",
+      "sha256": "9c866aaf6ce9542941eaa28735220d45039b786291c8e001208756b26319427c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular-theming/src/index.ts",
+      "sha256": "f83e16a709b4e888d3348e61bc9a453175cffd37ce36037ad8c7c0d9de5683a8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/ui5-angular-theming/src/ui5-theming.module.ts",
+      "sha256": "6b2c4db5d736e5276e6b05be7e7a7881d5fac04bbe8cbdf9d1212218a80f71f6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/index.ts",
+      "sha256": "7992ce4474eced00b8b4374fc18de043c9ea2f029e92daefe44e512db021e4f4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/angular-module-file.ts",
+      "sha256": "6739be829757a64d0b174c63295734dde0abc4bf0b331e5a9f89c47ba1b7839a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ng-package-file.ts",
+      "sha256": "ef0ae86a913fb6b0b1677ca6d2099bf976fb33d58bf46cd06e74352324b18244",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/angular-generator-options.ts",
+      "sha256": "ccd1b937ae81da1576e7d46bbcf328c6118b3bc3e060e7a55b199bdbfda1f340",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/index-file.ts",
+      "sha256": "62c59cc33da6d8676eaf8b0a3ba8a3fbef76953646f7e46cdcfdc1e4b5cbb2d6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/angular-generated-file.ts",
+      "sha256": "35d542fd374c4b7012ec25cd0c0d0ca8112369e59f4de32076ac612ec5439957",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/angular-export-specifier-type.ts",
+      "sha256": "c5bf262b3851e4439c17c00d0f8e677143798baf56dfb2fd217f35f1bc3e0088",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/fundamental-styles/helpers.ts",
+      "sha256": "15e82b0cc465fe023f253a742219598e1d345a6831c8bd7c414d8510a995593f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/fundamental-styles/fundamental-styles-directive-file.ts",
+      "sha256": "67b7b8a6e63374f76052ae5564f43887b1aa7a17bbf9f4e4a226df224d2c90df",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/fundamental-styles/fundamental-generator.ts",
+      "sha256": "a1f867a8cc890e7c24ae5458644d4d04023bc2a17fabf4808b2aa02c8c154841",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/utils/is-module.ts",
+      "sha256": "fb70b0abb38b8946d9b08ffcdaacd2b425ddd21446948c16dda78099f68d7f98",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/utils/get-exported.ts",
+      "sha256": "bfc6d8231f67d91fd8b315c93bba440908982b366ac7dc3fd724a59f5d17cc1c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/utils/is-declaration.ts",
+      "sha256": "47cf53dfa8863986298a124fc54ef0367a6ecd43e591b79d4c177a3addff207d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/utils/is-provider.ts",
+      "sha256": "f6302fba133060b30101d02afb2f2225aa7d0957bf17e7864066783ae9211bdf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/metadata-tools.ts",
+      "sha256": "9cddf3cb69a73876598f3d2d1316b2e2bd470c89fdccb62539fbd8c5136d3189",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/output-type.ts",
+      "sha256": "744520e23288cc471164cd3f366cc42d5a7e206679733e57adf8bae1e78a6cf7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/utils.ts",
+      "sha256": "81d907931eb655e655767c5faaf2bf2b123de20041fbed516ebe6011cc435a68",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/component-file.ts",
+      "sha256": "d46264b72ec9b11f9527efe549594558f08a22d2272bd7a1695ff9efb465a672",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/ui5componentsWrapper.ts",
+      "sha256": "00b9441f8cfbb4939a7e27f32ac38df427adcd8620c64810152733e277efc863",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/output-types-import-data.ts",
+      "sha256": "a8a037ab28d1f451c64bb9b57a32ee77cb5487d2e4805f8806b1f6b5718984bf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/normalize-options.ts",
+      "sha256": "2c98ab40a2592cbae6be61d0a93abff191cbe7b59d94ac0def0a4c04e7313388",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/ui5-webcomponents/generic-cva.ts",
+      "sha256": "a1f3e4ebc0a61b99b7cc9fe1cb51d43f54ef9f5f26916e2c2d0413efcda04bec",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/schema.ts",
+      "sha256": "d3660759555dcbce39d65116fde4107e4becd736d7988e2fd9ecd7b7f868ad86",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/get-config.ts",
+      "sha256": "b7c0c7bd3bea71fdbe7a92f021ac0c9da1a52df2cd1c69e9afbea3d36e34f42c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/types.d.ts",
+      "sha256": "bfcd923bb6b3eb791b42a732350dc4007bf1a922314dfb10bb1fb868b116084f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/config.ts",
+      "sha256": "f253a1c768aca43229e524e2c9ad50cf8a0e7064d1c1c0394e70b82b9ed4ae68",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/add-dependencies/index.ts",
+      "sha256": "2d15f9e44aa3f4595bb61757e926cd4c3cd42af59320a18f90de23bfa81a627f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/add-styles/index.ts",
+      "sha256": "6d789695c4369fd1e3fa9859e5757e97d0f251a37423ff3562e95cf5e8dfd788",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/find-ng-module-metadata.ts",
+      "sha256": "c25a0a344a577b862b250b858881e703c16a8c7801d6c5509e253848c3805430",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/has-module-import.ts",
+      "sha256": "d4d11a12b4c8f476721f2bb523d0f82fad4fd8a739c97ac23ffe97d8dac6f421",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/promt.ts",
+      "sha256": "20b30b9bc34d88171cd708fa3881e54da3a6232f0991d6a47d167e3754f1fddf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/is-ng-module-expression.ts",
+      "sha256": "22ffef4f2e7bbee937336eadf415a960f955c6d479b6b793ce08b781590171c0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/resolve-identifier-of-expression.ts",
+      "sha256": "654b9d7cee16e3bc469dcabf777ac7b66b74e7cdf3c12cbf8d55b1dda58c5012",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/get-project-definition.ts",
+      "sha256": "b5d97d23c13bc2cf268b12d1342b3bced80e2b8933f8b75b848738fc50b744c7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/project-main-file.ts",
+      "sha256": "6a29f7b5a031bffb796a59074ad0a2b3067c82302e9f5fc1883d63e8f97295d6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright Google LLC All Rights Reserved."
+      ]
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/find-providers-literal.ts",
+      "sha256": "43381fe0f6376d7f85613f41d57bd7921969f7e5bbf0e0273949952cf744f4a3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/package-config.ts",
+      "sha256": "64662bb45c68c537bf6a0d4f8ce1bec5c80e008183ad19052c1e447b00be055d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/getModuleDeclaration.ts",
+      "sha256": "9b717b861ec09fefd37b4f247580ad2d938afab7f4081705fd4e6e08572f6956",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/get-project-target.ts",
+      "sha256": "6bf29ad2df45083f6ee640569b4ab0726c2c5dad6186eed125bebf8b0f4d2721",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/find-import-providers-from-call.ts",
+      "sha256": "47c319b6bb923f95033264d874e3d233ba0f6bcdea68f98e65f9c0d34171b08c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/getSourceFile.ts",
+      "sha256": "cbb7d2c5037c24f83165678c3b640ec9584c74b5ede4b4f6aa4d6a3087c14e81",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/utils/find-import-local-name.ts",
+      "sha256": "2889368cd1382af99dded86797755b33e59457101551a0314d1a87460014bf3b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/add-theming/add-theming-module.ts",
+      "sha256": "0e57e44ec527781c2ece8d2f03153ae7f76264b9cc72c700b973d3fbb1417210",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/angular-generator/src/lib/schematics/common-schematics/add-theming/index.ts",
+      "sha256": "20959d7321d42f70286026d1cc2b1f309503cc7bc519241d80b617b3e6726473",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/theming/theming.service.ts",
+      "sha256": "2529e1a3778d846f0bc43c03fa5de7735007fc995a65c223e5ce9adc5403684f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/theming/theming.module.ts",
+      "sha256": "09a6ce7637294ea04e6d993c0c5b8fcbb1a0b25404d80d2cb4b6f56284029b70",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/theming/index.ts",
+      "sha256": "a2d4e4e02753968f279c5289a4c9a60bca36cde27ef12a0487db910bab9bd25b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/schema.ts",
+      "sha256": "d3660759555dcbce39d65116fde4107e4becd736d7988e2fd9ecd7b7f868ad86",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/get-config.ts",
+      "sha256": "b7c0c7bd3bea71fdbe7a92f021ac0c9da1a52df2cd1c69e9afbea3d36e34f42c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/types.d.ts",
+      "sha256": "bfcd923bb6b3eb791b42a732350dc4007bf1a922314dfb10bb1fb868b116084f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/config.ts",
+      "sha256": "f253a1c768aca43229e524e2c9ad50cf8a0e7064d1c1c0394e70b82b9ed4ae68",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/add-dependencies/index.ts",
+      "sha256": "2d15f9e44aa3f4595bb61757e926cd4c3cd42af59320a18f90de23bfa81a627f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/add-styles/index.ts",
+      "sha256": "6d789695c4369fd1e3fa9859e5757e97d0f251a37423ff3562e95cf5e8dfd788",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/find-ng-module-metadata.ts",
+      "sha256": "c25a0a344a577b862b250b858881e703c16a8c7801d6c5509e253848c3805430",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/has-module-import.ts",
+      "sha256": "d4d11a12b4c8f476721f2bb523d0f82fad4fd8a739c97ac23ffe97d8dac6f421",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/promt.ts",
+      "sha256": "20b30b9bc34d88171cd708fa3881e54da3a6232f0991d6a47d167e3754f1fddf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/is-ng-module-expression.ts",
+      "sha256": "22ffef4f2e7bbee937336eadf415a960f955c6d479b6b793ce08b781590171c0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/resolve-identifier-of-expression.ts",
+      "sha256": "654b9d7cee16e3bc469dcabf777ac7b66b74e7cdf3c12cbf8d55b1dda58c5012",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/get-project-definition.ts",
+      "sha256": "b5d97d23c13bc2cf268b12d1342b3bced80e2b8933f8b75b848738fc50b744c7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/project-main-file.ts",
+      "sha256": "6a29f7b5a031bffb796a59074ad0a2b3067c82302e9f5fc1883d63e8f97295d6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "Copyright Google LLC All Rights Reserved."
+      ]
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/find-providers-literal.ts",
+      "sha256": "43381fe0f6376d7f85613f41d57bd7921969f7e5bbf0e0273949952cf744f4a3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/package-config.ts",
+      "sha256": "64662bb45c68c537bf6a0d4f8ce1bec5c80e008183ad19052c1e447b00be055d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/getModuleDeclaration.ts",
+      "sha256": "9b717b861ec09fefd37b4f247580ad2d938afab7f4081705fd4e6e08572f6956",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/get-project-target.ts",
+      "sha256": "6bf29ad2df45083f6ee640569b4ab0726c2c5dad6186eed125bebf8b0f4d2721",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/find-import-providers-from-call.ts",
+      "sha256": "47c319b6bb923f95033264d874e3d233ba0f6bcdea68f98e65f9c0d34171b08c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/getSourceFile.ts",
+      "sha256": "cbb7d2c5037c24f83165678c3b640ec9584c74b5ede4b4f6aa4d6a3087c14e81",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/utils/find-import-local-name.ts",
+      "sha256": "2889368cd1382af99dded86797755b33e59457101551a0314d1a87460014bf3b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/add-theming/add-theming-module.ts",
+      "sha256": "0e57e44ec527781c2ece8d2f03153ae7f76264b9cc72c700b973d3fbb1417210",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/add-theming/index.ts",
+      "sha256": "20959d7321d42f70286026d1cc2b1f309503cc7bc519241d80b617b3e6726473",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/ng-add/available-themes.ts",
+      "sha256": "247a5f92428fc5c09f015523ee9561b5a2bf75465ba1184a42f4c6488d61904e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/ng-add/index.ts",
+      "sha256": "959e5c95694d1379d6d819d87713390f518c9b47a1e3c3b490409393995670ea",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/fundamental-styles/schematics/ng-add/common-css-parts.ts",
+      "sha256": "18e5d499aa4ecde0679dd6cc3480aa5f10bc03b83fd1307997a8c415cfbc488c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/commit/fs-commit/jest.config.ts",
+      "sha256": "f656a9157e6128de4f24e40ef3a8523c182fa1fadbbd7ecb61ecdfaba2b0562c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/commit/fs-commit/src/index.ts",
+      "sha256": "b6270ea6ef210a3b0b9430609d3a155a2738a3a75e8246a7121395bba9be8cb0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/commit/fs-commit/src/lib/nx-fs-implementation.ts",
+      "sha256": "2ab243ee1f094c9c1ddb7b186baabe1fd3955bc8825bc8fec537d8f1ef5cce97",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/commit/fs-commit/src/lib/fs-commit.ts",
+      "sha256": "1cd65aefdb89aea95abfe11080a4d32260c5a171aca959ef2e2744fb08a7931c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "libs/commit/fs-commit/src/lib/node-fs-implementation.ts",
+      "sha256": "bf3d073be9f1a2db6d2f91c6d1250105f4e21987599c6745c6a376640e8f1b43",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "mcp-server/src/server.ts",
+      "sha256": "5d09486ca956b2f1d7a626d9c7081b36990b40517d54e852b893855ce0c5f3fe",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": ".yarn/releases/yarn-4.11.0.cjs",
+      "sha256": "b0efc6597348fab50c777d2ff4b09e814974058cf012c3d687c9e80bca824358",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors"
+      ],
+      "via_reuse_toml": true
+    }
+  ],
+  "discovered_copyrights": [
+    "2022-2023 SAP SE or an SAP affiliate company and UI5 Web Components for Angular contributors",
+    "Copyright Google LLC All Rights Reserved."
+  ]
+}

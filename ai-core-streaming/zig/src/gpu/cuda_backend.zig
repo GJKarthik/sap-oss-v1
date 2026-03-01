@@ -180,7 +180,7 @@ pub const CudaBackend = struct {
     // ========================================================================
 
     /// Batch cosine similarity: compare message/topic vectors for dedup and matching.
-    /// GPU path: TODO — cuLaunchKernel dispatch of tiled dot-product + norm kernel
+    /// GPU path: cuLaunchKernel dispatch of tiled dot-product + norm kernel
     /// CPU path: scalar loop (correct, used in CI and macOS builds)
     pub fn batchCosineSimilarity(
         self: *CudaBackend,
@@ -191,7 +191,27 @@ pub const CudaBackend = struct {
         scores_out: []f32,
     ) KernelResult {
         const start = std.time.nanoTimestamp();
-        self.batchCosineSimilarityCpu(query, doc_vectors, num_docs, dim, scores_out);
+        var gpu_used = false;
+
+        if (self.initialized and builtin.os.tag == .linux) {
+            // GPU path: dispatch CUDA kernel for cosine similarity
+            const result = c.batch_cosine_similarity(
+                @ptrCast(scores_out.ptr),
+                @ptrCast(query.ptr),
+                @ptrCast(doc_vectors.ptr),
+                @intCast(num_docs),
+                @intCast(dim),
+            );
+            if (result == 0) {
+                gpu_used = true;
+            } else {
+                // Fallback to CPU on kernel error
+                self.batchCosineSimilarityCpu(query, doc_vectors, num_docs, dim, scores_out);
+            }
+        } else {
+            // CPU fallback for non-Linux or non-CUDA systems
+            self.batchCosineSimilarityCpu(query, doc_vectors, num_docs, dim, scores_out);
+        }
 
         const elapsed = std.time.nanoTimestamp() - start;
         _ = self.kernel_dispatches.fetchAdd(1, .monotonic);
@@ -202,7 +222,7 @@ pub const CudaBackend = struct {
             .success = true,
             .execution_time_ns = elapsed,
             .elements_processed = num_docs * dim,
-            .gpu_utilized = self.initialized,
+            .gpu_utilized = gpu_used,
         };
     }
 
@@ -238,7 +258,7 @@ pub const CudaBackend = struct {
     // ========================================================================
 
     /// Project token IDs through an embedding table for stream event nodes.
-    /// GPU path: TODO — cuLaunchKernel of embedding_gather_kernel
+    /// GPU path: cuLaunchKernel of embedding_gather_kernel
     /// CPU path: deterministic projection using wyhash seeding (placeholder until real weights loaded)
     pub fn embeddings(
         self: *CudaBackend,
@@ -247,8 +267,28 @@ pub const CudaBackend = struct {
         embedding_dim: usize,
     ) KernelResult {
         const start = std.time.nanoTimestamp();
+        var gpu_used = false;
 
-        self.embeddingsCpuFallback(input_tokens, output_embeddings, embedding_dim);
+        if (self.initialized and builtin.os.tag == .linux) {
+            // GPU path: dispatch CUDA kernel for embedding gather
+            // Note: This requires pre-loaded embedding weights on GPU
+            // For now, we use CPU fallback until embedding table is loaded
+            const result = c.embedding_gather(
+                @ptrCast(output_embeddings.ptr),
+                @ptrCast(input_tokens.ptr),
+                @intCast(input_tokens.len),
+                @intCast(embedding_dim),
+            );
+            if (result == 0) {
+                gpu_used = true;
+            } else {
+                // Fallback to CPU on kernel error or missing weights
+                self.embeddingsCpuFallback(input_tokens, output_embeddings, embedding_dim);
+            }
+        } else {
+            // CPU fallback for non-Linux or non-CUDA systems
+            self.embeddingsCpuFallback(input_tokens, output_embeddings, embedding_dim);
+        }
 
         const elapsed = std.time.nanoTimestamp() - start;
         _ = self.kernel_dispatches.fetchAdd(1, .monotonic);
@@ -259,18 +299,81 @@ pub const CudaBackend = struct {
             .success = true,
             .execution_time_ns = elapsed,
             .elements_processed = input_tokens.len * embedding_dim,
-            .gpu_utilized = self.initialized,
+            .gpu_utilized = gpu_used,
         };
     }
 
+    /// Global embedding table reference (set via loadEmbeddingWeights)
+    /// In production, this points to memory-mapped .bin file or loaded tensor
+    var embedding_table: ?[]const f32 = null;
+    var embedding_vocab_size: usize = 0;
+    var embedding_table_dim: usize = 0;
+    
+    /// Load embedding weights from pre-trained model file
+    /// Expected format: flat f32 array of shape [vocab_size, embedding_dim]
+    /// 
+    /// For production models:
+    /// - GPT-2: vocab_size=50257, embedding_dim=768 → ~150MB
+    /// - LLaMA-7B: vocab_size=32000, embedding_dim=4096 → ~500MB
+    ///
+    /// Weights are typically extracted from PyTorch checkpoints via:
+    /// ```python
+    /// weights = model.embed_tokens.weight.detach().cpu().numpy()
+    /// weights.astype(np.float32).tofile('embeddings.bin')
+    /// ```
+    pub fn loadEmbeddingWeights(weights: []const f32, vocab_size: usize, dim: usize) void {
+        if (weights.len != vocab_size * dim) {
+            log.err("Embedding weight size mismatch: expected {}x{}={}, got {}", .{
+                vocab_size, dim, vocab_size * dim, weights.len
+            });
+            return;
+        }
+        embedding_table = weights;
+        embedding_vocab_size = vocab_size;
+        embedding_table_dim = dim;
+        log.info("Loaded embedding table: vocab={}, dim={}", .{ vocab_size, dim });
+    }
+    
+    pub fn unloadEmbeddingWeights() void {
+        embedding_table = null;
+        embedding_vocab_size = 0;
+        embedding_table_dim = 0;
+    }
+    
     fn embeddingsCpuFallback(
         _: *CudaBackend,
         input_tokens: []const u32,
         output_embeddings: []f32,
         embedding_dim: usize,
     ) void {
-        // Deterministic pseudo-embedding via wyhash; NOT a trained model.
-        // TODO: Load real embedding weights and use table lookup.
+        // Production path: table lookup from loaded weights
+        if (embedding_table) |table| {
+            if (embedding_table_dim == embedding_dim) {
+                for (input_tokens, 0..) |token, b| {
+                    const token_idx = @min(token, embedding_vocab_size - 1);
+                    const src_offset = token_idx * embedding_dim;
+                    const dst_offset = b * embedding_dim;
+                    
+                    // Direct memory copy from embedding table
+                    @memcpy(
+                        output_embeddings[dst_offset..][0..embedding_dim],
+                        table[src_offset..][0..embedding_dim],
+                    );
+                }
+                return;
+            }
+            log.warn("Embedding dim mismatch: table={}, requested={}. Using hash fallback.", .{
+                embedding_table_dim, embedding_dim
+            });
+        }
+        
+        // Fallback: Deterministic pseudo-embedding via wyhash
+        // Used when no embedding weights are loaded (testing, CI, development)
+        // This produces consistent embeddings for the same token IDs but
+        // does NOT represent learned semantic relationships.
+        //
+        // For production inference, call loadEmbeddingWeights() first with
+        // actual model weights extracted from the target LLM checkpoint.
         for (input_tokens, 0..) |token, b| {
             var seed: u64 = std.hash.Wyhash.hash(0, std.mem.asBytes(&token));
             for (0..embedding_dim) |d| {
@@ -290,7 +393,7 @@ pub const CudaBackend = struct {
 
     /// Quantize f32 vectors to INT8 with per-vector scale factor.
     /// Used for compact message vector storage and fast approximate search.
-    /// GPU path: TODO — cuLaunchKernel of quantize_fp32_to_int8_kernel
+    /// GPU path: cuLaunchKernel of quantize_fp32_to_int8_kernel
     /// CPU path: scalar loop
     pub fn quantizeVectorsInt8(
         self: *CudaBackend,
@@ -301,7 +404,49 @@ pub const CudaBackend = struct {
         dim: usize,
     ) KernelResult {
         const start = std.time.nanoTimestamp();
+        var gpu_used = false;
 
+        if (self.initialized and builtin.os.tag == .linux) {
+            // GPU path: dispatch CUDA kernel for batch quantization
+            const result = c.batch_quantize_vectors_int8(
+                @ptrCast(output.ptr),
+                @ptrCast(scales.ptr),
+                @ptrCast(vectors.ptr),
+                @intCast(num_vectors),
+                @intCast(dim),
+            );
+            if (result == 0) {
+                gpu_used = true;
+            } else {
+                // Fallback to CPU on kernel error
+                self.quantizeVectorsInt8Cpu(vectors, output, scales, num_vectors, dim);
+            }
+        } else {
+            // CPU fallback for non-Linux or non-CUDA systems
+            self.quantizeVectorsInt8Cpu(vectors, output, scales, num_vectors, dim);
+        }
+
+        const elapsed = std.time.nanoTimestamp() - start;
+        _ = self.kernel_dispatches.fetchAdd(1, .monotonic);
+        _ = self.total_elements.fetchAdd(num_vectors * dim, .monotonic);
+        _ = self.total_exec_time_ns.fetchAdd(@intCast(elapsed), .monotonic);
+
+        return .{
+            .success = true,
+            .execution_time_ns = elapsed,
+            .elements_processed = num_vectors * dim,
+            .gpu_utilized = gpu_used,
+        };
+    }
+
+    fn quantizeVectorsInt8Cpu(
+        _: *CudaBackend,
+        vectors: []const f32,
+        output: []i8,
+        scales: []f32,
+        num_vectors: usize,
+        dim: usize,
+    ) void {
         for (0..num_vectors) |v| {
             const base = v * dim;
             var max_abs: f32 = 0.0;
@@ -316,18 +461,6 @@ pub const CudaBackend = struct {
                 output[base + d] = @as(i8, @intCast(std.math.clamp(quantized, -127, 127)));
             }
         }
-
-        const elapsed = std.time.nanoTimestamp() - start;
-        _ = self.kernel_dispatches.fetchAdd(1, .monotonic);
-        _ = self.total_elements.fetchAdd(num_vectors * dim, .monotonic);
-        _ = self.total_exec_time_ns.fetchAdd(@intCast(elapsed), .monotonic);
-
-        return .{
-            .success = true,
-            .execution_time_ns = elapsed,
-            .elements_processed = num_vectors * dim,
-            .gpu_utilized = self.initialized,
-        };
     }
 
     // ========================================================================

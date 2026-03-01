@@ -1,0 +1,288 @@
+{
+  "lineage": {
+    "services": [
+      {
+        "path": "ai-sdk-js-main",
+        "name": "SAP AI SDK (JavaScript)",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "f5e4fda56c4e",
+            "date": "2026-02-26 10:34:16 +0800",
+            "author": "plturrell",
+            "subject": "ai-sdk-js: OData Vocabularies integration for TypeScript type generation"
+          },
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "2903724fb841",
+            "date": "2026-02-26 02:55:18 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+          },
+          {
+            "hash": "2adac6cec957",
+            "date": "2026-02-26 02:07:06 +0800",
+            "author": "plturrell",
+            "subject": "Update"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "cap-llm-plugin-main",
+        "name": "CAP LLM Plugin",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "2903724fb841",
+            "date": "2026-02-26 02:55:18 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "world-monitor-main",
+        "name": "World Monitor",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "ui5-webcomponents-ngx-main",
+        "name": "UI5 Web Components (Angular)",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "odata-vocabularies-main",
+        "name": "OData Vocabularies",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9f8ccfcab546",
+            "date": "2026-02-26 10:26:38 +0800",
+            "author": "plturrell",
+            "subject": "Full integration plan - service-by-service implementation guide"
+          },
+          {
+            "hash": "27741f4846cc",
+            "date": "2026-02-26 10:24:17 +0800",
+            "author": "plturrell",
+            "subject": "Bidirectional integration audit - OData Vocabularies as Universal Dictionary"
+          },
+          {
+            "hash": "34244e05197e",
+            "date": "2026-02-26 10:20:30 +0800",
+            "author": "plturrell",
+            "subject": "OpenAI-compatible API endpoints for OData Vocabularies"
+          },
+          {
+            "hash": "13c5ff04a93b",
+            "date": "2026-02-26 10:16:34 +0800",
+            "author": "plturrell",
+            "subject": "Health check enhancements - comprehensive monitoring"
+          },
+          {
+            "hash": "0f57dce72086",
+            "date": "2026-02-26 10:13:51 +0800",
+            "author": "plturrell",
+            "subject": "Complete API documentation for 5/5 rating"
+          },
+          {
+            "hash": "d446b27a4c7c",
+            "date": "2026-02-26 10:09:57 +0800",
+            "author": "plturrell",
+            "subject": "Complete test suite for 5/5 rating - 97 tests total"
+          },
+          {
+            "hash": "cfc07eb6d4ec",
+            "date": "2026-02-26 10:04:16 +0800",
+            "author": "plturrell",
+            "subject": "Quick wins for 5/5 rating - Tests, Docker, CI"
+          },
+          {
+            "hash": "2a4fd20a76fb",
+            "date": "2026-02-26 09:58:34 +0800",
+            "author": "plturrell",
+            "subject": "Production Configuration for OData Vocabularies"
+          },
+          {
+            "hash": "c989079c279f",
+            "date": "2026-02-26 09:53:38 +0800",
+            "author": "plturrell",
+            "subject": "Add Production Readiness Review for OData Vocabularies"
+          },
+          {
+            "hash": "4d661effbe07",
+            "date": "2026-02-26 09:50:37 +0800",
+            "author": "plturrell",
+            "subject": "Phase 5: Cross-Platform Integration for OData Vocabularies"
+          },
+          {
+            "hash": "ad0df2b30ba9",
+            "date": "2026-02-26 09:47:06 +0800",
+            "author": "plturrell",
+            "subject": "Phase 4: Governance & Compliance for OData Vocabularies"
+          },
+          {
+            "hash": "f01820006f55",
+            "date": "2026-02-26 09:42:19 +0800",
+            "author": "plturrell",
+            "subject": "Phase 3: Vector Embeddings & RAG for OData Vocabularies"
+          },
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "data-cleaning-copilot-main",
+        "name": "Data Cleaning Copilot",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "2903724fb841",
+            "date": "2026-02-26 02:55:18 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "langchain-integration-for-sap-hana-cloud-main",
+        "name": "LangChain Integration for SAP HANA Cloud",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "generative-ai-toolkit-for-sap-hana-cloud-main",
+        "name": "Generative AI Toolkit for SAP HANA Cloud",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "vllm-main",
+        "name": "vLLM (inference engine)",
+        "upstream": "https://github.com/vllm-project/vllm",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      }
+    ]
+  }
+}

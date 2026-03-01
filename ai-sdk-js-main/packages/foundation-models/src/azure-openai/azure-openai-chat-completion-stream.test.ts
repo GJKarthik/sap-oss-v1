@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { createLogger } from '@sap-cloud-sdk/util';
 import { jest } from '@jest/globals';
 import { LineDecoder, SSEDecoder } from '@sap-ai-sdk/core';
-import { parseFileToString } from '../../../../test-util/mock-http.js';
+import { parseFileToString } from '../../../../test-util/fixtures.js';
 import { AzureOpenAiChatCompletionStream } from './azure-openai-chat-completion-stream.js';
 
 describe('OpenAI chat completion stream', () => {

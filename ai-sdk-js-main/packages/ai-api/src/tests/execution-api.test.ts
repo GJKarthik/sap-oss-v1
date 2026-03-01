@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import { ExecutionApi } from '../client/AI_CORE_API';
 import {
   aiCoreDestination,
   mockClientCredentialsGrantCall
-} from '../../../../test-util/mock-http.js';
+} from '../../../../test-util/interceptors.js';
 import type {
   AiEnactmentCreationRequest,
   AiExecutionCreationResponse,

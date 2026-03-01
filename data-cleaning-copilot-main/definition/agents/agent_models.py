@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Pydantic models for agent function calls in interactive sessions."""
 
 from typing import Literal, Optional

@@ -1,0 +1,87 @@
+{
+  "generated": "2026-02-28T11:32:49Z",
+  "ml_services": 6,
+  "services": [
+    {
+      "service": "ai-sdk-js-main",
+      "frameworks": [
+        "langchain",
+        "openai"
+      ],
+      "model_refs": 0,
+      "dataset_refs": 0,
+      "hw_targets": [
+        "Google TPU",
+        "CPU (no accelerator)"
+      ]
+    },
+    {
+      "service": "world-monitor-main",
+      "frameworks": [
+        "transformers"
+      ],
+      "model_refs": 0,
+      "dataset_refs": 0,
+      "hw_targets": [
+        "Intel XPU"
+      ]
+    },
+    {
+      "service": "data-cleaning-copilot-main",
+      "frameworks": [
+        "langchain",
+        "langchain_core",
+        "pandera",
+        "relbench"
+      ],
+      "model_refs": 0,
+      "dataset_refs": 0,
+      "hw_targets": [
+        "CPU (no accelerator)"
+      ]
+    },
+    {
+      "service": "langchain-integration-for-sap-hana-cloud-main",
+      "frameworks": [
+        "langchain",
+        "langchain_core"
+      ],
+      "model_refs": 0,
+      "dataset_refs": 0,
+      "hw_targets": [
+        "CPU (no accelerator)"
+      ]
+    },
+    {
+      "service": "generative-ai-toolkit-for-sap-hana-cloud-main",
+      "frameworks": [
+        "hana_ml"
+      ],
+      "model_refs": 1,
+      "dataset_refs": 0,
+      "hw_targets": [
+        "CPU (no accelerator)"
+      ]
+    },
+    {
+      "service": "vllm-main",
+      "frameworks": [
+        "torch",
+        "transformers",
+        "diffusers",
+        "peft",
+        "accelerate",
+        "datasets",
+        "lm-eval",
+        "lm_eval"
+      ],
+      "model_refs": 230,
+      "dataset_refs": 3,
+      "hw_targets": [
+        "NVIDIA CUDA GPU",
+        "Google TPU",
+        "Apple Silicon MPS"
+      ]
+    }
+  ]
+}

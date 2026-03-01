@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package predicates
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"sort"
 	"strings"
 
@@ -54,30 +53,36 @@ func (p *MCPRerankPredicate) rerank(query, docsJSON string) string {
 }
 
 func (p *MCPRerankPredicate) callMCP(query, docsJSON string) (string, error) {
-	body, _ := json.Marshal(map[string]string{"query": query, "documents": docsJSON})
-	req, err := http.NewRequest("POST", p.MCPAddress+"/mcp/tools/rerank", bytes.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.AuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+p.AuthToken)
+	mcpResult, err := callMCPTool(p.MCPAddress, p.AuthToken, "rerank", map[string]any{
+		"query":     query,
+		"documents": docsJSON,
+	})
+	if err == nil {
+		documents := stringField(mcpResult, "documents", "reranked_documents")
+		if documents != "" {
+			return documents, nil
+		}
+		if results, ok := mcpResult["results"].([]any); ok {
+			out, marshalErr := json.Marshal(results)
+			if marshalErr == nil {
+				return string(out), nil
+			}
+		}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
+	legacyBody, _ := json.Marshal(map[string]string{"query": query, "documents": docsJSON})
+	legacyResult, legacyErr := legacyMCPHTTPCall(p.MCPAddress, p.AuthToken, "/mcp/tools/rerank", legacyBody)
+	if legacyErr != nil {
+		if err != nil {
+			return "", err
+		}
+		return "", legacyErr
 	}
-	defer resp.Body.Close()
-
-	data, _ := io.ReadAll(resp.Body)
-	var result struct {
-		Documents string `json:"documents"`
+	documents := stringField(legacyResult, "documents", "reranked_documents")
+	if documents == "" {
+		return "", fmt.Errorf("mcp rerank response missing documents")
 	}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
-	}
-	return result.Documents, nil
+	return documents, nil
 }
 
 type rerankDoc struct {

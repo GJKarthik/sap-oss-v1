@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 // Gets the ts source file from a path
 import {SchematicsException, Tree} from "@angular-devkit/schematics";
 import * as ts from "typescript";

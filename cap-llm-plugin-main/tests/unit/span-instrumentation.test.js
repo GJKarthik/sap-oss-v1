@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Unit tests for OTel span instrumentation (Day 52).
  *
@@ -47,82 +49,78 @@ function makeTracer() {
 // Module setup helpers
 // ════════════════════════════════════════════════════════════════════
 
+const vector = Array.from({ length: 1536 }, (_, i) => Math.sin(i * 0.01));
+const defaultEmbedResponse = { getEmbeddings: () => [{ embedding: vector }] };
+const defaultChatResponse = {
+  getContent: () => "Hello!",
+  getTokenUsage: () => ({ total_tokens: 42 }),
+  getFinishReason: () => "stop",
+  data: { orchestration_result: { choices: [{ message: { content: "Hello!" } }] } },
+};
+const rows = [{ PAGE_CONTENT: "doc1", SCORE: 0.95 }, { PAGE_CONTENT: "doc2", SCORE: 0.85 }];
+
+let mockEmbedFn = jest.fn().mockResolvedValue(defaultEmbedResponse);
+let mockChatFn = jest.fn().mockResolvedValue(defaultChatResponse);
+let mockFilterFn = jest.fn().mockReturnValue({ type: "azure_content_safety" });
+
+jest.mock("@sap-ai-sdk/orchestration", () => ({
+  OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: (...a) => mockEmbedFn(...a) })),
+  OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: (...a) => mockChatFn(...a) })),
+  get buildAzureContentSafetyFilter() { return mockFilterFn; },
+}));
+
+jest.mock("@sap/cds", () => ({
+  Service: class { async init() {} },
+  connect: { to: jest.fn().mockResolvedValue({ run: jest.fn().mockResolvedValue(rows) }) },
+  db: { run: jest.fn().mockResolvedValue([{ NAME: "Alice" }]) },
+  log: () => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
+  once: jest.fn(),
+  env: { requires: {} },
+  requires: {},
+  services: {
+    EmployeeService: {
+      entities: {
+        Employees: {
+          name: "Employees",
+          elements: {
+            ID: { "@anonymize": "is_sequence", name: "ID" },
+            NAME: { name: "NAME" },
+          },
+        },
+      },
+    },
+  },
+}), { virtual: true });
+
+jest.mock("../../lib/validation-utils", () => ({
+  validateSqlIdentifier: jest.fn(),
+  validatePositiveInteger: jest.fn(),
+  validateEmbeddingVector: jest.fn(),
+}));
+
+jest.mock("../../srv/legacy", () => ({
+  getEmbedding: jest.fn(),
+  getChatCompletion: jest.fn(),
+  getRagResponse: jest.fn(),
+}));
+
 let Plugin;
 let tracer;
 
 function setupPlugin(sdkOverrides = {}) {
   jest.resetModules();
-
   tracer = makeTracer();
-  const capturedTracer = tracer;
+  const mockCapturedTracer = tracer;
 
-  // jest.doMock is NOT hoisted — safe to use inside functions and captures local variables
+  mockEmbedFn = sdkOverrides.embed ?? jest.fn().mockResolvedValue(defaultEmbedResponse);
+  mockChatFn = sdkOverrides.chatCompletion ?? jest.fn().mockResolvedValue(defaultChatResponse);
+  mockFilterFn = sdkOverrides.buildAzureContentSafetyFilter ?? jest.fn().mockReturnValue({ type: "azure_content_safety" });
+
   jest.doMock("../../src/telemetry/tracer", () => ({
-    getTracer: () => capturedTracer,
+    getTracer: () => mockCapturedTracer,
     SpanStatusCode: { UNSET: 0, OK: 1, ERROR: 2 },
     _resetTracerCache: jest.fn(),
   }));
-
-  // Default SDK mocks
-  const vector = Array.from({ length: 1536 }, (_, i) => Math.sin(i * 0.01));
-  const defaultEmbedResponse = { getEmbeddings: () => [{ embedding: vector }] };
-  const defaultChatResponse = {
-    getContent: () => "Hello!",
-    getTokenUsage: () => ({ total_tokens: 42 }),
-    getFinishReason: () => "stop",
-    data: { orchestration_result: { choices: [{ message: { content: "Hello!" } }] } },
-  };
-
-  const embedFn = sdkOverrides.embed ?? jest.fn().mockResolvedValue(defaultEmbedResponse);
-  const chatFn = sdkOverrides.chatCompletion ?? jest.fn().mockResolvedValue(defaultChatResponse);
-  const filterFn = sdkOverrides.buildAzureContentSafetyFilter ??
-    jest.fn().mockReturnValue({ type: "azure_content_safety" });
-
-  jest.doMock("@sap-ai-sdk/orchestration", () => ({
-    OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: embedFn })),
-    OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: chatFn })),
-    buildAzureContentSafetyFilter: filterFn,
-  }));
-
-  // Mock @sap/cds
-  const rows = [{ PAGE_CONTENT: "doc1", SCORE: 0.95 }, { PAGE_CONTENT: "doc2", SCORE: 0.85 }];
-  jest.doMock("@sap/cds", () => ({
-    Service: class { async init() {} },
-    connect: { to: jest.fn().mockResolvedValue({ run: jest.fn().mockResolvedValue(rows) }) },
-    db: { run: jest.fn().mockResolvedValue([{ NAME: "Alice" }]) },
-    log: () => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
-    once: jest.fn(),
-    env: { requires: {} },
-    requires: {},
-    services: {
-      EmployeeService: {
-        entities: {
-          Employees: {
-            name: "Employees",
-            elements: {
-              ID: { "@anonymize": "is_sequence", name: "ID" },
-              NAME: { name: "NAME" },
-            },
-          },
-        },
-      },
-    },
-  }));
-
-  // Mock validation utils (pass-through)
-  jest.doMock("../../lib/validation-utils", () => ({
-    validateSqlIdentifier: jest.fn(),
-    validatePositiveInteger: jest.fn(),
-    validateEmbeddingVector: jest.fn(),
-  }));
-
-  // Mock legacy module
-  jest.doMock("../../srv/legacy", () => ({
-    getEmbedding: jest.fn(),
-    getChatCompletion: jest.fn(),
-    getRagResponse: jest.fn(),
-  }));
-
   Plugin = require("../../srv/cap-llm-plugin.js");
   return new Plugin();
 }
@@ -138,8 +136,6 @@ const embedding = Array.from({ length: 1536 }, (_, i) => Math.sin(i * 0.01));
 describe("getEmbeddingWithConfig — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
-
   test("starts span with correct name", async () => {
     await plugin.getEmbeddingWithConfig(embConfig, "hello");
     expect(tracer.startSpan).toHaveBeenCalledWith("cap-llm-plugin.getEmbeddingWithConfig");
@@ -198,7 +194,6 @@ describe("getEmbeddingWithConfig — span instrumentation", () => {
 describe("getChatCompletionWithConfig — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   test("starts span with correct name", async () => {
     await plugin.getChatCompletionWithConfig(chatConfig, { messages: [] });
@@ -252,7 +247,6 @@ describe("getChatCompletionWithConfig — span instrumentation", () => {
 describe("similaritySearch — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   test("starts span with correct name", async () => {
     await plugin.similaritySearch("DOCS", "EMBED", "CONTENT", embedding, "COSINE_SIMILARITY", 3);
@@ -306,7 +300,6 @@ describe("similaritySearch — span instrumentation", () => {
 describe("getHarmonizedChatCompletion — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   const params = {
     clientConfig: { promptTemplating: { model: { name: "gpt-4o" } } },
@@ -358,7 +351,6 @@ describe("getHarmonizedChatCompletion — span instrumentation", () => {
 describe("getContentFilters — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   test("starts span with correct name", async () => {
     await plugin.getContentFilters({ type: "azure", config: {} });
@@ -401,7 +393,6 @@ describe("getContentFilters — span instrumentation", () => {
 describe("getAnonymizedData — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   test("starts span with correct name", async () => {
     await plugin.getAnonymizedData("EmployeeService.Employees", []);
@@ -441,7 +432,6 @@ describe("getAnonymizedData — span instrumentation", () => {
 describe("getRagResponseWithConfig — span instrumentation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   test("starts span with correct name", async () => {
     await plugin.getRagResponseWithConfig(
@@ -489,7 +479,6 @@ describe("getRagResponseWithConfig — span instrumentation", () => {
 describe("span.end() called exactly once per method invocation", () => {
   let plugin;
   beforeEach(() => { plugin = setupPlugin(); });
-  afterEach(() => jest.resetModules());
 
   test("getEmbeddingWithConfig success: end called once", async () => {
     await plugin.getEmbeddingWithConfig(embConfig, "hi");

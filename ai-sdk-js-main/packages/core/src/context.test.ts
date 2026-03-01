@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
-import { mockClientCredentialsGrantCall } from '../../../test-util/mock-http.js';
+import { mockClientCredentialsGrantCall } from '../../../test-util/interceptors.js';
 import { getAiCoreDestination } from './context.js';
 
 describe('context', () => {

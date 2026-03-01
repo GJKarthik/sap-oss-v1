@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 import json
 from hana_ai.tools.df_tools.ts_visualizer_tools import TimeSeriesDatasetReport
 from testML_BaseTestClass import TestML_BaseTestClass

@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
+// ── Mock handles ───────────────────────────────────────────────────────
 const mockSend = jest.fn(() => Promise.resolve({}));
 const mockDbRun = jest.fn(() => Promise.resolve([]));
 const mockConnectTo = jest.fn((service) => {
-  if (service === "db") {
-    return Promise.resolve({ run: mockDbRun });
-  }
+  if (service === "db") return Promise.resolve({ run: mockDbRun });
   return Promise.resolve({ run: jest.fn(), send: mockSend });
 });
+const mockEmbed = jest.fn();
+const MockOrchestrationEmbeddingClient = jest.fn().mockImplementation(() => ({ embed: mockEmbed }));
+const mockChatCompletion = jest.fn();
+const MockOrchestrationClient = jest.fn().mockImplementation(() => ({ chatCompletion: mockChatCompletion }));
 
 const mockCds = {
   db: { run: mockDbRun, kind: "hana" },
@@ -14,25 +19,11 @@ const mockCds = {
   log: jest.fn(() => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() })),
   env: { requires: {} },
   requires: {},
-  Service: class MockService {
-    async init() {}
-  },
+  Service: class MockService { async init() {} },
   once: jest.fn(),
 };
 
 jest.mock("@sap/cds", () => mockCds, { virtual: true });
-
-// ── SDK mocks ────────────────────────────────────────────────────────
-const mockEmbed = jest.fn();
-const MockOrchestrationEmbeddingClient = jest.fn().mockImplementation(() => ({
-  embed: mockEmbed,
-}));
-
-const mockChatCompletion = jest.fn();
-const MockOrchestrationClient = jest.fn().mockImplementation(() => ({
-  chatCompletion: mockChatCompletion,
-}));
-
 jest.mock("@sap-ai-sdk/orchestration", () => ({
   OrchestrationEmbeddingClient: MockOrchestrationEmbeddingClient,
   OrchestrationClient: MockOrchestrationClient,

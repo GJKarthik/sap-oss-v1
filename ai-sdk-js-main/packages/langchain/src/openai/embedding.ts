@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { AzureOpenAiEmbeddingClient as AzureOpenAiEmbeddingClientBase } from '@sap-ai-sdk/foundation-models';
 import { Embeddings } from '@langchain/core/embeddings';
 import type { HttpDestinationOrFetchOptions } from '@sap-cloud-sdk/connectivity';

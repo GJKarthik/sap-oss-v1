@@ -1,0 +1,126 @@
+{
+  "service": "ai-sdk-js-main",
+  "ml_frameworks": [
+    "langchain",
+    "openai"
+  ],
+  "hardware_targets": [
+    "Google TPU",
+    "CPU (no accelerator)"
+  ],
+  "model_refs": [],
+  "dataset_refs": [],
+  "model_card": {
+    "schema_version": "1.0",
+    "model_card_format": "HuggingFace-v0.2 / EU-AI-Act-Annex-IV",
+    "generated": "2026-02-28T11:32:46Z",
+    "model_details": {
+      "name": "SAP AI SDK (JavaScript)",
+      "description": "SAP OSS service: SAP AI SDK (JavaScript)",
+      "version": "NOASSERTION",
+      "license": "LicenseRef-SAP-Proprietary",
+      "contact": "SAP SE — AI & Open-Source Office",
+      "upstream": ""
+    },
+    "intended_use": {
+      "primary_uses": [
+        "Enterprise AI / ML inference",
+        "Data processing"
+      ],
+      "out_of_scope": [
+        "Safety-critical systems without additional validation"
+      ]
+    },
+    "technical_specifications": {
+      "ml_frameworks": [
+        "LangChain 1.2.27",
+        "OpenAI SDK 6.25.0"
+      ],
+      "hardware_requirements": [
+        "Google TPU",
+        "CPU (no accelerator)"
+      ],
+      "referenced_base_models": [],
+      "referenced_datasets": []
+    },
+    "provenance": {
+      "framework_components": [
+        {
+          "name": "LangChain",
+          "vendor": "LangChain Inc.",
+          "version": "1.2.27",
+          "license": "MIT",
+          "purl": "pkg:pypi/langchain@1.2.27"
+        },
+        {
+          "name": "OpenAI SDK",
+          "vendor": "OpenAI",
+          "version": "6.25.0",
+          "license": "MIT",
+          "purl": "pkg:pypi/openai@6.25.0"
+        }
+      ],
+      "base_model_sources": [],
+      "dataset_sources": []
+    },
+    "eu_ai_act": {
+      "risk_category": "Limited risk (Article 52) — requires transparency notification",
+      "transparency_obligations": [
+        "Users must be informed they are interacting with an AI system",
+        "Training data must be documented for high-risk use cases"
+      ],
+      "conformity_assessment": "pending"
+    },
+    "data_governance": {
+      "training_data_documented": false,
+      "privacy_impact_assessed": false,
+      "data_retention_policy": "Not specified — consult SAP Data Governance team"
+    }
+  },
+  "cdx_formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "LangChain",
+              "version": "1.2.27",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain@1.2.27"
+            },
+            {
+              "type": "library",
+              "name": "OpenAI SDK",
+              "version": "6.25.0",
+              "supplier": {
+                "name": "OpenAI"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/openai@6.25.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

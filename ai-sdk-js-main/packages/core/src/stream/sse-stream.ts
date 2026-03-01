@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { ErrorWithCause } from '@sap-cloud-sdk/util';
 import { LineDecoder } from './line-decoder.js';
 import { SSEDecoder } from './sse-decoder.js';

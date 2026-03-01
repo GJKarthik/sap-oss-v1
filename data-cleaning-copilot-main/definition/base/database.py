@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 from typing import Dict, Type, Mapping, Optional, List, Set, Literal, Union, Any, Tuple
 import pandas as pd
 from definition.base.table import Table

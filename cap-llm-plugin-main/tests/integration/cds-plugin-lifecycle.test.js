@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Integration tests for the CDS plugin lifecycle.
  *
@@ -12,42 +14,35 @@
  * and cap-llm-plugin.ts is exercised as a connected unit.
  */
 
-const mockCreateAnonymizedView = jest.fn();
-const mockDbRun = jest.fn(() => Promise.resolve([]));
-
-jest.mock("../../lib/anonymization-helper.js", () => ({
-  createAnonymizedView: mockCreateAnonymizedView,
-}));
-
-// ── SDK mocks (needed by cap-llm-plugin) ─────────────────────────────
-jest.mock("@sap-ai-sdk/orchestration", () => ({
-  OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: jest.fn() })),
-  OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: jest.fn() })),
-  buildAzureContentSafetyFilter: jest.fn(),
-}));
-
-// ── CDS mock with realistic service/entity structure ─────────────────
+// ── Mutable mock handles (initialised in beforeAll) ─────────────────
+let mockCreateAnonymizedView;
+let mockDbRun;
 let servedCallback = null;
+let mockLogWarn;
+let mockCds;
 
-const mockLogWarn = jest.fn();
-const mockCds = {
-  db: { run: mockDbRun, kind: "hana" },
-  connect: { to: jest.fn() },
-  services: [],
-  log: jest.fn(() => ({ debug: jest.fn(), info: jest.fn(), warn: mockLogWarn, error: jest.fn() })),
-  env: { requires: {} },
-  requires: { "cap-llm-plugin": true },
-  Service: class MockService {
-    async init() {}
-  },
-  once: jest.fn((event, cb) => {
-    if (event === "served") {
-      servedCallback = cb;
-    }
-  }),
-};
+beforeAll(() => {
+  mockCreateAnonymizedView = jest.fn();
+  mockDbRun = jest.fn(() => Promise.resolve([]));
+  mockLogWarn = jest.fn();
 
-jest.mock("@sap/cds", () => mockCds, { virtual: true });
+  mockCds = {
+    db: { run: mockDbRun, kind: "hana" },
+    connect: { to: jest.fn() },
+    services: [],
+    log: jest.fn(() => ({ debug: jest.fn(), info: jest.fn(), warn: mockLogWarn, error: jest.fn() })),
+    env: { requires: {} },
+    requires: { "cap-llm-plugin": true },
+    Service: class MockService {
+      async init() {}
+    },
+    once: jest.fn((event, cb) => {
+      if (event === "served") {
+        servedCallback = cb;
+      }
+    }),
+  };
+});
 
 // ── Fixture: realistic CDS entity structures ─────────────────────────
 
@@ -75,21 +70,34 @@ function makeAppService(name, entities) {
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function loadPlugin() {
-  jest.resetModules();
-  jest.mock("@sap/cds", () => mockCds, { virtual: true });
-  jest.mock("../../lib/anonymization-helper.js", () => ({
-    createAnonymizedView: mockCreateAnonymizedView,
-  }));
-  jest.mock("@sap-ai-sdk/orchestration", () => ({
-    OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: jest.fn() })),
-    OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: jest.fn() })),
-    buildAzureContentSafetyFilter: jest.fn(),
-  }));
-  require("../../cds-plugin.js");
+  jest.isolateModules(() => {
+    jest.mock("@sap/cds", () => mockCds, { virtual: true });
+    jest.mock("../../lib/anonymization-helper.js", () => ({
+      createAnonymizedView: mockCreateAnonymizedView,
+    }));
+    jest.mock("@sap-ai-sdk/orchestration", () => ({
+      OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: jest.fn() })),
+      OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: jest.fn() })),
+      buildAzureContentSafetyFilter: jest.fn(),
+    }));
+    require("../../cds-plugin.js");
+  });
 }
 
 function createPlugin() {
-  const CAPLLMPlugin = require("../../srv/cap-llm-plugin");
+  let CAPLLMPlugin;
+  jest.isolateModules(() => {
+    jest.mock("@sap/cds", () => mockCds, { virtual: true });
+    jest.mock("../../lib/anonymization-helper.js", () => ({
+      createAnonymizedView: mockCreateAnonymizedView,
+    }));
+    jest.mock("@sap-ai-sdk/orchestration", () => ({
+      OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: jest.fn() })),
+      OrchestrationClient: jest.fn().mockImplementation(() => ({ chatCompletion: jest.fn() })),
+      buildAzureContentSafetyFilter: jest.fn(),
+    }));
+    CAPLLMPlugin = require("../../srv/cap-llm-plugin");
+  });
   return new CAPLLMPlugin();
 }
 
@@ -105,6 +113,10 @@ beforeEach(() => {
   mockCds.services = [];
   mockDbRun.mockReset().mockResolvedValue([]);
   mockCreateAnonymizedView.mockReset();
+  // Restore once() implementation after clearAllMocks wipes it
+  mockCds.once.mockImplementation((event, cb) => {
+    if (event === "served") servedCallback = cb;
+  });
 });
 
 describe("CDS plugin lifecycle — @anonymize integration", () => {

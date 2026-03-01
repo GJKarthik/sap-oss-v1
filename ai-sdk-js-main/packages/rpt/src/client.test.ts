@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import {
   mockInference,
   mockClientCredentialsGrantCall,
   mockDeploymentsList
-} from '../../../test-util/mock-http.js';
+} from '../../../test-util/interceptors.js';
 import { RptClient } from './client.js';
 
 describe('rpt', () => {

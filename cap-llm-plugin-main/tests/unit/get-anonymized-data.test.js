@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 const mockDbRun = jest.fn(() => Promise.resolve([]));
 
 const mockCds = {
@@ -7,14 +9,11 @@ const mockCds = {
   log: jest.fn(() => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() })),
   env: { requires: {} },
   requires: {},
-  Service: class MockService {
-    async init() {}
-  },
+  Service: class MockService { async init() {} },
   once: jest.fn(),
 };
 
 jest.mock("@sap/cds", () => mockCds, { virtual: true });
-
 jest.mock("@sap-ai-sdk/orchestration", () => ({
   OrchestrationEmbeddingClient: jest.fn().mockImplementation(() => ({ embed: jest.fn() })),
   OrchestrationClient: jest.fn(),

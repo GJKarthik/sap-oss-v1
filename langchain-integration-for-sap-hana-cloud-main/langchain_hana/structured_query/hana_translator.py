@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 SAP SE
 from typing import Dict, Tuple, Union
 
 from langchain_core.structured_query import (

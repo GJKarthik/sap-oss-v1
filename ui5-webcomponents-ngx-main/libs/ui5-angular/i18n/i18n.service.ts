@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Inject, inject, Injectable} from "@angular/core";
 import I18nBundle, {getI18nBundle, registerI18nLoader} from "@ui5/webcomponents-base/dist/i18nBundle.js";
 import parseProperties from "@ui5/webcomponents-base/dist/PropertiesFileFormat.js";

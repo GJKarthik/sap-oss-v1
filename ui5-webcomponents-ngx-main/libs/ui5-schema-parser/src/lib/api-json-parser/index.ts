@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {ParserConfiguration} from "../parser-configuration";
 import {getImplementersAndSymbols} from "./getImplementersAndSymbols";
 import {getComponents} from "./get-components";

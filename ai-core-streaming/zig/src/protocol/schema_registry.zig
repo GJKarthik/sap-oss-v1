@@ -374,19 +374,136 @@ fn computeFingerprint(data: []const u8) u64 {
 // ============================================================================
 
 fn checkAvroCompatibility(old_schema: []const u8, new_schema: []const u8, mode: CompatibilityMode) !bool {
-    _ = old_schema;
-    _ = new_schema;
-
-    // Simplified compatibility check - in production would parse Avro schema JSON
+    // Avro compatibility checking per Apache Avro specification:
+    // - BACKWARD: New schema can read data written by old schema (readers can handle old data)
+    // - FORWARD: Old schema can read data written by new schema (writers can be upgraded first)
+    // - FULL: Both backward and forward compatible
+    //
+    // Rules for backward compatibility:
+    // 1. Adding a field with a default value is backward compatible
+    // 2. Removing a field with a default value is backward compatible
+    // 3. Adding/removing fields without defaults breaks compatibility
+    //
+    // This implementation checks structural compatibility via JSON parsing:
+    
+    if (mode == .None) return true;
+    
+    // Parse both schemas as JSON to extract fields
+    const old_fields = try extractAvroFields(old_schema);
+    const new_fields = try extractAvroFields(new_schema);
+    
     return switch (mode) {
         .None => true,
-        .Backward => true, // TODO: Implement proper Avro compatibility
-        .Forward => true,
-        .Full => true,
-        .BackwardTransitive => true,
-        .ForwardTransitive => true,
-        .FullTransitive => true,
+        .Backward => checkBackwardCompat(old_fields, new_fields),
+        .Forward => checkForwardCompat(old_fields, new_fields),
+        .Full => checkBackwardCompat(old_fields, new_fields) and checkForwardCompat(old_fields, new_fields),
+        .BackwardTransitive => checkBackwardCompat(old_fields, new_fields),
+        .ForwardTransitive => checkForwardCompat(old_fields, new_fields),
+        .FullTransitive => checkBackwardCompat(old_fields, new_fields) and checkForwardCompat(old_fields, new_fields),
     };
+}
+
+/// Extract field names from Avro schema JSON (simplified parser)
+fn extractAvroFields(schema: []const u8) !AvroFieldSet {
+    var result = AvroFieldSet{};
+    var field_count: usize = 0;
+    
+    // Look for "fields" array in JSON - simplified extraction
+    // Full implementation would use proper JSON parser
+    const fields_marker = "\"fields\"";
+    if (std.mem.indexOf(u8, schema, fields_marker)) |pos| {
+        var i = pos + fields_marker.len;
+        var depth: i32 = 0;
+        var in_string = false;
+        var field_name_start: ?usize = null;
+        
+        while (i < schema.len and field_count < 64) : (i += 1) {
+            const c = schema[i];
+            
+            if (c == '"' and (i == 0 or schema[i - 1] != '\\')) {
+                in_string = !in_string;
+                if (in_string) {
+                    field_name_start = i + 1;
+                } else if (field_name_start) |start| {
+                    // Check if this is a "name" field value
+                    const lookback = if (i >= 7) schema[i - 7 .. i] else "";
+                    if (std.mem.indexOf(u8, lookback, "name")) |_| {
+                        const name = schema[start..i];
+                        if (name.len > 0 and name.len < 64) {
+                            result.names[field_count] = name;
+                            result.has_default[field_count] = hasDefaultValue(schema, start);
+                            field_count += 1;
+                        }
+                    }
+                    field_name_start = null;
+                }
+            }
+            
+            if (!in_string) {
+                if (c == '[' or c == '{') depth += 1;
+                if (c == ']' or c == '}') depth -= 1;
+                if (depth < 0) break;
+            }
+        }
+    }
+    
+    result.count = field_count;
+    return result;
+}
+
+const AvroFieldSet = struct {
+    names: [64][]const u8 = undefined,
+    has_default: [64]bool = undefined,
+    count: usize = 0,
+    
+    fn contains(self: *const AvroFieldSet, name: []const u8) bool {
+        for (self.names[0..self.count]) |n| {
+            if (std.mem.eql(u8, n, name)) return true;
+        }
+        return false;
+    }
+    
+    fn getDefault(self: *const AvroFieldSet, name: []const u8) bool {
+        for (self.names[0..self.count], 0..) |n, i| {
+            if (std.mem.eql(u8, n, name)) return self.has_default[i];
+        }
+        return false;
+    }
+};
+
+fn hasDefaultValue(schema: []const u8, field_start: usize) bool {
+    // Look for "default" nearby after the field name
+    const search_window = @min(field_start + 100, schema.len);
+    const window = schema[field_start..search_window];
+    return std.mem.indexOf(u8, window, "\"default\"") != null;
+}
+
+/// BACKWARD compatibility: new schema can read old data
+/// - Removed fields must have defaults in old schema
+/// - Added fields must have defaults in new schema
+fn checkBackwardCompat(old_fields: AvroFieldSet, new_fields: AvroFieldSet) bool {
+    // Check that new fields have defaults
+    for (new_fields.names[0..new_fields.count], 0..) |name, i| {
+        if (!old_fields.contains(name)) {
+            // New field added - must have default for backward compat
+            if (!new_fields.has_default[i]) return false;
+        }
+    }
+    return true;
+}
+
+/// FORWARD compatibility: old schema can read new data  
+/// - Added fields are ignored by old readers (ok)
+/// - Removed fields must have defaults so old readers can substitute
+fn checkForwardCompat(old_fields: AvroFieldSet, new_fields: AvroFieldSet) bool {
+    // Check that removed fields had defaults in old schema
+    for (old_fields.names[0..old_fields.count], 0..) |name, i| {
+        if (!new_fields.contains(name)) {
+            // Field removed - must have had default for forward compat
+            if (!old_fields.has_default[i]) return false;
+        }
+    }
+    return true;
 }
 
 fn validateAvroPayload(payload: []const u8, schema_definition: []const u8) !bool {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { Inject, ModuleWithProviders, NgModule } from "@angular/core";
 import { I18nPipe } from "./i18n.pipe";
 import { I18nConfig } from "./i18n.types";

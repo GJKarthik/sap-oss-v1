@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package predicates
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"regexp"
 	"strings"
 
@@ -57,31 +56,31 @@ func (p *MCPEntitiesPredicate) extract(query string) (string, string) {
 }
 
 func (p *MCPEntitiesPredicate) callMCP(query string) (string, string, error) {
-	body, _ := json.Marshal(map[string]string{"query": query})
-	req, err := http.NewRequest("POST", p.MCPAddress+"/mcp/tools/extract_entities", bytes.NewReader(body))
-	if err != nil {
-		return "", "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.AuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+p.AuthToken)
+	mcpResult, err := callMCPTool(p.MCPAddress, p.AuthToken, "extract_entities", map[string]any{
+		"query": query,
+	})
+	if err == nil {
+		entityType := stringField(mcpResult, "entity_type", "entityType", "type")
+		entityID := stringField(mcpResult, "entity_id", "entityId", "id")
+		if entityType != "" && entityID != "" {
+			return entityType, entityID, nil
+		}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", "", err
+	legacyBody, _ := json.Marshal(map[string]string{"query": query})
+	legacyResult, legacyErr := legacyMCPHTTPCall(p.MCPAddress, p.AuthToken, "/mcp/tools/extract_entities", legacyBody)
+	if legacyErr != nil {
+		if err != nil {
+			return "", "", err
+		}
+		return "", "", legacyErr
 	}
-	defer resp.Body.Close()
-
-	data, _ := io.ReadAll(resp.Body)
-	var result struct {
-		EntityType string `json:"entity_type"`
-		EntityID   string `json:"entity_id"`
+	entityType := stringField(legacyResult, "entity_type", "entityType", "type")
+	entityID := stringField(legacyResult, "entity_id", "entityId", "id")
+	if entityType == "" || entityID == "" {
+		return "", "", fmt.Errorf("mcp extract_entities response missing entity fields")
 	}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return "", "", err
-	}
-	return result.EntityType, result.EntityID, nil
+	return entityType, entityID, nil
 }
 
 var entityPatterns = map[string]*regexp.Regexp{

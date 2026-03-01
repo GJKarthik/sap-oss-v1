@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1772008652835" clover="3.2.0">
-  <project timestamp="1772008652835" name="All files">
-    <metrics statements="258" coveredstatements="253" conditionals="125" coveredconditionals="118" methods="32" coveredmethods="28" elements="415" coveredelements="399" complexity="0" loc="258" ncloc="258" packages="3" files="5" classes="5"/>
+<coverage generated="1772254771988" clover="3.2.0">
+  <project timestamp="1772254771989" name="All files">
+    <metrics statements="650" coveredstatements="611" conditionals="239" coveredconditionals="221" methods="121" coveredmethods="86" elements="1010" coveredelements="918" complexity="0" loc="650" ncloc="650" packages="8" files="18" classes="18"/>
     <package name="cap-llm-plugin-main">
       <metrics statements="23" coveredstatements="23" conditionals="16" coveredconditionals="16" methods="1" coveredmethods="1"/>
       <file name="cds-plugin.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/cds-plugin.ts">
@@ -9,26 +9,26 @@
         <line num="1" count="15" type="stmt"/>
         <line num="2" count="15" type="stmt"/>
         <line num="4" count="15" type="stmt"/>
-        <line num="11" count="15" type="cond" truecount="2" falsecount="0"/>
-        <line num="14" count="13" type="stmt"/>
-        <line num="20" count="12" type="stmt"/>
-        <line num="23" count="12" type="stmt"/>
-        <line num="24" count="26" type="cond" truecount="2" falsecount="0"/>
-        <line num="25" count="12" type="cond" truecount="2" falsecount="0"/>
-        <line num="29" count="26" type="stmt"/>
-        <line num="30" count="16" type="stmt"/>
-        <line num="31" count="16" type="stmt"/>
-        <line num="33" count="16" type="cond" truecount="4" falsecount="0"/>
-        <line num="34" count="12" type="stmt"/>
-        <line num="36" count="12" type="stmt"/>
-        <line num="37" count="23" type="stmt"/>
-        <line num="39" count="23" type="cond" truecount="2" falsecount="0"/>
-        <line num="40" count="19" type="stmt"/>
-        <line num="43" count="12" type="cond" truecount="2" falsecount="0"/>
-        <line num="44" count="10" type="cond" truecount="2" falsecount="0"/>
-        <line num="45" count="2" type="stmt"/>
-        <line num="49" count="8" type="stmt"/>
-        <line num="52" count="2" type="stmt"/>
+        <line num="16" count="15" type="cond" truecount="2" falsecount="0"/>
+        <line num="19" count="13" type="stmt"/>
+        <line num="25" count="12" type="stmt"/>
+        <line num="28" count="12" type="stmt"/>
+        <line num="29" count="26" type="cond" truecount="2" falsecount="0"/>
+        <line num="30" count="12" type="cond" truecount="2" falsecount="0"/>
+        <line num="34" count="26" type="stmt"/>
+        <line num="35" count="16" type="stmt"/>
+        <line num="36" count="16" type="stmt"/>
+        <line num="38" count="16" type="cond" truecount="4" falsecount="0"/>
+        <line num="39" count="12" type="stmt"/>
+        <line num="41" count="12" type="stmt"/>
+        <line num="42" count="23" type="stmt"/>
+        <line num="44" count="23" type="cond" truecount="2" falsecount="0"/>
+        <line num="45" count="19" type="stmt"/>
+        <line num="48" count="12" type="cond" truecount="2" falsecount="0"/>
+        <line num="49" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="50" count="2" type="stmt"/>
+        <line num="54" count="8" type="stmt"/>
+        <line num="57" count="2" type="stmt"/>
       </file>
     </package>
     <package name="cap-llm-plugin-main.lib">
@@ -84,149 +84,448 @@
       </file>
       <file name="validation-utils.js" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/lib/validation-utils.js">
         <metrics statements="15" coveredstatements="15" conditionals="23" coveredconditionals="23" methods="3" coveredmethods="3"/>
-        <line num="7" count="12" type="stmt"/>
-        <line num="18" count="215" type="cond" truecount="4" falsecount="0"/>
-        <line num="19" count="5" type="stmt"/>
-        <line num="21" count="210" type="cond" truecount="2" falsecount="0"/>
+        <line num="7" count="29" type="stmt"/>
+        <line num="18" count="237" type="cond" truecount="4" falsecount="0"/>
+        <line num="19" count="6" type="stmt"/>
+        <line num="21" count="231" type="cond" truecount="2" falsecount="0"/>
         <line num="22" count="11" type="stmt"/>
-        <line num="38" count="44" type="cond" truecount="4" falsecount="0"/>
+        <line num="38" count="51" type="cond" truecount="4" falsecount="0"/>
         <line num="39" count="8" type="stmt"/>
-        <line num="41" count="36" type="cond" truecount="2" falsecount="0"/>
+        <line num="41" count="43" type="cond" truecount="2" falsecount="0"/>
         <line num="42" count="2" type="stmt"/>
-        <line num="53" count="40" type="cond" truecount="4" falsecount="0"/>
+        <line num="53" count="47" type="cond" truecount="4" falsecount="0"/>
         <line num="54" count="4" type="stmt"/>
-        <line num="59" count="36" type="stmt"/>
-        <line num="60" count="151" type="cond" truecount="4" falsecount="0"/>
+        <line num="59" count="43" type="stmt"/>
+        <line num="60" count="10903" type="cond" truecount="4" falsecount="0"/>
         <line num="61" count="6" type="stmt"/>
-        <line num="66" count="12" type="stmt"/>
+        <line num="66" count="29" type="stmt"/>
+      </file>
+    </package>
+    <package name="cap-llm-plugin-main.src.errors">
+      <metrics statements="36" coveredstatements="36" conditionals="22" coveredconditionals="21" methods="8" coveredmethods="8"/>
+      <file name="AnonymizationError.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/errors/AnonymizationError.ts">
+        <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="1" count="173" type="stmt"/>
+        <line num="9" count="173" type="stmt"/>
+        <line num="11" count="32" type="stmt"/>
+        <line num="12" count="32" type="stmt"/>
+      </file>
+      <file name="CAPLLMPluginError.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/errors/CAPLLMPluginError.ts">
+        <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="7" count="173" type="stmt"/>
+        <line num="15" count="156" type="stmt"/>
+        <line num="16" count="156" type="stmt"/>
+        <line num="17" count="156" type="stmt"/>
+        <line num="18" count="156" type="stmt"/>
+        <line num="19" count="156" type="stmt"/>
+      </file>
+      <file name="ChatCompletionError.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/errors/ChatCompletionError.ts">
+        <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="1" count="173" type="stmt"/>
+        <line num="9" count="173" type="stmt"/>
+        <line num="11" count="68" type="stmt"/>
+        <line num="12" count="68" type="stmt"/>
+      </file>
+      <file name="EmbeddingError.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/errors/EmbeddingError.ts">
+        <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="1" count="173" type="stmt"/>
+        <line num="8" count="173" type="stmt"/>
+        <line num="10" count="49" type="stmt"/>
+        <line num="11" count="49" type="stmt"/>
+      </file>
+      <file name="LLMErrorResponse.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/errors/LLMErrorResponse.ts">
+        <metrics statements="14" coveredstatements="14" conditionals="22" coveredconditionals="21" methods="3" coveredmethods="3"/>
+        <line num="42" count="12" type="stmt"/>
+        <line num="79" count="99" type="stmt"/>
+        <line num="96" count="109" type="stmt"/>
+        <line num="116" count="12" type="stmt"/>
+        <line num="117" count="109" type="cond" truecount="2" falsecount="0"/>
+        <line num="118" count="10" type="stmt"/>
+        <line num="129" count="99" type="cond" truecount="2" falsecount="0"/>
+        <line num="130" count="83" type="cond" truecount="1" falsecount="1"/>
+        <line num="131" count="83" type="cond" truecount="2" falsecount="0"/>
+        <line num="132" count="83" type="stmt"/>
+        <line num="139" count="83" type="stmt"/>
+        <line num="142" count="16" type="cond" truecount="2" falsecount="0"/>
+        <line num="143" count="8" type="stmt"/>
+        <line num="155" count="8" type="stmt"/>
+      </file>
+      <file name="SimilaritySearchError.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/errors/SimilaritySearchError.ts">
+        <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="1" count="2" type="stmt"/>
+        <line num="9" count="2" type="stmt"/>
+        <line num="11" count="3" type="stmt"/>
+        <line num="12" count="3" type="stmt"/>
+      </file>
+    </package>
+    <package name="cap-llm-plugin-main.src.telemetry">
+      <metrics statements="101" coveredstatements="99" conditionals="26" coveredconditionals="26" methods="27" coveredmethods="21"/>
+      <file name="ai-sdk-middleware.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/telemetry/ai-sdk-middleware.ts">
+        <metrics statements="38" coveredstatements="38" conditionals="17" coveredconditionals="17" methods="4" coveredmethods="4"/>
+        <line num="1" count="160" type="stmt"/>
+        <line num="77" count="160" type="cond" truecount="1" falsecount="0"/>
+        <line num="78" count="186" type="stmt"/>
+        <line num="79" count="50" type="stmt"/>
+        <line num="82" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="86" count="50" type="stmt"/>
+        <line num="88" count="50" type="stmt"/>
+        <line num="90" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="91" count="24" type="stmt"/>
+        <line num="93" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="94" count="5" type="stmt"/>
+        <line num="96" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="97" count="1" type="stmt"/>
+        <line num="99" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="100" count="36" type="stmt"/>
+        <line num="102" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="103" count="33" type="stmt"/>
+        <line num="108" count="50" type="stmt"/>
+        <line num="110" count="50" type="stmt"/>
+        <line num="112" count="50" type="stmt"/>
+        <line num="113" count="50" type="stmt"/>
+        <line num="115" count="45" type="stmt"/>
+        <line num="116" count="45" type="stmt"/>
+        <line num="120" count="45" type="cond" truecount="2" falsecount="0"/>
+        <line num="121" count="6" type="stmt"/>
+        <line num="126" count="39" type="stmt"/>
+        <line num="129" count="45" type="stmt"/>
+        <line num="131" count="5" type="stmt"/>
+        <line num="132" count="5" type="stmt"/>
+        <line num="136" count="5" type="stmt"/>
+        <line num="138" count="50" type="stmt"/>
+        <line num="153" count="50" type="stmt"/>
+        <line num="155" count="50" type="stmt"/>
+        <line num="160" count="17" type="cond" truecount="2" falsecount="0"/>
+        <line num="161" count="17" type="stmt"/>
+        <line num="163" count="17" type="stmt"/>
+        <line num="165" count="17" type="stmt"/>
+        <line num="168" count="33" type="stmt"/>
+      </file>
+      <file name="angular-tracing.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/telemetry/angular-tracing.ts">
+        <metrics statements="39" coveredstatements="39" conditionals="7" coveredconditionals="7" methods="9" coveredmethods="9"/>
+        <line num="11" count="85" type="stmt"/>
+        <line num="19" count="85" type="stmt"/>
+        <line num="43" count="85" type="stmt"/>
+        <line num="46" count="13" type="stmt"/>
+        <line num="48" count="13" type="stmt"/>
+        <line num="53" count="9" type="stmt"/>
+        <line num="54" count="9" type="stmt"/>
+        <line num="56" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="57" count="1" type="stmt"/>
+        <line num="60" count="8" type="stmt"/>
+        <line num="63" count="4" type="stmt"/>
+        <line num="84" count="85" type="stmt"/>
+        <line num="88" count="36" type="stmt"/>
+        <line num="89" count="36" type="stmt"/>
+        <line num="90" count="36" type="stmt"/>
+        <line num="91" count="31" type="stmt"/>
+        <line num="92" count="31" type="stmt"/>
+        <line num="94" count="5" type="stmt"/>
+        <line num="95" count="5" type="stmt"/>
+        <line num="99" count="5" type="stmt"/>
+        <line num="101" count="36" type="stmt"/>
+        <line num="116" count="85" type="stmt"/>
+        <line num="120" count="10" type="stmt"/>
+        <line num="121" count="10" type="stmt"/>
+        <line num="122" count="10" type="stmt"/>
+        <line num="133" count="85" type="stmt"/>
+        <line num="137" count="7" type="stmt"/>
+        <line num="138" count="7" type="stmt"/>
+        <line num="139" count="7" type="stmt"/>
+        <line num="150" count="85" type="stmt"/>
+        <line num="154" count="6" type="stmt"/>
+        <line num="155" count="6" type="stmt"/>
+        <line num="156" count="6" type="stmt"/>
+        <line num="172" count="85" type="stmt"/>
+        <line num="176" count="4" type="stmt"/>
+        <line num="178" count="4" type="stmt"/>
+        <line num="187" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="189" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="190" count="2" type="stmt"/>
+      </file>
+      <file name="tracer.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/src/telemetry/tracer.ts">
+        <metrics statements="24" coveredstatements="22" conditionals="2" coveredconditionals="2" methods="14" coveredmethods="8"/>
+        <line num="36" count="44" type="stmt"/>
+        <line num="44" count="44" type="stmt"/>
+        <line num="45" count="0" type="stmt"/>
+        <line num="53" count="44" type="stmt"/>
+        <line num="65" count="44" type="stmt"/>
+        <line num="66" count="44" type="stmt"/>
+        <line num="68" count="44" type="stmt"/>
+        <line num="79" count="44" type="stmt"/>
+        <line num="80" count="278" type="cond" truecount="2" falsecount="0"/>
+        <line num="82" count="46" type="stmt"/>
+        <line num="84" count="46" type="stmt"/>
+        <line num="85" count="46" type="stmt"/>
+        <line num="86" count="46" type="stmt"/>
+        <line num="88" count="272" type="stmt"/>
+        <line num="89" count="272" type="stmt"/>
+        <line num="90" count="669" type="stmt"/>
+        <line num="91" count="224" type="stmt"/>
+        <line num="92" count="94" type="stmt"/>
+        <line num="93" count="255" type="stmt"/>
+        <line num="94" count="261" type="stmt"/>
+        <line num="99" count="0" type="stmt"/>
+        <line num="102" count="46" type="stmt"/>
+        <line num="109" count="44" type="stmt"/>
+        <line num="110" count="23" type="stmt"/>
       </file>
     </package>
     <package name="cap-llm-plugin-main.srv">
-      <metrics statements="174" coveredstatements="170" conditionals="76" coveredconditionals="70" methods="23" coveredmethods="19"/>
+      <metrics statements="303" coveredstatements="299" conditionals="114" coveredconditionals="105" methods="26" coveredmethods="22"/>
       <file name="cap-llm-plugin.ts" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/srv/cap-llm-plugin.ts">
-        <metrics statements="118" coveredstatements="114" conditionals="56" coveredconditionals="50" methods="18" coveredmethods="14"/>
-        <line num="1" count="10" type="stmt"/>
-        <line num="2" count="10" type="stmt"/>
-        <line num="3" count="10" type="stmt"/>
-        <line num="4" count="10" type="stmt"/>
-        <line num="5" count="10" type="stmt"/>
-        <line num="6" count="10" type="stmt"/>
-        <line num="7" count="10" type="stmt"/>
-        <line num="9" count="10" type="stmt"/>
-        <line num="105" count="0" type="stmt"/>
-        <line num="127" count="23" type="stmt"/>
-        <line num="128" count="23" type="stmt"/>
-        <line num="129" count="23" type="stmt"/>
-        <line num="131" count="23" type="cond" truecount="2" falsecount="0"/>
-        <line num="132" count="5" type="stmt"/>
-        <line num="139" count="18" type="stmt"/>
-        <line num="141" count="20" type="cond" truecount="2" falsecount="0"/>
-        <line num="144" count="18" type="cond" truecount="2" falsecount="0"/>
-        <line num="145" count="4" type="stmt"/>
-        <line num="151" count="14" type="stmt"/>
-        <line num="154" count="14" type="stmt"/>
-        <line num="155" count="14" type="stmt"/>
-        <line num="156" count="14" type="stmt"/>
-        <line num="158" count="14" type="cond" truecount="2" falsecount="0"/>
-        <line num="160" count="9" type="stmt"/>
-        <line num="161" count="16" type="stmt"/>
-        <line num="162" count="16" type="cond" truecount="4" falsecount="0"/>
-        <line num="163" count="5" type="stmt"/>
-        <line num="172" count="9" type="stmt"/>
-        <line num="173" count="4" type="stmt"/>
-        <line num="174" count="4" type="stmt"/>
-        <line num="177" count="5" type="stmt"/>
-        <line num="178" count="5" type="stmt"/>
-        <line num="180" count="14" type="stmt"/>
-        <line num="184" count="14" type="stmt"/>
-        <line num="196" count="0" type="stmt"/>
-        <line num="217" count="36" type="cond" truecount="2" falsecount="0"/>
-        <line num="218" count="3" type="stmt"/>
-        <line num="222" count="33" type="cond" truecount="2" falsecount="0"/>
-        <line num="223" count="2" type="stmt"/>
-        <line num="228" count="31" type="stmt"/>
-        <line num="229" count="62" type="stmt"/>
-        <line num="231" count="31" type="stmt"/>
-        <line num="236" count="30" type="stmt"/>
-        <line num="237" count="24" type="stmt"/>
-        <line num="239" count="7" type="cond" truecount="1" falsecount="1"/>
-        <line num="240" count="7" type="stmt"/>
-        <line num="267" count="29" type="cond" truecount="2" falsecount="0"/>
-        <line num="268" count="2" type="stmt"/>
-        <line num="272" count="27" type="cond" truecount="2" falsecount="0"/>
-        <line num="273" count="2" type="stmt"/>
-        <line num="278" count="25" type="stmt"/>
-        <line num="279" count="50" type="stmt"/>
-        <line num="281" count="25" type="stmt"/>
-        <line num="290" count="24" type="stmt"/>
-        <line num="291" count="24" type="cond" truecount="2" falsecount="0"/>
-        <line num="293" count="24" type="stmt"/>
-        <line num="294" count="20" type="stmt"/>
-        <line num="296" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="297" count="5" type="stmt"/>
-        <line num="313" count="0" type="stmt"/>
-        <line num="366" count="21" type="stmt"/>
-        <line num="368" count="21" type="stmt"/>
-        <line num="371" count="18" type="stmt"/>
-        <line num="374" count="18" type="stmt"/>
-        <line num="382" count="15" type="stmt"/>
-        <line num="383" count="45" type="stmt"/>
-        <line num="387" count="15" type="stmt"/>
-        <line num="390" count="15" type="stmt"/>
-        <line num="393" count="15" type="cond" truecount="4" falsecount="0"/>
-        <line num="394" count="2" type="stmt"/>
-        <line num="395" count="2" type="stmt"/>
-        <line num="399" count="15" type="stmt"/>
-        <line num="402" count="15" type="stmt"/>
-        <line num="405" count="13" type="stmt"/>
-        <line num="410" count="13" type="stmt"/>
-        <line num="413" count="8" type="stmt"/>
-        <line num="414" count="8" type="stmt"/>
-        <line num="444" count="0" type="stmt"/>
-        <line num="484" count="36" type="stmt"/>
-        <line num="486" count="36" type="stmt"/>
-        <line num="487" count="35" type="stmt"/>
-        <line num="488" count="34" type="stmt"/>
-        <line num="489" count="33" type="stmt"/>
-        <line num="490" count="30" type="stmt"/>
-        <line num="493" count="27" type="stmt"/>
-        <line num="494" count="27" type="cond" truecount="2" falsecount="0"/>
-        <line num="495" count="2" type="stmt"/>
-        <line num="500" count="25" type="stmt"/>
-        <line num="501" count="25" type="cond" truecount="2" falsecount="0"/>
-        <line num="502" count="3" type="stmt"/>
-        <line num="506" count="25" type="stmt"/>
-        <line num="509" count="25" type="stmt"/>
-        <line num="510" count="25" type="stmt"/>
-        <line num="511" count="25" type="stmt"/>
-        <line num="512" count="22" type="cond" truecount="2" falsecount="0"/>
-        <line num="514" count="14" type="cond" truecount="2" falsecount="0"/>
-        <line num="515" count="2" type="stmt"/>
-        <line num="517" count="12" type="stmt"/>
-        <line num="518" count="12" type="stmt"/>
-        <line num="556" count="23" type="stmt"/>
-        <line num="557" count="46" type="stmt"/>
-        <line num="560" count="23" type="stmt"/>
-        <line num="563" count="22" type="stmt"/>
-        <line num="566" count="19" type="cond" truecount="4" falsecount="0"/>
-        <line num="568" count="7" type="stmt"/>
-        <line num="570" count="2" type="stmt"/>
-        <line num="572" count="2" type="stmt"/>
-        <line num="574" count="8" type="stmt"/>
-        <line num="577" count="6" type="cond" truecount="1" falsecount="1"/>
-        <line num="578" count="6" type="stmt"/>
-        <line num="607" count="15" type="cond" truecount="2" falsecount="0"/>
-        <line num="608" count="5" type="stmt"/>
-        <line num="615" count="10" type="stmt"/>
-        <line num="616" count="20" type="stmt"/>
-        <line num="617" count="10" type="stmt"/>
-        <line num="619" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="620" count="3" type="stmt"/>
-        <line num="629" count="10" type="stmt"/>
+        <metrics statements="247" coveredstatements="243" conditionals="94" coveredconditionals="85" methods="21" coveredmethods="17"/>
+        <line num="1" count="170" type="stmt"/>
+        <line num="2" count="170" type="stmt"/>
+        <line num="3" count="170" type="stmt"/>
+        <line num="4" count="170" type="stmt"/>
+        <line num="5" count="170" type="stmt"/>
+        <line num="6" count="170" type="stmt"/>
+        <line num="7" count="170" type="stmt"/>
+        <line num="8" count="170" type="stmt"/>
+        <line num="9" count="170" type="stmt"/>
+        <line num="11" count="170" type="stmt"/>
+        <line num="114" count="0" type="stmt"/>
+        <line num="136" count="29" type="stmt"/>
+        <line num="137" count="29" type="stmt"/>
+        <line num="138" count="29" type="stmt"/>
+        <line num="140" count="29" type="stmt"/>
+        <line num="141" count="29" type="stmt"/>
+        <line num="142" count="29" type="stmt"/>
+        <line num="144" count="29" type="cond" truecount="2" falsecount="0"/>
+        <line num="145" count="6" type="stmt"/>
+        <line num="152" count="23" type="stmt"/>
+        <line num="154" count="25" type="cond" truecount="2" falsecount="0"/>
+        <line num="157" count="23" type="cond" truecount="2" falsecount="0"/>
+        <line num="158" count="4" type="stmt"/>
+        <line num="164" count="19" type="stmt"/>
+        <line num="167" count="19" type="stmt"/>
+        <line num="168" count="19" type="stmt"/>
+        <line num="169" count="19" type="stmt"/>
+        <line num="171" count="19" type="cond" truecount="2" falsecount="0"/>
+        <line num="173" count="10" type="stmt"/>
+        <line num="174" count="19" type="stmt"/>
+        <line num="175" count="19" type="cond" truecount="4" falsecount="0"/>
+        <line num="176" count="5" type="stmt"/>
+        <line num="185" count="12" type="stmt"/>
+        <line num="186" count="5" type="stmt"/>
+        <line num="187" count="5" type="stmt"/>
+        <line num="190" count="9" type="stmt"/>
+        <line num="191" count="9" type="stmt"/>
+        <line num="192" count="9" type="stmt"/>
+        <line num="193" count="9" type="stmt"/>
+        <line num="194" count="9" type="stmt"/>
+        <line num="196" count="15" type="stmt"/>
+        <line num="200" count="15" type="stmt"/>
+        <line num="201" count="15" type="stmt"/>
+        <line num="202" count="15" type="stmt"/>
+        <line num="204" count="29" type="stmt"/>
+        <line num="216" count="0" type="stmt"/>
+        <line num="236" count="76" type="stmt"/>
+        <line num="237" count="76" type="cond" truecount="2" falsecount="0"/>
+        <line num="238" count="76" type="cond" truecount="2" falsecount="0"/>
+        <line num="240" count="76" type="stmt"/>
+        <line num="242" count="76" type="cond" truecount="2" falsecount="0"/>
+        <line num="243" count="9" type="stmt"/>
+        <line num="247" count="67" type="cond" truecount="2" falsecount="0"/>
+        <line num="248" count="3" type="stmt"/>
+        <line num="253" count="128" type="stmt"/>
+        <line num="255" count="64" type="stmt"/>
+        <line num="260" count="63" type="stmt"/>
+        <line num="271" count="55" type="stmt"/>
+        <line num="272" count="55" type="stmt"/>
+        <line num="273" count="55" type="stmt"/>
+        <line num="275" count="21" type="stmt"/>
+        <line num="276" count="21" type="stmt"/>
+        <line num="277" count="21" type="cond" truecount="2" falsecount="0"/>
+        <line num="278" count="9" type="stmt"/>
+        <line num="285" count="76" type="stmt"/>
+        <line num="307" count="69" type="stmt"/>
+        <line num="308" count="69" type="cond" truecount="2" falsecount="0"/>
+        <line num="309" count="69" type="cond" truecount="2" falsecount="0"/>
+        <line num="311" count="69" type="stmt"/>
+        <line num="313" count="69" type="cond" truecount="2" falsecount="0"/>
+        <line num="314" count="9" type="stmt"/>
+        <line num="318" count="60" type="cond" truecount="2" falsecount="0"/>
+        <line num="319" count="3" type="stmt"/>
+        <line num="324" count="114" type="stmt"/>
+        <line num="326" count="57" type="stmt"/>
+        <line num="335" count="56" type="stmt"/>
+        <line num="336" count="56" type="cond" truecount="2" falsecount="0"/>
+        <line num="338" count="56" type="stmt"/>
+        <line num="349" count="51" type="stmt"/>
+        <line num="350" count="51" type="stmt"/>
+        <line num="351" count="51" type="stmt"/>
+        <line num="353" count="18" type="stmt"/>
+        <line num="354" count="18" type="stmt"/>
+        <line num="355" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="356" count="6" type="stmt"/>
+        <line num="367" count="69" type="stmt"/>
+        <line num="379" count="0" type="stmt"/>
+        <line num="432" count="36" type="stmt"/>
+        <line num="433" count="36" type="cond" truecount="2" falsecount="0"/>
+        <line num="434" count="35" type="cond" truecount="1" falsecount="1"/>
+        <line num="435" count="35" type="stmt"/>
+        <line num="436" count="35" type="stmt"/>
+        <line num="437" count="35" type="stmt"/>
+        <line num="439" count="35" type="stmt"/>
+        <line num="441" count="35" type="stmt"/>
+        <line num="444" count="31" type="stmt"/>
+        <line num="446" count="31" type="stmt"/>
+        <line num="449" count="31" type="stmt"/>
+        <line num="457" count="27" type="stmt"/>
+        <line num="458" count="71" type="stmt"/>
+        <line num="461" count="27" type="stmt"/>
+        <line num="466" count="27" type="stmt"/>
+        <line num="469" count="27" type="stmt"/>
+        <line num="472" count="27" type="cond" truecount="4" falsecount="0"/>
+        <line num="473" count="2" type="stmt"/>
+        <line num="474" count="2" type="stmt"/>
+        <line num="478" count="27" type="stmt"/>
+        <line num="481" count="27" type="stmt"/>
+        <line num="483" count="25" type="stmt"/>
+        <line num="486" count="25" type="stmt"/>
+        <line num="491" count="25" type="stmt"/>
+        <line num="492" count="25" type="stmt"/>
+        <line num="495" count="10" type="stmt"/>
+        <line num="496" count="10" type="stmt"/>
+        <line num="497" count="10" type="stmt"/>
+        <line num="498" count="10" type="stmt"/>
+        <line num="500" count="35" type="stmt"/>
+        <line num="530" count="0" type="stmt"/>
+        <line num="570" count="60" type="stmt"/>
+        <line num="571" count="60" type="stmt"/>
+        <line num="572" count="60" type="stmt"/>
+        <line num="573" count="60" type="stmt"/>
+        <line num="574" count="60" type="cond" truecount="1" falsecount="1"/>
+        <line num="576" count="60" type="stmt"/>
+        <line num="578" count="60" type="stmt"/>
+        <line num="579" count="58" type="stmt"/>
+        <line num="580" count="57" type="stmt"/>
+        <line num="581" count="56" type="stmt"/>
+        <line num="582" count="53" type="stmt"/>
+        <line num="585" count="50" type="stmt"/>
+        <line num="586" count="50" type="cond" truecount="2" falsecount="0"/>
+        <line num="587" count="2" type="stmt"/>
+        <line num="592" count="48" type="stmt"/>
+        <line num="593" count="48" type="cond" truecount="2" falsecount="0"/>
+        <line num="594" count="3" type="stmt"/>
+        <line num="598" count="48" type="stmt"/>
+        <line num="601" count="48" type="stmt"/>
+        <line num="602" count="48" type="stmt"/>
+        <line num="603" count="47" type="stmt"/>
+        <line num="604" count="44" type="cond" truecount="2" falsecount="0"/>
+        <line num="605" count="43" type="stmt"/>
+        <line num="606" count="43" type="stmt"/>
+        <line num="607" count="43" type="stmt"/>
+        <line num="609" count="1" type="stmt"/>
+        <line num="611" count="16" type="stmt"/>
+        <line num="612" count="16" type="stmt"/>
+        <line num="613" count="16" type="cond" truecount="2" falsecount="0"/>
+        <line num="614" count="2" type="stmt"/>
+        <line num="616" count="14" type="stmt"/>
+        <line num="617" count="14" type="stmt"/>
+        <line num="620" count="60" type="stmt"/>
+        <line num="657" count="31" type="stmt"/>
+        <line num="658" count="31" type="stmt"/>
+        <line num="659" count="31" type="stmt"/>
+        <line num="660" count="31" type="stmt"/>
+        <line num="662" count="31" type="stmt"/>
+        <line num="663" count="62" type="stmt"/>
+        <line num="666" count="31" type="stmt"/>
+        <line num="669" count="30" type="stmt"/>
+        <line num="671" count="26" type="stmt"/>
+        <line num="672" count="26" type="stmt"/>
+        <line num="675" count="26" type="cond" truecount="4" falsecount="0"/>
+        <line num="677" count="8" type="stmt"/>
+        <line num="679" count="2" type="stmt"/>
+        <line num="681" count="2" type="stmt"/>
+        <line num="683" count="14" type="stmt"/>
+        <line num="686" count="7" type="stmt"/>
+        <line num="687" count="7" type="stmt"/>
+        <line num="688" count="7" type="cond" truecount="1" falsecount="1"/>
+        <line num="689" count="7" type="stmt"/>
+        <line num="695" count="31" type="stmt"/>
+        <line num="722" count="57" type="stmt"/>
+        <line num="724" count="57" type="stmt"/>
+        <line num="725" count="57" type="cond" truecount="2" falsecount="0"/>
+        <line num="727" count="57" type="cond" truecount="2" falsecount="0"/>
+        <line num="728" count="38" type="stmt"/>
+        <line num="729" count="38" type="stmt"/>
+        <line num="730" count="38" type="stmt"/>
+        <line num="731" count="38" type="stmt"/>
+        <line num="732" count="38" type="stmt"/>
+        <line num="735" count="57" type="stmt"/>
+        <line num="737" count="57" type="cond" truecount="2" falsecount="0"/>
+        <line num="738" count="38" type="stmt"/>
+        <line num="744" count="57" type="stmt"/>
+        <line num="745" count="57" type="stmt"/>
+        <line num="746" count="54" type="stmt"/>
+        <line num="748" count="4" type="stmt"/>
+        <line num="753" count="4" type="stmt"/>
+        <line num="754" count="4" type="stmt"/>
+        <line num="755" count="4" type="stmt"/>
+        <line num="756" count="4" type="stmt"/>
+        <line num="759" count="53" type="stmt"/>
+        <line num="760" count="106" type="stmt"/>
+        <line num="761" count="53" type="stmt"/>
+        <line num="763" count="53" type="stmt"/>
+        <line num="774" count="45" type="stmt"/>
+        <line num="776" count="45" type="stmt"/>
+        <line num="778" count="45" type="stmt"/>
+        <line num="779" count="216" type="stmt"/>
+        <line num="780" count="216" type="cond" truecount="2" falsecount="0"/>
+        <line num="781" count="207" type="stmt"/>
+        <line num="783" count="207" type="cond" truecount="2" falsecount="0"/>
+        <line num="784" count="178" type="stmt"/>
+        <line num="785" count="178" type="stmt"/>
+        <line num="789" count="42" type="stmt"/>
+        <line num="790" count="42" type="stmt"/>
+        <line num="792" count="42" type="stmt"/>
+        <line num="796" count="42" type="stmt"/>
+        <line num="798" count="42" type="cond" truecount="2" falsecount="0"/>
+        <line num="799" count="30" type="stmt"/>
+        <line num="800" count="30" type="stmt"/>
+        <line num="801" count="30" type="stmt"/>
+        <line num="802" count="30" type="stmt"/>
+        <line num="803" count="30" type="stmt"/>
+        <line num="806" count="12" type="stmt"/>
+        <line num="809" count="11" type="stmt"/>
+        <line num="810" count="11" type="stmt"/>
+        <line num="811" count="11" type="stmt"/>
+        <line num="813" count="11" type="cond" truecount="2" falsecount="0"/>
+        <line num="814" count="8" type="stmt"/>
+        <line num="815" count="8" type="stmt"/>
+        <line num="816" count="8" type="stmt"/>
+        <line num="817" count="8" type="stmt"/>
+        <line num="821" count="8" type="stmt"/>
+        <line num="824" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="825" count="3" type="stmt"/>
+        <line num="832" count="53" type="stmt"/>
+        <line num="856" count="27" type="stmt"/>
+        <line num="857" count="27" type="stmt"/>
+        <line num="860" count="27" type="cond" truecount="2" falsecount="0"/>
+        <line num="861" count="10" type="stmt"/>
+        <line num="866" count="10" type="stmt"/>
+        <line num="867" count="10" type="stmt"/>
+        <line num="868" count="10" type="stmt"/>
+        <line num="869" count="10" type="stmt"/>
+        <line num="872" count="17" type="stmt"/>
+        <line num="873" count="34" type="stmt"/>
+        <line num="874" count="17" type="stmt"/>
+        <line num="875" count="14" type="stmt"/>
+        <line num="876" count="14" type="stmt"/>
+        <line num="877" count="14" type="stmt"/>
+        <line num="879" count="3" type="stmt"/>
+        <line num="880" count="3" type="stmt"/>
+        <line num="881" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="882" count="3" type="stmt"/>
+        <line num="888" count="17" type="stmt"/>
+        <line num="893" count="170" type="stmt"/>
       </file>
       <file name="legacy.js" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/srv/legacy.js">
         <metrics statements="56" coveredstatements="56" conditionals="20" coveredconditionals="20" methods="5" coveredmethods="5"/>
-        <line num="14" count="11" type="stmt"/>
+        <line num="14" count="28" type="stmt"/>
         <line num="26" count="5" type="stmt"/>
         <line num="27" count="5" type="stmt"/>
         <line num="31" count="5" type="stmt"/>
@@ -281,7 +580,154 @@
         <line num="197" count="6" type="stmt"/>
         <line num="199" count="2" type="stmt"/>
         <line num="200" count="2" type="stmt"/>
-        <line num="204" count="11" type="stmt"/>
+        <line num="204" count="28" type="stmt"/>
+      </file>
+    </package>
+    <package name="cap-llm-plugin-main.srv.errors">
+      <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+      <file name="InvalidSimilaritySearchAlgoNameError.js" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/srv/errors/InvalidSimilaritySearchAlgoNameError.js">
+        <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="3" count="12" type="stmt"/>
+        <line num="5" count="12" type="stmt"/>
+        <line num="7" count="12" type="stmt"/>
+        <line num="9" count="12" type="stmt"/>
+        <line num="13" count="171" type="stmt"/>
+      </file>
+    </package>
+    <package name="cap-llm-plugin-main.tests.e2e">
+      <metrics statements="86" coveredstatements="59" conditionals="12" coveredconditionals="5" methods="29" coveredmethods="12"/>
+      <file name="server.js" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/tests/e2e/server.js">
+        <metrics statements="86" coveredstatements="59" conditionals="12" coveredconditionals="5" methods="29" coveredmethods="12"/>
+        <line num="15" count="9" type="stmt"/>
+        <line num="16" count="9" type="stmt"/>
+        <line num="17" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="25" count="14" type="stmt"/>
+        <line num="26" count="14" type="stmt"/>
+        <line num="27" count="14" type="stmt"/>
+        <line num="28" count="14" type="stmt"/>
+        <line num="30" count="14" type="stmt"/>
+        <line num="31" count="7" type="stmt"/>
+        <line num="32" count="7" type="stmt"/>
+        <line num="33" count="7" type="stmt"/>
+        <line num="34" count="3" type="stmt"/>
+        <line num="36" count="4" type="stmt"/>
+        <line num="37" count="4" type="stmt"/>
+        <line num="41" count="14" type="stmt"/>
+        <line num="42" count="14" type="stmt"/>
+        <line num="43" count="14" type="stmt"/>
+        <line num="44" count="14" type="stmt"/>
+        <line num="45" count="8" type="cond" truecount="1" falsecount="1"/>
+        <line num="47" count="6" type="stmt"/>
+        <line num="48" count="6" type="stmt"/>
+        <line num="52" count="14" type="stmt"/>
+        <line num="53" count="8" type="stmt"/>
+        <line num="57" count="8" type="stmt"/>
+        <line num="58" count="8" type="stmt"/>
+        <line num="62" count="5" type="stmt"/>
+        <line num="64" count="3" type="stmt"/>
+        <line num="65" count="3" type="stmt"/>
+        <line num="69" count="14" type="stmt"/>
+        <line num="70" count="2" type="stmt"/>
+        <line num="71" count="2" type="stmt"/>
+        <line num="72" count="2" type="stmt"/>
+        <line num="75" count="2" type="stmt"/>
+        <line num="77" count="0" type="stmt"/>
+        <line num="78" count="0" type="stmt"/>
+        <line num="82" count="14" type="stmt"/>
+        <line num="83" count="1" type="stmt"/>
+        <line num="84" count="1" type="stmt"/>
+        <line num="85" count="1" type="stmt"/>
+        <line num="87" count="0" type="stmt"/>
+        <line num="88" count="0" type="stmt"/>
+        <line num="92" count="14" type="stmt"/>
+        <line num="93" count="4" type="stmt"/>
+        <line num="94" count="4" type="stmt"/>
+        <line num="95" count="1" type="stmt"/>
+        <line num="97" count="3" type="stmt"/>
+        <line num="98" count="3" type="stmt"/>
+        <line num="102" count="14" type="stmt"/>
+        <line num="103" count="18" type="stmt"/>
+        <line num="106" count="18" type="stmt"/>
+        <line num="107" count="18" type="stmt"/>
+        <line num="108" count="18" type="stmt"/>
+        <line num="119" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="120" count="0" type="stmt"/>
+        <line num="121" count="0" type="stmt"/>
+        <line num="126" count="14" type="stmt"/>
+        <line num="127" count="1" type="stmt"/>
+        <line num="130" count="14" type="stmt"/>
+        <line num="141" count="14" type="cond" truecount="1" falsecount="1"/>
+        <line num="142" count="14" type="stmt"/>
+        <line num="143" count="14" type="stmt"/>
+        <line num="144" count="14" type="stmt"/>
+        <line num="145" count="14" type="stmt"/>
+        <line num="146" count="14" type="stmt"/>
+        <line num="152" count="9" type="cond" truecount="1" falsecount="1"/>
+        <line num="154" count="0" type="stmt"/>
+        <line num="155" count="0" type="stmt"/>
+        <line num="156" count="0" type="stmt"/>
+        <line num="158" count="0" type="stmt"/>
+        <line num="159" count="0" type="stmt"/>
+        <line num="160" count="0" type="stmt"/>
+        <line num="165" count="0" type="stmt"/>
+        <line num="166" count="0" type="stmt"/>
+        <line num="167" count="0" type="stmt"/>
+        <line num="169" count="0" type="stmt"/>
+        <line num="174" count="0" type="stmt"/>
+        <line num="175" count="0" type="stmt"/>
+        <line num="176" count="0" type="stmt"/>
+        <line num="178" count="0" type="stmt"/>
+        <line num="179" count="0" type="stmt"/>
+        <line num="183" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="186" count="0" type="stmt"/>
+        <line num="190" count="0" type="stmt"/>
+        <line num="191" count="0" type="stmt"/>
+        <line num="192" count="0" type="stmt"/>
+        <line num="195" count="9" type="stmt"/>
+      </file>
+    </package>
+    <package name="cap-llm-plugin-main.tests.e2e.helpers">
+      <metrics statements="35" coveredstatements="30" conditionals="16" coveredconditionals="16" methods="21" coveredmethods="13"/>
+      <file name="mock-ai-core.js" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/tests/e2e/helpers/mock-ai-core.js">
+        <metrics statements="11" coveredstatements="8" conditionals="5" coveredconditionals="5" methods="10" coveredmethods="7"/>
+        <line num="10" count="10" type="stmt"/>
+        <line num="11" count="15360" type="stmt"/>
+        <line num="13" count="10" type="stmt"/>
+        <line num="14" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="20" count="10" type="stmt"/>
+        <line num="21" count="0" type="stmt"/>
+        <line num="22" count="0" type="stmt"/>
+        <line num="27" count="0" type="stmt"/>
+        <line num="48" count="10" type="stmt"/>
+        <line num="61" count="30" type="stmt"/>
+        <line num="67" count="5" type="stmt"/>
+      </file>
+      <file name="setup-plugin.js" path="/Users/user/Documents/sap-oss/cap-llm-plugin-main/tests/e2e/helpers/setup-plugin.js">
+        <metrics statements="24" coveredstatements="22" conditionals="11" coveredconditionals="11" methods="11" coveredmethods="6"/>
+        <line num="13" count="5" type="stmt"/>
+        <line num="28" count="10" type="stmt"/>
+        <line num="31" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="34" count="10" type="stmt"/>
+        <line num="35" count="10" type="stmt"/>
+        <line num="36" count="10" type="stmt"/>
+        <line num="37" count="10" type="stmt"/>
+        <line num="39" count="10" type="stmt"/>
+        <line num="57" count="14" type="stmt"/>
+        <line num="71" count="14" type="stmt"/>
+        <line num="74" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="75" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="76" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="78" count="0" type="stmt"/>
+        <line num="79" count="0" type="stmt"/>
+        <line num="81" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="83" count="10" type="stmt"/>
+        <line num="84" count="9" type="stmt"/>
+        <line num="87" count="28" type="stmt"/>
+        <line num="95" count="10" type="stmt"/>
+        <line num="100" count="10" type="stmt"/>
+        <line num="101" count="10" type="stmt"/>
+        <line num="103" count="10" type="stmt"/>
+        <line num="117" count="5" type="stmt"/>
       </file>
     </package>
   </project>

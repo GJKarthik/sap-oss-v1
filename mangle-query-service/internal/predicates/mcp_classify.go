@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package predicates
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
 	"github.com/google/mangle/ast"
@@ -57,31 +56,37 @@ func (p *MCPClassifyPredicate) classify(query string) (string, float64) {
 }
 
 func (p *MCPClassifyPredicate) callMCP(query string) (string, float64, error) {
-	body, _ := json.Marshal(map[string]string{"query": query})
-	req, err := http.NewRequest("POST", p.MCPAddress+"/mcp/tools/classify_query", bytes.NewReader(body))
-	if err != nil {
-		return "", 0, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.AuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+p.AuthToken)
+	mcpResult, err := callMCPTool(p.MCPAddress, p.AuthToken, "classify_query", map[string]any{
+		"query": query,
+	})
+	if err == nil {
+		category := stringField(mcpResult, "category", "class", "label")
+		confidence := floatField(mcpResult, "confidence", "score")
+		if category != "" {
+			if confidence == 0 {
+				confidence = 0.8
+			}
+			return category, confidence, nil
+		}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", 0, err
+	legacyBody, _ := json.Marshal(map[string]string{"query": query})
+	legacyResult, legacyErr := legacyMCPHTTPCall(p.MCPAddress, p.AuthToken, "/mcp/tools/classify_query", legacyBody)
+	if legacyErr != nil {
+		if err != nil {
+			return "", 0, err
+		}
+		return "", 0, legacyErr
 	}
-	defer resp.Body.Close()
-
-	data, _ := io.ReadAll(resp.Body)
-	var result struct {
-		Category   string  `json:"category"`
-		Confidence float64 `json:"confidence"`
+	category := stringField(legacyResult, "category", "class", "label")
+	confidence := floatField(legacyResult, "confidence", "score")
+	if category == "" {
+		return "", 0, fmt.Errorf("mcp classify response missing category")
 	}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return "", 0, err
+	if confidence == 0 {
+		confidence = 0.8
 	}
-	return result.Category, result.Confidence, nil
+	return category, confidence, nil
 }
 
 func heuristicClassify(query string) (string, float64) {

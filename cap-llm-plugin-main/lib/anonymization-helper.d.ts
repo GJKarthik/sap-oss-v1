@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /** Map of element names to their @anonymize annotation parameter values. */
 export interface AnonymizedElements {
     [elementName: string]: string;

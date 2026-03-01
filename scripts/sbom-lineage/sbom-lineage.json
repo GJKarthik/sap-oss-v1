@@ -1,0 +1,1709 @@
+{
+  "generator": "collect_sbom_lineage.py",
+  "sbom": {
+    "projects": [
+      {
+        "path": "ai-sdk-js-main",
+        "name": "SAP AI SDK (JavaScript)",
+        "description": null,
+        "license": "Apache-2.0",
+        "packages": [
+          {
+            "name": "@changesets/cli",
+            "version": "^2.29.8",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@jest/globals",
+            "version": "^30.2.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-ai-sdk/ai-api",
+            "version": "(workspace)",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-ai-sdk/core",
+            "version": "(workspace)",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-ai-sdk/foundation-models",
+            "version": "(workspace)",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-ai-sdk/orchestration",
+            "version": "(workspace)",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-cloud-sdk/connectivity",
+            "version": "^4.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-cloud-sdk/eslint-config",
+            "version": "^4.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-cloud-sdk/generator-common",
+            "version": "^4.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-cloud-sdk/http-client",
+            "version": "^4.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-cloud-sdk/openapi-generator",
+            "version": "^4.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-cloud-sdk/util",
+            "version": "^4.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/jest",
+            "version": "^30.0.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/jsonwebtoken",
+            "version": "^9.0.10",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/mock-fs",
+            "version": "^4.13.4",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/node",
+            "version": "^22.19.11",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "depcheck",
+            "version": "^1.4.7",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint",
+            "version": "^9.39.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "glob",
+            "version": "^13.0.6",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest",
+            "version": "^30.2.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jsonwebtoken",
+            "version": "^9.0.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "mock-fs",
+            "version": "^5.5.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "nock",
+            "version": "^14.0.11",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "orval",
+            "version": "^8.4.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "prettier",
+            "version": "^3.8.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "ts-jest",
+            "version": "^29.4.6",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "ts-node",
+            "version": "^10.9.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "tsx",
+            "version": "^4.21.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "typescript",
+            "version": "^5.9.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "zod",
+            "version": "^4.3.6",
+            "license": null,
+            "type": "dev"
+          }
+        ]
+      },
+      {
+        "path": "cap-llm-plugin-main",
+        "name": "CAP LLM Plugin",
+        "description": "CAP LLM Plugin helps developers create tailored Generative AI based CAP applications",
+        "license": "Apache-2.0",
+        "packages": [
+          {
+            "name": "@babel/plugin-transform-dynamic-import",
+            "version": "^7.27.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@babel/plugin-transform-modules-commonjs",
+            "version": "^7.28.6",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@opentelemetry/api",
+            "version": "^1.9.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-ai-sdk/orchestration",
+            "version": ">=2.0.0",
+            "license": null,
+            "type": "peer"
+          },
+          {
+            "name": "@sap/cds",
+            "version": ">=7.1.1",
+            "license": null,
+            "type": "peer"
+          },
+          {
+            "name": "@sap/cds-hana",
+            "version": ">=2",
+            "license": null,
+            "type": "peer"
+          },
+          {
+            "name": "@types/node",
+            "version": "^25.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint",
+            "version": "^9.39.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint-config-prettier",
+            "version": "^10.1.8",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest",
+            "version": "^30.2.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest-junit",
+            "version": "^16.0.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "prettier",
+            "version": "^3.8.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "typescript",
+            "version": "^5.9.3",
+            "license": null,
+            "type": "dev"
+          }
+        ]
+      },
+      {
+        "path": "world-monitor-main",
+        "name": "World Monitor",
+        "description": null,
+        "license": "AGPL-3.0-only",
+        "packages": [
+          {
+            "name": "@deck.gl/aggregation-layers",
+            "version": "^9.2.6",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@deck.gl/core",
+            "version": "^9.2.6",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@deck.gl/geo-layers",
+            "version": "^9.2.6",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@deck.gl/layers",
+            "version": "^9.2.6",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@deck.gl/mapbox",
+            "version": "^9.2.6",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@playwright/test",
+            "version": "^1.52.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sentry/browser",
+            "version": "^10.39.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@tauri-apps/cli",
+            "version": "^2.10.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/d3",
+            "version": "^7.4.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/maplibre-gl",
+            "version": "^1.13.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/node",
+            "version": "^25.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/topojson-client",
+            "version": "^3.1.5",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/topojson-specification",
+            "version": "^1.0.5",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@upstash/redis",
+            "version": "^1.36.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@vercel/analytics",
+            "version": "^1.6.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@xenova/transformers",
+            "version": "^2.17.2",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "convex",
+            "version": "^1.32.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "d3",
+            "version": "^7.9.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "deck.gl",
+            "version": "^9.2.6",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "esbuild",
+            "version": "^0.27.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "fast-xml-parser",
+            "version": "^5.3.7",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "i18next",
+            "version": "^25.8.10",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "i18next-browser-languagedetector",
+            "version": "^8.2.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "maplibre-gl",
+            "version": "^5.16.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "markdownlint-cli2",
+            "version": "^0.20.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "onnxruntime-web",
+            "version": "^1.23.2",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "posthog-js",
+            "version": "^1.352.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "topojson-client",
+            "version": "^3.1.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "typescript",
+            "version": "^5.7.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "vite",
+            "version": "^6.0.7",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "vite-plugin-pwa",
+            "version": "^1.2.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "ws",
+            "version": "^8.19.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "youtubei.js",
+            "version": "^16.0.1",
+            "license": null,
+            "type": "runtime"
+          }
+        ]
+      },
+      {
+        "path": "ui5-webcomponents-ngx-main",
+        "name": "UI5 Web Components (Angular)",
+        "description": null,
+        "license": "Apache-2.0",
+        "packages": [
+          {
+            "name": "@actions/core",
+            "version": "^1.10.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular-devkit/architect",
+            "version": "0.2003.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular-devkit/build-angular",
+            "version": "20.3.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular-devkit/core",
+            "version": "20.3.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular-devkit/schematics",
+            "version": "20.3.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular-eslint/eslint-plugin",
+            "version": "20.5.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular-eslint/eslint-plugin-template",
+            "version": "20.5.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular-eslint/template-parser",
+            "version": "20.5.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular/animations",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/cli",
+            "version": "~20.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular/common",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/compiler",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/compiler-cli",
+            "version": "20.3.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular/core",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/forms",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/language-service",
+            "version": "20.3.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@angular/platform-browser",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/platform-browser-dynamic",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@angular/router",
+            "version": "20.3.9",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@babel/core",
+            "version": "^7.21.8",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@commitlint/cli",
+            "version": "17.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@commitlint/config-angular",
+            "version": "17.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@commitlint/config-conventional",
+            "version": "17.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/angular",
+            "version": "22.0.2",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@nx/cypress",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/devkit",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/eslint",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/eslint-plugin",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/jest",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/js",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/plugin",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/storybook",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@nx/workspace",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@sap-ui/common-css",
+            "version": "^0.40.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@schematics/angular",
+            "version": "20.3.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@storybook/addon-docs",
+            "version": "9.1.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@storybook/angular",
+            "version": "9.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@storybook/mdx2-csf",
+            "version": "^1.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/fs-extra",
+            "version": "^11.0.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/jest",
+            "version": "30.0.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/lodash",
+            "version": "4.14.191",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@types/node",
+            "version": "18.16.9",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@types/react",
+            "version": "^18.0.28",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@typescript-eslint/eslint-plugin",
+            "version": "7.18.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@typescript-eslint/parser",
+            "version": "7.18.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@typescript-eslint/utils",
+            "version": "^7.16.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "@ui5/tooling-webc",
+            "version": "0.3.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-ai",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-base",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-fiori",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-icons",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-icons-business-suite",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-icons-tnt",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-theming",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "@ui5/webcomponents-tools",
+            "version": "2.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "ajv-formats",
+            "version": "^2.1.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "autoprefixer",
+            "version": "^10.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "conventional-changelog",
+            "version": "^3.1.25",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "conventional-changelog-angular",
+            "version": "^5.0.13",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "conventional-recommended-bump",
+            "version": "^6.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "cypress",
+            "version": "14.3.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint",
+            "version": "8.57.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint-config-prettier",
+            "version": "10.1.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint-plugin-cypress",
+            "version": "2.15.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "eslint-plugin-storybook",
+            "version": "^9.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "fast-deep-equal",
+            "version": "3.1.3",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "fast-glob",
+            "version": "3.2.12",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "flatted",
+            "version": "^3.2.7",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "fundamental-styles",
+            "version": "^0.40.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "git-semver-tags",
+            "version": "^4.1.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "html-webpack-plugin",
+            "version": "^5.5.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "husky",
+            "version": "8.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest",
+            "version": "30.0.5",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest-environment-jsdom",
+            "version": "30.0.5",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest-preset-angular",
+            "version": "15.0.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jest-util",
+            "version": "30.0.5",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "jsonc-eslint-parser",
+            "version": "2.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "lerna",
+            "version": "^8.1.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "lodash",
+            "version": "4.17.23",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "ng-packagr",
+            "version": "20.3.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "nx",
+            "version": "22.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "patch-package",
+            "version": "^8.0.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "postcss",
+            "version": "8.4.31",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "postcss-import",
+            "version": "14.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "postcss-preset-env",
+            "version": "7.5.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "postcss-url",
+            "version": "10.1.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "prettier",
+            "version": "3.2.4",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "prettier-plugin-organize-imports",
+            "version": "^3.2.4",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "react",
+            "version": "^18.2.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "react-dom",
+            "version": "^18.2.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "rxjs",
+            "version": "7.8.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "semver",
+            "version": "^7.3.8",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "storybook",
+            "version": "^9.1.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "through2",
+            "version": "^4.0.2",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "ts-jest",
+            "version": "29.4.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "ts-node",
+            "version": "10.9.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "tslib",
+            "version": "2.4.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "typescript",
+            "version": "5.9.3",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "webpack",
+            "version": "^5.64.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "zone.js",
+            "version": "0.15.0",
+            "license": null,
+            "type": "runtime"
+          }
+        ]
+      },
+      {
+        "path": "odata-vocabularies-main",
+        "name": "OData Vocabularies",
+        "description": "Convert SAP vocabularies in CSDL XML to CSDL JSON and GitHub Flavored Markdown",
+        "license": null,
+        "packages": [
+          {
+            "name": "colors",
+            "version": "^1.4.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "eslint",
+            "version": "^8.56.0",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "express",
+            "version": "^4.22.1",
+            "license": null,
+            "type": "dev"
+          },
+          {
+            "name": "odata-csdl",
+            "version": "^0.11.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "odata-vocabularies",
+            "version": "oasis-tcs/odata-vocabularies",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "prettier",
+            "version": "^3.2.5",
+            "license": null,
+            "type": "dev"
+          }
+        ]
+      },
+      {
+        "path": "data-cleaning-copilot-main",
+        "name": "Data Cleaning Copilot",
+        "description": "This is a tool that takes in database schema and meta data describing that schema (e.g. description of the data in the tables, how the elements in the tables are connected, how the data is used) and helps users to formulate queries that can find errors or inconsistencies in the data.",
+        "license": null,
+        "packages": [
+          {
+            "name": "aioboto3",
+            "version": ">=15.0.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "black",
+            "version": ">=25.1.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "boto3",
+            "version": ">=1.38.27",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "frictionless",
+            "version": ">=5.18.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "gradio",
+            "version": ">=5.42.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "instructor",
+            "version": ">=1.10.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "ipykernel",
+            "version": ">=6.30.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "langchain",
+            "version": ">=0.3.27",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "langchain-aws",
+            "version": ">=0.2.27",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "langchain-community",
+            "version": ">=0.3.27",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "langchain-core",
+            "version": ">=0.3.73",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "loguru",
+            "version": ">=0.7.3",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "networkx",
+            "version": ">=3.3",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "numpy",
+            "version": ">=2.1.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "pandas",
+            "version": ">=2.2.0,<2.3",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "pandera",
+            "version": ">=0.25.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "python-dotenv",
+            "version": ">=1.1.1",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "pyyaml",
+            "version": ">=6.0.2",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "relbench",
+            "version": ">=1.1.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "ruff",
+            "version": ">=0.12.3",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "sap-ai-sdk-gen",
+            "version": ">=5.4.5",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "setuptools",
+            "version": ">=80.9.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "sqlalchemy",
+            "version": ">=2.0.41",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "tabulate",
+            "version": ">=0.9.0",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "ydata-profiling",
+            "version": "==4.15.1",
+            "license": null,
+            "type": "runtime"
+          }
+        ]
+      },
+      {
+        "path": "langchain-integration-for-sap-hana-cloud-main",
+        "name": "LangChain Integration for SAP HANA Cloud",
+        "description": "An integration package connecting SAP HANA Cloud and LangChain",
+        "license": "Apache-2.0",
+        "packages": [
+          {
+            "name": "poetry-core",
+            "version": ">=1.0.0",
+            "license": null,
+            "type": "build"
+          }
+        ]
+      },
+      {
+        "path": "generative-ai-toolkit-for-sap-hana-cloud-main",
+        "name": "Generative AI Toolkit for SAP HANA Cloud",
+        "description": "Generative AI Toolkit for SAP HANA Cloud",
+        "license": "Apache-2.0",
+        "packages": [
+          {
+            "name": "requirements",
+            "version": ".txt",
+            "license": null,
+            "type": "runtime"
+          },
+          {
+            "name": "setuptools",
+            "version": ">=62.4",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "wheel",
+            "version": "(any)",
+            "license": null,
+            "type": "build"
+          }
+        ]
+      },
+      {
+        "path": "vllm-main",
+        "name": "vLLM (inference engine)",
+        "description": "A high-throughput and memory-efficient inference and serving engine for LLMs",
+        "license": "Apache-2.0",
+        "packages": [
+          {
+            "name": "cmake",
+            "version": ">=3.26.1",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "grpcio-tools",
+            "version": "==1.78.0",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "jinja2",
+            "version": "(any)",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "ninja",
+            "version": "(any)",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "packaging",
+            "version": ">=24.2",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "setuptools",
+            "version": ">=77.0.3,<81.0.0",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "setuptools-scm",
+            "version": ">=8.0",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "torch",
+            "version": "== 2.10.0",
+            "license": null,
+            "type": "build"
+          },
+          {
+            "name": "wheel",
+            "version": "(any)",
+            "license": null,
+            "type": "build"
+          }
+        ]
+      }
+    ]
+  },
+  "lineage": {
+    "services": [
+      {
+        "path": "ai-sdk-js-main",
+        "name": "SAP AI SDK (JavaScript)",
+        "description": null,
+        "license": "Apache-2.0",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "f5e4fda56c4e",
+            "date": "2026-02-26 10:34:16 +0800",
+            "author": "plturrell",
+            "subject": "ai-sdk-js: OData Vocabularies integration for TypeScript type generation"
+          },
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "2903724fb841",
+            "date": "2026-02-26 02:55:18 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+          },
+          {
+            "hash": "2adac6cec957",
+            "date": "2026-02-26 02:07:06 +0800",
+            "author": "plturrell",
+            "subject": "Update"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "cap-llm-plugin-main",
+        "name": "CAP LLM Plugin",
+        "description": "CAP LLM Plugin helps developers create tailored Generative AI based CAP applications",
+        "license": "Apache-2.0",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "2903724fb841",
+            "date": "2026-02-26 02:55:18 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "world-monitor-main",
+        "name": "World Monitor",
+        "description": null,
+        "license": "AGPL-3.0-only",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "ui5-webcomponents-ngx-main",
+        "name": "UI5 Web Components (Angular)",
+        "description": null,
+        "license": "Apache-2.0",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "odata-vocabularies-main",
+        "name": "OData Vocabularies",
+        "description": "Convert SAP vocabularies in CSDL XML to CSDL JSON and GitHub Flavored Markdown",
+        "license": null,
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9f8ccfcab546",
+            "date": "2026-02-26 10:26:38 +0800",
+            "author": "plturrell",
+            "subject": "Full integration plan - service-by-service implementation guide"
+          },
+          {
+            "hash": "27741f4846cc",
+            "date": "2026-02-26 10:24:17 +0800",
+            "author": "plturrell",
+            "subject": "Bidirectional integration audit - OData Vocabularies as Universal Dictionary"
+          },
+          {
+            "hash": "34244e05197e",
+            "date": "2026-02-26 10:20:30 +0800",
+            "author": "plturrell",
+            "subject": "OpenAI-compatible API endpoints for OData Vocabularies"
+          },
+          {
+            "hash": "13c5ff04a93b",
+            "date": "2026-02-26 10:16:34 +0800",
+            "author": "plturrell",
+            "subject": "Health check enhancements - comprehensive monitoring"
+          },
+          {
+            "hash": "0f57dce72086",
+            "date": "2026-02-26 10:13:51 +0800",
+            "author": "plturrell",
+            "subject": "Complete API documentation for 5/5 rating"
+          },
+          {
+            "hash": "d446b27a4c7c",
+            "date": "2026-02-26 10:09:57 +0800",
+            "author": "plturrell",
+            "subject": "Complete test suite for 5/5 rating - 97 tests total"
+          },
+          {
+            "hash": "cfc07eb6d4ec",
+            "date": "2026-02-26 10:04:16 +0800",
+            "author": "plturrell",
+            "subject": "Quick wins for 5/5 rating - Tests, Docker, CI"
+          },
+          {
+            "hash": "2a4fd20a76fb",
+            "date": "2026-02-26 09:58:34 +0800",
+            "author": "plturrell",
+            "subject": "Production Configuration for OData Vocabularies"
+          },
+          {
+            "hash": "c989079c279f",
+            "date": "2026-02-26 09:53:38 +0800",
+            "author": "plturrell",
+            "subject": "Add Production Readiness Review for OData Vocabularies"
+          },
+          {
+            "hash": "4d661effbe07",
+            "date": "2026-02-26 09:50:37 +0800",
+            "author": "plturrell",
+            "subject": "Phase 5: Cross-Platform Integration for OData Vocabularies"
+          },
+          {
+            "hash": "ad0df2b30ba9",
+            "date": "2026-02-26 09:47:06 +0800",
+            "author": "plturrell",
+            "subject": "Phase 4: Governance & Compliance for OData Vocabularies"
+          },
+          {
+            "hash": "f01820006f55",
+            "date": "2026-02-26 09:42:19 +0800",
+            "author": "plturrell",
+            "subject": "Phase 3: Vector Embeddings & RAG for OData Vocabularies"
+          },
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "data-cleaning-copilot-main",
+        "name": "Data Cleaning Copilot",
+        "description": "This is a tool that takes in database schema and meta data describing that schema (e.g. description of the data in the tables, how the elements in the tables are connected, how the data is used) and helps users to formulate queries that can find errors or inconsistencies in the data.",
+        "license": null,
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "2903724fb841",
+            "date": "2026-02-26 02:55:18 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "langchain-integration-for-sap-hana-cloud-main",
+        "name": "LangChain Integration for SAP HANA Cloud",
+        "description": "An integration package connecting SAP HANA Cloud and LangChain",
+        "license": "Apache-2.0",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "generative-ai-toolkit-for-sap-hana-cloud-main",
+        "name": "Generative AI Toolkit for SAP HANA Cloud",
+        "description": "Generative AI Toolkit for SAP HANA Cloud",
+        "license": "Apache-2.0",
+        "upstream": "",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      },
+      {
+        "path": "vllm-main",
+        "name": "vLLM (inference engine)",
+        "description": "A high-throughput and memory-efficient inference and serving engine for LLMs",
+        "license": "Apache-2.0",
+        "upstream": "https://github.com/vllm-project/vllm",
+        "plans_path": "",
+        "commits": [
+          {
+            "hash": "9b8071156c1a",
+            "date": "2026-02-26 09:31:42 +0800",
+            "author": "plturrell",
+            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+          },
+          {
+            "hash": "0b20d62146fa",
+            "date": "2026-02-26 02:02:05 +0800",
+            "author": "plturrell",
+            "subject": "Initial commit for fresh sap-oss repo"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+# SBOM Policy-as-Code — SAP OSS Portfolio
+# Consumed by: python3 scripts/sbom-lineage/audit_sbom.py --policy policy.yaml
+#
+# This file defines the rules enforced during CI SBOM audit.
+# Adjust thresholds per your organisation's risk appetite.
+
+# ── License policy ────────────────────────────────────────────────────────────
+licenses:
+  # Components using these licenses will cause a FAIL (build block).
+  blocklist:
+    - AGPL-3.0-only
+    - AGPL-3.0-or-later
+    - GPL-3.0-only
+    - GPL-3.0-or-later
+    # - SSPL-1.0   # uncomment to block MongoDB / Elastic SSPL
+
+  # Components using these licenses will trigger a WARN (approval required).
+  require_approval:
+    - GPL-2.0-only
+    - GPL-2.0-or-later
+    - LGPL-2.0-only
+    - LGPL-2.0-or-later
+    - LGPL-2.1-only
+    - LGPL-2.1-or-later
+    - LGPL-3.0-only
+    - LGPL-3.0-or-later
+    - CC-BY-SA-4.0
+    - EUPL-1.2
+
+# ── Copyleft propagation ──────────────────────────────────────────────────────
+copyleft:
+  # FAIL | WARN | INFO | IGNORE
+  strong_copyleft_action: WARN      # GPL, AGPL, OSL
+  network_copyleft_action: WARN     # AGPL, EUPL (affects SaaS)
+
+# ── Export control ────────────────────────────────────────────────────────────
+export_control:
+  # Flag packages that may require ECCN 5D002 classification review
+  # FAIL | WARN | INFO | IGNORE
+  eccn_action: INFO
+
+# ── Vulnerability severity gates ─────────────────────────────────────────────
+vulnerabilities:
+  # Fail the build if any vulnerability at these severity levels is found.
+  # Requires vuln_overlay.py to have been run first.
+  fail_on_severity:
+    - CRITICAL
+
+  # Emit WARN (does not fail, but visible in audit report) for these levels.
+  warn_on_severity:
+    - HIGH
+    - MEDIUM
+

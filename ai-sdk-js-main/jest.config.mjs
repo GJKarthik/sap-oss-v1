@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -41,8 +43,15 @@ const config = {
   // A list of reporter names that Jest uses when writing coverage reports
   coverageReporters: ['html'],
 
-  // An object that configures minimum threshold enforcement for coverage results
-  // coverageThreshold: undefined,
+  // Minimum coverage thresholds (enforced in CI)
+  coverageThreshold: {
+    global: {
+      lines: 50,
+      branches: 45,
+      functions: 45,
+      statements: 50,
+    },
+  },
 
   // A path to a custom dependency extractor
   // dependencyExtractor: undefined,

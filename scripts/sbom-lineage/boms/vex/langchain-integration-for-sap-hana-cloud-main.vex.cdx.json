@@ -1,0 +1,27 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:5052b62b-fa8b-4977-ad16-eb9d45b1a298",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "LangChain Integration for SAP HANA Cloud",
+      "version": "1.0.2",
+      "purl": "pkg:pypi/langchain integration for sap hana cloud@1.0.2"
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

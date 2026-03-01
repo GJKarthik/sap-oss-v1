@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:d9e14893-326e-4ac5-bb3f-552ba2d3132f",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "name": "world-monitor",
+      "group": "",
+      "version": "2.5.4",
+      "purl": "pkg:npm/world-monitor@2.5.4",
+      "bom-ref": "pkg:npm/world-monitor@2.5.4",
+      "type": "application",
+      "licenses": [
+        {
+          "license": {
+            "id": "AGPL-3.0-only",
+            "url": "https://opensource.org/licenses/AGPL-3.0-only"
+          }
+        }
+      ],
+      "components": [
+        {
+          "group": "",
+          "name": "lodash",
+          "version": "latest",
+          "description": "Nix flake project: lodash",
+          "purl": "pkg:nix/lodash%40latest",
+          "type": "application",
+          "bom-ref": "pkg:nix/lodash@latest",
+          "properties": [
+            {
+              "name": "SrcFile",
+              "value": "/Users/user/Documents/sap-oss/world-monitor-main/node_modules/onnx-proto/node_modules/protobufjs/cli/node_modules/lodash/flake.lock"
+            },
+            {
+              "name": "cdx:nix:flake_dir",
+              "value": "/Users/user/Documents/sap-oss/world-monitor-main/node_modules/onnx-proto/node_modules/protobufjs/cli/node_modules/lodash"
+            }
+          ]
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

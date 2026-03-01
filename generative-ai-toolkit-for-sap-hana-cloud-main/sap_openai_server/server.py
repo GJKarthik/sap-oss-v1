@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 SAP OpenAI-Compatible Server for HANA Cloud Generative AI Toolkit
 

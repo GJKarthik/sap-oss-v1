@@ -1,0 +1,17 @@
+# Environment and secrets - never commit real credentials
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.cursor/rules/snyk_rules.mdc

@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { createLogger } from '@sap-cloud-sdk/util';
 import { jest } from '@jest/globals';
-import { parseMockResponse } from '../../../../test-util/mock-http.js';
+import { parseMockResponse } from '../../../../test-util/fixtures.js';
 import { AzureOpenAiEmbeddingResponse } from './azure-openai-embedding-response.js';
 import type { HttpResponse } from '@sap-cloud-sdk/http-client';
 import type { AzureOpenAiEmbeddingOutput } from './azure-openai-embedding-types.js';

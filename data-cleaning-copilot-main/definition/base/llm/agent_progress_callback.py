@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Callback interface for agent progress reporting."""
 
 from typing import Protocol, Optional, Any, Dict

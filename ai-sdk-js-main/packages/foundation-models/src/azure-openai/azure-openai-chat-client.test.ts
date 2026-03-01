@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import {
   mockClientCredentialsGrantCall,
   mockDeploymentsList,
-  mockInference,
-  parseFileToString,
-  parseMockResponse
-} from '../../../../test-util/mock-http.js';
+  mockInference
+} from '../../../../test-util/interceptors.js';
+import { parseFileToString, parseMockResponse } from '../../../../test-util/fixtures.js';
 import { AzureOpenAiChatClient } from './azure-openai-chat-client.js';
 import { apiVersion } from './model-types.js';
 import type { AzureOpenAiCreateChatCompletionResponse } from './client/inference/schema/index.js';

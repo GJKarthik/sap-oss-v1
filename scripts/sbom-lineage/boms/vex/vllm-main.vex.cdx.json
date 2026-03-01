@@ -1,0 +1,27 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:771025ce-4a88-4f58-8d9c-71584d6d9db5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T12:38:59Z",
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "vLLM (inference engine)",
+      "version": "0.9.0",
+      "purl": "pkg:pypi/vllm@0.9.0"
+    },
+    "authors": [
+      {
+        "name": "SAP SE — SBOM Pipeline (automated)"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "vulnerabilities": []
+}

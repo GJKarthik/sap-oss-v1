@@ -276,16 +276,125 @@ TOON format rules:
     fn stream_complete(
         inout self,
         prompt: String,
-        system_prompt: String = ""
+        system_prompt: String = "",
+        chunk_callback: fn(String) -> None = _default_chunk_callback
     ) -> String:
         """
-        Stream completion from AI Core (for long responses).
+        Stream completion from AI Core using Server-Sent Events (SSE).
         
-        Note: Streaming returns chunks that are accumulated into final TOON.
+        Yields chunks via callback as they arrive from the upstream LLM.
+        Returns the complete accumulated response in TOON format.
+        
+        Args:
+            prompt: The user prompt
+            system_prompt: Optional system prompt
+            chunk_callback: Function called for each received chunk
+        
+        Returns:
+            Complete TOON-formatted response (accumulated from all chunks)
         """
-        # For now, use regular complete
-        # TODO: Implement proper streaming with SSE
-        return self.complete(prompt, system_prompt)
+        var token = self._get_auth_token()
+        if token == "":
+            return "error:auth_failed"
+        
+        if self.config.endpoint == "" or self.config.deployment_id == "":
+            return "error:missing_config fields:endpoint|deployment_id"
+        
+        var url = self.config.endpoint + "/v2/inference/deployments/" + self.config.deployment_id + "/chat/completions"
+        
+        # Default system prompt for TOON output
+        var sys_prompt = system_prompt
+        if sys_prompt == "":
+            sys_prompt = """You are a precise assistant that responds in TOON format.
+TOON format rules:
+- Use key:value syntax (no quotes for simple strings)
+- Arrays use pipe separator: items:a|b|c
+- Null is represented as ~
+- Boolean is true/false
+- Only output the requested fields, nothing else."""
+        
+        try:
+            var requests = Python.import_module("requests")
+            var json_mod = Python.import_module("json")
+            
+            var headers = {
+                "Authorization": "Bearer " + token,
+                "AI-Resource-Group": self.config.resource_group,
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream"
+            }
+            
+            var payload = {
+                "messages": [
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": self.config.max_tokens,
+                "temperature": self.config.temperature,
+                "model": self.config.model_name,
+                "stream": True
+            }
+            
+            # Make streaming request
+            var response = requests.post(
+                url, 
+                headers=headers, 
+                json=payload,
+                stream=True,
+                timeout=self.config.request_timeout_seconds
+            )
+            
+            if response.status_code == 401:
+                self._invalidate_token()
+                return "error:auth_expired status:401"
+            
+            if response.status_code != 200:
+                return "error:request_failed status:" + str(response.status_code)
+            
+            # Accumulate streamed content
+            var accumulated = String()
+            
+            # Parse SSE stream
+            for line in response.iter_lines():
+                if line:
+                    var line_str = str(line, encoding="utf-8")
+                    
+                    # SSE format: "data: {...}"
+                    if line_str.startswith("data: "):
+                        var data_str = line_str[6:]  # Remove "data: " prefix
+                        
+                        # Check for stream end marker
+                        if data_str == "[DONE]":
+                            break
+                        
+                        try:
+                            var chunk_json = json_mod.loads(data_str)
+                            var choices = chunk_json.get("choices", [])
+                            if len(choices) > 0:
+                                var delta = choices[0].get("delta", {})
+                                var content = delta.get("content", "")
+                                if content:
+                                    var content_str = str(content)
+                                    accumulated += content_str
+                                    # Call the chunk callback
+                                    chunk_callback(content_str)
+                        except:
+                            # Skip malformed JSON chunks
+                            pass
+            
+            return self._clean_toon_response(accumulated)
+            
+        except e:
+            return "error:exception message:" + str(e)
+
+
+# ===----------------------------------------------------------------------=== #
+# Default callback for streaming
+# ===----------------------------------------------------------------------=== #
+
+fn _default_chunk_callback(chunk: String) -> None:
+    """Default chunk callback - does nothing (silent accumulation)."""
+    pass
 
 
 # ===----------------------------------------------------------------------=== #

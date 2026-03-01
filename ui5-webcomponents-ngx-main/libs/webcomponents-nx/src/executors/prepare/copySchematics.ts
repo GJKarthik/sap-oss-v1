@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { PrepareOptions } from './prepareOptions';
 import { logger, ProjectConfiguration } from '@nx/devkit';
 import { SchematicsOptions } from './schematicsOptions';

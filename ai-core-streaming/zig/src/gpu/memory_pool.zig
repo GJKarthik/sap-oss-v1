@@ -233,36 +233,78 @@ pub const GpuMemoryPool = struct {
     }
     
     /// Transfer data from CPU to GPU (H2D)
+    /// 
+    /// For CUDA: Uses cuMemcpyHtoD for synchronous transfer or cuMemcpyHtoDAsync for async
+    /// For Metal: Uses MTLBuffer with newBufferWithBytes or blit encoder
+    /// 
+    /// In production, GPU context provides the transfer primitives. Without GPU context,
+    /// this is a no-op (data stays in CPU buffer for CPU-only inference fallback).
     pub fn transferToGpu(self: *GpuMemoryPool, slot: *BufferSlot) !void {
         if (slot.state != .ready_for_transfer) return error.InvalidSlotState;
         
         slot.state = .gpu_processing;
         
-        // Actual GPU transfer would happen here
-        if (self.gpu_ctx) |_| {
-            // TODO: Implement actual Metal/CUDA transfer
-            // For now, simulate with CPU copy
+        if (self.gpu_ctx) |gpu| {
+            // GPU context provides the actual transfer implementation:
+            // - CUDA: cuMemcpyHtoDAsync(gpu_buffer, cpu_buffer, size, stream)
+            // - Metal: blitEncoder.copy(from: cpuBuffer, to: gpuBuffer)
+            //
+            // The gpu_ctx.copyHostToDevice abstracts the platform-specific call.
+            // Slot's gpu_buffer was allocated during pool initialization via
+            // gpu_ctx.allocateDeviceMemory(slot_size_bytes).
+            if (slot.gpu_buffer) |gpu_buf| {
+                if (slot.cpu_buffer) |cpu_buf| {
+                    gpu.copyHostToDevice(gpu_buf, cpu_buf.ptr, slot.data_size) catch |err| {
+                        log.err("H2D transfer failed: {}", .{err});
+                        slot.state = .ready_for_transfer; // Revert state
+                        return err;
+                    };
+                }
+            }
         }
+        // Without GPU context, CPU buffer serves as the working buffer
+        // for CPU-only inference (acceptable fallback for non-GPU environments)
         
         _ = self.h2d_transfers.fetchAdd(1, .monotonic);
         _ = self.total_bytes_transferred.fetchAdd(slot.data_size, .monotonic);
         
-        log.debug("H2D transfer: slot={} size={} bytes", .{ slot.index, slot.data_size });
+        log.debug("H2D transfer: slot={} size={} bytes gpu={}", .{
+            slot.index,
+            slot.data_size,
+            self.gpu_ctx != null,
+        });
     }
     
     /// Transfer data from GPU to CPU (D2H)
+    ///
+    /// For CUDA: Uses cuMemcpyDtoH for synchronous transfer or cuMemcpyDtoHAsync for async
+    /// For Metal: Uses MTLBuffer contents or blit encoder
     pub fn transferFromGpu(self: *GpuMemoryPool, slot: *BufferSlot) !void {
         if (slot.state != .gpu_complete) return error.InvalidSlotState;
         
-        // Actual GPU transfer would happen here
-        if (self.gpu_ctx) |_| {
-            // TODO: Implement actual Metal/CUDA transfer
+        if (self.gpu_ctx) |gpu| {
+            // GPU context provides the actual transfer implementation:
+            // - CUDA: cuMemcpyDtoHAsync(cpu_buffer, gpu_buffer, size, stream)
+            // - Metal: blitEncoder.copy(from: gpuBuffer, to: cpuBuffer)
+            if (slot.gpu_buffer) |gpu_buf| {
+                if (slot.cpu_buffer) |cpu_buf| {
+                    gpu.copyDeviceToHost(cpu_buf.ptr, gpu_buf, slot.data_size) catch |err| {
+                        log.err("D2H transfer failed: {}", .{err});
+                        return err;
+                    };
+                }
+            }
         }
+        // Without GPU context, data is already in CPU buffer
         
         _ = self.d2h_transfers.fetchAdd(1, .monotonic);
         _ = self.total_bytes_transferred.fetchAdd(slot.data_size, .monotonic);
         
-        log.debug("D2H transfer: slot={} size={} bytes", .{ slot.index, slot.data_size });
+        log.debug("D2H transfer: slot={} size={} bytes gpu={}", .{
+            slot.index,
+            slot.data_size,
+            self.gpu_ctx != null,
+        });
     }
     
     /// Get pool statistics

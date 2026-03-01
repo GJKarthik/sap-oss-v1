@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """V3 Check Generation Agent - Intelligent routing with context-aware tool selection."""
 
 from typing import Dict, Optional, Any, Set

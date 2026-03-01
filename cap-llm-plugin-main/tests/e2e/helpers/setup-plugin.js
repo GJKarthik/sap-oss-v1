@@ -1,16 +1,43 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * E2E Test Helper — Plugin Setup
  *
- * Creates a fully wired CAPLLMPlugin instance with mocked CDS and SDK
+ * Creates a fully wired CAPLLMPlugin instance with stubbed CDS and SDK
  * dependencies for end-to-end pipeline testing.
  */
 
-const {
-  createEmbeddingResponse,
-  createChatCompletionResponse,
-  createContentFilter,
-  createSimilaritySearchRows,
-} = require("./mock-ai-core");
+// ── Inline response fixtures ───────────────────────────────────────────────
+
+function createEmbeddingResponse(vector = null) {
+  const defaultVector = Array.from({ length: 1536 }, (_, i) => Math.sin(i * 0.01));
+  return { getEmbeddings: () => [{ embedding: vector || defaultVector }] };
+}
+
+function createChatCompletionResponse(content = "This is a test AI response.") {
+  return {
+    getContent: () => content,
+    getTokenUsage: () => ({ completion_tokens: 42, prompt_tokens: 100, total_tokens: 142 }),
+    getFinishReason: () => "stop",
+    data: {
+      orchestration_result: {
+        choices: [{ message: { role: "assistant", content }, finish_reason: "stop" }],
+        usage: { completion_tokens: 42, prompt_tokens: 100, total_tokens: 142 },
+      },
+    },
+  };
+}
+
+function createContentFilter() {
+  return { type: "azure_content_safety", config: { Hate: 2, Violence: 2, SelfHarm: 2, Sexual: 2 } };
+}
+
+function createSimilaritySearchRows(count = 3) {
+  return Array.from({ length: count }, (_, i) => ({
+    PAGE_CONTENT: `Document chunk ${i + 1}: This is relevant content about the topic.`,
+    SCORE: parseFloat((0.95 - i * 0.05).toFixed(2)),
+  }));
+}
 
 /**
  * Set up mocks and load the plugin for E2E testing.
@@ -19,6 +46,7 @@ const {
  * @param {Function} overrides.dbRun - Custom mock for cds.db.run
  * @param {Function} overrides.embed - Custom mock for OrchestrationEmbeddingClient.embed
  * @param {Function} overrides.chatCompletion - Custom mock for OrchestrationClient.chatCompletion
+ * @param {Function} overrides.stream - Custom mock for OrchestrationClient.stream
  * @param {Function} overrides.buildFilter - Custom mock for buildAzureContentSafetyFilter
  * @returns {{ plugin: object, mocks: object }}
  */
@@ -72,6 +100,11 @@ function setupPlugin(overrides = {}) {
   // ── Mock SDK ───────────────────────────────────────────────────────
   const mockEmbed = overrides.embed || jest.fn().mockResolvedValue(createEmbeddingResponse());
   const mockChatCompletion = overrides.chatCompletion || jest.fn().mockResolvedValue(createChatCompletionResponse());
+  const mockStream = overrides.stream || jest.fn().mockResolvedValue({
+    stream: { [Symbol.asyncIterator]: async function* () {} },
+    getFinishReason: () => "stop",
+    getTokenUsage: () => ({ total_tokens: 0 }),
+  });
   const mockBuildFilter = overrides.buildFilter || jest.fn().mockReturnValue(createContentFilter());
 
   jest.doMock("@sap-ai-sdk/orchestration", () => ({
@@ -80,6 +113,7 @@ function setupPlugin(overrides = {}) {
     })),
     OrchestrationClient: jest.fn().mockImplementation(() => ({
       chatCompletion: mockChatCompletion,
+      stream: mockStream,
     })),
     buildAzureContentSafetyFilter: mockBuildFilter,
   }));
@@ -100,6 +134,7 @@ function setupPlugin(overrides = {}) {
       dbRun: mockDbRun,
       embed: mockEmbed,
       chatCompletion: mockChatCompletion,
+      stream: mockStream,
       buildFilter: mockBuildFilter,
       log: { debug: mockLogDebug, info: mockLogInfo, warn: mockLogWarn, error: mockLogError },
     },

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 // NOTE: ALL code changes in this file MUST be reflected in the documentation portal.
 
 /* eslint-disable import/no-internal-modules */

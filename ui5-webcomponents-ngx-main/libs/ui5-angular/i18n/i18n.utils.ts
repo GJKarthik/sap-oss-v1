@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {FactorySansProvider, Provider} from "@angular/core";
 import {Translations} from "./i18n.types";
 import {I18N_TRANSLATIONS} from "./i18n.tokens";

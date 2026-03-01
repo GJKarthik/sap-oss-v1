@@ -1,0 +1,127 @@
+{
+  "service": "generative-ai-toolkit-for-sap-hana-cloud-main",
+  "ml_frameworks": [
+    "hana_ml"
+  ],
+  "hardware_targets": [
+    "CPU (no accelerator)"
+  ],
+  "model_refs": [
+    "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  ],
+  "dataset_refs": [],
+  "model_card": {
+    "schema_version": "1.0",
+    "model_card_format": "HuggingFace-v0.2 / EU-AI-Act-Annex-IV",
+    "generated": "2026-02-28T11:32:48Z",
+    "model_details": {
+      "name": "Generative AI Toolkit for SAP HANA Cloud",
+      "description": "SAP OSS service: Generative AI Toolkit for SAP HANA Cloud",
+      "version": "NOASSERTION",
+      "license": "LicenseRef-SAP-Proprietary",
+      "contact": "SAP SE — AI & Open-Source Office",
+      "upstream": ""
+    },
+    "intended_use": {
+      "primary_uses": [
+        "Enterprise AI / ML inference",
+        "Data processing"
+      ],
+      "out_of_scope": [
+        "Safety-critical systems without additional validation"
+      ]
+    },
+    "technical_specifications": {
+      "ml_frameworks": [
+        "SAP HANA ML 2.27.26020601"
+      ],
+      "hardware_requirements": [
+        "CPU (no accelerator)"
+      ],
+      "referenced_base_models": [
+        "cross-encoder/ms-marco-MiniLM-L-6-v2"
+      ],
+      "referenced_datasets": []
+    },
+    "provenance": {
+      "framework_components": [
+        {
+          "name": "SAP HANA ML",
+          "vendor": "SAP SE",
+          "version": "2.27.26020601",
+          "license": "LicenseRef-SAP-Proprietary",
+          "purl": "pkg:pypi/hana-ml@2.27.26020601"
+        }
+      ],
+      "base_model_sources": [
+        {
+          "model_id": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+          "source": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2",
+          "provenance": "HuggingFace Model Hub — verify license at source before deployment"
+        }
+      ],
+      "dataset_sources": []
+    },
+    "eu_ai_act": {
+      "risk_category": "Limited risk (Article 52) — requires transparency notification",
+      "transparency_obligations": [
+        "Users must be informed they are interacting with an AI system",
+        "Training data must be documented for high-risk use cases"
+      ],
+      "conformity_assessment": "pending"
+    },
+    "data_governance": {
+      "training_data_documented": false,
+      "privacy_impact_assessed": false,
+      "data_retention_policy": "Not specified — consult SAP Data Governance team"
+    }
+  },
+  "cdx_formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "SAP HANA ML",
+              "version": "2.27.26020601",
+              "supplier": {
+                "name": "SAP SE"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "LicenseRef-SAP-Proprietary"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/hana-ml@2.27.26020601"
+            },
+            {
+              "type": "machine-learning-model",
+              "name": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+              "description": "HuggingFace base model — cross-encoder/ms-marco-MiniLM-L-6-v2",
+              "externalReferences": [
+                {
+                  "type": "website",
+                  "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2"
+                }
+              ],
+              "licenses": [
+                {
+                  "license": {
+                    "id": "NOASSERTION"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

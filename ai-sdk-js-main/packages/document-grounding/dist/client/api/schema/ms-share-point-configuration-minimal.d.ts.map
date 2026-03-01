@@ -1,0 +1,1 @@
+{"version":3,"file":"ms-share-point-configuration-minimal.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/ms-share-point-configuration-minimal.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,oBAAoB,EAAE,MAAM,8BAA8B,CAAC;AACzE;;GAEG;AACH,MAAM,MAAM,gCAAgC,GAAG;IAC7C,UAAU,EAAE,oBAAoB,CAAC;CAClC,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

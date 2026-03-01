@@ -1,0 +1,81 @@
+# sbom-suppressions.yaml — Accepted SBOM policy exceptions.
+#
+# Each suppression must have:
+#   id          — unique identifier (SUP-NNN)
+#   rule        — SARIF rule ID being suppressed (SBOM001–SBOM015)
+#   component   — exact component name as it appears in the BOM
+#   service     — service slug (matches BOM file name without .cyclonedx.json)
+#   resolution  — CycloneDX VEX justification code:
+#                   not_affected         SAP does not ship or expose this component
+#                   code_not_reachable   the affected code path is never reached
+#                   requires_configuration  exploitation requires unsafe config
+#                   protected_by_mitigating_control  compensating control exists
+#                   intentional          the behaviour is intentional (own licence)
+#   justification — human-readable rationale (required)
+#   approved_by — team or person who approved (required for FAIL-level suppressions)
+#   expires     — ISO 8601 date; suppression must be reviewed before expiry
+#   remediation — optional upstream issue / PR tracking the real fix
+#
+# ─── Review cadence ───────────────────────────────────────────────────────────
+# FAIL suppressions:   reviewed every 6 months (see expires field)
+# WARN suppressions:   reviewed annually
+# ─────────────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
+
+version: "1.0"
+
+suppressions:
+
+  # ── rfc3987 (GPL-3.0-or-later) in vllm-main ─────────────────────────────────
+  - id:           SUP-001
+    rule:         SBOM001
+    component:    rfc3987
+    service:      vllm-main
+    resolution:   not_affected
+    justification: >
+      vllm-main is an audit-only reference BOM for the upstream vLLM project
+      (Apache-2.0, https://github.com/vllm-project/vllm). SAP does not distribute
+      vLLM or rfc3987; the BOM is generated for supply-chain visibility only.
+      rfc3987 is used internally by vLLM for IRI parsing and is never exposed in
+      SAP products. Upstream remediation: replace rfc3987 with rfc3986 (Apache-2.0)
+      or uri-template (MIT). Tracked at vllm-project/vllm.
+    approved_by:  SAP OSS Legal / AI Platform
+    expires:      "2026-12-31"
+    remediation:  https://github.com/vllm-project/vllm/issues
+
+  # ── html2text (GPL-3.0-or-later) in vllm-main ───────────────────────────────
+  - id:           SUP-002
+    rule:         SBOM001
+    component:    html2text
+    service:      vllm-main
+    resolution:   not_affected
+    justification: >
+      Same rationale as SUP-001. html2text is used by vLLM for converting HTML
+      documentation to plain text during model inference. SAP does not distribute
+      this component. Alternative: markdownify (MIT) or bleach (Apache-2.0).
+      Upstream fix required at vllm-project/vllm.
+    approved_by:  SAP OSS Legal / AI Platform
+    expires:      "2026-12-31"
+    remediation:  https://github.com/vllm-project/vllm/issues
+
+  # ── world-monitor root licence (AGPL-3.0-only) ──────────────────────────────
+  - id:           SUP-003
+    rule:         SBOM001
+    component:    world-monitor
+    service:      world-monitor-main
+    resolution:   intentional
+    justification: >
+      world-monitor is intentionally licensed under AGPL-3.0-only by its author
+      (Elie Habib). This finding fires because the root component's own licence
+      is on the organisational blocklist, not because of a dependency violation.
+      Permitted use: internal tooling only; world-monitor is not redistributed,
+      embedded in a commercial SaaS product, or exposed to external users.
+      The AGPL obligation (source availability) is satisfied by this repository
+      being open-source. Reviewed and accepted by SAP Legal.
+    approved_by:  SAP OSS Legal / Open-Source Office
+    expires:      "2027-01-01"
+    remediation:  >
+      If world-monitor is ever commercialised or embedded in a SaaS offering,
+      obtain a commercial licence from the author or relicense the service.
+

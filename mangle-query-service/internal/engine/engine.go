@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 // Package engine wraps the Mangle Datalog interpreter for query resolution.
 package engine
 
@@ -52,18 +54,31 @@ type MangleEngine struct {
 }
 
 // New creates a new MangleEngine, loading rules from the given directory.
+// Only routing.mg is loaded; use NewWithRules to load additional rule files.
 func New(rulesDir string) (*MangleEngine, error) {
+	return NewWithRules(rulesDir, "routing.mg")
+}
+
+// NewWithRules creates a MangleEngine loading the specified rule files (relative
+// to rulesDir) concatenated in order.  This is used by tests that need
+// governance.mg or rag_enrichment.mg in addition to routing.mg.
+func NewWithRules(rulesDir string, ruleFiles ...string) (*MangleEngine, error) {
 	eng := &MangleEngine{
 		rulesDir:      rulesDir,
 		extPredicates: make(map[ast.PredicateSym]mangleEngine.ExternalPredicateCallback),
 	}
 
-	rulesPath := filepath.Join(rulesDir, "routing.mg")
-	content, err := os.ReadFile(rulesPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read rules file %s: %w", rulesPath, err)
+	var combined strings.Builder
+	for _, f := range ruleFiles {
+		rulesPath := filepath.Join(rulesDir, f)
+		content, err := os.ReadFile(rulesPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read rules file %s: %w", rulesPath, err)
+		}
+		combined.Write(content)
+		combined.WriteByte('\n')
 	}
-	eng.rulesContent = string(content)
+	eng.rulesContent = combined.String()
 
 	if err := eng.reload(); err != nil {
 		return nil, fmt.Errorf("failed to load rules: %w", err)

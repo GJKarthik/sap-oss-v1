@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {Inject, NgModule} from '@angular/core';
 import {setAnimationMode} from '@ui5/webcomponents-base/dist/config/AnimationMode.js';
 

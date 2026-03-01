@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 /* eslint-disable no-console */
 import { resolve } from 'node:path';
 import { camelCase, pascalCase } from '@sap-cloud-sdk/util';

@@ -1,0 +1,584 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{listings}
+
+\geometry{margin=2cm}
+
+\definecolor{sapblue}{RGB}{0, 118, 203}
+\definecolor{darkgray}{RGB}{64, 64, 64}
+\definecolor{lightgray}{RGB}{240, 240, 240}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{lightgray},breaklines=true,frame=single}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{sapblue}{\textbf{SAP AI Platform - Detailed SBOM}}}
+\fancyhead[R]{\textcolor{darkgray}{Version 2.0}}
+\fancyfoot[C]{\thepage}
+
+\titleformat{\section}{\Large\bfseries\color{sapblue}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{darkgray}}{\thesubsection}{1em}{}
+
+\hypersetup{colorlinks=true,linkcolor=sapblue,urlcolor=sapblue}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\textcolor{sapblue}{Detailed SBOM}\\[0.5cm]}
+{\LARGE SAP AI Platform}\\[1cm]
+{\Large\textbf{Technical Architecture Reference}}\\[3cm]
+
+\begin{tabular}{ll}
+\textbf{Total Services:} & 13 \\
+\textbf{Total Source Files:} & 3,273 \\
+\textbf{Total Lines of Code:} & 628,700 \\
+\textbf{Languages:} & Zig, Python, TypeScript, Go, Java, Mojo \\
+\end{tabular}
+
+\vfill
+{\large March 2026}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+This document provides technical documentation for all 13 services. Each service section includes:
+\begin{itemize}[noitemsep]
+    \item Description and purpose
+    \item Architecture type and pattern  
+    \item Component breakdown
+    \item File counts and lines of code
+\end{itemize}
+
+\subsection{Language Distribution}
+
+\begin{tabular}{lrr}
+\toprule
+\textbf{Language} & \textbf{Files} & \textbf{LOC} \\
+\midrule
+Java & 1,800 & 450,000 \\
+Python & 450 & 48,000 \\
+TypeScript & 380 & 35,000 \\
+Zig & 180 & 32,000 \\
+C++/CUDA & 80 & 20,000 \\
+JavaScript & 220 & 18,000 \\
+Go & 45 & 8,500 \\
+Mojo & 15 & 3,200 \\
+\bottomrule
+\end{tabular}
+
+\newpage
+
+
+\section{ai-core-streaming}
+
+\subsection{Overview}
+
+\textbf{Real-time AI inference streaming service implementing Pulsar-compatible protocol for high-throughput message passing with GPU-accelerated inference}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & ai-core-streaming \\
+Version & 2.0.0 \\
+Language & Zig \\
+Runtime & Native binary \\
+License & Apache-2.0 \\
+Files & 95 \\
+Lines of Code & 18500 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Provides a streaming interface for AI inference requests, enabling real-time token generation, batch processing, and integration with SAP BTP services
+
+\subsection{Architecture}
+Type: Event-driven streaming \\
+Pattern: Pulsar-compatible broker with GPU inference backend
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item HTTP Admin API
+\item Pulsar Protocol Broker
+\item OpenAI-compatible REST API
+\item GPU Backend Layer (CUDA/Metal/WebGPU)
+\item Schema Registry
+\item Partition Manager
+\end{itemize}
+
+\newpage
+
+
+\section{ai-core-pal}
+
+\subsection{Overview}
+
+\textbf{Platform Abstraction Layer providing unified interface to multiple LLM backends (local, vLLM, NIM, AI Core) with OpenAI-compatible API}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & ai-core-pal \\
+Version & 1.0.0 \\
+Language & Zig, Mojo \\
+Runtime & Native binary \\
+License & Apache-2.0 \\
+Files & 78 \\
+Lines of Code & 12800 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Abstracts away the complexity of different LLM providers, enabling transparent switching between local models and cloud services
+
+\subsection{Architecture}
+Type: Gateway/Proxy \\
+Pattern: Provider abstraction with model routing
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item OpenAI-Compatible API Gateway
+\item Provider Adapters (vLLM, NIM, AI Core)
+\item Local LLaMA Inference Engine
+\item MCP Client for Tool Integration
+\item Mojo ReAct Agent
+\end{itemize}
+
+\newpage
+
+
+\section{vllm-main}
+
+\subsection{Overview}
+
+\textbf{High-throughput LLM inference engine with PagedAttention, continuous batching, and OpenAI-compatible API. Includes Zig rewrite modules for performance-critical paths}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & vllm-main \\
+Version & 0.9.0 \\
+Language & Python, Zig, C++/CUDA \\
+Runtime & Python 3.10+, CUDA 12.0+ \\
+License & Apache-2.0 \\
+Files & 520 \\
+Lines of Code & 85000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Production-grade LLM serving with best-in-class throughput and latency through innovative memory management
+
+\subsection{Architecture}
+Type: LLM Inference Server \\
+Pattern: Continuous batching with PagedAttention KV cache
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item OpenAI-Compatible API Server
+\item LLM Engine Core
+\item PagedAttention Memory Manager
+\item Continuous Batch Scheduler
+\item CUDA/ROCm Kernels
+\item Model Executor
+\end{itemize}
+
+\newpage
+
+
+\section{mangle-query-service}
+
+\subsection{Overview}
+
+\textbf{Query service for Mangle semantic data model with Elasticsearch hybrid search and MCP integration}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & mangle-query-service \\
+Version & 1.0.0 \\
+Language & Go \\
+Runtime & Go 1.22+ \\
+License & Apache-2.0 \\
+Files & 45 \\
+Lines of Code & 8500 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Enables semantic queries over SAP business entities using Datalog-style rules with hybrid vector/keyword search
+
+\subsection{Architecture}
+Type: Query Engine \\
+Pattern: Datalog-style rule engine with ES backend
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item gRPC Server
+\item Mangle Rule Engine
+\item Elasticsearch Client
+\item MCP Client for LLM
+\item Batch ETL Sync
+\item CDC Listener
+\end{itemize}
+
+\newpage
+
+
+\section{cap-llm-plugin-main}
+
+\subsection{Overview}
+
+\textbf{CAP LLM Plugin for SAP Cloud Application Programming Model - adds LLM capabilities to CAP applications}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & cap-llm-plugin-main \\
+Version & 1.8.0 \\
+Language & TypeScript, JavaScript \\
+Runtime & Node.js 20+ \\
+License & Apache-2.0 \\
+Files & 85 \\
+Lines of Code & 6200 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Enables CAP applications to use LLM features including chat, RAG, embeddings, and anonymization
+
+\subsection{Architecture}
+Type: CAP Plugin \\
+Pattern: CDS plugin with AI SDK integration
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item CDS Plugin Lifecycle
+\item AI SDK Middleware
+\item RAG Pipeline
+\item Anonymization Helper
+\item OpenTelemetry Tracing
+\item MCP Server
+\end{itemize}
+
+\newpage
+
+
+\section{ai-sdk-js-main}
+
+\subsection{Overview}
+
+\textbf{SAP AI SDK for JavaScript/TypeScript - client libraries for SAP AI Core and Generative AI Hub}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & ai-sdk-js-main \\
+Version & 1.5.0 \\
+Language & TypeScript \\
+Runtime & Node.js 18+, Browser \\
+License & Apache-2.0 \\
+Files & 120 \\
+Lines of Code & 15000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Provides TypeScript/JavaScript clients for all SAP AI Core APIs with full type safety
+
+\subsection{Architecture}
+Type: SDK \\
+Pattern: Monorepo with package-per-API
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item @sap-ai-sdk/core - Core utilities
+\item @sap-ai-sdk/ai-api - AI API client
+\item @sap-ai-sdk/foundation-models - Foundation model clients
+\item @sap-ai-sdk/orchestration - Orchestration client
+\item @sap-ai-sdk/prompt-registry - Prompt management
+\end{itemize}
+
+\newpage
+
+
+\section{elasticsearch-main}
+
+\subsection{Overview}
+
+\textbf{Elasticsearch search and analytics engine - distributed, RESTful search with vector capabilities}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & elasticsearch-main \\
+Version & 9.4.0 \\
+Language & Java \\
+Runtime & JVM 21+ \\
+License & Elastic-2.0 \\
+Files & 2000 \\
+Lines of Code & 450000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Provides full-text search, vector search, and analytics for the platform's search needs
+
+\subsection{Architecture}
+Type: Distributed Search Engine \\
+Pattern: Cluster with sharding and replication
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item REST API Layer
+\item Query Engine (Lucene)
+\item Cluster Coordination
+\item Indexing Pipeline
+\item Vector Search (KNN)
+\end{itemize}
+
+\newpage
+
+
+\section{langchain-integration-for-sap-hana-cloud-main}
+
+\subsection{Overview}
+
+\textbf{LangChain integration for SAP HANA Cloud - vector store and retriever implementations}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & langchain-integration-for-sap-hana-cloud-main \\
+Version & 0.5.0 \\
+Language & Python \\
+Runtime & Python 3.10+ \\
+License & Apache-2.0 \\
+Files & 35 \\
+Lines of Code & 2800 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Enables using SAP HANA Cloud as a vector store in LangChain applications
+
+\subsection{Architecture}
+Type: LangChain Integration \\
+Pattern: VectorStore and Retriever implementations
+
+\textbf{Components:}\begin{itemize}[noitemsep]
+\item HANAVectorStore
+\item HANARetriever
+\item Connection Pool
+\end{itemize}
+
+\newpage
+
+
+\section{generative-ai-toolkit-for-sap-hana-cloud-main}
+
+\subsection{Overview}
+
+\textbf{Generative AI toolkit for SAP HANA Cloud - RAG, embeddings, and LLM integration}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & generative-ai-toolkit-for-sap-hana-cloud-main \\
+Version & 1.2.0 \\
+Language & Python \\
+Runtime & Python 3.10+ \\
+License & Apache-2.0 \\
+Files & 40 \\
+Lines of Code & 4500 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Provides high-level APIs for building GenAI applications with SAP HANA Cloud
+
+\subsection{Architecture}
+Type:  \\
+Pattern: 
+
+
+
+\newpage
+
+
+\section{odata-vocabularies-main}
+
+\subsection{Overview}
+
+\textbf{OData vocabulary definitions and tooling for SAP business entities}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & odata-vocabularies-main \\
+Version & 1.0.0 \\
+Language & Python, XML \\
+Runtime & Python 3.10+ \\
+License & Apache-2.0 \\
+Files & 60 \\
+Lines of Code & 5500 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Provides vocabulary definitions and Python tooling for working with SAP OData services
+
+\subsection{Architecture}
+Type:  \\
+Pattern: 
+
+
+
+\newpage
+
+
+\section{ui5-webcomponents-ngx-main}
+
+\subsection{Overview}
+
+\textbf{UI5 Web Components for Angular - Angular wrappers for SAP UI5 web components}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & ui5-webcomponents-ngx-main \\
+Version & 0.4.0 \\
+Language & TypeScript \\
+Runtime & Angular 18+ \\
+License & Apache-2.0 \\
+Files & 150 \\
+Lines of Code & 12000 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Enables Angular developers to use SAP UI5 Web Components with full Angular integration
+
+\subsection{Architecture}
+Type:  \\
+Pattern: 
+
+
+
+\newpage
+
+
+\section{world-monitor-main}
+
+\subsection{Overview}
+
+\textbf{Global monitoring and observability service with security middleware}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & world-monitor-main \\
+Version & 1.0.0 \\
+Language & Python \\
+Runtime & Python 3.10+ \\
+License & MIT \\
+Files & 30 \\
+Lines of Code & 2200 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Provides monitoring capabilities with security headers and rate limiting
+
+\subsection{Architecture}
+Type:  \\
+Pattern: 
+
+
+
+\newpage
+
+
+\section{data-cleaning-copilot-main}
+
+\subsection{Overview}
+
+\textbf{AI-powered data cleaning assistant with interactive frontend}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Name & data-cleaning-copilot-main \\
+Version & 1.0.0 \\
+Language & Python \\
+Runtime & Python 3.10+ \\
+License & Apache-2.0 \\
+Files & 35 \\
+Lines of Code & 3200 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Purpose}
+Helps users clean and transform data using LLM suggestions
+
+\subsection{Architecture}
+Type:  \\
+Pattern: 
+
+
+
+\newpage
+
+
+\section{Cross-Cutting Concerns}
+
+\subsection{Authentication}
+All services use XSUAA JWT authentication via \texttt{ai-core-streaming/zig/src/auth/xsuaa.zig}
+
+\subsection{Observability}
+\begin{tabular}{ll}
+\toprule
+Tracing & OpenTelemetry \\
+Metrics & Prometheus \\
+Logging & Structured JSON \\
+\bottomrule
+\end{tabular}
+
+\subsection{MCP Servers}
+10 services expose Model Context Protocol servers for tool integration.
+
+\section{Appendix: JSON Reference}
+
+Full details including directory descriptions, key files, and dependencies available in:
+\begin{lstlisting}
+docs/sbom/service-inventory.json (688 lines)
+docs/sbom/sbom-cyclonedx-full.json (549 npm deps)
+\end{lstlisting}
+
+\vfill
+\begin{center}
+\textcolor{sapblue}{\rule{0.8\textwidth}{0.4pt}}\\[0.3cm]
+{\small Generated from service-inventory.json | SAP AI Engineering}
+\end{center}
+
+\end{document}

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { buildDocumentGroundingConfig } from './grounding.js';
 import type { DocumentGroundingServiceConfig } from '../orchestration-types.js';
 

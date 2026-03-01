@@ -12,6 +12,44 @@ from typing import Any
 import urllib.request
 import urllib.error
 
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if o.strip()
+]
+
+
+def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
+    origin = (handler.headers.get("Origin") or "").strip()
+    if origin and origin in CORS_ALLOWED_ORIGINS:
+        return origin
+    return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
+
+
+MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
+MAX_SEARCH_SIZE = int(os.environ.get("MCP_MAX_SEARCH_SIZE", "100"))
+MAX_KNN_K = int(os.environ.get("MCP_MAX_KNN_K", "100"))
+
+
+def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def parse_json_arg(value: Any, default: Any):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return default
+    return value if value is not None else default
+
 # =============================================================================
 # Types
 # =============================================================================
@@ -88,6 +126,10 @@ def get_aicore_config() -> dict:
         "base_url": os.environ.get("AICORE_BASE_URL", os.environ.get("AICORE_SERVICE_URL", "")),
         "resource_group": os.environ.get("AICORE_RESOURCE_GROUP", "default"),
     }
+
+
+def aicore_config_ready(config: dict) -> bool:
+    return all(config.get(k) for k in ("client_id", "client_secret", "auth_url", "base_url"))
 
 
 _cached_token = {"token": None, "expires_at": 0}
@@ -293,8 +335,10 @@ class MCPServer:
     # Tool Handlers
     def _handle_es_search(self, args: dict) -> dict:
         index = args.get("index", "*")
-        query = json.loads(args.get("query", '{"match_all": {}}'))
-        size = args.get("size", 10)
+        query = parse_json_arg(args.get("query", '{"match_all": {}}'), {"match_all": {}})
+        if not isinstance(query, dict):
+            query = {"match_all": {}}
+        size = clamp_int(args.get("size", 10), 10, 1, MAX_SEARCH_SIZE)
         body = {"query": query, "size": size}
         result = es_request("POST", f"/{index}/_search", body)
         self.facts["tool_invocation"].append({"tool": "es_search", "index": index, "timestamp": __import__("time").time()})
@@ -303,14 +347,18 @@ class MCPServer:
     def _handle_es_vector_search(self, args: dict) -> dict:
         index = args.get("index", "")
         field = args.get("field", "vector")
-        query_vector = json.loads(args.get("query_vector", "[]"))
-        k = args.get("k", 10)
+        query_vector = parse_json_arg(args.get("query_vector", "[]"), [])
+        if not isinstance(query_vector, list):
+            return {"error": "query_vector must be a JSON array"}
+        k = clamp_int(args.get("k", 10), 10, 1, MAX_KNN_K)
         body = {"knn": {"field": field, "query_vector": query_vector, "k": k, "num_candidates": k * 2}}
         return es_request("POST", f"/{index}/_search", body)
 
     def _handle_es_index(self, args: dict) -> dict:
         index = args.get("index", "")
-        document = json.loads(args.get("document", "{}"))
+        document = parse_json_arg(args.get("document", "{}"), {})
+        if not isinstance(document, dict):
+            return {"error": "document must be a JSON object"}
         doc_id = args.get("id")
         if doc_id:
             return es_request("PUT", f"/{index}/_doc/{doc_id}", document)
@@ -324,7 +372,9 @@ class MCPServer:
         return es_request("GET", f"/{index}")
 
     def _handle_generate_embedding(self, args: dict) -> dict:
-        text = args.get("text", "")
+        text = str(args.get("text", "") or "")
+        if text.strip() == "":
+            return {"error": "text is required"}
         deployments = aicore_request("GET", "/v2/lm/deployments")
         resources = deployments.get("resources", [])
         deployment = next((d for d in resources if "embed" in str(d.get("details", {})).lower()), resources[0] if resources else None)
@@ -337,7 +387,7 @@ class MCPServer:
         index = args.get("index", "")
         query = args.get("query", "")
         vector_field = args.get("vector_field", "embedding")
-        k = args.get("k", 10)
+        k = clamp_int(args.get("k", 10), 10, 1, MAX_KNN_K)
         
         # Generate embedding for query
         embed_result = self._handle_generate_embedding({"text": query})
@@ -365,6 +415,11 @@ class MCPServer:
         id = request.id
 
         try:
+            if request.jsonrpc != "2.0":
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: jsonrpc must be '2.0'"})
+            if not isinstance(params, dict):
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: params must be an object"})
+
             if method == "initialize":
                 return MCPResponse(id, {
                     "protocolVersion": "2024-11-05",
@@ -378,6 +433,10 @@ class MCPServer:
             elif method == "tools/call":
                 tool_name = params.get("name", "")
                 args = params.get("arguments", {})
+                if args is None:
+                    args = {}
+                if not isinstance(args, dict):
+                    return MCPResponse(id, error={"code": -32602, "message": "Invalid params: arguments must be an object"})
                 handlers = {
                     "es_search": self._handle_es_search,
                     "es_vector_search": self._handle_es_vector_search,
@@ -424,51 +483,65 @@ mcp_server = MCPServer()
 
 
 class MCPHandler(BaseHTTPRequestHandler):
+    def _write_json(self, status_code: int, payload: dict):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
             from datetime import datetime, timezone
-            response = {"status": "healthy", "service": "elasticsearch-mcp", "timestamp": datetime.now(timezone.utc).isoformat()}
-            self.wfile.write(json.dumps(response).encode())
+            aicore_cfg = get_aicore_config()
+            response = {
+                "status": "healthy",
+                "service": "elasticsearch-mcp",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "es_host": get_es_config().get("host"),
+                "aicore_config_ready": aicore_config_ready(aicore_cfg),
+            }
+            self._write_json(200, response)
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
         if self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode()
+            if content_length <= 0:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})
+                return
+            if content_length > MAX_REQUEST_BYTES:
+                self._write_json(413, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Request too large"}})
+                return
+
+            raw_body = self.rfile.read(content_length)
             try:
+                body = raw_body.decode("utf-8")
                 data = json.loads(body)
+                if not isinstance(data, dict):
+                    self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}})
+                    return
                 request = MCPRequest(data)
                 response = mcp_server.handle_request(request)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps(response.to_dict()).encode())
+                self._write_json(200, response.to_dict())
+            except UnicodeDecodeError:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Invalid UTF-8 body"}})
             except json.JSONDecodeError:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}).encode())
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def log_message(self, format, *args):
         pass

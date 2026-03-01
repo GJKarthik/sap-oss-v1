@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { constructCompletionPostRequestFromJsonModuleConfig } from './util/module-config.js';
 
 describe('construct completion post request from JSON', () => {

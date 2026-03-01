@@ -264,6 +264,196 @@ pub const ParsedCommand = struct {
 };
 
 // ============================================================================
+// Command deserialisers (read from the cmd_data portion of a parsed frame)
+// Field numbers follow PulsarApi.proto exactly.
+// ============================================================================
+
+/// Parse a single length-delimited string field from protobuf bytes.
+fn readStringField(data: []const u8, target_field: u32, allocator: std.mem.Allocator) !?[]u8 {
+    var idx: usize = 0;
+    while (idx < data.len) {
+        const tag = pb.readVarintFromSlice(data, &idx) catch break;
+        const field_num: u32 = @intCast(tag >> 3);
+        const wire_type: u3  = @intCast(tag & 0x7);
+        if (wire_type == 2) { // LengthDelimited
+            const len = pb.readVarintFromSlice(data, &idx) catch break;
+            if (idx + len > data.len) break;
+            if (field_num == target_field) {
+                return try allocator.dupe(u8, data[idx .. idx + len]);
+            }
+            idx += @intCast(len);
+        } else if (wire_type == 0) { // Varint
+            _ = pb.readVarintFromSlice(data, &idx) catch break;
+        } else break;
+    }
+    return null;
+}
+
+fn readUint64Field(data: []const u8, target_field: u32) u64 {
+    var idx: usize = 0;
+    while (idx < data.len) {
+        const tag = pb.readVarintFromSlice(data, &idx) catch break;
+        const field_num: u32 = @intCast(tag >> 3);
+        const wire_type: u3  = @intCast(tag & 0x7);
+        if (wire_type == 0) {
+            const val = pb.readVarintFromSlice(data, &idx) catch break;
+            if (field_num == target_field) return val;
+        } else if (wire_type == 2) {
+            const len = pb.readVarintFromSlice(data, &idx) catch break;
+            idx += @intCast(len);
+        } else break;
+    }
+    return 0;
+}
+
+/// Parsed CommandProducer (PulsarApi.proto fields: topic=1, producer_id=2, request_id=3, producer_name=5)
+pub const ParsedProducer = struct {
+    topic: []u8,       // caller must free
+    producer_id: u64,
+    request_id: u64,
+    producer_name: []u8, // caller must free; may be empty
+
+    pub fn parse(data: []const u8, allocator: std.mem.Allocator) !ParsedProducer {
+        // The outer BaseCommand wraps the sub-command in a LengthDelimited field.
+        // We receive the already-extracted cmd_data slice here (content only, no outer tag).
+        // Scan for field 5 (CommandProducer), then parse inside it.
+        var idx: usize = 0;
+        var sub: ?[]const u8 = null;
+        while (idx < data.len) {
+            const tag = pb.readVarintFromSlice(data, &idx) catch break;
+            const wire_type: u3 = @intCast(tag & 0x7);
+            if (wire_type == 2) {
+                const len = pb.readVarintFromSlice(data, &idx) catch break;
+                if (idx + len > data.len) break;
+                sub = data[idx .. idx + len];
+                idx += @intCast(len);
+            } else if (wire_type == 0) {
+                _ = pb.readVarintFromSlice(data, &idx) catch break;
+            } else break;
+        }
+        const src = sub orelse data;
+        const topic = (try readStringField(src, 1, allocator)) orelse
+            try allocator.dupe(u8, "persistent://public/default/unknown");
+        const producer_name = (try readStringField(src, 5, allocator)) orelse
+            try std.fmt.allocPrint(allocator, "producer-{d}", .{readUint64Field(src, 2)});
+        return .{
+            .topic        = topic,
+            .producer_id  = readUint64Field(src, 2),
+            .request_id   = readUint64Field(src, 3),
+            .producer_name = producer_name,
+        };
+    }
+};
+
+/// Parsed CommandSubscribe (topic=1, subscription=2, consumer_id=4, request_id=5, consumer_name=6)
+pub const ParsedSubscribe = struct {
+    topic: []u8,
+    subscription: []u8,
+    consumer_id: u64,
+    request_id: u64,
+    consumer_name: []u8,
+
+    pub fn parse(data: []const u8, allocator: std.mem.Allocator) !ParsedSubscribe {
+        var idx: usize = 0;
+        var sub: ?[]const u8 = null;
+        while (idx < data.len) {
+            const tag = pb.readVarintFromSlice(data, &idx) catch break;
+            const wire_type: u3 = @intCast(tag & 0x7);
+            if (wire_type == 2) {
+                const len = pb.readVarintFromSlice(data, &idx) catch break;
+                if (idx + len > data.len) break;
+                sub = data[idx .. idx + len];
+                idx += @intCast(len);
+            } else if (wire_type == 0) {
+                _ = pb.readVarintFromSlice(data, &idx) catch break;
+            } else break;
+        }
+        const src = sub orelse data;
+        const topic = (try readStringField(src, 1, allocator)) orelse
+            try allocator.dupe(u8, "persistent://public/default/unknown");
+        const subscription = (try readStringField(src, 2, allocator)) orelse
+            try allocator.dupe(u8, "default-sub");
+        const consumer_name = (try readStringField(src, 6, allocator)) orelse
+            try std.fmt.allocPrint(allocator, "consumer-{d}", .{readUint64Field(src, 4)});
+        return .{
+            .topic        = topic,
+            .subscription = subscription,
+            .consumer_id  = readUint64Field(src, 4),
+            .request_id   = readUint64Field(src, 5),
+            .consumer_name = consumer_name,
+        };
+    }
+};
+
+/// Parsed CommandSend (producer_id=1, sequence_id=2)
+pub const ParsedSend = struct {
+    producer_id: u64,
+    sequence_id: u64,
+
+    pub fn parse(data: []const u8) ParsedSend {
+        return .{
+            .producer_id = readUint64Field(data, 1),
+            .sequence_id = readUint64Field(data, 2),
+        };
+    }
+};
+
+/// Parsed CommandConnect (PulsarApi.proto fields: client_version=1, auth_data=3, auth_method_name=5)
+/// auth_data carries the raw Bearer token bytes when token-based auth is used.
+pub const ParsedConnect = struct {
+    client_version: []u8,  // caller must free
+    auth_method_name: []u8, // caller must free; empty when not set
+    auth_data: ?[]u8,       // caller must free; null when not present
+
+    pub fn parse(data: []const u8, allocator: std.mem.Allocator) !ParsedConnect {
+        // Scan the outer BaseCommand for the CONNECT sub-message (field 2, LengthDelimited)
+        var idx: usize = 0;
+        var sub: ?[]const u8 = null;
+        while (idx < data.len) {
+            const tag = pb.readVarintFromSlice(data, &idx) catch break;
+            const wire_type: u3 = @intCast(tag & 0x7);
+            if (wire_type == 2) {
+                const len = pb.readVarintFromSlice(data, &idx) catch break;
+                if (idx + len > data.len) break;
+                sub = data[idx .. idx + len];
+                idx += @intCast(len);
+            } else if (wire_type == 0) {
+                _ = pb.readVarintFromSlice(data, &idx) catch break;
+            } else break;
+        }
+        const src = sub orelse data;
+
+        // Field 1 = client_version (string)
+        const cv = (try readStringField(src, 1, allocator)) orelse
+            try allocator.dupe(u8, "unknown");
+        // Field 5 = auth_method_name (string, optional)
+        const amn = (try readStringField(src, 5, allocator)) orelse
+            try allocator.dupe(u8, "");
+        // Field 3 = auth_data (bytes — same wire type as string)
+        const ad = try readStringField(src, 3, allocator);
+
+        return .{
+            .client_version    = cv,
+            .auth_method_name  = amn,
+            .auth_data         = ad,
+        };
+    }
+};
+
+/// Parsed CommandFlow (consumer_id=1, message_permits=2)
+pub const ParsedFlow = struct {
+    consumer_id: u64,
+    message_permits: u32,
+
+    pub fn parse(data: []const u8) ParsedFlow {
+        return .{
+            .consumer_id     = readUint64Field(data, 1),
+            .message_permits = @intCast(@min(readUint64Field(data, 2), 0xFFFF_FFFF)),
+        };
+    }
+};
+
+// ============================================================================
 // Protocol Handler
 // ============================================================================
 
@@ -312,6 +502,20 @@ pub const ProtocolHandler = struct {
         const cmd = BaseCommand{
             .type = .SUCCESS,
             .success = .{ .request_id = request_id },
+        };
+        return Frame.serialize(self.allocator, cmd);
+    }
+
+    /// Send a Pulsar-protocol ERROR frame with AuthenticationError.
+    /// Used to reject a CONNECT when token validation fails.
+    pub fn createConnectFailedResponse(self: *ProtocolHandler, message: []const u8) ![]u8 {
+        const cmd = BaseCommand{
+            .type = .ERROR,
+            .err = .{
+                .request_id  = 0,
+                .error_code  = .AuthenticationError,
+                .message     = message,
+            },
         };
         return Frame.serialize(self.allocator, cmd);
     }

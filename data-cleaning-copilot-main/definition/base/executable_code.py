@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 from pydantic import BaseModel, Field, field_validator
 from typing import Callable, Any, Optional, Dict, List, Mapping, Tuple
 from abc import ABC, abstractmethod

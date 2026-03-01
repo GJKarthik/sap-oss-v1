@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import nock from 'nock';
 import { jest } from '@jest/globals';
 import {
   mockClientCredentialsGrantCall,
   mockDeploymentsList,
-  mockInference,
-  parseFileToString,
-  parseMockResponse
-} from '../../../test-util/mock-http.js';
+  mockInference
+} from '../../../test-util/interceptors.js';
+import { parseFileToString, parseMockResponse } from '../../../test-util/fixtures.js';
 import { buildDpiMaskingProvider } from './util/masking.js';
 import { OrchestrationEmbeddingClient } from './orchestration-embedding-client.js';
 import { OrchestrationEmbeddingResponse } from './orchestration-embedding-response.js';

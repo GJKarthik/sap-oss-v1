@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package sync
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -38,4 +41,24 @@ func TestBulkIndexEmpty(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error for empty changes, got %v", err)
 	}
+}
+
+func TestBulkIndexRequiresClient(t *testing.T) {
+	etl := NewBatchETL(nil, time.Minute)
+	err := etl.BulkIndex(context.Background(), []EntityChange{{
+		EntityType: "order",
+		EntityID:   "1",
+		Operation:  "insert",
+		Fields:     map[string]interface{}{"status": "new"},
+		ChangedAt:  time.Now(),
+	}})
+	if err == nil {
+		t.Fatal("expected error when ES client is nil")
+	}
+}
+
+func TestStopIsIdempotent(t *testing.T) {
+	etl := NewBatchETL(nil, time.Minute)
+	etl.Stop()
+	etl.Stop()
 }

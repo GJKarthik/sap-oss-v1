@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 /**
  * SAP AI SDK MCP Server
  * 
@@ -10,6 +12,7 @@ import * as https from 'https';
 import { URL } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuid } from 'uuid';
+const REMOTE_MCP_TIMEOUT_MS = 2500;
 
 // =============================================================================
 // Types
@@ -68,6 +71,90 @@ interface AICoreConfig {
   authUrl: string;
   baseUrl: string;
   resourceGroup: string;
+}
+
+function safeJsonParse<T>(value: unknown, fallback: T): T {
+  if (typeof value !== 'string') return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeMcpEndpoint(endpoint: string): string {
+  const trimmed = endpoint.trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/mcp') ? trimmed : `${trimmed}/mcp`;
+}
+
+function getRemoteMcpEndpoints(envKey: string): string[] {
+  const raw = process.env[envKey] || '';
+  return raw
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+    .map(normalizeMcpEndpoint);
+}
+
+function unwrapMcpToolResult(result: unknown): unknown {
+  if (!result || typeof result !== 'object') return result;
+  const content = (result as { content?: unknown }).content;
+  if (!Array.isArray(content) || content.length === 0) return result;
+  const first = content[0];
+  if (!first || typeof first !== 'object') return result;
+  const text = (first as { text?: unknown }).text;
+  if (typeof text !== 'string') return result;
+  return safeJsonParse<unknown>(text, text);
+}
+
+async function callMcpTool(
+  endpoint: string,
+  toolName: string,
+  toolArgs: Record<string, unknown>,
+  timeoutMs: number = REMOTE_MCP_TIMEOUT_MS,
+): Promise<unknown> {
+  const target = new URL(endpoint);
+  const body = JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'tools/call',
+    params: {
+      name: toolName,
+      arguments: toolArgs,
+    },
+  });
+  const client = target.protocol === 'http:' ? http : https;
+
+  return new Promise((resolve, reject) => {
+    const req = client.request({
+      hostname: target.hostname,
+      port: target.port || (target.protocol === 'http:' ? 80 : 443),
+      path: `${target.pathname}${target.search}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', (chunk: string) => data += chunk);
+      res.on('end', () => {
+        try {
+          const rpc = JSON.parse(data) as { result?: unknown; error?: { message?: string } };
+          if (rpc.error) {
+            return reject(new Error(rpc.error.message || 'remote MCP error'));
+          }
+          resolve(unwrapMcpToolResult(rpc.result));
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`remote MCP timeout after ${timeoutMs}ms`)));
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
 }
 
 function getConfig(): AICoreConfig {
@@ -319,18 +406,49 @@ class MCPServer {
   // ===========================================================================
 
   private initializeFacts(): void {
-    // Service registry facts
-    this.facts.set('service_registry', [
+    const localPort = Number.parseInt(process.env.MCP_PORT || '9090', 10) || 9090;
+    const serviceRegistry: Array<Record<string, unknown>> = [
+      { name: 'sap-ai-sdk-mcp', endpoint: `http://localhost:${localPort}/mcp`, model: 'sap-ai-sdk-mcp' },
       { name: 'ai-core-chat', endpoint: 'aicore://chat', model: 'claude-3.5-sonnet' },
       { name: 'ai-core-embed', endpoint: 'aicore://embed', model: 'text-embedding-ada-002' },
       { name: 'hana-vector', endpoint: 'hana://vector', model: 'vector-store' },
-    ]);
+    ];
+    getRemoteMcpEndpoints('AI_SDK_REMOTE_MCP_ENDPOINTS').forEach((endpoint, index) => {
+      serviceRegistry.push({ name: `remote-mcp-${index + 1}`, endpoint, model: 'federated' });
+    });
+
+    // Service registry facts
+    this.facts.set('service_registry', serviceRegistry);
 
     // Deployment facts (populated dynamically)
     this.facts.set('deployment', []);
 
     // Tool invocation facts (audit log)
     this.facts.set('tool_invocation', []);
+  }
+
+  private getFederatedMcpEndpoints(): string[] {
+    const endpoints = new Set<string>();
+
+    getRemoteMcpEndpoints('AI_SDK_REMOTE_MCP_ENDPOINTS').forEach(endpoint => endpoints.add(endpoint));
+
+    const orchestrationEndpoint = process.env.AI_SDK_ORCHESTRATION_MCP_ENDPOINT;
+    if (orchestrationEndpoint && orchestrationEndpoint.trim() !== '') {
+      endpoints.add(normalizeMcpEndpoint(orchestrationEndpoint));
+    }
+
+    const services = this.facts.get('service_registry');
+    if (Array.isArray(services)) {
+      services.forEach((service) => {
+        if (!service || typeof service !== 'object') return;
+        const endpoint = (service as { endpoint?: unknown }).endpoint;
+        if (typeof endpoint === 'string' && /^https?:\/\//.test(endpoint)) {
+          endpoints.add(normalizeMcpEndpoint(endpoint));
+        }
+      });
+    }
+
+    return Array.from(endpoints);
   }
 
   // ===========================================================================
@@ -431,8 +549,23 @@ class MCPServer {
   private async handleOrchestrationTool(args: Record<string, unknown>): Promise<unknown> {
     // Orchestration scenarios
     const scenario = args.scenario as string;
-    const input = typeof args.input === 'string' ? JSON.parse(args.input as string) : args.input;
-    
+    const input = typeof args.input === 'string' ? safeJsonParse<unknown>(args.input, args.input) : args.input;
+
+    for (const endpoint of this.getFederatedMcpEndpoints()) {
+      try {
+        const remoteResult = await callMcpTool(endpoint, 'orchestration_run', { scenario, input });
+        return {
+          scenario,
+          input,
+          status: 'federated',
+          source: endpoint,
+          result: remoteResult,
+        };
+      } catch {
+        // Try the next endpoint.
+      }
+    }
+
     return {
       scenario,
       input,
@@ -443,7 +576,7 @@ class MCPServer {
 
   private async handleMangleQueryTool(args: Record<string, unknown>): Promise<unknown> {
     const predicate = args.predicate as string;
-    const queryArgs = args.args ? JSON.parse(args.args as string) : [];
+    const queryArgs = Array.isArray(args.args) ? args.args : safeJsonParse<unknown[]>(args.args, []);
     
     // Simple fact lookup
     const facts = this.facts.get(predicate);
@@ -461,6 +594,23 @@ class MCPServer {
     if (predicate === 'service_available') {
       const services = this.facts.get('service_registry') || [];
       return { predicate, results: services };
+    }
+
+    for (const endpoint of this.getFederatedMcpEndpoints()) {
+      try {
+        const remoteResult = await callMcpTool(endpoint, 'mangle_query', {
+          predicate,
+          args: JSON.stringify(queryArgs),
+        });
+        if (remoteResult && typeof remoteResult === 'object') {
+          const results = (remoteResult as { results?: unknown }).results;
+          if (Array.isArray(results) && results.length > 0) {
+            return { predicate, results, source: endpoint };
+          }
+        }
+      } catch {
+        // Try next endpoint.
+      }
     }
 
     return { predicate, args: queryArgs, results: [], message: 'Unknown predicate' };
@@ -715,10 +865,22 @@ const PORT = parseInt(process.env.MCP_PORT || process.argv.find(a => a.startsWit
 
 const mcpServer = new MCPServer();
 
+// CORS: use CORS_ALLOWED_ORIGINS (comma-separated). Default allows localhost for dev.
+const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:3000,http://127.0.0.1:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+function getCorsOrigin(req: http.IncomingMessage): string | undefined {
+  const origin = req.headers.origin;
+  if (origin && corsAllowedOrigins.includes(origin)) return origin;
+  return corsAllowedOrigins[0];
+}
+
 // HTTP Server for SSE transport
 const httpServer = http.createServer(async (req, res) => {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const corsOrigin = getCorsOrigin(req);
+  if (corsOrigin) res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 

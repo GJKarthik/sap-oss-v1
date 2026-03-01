@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { AIMessageChunk } from '@langchain/core/messages';
 import type { AIMessageChunkFields } from '@langchain/core/messages';
 import type { ModuleResultsStreaming } from '@sap-ai-sdk/orchestration/internal.js';

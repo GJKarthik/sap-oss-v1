@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import type { SAPDocumentTranslationApplyToSelector } from '../client/api/schema/index.js';
 import type {
   TranslationConfigParams,

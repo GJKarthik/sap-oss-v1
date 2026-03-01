@@ -1,0 +1,58 @@
+version = 1
+SPDX-PackageName = "world-monitor"
+SPDX-PackageSupplier = "Elie Habib"
+SPDX-PackageDownloadLocation = "https://github.com/SAP-samples/world-monitor"
+
+# ── Default: all source files are AGPL-3.0-only ───────────────────────────────
+# This blanket annotation covers files that cannot carry inline SPDX headers
+# (binary assets, generated files, config files, lockfiles, protobuf definitions)
+# as well as any source files that were added without an inline header.
+# Per REUSE 3.x spec, annotations with precedence="override" take priority
+# over inline headers when both are present.
+
+[[annotations]]
+path = [
+  "**/*.json",
+  "**/*.toml",
+  "**/*.lock",
+  "**/*.md",
+  "**/*.yml",
+  "**/*.yaml",
+  "**/*.txt",
+  "**/*.proto",
+  "**/*.png",
+  "**/*.ico",
+  "**/*.svg",
+  "**/*.html",
+  "**/*.css",
+  "**/*.example",
+  "**/*.npy",
+  "**/*.pdf",
+  "**/*.sql",
+  "**/*.mg",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Elie Habib"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# TypeScript / JavaScript source files (may not all carry inline headers)
+[[annotations]]
+path = ["**/*.ts", "**/*.js", "**/*.mjs", "**/*.cjs"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Elie Habib"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Rust source (src-tauri)
+[[annotations]]
+path = ["**/*.rs"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Elie Habib"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Python helper scripts
+[[annotations]]
+path = ["**/*.py"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Elie Habib"
+SPDX-License-Identifier = "AGPL-3.0-only"
+

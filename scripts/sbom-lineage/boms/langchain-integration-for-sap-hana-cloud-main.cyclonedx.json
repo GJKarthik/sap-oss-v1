@@ -1,0 +1,240 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:8a89088b-b2ae-49cc-94bc-beb946e3a3a4",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T10:30:32Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "bom-ref": "pkg:pypi/sap-oss-build-cyclonedx@1.0",
+          "author": "SAP SE",
+          "name": "build_cyclonedx.py",
+          "version": "1.0",
+          "description": "SAP OSS SBOM generator script"
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE",
+        "url": "https://sap.com"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "LangChain Integration for SAP HANA Cloud",
+      "version": "1.0.2",
+      "purl": "pkg:pypi/langchain integration for sap hana cloud@1.0.2"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-core@1.2.13",
+      "name": "langchain-core",
+      "version": "1.2.13",
+      "purl": "pkg:pypi/langchain-core@1.2.13",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-core/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b31823e28d3eff1e237096d0bd3bf80c6f9624eb471a9496dbfbd427779f8d82"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-classic@1.0.1",
+      "name": "langchain-classic",
+      "version": "1.0.1",
+      "purl": "pkg:pypi/langchain-classic@1.0.1",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-classic/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "131d83a02bb80044c68fedc1ab4ae885d5b8f8c2c742d8ab9e7534ad9cda8e80"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain@1.2.10",
+      "name": "langchain",
+      "version": "1.2.10",
+      "purl": "pkg:pypi/langchain@1.2.10",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e07a377204451fffaed88276b8193e894893b1003e25c5bca6539288ccca3698"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/hdbcli@2.27.23",
+      "name": "hdbcli",
+      "version": "2.27.23",
+      "purl": "pkg:pypi/hdbcli@2.27.23",
+      "supplier": {
+        "name": "SAP SE",
+        "url": "https://pypi.org/project/hdbcli/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "LicenseRef-SAP-DeveloperAgreement"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bd9f83b1d2bb567bd32f7728a4af8e1d04c237cfe02d160572c4c834c6fc2f99"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/rdflib@7.6.0",
+      "name": "rdflib",
+      "version": "7.6.0",
+      "purl": "pkg:pypi/rdflib@7.6.0",
+      "supplier": {
+        "name": "Daniel 'eikeon' Krech",
+        "url": "https://pypi.org/project/rdflib/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "root-component",
+      "dependsOn": [
+        "pkg:pypi/langchain-core@1.2.13",
+        "pkg:pypi/langchain-classic@1.0.1",
+        "pkg:pypi/langchain@1.2.10",
+        "pkg:pypi/hdbcli@2.27.23",
+        "pkg:pypi/rdflib@7.6.0"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/langchain-core@1.2.13",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain-classic@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain@1.2.10",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/hdbcli@2.27.23",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/rdflib@7.6.0",
+      "dependsOn": []
+    }
+  ],
+  "formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "LangChain",
+              "version": "1.2.10",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain@1.2.10"
+            },
+            {
+              "type": "library",
+              "name": "LangChain Core",
+              "version": "1.2.13",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain-core@1.2.13"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": []
+}

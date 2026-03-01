@@ -100,18 +100,168 @@ pub const Client = struct {
 
     /// Query remote Mangle server via HTTP
     fn queryRemote(self: *Self, predicate: []const u8) ![]const Fact {
-        _ = self;
-        _ = predicate;
-        // TODO: Implement HTTP client to query Mangle server
-        return error.NotImplemented;
+        const server_url = self.config.server_url orelse return error.NoServerConfigured;
+        
+        // Build query URL: {server_url}/api/query?predicate={predicate}
+        var url_buf: [2048]u8 = undefined;
+        const url = std.fmt.bufPrint(&url_buf, "{s}/api/query?predicate={s}", .{
+            server_url, predicate,
+        }) catch return error.UrlTooLong;
+        
+        // Use std.http.Client for HTTP GET request
+        var client = std.http.Client{ .allocator = self.allocator };
+        defer client.deinit();
+        
+        const uri = std.Uri.parse(url) catch return error.InvalidUrl;
+        
+        // Create buffer for response body
+        var response_body = std.ArrayList(u8).init(self.allocator);
+        defer response_body.deinit();
+        
+        // Perform the HTTP GET request
+        const result = client.fetch(.{
+            .location = .{ .uri = uri },
+            .response_storage = .{ .dynamic = &response_body },
+            .max_redirects = 3,
+        }) catch |err| {
+            std.log.warn("Mangle HTTP request failed: {}", .{err});
+            return error.HttpRequestFailed;
+        };
+        
+        if (result.status != .ok) {
+            std.log.warn("Mangle server returned status: {}", .{result.status});
+            return error.HttpRequestFailed;
+        }
+        
+        // Parse JSON response into facts
+        // Expected format: { "results": [{"predicate": "...", "args": [...]}] }
+        const json_slice = response_body.items;
+        const parsed = std.json.parseFromSlice(
+            struct { results: []const JsonFact },
+            self.allocator,
+            json_slice,
+            .{},
+        ) catch return error.InvalidJsonResponse;
+        defer parsed.deinit();
+        
+        // Convert JSON facts to our Fact type
+        var facts = std.ArrayList(Fact).init(self.allocator);
+        errdefer facts.deinit();
+        
+        for (parsed.value.results) |json_fact| {
+            var args = std.ArrayList(Value).init(self.allocator);
+            errdefer args.deinit();
+            
+            for (json_fact.args) |arg| {
+                const value: Value = switch (arg) {
+                    .string => |s| .{ .string = try self.allocator.dupe(u8, s) },
+                    .integer => |i| .{ .int = i },
+                    .float => |f| .{ .float = f },
+                    .bool => |b| .{ .bool_ = b },
+                    else => continue,
+                };
+                try args.append(value);
+            }
+            
+            try facts.append(.{
+                .predicate = try self.allocator.dupe(u8, json_fact.predicate),
+                .args = try args.toOwnedSlice(),
+            });
+        }
+        
+        return try facts.toOwnedSlice();
     }
 
-    /// Query local .mg files
+    /// Query local .mg files (basic parser for simple facts)
     fn queryLocal(self: *Self, predicate: []const u8) ![]const Fact {
-        _ = self;
-        _ = predicate;
-        // TODO: Implement local file parser
-        return error.NotImplemented;
+        const local_path = self.config.local_path orelse return error.NoLocalPathConfigured;
+        
+        // Try to open the .mg file for this predicate
+        var path_buf: [1024]u8 = undefined;
+        const mg_path = std.fmt.bufPrint(&path_buf, "{s}/{s}.mg", .{
+            local_path, predicate,
+        }) catch return error.PathTooLong;
+        
+        const file = std.fs.cwd().openFile(mg_path, .{}) catch |err| {
+            // If specific file doesn't exist, try default rules.mg
+            if (err == error.FileNotFound) {
+                const rules_path = std.fmt.bufPrint(&path_buf, "{s}/rules.mg", .{local_path}) catch return error.PathTooLong;
+                return self.parseMangleFile(rules_path, predicate) catch return &.{};
+            }
+            return error.FileOpenFailed;
+        };
+        defer file.close();
+        
+        return self.parseMangleFileFromHandle(file, predicate);
+    }
+    
+    /// Parse a Mangle file and extract facts matching the predicate
+    fn parseMangleFile(self: *Self, path: []const u8, predicate: []const u8) ![]const Fact {
+        const file = std.fs.cwd().openFile(path, .{}) catch return error.FileOpenFailed;
+        defer file.close();
+        return self.parseMangleFileFromHandle(file, predicate);
+    }
+    
+    /// Parse Mangle file contents from a file handle
+    fn parseMangleFileFromHandle(self: *Self, file: std.fs.File, predicate: []const u8) ![]const Fact {
+        var facts = std.ArrayList(Fact).init(self.allocator);
+        errdefer facts.deinit();
+        
+        // Read file line by line
+        var reader = file.reader();
+        var line_buf: [4096]u8 = undefined;
+        
+        while (reader.readUntilDelimiterOrEof(&line_buf, '\n')) |maybe_line| {
+            const line = maybe_line orelse break;
+            
+            // Skip comments and empty lines
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0 or trimmed[0] == '#' or trimmed[0] == '/') continue;
+            
+            // Simple parser: look for "predicate(arg1, arg2, ...)."
+            // Find predicate name
+            if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
+                const pred_name = trimmed[0..paren_pos];
+                
+                // Check if this matches our target predicate
+                if (!std.mem.eql(u8, pred_name, predicate)) continue;
+                
+                // Extract arguments between ( and ).
+                if (std.mem.indexOf(u8, trimmed[paren_pos..], ")")) |close_pos| {
+                    const args_str = trimmed[paren_pos + 1 .. paren_pos + close_pos];
+                    
+                    // Parse arguments (simple string splitting)
+                    var args = std.ArrayList(Value).init(self.allocator);
+                    errdefer args.deinit();
+                    
+                    var it = std.mem.splitScalar(u8, args_str, ',');
+                    while (it.next()) |arg| {
+                        const arg_trimmed = std.mem.trim(u8, arg, " \t\"'");
+                        if (arg_trimmed.len > 0) {
+                            // Try to parse as number first
+                            if (std.fmt.parseInt(i64, arg_trimmed, 10)) |int_val| {
+                                try args.append(.{ .int = int_val });
+                            } else |_| {
+                                if (std.fmt.parseFloat(f64, arg_trimmed)) |float_val| {
+                                    try args.append(.{ .float = float_val });
+                                } else |_| {
+                                    try args.append(.{ .string = try self.allocator.dupe(u8, arg_trimmed) });
+                                }
+                            }
+                        }
+                    }
+                    
+                    try facts.append(.{
+                        .predicate = try self.allocator.dupe(u8, pred_name),
+                        .args = try args.toOwnedSlice(),
+                    });
+                }
+            }
+        } else |err| {
+            std.log.warn("Error reading mangle file: {}", .{err});
+        }
+        
+        return try facts.toOwnedSlice();
     }
 
     // ========================================================================
@@ -299,6 +449,12 @@ const embedded_tensor_patterns = [_]TensorPatternInfo{
     .{ .arch = "phi2", .pattern = "blk.{N}.ffn_down.weight", .description = "FFN down projection" },
     .{ .arch = "phi2", .pattern = "output_norm.weight", .description = "Final layer norm" },
     .{ .arch = "phi2", .pattern = "output.weight", .description = "Output projection" },
+};
+
+// JSON response types for HTTP queries
+const JsonFact = struct {
+    predicate: []const u8,
+    args: []const std.json.Value,
 };
 
 // Placeholder for raw fact storage

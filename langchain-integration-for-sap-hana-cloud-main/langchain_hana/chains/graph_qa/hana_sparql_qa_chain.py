@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 SAP SE
 """Question answering over a SAP HANA graph using SPARQL."""
 
 from __future__ import annotations

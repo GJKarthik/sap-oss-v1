@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * cap-llm-plugin — Public API type exports.
  *
@@ -47,3 +49,13 @@ export { getTracer, SpanStatusCode, _resetTracerCache } from "./telemetry/tracer
 export type { PluginSpan, PluginTracer, SpanStatusCodeValue } from "./telemetry/tracer";
 export { createOtelMiddleware } from "./telemetry/ai-sdk-middleware";
 export type { OtelMiddlewareOptions, AiSdkMiddleware } from "./telemetry/ai-sdk-middleware";
+export {
+  injectTraceContextHeaders,
+  withSpan,
+  withChatSpan,
+  withRagSpan,
+  withFilterSpan,
+  addEventToActiveSpan,
+  TracingSpanStatus,
+} from "./telemetry/angular-tracing";
+export type { TracingSpanStatusValue } from "./telemetry/angular-tracing";

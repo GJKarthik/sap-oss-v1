@@ -21,7 +21,7 @@ pub const Config = struct {
     pub fn fromEnv(allocator: std.mem.Allocator) Config {
         _ = allocator;
         return .{
-            .port = getEnvU16("MCPPAL_PORT", 9881),
+            .port = getEnvPort(9881),
             .host = getEnvStr("MCPPAL_HOST", "0.0.0.0"),
             .pal_sdk_path = getEnvStr("PAL_SDK_PATH", "../../../aiNucleusSdk/ainuc-sap-sdk/sap-pal-webcomponents-sql"),
             .hana_host = getEnvStr("HANA_HOST", "localhost"),
@@ -45,6 +45,20 @@ pub const Config = struct {
     fn getEnvU16(key: []const u8, default: u16) u16 {
         const val = std.posix.getenv(key) orelse return default;
         return std.fmt.parseInt(u16, val, 10) catch default;
+    }
+
+    fn getEnvPort(default: u16) u16 {
+        const explicit = std.posix.getenv("MCPPAL_PORT");
+        if (explicit) |val| {
+            return std.fmt.parseInt(u16, val, 10) catch default;
+        }
+
+        const alias = std.posix.getenv("MCP_PORT");
+        if (alias) |val| {
+            return std.fmt.parseInt(u16, val, 10) catch default;
+        }
+
+        return default;
     }
 
     fn getEnvLogLevel(key: []const u8, default: LogLevel) LogLevel {

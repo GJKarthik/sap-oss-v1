@@ -1,0 +1,85 @@
+# Dependabot: automated dependency updates
+# https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Root / GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "github-actions"]
+
+  # AI SDK JS (pnpm)
+  - package-ecosystem: "npm"
+    directory: "/ai-sdk-js-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "ai-sdk-js"]
+    versioning-strategy: increase
+
+  # CAP LLM Plugin
+  - package-ecosystem: "npm"
+    directory: "/cap-llm-plugin-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "cap-llm-plugin"]
+
+  # World Monitor
+  - package-ecosystem: "npm"
+    directory: "/world-monitor-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "world-monitor"]
+
+  # UI5 Web Components Angular
+  - package-ecosystem: "npm"
+    directory: "/ui5-webcomponents-ngx-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "ui5-webcomponents"]
+
+  # Data Cleaning Copilot (Python)
+  - package-ecosystem: "pip"
+    directory: "/data-cleaning-copilot-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "data-cleaning-copilot"]
+
+  # OData Vocabularies (Python)
+  - package-ecosystem: "pip"
+    directory: "/odata-vocabularies-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "odata-vocabularies"]
+
+  # vLLM (Python)
+  - package-ecosystem: "pip"
+    directory: "/vllm-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "vllm"]
+
+  # LangChain HANA integration (Python)
+  - package-ecosystem: "pip"
+    directory: "/langchain-integration-for-sap-hana-cloud-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+
+  # Generative AI Toolkit HANA (Python)
+  - package-ecosystem: "pip"
+    directory: "/generative-ai-toolkit-for-sap-hana-cloud-main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]

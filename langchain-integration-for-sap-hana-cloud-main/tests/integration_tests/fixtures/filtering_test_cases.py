@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2023 SAP SE
 """Module contains test cases for testing filtering of documents in vector stores."""
 
 from langchain_core.documents import Document

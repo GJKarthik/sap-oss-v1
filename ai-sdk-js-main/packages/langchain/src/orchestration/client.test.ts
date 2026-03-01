@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { constructCompletionPostRequest } from '@sap-ai-sdk/orchestration/internal.js';
 import { jest } from '@jest/globals';
 import nock from 'nock';
@@ -12,10 +14,9 @@ import { z } from 'zod';
 import {
   mockClientCredentialsGrantCall,
   mockDeploymentsList,
-  mockInference,
-  parseMockResponse,
-  parseFileToString
-} from '../../../../test-util/mock-http.js';
+  mockInference
+} from '../../../../test-util/interceptors.js';
+import { parseMockResponse, parseFileToString } from '../../../../test-util/fixtures.js';
 import { addNumbersTool } from '../../../../test-util/tools.js';
 import { OrchestrationClient } from './client.js';
 import type { LangChainOrchestrationModuleConfig } from './types.js';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { fileURLToPath } from 'url';
 import path, { resolve } from 'path';
 import { StringOutputParser } from '@langchain/core/output_parsers';

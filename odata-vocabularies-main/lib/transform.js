@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2019 SAP SE
 "use strict";
 
 const csdl = require("odata-csdl");

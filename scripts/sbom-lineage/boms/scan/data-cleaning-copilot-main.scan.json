@@ -1,0 +1,569 @@
+{
+  "service": "data-cleaning-copilot-main",
+  "total_files": 63,
+  "files_with_spdx": 63,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 12,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "LicenseRef-SAP-DeveloperAgreement",
+    "MIT"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "BSD-3-Clause",
+      "MIT"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "9ee88070085837d98606b1a3f320a4bbfeaf69bd5400e89e6c15e6ab1f48fb07",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "91d53cf74c1b569f20a2da5c4b001644dfb923e08035e4a3aceeb4a53430c317",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/data_cleaning_service.yaml",
+      "sha256": "9dc9df89e6391d6b90b0545648c030573c1272129d7874d43c3d93745f93d4f7",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "a5f51f7c1ba13d839eb466a38c833ca4fc5343ba1b5ca0c3aa1d8bd5c5868182",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "bin/download_relbench_data.py",
+      "sha256": "524a125ebb0b88773b722ae03a0eb0f1b80a43d527193a37734cfd85189c7f10",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "bin/copilot.py",
+      "sha256": "5f0d22db37b6e8095f31a881247cc94856ed69b8e2d086e98d5cde21fbc7ad10",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "bin/api.py",
+      "sha256": "64e0b4b14a35f37a53f47654a161a05ba1138c35333a71eb74d6a17c40d94ea1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "bin/agent_workflow.py",
+      "sha256": "19b5695cb84d9da4c2b1d3102bc21d2752106f796152b14b35d8c4cfe0386a0a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "10a79a6bf3d174812dcde736f909e6d249331d0043ffe08a51e0a5b49494d9cc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "agent/data_cleaning_agent.py",
+      "sha256": "3ae0e28334707d090c18cbedbb5217c93c5d639df8406812c60ce4ebef5d4e00",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/__init__.py",
+      "sha256": "cc47867459a9e95011e39720edadee511c20180d859627bb9cadf21f7ec80e6d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "mcp_server/server.py",
+      "sha256": "1b5c4b7274673e65528d9d7870e9fe9e08b59dfe60a8b257d240012bffca9081",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/benchmark/__init__.py",
+      "sha256": "48acd07122ee6430fd51eb027906e6ee43879749b4d2f7b19671c94f861bc597",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/__init__.py",
+      "sha256": "ee339436f7d0e2625be283de6f1fec0464b652fb4c7aa1df232489edc24cba01",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/models.py",
+      "sha256": "feff793cf370937d83439921280e3d159ad57e0fa261638f874fb2b3d6f07354",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/session_manager.py",
+      "sha256": "afe350aa35712d3527595c24d8725e4cb532d01f7d5910c88eff997ee959e8ae",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/__init__.py",
+      "sha256": "3aadcd8e6dc99a3870132d855f0a4bd40a25489a042b6ded193142d15c774731",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/exceptions.py",
+      "sha256": "b0854a420ba9bdc376bd512ca2c4f77d0fe1eb94479550e4ae869b0f5c1f2fa5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/agents/check_generation_agent_v1.py",
+      "sha256": "2acfae9b23f6c21694a3b97bf188c7a3c32b8a46895524fd3d20a3caec046d31",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/agents/__init__.py",
+      "sha256": "8e6ce2368ca7a855ba51aef3a508b1ee92ec16bf1467792e05556cb3b5bf09e3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/agents/agent_models.py",
+      "sha256": "f3d5980dcf1191f78d0484706acc084c4425412663156e9523b8369ea53b51de",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/agents/corruption_generation_agent.py",
+      "sha256": "c6f1bb2049a9dd9eaf08ef4c363d3d39003f741735c516e2e2558bdf61e1c079",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/agents/check_generation_agent_v2.py",
+      "sha256": "6ea1906bfff52e3e3887a0146ffd08535d2e76d42e7608da0fedf000d177bd22",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/agents/check_generation_agent_v3.py",
+      "sha256": "e1af1f077e79078831a1d5e954e629c3db6b50644c8e1f80661f05a94ddbfc0f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/term_converter.py",
+      "sha256": "6c2456516d67cc1a8f4a36cf19a1c62cb3c19ab1c84cfabac6b526aed1c42018",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/table_generator.py",
+      "sha256": "b946adc90e768d3b9818a0f8be927bef9824756040f4d5564892286ad1fa7e93",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/database_integration.py",
+      "sha256": "5b5e9b1da4cd5e09fc722e6482ee06d94484ce855b0831fc6da060ddd10d4a33",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/__init__.py",
+      "sha256": "d05f1736d678fb84ccf33048a15166c982112574e9a602b61309b287769dd844",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/test_odata_integration.py",
+      "sha256": "974c57394b104518ec82b12165517cb0d782a061547f0c43d88d2598a51b5320",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/vocabulary_parser.py",
+      "sha256": "6d02e17f1ee5646dec5713e0d4cc31590efa3709b0570e5032778cff0fa0d9f0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/executable_code.py",
+      "sha256": "24c159530f9e54b81f95c831cc35b8fa46e0b3f5a6a5cf342dc3e732f4d5bc62",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/prompt_builder.py",
+      "sha256": "e6a55552eac18cd41bfbe5b52e6e896d44c729af8aad23a157c4e35f4d72dcf9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/database.py",
+      "sha256": "0d2bff88b5ff8586ab6df67c3f516a6b48619c622234194274a3d0c0040967c9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/__init__.py",
+      "sha256": "74b8628666ea8c5539123879efde7335e95567985d187dff7624ab3d6142d9eb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/util_column_mapping.py",
+      "sha256": "350c20f525a211664dd0a4651f3e0786b4f5bc9840fc9c753ff9e8bcc95c3fad",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/corruption.py",
+      "sha256": "12b18d6511af4cccbf543da9d1552accaa33fe54de0de0aa0ed1a844a65f6ce0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/util_profiler.py",
+      "sha256": "065955841e21d26134f8683f64f8353b6e3cd8e0c8554d997b094e255b9f05c2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/table.py",
+      "sha256": "2486415cb14145e07449c1a61b034c10f5c0fa4656489ca5a307fdd54e383298",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/util_toolcalls.py",
+      "sha256": "d44d93b7427f3ebf00d839afc9a5b09cb0845de4b43ad7a0667cd42fac6e0519",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/base/llm/agent_progress_callback.py",
+      "sha256": "34388564365624b5a3bca3997d583e1c6f5a8417cfac73312dacf92a97eb25ea",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/tests/test_vocabulary_parser.py",
+      "sha256": "3e40bebe2fa682f25da0c031286e77bc9dc028f62c1baca34d9ae808d158eb3d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/tests/__init__.py",
+      "sha256": "7b956ab10289a41dba70e20f2c0fd1206008c61bc432a6b4a4d831a7f0c8b04a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/tests/test_database_integration.py",
+      "sha256": "40be84a2272f4e3afa4105b5c5b1a235a3e7a86a62709eff4a2b5c6f0b5b66a3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/odata/tests/test_term_converter.py",
+      "sha256": "4249350042a7ecc661089a84dc11ac1beb27b4dfa7315ebdd6a4383deaf9bab6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/interactive/session.py",
+      "sha256": "265e9eb022637a5c614906a8e6e41445415d81c3fbeea3b05c524e753d4387c5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/interactive/__init__.py",
+      "sha256": "206c43e4fa84f0aab3a6c717ce0cf61dc8a21d864cc237263a3cebcfc2290b73",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/llm/interactive/streaming_progress.py",
+      "sha256": "6e8af5beaa0c6f547341b42656858de655cc4a82db649749380a16ff3a109b90",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/database/rel_stack.py",
+      "sha256": "abd6ee39516aef38137bf370e4625aa7e1097c06e65a2128ba1b06240fe5472b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/corruption/util_check_parsing.py",
+      "sha256": "6b150a8ee2e2c8861dfbe33fd31d58f2cd9061160561848ec943f466cf2fec67",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/corruption/util_value_generation.py",
+      "sha256": "ad394e86e66e5e7943bb60268193e929ab825c378c1d03402d71bc2432afad4c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/corruption/__init__.py",
+      "sha256": "a9b96f49d9801840c7b523e859915ded83318a4e5f88aa110adb111f7fcc6ec0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/check/constants.py",
+      "sha256": "b8a8751f65138402366e982259297149f57a2efafcf1a129ff9adeeff1284c14",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/impl/check/rule_based_logic.py",
+      "sha256": "ebf166afd7ec5f2cf2a4546f14622ab77dd719b6a77f8d1ff9411d8dd786e5cd",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/benchmark/gen/rel_stack.py",
+      "sha256": "3b86dfa3765d47fbc2b0506bfe54a74b0804ab3c54aab68a686bedc71ebddb76",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "definition/benchmark/gen/__init__.py",
+      "sha256": "1173fa403f64bc619f79b039f6f161fab6b2ae3677551f326f9d7d38276ea761",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "definition/benchmark/eval/__init__.py",
+      "sha256": "bfe0bb57c87049ffb83f173d682bcc999d77e98158a82d3154956e4eaf4873e3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "definition/benchmark/eval/evaluator.py",
+      "sha256": "c8f05b67ae39ae2f251186323a3dc7a64d97ecb777accd592b1bc149ec99c4f6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "frontend/src/main.ts",
+      "sha256": "bcab7e2128350f7ede7ec6b92bbbea2dc373a1d645eaddf8b02109f2f4d7ab95",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "frontend/src/app/app.ts",
+      "sha256": "88c9d985a3ea03e5ae564224c89f6169f0c158f38d977e576bd71dac2d6b67e5",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "frontend/src/app/app.config.ts",
+      "sha256": "f2e529f5e5997df54a05fc144f333c71e9eb573c7e361ecc747275ae3200d166",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "frontend/src/app/copilot.service.ts",
+      "sha256": "fc0af4383caf6432e3d090725202c301f731bd9f7e9bda1c99e53d645fc25b86",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "frontend/src/app/checks-panel/checks-panel.component.ts",
+      "sha256": "a8ac4faf8152776fcf7a2c0a5f47d99487d890efc21d2ada5bd5d5f7fca1bdb2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "frontend/src/app/chat/chat.component.ts",
+      "sha256": "07d86c3ae1b096f55646b7533838ab814351059145dc2dbbc85eddd4b7d7f3eb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+      ],
+      "via_reuse_toml": true
+    }
+  ],
+  "discovered_copyrights": [
+    "2025 SAP SE or an SAP affiliate company and data-cleaning-copilot contributors"
+  ]
+}

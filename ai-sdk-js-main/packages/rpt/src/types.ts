@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import type { Xor } from '@sap-cloud-sdk/util';
 import type { ColumnType, SchemaFieldConfig } from './client/rpt/index.js';
 

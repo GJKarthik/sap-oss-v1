@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { TokenComponent } from '@ui5/webcomponents-ngx/main/token';

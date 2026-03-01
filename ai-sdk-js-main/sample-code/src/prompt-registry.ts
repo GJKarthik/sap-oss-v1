@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { PromptTemplatesApi } from '@sap-ai-sdk/prompt-registry';
 import type {
   PromptTemplateDeleteResponse,

@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 // Package server implements the gRPC service for the Mangle Query Service.
 package server
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/sap-oss/mangle-query-service/api/gen"
 	"github.com/sap-oss/mangle-query-service/internal/engine"
@@ -14,6 +19,11 @@ import (
 	"github.com/sap-oss/mangle-query-service/internal/resilience"
 	"github.com/sap-oss/mangle-query-service/internal/sync"
 )
+
+const maxResolveQueryChars = 16 * 1024
+const maxCorrelationIDChars = 256
+const maxEntityRefChars = 256
+const maxSyncPayloadChars = 256 * 1024
 
 // GRPCServer implements the QueryService gRPC interface.
 type GRPCServer struct {
@@ -23,6 +33,7 @@ type GRPCServer struct {
 	cacheManager *sync.CacheManager
 	breakers     *resilience.BreakerRegistry
 	metrics      *resilience.Metrics
+	userRolePred *predicates.CurrentUserRolePredicate
 }
 
 // ServerOptions holds optional dependencies for GRPCServer.
@@ -69,7 +80,19 @@ func NewGRPCServer(rulesDir string, opts *ServerOptions) (*GRPCServer, error) {
 		eng.RegisterPredicate("llm_generate", 3, &predicates.MCPLLMPredicate{
 			MCPAddress: opts.MCPAddress, AuthToken: opts.MCPToken,
 		})
+	}
 
+	// Register built-in governance / GDPR predicates (always available)
+	srv.userRolePred = &predicates.CurrentUserRolePredicate{}
+	eng.RegisterPredicate("current_user_role", 1, srv.userRolePred)
+	eng.RegisterPredicate("current_date", 1, &predicates.CurrentDatePredicate{})
+	eng.RegisterPredicate("environment", 1, &predicates.EnvironmentPredicate{})
+	eng.RegisterPredicate("consent_verified", 2, &predicates.ConsentVerifiedPredicate{
+		ConsentServiceURL: os.Getenv("MQS_CONSENT_SERVICE_URL"),
+	})
+	eng.RegisterPredicate("log_audit", 2, &predicates.LogAuditPredicate{})
+
+	if opts != nil {
 		if err := eng.Reload(); err != nil {
 			return nil, err
 		}
@@ -79,20 +102,27 @@ func NewGRPCServer(rulesDir string, opts *ServerOptions) (*GRPCServer, error) {
 }
 
 func (s *GRPCServer) Resolve(ctx context.Context, req *pb.ResolveRequest) (*pb.ResolveResponse, error) {
+	if err := validateResolveRequest(req); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, status.Errorf(codes.Canceled, "request canceled: %v", err)
+	}
+
 	start := time.Now()
 
 	// Check circuit breaker for the resolve path
 	cb := s.breakers.Get("resolve")
 	if !cb.Allow() {
 		s.metrics.RecordError()
-		return nil, fmt.Errorf("circuit breaker open: resolve path unavailable")
+		return nil, status.Error(codes.Unavailable, "resolve temporarily unavailable")
 	}
 
 	result, err := s.engine.Resolve(req.Query)
 	if err != nil {
 		cb.RecordFailure()
 		s.metrics.RecordError()
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "resolve failed: %v", err)
 	}
 	cb.RecordSuccess()
 
@@ -125,9 +155,14 @@ func (s *GRPCServer) Resolve(ctx context.Context, req *pb.ResolveRequest) (*pb.R
 }
 
 func (s *GRPCServer) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, status.Errorf(codes.Canceled, "request canceled: %v", err)
+	}
+
 	components := map[string]string{
 		"mangle_engine": "healthy",
 	}
+	metrics := make(map[string]float32)
 
 	// Report circuit breaker states
 	for _, cb := range s.breakers.All() {
@@ -137,7 +172,7 @@ func (s *GRPCServer) Health(ctx context.Context, req *pb.HealthRequest) (*pb.Hea
 	// Report key metrics
 	snap := s.metrics.Snapshot()
 	for k, v := range snap {
-		components["metric_"+k] = fmt.Sprintf("%.2f", v)
+		metrics[k] = float32(v)
 	}
 
 	status := "healthy"
@@ -151,15 +186,24 @@ func (s *GRPCServer) Health(ctx context.Context, req *pb.HealthRequest) (*pb.Hea
 	return &pb.HealthResponse{
 		Status:     status,
 		Components: components,
+		Metrics:    metrics,
 	}, nil
 }
 
 func (s *GRPCServer) SyncEntity(ctx context.Context, req *pb.SyncEntityRequest) (*pb.SyncEntityResponse, error) {
+	op, err := validateSyncEntityRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, status.Errorf(codes.Canceled, "request canceled: %v", err)
+	}
+
 	if s.cdcListener == nil {
 		return &pb.SyncEntityResponse{Success: false, Error: "sync not configured"}, nil
 	}
 
-	entityRefs, err := s.cdcListener.HandleChange(ctx, req.EntityType, req.EntityId, req.Operation, req.PayloadJson)
+	entityRefs, err := s.cdcListener.HandleChange(ctx, req.EntityType, req.EntityId, op, req.PayloadJson)
 	if err != nil {
 		return &pb.SyncEntityResponse{Success: false, Error: err.Error()}, nil
 	}
@@ -170,4 +214,59 @@ func (s *GRPCServer) SyncEntity(ctx context.Context, req *pb.SyncEntityRequest) 
 	}
 
 	return &pb.SyncEntityResponse{Success: true}, nil
+}
+
+func validateResolveRequest(req *pb.ResolveRequest) error {
+	if req == nil {
+		return status.Error(codes.InvalidArgument, "request is required")
+	}
+	if len(req.CorrelationId) > maxCorrelationIDChars {
+		return status.Errorf(codes.InvalidArgument, "correlation_id exceeds maximum length of %d characters", maxCorrelationIDChars)
+	}
+	query := strings.TrimSpace(req.Query)
+	if query == "" {
+		return status.Error(codes.InvalidArgument, "query is required")
+	}
+	if len(query) > maxResolveQueryChars {
+		return status.Errorf(codes.InvalidArgument, "query exceeds maximum length of %d characters", maxResolveQueryChars)
+	}
+	return nil
+}
+
+func validateSyncEntityRequest(req *pb.SyncEntityRequest) (string, error) {
+	if req == nil {
+		return "", status.Error(codes.InvalidArgument, "request is required")
+	}
+	entityType := strings.TrimSpace(req.EntityType)
+	if entityType == "" {
+		return "", status.Error(codes.InvalidArgument, "entity_type is required")
+	}
+	entityID := strings.TrimSpace(req.EntityId)
+	if entityID == "" {
+		return "", status.Error(codes.InvalidArgument, "entity_id is required")
+	}
+	if len(entityType) > maxEntityRefChars {
+		return "", status.Errorf(codes.InvalidArgument, "entity_type exceeds maximum length of %d characters", maxEntityRefChars)
+	}
+	if len(entityID) > maxEntityRefChars {
+		return "", status.Errorf(codes.InvalidArgument, "entity_id exceeds maximum length of %d characters", maxEntityRefChars)
+	}
+	op := strings.ToLower(strings.TrimSpace(req.Operation))
+	switch op {
+	case "insert", "update":
+		if strings.TrimSpace(req.PayloadJson) == "" {
+			return "", status.Error(codes.InvalidArgument, "payload_json is required for insert/update")
+		}
+		if len(req.PayloadJson) > maxSyncPayloadChars {
+			return "", status.Errorf(codes.InvalidArgument, "payload_json exceeds maximum length of %d characters", maxSyncPayloadChars)
+		}
+	case "delete":
+		// payload is optional for delete
+		if len(req.PayloadJson) > maxSyncPayloadChars {
+			return "", status.Errorf(codes.InvalidArgument, "payload_json exceeds maximum length of %d characters", maxSyncPayloadChars)
+		}
+	default:
+		return "", status.Error(codes.InvalidArgument, "operation must be one of: insert, update, delete")
+	}
+	return op, nil
 }

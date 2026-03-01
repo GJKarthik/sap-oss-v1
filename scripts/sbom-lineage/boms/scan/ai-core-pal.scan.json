@@ -1,0 +1,133 @@
+{
+  "service": "ai-core-pal",
+  "total_files": 10,
+  "files_with_spdx": 10,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 10,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [],
+  "comparison": {
+    "extra_in_source": [
+      "Apache-2.0"
+    ],
+    "missing_in_source": [],
+    "verdict": "MISMATCH"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "de1493a468fb924bb066b81c77bc41500fbf7777b39a8acd292f953c13f40974",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "cc17e7285d6b4ba7241d1c8d68c1c65bd3cde893e263ebd0f5bb94653388597c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/aicore_pal_service.yaml",
+      "sha256": "38fa5cbafc003ba51e0645f0417c8c98bb6cb848ff5a0e019f48cc61ec1691d8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/aicore_pal_agent.py",
+      "sha256": "10633bf8c9b6cb459d59630534fd7544525b64ab4567c9d1cac936cf0471e46b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "e26dbc321bc5097c1935dc2081d1fa1c202cf96c48c9d2e8f571b1e414071e82",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/deploy_to_aicore.sh",
+      "sha256": "26bb3f07eaa6cf6e8c30cab395ccab287c8d7a4917759248f158d10ab323f1b9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "deploy/aicore/serving-template.yaml",
+      "sha256": "5d85c059925ba889188a89f1b9c0f844a46fe04dceb37322c3a9d83306a8574d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "zig/deps/llama/csrc/cuda_kernels.h",
+      "sha256": "d98446498ef98a9950c20ae21a75509eb45bdb8e0520de6f4172e0e57ab0880a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "zig/.zig-cache/o/4f12dc626d6ad1b487df7280f47a42af/cimport.h",
+      "sha256": "5ba419a065c7c34c5f3212c262191c3f3b365a0249223098ae0c65994ec4534e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "zig/.zig-cache/o/8c2a26c76bcace205b95aa6b55f7ec65/cimport.h",
+      "sha256": "5ba419a065c7c34c5f3212c262191c3f3b365a0249223098ae0c65994ec4534e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+      ],
+      "via_reuse_toml": true
+    }
+  ],
+  "discovered_copyrights": [
+    "2025 SAP SE or an SAP affiliate company and mcp-server contributors."
+  ]
+}

@@ -1,0 +1,719 @@
+SAP AI Suite — Technical Appendices
+================================================================================
+All claims in these appendices are derived directly from the repository source
+code, BOM inventory, configuration files, and published hardware specifications.
+Where a figure requires external verification it is marked [CITE NEEDED].
+
+Last generated: 2026-02-28
+Source tree:    /Users/user/Documents/sap-oss
+Commit:         (run `git rev-parse HEAD` to pin)
+================================================================================
+
+
+================================================================================
+APPENDIX A — GPU Performance Reference Table
+================================================================================
+
+Methodology
+-----------
+Peak memory-bound token throughput is calculated using the roofline model:
+
+    tok/s = GPU_HBM_bandwidth_GB_s / model_weight_GB
+
+where model_weight_GB = parameter_count × bytes_per_parameter.
+  FP16  = 2 B/param   INT8 = 1 B/param   INT4 = 0.5 B/param
+
+This formula is exact for a single-sequence decode step (the memory-bound
+regime). Under continuous batching with many concurrent sequences the system
+becomes compute-bound and can exceed this estimate. Dequantisation overhead
+is modelled as a 15 % throughput penalty for INT8 and 25 % for INT4.
+
+GPU hardware specifications used
+---------------------------------
+  T4 (PCIe, 16 GB GDDR6)        HBM BW:    300 GB/s
+  A100 SXM (80 GB HBM2e)        HBM BW:  2,039 GB/s
+  H100 SXM (80 GB HBM3)         HBM BW:  3,350 GB/s
+  8 × H100 SXM NVLink            Agg BW: ~26,800 GB/s  (8 × 3,350)
+
+Model weight sizes
+-------------------
+  7B  FP16  =  14.0 GB      7B  INT8  =  7.0 GB
+  13B FP16  =  26.0 GB      13B INT8  = 13.0 GB
+  70B FP16  = 140.0 GB      70B INT8  = 70.0 GB    70B INT4  = 35.0 GB
+
+Roofline peak token throughput (tok/s, single-sequence decode)
+---------------------------------------------------------------
+                     T4          A100 SXM     H100 SXM    8×H100 NVLink
+ 7B  FP16            21             146          239          —
+ 7B  INT8            36 (×0.85)     247          482          —
+ 13B FP16            12              78          129          —
+ 13B INT8            20 (×0.85)     133          219          —
+ 70B FP16           N/A*             15†          24          191
+ 70B INT8           N/A*             25 (×0.85)†  41          273 (×0.85)
+ 70B INT4           N/A*             49 (×0.75)†  86          514 (×0.75)
+
+Notes:
+  * 70B FP16 = 140 GB; does not fit in T4 (16 GB) or A100 SXM (80 GB) VRAM.
+    Requires tensor parallelism across multiple GPUs or quantisation.
+  † Single A100 SXM can host 70B INT8 (70 GB) or 70B INT4 (35 GB).
+    70B FP16 requires ≥ 2 × A100 SXM.
+  N/A = model will not load in available VRAM.
+
+Observed vLLM throughput on 7B FP16 under batch load (reported externally)
+---------------------------------------------------------------------------
+  Ollama sequential (single request)  ~41 tok/s     [Red Hat 2025, CITE NEEDED]
+  vLLM 0.9.0 continuous batching     ~793 tok/s     [vLLM benchmark, CITE NEEDED]
+
+The 793 tok/s figure is consistent with the roofline for a 7B model on
+2 × A100 SXM under saturated batch load; it is not achievable for 70B models
+on equivalent hardware without quantisation (roofline: 25–41 tok/s).
+
+The document's claim that "a minimum of 46 ms per token on a T4, regardless
+of the software" is only valid for a 7B FP16 model. The correct generalisation:
+  min_latency_ms = (model_weight_GB / GPU_BW_GB_s) × 1000
+
+
+================================================================================
+APPENDIX B — Benchmark Conditions for All Performance Claims
+================================================================================
+
+The following template records what must be stated alongside every numeric
+performance claim in the document. Values in [brackets] are not yet captured.
+
+Benchmark identifier:  PERF-001
+Claim in document:     "vLLM achieves 793 tokens per second"
+  Hardware:            [GPU model, VRAM, NVLink/PCIe]
+  Model:               [name, parameter count, precision, quantisation]
+  vLLM version:        [git SHA or tag]
+  Batch configuration: [max_num_seqs, max_num_batched_tokens]
+  Input distribution:  [dataset name, mean input length, mean output length]
+  Concurrency:         [QPS or number of simultaneous requests]
+  Metric:              Output tok/s (not prefill tok/s)
+  Source:              [URL or internal report ID]
+
+Benchmark identifier:  PERF-002
+Claim in document:     "TTFT ~1.1 seconds / end-to-end ~2.3 seconds"
+  Hardware:            [GPU model for vLLM; HANA hardware for retrieval]
+  Model:               [name, parameter count, precision]
+  Speculative decoding: [enabled/disabled; draft model; num_speculative_tokens]
+  HANA dataset:        [row count in ledger; index type; column store or row store]
+  Concurrent users:    [number of simultaneous sessions during measurement]
+  Percentile reported: [p50 / p95 / p99]
+  Network:             [intra-datacenter / cross-region]
+  Metric definition:   TTFT = wall-clock time from HTTP POST to first SSE byte
+  Source:              [URL or internal report ID]
+
+Benchmark identifier:  PERF-003
+Claim in document:     "vLLM v0.6.0: 2.7× throughput, 5× TPOT reduction"
+  Baseline:            vLLM v0.5.x (single-process, asyncio scheduler)
+  New version:         vLLM v0.6.0 (multiprocess + ZeroMQ scheduler)
+  Hardware:            A100 SXM 80 GB (as stated in vLLM release blog)
+  Model:               Llama-3 8B FP16
+  Metric A:            Output tok/s at fixed QPS
+  Metric B:            TPOT (time-per-output-token) at fixed QPS
+  Source:              vLLM blog "vLLM v0.6.0 release", 2024 [CITE NEEDED: URL]
+
+Benchmark identifier:  PERF-004
+Claim in document:     "speculative decoding acceptance rate > 90% on financial queries"
+  Draft model:         MLP Speculator (n_predict=3, n_candidates=5,
+                       top_k_tokens_per_head=[5,4,3])  — confirmed in
+                       vllm/transformers_utils/configs/mlp_speculator.py
+  Target model:        [name, parameter count]
+  Domain corpus:       [SAP OData vocabulary terms, ledger field names — size?]
+  Evaluation set:      [N financial queries; source; held-out or in-distribution?]
+  Metric:              draft_acceptance_rate from
+                       vllm:spec_decode_num_accepted_tokens /
+                       vllm:spec_decode_num_draft_tokens
+                       (Prometheus counters confirmed in vllm/v1/spec_decode/metrics.py)
+  Source:              [internal benchmark — not yet published]
+
+vLLM built-in benchmark scripts (confirmed in .buildkite/performance-benchmarks/):
+  Latency test:   input_len=32, output_len=128, batch_size=8, metric=p50/p99 E2E
+  Throughput test: 200 ShareGPT prompts, fixed seed, max-batch throughput
+  Serving test:   QPS ∈ {1, 4, 16, ∞}, Poisson arrivals, metrics=TTFT+ITL p50/p95/p99
+
+
+================================================================================
+APPENDIX C — End-to-End Latency Budget
+================================================================================
+
+The document asserts a "2.3-second end-to-end" response time. The table below
+decomposes that claim into measurable stages. Budget figures are taken from the
+document's own text; Source column shows where the measurement must come from.
+
+Stage  Component              Budget     Cumulative  Source / Verification
+-----  ---------------------  ---------  ----------  ---------------------------
+0      HTTP receive + auth    0–50 ms        50 ms   XSUAA JWT validation;
+       (XSUAA)                                        measured via auth/xsuaa.zig
+                                                       middleware timing hook
+
+1      Schema validation      0–20 ms        70 ms   schema/registry.zig;
+       (schema/registry.zig)                          SchemaRegistry.validate()
+
+2      OData vocabulary       ~100 ms       170 ms   Document claim "T+0.1s";
+       resolution                                     odata-vocabularies-main
+       (odata-vocabularies)                           must expose latency metric
+
+3      HANA context retrieval 200–300 ms    470 ms   Document claim; HANA pool
+       (managed_ledger.zig /                          config: max 20 connections,
+       hana_connector.zig)                            30 s connect timeout
+                                                       (standalone.conf)
+
+4      Mangle transformation  <150 ms       620 ms   Document claim;
+       (mangle-query-service)                         governance.mg + rag_enrichment.mg
+                                                       rule evaluation time
+
+5      MCP planning +         ~580 ms     1,200 ms   Document claim "T+1.2s";
+       vLLM TTFT                                      no code-level timer found;
+       (ai-core-pal →                                 needs span in broker.zig
+       vllm-main)                                     routeHttpRequest()
+
+6      Token generation       ~1,100 ms   2,300 ms   Residual; equals
+       + SSE delivery                                 output_tokens × ms/token;
+       (broker.zig SSE +                              at 7B FP16 on A100 ≈ 7 ms/tok
+       zero_copy_pipeline.zig)                        → ~157 tokens of output
+
+Derived output length from budget:
+  Generation window = 2,300 ms − 1,200 ms = 1,100 ms
+  At 7B FP16 on A100 SXM (145 tok/s) → 1,100 ms × 0.145 ≈ 160 tokens output
+  At 7B FP16 on T4 (21 tok/s)        → 1,100 ms × 0.021 ≈  23 tokens output
+
+The 2.3 s budget is plausible for a 7B model on A100 producing ~160 output tokens
+but not for a 70B model on T4 (would require ≥ 23 s generation time alone).
+
+Configuration values from code that affect this budget
+-------------------------------------------------------
+  HANA pool max connections:   20           (standalone.conf: hanaPoolMaxConnections)
+  HANA connection timeout:     30,000 ms    (standalone.conf: hanaConnectionTimeoutMs)
+  HANA idle timeout:           300,000 ms   (standalone.conf: hanaIdleTimeoutMs)
+  Broker max message size:     5 MB         (standalone.conf: maxMessageSize)
+  Broker I/O threads:          4 (default standalone; 8 in BrokerOptions default)
+  HTTP server max connections: 10,000       (http/server.zig:117)
+  Metrics server max conns:    100          (metrics/http_server.zig:19)
+  Zero-copy GPU timeout:       5,000 ms     (zero_copy_pipeline.zig: ZeroCopyConfig)
+  Zero-copy max input:         1 MB         (zero_copy_pipeline.zig: max_input_size)
+  Zero-copy max seq len:       2,048 tokens (zero_copy_pipeline.zig: max_seq_len)
+  ZMQ I/O threads (vLLM):      2            (vllm/utils/network_utils.py)
+
+Action required: instrument each stage boundary in broker.zig with nanosecond
+timestamps and expose the p50/p95/p99 breakdown via the /metrics endpoint.
+
+
+================================================================================
+APPENDIX D — Speculative Decoding Acceptance Rate Data
+================================================================================
+
+What is implemented (verified from vllm-main source tree)
+----------------------------------------------------------
+  EAGLE speculative decoding:
+    vllm/v1/spec_decode/eagle.py           — tree-based hidden-state predictor
+    vllm/v1/spec_decode/draft_model.py     — generic draft model wrapper
+    PADDING_SLOT_ID constant = -1
+    parallel_drafting: bool (default False)
+    Supported target architectures: llama, qwen, minicpm, gpt_oss,
+      hunyuan_vl, hunyuan_v1_dense, afmoe, nemotron_h
+
+  MLP Speculator (vllm/transformers_utils/configs/mlp_speculator.py):
+    vocab_size:              32,000 (default)
+    emb_dim:                  4,096 (default, matches LLaMA-2/3 hidden size)
+    n_predict:                    3 (tokens predicted per draft step, default)
+    n_candidates:                 5 (beam candidates per sequence, default)
+    top_k_tokens_per_head:  [5, 4, 3] (per-position top-k, default)
+    tie_weights:              False (independent head weights, default)
+    Supported checkpoints:  Llama-3 8B, Llama-3 70B, Granite 3B/7B/8B/20B,
+                             CodeLlama-34B, Llama-2 70B (pre-trained MLP heads)
+
+  N-gram speculative decoding (SpeculativeConfig):
+    prompt_lookup_min: 5 (default)
+    prompt_lookup_max: 5 (default)
+
+  Suffix decoding (SpeculativeConfig):
+    suffix_decoding_max_tree_depth:       24 (default)
+    suffix_decoding_max_cached_requests:  10,000 (default)
+    suffix_decoding_max_spec_factor:      1.0 (default)
+    suffix_decoding_min_token_prob:       0.1 (default)
+
+Prometheus metrics exposed by vLLM for acceptance rate measurement
+(vllm/v1/spec_decode/metrics.py — confirmed present):
+  vllm:spec_decode_num_drafts               counter — total draft rounds
+  vllm:spec_decode_num_draft_tokens         counter — total tokens proposed
+  vllm:spec_decode_num_accepted_tokens      counter — tokens accepted by target
+  vllm:spec_decode_num_accepted_tokens_per_pos  histogram — per draft position
+
+Derived acceptance rate formula (from metrics.py):
+  draft_acceptance_rate = accepted_tokens / draft_tokens
+  mean_acceptance_length = 1 + (accepted_tokens / num_drafts)
+
+What the ">90% acceptance on financial queries" claim requires
+--------------------------------------------------------------
+  1. Draft model fine-tuned or selected for SAP OData / financial vocabulary
+     (field names: CompanyCode, FiscalYear, AccountingDocument, PostingDate, etc.)
+  2. Evaluation set: N held-out financial queries; N must be stated.
+  3. Hardware + model: T4 / A100 / H100; 7B or 70B target; FP16 or INT8.
+  4. Comparison baseline: acceptance rate of the same draft model on
+     general-purpose queries (expected ~60–80 %).
+  5. Measurement: vllm:spec_decode_num_accepted_tokens /
+                  vllm:spec_decode_num_draft_tokens over the evaluation run.
+
+If the domain corpus genuinely covers SAP vocabulary, acceptance rates
+of 85–92 % are plausible for 3-token MLP speculation; values above 95 %
+are unusual and require explicit documentation.
+
+
+================================================================================
+APPENDIX E — Actual Service Inventory
+================================================================================
+
+Source: docs/sbom-lineage-manifest.yaml + scripts/sbom-lineage/boms/*.cyclonedx.json
+Generated: 2026-02-28 from repository HEAD
+
+Logical   Repository path                                 BOM version    BOM comps  Primary lang(s)
+service
+--------  ----------------------------------------------  -------------  ---------  ----------------
+  1       ui5-webcomponents-ngx-main                      v1.0.0             2,743  TypeScript
+  2       ai-sdk-js-main                                  v2.7.0             1,228  TypeScript
+  3       cap-llm-plugin-main                             v1.5.0               577  TypeScript
+  4a      ai-core-streaming  (Pulsar rewrite, see note)   v0.0.0 (*)           0   Zig / Mojo / Mangle
+  4b      ai-core-pal                                     v0.0.0 (*)           0   Zig / Mojo / Mangle
+  5       —  (SAP HANA PAL, no public repository)
+  6       data-cleaning-copilot-main                      v0.1.0                25  Python
+  7       elasticsearch-main                              v0.0.0 (*)             0  (stub BOM)
+  8       generative-ai-toolkit-for-sap-hana-cloud-main   v1.0.26021200          9  Python
+  9       langchain-integration-for-sap-hana-cloud-main   v1.0.2                 5  Python
+ 10a      mangle-main                                     v0.1.0                 7  Go
+ 10b      mangle-query-service                            v0.1.0                 4  Go
+ 11       odata-vocabularies-main                         v0.5.2               184  TypeScript
+ 12       vllm-main                                       v0.9.0               360  Python / CUDA C++
+ 13       world-monitor-main                              v2.5.4             1,001  TypeScript / Rust
+
+(*) BOMs for ai-core-streaming, ai-core-pal, and elasticsearch-main contain
+    0 components. These services use Zig, Mojo, and C/C++ dependencies managed
+    as vendored source trees (zig/deps/) outside the npm/pip/cargo ecosystems
+    and therefore do not appear in package-manager-generated BOMs.
+    A manual inventory of vendored dependencies is required for these three repos.
+
+Notes
+-----
+  • Total repositories: 14  (not 13 as stated in the document)
+  • The document counts 13 logical services by grouping:
+      – ai-core-streaming + ai-core-pal   → Service 4 ("Streaming Core")
+      – mangle-main + mangle-query-service → Service 10 ("Mangle")
+    This grouping is valid but should be stated explicitly.
+
+  • ai-core-streaming is a ground-up Pulsar rewrite (Zig + Mojo + Mangle),
+    NOT a wrapper around upstream Apache Pulsar. Evidence:
+      – broker/broker.zig:     binary protocol on port 6650 (Pulsar default)
+      – storage/managed_ledger.zig: append-only log backed by SAP HANA
+                                    (replaces Apache BookKeeper)
+      – recovery/wal.zig:      WAL with full LSN-based transaction log
+      – conf/standalone.conf:  header reads "BDC Pulsar Streaming — Standalone"
+      – mojo/src/stream_processor.mojo: struct StreamMessage mirrors Pulsar
+                                         message schema (ledger_id, entry_id)
+      – mangle/a2a/streaming_rules.mg:  Exclusive / Shared / Failover /
+                                         Key_Shared subscription types (Pulsar API)
+
+  • world-monitor-main is a Tauri desktop + geospatial web application.
+    Key production dependencies: deck.gl, maplibre-gl, topojson-client, d3,
+    @xenova/transformers (client-side ML), onnxruntime-web, convex, posthog-js.
+    It is NOT primarily an OpenTelemetry-based compliance tracing platform.
+
+
+================================================================================
+APPENDIX F — Privacy Rule Examples (Mangle Datalog)
+================================================================================
+
+All rules below are excerpted verbatim from the repository.
+File paths are relative to the repository root.
+
+--- F.1  Data subject and personal data field detection ---
+Source: mangle-query-service/rules/governance.mg
+
+  # Detect data subject entities from OData PersonalData annotations
+  is_data_subject_entity(EntityType) :-
+    entity_annotation(EntityType, "PersonalData.EntitySemantics", "DataSubject").
+
+  # Pattern-based fallback for unannotated schemas
+  is_data_subject_entity(EntityType) :-
+    EntityType :> match("(?i)customer|employee|user|person|contact|patient|member").
+
+  # Personal data field detection (annotated)
+  is_personal_data_field(EntityType, FieldName) :-
+    field_annotation(EntityType, FieldName, "PersonalData.IsPotentiallyPersonal", true).
+
+  # Personal data field detection (pattern-based)
+  is_personal_data_field(EntityType, FieldName) :-
+    FieldName :> match("(?i)e?mail|phone|address|birth.*date|dob|ssn"),
+    is_data_subject_entity(EntityType).
+
+  # GDPR special-category sensitive data
+  is_sensitive_data_field(EntityType, FieldName) :-
+    FieldName :> match("(?i)health|medical|ethnic|religion|political|sexual|genetic|biometric|criminal").
+
+--- F.2  Anonymisation rules ---
+Source: mangle-query-service/rules/governance.mg
+
+  # Sensitive fields must be anonymised in non-production environments
+  must_anonymize(EntityType, FieldName) :-
+    is_sensitive_data_field(EntityType, FieldName),
+    environment("non-production").
+
+  # Personal fields must be masked in audit logs and exports
+  must_anonymize(EntityType, FieldName) :-
+    is_personal_data_field(EntityType, FieldName),
+    context("audit_log").
+
+--- F.3  Access control ---
+Source: mangle-query-service/rules/governance.mg
+
+  # Data Protection Officer has unrestricted read access
+  access_allowed(Query, "dpo", "role:dpo") :-
+    is_data_subject_entity(_).
+
+  # Regular users may access personal data only with verified consent
+  access_allowed(Query, "user", "consent_verified") :-
+    extract_entities(Query, EntityType, EntityID),
+    consent_verified(EntityType, EntityID).
+
+  # Deny access to GDPR special-category data for non-privileged roles
+  !access_allowed(Query, Role, _) :-
+    extract_entities(Query, EntityType, _),
+    is_sensitive_data_field(EntityType, _),
+    Role != "dpo",
+    Role != "medical_staff".
+
+--- F.4  GDPR data subject rights ---
+Source: mangle-query-service/rules/governance.mg
+
+  # Right of access — collect all personal data for a subject ID
+  subject_access_request(SubjectID, PersonalData) :-
+    is_data_subject_entity(EntityType),
+    entity_has_id(EntityType, SubjectID, EntityID),
+    collect_personal_data(EntityType, EntityID, PersonalData).
+
+  # Right to erasure — identify records eligible for deletion
+  subject_erasure_request(SubjectID, DataToDelete) :-
+    is_data_subject_entity(EntityType),
+    entity_has_id(EntityType, SubjectID, EntityID),
+    !legal_hold(EntityType, EntityID),
+    DataToDelete = {"entity_type": EntityType, "entity_id": EntityID}.
+
+  # Right to portability — export in structured format
+  subject_portability_request(SubjectID, ExportData) :-
+    is_data_subject_entity(EntityType),
+    entity_has_id(EntityType, SubjectID, EntityID),
+    collect_personal_data(EntityType, EntityID, PersonalData),
+    format_portable(PersonalData, ExportData).
+
+  # Retention expiry detection
+  data_retention_expired(EntityType, EntityID) :-
+    field_annotation(EntityType, _, "PersonalData.EndOfBusinessDate", EndDateField),
+    entity_field_value(EntityType, EntityID, EndDateField, EndDate),
+    EndDate < current_date().
+
+--- F.5  Governance resolution with audit gate ---
+Source: mangle-query-service/rules/governance.mg
+
+  # All resolution paths pass through audit gate and access check
+  resolve_with_governance(Query, Answer, ResPath, Score) :-
+    audit_required(Query, AuditReason),
+    log_audit(Query, AuditReason),
+    access_allowed(Query, current_user_role(), AccessReason),
+    resolve(Query, RawAnswer, ResPath, RawScore),
+    apply_anonymization(Query, RawAnswer, Answer),
+    Score = RawScore.
+
+  # Deny resolution if role check fails — returns literal "Access denied"
+  resolve_with_governance(Query, "Access denied", "denied", 0) :-
+    !access_allowed(Query, current_user_role(), _).
+
+--- F.6  Service autonomy and human oversight (cross-service governance) ---
+Source: ai-core-streaming/mesh/governance_rules.mg
+
+  # Autonomy level assignments
+  service_autonomy("vllm", "L1").              # All actions require human approval
+  service_autonomy("data-cleaning-copilot", "L2").
+  service_autonomy("ai-core-pal", "L2").
+
+  # Compute oversight requirement from autonomy level
+  requires_human_oversight(Service) :-
+    service_autonomy(Service, Level),
+    autonomy_level_value(Level, Value),
+    Value =< 2.
+
+  # Actions unconditionally requiring human review
+  always_requires_approval("delete_data").
+  always_requires_approval("train_model").
+  always_requires_approval("deploy_model").
+  always_requires_approval("grant_access").
+
+--- F.7  Security-class-based routing (confidential data → private inference) ---
+Source: ai-core-streaming/mangle/domain/agents.mg and
+        ai-core-pal/mangle/domain/data_products.mg
+
+  # Confidential data is routed exclusively to on-premise vLLM instance
+  # (rule paraphrased from domain/agents.mg — actual field names vary by file)
+  route_to_backend(Request, "vllm") :-
+    request_security_class(Request, "confidential").
+
+  # Public and internal data may use SAP AI Core external endpoint
+  route_to_backend(Request, "aicore") :-
+    request_security_class(Request, "public").
+
+  route_to_backend(Request, "aicore") :-
+    request_security_class(Request, "internal").
+
+  # Restricted data is blocked entirely
+  route_to_backend(Request, "blocked") :-
+    request_security_class(Request, "restricted").
+
+
+================================================================================
+APPENDIX G — Research Citations Index
+================================================================================
+
+The document references the following sources without full citations.
+Status column: VERIFIED = locatable; PARTIAL = found but details missing;
+               NOT FOUND = not locatable under the stated author/year.
+
+Ref   Status      Document claim                               Action required
+----  ----------  -------------------------------------------  --------------------
+[1]   NOT FOUND   "Gartner (2024): integration costs exceed    Provide: report title,
+                  build costs within 18 months"                Gartner doc ID (G00xxxxx),
+                                                               publication month.
+
+[2]   NOT FOUND   "McKinsey (2024): integration overhead       Provide: report title,
+                  = 40–60 % of engineering capacity"           section name, URL or
+                                                               McKinsey report code.
+
+[3]   NOT FOUND   "MIT Sloan Management Review (2024):         Provide: article title,
+                  3–5× more incidents in assembled systems"    author(s), volume, issue.
+
+[4]   NOT FOUND   "Forrester (2024): median TTFT 4.2 s vs      Provide: wave title,
+                  1.1 s"                                        Forrester doc ID,
+                                                               publication quarter.
+
+[5]   NOT FOUND   "ACL 2024: 34 % accuracy drop in            Provide: paper title,
+                  workflow-based systems"                       author(s), proceedings
+                                                               page range, arXiv ID.
+
+[6]   NOT FOUND   "60 % of users abandon AI tools after        Provide: study title and
+                  > 5 seconds"                                  methodology; Google /
+                                                               Deloitte web-latency
+                                                               research does not cover
+                                                               AI generation latency.
+
+[7]   PARTIAL     "Red Hat 2025–2026: Ollama ~41 tok/s,        Provide: report title,
+                  vLLM 793 tok/s"                              URL, hardware spec,
+                                                               model tested.
+
+Verified technical references that should be added to the document's bibliography:
+
+[A]   VERIFIED    PagedAttention / vLLM                        Kwon, W., et al.
+                                                               "Efficient Memory
+                                                               Management for Large
+                                                               Language Model Serving
+                                                               with PagedAttention."
+                                                               SOSP 2023.
+                                                               arXiv:2309.06180
+
+[B]   VERIFIED    EAGLE speculative decoding                   Li, Y., et al.
+                                                               "EAGLE: Speculative
+                                                               Sampling Requires
+                                                               Rethinking Feature
+                                                               Uncertainty."
+                                                               ICML 2024.
+                                                               arXiv:2401.15077
+
+[C]   VERIFIED    EAGLE-3 (2×–6× speedup figure)              Li, Y., et al.
+                                                               "EAGLE-3: Scaling up
+                                                               Inference Acceleration
+                                                               of LLMs via Training-
+                                                               Time Test."
+                                                               arXiv:2503.01840
+
+[D]   VERIFIED    vLLM continuous batching                     Yu, G., et al.
+                                                               "Orca: A Distributed
+                                                               Serving System for
+                                                               Transformer-Based
+                                                               Generative Models."
+                                                               OSDI 2022.
+
+[E]   VERIFIED    vLLM v0.6.0 multiprocess + ZMQ              vLLM blog post:
+                  2.7× throughput / 5× TPOT                    "vLLM v0.6.0: 2.7x
+                                                               Throughput Improvement
+                                                               and 64x Reduction in
+                                                               Blocked Requests."
+                                                               vllm.ai, Oct 2024.
+                                                               [CITE NEEDED: exact URL]
+
+[F]   VERIFIED    Prefill-decode disaggregation                Zhong, Y., et al.
+                  ("DistServe")                                "DistServe: Disaggregating
+                                                               Prefill and Decoding for
+                                                               Goodput-Optimized LLM
+                                                               Serving." OSDI 2024.
+                                                               arXiv:2401.09670
+
+[G]   VERIFIED    Google Mangle Datalog engine                 github.com/google/mangle
+                  (Service 10 basis)                           Apache-2.0 license.
+                                                               Confirmed in BOM:
+                                                               pkg:golang/github.com/
+                                                               google/mangle@0.1.0
+
+[H]   VERIFIED    Speculative decoding (original)              Leviathan, Y., et al.
+                                                               "Fast Inference from
+                                                               Transformers via
+                                                               Speculative Decoding."
+                                                               ICML 2023.
+                                                               arXiv:2211.17192
+
+
+================================================================================
+APPENDIX H — Streaming Layer Implementation Status
+================================================================================
+
+This appendix audits every capability claimed for Service 4 (ai-core-streaming)
+against what is actually present in the source tree.
+
+Key finding:
+  ai-core-streaming is a ground-up rewrite of the Apache Pulsar message broker
+  in Zig (core broker + storage + transport) and Mojo (stream processing + SIMD
+  embeddings) with Mangle for declarative routing and governance policy.
+  It is not a wrapper around upstream Pulsar.
+
+Capability                    Claim in document  Status       Evidence
+----------------------------  -----------------  -----------  ---------------------------
+Binary protocol server        Pulsar-compatible  IMPLEMENTED  broker.zig: binary server
+(port 6650)                                                   on BrokerOptions.
+                                                              broker_service_port=6650
+                                                              (standalone.conf)
+
+HTTP admin server             Yes                IMPLEMENTED  broker.zig: HTTP server
+(port 8080)                                                   on web_service_port=8080;
+                                                              routes: /health, /metrics,
+                                                              /v1/chat/completions,
+                                                              /v1/models, /api/gpu/info
+
+OpenAI-compatible API         Yes                IMPLEMENTED  broker.zig: routeHttpRequest()
+(/v1/chat/completions etc.)                                   handles completions,
+                                                              embeddings, models, audio
+                                                              (stub), images (stub),
+                                                              moderations (stub)
+
+Topic management              Yes                IMPLEMENTED  broker.zig: Topic struct;
+                                                              getOrCreateTopic(),
+                                                              deleteTopic()
+
+Producer / Consumer /         Yes                IMPLEMENTED  broker.zig: Producer,
+Subscription model                                            Consumer, Subscription
+                                                              structs; Exclusive /
+                                                              Shared / Failover /
+                                                              Key_Shared types
+
+Write-Ahead Log               Yes                IMPLEMENTED  recovery/wal.zig:
+                                                              full LSN-based WAL with
+                                                              32 record types (BeginTxn,
+                                                              CommitTxn, MessagePublished,
+                                                              LedgerCreated, Checkpoint…)
+                                                              designed for 100K+ msg/s
+
+Managed ledger storage        Yes                IMPLEMENTED  storage/managed_ledger.zig:
+(replaces BookKeeper)                                         append-only log backed by
+                                                              SAP HANA; max 50,000
+                                                              entries/ledger, 256 MB
+                                                              rollover, 64 KB write buffer
+
+Retention + tiered storage    Yes (config)       PARTIAL      standalone.conf: offload
+                                                              driver config present;
+                                                              storage/retention.zig
+                                                              exists; full offload
+                                                              implementation not verified
+
+Transaction support           Yes                PARTIAL      standalone.conf:
+                                                              transactionEnabled=true;
+                                                              storage/transaction.zig
+                                                              exists; coordinator
+                                                              integration not verified
+
+Zero-copy GPU pipeline        Yes                IMPLEMENTED  gpu/zero_copy_pipeline.zig:
+(HTTP → DMA → GPU → SSE)                                      ZeroCopyPipeline with 3
+                                                              command slots; JSON parse
+                                                              + tokenize + embed via
+                                                              Metal GPU kernels;
+                                                              DMA latency + GPU latency
+                                                              tracked per-slot;
+                                                              CPU fallback present
+
+SIMD stream processing        Yes                IMPLEMENTED  mojo/src/stream_processor.mojo:
+(Mojo / AVX-512)                                              SIMD_WIDTH=8 (AVX-512);
+                                                              BATCH_SIZE=256;
+                                                              EMBEDDING_DIM=384;
+                                                              WindowedAggregator (time /
+                                                              count / session windows);
+                                                              EmbeddingProcessor with
+                                                              SIMD cosine similarity
+
+Mojo → Zig FFI                Yes                IMPLEMENTED  mojo/src/ffi_exports.mojo:
+                                                              C-ABI exports for Zig
+                                                              hot-path integration
+                                                              (mojo_init, embedding
+                                                              generation, tokenisation)
+                                                              mojo_bridge.zig bridges
+                                                              to libmojo_streaming.so
+
+XSUAA authentication          Yes                IMPLEMENTED  auth/xsuaa.zig: JWT
+                                                              validation; X.509
+                                                              thumbprint (x5t) support
+
+Circuit breaker               Yes                IMPLEMENTED  resilience/circuit_breaker.zig
+
+Graceful shutdown             Yes                IMPLEMENTED  resilience/graceful_shutdown.zig;
+                                                              broker.zig: BrokerState
+                                                              machine (Initializing →
+                                                              Running → Draining →
+                                                              ShuttingDown → Stopped)
+
+HANA connection pool          Yes                IMPLEMENTED  standalone.conf:
+                                                              hanaPoolMinConnections=2,
+                                                              hanaPoolMaxConnections=20,
+                                                              timeout=30 s
+
+Schema registry               Yes                IMPLEMENTED  schema/registry.zig;
+                                                              standalone.conf:
+                                                              schemaCompatibilityStrategy=FULL
+
+Prometheus metrics            Yes                PARTIAL      ISSUE: prometheus.zig
+(via prometheus.zig)                                          all methods are no-ops
+                                                              (confirmed stub).
+                                                              HOWEVER: broker.zig
+                                                              /metrics handler outputs
+                                                              Prometheus text format
+                                                              directly (broker_topics_count,
+                                                              broker_messages_in,
+                                                              broker_messages_out,
+                                                              broker_uptime_ms).
+                                                              The PrometheusMetrics class
+                                                              is unused; the broker HTTP
+                                                              handler IS the metrics source.
+                                                              prometheus.zig should either
+                                                              be removed or wired up.
+
+Max concurrent connections    10,000+            VERIFIED     http/server.zig line 117:
+(HTTP server)                                   (HTTP)        max_connections: u32 = 10000
+                                                DIFFERENT     metrics/http_server.zig
+                                                (metrics)     line 19:
+                                                              max_connections: u32 = 100
+                                                              (metrics endpoint only)
+
+Apache Pulsar transport        Document implied   CORRECTED    There is no dependency on
+                               external Pulsar               upstream Apache Pulsar.
+                                                              ai-core-streaming IS the
+                                                              Pulsar implementation.
+                                                              btp/event_mesh.zig is a
+                                                              SAP BTP Event Mesh
+                                                              connector/bridge, separate
+                                                              from the broker core.
+
+================================================================================
+END OF APPENDICES
+================================================================================
+

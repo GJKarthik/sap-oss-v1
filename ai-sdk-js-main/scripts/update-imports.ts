@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 /* eslint-disable no-console */
 import { basename, resolve } from 'node:path';
 import { transformFilesInDirectory } from './util.js';

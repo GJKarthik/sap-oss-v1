@@ -1,0 +1,306 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "generative-ai-toolkit-for-sap-hana-cloud-main",
+  "documentNamespace": "https://spdx.org/spdxdocs/generative-ai-toolkit-for-sap-hana-cloud-main-7fede9e7-0d58-4855-878d-22dc920a6712",
+  "creationInfo": {
+    "created": "2026-02-28T10:30:23Z",
+    "creators": [
+      "Tool: SAP-OSS-SBOM-Pipeline-1.0",
+      "Organization: SAP SE"
+    ],
+    "licenseListVersion": "3.24"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-root-component",
+      "name": "Generative AI Toolkit for SAP HANA Cloud",
+      "versionInfo": "1.0.26021200",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/generative ai toolkit for sap hana cloud@1.0.26021200"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-community-0",
+      "name": "langchain-community",
+      "versionInfo": "0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain-community@0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2135abb2c7748a35c84613108f7ebf30f8505b18c3c18305ffaecfc7651f6c6a"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-text-splitters-0",
+      "name": "langchain-text-splitters",
+      "versionInfo": "0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain-text-splitters@0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5ed0d7bf314ba925041e7d7d17cd8b10f688300d5415fb26c29442f061e329dc"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-numpy-0",
+      "name": "numpy",
+      "versionInfo": "0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "(BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0)",
+      "licenseDeclared": "(BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0)",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Travis E. Oliphant et al.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/numpy@0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e7e88598032542bd49af7c4747541422884219056c268823ef6e5e89851c8825"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-pandas-0",
+      "name": "pandas",
+      "versionInfo": "0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: The Pandas Development Team",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pandas@0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "de09668c1bf3b925c07e5762291602f0d789eca1b3a781f99c1c78f6cac0e7ea"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-hana-ml-2.27.26020601",
+      "name": "hana-ml",
+      "versionInfo": "2.27.26020601",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LicenseRef-SAP-DeveloperAgreement",
+      "licenseDeclared": "LicenseRef-SAP-DeveloperAgreement",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: SAP SE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/hana-ml@2.27.26020601"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fe0a545dc045e8c33b5c644f0c1ae371648adfd0f76f96b083090200994403e8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-pydantic-2.11",
+      "name": "pydantic",
+      "versionInfo": "2.11",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Samuel Colvin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pydantic@2.11"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d52535bb7aba33c2af820eaefd866f3322daf39319d03374921cd17fbbdf28f9"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-sap-ai-sdk-gen-0",
+      "name": "sap-ai-sdk-gen",
+      "versionInfo": "0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LicenseRef-SAP-DeveloperAgreement",
+      "licenseDeclared": "LicenseRef-SAP-DeveloperAgreement",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: SAP SE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/sap-ai-sdk-gen@0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "82be3d1286f797366860a6fe340462e4567b4218b257f1b863a2da9e6e98f246"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-langchain-hana-0",
+      "name": "langchain-hana",
+      "versionInfo": "0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: None",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/langchain-hana@0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d1734f2af225b472e6233aa18973fe821f232d7a07644d5d8d4758486c86aec9"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pkg-pypi-fastmcp-2.0",
+      "name": "fastmcp",
+      "versionInfo": "2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Jeremiah Lowin",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/fastmcp@2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d5c4111233a6a29fa92ed5acdbfe4feae922191a1d1c1543f0a85efeef31fbb9"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-root-component"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-community-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-text-splitters-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-numpy-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-pandas-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-hana-ml-2.27.26020601"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-pydantic-2.11"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-sap-ai-sdk-gen-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-langchain-hana-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-root-component",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pkg-pypi-fastmcp-2.0"
+    }
+  ],
+  "documentDescribes": [
+    "SPDXRef-root-component"
+  ]
+}

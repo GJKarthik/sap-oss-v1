@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import {
   AIMessage,
   HumanMessage,
@@ -7,7 +9,7 @@ import {
 } from '@langchain/core/messages';
 import { tool } from '@langchain/core/tools';
 import { toJsonSchema } from '@langchain/core/utils/json_schema';
-import { parseMockResponse } from '../../../../test-util/mock-http.js';
+import { parseMockResponse } from '../../../../test-util/fixtures.js';
 import {
   addNumbersSchema,
   addNumbersSchemaV3

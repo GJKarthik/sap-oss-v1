@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {dependencyRelativePath, GeneratedFile} from "@ui5/webcomponents-transformer";
 import {AngularExportSpecifierType} from "./angular-export-specifier-type";
 import {ParsedPath} from "path";

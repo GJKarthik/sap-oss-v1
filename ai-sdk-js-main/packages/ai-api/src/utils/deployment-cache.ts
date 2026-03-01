@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { Cache } from '@sap-cloud-sdk/connectivity/internal.js';
 import { type AiDeployment } from '../client/AI_CORE_API/index.js';
 import { type DeploymentResolutionOptions } from './deployment-resolver.js';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Unit tests for createOtelMiddleware (Day 53).
  *
@@ -53,34 +55,34 @@ let createOtelMiddleware;
 let tracer;
 
 function loadMiddleware(otelAvailable = false) {
-  jest.resetModules();
   tracer = makeTracer();
-  const capturedTracer = tracer;
+  const mockCapturedTracer = tracer;
 
-  jest.doMock("../../src/telemetry/tracer", () => ({
-    getTracer: () => capturedTracer,
-    SpanStatusCode: { UNSET: 0, OK: 1, ERROR: 2 },
-  }));
-
-  if (otelAvailable) {
-    const mockInject = jest.fn((ctx, carrier) => {
-      carrier["traceparent"] = "00-abc123-def456-01";
-    });
-    jest.doMock("@opentelemetry/api", () => ({
-      propagation: { inject: mockInject },
-      context: { active: jest.fn().mockReturnValue({}) },
-      _mockInject: mockInject,
+  jest.isolateModules(() => {
+    jest.doMock("../../src/telemetry/tracer", () => ({
+      getTracer: () => mockCapturedTracer,
+      SpanStatusCode: { UNSET: 0, OK: 1, ERROR: 2 },
     }));
-  } else {
-    // Simulate package not installed
-    jest.doMock("@opentelemetry/api", () => {
-      throw Object.assign(new Error("Cannot find module '@opentelemetry/api'"), {
-        code: "MODULE_NOT_FOUND",
-      });
-    });
-  }
 
-  ({ createOtelMiddleware } = require("../../src/telemetry/ai-sdk-middleware"));
+    if (otelAvailable) {
+      const mockInject = jest.fn((ctx, carrier) => {
+        carrier["traceparent"] = "00-abc123-def456-01";
+      });
+      jest.doMock("@opentelemetry/api", () => ({
+        propagation: { inject: mockInject },
+        context: { active: jest.fn().mockReturnValue({}) },
+        _mockInject: mockInject,
+      }));
+    } else {
+      jest.doMock("@opentelemetry/api", () => {
+        throw Object.assign(new Error("Cannot find module '@opentelemetry/api'"), {
+          code: "MODULE_NOT_FOUND",
+        });
+      });
+    }
+
+    ({ createOtelMiddleware } = require("../../src/telemetry/ai-sdk-middleware"));
+  });
 }
 
 // Helper to build a MiddlewareOptions object

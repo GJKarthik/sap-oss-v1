@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * Type-check test: verifies that consumers can import public types
  * from the package barrel export. This file is NOT executed — it is

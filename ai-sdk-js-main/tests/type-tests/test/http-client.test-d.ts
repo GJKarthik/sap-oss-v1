@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { expectError, expectType } from 'tsd';
 import { executeRequest } from '@sap-ai-sdk/core';
 import type { HttpResponse } from '@sap-cloud-sdk/http-client';

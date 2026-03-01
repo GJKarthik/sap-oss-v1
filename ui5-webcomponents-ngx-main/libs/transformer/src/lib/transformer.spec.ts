@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { transformer } from './transformer';
 import { TransformerConfig } from './types/transformer-config';
 import { GeneratedFile } from './generated-file';

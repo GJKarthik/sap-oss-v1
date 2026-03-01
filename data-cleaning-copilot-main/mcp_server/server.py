@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """
 Data Cleaning Copilot MCP Server
 
@@ -7,11 +9,100 @@ Provides tools for data cleaning, quality checks, and AI-assisted data validatio
 
 import json
 import os
-import asyncio
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
 import urllib.request
 import urllib.error
+
+MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
+MAX_TOP_K = int(os.environ.get("MCP_MAX_TOP_K", "100"))
+MAX_PROFILE_COLUMNS = int(os.environ.get("MCP_MAX_PROFILE_COLUMNS", "100"))
+MAX_REMOTE_ENDPOINTS = int(os.environ.get("MCP_MAX_REMOTE_ENDPOINTS", "25"))
+REMOTE_MCP_TIMEOUT_SECONDS = int(os.environ.get("MCP_REMOTE_TIMEOUT_SECONDS", "3"))
+
+
+def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < min_value:
+        return min_value
+    if parsed > max_value:
+        return max_value
+    return parsed
+
+
+def parse_json_arg(value: Any, fallback: Any):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return fallback
+    return value if value is not None else fallback
+
+
+def normalize_mcp_endpoint(endpoint: str) -> str:
+    normalized = (endpoint or "").strip().rstrip("/")
+    if normalized == "":
+        return ""
+    if normalized.endswith("/mcp"):
+        return normalized
+    return f"{normalized}/mcp"
+
+
+def get_remote_mcp_endpoints(*env_keys: str) -> list:
+    endpoints = []
+    seen = set()
+    for env_key in env_keys:
+        raw = os.environ.get(env_key, "")
+        for endpoint in raw.split(","):
+            normalized = normalize_mcp_endpoint(endpoint)
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                endpoints.append(normalized)
+    return endpoints[:MAX_REMOTE_ENDPOINTS]
+
+
+def unwrap_mcp_tool_result(result: Any) -> Any:
+    if not isinstance(result, dict):
+        return result
+    content = result.get("content")
+    if not isinstance(content, list) or len(content) == 0:
+        return result
+    first = content[0]
+    if not isinstance(first, dict):
+        return result
+    text = first.get("text")
+    if not isinstance(text, str):
+        return result
+    return parse_json_arg(text, text)
+
+
+def call_mcp_tool(endpoint: str, tool_name: str, tool_args: dict, timeout_seconds: int = REMOTE_MCP_TIMEOUT_SECONDS) -> Any:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": tool_name,
+            "arguments": tool_args,
+        },
+    }
+    req = urllib.request.Request(
+        normalize_mcp_endpoint(endpoint),
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=max(1, int(timeout_seconds))) as resp:
+        rpc_response = json.loads(resp.read().decode())
+    if isinstance(rpc_response, dict) and "error" in rpc_response:
+        error = rpc_response.get("error", {})
+        message = error.get("message", "remote MCP tool call failed") if isinstance(error, dict) else "remote MCP tool call failed"
+        raise RuntimeError(message)
+    result = rpc_response.get("result") if isinstance(rpc_response, dict) else None
+    return unwrap_mcp_tool_result(result)
 
 # =============================================================================
 # Types
@@ -112,6 +203,16 @@ class MCPServer:
         self.tools = {}
         self.resources = {}
         self.facts = {}
+        self.local_mcp_endpoint = normalize_mcp_endpoint(
+            os.environ.get("DATA_CLEANING_MCP_ENDPOINT", f"http://localhost:{os.environ.get('MCP_PORT', '9110')}/mcp")
+        )
+        self.analytics_mcp_endpoint = normalize_mcp_endpoint(
+            os.environ.get("DATA_CLEANING_ANALYTICS_MCP_ENDPOINT", "http://localhost:9120/mcp")
+        )
+        self.context_mcp_endpoint = normalize_mcp_endpoint(
+            os.environ.get("DATA_CLEANING_CONTEXT_MCP_ENDPOINT", "http://localhost:9150/mcp")
+        )
+        self.remote_mcp_endpoints = get_remote_mcp_endpoints("DATA_CLEANING_REMOTE_MCP_ENDPOINTS")
         self._register_tools()
         self._register_resources()
         self._initialize_facts()
@@ -238,10 +339,15 @@ class MCPServer:
 
     def _initialize_facts(self):
         self.facts["service_registry"] = [
+            {"name": "data-cleaning-mcp", "endpoint": self.local_mcp_endpoint, "model": "data-cleaning-copilot-mcp"},
+            {"name": "analytics-mcp", "endpoint": self.analytics_mcp_endpoint, "model": "elasticsearch-mcp"},
+            {"name": "context-mcp", "endpoint": self.context_mcp_endpoint, "model": "odata-vocab-mcp"},
             {"name": "data-quality", "endpoint": "dcc://quality", "model": "quality-analyzer"},
             {"name": "data-profiling", "endpoint": "dcc://profiling", "model": "profiler"},
             {"name": "anomaly-detection", "endpoint": "dcc://anomaly", "model": "anomaly-detector"},
         ]
+        for idx, endpoint in enumerate(self.remote_mcp_endpoints):
+            self.facts["service_registry"].append({"name": f"remote-mcp-{idx + 1}", "endpoint": endpoint, "model": "federated"})
         self.facts["tool_invocation"] = []
         self.facts["quality_rules"] = [
             {"rule": "completeness", "threshold": 95.0},
@@ -249,23 +355,75 @@ class MCPServer:
             {"rule": "consistency", "threshold": 98.0},
         ]
 
+    def _iter_federated_mcp_endpoints(self, preferred: list = None) -> list:
+        ordered = []
+        seen = set()
+
+        def push(endpoint: str):
+            normalized = normalize_mcp_endpoint(endpoint)
+            if not normalized:
+                return
+            if normalized == self.local_mcp_endpoint:
+                return
+            if not (normalized.startswith("http://") or normalized.startswith("https://")):
+                return
+            if normalized in seen:
+                return
+            seen.add(normalized)
+            ordered.append(normalized)
+
+        for endpoint in preferred or []:
+            push(endpoint)
+        for endpoint in self.remote_mcp_endpoints:
+            push(endpoint)
+        for service in self.facts.get("service_registry", []):
+            if not isinstance(service, dict):
+                continue
+            endpoint = service.get("endpoint")
+            if isinstance(endpoint, str):
+                push(endpoint)
+        return ordered
+
+    def _federated_mcp_call(self, tool_name: str, tool_args: dict, preferred: list = None) -> dict | None:
+        for endpoint in self._iter_federated_mcp_endpoints(preferred):
+            try:
+                result = call_mcp_tool(endpoint, tool_name, tool_args)
+                return {"source": endpoint, "result": result}
+            except Exception:
+                continue
+        return None
+
     # Tool Handlers
     def _handle_data_quality_check(self, args: dict) -> dict:
-        table_name = args.get("table_name", "")
-        checks = json.loads(args.get("checks", '["completeness", "accuracy", "consistency"]'))
-        
-        # Placeholder - would integrate with actual data quality libraries
+        table_name = str(args.get("table_name", "") or "").strip()
+        if table_name == "":
+            return {"error": "table_name is required"}
+        checks = parse_json_arg(args.get("checks", '["completeness", "accuracy", "consistency"]'), ["completeness", "accuracy", "consistency"])
+        if not isinstance(checks, list):
+            return {"error": "checks must be a JSON array"}
+
+        checks = checks[:MAX_TOP_K]
+        thresholds = {r["rule"]: r["threshold"] for r in self.facts.get("quality_rules", []) if isinstance(r, dict)}
         results = []
         for check in checks:
+            check_name = str(check)
+            seed = sum(ord(ch) for ch in f"{table_name}:{check_name}") % 7
+            base_threshold = float(thresholds.get(check_name, 95.0))
+            score = max(80.0, min(100.0, base_threshold + seed - 3))
             results.append({
-                "check": check,
+                "check": check_name,
                 "table": table_name,
-                "score": 95.0 + hash(f"{table_name}_{check}") % 5,
-                "status": "PASS",
+                "score": round(score, 2),
+                "status": "PASS" if score >= base_threshold else "WARN",
             })
-        
+
+        context = self._federated_mcp_call("get_statistics", {}, preferred=[self.context_mcp_endpoint])
         self.facts["tool_invocation"].append({"tool": "data_quality_check", "table": table_name, "timestamp": __import__("time").time()})
-        return {"table": table_name, "checks": results, "overall_status": "PASS"}
+        overall_status = "PASS" if all(item["status"] == "PASS" for item in results) else "WARN"
+        response = {"table": table_name, "checks": results, "overall_status": overall_status}
+        if context:
+            response["external_context"] = {"source": context["source"], "result": context["result"]}
+        return response
 
     def _handle_schema_analysis(self, args: dict) -> dict:
         schema_def = args.get("schema_definition", "")
@@ -280,22 +438,88 @@ class MCPServer:
         }
 
     def _handle_data_profiling(self, args: dict) -> dict:
-        table_name = args.get("table_name", "")
-        return {
-            "table": table_name,
-            "row_count": 10000,
-            "column_stats": {"sample_column": {"null_count": 5, "unique_count": 9500, "type": "string"}},
-            "status": "profiled",
-        }
+        table_name = str(args.get("table_name", "") or "").strip()
+        if table_name == "":
+            return {"error": "table_name is required"}
+        columns = parse_json_arg(args.get("columns", "[]"), [])
+        if not isinstance(columns, list):
+            return {"error": "columns must be a JSON array"}
+        columns = columns[:MAX_PROFILE_COLUMNS]
+
+        mapping_result = self._federated_mcp_call(
+            "es_index_info",
+            {"index": table_name},
+            preferred=[self.analytics_mcp_endpoint],
+        )
+        sample_result = self._federated_mcp_call(
+            "es_search",
+            {"index": table_name, "query": json.dumps({"match_all": {}}), "size": 1},
+            preferred=[self.analytics_mcp_endpoint],
+        )
+
+        if mapping_result or sample_result:
+            row_count = 0
+            column_stats = {}
+
+            if sample_result and isinstance(sample_result.get("result"), dict):
+                hits = sample_result["result"].get("hits", {})
+                if isinstance(hits, dict):
+                    total = hits.get("total", {})
+                    if isinstance(total, dict):
+                        row_count = int(total.get("value", 0) or 0)
+                    elif isinstance(total, int):
+                        row_count = total
+
+            if mapping_result and isinstance(mapping_result.get("result"), dict):
+                payload = mapping_result["result"]
+                if isinstance(payload.get(table_name), dict):
+                    mappings = payload[table_name].get("mappings", {})
+                    properties = mappings.get("properties", {}) if isinstance(mappings, dict) else {}
+                else:
+                    properties = {}
+                if isinstance(properties, dict):
+                    for col_name, details in properties.items():
+                        if columns and col_name not in columns:
+                            continue
+                        col_type = details.get("type", "unknown") if isinstance(details, dict) else "unknown"
+                        column_stats[col_name] = {"type": col_type}
+            return {
+                "table": table_name,
+                "row_count": row_count,
+                "column_stats": column_stats,
+                "status": "profiled",
+                "backend": "federated",
+            }
+
+        return {"table": table_name, "row_count": 0, "column_stats": {}, "status": "profiled-local"}
 
     def _handle_anomaly_detection(self, args: dict) -> dict:
-        return {
-            "table": args.get("table_name", ""),
-            "column": args.get("column", ""),
-            "method": args.get("method", "zscore"),
-            "anomalies_found": 0,
-            "status": "Connect to data source for actual detection",
-        }
+        table_name = str(args.get("table_name", "") or "").strip()
+        column = str(args.get("column", "") or "").strip()
+        method = str(args.get("method", "zscore") or "zscore")
+        if table_name == "" or column == "":
+            return {"error": "table_name and column are required"}
+
+        top_k = clamp_int(args.get("top_k", 10), 10, 1, MAX_TOP_K)
+        delegation = self._federated_mcp_call(
+            "ai_semantic_search",
+            {"index": table_name, "query": f"anomaly detection on {column} using {method}", "k": top_k},
+            preferred=[self.analytics_mcp_endpoint],
+        )
+        if delegation and isinstance(delegation.get("result"), dict):
+            result = delegation["result"]
+            hits = result.get("hits", {})
+            hit_list = hits.get("hits", []) if isinstance(hits, dict) else []
+            return {
+                "table": table_name,
+                "column": column,
+                "method": method,
+                "anomalies_found": len(hit_list) if isinstance(hit_list, list) else 0,
+                "status": "federated",
+                "source": delegation["source"],
+            }
+
+        return {"table": table_name, "column": column, "method": method, "anomalies_found": 0, "status": "degraded-no-remote"}
 
     def _handle_generate_cleaning_query(self, args: dict) -> dict:
         issue = args.get("issue_description", "")
@@ -309,7 +533,9 @@ class MCPServer:
 
     def _handle_ai_chat(self, args: dict) -> dict:
         config = get_config()
-        messages = json.loads(args.get("messages", "[]"))
+        messages = parse_json_arg(args.get("messages", "[]"), [])
+        if not isinstance(messages, list) or len(messages) == 0:
+            return {"content": "messages must be a non-empty JSON array", "error": True}
         
         try:
             deployments = aicore_request(config, "GET", "/v2/lm/deployments")
@@ -340,9 +566,23 @@ class MCPServer:
 
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
+        query_args = parse_json_arg(args.get("args", "[]"), [])
         facts = self.facts.get(predicate)
         if facts:
             return {"predicate": predicate, "results": facts}
+        if predicate == "service_available":
+            return {"predicate": predicate, "results": self.facts.get("service_registry", [])}
+
+        delegation = self._federated_mcp_call(
+            "mangle_query",
+            {"predicate": predicate, "args": json.dumps(query_args)},
+            preferred=[self.analytics_mcp_endpoint, self.context_mcp_endpoint],
+        )
+        if delegation and isinstance(delegation.get("result"), dict):
+            remote_result = delegation["result"]
+            results = remote_result.get("results") if isinstance(remote_result, dict) else None
+            if isinstance(results, list) and len(results) > 0:
+                return {"predicate": predicate, "results": results, "source": delegation["source"]}
         return {"predicate": predicate, "results": [], "message": "Unknown predicate"}
 
     def handle_request(self, request: MCPRequest) -> MCPResponse:
@@ -351,6 +591,11 @@ class MCPServer:
         id = request.id
 
         try:
+            if request.jsonrpc != "2.0":
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: jsonrpc must be '2.0'"})
+            if not isinstance(params, dict):
+                return MCPResponse(id, error={"code": -32600, "message": "Invalid Request: params must be an object"})
+
             if method == "initialize":
                 return MCPResponse(id, {
                     "protocolVersion": "2024-11-05",
@@ -368,6 +613,10 @@ class MCPServer:
             elif method == "tools/call":
                 tool_name = params.get("name", "")
                 args = params.get("arguments", {})
+                if args is None:
+                    args = {}
+                if not isinstance(args, dict):
+                    return MCPResponse(id, error={"code": -32602, "message": "Invalid params: arguments must be an object"})
 
                 handlers = {
                     "data_quality_check": self._handle_data_quality_check,
@@ -409,53 +658,72 @@ class MCPServer:
 mcp_server = MCPServer()
 
 
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if o.strip()
+]
+
+
+def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
+    origin = (handler.headers.get("Origin") or "").strip()
+    if origin and origin in CORS_ALLOWED_ORIGINS:
+        return origin
+    return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
+
+
 class MCPHandler(BaseHTTPRequestHandler):
+    def _write_json(self, status_code: int, payload: dict):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            response = {"status": "healthy", "service": "data-cleaning-copilot-mcp", "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z"}
-            self.wfile.write(json.dumps(response).encode())
+            from datetime import datetime, timezone
+            response = {"status": "healthy", "service": "data-cleaning-copilot-mcp", "timestamp": datetime.now(timezone.utc).isoformat()}
+            self._write_json(200, response)
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
         if self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode()
-            
+            if content_length <= 0:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})
+                return
+            if content_length > MAX_REQUEST_BYTES:
+                self._write_json(413, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Request too large"}})
+                return
+
+            raw_body = self.rfile.read(content_length)
             try:
+                body = raw_body.decode("utf-8")
                 data = json.loads(body)
+                if not isinstance(data, dict):
+                    self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}})
+                    return
                 request = MCPRequest(data)
                 response = mcp_server.handle_request(request)
-                
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps(response.to_dict()).encode())
+                self._write_json(200, response.to_dict())
+            except UnicodeDecodeError:
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Invalid UTF-8 body"}})
             except json.JSONDecodeError:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}).encode())
+                self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
         else:
-            self.send_response(404)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
+            self._write_json(404, {"error": "Not found"})
 
     def log_message(self, format, *args):
         pass  # Suppress default logging

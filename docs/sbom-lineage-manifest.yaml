@@ -1,0 +1,85 @@
+# Manifest for SBOM (CycloneDX) and change-lineage generation.
+# Used by scripts/sbom-lineage/ to build BOMs and LaTeX report.
+
+services:
+  # ── JavaScript / TypeScript ─────────────────────────────────────────────────
+  - path: ai-sdk-js-main
+    name: SAP AI SDK (JavaScript)
+    package_manager: pnpm
+
+  - path: cap-llm-plugin-main
+    name: CAP LLM Plugin
+    package_manager: npm
+
+  - path: world-monitor-main
+    name: World Monitor
+    package_manager: npm
+
+  - path: ui5-webcomponents-ngx-main
+    name: UI5 Web Components (Angular)
+    package_manager: yarn
+
+  - path: odata-vocabularies-main
+    name: OData Vocabularies
+    package_manager: npm
+    version: "0.5.2"   # odata-vocabularies workspace package version
+
+  # ── Python ──────────────────────────────────────────────────────────────────
+  - path: data-cleaning-copilot-main
+    name: Data Cleaning Copilot
+    package_manager: python
+
+  - path: langchain-integration-for-sap-hana-cloud-main
+    name: LangChain Integration for SAP HANA Cloud
+    package_manager: python
+
+  - path: generative-ai-toolkit-for-sap-hana-cloud-main
+    name: Generative AI Toolkit for SAP HANA Cloud
+    package_manager: python
+
+  - path: vllm-main
+    name: vLLM (inference engine)
+    package_manager: python
+    version: "0.9.0"   # upstream tag at time of fork snapshot
+    upstream: https://github.com/vllm-project/vllm
+
+  # ── Go ──────────────────────────────────────────────────────────────────────
+  - path: mangle-main
+    name: Mangle (Datalog engine)
+    package_manager: go
+    version: "0.1.0"   # no official release tag; HEAD snapshot
+    upstream: https://github.com/google/mangle
+
+  - path: mangle-query-service
+    name: Mangle Query Service
+    package_manager: go
+    version: "0.1.0"   # initial SAP OSS release
+
+  # ── Java ────────────────────────────────────────────────────────────────────
+  - path: elasticsearch-main
+    name: Elasticsearch (SAP fork)
+    package_manager: java
+    version: "9.4.0"   # from build-tools-internal/version.properties
+    upstream: https://github.com/elastic/elasticsearch
+    stub: true          # Full SBOM requires `./gradlew cyclonedxBom`. The BOM
+                        # currently only captures sap_openai_server/ additions.
+    note: >
+      Full SBOM requires `./gradlew cyclonedxBom`. The stub BOM documents the
+      SAP-specific sap_openai_server/ additions. Run build_full_python_sbom.sh
+      to generate a Python SBOM for sap_openai_server only.
+
+  # ── Zig / Mojo ──────────────────────────────────────────────────────────────
+  - path: ai-core-pal
+    name: AI Core PAL (Zig/Mojo)
+    package_manager: zig
+    stub: true          # Zig has no standard registry; deps are vendored.
+    note: >
+      Zig has no standard package registry. Dependencies are vendored under
+      the project. BOM is a stub; update manually when zig.zon is introduced.
+
+  - path: ai-core-streaming
+    name: AI Core Streaming (Zig/Mojo)
+    package_manager: zig
+    stub: true          # See ai-core-pal note.
+    note: >
+      See ai-core-pal note above.

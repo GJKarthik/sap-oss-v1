@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 import unittest
 from hana_ai.vectorstore.embedding_service import GenAIHubEmbeddings
 

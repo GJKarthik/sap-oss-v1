@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { OpenApiRequestBuilder as CloudSDKOpenApiRequestBuilder } from '@sap-cloud-sdk/openapi';
 import { executeRequest } from './http-client.js';
 import type { HttpDestinationOrFetchOptions } from '@sap-cloud-sdk/connectivity';

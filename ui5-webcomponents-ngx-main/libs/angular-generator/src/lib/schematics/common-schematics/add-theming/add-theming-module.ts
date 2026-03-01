@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {SchematicContext, SchematicsException, Tree} from "@angular-devkit/schematics";
 import {ProjectDefinition} from "@schematics/angular/utility";
 import {Schema} from '../schema';

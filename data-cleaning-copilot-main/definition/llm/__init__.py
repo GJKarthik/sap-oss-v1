@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """LLM integration module for semantic-rdb-gen.
 
 This module provides centralized LLM session management and database context

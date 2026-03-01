@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { AzureOpenAiChatClient as AzureOpenAiChatClientBase } from '@sap-ai-sdk/foundation-models';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { ChatGenerationChunk } from '@langchain/core/outputs';

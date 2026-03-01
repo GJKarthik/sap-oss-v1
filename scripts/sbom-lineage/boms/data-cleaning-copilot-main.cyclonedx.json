@@ -1,0 +1,852 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:57fa1e30-308f-4aee-ad3b-457732f38df6",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-28T10:30:18Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "bom-ref": "pkg:pypi/sap-oss-build-cyclonedx@1.0",
+          "author": "SAP SE",
+          "name": "build_cyclonedx.py",
+          "version": "1.0",
+          "description": "SAP OSS SBOM generator script"
+        }
+      ]
+    },
+    "authors": [
+      {
+        "name": "SAP SE",
+        "url": "https://sap.com"
+      }
+    ],
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "root-component",
+      "name": "Data Cleaning Copilot",
+      "version": "0.1.0",
+      "purl": "pkg:pypi/data cleaning copilot@0.1.0"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/aioboto3@15.0.0",
+      "name": "aioboto3",
+      "version": "15.0.0",
+      "purl": "pkg:pypi/aioboto3@15.0.0",
+      "supplier": {
+        "name": "Terri Cain",
+        "url": "https://pypi.org/project/aioboto3/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9cf54b3627c8b34bb82eaf43ab327e7027e37f92b1e10dd5cfe343cd512568d0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/black@25.1.0",
+      "name": "black",
+      "version": "25.1.0",
+      "purl": "pkg:pypi/black@25.1.0",
+      "supplier": {
+        "name": "Łukasz Langa",
+        "url": "https://pypi.org/project/black/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "759e7ec1e050a15f89b770cefbf91ebee8917aac5c20483bc2d80a6c3a04df32"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/boto3@1.38.27",
+      "name": "boto3",
+      "version": "1.38.27",
+      "purl": "pkg:pypi/boto3@1.38.27",
+      "supplier": {
+        "name": "Amazon Web Services",
+        "url": "https://pypi.org/project/boto3/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "95f5fe688795303a8a15e8b7e7f255cadab35eae459d00cc281a4fd77252ea80"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/frictionless@5.18.1",
+      "name": "frictionless",
+      "version": "5.18.1",
+      "purl": "pkg:pypi/frictionless@5.18.1",
+      "supplier": {
+        "name": "Open Knowledge Foundation",
+        "url": "https://pypi.org/project/frictionless/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3f4c87469a89bdb88e9cc318088553a26f3d14839098f95c183ea01fc89628dd"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/gradio@5.42.0",
+      "name": "gradio",
+      "version": "5.42.0",
+      "purl": "pkg:pypi/gradio@5.42.0",
+      "supplier": {
+        "name": "Abubakar Abid",
+        "url": "https://pypi.org/project/gradio/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3e11c076f4eaa2d545fb176551a2a72e951374882b8543aeebd45739085da5d2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/instructor@1.10.0",
+      "name": "instructor",
+      "version": "1.10.0",
+      "purl": "pkg:pypi/instructor@1.10.0",
+      "supplier": {
+        "name": "Jason Liu",
+        "url": "https://pypi.org/project/instructor/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9c789f0fce915d5498059afb5314530c8a5b22b0283302679148ddae98f732b0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/ipykernel@6.30.0",
+      "name": "ipykernel",
+      "version": "6.30.0",
+      "purl": "pkg:pypi/ipykernel@6.30.0",
+      "supplier": {
+        "name": "IPython Development Team",
+        "url": "https://pypi.org/project/ipykernel/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fd2936e55c4a1c2ee8b1e5fa6a372b8eecc0ab1338750dee76f48fa5cca1301e"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain@0.3.27",
+      "name": "langchain",
+      "version": "0.3.27",
+      "purl": "pkg:pypi/langchain@0.3.27",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7b20c4f338826acb148d885b20a73a16e410ede9ee4f19bb02011852d5f98798"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-aws@0.2.27",
+      "name": "langchain-aws",
+      "version": "0.2.27",
+      "purl": "pkg:pypi/langchain-aws@0.2.27",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-aws/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d2912c4488ff5ef0361661c1a42476b3586c27c8e86c0c7e3a198e5dc9b8ae6f"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-community@0.3.27",
+      "name": "langchain-community",
+      "version": "0.3.27",
+      "purl": "pkg:pypi/langchain-community@0.3.27",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-community/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "581f97b795f9633da738ea95da9cb78f8879b538090c9b7a68c0aed49c828f0d"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/langchain-core@0.3.73",
+      "name": "langchain-core",
+      "version": "0.3.73",
+      "purl": "pkg:pypi/langchain-core@0.3.73",
+      "supplier": {
+        "name": "None",
+        "url": "https://pypi.org/project/langchain-core/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "90c64e13d5a213b0642eab29831b011a3592e57f20f34cac8c0bf9a6e4f563bc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/loguru@0.7.3",
+      "name": "loguru",
+      "version": "0.7.3",
+      "purl": "pkg:pypi/loguru@0.7.3",
+      "supplier": {
+        "name": "Delgan",
+        "url": "https://pypi.org/project/loguru/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/networkx@3.3",
+      "name": "networkx",
+      "version": "3.3",
+      "purl": "pkg:pypi/networkx@3.3",
+      "supplier": {
+        "name": "Aric Hagberg",
+        "url": "https://pypi.org/project/networkx/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "28575580c6ebdaf4505b22c6256a2b9de86b316dc63ba9e93abde3d78dfdbcf2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/numpy@2.1.0",
+      "name": "numpy",
+      "version": "2.1.0",
+      "purl": "pkg:pypi/numpy@2.1.0",
+      "supplier": {
+        "name": "Travis E. Oliphant et al.",
+        "url": "https://pypi.org/project/numpy/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6326ab99b52fafdcdeccf602d6286191a79fe2fda0ae90573c5814cd2b0bc1b8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pandas@2.2.02.3",
+      "name": "pandas",
+      "version": "2.2.02.3",
+      "purl": "pkg:pypi/pandas@2.2.02.3",
+      "supplier": {
+        "name": "The Pandas Development Team",
+        "url": "https://pypi.org/project/pandas/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "de09668c1bf3b925c07e5762291602f0d789eca1b3a781f99c1c78f6cac0e7ea"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pandera@0.25.0",
+      "name": "pandera",
+      "version": "0.25.0",
+      "purl": "pkg:pypi/pandera@0.25.0",
+      "supplier": {
+        "name": "Niels Bantilan",
+        "url": "https://pypi.org/project/pandera/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "365a555accc46404466641203e297722d424d74a1315f077ab899e1344f82303"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/python-dotenv@1.1.1",
+      "name": "python-dotenv",
+      "version": "1.1.1",
+      "purl": "pkg:pypi/python-dotenv@1.1.1",
+      "supplier": {
+        "name": "Saurabh Kumar",
+        "url": "https://pypi.org/project/python-dotenv/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pyyaml@6.0.2",
+      "name": "pyyaml",
+      "version": "6.0.2",
+      "purl": "pkg:pypi/pyyaml@6.0.2",
+      "supplier": {
+        "name": "Kirill Simonov",
+        "url": "https://pypi.org/project/pyyaml/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0a9a2848a5b7feac301353437eb7d5957887edbf81d56e903999a75a3d743086"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/relbench@1.1.0",
+      "name": "relbench",
+      "version": "1.1.0",
+      "purl": "pkg:pypi/relbench@1.1.0",
+      "supplier": {
+        "name": "RelBench Team",
+        "url": "https://pypi.org/project/relbench/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "41d0b697380d2980fe99532f4766a6f2bb9f6972e4e72f49d783f7f775bacae8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/ruff@0.12.3",
+      "name": "ruff",
+      "version": "0.12.3",
+      "purl": "pkg:pypi/ruff@0.12.3",
+      "supplier": {
+        "name": "Charlie Marsh",
+        "url": "https://pypi.org/project/ruff/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "47552138f7206454eaf0c4fe827e546e9ddac62c2a3d2585ca54d29a890137a2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/sap-ai-sdk-gen@5.4.5",
+      "name": "sap-ai-sdk-gen",
+      "version": "5.4.5",
+      "purl": "pkg:pypi/sap-ai-sdk-gen@5.4.5",
+      "supplier": {
+        "name": "SAP SE",
+        "url": "https://pypi.org/project/sap-ai-sdk-gen/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "LicenseRef-SAP-DeveloperAgreement"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c8cd5a0c1c4fc7488ec05de06239ae60a54fe3d2b26e30f8e6256a25c16c51ad"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/setuptools@80.9.0",
+      "name": "setuptools",
+      "version": "80.9.0",
+      "purl": "pkg:pypi/setuptools@80.9.0",
+      "supplier": {
+        "name": "Python Packaging Authority",
+        "url": "https://pypi.org/project/setuptools/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/sqlalchemy@2.0.41",
+      "name": "sqlalchemy",
+      "version": "2.0.41",
+      "purl": "pkg:pypi/sqlalchemy@2.0.41",
+      "supplier": {
+        "name": "Mike Bayer",
+        "url": "https://pypi.org/project/sqlalchemy/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b1f09b6821406ea1f94053f346f28f8215e293344209129a9c0fcc3578598d7b"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/tabulate@0.9.0",
+      "name": "tabulate",
+      "version": "0.9.0",
+      "purl": "pkg:pypi/tabulate@0.9.0",
+      "supplier": {
+        "name": "Sergey Astanin",
+        "url": "https://pypi.org/project/tabulate/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/ydata-profiling@4.15.1",
+      "name": "ydata-profiling",
+      "version": "4.15.1",
+      "purl": "pkg:pypi/ydata-profiling@4.15.1",
+      "supplier": {
+        "name": "YData Labs Inc",
+        "url": "https://pypi.org/project/ydata-profiling/"
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ba0956438fd3e9148ba274d694856dcf4a8bbe74c34cb545cd26f4e525d31d69"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "root-component",
+      "dependsOn": [
+        "pkg:pypi/aioboto3@15.0.0",
+        "pkg:pypi/black@25.1.0",
+        "pkg:pypi/boto3@1.38.27",
+        "pkg:pypi/frictionless@5.18.1",
+        "pkg:pypi/gradio@5.42.0",
+        "pkg:pypi/instructor@1.10.0",
+        "pkg:pypi/ipykernel@6.30.0",
+        "pkg:pypi/langchain@0.3.27",
+        "pkg:pypi/langchain-aws@0.2.27",
+        "pkg:pypi/langchain-community@0.3.27",
+        "pkg:pypi/langchain-core@0.3.73",
+        "pkg:pypi/loguru@0.7.3",
+        "pkg:pypi/networkx@3.3",
+        "pkg:pypi/numpy@2.1.0",
+        "pkg:pypi/pandas@2.2.02.3",
+        "pkg:pypi/pandera@0.25.0",
+        "pkg:pypi/python-dotenv@1.1.1",
+        "pkg:pypi/pyyaml@6.0.2",
+        "pkg:pypi/relbench@1.1.0",
+        "pkg:pypi/ruff@0.12.3",
+        "pkg:pypi/sap-ai-sdk-gen@5.4.5",
+        "pkg:pypi/setuptools@80.9.0",
+        "pkg:pypi/sqlalchemy@2.0.41",
+        "pkg:pypi/tabulate@0.9.0",
+        "pkg:pypi/ydata-profiling@4.15.1"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/aioboto3@15.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/black@25.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/boto3@1.38.27",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/frictionless@5.18.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/gradio@5.42.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/instructor@1.10.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/ipykernel@6.30.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain@0.3.27",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain-aws@0.2.27",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain-community@0.3.27",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/langchain-core@0.3.73",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/loguru@0.7.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/networkx@3.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/numpy@2.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pandas@2.2.02.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pandera@0.25.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/python-dotenv@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pyyaml@6.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/relbench@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/ruff@0.12.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/sap-ai-sdk-gen@5.4.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/setuptools@80.9.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/sqlalchemy@2.0.41",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/tabulate@0.9.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/ydata-profiling@4.15.1",
+      "dependsOn": []
+    }
+  ],
+  "formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "LangChain",
+              "version": "0.3.27",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain@0.3.27"
+            },
+            {
+              "type": "library",
+              "name": "LangChain Core",
+              "version": "0.3.73",
+              "supplier": {
+                "name": "LangChain Inc."
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/langchain-core@0.3.73"
+            },
+            {
+              "type": "library",
+              "name": "Pandera",
+              "version": "0.25.0",
+              "supplier": {
+                "name": "Union.ai"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/pandera@0.25.0"
+            },
+            {
+              "type": "library",
+              "name": "RelBench",
+              "version": "1.1.0",
+              "supplier": {
+                "name": "Stanford SNAP"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "MIT"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/relbench@1.1.0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": []
+}

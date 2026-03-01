@@ -1,0 +1,1 @@
+{"version":3,"file":"error-base.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/error-base.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,oBAAoB,GAAG;IACjC,IAAI,CAAC,EAAE,MAAM,CAAC;IACd,OAAO,CAAC,EAAE,MAAM,CAAC;CAClB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

@@ -1,4 +1,6 @@
-import { parseMockResponse } from '../../../../test-util/mock-http.js';
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
+import { parseMockResponse } from '../../../../test-util/fixtures.js';
 import { AzureOpenAiChatCompletionStreamChunkResponse } from './azure-openai-chat-completion-stream-chunk-response.js';
 import type { AzureOpenAiCreateChatCompletionStreamResponse } from './client/inference/schema/index.js';
 

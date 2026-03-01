@@ -6,6 +6,10 @@ const protocol = @import("protocol");
 const hana = @import("hana");
 const storage = @import("storage");
 const llama = @import("llama");
+const prometheus = @import("../metrics/prometheus.zig");
+const wal_mod = @import("../recovery/wal.zig");
+const recovery_mod = @import("../recovery/state_recovery.zig");
+const xsuaa = @import("../auth/xsuaa.zig");
 
 const log = std.log.scoped(.broker);
 
@@ -30,10 +34,39 @@ pub const BrokerOptions = struct {
     max_message_size: u64 = 5 * 1024 * 1024,
     authentication_enabled: bool = false,
     authorization_enabled: bool = false,
+    /// When authentication_enabled is true the broker validates every CONNECT
+    /// token against this XSUAA configuration.  If null, the config is loaded
+    /// from VCAP_SERVICES / individual XSUAA_* env vars at startup.
+    xsuaa_config: ?xsuaa.XsuaaConfig = null,
     // HANA storage
     hana_host: []const u8 = "",
     hana_port: u16 = 443,
     hana_schema: []const u8 = "AIPROMPT_STORAGE",
+    // vLLM upstream for /v1/toon/chat/completions and /v1/chat/completions
+    // Set via VLLM_BASE_URL env var or override in BrokerOptions.
+    // Example: "http://localhost:8000"
+    vllm_base_url: []const u8 = "",
+
+    // Speculative decoding (DART / Engram) configuration.
+    //
+    // DART  — Draft-Assisted Rejection-based Transformer decoding.
+    //         Set VLLM_SPEC_DECODE_MODEL to the draft model path/name.
+    //         Set VLLM_SPEC_DECODE_NUM_SPECULATIVE_TOKENS (default: 5).
+    //
+    // Engram — SAP-internal n-gram draft model (no separate model file needed).
+    //          Set VLLM_SPEC_DECODE_METHOD=ngram to activate.
+    //
+    // When either env var is set the broker injects `speculative_config` into
+    // every forwarded chat/completions request body before sending to vLLM.
+    // vLLM ≥ 0.4.0 supports this field natively.
+    //
+    // Env vars (all optional):
+    //   VLLM_SPEC_DECODE_MODEL   — draft model name/path (activates DART)
+    //   VLLM_SPEC_DECODE_METHOD  — "ngram" activates Engram; default "draft_model"
+    //   VLLM_SPEC_DECODE_TOKENS  — number of speculative tokens (default: 5)
+    vllm_spec_decode_model: []const u8 = "",
+    vllm_spec_decode_method: []const u8 = "draft_model",
+    vllm_spec_decode_tokens: u8 = 5,
 };
 
 /// Main Broker struct
@@ -64,6 +97,15 @@ pub const Broker = struct {
     messages_in: std.atomic.Value(u64),
     messages_out: std.atomic.Value(u64),
 
+    // Prometheus metrics (wraps the same counters for /metrics exposition)
+    metrics: prometheus.PrometheusMetrics,
+
+    // WAL for crash recovery
+    wal: ?wal_mod.WAL,
+
+    // XSUAA token validator — non-null when authentication_enabled is true
+    validator: ?xsuaa.TokenValidator,
+
     pub fn init(allocator: std.mem.Allocator, options: BrokerOptions) !*Broker {
         const broker = try allocator.create(Broker);
         broker.* = .{
@@ -82,7 +124,24 @@ pub const Broker = struct {
             .start_time = std.time.milliTimestamp(),
             .messages_in = std.atomic.Value(u64).init(0),
             .messages_out = std.atomic.Value(u64).init(0),
+            .metrics = prometheus.PrometheusMetrics.init(allocator),
+            .wal = null,
+            .validator = null,
         };
+
+        // Initialise the XSUAA token validator when authentication is enabled
+        if (options.authentication_enabled) {
+            const cfg = options.xsuaa_config orelse
+                xsuaa.XsuaaConfig.fromEnv(allocator) catch |err| blk: {
+                    log.warn("Could not load XSUAA config from environment: {} — auth disabled", .{err});
+                    break :blk null;
+                };
+            if (cfg) |c| {
+                broker.validator = xsuaa.TokenValidator.init(allocator, c);
+                log.info("XSUAA token validator initialised (url={s})", .{c.url});
+            }
+        }
+
         return broker;
     }
 
@@ -121,6 +180,12 @@ pub const Broker = struct {
         }
         self.topics.deinit();
 
+        // Deinit WAL
+        if (self.wal) |*w| w.deinit();
+
+        // Deinit XSUAA validator
+        if (self.validator) |*v| v.deinit();
+
         self.allocator.destroy(self);
     }
 
@@ -130,6 +195,9 @@ pub const Broker = struct {
         // Initialize HANA connection
         try self.initStorage();
 
+        // Initialize WAL and replay any uncommitted state from a previous run
+        try self.initAndReplayWAL();
+
         // Start binary protocol server
         try self.startBinaryServer();
 
@@ -138,6 +206,38 @@ pub const Broker = struct {
 
         self.state = .Running;
         log.info("Broker is now running", .{});
+    }
+
+    fn initAndReplayWAL(self: *Broker) !void {
+        const wal_dir = "data/wal";
+        log.info("Initializing WAL at {s}", .{wal_dir});
+
+        self.wal = try wal_mod.WAL.init(self.allocator, wal_dir, .{});
+
+        // Run state recovery
+        var engine = recovery_mod.StateRecoveryEngine.init(
+            self.allocator,
+            &self.wal.?,
+            .{ .wal_dir = wal_dir, .hana_sync_enabled = false },
+        );
+        defer engine.deinit();
+
+        const recovered = try engine.recover();
+
+        // Re-create topics that were alive at crash time
+        var topic_iter = recovered.topics.iterator();
+        while (topic_iter.next()) |entry| {
+            const ts = entry.value_ptr;
+            if (ts.is_deleted) continue;
+            _ = self.getOrCreateTopic(ts.name) catch |err| {
+                log.warn("WAL replay: failed to restore topic {s}: {}", .{ ts.name, err });
+            };
+        }
+
+        const p = engine.getProgress();
+        log.info("WAL replay complete: {} topics, {} subscriptions, {} cursors restored (LSN {})", .{
+            p.topics_recovered, p.subscriptions_recovered, p.cursors_recovered, recovered.last_lsn,
+        });
     }
 
     fn initStorage(self: *Broker) !void {
@@ -213,6 +313,7 @@ pub const Broker = struct {
 
     fn handleBinaryConnection(self: *Broker, conn: std.net.Server.Connection) void {
         log.debug("New binary connection from {any}", .{conn.address});
+        self.metrics.recordConnection();
 
         const connection = ClientConnection.init(self.allocator, conn.stream, self, conn.address) catch |err| {
             log.err("Failed to initialize connection state: {any}", .{err});
@@ -336,7 +437,56 @@ pub const Broker = struct {
 
         switch (cmd.command_type) {
             .CONNECT => {
-                log.info("Client connected from {any}", .{connection.address});
+                // Parse the CommandConnect to extract auth_data
+                const parsed_connect = protocol.ParsedConnect.parse(frame.cmd_data, self.allocator) catch |err| {
+                    log.warn("Failed to parse CommandConnect: {}", .{err});
+                    const resp = try handler.createConnectFailedResponse("malformed CONNECT frame");
+                    defer self.allocator.free(resp);
+                    try stream.writeAll(resp);
+                    return error.MalformedConnect;
+                };
+                defer {
+                    self.allocator.free(parsed_connect.client_version);
+                    self.allocator.free(parsed_connect.auth_method_name);
+                    if (parsed_connect.auth_data) |ad| self.allocator.free(ad);
+                }
+
+                log.info("CONNECT from {any} client_version={s}", .{
+                    connection.address, parsed_connect.client_version,
+                });
+
+                // Authenticate when a validator is configured
+                if (self.validator) |*v| {
+                    const token_bytes = parsed_connect.auth_data orelse {
+                        log.warn("Auth required but no auth_data in CONNECT from {any}", .{connection.address});
+                        const resp = try handler.createConnectFailedResponse("auth_data required");
+                        defer self.allocator.free(resp);
+                        try stream.writeAll(resp);
+                        return error.AuthenticationRequired;
+                    };
+
+                    // auth_data may be prefixed with "Bearer " or be a raw token
+                    const raw = token_bytes;
+                    const token_str = if (std.mem.startsWith(u8, raw, "Bearer "))
+                        raw[7..]
+                    else
+                        raw;
+
+                    var jwt = v.validate(token_str) catch |err| {
+                        log.warn("Token validation failed for {any}: {}", .{ connection.address, err });
+                        const resp = try handler.createConnectFailedResponse("token validation failed");
+                        defer self.allocator.free(resp);
+                        try stream.writeAll(resp);
+                        return error.AuthenticationFailed;
+                    };
+                    defer jwt.deinit();
+
+                    log.info("Authenticated connection from {any} sub={s}", .{
+                        connection.address,
+                        jwt.payload.sub orelse "unknown",
+                    });
+                }
+
                 const response = try handler.createConnectedResponse("BDC-AIPrompt-Broker-1.0.0");
                 defer self.allocator.free(response);
                 try stream.writeAll(response);
@@ -347,68 +497,68 @@ pub const Broker = struct {
                 try stream.writeAll(response);
             },
             .PRODUCER => {
-                // In production: parse CommandProducer to get topic and producer name
-                // For now, use dummy values to demonstrate state tracking
-                const topic_name = "persistent://public/default/test";
-                const producer_id: u64 = 1;
-                const request_id: u64 = 0;
+                const parsed = try protocol.ParsedProducer.parse(frame.cmd_data, self.allocator);
+                defer {
+                    self.allocator.free(parsed.topic);
+                    self.allocator.free(parsed.producer_name);
+                }
 
-                const topic = try self.getOrCreateTopic(topic_name);
+                const topic = try self.getOrCreateTopic(parsed.topic);
                 const producer = try self.allocator.create(Producer);
-                producer.* = try Producer.init(self.allocator, producer_id, "test-producer", topic_name);
+                producer.* = try Producer.init(self.allocator, parsed.producer_id, parsed.producer_name, parsed.topic);
 
                 try topic.producers.append(topic.allocator, producer);
-                try connection.producers.put(producer_id, producer);
+                try connection.producers.put(parsed.producer_id, producer);
 
-                const response = try handler.createSuccessResponse(request_id);
+                const response = try handler.createSuccessResponse(parsed.request_id);
                 defer self.allocator.free(response);
                 try stream.writeAll(response);
-                log.info("Producer registered: {s} on {s}", .{ producer.name, topic_name });
+                log.info("Producer registered: {s} on {s}", .{ producer.name, parsed.topic });
             },
             .SUBSCRIBE => {
-                const topic_name = "persistent://public/default/test";
-                const consumer_id: u64 = 1;
-                const request_id: u64 = 0;
-                const sub_name = "test-sub";
+                const parsed = try protocol.ParsedSubscribe.parse(frame.cmd_data, self.allocator);
+                defer {
+                    self.allocator.free(parsed.topic);
+                    self.allocator.free(parsed.subscription);
+                    self.allocator.free(parsed.consumer_name);
+                }
 
-                const topic = try self.getOrCreateTopic(topic_name);
-                const sub = try topic.getOrCreateSubscription(sub_name);
+                const topic = try self.getOrCreateTopic(parsed.topic);
+                const sub = try topic.getOrCreateSubscription(parsed.subscription);
 
                 const consumer = try self.allocator.create(Consumer);
-                consumer.* = try Consumer.init(self.allocator, consumer_id, "test-consumer", sub_name, connection);
+                consumer.* = try Consumer.init(self.allocator, parsed.consumer_id, parsed.consumer_name, parsed.subscription, connection);
 
                 try sub.consumers.append(sub.allocator, consumer);
-                try connection.consumers.put(consumer_id, consumer);
+                try connection.consumers.put(parsed.consumer_id, consumer);
 
-                const response = try handler.createSuccessResponse(request_id);
+                const response = try handler.createSuccessResponse(parsed.request_id);
                 defer self.allocator.free(response);
                 try stream.writeAll(response);
-                log.info("Consumer subscribed: {s} to {s} (sub: {s})", .{ consumer.name, topic_name, sub_name });
+                log.info("Consumer subscribed: {s} to {s} (sub: {s})", .{ consumer.name, parsed.topic, parsed.subscription });
             },
             .SEND => {
-                const producer_id: u64 = 1; // In production: parse from CommandSend
-                const sequence_id: u64 = 0; // In production: parse from CommandSend
+                const parsed = protocol.ParsedSend.parse(frame.cmd_data);
                 const payload = frame.payload orelse return error.MissingPayload;
 
-                // Find producer to get topic
-                const producer = connection.producers.get(producer_id) orelse return error.ProducerNotFound;
+                const producer = connection.producers.get(parsed.producer_id) orelse return error.ProducerNotFound;
                 const topic = self.getTopic(producer.topic) orelse return error.TopicNotFound;
 
                 const entry_id = try topic.publish(payload);
+                self.metrics.recordMessageIn(1);
+                _ = self.messages_in.fetchAdd(1, .monotonic);
 
-                const response = try handler.createSuccessResponse(0); // Dummy receipt
+                const response = try handler.createSuccessResponse(parsed.sequence_id);
                 _ = entry_id;
-                _ = sequence_id;
                 defer self.allocator.free(response);
                 try stream.writeAll(response);
             },
             .FLOW => {
-                const consumer_id: u64 = 1; // In production: parse from CommandFlow
-                const permits: u32 = 1000; // In production: parse from CommandFlow
+                const parsed = protocol.ParsedFlow.parse(frame.cmd_data);
 
-                if (connection.consumers.get(consumer_id)) |consumer| {
-                    consumer.addPermits(permits);
-                    log.debug("Added {} permits to consumer {s}", .{ permits, consumer.name });
+                if (connection.consumers.get(parsed.consumer_id)) |consumer| {
+                    consumer.addPermits(parsed.message_permits);
+                    log.debug("Added {} permits to consumer {s}", .{ parsed.message_permits, consumer.name });
                 }
             },
             else => {
@@ -503,27 +653,38 @@ pub const Broker = struct {
     }
 
     fn handleApiMetrics(self: *Broker, stream: std.net.Stream) void {
+        // Keep gauge metrics in sync with broker state before rendering
+        _ = self.metrics.messages_in.store(self.messages_in.load(.monotonic), .monotonic);
+        _ = self.metrics.messages_out.store(self.messages_out.load(.monotonic), .monotonic);
+
+        // Append broker-level gauges then delegate to PrometheusMetrics.renderText()
+        const prom_text = self.metrics.renderText(self.allocator) catch {
+            sendHttpPlain(stream, 200, "# render error\n");
+            return;
+        };
+        defer self.allocator.free(prom_text);
+
         const stats = self.getStats();
-        const body = std.fmt.allocPrint(self.allocator,
+        const gauge_text = std.fmt.allocPrint(self.allocator,
             \\# HELP broker_topics_count Number of active topics
             \\# TYPE broker_topics_count gauge
             \\broker_topics_count {d}
-            \\# HELP broker_messages_in Total messages received
-            \\# TYPE broker_messages_in counter
-            \\broker_messages_in {d}
-            \\# HELP broker_messages_out Total messages dispatched
-            \\# TYPE broker_messages_out counter
-            \\broker_messages_out {d}
             \\# HELP broker_uptime_ms Broker uptime in milliseconds
             \\# TYPE broker_uptime_ms gauge
             \\broker_uptime_ms {d}
             \\
-        , .{ stats.topics_count, stats.messages_in, stats.messages_out, stats.uptime_ms }) catch {
-            sendHttpPlain(stream, 200, "# error\n");
+        , .{ stats.topics_count, stats.uptime_ms }) catch {
+            sendHttpPlain(stream, 200, prom_text);
             return;
         };
-        defer self.allocator.free(body);
-        sendHttpPlain(stream, 200, body);
+        defer self.allocator.free(gauge_text);
+
+        const full = std.mem.concat(self.allocator, u8, &.{ prom_text, gauge_text }) catch {
+            sendHttpPlain(stream, 200, prom_text);
+            return;
+        };
+        defer self.allocator.free(full);
+        sendHttpPlain(stream, 200, full);
     }
 
     fn handleApiGpuInfo(self: *Broker, stream: std.net.Stream) void {
@@ -539,79 +700,149 @@ pub const Broker = struct {
             return;
         };
 
-        // Extract user content (simple pattern search)
-        const user_content = extractUserContent(request_body);
-        if (user_content.len == 0) {
-            sendHttpJson(stream, 400, "{\"error\":{\"message\":\"No user message found\",\"type\":\"invalid_request_error\"}}");
+        // Determine vLLM base URL: option field > env var > localhost default
+        const base_url = blk: {
+            if (self.options.vllm_base_url.len > 0) break :blk self.options.vllm_base_url;
+            if (std.posix.getenv("VLLM_BASE_URL")) |env| break :blk env;
+            break :blk "http://127.0.0.1:8000";
+        };
+
+        // Build the upstream URL: forward to vLLM's OpenAI-compatible endpoint
+        const upstream_url = std.fmt.allocPrint(self.allocator, "{s}/v1/chat/completions", .{base_url}) catch {
+            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"URL allocation failed\",\"type\":\"server_error\"}}");
             return;
+        };
+        defer self.allocator.free(upstream_url);
+
+        // Parse host and port from upstream_url for std.net.tcpConnectToHost
+        // Expected format: http://host:port  (no TLS for internal sidecar)
+        const host_port = parseHostPort(upstream_url) catch {
+            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Invalid vLLM URL\",\"type\":\"server_error\"}}");
+            return;
+        };
+
+        const vllm_stream = std.net.tcpConnectToHost(self.allocator, host_port.host, host_port.port) catch {
+            sendHttpJson(stream, 503, "{\"error\":{\"message\":\"vLLM upstream unavailable\",\"type\":\"server_error\"}}");
+            return;
+        };
+        defer vllm_stream.close();
+
+        // Optionally inject speculative_config (DART / Engram) into the request body
+        const effective_body = self.injectSpecDecodeConfig(request_body) catch request_body;
+        defer if (effective_body.ptr != request_body.ptr) self.allocator.free(effective_body);
+
+        // Forward the (possibly enriched) body to vLLM
+        const http_req = std.fmt.allocPrint(self.allocator,
+            "POST /v1/chat/completions HTTP/1.1\r\nHost: {s}:{d}\r\nContent-Type: application/json\r\nContent-Length: {d}\r\nConnection: close\r\n\r\n{s}",
+            .{ host_port.host, host_port.port, effective_body.len, effective_body },
+        ) catch {
+            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Request build failed\",\"type\":\"server_error\"}}");
+            return;
+        };
+        defer self.allocator.free(http_req);
+
+        vllm_stream.writeAll(http_req) catch {
+            sendHttpJson(stream, 502, "{\"error\":{\"message\":\"vLLM write failed\",\"type\":\"server_error\"}}");
+            return;
+        };
+
+        // Read the full HTTP response from vLLM (up to 4 MiB)
+        var resp_buf = std.ArrayList(u8).init(self.allocator);
+        defer resp_buf.deinit();
+        vllm_stream.reader().readAllArrayList(&resp_buf, 4 * 1024 * 1024) catch {};
+
+        // Strip HTTP headers — find the blank line separating headers from body
+        const raw = resp_buf.items;
+        const body_start = std.mem.indexOf(u8, raw, "\r\n\r\n") orelse 0;
+        const json_body = if (body_start + 4 < raw.len) raw[body_start + 4 ..] else "{}";
+
+        // Parse HTTP status from first line ("HTTP/1.1 200 OK")
+        const status_code: u16 = parseHttpStatus(raw) orelse 200;
+
+        sendHttpJson(stream, status_code, json_body);
+    }
+
+    /// Inject `speculative_config` into a JSON chat/completions body for vLLM
+    /// speculative decoding (DART draft-model or Engram n-gram).
+    ///
+    /// Returns the original slice unchanged when spec-decode is not configured.
+    /// Returns a newly allocated slice (caller must free) when injection occurs.
+    fn injectSpecDecodeConfig(self: *Broker, body: []const u8) ![]u8 {
+        // Resolve spec-decode settings: option fields > env vars
+        const spec_model = blk: {
+            if (self.options.vllm_spec_decode_model.len > 0) break :blk self.options.vllm_spec_decode_model;
+            break :blk std.posix.getenv("VLLM_SPEC_DECODE_MODEL") orelse "";
+        };
+        const spec_method = blk: {
+            if (self.options.vllm_spec_decode_method.len > 0) break :blk self.options.vllm_spec_decode_method;
+            break :blk std.posix.getenv("VLLM_SPEC_DECODE_METHOD") orelse "draft_model";
+        };
+        const spec_tokens_str = std.posix.getenv("VLLM_SPEC_DECODE_TOKENS") orelse "";
+        const spec_tokens: u8 = if (spec_tokens_str.len > 0)
+            std.fmt.parseInt(u8, spec_tokens_str, 10) catch self.options.vllm_spec_decode_tokens
+        else
+            self.options.vllm_spec_decode_tokens;
+
+        // Neither DART nor Engram configured → pass through unchanged
+        const use_ngram = std.mem.eql(u8, spec_method, "ngram");
+        if (!use_ngram and spec_model.len == 0) return body;
+
+        // Already has speculative_config → don't double-inject
+        if (std.mem.indexOf(u8, body, "speculative_config") != null) return body;
+
+        // Build the speculative_config JSON fragment
+        const spec_fragment = if (use_ngram)
+            // Engram: SAP-internal n-gram draft (no separate model file)
+            try std.fmt.allocPrint(self.allocator,
+                \\,"speculative_config":{{"method":"ngram","num_speculative_tokens":{d},"prompt_lookup_max":4}}
+            , .{spec_tokens})
+        else
+            // DART: draft-model-based speculative decoding
+            try std.fmt.allocPrint(self.allocator,
+                \\,"speculative_config":{{"draft_model_name":"{s}","num_speculative_tokens":{d}}}
+            , .{ spec_model, spec_tokens });
+        defer self.allocator.free(spec_fragment);
+
+        // Inject before the closing `}` of the top-level JSON object
+        const close = std.mem.lastIndexOfScalar(u8, body, '}') orelse return body;
+        const new_body = try std.mem.concat(self.allocator, u8, &.{
+            body[0..close],
+            spec_fragment,
+            body[close..],
+        });
+        return new_body;
+    }
+
+    /// Parse "http://host:port/..." → { host, port }
+    const HostPort = struct { host: []const u8, port: u16 };
+    fn parseHostPort(url: []const u8) !HostPort {
+        // Strip scheme
+        const after_scheme = if (std.mem.startsWith(u8, url, "http://"))
+            url[7..]
+        else if (std.mem.startsWith(u8, url, "https://"))
+            url[8..]
+        else
+            url;
+        // Strip path
+        const host_part = if (std.mem.indexOfScalar(u8, after_scheme, '/')) |slash|
+            after_scheme[0..slash]
+        else
+            after_scheme;
+        // Split host:port
+        if (std.mem.lastIndexOfScalar(u8, host_part, ':')) |colon| {
+            const host = host_part[0..colon];
+            const port = std.fmt.parseInt(u16, host_part[colon + 1 ..], 10) catch return error.InvalidPort;
+            return .{ .host = host, .port = port };
         }
+        return .{ .host = host_part, .port = 8000 };
+    }
 
-        // === REAL LLM INFERENCE via custom Zig LLaMA engine ===
-        const config = llama.ModelConfig{
-            .architecture = .llama,
-            .n_embd = 64,
-            .n_heads = 4,
-            .n_kv_heads = 4,
-            .n_layers = 2,
-            .n_ff = 172,
-            .vocab_size = 256,
-            .context_length = 512,
-        };
-        var model = llama.Model.load(self.allocator, config) catch {
-            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Model load failed\",\"type\":\"server_error\"}}");
-            return;
-        };
-        defer model.deinit();
-
-        var sampler = llama.Sampler.init(self.allocator, .{ .temperature = 0.7 }) catch {
-            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Sampler init failed\",\"type\":\"server_error\"}}");
-            return;
-        };
-        defer sampler.deinit();
-
-        var engine = llama.InferenceEngine.init(self.allocator, model, sampler) catch {
-            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Engine init failed\",\"type\":\"server_error\"}}");
-            return;
-        };
-        defer engine.deinit();
-
-        // Tokenize (byte-level)
-        const max_pt: usize = @min(user_content.len, 128);
-        var prompt_tokens_buf: [128]u32 = undefined;
-        for (0..max_pt) |i| {
-            prompt_tokens_buf[i] = @as(u32, user_content[i]);
-        }
-
-        const output_tokens = engine.generate(prompt_tokens_buf[0..max_pt], 32) catch {
-            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Inference failed\",\"type\":\"server_error\"}}");
-            return;
-        };
-        defer self.allocator.free(output_tokens);
-
-        // Convert to text
-        var output_buf: [256]u8 = undefined;
-        const out_len = @min(output_tokens.len, output_buf.len);
-        for (0..out_len) |i| {
-            output_buf[i] = @truncate(output_tokens[i] & 0xFF);
-        }
-
-        const prompt_toks: u32 = @intCast(max_pt);
-        const comp_toks: u32 = @intCast(output_tokens.len);
-        const resp = std.fmt.allocPrint(self.allocator,
-            \\{{"id":"chatcmpl-toon-{d}","object":"chat.completion","created":{d},"model":"sap-toon-llama-zig","choices":[{{"index":0,"message":{{"role":"assistant","content":"{s}"}},"finish_reason":"stop"}}],"usage":{{"prompt_tokens":{d},"completion_tokens":{d},"total_tokens":{d}}},"system_fingerprint":"zig-llama-v1"}}
-        , .{
-            std.time.timestamp(),
-            std.time.timestamp(),
-            output_buf[0..out_len],
-            prompt_toks,
-            comp_toks,
-            prompt_toks + comp_toks,
-        }) catch {
-            sendHttpJson(stream, 500, "{\"error\":{\"message\":\"Response formatting failed\",\"type\":\"server_error\"}}");
-            return;
-        };
-        defer self.allocator.free(resp);
-        sendHttpJson(stream, 200, resp);
+    fn parseHttpStatus(raw: []const u8) ?u16 {
+        // "HTTP/1.1 200 OK\r\n..."
+        const sp1 = std.mem.indexOfScalar(u8, raw, ' ') orelse return null;
+        const rest = raw[sp1 + 1 ..];
+        const sp2 = std.mem.indexOfScalar(u8, rest, ' ') orelse rest.len;
+        return std.fmt.parseInt(u16, rest[0..sp2], 10) catch null;
     }
 
     fn handleApiChatCompletions(self: *Broker, stream: std.net.Stream, body: ?[]const u8) void {

@@ -1,0 +1,1 @@
+{"version":3,"file":"data-repositories.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/data-repositories.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,sBAAsB,CAAC;AAC3D;;GAEG;AACH,MAAM,MAAM,gBAAgB,GAAG;IAC7B,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,SAAS,EAAE,cAAc,EAAE,CAAC;CAC7B,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

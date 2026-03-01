@@ -1,23 +1,55 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { OrchestrationClient } from '@sap-ai-sdk/orchestration';
 
+interface PlaceholderInput {
+  name?: unknown;
+  value?: unknown;
+}
+
+interface OrchestrationRequest {
+  data?: {
+    template?: unknown;
+    placeholderValues?: unknown;
+  };
+}
+
+const MAX_TEMPLATE_CHARS = 40000;
+const MAX_PLACEHOLDERS = 500;
+
 export default class OrchestrationService {
-  async chatCompletion(req: any) {
-    const { template, placeholderValues } = req.data;
+  async chatCompletion(req: OrchestrationRequest) {
+    const template = req?.data?.template;
+    const placeholderValues = req?.data?.placeholderValues;
+    if (typeof template !== 'string' || template.trim().length === 0) {
+      throw new Error('chatCompletion requires a non-empty template string.');
+    }
+    if (template.length > MAX_TEMPLATE_CHARS) {
+      throw new Error(`chatCompletion template exceeds maximum length (${MAX_TEMPLATE_CHARS}).`);
+    }
+    if (!Array.isArray(placeholderValues)) {
+      throw new Error('chatCompletion requires placeholderValues as an array.');
+    }
+
     const model = {
       name: 'gpt-4o'
     };
-    const prompt = { template };
 
-    const response = await new OrchestrationClient({
-      promptTemplating: {
-        model,
-        prompt
-      }
-    }).chatCompletion({
-      placeholderValues: mapPlaceholderValues(placeholderValues)
-    });
+    try {
+      const response = await new OrchestrationClient({
+        promptTemplating: {
+          model,
+          prompt: { template: template.slice(0, MAX_TEMPLATE_CHARS) }
+        }
+      } as any).chatCompletion({
+        placeholderValues: mapPlaceholderValues(placeholderValues.slice(0, MAX_PLACEHOLDERS))
+      });
 
-    return response.getContent();
+      return response.getContent();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Orchestration chat completion failed: ${message}`);
+    }
   }
 }
 
@@ -42,10 +74,14 @@ export default class OrchestrationService {
  * @returns Mapped placeholder values for orchestration service.
  */
 function mapPlaceholderValues(
-  placeholderValues: { name: string; value: string }[]
+  placeholderValues: PlaceholderInput[]
 ): Record<string, string> {
-  return placeholderValues.reduce(
-    (acc, { name, value }) => ({ ...acc, [name]: value }),
-    {} as Record<string, string>
-  );
+  const mapped: Record<string, string> = {};
+  for (const entry of placeholderValues) {
+    if (!entry || typeof entry.name !== 'string') continue;
+    const name = entry.name.trim();
+    if (!name) continue;
+    mapped[name] = typeof entry.value === 'string' ? entry.value : String(entry.value ?? '');
+  }
+  return mapped;
 }

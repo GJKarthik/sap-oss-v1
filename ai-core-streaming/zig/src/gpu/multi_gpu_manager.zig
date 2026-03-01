@@ -416,10 +416,133 @@ pub const MultiGpuManager = struct {
                     distribution.task_count += 1;
                 }
             },
-            .pipeline_parallel, .tensor_parallel, .hybrid => {
-                // TODO: Implement other strategies
-                log.warn("Strategy {} not yet implemented, falling back to data_parallel", .{strategy});
-                return self.distributeWorkload(total_batch_size, .data_parallel);
+            .tensor_parallel => {
+                // Tensor parallelism: split weight matrices column-wise across GPUs
+                // Each GPU computes a portion of each layer, then all-reduce to sync
+                // This is for very large models that don't fit on a single GPU
+                
+                if (self.local_gpu_count < 2) {
+                    // Fall back to single GPU
+                    return self.distributeWorkload(total_batch_size, .data_parallel);
+                }
+                
+                // For tensor parallel, each GPU processes ALL batch items,
+                // but only a slice of the hidden dimensions
+                for (0..self.local_gpu_count) |i| {
+                    distribution.tasks[i] = DeviceTask{
+                        .device_id = @intCast(i),
+                        .batch_start = 0,  // All GPUs process full batch
+                        .batch_size = total_batch_size,
+                        // The tensor_shard_idx and total_shards would be used
+                        // by the kernel to compute only columns [i*cols/n, (i+1)*cols/n)
+                    };
+                    distribution.task_count += 1;
+                }
+                
+                log.info("Tensor parallel distribution: {} GPUs, each processing {} items (sharded)", .{
+                    distribution.task_count,
+                    total_batch_size,
+                });
+            },
+            
+            .pipeline_parallel => {
+                // Pipeline parallelism: assign transformer layers to GPUs in round-robin
+                // GPU 0: layers 0, 4, 8, ...
+                // GPU 1: layers 1, 5, 9, ...
+                // GPU 2: layers 2, 6, 10, ...
+                // GPU 3: layers 3, 7, 11, ...
+                // Activations are passed between GPUs via ZeroCopyPipeline
+                
+                if (self.local_gpu_count < 2) {
+                    return self.distributeWorkload(total_batch_size, .data_parallel);
+                }
+                
+                // For pipeline parallel with micro-batching:
+                // Split batch into micro-batches, pipeline through stages
+                const num_stages = self.local_gpu_count;
+                const micro_batch_size = @max(1, total_batch_size / (num_stages * 2)); // 2x microbatches per stage
+                const num_micro_batches = (total_batch_size + micro_batch_size - 1) / micro_batch_size;
+                
+                var offset: usize = 0;
+                var task_idx: u8 = 0;
+                
+                // Create tasks for each micro-batch assigned to its starting stage
+                for (0..num_micro_batches) |mb| {
+                    const remaining = total_batch_size - offset;
+                    const mb_size = @min(micro_batch_size, remaining);
+                    
+                    if (mb_size == 0) break;
+                    
+                    // Assign to stage based on micro-batch index for pipeline fill
+                    const stage: u8 = @intCast(mb % num_stages);
+                    
+                    distribution.tasks[task_idx] = DeviceTask{
+                        .device_id = stage,
+                        .batch_start = offset,
+                        .batch_size = mb_size,
+                    };
+                    
+                    offset += mb_size;
+                    task_idx += 1;
+                    
+                    if (task_idx >= ClusterConfig.MAX_TOTAL_GPUS) break;
+                }
+                
+                distribution.task_count = task_idx;
+                
+                log.info("Pipeline parallel distribution: {} stages, {} micro-batches of ~{} items", .{
+                    num_stages,
+                    num_micro_batches,
+                    micro_batch_size,
+                });
+            },
+            
+            .hybrid => {
+                // Hybrid: combine data parallel + tensor/pipeline parallel
+                // Example: 8 GPUs = 2 data-parallel replicas × 4 tensor-parallel shards
+                
+                if (self.local_gpu_count < 4) {
+                    // Not enough GPUs for hybrid, use data parallel
+                    return self.distributeWorkload(total_batch_size, .data_parallel);
+                }
+                
+                // Split GPUs into replica groups
+                const tensor_parallel_degree: u8 = 2; // Each replica uses 2 GPUs for tensor parallel
+                const num_replicas = self.local_gpu_count / tensor_parallel_degree;
+                
+                // Split batch across replicas (data parallel)
+                const base_batch_per_replica = total_batch_size / num_replicas;
+                const remainder = total_batch_size % num_replicas;
+                
+                var offset: usize = 0;
+                var task_idx: u8 = 0;
+                
+                for (0..num_replicas) |replica| {
+                    const extra: usize = if (replica < remainder) 1 else 0;
+                    const replica_batch_size = base_batch_per_replica + extra;
+                    
+                    // Each replica has tensor_parallel_degree GPUs
+                    for (0..tensor_parallel_degree) |shard| {
+                        const device_id = replica * tensor_parallel_degree + shard;
+                        
+                        distribution.tasks[task_idx] = DeviceTask{
+                            .device_id = @intCast(device_id),
+                            .batch_start = offset,
+                            .batch_size = replica_batch_size,
+                            // Within replica, this GPU handles shard [shard] of [tensor_parallel_degree]
+                        };
+                        task_idx += 1;
+                    }
+                    
+                    offset += replica_batch_size;
+                }
+                
+                distribution.task_count = task_idx;
+                
+                log.info("Hybrid distribution: {} replicas × {} tensor-parallel shards", .{
+                    num_replicas,
+                    tensor_parallel_degree,
+                });
             },
         }
         

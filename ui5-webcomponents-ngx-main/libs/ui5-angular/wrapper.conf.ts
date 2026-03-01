@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import { ComponentData } from "@ui5/webcomponents-transformer";
 import { customElementSchemaParser } from "@ui5/webcomponents-schema-parser";
 import {

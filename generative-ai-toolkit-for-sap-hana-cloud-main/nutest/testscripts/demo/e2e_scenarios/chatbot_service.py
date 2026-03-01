@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 from flask import Flask, request, jsonify
 from gen_ai_hub.proxy.langchain import init_llm
 from hana_ml import dataframe

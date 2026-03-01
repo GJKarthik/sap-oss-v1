@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 package sync
 
 import (
@@ -6,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -24,13 +28,18 @@ func NewCDCListener(es *elasticsearch.Client) *CDCListener {
 // HandleChange processes a single entity change event, indexing into ES
 // and returning cache keys that should be invalidated.
 func (c *CDCListener) HandleChange(ctx context.Context, entityType, entityID, operation, payloadJSON string) ([]string, error) {
-	index := fmt.Sprintf("business-%s", entityType)
+	if c.ES == nil {
+		return nil, fmt.Errorf("cdc listener is not configured")
+	}
 
-	switch operation {
+	index := fmt.Sprintf("business-%s", entityType)
+	normalizedOp := strings.ToLower(strings.TrimSpace(operation))
+
+	switch normalizedOp {
 	case "delete":
 		return c.deleteDoc(ctx, index, entityID)
 	case "insert", "update":
-		return c.upsertDoc(ctx, index, entityID, payloadJSON)
+		return c.upsertDoc(ctx, entityType, index, entityID, payloadJSON)
 	default:
 		return nil, fmt.Errorf("unknown operation: %s", operation)
 	}
@@ -42,27 +51,33 @@ func (c *CDCListener) deleteDoc(ctx context.Context, index, id string) ([]string
 		return nil, fmt.Errorf("delete failed: %w", err)
 	}
 	defer res.Body.Close()
+	if res.IsError() && res.StatusCode != http.StatusNotFound {
+		return nil, fmt.Errorf("delete failed: %s", res.String())
+	}
 
 	log.Printf("CDC: deleted %s/%s", index, id)
 	// Return entity reference for cache invalidation
 	return []string{fmt.Sprintf("%s:%s", index, id)}, nil
 }
 
-func (c *CDCListener) upsertDoc(ctx context.Context, index, id, payloadJSON string) ([]string, error) {
+func (c *CDCListener) upsertDoc(ctx context.Context, entityType, index, id, payloadJSON string) ([]string, error) {
 	var fields map[string]interface{}
 	if err := json.Unmarshal([]byte(payloadJSON), &fields); err != nil {
 		return nil, fmt.Errorf("invalid payload JSON: %w", err)
 	}
 
 	doc := map[string]interface{}{
-		"hana_key":        id,
-		"entity_type":     index,
-		"fields":          fields,
-		"display_text":    formatDisplayText(fields),
-		"last_synced_at":  time.Now().UTC().Format(time.RFC3339),
+		"hana_key":       id,
+		"entity_type":    entityType,
+		"fields":         fields,
+		"display_text":   formatDisplayText(fields),
+		"last_synced_at": time.Now().UTC().Format(time.RFC3339),
 	}
 
-	body, _ := json.Marshal(doc)
+	body, err := json.Marshal(doc)
+	if err != nil {
+		return nil, fmt.Errorf("index failed: encode document: %w", err)
+	}
 	res, err := c.ES.Index(index, bytes.NewReader(body),
 		c.ES.Index.WithDocumentID(id),
 		c.ES.Index.WithContext(ctx),

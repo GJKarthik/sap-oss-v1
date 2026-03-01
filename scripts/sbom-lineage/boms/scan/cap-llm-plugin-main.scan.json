@@ -1,0 +1,973 @@
+{
+  "service": "cap-llm-plugin-main",
+  "total_files": 110,
+  "files_with_spdx": 110,
+  "spdx_coverage_pct": 100,
+  "files_with_copyright": 13,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "(BSD-3-Clause OR GPL-2.0)",
+    "(MIT OR CC0-1.0)",
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BlueOak-1.0.0",
+    "CC-BY-4.0",
+    "ISC",
+    "MIT",
+    "NOASSERTION",
+    "Python-2.0",
+    "SAP DEVELOPER LICENSE AGREEMENT",
+    "SEE LICENSE",
+    "SEE LICENSE IN LICENSE",
+    "SEE LICENSE IN LICENSE file"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "(BSD-3-Clause OR GPL-2.0)",
+      "(MIT OR CC0-1.0)",
+      "0BSD",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "BlueOak-1.0.0",
+      "CC-BY-4.0",
+      "ISC",
+      "MIT",
+      "NOASSERTION",
+      "Python-2.0",
+      "SAP DEVELOPER LICENSE AGREEMENT",
+      "SEE LICENSE",
+      "SEE LICENSE IN LICENSE",
+      "SEE LICENSE IN LICENSE file"
+    ],
+    "verdict": "OK"
+  },
+  "files": [
+    {
+      "path": "REUSE.toml",
+      "sha256": "e24f5aef87b0857cca7c7b423ac67463012c037b82f0e518f4ef176bbf077151",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "jest.config.js",
+      "sha256": "86ed72eddd3b9b5f26a293e85bf4ab8a3762663da0078b8753e8267922ce69da",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "cds-plugin.js",
+      "sha256": "740726385fec412d8404ee758d8fa2f1d1bdf878671633b890d71be3cbcc0b76",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "babel.config.js",
+      "sha256": "2e1ad7fa04c57fac475078a2aac7c781709452622715a5568b881da6fc2841e0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "eslint.config.js",
+      "sha256": "dcf94f0512be08c8a893de892eeddd6349b83cf41748d20239d865086d2728a0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "cds-plugin.ts",
+      "sha256": "f7715d328dc7f8c253a045428bf54756573d1e94d7f3ef82704d636a4bcde72c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "cds-plugin.d.ts",
+      "sha256": "b45c86c687414206a9716aaae14ee98a173abd929c7ac5a710577f7f2b981a30",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "types/sap-cds.d.ts",
+      "sha256": "055a80653f03ec7834d65e6b249bc20565b6f748873b6876160401647f48e0d3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "data_products/registry.yaml",
+      "sha256": "74dc32a5a05205d2eedf612c86572812c95c327986e22a99abcfb6eed217b7b4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "data_products/cap_llm_service.yaml",
+      "sha256": "28210b3ffe4219398c296232dabfe36568552dfa5c4baece321e767d952844d2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/__init__.py",
+      "sha256": "5fd59938f6d27a29506be0d4ba728fcd4ea46df06406781f0463a21ad7a9f665",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "agent/cap_llm_agent.py",
+      "sha256": "17b1c62005a336bfa48ce9db22e18d3d74e51342e6970a41e3cbdaa6f2f0da94",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "scripts/contract-check.js",
+      "sha256": "819758e57935208399b72c4b53b2ab0c8dc88a03459e03cb088598d0e034cac6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "lib/validation-utils.js",
+      "sha256": "90585ec10036f18dc8f6afec283640177a24e33bca2cb35d2dffbb9180d482b8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "lib/anonymization-helper.js",
+      "sha256": "7c5487625da1f189c27ee26017cf47fd11981e88495121f816c1aae13255a2ae",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "lib/validation-utils.d.ts",
+      "sha256": "895593ffe5b6e8b3bdc45dd7566a09d56f028dc430f18bf386a2c150ca463530",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "lib/anonymization-helper.ts",
+      "sha256": "9bd8ca2a2e7bc929ef036bbd6ce948fe9ac73393ae3f1e00573def5bb0627173",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "lib/anonymization-helper.d.ts",
+      "sha256": "41017ca0edb96f4c89b163df0100dbdae0447efb0c07ab0f8e41e84fc0bb2301",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/cap-llm-plugin.ts",
+      "sha256": "09c7cf771f3e034a4ef76e0ef87ebd9cfcad1752909012bd595f5830f7e4044e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/legacy.js",
+      "sha256": "03c8893e6d3e8e74e11ad741843ef2a9fffe494eeda1f3ed1aa74f9ae22cf0e0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/legacy.d.ts",
+      "sha256": "a45afcef2885e701969e96f59f5374bb0e1c43327fbf53fa2602d8fc020256b9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/cap-llm-plugin.js",
+      "sha256": "fbb8f31d86778aa1809543365e5f5500701f31a89f3536204bec6d913041b59b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/cap-llm-plugin.d.ts",
+      "sha256": "8d2ca39924aa38c220ebbaf333beea366a7fdf5a7302eef25cb0f8b54025d0e0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/types.js",
+      "sha256": "d910eef2863908d14fa900f1babc79bdf5e13de7df0cffe5691121c69d4a2030",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/types.d.ts",
+      "sha256": "ff48bfad17585eb54439f7e2bb6c228a89be84dd066a3fee12bfc7e44ca0eaa6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/index.js",
+      "sha256": "4a7fd14935d4cc6fe851066a385b3b11a08dd10f27dca402396078367551c0de",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/types.ts",
+      "sha256": "2637c244e6aa924cd019da603e4e8af7f4f63317b2571393be0a81aaff251332",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "fc0c298a1ac47bf2a2b8aa4961fb74faab2f7ce1be6125ed1a2f3e79d3e79eff",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/index.d.ts",
+      "sha256": "708b9ec4aaef6d1e57a117a74bb2657a4ea73ca093b4583e9324af19974c2357",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/tracer.ts",
+      "sha256": "384205b33865f25e65a87680c57fde6967cb45efd5aaae8d04da6935623c9a0c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/angular-tracing.ts",
+      "sha256": "24047113501a50874e7ccf73078013206e2ba401ad49a841022215770210e6e4",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/ai-sdk-middleware.js",
+      "sha256": "56f82f0f9cc24176d3c5b9a4a0545ba1ad599e2e7fed23d3257b92ec2f2c7965",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/angular-tracing.js",
+      "sha256": "ab48249c633502c7f1c87c37bff89739da7001294e1b82c0d23a71458b933f85",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/angular-tracing.d.ts",
+      "sha256": "a4742d185ae97bd18eb6de6f962c846fcbd461544fd6d9b796771bd6fa6b4239",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/ai-sdk-middleware.d.ts",
+      "sha256": "98075ad5c51fe39e30133d6fcdfe2130ebaf6aa5324f91878a5753149f74932a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/tracer.js",
+      "sha256": "6821e81d3ce546a2e15791929fb5b1e613aed4b7bff10d59950514557c4d240a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/ai-sdk-middleware.ts",
+      "sha256": "2d79f3edab5a10150d5342f446fd7951be64c5a75b268bce5b1572c9980ed8b6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/telemetry/tracer.d.ts",
+      "sha256": "8740bd9771571ba58a4d83c38a13841d5b0227434230dce8f8fb60ce34ecd238",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/AnonymizationError.js",
+      "sha256": "9f9e7c9ffce6a13024f753895e5297547bc60eb745ba4b593812d8286c3f49d0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/SimilaritySearchError.ts",
+      "sha256": "6fc60c7a205b582907b53040b98cdb7b1414fb99c2f3696d0c8267e4f50f4e7d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/ChatCompletionError.ts",
+      "sha256": "10b94cfd60067b28ad7f5b18d2ccc75623406c9034f72fb310bb1e6bcf40f9db",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/EmbeddingError.ts",
+      "sha256": "c06cb1c823e67e9005f12bd9622ff0c3e08446132fdb09798a4695b3134cedfa",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/LLMErrorResponse.js",
+      "sha256": "106099fe79b5d216f0b04dba77988f8c9f8022efc514ae34e113a25c243a4d88",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/AnonymizationError.d.ts",
+      "sha256": "5132047ba12f9a8fb1b2265a7bbe965597bf27130161ce0da9d5bd4c00ff944f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/index.js",
+      "sha256": "50564043236d619ff4497338f477204f75544afe6677312a684f4916741eb17f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/CAPLLMPluginError.ts",
+      "sha256": "27bbb39e096769107de4a6fc8352325db5977761805cc5e3826160a59a23e82f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/SimilaritySearchError.d.ts",
+      "sha256": "2e65c413a2970a5cc739ab90199f467fa60911288c454f751812a0b9d8adabaf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/ChatCompletionError.js",
+      "sha256": "ddd2237e6f9c3386deb1e6b750e94d0d017a654cec87c198afc3d193fd56dbe2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/EmbeddingError.js",
+      "sha256": "6ddee961025bb17c3175ba5686ca2c51cae1fad69a0b0c81b7e81e7ecc455d9b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/EmbeddingError.d.ts",
+      "sha256": "af911d7b163fcaf35cb5d284fb0dced8467d3754a3dd296562458735830da3a6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/AnonymizationError.ts",
+      "sha256": "c7b990d545e2d2f23c80e6c78882301416a1f2cccbd80c8eb484f2701c8d530a",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/CAPLLMPluginError.d.ts",
+      "sha256": "f16e60354dfc818d3ac3809f336afe1a9dfb7664bd0978c372c4970c859490bf",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/SimilaritySearchError.js",
+      "sha256": "52e78fe485499919b63a3b7128965bffdb5d930c4f8bdf090add452bea128c7e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/LLMErrorResponse.d.ts",
+      "sha256": "fbc69396f8a931cf84e098f9f1cb5dd727cef3892484856605bc56c4df257754",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/ChatCompletionError.d.ts",
+      "sha256": "d54345269f10d21ab125ccfc4b833a2db300b2a7dc651ef87b7d2281e8c611eb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/index.ts",
+      "sha256": "2240b8ddf104bffe6a7cee3757041180ec5be0711ea3d4212d1f167a76963bee",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/CAPLLMPluginError.js",
+      "sha256": "ff67729421bbd92db3f7afc09047757a0b8d22304c600182ebfda212868886b6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/index.d.ts",
+      "sha256": "8267f5388d4119aa111f2a185e2ee3dac3f3eb65a70a4e6fc59615deb8ee4a69",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "src/errors/LLMErrorResponse.ts",
+      "sha256": "036fffd3934cc1bab051fade961a37b58ff4d3314c72ac605617186121efef5e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/errors/InvalidSimilaritySearchAlgoNameError.js",
+      "sha256": "e5eb5f30a6ae030f973419ca685d3b386325ee7cc59c615a8dd96c858ad67151",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "srv/errors/InvalidSimilaritySearchAlgoNameError.d.ts",
+      "sha256": "c9f4cf11b6e2adcac0522d28fa05e58be35c4ba13f35dc4624e1a1fafd947828",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": ".github/workflows/e2e.yml",
+      "sha256": "8f5899fe8ea7f48462cf376c79cd7407c5c80dbe7c74a9f544c18fcc86a55d3c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "b242e5bc92d203e695de897e6c1b46b86371fd76f9dee983740ec05b6bd6ecc2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "examples/angular-demo/streaming-chat.service.ts",
+      "sha256": "a7b135f6cfcfb1671b6a06e75da30377fc9a362e5b9773529d11937225e7292d",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/app.bootstrap.ts",
+      "sha256": "ccbfe375e8e3ba6cf5ee336d5269ed0cdb8dc3c40962c7716e74b41f11460314",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/streaming-chat.component.ts",
+      "sha256": "fad2f3cf5c6ef1b6a88012751213ed18aa56a8f3a47f1180878707d8cedac5c3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/tracing.service.ts",
+      "sha256": "33d44e5ee8fa96d5527b468235045d6db753db14ccacc90cd067edf559328841",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/chat.component.ts",
+      "sha256": "11816f2b76a0bc071d1243e5015f8bcac1cd62a7688f2e15d94b2b2c7cc63dd9",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/error.interceptor.ts",
+      "sha256": "397e2628b27c477a327380ff622e62c162ef8a43adf488d7c16219c02c2d6617",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/tracing.interceptor.ts",
+      "sha256": "e4b5d81bbd53e596c4c8ac439220091bc8c663e522b32c168188feb554335f82",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "examples/angular-demo/error-display.component.ts",
+      "sha256": "d82d626d29c1e165731f0e003331db7860b1710bd1679618023490b3879a3717",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "docs/api/openapi.yaml",
+      "sha256": "7736cfa8186a2fa7d76e3588569f13bd8cbf6ea2db9969cae2b1953d83aa0580",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "tests/unit/legacy.test.js",
+      "sha256": "ab24ddf3a37afee9664e999c70e5aefa93fe8c7ef232002783776e91b9b19c32",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/embedding-chat-config.test.js",
+      "sha256": "5dd4d580493094c8aa2e658af04376c4de0d68a57efea8ca1c0d6ffa6a7a4980",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/error-enrichment.test.js",
+      "sha256": "df1b6386b497e12f49ba7d4ada5ce70ae9f71c3e3208e2839b75f22ac61ac65c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/llm-error-response.test.js",
+      "sha256": "42d6009907442a72009277b4fad5ddc7d2e65743b53b4241a175279d9f1411f8",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/angular-tracing.test.js",
+      "sha256": "95703d29c78714955aeed49508e27e0b942eab6739c763ca9f00284f65a7cfdc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/anonymization-helper.test.js",
+      "sha256": "574af1d20b7f71564e4fdca367b40ad21770e055c3480f5ac48e8fbfa263183c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/similarity-search.test.js",
+      "sha256": "153a58180dd5a6ac892bef1cb2f4409454593f23caac9bff81c3587b5b80efc1",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/ai-sdk-middleware.test.js",
+      "sha256": "0de2f0073c775b5ac07a766d7bd389f53fcfb9fcb579316c80745f02e22cad5b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/rag-response.test.js",
+      "sha256": "cfc6bf1a98ee91c5ea67ea329c383d409885a3c9a76ced82fc3b5acd45574022",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/span-instrumentation.test.js",
+      "sha256": "ee787dabe3f974596c577f93a0f2b5f9c180d0362c319dc212a3fa5ef135da40",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/error-handling-validation.test.js",
+      "sha256": "b4f9b1f2645acceb683bf9c64b6e44a0cba4fcabc64fa11d9c2b37752e650872",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/get-anonymized-data.test.js",
+      "sha256": "f565394d396c61b4555db40d2384202c6bb5674aabfc6d25891cdf848fd79fdb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/orchestration.test.js",
+      "sha256": "318383aac9eb0d2e80853f6682097e8903f2b5f20277fdc146ac512a85db887f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/error-interceptor.test.js",
+      "sha256": "ffba248d40567ae44d58829d4899ac222dca1ee8490e958e2136b32e7c892bcc",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/validation-utils.test.js",
+      "sha256": "cf401ed5d71ddb80e0c8ceb04750d41b32affb0c3436b7182eaf523d9e9663f0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/cds-plugin.test.js",
+      "sha256": "29c05585052a9aa826c18e54c6a0c7119d916fc92fc2b8e9588f38a0aaaa3a43",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/otel-trace-topology.test.js",
+      "sha256": "451ec14ed6e9b03cd38e7cb8c5baef5ee6f51cd656d22057e36c04f148b3ff19",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/stream-chat.test.js",
+      "sha256": "97488aaaf2198d351dd01f229831ab8c121daf1c76a6c42446b5e65cf19f438f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/unit/tracer.test.js",
+      "sha256": "19e73de1feed8e853354bed4b16f62ed30aecdaf49a6092ff48535a846f86c60",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration/rag-pipeline.test.js",
+      "sha256": "f74d4ad0de7fa37d2944a970282e66d7d80ae60b30397e8b98bf1f9077e03481",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration/typed-errors.test.js",
+      "sha256": "51ef481046cb23aa4c47025342945617b6ba03c8be1ec7c3ccbcbc34910c1031",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration/cds-plugin-lifecycle.test.js",
+      "sha256": "c937816848f7bbfc6df35adb8605351fa85762d4f6f9dc976d95f4749697f0a3",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/integration/orchestration.test.js",
+      "sha256": "02b51e047fe1330ae78008fc4c2aa3bde034ebabb2eac75933973233a1bc3b14",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/error-response.test.js",
+      "sha256": "3430eaa63b3756dcd1c8d05f03c8b9715599e5397881a9027a36b6ba381ca695",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/server.js",
+      "sha256": "b1de49d8c504a5328d78021c4f922ad8f634ece949f30afb1c7f91ff70b99f39",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/stream-chat.e2e.test.js",
+      "sha256": "176b96492aa779ce4bd9624ddc1ed89fb2b7ab58d33bda0c9338f45df25f7966",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/smoke.test.js",
+      "sha256": "0a1c0a246ece8b3596cc6de1e97e1e3a229ef384652e99dab47abcc0ff92cceb",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/rag-flow.test.js",
+      "sha256": "7d9c49914e4b6a9196210b811cc7e92c34e73c977819748bac397c328d75fdf6",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/chat-flow.test.js",
+      "sha256": "11be28c0b597d5787e1505d549f80354e260846d7cf08fcaa9802e383ee6a7ef",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/type-check/consumer-test.ts",
+      "sha256": "ea144d333d3745ef5fbf85d7e853f4ecfac8aebbf2e18c05aee7abc05f5093b2",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/type-check/angular-client-types.test.js",
+      "sha256": "3fd41abdfc3100d874887e5c1b0ee88e632e17b48569407047bc05a47e7cb703",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "tests/e2e/helpers/setup-plugin.js",
+      "sha256": "a6df062cabfd72c8fcd14a4f849df14b749f2760680d41d65128bd085278075f",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "mcp-server/src/server.ts",
+      "sha256": "1c9bd9539fe9cc1acc0c2975406aeecd60b05869fe34f1a9e3680f57f41394b0",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": []
+    },
+    {
+      "path": "docker/jaeger/docker-compose.yml",
+      "sha256": "a5fb0aebd0b8528e41cfa459c542f67b37d24e41620d9d9da4a48a941489211e",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "docker/jaeger/otel-collector-config.yml",
+      "sha256": "99bf26ed7b02bb5b6765f6ebc169f20379644d75418792faa574946ce0f8667b",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "generated/angular-client/cap-llm-plugin.service.ts",
+      "sha256": "bc49febe2dbc5700d619ce1167771f944d0817e8c83045ed728f5a43c87f3d29",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "generated/angular-client/index.ts",
+      "sha256": "9a3fe0fd0f0db9a40bf750b82a3d0a34cc81d1d4333a27ec92dd7dd9210cfe8c",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    },
+    {
+      "path": "generated/angular-client/models.ts",
+      "sha256": "e5872369504b8bf54f62a39a0d2f1a2c4a169075802aacde000e47deec55dc74",
+      "spdx_ids": [
+        "Apache-2.0"
+      ],
+      "copyrights": [
+        "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+      ],
+      "via_reuse_toml": true
+    }
+  ],
+  "discovered_copyrights": [
+    "2025 SAP SE or an SAP affiliate company and cap-llm-plugin contributors"
+  ]
+}

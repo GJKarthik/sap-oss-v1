@@ -1,0 +1,99 @@
+{
+  "service": "world-monitor-main",
+  "ml_frameworks": [
+    "transformers"
+  ],
+  "hardware_targets": [
+    "Intel XPU"
+  ],
+  "model_refs": [],
+  "dataset_refs": [],
+  "model_card": {
+    "schema_version": "1.0",
+    "model_card_format": "HuggingFace-v0.2 / EU-AI-Act-Annex-IV",
+    "generated": "2026-02-28T11:32:48Z",
+    "model_details": {
+      "name": "World Monitor",
+      "description": "SAP OSS service: World Monitor",
+      "version": "NOASSERTION",
+      "license": "LicenseRef-SAP-Proprietary",
+      "contact": "SAP SE — AI & Open-Source Office",
+      "upstream": ""
+    },
+    "intended_use": {
+      "primary_uses": [
+        "Enterprise AI / ML inference",
+        "Data processing"
+      ],
+      "out_of_scope": [
+        "Safety-critical systems without additional validation"
+      ]
+    },
+    "technical_specifications": {
+      "ml_frameworks": [
+        "HuggingFace Transformers 2.17.2"
+      ],
+      "hardware_requirements": [
+        "Intel XPU"
+      ],
+      "referenced_base_models": [],
+      "referenced_datasets": []
+    },
+    "provenance": {
+      "framework_components": [
+        {
+          "name": "HuggingFace Transformers",
+          "vendor": "Hugging Face",
+          "version": "2.17.2",
+          "license": "Apache-2.0",
+          "purl": "pkg:pypi/transformers@2.17.2"
+        }
+      ],
+      "base_model_sources": [],
+      "dataset_sources": []
+    },
+    "eu_ai_act": {
+      "risk_category": "Limited risk (Article 52) — requires transparency notification",
+      "transparency_obligations": [
+        "Users must be informed they are interacting with an AI system",
+        "Training data must be documented for high-risk use cases"
+      ],
+      "conformity_assessment": "pending"
+    },
+    "data_governance": {
+      "training_data_documented": false,
+      "privacy_impact_assessed": false,
+      "data_retention_policy": "Not specified — consult SAP Data Governance team"
+    }
+  },
+  "cdx_formulation": [
+    {
+      "workflows": [
+        {
+          "name": "inference",
+          "taskTypes": [
+            "inference"
+          ],
+          "components": [
+            {
+              "type": "library",
+              "name": "HuggingFace Transformers",
+              "version": "2.17.2",
+              "supplier": {
+                "name": "Hugging Face"
+              },
+              "licenses": [
+                {
+                  "license": {
+                    "id": "Apache-2.0"
+                  }
+                }
+              ],
+              "purl": "pkg:pypi/transformers@2.17.2"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

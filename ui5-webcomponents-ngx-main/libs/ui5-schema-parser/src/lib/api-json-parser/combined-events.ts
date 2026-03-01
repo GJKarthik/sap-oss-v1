@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 import {SymbolObject} from "./symbol-types";
 
 export const combinedEvents = (current: { extends: string; events: Array<any>; }, ...bases: Record<SymbolObject['name'], SymbolObject>[]) => {

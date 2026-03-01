@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
 import { createLogger } from '@sap-cloud-sdk/util';
 import { jest } from '@jest/globals';
 import { isOrchestrationModuleConfigList } from '../orchestration-types.js';

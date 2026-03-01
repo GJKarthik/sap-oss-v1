@@ -1,0 +1,1 @@
+{"version":3,"file":"details-error-response.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/details-error-response.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,oBAAoB,GAAG;IACjC;;OAEG;IACH,IAAI,CAAC,EAAE,MAAM,CAAC;IACd;;OAEG;IACH,OAAO,CAAC,EAAE,MAAM,CAAC;CAClB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

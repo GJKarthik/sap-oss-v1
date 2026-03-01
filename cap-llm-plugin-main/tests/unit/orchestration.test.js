@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
 // Mock the OrchestrationClient and buildAzureContentSafetyFilter
 const mockChatCompletion = jest.fn();
 const mockGetContent = jest.fn(() => "AI-generated response content");

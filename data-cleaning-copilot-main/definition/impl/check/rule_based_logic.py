@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
 """Rule-based logic generation for validation and corruption."""
 
 from typing import Type, List, Dict, Optional, Mapping

@@ -64,11 +64,63 @@ pub const XsuaaConfig = struct {
         };
     }
 
+    /// Parse an XsuaaConfig from the BTP VCAP_SERVICES JSON blob.
+    ///
+    /// Expected shape (SAP XSUAA service binding):
+    /// {
+    ///   "xsuaa": [{
+    ///     "credentials": {
+    ///       "url":          "https://<tenant>.authentication.<region>.hana.ondemand.com",
+    ///       "clientid":     "sb-<app>!t<instance>",
+    ///       "clientsecret": "<secret>",
+    ///       "identityzone": "<subaccount-subdomain>",
+    ///       "subdomain":    "<subaccount-subdomain>",
+    ///       "tenantid":     "<tenant-uuid>",
+    ///       "uaadomain":    "authentication.<region>.hana.ondemand.com"
+    ///     }
+    ///   }]
+    /// }
+    ///
+    /// All returned strings are heap-allocated copies owned by the caller
+    /// (they live as long as the provided allocator).
     fn parseVcapServices(allocator: std.mem.Allocator, json_str: []const u8) !XsuaaConfig {
-        _ = allocator;
-        _ = json_str;
-        // TODO: Parse VCAP_SERVICES JSON for xsuaa binding
-        return error.VcapParseNotImplemented;
+        const parsed = try std.json.parseFromSlice(std.json.Value, allocator, json_str, .{});
+        defer parsed.deinit();
+
+        const root = parsed.value;
+        if (root != .object) return error.InvalidVcapFormat;
+
+        // Locate the first xsuaa binding
+        const xsuaa_val = root.object.get("xsuaa") orelse return error.NoXsuaaBinding;
+        if (xsuaa_val != .array) return error.InvalidVcapFormat;
+        const bindings = xsuaa_val.array.items;
+        if (bindings.len == 0) return error.EmptyXsuaaBinding;
+
+        const binding = bindings[0];
+        if (binding != .object) return error.InvalidVcapFormat;
+
+        const creds_val = binding.object.get("credentials") orelse return error.NoCredentials;
+        if (creds_val != .object) return error.InvalidVcapFormat;
+        const creds = creds_val.object;
+
+        // Required fields
+        const url_val = creds.get("url") orelse return error.MissingXsuaaUrl;
+        const cid_val = creds.get("clientid") orelse return error.MissingClientId;
+        if (url_val != .string or cid_val != .string) return error.InvalidVcapFormat;
+
+        // Optional fields (empty string as default)
+        const secret_str = if (creds.get("clientsecret")) |v| (if (v == .string) v.string else "") else "";
+        const zone_str   = if (creds.get("identityzone")) |v| (if (v == .string) v.string else "") else "";
+        const sub_str    = if (creds.get("subdomain"))    |v| (if (v == .string) v.string else "") else "";
+
+        // Dupe all strings so they survive parsed.deinit()
+        return .{
+            .url            = try allocator.dupe(u8, url_val.string),
+            .client_id      = try allocator.dupe(u8, cid_val.string),
+            .client_secret  = try allocator.dupe(u8, secret_str),
+            .identity_zone  = try allocator.dupe(u8, zone_str),
+            .subdomain      = try allocator.dupe(u8, sub_str),
+        };
     }
 
     fn getSecureClientSecret() ![]const u8 {
@@ -353,10 +405,11 @@ pub const JwtPayload = struct {
     pub fn parse(allocator: std.mem.Allocator, json: []const u8) !JwtPayload {
         var payload = JwtPayload{};
 
-        // Parse standard claims
-        if (extractJsonString(json)) |_| {
-            // TODO: Implement proper JSON parsing
-        }
+        // Use std.json for proper parsing when possible, fall back to string extraction
+        // Note: We use string extraction here because the payload strings need to point
+        // into the original JSON buffer to avoid allocation lifetime issues.
+        // For a production system, consider using std.json.parseFromSlice with
+        // ArenaAllocator to manage memory properly.
 
         // Parse "iss"
         if (std.mem.indexOf(u8, json, "\"iss\"")) |idx| {
@@ -703,34 +756,151 @@ pub const TokenValidator = struct {
         try self.verifyRsaSignature(token, key);
     }
 
+    /// Verify an RS256 (RSASSA-PKCS1-v1_5 with SHA-256) JWT signature.
+    ///
+    /// Algorithm:
+    ///   1.  Decode the JWK modulus (n) and public exponent (e) from base64url.
+    ///   2.  Compute SHA-256 over the JWT's signed bytes (header.payload ASCII).
+    ///   3.  Compute m = sig^e mod n using square-and-multiply big-integer arithmetic.
+    ///   4.  Verify PKCS#1 v1.5 padding: 0x00 0x01 [0xFF…] 0x00 [DigestInfo] [hash].
     fn verifyRsaSignature(self: *TokenValidator, token: *JwtToken, key: JwkKey) !void {
-        _ = self;
-        _ = key;
+        const alloc = self.allocator;
 
-        // Get the signed data (header.payload)
-        const signed_data = token.getSignedData();
-        _ = signed_data;
+        // Only RS256 is implemented; reject other algorithms
+        if (!std.mem.eql(u8, token.header.alg, "RS256")) {
+            log.err("Unsupported algorithm for RSA verify: {s}", .{token.header.alg});
+            return error.UnsupportedAlgorithm;
+        }
 
-        // In a production implementation, you would:
-        // 1. Decode the RSA modulus (n) and exponent (e) from base64url
-        // 2. Construct the RSA public key
-        // 3. Verify the signature using the appropriate hash algorithm
+        // Decode n (modulus) and e (public exponent) from base64url
+        const n_bytes = try base64UrlDecode(alloc, key.n);
+        defer alloc.free(n_bytes);
+        const e_bytes = try base64UrlDecode(alloc, key.e);
+        defer alloc.free(e_bytes);
 
-        // For now, we do basic validation and log that signature verification
-        // requires a proper crypto library integration
-
-        if (token.signature.len < 64) {
-            log.err("Signature too short: {} bytes", .{token.signature.len});
+        const n_len = n_bytes.len; // e.g. 256 for RSA-2048
+        if (n_len < 64 or n_len > 512) return error.UnsupportedKeySize;
+        if (token.signature.len != n_len) {
+            log.err("Signature length {} does not match key size {}", .{ token.signature.len, n_len });
             return error.InvalidSignature;
         }
 
-        log.debug("Signature validation passed (length check)", .{});
+        // Compute SHA-256 of the signed bytes ("header.payload")
+        const signed_data = token.getSignedData();
+        var hash: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(signed_data, &hash, .{});
 
-        // TODO: Implement full RSA signature verification
-        // This requires either:
-        // 1. Binding to OpenSSL/BoringSSL
-        // 2. Using a Zig crypto library that supports RSA
-        // 3. Implementing RSA verification from scratch
+        // Load n, e, sig as big integers (via hex strings)
+        var n_big = try std.math.big.int.Managed.init(alloc);
+        defer n_big.deinit();
+        var e_big = try std.math.big.int.Managed.init(alloc);
+        defer e_big.deinit();
+        var sig_big = try std.math.big.int.Managed.init(alloc);
+        defer sig_big.deinit();
+
+        try setBigIntFromBytes(&n_big, n_bytes, alloc);
+        try setBigIntFromBytes(&e_big, e_bytes, alloc);
+        try setBigIntFromBytes(&sig_big, token.signature, alloc);
+
+        // m = sig^e mod n  (RSA public key operation)
+        var m = try std.math.big.int.Managed.init(alloc);
+        defer m.deinit();
+        try rsaPowMod(&m, sig_big.toConst(), e_bytes, n_big.toConst(), alloc);
+
+        // Write m as a big-endian byte array of exactly n_len bytes
+        var m_bytes: [512]u8 = std.mem.zeroes([512]u8);
+        m.toConst().writeTwosComplement(m_bytes[0..n_len], .big);
+
+        // Verify PKCS#1 v1.5 structure:
+        //   0x00 0x01 [FF...FF (>= 8 bytes)] 0x00 [DigestInfo] [SHA-256 hash]
+        if (m_bytes[0] != 0x00 or m_bytes[1] != 0x01) {
+            log.err("PKCS#1 v1.5 padding marker missing", .{});
+            return error.InvalidSignature;
+        }
+        var sep: usize = 2;
+        while (sep < n_len and m_bytes[sep] == 0xFF) sep += 1;
+        if (sep >= n_len or m_bytes[sep] != 0x00) {
+            log.err("PKCS#1 v1.5 separator 0x00 not found", .{});
+            return error.InvalidSignature;
+        }
+        if (sep - 2 < 8) {
+            log.err("PKCS#1 v1.5 padding too short: {} bytes", .{sep - 2});
+            return error.InvalidSignature;
+        }
+        sep += 1; // advance past 0x00 separator → now at DigestInfo
+
+        // SHA-256 DigestInfo header (RFC 8017 appendix C)
+        const sha256_di = [19]u8{
+            0x30, 0x31, 0x30, 0x0d, 0x06, 0x09,
+            0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,
+            0x05, 0x00, 0x04, 0x20,
+        };
+        if (sep + sha256_di.len + 32 > n_len) return error.InvalidSignature;
+        if (!std.mem.eql(u8, m_bytes[sep .. sep + sha256_di.len], &sha256_di)) {
+            log.err("PKCS#1 v1.5 DigestInfo mismatch", .{});
+            return error.InvalidSignature;
+        }
+
+        const hash_start = sep + sha256_di.len;
+        if (!std.mem.eql(u8, m_bytes[hash_start .. hash_start + 32], &hash)) {
+            log.err("JWT signature verification failed: hash mismatch", .{});
+            return error.SignatureVerificationFailed;
+        }
+
+        log.info("JWT RS256 signature verified OK (kid={s})", .{key.kid});
+    }
+
+    // -------------------------------------------------------------------------
+    // Private RSA helpers
+    // -------------------------------------------------------------------------
+
+    /// Set a Managed big integer from a raw big-endian byte slice.
+    fn setBigIntFromBytes(m: *std.math.big.int.Managed, bytes: []const u8, alloc: std.mem.Allocator) !void {
+        const hex = try alloc.alloc(u8, bytes.len * 2);
+        defer alloc.free(hex);
+        for (bytes, 0..) |byte, i| {
+            const hi: u8 = byte >> 4;
+            const lo: u8 = byte & 0xF;
+            hex[i * 2]     = if (hi < 10) '0' + hi else 'a' + hi - 10;
+            hex[i * 2 + 1] = if (lo < 10) '0' + lo else 'a' + lo - 10;
+        }
+        try m.setString(16, hex);
+    }
+
+    /// Compute result = base^exp mod modulus using square-and-multiply.
+    /// exp_bytes is the big-endian byte representation of the exponent.
+    fn rsaPowMod(
+        result: *std.math.big.int.Managed,
+        base_const: std.math.big.int.Const,
+        exp_bytes: []const u8,
+        mod_const: std.math.big.int.Const,
+        alloc: std.mem.Allocator,
+    ) !void {
+        var base = try std.math.big.int.Managed.init(alloc);
+        defer base.deinit();
+        try base.copy(base_const);
+
+        var tmp = try std.math.big.int.Managed.init(alloc);
+        defer tmp.deinit();
+        var q = try std.math.big.int.Managed.init(alloc);
+        defer q.deinit();
+
+        try result.set(1); // result = 1
+
+        for (exp_bytes) |byte| {
+            var mask: u8 = 0x80;
+            while (mask != 0) : (mask >>= 1) {
+                // Square: tmp = result * result; result = tmp mod modulus
+                try tmp.mul(result.toConst(), result.toConst());
+                try q.divFloor(result, tmp.toConst(), mod_const);
+
+                if (byte & mask != 0) {
+                    // Multiply: tmp = result * base; result = tmp mod modulus
+                    try tmp.mul(result.toConst(), base.toConst());
+                    try q.divFloor(result, tmp.toConst(), mod_const);
+                }
+            }
+        }
     }
 
     /// Refresh the JWKS cache from the XSUAA endpoint
