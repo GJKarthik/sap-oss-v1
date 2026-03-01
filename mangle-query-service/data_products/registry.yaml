@@ -7,8 +7,42 @@ apiVersion: dataproducts/v1
 kind: DataProductRegistry
 metadata:
   name: mangle-query-service
-  version: "1.0.0"
+  version: "1.1.0"
   description: "OpenAI-compatible query routing service with governance"
+
+# Agent Classification (2025-AI-Agent-Index.pdf)
+x-agent-classification:
+  # Category: chat, browser, enterprise
+  category: "enterprise"
+  category_reference: "2025-AI-Agent-Index_p005_c002"
+  
+  # Agency criteria (all must be true)
+  agency_criteria:
+    autonomy: true
+    goal_complexity: true
+    env_interaction: true
+    generality: true
+  
+  # Action space
+  action_space:
+    type: "api"
+    tools:
+      - "chat_completion"
+      - "embeddings"
+      - "model_routing"
+    write_access: false  # Read-only for LLM queries
+    external_access: true  # Calls SAP AI Core
+  
+  # Risk assessment
+  risk_level: "medium"
+  risk_factors:
+    - "external_api_access"
+    - "sensitive_data_routing"
+  risk_mitigations:
+    - "L2_autonomy"
+    - "emergency_stop"
+    - "guardrails"
+    - "monitoring"
 
 # Regulatory Compliance (Required for 100/100 score)
 x-regulatory-compliance:
