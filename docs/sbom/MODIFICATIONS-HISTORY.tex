@@ -391,26 +391,26 @@ Cross-cutting & 13 & MCP servers, agents, data products \\
 \end{tabular}
 
 %% =============================================================================
-%% PENDING IMPROVEMENTS
+%% IMPLEMENTED IMPROVEMENTS (March 2026)
 %% =============================================================================
-\subsection{Pending Improvements}
+\subsection{Implemented Improvements}
 
-Based on code analysis, the following improvements are documented but not yet implemented:
+All previously identified improvements have been implemented. The following table documents each improvement with its implementation details:
 
-\begin{longtable}{@{}L{0.5cm}L{4cm}L{2cm}L{7cm}@{}}
+\begin{longtable}{@{}L{0.5cm}L{3.5cm}L{2cm}L{7cm}@{}}
 \toprule
-\textbf{\#} & \textbf{Item} & \textbf{Impact} & \textbf{Description} \\
+\textbf{\#} & \textbf{Item} & \textbf{Status} & \textbf{Implementation Details} \\
 \midrule
 \endhead
-1 & XSUAA RSA Verification & Security & JWT signature verification (TODO in xsuaa.zig:729) \\
-2 & VCAP\_SERVICES Parsing & Deployment & Parse BTP service bindings (TODO in xsuaa.zig:70) \\
-3 & CONNECT Auth Wiring & Security & Wire XSUAA to broker CONNECT handler \\
-4 & BatchETL HANA Query & Correctness & Implement HANA query in SyncOnce (batch\_etl.go:85) \\
-5 & Schema Compatibility & Correctness & Implement BACKWARD/FORWARD/FULL checks \\
-6 & SSE Streaming (Mojo) & Feature & Implement SSE in aicore.mojo:287 \\
-7 & ReAct Tool Executor & Feature & Wire tool dispatch table in react.mojo:273 \\
-8 & CUDA Kernel Dispatch & Performance & Add cuLaunchKernel calls (cuda\_backend.zig) \\
-9 & Multi-GPU Strategies & Performance & Implement tensor\_parallel, pipeline\_parallel \\
-10 & XSUAA Unit Tests & Testing & Add xsuaa\_test.zig coverage \\
+1 & XSUAA RSA Verification & \textcolor{green!60!black}{\textbf{Done}} & \texttt{verifyRsaSignature()} in xsuaa.zig implements RS256 with PKCS\#1 v1.5 padding using \texttt{std.crypto} \\
+2 & VCAP\_SERVICES Parsing & \textcolor{green!60!black}{\textbf{Done}} & \texttt{parseVcapServices()} extracts xsuaa credentials (url, clientid, clientsecret, uaadomain) using \texttt{std.json} \\
+3 & CONNECT Auth Wiring & \textcolor{green!60!black}{\textbf{Done}} & \texttt{handleProtocolCommand()} calls \texttt{TokenValidator.validate()} for CommandConnect auth\_data \\
+4 & BatchETL HANA Query & \textcolor{green!60!black}{\textbf{Done}} & \texttt{queryEntityChanges()} in batch\_etl.go queries HANA via ODBC with \texttt{SELECT...WHERE CHANGED\_AT > ?} \\
+5 & Schema Compatibility & \textcolor{green!60!black}{\textbf{Done}} & \texttt{isCompatibleWith()} implements BACKWARD/FORWARD/FULL for JSON Schema and Avro \\
+6 & SSE Streaming (Mojo) & \textcolor{green!60!black}{\textbf{Done}} & \texttt{stream\_complete()} in aicore.mojo parses SSE chunks and yields tokens \\
+7 & ReAct Tool Executor & \textcolor{green!60!black}{\textbf{Done}} & \texttt{default\_executor()} dispatch table routes to search, calculator, MCP tools via Python interop \\
+8 & CUDA Kernel Dispatch & \textcolor{green!60!black}{\textbf{Done}} & \texttt{cuLaunchKernel} calls for batch\_cosine\_similarity, embedding\_gather, quantize\_vectors \\
+9 & Multi-GPU Strategies & \textcolor{green!60!black}{\textbf{Done}} & \texttt{distributeWorkload()} implements tensor\_parallel (NCCL), pipeline\_parallel, hybrid strategies \\
+10 & XSUAA Unit Tests & \textcolor{green!60!black}{\textbf{Done}} & xsuaa\_test.zig with 20+ tests: JWT parsing, expiry, scope validation, RS256 verification \\
 \bottomrule
 \end{longtable}
