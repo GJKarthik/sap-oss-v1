@@ -1,55 +1,66 @@
 """
-Model Registry for OpenAI-Compatible API
+Model Registry - Mangle-Based Configuration
 
-Day 8 Deliverable: Model definitions, capabilities, and backend mapping
-- Model metadata and capabilities
-- Backend configuration
-- Model aliasing
-- Context window limits
+Day 8 Refactored: Loads model definitions from Mangle rules
+- NO hardcoded OpenAI/Anthropic direct API access
+- All models accessed via SAP AI Core or private vLLM
+- Configuration loaded from rules/model_registry.mg
 
 Usage:
-    from routing.model_registry import ModelRegistry
+    from routing.model_registry import ModelRegistry, get_model_registry
     
-    registry = ModelRegistry()
-    model_info = registry.get_model("gpt-4")
+    registry = get_model_registry()
+    model = registry.get_model("gpt-4")  # Via SAP AI Core
 """
 
 import logging
+import os
+import re
 from typing import Optional, Dict, Any, List, Set
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 # ========================================
-# Enums
+# Provider Types - SAP AI Core & Private LLM ONLY
 # ========================================
 
 class ModelProvider(str, Enum):
-    """Model providers."""
-    OPENAI = "openai"
-    ANTHROPIC = "anthropic"
-    GOOGLE = "google"
-    AZURE = "azure"
+    """
+    Model providers - SAP AI Core and private deployments only.
+    
+    NO direct external API providers (OpenAI, Anthropic, etc.)
+    All access goes through SAP AI Core proxy or private vLLM.
+    """
     SAP_AI_CORE = "sap_ai_core"
-    LOCAL = "local"
+    PRIVATE_LLM = "private_llm"
+    VLLM = "vllm"
 
+
+# ========================================
+# Model Capabilities
+# ========================================
 
 class ModelCapability(str, Enum):
-    """Model capabilities."""
+    """Capabilities that models can support."""
     CHAT = "chat"
     COMPLETION = "completion"
     EMBEDDING = "embedding"
-    VISION = "vision"
     FUNCTION_CALLING = "function_calling"
     TOOL_USE = "tool_use"
     JSON_MODE = "json_mode"
     STREAMING = "streaming"
 
 
+# ========================================
+# Model Tiers
+# ========================================
+
 class ModelTier(str, Enum):
-    """Model tiers for routing decisions."""
+    """Model pricing/performance tiers."""
     PREMIUM = "premium"
     STANDARD = "standard"
     ECONOMY = "economy"
@@ -62,22 +73,9 @@ class ModelTier(str, Enum):
 @dataclass
 class ModelDefinition:
     """
-    Definition of a model and its capabilities.
+    Definition of a model available through SAP AI Core or private LLM.
     
-    Attributes:
-        id: Model identifier (e.g., "gpt-4")
-        provider: Model provider
-        backend_id: Backend model identifier (may differ from id)
-        display_name: Human-readable name
-        capabilities: Set of capabilities
-        tier: Model tier for routing
-        context_window: Max context window size
-        max_output_tokens: Max output tokens
-        input_cost_per_1k: Cost per 1k input tokens (USD)
-        output_cost_per_1k: Cost per 1k output tokens (USD)
-        enabled: Whether model is enabled
-        deprecated: Whether model is deprecated
-        aliases: Alternative names for this model
+    Loaded from Mangle rules/model_registry.mg facts.
     """
     id: str
     provider: ModelProvider
@@ -86,47 +84,37 @@ class ModelDefinition:
     capabilities: Set[ModelCapability] = field(default_factory=set)
     tier: ModelTier = ModelTier.STANDARD
     context_window: int = 4096
-    max_output_tokens: int = 4096
-    input_cost_per_1k: float = 0.0
-    output_cost_per_1k: float = 0.0
+    max_output_tokens: Optional[int] = None
     enabled: bool = True
-    deprecated: bool = False
-    aliases: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
     
     def supports(self, capability: ModelCapability) -> bool:
         """Check if model supports a capability."""
         return capability in self.capabilities
     
     def supports_all(self, capabilities: List[ModelCapability]) -> bool:
-        """Check if model supports all capabilities."""
-        return all(cap in self.capabilities for cap in capabilities)
+        """Check if model supports all given capabilities."""
+        return all(c in self.capabilities for c in capabilities)
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for API response."""
+        """Convert to OpenAI-compatible model object."""
         return {
             "id": self.id,
             "object": "model",
-            "created": 0,  # Not tracked
+            "created": 0,
             "owned_by": self.provider.value,
-            "permission": [],
-            "root": self.id,
-            "parent": None,
         }
     
     def to_detailed_dict(self) -> Dict[str, Any]:
-        """Convert to detailed dictionary."""
+        """Convert to detailed model info."""
         return {
-            "id": self.id,
-            "provider": self.provider.value,
-            "backend_id": self.backend_id,
+            **self.to_dict(),
             "display_name": self.display_name,
-            "capabilities": [cap.value for cap in self.capabilities],
-            "tier": self.tier.value,
+            "provider": self.provider.value,
+            "capabilities": [c.value for c in self.capabilities],
             "context_window": self.context_window,
             "max_output_tokens": self.max_output_tokens,
+            "tier": self.tier.value,
             "enabled": self.enabled,
-            "deprecated": self.deprecated,
         }
 
 
@@ -137,31 +125,163 @@ class ModelDefinition:
 @dataclass
 class BackendDefinition:
     """
-    Definition of a backend service.
+    Backend configuration for SAP AI Core or private LLM.
     
-    Attributes:
-        id: Backend identifier
-        provider: Backend provider
-        base_url: Base URL for API calls
-        api_key_env: Environment variable for API key
-        enabled: Whether backend is enabled
-        priority: Priority for load balancing (higher = preferred)
-        max_concurrent: Max concurrent requests
-        timeout: Request timeout in seconds
-        supports_streaming: Whether backend supports streaming
-        health_check_endpoint: Health check endpoint
+    Base URL loaded dynamically from environment/config.
     """
     id: str
     provider: ModelProvider
-    base_url: str
-    api_key_env: str = ""
-    enabled: bool = True
+    base_url: str = ""  # Loaded from env at runtime
     priority: int = 100
-    max_concurrent: int = 100
-    timeout: float = 60.0
-    supports_streaming: bool = True
-    health_check_endpoint: str = "/health"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timeout_ms: int = 60000
+    streaming_support: bool = True
+    enabled: bool = True
+
+
+# ========================================
+# Mangle Facts Parser
+# ========================================
+
+class MangleFactsLoader:
+    """
+    Loads model configuration from Mangle rules file.
+    
+    Parses extensional facts from rules/model_registry.mg
+    """
+    
+    def __init__(self, rules_path: Optional[str] = None):
+        if rules_path is None:
+            # Default path relative to this module
+            base_dir = Path(__file__).parent.parent
+            rules_path = str(base_dir / "rules" / "model_registry.mg")
+        self.rules_path = rules_path
+        self._facts: Dict[str, List[tuple]] = {}
+    
+    def load(self) -> None:
+        """Load and parse Mangle facts from rules file."""
+        if not os.path.exists(self.rules_path):
+            logger.warning(f"Mangle rules not found: {self.rules_path}")
+            return
+        
+        with open(self.rules_path, 'r') as f:
+            content = f.read()
+        
+        self._parse_facts(content)
+    
+    def _parse_facts(self, content: str) -> None:
+        """Parse Mangle fact declarations."""
+        # Pattern for simple facts: predicate("arg1", "arg2", ...).
+        fact_pattern = re.compile(
+            r'^(\w+)\(([^)]+)\)\.\s*$',
+            re.MULTILINE
+        )
+        
+        for match in fact_pattern.finditer(content):
+            predicate = match.group(1)
+            args_str = match.group(2)
+            
+            # Parse arguments
+            args = self._parse_args(args_str)
+            
+            if predicate not in self._facts:
+                self._facts[predicate] = []
+            self._facts[predicate].append(tuple(args))
+    
+    def _parse_args(self, args_str: str) -> List[Any]:
+        """Parse fact arguments."""
+        args = []
+        # Simple string parsing for quoted args
+        current = ""
+        in_string = False
+        
+        for char in args_str:
+            if char == '"' and not in_string:
+                in_string = True
+            elif char == '"' and in_string:
+                in_string = False
+                args.append(current)
+                current = ""
+            elif char == ',' and not in_string:
+                # Check if current is a number
+                stripped = current.strip()
+                if stripped and stripped.isdigit():
+                    args.append(int(stripped))
+                current = ""
+            elif in_string or char not in ' \t':
+                current += char
+        
+        # Handle last arg if number
+        stripped = current.strip()
+        if stripped and stripped.isdigit():
+            args.append(int(stripped))
+        
+        return args
+    
+    def get_facts(self, predicate: str) -> List[tuple]:
+        """Get all facts for a predicate."""
+        return self._facts.get(predicate, [])
+    
+    def get_models(self) -> List[Dict[str, Any]]:
+        """Get model definitions from facts."""
+        models = []
+        for fact in self.get_facts("model"):
+            if len(fact) >= 4:
+                models.append({
+                    "id": fact[0],
+                    "display_name": fact[1],
+                    "provider": fact[2],
+                    "backend_id": fact[3],
+                })
+        return models
+    
+    def get_backends(self) -> List[Dict[str, Any]]:
+        """Get backend definitions from facts."""
+        backends = []
+        for fact in self.get_facts("backend"):
+            if len(fact) >= 3:
+                backends.append({
+                    "id": fact[0],
+                    "provider": fact[1],
+                    "base_url": fact[2],
+                })
+        return backends
+    
+    def is_enabled(self, predicate: str, model_id: str) -> bool:
+        """Check if a model is enabled."""
+        for fact in self.get_facts(predicate):
+            if len(fact) >= 1 and fact[0] == model_id:
+                return True
+        return False
+    
+    def get_capabilities(self, model_id: str) -> Set[str]:
+        """Get capabilities for a model."""
+        caps = set()
+        for fact in self.get_facts("model_capability"):
+            if len(fact) >= 2 and fact[0] == model_id:
+                caps.add(fact[1])
+        return caps
+    
+    def get_context_window(self, model_id: str) -> Optional[int]:
+        """Get context window for a model."""
+        for fact in self.get_facts("model_context_window"):
+            if len(fact) >= 2 and fact[0] == model_id:
+                return fact[1]
+        return None
+    
+    def get_tier(self, model_id: str) -> Optional[str]:
+        """Get tier for a model."""
+        for fact in self.get_facts("model_tier"):
+            if len(fact) >= 2 and fact[0] == model_id:
+                return fact[1]
+        return None
+    
+    def get_aliases(self) -> Dict[str, str]:
+        """Get model aliases."""
+        aliases = {}
+        for fact in self.get_facts("model_alias"):
+            if len(fact) >= 2:
+                aliases[fact[0]] = fact[1]
+        return aliases
 
 
 # ========================================
@@ -170,344 +290,197 @@ class BackendDefinition:
 
 class ModelRegistry:
     """
-    Registry of available models and backends.
+    Registry of available models loaded from Mangle rules.
     
-    Responsibilities:
-    - Store model definitions
-    - Handle model aliases
-    - Provide model lookup
-    - List available models
+    All models are accessed through SAP AI Core or private vLLM.
+    NO direct external API access.
     """
     
-    def __init__(self):
+    def __init__(self, load_from_mangle: bool = True):
         self._models: Dict[str, ModelDefinition] = {}
         self._backends: Dict[str, BackendDefinition] = {}
         self._aliases: Dict[str, str] = {}
         
-        # Initialize with default models
-        self._register_default_models()
-        self._register_default_backends()
+        if load_from_mangle:
+            self._load_from_mangle()
+        else:
+            # Fallback to minimal defaults
+            self._register_defaults()
     
-    def _register_default_models(self) -> None:
-        """Register default model definitions."""
+    def _load_from_mangle(self) -> None:
+        """Load configuration from Mangle rules."""
+        loader = MangleFactsLoader()
+        loader.load()
         
-        # OpenAI GPT-4 series
-        self.register_model(ModelDefinition(
+        # Register backends
+        for backend_data in loader.get_backends():
+            provider = self._parse_provider(backend_data["provider"])
+            backend = BackendDefinition(
+                id=backend_data["id"],
+                provider=provider,
+                base_url=self._get_backend_url(backend_data["id"]),
+                enabled=loader.is_enabled("backend_enabled", backend_data["id"]),
+            )
+            self._backends[backend.id] = backend
+        
+        # Register models
+        for model_data in loader.get_models():
+            provider = self._parse_provider(model_data["provider"])
+            capabilities = {
+                self._parse_capability(c)
+                for c in loader.get_capabilities(model_data["id"])
+            }
+            
+            tier_str = loader.get_tier(model_data["id"])
+            tier = ModelTier(tier_str) if tier_str else ModelTier.STANDARD
+            
+            model = ModelDefinition(
+                id=model_data["id"],
+                provider=provider,
+                backend_id=model_data["backend_id"],
+                display_name=model_data["display_name"],
+                capabilities=capabilities,
+                tier=tier,
+                context_window=loader.get_context_window(model_data["id"]) or 4096,
+                enabled=loader.is_enabled("model_enabled", model_data["id"]),
+            )
+            self._models[model.id] = model
+        
+        # Register aliases
+        self._aliases = loader.get_aliases()
+        
+        logger.info(
+            f"Loaded {len(self._models)} models and {len(self._backends)} backends from Mangle"
+        )
+    
+    def _parse_provider(self, provider_str: str) -> ModelProvider:
+        """Parse provider string to enum."""
+        provider_map = {
+            "sap_ai_core": ModelProvider.SAP_AI_CORE,
+            "private_llm": ModelProvider.PRIVATE_LLM,
+            "vllm": ModelProvider.VLLM,
+        }
+        return provider_map.get(provider_str, ModelProvider.SAP_AI_CORE)
+    
+    def _parse_capability(self, cap_str: str) -> ModelCapability:
+        """Parse capability string to enum."""
+        cap_map = {
+            "chat": ModelCapability.CHAT,
+            "completion": ModelCapability.COMPLETION,
+            "embedding": ModelCapability.EMBEDDING,
+            "function_calling": ModelCapability.FUNCTION_CALLING,
+            "tool_use": ModelCapability.TOOL_USE,
+            "json_mode": ModelCapability.JSON_MODE,
+            "streaming": ModelCapability.STREAMING,
+        }
+        return cap_map.get(cap_str, ModelCapability.CHAT)
+    
+    def _get_backend_url(self, backend_id: str) -> str:
+        """Get backend URL from environment."""
+        # URLs loaded from environment, not hardcoded
+        env_map = {
+            "aicore_primary": "AICORE_BASE_URL",
+            "vllm_primary": "VLLM_BASE_URL",
+        }
+        env_var = env_map.get(backend_id, f"{backend_id.upper()}_BASE_URL")
+        return os.environ.get(env_var, "")
+    
+    def _register_defaults(self) -> None:
+        """Register minimal defaults when Mangle rules not available."""
+        # SAP AI Core backend
+        self._backends["aicore_primary"] = BackendDefinition(
+            id="aicore_primary",
+            provider=ModelProvider.SAP_AI_CORE,
+            base_url=os.environ.get("AICORE_BASE_URL", ""),
+            priority=100,
+        )
+        
+        # Private vLLM backend
+        self._backends["vllm_primary"] = BackendDefinition(
+            id="vllm_primary",
+            provider=ModelProvider.VLLM,
+            base_url=os.environ.get("VLLM_BASE_URL", ""),
+            priority=90,
+        )
+        
+        # Minimal model set via AI Core
+        self._models["gpt-4"] = ModelDefinition(
             id="gpt-4",
-            provider=ModelProvider.OPENAI,
-            backend_id="gpt-4",
-            display_name="GPT-4",
+            provider=ModelProvider.SAP_AI_CORE,
+            backend_id="aicore_primary",
+            display_name="GPT-4 via AI Core",
             capabilities={
                 ModelCapability.CHAT,
                 ModelCapability.FUNCTION_CALLING,
-                ModelCapability.TOOL_USE,
-                ModelCapability.JSON_MODE,
                 ModelCapability.STREAMING,
             },
             tier=ModelTier.PREMIUM,
             context_window=8192,
-            max_output_tokens=4096,
-            input_cost_per_1k=0.03,
-            output_cost_per_1k=0.06,
-            aliases=["gpt-4-0613"],
-        ))
-        
-        self.register_model(ModelDefinition(
-            id="gpt-4-turbo",
-            provider=ModelProvider.OPENAI,
-            backend_id="gpt-4-turbo-preview",
-            display_name="GPT-4 Turbo",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.VISION,
-                ModelCapability.FUNCTION_CALLING,
-                ModelCapability.TOOL_USE,
-                ModelCapability.JSON_MODE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.PREMIUM,
-            context_window=128000,
-            max_output_tokens=4096,
-            input_cost_per_1k=0.01,
-            output_cost_per_1k=0.03,
-            aliases=["gpt-4-turbo-preview", "gpt-4-1106-preview"],
-        ))
-        
-        self.register_model(ModelDefinition(
-            id="gpt-4o",
-            provider=ModelProvider.OPENAI,
-            backend_id="gpt-4o",
-            display_name="GPT-4 Omni",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.VISION,
-                ModelCapability.FUNCTION_CALLING,
-                ModelCapability.TOOL_USE,
-                ModelCapability.JSON_MODE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.PREMIUM,
-            context_window=128000,
-            max_output_tokens=16384,
-            input_cost_per_1k=0.005,
-            output_cost_per_1k=0.015,
-            aliases=["gpt-4o-2024-05-13"],
-        ))
-        
-        self.register_model(ModelDefinition(
-            id="gpt-4o-mini",
-            provider=ModelProvider.OPENAI,
-            backend_id="gpt-4o-mini",
-            display_name="GPT-4 Omni Mini",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.VISION,
-                ModelCapability.FUNCTION_CALLING,
-                ModelCapability.TOOL_USE,
-                ModelCapability.JSON_MODE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.STANDARD,
-            context_window=128000,
-            max_output_tokens=16384,
-            input_cost_per_1k=0.00015,
-            output_cost_per_1k=0.0006,
-        ))
-        
-        # OpenAI GPT-3.5 series
-        self.register_model(ModelDefinition(
-            id="gpt-3.5-turbo",
-            provider=ModelProvider.OPENAI,
-            backend_id="gpt-3.5-turbo",
-            display_name="GPT-3.5 Turbo",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.FUNCTION_CALLING,
-                ModelCapability.TOOL_USE,
-                ModelCapability.JSON_MODE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.ECONOMY,
-            context_window=16385,
-            max_output_tokens=4096,
-            input_cost_per_1k=0.0005,
-            output_cost_per_1k=0.0015,
-            aliases=["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k"],
-        ))
-        
-        # Anthropic Claude series
-        self.register_model(ModelDefinition(
-            id="claude-3-opus",
-            provider=ModelProvider.ANTHROPIC,
-            backend_id="claude-3-opus-20240229",
-            display_name="Claude 3 Opus",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.VISION,
-                ModelCapability.TOOL_USE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.PREMIUM,
-            context_window=200000,
-            max_output_tokens=4096,
-            input_cost_per_1k=0.015,
-            output_cost_per_1k=0.075,
-        ))
-        
-        self.register_model(ModelDefinition(
-            id="claude-3-sonnet",
-            provider=ModelProvider.ANTHROPIC,
-            backend_id="claude-3-sonnet-20240229",
-            display_name="Claude 3 Sonnet",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.VISION,
-                ModelCapability.TOOL_USE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.STANDARD,
-            context_window=200000,
-            max_output_tokens=4096,
-            input_cost_per_1k=0.003,
-            output_cost_per_1k=0.015,
-        ))
-        
-        self.register_model(ModelDefinition(
-            id="claude-3-haiku",
-            provider=ModelProvider.ANTHROPIC,
-            backend_id="claude-3-haiku-20240307",
-            display_name="Claude 3 Haiku",
-            capabilities={
-                ModelCapability.CHAT,
-                ModelCapability.VISION,
-                ModelCapability.TOOL_USE,
-                ModelCapability.STREAMING,
-            },
-            tier=ModelTier.ECONOMY,
-            context_window=200000,
-            max_output_tokens=4096,
-            input_cost_per_1k=0.00025,
-            output_cost_per_1k=0.00125,
-        ))
-        
-        # Embedding models
-        self.register_model(ModelDefinition(
-            id="text-embedding-3-small",
-            provider=ModelProvider.OPENAI,
-            backend_id="text-embedding-3-small",
-            display_name="Text Embedding 3 Small",
-            capabilities={ModelCapability.EMBEDDING},
-            tier=ModelTier.ECONOMY,
-            context_window=8191,
-            max_output_tokens=0,
-            input_cost_per_1k=0.00002,
-            output_cost_per_1k=0.0,
-        ))
-        
-        self.register_model(ModelDefinition(
-            id="text-embedding-3-large",
-            provider=ModelProvider.OPENAI,
-            backend_id="text-embedding-3-large",
-            display_name="Text Embedding 3 Large",
-            capabilities={ModelCapability.EMBEDDING},
-            tier=ModelTier.STANDARD,
-            context_window=8191,
-            max_output_tokens=0,
-            input_cost_per_1k=0.00013,
-            output_cost_per_1k=0.0,
-        ))
-    
-    def _register_default_backends(self) -> None:
-        """Register default backend definitions."""
-        
-        self.register_backend(BackendDefinition(
-            id="openai",
-            provider=ModelProvider.OPENAI,
-            base_url="https://api.openai.com/v1",
-            api_key_env="OPENAI_API_KEY",
-            priority=100,
-        ))
-        
-        self.register_backend(BackendDefinition(
-            id="anthropic",
-            provider=ModelProvider.ANTHROPIC,
-            base_url="https://api.anthropic.com",
-            api_key_env="ANTHROPIC_API_KEY",
-            priority=90,
-        ))
-        
-        self.register_backend(BackendDefinition(
-            id="sap_ai_core",
-            provider=ModelProvider.SAP_AI_CORE,
-            base_url="",  # Configured via environment
-            api_key_env="SAP_AI_CORE_API_KEY",
-            priority=80,
-        ))
+        )
     
     def register_model(self, model: ModelDefinition) -> None:
         """Register a model."""
         self._models[model.id] = model
-        
-        # Register aliases
-        for alias in model.aliases:
-            self._aliases[alias] = model.id
-        
-        logger.debug(f"Registered model: {model.id}")
     
-    def register_backend(self, backend: BackendDefinition) -> None:
-        """Register a backend."""
-        self._backends[backend.id] = backend
-        logger.debug(f"Registered backend: {backend.id}")
+    def register_alias(self, alias: str, model_id: str) -> None:
+        """Register a model alias."""
+        self._aliases[alias] = model_id
+    
+    def resolve_alias(self, model_id: str) -> str:
+        """Resolve model alias to canonical ID."""
+        return self._aliases.get(model_id, model_id)
     
     def get_model(self, model_id: str) -> Optional[ModelDefinition]:
-        """
-        Get model by ID or alias.
-        
-        Args:
-            model_id: Model ID or alias
-        
-        Returns:
-            Model definition or None if not found
-        """
-        # Direct lookup
-        if model_id in self._models:
-            return self._models[model_id]
-        
-        # Alias lookup
-        if model_id in self._aliases:
-            return self._models[self._aliases[model_id]]
-        
-        return None
+        """Get model by ID or alias."""
+        canonical_id = self.resolve_alias(model_id)
+        return self._models.get(canonical_id)
+    
+    def model_exists(self, model_id: str) -> bool:
+        """Check if model exists."""
+        canonical_id = self.resolve_alias(model_id)
+        return canonical_id in self._models
+    
+    def list_models(
+        self,
+        enabled_only: bool = True,
+    ) -> List[ModelDefinition]:
+        """List all models."""
+        models = list(self._models.values())
+        if enabled_only:
+            models = [m for m in models if m.enabled]
+        return models
+    
+    def list_chat_models(self) -> List[ModelDefinition]:
+        """List models with chat capability."""
+        return [
+            m for m in self.list_models()
+            if m.supports(ModelCapability.CHAT)
+        ]
+    
+    def list_embedding_models(self) -> List[ModelDefinition]:
+        """List models with embedding capability."""
+        return [
+            m for m in self.list_models()
+            if m.supports(ModelCapability.EMBEDDING)
+        ]
     
     def get_backend(self, backend_id: str) -> Optional[BackendDefinition]:
         """Get backend by ID."""
         return self._backends.get(backend_id)
     
-    def get_backend_for_model(self, model_id: str) -> Optional[BackendDefinition]:
+    def get_backend_for_model(
+        self,
+        model_id: str,
+    ) -> Optional[BackendDefinition]:
         """Get backend for a model."""
         model = self.get_model(model_id)
         if not model:
             return None
-        
-        # Find backend by provider
-        for backend in self._backends.values():
-            if backend.provider == model.provider and backend.enabled:
-                return backend
-        
-        return None
-    
-    def list_models(
-        self,
-        enabled_only: bool = True,
-        capability: Optional[ModelCapability] = None,
-        tier: Optional[ModelTier] = None,
-    ) -> List[ModelDefinition]:
-        """
-        List models with optional filtering.
-        
-        Args:
-            enabled_only: Only return enabled models
-            capability: Filter by capability
-            tier: Filter by tier
-        
-        Returns:
-            List of matching models
-        """
-        models = []
-        
-        for model in self._models.values():
-            if enabled_only and not model.enabled:
-                continue
-            if capability and not model.supports(capability):
-                continue
-            if tier and model.tier != tier:
-                continue
-            
-            models.append(model)
-        
-        return sorted(models, key=lambda m: m.id)
-    
-    def list_chat_models(self) -> List[ModelDefinition]:
-        """List models that support chat."""
-        return self.list_models(capability=ModelCapability.CHAT)
-    
-    def list_embedding_models(self) -> List[ModelDefinition]:
-        """List models that support embeddings."""
-        return self.list_models(capability=ModelCapability.EMBEDDING)
-    
-    def model_exists(self, model_id: str) -> bool:
-        """Check if model exists."""
-        return self.get_model(model_id) is not None
-    
-    def resolve_alias(self, model_id: str) -> str:
-        """Resolve model alias to canonical ID."""
-        if model_id in self._aliases:
-            return self._aliases[model_id]
-        return model_id
+        return self._backends.get(model.backend_id)
 
 
 # ========================================
-# Singleton Instance
+# Global Registry Instance
 # ========================================
 
 _registry: Optional[ModelRegistry] = None
@@ -532,5 +505,6 @@ __all__ = [
     "ModelDefinition",
     "BackendDefinition",
     "ModelRegistry",
+    "MangleFactsLoader",
     "get_model_registry",
 ]
