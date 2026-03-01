@@ -41,12 +41,44 @@ void FactorizationRewriter::visitOperator(planner::LogicalOperator* op) {
 }
 
 void FactorizationRewriter::visitHashJoin(planner::LogicalOperator* op) {
-    // TODO(Royi) correctly set the cardinality here
     auto& hashJoin = op->cast<LogicalHashJoin>();
     auto groupsPosToFlattenOnProbeSide = hashJoin.getGroupsPosToFlattenOnProbeSide();
     hashJoin.setChild(0, appendFlattens(hashJoin.getChild(0), groupsPosToFlattenOnProbeSide));
     auto groupsPosToFlattenOnBuildSide = hashJoin.getGroupsPosToFlattenOnBuildSide();
     hashJoin.setChild(1, appendFlattens(hashJoin.getChild(1), groupsPosToFlattenOnBuildSide));
+    // Propagate cardinality from children after flattening
+    // For hash join, cardinality is the product of probe and build cardinalities
+    // adjusted by selectivity (estimated as min(1.0, probe/build) for inner joins)
+    auto probeCardinality = hashJoin.getChild(0)->getCardinality();
+    auto buildCardinality = hashJoin.getChild(1)->getCardinality();
+    common::cardinality_t joinCardinality;
+    switch (hashJoin.getJoinType()) {
+    case common::JoinType::INNER:
+        // Inner join: estimate as smaller cardinality (conservative)
+        joinCardinality = std::min(probeCardinality, buildCardinality);
+        break;
+    case common::JoinType::LEFT:
+    case common::JoinType::LEFT_SINGLE:
+        // Left join: at least probe cardinality
+        joinCardinality = probeCardinality;
+        break;
+    case common::JoinType::MARK:
+        // Mark join: probe cardinality preserved
+        joinCardinality = probeCardinality;
+        break;
+    case common::JoinType::COUNT:
+        // Count join: probe cardinality
+        joinCardinality = probeCardinality;
+        break;
+    default:
+        // Conservative default: smaller of the two
+        joinCardinality = std::min(probeCardinality, buildCardinality);
+        break;
+    }
+    if (joinCardinality == 0) {
+        joinCardinality = 1; // Ensure non-zero cardinality
+    }
+    hashJoin.setCardinality(joinCardinality);
 }
 
 void FactorizationRewriter::visitIntersect(planner::LogicalOperator* op) {
@@ -181,8 +213,9 @@ std::shared_ptr<planner::LogicalOperator> FactorizationRewriter::appendFlattenIf
     if (op->getSchema()->getGroup(groupPos)->isFlat()) {
         return op;
     }
-    // we set the cardinalities in a separate pass
-    auto flatten = std::make_shared<LogicalFlatten>(groupPos, std::move(op), 0 /* cardinality */);
+    // Propagate cardinality from child - flatten preserves cardinality
+    auto childCardinality = op->getCardinality();
+    auto flatten = std::make_shared<LogicalFlatten>(groupPos, std::move(op), childCardinality);
     flatten->computeFactorizedSchema();
     return flatten;
 }
