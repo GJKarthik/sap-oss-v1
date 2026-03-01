@@ -47,6 +47,24 @@ except ImportError:
 ENABLE_SEMANTIC_CACHE = os.getenv("ENABLE_SEMANTIC_CACHE", "true").lower() == "true"
 ENABLE_REQUEST_BATCHING = os.getenv("ENABLE_REQUEST_BATCHING", "true").lower() == "true"
 
+# Import intelligence modules (Phase 2)
+try:
+    from intelligence.semantic_classifier import get_classifier
+    from intelligence.speculative import get_speculative_executor
+    from intelligence.model_selector import get_model_selector
+    INTELLIGENCE_AVAILABLE = True
+except ImportError:
+    INTELLIGENCE_AVAILABLE = False
+    get_classifier = None
+    get_speculative_executor = None
+    get_model_selector = None
+
+# Feature flags for Phase 2
+ENABLE_SEMANTIC_CLASSIFIER = os.getenv("ENABLE_SEMANTIC_CLASSIFIER", "true").lower() == "true"
+ENABLE_SPECULATIVE_EXECUTION = os.getenv("ENABLE_SPECULATIVE_EXECUTION", "true").lower() == "true"
+ENABLE_MODEL_SELECTION = os.getenv("ENABLE_MODEL_SELECTION", "true").lower() == "true"
+SPECULATIVE_THRESHOLD = int(os.getenv("SPECULATIVE_THRESHOLD", "75"))
+
 app = FastAPI(
     title="Mangle Query Service - OpenAI API",
     description="OpenAI-compatible API with Mangle routing rules",
@@ -1007,8 +1025,62 @@ async def health_check():
             "aicore": AICORE_URL,
             "hana": f"{HANA_HOST}:{HANA_PORT}" if HANA_HOST else "not configured"
         },
-        "routing_rules": ["routing.mg", "analytics_routing.mg", "governance.mg", "rag_enrichment.mg"]
+        "routing_rules": ["routing.mg", "analytics_routing.mg", "governance.mg", "rag_enrichment.mg"],
+        "features": {
+            "semantic_cache": ENABLE_SEMANTIC_CACHE and EFFICIENCY_AVAILABLE,
+            "request_batching": ENABLE_REQUEST_BATCHING and EFFICIENCY_AVAILABLE,
+            "semantic_classifier": ENABLE_SEMANTIC_CLASSIFIER and INTELLIGENCE_AVAILABLE,
+            "speculative_execution": ENABLE_SPECULATIVE_EXECUTION and INTELLIGENCE_AVAILABLE,
+            "model_selection": ENABLE_MODEL_SELECTION and INTELLIGENCE_AVAILABLE,
+        }
     }
+
+
+@app.get("/v1/stats")
+async def get_stats():
+    """Get statistics for efficiency and intelligence features (Phase 1 & 2)."""
+    stats = {
+        "phase1": {},
+        "phase2": {},
+        "features_enabled": {
+            "semantic_cache": ENABLE_SEMANTIC_CACHE,
+            "request_batching": ENABLE_REQUEST_BATCHING,
+            "semantic_classifier": ENABLE_SEMANTIC_CLASSIFIER,
+            "speculative_execution": ENABLE_SPECULATIVE_EXECUTION,
+            "model_selection": ENABLE_MODEL_SELECTION,
+        }
+    }
+    
+    # Phase 1 stats
+    if EFFICIENCY_AVAILABLE and semantic_cache:
+        try:
+            stats["phase1"]["semantic_cache"] = semantic_cache.get_stats()
+        except:
+            pass
+    
+    if EFFICIENCY_AVAILABLE and get_batched_client:
+        try:
+            client = await get_batched_client()
+            stats["phase1"]["batch_client"] = client.get_stats()
+        except:
+            pass
+    
+    # Phase 2 stats
+    if INTELLIGENCE_AVAILABLE and get_speculative_executor:
+        try:
+            executor = await get_speculative_executor()
+            stats["phase2"]["speculative_execution"] = executor.get_stats()
+        except:
+            pass
+    
+    if INTELLIGENCE_AVAILABLE and get_model_selector:
+        try:
+            selector = await get_model_selector()
+            stats["phase2"]["model_selection"] = selector.get_stats()
+        except:
+            pass
+    
+    return stats
 
 
 @app.get("/v1/routing/classify")
