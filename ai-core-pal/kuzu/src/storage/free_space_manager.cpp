@@ -1,5 +1,95 @@
 #include "storage/free_space_manager.h"
 
+/**
+ * P2-127: Free Space Manager - Buddy-Style Free Space Tracking
+ * 
+ * Purpose:
+ * Manages free page ranges using a buddy-system inspired leveled free list.
+ * Efficiently allocates and coalesces contiguous page ranges while minimizing
+ * fragmentation through power-of-2 level organization.
+ * 
+ * Architecture:
+ * ```
+ * FreeSpaceManager
+ *   ├── freeLists: vector<sorted_free_list_t>
+ *   │     └── Level i contains ranges with 2^i <= pages < 2^(i+1)
+ *   ├── uncheckpointedFreePageRanges: vector<PageRange>
+ *   │     └── Pending frees awaiting checkpoint
+ *   ├── numEntries: row_idx_t
+ *   └── needClearEvictedEntries: bool
+ * 
+ * Buddy-Style Levels:
+ *   Level 0: 1 page     (2^0)
+ *   Level 1: 2-3 pages  (2^1)
+ *   Level 2: 4-7 pages  (2^2)
+ *   Level n: 2^n to 2^(n+1)-1 pages
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. addFreePages(entry):
+ *    - Calculate level from numPages
+ *    - Insert into appropriate sorted free list
+ *    - O(log n) insertion into sorted set
+ * 
+ * 2. popFreePages(numPages):
+ *    - Start at getLevel(numPages)
+ *    - Search upward for suitable range
+ *    - Split if range is larger than needed
+ *    - Return allocated range, add remainder back
+ *    
+ * 3. splitPageRange(chunk, numRequired):
+ *    - Allocate first numRequired pages
+ *    - Add remainder as new free entry
+ *    - Enables best-fit allocation
+ * 
+ * 4. mergePageRanges():
+ *    - Sort all entries by startPageIdx
+ *    - Coalesce adjacent ranges
+ *    - Reduces fragmentation
+ *    - Called during finalizeCheckpoint()
+ * 
+ * 5. finalizeCheckpoint(fileHandle):
+ *    - Evict uncheckpointed pages from buffer
+ *    - Merge all ranges for defragmentation
+ *    - Truncate file if last range is at end
+ * 
+ * Allocation Example:
+ * ```
+ * Request: popFreePages(5)
+ *   Level = getLevel(5) = 2  (since 2^2 = 4 <= 5 < 8 = 2^3)
+ *   Search level 2, 3, 4... for range >= 5 pages
+ *   Found: {startPageIdx=100, numPages=8}
+ *   Split: return {100, 5}, add {105, 3} to level 1
+ * ```
+ * 
+ * Checkpoint Integration:
+ * ```
+ * Transaction commits free pages:
+ *   addUncheckpointedFreePages() → pending list
+ *   
+ * On checkpoint:
+ *   finalizeCheckpoint() → 
+ *     evict pages from buffer manager
+ *     merge all ranges
+ *     truncate file if possible
+ * 
+ * On rollback:
+ *   rollbackCheckpoint() → clear pending list
+ * ```
+ * 
+ * Serialization:
+ * - Writes all entries (startPageIdx, numPages) pairs
+ * - Includes both checkpointed and pending entries
+ * - Used for database persistence
+ * 
+ * Performance:
+ * - addFreePages: O(log n) per level
+ * - popFreePages: O(levels * log n) worst case
+ * - mergePageRanges: O(n log n) sort + O(n) merge
+ * - Space: O(n) where n = free ranges
+ */
+
 #include "common/serializer/deserializer.h"
 #include "common/serializer/in_mem_file_writer.h"
 #include "common/serializer/serializer.h"
