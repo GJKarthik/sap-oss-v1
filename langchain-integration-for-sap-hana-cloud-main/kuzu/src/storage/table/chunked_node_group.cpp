@@ -1,5 +1,89 @@
 #include "storage/table/chunked_node_group.h"
 
+/**
+ * P3-186: ChunkedNodeGroup - Batched Row Storage Unit
+ * 
+ * Purpose:
+ * Container for column chunks holding up to 8K rows. Serves as the
+ * fundamental unit of storage below NodeGroup (64K) level.
+ * 
+ * Architecture:
+ * ```
+ * ChunkedNodeGroup (8K rows, CHUNKED_NODE_GROUP_CAPACITY)
+ *   ├── format: NodeGroupDataFormat (REGULAR or CSR)
+ *   ├── residencyState: ResidencyState (IN_MEMORY or ON_DISK)
+ *   ├── startRowIdx: row_idx_t
+ *   ├── capacity: uint64_t
+ *   ├── numRows: atomic<row_idx_t>
+ *   ├── chunks: vector<ColumnChunk>
+ *   └── versionInfo: VersionInfo
+ * 
+ * InMemChunkedNodeGroup (for copy pipelines)
+ *   ├── startRowIdx, numRows, capacity
+ *   ├── chunks: vector<ColumnChunkData>
+ *   ├── dataInUse: bool (for spilling)
+ *   └── spillToDiskMutex
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. append():
+ *    - Add rows to column chunks
+ *    - Track in version info if transactional
+ *    - Handle capacity overflow
+ * 
+ * 2. scan():
+ *    - Check zone map for skip optimization
+ *    - Get selection vector from version info
+ *    - Scan each column chunk
+ * 
+ * 3. lookup():
+ *    - Check visibility via version info
+ *    - Lookup single row from each chunk
+ * 
+ * 4. update():
+ *    - Delegate to column chunk update
+ *    - Track in update info
+ * 
+ * 5. delete_():
+ *    - Mark deleted in version info
+ *    - Does not physically remove
+ * 
+ * 6. flush():
+ *    - Convert IN_MEMORY to ON_DISK
+ *    - Split if needed
+ *    - Write to page allocator
+ * 
+ * Residency States:
+ * | State | Location | Mutable | Use Case |
+ * |-------|----------|---------|----------|
+ * | IN_MEMORY | RAM | Yes | Active writes |
+ * | ON_DISK | File | No* | Committed data |
+ * * Updates go through update info
+ * 
+ * Version Info Integration:
+ * ```
+ * append() → versionInfo->append(txID, startRow, count)
+ * delete_() → versionInfo->delete_(txID, rowIdx)
+ * scan() → versionInfo->getSelVectorToScan()
+ * lookup() → versionInfo->isSelected()
+ * ```
+ * 
+ * Zone Map Optimization:
+ * - getZoneMapResult() checks column predicates
+ * - SKIP_SCAN: All rows filtered out
+ * - ALWAYS_SCAN: Need to check actual values
+ * 
+ * Exception Handling:
+ * - handleAppendException() truncates on failure
+ * - Ensures chunk consistency after errors
+ * 
+ * Spilling (InMemChunkedNodeGroup):
+ * - setUnused() marks for potential spill
+ * - spillToDisk() writes to temp storage
+ * - loadFromDisk() restores when needed
+ */
+
 #include <exception>
 
 #include "common/assert.h"
