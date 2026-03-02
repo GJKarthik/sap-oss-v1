@@ -1,5 +1,103 @@
 #include "storage/table/table.h"
 
+/**
+ * P2-115: Base Table Class - Abstract Storage Interface
+ * 
+ * Purpose:
+ * Defines the abstract base class and state objects for all table types
+ * in the storage layer. Provides common infrastructure for NodeTable
+ * and RelTable implementations.
+ * 
+ * Class Hierarchy:
+ * ```
+ * Table (abstract base)
+ *   ├── NodeTable      // Vertex storage
+ *   └── RelTable       // Edge storage
+ * 
+ * TableScanState (base scan state)
+ *   ├── NodeTableScanState
+ *   └── RelTableScanState
+ * 
+ * TableInsertState / TableUpdateState / TableDeleteState
+ *   ├── NodeTable variants
+ *   └── RelTable variants
+ * ```
+ * 
+ * Table Base Class Members:
+ * ```
+ * Table
+ *   ├── tableType: TableType       // NODE or REL
+ *   ├── tableID: table_id_t        // Unique identifier
+ *   ├── tableName: string          // Human-readable name
+ *   ├── enableCompression: bool    // Storage compression flag
+ *   ├── memoryManager: MemoryManager*
+ *   ├── shadowFile: ShadowFile*    // Write-ahead logging
+ *   └── hasChanges: bool           // Dirty flag for checkpoint
+ * ```
+ * 
+ * TableScanState:
+ * - outputVectors: Target vectors for scan results
+ * - outState: Shared state for output vectors
+ * - table: Reference to table being scanned
+ * - columnIDs: Which columns to scan
+ * - columnPredicateSets: Filter predicates per column
+ * - nodeGroupScanState: Current node group scan position
+ * 
+ * Key Abstract Methods (implemented by subclasses):
+ * - scan(): Iterate through table rows
+ * - initScanState(): Prepare scan state
+ * - insert(): Add new rows
+ * - update(): Modify existing rows
+ * - delete_(): Remove rows
+ * - checkpoint(): Persist changes to disk
+ * - commit(): Apply transaction changes
+ * 
+ * State Object Lifecycle:
+ * ```
+ * 1. InsertState created with property vectors
+ * 2. Passed to table.insert(transaction, state)
+ * 3. State tracks logToWAL flag for durability
+ * 4. State destroyed after operation
+ * ```
+ * 
+ * Common Utilities:
+ * 
+ * 1. resetOutVectors():
+ *    Clears auxiliary buffers and resets selection vectors.
+ *    Called before each scan batch.
+ * 
+ * 2. setToTable():
+ *    Binds scan state to specific table and columns.
+ *    Initializes chunk states for each column.
+ * 
+ * 3. constructDataChunk():
+ *    Creates DataChunk with typed ValueVectors.
+ *    Used for bulk data transfer operations.
+ * 
+ * Design Patterns:
+ * 
+ * 1. Template Method Pattern:
+ *    scan() calls scanInternal() which is overridden.
+ * 
+ * 2. State Object Pattern:
+ *    Operations take state objects rather than many parameters.
+ *    Enables flexible configuration and future extension.
+ * 
+ * 3. WAL Integration:
+ *    logToWAL flag on state objects controls durability.
+ *    Can be disabled for bulk operations.
+ * 
+ * Thread Safety:
+ * - Table objects are NOT thread-safe by themselves
+ * - Transactions provide isolation
+ * - Concurrent access via transaction isolation
+ * 
+ * Extension Points:
+ * - New table types can inherit from Table
+ * - State objects can be extended with type-specific data
+ * - Predicate pushdown via columnPredicateSets
+ */
+
 #include "storage/storage_manager.h"
 #include "storage/table/node_table.h"
 #include "storage/table/rel_table.h"
