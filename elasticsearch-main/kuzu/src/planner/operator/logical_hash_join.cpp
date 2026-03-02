@@ -191,15 +191,16 @@ bool LogicalHashJoin::requireFlatProbeKeys() const {
     if (joinConditions.size() > 1) {
         return true;
     }
-    // Flatten for left join.
-    if (joinType == JoinType::LEFT || joinType == JoinType::COUNT) {
-        return true; // TODO(Guodong): fix this. We shouldn't require flatten.
-    }
     auto& [probeKey, buildKey] = joinConditions[0];
     // Flatten for non-ID-based join.
     if (probeKey->dataType.getLogicalTypeID() != LogicalTypeID::INTERNAL_ID) {
         return true;
     }
+    // For LEFT/COUNT joins with single ID-based key:
+    // - If build side has unique keys (e.g., from a node table scan), we can avoid flatten
+    // - This is because each probe key will match at most one build tuple
+    // For INNER joins: same uniqueness check applies
+    // Only flatten if the build side key is NOT unique
     return !JoinNodeIDUniquenessAnalyzer::isUnique(children[1].get(), *buildKey);
 }
 
