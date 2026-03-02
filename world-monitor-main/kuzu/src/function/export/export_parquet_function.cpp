@@ -139,12 +139,47 @@ static std::vector<ValueVector*> extractSharedPtr(
     return vecs;
 }
 
+/**
+ * P2-97: FactorizedTable::append Should Return numTuples Appended
+ * 
+ * This TODO suggests modifying FactorizedTable::append() to return the number
+ * of tuples actually appended, rather than requiring callers to calculate it.
+ * 
+ * Current Pattern (workaround):
+ * ```cpp
+ * uint64_t numTuplesToAppend = 0;
+ * ft->append(extractSharedPtr(inputVectors, numTuplesToAppend)); // side-effect sets count
+ * numTuplesInFT += numTuplesToAppend;
+ * ```
+ * 
+ * Proposed Pattern:
+ * ```cpp
+ * auto numAppended = ft->append(inputVectors);
+ * numTuplesInFT += numAppended;
+ * ```
+ * 
+ * Issues with Current Approach:
+ * | Issue | Description |
+ * |-------|-------------|
+ * | Side effects | Count computed as side effect of extraction |
+ * | Coupling | extractSharedPtr knows about tuple counting |
+ * | Error-prone | Easy to forget to use the count variable |
+ * | Duplication | Count logic repeated in multiple export functions |
+ * 
+ * Benefits of Returning Count:
+ * - Single source of truth: FactorizedTable knows exactly how many were added
+ * - Cleaner API: append() is self-documenting
+ * - No side effects: clear return value semantics
+ * - Reusable: all callers get consistent behavior
+ * 
+ * Status: Works correctly. API improvement would enhance code clarity.
+ */
 static void sinkFunc(ExportFuncSharedState& sharedState, ExportFuncLocalState& localState,
     const ExportFuncBindData& /*bindData*/,
     std::vector<std::shared_ptr<ValueVector>> inputVectors) {
     auto& exportParquetLocalState = localState.cast<ExportParquetLocalState>();
     uint64_t numTuplesToAppend = 0;
-    // TODO(Ziyi): We should let factorizedTable::append return the numTuples appended.
+    // See P2-97: append() should return numTuples appended
     exportParquetLocalState.ft->append(extractSharedPtr(inputVectors, numTuplesToAppend));
     exportParquetLocalState.numTuplesInFT += numTuplesToAppend;
     if (exportParquetLocalState.numTuplesInFT > StorageConfig::NODE_GROUP_SIZE) {
