@@ -1,5 +1,104 @@
 #include "storage/buffer_manager/vm_region.h"
 
+/**
+ * P3-212: VMRegion - Virtual Memory Region Management
+ * 
+ * Purpose:
+ * Manages a large virtual memory region for buffer pool frames.
+ * Uses OS-level memory mapping (mmap/VirtualAlloc) to reserve
+ * address space without committing physical memory.
+ * 
+ * Architecture:
+ * ```
+ * VMRegion {
+ *   region: uint8_t*              // Base address of VM region
+ *   frameSize: uint64_t           // Size per frame
+ *   maxNumFrameGroups: uint64_t   // Max groups in region
+ *   numFrameGroups: uint64_t      // Currently allocated groups
+ *   mtx: mutex                    // Thread safety
+ * }
+ * ```
+ * 
+ * Frame Size Classes:
+ * | PageSizeClass | Size |
+ * |---------------|------|
+ * | REGULAR_PAGE | KUZU_PAGE_SIZE (4KB) |
+ * | TEMP_PAGE | TEMP_PAGE_SIZE (256KB) |
+ * 
+ * Constructor Algorithm:
+ * ```
+ * VMRegion(pageSizeClass, maxRegionSize):
+ *   frameSize = pageSizeClass == REGULAR ? 4KB : 256KB
+ *   bytesPerFrameGroup = frameSize * PAGE_GROUP_SIZE
+ *   maxNumFrameGroups = ceil(maxRegionSize / bytesPerFrameGroup)
+ *   
+ *   #ifdef _WIN32:
+ *     region = VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_READWRITE)
+ *   #else:
+ *     region = mmap(NULL, size, PROT_READ|PROT_WRITE,
+ *                   MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0)
+ *   
+ *   IF failed: THROW BufferManagerException
+ * ```
+ * 
+ * MEM_RESERVE vs MAP_NORESERVE:
+ * - Reserve virtual address space
+ * - Do NOT commit physical memory yet
+ * - Physical pages allocated on first access (lazy)
+ * 
+ * releaseFrame() - Return Physical Memory:
+ * ```
+ * releaseFrame(frameIdx):
+ *   framePtr = getFrame(frameIdx)
+ *   
+ *   #ifdef _WIN32:
+ *     VirtualFree(framePtr, frameSize, MEM_DECOMMIT)
+ *   #else:
+ *     madvise(framePtr, frameSize, MADV_DONTNEED)
+ *   
+ *   // Physical memory released back to OS
+ *   // Virtual address still valid (can re-access)
+ * ```
+ * 
+ * addNewFrameGroup() Algorithm:
+ * ```
+ * addNewFrameGroup():
+ *   LOCK mtx
+ *   IF numFrameGroups >= maxNumFrameGroups:
+ *     THROW BufferManagerException
+ *   RETURN numFrameGroups++
+ * ```
+ * 
+ * Destructor:
+ * ```
+ * ~VMRegion():
+ *   #ifdef _WIN32: VirtualFree(region, 0, MEM_RELEASE)
+ *   #else: munmap(region, maxRegionSize)
+ * ```
+ * 
+ * Memory Layout:
+ * ```
+ * region base
+ *   │
+ *   ├── Frame Group 0
+ *   │     ├── Frame 0
+ *   │     ├── Frame 1
+ *   │     └── ... (PAGE_GROUP_SIZE frames)
+ *   ├── Frame Group 1
+ *   │     └── ...
+ *   └── ...
+ * ```
+ * 
+ * Usage:
+ * ```cpp
+ * VMRegion region(PageSizeClass::REGULAR_PAGE, 1GB);
+ * auto groupIdx = region.addNewFrameGroup();
+ * uint8_t* frame = region.getFrame(groupIdx * PAGE_GROUP_SIZE);
+ * // Use frame...
+ * region.releaseFrame(frameIdx);  // Return physical memory
+ * ```
+ */
+
 #include "common/string_format.h"
 #include "common/system_config.h"
 #include "common/system_message.h"
