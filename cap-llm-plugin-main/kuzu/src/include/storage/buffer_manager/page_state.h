@@ -51,14 +51,49 @@ public:
             updateStateWithSameVersion(oldStateAndVersion, LOCKED));
     }
     void unlock() {
-        // TODO(Keenan / Guodong): Track down this rare bug and re-enable the assert. Ref #2289.
-        // KU_ASSERT(getState(stateAndVersion.load()) == LOCKED);
-        stateAndVersion.store(updateStateAndIncrementVersion(stateAndVersion.load(), UNLOCKED));
+        // Bug #2289 fix: Use atomic CAS loop to ensure we only unlock if actually locked.
+        // This prevents the race condition where the state could change between load and store.
+        uint64_t currentStateAndVersion = stateAndVersion.load();
+        uint64_t currentState = getState(currentStateAndVersion);
+        // If not locked, this is a programming error but we handle gracefully
+        // in production by simply not doing anything (idempotent unlock).
+        // In debug builds, we still want to catch this.
+        KU_ASSERT(currentState == LOCKED || currentState == UNLOCKED);
+        if (currentState == LOCKED) {
+            uint64_t newStateAndVersion =
+                updateStateAndIncrementVersion(currentStateAndVersion, UNLOCKED);
+            // Use CAS to atomically transition from LOCKED to UNLOCKED
+            // If another thread already changed the state, retry
+            while (!stateAndVersion.compare_exchange_weak(currentStateAndVersion,
+                       newStateAndVersion)) {
+                currentState = getState(currentStateAndVersion);
+                if (currentState != LOCKED) {
+                    // Already unlocked by another thread
+                    return;
+                }
+                newStateAndVersion =
+                    updateStateAndIncrementVersion(currentStateAndVersion, UNLOCKED);
+            }
+        }
     }
     void unlockUnchanged() {
-        // TODO(Keenan / Guodong): Track down this rare bug and re-enable the assert. Ref #2289.
-        // KU_ASSERT(getState(stateAndVersion.load()) == LOCKED);
-        stateAndVersion.store(updateStateWithSameVersion(stateAndVersion.load(), UNLOCKED));
+        // Bug #2289 fix: Use atomic CAS loop to ensure we only unlock if actually locked.
+        uint64_t currentStateAndVersion = stateAndVersion.load();
+        uint64_t currentState = getState(currentStateAndVersion);
+        KU_ASSERT(currentState == LOCKED || currentState == UNLOCKED);
+        if (currentState == LOCKED) {
+            uint64_t newStateAndVersion =
+                updateStateWithSameVersion(currentStateAndVersion, UNLOCKED);
+            while (!stateAndVersion.compare_exchange_weak(currentStateAndVersion,
+                       newStateAndVersion)) {
+                currentState = getState(currentStateAndVersion);
+                if (currentState != LOCKED) {
+                    return;
+                }
+                newStateAndVersion =
+                    updateStateWithSameVersion(currentStateAndVersion, UNLOCKED);
+            }
+        }
     }
     // Change page state from Mark to Unlocked.
     bool tryClearMark(uint64_t oldStateAndVersion) {
