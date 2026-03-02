@@ -1,5 +1,90 @@
 #include "catalog/catalog_entry/index_catalog_entry.h"
 
+/**
+ * P3-144: IndexCatalogEntry - Secondary Index Metadata
+ * 
+ * Purpose:
+ * Catalog entry for secondary indexes on node table properties.
+ * Stores index definition, target table/properties, and auxiliary
+ * index-specific data for lazy loading.
+ * 
+ * Architecture:
+ * ```
+ * CatalogEntry (base)
+ *   └── IndexCatalogEntry
+ *         ├── type: string              // Index type (e.g., "HNSW")
+ *         ├── tableID: table_id_t       // Target node table
+ *         ├── indexName: string         // User-defined name
+ *         ├── propertyIDs: vector<property_id_t>  // Indexed properties
+ *         ├── auxInfo: unique_ptr<IndexAuxInfo>   // Loaded index data
+ *         ├── auxBuffer: unique_ptr<uint8_t[]>    // Serialized index
+ *         └── auxBufferSize: uint64_t
+ * ```
+ * 
+ * Index States:
+ * ```
+ * Loaded:   auxInfo != nullptr (index structure in memory)
+ * Unloaded: auxBuffer != nullptr (serialized form on disk)
+ * 
+ * isLoaded() → auxInfo != nullptr
+ * ```
+ * 
+ * Internal Name:
+ * ```
+ * getInternalIndexName(tableID, indexName):
+ *   → "{tableID}_{indexName}"
+ * 
+ * Example: Table 5, Index "vec_idx"
+ *   → "5_vec_idx"
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. setAuxInfo(auxInfo):
+ *    - Set loaded index structure
+ *    - Clears auxBuffer (now loaded)
+ * 
+ * 2. containsPropertyID(propertyID):
+ *    - Check if property is indexed
+ *    - Used for query optimization
+ * 
+ * 3. serialize():
+ *    - If loaded: serialize auxInfo via BufferWriter
+ *    - If unloaded: write auxBuffer directly
+ * 
+ * 4. deserialize():
+ *    - Read metadata + auxBuffer
+ *    - Index stays unloaded until query needs it
+ * 
+ * 5. getAuxBufferReader():
+ *    - Create BufferReader for lazy index loading
+ *    - Throws if auxBuffer not set
+ * 
+ * 6. copyFrom():
+ *    - Deep copy including auxInfo
+ *    - For version chain management
+ * 
+ * IndexAuxInfo (base class):
+ * - Virtual serialize() → returns BufferWriter
+ * - Subclassed by specific index types (HNSW, etc.)
+ * 
+ * Usage:
+ * ```cpp
+ * // Create index
+ * CREATE INDEX vec_idx ON Person(embedding) USING HNSW
+ * 
+ * // Lookup
+ * auto* idx = catalog->getIndex(txn, tableID, "vec_idx");
+ * if (!idx->isLoaded()) {
+ *     auto reader = idx->getAuxBufferReader();
+ *     // Load index structure from reader
+ * }
+ * ```
+ * 
+ * Entry Type:
+ * - CatalogEntryType::INDEX_ENTRY
+ */
+
 #include "common/exception/runtime.h"
 #include "common/serializer/buffer_writer.h"
 
