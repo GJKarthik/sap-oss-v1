@@ -1,5 +1,92 @@
 #include "storage/table/rel_table.h"
 
+/**
+ * P3-180: RelTable - Relationship Storage Implementation
+ * 
+ * Purpose:
+ * Implements the storage layer for relationship (edge) tables in the graph database.
+ * Uses CSR (Compressed Sparse Row) format for efficient adjacency list storage.
+ * 
+ * Architecture:
+ * ```
+ * RelTable
+ *   ├── directedRelData: vector<RelTableData>  // FWD and/or BWD storage
+ *   ├── fromNodeTableID, toNodeTableID
+ *   ├── relGroupID: table_id_t                 // Parent rel group
+ *   └── nextRelOffset: offset_t                // Next rel ID
+ * 
+ * RelTableScanState
+ *   ├── direction: RelDataDirection            // FWD or BWD
+ *   ├── nodeIDVector: ValueVector*             // Bound node IDs
+ *   ├── csrOffsetColumn, csrLengthColumn       // CSR metadata
+ *   ├── localTableScanState                    // Uncommitted data
+ *   └── cachedBoundNodeSelVector               // Selection optimization
+ * ```
+ * 
+ * CSR Storage Layout:
+ * ```
+ * For node N with edges to M1, M2, M3:
+ *   CSR Offset[N] = start index in edges array
+ *   CSR Length[N] = 3 (number of edges)
+ *   Edges[offset..offset+3] = [M1, M2, M3]
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. INSERT:
+ *    - Check multiplicity constraint (MANY/ONE)
+ *    - Insert to local storage
+ *    - Log to WAL
+ * 
+ * 2. UPDATE:
+ *    - If uncommitted (high offset): update local
+ *    - Else: update both FWD and BWD directions
+ * 
+ * 3. DELETE:
+ *    - If uncommitted: delete from local
+ *    - Else: delete from both directions
+ * 
+ * 4. DETACH DELETE:
+ *    - Delete all edges from a source node
+ *    - Scan CSR, delete each rel individually
+ *    - Handles reverse direction cleanup
+ * 
+ * 5. SCAN:
+ *    - Iterate CSR for bound nodes
+ *    - Check committed then uncommitted data
+ * 
+ * Direction Storage:
+ * | Mode | Storage | Description |
+ * |------|---------|-------------|
+ * | BOTH | FWD+BWD | Full bidirectional |
+ * | FWD_ONLY | FWD | Forward only |
+ * | BWD_ONLY | BWD | Backward only |
+ * 
+ * Multiplicity Constraints:
+ * | Type | Meaning |
+ * |------|---------|
+ * | MANY_MANY | No constraint |
+ * | MANY_ONE | Max 1 outgoing per node |
+ * | ONE_MANY | Max 1 incoming per node |
+ * | ONE_ONE | Max 1 both directions |
+ * 
+ * Commit Process:
+ * ```
+ * commit(localRelTable)
+ *   │
+ *   ├── updateRelOffsets() → assign committed IDs
+ *   │
+ *   └── For each direction:
+ *         └── prepareCommitForNodeGroup()
+ *               └── Append local rows to CSR
+ * ```
+ * 
+ * Offset Management:
+ * - Uncommitted: offset >= MAX_NUM_ROWS_IN_TABLE
+ * - Committed: actual offset in storage
+ * - getCommittedOffset() converts at commit time
+ */
+
 #include <algorithm>
 
 #include "catalog/catalog_entry/rel_group_catalog_entry.h"
