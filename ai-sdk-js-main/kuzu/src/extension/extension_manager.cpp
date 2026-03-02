@@ -1,5 +1,83 @@
 #include "extension/extension_manager.h"
 
+/**
+ * P3-166: ExtensionManager - Extension Loading and Management
+ * 
+ * Purpose:
+ * Manages the loading, registration, and lifecycle of database extensions.
+ * Extensions can add new functions, storage backends, and configuration options.
+ * 
+ * Architecture:
+ * ```
+ * ExtensionManager
+ *   ├── loadedExtensions: vector<LoadedExtension>
+ *   ├── extensionOptions: map<name, ExtensionOption>
+ *   └── storageExtensions: map<name, StorageExtension>
+ * ```
+ * 
+ * Extension Loading Flow:
+ * ```
+ * LOAD EXTENSION 'extension_name'
+ *   │
+ *   ├── 1. Check if official extension
+ *   │     └── If yes, get from official path
+ *   │
+ *   ├── 2. Execute extension loader (if exists)
+ *   │
+ *   ├── 3. Load shared library
+ *   │     ├── ExtensionLibLoader loads .so/.dylib
+ *   │     ├── Get name function
+ *   │     └── Get init function
+ *   │
+ *   ├── 4. Check if already loaded
+ *   │     └── If yes, unload and return
+ *   │
+ *   ├── 5. Call init function
+ *   │
+ *   ├── 6. Add to loadedExtensions
+ *   │
+ *   └── 7. Log to WAL if needed
+ * ```
+ * 
+ * Extension Sources:
+ * | Source | Description |
+ * |--------|-------------|
+ * | OFFICIAL | Built-in Kuzu extensions |
+ * | USER | User-provided extensions |
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | loadExtension() | Load extension from path |
+ * | addExtensionOption() | Register config option |
+ * | getExtensionOption() | Get option by name |
+ * | registerStorageExtension() | Add storage backend |
+ * | getStorageExtensions() | Get all storage backends |
+ * | autoLoadLinkedExtensions() | Load linked extensions |
+ * | toCypher() | Generate LOAD statements |
+ * 
+ * Extension Options:
+ * - Extensions can register configuration options
+ * - Options have name, type, default value
+ * - isConfidential flag hides values from display
+ * 
+ * Storage Extensions:
+ * - Provide custom storage backends
+ * - Enable external data sources
+ * - Registered by name
+ * 
+ * WAL Logging:
+ * - Extension loads are logged to WAL
+ * - Enables replay during recovery
+ * - Uses logLoadExtension()
+ * 
+ * Usage:
+ * ```sql
+ * LOAD EXTENSION httpfs;
+ * LOAD EXTENSION '/path/to/extension.so';
+ * ```
+ */
+
 #include "common/file_system/virtual_file_system.h"
 #include "common/string_utils.h"
 #include "extension/extension.h"
