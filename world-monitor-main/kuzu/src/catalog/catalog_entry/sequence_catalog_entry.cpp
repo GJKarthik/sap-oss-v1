@@ -1,5 +1,88 @@
 #include "catalog/catalog_entry/sequence_catalog_entry.h"
 
+/**
+ * P3-143: SequenceCatalogEntry - Sequence (Auto-Increment) Metadata
+ * 
+ * Purpose:
+ * Manages sequence objects that generate unique integer values.
+ * Used for SERIAL columns (auto-increment) and explicit sequences.
+ * Thread-safe with transactional rollback support.
+ * 
+ * Architecture:
+ * ```
+ * CatalogEntry (base)
+ *   └── SequenceCatalogEntry
+ *         ├── sequenceData: SequenceData
+ *         │     ├── usageCount: uint64_t   // Number of nextval calls
+ *         │     ├── currVal: int64_t       // Current sequence value
+ *         │     ├── increment: int64_t     // Step size (can be negative)
+ *         │     ├── startValue: int64_t    // Initial value
+ *         │     ├── minValue: int64_t      // Lower bound
+ *         │     ├── maxValue: int64_t      // Upper bound
+ *         │     └── cycle: bool            // Wrap around at bounds
+ *         └── mtx: mutex                   // Thread-safe access
+ * ```
+ * 
+ * Sequence State:
+ * ```
+ * CREATE SEQUENCE counter START 1 INCREMENT 1 MINVALUE 1 MAXVALUE 1000
+ *   ├── startValue = 1
+ *   ├── increment = 1
+ *   ├── minValue = 1
+ *   ├── maxValue = 1000
+ *   └── cycle = false (default)
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. currVal():
+ *    - Return current value
+ *    - Throws if sequence never used (usageCount == 0)
+ * 
+ * 2. nextValNoLock():
+ *    - Advance sequence by increment
+ *    - Handle overflow with cycle or throw error
+ *    - First call initializes to startValue
+ * 
+ * 3. nextKVal(transaction, count, [resultVector]):
+ *    - Advance K values in batch
+ *    - Push rollback data to transaction
+ *    - Optionally fill result vector with values
+ * 
+ * 4. rollbackVal(usageCount, currVal):
+ *    - Restore sequence state on transaction rollback
+ * 
+ * Cycle Behavior:
+ * ```
+ * cycle = true:
+ *   At maxValue → wrap to minValue
+ *   At minValue (negative increment) → wrap to maxValue
+ * 
+ * cycle = false:
+ *   At bounds → throw CatalogException
+ * ```
+ * 
+ * SERIAL Integration:
+ * ```
+ * CREATE TABLE Person (id SERIAL, ...)
+ *   └── Creates internal sequence: __serial_Person_id
+ *   └── INSERT auto-calls nextval('__serial_Person_id')
+ * ```
+ * 
+ * Thread Safety:
+ * - std::lock_guard on mtx for all operations
+ * - Ensures atomic sequence value generation
+ * 
+ * Transactional Rollback:
+ * ```
+ * nextKVal() → transaction.pushSequenceChange()
+ *   └── On rollback: rollbackVal(savedUsageCount, savedCurrVal)
+ * ```
+ * 
+ * Entry Type:
+ * - CatalogEntryType::SEQUENCE_ENTRY
+ */
+
 #include "binder/ddl/bound_create_sequence_info.h"
 #include "common/exception/catalog.h"
 #include "common/exception/overflow.h"
