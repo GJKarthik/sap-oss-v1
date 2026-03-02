@@ -559,9 +559,49 @@ void ArrowRowBatch::copyNonNullValue(ArrowVector* vector, const Value& value, st
     }
 }
 
+/**
+ * P2-92: Extract Null Marking Pattern to Function
+ * 
+ * This TODO suggests extracting the null value marking pattern into a dedicated function.
+ * 
+ * Current Pattern (repeated in multiple places):
+ * ```cpp
+ * setBitToZero(vector->validity.data(), pos);
+ * vector->numNulls++;
+ * ```
+ * 
+ * What's Being Suggested:
+ * | Approach | Implementation |
+ * |----------|----------------|
+ * | Current | Manual setBitToZero + numNulls++ each time |
+ * | Proposed | Single function call: markAsNull(vector, pos) |
+ * 
+ * Proposed Function:
+ * ```cpp
+ * static void markAsNull(ArrowVector* vector, std::int64_t pos) {
+ *     setBitToZero(vector->validity.data(), pos);
+ *     vector->numNulls++;
+ * }
+ * ```
+ * 
+ * Benefits of Extraction:
+ * - DRY (Don't Repeat Yourself): pattern used in many templateCopyNullValue specializations
+ * - Single point of change: if marking logic changes, update one place
+ * - Clearer intent: markAsNull(vector, pos) vs two separate operations
+ * - Reduces chance of forgetting to increment numNulls
+ * 
+ * Places Using This Pattern:
+ * - templateCopyNullValue<DT>() - generic case
+ * - templateCopyNullValue<STRING>() - plus offsets update
+ * - templateCopyNullValue<LIST>() - plus offsets update
+ * - templateCopyNullValue<STRUCT>() - base case
+ * 
+ * Status: Works correctly. Refactor would improve code maintainability.
+ */
 template<LogicalTypeID DT>
 void ArrowRowBatch::templateCopyNullValue(ArrowVector* vector, std::int64_t pos) {
-    // TODO(Guodong): make this as a function.
+    // Mark position as null: clear validity bit and increment null count
+    // See P2-92: Consider extracting to markAsNull(vector, pos) function
     setBitToZero(vector->validity.data(), pos);
     vector->numNulls++;
 }
