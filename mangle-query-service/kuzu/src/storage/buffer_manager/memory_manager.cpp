@@ -1,5 +1,72 @@
 #include "storage/buffer_manager/memory_manager.h"
 
+/**
+ * P3-172: MemoryManager - Temporary Memory Allocation
+ * 
+ * Purpose:
+ * Manages temporary memory allocations for query processing. Provides
+ * memory buffers that can be spilled to disk under memory pressure.
+ * 
+ * Architecture:
+ * ```
+ * MemoryManager
+ *   ├── bm: BufferManager*        // Underlying buffer manager
+ *   ├── fh: FileHandle*           // Temp file (mm-256KB)
+ *   ├── freePages: stack<page_idx_t>
+ *   ├── pageSize: 256KB (TEMP_PAGE_SIZE)
+ *   └── allocatorLock: mutex
+ * ```
+ * 
+ * Memory Buffer Lifecycle:
+ * ```
+ * 1. allocateBuffer(size)
+ *    │
+ *    ├── If size != TEMP_PAGE_SIZE:
+ *    │     └── malloc directly (non-evictable)
+ *    │
+ *    └── Else (256KB):
+ *          ├── Check freePages stack
+ *          │     ├── If empty: addNewPage()
+ *          │     └── Else: pop from freePages
+ *          └── pin page → return buffer
+ * 
+ * 2. ~MemoryBuffer() (destruction)
+ *    └── freeBlock() + updateUsedMemoryForFreedBlock()
+ * 
+ * 3. setSpilledToDisk(filePosition)
+ *    └── Free buffer, mark as evicted
+ * 
+ * 4. prepareLoadFromDisk()
+ *    └── Re-allocate buffer for reload
+ * ```
+ * 
+ * Two Allocation Paths:
+ * | Size | Path | Evictable |
+ * |------|------|-----------|
+ * | 256KB | BufferManager page | Yes |
+ * | Other | Direct malloc | No |
+ * 
+ * SpillResult:
+ * - Returned when buffer spills to disk
+ * - Contains memory freed info
+ * - Used by spiller to track resources
+ * 
+ * Memory Tracking:
+ * - Reserve memory via BufferManager
+ * - Track nonEvictableMemory for malloc'd blocks
+ * - Free pages returned to freePages stack
+ * 
+ * Thread Safety:
+ * - allocatorLock protects freePages stack
+ * - BufferManager handles page-level concurrency
+ * 
+ * Static Access:
+ * ```cpp
+ * MemoryManager* mm = MemoryManager::Get(clientContext);
+ * auto buffer = mm->allocateBuffer(true, 256*1024);
+ * ```
+ */
+
 #include <mutex>
 
 #include "common/exception/buffer_manager.h"
