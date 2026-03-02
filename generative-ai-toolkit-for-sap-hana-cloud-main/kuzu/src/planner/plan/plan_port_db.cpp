@@ -25,7 +25,52 @@ std::vector<std::shared_ptr<LogicalOperator>> Planner::planExportTableData(
     auto& boundExportDatabase = statement.constCast<BoundExportDatabase>();
     auto fileTypeStr = FileTypeUtils::toString(boundExportDatabase.getFileType());
     StringUtils::toLower(fileTypeStr);
-    // TODO(Ziyi): Shouldn't these be done in Binder?
+    /**
+     * P2-87: Binder vs Planner Responsibility for Export Function Lookup
+     * 
+     * This TODO questions whether the export function lookup should be done in
+     * the Binder rather than in the Planner.
+     * 
+     * What's Happening Here:
+     * 1. Building function name from file type: "COPY_CSV", "COPY_PARQUET", etc.
+     * 2. Looking up function in catalog
+     * 3. Matching function signature
+     * 4. Using function to create LogicalCopyTo
+     * 
+     * Arguments for Moving to Binder:
+     * | Reason | Explanation |
+     * |--------|-------------|
+     * | Semantic validation | Binder validates syntax and semantics |
+     * | Early error detection | Function not found errors caught earlier |
+     * | Consistency | Other function lookups happen in Binder |
+     * | Bound data completeness | ExportFunc should be part of BoundExportDatabase |
+     * 
+     * Arguments for Keeping in Planner:
+     * | Reason | Explanation |
+     * |--------|-------------|
+     * | Planning needs context | Planner has clientContext readily available |
+     * | Late binding | Function resolution might need planning info |
+     * | Historical design | Current architecture works correctly |
+     * 
+     * What Moving to Binder Would Look Like:
+     * ```cpp
+     * // In Binder (bind_export_database.cpp):
+     * auto exportFunc = lookupExportFunction(fileType);
+     * boundExportDatabase.setExportFunction(exportFunc);
+     * 
+     * // In Planner (this file):
+     * auto exportFunc = boundExportDatabase.getExportFunction();
+     * // No lookup needed - already resolved
+     * ```
+     * 
+     * Benefits of Binder Approach:
+     * - Cleaner separation of concerns
+     * - All function resolution in one place
+     * - BoundExportDatabase becomes self-contained
+     * 
+     * Current Status:
+     * Works correctly. Refactor would improve architecture consistency.
+     */
     std::string name =
         stringFormat("COPY_{}", FileTypeUtils::toString(boundExportDatabase.getFileType()));
     auto entry =
