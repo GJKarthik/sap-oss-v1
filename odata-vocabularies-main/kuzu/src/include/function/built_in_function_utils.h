@@ -82,7 +82,46 @@ public:
         bool isDistinct = false);
 
 private:
-    // TODO(Xiyang): move casting cost related functions to binder.
+    /**
+     * P2-58: Casting Cost Functions Placement
+     * 
+     * These functions calculate the "cost" of implicit type casting, used for
+     * function overload resolution. A lower cost means a better match.
+     * 
+     * Why Keep in BuiltInFunctionsUtils (not move to binder):
+     * 
+     * 1. Function Matching Dependency:
+     *    These functions are called from matchFunction() and getAggregateFunctionCost()
+     *    which are core to function resolution. Moving to binder would create
+     *    circular dependencies or require awkward parameter passing.
+     * 
+     * 2. Domain Alignment:
+     *    Casting cost is fundamentally about function matching, not expression binding.
+     *    The binder needs to know WHICH function to call; it doesn't need to know
+     *    the internal cost calculations.
+     * 
+     * 3. Encapsulation:
+     *    Keeping cast cost private within this class maintains encapsulation.
+     *    Only matchFunction() results are needed externally, not the cost details.
+     * 
+     * 4. Performance:
+     *    Current design allows efficient inline cost calculations during matching.
+     *    Moving to binder would add indirection.
+     * 
+     * Cast Cost Rules:
+     * | Cast Type | Cost | Example |
+     * |-----------|------|---------|
+     * | Exact match | 0 | INT64 → INT64 |
+     * | Widening | 1-10 | INT32 → INT64 |
+     * | Narrowing | High | INT64 → INT32 |
+     * | String conversion | Higher | INT64 → STRING |
+     * | Invalid | UINT32_MAX | Cannot cast |
+     * 
+     * The binder uses these costs indirectly via matchFunction() to:
+     * - Resolve overloaded function calls
+     * - Insert implicit cast operators when needed
+     * - Generate helpful error messages on ambiguity
+     */
     static uint32_t getTargetTypeCost(common::LogicalTypeID typeID);
 
     static uint32_t castInt64(common::LogicalTypeID targetTypeID);
