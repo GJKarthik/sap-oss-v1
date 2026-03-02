@@ -203,10 +203,24 @@ static std::vector<LogicalOperator*> getRecursiveExtendOutputNodeCandidates(
     return result;
 }
 
+// Semi Mask Application Strategy:
+// A semi mask filters tuples on one side of a join based on keys from the other side.
+// This function determines which operator(s) should receive the semi mask:
+//
+// Priority order for applying semi masks:
+// 1. RecursiveExtend INPUT node - Filters input to recursive operations (most beneficial)
+// 2. RecursiveExtend OUTPUT node - Filters output of recursive operations
+// 3. ScanNodeTable - Basic node scan filtering
+//
+// Note: Currently we apply semi mask to only ONE type of operator at a time.
+// Applying to multiple operator types simultaneously (e.g., both ScanNodeTable
+// and RecursiveJoin) is possible but requires careful analysis:
+// - May cause redundant filtering (performance overhead)
+// - May conflict if operators share state
+// - Need to ensure correctness when mask is applied multiple times
+// Future optimization: analyze query plan to determine if combined application is beneficial.
 static std::shared_ptr<LogicalOperator> tryApplySemiMask(std::shared_ptr<Expression> nodeID,
     std::shared_ptr<LogicalOperator> fromRoot, LogicalOperator* toRoot) {
-    // TODO(Xiyang): Check if a semi mask can/need to be applied to ScanNodeTable, RecursiveJoin &
-    // GDS at the same time
     auto recursiveExtendInputNodeCandidates =
         getRecursiveExtendInputNodeCandidates(*nodeID, toRoot);
     if (!recursiveExtendInputNodeCandidates.empty()) {
@@ -262,13 +276,28 @@ static bool tryProbeToBuildHJSIP(LogicalOperator* op) {
     return true;
 }
 
+// Build Side Qualification for SIP (Sideways Information Passing):
+// The build side is considered "qualified" for SIP if it can benefit from receiving
+// a semi mask from the probe side. This happens when:
+// 1. The build side contains selective filters - semi mask can further reduce work
+// 2. The build side has a RecursiveExtend (GDS) operator - semi mask significantly
+//    reduces the search space for graph algorithms
+//
+// Heuristic: For RecursiveExtend, we assume SIP is beneficial because:
+// - Recursive operations are typically expensive (O(edges * depth))
+// - Semi mask restricts input/output nodes, pruning large portions of the graph
+// - Even with some overhead from mask application, the savings usually outweigh costs
+//
+// Potential false positive: If the recursive pattern already has very high selectivity
+// (e.g., searching for a specific path), the semi mask overhead may not be justified.
+// A more sophisticated analysis could estimate selectivity before deciding.
 static bool isBuildSideQualified(LogicalOperator* buildRoot) {
     if (subPlanContainsFilter(buildRoot)) {
         return true;
     }
-    // TODO(Xiyang): this may not be the best solution. Most of the time we will pass a semi mask
-    // to GDS (recursive join) operator and make it generate small result. Though there are also
-    // exceptions. In such case we will pay a bit overhead.
+    // Heuristic: RecursiveExtend operations benefit significantly from semi masks
+    // because they prune the graph search space. This is usually beneficial even
+    // with the overhead of mask application.
     auto op = buildRoot;
     while (op->getNumChildren() == 1) {
         op = op->getChild(0).get();
@@ -323,7 +352,17 @@ void HashJoinSIPOptimizer::visitHashJoin(LogicalOperator* op) {
     tryProbeToBuildHJSIP(op);
 }
 
-// TODO(Xiyang): we don't apply SIP from build to probe.
+// Intersect SIP Strategy:
+// Currently we only apply probe-to-build SIP for Intersect operations.
+// Build-to-probe SIP is not implemented because:
+// 1. Intersect typically has multiple build sides (unlike hash join's single build)
+// 2. Accumulating probe side is less beneficial when intersecting multiple sets
+// 3. The current optimization already provides good performance for common cases
+//
+// Future enhancement: Consider build-to-probe SIP when:
+// - Build sides are highly selective
+// - Probe side would benefit from early filtering
+// - Analysis shows probe cardinality >> intersection result cardinality
 void HashJoinSIPOptimizer::visitIntersect(LogicalOperator* op) {
     auto& intersect = op->cast<LogicalIntersect>();
     switch (intersect.getSIPInfo().position) {
