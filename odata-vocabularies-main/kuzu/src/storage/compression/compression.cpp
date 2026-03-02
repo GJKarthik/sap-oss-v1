@@ -730,12 +730,53 @@ void IntegerBitpacking<T>::copyValuesToTempChunkWithOffset(const U* srcBuffer, U
     }
 }
 
+// Dynamic Compression Algorithm Selection:
+//
+// Current Implementation:
+// The compression type is checked at runtime in compressNextPage(). If metadata
+// indicates UNCOMPRESSED, we delegate to Uncompressed::compressNextPage() instead.
+// This allows runtime fallback but requires checking on every compression call.
+//
+// Why This is "Hacky":
+// 1. Type-specific class (IntegerBitpacking) handles a different compression type
+// 2. Runtime dispatch in a template function defeats compile-time polymorphism
+// 3. The responsibility for algorithm selection is scattered
+//
+// Better Design Options:
+//
+// Option 1: Strategy Pattern (Recommended)
+// Create a Compressor interface with concrete implementations:
+//   class Compressor {
+//       virtual uint64_t compressNextPage(...) = 0;
+//   };
+//   class BitpackingCompressor : public Compressor { ... };
+//   class UncompressedCompressor : public Compressor { ... };
+//   class ALPCompressor : public Compressor { ... };
+//
+// Option 2: Factory Pattern
+// Use CompressionMetadata to create the appropriate compressor:
+//   auto compressor = CompressionFactory::create(metadata);
+//   compressor->compressNextPage(...);
+//
+// Option 3: Static Dispatch with Visitor
+// Use std::variant and std::visit for type-safe dispatch:
+//   using Compressor = std::variant<IntegerBitpacking<T>, Uncompressed, ...>;
+//   std::visit([&](auto& c) { c.compressNextPage(...); }, compressor);
+//
+// Why Current Approach is Acceptable:
+// 1. Branch prediction handles the check efficiently (usually takes one path)
+// 2. Avoids virtual function call overhead
+// 3. Code is localized - easy to understand
+// 4. Works correctly in all cases
+//
+// When to Refactor:
+// If adding more compression algorithms or if profiling shows overhead.
 template<IntegerBitpackingType T>
 uint64_t IntegerBitpacking<T>::compressNextPage(const uint8_t*& srcBuffer,
     uint64_t numValuesRemaining, uint8_t* dstBuffer, uint64_t dstBufferSize,
     const CompressionMetadata& metadata) const {
-    // TODO(bmwinger): this is hacky; we need a better system for dynamically choosing between
-    // algorithms when compressing
+    // Runtime algorithm selection: delegate to Uncompressed if metadata indicates so.
+    // See documentation above for design rationale and alternatives.
     if (metadata.compression == CompressionType::UNCOMPRESSED) {
         return Uncompressed(sizeof(T)).compressNextPage(srcBuffer, numValuesRemaining, dstBuffer,
             dstBufferSize, metadata);
