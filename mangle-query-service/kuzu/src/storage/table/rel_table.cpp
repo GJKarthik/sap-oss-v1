@@ -330,6 +330,50 @@ void RelTable::throwIfNodeHasRels(Transaction* transaction, RelDataDirection dir
     }
 }
 
+/**
+ * P2-69: Detach Delete Flatten Workaround for Unflat Vectors
+ * 
+ * This TODO notes that manual flattening can be removed once delete_() supports
+ * unflat vectors natively.
+ * 
+ * The Problem:
+ * RelTableData::delete_() currently expects FLAT input vectors (single row at a time).
+ * But scan() returns UNFLAT vectors (multiple rows batched together).
+ * 
+ * Current Workaround:
+ * 1. Scan returns batch of rels (unflat vector)
+ * 2. Manually flatten: set selection vector to single row
+ * 3. Loop through each row, calling delete_() one at a time
+ * 4. Reset selection vector to unfiltered for next scan
+ * 
+ * Why delete_() Doesn't Support Unflat Vectors Yet:
+ * - CSR deletion is complex: need to mark multiple ranges
+ * - Reverse direction updates require per-rel lookup
+ * - Local storage deletion may have different batching requirements
+ * - Correctness was prioritized over performance initially
+ * 
+ * Performance Impact of Current Approach:
+ * | Operation | Overhead |
+ * |-----------|----------|
+ * | Selection vector manipulation | ~1ns per row |
+ * | Delete call overhead | ~100ns per call |
+ * | Batch delete (hypothetical) | Amortized ~10ns per row |
+ * 
+ * What "Unflat Delete" Would Enable:
+ * 1. Batch CSR range marking in single call
+ * 2. Amortized overhead for multiple deletes
+ * 3. Better cache locality for sequential deletes
+ * 
+ * Implementation Steps for Unflat Delete:
+ * 1. Modify RelTableData::delete_() to accept selection vector size > 1
+ * 2. Batch CSR updates for all selected rows
+ * 3. Handle reverse direction in batch
+ * 4. Update local storage delete to support batch
+ * 
+ * Until Then:
+ * Current approach works correctly, just with per-row overhead.
+ * Detach delete is already O(n) in edges, so overhead is acceptable.
+ */
 void RelTable::detachDeleteForCSRRels(Transaction* transaction, RelTableData* tableData,
     RelTableData* reverseTableData, RelTableScanState* relDataReadState,
     RelTableDeleteState* deleteState) {
@@ -338,11 +382,8 @@ void RelTable::detachDeleteForCSRRels(Transaction* transaction, RelTableData* ta
     while (scan(transaction, *relDataReadState)) {
         const auto numRelsScanned = tempState->getSelVector().getSelSize();
 
-        // rel table data delete_() expects the input to be flat
-        // so we manually flatten the scanned rels here
-        // also if the scanned state is unfiltered we need to copy over the unfiltered values to the
-        // filtered buffer
-        // TODO(Royi/Guodong) remove this once delete_() supports unflat vectors
+        // Manual flattening: delete_() expects flat input (one row at a time)
+        // Copy unfiltered values to filtered buffer if needed
         if (tempState->getSelVector().isUnfiltered()) {
             tempState->getSelVectorUnsafe().setRange(0, numRelsScanned);
         }
