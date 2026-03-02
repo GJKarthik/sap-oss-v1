@@ -1,5 +1,97 @@
 #include "storage/storage_manager.h"
 
+/**
+ * P2-130: Storage Manager - Central Storage Coordination
+ * 
+ * Purpose:
+ * Central coordinator for all storage operations in the database.
+ * Manages tables, files, WAL, shadow file, and serialization/deserialization
+ * of the entire storage layer.
+ * 
+ * Architecture:
+ * ```
+ * StorageManager
+ *   ├── databasePath: string
+ *   ├── readOnly: bool
+ *   ├── inMemory: bool
+ *   ├── dataFH: FileHandle*             // Main data file
+ *   ├── memoryManager: MemoryManager&
+ *   ├── wal: unique_ptr<WAL>            // Write-ahead log
+ *   ├── shadowFile: unique_ptr<ShadowFile>
+ *   ├── tables: map<table_id_t, unique_ptr<Table>>
+ *   ├── registeredIndexTypes: vector<IndexType>
+ *   └── databaseHeader: unique_ptr<DatabaseHeader>
+ * ```
+ * 
+ * Key Responsibilities:
+ * 
+ * 1. Table Management:
+ *    - createNodeTable(): Physical table for node entries
+ *    - createRelTableGroup(): Creates all rel tables for a group
+ *    - addRelTable(): Incremental rel table creation
+ *    - getTable(): Retrieve table by ID
+ *    - reclaimDroppedTables(): Cleanup after DROP TABLE
+ * 
+ * 2. File Management:
+ *    - initDataFileHandle(): Initialize main data file
+ *    - In-memory or persistent based on databasePath
+ * 
+ * 3. Recovery:
+ *    - recover(): Replay WAL using WALReplayer
+ * 
+ * 4. Checkpoint Support:
+ *    - checkpoint(): Flush all tables to disk
+ *    - finalizeCheckpoint(): Complete checkpoint process
+ *    - rollbackCheckpoint(): Revert failed checkpoint
+ * 
+ * 5. Serialization:
+ *    - serialize(): Write all table metadata
+ *    - deserialize(): Restore tables from disk
+ * 
+ * Relationship Table Architecture:
+ * ```
+ * RelGroupCatalogEntry (logical "KNOWS")
+ *   └── RelTableCatalogInfo[] (physical tables)
+ *         ├── {Person→Person}
+ *         ├── {Person→Company}
+ *         └── ...
+ * 
+ * createRelTableGroup(): Creates all at once (DDL)
+ * addRelTable(): Creates single table (schema evolution)
+ * ```
+ * 
+ * Thread Safety:
+ * - Mutex-protected table operations
+ * - Lock guard for createTable(), serialize(), etc.
+ * 
+ * Serialization Format:
+ * ```
+ * num_node_tables: uint64
+ * for each node table:
+ *   table_id: table_id_t
+ *   table.serialize()
+ * 
+ * num_rel_groups: uint64
+ * for each rel group:
+ *   rel_group_id: table_id_t
+ *   num_inner_rel_tables: uint64
+ *   for each inner table:
+ *     RelTableCatalogInfo.serialize()
+ *     table.serialize()
+ * ```
+ * 
+ * Static Access:
+ * ```cpp
+ * StorageManager* sm = StorageManager::Get(clientContext);
+ * // Returns from attached database or main database
+ * ```
+ * 
+ * Index Registration:
+ * - registerIndexType(): Add custom index types
+ * - getIndexType(): Lookup by type name
+ * - Default: PrimaryKeyIndex
+ */
+
 #include "catalog/catalog_entry/node_table_catalog_entry.h"
 #include "catalog/catalog_entry/rel_group_catalog_entry.h"
 #include "common/file_system/virtual_file_system.h"
