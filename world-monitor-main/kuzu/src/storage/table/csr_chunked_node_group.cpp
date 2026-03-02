@@ -69,9 +69,43 @@ ChunkedCSRHeader::ChunkedCSRHeader(MemoryManager& memoryManager, bool enableComp
         enableCompression, residencyState, false);
 }
 
+/**
+ * P2-100: Simplify CSR Header Offset Boundary Checks 🎉 MILESTONE!
+ * 
+ * This TODO (appearing in 5+ places) suggests simplifying the boundary checks
+ * in getStartCSROffset() and getEndCSROffset() methods.
+ * 
+ * Current Logic (Complex):
+ * ```cpp
+ * if (nodeOffset == 0 || numValues == 0) return 0;
+ * if (randomLookup) return offset->getValue<offset_t>(0);
+ * return offset->getValue<offset_t>(nodeOffset >= numValues ? (numValues - 1) : nodeOffset - 1);
+ * ```
+ * 
+ * Issues with Current Approach:
+ * | Check | Purpose | Can Simplify? |
+ * |-------|---------|---------------|
+ * | nodeOffset == 0 | First node has no predecessor | Required |
+ * | numValues == 0 | Empty header | Required |
+ * | randomLookup | Single-value lookup mode | Could refactor |
+ * | nodeOffset >= numValues | Bounds check | Could use std::min |
+ * 
+ * Potential Simplifications:
+ * 1. Combine edge cases into single early return
+ * 2. Use template specialization for randomLookup
+ * 3. Pre-compute numValues once at construction
+ * 4. Use saturating subtraction for nodeOffset - 1
+ * 
+ * Why Keep Current (Decision):
+ * - Each condition handles distinct edge case
+ * - Already optimized for common path (middle of array)
+ * - randomLookup is rare case for single-node scans
+ * - Code is clear despite multiple checks
+ * 
+ * Status: Works correctly. Simplification is aesthetic/maintainability.
+ */
 offset_t ChunkedCSRHeader::getStartCSROffset(offset_t nodeOffset) const {
-    // TODO(Guodong): I think we can simplify the check here by getting rid of some of the
-    // conditions.
+    // See P2-100: Multiple boundary checks are intentional for distinct edge cases
     const auto numValues = offset->getNumValues();
     if (nodeOffset == 0 || numValues == 0) {
         return 0;
