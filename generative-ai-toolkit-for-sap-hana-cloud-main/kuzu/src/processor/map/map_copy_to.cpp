@@ -24,8 +24,53 @@ std::unique_ptr<PhysicalOperator> PlanMapper::mapCopyTo(const LogicalOperator* l
     }
     auto exportFunc = logicalCopyTo.getExportFunc();
     auto bindData = logicalCopyTo.getBindData();
-    // TODO(Xiyang): Query: COPY (RETURN null) TO '/tmp/1.parquet', the datatype of the first
-    // column is ANY, should we solve the type at binder?
+    /**
+     * P2-76: ANY Type Resolution in COPY TO
+     * 
+     * This TODO asks whether ANY type should be resolved at binder time.
+     * 
+     * Example Query:
+     * ```sql
+     * COPY (RETURN null) TO '/tmp/1.parquet'
+     * ```
+     * 
+     * The Problem:
+     * - `RETURN null` has type ANY (unresolved type)
+     * - Parquet format needs a concrete type for each column
+     * - Currently, ANY type flows through to the mapper
+     * - We set the type here, but should it happen earlier?
+     * 
+     * Where Type Resolution Could Happen:
+     * | Stage | Pros | Cons |
+     * |-------|------|------|
+     * | Binder | Early error detection, cleaner pipeline | Binder doesn't know file format |
+     * | Planner | Has schema context | Still before format is known |
+     * | Mapper (here) | Knows export format | Late in pipeline, may miss optimizations |
+     * 
+     * Why Binder Might Be Better:
+     * 1. Early validation: "Cannot export ANY type to Parquet"
+     * 2. Type inference: Could default ANY to STRING or error
+     * 3. Consistent with other type resolution
+     * 
+     * Why Current Approach Works:
+     * - Mapper has access to all expression types
+     * - Export function can handle type conversion
+     * - Some formats (CSV) might accept ANY as string
+     * 
+     * What "Solving at Binder" Would Mean:
+     * ```cpp
+     * // In binder for COPY TO:
+     * for (auto& expr : expressions) {
+     *     if (expr->dataType.getLogicalTypeID() == LogicalTypeID::ANY) {
+     *         throw BinderException("Cannot export untyped NULL");
+     *         // Or: expr->dataType = LogicalType::STRING();  // Default
+     *     }
+     * }
+     * ```
+     * 
+     * Current Status:
+     * Works for most cases; edge case (pure NULL) could benefit from binder handling.
+     */
     bindData->setDataType(std::move(types));
     auto sharedState = exportFunc.createSharedState();
     auto info =
