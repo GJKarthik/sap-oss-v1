@@ -1,5 +1,94 @@
 #include "storage/disk_array.h"
 
+/**
+ * P3-191: DiskArray - Persistent Array with Page-Based Storage
+ * 
+ * Purpose:
+ * Implements a growable array stored on disk with transactional support.
+ * Uses Page Index Pages (PIPs) to map logical indices to physical pages.
+ * 
+ * Architecture:
+ * ```
+ * DiskArrayHeader
+ *   ├── numElements: uint64_t
+ *   └── firstPIPPageIdx: page_idx_t
+ * 
+ * PageStorageInfo
+ *   ├── alignedElementSize: uint64_t
+ *   └── numElementsPerPage: uint64_t
+ * 
+ * PIP (Page Index Page)
+ *   ├── pageIdxs[NUM_PAGE_IDXS_PER_PIP]: page_idx_t[]
+ *   └── nextPipPageIdx: page_idx_t
+ * ```
+ * 
+ * Page Layout:
+ * ```
+ * Header → PIP0 → PIP1 → ... → PIPn
+ *            ↓      ↓           ↓
+ *          [AP0, AP1, ...]   [APn, ...]
+ *          
+ * AP = Array Page (stores actual elements)
+ * PIP = Page Index Page (stores page indices)
+ * ```
+ * 
+ * Index Calculation:
+ * ```
+ * getAPIdxAndOffsetInAP(idx):
+ *   apIdx = idx / numElementsPerPage
+ *   byteOffset = (idx % numElementsPerPage) * alignedElementSize
+ *   
+ * getAPPageIdx(apIdx):
+ *   pipIdx = apIdx / NUM_PAGE_IDXS_PER_PIP
+ *   offsetInPIP = apIdx % NUM_PAGE_IDXS_PER_PIP
+ *   RETURN pips[pipIdx].pageIdxs[offsetInPIP]
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. get(idx):
+ *    - Calculate apIdx and offset
+ *    - Find page via PIP lookup
+ *    - Read element from page
+ * 
+ * 2. update(idx, val):
+ *    - Calculate page location
+ *    - Shadow page if needed (via ShadowFile)
+ *    - Write value to shadowed page
+ * 
+ * 3. resize(newSize):
+ *    - Allocate new array pages as needed
+ *    - Add new PIPs if needed
+ *    - Update header.numElements
+ * 
+ * 4. pushBack(val):
+ *    - Increment numElements
+ *    - Allocate page if needed
+ *    - Write value
+ * 
+ * Transactional Support:
+ * ```
+ * pipUpdates:
+ *   ├── updatedLastPIP: Optional<PIPWrapper>
+ *   └── newPIPs: vector<PIPWrapper>
+ * 
+ * On checkpoint: Apply pipUpdates to disk
+ * On rollback: Discard pipUpdates
+ * ```
+ * 
+ * Shadow File Integration:
+ * - New pages (pageIdx > lastPageOnDisk): Write directly
+ * - Existing pages: Shadow via ShadowFile
+ * - Enables atomic commit/rollback
+ * 
+ * WriteIterator:
+ * - Efficient batch writes
+ * - Maintains pinned page state
+ * - Avoids repeated page lookups
+ * 
+ * See P2-67 inline for size management (grow-only) rationale.
+ */
+
 #include "common/exception/runtime.h"
 #include "common/string_format.h"
 #include "common/types/types.h"
