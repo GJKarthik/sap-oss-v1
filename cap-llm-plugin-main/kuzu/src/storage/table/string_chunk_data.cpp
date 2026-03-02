@@ -1,5 +1,81 @@
 #include "storage/table/string_chunk_data.h"
 
+/**
+ * P2-122: String Chunk Data - Dictionary-Encoded String Storage
+ * 
+ * Purpose:
+ * Provides specialized storage for STRING and BLOB columns using dictionary
+ * encoding. Stores unique string values once and references via compact indices.
+ * 
+ * Architecture:
+ * ```
+ * StringChunkData
+ *   ├── indexColumnChunk: ColumnChunkData<UINT32>  // Index into dictionary
+ *   ├── dictionaryChunk: DictionaryChunk           // Actual string storage
+ *   ├── nullData: NullChunkData                    // Null tracking
+ *   └── needFinalize: bool                         // Pruning flag
+ * 
+ * Storage Layout:
+ * ┌───────────────────────────────────────────────────────┐
+ * │ Row 0: index=0 → dictionary["Hello"]                  │
+ * │ Row 1: index=1 → dictionary["World"]                  │
+ * │ Row 2: index=0 → dictionary["Hello"] (deduplication!) │
+ * │ Row 3: NULL                                           │
+ * └───────────────────────────────────────────────────────┘
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. append(vector, selView):
+ *    - For each non-null value, append string to dictionary
+ *    - Store returned index in indexColumnChunk
+ *    - Update nullData for null values
+ * 
+ * 2. getValue<string_view>(pos):
+ *    - Lookup index from indexColumnChunk[pos]
+ *    - Return dictionaryChunk.getString(index)
+ *    - Zero-copy via string_view
+ * 
+ * 3. setValueFromString(value, pos):
+ *    - Add string to dictionary (deduplicates automatically)
+ *    - Store resulting index at pos
+ * 
+ * 4. write(vector/chunk, ...):
+ *    - Random access update with needFinalize tracking
+ *    - Marks chunk for pruning if overwriting existing values
+ * 
+ * 5. finalize():
+ *    - Prune unused dictionary entries before flush
+ *    - Rebuild dictionary with only used strings
+ *    - Update all indices to point to new positions
+ * 
+ * Out-of-Place Update Handling:
+ * ```
+ * When needFinalize = true (overwritten values exist):
+ *   1. Create new dictionary chunk
+ *   2. Iterate all values
+ *   3. Re-insert used strings (new deduplication)
+ *   4. Update indices to new positions
+ *   5. Old dictionary garbage collected
+ * ```
+ * 
+ * Child Column Structure:
+ * - INDEX_COLUMN_CHILD_READ_STATE_IDX (0): Index column state
+ * - OFFSET_COLUMN_CHILD_READ_STATE_IDX (1): Dictionary offset state
+ * - DATA_COLUMN_CHILD_READ_STATE_IDX (2): Dictionary data state
+ * 
+ * Serialization:
+ * - ColumnChunkData base (metadata, null)
+ * - indexColumnChunk
+ * - dictionaryChunk (offset + data chunks)
+ * 
+ * Performance:
+ * - append(): O(1) average (hash lookup + amortized resize)
+ * - getValue(): O(1) index lookup + O(1) dictionary access
+ * - finalize(): O(n) for n values
+ * - Space: unique_count * avg_len + n * 4 bytes
+ */
+
 #include "common/data_chunk/sel_vector.h"
 #include "common/serializer/deserializer.h"
 #include "common/serializer/serializer.h"
