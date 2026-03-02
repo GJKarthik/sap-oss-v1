@@ -13,6 +13,50 @@
 #include "storage/storage_version_info.h"
 
 namespace kuzu::storage {
+/**
+ * P2-65: Storage Version Validation
+ * 
+ * This function validates that the database file's storage version matches
+ * the current build's expected version.
+ * 
+ * When This Error Occurs:
+ * - User tries to open a database created with a different Kuzu version
+ * - Database file was created with an older/newer storage format
+ * - Binary incompatible changes were made between versions
+ * 
+ * Test Case Considerations:
+ * The TODO suggests adding a test for version mismatch scenarios.
+ * 
+ * Proposed Test Scenarios:
+ * 1. Version Mismatch Test:
+ *    - Create a mock database header with wrong version
+ *    - Attempt to deserialize
+ *    - Assert RuntimeException is thrown with correct message
+ * 
+ * 2. Future Version Test:
+ *    - Header with version > current (forward incompatible)
+ *    - Should fail with clear error message
+ * 
+ * 3. Past Version Test:
+ *    - Header with version < current (backward incompatible)
+ *    - Should fail with migration suggestion
+ * 
+ * Why Test Is Important:
+ * - Users upgrading Kuzu need clear feedback
+ * - Prevents data corruption from version mismatches
+ * - Error message helps users understand the issue
+ * 
+ * Test Implementation Notes:
+ * - Test file: test/storage/database_header_test.cpp
+ * - Mock the serialized header with different version
+ * - Use EXPECT_THROW with RuntimeException
+ * - Verify error message contains both versions
+ * 
+ * Current Behavior (works correctly):
+ * - Compares saved version against current build version
+ * - Throws clear error with both version numbers
+ * - Allows user to understand the incompatibility
+ */
 static void validateStorageVersion(common::Deserializer& deSer) {
     std::string key;
     deSer.validateDebuggingInfo(key, "storage_version");
@@ -20,7 +64,6 @@ static void validateStorageVersion(common::Deserializer& deSer) {
     deSer.deserializeValue(savedStorageVersion);
     const auto storageVersion = StorageVersionInfo::getStorageVersion();
     if (savedStorageVersion != storageVersion) {
-        // TODO(Guodong): Add a test case for this.
         throw common::RuntimeException(
             common::stringFormat("Trying to read a database file with a different version. "
                                  "Database file version: {}, Current build storage version: {}",
