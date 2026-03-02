@@ -1,6 +1,73 @@
 #include "storage/table/version_record_handler.h"
 
 /**
+ * P3-220: VersionRecordHandler - Extended Implementation Details
+ * 
+ * Additional Details (see P2-116 for architecture overview)
+ * 
+ * rollbackInsert() Implementation:
+ * ```
+ * rollbackInsert(context, nodeGroupIdx, startRow, numRows):
+ *   commitTS = Transaction::Get(context).getCommitTS()
+ *   applyFuncToChunkedGroups(
+ *     &ChunkedNodeGroup::rollbackInsert,
+ *     nodeGroupIdx,
+ *     startRow,
+ *     numRows,
+ *     commitTS
+ *   )
+ * ```
+ * 
+ * applyFuncToChunkedGroups Pattern:
+ * ```
+ * // Abstract method - implemented by concrete handlers:
+ * 
+ * NodeTableVersionRecordHandler:
+ *   applyFuncToChunkedGroups(func, nodeGroupIdx, startRow, numRows, commitTS):
+ *     nodeGroup = nodeGroupCollection.getGroup(nodeGroupIdx)
+ *     (nodeGroup.*func)(startRow, numRows, commitTS)
+ * 
+ * RelTableVersionRecordHandler:
+ *   applyFuncToChunkedGroups(func, nodeGroupIdx, startRow, numRows, commitTS):
+ *     csrGroup = relTableData.getCSRGroup(direction, nodeGroupIdx)
+ *     (csrGroup.*func)(startRow, numRows, commitTS)
+ * ```
+ * 
+ * Member Function Pointer Type:
+ * ```
+ * using version_record_handler_op_t = void (ChunkedNodeGroup::*)(
+ *     row_idx_t startRow,
+ *     row_idx_t numRows,
+ *     transaction_t commitTS
+ * );
+ * 
+ * // Enables generic dispatch:
+ * &ChunkedNodeGroup::rollbackInsert  // Undo insert
+ * &ChunkedNodeGroup::commitInsert    // Finalize insert
+ * ```
+ * 
+ * Transaction Integration:
+ * ```
+ * Transaction abort sequence:
+ *   1. UndoBuffer.rollback()
+ *   2. FOR each INSERT_RECORD:
+ *        handler->rollbackInsert(ctx, nodeGroupIdx, startRow, numRows)
+ *   3. FOR each DELETE_RECORD:
+ *        // Similar rollback pattern
+ *   4. Local storage cleanup
+ *   5. Transaction marked aborted
+ * ```
+ * 
+ * Commit Timestamp Usage:
+ * ```
+ * commitTS passed to ChunkedNodeGroup functions:
+ * - rollbackInsert: Mark version invalid at commitTS
+ * - Visibility check: row visible if ts <= queryTS
+ * - Garbage collection: Can remove if no tx needs version
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-116: Version Record Handler - MVCC Rollback Interface
  * 
  * Purpose:
