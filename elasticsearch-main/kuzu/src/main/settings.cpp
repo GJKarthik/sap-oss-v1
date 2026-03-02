@@ -1,5 +1,78 @@
 #include "main/settings.h"
 
+/**
+ * P3-158: Settings - Runtime Configuration System
+ * 
+ * Purpose:
+ * Implements the SET/GET interface for runtime database configuration.
+ * Each setting class provides typed access to client or database config.
+ * 
+ * Architecture:
+ * ```
+ * BuiltInOptions (defined in db_config.h)
+ *   └── Setting classes (defined here)
+ *         ├── setContext() - Apply value to ClientContext
+ *         └── getSetting() - Read value from ClientContext
+ * 
+ * Configuration Scope:
+ *   ClientConfig (session-scoped)     DBConfig (database-scoped)
+ *     ├── numThreads                    ├── enableMultiWrites
+ *     ├── timeoutInMS                   ├── checkpointThreshold
+ *     ├── enableProgressBar             ├── autoCheckpoint
+ *     ├── varLengthMaxDepth             ├── forceCheckpointOnClose
+ *     ├── enableSemiMask                └── enableSpillingToDisk
+ *     ├── enableZoneMap
+ *     └── recursivePatternSemantic
+ * ```
+ * 
+ * Setting Categories:
+ * 
+ * 1. Performance Settings:
+ *    | Setting | Default | Description |
+ *    |---------|---------|-------------|
+ *    | threads | CPU cores | Worker threads |
+ *    | timeout | 0 | Query timeout (ms, 0=none) |
+ *    | var_length_extend_max_depth | 30 | Max path depth |
+ *    | enable_semi_mask | true | Semi-join optimization |
+ *    | enable_zone_map | true | Zone map filtering |
+ * 
+ * 2. User Experience Settings:
+ *    | Setting | Default | Description |
+ *    |---------|---------|-------------|
+ *    | progress_bar | false | Show progress bar |
+ *    | warning_limit | 1024 | Max warnings |
+ * 
+ * 3. Path Semantics:
+ *    | Setting | Default | Description |
+ *    |---------|---------|-------------|
+ *    | recursive_pattern_semantic | WALK | ALL_WALKS/WALK/TRAIL/ACYCLIC |
+ *    | recursive_pattern_factor | 1 | Cardinality scale factor |
+ * 
+ * 4. Database-Wide Settings:
+ *    | Setting | Default | Description |
+ *    |---------|---------|-------------|
+ *    | enable_mvcc | false | Multi-write transactions |
+ *    | checkpoint_threshold | 16MB | Auto-checkpoint trigger |
+ *    | auto_checkpoint | true | Enable auto-checkpoint |
+ *    | force_checkpoint_closing_db | true | Checkpoint on close |
+ *    | spill_to_disk | false | Enable disk spilling |
+ * 
+ * Usage:
+ * ```sql
+ * SET threads = 8;
+ * SET timeout = 5000;
+ * SET progress_bar = true;
+ * 
+ * CALL current_setting('threads');  -- Returns 8
+ * ```
+ * 
+ * Implementation Pattern:
+ * Each setting class follows this pattern:
+ * - inputType: Expected parameter type
+ * - setContext(): Validate type, update config
+ * - getSetting(): Read from config, return Value
+ */
+
 #include "common/exception/runtime.h"
 #include "common/task_system/progress_bar.h"
 #include "main/client_context.h"
