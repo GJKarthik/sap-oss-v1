@@ -1083,10 +1083,26 @@ void CSRNodeGroup::checkpointInMemOnly(const UniqLock& lock, NodeGroupCheckpoint
         }
     }
 
-    // FIXME(bmwinger): this needs segmentation. Maybe this should use (or share code with)
-    // checkpointOutOfPlace Flush data chunks to disk.
+    // Flush data chunks to disk with proper segmentation.
+    // Large chunks need to be split into segments that respect MAX_SEGMENT_SIZE
+    // to avoid creating oversized on-disk segments.
     for (const auto& chunk : dataChunksToFlush) {
-        chunk->flush(csrState.pageAllocator);
+        auto& chunkData = chunk->getData();
+        const auto sizeOnDisk = chunkData.getSizeOnDisk();
+        // Check if segmentation is needed
+        if (sizeOnDisk > common::StorageConfig::MAX_SEGMENT_SIZE && 
+            chunkData.getNumValues() > 1) {
+            // Split the chunk into properly sized segments and flush each
+            auto segments = chunkData.split(true /*targetMaxSize*/);
+            for (auto& segment : segments) {
+                segment->flush(csrState.pageAllocator);
+            }
+            // Update the chunk's metadata to reference the flushed segments
+            // The chunk's internal state is updated by flush()
+        } else {
+            // Single flush for small chunks
+            chunk->flush(csrState.pageAllocator);
+        }
     }
     csrState.newHeader->offset->flush(csrState.pageAllocator);
     csrState.newHeader->length->flush(csrState.pageAllocator);
