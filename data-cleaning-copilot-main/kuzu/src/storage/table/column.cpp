@@ -1,6 +1,80 @@
 #include "storage/table/column.h"
 
 /**
+ * P3-182: Column - Extended Documentation
+ * 
+ * Additional Details (see P2-118 for base documentation)
+ * 
+ * Segment Architecture:
+ * ```
+ * Column Data Layout:
+ *   ├── Segment 0: [values 0..N-1]
+ *   ├── Segment 1: [values N..2N-1]
+ *   └── ...
+ * 
+ * rangeSegments(offset, length, callback):
+ *   - Iterates segments covering [offset, offset+length)
+ *   - Handles segment boundaries automatically
+ *   - Callback receives (segmentState, offsetInSegment, lengthInSegment, dstOffset)
+ * ```
+ * 
+ * Compression Flow:
+ * ```
+ * Write Path:
+ *   Data → WriteCompressedValuesToPage → Compressed Page
+ *   
+ * Read Path:
+ *   Compressed Page → ReadCompressedValuesFromPage → ValueVector/Buffer
+ * 
+ * ALP (Adaptive Lossless floating Point):
+ *   - Exception chunk for outliers
+ *   - InMemoryExceptionChunk<double/float>
+ *   - finalizeAndFlushToDisk() on checkpoint
+ * ```
+ * 
+ * InternalID Optimization:
+ * ```
+ * Storage: offset only (8 bytes)
+ * Read: populateCommonTableID() fills tableID
+ * 
+ * vs Full Storage: 16 bytes (offset + tableID)
+ * Savings: 50% for ID columns
+ * ```
+ * 
+ * Checkpoint Decision Tree:
+ * ```
+ * canCheckpointInPlace()?
+ *   │
+ *   ├── Check page capacity
+ *   │     └── isEndOffsetOutOfPagesCapacity()
+ *   │
+ *   ├── Check compression compatibility
+ *   │     └── canAlwaysUpdateInPlace() or canUpdateInPlace()
+ *   │
+ *   └── Result:
+ *         ├── IN-PLACE: Write updates directly
+ *         └── OUT-OF-PLACE: Scan → Apply → Flush
+ * ```
+ * 
+ * Segment Splitting:
+ * ```
+ * When segment too large:
+ *   1. shouldSplit() returns true
+ *   2. split() creates multiple segments
+ *   3. Each segment flushed independently
+ *   4. Enables parallel I/O and better cache
+ * ```
+ * 
+ * Statistics Update:
+ * ```
+ * updateStatistics(metadata, maxIndex, min, max):
+ *   - Track numValues high watermark
+ *   - Update min/max for range queries
+ *   - Used by optimizer for selectivity
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-118: Column Storage - Core Read/Write Implementation
  * 
  * Purpose:
