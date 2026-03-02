@@ -1,5 +1,75 @@
 #include "binder/binder.h"
 
+/**
+ * P3-161: Binder - Semantic Analysis
+ * 
+ * Purpose:
+ * Performs semantic analysis on parsed AST. Resolves identifiers, validates
+ * types, checks schema references, and produces bound statements ready for
+ * planning.
+ * 
+ * Architecture:
+ * ```
+ * Statement (AST)
+ *   │
+ *   └── Binder::bind()
+ *         │
+ *         ├── Dispatch by StatementType
+ *         │     ├── bindQuery() - MATCH/RETURN queries
+ *         │     ├── bindCreateTable() - DDL
+ *         │     ├── bindCopyFromClause() - COPY FROM
+ *         │     ├── bindTransaction() - BEGIN/COMMIT
+ *         │     └── ...
+ *         │
+ *         ├── ExpressionBinder - Bind expressions
+ *         │
+ *         └── BoundStatementRewriter - Post-processing
+ * ```
+ * 
+ * Key Responsibilities:
+ * | Task | Description |
+ * |------|-------------|
+ * | Name Resolution | Resolve table/column names to catalog entries |
+ * | Type Checking | Validate expression types, implicit casts |
+ * | Scope Management | Track visible variables |
+ * | Schema Validation | Verify tables/columns exist |
+ * | Function Resolution | Match function calls to definitions |
+ * 
+ * Scope Management:
+ * ```cpp
+ * scope.addExpression(name, expr)  // Add variable to scope
+ * scope.contains(name)              // Check if exists
+ * saveScope() / restoreScope()      // For subqueries
+ * ```
+ * 
+ * Statement Type Dispatch:
+ * | StatementType | Bind Method |
+ * |---------------|-------------|
+ * | QUERY | bindQuery() |
+ * | CREATE_TABLE | bindCreateTable() |
+ * | COPY_FROM | bindCopyFromClause() |
+ * | COPY_TO | bindCopyToClause() |
+ * | DROP | bindDrop() |
+ * | ALTER | bindAlter() |
+ * | STANDALONE_CALL | bindStandaloneCall() |
+ * | TRANSACTION | bindTransaction() |
+ * | EXPORT_DATABASE | bindExportDatabaseClause() |
+ * 
+ * Reserved Names:
+ * - Column names: _ID, _LABEL, _SRC, _DST, etc.
+ * - Protected from user-defined conflicts
+ * 
+ * File Scan Function Resolution:
+ * - Parquet → ParquetScanFunction
+ * - CSV → ParallelCSVScan or SerialCSVScan
+ * - NPY → NpyScanFunction
+ * - Unknown → Extension scan functions
+ * 
+ * Post-Processing:
+ * - BoundStatementRewriter performs final transformations
+ * - Handles optimizations and rewrites
+ */
+
 #include "binder/bound_statement_rewriter.h"
 #include "catalog/catalog.h"
 #include "common/copier_config/csv_reader_config.h"
