@@ -80,9 +80,32 @@ bool HashIndex<T>::checkpoint(PageAllocator& pageAllocator) {
             reserve(pageAllocator, transaction, netInserts);
         }
         localStorage->applyLocalChanges(
-            [&](Key) {
-                // TODO(Guodong/Ben): FIX-ME. We should vacuum the index during checkpoint.
-                // DO NOTHING.
+            [&](Key key) {
+                // Vacuum: Delete entries from the persistent index during checkpoint
+                // This removes entries that were deleted in the local storage
+                auto hashValue = HashIndexUtils::hash(key);
+                auto fingerprint = HashIndexUtils::getFingerprintForHash(hashValue);
+                auto primarySlotId =
+                    HashIndexUtils::getPrimarySlotIdForHash(indexHeaderForWriteTrx, hashValue);
+                auto iter = getSlotIterator(primarySlotId, transaction);
+                do {
+                    for (entry_pos_t entryPos = 0; entryPos < PERSISTENT_SLOT_CAPACITY;
+                         entryPos++) {
+                        if (!iter.slot.header.isEntryValid(entryPos)) {
+                            continue;
+                        }
+                        if (iter.slot.header.fingerprints[entryPos] != fingerprint) {
+                            continue;
+                        }
+                        // Check if this entry matches the key to delete
+                        if (equals(transaction, key, iter.slot.entries[entryPos].key)) {
+                            iter.slot.header.setEntryInvalid(entryPos);
+                            updateSlot(transaction, iter.slotInfo, iter.slot);
+                            indexHeaderForWriteTrx.numEntries--;
+                            return; // Entry deleted, move to next key
+                        }
+                    }
+                } while (nextChainedSlot(transaction, iter));
             },
             [&](const auto& insertions) {
                 mergeBulkInserts(pageAllocator, transaction, insertions);
