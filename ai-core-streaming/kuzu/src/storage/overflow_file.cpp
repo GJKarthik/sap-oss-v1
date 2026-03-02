@@ -1,6 +1,104 @@
 #include "storage/overflow_file.h"
 
 /**
+ * P3-196: OverflowFile - Extended Implementation Documentation
+ * 
+ * Additional Details (see P2-131 for architecture overview)
+ * 
+ * readString() Algorithm:
+ * ```
+ * readString(trxType, ku_string_t):
+ *   IF isShortString(len):
+ *     RETURN inline prefix
+ *   
+ *   cursor = decode(overflowPtr)  // {pageIdx, offset}
+ *   result = ""
+ *   remainingLength = len
+ *   
+ *   WHILE remainingLength > 0:
+ *     bytesToRead = min(remaining, END_OF_PAGE - cursor.offset)
+ *     read(trxType, cursor.pageIdx, func):
+ *       result.append(frame + offset, bytesToRead)
+ *       cursor.pageIdx = *(frame + END_OF_PAGE)  // Next page link
+ *     remainingLength -= bytesToRead
+ *     cursor.offset = 0  // Start of next page
+ *   
+ *   RETURN result
+ * ```
+ * 
+ * setStringOverflow() Algorithm:
+ * ```
+ * setStringOverflow(pageAllocator, src, len, diskDst):
+ *   IF len <= SHORT_STR_LENGTH: RETURN
+ *   
+ *   headerChanged = true
+ *   IF nextPosToWriteTo.pageIdx == INVALID:
+ *     pageToWrite = addANewPage()
+ *   ELSE:
+ *     pageToWrite = getCachedOrLoadPage()
+ *   
+ *   encode(overflowPtr, pageIdx, offset)  // Store start position
+ *   
+ *   WHILE remainingLength > 0:
+ *     bytesToWrite = min(remaining, END_OF_PAGE - offset)
+ *     memcpy(pageToWrite + offset, src + written, bytesToWrite)
+ *     remainingLength -= bytesToWrite
+ *     offset += bytesToWrite
+ *     IF offset >= END_OF_PAGE:
+ *       pageToWrite = addANewPage()  // Links previous page
+ * ```
+ * 
+ * addANewPage() Flow:
+ * ```
+ * addANewPage(pageAllocator):
+ *   newPageIdx = overflowFile.getNewPageIdx()
+ *   IF pageWriteCache not empty:
+ *     // Link previous page to new page
+ *     memcpy(prevPage + END_OF_PAGE, &newPageIdx)
+ *   IF startPageIdx == INVALID:
+ *     startPageIdx = newPageIdx
+ *   pageWriteCache[newPageIdx] = allocateBuffer()
+ *   nextPosToWriteTo = {newPageIdx, 0}
+ *   RETURN buffer
+ * ```
+ * 
+ * equals() Optimization:
+ * ```
+ * equals(trxType, keyToLookup, keyInEntry):
+ *   cursor = decode(keyInEntry.overflowPtr)
+ *   WHILE lengthRead < keyInEntry.len:
+ *     bytesToCheck = min(remaining, END_OF_PAGE - offset)
+ *     equal = memcmp(keyToLookup + read, frame + offset, bytes)
+ *     IF !equal: RETURN false  // Early exit
+ *     cursor.pageIdx = nextPageIdx
+ *     offset = 0
+ *   RETURN true
+ * ```
+ * 
+ * Page Layout Detail:
+ * ```
+ * | Offset | Size | Content |
+ * |--------|------|---------|
+ * | 0 | END_OF_PAGE | String data bytes |
+ * | END_OF_PAGE | sizeof(page_idx_t) | Next page index |
+ * 
+ * END_OF_PAGE = KUZU_PAGE_SIZE - sizeof(page_idx_t)
+ * ```
+ * 
+ * Checkpoint Flow:
+ * ```
+ * OverflowFile::checkpoint():
+ *   1. Allocate header page if needed
+ *   2. FOR each handle: handle->checkpoint()
+ *   3. IF headerChanged: write header page
+ * 
+ * OverflowFileHandle::checkpoint():
+ *   FOR each (pageIndex, page) in pageWriteCache:
+ *     writePageToDisk(pageIndex, data, newPage)
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-131: Overflow File - Long String Storage Management
  * 
  * Purpose:
