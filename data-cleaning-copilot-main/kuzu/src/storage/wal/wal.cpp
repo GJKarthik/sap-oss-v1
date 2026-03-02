@@ -1,6 +1,88 @@
 #include "storage/wal/wal.h"
 
 /**
+ * P3-204: WAL - Extended Implementation Documentation
+ * 
+ * Additional Details (see P3-174 for architecture overview)
+ * 
+ * Constructor Parameters:
+ * ```
+ * WAL(dbPath, readOnly, enableChecksums, vfs):
+ *   walPath = StorageUtils::getWALFilePath(dbPath)  // ".wal"
+ *   inMemory = DBConfig::isDBPathInMemory(dbPath)   // ":memory:"
+ *   store readOnly, vfs, enableChecksums
+ * ```
+ * 
+ * logCommittedWAL() Algorithm:
+ * ```
+ * logCommittedWAL(localWAL, context):
+ *   IF readOnly OR inMemory OR localWAL.size == 0:
+ *     RETURN  // No logging needed
+ *   
+ *   LOCK mtx
+ *   initWriter(context)  // Lazy init serializer
+ *   localWAL.inMemWriter.flush(serializer.writer)
+ *   flushAndSyncNoLock()  // Ensure durability
+ * ```
+ * 
+ * logAndFlushCheckpoint() Algorithm:
+ * ```
+ * logAndFlushCheckpoint(context):
+ *   LOCK mtx
+ *   initWriter(context)
+ *   addNewWALRecordNoLock(CheckpointRecord)
+ *   flushAndSyncNoLock()
+ * ```
+ * 
+ * initWriter() Flow:
+ * ```
+ * initWriter(context):
+ *   IF serializer already exists: RETURN
+ *   
+ *   fileInfo = vfs.openFile(walPath, CREATE_IF_NOT_EXISTS | RW)
+ *   writer = BufferedFileWriter(fileInfo)
+ *   IF enableChecksums:
+ *     writer = ChecksumWriter(writer, mm)  // Wrap for checksums
+ *   serializer = new Serializer(writer)
+ *   
+ *   IF fileInfo.getFileSize() == 0:
+ *     writeHeader(context)  // Write DB UUID + checksum flag
+ *   
+ *   // APPEND mode - don't overwrite existing records
+ *   bufferedWriter.setFileOffset(fileInfo.getFileSize())
+ * ```
+ * 
+ * writeHeader() Format:
+ * ```
+ * [ObjectBegin]
+ *   [DatabaseID: ku_uuid_t]
+ *   [enableChecksums: bool]
+ * [ObjectEnd]
+ * ```
+ * 
+ * addNewWALRecordNoLock() Format:
+ * ```
+ * addNewWALRecordNoLock(record):
+ *   ASSERT type != INVALID_RECORD
+ *   serializer.writer.onObjectBegin()
+ *   record.serialize(serializer)
+ *   serializer.writer.onObjectEnd()
+ * ```
+ * 
+ * clear() vs reset():
+ * | Method | Action | Use Case |
+ * |--------|--------|----------|
+ * | clear() | Clear buffer only | After checkpoint, keep file |
+ * | reset() | Remove WAL file | Full cleanup, delete file |
+ * 
+ * Static Access:
+ * ```cpp
+ * WAL* wal = WAL::Get(context);
+ * // Returns from context.getDatabase().getStorageManager().getWAL()
+ * ```
+ * 
+ * ====================================
+ * 
  * P3-174: WAL (Write-Ahead Log) - Durability and Recovery
  * 
  * Purpose:
