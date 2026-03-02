@@ -1,6 +1,90 @@
 #include "storage/storage_utils.h"
 
 /**
+ * P3-200: StorageUtils - Extended Implementation Documentation (Day 200 Milestone! 🎉)
+ * 
+ * Additional Details (see P2-125 for architecture overview)
+ * 
+ * getColumnName() Switch Logic:
+ * ```
+ * getColumnName(propertyName, type, prefix):
+ *   SWITCH type:
+ *     DATA:       RETURN "{property}_data"
+ *     NULL_MASK:  RETURN "{property}_null"
+ *     INDEX:      RETURN "{property}_index"
+ *     OFFSET:     RETURN "{property}_offset"
+ *     CSR_OFFSET: RETURN "{prefix}_csr_offset"
+ *     CSR_LENGTH: RETURN "{prefix}_csr_length"
+ *     STRUCT_CHILD: RETURN "{property}_{prefix}_child"
+ *     DEFAULT:
+ *       IF prefix.empty(): RETURN propertyName
+ *       ELSE: RETURN "{prefix}_{property}"
+ * ```
+ * 
+ * Column Naming Examples:
+ * ```
+ * getColumnName("age", DATA, "")         → "age_data"
+ * getColumnName("age", NULL_MASK, "")    → "age_null"
+ * getColumnName("", CSR_OFFSET, "fwd")   → "fwd_csr_offset"
+ * getColumnName("addr", STRUCT_CHILD, "city") → "addr_city_child"
+ * getColumnName("name", DEFAULT, "")     → "name"
+ * getColumnName("name", DEFAULT, "pk")   → "pk_name"
+ * ```
+ * 
+ * expandPath() Algorithm:
+ * ```
+ * expandPath(context, path):
+ *   IF isDBPathInMemory(path):
+ *     RETURN path  // ":memory:" unchanged
+ *   
+ *   fullPath = path
+ *   IF path.starts_with('~'):
+ *     home = context.getSetting(HomeDirectorySetting)
+ *     fullPath = home + path.substr(1)
+ *   
+ *   // Normalize: resolve '.', '..', ensure absolute
+ *   normalizedPath = filesystem::absolute(fullPath).lexically_normal()
+ *   RETURN normalizedPath.string()
+ * ```
+ * 
+ * Path Expansion Examples:
+ * ```
+ * expandPath(ctx, ":memory:")      → ":memory:"
+ * expandPath(ctx, "~/mydb")        → "/home/user/mydb"
+ * expandPath(ctx, "./data/mydb")   → "/cwd/data/mydb"
+ * expandPath(ctx, "../sibling/db") → "/parent/sibling/db"
+ * expandPath(ctx, "data/../db")    → "/cwd/db"
+ * ```
+ * 
+ * getDataTypeSize() Logic:
+ * ```
+ * getDataTypeSize(type):
+ *   SWITCH type.getPhysicalType():
+ *     STRING: RETURN sizeof(ku_string_t)  // 16 bytes
+ *     LIST:
+ *     ARRAY:  RETURN sizeof(ku_list_t)    // 16 bytes
+ *     STRUCT:
+ *       size = 0
+ *       FOR field in struct.fields:
+ *         size += getDataTypeSize(field.type)
+ *       size += NullBuffer::getNumBytesForNullValues(fields.size())
+ *       RETURN size
+ *     DEFAULT:
+ *       RETURN PhysicalTypeUtils::getFixedTypeSize(type)
+ * ```
+ * 
+ * Data Type Size Examples:
+ * ```
+ * INT64:  8 bytes
+ * DOUBLE: 8 bytes
+ * BOOL:   1 byte
+ * STRING: 16 bytes (ku_string_t)
+ * LIST:   16 bytes (ku_list_t)
+ * STRUCT{a: INT64, b: BOOL}: 8 + 1 + ceil(2/8) = 10 bytes
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-125: Storage Utils - Storage Layer Utility Functions
  * 
  * Purpose:
