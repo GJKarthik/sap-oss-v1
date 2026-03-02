@@ -1,5 +1,80 @@
 #include "catalog/catalog_entry/table_catalog_entry.h"
 
+/**
+ * P3-145: TableCatalogEntry - Base Table Catalog Entry
+ * 
+ * Purpose:
+ * Abstract base class for all table types (node tables, relationship tables).
+ * Provides common property management, ALTER operations, and serialization.
+ * 
+ * Inheritance:
+ * ```
+ * CatalogEntry (base)
+ *   └── TableCatalogEntry
+ *         ├── NodeTableCatalogEntry (nodes/vertices)
+ *         └── RelGroupCatalogEntry  (relationships/edges)
+ * ```
+ * 
+ * Core Components:
+ * ```
+ * TableCatalogEntry {
+ *   comment: string                      // User comment
+ *   propertyCollection: PropertyDefinitionCollection  // Properties
+ *   hasParent_: bool                     // Dependency flag
+ * }
+ * ```
+ * 
+ * ALTER Operations (handled by alter()):
+ * ```
+ * AlterType::RENAME            → rename(newName)
+ * AlterType::RENAME_PROPERTY   → renameProperty(old, new)
+ * AlterType::ADD_PROPERTY      → addProperty(definition)
+ * AlterType::DROP_PROPERTY     → dropProperty(name)
+ * AlterType::COMMENT           → setComment(comment)
+ * AlterType::ADD_FROM_TO_CONNECTION     → addFromToConnection() [REL only]
+ * AlterType::DROP_FROM_TO_CONNECTION    → dropFromToConnection() [REL only]
+ * ```
+ * 
+ * Property Operations:
+ * ```
+ * containsProperty(name)  → bool
+ * getPropertyID(name)     → property_id_t
+ * getProperty(name/idx)   → PropertyDefinition
+ * getColumnID(name/idx)   → column_id_t
+ * getMaxColumnID()        → column_id_t
+ * vacuumColumnIDs(next)   → compact after DROP
+ * ```
+ * 
+ * Serialization:
+ * ```
+ * serialize():
+ *   1. CatalogEntry::serialize()
+ *   2. Write comment
+ *   3. propertyCollection.serialize()
+ * 
+ * deserialize():
+ *   1. Read comment + properties
+ *   2. Dispatch to NodeTableCatalogEntry or RelGroupCatalogEntry
+ *   3. Set comment + propertyCollection on result
+ * ```
+ * 
+ * ALTER Flow:
+ * ```
+ * ALTER TABLE Person ADD age INT64
+ *   │
+ *   ├── 1. copy() → create new entry
+ *   ├── 2. addProperty(PropertyDefinition)
+ *   ├── 3. setOID(same OID)
+ *   ├── 4. setTimestamp(newTS)
+ *   └── 5. return newEntry → replaces old in version chain
+ * ```
+ * 
+ * Virtual Methods (implemented by subclasses):
+ * - copy() → unique_ptr<TableCatalogEntry>
+ * - getBoundExtraCreateInfo() → unique_ptr<BoundExtraCreateCatalogEntryInfo>
+ * - toCypher() → string (CREATE statement)
+ */
+
 #include "binder/ddl/bound_alter_info.h"
 #include "catalog/catalog.h"
 #include "catalog/catalog_entry/node_table_catalog_entry.h"
