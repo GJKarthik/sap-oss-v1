@@ -1,5 +1,85 @@
 #include "storage/table/column_chunk_data.h"
 
+/**
+ * P2-119: Column Chunk Data - In-Memory Data Buffer Management
+ * 
+ * Purpose:
+ * Manages in-memory data buffers for column storage with compression support,
+ * type-specific handling, statistics tracking, and disk serialization.
+ * Foundation for all column data operations.
+ * 
+ * Architecture:
+ * ```
+ * ColumnChunkData
+ *   ├── buffer: unique_ptr<Buffer>       // Actual data storage
+ *   ├── nullData: unique_ptr<NullChunkData>
+ *   ├── dataType: LogicalType
+ *   ├── metadata: ColumnChunkMetadata    // On-disk info
+ *   ├── inMemoryStats: ColumnChunkStats  // Min/max tracking
+ *   └── residencyState: IN_MEMORY | ON_DISK
+ * 
+ * Specialized Subclasses:
+ *   ├── BoolChunkData       // Bit-packed booleans
+ *   ├── NullChunkData       // Null bitmap
+ *   ├── InternalIDChunkData // Node/rel IDs with commonTableID
+ *   ├── StringChunkData     // Dictionary-encoded strings
+ *   ├── ListChunkData       // Variable-length lists
+ *   └── StructChunkData     // Nested struct types
+ * ```
+ * 
+ * Compression Selection (getCompression):
+ * | Type | Compression Algorithm |
+ * |------|----------------------|
+ * | INT8-INT128 | IntegerBitpacking |
+ * | UINT8-UINT64 | IntegerBitpacking |
+ * | FLOAT | FloatCompression (ALP) |
+ * | DOUBLE | FloatCompression (ALP) |
+ * | Others | Uncompressed |
+ * 
+ * Key Operations:
+ * 
+ * 1. append(): Add values from vector/chunk
+ *    - copyVectorToBuffer() handles selection
+ *    - updateStats() tracks min/max
+ * 
+ * 2. scan(): Read range to ValueVector
+ *    - Direct memcpy for fixed-size
+ *    - Type-specific for BOOL/InternalID
+ * 
+ * 3. write(): Random-access update
+ *    - Supports vector or chunk source
+ *    - Updates numValues if extending
+ * 
+ * 4. flush(): Persist to disk
+ *    - Allocate pages via pageAllocator
+ *    - Compress via flushBufferFunction
+ *    - Set residencyState = ON_DISK
+ * 
+ * 5. split(): Break oversized chunks
+ *    - Binary search for optimal size
+ *    - Handles oversized single values
+ *    - Recursive for nested types
+ * 
+ * Statistics Tracking:
+ * - inMemoryStats: Min/max for uncommitted data
+ * - getMergedColumnChunkStats(): Combines with on-disk metadata
+ * - Used for predicate pushdown optimization
+ * 
+ * Residency States:
+ * - IN_MEMORY: Buffer contains data, capacity > 0
+ * - ON_DISK: Metadata points to pages, capacity = 0
+ * - setToInMemory()/setToOnDisk(): State transitions
+ * 
+ * Serialization:
+ * - serialize(): Write dataType, metadata, enableCompression, nullData
+ * - deserialize(): Factory creates appropriate subclass
+ * 
+ * Memory Management:
+ * - resize(): Grow buffer, preserve data
+ * - resizeWithoutPreserve(): Grow without copy
+ * - spillToDisk()/loadFromDisk(): Buffer manager integration
+ */
+
 #include <algorithm>
 
 #include "common/data_chunk/sel_vector.h"
