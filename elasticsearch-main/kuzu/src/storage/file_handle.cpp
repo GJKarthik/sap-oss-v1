@@ -1,5 +1,99 @@
 #include "storage/file_handle.h"
 
+/**
+ * P2-132: File Handle - Page-Based File Management
+ * 
+ * Purpose:
+ * Manages file I/O with page-based access patterns. Provides abstraction for
+ * persistent files and in-memory temporary files with buffer manager integration.
+ * 
+ * Architecture:
+ * ```
+ * FileHandle
+ *   ├── fhFlags: uint8_t              // File handle flags
+ *   ├── fileIndex: uint32_t           // Buffer manager file index
+ *   ├── numPages: atomic<page_idx_t>  // Current page count
+ *   ├── pageCapacity: page_idx_t      // Allocated capacity
+ *   ├── bm: BufferManager*            // Buffer manager reference
+ *   ├── pageSizeClass: PageSizeClass  // REGULAR_PAGE or TEMP_PAGE
+ *   ├── pageStates: ConcurrentVector<PageState>
+ *   ├── frameGroupIdxes: ConcurrentVector<page_group_idx_t>
+ *   ├── pageManager: unique_ptr<PageManager>
+ *   └── fileInfo: unique_ptr<FileInfo>
+ * ```
+ * 
+ * File Handle Modes:
+ * 
+ * 1. Persistent File:
+ *    - constructPersistentFileHandle()
+ *    - Opens existing file or creates new
+ *    - Calculates numPages from file size
+ *    - Supports READ_ONLY, WRITE, CREATE_IF_NOT_EXISTS flags
+ *    - Optional file locking (READ_LOCK, WRITE_LOCK)
+ * 
+ * 2. Temporary (In-Memory) File:
+ *    - constructTmpFileHandle()
+ *    - No actual file on disk
+ *    - All pages pinned in buffer manager
+ *    - Used for intermediate query results
+ * 
+ * Page Management:
+ * 
+ * 1. addNewPage() / addNewPages():
+ *    - Allocates new page(s)
+ *    - Expands page groups if needed
+ *    - For in-memory: pins immediately
+ * 
+ * 2. addNewPageGroupWithoutLock():
+ *    - Expands capacity by PAGE_GROUP_SIZE
+ *    - Allocates new frame group in buffer manager
+ * 
+ * 3. removePageIdxAndTruncateIfNecessary():
+ *    - Reduces numPages
+ *    - Shrinks page groups if possible
+ *    - Does NOT truncate underlying file immediately
+ * 
+ * Page Access:
+ * 
+ * 1. pinPage(pageIdx, readPolicy):
+ *    - Brings page into memory
+ *    - readPolicy: DONT_READ_PAGE (new pages) or READ_PAGE
+ *    - In-memory: returns existing frame
+ * 
+ * 2. optimisticReadPage(pageIdx, readOp):
+ *    - Lock-free read with retry on conflict
+ *    - In-memory: direct frame access
+ * 
+ * 3. unpinPage(pageIdx):
+ *    - Releases pin, allows eviction
+ * 
+ * 4. getFrame(pageIdx):
+ *    - Direct frame access (must be pinned)
+ * 
+ * Flushing:
+ * 
+ * 1. flushAllDirtyPagesInFrames():
+ *    - Writes all dirty pages to disk
+ * 
+ * 2. flushPageIfDirtyWithoutLock():
+ *    - Writes single page if dirty
+ *    - Clears dirty flag
+ * 
+ * 3. writePagesToFile():
+ *    - Bulk write buffer to file
+ *    - In-memory: copies to frames
+ * 
+ * Thread Safety:
+ * - fhSharedMutex for page allocation
+ * - ConcurrentVector for page states
+ * - Atomic numPages counter
+ * 
+ * Page Groups:
+ * - Pages organized in groups of PAGE_GROUP_SIZE
+ * - Each group has its own frame group in buffer manager
+ * - Efficient memory management granularity
+ */
+
 #include <cmath>
 
 #include "common/file_system/virtual_file_system.h"
