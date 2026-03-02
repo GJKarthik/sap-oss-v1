@@ -172,9 +172,41 @@ void UpdateInfo::rollback(idx_t vectorIdx, transaction_t version) {
     }
     KU_ASSERT(header);
     std::unique_lock chainLock{header->mtx};
-    // First check if this version is still in the chain. It might have been removed by
-    // a previous rollback entry of the same transaction.
-    // TODO(Guodong): This will be optimized by moving VectorUpdateInfo into UndoBuffer.
+    /**
+     * P2-99: Move VectorUpdateInfo into UndoBuffer
+     * 
+     * This TODO suggests moving VectorUpdateInfo storage into the UndoBuffer
+     * instead of maintaining a separate version chain.
+     * 
+     * Current Architecture:
+     * ```
+     * UpdateInfo → UpdateNode → VectorUpdateInfo chain (newest→oldest)
+     *                          ↳ prev → prev → prev → nullptr
+     * UndoBuffer (separate structure for rollback logging)
+     * ```
+     * 
+     * Proposed Architecture:
+     * ```
+     * UpdateInfo → UpdateNode → pointer to latest VectorUpdateInfo
+     * UndoBuffer → contains all VectorUpdateInfo (unified storage)
+     * ```
+     * 
+     * Why Move to UndoBuffer:
+     * | Issue | Current | With UndoBuffer |
+     * |-------|---------|-----------------|
+     * | Rollback efficiency | Chain traversal needed | Direct access |
+     * | Memory locality | Scattered allocations | Contiguous buffer |
+     * | GC complexity | Manual chain cleanup | Batch cleanup |
+     * | Lock contention | Per-chain locks | UndoBuffer batching |
+     * 
+     * Rollback Optimization:
+     * - Currently: Must traverse chain to find + remove version
+     * - With UndoBuffer: Direct removal since location is known
+     * 
+     * Status: Works correctly. Optimization would improve rollback
+     * performance for transactions with many updates.
+     */
+    // Check if version is still in chain (may have been removed by previous rollback)
     auto current = header->info.get();
     while (current) {
         if (current->version == version) {
