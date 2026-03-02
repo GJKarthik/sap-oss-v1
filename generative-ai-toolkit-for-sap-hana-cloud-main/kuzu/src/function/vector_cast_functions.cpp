@@ -288,7 +288,44 @@ bool CastFunction::hasImplicitCast(const LogicalType& srcType, const LogicalType
             dstType.getLogicalTypeID()) != UNDEFINED_CAST_COST) {
         return true;
     }
-    // TODO(Jiamin): there are still other special cases
+    /**
+     * P2-60: Special Cases in hasImplicitCast
+     * 
+     * After checking the standard cast cost table, we handle special cases that
+     * require custom logic.
+     * 
+     * Currently Handled Special Cases:
+     * 1. Numerical type casting - Allow any numerical to any numerical
+     *    - INT32 → DOUBLE (widening) ✓
+     *    - DOUBLE → INT32 (narrowing with potential precision loss) ✓
+     *    - INT128 → INT8 (narrowing with potential overflow) ✓
+     * 
+     * Potential Future Special Cases (not yet implemented):
+     * 2. Timestamp precision casting
+     *    - TIMESTAMP_NS → TIMESTAMP_MS (precision loss)
+     *    - Currently handled via castTimestamp() but may need refinement
+     * 
+     * 3. String to numeric with format specifications
+     *    - "1,234.56" → DOUBLE with locale-aware parsing
+     *    - Currently relies on castFromString()
+     * 
+     * 4. BLOB to primitive types
+     *    - Binary decoding of numeric types
+     *    - Security implications need consideration
+     * 
+     * 5. JSON string to nested types
+     *    - Parsing JSON into STRUCT/LIST
+     *    - Currently not supported as implicit cast
+     * 
+     * Why Allow All Numerical Casts:
+     * - User intent is clear when using numerical types
+     * - Database engines typically allow flexible numeric conversions
+     * - Runtime overflow/precision errors provide feedback
+     * - Explicit cast() can still be used for control
+     * 
+     * Note: The getCastCost() function already handles most standard cases.
+     * This fallback catches any numerical combinations not explicitly listed.
+     */
     // We allow cast between any numerical types
     if (LogicalTypeUtils::isNumerical(srcType) && LogicalTypeUtils::isNumerical(dstType)) {
         return true;
