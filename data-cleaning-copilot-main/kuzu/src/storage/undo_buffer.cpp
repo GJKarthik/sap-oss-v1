@@ -1,5 +1,97 @@
 #include "storage/undo_buffer.h"
 
+/**
+ * P2-128: Undo Buffer - Transaction Rollback Support
+ * 
+ * Purpose:
+ * Provides undo logging for transaction rollback. Records all modifications
+ * during a transaction and enables reverting changes on abort or replaying
+ * commit timestamps on success.
+ * 
+ * Architecture:
+ * ```
+ * UndoBuffer
+ *   ├── memoryBuffers: vector<UndoMemoryBuffer>
+ *   │     └── Sequential buffers for undo records
+ *   └── mm: MemoryManager*
+ * 
+ * UndoRecordHeader (per record)
+ *   ├── recordType: UndoRecordType
+ *   └── recordSize: uint32_t
+ * 
+ * Record Types:
+ *   CATALOG_ENTRY   → Schema changes (CREATE/ALTER/DROP)
+ *   SEQUENCE_ENTRY  → Sequence value changes
+ *   INSERT_INFO     → Inserted rows version info
+ *   DELETE_INFO     → Deleted rows version info
+ *   UPDATE_INFO     → Updated column values
+ * ```
+ * 
+ * Record Structures:
+ * 
+ * 1. CatalogEntryRecord:
+ *    - catalogSet: CatalogSet* (parent catalog)
+ *    - catalogEntry: CatalogEntry* (modified entry)
+ * 
+ * 2. SequenceEntryRecord:
+ *    - sequenceEntry: SequenceCatalogEntry*
+ *    - sequenceRollbackData: {usageCount, currVal}
+ * 
+ * 3. VersionRecord (INSERT_INFO/DELETE_INFO):
+ *    - startRow, numRows, nodeGroupIdx
+ *    - versionRecordHandler: VersionRecordHandler*
+ * 
+ * 4. VectorUpdateRecord (UPDATE_INFO):
+ *    - updateInfo, vectorIdx, vectorUpdateInfo
+ *    - version: transaction_t (for rollback)
+ * 
+ * Transaction Flow:
+ * ```
+ * During Transaction:
+ *   INSERT → createInsertInfo()
+ *   DELETE → createDeleteInfo()
+ *   UPDATE → createVectorUpdateInfo()
+ *   CREATE → createCatalogEntry()
+ *   SEQUENCE → createSequenceChange()
+ * 
+ * On COMMIT:
+ *   iterate() forward through records
+ *   Apply commitTS to each record
+ * 
+ * On ROLLBACK:
+ *   reverseIterate() backward through records
+ *   Undo each modification in reverse order
+ * ```
+ * 
+ * Iteration Modes:
+ * - iterate(): Forward order (for commit - apply commit timestamps)
+ * - reverseIterate(): Reverse order (for rollback - undo changes)
+ * 
+ * Commit Operations:
+ * - commitCatalogEntryRecord(): Set timestamp on new entry
+ * - commitVersionInfo(): Apply commitTS to insert/delete info
+ * - commitVectorUpdateInfo(): Commit update info with timestamp
+ * 
+ * Rollback Operations:
+ * - rollbackCatalogEntryRecord(): Remove entry from version chain
+ * - rollbackSequenceEntry(): Restore previous sequence value
+ * - rollbackVersionInfo(): Revert insert/delete
+ * - rollbackVectorUpdateInfo(): Restore previous values
+ * 
+ * Memory Management:
+ * - Auto-grows buffers as needed
+ * - Initial capacity: UNDO_MEMORY_BUFFER_INIT_CAPACITY
+ * - Doubles capacity when exceeded
+ * 
+ * Thread Safety:
+ * - Mutex-protected createUndoRecord()
+ * - One UndoBuffer per transaction
+ * 
+ * Performance:
+ * - createUndoRecord: O(1) amortized
+ * - commit/rollback: O(n) records
+ */
+
 #include "catalog/catalog_entry/catalog_entry.h"
 #include "catalog/catalog_entry/sequence_catalog_entry.h"
 #include "catalog/catalog_entry/table_catalog_entry.h"
