@@ -1,5 +1,103 @@
 #include "storage/shadow_utils.h"
 
+/**
+ * P3-199: ShadowUtils - Shadow Page Management Utilities
+ * 
+ * Purpose:
+ * Provides utility functions for shadow page operations during
+ * checkpoint-based atomic updates. Abstracts the common patterns
+ * of creating, reading, and updating shadow pages.
+ * 
+ * Architecture:
+ * ```
+ * ShadowPageAndFrame {
+ *   originalPage: page_idx_t    // Page in main data file
+ *   shadowPage: page_idx_t      // Page in shadow file
+ *   frame: uint8_t*             // Pinned shadow frame
+ * }
+ * ```
+ * 
+ * createShadowVersionIfNecessaryAndPinPage() Flow:
+ * ```
+ * createShadowVersionIfNecessaryAndPinPage(originalPage, skipRead, fh, sf):
+ *   hasShadow = shadowFile.hasShadowPage(fileIdx, originalPage)
+ *   shadowPage = shadowFile.getOrCreateShadowPage(fileIdx, originalPage)
+ *   
+ *   IF hasShadow:
+ *     frame = shadowFH.pinPage(shadowPage, READ_PAGE)
+ *   ELSE:
+ *     frame = shadowFH.pinPage(shadowPage, DONT_READ_PAGE)
+ *     IF !skipRead:
+ *       // Copy original page content to shadow
+ *       fileHandle.optimisticReadPage(originalPage, [&](src) {
+ *         memcpy(frame, src, KUZU_PAGE_SIZE)
+ *       })
+ *   
+ *   shadowFH.setLockedPageDirty(shadowPage)
+ *   RETURN {originalPage, shadowPage, frame}
+ * ```
+ * 
+ * getFileHandleAndPhysicalPageIdxToPin() Logic:
+ * ```
+ * getFileHandleAndPhysicalPageIdxToPin(fh, pageIdx, sf, trxType):
+ *   IF trxType == CHECKPOINT AND hasShadowPage:
+ *     RETURN (shadowFH, shadowPageIdx)  // Read from shadow
+ *   ELSE:
+ *     RETURN (fileHandle, pageIdx)      // Read from main
+ * ```
+ * 
+ * updatePage() Pattern:
+ * ```
+ * updatePage(fileHandle, originalPage, skipRead, shadowFile, updateOp):
+ *   1. Create shadow version if needed
+ *   2. Pin shadow page
+ *   3. Execute updateOp(frame)
+ *   4. Unpin shadow page
+ * 
+ * Exception safety: unpin on throw
+ * ```
+ * 
+ * readShadowVersionOfPage() Pattern:
+ * ```
+ * readShadowVersionOfPage(fileHandle, originalPage, shadowFile, readOp):
+ *   ASSERT shadow page exists
+ *   shadowPage = getShadowPage()
+ *   frame = pin(shadowPage, READ_PAGE)
+ *   readOp(frame)
+ *   unpin(shadowPage)
+ * ```
+ * 
+ * Usage Patterns:
+ * 
+ * 1. Modify page during checkpoint:
+ *    ```cpp
+ *    ShadowUtils::updatePage(dataFH, pageIdx, false, shadowFile,
+ *        [&](uint8_t* frame) { /* modify frame */ });
+ *    ```
+ * 
+ * 2. Read page considering shadow:
+ *    ```cpp
+ *    auto [fh, idx] = ShadowUtils::getFileHandleAndPhysicalPageIdxToPin(
+ *        dataFH, pageIdx, shadowFile, trxType);
+ *    fh->readPage(idx, callback);
+ *    ```
+ * 
+ * 3. Read shadow version directly:
+ *    ```cpp
+ *    ShadowUtils::readShadowVersionOfPage(dataFH, pageIdx, shadowFile,
+ *        [&](uint8_t* frame) { /* read data */ });
+ *    ```
+ * 
+ * Thread Safety:
+ * - Single-threaded checkpoint assumed
+ * - No concurrent shadow page access
+ * 
+ * Performance:
+ * - Copy-on-write semantics (original page copied on first modify)
+ * - Shadow pages reused within checkpoint
+ * - Dirty tracking per shadow page
+ */
+
 #include "storage/file_handle.h"
 #include "storage/shadow_file.h"
 #include "transaction/transaction.h"
