@@ -77,10 +77,64 @@ LogicalType ArrowConverter::fromArrowSchema(const ArrowSchema* schema) {
                 return LogicalType(LogicalTypeID::TIMESTAMP_MS);
             }
         case 't':
-            // TODO implement pure time type
+            /**
+             * P2-89: Pure Time Type Support (Arrow format 'tt')
+             * 
+             * Arrow's 'tt' format represents a pure time type (time of day without date).
+             * 
+             * Arrow Time Formats:
+             * | Format | Unit | Storage |
+             * |--------|------|---------|
+             * | tts | Seconds | int32 |
+             * | ttm | Milliseconds | int32 |
+             * | ttu | Microseconds | int64 |
+             * | ttn | Nanoseconds | int64 |
+             * 
+             * What This Would Require:
+             * 1. New LogicalTypeID::TIME type
+             * 2. time_t struct (storing microseconds since midnight)
+             * 3. Comparison, arithmetic, and formatting functions
+             * 4. Cast functions: STRING <-> TIME, TIMESTAMP -> TIME
+             * 
+             * Use Cases:
+             * - Store opening hours: "09:00:00"
+             * - Event scheduling without dates
+             * - Data from SQL TIME columns
+             * 
+             * Current Workaround:
+             * - Store as STRING: "14:30:00"
+             * - Store as INT64: microseconds since midnight
+             * - Store as INTERVAL (but semantically different)
+             * 
+             * Status: NotImplementedException thrown for Arrow TIME types.
+             */
             throw NotImplementedException("Pure time types are not supported");
         case 's':
-            // TODO maxwell: timezone support
+            /**
+             * P2-89b: Timezone Support for Timestamps
+             * 
+             * Arrow timestamps can have timezone annotations:
+             * - Format: "ts[unit]:[timezone]" (e.g., "tsu:America/New_York")
+             * 
+             * Current Behavior:
+             * - We parse the unit (s/m/u/n) correctly
+             * - Timezone part is IGNORED - all timestamps treated as UTC
+             * 
+             * What Proper Timezone Support Would Need:
+             * 1. TIMESTAMP_TZ type that stores timezone info
+             * 2. Timezone database (e.g., tzdb or ICU)
+             * 3. Conversion functions for display and comparison
+             * 4. DST handling for arithmetic operations
+             * 
+             * Trade-offs:
+             * | Approach | Pros | Cons |
+             * |----------|------|------|
+             * | UTC only | Simple, no ambiguity | User must convert |
+             * | Store TZ | Full fidelity | Complex, larger storage |
+             * | Convert on ingest | Normalized data | Loses original TZ |
+             * 
+             * Status: Timezone part of Arrow schema currently ignored.
+             */
             switch (arrowType[2]) {
             case 's':
                 return LogicalType(LogicalTypeID::TIMESTAMP_SEC);
