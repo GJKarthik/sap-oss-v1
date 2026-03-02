@@ -1,5 +1,77 @@
 #include "storage/wal/local_wal.h"
 
+/**
+ * P3-178: LocalWAL - Per-Transaction WAL Buffer
+ * 
+ * Purpose:
+ * Buffers WAL records for a single transaction in memory before commit.
+ * Allows atomic transaction commit by writing all records at once to global WAL.
+ * 
+ * Architecture:
+ * ```
+ * LocalWAL
+ *   ├── inMemWriter: shared_ptr<InMemFileWriter>  // Memory buffer
+ *   ├── serializer: Serializer                     // Record serialization
+ *   └── mtx: mutex                                 // Thread safety
+ * ```
+ * 
+ * Transaction Lifecycle:
+ * ```
+ * BEGIN
+ *   └── LocalWAL::logBeginTransaction()
+ * 
+ * Operations during transaction:
+ *   ├── logCreateCatalogEntryRecord()
+ *   ├── logDropCatalogEntryRecord()
+ *   ├── logAlterCatalogEntryRecord()
+ *   ├── logTableInsertion()
+ *   ├── logNodeDeletion() / logNodeUpdate()
+ *   ├── logRelDelete() / logRelUpdate()
+ *   ├── logRelDetachDelete()
+ *   ├── logUpdateSequenceRecord()
+ *   └── logLoadExtension()
+ * 
+ * COMMIT
+ *   ├── LocalWAL::logCommit()
+ *   └── WAL::logCommittedWAL(localWAL) → flush to disk
+ * 
+ * ROLLBACK
+ *   └── LocalWAL::clear() → discard all records
+ * ```
+ * 
+ * Record Logging Methods:
+ * | Method | Record Type |
+ * |--------|-------------|
+ * | logBeginTransaction() | BEGIN_TRANSACTION |
+ * | logCommit() | COMMIT |
+ * | logCreateCatalogEntryRecord() | CREATE_CATALOG_ENTRY |
+ * | logDropCatalogEntryRecord() | DROP_CATALOG_ENTRY |
+ * | logAlterCatalogEntryRecord() | ALTER_TABLE_ENTRY |
+ * | logTableInsertion() | TABLE_INSERTION |
+ * | logNodeDeletion() | NODE_DELETION |
+ * | logNodeUpdate() | NODE_UPDATE |
+ * | logRelDelete() | REL_DELETION |
+ * | logRelDetachDelete() | REL_DETACH_DELETE |
+ * | logRelUpdate() | REL_UPDATE |
+ * | logUpdateSequenceRecord() | UPDATE_SEQUENCE |
+ * | logLoadExtension() | LOAD_EXTENSION |
+ * 
+ * Checksum Support:
+ * - Optional via ChecksumWriter wrapper
+ * - Wraps InMemFileWriter
+ * - Same checksum format as global WAL
+ * 
+ * Thread Safety:
+ * - Mutex protects all write operations
+ * - Each transaction has its own LocalWAL
+ * - No cross-transaction contention
+ * 
+ * Memory Management:
+ * - Uses MemoryManager for buffer allocation
+ * - clear() releases buffer memory
+ * - getSize() returns current buffer size
+ */
+
 #include "binder/ddl/bound_alter_info.h"
 #include "catalog/catalog_entry/sequence_catalog_entry.h"
 #include "common/serializer/in_mem_file_writer.h"
