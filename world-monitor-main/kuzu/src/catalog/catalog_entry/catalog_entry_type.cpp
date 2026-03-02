@@ -1,5 +1,65 @@
 #include "catalog/catalog_entry/catalog_entry_type.h"
 
+/**
+ * P3-152: CatalogEntryType - Entry Type Utilities
+ * 
+ * Purpose:
+ * Provides string conversion utilities for CatalogEntryType enum values.
+ * Used for debugging, logging, error messages, and user-facing output.
+ * 
+ * CatalogEntryType Enum:
+ * ```
+ * Table Types:
+ *   NODE_TABLE_ENTRY         - Node/vertex tables
+ *   REL_GROUP_ENTRY          - Relationship/edge tables
+ *   FOREIGN_TABLE_ENTRY      - External tables (attached DBs)
+ * 
+ * Function Types:
+ *   SCALAR_FUNCTION_ENTRY    - Scalar functions (upper, length)
+ *   AGGREGATE_FUNCTION_ENTRY - Aggregates (sum, count, avg)
+ *   TABLE_FUNCTION_ENTRY     - Table-returning (read_csv)
+ *   STANDALONE_TABLE_FUNCTION_ENTRY - Special table functions
+ *   REWRITE_FUNCTION_ENTRY   - Query rewrite functions
+ *   COPY_FUNCTION_ENTRY      - COPY FROM functions
+ *   SCALAR_MACRO_ENTRY       - User-defined macros
+ * 
+ * Other Types:
+ *   SEQUENCE_ENTRY           - Auto-increment sequences
+ *   INDEX_ENTRY              - Secondary indexes
+ *   TYPE_ENTRY               - User-defined types
+ *   DUMMY_ENTRY              - Placeholder/internal
+ * ```
+ * 
+ * Utility Classes:
+ * 
+ * 1. CatalogEntryTypeUtils::toString(type)
+ *    - Returns internal enum name (e.g., "NODE_TABLE_ENTRY")
+ *    - Used for debugging, serialization, logging
+ * 
+ * 2. FunctionEntryTypeUtils::toString(type)
+ *    - Returns user-friendly function type names
+ *    - Used in error messages shown to users
+ *    - Examples:
+ *      * SCALAR_MACRO_ENTRY → "MACRO FUNCTION"
+ *      * AGGREGATE_FUNCTION_ENTRY → "AGGREGATE FUNCTION"
+ *      * SCALAR_FUNCTION_ENTRY → "SCALAR FUNCTION"
+ *      * TABLE_FUNCTION_ENTRY → "TABLE FUNCTION"
+ * 
+ * Usage Examples:
+ * ```
+ * // Debug logging
+ * log("Created entry of type: " + CatalogEntryTypeUtils::toString(type));
+ * 
+ * // User error message
+ * throw Exception("Cannot DROP " + FunctionEntryTypeUtils::toString(type));
+ * ```
+ * 
+ * Type Categories (for dispatching):
+ * - isTableType(): NODE_TABLE_ENTRY, REL_GROUP_ENTRY, FOREIGN_TABLE_ENTRY
+ * - isFunctionType(): *_FUNCTION_ENTRY, SCALAR_MACRO_ENTRY
+ * - isSerializable(): Most types (not DUMMY_ENTRY)
+ */
+
 #include "common/assert.h"
 
 namespace kuzu {
