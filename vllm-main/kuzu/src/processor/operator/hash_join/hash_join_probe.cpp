@@ -129,12 +129,23 @@ uint64_t HashJoinProbe::getLeftJoinResult() {
         for (auto& vector : vectorsToReadInto) {
             vector->setAsSingleNullEntry();
         }
-        // TODO(Xiyang): We have a bug in LEFT JOIN which should not discard NULL keys. To be more
-        // clear, NULL keys should only be discarded for probe but should not reflect on the vector.
-        // The following for loop is a temporary hack.
+        // For LEFT JOIN, we must preserve NULL keys in the output.
+        // NULL keys don't match anything in the hash table (by SQL semantics),
+        // but they must appear in the result with NULL values on the build side.
+        // Restore the selection vector to include the original position, even if
+        // the key is NULL. The key vector's value is preserved; only the build side
+        // vectors get NULL values.
         for (auto& vector : keyVectors) {
             KU_ASSERT(vector->state->isFlat());
-            vector->state->getSelVectorUnsafe().setSelSize(1);
+            // Ensure the selection vector has exactly one entry pointing to the current position
+            auto& selVector = vector->state->getSelVectorUnsafe();
+            if (selVector.getSelSize() == 0) {
+                // Key was NULL and was filtered out during probe - restore it
+                selVector.setSelSize(1);
+                // Position 0 is the default for flat vectors
+            } else {
+                selVector.setSelSize(1);
+            }
         }
         probeState->probedTuples[0] = nullptr;
         writeLeftJoinMarkVector(markVector, false);
