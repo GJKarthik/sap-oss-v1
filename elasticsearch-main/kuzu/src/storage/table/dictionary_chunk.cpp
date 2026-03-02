@@ -1,6 +1,76 @@
 #include "storage/table/dictionary_chunk.h"
 
 /**
+ * P3-217: DictionaryChunk - Extended Implementation Details
+ * 
+ * Additional Details (see P2-120 for architecture overview)
+ * 
+ * Constructor:
+ * ```
+ * DictionaryChunk(mm, capacity, enableCompression, residencyState):
+ *   stringDataChunk = ColumnChunkFactory::create(UINT8, 0, no compression)
+ *   offsetChunk = ColumnChunkFactory::create(UINT64, 
+ *                   min(capacity, INITIAL_OFFSET_CHUNK_CAPACITY))
+ *   indexTable = unordered_set(StringOps(this))
+ * ```
+ * 
+ * INITIAL_OFFSET_CHUNK_CAPACITY = 3:
+ * - Not power of 2 intentionally
+ * - Ensures always extra space for in-place updates
+ * - Node group size is always power of 2
+ * - So offset chunk never exactly equals node group size
+ * 
+ * appendString() Implementation:
+ * ```
+ * appendString(val):
+ *   IF enableCompression AND indexTable.find(val) exists:
+ *     RETURN existing index  // Deduplication
+ *   
+ *   IF stringDataChunk.capacity < numValues + val.size:
+ *     resize to bit_ceil(capacity + val.size)
+ *   
+ *   startOffset = stringDataChunk.numValues
+ *   memcpy(stringDataChunk.data + startOffset, val.data, val.size)
+ *   stringDataChunk.numValues += val.size
+ *   
+ *   index = offsetChunk.numValues
+ *   IF index >= offsetChunk.capacity:
+ *     resize(capacity * CHUNK_RESIZE_RATIO)  // 2x
+ *   
+ *   offsetChunk[index] = startOffset
+ *   offsetChunk.numValues++
+ *   
+ *   IF enableCompression:
+ *     indexTable.insert({index})
+ *   
+ *   RETURN index
+ * ```
+ * 
+ * getString() Implementation:
+ * ```
+ * getString(index):
+ *   startOffset = offsetChunk[index]
+ *   length = getStringLength(index)
+ *   RETURN string_view(stringDataChunk.data + startOffset, length)
+ * ```
+ * 
+ * getStringLength() Implementation:
+ * ```
+ * getStringLength(index):
+ *   IF stringDataChunk.numValues == 0: RETURN 0
+ *   IF index + 1 < offsetChunk.numValues:
+ *     RETURN offsetChunk[index+1] - offsetChunk[index]
+ *   RETURN stringDataChunk.numValues - offsetChunk[index]  // Last string
+ * ```
+ * 
+ * Serialization Order:
+ * ```
+ * serialize(): offsetChunk → stringDataChunk
+ * deserialize(): offsetChunk → stringDataChunk (indexTable rebuilt on demand)
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-120: Dictionary Chunk - String Dictionary Encoding
  * 
  * Purpose:
