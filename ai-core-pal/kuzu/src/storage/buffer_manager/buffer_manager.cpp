@@ -1,6 +1,92 @@
 #include "storage/buffer_manager/buffer_manager.h"
 
 /**
+ * P3-189: BufferManager - Extended Documentation
+ * 
+ * Additional Details (see P3-171 for base documentation)
+ * 
+ * Pin State Machine:
+ * ```
+ * pin(fileHandle, pageIdx, policy):
+ *   LOOP:
+ *     currState = pageState->getStateAndVersion()
+ *     SWITCH currState:
+ *       EVICTED:
+ *         IF tryLock(currState):
+ *           claimAFrame()  // May evict other pages
+ *           insert into evictionQueue
+ *           RETURN frame pointer
+ *       UNLOCKED/MARKED:
+ *         IF tryLock(currState):
+ *           RETURN frame pointer
+ *       LOCKED:
+ *         CONTINUE spinning
+ * ```
+ * 
+ * Optimistic Read Protocol:
+ * ```
+ * optimisticRead(func):
+ *   LOOP:
+ *     version1 = pageState->getStateAndVersion()
+ *     IF UNLOCKED:
+ *       try_func(func, frame)  // Execute read
+ *       version2 = pageState->getStateAndVersion()
+ *       IF version1 == version2:
+ *         RETURN  // Read was consistent
+ *     ELIF MARKED:
+ *       tryClearMark()  // Second chance
+ *     ELIF EVICTED:
+ *       pin() then unpin()  // Load page
+ *     ELIF LOCKED:
+ *       CONTINUE spinning
+ * ```
+ * 
+ * Eviction Queue Batch Processing:
+ * ```
+ * evictPages():
+ *   1. Fetch BATCH_SIZE candidates from queue
+ *   2. For each candidate:
+ *      - Check if evictable (UNLOCKED+MARKED)
+ *      - If UNLOCKED only: Mark (second chance)
+ *   3. Try evict collected candidates
+ *   4. Return total bytes freed
+ * ```
+ * 
+ * Memory Pressure Handling:
+ * ```
+ * reserve(size):
+ *   usedMemory += size
+ *   WHILE usedMemory > bufferPoolSize:
+ *     memoryClaimed = 0
+ *     IF no spiller OR usedMemory - nonEvictable > poolSize/2:
+ *       memoryClaimed = evictPages()
+ *     ELSE:
+ *       (claimed, nowEvictable) = spiller->claimNextGroup()
+ *       IF claimed == 0:
+ *         memoryClaimed = evictPages()
+ *     IF memoryClaimed == 0:
+ *       IF failedCount++ < 2:
+ *         sleep(5ms)  // Wait for other threads
+ *       ELSE:
+ *         freeUsedMemory(size)
+ *         RETURN false
+ *   freeUsedMemory(totalClaimed)
+ *   RETURN true
+ * ```
+ * 
+ * Spiller Integration:
+ * ```
+ * When memory pressure is high:
+ *   1. Check if evictable memory > 50% of pool
+ *   2. If yes: evictPages() first
+ *   3. If no: spiller->claimNextGroup()
+ *      - Writes unused chunks to temp file
+ *      - Returns (bytesFreed, nowEvictable)
+ *   4. nonEvictableMemory adjusted accordingly
+ * ```
+ * 
+ * ====================================
+ * 
  * P3-171: BufferManager - Page Buffer Pool Management
  * 
  * Purpose:
