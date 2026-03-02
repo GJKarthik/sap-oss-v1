@@ -1,5 +1,86 @@
 #include "transaction/transaction.h"
 
+/**
+ * P3-136: Transaction - Core Transaction Management
+ * 
+ * Purpose:
+ * Core transaction implementation providing ACID guarantees for database operations.
+ * Manages transaction lifecycle including begin, commit, and rollback with full
+ * support for MVCC (Multi-Version Concurrency Control).
+ * 
+ * Architecture:
+ * ```
+ * Transaction
+ *   ├── type: TransactionType          // READ_ONLY, WRITE, DUMMY, CHECKPOINT
+ *   ├── ID: transaction_t              // Unique transaction identifier
+ *   ├── startTS: transaction_t         // Start timestamp for MVCC
+ *   ├── commitTS: transaction_t        // Set on commit
+ *   ├── currentTS: timestamp_t         // Wall clock timestamp
+ *   ├── clientContext: ClientContext*  // Owning context
+ *   ├── localStorage: unique_ptr<LocalStorage>
+ *   ├── undoBuffer: unique_ptr<UndoBuffer>
+ *   ├── localWAL: unique_ptr<LocalWAL>
+ *   ├── forceCheckpoint: bool          // Force checkpoint on commit
+ *   └── hasCatalogChanges: bool        // Catalog modified
+ * ```
+ * 
+ * Transaction Types:
+ * 
+ * | Type | Description |
+ * |------|-------------|
+ * | READ_ONLY | Only reads, no locks, snapshot isolation |
+ * | WRITE | Can modify data, exclusive locks, WAL logging |
+ * | DUMMY | Internal placeholder transaction |
+ * | CHECKPOINT | Special transaction for checkpoint operations |
+ * 
+ * Lifecycle:
+ * ```
+ * BEGIN → Active → COMMIT/ROLLBACK → Ended
+ *   │
+ *   ├── localStorage: Tracks local modifications
+ *   ├── undoBuffer: Records changes for rollback
+ *   └── localWAL: Write-ahead log for durability
+ * ```
+ * 
+ * Commit Flow:
+ * 1. localStorage->commit(): Merge local changes
+ * 2. undoBuffer->commit(): Apply commit timestamp
+ * 3. localWAL->logCommit(): Log commit record
+ * 4. wal->logCommittedWAL(): Flush to main WAL
+ * 5. Catalog::incrementVersion(): If catalog changed
+ * 
+ * Rollback Flow:
+ * 1. undoBuffer->rollback(): Undo all changes
+ * 2. localStorage->rollback(): Discard local state
+ * 3. Clear catalog change flag
+ * 
+ * Undo Buffer Operations:
+ * - pushCreateDropCatalogEntry(): DDL operations
+ * - pushAlterCatalogEntry(): ALTER operations
+ * - pushSequenceChange(): Sequence modifications
+ * - pushInsertInfo(): INSERT undo records
+ * - pushDeleteInfo(): DELETE undo records
+ * - pushVectorUpdateInfo(): UPDATE undo records
+ * 
+ * WAL Logging Decision:
+ * ```cpp
+ * shouldLogToWAL() = isWriteTransaction() && !inMemory
+ * ```
+ * 
+ * LocalCacheManager:
+ * Thread-safe cache for transaction-local objects.
+ * Used for caching computed values within transaction scope.
+ * 
+ * Global Constants:
+ * - DUMMY_TRANSACTION: Placeholder for read operations
+ * - DUMMY_CHECKPOINT_TRANSACTION: For checkpoint operations
+ * 
+ * Static Access:
+ * ```cpp
+ * Transaction* tx = Transaction::Get(clientContext);
+ * ```
+ */
+
 #include "common/exception/runtime.h"
 #include "main/client_context.h"
 #include "main/db_config.h"
