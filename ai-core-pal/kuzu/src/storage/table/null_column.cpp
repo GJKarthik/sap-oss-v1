@@ -1,5 +1,69 @@
 #include "storage/table/null_column.h"
 
+/**
+ * P3-215: NullColumn - Extended Implementation Details
+ * 
+ * Additional Details (see P2-106 for architecture overview)
+ * 
+ * NullColumnFunc Structure:
+ * ```
+ * struct NullColumnFunc {
+ *   static readValuesFromPageToVector(frame, cursor, vector, pos, count, metadata)
+ * }
+ * ```
+ * 
+ * readValuesFromPageToVector() Implementation:
+ * ```
+ * readValuesFromPageToVector(frame, pageCursor, vector, posInVector, numValues, metadata):
+ *   IF metadata.isConstant():
+ *     // All values have same null state
+ *     value = ConstantCompression::decompressValues(...)
+ *     vector.setNullRange(posInVector, numValues, value)
+ *   ELSE:
+ *     // Bit-packed null flags
+ *     vector.setNullFromBits(
+ *       (uint64_t*)frame,
+ *       pageCursor.elemPosInPage,
+ *       posInVector,
+ *       numValues
+ *     )
+ * ```
+ * 
+ * Memory Alignment Safety:
+ * ```
+ * Cast to uint64_t* is safe because:
+ * 1. KUZU_PAGE_SIZE = 4096 (multiple of 8)
+ * 2. Buffer manager guarantees 8-byte alignment
+ * 3. Page boundaries never split uint64_t
+ * ```
+ * 
+ * NullColumn Constructor:
+ * ```
+ * NullColumn(name, dataFH, mm, shadowFile, enableCompression):
+ *   base: Column(name, BOOL, dataFH, mm, shadowFile, compress, false)
+ *   readToVectorFunc = NullColumnFunc::readValuesFromPageToVector
+ * 
+ * Key: requireNullColumn = false
+ *      (NullColumn doesn't need its own null column!)
+ * ```
+ * 
+ * Compression Modes:
+ * | Mode | When Used | Bits/Value |
+ * |------|-----------|------------|
+ * | CONSTANT | All same state | 0 |
+ * | BOOLEAN_BITPACKING | Mixed | 1 |
+ * 
+ * Performance Characteristics:
+ * ```
+ * CONSTANT mode: O(1) for any range
+ * BITPACKED mode: O(n/64) word operations
+ * 
+ * setNullFromBits uses 64-bit operations:
+ * - Single word handles 64 nulls
+ * - Cache-line aligned access
+ * ```
+ */
+
 #include "common/vector/value_vector.h"
 #include "storage/buffer_manager/memory_manager.h"
 #include "storage/compression/compression.h"
