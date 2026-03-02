@@ -1,6 +1,72 @@
 #include "storage/file_handle.h"
 
 /**
+ * P3-193: FileHandle - Further Extended Documentation
+ * 
+ * Additional Implementation Details
+ * 
+ * Constructor Flow:
+ * ```
+ * FileHandle(path, flags, bm, fileIndex, vfs, context):
+ *   1. Initialize base members
+ *   2. IF isNewTmpFile(): constructTmpFileHandle()
+ *      ELSE: constructPersistentFileHandle()
+ *   3. Create pageStates ConcurrentVector
+ *   4. Create frameGroupIdxes ConcurrentVector
+ *   5. FOR each page group:
+ *        frameGroupIdxes[i] = bm->addNewFrameGroup()
+ * ```
+ * 
+ * Page Addition Flow:
+ * ```
+ * addNewPages(n):
+ *   LOCK fhSharedMutex
+ *   FOR i in 0..n:
+ *     IF numPages == pageCapacity:
+ *       addNewPageGroupWithoutLock()
+ *     pageStates[numPages].resetToEvicted()
+ *     numPages++
+ *     IF isInMemoryMode():
+ *       bm->pin(this, pageIdx, DONT_READ_PAGE)
+ * ```
+ * 
+ * Page Group Expansion:
+ * ```
+ * addNewPageGroupWithoutLock():
+ *   pageCapacity += PAGE_GROUP_SIZE (4096)
+ *   pageStates.resize(pageCapacity)
+ *   frameGroupIdxes.push_back(bm->addNewFrameGroup())
+ * ```
+ * 
+ * Pin/Unpin Behavior:
+ * ```
+ * pinPage(pageIdx, policy):
+ *   IF isInMemoryMode():
+ *     RETURN bm->getFrame()  // Already pinned
+ *   RETURN bm->pin()  // May load from disk
+ * 
+ * unpinPage(pageIdx):
+ *   bm->unpin()  // Allows eviction
+ * ```
+ * 
+ * Frame Group Mapping:
+ * ```
+ * pageIdx → frameGroupIdx:
+ *   groupIdx = pageIdx / PAGE_GROUP_SIZE
+ *   frameGroup = frameGroupIdxes[groupIdx]
+ *   offsetInGroup = pageIdx % PAGE_GROUP_SIZE
+ * ```
+ * 
+ * File Size Calculation:
+ * ```
+ * constructPersistentFileHandle():
+ *   fileLength = fileInfo->getFileSize()
+ *   numPages = ceil(fileLength / pageSize)
+ *   pageCapacity = ceil(numPages / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE
+ * ```
+ * 
+ * ====================================
+ * 
  * P3-173: File Handle - Extended Documentation
  * 
  * Additional Details (see P2-132 for base documentation)
