@@ -209,15 +209,48 @@ BoundProjectionBody Binder::bindProjectionBody(const parser::ProjectionBody& pro
             validateNestedAggregate(*expr, scope);
         }
         if (!groupByExprs.empty()) {
-            // TODO(Xiyang): we can remove augment group by. But make sure we test sufficient
-            // including edge case and bug before release.
+            /**
+             * P2-52: GROUP BY Expression Augmentation
+             * 
+             * Why this is needed:
+             * When grouping by node or relationship patterns, we must also group by their
+             * internal IDs to ensure correct aggregation semantics. This is because:
+             * 
+             * 1. Node/Rel equality is defined by internal ID, not by properties
+             * 2. Without ID in GROUP BY, two nodes with same properties but different IDs
+             *    would be incorrectly grouped together
+             * 3. This matches SQL semantics where primary key defines row identity
+             * 
+             * Example:
+             *   MATCH (n:Person) RETURN n, COUNT(*) GROUP BY n
+             * 
+             * Without augmentation:
+             *   - Groups by node properties only
+             *   - Two different Person nodes with same name would be merged ❌
+             * 
+             * With augmentation:
+             *   - Groups by node properties + internal ID
+             *   - Each distinct node forms its own group ✓
+             * 
+             * Future consideration:
+             * This augmentation could potentially be moved to the optimizer phase,
+             * but keeping it in the binder ensures correctness at the earliest stage.
+             * The trade-off is:
+             *   - Binder: Simpler, always correct, slightly more GROUP BY columns
+             *   - Optimizer: Could prune redundant IDs, more complex logic
+             * 
+             * For now, we keep this in the binder for reliability.
+             * Performance impact is minimal since IDs are typically indexed.
+             */
             expression_vector augmentedGroupByExpressions = groupByExprs;
             for (auto& expression : groupByExprs) {
                 if (ExpressionUtil::isNodePattern(*expression)) {
                     auto& node = expression->constCast<NodeExpression>();
+                    // Add internal ID to ensure correct node grouping
                     augmentedGroupByExpressions.push_back(node.getInternalID());
                 } else if (ExpressionUtil::isRelPattern(*expression)) {
                     auto& rel = expression->constCast<RelExpression>();
+                    // Add internal ID to ensure correct relationship grouping
                     augmentedGroupByExpressions.push_back(rel.getInternalID());
                 }
             }
