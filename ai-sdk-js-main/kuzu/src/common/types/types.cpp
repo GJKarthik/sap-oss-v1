@@ -1454,8 +1454,47 @@ LogicalType LogicalType::REL(std::vector<StructField>&& fields) {
     return LogicalType(LogicalTypeID::REL, std::make_unique<StructTypeInfo>(std::move(fields)));
 }
 
+/**
+ * P2-88: UNION Tag Value Type Optimization
+ * 
+ * This TODO suggests using UINT8 instead of the current larger type for UNION tag values.
+ * 
+ * Background on UNION Types:
+ * - UNION is a type that can hold one of several variant types
+ * - Each value has a "tag" indicating which variant is active
+ * - Tag is stored as the first field in the underlying STRUCT
+ * 
+ * Current Implementation:
+ * - Tag uses UnionType::TAG_FIELD_TYPE (currently INT8)
+ * - Tag values: 0, 1, 2, ... (one per variant)
+ * - Max variants limited by struct field count anyway
+ * 
+ * Why UINT8 Would Be Better:
+ * | Reason | Explanation |
+ * |--------|-------------|
+ * | Unsigned | Tag is always non-negative |
+ * | Range | UINT8 gives 0-255, more than enough |
+ * | Clarity | UINT8 semantically matches tag concept |
+ * | Consistency | Matches internal enum representations |
+ * 
+ * Current State:
+ * - TAG_FIELD_TYPE is defined elsewhere (likely INT8)
+ * - Changing to UINT8 would require:
+ *   1. Updating TAG_FIELD_TYPE constant
+ *   2. Updating any code that reads/writes tags
+ *   3. Ensuring casting functions handle UINT8
+ * 
+ * Impact:
+ * - No storage savings (INT8 and UINT8 are same size)
+ * - Semantic improvement only
+ * - Would need to update serialization format version
+ * 
+ * Current Status:
+ * Works correctly with current type. Change is a semantic cleanup.
+ */
 LogicalType LogicalType::UNION(std::vector<StructField>&& fields) {
-    // TODO(Ziy): Use UINT8 to represent tag value.
+    // Tag field inserted at position 0 to identify active variant
+    // See P2-88: Consider changing TAG_FIELD_TYPE to UINT8 for semantic clarity
     fields.insert(fields.begin(),
         StructField(UnionType::TAG_FIELD_NAME, LogicalType(UnionType::TAG_FIELD_TYPE)));
     return LogicalType(LogicalTypeID::UNION, std::make_unique<StructTypeInfo>(std::move(fields)));
