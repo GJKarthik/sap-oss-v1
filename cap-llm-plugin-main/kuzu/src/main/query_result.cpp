@@ -1,5 +1,80 @@
 #include "main/query_result.h"
 
+/**
+ * P3-157: QueryResult - Query Execution Results
+ * 
+ * Purpose:
+ * Represents the result of executing a query. Provides iteration over result
+ * rows, access to column metadata, and Arrow format conversion.
+ * 
+ * Architecture:
+ * ```
+ * QueryResult (base)
+ *   ├── MaterializedQueryResult  // All rows in memory
+ *   └── ArrowQueryResult         // Arrow batch format
+ * 
+ * QueryResult
+ *   ├── type: QueryResultType    // FTABLE or ARROW
+ *   ├── columnNames: vector<string>
+ *   ├── columnTypes: vector<LogicalType>
+ *   ├── tuple: shared_ptr<FlatTuple>
+ *   ├── querySummary: unique_ptr<QuerySummary>
+ *   └── nextQueryResult: unique_ptr<QueryResult>  // Chained results
+ * ```
+ * 
+ * Iteration Patterns:
+ * ```cpp
+ * // Pattern 1: Direct iteration
+ * while (result->hasNext()) {
+ *     auto tuple = result->getNext();
+ *     auto val = tuple->getValue(0);
+ * }
+ * 
+ * // Pattern 2: Arrow batches
+ * while (result->hasNextArrowChunk()) {
+ *     auto chunk = result->getNextArrowChunk();
+ *     // Process Arrow format
+ * }
+ * 
+ * // Pattern 3: Multiple statements
+ * while (result->hasNextQueryResult()) {
+ *     result = result->getNextQueryResult();
+ *     // Process next statement's result
+ * }
+ * ```
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | isSuccess() | Check if query succeeded |
+ * | getErrorMessage() | Get error if failed |
+ * | getNumColumns() | Number of result columns |
+ * | getColumnNames() | Column name list |
+ * | getColumnDataTypes() | Column type list |
+ * | getQuerySummary() | Timing and statistics |
+ * | getArrowSchema() | Arrow schema |
+ * | hasNext() | Check for more rows |
+ * | getNext() | Get next result row |
+ * 
+ * QuerySummary:
+ * ```
+ * QuerySummary {
+ *   compilingTime: double   // Parse + Bind + Plan time
+ *   executionTime: double   // Physical plan execution time
+ * }
+ * ```
+ * 
+ * Lifecycle Management:
+ * - Tracks dbLifeCycleManager to detect closed database
+ * - Throws if database closed during iteration
+ * - Prevents use-after-free scenarios
+ * 
+ * Result Chaining:
+ * - Multiple statements produce linked results
+ * - nextQueryResult links results together
+ * - QueryResultIterator traverses chain
+ */
+
 #include "common/arrow/arrow_converter.h"
 #include "main/query_result/materialized_query_result.h"
 #include "processor/result/flat_tuple.h"
