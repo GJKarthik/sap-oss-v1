@@ -91,14 +91,29 @@ private:
             buffer_.inc(1);
             bitpack_pos = 0;
         }
+        
+        // Buffer overflow protection: check if we have data left before reading
+        if (buffer_.empty()) {
+            return false;  // No more data available
+        }
+        
         auto indicator_value = ParquetDecodeUtils::VarintDecode<uint32_t>(buffer_);
 
         // lsb indicates if it is a literal run or repeated run
         bool is_literal = indicator_value & 1;
         if (is_literal) {
             literal_count_ = (indicator_value >> 1) * 8;
+            // Validate we have enough buffer for the literal data
+            uint32_t bytes_needed = (literal_count_ * bit_width_ + 7) / 8;
+            if (buffer_.remaining() < bytes_needed) {
+                throw std::runtime_error("RLE decoder buffer overflow: not enough data for literal run");
+            }
         } else {
             repeat_count_ = indicator_value >> 1;
+            // Buffer overflow check: ensure we have enough bytes for the encoded value
+            if (buffer_.remaining() < byte_encoded_len) {
+                throw std::runtime_error("RLE decoder buffer overflow: not enough data for repeated value");
+            }
             // (ARROW-4018) this is not big-endian compatible, lol
             current_value_ = 0;
             for (auto i = 0; i < byte_encoded_len; i++) {
@@ -109,7 +124,6 @@ private:
                 throw std::runtime_error("Payload value bigger than allowed. Corrupted file?");
             }
         }
-        // TODO complain if we run out of buffer
         return true;
     }
 };
