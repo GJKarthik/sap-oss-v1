@@ -1,5 +1,90 @@
 #include "storage/table/dictionary_column.h"
 
+/**
+ * P3-218: DictionaryColumn - Persistent Dictionary Column Storage
+ * 
+ * Purpose:
+ * Manages persistent storage for dictionary-encoded string columns.
+ * Handles two sub-columns: data (string bytes) and offset (string positions).
+ * 
+ * Architecture:
+ * ```
+ * DictionaryColumn {
+ *   dataColumn: Column<UINT8>   // Raw string bytes
+ *   offsetColumn: Column<UINT64> // String start offsets
+ * }
+ * 
+ * Relationship with DictionaryChunk:
+ *   DictionaryChunk (in-memory)
+ *     ↓ flush/serialize
+ *   DictionaryColumn (on-disk)
+ *     ↓ scan/deserialize
+ *   DictionaryChunk (in-memory)
+ * ```
+ * 
+ * Constructor:
+ * ```
+ * DictionaryColumn(name, dataFH, mm, shadowFile, enableCompression):
+ *   dataColumn = Column("name_DATA", UINT8, no compress, no null)
+ *   offsetColumn = Column("name_OFFSET", UINT64, compress, no null)
+ * ```
+ * 
+ * scan() to DictionaryChunk:
+ * ```
+ * scan(state, dictChunk):
+ *   initialDictSize = offsetChunk.numValues
+ *   initialDictDataSize = stringDataChunk.numValues
+ *   
+ *   // Resize if needed
+ *   dataColumn.scanSegment() → stringDataChunk
+ *   offsetColumn.scanSegment() → offsetChunk
+ *   
+ *   // Adjust offsets for appending
+ *   FOR i in [initialDictSize, offsetChunk.numValues):
+ *     offsetChunk[i] += initialDictDataSize
+ * ```
+ * 
+ * scan<T>() Template (ValueVector or StringChunkData):
+ * ```
+ * scan(offsetState, dataState, offsetsToScan, result, indexMeta):
+ *   // Sort offsets for deduplication if >50% duplicated
+ *   duplicationFactor = offsetState.numValues / indexMeta.numValues
+ *   IF duplicationFactor <= 0.5:
+ *     sort(offsetsToScan)
+ *   
+ *   // Scan range of offsets
+ *   scanOffsets() → offsets array
+ *   
+ *   // Scan each string value
+ *   FOR each offset:
+ *     startOffset, endOffset → length
+ *     scanValue() → result
+ *     // Re-use for duplicates
+ * ```
+ * 
+ * append() Implementation:
+ * ```
+ * append(dictChunk, state, val):
+ *   startOffset = dataColumn.appendValues(val.data, val.size)
+ *   index = offsetColumn.appendValues(startOffset, 1)
+ *   RETURN index
+ * ```
+ * 
+ * canCommitInPlace() Checks:
+ * ```
+ * canCommitInPlace(state, numNewStrings, totalLength):
+ *   RETURN canDataCommitInPlace(dataState, totalLength)
+ *       && canOffsetCommitInPlace(offsetState, dataState, numNewStrings, totalLength)
+ * 
+ * canDataCommitInPlace:
+ *   totalAfter = numValues + totalLength
+ *   RETURN totalAfter <= numPages * PAGE_SIZE
+ * 
+ * canOffsetCommitInPlace:
+ *   Check capacity, check 32-bit index limit, check compression
+ * ```
+ */
+
 #include <algorithm>
 #include <cstdint>
 
