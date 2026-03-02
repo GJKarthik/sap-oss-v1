@@ -1,5 +1,105 @@
 #include "storage/wal/wal_record.h"
 
+/**
+ * P3-201: WALRecord - Write-Ahead Log Record Types
+ * 
+ * Purpose:
+ * Defines all WAL record types and their serialization/deserialization.
+ * Each record type captures a specific database operation for recovery.
+ * 
+ * WAL Record Types:
+ * ```
+ * WALRecordType
+ *   ├── INVALID_RECORD           // Error case
+ *   ├── BEGIN_TRANSACTION_RECORD // Start of transaction
+ *   ├── COMMIT_RECORD            // Transaction committed
+ *   ├── CHECKPOINT_RECORD        // Checkpoint marker
+ *   ├── CREATE_CATALOG_ENTRY_RECORD  // Schema creation
+ *   ├── DROP_CATALOG_ENTRY_RECORD    // Schema deletion
+ *   ├── ALTER_TABLE_ENTRY_RECORD     // Schema modification
+ *   ├── TABLE_INSERTION_RECORD   // Row insertions
+ *   ├── NODE_DELETION_RECORD     // Node deletions
+ *   ├── NODE_UPDATE_RECORD       // Node property updates
+ *   ├── REL_DELETION_RECORD      // Relationship deletions
+ *   ├── REL_DETACH_DELETE_RECORD // Detach delete
+ *   ├── REL_UPDATE_RECORD        // Rel property updates
+ *   ├── COPY_TABLE_RECORD        // Bulk copy operation
+ *   ├── UPDATE_SEQUENCE_RECORD   // Sequence update
+ *   └── LOAD_EXTENSION_RECORD    // Extension loading
+ * ```
+ * 
+ * Deserialization Dispatch:
+ * ```
+ * WALRecord::deserialize(deserializer, context):
+ *   type = read WALRecordType
+ *   SWITCH type:
+ *     BEGIN_TRANSACTION: BeginTransactionRecord::deserialize()
+ *     COMMIT:            CommitRecord::deserialize()
+ *     CREATE_CATALOG:    CreateCatalogEntryRecord::deserialize()
+ *     DROP_CATALOG:      DropCatalogEntryRecord::deserialize()
+ *     ALTER_TABLE:       AlterTableEntryRecord::deserialize()
+ *     TABLE_INSERTION:   TableInsertionRecord::deserialize(ctx)
+ *     NODE_DELETION:     NodeDeletionRecord::deserialize(ctx)
+ *     NODE_UPDATE:       NodeUpdateRecord::deserialize(ctx)
+ *     REL_DELETION:      RelDeletionRecord::deserialize(ctx)
+ *     REL_DETACH_DELETE: RelDetachDeleteRecord::deserialize(ctx)
+ *     REL_UPDATE:        RelUpdateRecord::deserialize(ctx)
+ *     COPY_TABLE:        CopyTableRecord::deserialize()
+ *     CHECKPOINT:        CheckpointRecord::deserialize()
+ *     UPDATE_SEQUENCE:   UpdateSequenceRecord::deserialize()
+ *     LOAD_EXTENSION:    LoadExtensionRecord::deserialize()
+ *   RETURN walRecord
+ * ```
+ * 
+ * Record Serialization Formats:
+ * 
+ * 1. Simple Records (no data):
+ *    BeginTransactionRecord: [type]
+ *    CommitRecord: [type]
+ *    CheckpointRecord: [type]
+ * 
+ * 2. Catalog Records:
+ *    CreateCatalogEntryRecord: [type][catalogEntry][isInternal]
+ *    DropCatalogEntryRecord: [type][entryID][entryType]
+ *    AlterTableEntryRecord: [type][alterType][tableName][extraInfo]
+ * 
+ * 3. Data Records:
+ *    TableInsertionRecord: [type][tableID][tableType][numRows][numVectors][vectors...]
+ *    NodeDeletionRecord: [type][tableID][nodeOffset][pkVector]
+ *    NodeUpdateRecord: [type][tableID][columnID][nodeOffset][propertyVector]
+ *    RelDeletionRecord: [type][tableID][srcVector][dstVector][relIDVector]
+ *    RelUpdateRecord: [type][tableID][columnID][srcVector][dstVector][relIDVector][propertyVector]
+ * 
+ * 4. Special Records:
+ *    CopyTableRecord: [type][tableID]
+ *    UpdateSequenceRecord: [type][sequenceID][kCount]
+ *    LoadExtensionRecord: [type][path]
+ * 
+ * AlterType Handling:
+ * | AlterType | Extra Info |
+ * |-----------|------------|
+ * | ADD_PROPERTY | PropertyDefinition |
+ * | DROP_PROPERTY | propertyName |
+ * | RENAME_PROPERTY | newName, oldName |
+ * | COMMENT | comment string |
+ * | RENAME | newName |
+ * | ADD/DROP_CONNECTION | fromTableID, toTableID |
+ * 
+ * ValueVector Deserialization:
+ * - Data records need ClientContext for MemoryManager
+ * - ValueVector::deSerialize() recreates vectors
+ * - DataChunkState shared for related vectors
+ * 
+ * Usage in Recovery:
+ * ```
+ * WALReplayer::replay():
+ *   WHILE records in WAL:
+ *     record = WALRecord::deserialize()
+ *     SWITCH record.type:
+ *       // Apply operation to database
+ * ```
+ */
+
 #include "catalog/catalog_entry/catalog_entry.h"
 #include "common/exception/runtime.h"
 #include "common/serializer/deserializer.h"
