@@ -490,10 +490,45 @@ static std::unique_ptr<ChunkedCSRNodeGroup> createNewPersistentChunkGroup(
     return newGroup;
 }
 
+// Checkpoint Optimization: Early Skip for Unchanged Node Groups
+// 
+// Problem: Checkpointing a node group involves scanning the CSR header from disk,
+// which is expensive even if nothing has changed.
+//
+// Early Skip Conditions:
+// 1. No in-memory chunks (csrIndex == nullptr): No insertions have been made
+// 2. No changes in persistent chunk: No updates or deletions
+//
+// When both conditions are met, we can skip the checkpoint entirely since
+// the on-disk state is already up-to-date.
+//
+// Implementation:
+// - Check csrIndex first (cheap - just a pointer check)
+// - Then check persistentChunkGroup for any uncommitted changes
+// - Only scan CSR header if there are actual changes to process
+//
+// Performance Impact:
+// - Avoids unnecessary I/O for reading CSR header (typically 2 pages)
+// - Reduces checkpoint latency for large databases with many unchanged node groups
+// - Particularly beneficial for read-heavy workloads with periodic checkpoints
 void CSRNodeGroup::checkpointInMemAndOnDisk(const UniqLock& lock, NodeGroupCheckpointState& state) {
-    // TODO(Guodong): Should skip early here if no changes in the node group, so we avoid scanning
-    // the csr header. Case: No insertions/deletions in persistent chunk and no in-mem chunks.
     auto& csrState = state.cast<CSRNodeGroupCheckpointState>();
+    
+    // Early skip: If no in-memory chunks and no changes in persistent chunk,
+    // we can skip the expensive CSR header scan
+    bool hasInMemChanges = (csrIndex != nullptr);
+    bool hasPersistentChanges = persistentChunkGroup && 
+        persistentChunkGroup->hasAnyChanges(&DUMMY_CHECKPOINT_TRANSACTION);
+    
+    if (!hasInMemChanges && !hasPersistentChanges) {
+        // Fast path: Nothing changed, just handle column set changes if needed
+        if (csrState.columnIDs.size() != persistentChunkGroup->getNumColumns()) {
+            persistentChunkGroup = createNewPersistentChunkGroup(
+                persistentChunkGroup->cast<ChunkedCSRNodeGroup>(), csrState);
+        }
+        return;
+    }
+    
     // Scan old csr header from disk and construct new csr header.
     persistentChunkGroup->cast<ChunkedCSRNodeGroup>().scanCSRHeader(*state.mm, csrState);
     csrState.newHeader =
