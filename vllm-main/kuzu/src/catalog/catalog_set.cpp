@@ -1,5 +1,86 @@
 #include "catalog/catalog_set.h"
 
+/**
+ * P3-140: CatalogSet - Versioned Catalog Entry Collection
+ * 
+ * Purpose:
+ * CatalogSet provides MVCC-enabled storage for catalog entries. Each entry
+ * maintains a version chain for transactional visibility, enabling concurrent
+ * DDL operations with proper isolation.
+ * 
+ * Architecture:
+ * ```
+ * CatalogSet
+ *   ├── entries: map<string, unique_ptr<CatalogEntry>>
+ *   │     └── key = entry name, value = version chain head
+ *   ├── nextOID: oid_t              // Monotonic object ID generator
+ *   ├── mtx: shared_mutex           // Reader-writer lock
+ *   └── isInternal: bool            // Internal vs user-facing
+ * 
+ * Version Chain (per entry):
+ *   Entry[txID=5] → Entry[txID=3] → Entry[committed] → nullptr
+ *     (head)          (prev)           (prev)
+ * ```
+ * 
+ * Entry Versioning:
+ * - timestamp field: transaction ID that created this version
+ * - Committed entries have timestamp < START_TRANSACTION_ID
+ * - Active transaction entries have timestamp = transaction.ID
+ * 
+ * MVCC Visibility Rules:
+ * ```
+ * traverseVersionChainsForTransaction():
+ *   1. If entry.timestamp == txn.ID → visible (own changes)
+ *   2. If entry.timestamp <= txn.startTS → visible (committed before)
+ *   3. Otherwise → traverse to prev version
+ * ```
+ * 
+ * Write-Write Conflict Detection:
+ * ```
+ * checkWWConflict():
+ *   Conflict if:
+ *   - Entry modified by active transaction (timestamp >= START_TRANSACTION_ID)
+ *     AND not by current transaction (timestamp != txn.ID)
+ *   OR
+ *   - Entry committed after current transaction started
+ *     (timestamp > txn.startTS)
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. createEntry(transaction, entry):
+ *    - Assign OID from nextOID++
+ *    - Create dummy entry as chain anchor
+ *    - Emplace new entry as head
+ *    - Push to undo buffer
+ * 
+ * 2. dropEntry(transaction, name, oid):
+ *    - Create tombstone (deleted dummy entry)
+ *    - Emplace as head
+ *    - Push to undo buffer
+ * 
+ * 3. getEntry(transaction, name):
+ *    - Traverse version chain for visibility
+ *    - Return visible non-deleted entry
+ * 
+ * 4. alterTableEntry(transaction, alterInfo):
+ *    - For RENAME: drop + create
+ *    - For others: create new version, emplace as head
+ * 
+ * OID Assignment:
+ * - User entries: Start from 0
+ * - Internal entries: Start from INTERNAL_CATALOG_SET_START_OID
+ * 
+ * Serialization:
+ * - Only committed, non-deleted, non-function entries
+ * - Skips scalar/aggregate/table function entries
+ * 
+ * Thread Safety:
+ * - shared_mutex for reader-writer locking
+ * - Shared lock for reads (containsEntry, getEntry, getEntries)
+ * - Exclusive lock for writes (createEntry, dropEntry, alter)
+ */
+
 #include <mutex>
 
 #include "binder/ddl/bound_alter_info.h"
