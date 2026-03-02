@@ -1,5 +1,81 @@
 #include "catalog/property_definition_collection.h"
 
+/**
+ * P3-150: PropertyDefinitionCollection - Table Property Management
+ * 
+ * Purpose:
+ * Manages the collection of property definitions for tables. Handles
+ * property ID allocation, column ID mapping, and ADD/DROP/RENAME operations.
+ * 
+ * Architecture:
+ * ```
+ * PropertyDefinitionCollection {
+ *   definitions: map<property_id_t, PropertyDefinition>
+ *   columnIDs: map<property_id_t, column_id_t>
+ *   nameToPropertyIDMap: map<string, property_id_t>
+ *   nextPropertyID: property_id_t
+ *   nextColumnID: column_id_t
+ * }
+ * ```
+ * 
+ * ID Relationships:
+ * ```
+ * Property ID: Logical identifier (preserved across renames)
+ * Column ID: Physical storage column (may change on vacuum)
+ * 
+ * Example:
+ *   CREATE NODE TABLE Person (id INT64, name STRING, age INT64)
+ *     definitions[0] = id   → columnIDs[0] = 0
+ *     definitions[1] = name → columnIDs[1] = 1
+ *     definitions[2] = age  → columnIDs[2] = 2
+ * 
+ *   ALTER TABLE Person DROP name
+ *     definitions: {0: id, 2: age}  (gaps in IDs)
+ *     columnIDs: {0: 0, 2: 2}
+ * 
+ *   vacuumColumnIDs(0):
+ *     columnIDs: {0: 0, 2: 1}  (compacted)
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. add(PropertyDefinition):
+ *    - Assigns nextPropertyID
+ *    - Assigns nextColumnID
+ *    - Inserts into all maps
+ * 
+ * 2. drop(name):
+ *    - Removes from definitions, columnIDs, nameToPropertyIDMap
+ *    - Creates gaps in IDs (filled by vacuum)
+ * 
+ * 3. rename(oldName, newName):
+ *    - Updates PropertyDefinition.name
+ *    - Updates nameToPropertyIDMap
+ *    - Property ID and Column ID unchanged
+ * 
+ * 4. vacuumColumnIDs(startID):
+ *    - Reassigns column IDs sequentially
+ *    - Called after DROP to compact storage
+ * 
+ * 5. getMaxColumnID():
+ *    - Returns highest column ID
+ *    - Used for storage allocation
+ * 
+ * 6. toCypher():
+ *    - Generates column definitions for CREATE
+ *    - Format: `name` TYPE,
+ *    - Skips INTERNAL_ID columns
+ * 
+ * Serialization:
+ * - nextColumnID, nextPropertyID, definitions map, columnIDs map
+ * - Reconstructs nameToPropertyIDMap from definitions on deserialize
+ * 
+ * Used By:
+ * - TableCatalogEntry (via propertyCollection member)
+ * - NodeTableCatalogEntry
+ * - RelGroupCatalogEntry
+ */
+
 #include <map>
 #include <sstream>
 
