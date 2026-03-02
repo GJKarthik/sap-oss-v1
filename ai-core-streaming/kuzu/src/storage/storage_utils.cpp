@@ -1,5 +1,85 @@
 #include "storage/storage_utils.h"
 
+/**
+ * P2-125: Storage Utils - Storage Layer Utility Functions
+ * 
+ * Purpose:
+ * Provides common utility functions for the storage layer including
+ * column naming conventions, path handling, and data type size calculations.
+ * Used throughout storage components for consistent behavior.
+ * 
+ * Key Functions:
+ * 
+ * 1. getColumnName(propertyName, type, prefix):
+ *    Generates standardized column names for storage files.
+ *    
+ *    | ColumnType | Format |
+ *    |------------|--------|
+ *    | DATA | "{property}_data" |
+ *    | NULL_MASK | "{property}_null" |
+ *    | INDEX | "{property}_index" |
+ *    | OFFSET | "{property}_offset" |
+ *    | CSR_OFFSET | "{prefix}_csr_offset" |
+ *    | CSR_LENGTH | "{prefix}_csr_length" |
+ *    | STRUCT_CHILD | "{property}_{prefix}_child" |
+ *    | DEFAULT | "{prefix}_{property}" or "{property}" |
+ * 
+ * 2. expandPath(context, path):
+ *    Expands and normalizes database file paths.
+ *    - Handles in-memory databases (returns as-is)
+ *    - Expands '~' to home directory from settings
+ *    - Resolves '.' and '..' using std::filesystem
+ *    - Returns absolute normalized path
+ *    
+ *    Example:
+ *    "~/mydb" → "/home/user/mydb"
+ *    "./data/../mydb" → "/current/mydb"
+ * 
+ * 3. getDataTypeSize(type):
+ *    Calculates in-memory size for data types.
+ *    
+ *    | Type | Size |
+ *    |------|------|
+ *    | STRING | sizeof(ku_string_t) = 16 bytes |
+ *    | LIST/ARRAY | sizeof(ku_list_t) = 16 bytes |
+ *    | STRUCT | Sum of field sizes + null buffer |
+ *    | Fixed types | PhysicalTypeUtils::getFixedTypeSize() |
+ *    
+ *    Struct calculation:
+ *    ```
+ *    total = 0
+ *    for field in struct.fields:
+ *        total += getDataTypeSize(field.type)
+ *    total += NullBuffer::getNumBytesForNullValues(num_fields)
+ *    ```
+ * 
+ * Usage Patterns:
+ * 
+ * Column Naming:
+ * ```cpp
+ * // For property "name" with data column
+ * getColumnName("name", ColumnType::DATA, "") → "name_data"
+ * 
+ * // For null mask
+ * getColumnName("name", ColumnType::NULL_MASK, "") → "name_null"
+ * 
+ * // For CSR structures
+ * getColumnName("", ColumnType::CSR_OFFSET, "rel") → "rel_csr_offset"
+ * ```
+ * 
+ * Path Handling:
+ * ```cpp
+ * expandPath(ctx, "~/mydb")     → "/home/user/mydb"
+ * expandPath(ctx, ":memory:")   → ":memory:"
+ * expandPath(ctx, "./rel/path") → "/absolute/rel/path"
+ * ```
+ * 
+ * Notes:
+ * - Column naming ensures unique, predictable file names
+ * - Path expansion is context-aware for home directory
+ * - Data type sizes match ValueVector storage requirements
+ */
+
 #include <filesystem>
 
 #include "common/null_buffer.h"
