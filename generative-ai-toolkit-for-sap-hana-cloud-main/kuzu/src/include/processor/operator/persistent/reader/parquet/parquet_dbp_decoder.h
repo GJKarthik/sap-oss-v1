@@ -76,10 +76,21 @@ public:
 
             auto read_now =
                 std::min<uint64_t>(values_left_in_miniblock, (uint64_t)batch_size - value_offset);
-            ParquetDecodeUtils::BitUnpack<T>(buffer_, bitpack_pos, &values[value_offset], read_now,
-                miniblock_bit_widths[miniblock_offset]);
-            for (auto i = value_offset; i < value_offset + read_now; i++) {
-                values[i] = ((i == 0) ? start_value : values[i - 1]) + min_delta + values[i];
+            
+            // Handle width=0 case: when bit width is 0, all delta values are 0,
+            // meaning all values in the miniblock are the same (constant).
+            // In this case, we don't need to read any bits from the buffer.
+            if (miniblock_bit_widths[miniblock_offset] == 0) {
+                // All deltas are 0, so each value is prev_value + min_delta
+                for (auto i = value_offset; i < value_offset + read_now; i++) {
+                    values[i] = ((i == 0) ? start_value : values[i - 1]) + min_delta;
+                }
+            } else {
+                ParquetDecodeUtils::BitUnpack<T>(buffer_, bitpack_pos, &values[value_offset], read_now,
+                    miniblock_bit_widths[miniblock_offset]);
+                for (auto i = value_offset; i < value_offset + read_now; i++) {
+                    values[i] = ((i == 0) ? start_value : values[i - 1]) + min_delta + values[i];
+                }
             }
             value_offset += read_now;
             values_left_in_miniblock -= read_now;
