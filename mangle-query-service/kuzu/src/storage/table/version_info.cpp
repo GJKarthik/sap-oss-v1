@@ -8,6 +8,93 @@
 
 using namespace kuzu::common;
 
+/**
+ * P2-108: MVCC Version Info Management and Optimization Strategies
+ * 
+ * Architecture Overview:
+ * Implements Multi-Version Concurrency Control (MVCC) for row-level visibility.
+ * Tracks insertion and deletion versions per row to determine transaction visibility.
+ * 
+ * Data Structure:
+ * ```
+ * VersionInfo
+ *   └── vectorsInfo: vector<VectorVersionInfo>  // Per-vector (2048 rows) tracking
+ *       └── VectorVersionInfo
+ *           ├── insertedVersions: array<transaction_t, 2048>  // Insert timestamps
+ *           ├── deletedVersions: array<transaction_t, 2048>   // Delete timestamps
+ *           ├── sameInsertionVersion: transaction_t           // Batch optimization
+ *           ├── sameDeletionVersion: transaction_t            // Batch optimization
+ *           ├── insertionStatus: enum { NO_INSERTED, CHECK_VERSION, ALWAYS_INSERTED }
+ *           └── deletionStatus: enum { NO_DELETED, CHECK_VERSION }
+ * ```
+ * 
+ * Key Optimization: Same-Transaction Batching
+ * When all rows in a vector are inserted/deleted by the same transaction,
+ * we use sameInsertionVersion/sameDeletionVersion instead of allocating arrays.
+ * This saves 16KB per vector (2048 * 8 bytes per array).
+ * 
+ * Memory Usage Analysis:
+ * | Scenario | Memory per Vector |
+ * |----------|-------------------|
+ * | No versions | ~48 bytes (struct overhead) |
+ * | Same-tx insert | ~48 bytes |
+ * | Per-row insert | ~16KB (insertedVersions array) |
+ * | Both arrays | ~32KB |
+ * 
+ * Existing TODOs (lines 15-22):
+ * 1. ALWAYS_INSERTED status for post-checkpoint deleted vectors
+ * 2. Additional same insertion/deletion field optimization
+ * 3. Separate insertion/deletion into separate Vectors
+ * 
+ * Additional Optimization Opportunities:
+ * 
+ * 1. Bitmap-based Version Tracking:
+ *    For committed transactions, use bitmap instead of array:
+ *    ```
+ *    // Only need 1 bit per row if all from same transaction
+ *    std::bitset<2048> insertedBitmap;
+ *    transaction_t insertCommitTS;
+ *    ```
+ *    Saves 16KB → 256 bytes per vector.
+ * 
+ * 2. Lazy Array Allocation:
+ *    Current: Allocate full 2048-element array on first mixed insert
+ *    Better: Use small vector/map until threshold:
+ *    ```
+ *    // Small storage for sparse changes
+ *    std::vector<std::pair<row_idx_t, transaction_t>> sparseVersions;
+ *    // Convert to array when sparseVersions.size() > threshold
+ *    ```
+ * 
+ * 3. SIMD Selection Vector Building:
+ *    getSelVectorForScan() iterates per-row
+ *    Better: Use SIMD to check 64 rows at once:
+ *    ```
+ *    __m512i startTS_vec = _mm512_set1_epi64(startTS);
+ *    // Compare 8 transaction IDs in parallel
+ *    ```
+ * 
+ * 4. Epoch-based Garbage Collection:
+ *    Track minimum active transaction ID, clear old versions:
+ *    - If all active txns > insertTS, status = ALWAYS_INSERTED
+ *    - If all active txns > deleteTS, can physically delete row
+ * 
+ * Visibility Rules (isSelected):
+ * A row is visible to transaction T if:
+ * 1. Inserted by T OR committed before T's startTS
+ * 2. AND NOT (deleted by T OR committed delete before T's startTS)
+ * 
+ * Write-Write Conflict Detection:
+ * delete_() throws RuntimeException if:
+ * - Row already deleted by different transaction
+ * - Ensures serializable isolation level
+ * 
+ * Serialization Notes:
+ * - Only serializes committed state (no uncommitted transactions)
+ * - insertionStatus must be NO_INSERTED or ALWAYS_INSERTED (not CHECK_VERSION)
+ * - deletedVersions can have CHECK_VERSION (for committed deletes)
+ */
+
 namespace kuzu {
 namespace storage {
 
