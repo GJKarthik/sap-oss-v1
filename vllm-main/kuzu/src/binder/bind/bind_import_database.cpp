@@ -53,6 +53,65 @@ static std::string getColumnNamesToCopy(const CopyFrom& copyFrom) {
     return stringFormat("({})", columns);
 }
 
+/**
+ * Escape special characters in file path for Cypher parser
+ * 
+ * P2-51: Windows Path Escaping for Import Database
+ * 
+ * Problem:
+ * The Cypher parser requires special characters in string literals to be escaped.
+ * On Windows, file paths use backslash (\) as the path separator, which is also
+ * the escape character in Cypher strings. This creates a conflict:
+ * 
+ * Flow:
+ * 1. User inputs: IMPORT DATABASE 'C:\\db\\uw'
+ * 2. Parser unescapes to: C:\db\uw
+ * 3. This function receives: C:\db\uw
+ * 4. Path is passed to parser for COPY query generation
+ * 5. Parser fails because unescaped backslashes are invalid
+ * 
+ * Solution:
+ * Re-escape backslashes before passing to parser. This is necessary because
+ * we're generating Cypher queries programmatically that will be re-parsed.
+ * 
+ * Long-term Fix:
+ * The proper solution is to use parameterized queries or a query builder
+ * that handles escaping automatically, rather than string concatenation.
+ * This would require changes to:
+ * - Parser to support parameterized string literals
+ * - Query builder utility to escape strings properly
+ * - All places that generate Cypher dynamically
+ * 
+ * Why This Works:
+ * | Input | After Escape | After Parse |
+ * |-------|--------------|-------------|
+ * | C:\db | C:\\db | C:\db |
+ * | /unix | /unix | /unix |
+ * 
+ * @param boundFilePath Base directory path
+ * @param filePath Relative file path from COPY statement
+ * @return Properly escaped file path for Cypher parser
+ */
+static std::string escapePathForParser(const std::string& path) {
+    std::string result = path;
+#if defined(_WIN32)
+    // Escape backslashes for Windows paths
+    // Each \ must become \\ for the Cypher parser
+    size_t pos = 0;
+    while ((pos = result.find('\\', pos)) != std::string::npos) {
+        result.replace(pos, 1, "\\\\");
+        pos += 2;
+    }
+#endif
+    // Also escape any quotes in the path
+    size_t quotePos = 0;
+    while ((quotePos = result.find('"', quotePos)) != std::string::npos) {
+        result.replace(quotePos, 1, "\\\"");
+        quotePos += 2;
+    }
+    return result;
+}
+
 static std::string getCopyFilePath(const std::string& boundFilePath, const std::string& filePath) {
     if (filePath[0] == '/' || (std::isalpha(filePath[0]) && filePath[1] == ':')) {
         // Note:
@@ -60,25 +119,11 @@ static std::string getCopyFilePath(const std::string& boundFilePath, const std::
         // Windows absolute path starts with "[DiskID]://"
         // This code path is for backward compatibility, we used to export the absolute path for
         // csv files to copy.cypher files.
-        return filePath;
+        return escapePathForParser(filePath);
     }
 
     auto path = boundFilePath + "/" + filePath;
-#if defined(_WIN32)
-    // TODO(Ziyi): This is a temporary workaround because our parser requires input cypher queries
-    // to escape all special characters in string literal. E.g. The user input query is: 'IMPORT
-    // DATABASE 'C:\\db\\uw''. The parser removes any escaped characters and this function accepts
-    // the path parameter as 'C:\db\uw'. Then the ImportDatabase operator gives the file path to
-    // antlr4 parser directly without escaping any special characters in the path, which causes a
-    // parser exception. However, the parser exception is not thrown properly which leads to the
-    // undefined behaviour.
-    size_t pos = 0;
-    while ((pos = path.find('\\', pos)) != std::string::npos) {
-        path.replace(pos, 1, "\\\\");
-        pos += 2;
-    }
-#endif
-    return path;
+    return escapePathForParser(path);
 }
 
 std::unique_ptr<BoundStatement> Binder::bindImportDatabaseClause(const Statement& statement) {
