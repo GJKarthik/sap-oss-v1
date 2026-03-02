@@ -48,14 +48,19 @@ bool HashJoinProbe::getMatchedTuplesForFlatKey(ExecutionContext* context) {
         return true;
     }
     if (probeState->probedTuples[0] == nullptr) { // No more matched tuples on the chain.
-        // We still need to save and restore for flat input because we are discarding NULL join keys
+        // We need to save and restore for flat input because we are discarding NULL join keys
         // which changes the selected position.
-        // TODO(Guodong): we have potential bugs here because all keys' states should be restored.
-        restoreSelVector(*keyVectors[0]->state);
+        // For multi-key joins, ALL key vectors must have their states restored/saved
+        // to ensure correct selection vector handling across all join keys.
+        for (auto& keyVector : keyVectors) {
+            restoreSelVector(*keyVector->state);
+        }
         if (!children[0]->getNextTuple(context)) {
             return false;
         }
-        saveSelVector(*keyVectors[0]->state);
+        for (auto& keyVector : keyVectors) {
+            saveSelVector(*keyVector->state);
+        }
         sharedState->getHashTable()->probe(keyVectors, *hashVector, hashSelVec, tmpHashVector.get(),
             probeState->probedTuples.get());
     }
