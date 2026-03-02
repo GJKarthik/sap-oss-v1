@@ -186,20 +186,62 @@ static std::vector<ColumnPredicateSet> getColumnPredicateSets(const expression_v
     return predicateSets;
 }
 
+// Constant expression detection for index scan optimization.
+// NOTE: Ideally, constant folding should happen in the binder phase so that
+// by the time we reach the optimizer, all foldable expressions are already
+// reduced to literals. This is a temporary solution until binder-level
+// constant folding is implemented.
 static bool isConstantExpression(const std::shared_ptr<Expression> expression) {
+    if (!expression) {
+        return false;
+    }
+    
     switch (expression->expressionType) {
     case ExpressionType::LITERAL:
     case ExpressionType::PARAMETER: {
+        // Literals and parameters are constant at query execution time
         return true;
     }
-    // TODO(Xiyang): fold parameter expression in binder.
     case ExpressionType::FUNCTION: {
         auto& func = expression->constCast<ScalarFunctionExpression>();
-        if (func.getFunction().name == "CAST") {
+        const auto& funcName = func.getFunction().name;
+        
+        // Handle type casting functions - constant if input is constant
+        if (funcName == "CAST") {
             return isConstantExpression(func.getChild(0));
-        } else {
-            return false;
         }
+        
+        // Handle deterministic scalar functions with all constant arguments
+        // These include common operations that don't depend on table data:
+        // - Arithmetic: +, -, *, /, %
+        // - String: CONCAT, UPPER, LOWER, SUBSTRING, etc.
+        // - Date/Time: DATE, TIMESTAMP, INTERVAL arithmetic
+        // - Type coercion functions
+        
+        // Check if all children are constant
+        bool allChildrenConstant = true;
+        for (size_t i = 0; i < func.getNumChildren(); ++i) {
+            if (!isConstantExpression(func.getChild(i))) {
+                allChildrenConstant = false;
+                break;
+            }
+        }
+        
+        // If all children are constant and function is deterministic,
+        // the result is constant. For now, we only handle CAST explicitly
+        // as other functions need more careful analysis of side effects.
+        // TODO: Implement proper constant folding in binder to handle all
+        // deterministic functions with constant arguments.
+        if (allChildrenConstant && funcName == "CAST") {
+            return true;
+        }
+        
+        return false;
+    }
+    case ExpressionType::CASE_ELSE: {
+        // CASE expressions could be constant if all branches are constant
+        // but this is complex - defer to binder constant folding
+        return false;
     }
     default:
         return false;
