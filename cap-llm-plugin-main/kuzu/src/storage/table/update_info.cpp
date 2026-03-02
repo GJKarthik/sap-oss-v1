@@ -1,5 +1,98 @@
 #include "storage/table/update_info.h"
 
+/**
+ * P3-188: UpdateInfo - In-Place Update Tracking
+ * 
+ * Purpose:
+ * Tracks uncommitted row updates for MVCC. Stores updated values per-vector
+ * in a version chain enabling read/write isolation without copying entire rows.
+ * 
+ * Architecture:
+ * ```
+ * UpdateInfo
+ *   ├── mtx: shared_mutex (for updates vector)
+ *   └── updates: vector<UpdateNode>  // Per-vector update tracking
+ * 
+ * UpdateNode
+ *   ├── mtx: shared_mutex (for version chain)
+ *   └── info: VectorUpdateInfo*  // Head of version chain
+ * 
+ * VectorUpdateInfo (per-transaction updates)
+ *   ├── version: transaction_t  // txID or commitTS
+ *   ├── numRowsUpdated: uint16_t
+ *   ├── rowsInVector[2048]: sel_t  // Which rows updated
+ *   ├── data: ColumnChunkData  // New values
+ *   ├── prev: unique_ptr<VectorUpdateInfo>  // Older version
+ *   └── next: VectorUpdateInfo*  // Newer version
+ * ```
+ * 
+ * Version Chain:
+ * ```
+ * UpdateNode → VectorUpdateInfo (newest, uncommitted)
+ *                ↓ prev
+ *              VectorUpdateInfo (committed ts=50)
+ *                ↓ prev
+ *              VectorUpdateInfo (committed ts=30)
+ *                ↓ prev
+ *              nullptr
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. update():
+ *    - Lock chain head
+ *    - Check write-write conflicts
+ *    - Find or create VectorUpdateInfo for txn
+ *    - Write new value to data
+ * 
+ * 2. scan():
+ *    - Iterate through relevant vectors
+ *    - Find visible version in chain
+ *    - Apply updates to output
+ * 
+ * 3. lookup():
+ *    - Find vector containing row
+ *    - Search chain for visible update
+ *    - Copy updated value to output
+ * 
+ * 4. commit():
+ *    - Replace txID with commitTS in version
+ * 
+ * 5. rollback():
+ *    - Remove version from chain
+ *    - Fix prev/next pointers
+ * 
+ * Write-Write Conflict Detection:
+ * ```
+ * For each existing version:
+ *   IF version > transaction->startTS:  // Uncommitted or newer
+ *     IF rowsInVector overlaps:
+ *       THROW RuntimeException("Write-write conflict")
+ * ```
+ * 
+ * Visibility Rules:
+ * ```
+ * Version is visible IF:
+ *   version == transaction->ID  // Same transaction
+ *   OR version <= transaction->startTS  // Committed before
+ * ```
+ * 
+ * Scan with Bitset:
+ * ```
+ * std::bitset<2048> rowsUpdated;
+ * FOR each version (newest to oldest):
+ *   FOR each row in version:
+ *     IF NOT rowsUpdated[row]:
+ *       Apply update
+ *       rowsUpdated[row] = true
+ * ```
+ * 
+ * Thread Safety:
+ * - mtx protects updates vector resize
+ * - Per-UpdateNode mtx protects version chain
+ * - Acquire chain lock before traversing
+ */
+
 #include <bitset>
 
 #include "common/exception/runtime.h"
