@@ -768,16 +768,25 @@ void NullChunkData::serialize(Serializer& serializer) const {
     KU_ASSERT(residencyState == ResidencyState::ON_DISK);
     serializer.writeDebuggingInfo("null_chunk_metadata");
     metadata.serialize(serializer);
+    // Serialize enableCompression flag for proper deserialization
+    serializer.writeDebuggingInfo("null_enable_compression");
+    serializer.write<bool>(enableCompression);
 }
 
 std::unique_ptr<NullChunkData> NullChunkData::deserialize(MemoryManager& memoryManager,
     Deserializer& deSer) {
     std::string key;
     ColumnChunkMetadata metadata;
+    bool enableCompression = true; // Default for backward compatibility
     deSer.validateDebuggingInfo(key, "null_chunk_metadata");
     metadata = decltype(metadata)::deserialize(deSer);
-    // TODO: FIX-ME. enableCompression.
-    return std::make_unique<NullChunkData>(memoryManager, true, metadata);
+    // Read enableCompression flag - handle both old format (without flag) and new format
+    // Use peek to check if the flag exists without consuming the stream
+    if (deSer.validateDebuggingInfo(key, "null_enable_compression", false /*throwOnFail*/)) {
+        deSer.deserializeValue<bool>(enableCompression);
+    }
+    // Note: If the flag wasn't present (old format), we default to true for backward compatibility
+    return std::make_unique<NullChunkData>(memoryManager, enableCompression, metadata);
 }
 
 void NullChunkData::scan(ValueVector& output, offset_t offset, length_t length,
