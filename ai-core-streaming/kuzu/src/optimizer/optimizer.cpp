@@ -1,5 +1,81 @@
 #include "optimizer/optimizer.h"
 
+/**
+ * P3-163: Optimizer - Logical Plan Optimization
+ * 
+ * Purpose:
+ * Optimizes logical query plans using a series of rewriters. Each optimizer
+ * applies specific transformations to improve execution efficiency.
+ * 
+ * Architecture:
+ * ```
+ * LogicalPlan (from Planner)
+ *   │
+ *   └── Optimizer::optimize()
+ *         │
+ *         ├── RemoveFactorizationRewriter
+ *         ├── CorrelatedSubqueryUnnestSolver
+ *         ├── RemoveUnnecessaryJoinOptimizer
+ *         ├── FilterPushDownOptimizer
+ *         ├── ProjectionPushDownOptimizer
+ *         ├── LimitPushDownOptimizer
+ *         ├── HashJoinSIPOptimizer (if enableSemiMask)
+ *         ├── TopKOptimizer
+ *         ├── FactorizationRewriter
+ *         ├── AggKeyDependencyOptimizer
+ *         └── CardinalityUpdater (for EXPLAIN)
+ * ```
+ * 
+ * Optimization Phases:
+ * | Phase | Optimizer | Description |
+ * |-------|-----------|-------------|
+ * | 1 | RemoveFactorizationRewriter | Remove factorization for optimization |
+ * | 2 | CorrelatedSubqueryUnnestSolver | Decorrelate subqueries |
+ * | 3 | RemoveUnnecessaryJoinOptimizer | Eliminate redundant joins |
+ * | 4 | FilterPushDownOptimizer | Push filters closer to scans |
+ * | 5 | ProjectionPushDownOptimizer | Push projections down |
+ * | 6 | LimitPushDownOptimizer | Push LIMIT into operators |
+ * | 7 | HashJoinSIPOptimizer | Semi-join pruning |
+ * | 8 | TopKOptimizer | Convert ORDER BY + LIMIT to TopK |
+ * | 9 | FactorizationRewriter | Restore factorization structure |
+ * | 10 | AggKeyDependencyOptimizer | Optimize aggregation keys |
+ * 
+ * Conditional Optimizations:
+ * - HashJoinSIPOptimizer: Only if enableSemiMask=true
+ * - CardinalityUpdater: Only for EXPLAIN LOGICAL
+ * 
+ * Configuration:
+ * - enablePlanOptimizer: Master switch for all optimizations
+ * - If disabled, only SchemaPopulator runs
+ * 
+ * Optimizer Interface:
+ * Each optimizer implements:
+ * ```cpp
+ * class SomeOptimizer : public LogicalOperatorVisitor {
+ *     void rewrite(LogicalPlan* plan);
+ *     // Visits operator tree, applies transformations
+ * };
+ * ```
+ * 
+ * Key Optimizations:
+ * 
+ * 1. FilterPushDown:
+ *    Before: Scan → Join → Filter
+ *    After:  Scan+Filter → Join
+ * 
+ * 2. ProjectionPushDown:
+ *    Before: Scan(all cols) → Project(a,b)
+ *    After:  Scan(a,b)
+ * 
+ * 3. TopK:
+ *    Before: Scan → OrderBy → Limit
+ *    After:  Scan → TopK
+ * 
+ * Output:
+ * - Optimized LogicalPlan
+ * - Passed to PlanMapper for physical plan
+ */
+
 #include "main/client_context.h"
 #include "optimizer/acc_hash_join_optimizer.h"
 #include "optimizer/agg_key_dependency_optimizer.h"
