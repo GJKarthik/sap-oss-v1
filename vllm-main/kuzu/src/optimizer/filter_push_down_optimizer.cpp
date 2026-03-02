@@ -106,15 +106,44 @@ std::shared_ptr<LogicalOperator> FilterPushDownOptimizer::visitCrossProductRepla
     for (auto& predicate : remainingPSet.equalityPredicates) {
         auto left = predicate->getChild(0);
         auto right = predicate->getChild(1);
-        // TODO(Xiyang): this can only rewrite left = right, we should also be able to do
-        // expr(left), expr(right)
-        if (probeSchema->isExpressionInScope(*left) && buildSchema->isExpressionInScope(*right)) {
+        
+        // Extended filter push-down: handle both simple columns and expressions
+        // Case 1: Simple column references (left = right)
+        // Case 2: Expressions involving columns from each side (expr(left) = expr(right))
+        
+        // Check if expression is evaluable on a schema (all referenced columns are in scope)
+        bool leftInProbe = probeSchema->evaluable(*left);
+        bool leftInBuild = buildSchema->evaluable(*left);
+        bool rightInProbe = probeSchema->evaluable(*right);
+        bool rightInBuild = buildSchema->evaluable(*right);
+        
+        // Determine if we can create a join condition
+        // A valid join condition requires:
+        // - One side evaluable only on probe, other only on build
+        // - Or one side evaluable on probe and other on build (possibly both on same side for constants)
+        
+        if ((leftInProbe && !leftInBuild) && (rightInBuild && !rightInProbe)) {
+            // Left is probe-only, right is build-only: left = right
+            joinConditions.emplace_back(left, right);
+        } else if ((rightInProbe && !rightInBuild) && (leftInBuild && !leftInProbe)) {
+            // Right is probe-only, left is build-only: swap to right = left
+            joinConditions.emplace_back(right, left);
+        } else if (leftInProbe && rightInBuild && !leftInBuild && !rightInProbe) {
+            // Classic case: left on probe, right on build
+            joinConditions.emplace_back(left, right);
+        } else if (rightInProbe && leftInBuild && !rightInBuild && !leftInProbe) {
+            // Swapped classic case
+            joinConditions.emplace_back(right, left);
+        } else if (probeSchema->isExpressionInScope(*left) && buildSchema->isExpressionInScope(*right)) {
+            // Backward compatibility: simple column in scope check
             joinConditions.emplace_back(left, right);
         } else if (probeSchema->isExpressionInScope(*right) &&
                    buildSchema->isExpressionInScope(*left)) {
             joinConditions.emplace_back(right, left);
         } else {
             // Collect predicates that cannot be rewritten as join conditions.
+            // This includes predicates where both sides reference columns from both schemas
+            // (would require additional joins or cross-products to evaluate)
             predicates.push_back(predicate);
         }
     }
