@@ -1,5 +1,81 @@
 #include "storage/table/compression_flush_buffer.h"
 
+/**
+ * P2-121: Compression Flush Buffer - Disk Persistence with Compression
+ * 
+ * Purpose:
+ * Provides the bridge between in-memory column data and compressed on-disk
+ * storage. Handles page-by-page compression and special ALP exception handling
+ * for floating-point data.
+ * 
+ * Architecture:
+ * ```
+ * Flush Buffer Functions:
+ *   ├── uncompressedFlushBuffer      // Direct page writes
+ *   ├── CompressedFlushBuffer        // Integer/general compression
+ *   └── CompressedFloatFlushBuffer<T>  // ALP float compression
+ * 
+ * Flow:
+ * In-Memory Buffer → Compress Page → Write to FileHandle → Update Metadata
+ * ```
+ * 
+ * uncompressedFlushBuffer:
+ * - Direct write of buffer to allocated pages
+ * - Used for BOOL, INTERVAL, and other uncompressible types
+ * - Simply memcpy to disk pages
+ * 
+ * CompressedFlushBuffer:
+ * - Page-by-page compression for integers
+ * - Allocates temp buffer for compressed output
+ * - Tracks valuesRemaining and pages written
+ * - Zero-fills unused page space
+ * 
+ * CompressedFloatFlushBuffer<T>:
+ * - Special handling for ALP (Adaptive Lossless Piecewise) compression
+ * - Two-phase write:
+ *   1. Compressed data pages (main values)
+ *   2. Exception pages (values that don't compress well)
+ * 
+ * ALP Exception Handling:
+ * ```
+ * Page Layout for ALP floats:
+ * ┌────────────────────────────────────────┐
+ * │ Pages 0..N-1: Compressed float data    │
+ * │ Pages N..M: Exception buffer           │
+ * │   - Index + original value pairs       │
+ * │   - For values outside ALP range       │
+ * └────────────────────────────────────────┘
+ * ```
+ * 
+ * Key Functions:
+ * 
+ * 1. flushCompressedFloats<T>():
+ *    - Compresses pages with exception collection
+ *    - Returns exception buffer for separate flush
+ * 
+ * 2. flushALPExceptions<T>():
+ *    - Writes exception buffer after main data
+ *    - Uses uncompressed format for exceptions
+ * 
+ * Page Writing Process:
+ * ```cpp
+ * while (valuesRemaining > 0) {
+ *   compressedSize = alg->compressNextPage(...)
+ *   dataFH->writePageToFile(compressedBuffer, pageIdx)
+ *   valuesRemaining -= numValuesPerPage
+ * }
+ * ```
+ * 
+ * Template Instantiations:
+ * - CompressedFloatFlushBuffer<float>
+ * - CompressedFloatFlushBuffer<double>
+ * 
+ * Performance:
+ * - Compression overhead amortized over page writes
+ * - Exception handling adds ~10% overhead for outlier-heavy data
+ * - Zero-fill ensures consistent page sizes for recovery
+ */
+
 #include <type_traits>
 
 #include "common/types/types.h"
