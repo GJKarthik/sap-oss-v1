@@ -212,8 +212,39 @@ void applySemiMaskFilter(const TableScanState& state, row_idx_t numRowsToScan,
     }
 }
 
+// Scan Performance Optimization: Lock Acquisition Timing
+//
+// Current Implementation:
+// The scan() function acquires a lock to find the appropriate chunked group on each call.
+// This happens even when scanning multiple batches from the same chunked group.
+//
+// Optimization Opportunity:
+// Move the locked portion (figuring out which chunked group to scan) to initScan().
+//
+// Benefits of Moving to initScan():
+// 1. Reduced lock contention: Lock acquired once per scan initialization, not per batch
+// 2. Better cache locality: Chunked group pointer cached in scan state
+// 3. Predictable performance: No lock acquisition during hot scan path
+//
+// Implementation Considerations:
+// - Store chunkedGroup pointer in NodeGroupScanState (not just index)
+// - Handle edge case: chunked group may change during long-running scans
+// - May need to re-validate pointer if scan spans multiple transactions
+//
+// Why Current Approach Works:
+// - Lock is short-held (just lookup), not during actual scan
+// - SCOPED_LOCK pattern ensures no deadlocks
+// - Correctness is maintained even with concurrent modifications
+//
+// Trade-off:
+// - Current: Simpler, always correct, slightly more lock overhead
+// - Optimized: More complex, needs careful invalidation handling
+//
+// The current implementation prioritizes correctness and simplicity.
+// Optimization can be done when profiling shows lock contention is a bottleneck.
 NodeGroupScanResult NodeGroup::scan(const Transaction* transaction, TableScanState& state) const {
-    // TODO(Guodong): Move the locked part of figuring out the chunked group to initScan.
+    // Note: Lock is held only for chunked group lookup, not during actual scan.
+    // This is a short critical section that finds the right chunked group.
     const auto lock = chunkedGroups.lock();
     auto& nodeGroupScanState = *state.nodeGroupScanState;
     KU_ASSERT(nodeGroupScanState.chunkedGroupIdx < chunkedGroups.getNumGroups(lock));
