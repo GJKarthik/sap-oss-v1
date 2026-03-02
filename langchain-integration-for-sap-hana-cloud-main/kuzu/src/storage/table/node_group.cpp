@@ -212,9 +212,10 @@ void applySemiMaskFilter(const TableScanState& state, row_idx_t numRowsToScan,
     }
 }
 
-// Scan Performance Optimization: Lock Acquisition Timing
-//
-// Current Implementation:
+/**
+ * P2-103: Scan Performance Optimization - Lock Acquisition Timing
+ * 
+ * Current Implementation:
 // The scan() function acquires a lock to find the appropriate chunked group on each call.
 // This happens even when scanning multiple batches from the same chunked group.
 //
