@@ -1,5 +1,89 @@
 #include "storage/table/list_column.h"
 
+/**
+ * P2-110: List Column Storage - Variable-Length Array Optimization
+ * 
+ * Purpose:
+ * Implements efficient storage for LIST/ARRAY types with variable-length elements.
+ * Uses separate offset/size/data columns for O(1) random access to list elements.
+ * 
+ * Storage Layout:
+ * ```
+ * ListColumn (stores list_entry_t values)
+ *   ├── offsetColumn: Column<UINT64>    // End offset of each list
+ *   ├── sizeColumn: Column<UINT32>      // Size of each list
+ *   ├── dataColumn: Column<ChildType>   // Actual list elements (recursive)
+ *   └── nullColumn: Column<bool>        // Null bitmap
+ * 
+ * Physical Layout (for 3 lists: [1,2], [3,4,5], [6]):
+ * Row:     | 0  | 1  | 2  |
+ * Offset:  | 2  | 5  | 6  |  (cumulative end positions)
+ * Size:    | 2  | 3  | 1  |  (element counts)
+ * Data:    | 1 | 2 | 3 | 4 | 5 | 6 |  (flattened elements)
+ * ```
+ * 
+ * Key Data Structures:
+ * - ListOffsetSizeInfo: Cached offset/size arrays for scan operations
+ * - list_entry_t: {offset, size} tuple for ValueVector representation
+ * 
+ * Scan Optimization: isOffsetSortedAscending()
+ * When list data is stored contiguously (no deletions/updates),
+ * we can scan the entire range in one dataColumn->scanSegment() call.
+ * Otherwise, we fall back to per-list scanning.
+ * 
+ * Performance Analysis:
+ * | Operation | Contiguous | Fragmented |
+ * |-----------|------------|------------|
+ * | Full scan | O(n) | O(m*n) where m=avg list size |
+ * | Random access | O(1) | O(1) |
+ * | Append | O(k) | O(k) |
+ * | Checkpoint | In-place possible | May require rewrite |
+ * 
+ * Compression Consideration:
+ * - FLOAT/DOUBLE arrays in ARRAY types disable compression
+ * - disableCompressionOnData() prevents lossy compression for vector data
+ * - Important for embedding vectors in AI/ML workloads
+ * 
+ * Checkpoint Strategy (checkpointSegment):
+ * 1. Try in-place checkpoint for data column first
+ * 2. If data is contiguous, use single segment checkpoint
+ * 3. For fragmented data, create per-list checkpoint states
+ * 4. Offset/size columns always checkpoint independently
+ * 
+ * Memory Optimization Opportunities:
+ * 
+ * 1. Delta Encoding for Offsets:
+ *    Instead of storing cumulative offsets, store deltas:
+ *    ```
+ *    // Current: [2, 5, 6] - 8 bytes each = 24 bytes
+ *    // Delta:   [2, 3, 1] - can use 1-2 bytes each = 3-6 bytes
+ *    ```
+ *    With variable-length encoding: 75% space reduction.
+ * 
+ * 2. Run-Length Encoding for Size Column:
+ *    When many lists have same size (common in embeddings):
+ *    ```
+ *    // Embedding vectors: all size=1536
+ *    // RLE: (1536, count=10000) = 12 bytes vs 40KB
+ *    ```
+ * 
+ * 3. Prefetch Data During Offset Scan:
+ *    ```
+ *    void scanWithPrefetch(offset_t start, offset_t end) {
+ *        // Prefetch data pages while scanning offsets
+ *        for (auto i = start; i < end; i++) {
+ *            __builtin_prefetch(dataPtr + offsets[i+8]);
+ *            process(data[offsets[i]]);
+ *        }
+ *    }
+ *    ```
+ * 
+ * 4. Compact Storage for Small Lists:
+ *    For lists with ≤ N elements, inline in main column:
+ *    - Avoids indirection for common small lists
+ *    - Similar to PostgreSQL TOAST threshold
+ */
+
 #include <algorithm>
 
 #include "common/assert.h"
