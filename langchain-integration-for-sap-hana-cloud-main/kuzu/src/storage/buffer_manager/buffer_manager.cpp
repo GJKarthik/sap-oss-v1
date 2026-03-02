@@ -1,5 +1,84 @@
 #include "storage/buffer_manager/buffer_manager.h"
 
+/**
+ * P3-171: BufferManager - Page Buffer Pool Management
+ * 
+ * Purpose:
+ * Manages the buffer pool for caching database pages in memory. Implements
+ * page pinning/unpinning, eviction, and memory pressure handling.
+ * 
+ * Architecture:
+ * ```
+ * BufferManager
+ *   ├── bufferPoolSize: uint64_t        // Max memory for pages
+ *   ├── usedMemory: atomic<uint64_t>    // Current usage
+ *   ├── evictionQueue: EvictionQueue    // Clock-based eviction
+ *   ├── vmRegions: array<VMRegion, 2>   // Virtual memory regions
+ *   ├── fileHandles: vector<FileHandle*>
+ *   └── spiller: unique_ptr<Spiller>    // Disk spilling
+ * ```
+ * 
+ * Page States:
+ * | State | Description |
+ * |-------|-------------|
+ * | EVICTED | Not in memory |
+ * | UNLOCKED | In memory, available |
+ * | MARKED | Second chance bit set |
+ * | LOCKED | Pinned by a thread |
+ * 
+ * Key Operations:
+ * 
+ * 1. pin(fileHandle, pageIdx, policy):
+ *    - If EVICTED: Load page, acquire lock
+ *    - If UNLOCKED/MARKED: Acquire lock
+ *    - If LOCKED: Spin wait
+ *    - Returns: Pointer to page frame
+ * 
+ * 2. unpin(fileHandle, pageIdx):
+ *    - Releases lock on page
+ *    - Page becomes UNLOCKED
+ * 
+ * 3. optimisticRead(fileHandle, pageIdx, func):
+ *    - Read without locking (versioned)
+ *    - Retries if page changed during read
+ * 
+ * Eviction (Clock Algorithm):
+ * ```
+ * 1. Scan evictionQueue in batches
+ * 2. For each candidate:
+ *    - If UNLOCKED+MARKED: Try evict
+ *    - If UNLOCKED: Mark for second chance
+ * 3. Flush dirty pages before evicting
+ * 4. Decommit memory
+ * ```
+ * 
+ * Memory Reservation:
+ * ```
+ * reserve(size)
+ *   1. Increment usedMemory
+ *   2. While usedMemory > bufferPoolSize:
+ *        - Try evictPages()
+ *        - Try spiller->claimNextGroup()
+ *   3. If failed: rollback and return false
+ * ```
+ * 
+ * VM Regions:
+ * | Class | Purpose |
+ * |-------|---------|
+ * | REGULAR_PAGE | Persistent data pages |
+ * | TEMP_PAGE | Temporary/intermediate data |
+ * 
+ * Platform-Specific:
+ * - Windows: VirtualAlloc/VirtualFree, SEH for access violations
+ * - Unix: mmap with on-demand commit
+ * - BM_MALLOC: Alternative malloc-based mode
+ * 
+ * Spilling:
+ * - When memory pressure is high
+ * - Writes evictable data to disk
+ * - Reloads on demand
+ */
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
