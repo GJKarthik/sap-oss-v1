@@ -194,11 +194,51 @@ void ColumnChunk::update(const Transaction* transaction, offset_t offsetInChunk,
         transaction->getID());
 }
 
+/**
+ * P2-102: In-Place Stats Merging for ColumnChunk
+ * 
+ * This TODO suggests replacing the current stats merging pattern with an
+ * in-place modification approach.
+ * 
+ * Current Approach:
+ * ```cpp
+ * for (auto& segment : data) {
+ *     auto segmentStats = segment->getMergedColumnChunkStats();  // Creates copy
+ *     baseStats.merge(segmentStats, ...);  // Merges copy
+ * }
+ * ```
+ * 
+ * Proposed In-Place Approach:
+ * ```cpp
+ * for (auto& segment : data) {
+ *     segment->mergeStatsInto(baseStats, ...);  // Direct modification
+ * }
+ * ```
+ * 
+ * Why In-Place is Better:
+ * | Aspect | Current | In-Place |
+ * |--------|---------|----------|
+ * | Memory | Temporary MergedColumnChunkStats per segment | No temporaries |
+ * | Copies | N segments = N copies | Zero copies |
+ * | Cache | Poor (allocate, use, discard) | Good (accumulate) |
+ * | Code | Two-step: get then merge | Single step: merge |
+ * 
+ * Implementation:
+ * Add new method to ColumnChunkData:
+ * ```cpp
+ * void ColumnChunkData::mergeStatsInto(
+ *     MergedColumnChunkStats& target,
+ *     PhysicalTypeID physType) const;
+ * ```
+ * 
+ * Status: Works correctly. Optimization would reduce memory allocations
+ * during zone map computation for multi-segment chunks.
+ */
 MergedColumnChunkStats ColumnChunk::getMergedColumnChunkStats() const {
     KU_ASSERT(!updateInfo.isSet());
     auto baseStats = MergedColumnChunkStats{ColumnChunkStats{}, true, true};
     for (auto& segment : data) {
-        // TODO: Replace with a function that modifies the existing stats in-place?
+        // P2-102: Consider in-place mergeStatsInto() to avoid temporary copies
         auto segmentStats = segment->getMergedColumnChunkStats();
         baseStats.merge(segmentStats, segment->getDataType().getPhysicalType());
     }
