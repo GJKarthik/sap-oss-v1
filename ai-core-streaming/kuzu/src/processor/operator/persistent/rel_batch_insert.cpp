@@ -45,7 +45,51 @@ void RelBatchInsert::initLocalStateInternal(ResultSet*, ExecutionContext* contex
     auto tableID = relGroupEntry.getRelEntryInfo(relInfo->fromTableID, relInfo->toTableID)->oid;
     auto nbrTableID = RelDirectionUtils::getNbrTableID(relInfo->direction, relInfo->fromTableID,
         relInfo->toTableID);
-    // TODO(Guodong): Get rid of the hard-coded nbr and rel column ID 0/1.
+    /**
+     * P2-81: Hard-Coded Column ID Constants for NBR and REL
+     * 
+     * This TODO suggests replacing hard-coded column IDs 0 and 1 with named constants.
+     * 
+     * Current Hardcoding:
+     * - Column 0: Neighbor node ID (nbrTableID)
+     * - Column 1: Relationship ID (tableID)
+     * 
+     * Why This Is Hardcoded:
+     * - CSR (Compressed Sparse Row) format has fixed layout
+     * - NBR ID always comes first (for adjacency lookup)
+     * - REL ID second (for identifying the edge)
+     * - Property columns follow after these two
+     * 
+     * What "Getting Rid of Hardcoding" Would Look Like:
+     * ```cpp
+     * // Define constants (in a header):
+     * constexpr column_id_t NBR_COLUMN_ID = 0;
+     * constexpr column_id_t REL_COLUMN_ID = 1;
+     * constexpr column_id_t FIRST_PROPERTY_COLUMN_ID = 2;
+     * 
+     * // Use here:
+     * localState->chunkedGroup->getColumnChunk(NBR_COLUMN_ID)
+     *     .cast<InternalIDChunkData>().setTableID(nbrTableID);
+     * localState->chunkedGroup->getColumnChunk(REL_COLUMN_ID)
+     *     .cast<InternalIDChunkData>().setTableID(tableID);
+     * ```
+     * 
+     * Benefits:
+     * | Benefit | Description |
+     * |---------|-------------|
+     * | Readability | Clear intent vs magic numbers |
+     * | Maintainability | Single source of truth |
+     * | Searchability | Find all uses of NBR_COLUMN_ID |
+     * | Safety | Compile-time constants, not magic values |
+     * 
+     * Related Hardcoded Values:
+     * - boundNodeOffsetColumnID uses 0/1 based on direction
+     * - partitioningIdx uses 0/1 for FWD/BWD
+     * - These could also use named constants
+     * 
+     * Current Status:
+     * Works correctly; refactor would improve code quality.
+     */
     localState->chunkedGroup->getColumnChunk(0).cast<InternalIDChunkData>().setTableID(nbrTableID);
     localState->chunkedGroup->getColumnChunk(1).cast<InternalIDChunkData>().setTableID(tableID);
     const auto relLocalState = localState->ptrCast<RelBatchInsertLocalState>();
