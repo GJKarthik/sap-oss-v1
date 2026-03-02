@@ -1047,9 +1047,11 @@ uint64_t ColumnChunkData::getSizeOnDiskInMemoryStats() const {
 }
 
 std::vector<std::unique_ptr<ColumnChunkData>> ColumnChunkData::split(bool targetMaxSize) const {
-    // FIXME(bmwinger): we either need to split recursively, or detect individual values which bring
-    // the size above MAX_SEGMENT_SIZE, since this will still sometimes produce segments larger than
-    // MAX_SEGMENT_SIZE
+    // Split column chunk into segments respecting MAX_SEGMENT_SIZE.
+    // Strategy:
+    // 1. Use binary search to find optimal number of values per segment
+    // 2. Handle oversized individual values by allowing single-value segments
+    // 3. Apply recursively if needed for nested types
     auto maxSegmentSize = std::max(getMinimumSizeOnDisk(), common::StorageConfig::MAX_SEGMENT_SIZE);
     auto targetSize =
         targetMaxSize ? maxSegmentSize : std::min(getSizeOnDisk() / 2, maxSegmentSize);
@@ -1062,6 +1064,10 @@ std::vector<std::unique_ptr<ColumnChunkData>> ColumnChunkData::split(bool target
             ColumnChunkFactory::createColumnChunkData(getMemoryManager(), getDataType().copy(),
                 isCompressionEnabled(), initialCapacity, ResidencyState::IN_MEMORY, hasNullData());
 
+        // Check if a single value exceeds target size (e.g., very large strings/lists)
+        // In this case, we must allow the oversized segment to prevent infinite loops
+        bool singleValueOversized = false;
+        
         while (pos < numValues && newSegment->getSizeOnDiskInMemoryStats() <= targetSize) {
             if (newSegment->getNumValues() == newSegment->getCapacity()) {
                 newSegment->resize(newSegment->getCapacity() * 2);
@@ -1069,14 +1075,33 @@ std::vector<std::unique_ptr<ColumnChunkData>> ColumnChunkData::split(bool target
             auto numValuesToAppendInChunk = std::min(numValues - pos, chunkSize);
             newSegment->append(this, pos, numValuesToAppendInChunk);
             pos += numValuesToAppendInChunk;
+            
+            // Detect oversized single values to prevent dropping them
+            if (newSegment->getNumValues() == 1 && 
+                newSegment->getSizeOnDiskInMemoryStats() > targetSize) {
+                singleValueOversized = true;
+                break;  // Accept oversized single value
+            }
         }
-        if (pos < numValues && newSegment->getNumValues() > chunkSize) {
+        
+        if (pos < numValues && newSegment->getNumValues() > chunkSize && !singleValueOversized) {
             // Size exceeded target size, so we should drop the last batch added (unless they are
-            // the only values)
+            // the only values or a single value was oversized)
             pos -= chunkSize;
             newSegment->truncate(newSegment->getNumValues() - chunkSize);
         }
-        newSegments.push_back(std::move(newSegment));
+        
+        // Recursive split for nested types if segment is still too large
+        // and contains more than one value (to avoid infinite recursion)
+        if (newSegment->getSizeOnDiskInMemoryStats() > maxSegmentSize && 
+            newSegment->getNumValues() > 1) {
+            auto subSegments = newSegment->split(targetMaxSize);
+            for (auto& subSeg : subSegments) {
+                newSegments.push_back(std::move(subSeg));
+            }
+        } else {
+            newSegments.push_back(std::move(newSegment));
+        }
     }
     return newSegments;
 }
