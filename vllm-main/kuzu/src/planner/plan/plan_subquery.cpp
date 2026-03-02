@@ -199,9 +199,49 @@ void Planner::planRegularMatch(const QueryGraphCollection& queryGraphCollection,
             appendCrossProduct(leftPlan, rightPlan, leftPlan);
         }
     } else {
-        // TODO(Xiyang): there is a question regarding if we want to plan as a correlated subquery
-        // Multi-part query is actually CTE and CTE can be considered as a subquery but does not
-        // scan from outer.
+        /**
+         * P2-86: Multi-Part Query as Correlated Subquery vs CTE Planning
+         * 
+         * This TODO raises a design question: Should multi-part queries (WITH clauses)
+         * be planned as correlated subqueries?
+         * 
+         * Current Behavior:
+         * - Multi-part queries treated as UNNEST_CORRELATED subqueries
+         * - Joined via joinNodeIDs (shared internal IDs between clauses)
+         * 
+         * The Design Question:
+         * Multi-part queries are actually Common Table Expressions (CTEs), which:
+         * - Can be considered subqueries (conceptually)
+         * - But do NOT scan from outer (unlike traditional correlated subqueries)
+         * 
+         * Example:
+         * ```cypher
+         * MATCH (a) WITH a
+         * MATCH (a)-[:KNOWS]->(b)  -- Is this a correlated subquery?
+         * RETURN a, b
+         * ```
+         * 
+         * Different Planning Strategies:
+         * | Strategy | How It Works | When Appropriate |
+         * |----------|--------------|------------------|
+         * | CORRELATED | Scan outer per inner tuple | True dependency |
+         * | UNNEST_CORRELATED | Join on shared IDs | ID-based correlation |
+         * | CTE_STYLE | Materialize then join | No tuple dependency |
+         * 
+         * Current Choice (UNNEST_CORRELATED):
+         * - Treats shared node IDs as join conditions
+         * - Efficient: uses hash join instead of nested loop
+         * - Correct: produces same results as correlated planning
+         * 
+         * Why This Works:
+         * - Multi-part queries share node IDs across clauses
+         * - Hash join on IDs is semantically equivalent to correlation
+         * - Better performance than true correlated execution
+         * 
+         * The Question Remains:
+         * Whether to refactor to make CTE planning explicit (cleaner semantics)
+         * or keep current approach (correct and efficient).
+         */
         info.subqueryType = SubqueryPlanningType::UNNEST_CORRELATED;
         info.corrExprs = joinNodeIDs;
         info.corrExprsCard = leftPlan.getCardinality();
