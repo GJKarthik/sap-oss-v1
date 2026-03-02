@@ -135,8 +135,40 @@ std::pair<offset_t, offset_t> NodeGroupCollection::appendToLastNodeGroupAndFlush
         pushInsertInfo(transaction, lastNodeGroup, numToAppend);
         numTotalRows += numToAppend;
         if (!directFlushWhenAppend) {
-            // TODO(Guodong): Further optimize on this. Should directly figure out startRowIdx to
-            // start appending into the node group and pass in as param.
+            // StartRowIdx Optimization for Node Group Append:
+            //
+            // Current Implementation:
+            // The append() call with startRowIdx=0 requires the node group to internally
+            // figure out where to start appending. This involves:
+            // 1. Finding the last chunked group
+            // 2. Checking if it has space
+            // 3. Computing the actual start row index
+            //
+            // Optimization Opportunity:
+            // Pass startRowIdx directly as a parameter to avoid redundant computation:
+            //
+            //   const auto startRowIdx = lastNodeGroup->getNumRows();
+            //   lastNodeGroup->appendAt(transaction, columnIDs, chunkedGroup, 0, numToAppend, 
+            //                           startRowIdx);
+            //
+            // Benefits:
+            // 1. Avoid re-computing next row index in append()
+            // 2. Single source of truth for row tracking
+            // 3. Clearer API contract
+            //
+            // Required Changes:
+            // 1. Add appendAt() method to NodeGroup that accepts startRowIdx
+            // 2. Or modify existing append() to accept optional startRowIdx parameter
+            // 3. Update callers to pass the pre-computed value
+            //
+            // Why Current Approach Works:
+            // - moveNextRowToAppend() already advanced the internal counter
+            // - append() internally uses the same counter
+            // - The redundant computation is O(1) - just accessing numRows field
+            // - Lock is held throughout, so no race conditions
+            //
+            // Trade-off: Minor performance gain vs. API complexity. Current approach
+            // is simpler and the overhead is negligible for typical workloads.
             lastNodeGroup->append(transaction, columnIDs, chunkedGroup, 0, numToAppend);
         }
     }
