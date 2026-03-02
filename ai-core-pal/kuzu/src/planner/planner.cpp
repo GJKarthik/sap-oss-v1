@@ -1,5 +1,71 @@
 #include "planner/planner.h"
 
+/**
+ * P3-162: Planner - Logical Plan Generation
+ * 
+ * Purpose:
+ * Generates logical query plans from bound statements. Creates a tree of
+ * LogicalOperators that represents the execution strategy.
+ * 
+ * Architecture:
+ * ```
+ * BoundStatement
+ *   │
+ *   └── Planner::planStatement()
+ *         │
+ *         ├── Dispatch by StatementType
+ *         │     ├── planQuery() - MATCH/RETURN
+ *         │     ├── planCreateTable() - CREATE TABLE
+ *         │     ├── planCopyFrom() - COPY FROM
+ *         │     └── ...
+ *         │
+ *         └── Return LogicalPlan
+ * ```
+ * 
+ * Planner Components:
+ * | Component | Description |
+ * |-----------|-------------|
+ * | CardinalityEstimator | Estimate result sizes |
+ * | PropertyExprCollection | Track property expressions |
+ * | QueryGraphPlanningInfo | Track correlated expressions |
+ * | PlannerExtensions | Extension-provided planners |
+ * 
+ * Statement Type Dispatch:
+ * | StatementType | Plan Method |
+ * |---------------|-------------|
+ * | QUERY | planQuery() |
+ * | CREATE_TABLE | planCreateTable() |
+ * | CREATE_SEQUENCE | planCreateSequence() |
+ * | COPY_FROM | planCopyFrom() |
+ * | COPY_TO | planCopyTo() |
+ * | DROP | planDrop() |
+ * | ALTER | planAlter() |
+ * | STANDALONE_CALL | planStandaloneCall() |
+ * | TRANSACTION | planTransaction() |
+ * | EXPLAIN | planExplain() |
+ * 
+ * Query Planning:
+ * - planQuery() handles complex MATCH/RETURN queries
+ * - Uses cardinality estimation for join ordering
+ * - Supports correlated subqueries
+ * 
+ * PropertyExprCollection:
+ * - Tracks which properties are needed for each pattern
+ * - Enables property push-down optimization
+ * - addProperties(): Register property access
+ * - getProperties(): Get properties for a pattern
+ * 
+ * QueryGraphPlanningInfo:
+ * - Tracks correlated expressions (corrExprs)
+ * - Used for planning correlated subqueries
+ * - containsCorrExpr(): Check if expression is correlated
+ * 
+ * Output:
+ * - LogicalPlan containing tree of LogicalOperators
+ * - Passed to Optimizer for optimization
+ * - Then to PlanMapper for physical plan
+ */
+
 #include "main/client_context.h"
 #include "main/database.h"
 
