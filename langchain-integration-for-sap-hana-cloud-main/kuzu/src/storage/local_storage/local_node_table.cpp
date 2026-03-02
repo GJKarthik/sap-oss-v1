@@ -1,5 +1,80 @@
 #include "storage/local_storage/local_node_table.h"
 
+/**
+ * P3-184: LocalNodeTable - Transaction-Local Node Storage
+ * 
+ * Purpose:
+ * Provides transaction-local storage for uncommitted node inserts, updates,
+ * and deletes. Isolated from other transactions until commit.
+ * 
+ * Architecture:
+ * ```
+ * LocalNodeTable
+ *   ├── table: Table& (reference to main NodeTable)
+ *   ├── startOffset: offset_t  // First local offset
+ *   ├── nodeGroups: NodeGroupCollection  // Local node groups
+ *   ├── hashIndex: LocalHashIndex  // Local PK index
+ *   └── overflowFile: InMemOverflowFile  // String storage
+ * ```
+ * 
+ * Offset Management:
+ * ```
+ * Global offset space:
+ *   [0 .. startOffset-1]: Committed rows
+ *   [startOffset .. ∞]: Local (uncommitted) rows
+ * 
+ * Local offset = startOffset + rowIdxInLocalNodeGroups
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. insert():
+ *    - Allocate new offset: startOffset + numTotalRows
+ *    - Insert into local hash index (PK validation)
+ *    - Append to local node groups
+ *    - Set nodeID in result vector
+ * 
+ * 2. update():
+ *    - Verify offset >= startOffset (local row)
+ *    - Find node group and row index
+ *    - Update specific column value
+ * 
+ * 3. delete_():
+ *    - Delete from local hash index
+ *    - Mark as deleted in local node group
+ * 
+ * 4. lookupPK():
+ *    - Search local hash index
+ *    - Apply visibility check
+ *    - Return local offset if found
+ * 
+ * Visibility Check:
+ * ```
+ * isVisible(transaction, offset):
+ *   1. Convert offset to (nodeGroupIdx, offsetInGroup)
+ *   2. Get node group at index
+ *   3. Return: !isDeleted && isInserted
+ * ```
+ * 
+ * PK Uniqueness:
+ * - Local hash index validates uniqueness for uncommitted
+ * - validateUniquenessConstraint() checks before insert
+ * - Duplicate throws RuntimeException
+ * 
+ * Commit Process (in NodeTable):
+ * ```
+ * 1. Append local node groups to committed storage
+ * 2. Apply deletions with proper offset mapping
+ * 3. Update PK index with committed offsets
+ * 4. Clear local storage
+ * ```
+ * 
+ * Memory Management:
+ * - clear() resets hash index and node groups
+ * - Uses transaction-local MemoryManager allocation
+ * - InMemOverflowFile for string values
+ */
+
 #include "catalog/catalog_entry/node_table_catalog_entry.h"
 #include "common/cast.h"
 #include "common/exception/message.h"
