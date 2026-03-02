@@ -1,5 +1,87 @@
 #include "main/database.h"
 
+/**
+ * P3-153: Database - Core Database Interface
+ * 
+ * Purpose:
+ * The main entry point for Kuzu graph database. Manages all core subsystems
+ * and provides the public API for database operations.
+ * 
+ * Architecture:
+ * ```
+ * Database
+ *   ├── Catalog                   // Schema metadata
+ *   ├── StorageManager            // Data storage
+ *   ├── TransactionManager        // ACID transactions
+ *   ├── BufferManager             // Buffer pool
+ *   ├── MemoryManager             // Memory allocation
+ *   ├── QueryProcessor            // Query execution
+ *   ├── ExtensionManager          // Extensions
+ *   ├── VirtualFileSystem         // File I/O
+ *   └── DatabaseManager           // Attached DBs
+ * ```
+ * 
+ * SystemConfig Options:
+ * ```
+ * bufferPoolSize      - Buffer pool memory (default: 80% system RAM)
+ * maxNumThreads       - Worker threads (default: hardware_concurrency)
+ * enableCompression   - Compress data pages
+ * readOnly            - Read-only mode
+ * maxDBSize           - Maximum database size
+ * autoCheckpoint      - Auto checkpoint on commit
+ * checkpointThreshold - Checkpoint after N bytes
+ * forceCheckpointOnClose - Checkpoint on destructor
+ * enableChecksums     - Page checksums
+ * ```
+ * 
+ * Initialization Flow:
+ * ```
+ * Database(path, config)
+ *   │
+ *   ├── 1. Expand path (handle ~, validate)
+ *   ├── 2. Create VirtualFileSystem
+ *   ├── 3. Create BufferManager
+ *   ├── 4. Create MemoryManager
+ *   ├── 5. Create QueryProcessor
+ *   ├── 6. Create Catalog
+ *   ├── 7. Create StorageManager
+ *   ├── 8. Create TransactionManager
+ *   ├── 9. Create ExtensionManager
+ *   └── 10. Recovery (if not in-memory)
+ * ```
+ * 
+ * Extension Points:
+ * ```
+ * registerFileSystem()      - Custom file systems
+ * registerStorageExtension() - Storage backends
+ * addExtensionOption()      - Config options
+ * addTransformerExtension() - Query transformers
+ * addBinderExtension()      - Binder extensions
+ * addPlannerExtension()     - Planner extensions
+ * addMapperExtension()      - Mapper extensions
+ * ```
+ * 
+ * Shutdown:
+ * ```
+ * ~Database()
+ *   │
+ *   ├── If not read-only and forceCheckpointOnClose:
+ *   │     transactionManager->checkpoint()
+ *   └── Set isDatabaseClosed = true
+ * ```
+ * 
+ * Query ID Generation:
+ * - Thread-safe getNextQueryID()
+ * - Used for query identification/logging
+ * 
+ * Usage:
+ * ```cpp
+ * Database db("./mydb");
+ * Connection conn(&db);
+ * auto result = conn.query("MATCH (n) RETURN n");
+ * ```
+ */
+
 #include "extension/binder_extension.h"
 #include "extension/extension_manager.h"
 #include "extension/mapper_extension.h"
