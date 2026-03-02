@@ -148,11 +148,49 @@ uint64_t PayloadScanner::scan(std::vector<common::ValueVector*> vectorsToRead) {
             blockPtrInfo->updateTuplePtrIfNecessary();
             numTuplesRead += numTuplesToReadInCurBlock;
         }
-        // TODO(Ziyi): This is a hacky way of using factorizedTable::lookup function,
-        // since the tuples in tuplesToRead may not belong to factorizedTable0. The
-        // lookup function doesn't perform a check on whether it holds all the tuples in
-        // tuplesToRead. We should optimize this lookup function in the orderByScan
-        // optimization PR.
+        /**
+         * P2-84: Cross-Table Lookup in ORDER BY Payload Scanner
+         * 
+         * This is a "hacky" use of factorizedTable::lookup() because tuples in
+         * tuplesToRead may not actually belong to payloadTables[0].
+         * 
+         * Current Behavior:
+         * - Multiple threads create separate payloadTables during ORDER BY
+         * - Sorted results may reference tuples from ANY table (0, 1, 2, ...)
+         * - We call lookup() on table 0, passing it tuple pointers from ANY table
+         * - This works because lookup() just reads from the pointers, doesn't verify ownership
+         * 
+         * Why It's "Hacky":
+         * - Semantically misleading: calling table0->lookup() with table2's data
+         * - No ownership validation: lookup() trusts that pointers are valid
+         * - Assumes all tables have identical schema (which they do)
+         * 
+         * What a Clean Solution Would Look Like:
+         * ```cpp
+         * // Option 1: Route to correct table
+         * for (auto i = 0u; i < numTuplesToRead; i++) {
+         *     auto ftIdx = OrderByKeyEncoder::getEncodedFTIdx(payloadInfo);
+         *     payloadTables[ftIdx]->lookup(vectorsToRead, colsToScan, &tuplesToRead[i], i, 1);
+         * }
+         * 
+         * // Option 2: Static method that takes tuples directly
+         * FactorizedTable::lookupFromTuples(vectorsToRead, colsToScan, tuplesToRead, numTuples);
+         * ```
+         * 
+         * Why Current Approach Works:
+         * | Reason | Explanation |
+         * |--------|-------------|
+         * | Same schema | All payloadTables have identical column layout |
+         * | Direct pointers | tuplesToRead contains actual memory addresses |
+         * | No validation | lookup() reads from pointers without checking |
+         * 
+         * Trade-offs:
+         * - Current: Fast (no per-tuple routing), but semantically wrong
+         * - Per-table routing: Clean, but adds overhead per tuple
+         * - Static method: Clean, but requires refactoring FactorizedTable
+         * 
+         * Should be addressed in orderByScan optimization PR.
+         */
         payloadTables[0]->lookup(vectorsToRead, colsToScan, tuplesToRead.get(), 0, numTuplesToRead);
         nextTupleIdxToReadInMergedKeyBlock += numTuplesToRead;
         return numTuplesRead;
