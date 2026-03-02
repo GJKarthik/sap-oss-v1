@@ -146,9 +146,49 @@ void FactorizedTable::resize(uint64_t numTuples) {
         block->numTuples += numTuplesToAdd;
     } else {
         auto numTuplesRemaining = numTuples;
+        /**
+         * P2-80: FactorizedTable Block Reuse Fragmentation
+         * 
+         * This TODO notes that resize() can leave "holes" (empty blocks) in the middle
+         * when a table is shrunk and then grown again.
+         * 
+         * Current Behavior:
+         * - resize(smaller) adjusts numTuples in blocks but doesn't remove blocks
+         * - resize(larger) adds new blocks at the end
+         * - Result: middle blocks may be partially empty
+         * 
+         * Example:
+         * ```
+         * Initial: [Block0: 1000 tuples] [Block1: 1000 tuples] [Block2: 500 tuples]
+         * resize(500):  Adjusts counts, but blocks still exist
+         * resize(2000): Adds new Block3 at end
+         * Result: [B0: 500] [B1: 0] [B2: 0] [B3: 1500] <- fragmented
+         * ```
+         * 
+         * Impact:
+         * | Issue | Consequence |
+         * |-------|-------------|
+         * | Memory waste | Empty blocks still allocated |
+         * | Iteration | Must skip empty blocks |
+         * | Sequential access | Cache misses from fragmentation |
+         * 
+         * Why This Is Low Priority:
+         * - resize() is rarely called with smaller values
+         * - Assertion ensures only single-block case (current guard)
+         * - Most use cases are append-only (no shrinking)
+         * 
+         * Potential Fix:
+         * ```cpp
+         * // Compact blocks after shrinking
+         * void compactBlocks() {
+         *     blocks.erase(
+         *         std::remove_if(blocks.begin(), blocks.end(),
+         *             [](auto& b) { return b->numTuples == 0; }),
+         *         blocks.end());
+         * }
+         * ```
+         */
         KU_ASSERT(flatTupleBlockCollection->getBlocks().size() == 1);
-        // TODO: It always adds to the end, so this will leave empty blocks in the middle if it's
-        // reused
         for (auto& block : flatTupleBlockCollection->getBlocks()) {
             block->numTuples =
                 std::min(static_cast<uint32_t>(numTuplesRemaining), numFlatTuplesPerBlock);
