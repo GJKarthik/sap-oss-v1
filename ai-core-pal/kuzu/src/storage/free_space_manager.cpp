@@ -1,6 +1,94 @@
 #include "storage/free_space_manager.h"
 
 /**
+ * P3-198: FreeSpaceManager - Extended Implementation Documentation
+ * 
+ * Additional Details (see P2-127 for architecture overview)
+ * 
+ * getLevel() Calculation:
+ * ```
+ * getLevel(numPages):
+ *   // Returns floor(log2(numPages))
+ *   RETURN CountZeros::Trailing(bit_floor(numPages))
+ * 
+ * Examples:
+ *   1 page  → level 0 (2^0 = 1)
+ *   2 pages → level 1 (2^1 = 2)
+ *   3 pages → level 1 (2^1 = 2 <= 3 < 4 = 2^2)
+ *   4 pages → level 2 (2^2 = 4)
+ *   5 pages → level 2 (2^2 = 4 <= 5 < 8 = 2^3)
+ * ```
+ * 
+ * popFreePages() Algorithm:
+ * ```
+ * popFreePages(numPages):
+ *   levelToSearch = getLevel(numPages)
+ *   FOR level in levelToSearch..freeLists.size():
+ *     curList = freeLists[level]
+ *     entryIt = curList.lower_bound({0, numPages})
+ *     IF entryIt != end:
+ *       entry = *entryIt
+ *       curList.erase(entryIt)
+ *       --numEntries
+ *       RETURN splitPageRange(entry, numPages)
+ *   RETURN nullopt
+ * ```
+ * 
+ * splitPageRange() Algorithm:
+ * ```
+ * splitPageRange(chunk, numRequired):
+ *   ret = {chunk.startPageIdx, numRequired}
+ *   IF numRequired < chunk.numPages:
+ *     remainder = {chunk.start + numRequired,
+ *                  chunk.numPages - numRequired}
+ *     addFreePages(remainder)  // Re-add to appropriate level
+ *   RETURN ret
+ * ```
+ * 
+ * mergePageRanges() Algorithm:
+ * ```
+ * mergePageRanges(newEntries, fileHandle):
+ *   1. Collect all entries (new + existing)
+ *   2. Reset freeLists
+ *   3. Sort by startPageIdx
+ *   4. FOR each entry:
+ *        IF adjacent to prev: merge
+ *        ELSE: addFreePages(prev)
+ *   5. handleLastPageRange() // May truncate file
+ * ```
+ * 
+ * finalizeCheckpoint() Algorithm:
+ * ```
+ * finalizeCheckpoint(fileHandle):
+ *   FOR each uncheckpointed entry:
+ *     evictPages(fileHandle, entry)  // Remove from BM
+ *   mergePageRanges(uncheckpointed, fileHandle)
+ *   uncheckpointedFreePageRanges.clear()
+ * ```
+ * 
+ * File Truncation Optimization:
+ * ```
+ * handleLastPageRange(pageRange, fileHandle):
+ *   IF pageRange.end() == fileHandle.getNumPages():
+ *     // Last range at end of file - truncate
+ *     fileHandle.removePageIdxAndTruncateIfNecessary()
+ *   ELSE:
+ *     addFreePages(pageRange)
+ * ```
+ * 
+ * Serialization Format:
+ * ```
+ * [debugging_info: "page_manager"]
+ * [debugging_info: "numEntries"]
+ * [numEntries: row_idx_t]
+ * [debugging_info: "entries"]
+ * FOR each entry:
+ *   [startPageIdx: page_idx_t]
+ *   [numPages: page_idx_t]
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-127: Free Space Manager - Buddy-Style Free Space Tracking
  * 
  * Purpose:
