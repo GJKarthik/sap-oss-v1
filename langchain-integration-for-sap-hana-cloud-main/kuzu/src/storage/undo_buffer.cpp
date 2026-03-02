@@ -1,6 +1,108 @@
 #include "storage/undo_buffer.h"
 
 /**
+ * P3-197: UndoBuffer - Extended Implementation Documentation
+ * 
+ * Additional Details (see P2-128 for architecture overview)
+ * 
+ * Record Layout:
+ * ```
+ * [UndoRecordHeader][Record Data]
+ * 
+ * UndoRecordHeader {
+ *   recordType: UndoRecordType  // 4 bytes
+ *   recordSize: uint32_t        // 4 bytes
+ * }
+ * ```
+ * 
+ * Record Type Sizes:
+ * | Type | Data Structure | Size |
+ * |------|----------------|------|
+ * | CATALOG_ENTRY | CatalogEntryRecord | 16 bytes |
+ * | SEQUENCE_ENTRY | SequenceEntryRecord | ~24 bytes |
+ * | INSERT_INFO | VersionRecord | ~32 bytes |
+ * | DELETE_INFO | VersionRecord | ~32 bytes |
+ * | UPDATE_INFO | VectorUpdateRecord | ~32 bytes |
+ * 
+ * createUndoRecord() Algorithm:
+ * ```
+ * createUndoRecord(size):
+ *   LOCK mtx
+ *   IF memoryBuffers.empty() OR !canFit(size):
+ *     capacity = INIT_CAPACITY
+ *     WHILE size > capacity: capacity *= 2
+ *     memoryBuffers.push_back(allocateBuffer(capacity))
+ *   
+ *   res = memoryBuffers.back().getData() + currentPosition
+ *   memoryBuffers.back().movePosition(size)
+ *   RETURN res
+ * ```
+ * 
+ * iterate() Algorithm:
+ * ```
+ * iterate(callback):
+ *   FOR bufferIdx in 0..memoryBuffers.size():
+ *     current = buffer.getData()
+ *     end = current + buffer.getCurrentPosition()
+ *     WHILE current < end:
+ *       header = read UndoRecordHeader
+ *       callback(header.type, current)
+ *       current += header.recordSize
+ * ```
+ * 
+ * reverseIterate() Algorithm:
+ * ```
+ * reverseIterate(callback):
+ *   FOR bufferIdx in reverse(0..size):
+ *     // First pass: collect all entries
+ *     entries = []
+ *     WHILE current < end:
+ *       entries.push({type, data})
+ *     // Second pass: iterate in reverse
+ *     FOR i in reverse(entries):
+ *       callback(entries[i].type, entries[i].data)
+ * ```
+ * 
+ * Commit Flow:
+ * ```
+ * commit(commitTS):
+ *   iterate([&](type, entry) {
+ *     commitRecord(type, entry, commitTS)
+ *   })
+ * 
+ * commitRecord(type, record, commitTS):
+ *   SWITCH type:
+ *     CATALOG_ENTRY: setTimestamp(newEntry, commitTS)
+ *     INSERT_INFO: ChunkedNodeGroup::commitInsert()
+ *     DELETE_INFO: ChunkedNodeGroup::commitDelete()
+ *     UPDATE_INFO: UpdateInfo::commit()
+ * ```
+ * 
+ * Rollback Flow:
+ * ```
+ * rollback(context):
+ *   reverseIterate([&](type, entry) {
+ *     rollbackRecord(context, type, entry)
+ *   })
+ * 
+ * rollbackRecord(type, record):
+ *   SWITCH type:
+ *     CATALOG_ENTRY: Remove from version chain
+ *     SEQUENCE_ENTRY: Restore previous value
+ *     INSERT_INFO: rollbackInsert()
+ *     DELETE_INFO: rollbackDelete()
+ *     UPDATE_INFO: UpdateInfo::rollback()
+ * ```
+ * 
+ * Memory Buffer Growth:
+ * ```
+ * Initial: UNDO_MEMORY_BUFFER_INIT_CAPACITY
+ * Growth: capacity *= 2 (doubling)
+ * No shrinking (buffers kept until transaction ends)
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-128: Undo Buffer - Transaction Rollback Support
  * 
  * Purpose:
