@@ -57,14 +57,61 @@ void ResultCollector::executeInternal(ExecutionContext* context) {
     }
 }
 
+/**
+ * P2-74: FactorizedTable Interface for Flat/Unflat State
+ * 
+ * This TODO suggests adding a cleaner interface in FactorizedTable to handle
+ * the flat/unflat state setting based on column schema.
+ * 
+ * The Problem:
+ * - Some code checks currIdx == -1 to determine if state is unflat
+ * - This is a legacy convention that's error-prone
+ * - The flat/unflat state should be derived from the table schema
+ * 
+ * Current Pattern (here and elsewhere):
+ * ```cpp
+ * for (auto i = 0u; i < payloadVectors.size(); ++i) {
+ *     auto columnSchema = tableSchema->getColumn(i);
+ *     if (columnSchema->isFlat()) {
+ *         payloadVectors[i]->state->setToFlat();
+ *     }
+ * }
+ * ```
+ * 
+ * What "Interface in FactorizedTable" Would Look Like:
+ * ```cpp
+ * // Proposed API:
+ * table->initVectorStates(payloadVectors);  // Sets flat/unflat based on schema
+ * 
+ * // Or more explicitly:
+ * for (auto i = 0u; i < payloadVectors.size(); ++i) {
+ *     table->applyColumnStateToVector(i, payloadVectors[i]);
+ * }
+ * ```
+ * 
+ * Why This Matters:
+ * - DRY: This pattern is repeated in multiple operators
+ * - Correctness: Centralizing logic prevents inconsistencies
+ * - Readability: Intent is clearer than manual state manipulation
+ * 
+ * Current Workaround:
+ * - Manually iterate through columns and check isFlat()
+ * - Set vector state accordingly
+ * - Works, but duplicated across codebase
+ * 
+ * Places That Would Benefit:
+ * - ResultCollector (here)
+ * - Scan operators
+ * - Hash join probe side
+ * - Aggregate finalization
+ */
 void ResultCollector::finalizeInternal(ExecutionContext* context) {
     switch (info.accumulateType) {
     case AccumulateType::OPTIONAL_: {
         auto localResultSet = getResultSet(MemoryManager::Get(*context->clientContext));
         initNecessaryLocalState(localResultSet.get(), context);
-        // We should remove currIdx completely as some of the code still relies on currIdx = -1 to
-        // check if the state if unFlat or not. This should no longer be necessary.
-        // TODO(Ziyi): add an interface in factorized table
+        // Manual flat/unflat state setting based on column schema
+        // (This pattern could be encapsulated in FactorizedTable)
         auto table = sharedState->getTable();
         auto tableSchema = table->getTableSchema();
         for (auto i = 0u; i < payloadVectors.size(); ++i) {
