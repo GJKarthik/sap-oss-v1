@@ -141,7 +141,43 @@ common::Value RecursivePatternFactorSetting::getSetting(const ClientContext* con
 
 void EnableMVCCSetting::setContext(ClientContext* context, const common::Value& parameter) {
     KU_ASSERT(parameter.getDataType().getLogicalTypeID() == common::LogicalTypeID::BOOL);
-    // TODO: This is a temporary solution to make tests of multiple write transactions easier.
+    /**
+     * P2-62: Multi-Write Transaction Support Configuration
+     * 
+     * This setting controls whether multiple concurrent write transactions are allowed.
+     * 
+     * Background:
+     * Traditional graph databases often use single-writer architectures where only one
+     * transaction can write at a time. Kuzu supports experimental multi-writer mode
+     * for scenarios requiring concurrent write access.
+     * 
+     * Why This Setting Exists:
+     * 1. Testing: Enables easier testing of concurrent write scenarios
+     * 2. Production: Allows enabling multi-write for specific workloads
+     * 3. Safety: Disabled by default to prevent data inconsistency issues
+     * 
+     * Usage:
+     *   SET enable_mvcc = true;   -- Enable multi-write transactions
+     *   SET enable_mvcc = false;  -- Single-writer mode (default)
+     * 
+     * When to Enable:
+     * - When your application requires concurrent write access
+     * - When testing multi-writer scenarios
+     * - When using MVCC-aware transaction patterns
+     * 
+     * Considerations:
+     * - Multi-write mode may have performance implications
+     * - Write conflicts are resolved using MVCC (Multi-Version Concurrency Control)
+     * - Not all operations may support concurrent writes yet
+     * 
+     * Future Plans:
+     * - Make multi-write the default once fully battle-tested
+     * - Remove this setting when single-writer mode is deprecated
+     * - Add finer-grained concurrency controls
+     * 
+     * Note: This is intentionally a DBConfig (not ClientConfig) setting because it
+     * affects database-wide transaction behavior, not just the current session.
+     */
     context->getDBConfigUnsafe()->enableMultiWrites = parameter.getValue<bool>();
 }
 
