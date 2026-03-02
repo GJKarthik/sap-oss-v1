@@ -1,5 +1,84 @@
 #include "storage/local_storage/local_rel_table.h"
 
+/**
+ * P3-185: LocalRelTable - Transaction-Local Relationship Storage
+ * 
+ * Purpose:
+ * Provides transaction-local storage for uncommitted relationship inserts,
+ * updates, and deletes. Uses CSR-like index for efficient adjacency lookup.
+ * 
+ * Architecture:
+ * ```
+ * LocalRelTable
+ *   ├── table: Table& (reference to main RelTable)
+ *   ├── localNodeGroup: NodeGroup  // Stores rel data
+ *   └── directedIndices: vector<DirectedCSRIndex>
+ *         └── index: map<nodeOffset, row_idx_vec_t>
+ * ```
+ * 
+ * Column Layout (Local):
+ * ```
+ * Column 0: srcNodeID (INTERNAL_ID)
+ * Column 1: dstNodeID (INTERNAL_ID)
+ * Column 2: relID (INTERNAL_ID)
+ * Column 3+: Properties
+ * 
+ * vs Global Layout:
+ *   Column 0: nbrNodeID
+ *   Column 1+: Properties
+ * ```
+ * 
+ * CSR Index Structure:
+ * ```
+ * DirectedCSRIndex
+ *   ├── direction: FWD or BWD
+ *   └── index: map<boundNodeOffset, [row indices]>
+ * 
+ * For each direction, maps bound node to list of local row indices.
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. insert():
+ *    - Allocate rel offset (MAX_NUM_ROWS_IN_TABLE + localRow)
+ *    - Store src, dst, properties in local node group
+ *    - Add row index to both FWD and BWD CSR indices
+ * 
+ * 2. update():
+ *    - Find matching row via findMatchingRow()
+ *    - Update column in local node group
+ * 
+ * 3. delete_():
+ *    - Find matching row
+ *    - Remove from FWD and BWD CSR indices
+ * 
+ * 4. scan():
+ *    - Lookup bound node in CSR index
+ *    - Return row indices for that bound node
+ *    - Lookup actual data from local node group
+ * 
+ * Column ID Rewriting:
+ * ```
+ * rewriteLocalColumnID():
+ *   NBR_ID_COLUMN_ID →
+ *     FWD: LOCAL_NBR_NODE_ID_COLUMN_ID (1)
+ *     BWD: LOCAL_BOUND_NODE_ID_COLUMN_ID (0)
+ *   Other: columnID + 1 (shift for src/dst prefix)
+ * ```
+ * 
+ * findMatchingRow():
+ * ```
+ * 1. Get row indices from both FWD and BWD CSR indices
+ * 2. Intersect the sets
+ * 3. Scan local node group for matching relID
+ * 4. Return matched row index
+ * ```
+ * 
+ * Uncommitted Offset:
+ * - relOffset >= MAX_NUM_ROWS_IN_TABLE indicates uncommitted
+ * - Converted to committed offset during commit
+ */
+
 #include <algorithm>
 #include <numeric>
 
