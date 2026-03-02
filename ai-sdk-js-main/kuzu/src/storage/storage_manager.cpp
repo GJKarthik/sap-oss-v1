@@ -1,6 +1,115 @@
 #include "storage/storage_manager.h"
 
 /**
+ * P3-195: StorageManager - Extended Implementation Documentation
+ * 
+ * Additional Details (see P3-170 and P2-130 for architecture)
+ * 
+ * Constructor Flow:
+ * ```
+ * StorageManager(databasePath, readOnly, enableChecksums, mm, enableCompression, vfs):
+ *   1. Store databasePath, readOnly flag
+ *   2. Create WAL with checksums option
+ *   3. Create ShadowFile for atomic updates
+ *   4. Check if path is ":memory:" (in-memory mode)
+ *   5. Register PrimaryKeyIndex type
+ * ```
+ * 
+ * initDataFileHandle() Flow:
+ * ```
+ * initDataFileHandle():
+ *   IF inMemory:
+ *     Create O_PERSISTENT_FILE_IN_MEM handle
+ *   ELSE:
+ *     flag = readOnly ? READ_ONLY : CREATE_NOT_EXISTS
+ *     flag |= LOCKED (for persistent)
+ *     Create file handle
+ *     IF numPages == 0 AND !readOnly:
+ *       1. Allocate header page
+ *       2. Initialize database header with UUID
+ *       3. Write header to page 0
+ *       4. Sync file
+ * ```
+ * 
+ * Table Creation by Type:
+ * ```
+ * createTable(entry):
+ *   SWITCH entry.type:
+ *     NODE_TABLE_ENTRY:
+ *       createNodeTable() → new NodeTable()
+ *     REL_GROUP_ENTRY:
+ *       createRelTableGroup() → FOR each info: new RelTable()
+ * ```
+ * 
+ * Checkpoint Flow:
+ * ```
+ * checkpoint(context, pageAllocator):
+ *   hasChanges = false
+ *   FOR each nodeTable:
+ *     hasChanges |= table->checkpoint()
+ *   FOR each relGroup:
+ *     FOR each relTable in group:
+ *       hasChanges |= table->checkpoint()
+ *     entry->vacuumColumnIDs()
+ *   reclaimDroppedTables()
+ *   RETURN hasChanges
+ * ```
+ * 
+ * reclaimDroppedTables() Algorithm:
+ * ```
+ * reclaimDroppedTables(catalog):
+ *   droppedTables = []
+ *   FOR each (tableID, table) in tables:
+ *     IF NODE and !catalog.containsTable(id):
+ *       table->reclaimStorage()
+ *       droppedTables.push(id)
+ *     ELIF REL:
+ *       IF !catalog.containsTable(relGroupID):
+ *         table->reclaimStorage()
+ *         droppedTables.push(id)
+ *       ELIF !relGroupEntry.getRelEntryInfo(src, dst):
+ *         table->reclaimStorage()
+ *         droppedTables.push(id)
+ *   FOR each id in droppedTables:
+ *     tables.erase(id)
+ * ```
+ * 
+ * Serialization Format:
+ * ```
+ * [num_node_tables: u64]
+ * FOR each node table (sorted by ID):
+ *   [table_id: table_id_t]
+ *   [table.serialize()]
+ * 
+ * [num_rel_groups: u64]
+ * FOR each rel group (sorted by ID):
+ *   [rel_group_id: table_id_t]
+ *   [num_inner_rel_tables: u64]
+ *   FOR each inner table:
+ *     [RelTableCatalogInfo.serialize()]
+ *     [table.serialize()]
+ * ```
+ * 
+ * Database Header Management:
+ * ```
+ * getOrInitDatabaseHeader():
+ *   IF databaseHeader == null:
+ *     ASSERT no persistent header exists
+ *     databaseHeader = createInitialHeader(random)
+ *   RETURN databaseHeader
+ * ```
+ * 
+ * Static Get Pattern:
+ * ```
+ * StorageManager::Get(context):
+ *   IF context has attachedDatabase:
+ *     RETURN attachedDB->getStorageManager()
+ *   ELSE:
+ *     RETURN context.getDatabase()->getStorageManager()
+ * ```
+ * 
+ * ====================================
+ * 
  * P3-170: Storage Manager - Central Storage Coordination
  * 
  * Extended Documentation (see P2-130 for base documentation)
