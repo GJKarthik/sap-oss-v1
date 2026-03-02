@@ -1,5 +1,87 @@
 #include "storage/disk_array_collection.h"
 
+/**
+ * P2-134: Disk Array Collection - Multi-Array Header Management
+ * 
+ * Purpose:
+ * Manages a collection of disk arrays sharing header pages. Used by hash indexes
+ * to organize multiple related disk arrays (e.g., primary slots, overflow slots)
+ * with unified header management.
+ * 
+ * Architecture:
+ * ```
+ * DiskArrayCollection
+ *   ├── fileHandle: FileHandle&          // Underlying storage
+ *   ├── shadowFile: ShadowFile&          // Shadow paging
+ *   ├── bypassShadowing: bool            // Optimization flag
+ *   ├── numHeaders: size_t               // Total array count
+ *   ├── headerPagesOnDisk: size_t        // Persisted pages
+ *   ├── headersForReadTrx: vector<unique_ptr<HeaderPage>>
+ *   └── headersForWriteTrx: vector<unique_ptr<HeaderPage>>
+ * 
+ * HeaderPage Layout:
+ *   ├── numHeaders: size_t               // Headers in this page
+ *   ├── nextHeaderPage: page_idx_t       // Linked list pointer
+ *   └── headers[NUM_HEADERS_PER_PAGE]: DiskArrayHeader[]
+ * ```
+ * 
+ * MVCC Design:
+ * - headersForReadTrx: Consistent read view (from checkpoint)
+ * - headersForWriteTrx: Mutable write view
+ * - Checkpoint copies write→read view
+ * - Enables snapshot isolation for readers
+ * 
+ * Key Operations:
+ * 
+ * 1. Constructor (new collection):
+ *    - Creates empty header pages for read/write
+ *    - headerPagesOnDisk = 0
+ * 
+ * 2. Constructor (from disk):
+ *    - Reads linked header pages from firstHeaderPage
+ *    - Copies to both read and write views
+ *    - Counts total numHeaders
+ * 
+ * 3. addDiskArray():
+ *    - Increments numHeaders
+ *    - Adds new HeaderPage if current full
+ *    - Returns index for DiskArray creation
+ * 
+ * 4. checkpoint(firstHeaderPage, pageAllocator):
+ *    - Allocates new header pages if needed
+ *    - Writes changed headers via ShadowUtils
+ *    - Only updates pages that differ from read version
+ *    - Updates headerPagesOnDisk count
+ * 
+ * 5. reclaimStorage():
+ *    - Frees all header pages in linked list
+ *    - Called during DROP TABLE
+ * 
+ * Header Page Linking:
+ * ```
+ * HeaderPage[0] → HeaderPage[1] → ... → HeaderPage[N]
+ *   ↓               ↓                       ↓
+ * headers[0..K]   headers[0..K]           headers[0..M]
+ *   ↓               ↓                       ↓
+ * DiskArray      DiskArray              DiskArray
+ * ```
+ * 
+ * Usage Example:
+ * ```cpp
+ * // Primary Key Index creates multiple disk arrays
+ * DiskArrayCollection dac(fileHandle, shadowFile);
+ * size_t primarySlotsIdx = dac.addDiskArray();
+ * size_t overflowSlotsIdx = dac.addDiskArray();
+ * 
+ * // Get headers for individual disk arrays
+ * auto& primaryHeader = dac.getHeader(primarySlotsIdx);
+ * ```
+ * 
+ * Thread Safety:
+ * - Read/write separation enables concurrent reads
+ * - Write operations must be serialized
+ */
+
 #include "common/system_config.h"
 #include "common/types/types.h"
 #include "storage/file_handle.h"
