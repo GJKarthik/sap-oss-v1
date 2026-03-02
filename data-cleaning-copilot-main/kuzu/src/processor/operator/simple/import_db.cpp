@@ -23,6 +23,59 @@ static void validateQueryResult(main::QueryResult* queryResult) {
     }
 }
 
+/**
+ * P2-79: Import DB Transaction Handling - Multi-Statement Limitation
+ * 
+ * This TODO notes that Import DB needs special transaction handling that should
+ * be refactored once multi-statement transactions are supported.
+ * 
+ * Current Behavior:
+ * 1. If user has active transaction, commit it first
+ * 2. Execute each statement (DDL + COPY) with auto-transaction
+ * 3. Each statement commits independently
+ * 
+ * Why This Is "Special":
+ * - Normal queries run within a single transaction
+ * - Import DB runs MULTIPLE transactions (one per statement)
+ * - This breaks atomicity: partial import on failure
+ * 
+ * Current Limitation Impact:
+ * | Scenario | What Happens |
+ * |----------|--------------|
+ * | All succeed | Database imported correctly |
+ * | DDL fails | No tables created, error shown |
+ * | COPY fails mid-way | Some tables have data, some don't |
+ * | Index fails | Tables have data, no indexes |
+ * 
+ * Why Multi-Statement Transactions Would Help:
+ * ```cpp
+ * // Ideal implementation:
+ * transactionContext->begin();
+ * for (auto& stmt : allStatements) {
+ *     clientContext->execute(stmt);
+ *     if (failed) {
+ *         transactionContext->rollback();  // Atomic rollback
+ *         return;
+ *     }
+ * }
+ * transactionContext->commit();  // All-or-nothing
+ * ```
+ * 
+ * Current Workaround:
+ * - Commit any active user transaction first
+ * - Execute statements with auto-commit
+ * - On failure: database may be in partial state
+ * - User must manually clean up on error
+ * 
+ * Why This Works In Practice:
+ * - Import DB is typically run on empty/new database
+ * - Schema creation (DDL) rarely fails if export was valid
+ * - COPY failures are usually data issues, not transaction issues
+ * 
+ * Future Refactor:
+ * When multi-DDL/COPY transactions are supported, wrap entire import
+ * in single transaction for atomicity.
+ */
 void ImportDB::executeInternal(ExecutionContext* context) {
     auto clientContext = context->clientContext;
     if (query.empty()) { // Export empty database.
@@ -30,10 +83,8 @@ void ImportDB::executeInternal(ExecutionContext* context) {
             storage::MemoryManager::Get(*clientContext));
         return;
     }
-    // TODO(Guodong): this is special for "Import database". Should refactor after we support
-    // multiple DDL and COPY statements in a single transaction.
-    // Currently, we split multiple query statements into single query and execute them one by one,
-    // each with an auto transaction.
+    // Special handling: commit active transaction, execute with auto-transactions
+    // See P2-79 comment above for why this is needed
     auto transactionContext = transaction::TransactionContext::Get(*clientContext);
     if (transactionContext->hasActiveTransaction()) {
         transactionContext->commit();
