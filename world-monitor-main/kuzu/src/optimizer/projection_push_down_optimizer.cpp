@@ -100,30 +100,53 @@ void ProjectionPushDownOptimizer::visitNodeLabelFilter(LogicalOperator* op) {
     collectExpressionsInUse(filter.getNodeID());
 }
 
-// Hash Join Projection Push-Down:
-// This optimization prunes columns that aren't needed from the build side of hash joins.
-// 
-// Current behavior:
-// - Collect join keys as expressions in use
-// - Prune expressions not referenced downstream from build side materialization
-// - Pre-append a projection to the build side if pruning is beneficial
-//
-// Design consideration - Separate Optimizer:
-// The TODO suggests moving this to a separate HashJoinProjectionOptimizer because:
-// 1. Hash join has unique considerations (build vs probe side semantics)
-// 2. Materialization costs differ from simple projection push-down
-// 3. A dedicated optimizer could make cost-based decisions about pruning
-// 4. Could potentially eliminate entire columns from hash table construction
-//
-// Current approach is correct but could be enhanced with:
-// - Cost model for materialization savings vs projection overhead
-// - Integration with hash table sizing decisions
-// - Coordination with SIP (sideways information passing) optimizations
-//
-// For now, we keep this in ProjectionPushDownOptimizer for simplicity since:
-// - The logic is relatively straightforward
-// - It shares infrastructure with other projection push-down
-// - Separating it would require significant refactoring
+/**
+ * P2-94: Hash Join Projection Push-Down Optimization
+ * 
+ * This optimization prunes columns that aren't needed from the build side of hash joins.
+ * 
+ * Current Behavior:
+ * - Collect join keys as expressions in use
+ * - Prune expressions not referenced downstream from build side materialization
+ * - Pre-append a projection to the build side if pruning is beneficial
+ * 
+ * Design Consideration - Separate HashJoinProjectionOptimizer:
+ * The TODO suggests moving this to a dedicated optimizer because:
+ * 
+ * | Reason | Explanation |
+ * |--------|-------------|
+ * | Unique semantics | Build vs probe side have different materialization costs |
+ * | Cost-based decisions | Dedicated optimizer could weigh pruning benefits vs overhead |
+ * | Hash table sizing | Could integrate with hash table memory allocation |
+ * | SIP coordination | Better integration with sideways information passing |
+ * 
+ * Potential Enhancements:
+ * - Cost model: estimate materialization savings vs projection overhead
+ * - Column reordering: better cache locality for frequently accessed columns
+ * - Partial materialization: only materialize columns needed early
+ * - Late materialization: defer column fetch until after hash probe
+ * 
+ * Why Keep in ProjectionPushDownOptimizer (Current Decision):
+ * | Reason | Explanation |
+ * |--------|-------------|
+ * | Simplicity | Logic is relatively straightforward |
+ * | Shared infrastructure | Reuses expression tracking from parent optimizer |
+ * | Refactoring cost | Separating requires significant code changes |
+ * | Works correctly | Current implementation is functionally correct |
+ * 
+ * Example Optimization Scenario:
+ * ```
+ * Query: SELECT a.name FROM A, B WHERE A.id = B.aid
+ * 
+ * Before: Build side materializes all B columns
+ * After: Build side only materializes B.aid (join key)
+ * 
+ * Savings: Reduced memory, better cache utilization
+ * ```
+ * 
+ * Status: Works correctly. Separate optimizer could enable more sophisticated
+ * cost-based optimizations in the future.
+ */
 void ProjectionPushDownOptimizer::visitHashJoin(LogicalOperator* op) {
     auto& hashJoin = op->constCast<LogicalHashJoin>();
     for (auto& [probeJoinKey, buildJoinKey] : hashJoin.getJoinConditions()) {
