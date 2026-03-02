@@ -1,5 +1,77 @@
 #include "storage/table/struct_chunk_data.h"
 
+/**
+ * P2-124: Struct Chunk Data - Nested Struct Type Storage
+ * 
+ * Purpose:
+ * Provides specialized storage for STRUCT columns with typed fields.
+ * Stores each field in a separate child column chunk, enabling efficient
+ * columnar access to individual fields.
+ * 
+ * Architecture:
+ * ```
+ * StructChunkData
+ *   ├── childChunks: vector<unique_ptr<ColumnChunkData>>
+ *   │     └── One chunk per field in struct type
+ *   ├── nullData: NullChunkData    // Whole-struct null tracking
+ *   └── numValues: uint64_t
+ * 
+ * Storage Layout for STRUCT(name STRING, age INT32):
+ * ┌───────────────────────────────────────────────────────┐
+ * │ childChunks[0] (name): StringChunkData                │
+ * │   Row 0: "Alice" | Row 1: "Bob" | Row 2: NULL         │
+ * │                                                       │
+ * │ childChunks[1] (age): ColumnChunkData<INT32>          │
+ * │   Row 0: 25 | Row 1: 30 | Row 2: NULL                 │
+ * │                                                       │
+ * │ nullData: Row 0: false | Row 1: false | Row 2: true   │
+ * └───────────────────────────────────────────────────────┘
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. append(vector, selView):
+ *    - For each struct field, append from StructVector::getFieldVector
+ *    - Update nullData for whole-struct nulls
+ * 
+ * 2. scan(output, offset, length):
+ *    - Scan nullData to output
+ *    - For each field, scan childChunks[i] to output's field vector
+ * 
+ * 3. lookup(offsetInChunk, output):
+ *    - Check nullData for struct-level null
+ *    - For each field, lookup from corresponding childChunk
+ * 
+ * 4. write(vector, offsetInVector, offsetInChunk):
+ *    - Write each field from StructVector to childChunks
+ *    - Update nullData
+ * 
+ * 5. finalize():
+ *    - Recursively finalize all childChunks
+ *    - Important for nested strings/lists that need compaction
+ * 
+ * Columnar Benefits:
+ * - Selective field access: Can read only needed fields
+ * - Type-specific compression per field
+ * - Cache-efficient field scans
+ * 
+ * Initialization:
+ * - Creates childChunks based on StructType::getFieldTypes
+ * - Each child uses appropriate ColumnChunkData subclass
+ * 
+ * Serialization:
+ * - Base ColumnChunkData fields
+ * - Vector of child chunks (recursive serialization)
+ * 
+ * Sanity Check:
+ * - All childChunks must have same numValues
+ * - Recursive check on each child's validity
+ * 
+ * Performance:
+ * - append/scan/write: O(n * num_fields)
+ * - Space: Sum of child chunk sizes + null bitmap
+ */
+
 #include "common/data_chunk/sel_vector.h"
 #include "common/serializer/deserializer.h"
 #include "common/serializer/serializer.h"
