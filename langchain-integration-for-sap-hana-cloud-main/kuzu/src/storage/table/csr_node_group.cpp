@@ -490,9 +490,10 @@ static std::unique_ptr<ChunkedCSRNodeGroup> createNewPersistentChunkGroup(
     return newGroup;
 }
 
-// Checkpoint Optimization: Early Skip for Unchanged Node Groups
-// 
-// Problem: Checkpointing a node group involves scanning the CSR header from disk,
+/**
+ * P2-104: CSR Checkpoint Early Skip Optimization
+ * 
+ * Problem: Checkpointing a node group involves scanning the CSR header from disk,
 // which is expensive even if nothing has changed.
 //
 // Early Skip Conditions:
