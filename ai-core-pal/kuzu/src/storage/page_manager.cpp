@@ -1,5 +1,88 @@
 #include "storage/page_manager.h"
 
+/**
+ * P2-133: Page Manager - Page Allocation with Free Space Management
+ * 
+ * Purpose:
+ * High-level page allocation manager that integrates with FreeSpaceManager
+ * to efficiently allocate and recycle pages. Handles both fresh allocation
+ * and reuse of freed pages.
+ * 
+ * Architecture:
+ * ```
+ * PageManager
+ *   ├── fileHandle: FileHandle*            // Underlying file
+ *   ├── freeSpaceManager: unique_ptr<FreeSpaceManager>
+ *   ├── mtx: mutex                         // Thread safety
+ *   └── version: atomic<uint64_t>          // Change tracking
+ * 
+ * Allocation Flow:
+ *   allocatePageRange(n)
+ *         │
+ *         ├── Try FSM.popFreePages(n)
+ *         │     └── Reuse freed pages if available
+ *         │
+ *         └── If no free pages:
+ *               fileHandle.addNewPages(n)
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. allocatePageRange(numPages):
+ *    - First try FreeSpaceManager for reusable pages
+ *    - Falls back to expanding file if no free pages
+ *    - Returns PageRange{startPageIdx, numPages}
+ *    - Increments version on FSM allocation
+ * 
+ * 2. freePageRange(entry):
+ *    - Marks pages for deferred reuse
+ *    - addUncheckpointedFreePages() - NOT immediately reusable
+ *    - Pages become available after next checkpoint
+ *    - Ensures checkpoint recovery safety
+ * 
+ * 3. freeImmediatelyRewritablePageRange(fileHandle, entry):
+ *    - For transaction rollback scenarios
+ *    - evictAndAddFreePages() - immediately reusable
+ *    - Evicts from buffer manager first
+ * 
+ * Free Page Lifecycle:
+ * ```
+ * ALLOCATED → freePageRange() → UNCHECKPOINTED
+ *                                    │
+ *                            [checkpoint]
+ *                                    ↓
+ *                              FREE (reusable)
+ *                                    │
+ *                            allocatePageRange()
+ *                                    ↓
+ *                              ALLOCATED
+ * ```
+ * 
+ * Checkpoint Integration:
+ * - serialize(): Save FSM state for persistence
+ * - deserialize(): Restore FSM state on recovery
+ * - finalizeCheckpoint(): Move uncheckpointed to free
+ * - clearEvictedBMEntriesIfNeeded(): Cleanup buffer manager
+ * 
+ * Version Tracking:
+ * - version increments on any allocation/free
+ * - changedSinceLastCheckpoint() checks if version changed
+ * - resetVersion() after successful checkpoint
+ * 
+ * Static Access:
+ * ```cpp
+ * PageManager* pm = PageManager::Get(clientContext);
+ * ```
+ * 
+ * Thread Safety:
+ * - Mutex-protected allocation/free operations
+ * - Version is atomic for concurrent reads
+ * 
+ * Feature Flag:
+ * - ENABLE_FSM = true (default)
+ * - When false: all allocations expand file
+ */
+
 #include "common/uniq_lock.h"
 #include "storage/file_handle.h"
 #include "storage/storage_manager.h"
