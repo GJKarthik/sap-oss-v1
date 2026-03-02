@@ -15,10 +15,53 @@ class FunctionCatalogEntry;
 
 namespace function {
 
+/**
+ * P2-57: Function Matching Utilities
+ * 
+ * This class provides utilities for resolving function calls to specific
+ * function implementations based on name and argument types.
+ * 
+ * Current Design:
+ * The class has separate methods for different function types:
+ * - matchFunction(): For scalar and table functions
+ * - matchAggregateFunction(): For aggregate functions with isDistinct parameter
+ * 
+ * Why Not Unified Yet:
+ * Aggregate functions have additional matching criteria (isDistinct flag)
+ * that don't apply to scalar/table functions. A truly unified interface would need:
+ * 
+ * Option A: Generic parameters
+ *   matchFunction<FunctionType>(name, types, ...extraArgs)
+ *   - Pros: Type-safe, compile-time checking
+ *   - Cons: Complex template metaprogramming, harder to extend
+ * 
+ * Option B: Config struct
+ *   struct MatchConfig { bool isDistinct; FunctionType type; ... };
+ *   matchFunction(name, types, config)
+ *   - Pros: Flexible, easy to extend
+ *   - Cons: Runtime overhead, looser type safety
+ * 
+ * Option C: Visitor pattern
+ *   FunctionMatcher visitor(name, types);
+ *   catalogEntry->accept(visitor);
+ *   - Pros: Clean OO design, extensible
+ *   - Cons: More classes, indirection overhead
+ * 
+ * Current Decision:
+ * Keep separate methods as they work correctly and the extra parameter for
+ * aggregates (isDistinct) would complicate a unified interface. The cognitive
+ * overhead of understanding two methods is minimal compared to understanding
+ * a complex unified interface.
+ * 
+ * If we add more function types (e.g., window functions) with their own
+ * matching criteria, revisiting this design would be worthwhile.
+ */
 class BuiltInFunctionsUtils {
 public:
-    // TODO(Ziyi): We should have a unified interface for matching table, aggregate and scalar
-    // functions.
+    /**
+     * Match a function by name and input types.
+     * For scalar and table functions.
+     */
     static KUZU_API Function* matchFunction(const std::string& name,
         const catalog::FunctionCatalogEntry* catalogEntry) {
         return matchFunction(name, {}, catalogEntry);
