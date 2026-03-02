@@ -16,6 +16,48 @@ std::string IntersectPrintInfo::toString() const {
     return result;
 }
 
+/**
+ * P2-75: Intersect Operator Key Storage Order Assumption
+ * 
+ * This TODO suggests removing the assumption that keys are always in columns 0 and 1
+ * of the FactorizedTable.
+ * 
+ * Current Assumption:
+ * - Column 0: Build key (the key from the build side)
+ * - Column 1: Intersect key (the key used for intersection)
+ * - Columns 2+: Payload columns
+ * 
+ * Why This Is Hardcoded:
+ * - The intersect operator was designed with this fixed layout
+ * - Simplifies index calculation: payload columns start at index 2
+ * - No need to store/lookup key column positions
+ * 
+ * Why Flexibility Would Be Better:
+ * | Issue | Problem |
+ * |-------|---------|
+ * | Tight coupling | Cannot reorder columns without breaking intersect |
+ * | Maintenance | Changes to table layout require updates here |
+ * | Reusability | Cannot use intersect with different table schemas |
+ * 
+ * What "Storing Keys in Any Order" Would Require:
+ * 1. Store key column indices in IntersectDataInfo
+ * 2. Compute payload column indices dynamically:
+ *    ```cpp
+ *    // Instead of: columnIdxesToScanFrom.push_back(i + 2);
+ *    // Use: columnIdxesToScanFrom.push_back(getPayloadColumnIdx(i));
+ *    ```
+ * 3. Update FactorizedTable lookup to use these indices
+ * 
+ * Impact of Current Approach:
+ * - Works correctly as long as table schema follows convention
+ * - Any schema change breaks the intersect operator
+ * - Adding new system columns would shift payload indices
+ * 
+ * Why Keep For Now:
+ * - Intersect is specialized for shortest path queries
+ * - Table schema is controlled by the planner
+ * - Performance: no extra indirection for column lookup
+ */
 void Intersect::initLocalStateInternal(ResultSet* resultSet, ExecutionContext* /*context*/) {
     outKeyVector = resultSet->getValueVector(outputDataPos);
     for (auto& dataInfo : intersectDataInfos) {
@@ -24,9 +66,7 @@ void Intersect::initLocalStateInternal(ResultSet* resultSet, ExecutionContext* /
         std::vector<ValueVector*> vectorsToReadInto;
         for (auto i = 0u; i < dataInfo.payloadsDataPos.size(); i++) {
             auto vector = resultSet->getValueVector(dataInfo.payloadsDataPos[i]);
-            // Always skip the first two columns in the fTable: build key and intersect key.
-            // TODO(Guodong): Remove this assumption so that keys can be stored in any order. Change
-            // mapping logic too so that we don't need to maintain this order explicitly.
+            // Skip columns 0 (build key) and 1 (intersect key), payloads start at column 2
             columnIdxesToScanFrom.push_back(i + 2);
             vectorsToReadInto.push_back(vector.get());
         }
