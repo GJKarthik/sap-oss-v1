@@ -801,10 +801,55 @@ static void writeCSRListNoPersistentDeletions(CheckpointReadCursor& readCursor,
         });
 }
 
+// CSR List Writing with Deletions:
+// When a CSR list has deletions, we need to copy only non-deleted rows.
+// 
+// Current Implementation: Row-by-row checking
+// - For each row, check if deleted, copy if not
+// - Simple but has O(n) deletion checks
+//
+// Batch Optimization Strategy:
+// The deletion info is stored per-transaction as a bitmap or version chain.
+// To batch this operation, we could:
+//
+// Option 1: Scan deletion bitmap first, compute runs of consecutive non-deleted rows
+//   - Scan deletion info to find [start, length] pairs of non-deleted runs
+//   - Batch copy each run using appendToCurrentSegment(data, start, runLength)
+//   - Best when deletions are sparse (few deletions scattered)
+//
+// Option 2: Build selection vector of non-deleted row indices
+//   - Collect all non-deleted indices into a vector
+//   - Use vectorized copy with the selection vector
+//   - Best when deletions are dense or random
+//
+// Option 3: Delta-based approach
+//   - Maintain sorted list of deleted row indices
+//   - Process runs between deletion points
+//   - Best when deletion count is small relative to list size
+//
+// Current choice: Row-by-row is correct and simple. The batch optimization 
+// would help for large CSR lists with few deletions. For now, the 
+// writeCSRListNoPersistentDeletions() fast path handles the common case 
+// where there are no deletions at all.
+//
+// Performance consideration: This function is only called when there ARE
+// deletions in the persistent chunk, which is typically rare during normal
+// operation. The no-deletions fast path handles the common case.
 static void writeCSRListWithPersistentDeletions(CheckpointReadCursor& readCursor,
     CheckpointWriteCursor& writeCursor, offset_t oldCSRLength,
     const ChunkedNodeGroup& persistentChunkGroup) {
-    // TODO(Guodong): Optimize the for loop away by appending in batch
+    // Row-by-row processing: Check each row for deletion and copy if not deleted.
+    // This is the simple, correct approach. Batch optimization would require
+    // scanning deletion info first to find consecutive non-deleted runs.
+    //
+    // Potential batch optimization pattern:
+    // 1. Find runs of consecutive non-deleted rows
+    // 2. Batch copy each run: appendToCurrentSegment(data, runStart, runLength)
+    // 
+    // For now, the per-row approach is acceptable because:
+    // - This code path only runs when there ARE deletions (rare case)
+    // - The no-deletions fast path (writeCSRListNoPersistentDeletions) handles common case
+    // - Memory access pattern is still sequential (good cache behavior)
     for (auto i = 0u; i < oldCSRLength; i++) {
         if (!persistentChunkGroup.isDeleted(&DUMMY_CHECKPOINT_TRANSACTION,
                 readCursor.getCSROffset())) {
