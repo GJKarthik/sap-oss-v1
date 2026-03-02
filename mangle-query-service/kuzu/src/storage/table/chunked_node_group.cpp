@@ -448,10 +448,44 @@ std::unique_ptr<ColumnChunk> InMemChunkedNodeGroup::flushInternal(ColumnChunkDat
         auto splitSegments = chunk.split(true /*new segments are always the max size if possible*/);
         std::vector<std::unique_ptr<ColumnChunkData>> flushedSegments;
         flushedSegments.reserve(splitSegments.size());
+        /**
+         * P2-98: Predictive Segment Splitting vs Backtracking
+         * 
+         * This TODO suggests implementing predictive splitting instead of backtracking.
+         * 
+         * Current Approach (Backtracking):
+         * 1. Copy values into segment until full
+         * 2. If we copy too many, truncate/backtrack
+         * 3. Call finalize() to prune truncated values
+         * 
+         * Proposed Approach (Predictive):
+         * 1. Calculate exact segment boundaries before copying
+         * 2. Copy only the values that fit
+         * 3. No backtracking/finalize needed
+         * 
+         * Why Backtracking Happens:
+         * | Data Type | Issue |
+         * |-----------|-------|
+         * | Strings | Variable-length, can't predict exact count |
+         * | Lists | Nested elements vary in size |
+         * | Compressed | Compression ratio varies by data |
+         * 
+         * Benefits of Predictive Splitting:
+         * - No wasted copy operations
+         * - No finalize() overhead after split
+         * - More predictable memory usage
+         * - Better for large string/list columns
+         * 
+         * Implementation Challenges:
+         * - Need to scan data twice (estimate + copy)
+         * - Compression complicates size estimation
+         * - May be slower for small segments
+         * 
+         * Status: Current approach works correctly. Predictive splitting
+         * would be a performance optimization for edge cases.
+         */
         for (auto& segment : splitSegments) {
-            // TODO(bmwinger): This should be removed when splitting works predictively instead of
-            // backtracking if we copy too many values
-            // It's only needed to prune values from string/list chunks which were truncated
+            // Finalize to prune truncated values (see P2-98 for predictive alternative)
             segment->finalize();
             flushedSegments.push_back(Column::flushChunkData(*segment, pageAllocator));
         }
