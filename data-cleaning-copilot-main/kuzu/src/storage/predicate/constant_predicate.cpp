@@ -1,5 +1,92 @@
 #include "storage/predicate/constant_predicate.h"
 
+/**
+ * P3-207: ColumnConstantPredicate - Constant Comparison Zone Map Filtering
+ * 
+ * Purpose:
+ * Implements zone map filtering for comparison predicates against constants.
+ * Uses min/max statistics to skip chunks where predicate cannot match.
+ * 
+ * Class:
+ * ```
+ * ColumnConstantPredicate : ColumnPredicate {
+ *   value: Value        // Constant to compare against
+ *   expressionType: ExpressionType  // =, <>, <, <=, >, >=
+ * }
+ * ```
+ * 
+ * inRange() Helper:
+ * ```
+ * inRange(min, max, val):
+ *   RETURN val >= min AND val <= max
+ * ```
+ * 
+ * checkZoneMapSwitch() Logic:
+ * ```
+ * checkZoneMapSwitch<T>(stats, expressionType, value):
+ *   IF stats.min OR stats.max not available:
+ *     RETURN ALWAYS_SCAN  // Can't optimize
+ *   
+ *   min = stats.min, max = stats.max, c = value
+ *   
+ *   SWITCH expressionType:
+ *     EQUALS:
+ *       IF c NOT in [min, max]: SKIP_SCAN
+ *     
+ *     NOT_EQUALS:
+ *       IF min == max == c: SKIP_SCAN (all values equal c)
+ *     
+ *     GREATER_THAN:
+ *       IF c >= max: SKIP_SCAN (no value > c)
+ *     
+ *     GREATER_THAN_EQUALS:
+ *       IF c > max: SKIP_SCAN (no value >= c)
+ *     
+ *     LESS_THAN:
+ *       IF c <= min: SKIP_SCAN (no value < c)
+ *     
+ *     LESS_THAN_EQUALS:
+ *       IF c < min: SKIP_SCAN (no value <= c)
+ *   
+ *   RETURN ALWAYS_SCAN
+ * ```
+ * 
+ * Zone Map Decision Table:
+ * | Predicate | Condition for SKIP_SCAN |
+ * |-----------|-------------------------|
+ * | col = c | c < min OR c > max |
+ * | col <> c | min == max == c |
+ * | col > c | c >= max |
+ * | col >= c | c > max |
+ * | col < c | c <= min |
+ * | col <= c | c < min |
+ * 
+ * Examples:
+ * ```
+ * Chunk stats: min=10, max=50
+ * 
+ * WHERE age = 5   → SKIP_SCAN (5 < 10)
+ * WHERE age = 30  → ALWAYS_SCAN (30 in [10,50])
+ * WHERE age > 60  → SKIP_SCAN (60 >= 50)
+ * WHERE age < 5   → SKIP_SCAN (5 <= 10)
+ * ```
+ * 
+ * Type Dispatch:
+ * ```
+ * checkZoneMap(stats):
+ *   physicalType = value.getDataType().getPhysicalType()
+ *   TypeUtils::visit(physicalType,
+ *     [&]<StorageValueType T>() { checkZoneMapSwitch<T>(...) },
+ *     [&](auto) { ALWAYS_SCAN }  // Non-storage types
+ *   )
+ * ```
+ * 
+ * toString() Formatting:
+ * - STRING, LIST, STRUCT: wrap value in quotes
+ * - UUID, TIMESTAMP, DATE: wrap in quotes
+ * - Others: plain value
+ */
+
 #include "common/type_utils.h"
 #include "function/comparison/comparison_functions.h"
 #include "storage/compression/compression.h"
