@@ -208,10 +208,42 @@ void StringColumn::scanSegment(const SegmentState& state, ColumnChunkData* resul
     });
 }
 
+/**
+ * P2-96: Replace Raw Array with ValueVector for Index Scanning
+ * 
+ * This TODO suggests replacing the raw pointer-based index scanning with ValueVector.
+ * 
+ * Current Approach:
+ * ```cpp
+ * auto indices = std::make_unique<string_index_t[]>(numValuesToRead);
+ * indexColumn->scanSegment(..., reinterpret_cast<uint8_t*>(indices.get()));
+ * ```
+ * 
+ * Proposed Approach:
+ * ```cpp
+ * ValueVector indicesVector(LogicalType::UINT32(), numValuesToRead);
+ * indexColumn->scanSegment(..., &indicesVector);
+ * ```
+ * 
+ * Why Change Is Desirable:
+ * | Issue | Current | With ValueVector |
+ * |-------|---------|-----------------|
+ * | Type safety | Raw uint8_t* cast | Typed access |
+ * | Memory management | Manual unique_ptr | RAII vector |
+ * | Interface consistency | Dual interface | Single interface |
+ * | Null handling | Manual | Integrated |
+ * 
+ * Benefits:
+ * - Eliminates reinterpret_cast for cleaner code
+ * - Unifies scan interface across all column types
+ * - Better null value handling through ValueVector
+ * - Easier to add selection vector support later
+ * 
+ * Status: Works correctly. Refactor would improve code maintainability.
+ */
 void StringColumn::scanUnfiltered(const SegmentState& state, offset_t startOffsetInChunk,
     offset_t numValuesToRead, ValueVector* resultVector, sel_t startPosInVector) const {
-    // TODO: Replace indices with ValueVector to avoid maintaining `scan` interface from
-    // uint8_t*.
+    // Raw array scan - see P2-96 for ValueVector refactoring suggestion
     auto indices = std::make_unique<string_index_t[]>(numValuesToRead);
     indexColumn->scanSegment(getChildState(state, ChildStateIndex::INDEX), startOffsetInChunk,
         numValuesToRead, reinterpret_cast<uint8_t*>(indices.get()));
