@@ -1,5 +1,77 @@
 #include "storage/table/version_info.h"
 
+/**
+ * P3-187: VersionInfo - Extended Documentation
+ * 
+ * Additional Details (see P2-108 for base documentation)
+ * 
+ * Row Visibility Logic:
+ * ```
+ * isSelected(startTS, txID, rowIdx):
+ *   IF deletionStatus == NO_DELETED AND insertionStatus == ALWAYS_INSERTED:
+ *     RETURN true  // Fast path: no versioning needed
+ *   
+ *   IF insertionStatus == NO_INSERTED:
+ *     RETURN false  // No insertions exist
+ *   
+ *   IF isInserted(startTS, txID, rowIdx):
+ *     RETURN !isDeleted(startTS, txID, rowIdx)
+ *   
+ *   RETURN false
+ * ```
+ * 
+ * Transaction Visibility Rules:
+ * ```
+ * isInserted(startTS, txID, rowIdx):
+ *   insertionTS = getInsertionTS(rowIdx)
+ *   RETURN insertionTS == txID  // Same transaction
+ *       OR insertionTS <= startTS  // Committed before start
+ * 
+ * isDeleted(startTS, txID, rowIdx):
+ *   deletionTS = getDeletionTS(rowIdx)
+ *   RETURN deletionTS == txID  // Same transaction
+ *       OR deletionTS <= startTS  // Committed before start
+ * ```
+ * 
+ * Selection Vector Building:
+ * ```
+ * getSelVectorToScan():
+ *   FOR each vector in range:
+ *     IF no version info:
+ *       Add all rows to selVector
+ *     ELSE:
+ *       FOR each row in vector:
+ *         IF isInserted AND NOT isDeleted:
+ *           Add row to selVector
+ * ```
+ * 
+ * Commit/Rollback Operations:
+ * ```
+ * commitInsert(startRow, numRows, commitTS):
+ *   - Replace txID with commitTS in insertedVersions
+ *   
+ * rollbackInsert(startRow, numRows):
+ *   - Reset insertedVersions to INVALID_TRANSACTION
+ *   - Clear array if no insertions remain
+ *   
+ * commitDelete(startRow, numRows, commitTS):
+ *   - Replace txID with commitTS in deletedVersions
+ *   
+ * rollbackDelete(startRow, numRows):
+ *   - Reset deletedVersions to INVALID_TRANSACTION
+ * ```
+ * 
+ * Vector Index Calculation:
+ * ```
+ * [vectorIdx, rowInVector] = 
+ *   StorageUtils::getQuotientRemainder(rowIdx, DEFAULT_VECTOR_CAPACITY)
+ * 
+ * e.g., row 5000:
+ *   vectorIdx = 5000 / 2048 = 2
+ *   rowInVector = 5000 % 2048 = 904
+ * ```
+ */
+
 #include "common/exception/runtime.h"
 #include "common/serializer/deserializer.h"
 #include "common/serializer/serializer.h"
