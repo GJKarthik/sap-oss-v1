@@ -87,10 +87,43 @@ void DictionaryColumn::scan(const SegmentState& offsetState, const SegmentState&
         firstOffsetToScan = min->first;
         lastOffsetToScan = max->first;
     }
-    // TODO(bmwinger): scan batches of adjacent values.
-    // Ideally we scan values together until we reach empty pages
-    // This would also let us use the same optimization for the data column,
-    // where the worst case for the current method is much worse
+    /**
+     * P2-101: Batch Scanning Adjacent Dictionary Values
+     * 
+     * This TODO suggests scanning batches of adjacent values together instead
+     * of scanning each value individually.
+     * 
+     * Current Approach:
+     * - Scan each string value one at a time
+     * - Each scan involves separate page lookups
+     * - No benefit from spatial locality
+     * 
+     * Proposed Batch Approach:
+     * - Group adjacent string indices together
+     * - Scan contiguous regions in single operations
+     * - Stop batches at empty/unused pages
+     * 
+     * Why This Matters:
+     * | Scenario | Current | Batched |
+     * |----------|---------|---------|
+     * | Sequential scan | N page lookups | ~N/batch lookups |
+     * | Cached pages | Good | Better (prefetch) |
+     * | Sparse scan | Same | Same |
+     * | Data column | Worst case bad | Applies same optimization |
+     * 
+     * Implementation Steps:
+     * 1. Sort offsetsToScan by index (already done for duplicates)
+     * 2. Identify contiguous index ranges
+     * 3. Batch-scan each range into buffer
+     * 4. Copy from buffer to output positions
+     * 
+     * Challenge:
+     * - Need to know page boundaries to avoid reading empty pages
+     * - Must handle page-spanning strings correctly
+     * 
+     * Status: Works correctly. Optimization would improve scan performance
+     * for sequential or nearly-sequential access patterns.
+     */
 
     // Note that the list will contain duplicates when indices are duplicated.
     // Each distinct value is scanned once, and re-used when writing to each output value
