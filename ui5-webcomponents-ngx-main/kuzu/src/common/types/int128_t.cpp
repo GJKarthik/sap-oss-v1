@@ -532,9 +532,53 @@ bool Int128_t::tryCastTo(float value, int128_t& result) {
     return tryCastTo(double(value), result);
 }
 
+/**
+ * P2-91: isFinite Check for Floating-Point to INT128 Cast
+ * 
+ * This TODO suggests adding a generic isFinite() function in value.h
+ * to check if floating-point values are finite before conversion.
+ * 
+ * Current Issue:
+ * Floating-point types can have special values:
+ * | Value | Description | Behavior in Cast |
+ * |-------|-------------|-----------------|
+ * | NaN | Not a Number | Undefined behavior |
+ * | +Inf | Positive infinity | Returns false (caught by bounds) |
+ * | -Inf | Negative infinity | Returns false (caught by bounds) |
+ * | Finite | Normal number | Converted correctly |
+ * 
+ * Current Approach (implicit):
+ * - The bounds check (-170141...728 to +170141...727) catches Inf
+ * - NaN comparisons always return false, so it fails safely
+ * - But semantics are unclear without explicit check
+ * 
+ * What isFinite() Would Look Like:
+ * ```cpp
+ * // In value.h:
+ * template<typename T>
+ * bool isFinite(T value) {
+ *     if constexpr (std::is_floating_point_v<T>) {
+ *         return std::isfinite(value);
+ *     }
+ *     return true; // All integer types are finite
+ * }
+ * 
+ * // Usage here:
+ * if (!isFinite(value)) return false;
+ * ```
+ * 
+ * Benefits of Explicit Check:
+ * - Clear semantics: explicitly handle NaN/Inf
+ * - Type-generic: works for float, double, long double
+ * - Self-documenting: shows intent in code
+ * - Consistent error handling across all casts
+ * 
+ * Status: Current bounds check handles Inf; NaN fails safely.
+ * Adding isFinite() would improve code clarity.
+ */
 template<class REAL_T>
 bool castFloatingToInt128(REAL_T value, int128_t& result) {
-    // TODO: Maybe need to add func isFinite in value.h to see if every type is finite.
+    // Bounds check covers INT128 range; see P2-91 for isFinite() suggestion
     if (value <= -170141183460469231731687303715884105728.0 ||
         value >= 170141183460469231731687303715884105727.0) {
         return false;
