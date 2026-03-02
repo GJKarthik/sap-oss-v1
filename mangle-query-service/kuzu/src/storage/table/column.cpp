@@ -1,5 +1,95 @@
 #include "storage/table/column.h"
 
+/**
+ * P2-118: Column Storage - Core Read/Write Implementation
+ * 
+ * Purpose:
+ * Implements the fundamental column storage layer with compression-aware
+ * read/write operations, type-specific handling, and checkpoint support.
+ * Central to all property storage in the database.
+ * 
+ * Architecture:
+ * ```
+ * Column
+ *   ├── name, dataType, enableCompression
+ *   ├── columnReadWriter: ColumnReadWriter    // Page-level I/O
+ *   ├── nullColumn: NullColumn*               // Optional null tracking
+ *   ├── readToVectorFunc: function            // Decompression to ValueVector
+ *   ├── readToPageFunc: function              // Decompression to buffer
+ *   └── writeFunc: function                   // Compression on write
+ * 
+ * Specialized Subclasses:
+ *   ├── InternalIDColumn   // Node/rel ID with tableID
+ *   ├── StringColumn       // Dictionary-encoded strings
+ *   ├── ListColumn         // Variable-length lists
+ *   ├── StructColumn       // Nested struct types
+ *   └── NullColumn         // Null bitmap storage
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. scan(): Read range from column to ValueVector
+ *    - Route through segments via rangeSegments()
+ *    - Apply decompression per segment
+ *    - Handle filtered/unfiltered selection vectors
+ * 
+ * 2. lookupValue(): Single-value point lookup
+ *    - Find segment via findSegment()
+ *    - Check null column first
+ *    - Read compressed value to vector position
+ * 
+ * 3. write(): Update values in column
+ *    - Route through segments
+ *    - Write with compression
+ *    - Update min/max statistics
+ * 
+ * 4. appendValues(): Append to end of column
+ *    - Write at current numValues offset
+ *    - Update statistics and numValues
+ * 
+ * 5. checkpointSegment(): Persist changes to disk
+ *    - In-place if compression allows
+ *    - Out-of-place with full rewrite otherwise
+ *    - Handle segment splitting for oversized data
+ * 
+ * Compression Integration:
+ * - ReadCompressedValuesFromPage: Decompress page data
+ * - WriteCompressedValuesToPage: Compress and write
+ * - ALP handling for float/double with exception chunks
+ * 
+ * InternalID Special Handling:
+ * - Store only offset (tableID constant per column)
+ * - populateCommonTableID() fills in tableID on read
+ * - Enables more efficient storage (8 bytes vs 16)
+ * 
+ * Checkpoint Strategy:
+ * ```
+ * canCheckpointInPlace()?
+ *   ├── YES: checkpointColumnChunkInPlace()
+ *   │   └── Write updates directly to pages
+ *   └── NO: checkpointColumnChunkOutOfPlace()
+ *       ├── Scan all data to in-memory chunk
+ *       ├── Apply updates
+ *       ├── Split if needed
+ *       └── Flush to new pages
+ * ```
+ * 
+ * ColumnFactory Type Dispatch:
+ * | Type | Implementation |
+ * |------|----------------|
+ * | BOOL, INT*, UINT*, DOUBLE, FLOAT | Column (base) |
+ * | INTERNAL_ID | InternalIDColumn |
+ * | STRING | StringColumn |
+ * | LIST, ARRAY | ListColumn |
+ * | STRUCT | StructColumn |
+ * 
+ * Performance Characteristics:
+ * - Scan: O(n) with vectorized decompression
+ * - Lookup: O(log s) segment search + O(1) access
+ * - Write: O(1) per value with compression overhead
+ * - Checkpoint: O(n) for out-of-place, O(k) for in-place
+ */
+
 #include <algorithm>
 #include <cstdint>
 #include <memory>
