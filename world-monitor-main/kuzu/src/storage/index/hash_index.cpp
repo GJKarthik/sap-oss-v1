@@ -285,20 +285,44 @@ void HashIndex<T>::sortEntries(const Transaction* transaction,
     });
 }
 
+// Hash Index Bulk Insert Optimization Strategies:
+//
+// Current Implementation (Two-Pass):
+// 1. reserve() - Split slots to accommodate new entries
+// 2. mergeBulkInserts() - Insert entries into disk slots
+//
+// This separation is clean but requires two passes over the data structure.
+//
+// One-Pass Optimization:
+// Merge splitting and insertion into a single pass:
+//   1. Compute new number of primary slots
+//   2. For each slot:
+//      a. Determine if it needs splitting (and how many times)
+//      b. Insert/rehash each element one by one
+//      c. Copy rehashed entries to new slot in-memory
+//      d. Process new slot immediately (avoids memory overhead)
+//
+// Benefits of One-Pass:
+// | Aspect | Improvement |
+// |--------|-------------|
+// | Locking | Reduced frame unpinning cycles |
+// | Parallelization | Better suited for concurrent ops |
+// | Cache | Better locality when split+insert together |
+//
+// Why Two-Pass is Acceptable:
+// 1. Code is cleaner and easier to maintain
+// 2. Performance difference may be negligible for typical workloads
+// 3. Splitting is O(slots), insertion is O(entries) - usually different scales
+// 4. Memory overhead is bounded by page-at-a-time processing
+//
+// When to Optimize:
+// If profiling shows hash index bulk inserts as a bottleneck, especially
+// for concurrent/parallel workloads where frame locking is contended.
 template<typename T>
 void HashIndex<T>::mergeBulkInserts(PageAllocator& pageAllocator, const Transaction* transaction,
     const InMemHashIndex<T>& insertLocalStorage) {
-    // TODO: Ideally we can split slots at the same time that we insert new ones
-    // Compute the new number of primary slots, and iterate over each slot, determining if it
-    // needs to be split (and how many times, which is complicated) and insert/rehash each element
-    // one by one. Rehashed entries should be copied into a new slot in-memory, and then that new
-    // slot (with the entries from the respective slot in the local storage) should be processed
-    // immediately to avoid increasing memory usage (caching one page of slots at a time since split
-    // slots usually get rehashed to a new page).
-    //
-    // On the other hand, two passes may not be significantly slower than one
-    // TODO: one pass would also reduce locking when frames are unpinned,
-    // which is useful if this can be parallelized
+    // Two-pass approach: reserve() then mergeBulkInserts()
+    // See documentation above for one-pass optimization strategies.
     reserve(pageAllocator, transaction, insertLocalStorage.size());
     // RUNTIME_CHECK(auto originalNumEntries = this->indexHeaderForWriteTrx.numEntries);
 
