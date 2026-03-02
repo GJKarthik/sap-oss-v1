@@ -66,14 +66,59 @@ static void copyInternalID(ValueVector* srcVector, ValueVector* dstIDVector,
     }
 }
 
-// TODO(Xiyang): revisit me. Instead of printing in src->dst order. Maybe left->right order make
-// more sense.
-// Truth table.
-// Edge Direction | ExtendFromSource | Result
-// FWD            | T                | T
-// FWD            | F                | F
-// BWD            | T                | F
-// BWD            | F                | T
+/**
+ * P2-77: Path Edge Print Order - src→dst vs left→right
+ * 
+ * This TODO questions whether printing edges in src→dst order makes sense,
+ * or if left→right order would be more intuitive.
+ * 
+ * Current Behavior (src→dst order):
+ * Edges are printed with the source node first, destination node second,
+ * based on the edge direction in the graph.
+ * 
+ * Alternative (left→right order):
+ * Edges would be printed in the order they appear in the path traversal,
+ * regardless of the underlying edge direction.
+ * 
+ * Example:
+ * ```
+ * Query: MATCH p = (a)-[*]-(b) WHERE a.id = 1 AND b.id = 5
+ * Path traversal: 1 -> 2 <- 3 -> 4 -> 5
+ * 
+ * src→dst order (current):
+ *   Edge 1: (1)->(2)  // FWD edge
+ *   Edge 2: (3)->(2)  // BWD edge, but printed src->dst
+ *   Edge 3: (3)->(4)
+ *   Edge 4: (4)->(5)
+ * 
+ * left→right order (alternative):
+ *   Edge 1: (1)->(2)  // Same as traversal direction
+ *   Edge 2: (2)<-(3)  // Shows traversal went backward
+ *   Edge 3: (3)->(4)
+ *   Edge 4: (4)->(5)
+ * ```
+ * 
+ * Truth Table (current logic):
+ * | Edge Direction | ExtendFromSource | Print src first? |
+ * |----------------|------------------|------------------|
+ * | FWD            | true             | yes              |
+ * | FWD            | false            | no               |
+ * | BWD            | true             | no               |
+ * | BWD            | false            | yes              |
+ * 
+ * Why left→right Might Be Better:
+ * - Matches visual path traversal order
+ * - Easier to follow for users reading results
+ * - Consistent with query pattern order
+ * 
+ * Why src→dst Might Be Better:
+ * - Matches graph schema (edge has src and dst)
+ * - Consistent regardless of traversal direction
+ * - Easier for programmatic processing
+ * 
+ * Current Status:
+ * Using src→dst order. Consider user feedback before changing.
+ */
 static bool isCorrectOrder(ValueVector* vector, sel_t pos, bool extendFromSource) {
     if (extendFromSource) {
         return vector->getValue<bool>(pos);
