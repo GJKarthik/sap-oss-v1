@@ -1,5 +1,95 @@
 #include "storage/table/node_group.h"
 
+/**
+ * P3-183: NodeGroup - Core Storage Unit
+ * 
+ * Purpose:
+ * Manages a collection of ChunkedNodeGroups containing up to 64K rows.
+ * Each NodeGroup corresponds to one node group in the storage hierarchy.
+ * 
+ * Architecture:
+ * ```
+ * NodeGroup (64K rows max)
+ *   ├── nodeGroupIdx: node_group_idx_t
+ *   ├── dataTypes: vector<LogicalType>
+ *   ├── enableCompression: bool
+ *   ├── numRows: row_idx_t
+ *   ├── format: NodeGroupDataFormat (REGULAR or CSR)
+ *   └── chunkedGroups: ChunkedNodeGroupCollection
+ *         ├── group[0]: ChunkedNodeGroup (persistent, on-disk)
+ *         └── group[1..N]: ChunkedNodeGroup (in-memory appends)
+ * ```
+ * 
+ * ChunkedNodeGroup Hierarchy:
+ * ```
+ * NodeGroup
+ *   ├── ChunkedNodeGroup 0 (ON_DISK, 0..N rows)
+ *   ├── ChunkedNodeGroup 1 (IN_MEMORY, new inserts)
+ *   └── ...
+ * 
+ * Capacity: CHUNKED_NODE_GROUP_CAPACITY (8K rows)
+ * Total: Up to NODE_GROUP_SIZE (64K rows)
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. append(): Add rows to node group
+ *    - Creates new ChunkedNodeGroup if needed
+ *    - Fills current group up to capacity
+ *    - Updates numRows counter
+ * 
+ * 2. scan(): Sequential row scan
+ *    - Iterates through chunked groups
+ *    - Respects semi-mask filtering
+ *    - Returns batch of rows (up to VECTOR_CAPACITY)
+ * 
+ * 3. lookup(): Point lookup by row index
+ *    - Find chunked group containing row
+ *    - Delegate to chunked group lookup
+ * 
+ * 4. update(): Update single row
+ *    - Find chunked group
+ *    - Update specific column value
+ * 
+ * 5. delete_(): Mark row as deleted
+ *    - Find chunked group
+ *    - Mark in version info
+ * 
+ * 6. checkpoint(): Persist changes to disk
+ *    - Merge in-memory with on-disk data
+ *    - Handle updates and deletions
+ *    - Consolidate into single chunked group
+ * 
+ * Thread Safety:
+ * - chunkedGroups protected by mutex
+ * - Lock acquired for group lookup/modification
+ * - Short critical sections for scalability
+ * 
+ * Visibility:
+ * ```
+ * isVisible(transaction, rowIdx)
+ *   ├── Find chunked group
+ *   ├── Check not deleted
+ *   └── Check is inserted (committed or same tx)
+ * ```
+ * 
+ * Checkpoint Flow:
+ * ```
+ * checkpoint()
+ *   ├── checkpointVersionInfo() → deletions
+ *   ├── If all deleted: flush empty
+ *   ├── If has persistent:
+ *   │     └── checkpointInMemAndOnDisk()
+ *   └── Else:
+ *         └── checkpointInMemOnly()
+ * ```
+ * 
+ * Semi-Mask Support:
+ * - Optional filtering during scan
+ * - Used for semi-join optimization
+ * - applySemiMaskFilter() applies range filter
+ */
+
 #include "common/assert.h"
 #include "common/types/types.h"
 #include "common/uniq_lock.h"
