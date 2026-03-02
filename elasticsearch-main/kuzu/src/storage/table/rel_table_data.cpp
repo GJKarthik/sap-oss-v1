@@ -1,5 +1,87 @@
 #include "storage/table/rel_table_data.h"
 
+/**
+ * P2-117: Relationship Table Data - CSR-Based Edge Storage
+ * 
+ * Purpose:
+ * Implements the storage layer for relationship (edge) data using CSR
+ * (Compressed Sparse Row) format. Provides efficient adjacency list
+ * storage for graph traversals.
+ * 
+ * Architecture:
+ * ```
+ * RelTableData (per direction: FWD or BWD)
+ *   ├── csrHeaderColumns:
+ *   │   ├── offset: Column<UINT64>   // CSR offset array
+ *   │   └── length: Column<UINT64>   // Adjacency list lengths
+ *   ├── columns: vector<Column>      // Property columns
+ *   │   ├── NBR_ID_COLUMN_ID (0)     // Neighbor node IDs
+ *   │   ├── REL_ID_COLUMN_ID (1)     // Relationship IDs
+ *   │   └── ... property columns
+ *   ├── nodeGroups: NodeGroupCollection<CSRNodeGroup>
+ *   └── version handlers:
+ *       ├── persistentVersionRecordHandler
+ *       └── inMemoryVersionRecordHandler
+ * ```
+ * 
+ * CSR Storage Format:
+ * ```
+ * For node 0 with neighbors [10, 20]:
+ * For node 1 with neighbors [30]:
+ * For node 2 with neighbors [40, 50, 60]:
+ * 
+ * offset: [0, 2, 3, 6]  // Start index for each node
+ * length: [2, 1, 3]     // Number of neighbors per node
+ * NBR_ID: [10, 20, 30, 40, 50, 60]  // Concatenated adjacency lists
+ * ```
+ * 
+ * Dual Version Record Handlers:
+ * 
+ * 1. PersistentVersionRecordHandler:
+ *    - For committed relationships on disk
+ *    - Routes to CSRNodeGroup.persistentChunkedGroup
+ * 
+ * 2. InMemoryVersionRecordHandler:
+ *    - For uncommitted relationships in memory
+ *    - Routes to CSRNodeGroup.inMemoryChunkedGroups
+ * 
+ * Key Operations:
+ * 
+ * 1. update(): Modify relationship property
+ *    - Find matching row via findMatchingRow()
+ *    - Route to appropriate CSR source (persistent/in-memory)
+ * 
+ * 2. delete_(): Remove relationship
+ *    - Find row, mark as deleted
+ *    - Push to undo buffer for rollback
+ * 
+ * 3. findMatchingRow(): Locate relationship by relID
+ *    - Scan through adjacency list for bound node
+ *    - Return source type and row index
+ * 
+ * 4. checkIfNodeHasRels(): Check if node has any relationships
+ *    - Used for cascade delete validation
+ * 
+ * Checkpoint Process:
+ * 1. Vacuum deleted columns
+ * 2. Merge in-memory changes to persistent CSR
+ * 3. Rebuild CSR header columns
+ * 4. Flush to disk
+ * 
+ * Performance Characteristics:
+ * | Operation | Complexity | Notes |
+ * |-----------|------------|-------|
+ * | Scan neighbors | O(degree) | Direct array access |
+ * | Find rel by ID | O(degree) | Linear scan of adj list |
+ * | Insert | O(1) amortized | Append to in-memory |
+ * | Delete | O(1) | Mark in bitmap |
+ * 
+ * Graph Traversal Efficiency:
+ * - Sequential memory access for neighbors
+ * - Cache-friendly layout
+ * - Ideal for BFS/DFS patterns
+ */
+
 #include "catalog/catalog_entry/rel_group_catalog_entry.h"
 #include "common/enums/rel_direction.h"
 #include "common/types/types.h"
