@@ -1,5 +1,120 @@
 #include "storage/table/node_table.h"
 
+/**
+ * P2-113: Node Table Storage Architecture - Complete Node CRUD Implementation
+ * 
+ * Purpose:
+ * Implements the storage layer for node (vertex) tables in the graph database.
+ * Provides CRUD operations, primary key indexing, transaction support, and
+ * efficient bulk operations.
+ * 
+ * Architecture Overview:
+ * ```
+ * NodeTable
+ *   ├── columns: vector<Column>           // Property columns by columnID
+ *   ├── nodeGroups: NodeGroupCollection   // Data storage (64K rows/group)
+ *   ├── indexes: vector<IndexHolder>      // Primary key + secondary indexes
+ *   ├── pkColumnID: column_id_t           // Primary key column reference
+ *   └── versionRecordHandler              // MVCC rollback support
+ * 
+ * NodeTableScanState
+ *   ├── source: {COMMITTED, UNCOMMITTED, NONE}  // Where to scan from
+ *   ├── nodeGroup: NodeGroup*             // Current scan target
+ *   ├── nodeIDVector: ValueVector*        // Output node IDs
+ *   └── columns: vector<Column*>          // Columns to scan
+ * ```
+ * 
+ * Data Layout:
+ * ```
+ * Table ID: 0
+ *   ├── NodeGroup 0 (rows 0-65535)
+ *   │   ├── Column 0 (name)
+ *   │   ├── Column 1 (age)
+ *   │   └── Version Info
+ *   ├── NodeGroup 1 (rows 65536-131071)
+ *   │   └── ...
+ *   └── PrimaryKeyIndex (hash index on pk column)
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. INSERT (insert):
+ *    a. Validate PK uniqueness via getPKIndex()->lookup()
+ *    b. Insert to local storage (transaction-local)
+ *    c. Update all indexes (PK + secondary)
+ *    d. Log to WAL for durability
+ * 
+ * 2. UPDATE (update):
+ *    a. Cannot update primary key (throws exception)
+ *    b. For uncommitted rows: update local storage
+ *    c. For committed rows: update nodeGroups directly
+ *    d. Update affected secondary indexes
+ * 
+ * 3. DELETE (delete_):
+ *    a. Delete from all indexes
+ *    b. For uncommitted: delete from local storage
+ *    c. For committed: mark as deleted in nodeGroup
+ *    d. Push to undo buffer for rollback
+ * 
+ * 4. SCAN (scanInternal):
+ *    a. Determine source (COMMITTED vs UNCOMMITTED)
+ *    b. Initialize nodeGroup scan state
+ *    c. Iterate through rows respecting visibility
+ * 
+ * 5. LOOKUP (lookup/lookupPK):
+ *    a. Single-row point lookup by nodeID
+ *    b. For PK: use hash index O(1) average
+ *    c. Visibility check via isVisible()
+ * 
+ * Transaction Handling:
+ * - Local Storage: Uncommitted writes go to LocalNodeTable
+ * - Commit: Append local to nodeGroups, rebuild indexes
+ * - Rollback: Discard local, restore index state
+ * 
+ * Commit Process (commit method):
+ * ```
+ * 1. Append all local tuples to nodeGroups
+ * 2. Mark deleted tuples in committed storage
+ * 3. Scan & insert to indexes for new tuples
+ * 4. Clear local table
+ * ```
+ * 
+ * Index Management:
+ * - PrimaryKeyIndex: Required, unique constraint
+ * - Secondary indexes: Optional, maintained on write
+ * - Index commit: Scan uncommitted, insert to persistent index
+ * 
+ * Checkpoint Process:
+ * 1. Vacuum deleted columns
+ * 2. Flush nodeGroups to disk
+ * 3. Checkpoint all indexes
+ * 4. Reset hasChanges flag
+ * 
+ * Performance Characteristics:
+ * | Operation | Complexity | Notes |
+ * |-----------|------------|-------|
+ * | Insert | O(log n) | PK index insert |
+ * | Lookup by PK | O(1) avg | Hash index |
+ * | Scan | O(n) | Linear through nodeGroups |
+ * | Update | O(1) | Direct offset access |
+ * | Delete | O(1) | Bitmap mark |
+ * 
+ * Optimization Opportunities (see inline comments):
+ * 
+ * 1. Local Storage Deletion Optimization (line ~510):
+ *    Grab deleted row set directly instead of iterating all rows.
+ *    Currently O(n), could be O(d) where d = deletions.
+ * 
+ * 2. Batch Index Updates:
+ *    Buffer index updates and apply in batch for bulk inserts.
+ * 
+ * 3. Parallel Scan:
+ *    Scan multiple nodeGroups concurrently for large tables.
+ * 
+ * 4. Index-Only Scan:
+ *    Return results directly from index if all columns indexed.
+ */
+
 #include "catalog/catalog_entry/node_table_catalog_entry.h"
 #include "common/cast.h"
 #include "common/exception/message.h"
