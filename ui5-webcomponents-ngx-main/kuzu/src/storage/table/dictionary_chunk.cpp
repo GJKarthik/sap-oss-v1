@@ -1,5 +1,79 @@
 #include "storage/table/dictionary_chunk.h"
 
+/**
+ * P2-120: Dictionary Chunk - String Dictionary Encoding
+ * 
+ * Purpose:
+ * Implements dictionary encoding for string columns to achieve space efficiency
+ * by deduplicating repeated strings. Each unique string is stored once, and
+ * references use compact integer indices.
+ * 
+ * Architecture:
+ * ```
+ * DictionaryChunk
+ *   ├── stringDataChunk: ColumnChunkData<UINT8>  // Concatenated string bytes
+ *   ├── offsetChunk: ColumnChunkData<UINT64>     // Start offset for each string
+ *   ├── indexTable: unordered_set<StringOps>     // Deduplication hash table
+ *   └── enableCompression: bool                  // Whether to deduplicate
+ * 
+ * Storage Layout:
+ * ┌─────────────────────────────────────────────────────────┐
+ * │ offsetChunk:     [0, 5, 10, 15]                         │
+ * │ stringDataChunk: "HelloWorldTest..."                    │
+ * │                   ^^^^^          <- index 0: "Hello"    │
+ * │                        ^^^^^     <- index 1: "World"    │
+ * │                             ^^^^ <- index 2: "Test"     │
+ * └─────────────────────────────────────────────────────────┘
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. appendString(val):
+ *    - Check indexTable for existing string (O(1) average)
+ *    - If found and compression enabled, return existing index
+ *    - Otherwise append to stringDataChunk, add offset to offsetChunk
+ *    - Insert into indexTable for future deduplication
+ * 
+ * 2. getString(index):
+ *    - Lookup start offset from offsetChunk[index]
+ *    - Calculate length from offsetChunk[index+1] - offsetChunk[index]
+ *    - Return string_view into stringDataChunk
+ * 
+ * 3. getStringLength(index):
+ *    - For index < numStrings-1: offset[index+1] - offset[index]
+ *    - For last string: stringDataChunk.numValues - offset[index]
+ * 
+ * Deduplication Strategy:
+ * - StringOps provides hash and equality for indexTable
+ * - Uses string_view to avoid copying during lookup
+ * - Only deduplicates when enableCompression = true
+ * 
+ * Capacity Management:
+ * - INITIAL_OFFSET_CHUNK_CAPACITY = 3 (not power of 2)
+ * - Ensures always extra space for in-place updates
+ * - stringDataChunk doubles via bit_ceil on overflow
+ * - offsetChunk grows by CHUNK_RESIZE_RATIO (2x)
+ * 
+ * Memory Efficiency:
+ * ```
+ * Without dictionary: N * avg_string_length bytes
+ * With dictionary:    unique_strings * avg_length + N * 8 bytes (indices)
+ * Savings when:       repeated_ratio > 8 / avg_string_length
+ * 
+ * Example: 1000 names with 100 unique, avg 20 chars
+ * Without: 1000 * 20 = 20,000 bytes
+ * With:    100 * 20 + 1000 * 8 = 10,000 bytes (50% savings)
+ * ```
+ * 
+ * Serialization:
+ * - serialize(): Write offsetChunk then stringDataChunk
+ * - deserialize(): Reconstruct both chunks, indexTable rebuilt on demand
+ * 
+ * Thread Safety:
+ * - Not thread-safe by itself
+ * - Protected by transaction/chunk-level locking
+ */
+
 #include "common/constants.h"
 #include "common/serializer/deserializer.h"
 #include "common/serializer/serializer.h"
