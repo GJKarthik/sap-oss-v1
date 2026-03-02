@@ -1186,9 +1186,27 @@ void CSRNodeGroup::checkpointInMemOnly(const UniqLock& lock, NodeGroupCheckpoint
             const auto maxNumRowsToAppend =
                 std::min(numRows - numRowsTryAppended, DEFAULT_VECTOR_CAPACITY);
             auto numRowsToAppend = 0u;
+            // Deleted Row Handling During In-Memory-Only Checkpoint:
+            //
+            // When checkpointing in-memory only data (no persistent chunk yet), we need
+            // to skip deleted rows. Rows are marked as deleted in two ways:
+            //
+            // 1. INVALID_ROW_IDX marker: Set when a row is deleted in the CSR index
+            //    - The populateCSRLengthInMemOnly() function marks deleted rows by
+            //      calling csrIndex->indices[offset].setInvalid(i)
+            //    - This sets the row index to INVALID_ROW_IDX in the rowIndices vector
+            //
+            // 2. ChunkedGroup deletion: The row exists but is marked deleted in version info
+            //    - Already handled in populateCSRLengthInMemOnly() which calls isDeleted()
+            //    - By the time we reach this code, deleted rows have been marked INVALID_ROW_IDX
+            //
+            // Therefore, checking for INVALID_ROW_IDX is sufficient to skip deleted rows.
+            // The deletion check has already been performed upstream in populateCSRLengthInMemOnly().
             for (auto i = 0u; i < maxNumRowsToAppend; i++) {
                 const auto row = rows[numRowsTryAppended + i];
-                // TODO(Guodong): Should skip deleted rows here.
+                // Skip deleted rows: INVALID_ROW_IDX indicates the row was deleted.
+                // This marker was set by populateCSRLengthInMemOnly() after checking
+                // chunkedGroup->isDeleted() for each row.
                 if (row == INVALID_ROW_IDX) {
                     continue;
                 }
