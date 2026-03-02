@@ -1,5 +1,85 @@
 #include "main/client_context.h"
 
+/**
+ * P3-155: ClientContext - Session State Management
+ * 
+ * Purpose:
+ * Manages all session-specific state for a database connection. Contains
+ * transaction context, configuration, progress tracking, and query execution
+ * orchestration.
+ * 
+ * Architecture:
+ * ```
+ * ClientContext
+ *   ├── localDatabase: Database*         // Parent database
+ *   ├── transactionContext               // Transaction management
+ *   ├── clientConfig                     // Session settings
+ *   ├── progressBar                      // Query progress
+ *   ├── warningContext                   // Query warnings
+ *   ├── graphEntrySet                    // Graph projections
+ *   ├── randomEngine                     // RNG for queries
+ *   └── extensionOptionValues            // Extension settings
+ * ```
+ * 
+ * ClientConfig Settings:
+ * ```
+ * numThreads                    - Worker threads for this session
+ * timeoutInMS                   - Query timeout (0 = no timeout)
+ * varLengthMaxDepth            - Max path length for variable-length
+ * enableProgressBar            - Show progress bar
+ * showProgressAfter            - Delay before showing progress
+ * recursivePatternSemantic     - ALL_WALKS/WALK/TRAIL/ACYCLIC
+ * enableSemiMask               - Semi-join optimization
+ * enableZoneMap                - Zone map filtering
+ * warningLimit                 - Max warnings to collect
+ * ```
+ * 
+ * Query Execution Flow:
+ * ```
+ * clientContext->query("MATCH (n) RETURN n")
+ *   │
+ *   ├── 1. parseQuery() - Parser creates AST
+ *   ├── 2. prepareNoLock() - Bind + Plan
+ *   │     ├── StatementReadWriteAnalyzer
+ *   │     ├── Binder - Semantic analysis
+ *   │     ├── Planner - Logical plan
+ *   │     └── Optimizer - Optimize plan
+ *   └── 3. executeNoLock() - Run plan
+ *         ├── PlanMapper - Physical plan
+ *         └── QueryProcessor - Execute
+ * ```
+ * 
+ * Transaction Management:
+ * ```
+ * TransactionHelper::runFuncInTransaction()
+ *   │
+ *   ├── Auto transaction: Creates if needed
+ *   ├── Manual transaction: Uses existing
+ *   ├── On success: Commit (based on action)
+ *   └── On failure: Rollback
+ * ```
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | query() | Full query execution |
+ * | prepareWithParams() | Prepare statement |
+ * | executeWithParams() | Execute prepared |
+ * | getCurrentSetting() | Get config value |
+ * | setExtensionOption() | Set extension config |
+ * | addScalarFunction() | Register UDF |
+ * 
+ * Prepared Statement Caching:
+ * - cachedPreparedStatementManager stores parsed + planned statements
+ * - Reuse plans across multiple executions
+ * - Rebind parameters on each execution
+ * 
+ * Thread Safety:
+ * - Uses mutex (mtx) for query operations
+ * - ClientContext is NOT thread-safe
+ * - One ClientContext per Connection
+ */
+
 #include "binder/binder.h"
 #include "common/exception/checkpoint.h"
 #include "common/exception/connection.h"
