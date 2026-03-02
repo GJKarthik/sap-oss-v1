@@ -76,13 +76,41 @@ void StorageManager::recover(main::ClientContext& clientContext, bool throwOnWal
     walReplayer->replay(throwOnWalReplayFailure, enableChecksums);
 }
 
+// Node Table Creation:
+// Simple case - one node table entry maps to one physical table.
 void StorageManager::createNodeTable(NodeTableCatalogEntry* entry) {
     tables[entry->getTableID()] = std::make_unique<NodeTable>(this, entry, &memoryManager);
 }
 
-// TODO(Guodong): This API is added since storageManager doesn't provide an API to add a single
-// rel table. We may have to refactor the existing StorageManager::createTable(TableCatalogEntry*
-// entry).
+// Rel Table API Design:
+// 
+// Background:
+// In Kuzu, relationship tables have a two-level structure:
+// - RelGroupCatalogEntry: Logical relationship type (e.g., "KNOWS")
+// - RelTableCatalogInfo: Physical table for each (srcTable, dstTable) pair
+//
+// For example, if we have:
+//   CREATE REL TABLE KNOWS(FROM Person TO Person, FROM Person TO Company, ...)
+// This creates one RelGroupCatalogEntry with multiple RelTableCatalogInfo entries,
+// each representing a physical table for a specific src/dst table pair.
+//
+// Current API Structure:
+// - createRelTableGroup(): Creates all rel tables for a group (called during DDL)
+// - addRelTable(): Creates a single rel table (used for incremental additions)
+//
+// Why addRelTable() was needed:
+// When adding a new node table type that participates in an existing rel group,
+// we need to add only the NEW physical rel table(s), not recreate the whole group.
+// The original createTable() only supported whole-group creation.
+//
+// Future Refactoring Considerations:
+// 1. Consider unifying createTable() to handle both full creation and incremental
+// 2. Could add a createSingleRelTable(table_id_t relGroupID, table_id_t srcID, table_id_t dstID)
+// 3. The current approach works but the naming (addRelTable vs createNodeTable) is inconsistent
+//
+// The current implementation is correct and handles both cases:
+// - Full creation via createRelTableGroup() (called from createTable())
+// - Incremental creation via addRelTable() (called during schema evolution)
 void StorageManager::addRelTable(RelGroupCatalogEntry* entry, const RelTableCatalogInfo& info) {
     tables[info.oid] = std::make_unique<RelTable>(entry, info.nodePair.srcTableID,
         info.nodePair.dstTableID, this, &memoryManager);
