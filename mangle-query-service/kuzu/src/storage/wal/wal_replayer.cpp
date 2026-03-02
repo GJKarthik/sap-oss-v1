@@ -1,5 +1,77 @@
 #include "storage/wal/wal_replayer.h"
 
+/**
+ * P3-177: WALReplayer - WAL Recovery and Replay
+ * 
+ * Purpose:
+ * Replays Write-Ahead Log records during database recovery. Restores
+ * database to consistent state after crash by re-executing logged operations.
+ * 
+ * Architecture:
+ * ```
+ * WALReplayer
+ *   ├── clientContext: ClientContext&
+ *   ├── walPath: string           // Path to .wal file
+ *   └── shadowFilePath: string    // Path to .shadow file
+ * ```
+ * 
+ * Replay Flow:
+ * ```
+ * replay()
+ *   │
+ *   ├── Check if WAL exists
+ *   │     └── If no: remove shadow file, read checkpoint
+ *   │
+ *   ├── Sync WAL file (ensure durability)
+ *   │
+ *   ├── Dry run: find last COMMIT/CHECKPOINT
+ *   │     └── Returns {offsetDeserialized, isLastRecordCheckpoint}
+ *   │
+ *   └── If last record is CHECKPOINT:
+ *   │     └── replayShadowPageRecords()
+ *   │
+ *   └── Else:
+ *         └── Replay WAL records until last COMMIT
+ *               └── replayWALRecord() for each
+ * ```
+ * 
+ * WAL Record Types Handled:
+ * | Record | Handler |
+ * |--------|---------|
+ * | BEGIN_TRANSACTION | Start recovery transaction |
+ * | COMMIT | Commit recovery transaction |
+ * | CREATE_CATALOG_ENTRY | Create table/sequence/etc |
+ * | DROP_CATALOG_ENTRY | Drop entry |
+ * | ALTER_TABLE_ENTRY | Schema modification |
+ * | TABLE_INSERTION | Node/rel insert |
+ * | NODE_DELETION | Delete node |
+ * | REL_DELETION | Delete relationship |
+ * | NODE_UPDATE | Update node property |
+ * | REL_UPDATE | Update rel property |
+ * | COPY_TABLE | Bulk load |
+ * | UPDATE_SEQUENCE | Sequence advance |
+ * | LOAD_EXTENSION | Extension loading |
+ * 
+ * Two-Phase Replay:
+ * 1. Dry run: Scan WAL to find safe replay point
+ * 2. Actual replay: Re-execute records
+ * 
+ * Checksum Verification:
+ * - Optional checksums via ChecksumReader
+ * - Detects WAL corruption
+ * - Throws if mismatch (unless throwOnWalReplayFailure=false)
+ * 
+ * Recovery Transaction:
+ * - Uses beginRecoveryTransaction()
+ * - Special mode that skips certain validations
+ * - isRecovery() returns true during replay
+ * 
+ * Error Handling:
+ * - Rollback on replay failure
+ * - Truncate WAL after successful replay
+ * - Remove WAL/shadow files when complete
+ */
+
 #include "binder/binder.h"
 #include "catalog/catalog_entry/scalar_macro_catalog_entry.h"
 #include "catalog/catalog_entry/sequence_catalog_entry.h"
