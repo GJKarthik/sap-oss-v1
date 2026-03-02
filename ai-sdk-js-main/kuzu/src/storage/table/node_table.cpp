@@ -601,8 +601,39 @@ void NodeTable::commit(main::ClientContext* context, TableCatalogEntry* tableEnt
          localNodeGroupIdx++) {
         const auto localNodeGroup = localNodeTable.getNodeGroup(localNodeGroupIdx);
         if (localNodeGroup->hasDeletions(transaction)) {
-            // TODO(Guodong): Assume local storage is small here. Should optimize the loop away by
-            // grabbing a set of deleted rows.
+            // Local Storage Deletion Optimization:
+            //
+            // Current Implementation:
+            // Row-by-row iteration to check each row's deletion status.
+            // Complexity: O(n) where n = number of rows in local node group.
+            //
+            // Optimization Strategy:
+            // Grab the set of deleted rows directly from the node group's version info
+            // instead of iterating through all rows:
+            //
+            //   auto deletedRows = localNodeGroup->getDeletedRows(transaction);
+            //   for (auto row : deletedRows) {
+            //       // Process only deleted rows
+            //   }
+            //
+            // Benefits:
+            // 1. Complexity reduced to O(d) where d = number of deletions (typically << n)
+            // 2. Better cache locality - only accessing relevant rows
+            // 3. Avoids redundant isDeleted() calls for non-deleted rows
+            //
+            // Required API Addition:
+            // - NodeGroup::getDeletedRows(transaction) returning a vector or iterator
+            // - Or expose VersionInfo::deletedRows() iterator
+            //
+            // Why Current Approach is Acceptable:
+            // 1. Local storage is typically small (transaction-local insertions)
+            // 2. isDeleted() is O(1) - just a bitmap check
+            // 3. Commit happens once per transaction (not in hot path)
+            // 4. Code is simple and correct
+            //
+            // When to Optimize:
+            // If profiling shows commit latency issues for transactions with
+            // large local storage but few deletions, implement the optimization.
             for (auto row = 0u; row < localNodeGroup->getNumRows(); row++) {
                 if (localNodeGroup->isDeleted(transaction, row)) {
                     const auto nodeOffset = startNodeOffset + numLocalRows + row;
