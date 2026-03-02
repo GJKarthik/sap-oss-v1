@@ -1,5 +1,83 @@
 #include "storage/table/list_chunk_data.h"
 
+/**
+ * P2-123: List Chunk Data - Variable-Length List/Array Storage
+ * 
+ * Purpose:
+ * Provides specialized storage for LIST and ARRAY columns with variable-length
+ * elements. Uses offset/size columns to track list boundaries within a shared
+ * data column.
+ * 
+ * Architecture:
+ * ```
+ * ListChunkData
+ *   ├── offsetColumnChunk: UINT64     // End offset of each list
+ *   ├── sizeColumnChunk: UINT32       // Size of each list
+ *   ├── dataColumnChunk: ChildType    // Flattened list values
+ *   ├── nullData: NullChunkData       // Null tracking
+ *   └── checkOffsetSortedAsc: bool    // Rewrite optimization flag
+ * 
+ * Storage Layout for [[1,2], [3], [4,5,6], NULL]:
+ * ┌─────────────────────────────────────────────────┐
+ * │ Row 0: offset=2, size=2 → data[0..1] = [1, 2]   │
+ * │ Row 1: offset=3, size=1 → data[2..2] = [3]      │
+ * │ Row 2: offset=6, size=3 → data[3..5] = [4,5,6]  │
+ * │ Row 3: NULL (offset=6, size=0)                  │
+ * └─────────────────────────────────────────────────┘
+ * dataColumnChunk: [1, 2, 3, 4, 5, 6]
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. getListStartOffset(i): Calculate start from end offset - size
+ * 2. getListEndOffset(i): Read from offsetColumnChunk[i]
+ * 3. getListSize(i): Read from sizeColumnChunk[i]
+ * 
+ * 4. append(vector, selView):
+ *    - For each list, record size and calculate new end offset
+ *    - Resize dataColumnChunk as needed
+ *    - Copy list elements via copyListValues()
+ * 
+ * 5. scan(output, offset, length):
+ *    - Calculate total data size needed
+ *    - Resize output's data vector
+ *    - Batch copy if offsets are consecutive (optimization)
+ *    - Otherwise copy list-by-list
+ * 
+ * 6. write(vector, ...):
+ *    - Random access update
+ *    - Appends new data to end of dataColumnChunk
+ *    - Sets checkOffsetSortedAsc for finalize consideration
+ * 
+ * 7. finalize():
+ *    - Rewrite chunk if offsets are not consecutive
+ *    - Improves scan performance by making data contiguous
+ *    - Only triggers if random writes occurred (checkOffsetSortedAsc)
+ * 
+ * Scan Optimization:
+ * ```
+ * isOffsetsConsecutiveAndSortedAscending()?
+ *   ├── YES: Single batch scan (fast!)
+ *   └── NO: List-by-list scan (slower)
+ * ```
+ * 
+ * Child Column Structure:
+ * - SIZE_COLUMN_CHILD_READ_STATE_IDX (0): Size column state
+ * - DATA_COLUMN_CHILD_READ_STATE_IDX (1): Data column state
+ * - OFFSET_COLUMN_CHILD_READ_STATE_IDX (2): Offset column state
+ * 
+ * Finalize Strategy:
+ * - Only rewrite if: data > half capacity AND random writes occurred
+ *   AND offsets not consecutive
+ * - Creates new contiguous chunk and swaps
+ * 
+ * Performance:
+ * - append(): O(k) where k = total list elements
+ * - scan() consecutive: O(n) batch read
+ * - scan() fragmented: O(n * avg_list_size)
+ * - finalize(): O(total_elements)
+ */
+
 #include <cmath>
 
 #include "common/data_chunk/sel_vector.h"
