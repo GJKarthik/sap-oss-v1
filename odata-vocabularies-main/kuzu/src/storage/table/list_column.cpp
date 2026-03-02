@@ -117,18 +117,22 @@ void ListColumn::scanSegment(const SegmentState& state, offset_t startOffsetInCh
 void ListColumn::scanSegment(const SegmentState& state, ColumnChunkData* resultChunk,
     common::offset_t startOffsetInSegment, common::row_idx_t numValuesToScan) const {
     auto startOffsetInResult = resultChunk->getNumValues();
+    auto& listColumnChunk = resultChunk->cast<ListChunkData>();
+    // Save the original offset/size chunk numValues BEFORE calling Column::scanSegment,
+    // since it may modify them as a side effect when appending to the result chunk.
+    // We need these values to properly position our subsequent scans.
+    const auto originalOffsetNumValues = listColumnChunk.getOffsetColumnChunk()->getNumValues();
+    const auto originalSizeNumValues = listColumnChunk.getSizeColumnChunk()->getNumValues();
+    
     Column::scanSegment(state, resultChunk, startOffsetInSegment, numValuesToScan);
     if (numValuesToScan == 0) {
         return;
     }
-    // Column::scanSegment above modifies the size of the offset/size chunks before we scan
-    // them
-    // Revert this so that they scan to the correct position
-    // FIXME(bmwinger): there should be a better solution to this, but it will probably be removed
-    // later anyway
-    auto& listColumnChunk = resultChunk->cast<ListChunkData>();
-    listColumnChunk.getOffsetColumnChunk()->setNumValues(startOffsetInResult);
-    listColumnChunk.getSizeColumnChunk()->setNumValues(startOffsetInResult);
+    // Restore the offset/size chunk numValues to their original values.
+    // Column::scanSegment modifies these as a side effect, but we need to scan
+    // them independently starting from the correct position.
+    listColumnChunk.getOffsetColumnChunk()->setNumValues(originalOffsetNumValues);
+    listColumnChunk.getSizeColumnChunk()->setNumValues(originalSizeNumValues);
 
     offsetColumn->scanSegment(state.childrenStates[OFFSET_COLUMN_CHILD_READ_STATE_IDX],
         listColumnChunk.getOffsetColumnChunk(), startOffsetInSegment, numValuesToScan);
