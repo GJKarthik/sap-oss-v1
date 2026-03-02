@@ -484,7 +484,28 @@ void ArrowConverter::fromArrowArray(const ArrowSchema* schema, const ArrowArray*
                     srcOffset, dstOffset, count);
             }
         case 't':
-            // TODO pure time type
+            /**
+             * P2-95: Arrow TIME Type Support (Pure Time)
+             * 
+             * Arrow's TIME type format codes:
+             * - 'tts' = TIME32 seconds since midnight (int32)
+             * - 'ttm' = TIME32 milliseconds since midnight (int32)
+             * - 'ttu' = TIME64 microseconds since midnight (int64)
+             * - 'ttn' = TIME64 nanoseconds since midnight (int64)
+             * 
+             * Why Kuzu Doesn't Support TIME:
+             * - Kuzu uses TIMESTAMP (date + time), not pure TIME
+             * - TIME is wall-clock time without date context
+             * - Use cases: schedules, recurring events, store hours
+             * 
+             * Implementation If Needed:
+             * 1. Add TIME logical type to Kuzu type system
+             * 2. Implement scanArrowArrayTime32/Time64 functions
+             * 3. Handle timezone considerations
+             * 
+             * Status: Not supported. KU_UNREACHABLE indicates
+             * this code path should never be reached with valid data.
+             */
             KU_UNREACHABLE;
         case 's':
             // TIMESTAMP
