@@ -1,6 +1,93 @@
 #include "storage/shadow_file.h"
 
 /**
+ * P3-194: ShadowFile - Extended Implementation Documentation
+ * 
+ * Additional Details (see P3-175 for architecture overview)
+ * 
+ * Data Structures:
+ * ```
+ * ShadowPageRecord {
+ *   originalFileIdx: file_idx_t  // Source file index
+ *   originalPageIdx: page_idx_t  // Source page index
+ * }
+ * 
+ * ShadowFileHeader {
+ *   numShadowPages: uint64_t     // Count of shadow pages
+ *   databaseID: ku_uuid_t       // Database UUID verification
+ * }
+ * ```
+ * 
+ * Shadow Page Mapping:
+ * ```
+ * shadowPagesMap: map<file_idx_t, map<page_idx_t, shadow_page_idx>>
+ * 
+ * Original Page (file 0, page 42)
+ *       │
+ *       └── shadowPagesMap[0][42] = shadowPageIdx
+ *             │
+ *             └── shadowingFH->page[shadowPageIdx]
+ * ```
+ * 
+ * getOrCreateShadowPage() Algorithm:
+ * ```
+ * getOrCreateShadowPage(fileIdx, pageIdx):
+ *   IF shadowPagesMap[fileIdx][pageIdx] exists:
+ *     RETURN existing shadowPageIdx
+ *   ELSE:
+ *     shadowPageIdx = shadowingFH->addNewPage()
+ *     shadowPagesMap[fileIdx][pageIdx] = shadowPageIdx
+ *     shadowPageRecords.push_back({fileIdx, pageIdx})
+ *     RETURN shadowPageIdx
+ * ```
+ * 
+ * applyShadowPages() Algorithm:
+ * ```
+ * applyShadowPages():
+ *   shadowPageIdx = 1  // Skip header
+ *   FOR each record in shadowPageRecords:
+ *     1. Read shadow page from shadowingFH
+ *     2. Write to dataFileInfo at record.originalPageIdx
+ *     3. Update BM frame if page cached
+ *   Sync data file
+ * ```
+ * 
+ * replayShadowPageRecords() - Recovery:
+ * ```
+ * replayShadowPageRecords():
+ *   1. Open shadow file (read-only)
+ *   2. Open data file (read-write with lock)
+ *   3. Read header, verify database UUID
+ *   4. Deserialize shadowPageRecords from file end
+ *   5. FOR each record:
+ *        Read shadow → Write to data file
+ * ```
+ * 
+ * flushAll() Algorithm:
+ * ```
+ * flushAll():
+ *   1. Write ShadowFileHeader to page 0
+ *   2. Flush all dirty shadow pages
+ *   3. Serialize shadowPageRecords to file end
+ *   4. Sync shadow file to disk
+ * ```
+ * 
+ * Shadow File Layout:
+ * ```
+ * [Header Page][Shadow Page 1]...[Shadow Page N][Records]
+ *      │              │                  │          │
+ *    Page 0        Page 1...N       Page N+1    After pages
+ * ```
+ * 
+ * Thread Safety:
+ * - Single-threaded checkpoint assumed
+ * - No locks during applyShadowPages()
+ * - BM frame update without lock (single-thread)
+ * 
+ * See P2-66 inline for cleanup design rationale.
+ * 
+ * ====================================
+ * 
  * P3-175: ShadowFile - Shadow Paging for Atomic Updates
  * 
  * Purpose:
