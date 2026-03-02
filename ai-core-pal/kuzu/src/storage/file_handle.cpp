@@ -1,6 +1,59 @@
 #include "storage/file_handle.h"
 
 /**
+ * P3-173: File Handle - Extended Documentation
+ * 
+ * Additional Details (see P2-132 for base documentation)
+ * 
+ * File Handle Flags:
+ * | Flag | Bit | Description |
+ * |------|-----|-------------|
+ * | READ_ONLY | 0x01 | Open for reading only |
+ * | NEW_TMP_FILE | 0x02 | In-memory temporary file |
+ * | PERSISTENT | 0x04 | Persistent disk file |
+ * | CREATE_IF_NOT_EXISTS | 0x08 | Create file if missing |
+ * | LARGE_PAGED | 0x10 | Use 256KB temp pages |
+ * | LOCKED | 0x20 | Acquire file lock |
+ * 
+ * Page Size Classes:
+ * | Class | Size | Usage |
+ * |-------|------|-------|
+ * | REGULAR_PAGE | 4KB | Persistent data |
+ * | TEMP_PAGE | 256KB | Temporary results |
+ * 
+ * Frame Group Allocation:
+ * ```
+ * FileHandle creates → BufferManager allocates frame groups
+ *   │
+ *   └── Each page group (PAGE_GROUP_SIZE pages)
+ *         └── Maps to one frame group in VM region
+ * ```
+ * 
+ * In-Memory Mode Behavior:
+ * - addNewPage(): Immediately pins in buffer manager
+ * - pinPage(): Returns existing frame (no load)
+ * - optimisticRead(): Direct frame access
+ * - writePagesToFile(): memcpy to frame
+ * 
+ * File Opening Modes:
+ * ```cpp
+ * // Read-only persistent file
+ * O_PERSISTENT_FILE_READ_ONLY
+ * 
+ * // Create if not exists
+ * O_PERSISTENT_FILE_CREATE_NOT_EXISTS
+ * 
+ * // In-memory temporary
+ * O_IN_MEM_TEMP_FILE
+ * ```
+ * 
+ * ConcurrentVector Usage:
+ * - pageStates: Thread-safe page state storage
+ * - frameGroupIdxes: Frame group index mapping
+ * - Supports lock-free reads for hot paths
+ * 
+ * ====================================
+ * 
  * P2-132: File Handle - Page-Based File Management
  * 
  * Purpose:
