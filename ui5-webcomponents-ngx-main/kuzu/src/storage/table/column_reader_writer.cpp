@@ -11,6 +11,70 @@
 #include "storage/table/column_chunk_metadata.h"
 #include <concepts>
 
+/**
+ * P2-107: Column Reader/Writer Architecture and Optimization Patterns
+ * 
+ * Architecture Overview:
+ * This file implements a polymorphic reader/writer system with specialization
+ * for different data types. Uses composition over inheritance for float types.
+ * 
+ * Class Hierarchy:
+ * ```
+ * ColumnReadWriter (base)
+ *   ├── DefaultColumnReadWriter: General-purpose read/write
+ *   └── FloatColumnReadWriter<T>: ALP-compressed float handling
+ *       └── Contains DefaultColumnReadWriter (composition)
+ * ```
+ * 
+ * Design Pattern: Type-based Factory
+ * ColumnReadWriterFactory::createColumnReadWriter() selects implementation
+ * based on PhysicalTypeID at runtime:
+ * - FLOAT/DOUBLE → FloatColumnReadWriter<T>
+ * - Other types → DefaultColumnReadWriter
+ * 
+ * ALP Float Compression Exception Handling:
+ * When writing floats with ALP compression:
+ * 1. Encode value using ALP (exp, fac parameters)
+ * 2. Decode back to check for precision loss
+ * 3. If loss detected, store as "exception" in separate chunk
+ * 4. During read, patch exceptions back into results
+ * 
+ * Performance Trade-offs:
+ * | Aspect | Current | Alternative |
+ * |--------|---------|-------------|
+ * | Float write | Per-value encode/decode | Batch encode, batch check |
+ * | Exception search | Linear scan from offset | Binary search + cache |
+ * | Page iteration | Per-page function call | Batch multi-page reads |
+ * 
+ * Optimization Opportunities:
+ * 
+ * 1. Batch Float Encoding:
+ *    Current: Encode values one at a time in writeValuesToPage()
+ *    Better: Use alp::AlpEncode::encode_batch() for vectorized encoding
+ *    Benefit: ~3x faster for large batches
+ * 
+ * 2. Exception Index Caching:
+ *    Current: findFirstExceptionAtOrPastOffset() does linear scan
+ *    Better: Build sorted index, use binary search
+ *    When: If exception count > 64, use std::lower_bound
+ * 
+ * 3. Page Prefetching:
+ *    Current: readFromPage() reads pages one at a time
+ *    Better: Prefetch next page(s) while processing current
+ *    Implementation: Use async I/O or mmap with MADV_WILLNEED
+ * 
+ * 4. Filter Push-down Optimization:
+ *    Current: Filter applied after full page read
+ *    Better: For CONSTANT compression, skip page entirely if filtered
+ *    Check: filterFunc before readFromPage() for constant pages
+ * 
+ * Why Current Approach Works:
+ * - Template-based helpers avoid virtual call overhead
+ * - Concepts (WriteToPageHelper) ensure type safety at compile time
+ * - Exception handling integrates cleanly with ALP decompression
+ * - DefaultColumnReadWriter is reused via composition (not duplication)
+ */
+
 namespace kuzu::storage {
 
 using namespace common;
