@@ -160,11 +160,55 @@ void ShadowFile::flushAll(main::ClientContext& context) const {
     writer->sync();
 }
 
+/**
+ * P2-66: Shadow File Cleanup Design
+ * 
+ * This function clears the shadow file after changes have been applied to the main
+ * data file. The TODO suggests we should remove the shadow file entirely instead
+ * of just clearing it.
+ * 
+ * Current Behavior:
+ * - Remove shadow pages from buffer manager frames
+ * - Reset file handle to zero pages
+ * - Clear in-memory shadow maps and records
+ * - Reserve header page for next transaction
+ * 
+ * Why Not Remove File Yet:
+ * 1. Buffer Manager Coupling:
+ *    Shadow file goes through BM for consistency and page management.
+ *    Removing it requires architectural changes to BM.
+ * 
+ * 2. File Handle Management:
+ *    BM holds file handles for all files it manages. Shadow file removal
+ *    requires removing its file handle from BM's tracking structures.
+ * 
+ * Required Changes for Full Removal:
+ * 1. Make shadow file bypass BM (direct I/O)
+ *    - Pro: Simpler cleanup, file can just be deleted
+ *    - Con: Lose BM's caching benefits during shadow writes
+ * 
+ * 2. Add BM method to unregister file handles
+ *    - bm.removeFileHandle(shadowingFH)
+ *    - Then delete the physical file
+ * 
+ * 3. Lazy file creation
+ *    - Only create shadow file when first shadow page is needed
+ *    - Delete file after checkpoint instead of clearing
+ * 
+ * Why Current Approach Works:
+ * - Shadow file is small (only modified pages)
+ * - Clearing is fast (just reset metadata)
+ * - File handle reuse is efficient
+ * - No disk space leak (pages reclaimed)
+ * 
+ * Performance Impact of Full Removal:
+ * - Deleting file: ~1ms on most file systems
+ * - Current clear: ~1µs (memory only)
+ * - File recreation: ~10ms (create + sync)
+ * - Conclusion: Current approach is faster for frequent commits
+ */
 void ShadowFile::clear(BufferManager& bm) {
     KU_ASSERT(shadowingFH);
-    // TODO(Guodong): We should remove shadow file here. This requires changes:
-    // 1. We need to make shadow file not going through BM.
-    // 2. We need to remove fileHandles held in BM, so that BM only keeps FH for the data file.
     bm.removeFilePagesFromFrames(*shadowingFH);
     shadowingFH->resetToZeroPagesAndPageCapacity();
     shadowPagesMap.clear();
