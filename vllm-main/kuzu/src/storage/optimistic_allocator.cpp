@@ -1,6 +1,76 @@
 #include "storage/optimistic_allocator.h"
 
 /**
+ * P3-214: OptimisticAllocator - Extended Implementation Details
+ * 
+ * Additional Details (see P2-126 for architecture overview)
+ * 
+ * Constructor:
+ * ```
+ * OptimisticAllocator(pageManager):
+ *   base: PageAllocator(pageManager.getDataFH())
+ *   this.pageManager = pageManager
+ *   optimisticallyAllocatedPages = []  // Empty vector
+ * ```
+ * 
+ * allocatePageRange() Implementation:
+ * ```
+ * allocatePageRange(numPages):
+ *   pageRange = pageManager.allocatePageRange(numPages)
+ *   IF numPages > 0:
+ *     optimisticallyAllocatedPages.push_back(pageRange)
+ *   RETURN pageRange
+ * 
+ * Note: Zero-page allocations not tracked (no-op)
+ * ```
+ * 
+ * freePageRange() Implementation:
+ * ```
+ * freePageRange(block):
+ *   pageManager.freePageRange(block)
+ *   // Direct pass-through - explicit frees NOT tracked
+ *   // Used when caller explicitly wants to free
+ * ```
+ * 
+ * rollback() Implementation:
+ * ```
+ * rollback():
+ *   FOR each entry IN optimisticallyAllocatedPages:
+ *     pageManager.freeImmediatelyRewritablePageRange(dataFH, entry)
+ *   optimisticallyAllocatedPages.clear()
+ * 
+ * Key: Uses freeImmediatelyRewritablePageRange()
+ *      - Pages immediately available for reuse
+ *      - No WAL logging needed (uncommitted)
+ * ```
+ * 
+ * commit() Implementation:
+ * ```
+ * commit():
+ *   optimisticallyAllocatedPages.clear()
+ *   // Just clear tracking - allocations now permanent
+ *   // Pages remain allocated in pageManager
+ * ```
+ * 
+ * Tracking Vector:
+ * ```
+ * optimisticallyAllocatedPages: vector<PageRange>
+ * 
+ * PageRange {
+ *   startPageIdx: page_idx_t
+ *   numPages: page_idx_t
+ * }
+ * 
+ * Memory: O(n) where n = number of allocatePageRange calls
+ * ```
+ * 
+ * Thread Safety:
+ * - NOT thread-safe by itself
+ * - Caller must hold appropriate transaction locks
+ * - PageManager handles internal concurrency
+ * 
+ * ====================================
+ * 
  * P2-126: Optimistic Allocator - Transaction-Aware Page Allocation
  * 
  * Purpose:
