@@ -1,5 +1,92 @@
 #include "storage/index/hash_index.h"
 
+/**
+ * P3-181: HashIndex - Primary Key Hash Index Implementation
+ * 
+ * Purpose:
+ * Implements extensible hash indexing for primary key lookups. Provides
+ * O(1) average-case lookup, insert, and delete operations.
+ * 
+ * Architecture:
+ * ```
+ * HashIndex<T>
+ *   ├── pSlots: DiskArray<Slot>       // Primary slots
+ *   ├── oSlots: DiskArray<Slot>       // Overflow slots
+ *   ├── localStorage: HashIndexLocalStorage
+ *   ├── indexHeaderForReadTrx        // Immutable snapshot
+ *   ├── indexHeaderForWriteTrx       // Mutable during writes
+ *   └── overflowFileHandle           // For string keys
+ * 
+ * PrimaryKeyIndex
+ *   ├── hashIndices: vector<HashIndex>  // Partitioned by key hash
+ *   ├── hashIndexDiskArrays: DiskArrayCollection
+ *   ├── overflowFile: OverflowFile      // String storage
+ *   └── shadowFile: ShadowFile          // For atomicity
+ * ```
+ * 
+ * Hash Slot Structure:
+ * ```
+ * SlotHeader
+ *   ├── validMask: bitset             // Which entries are valid
+ *   ├── fingerprints[8]               // Quick equality check
+ *   └── nextOvfSlotId                 // Chaining pointer
+ * 
+ * Slot
+ *   ├── header: SlotHeader
+ *   └── entries[8]: SlotEntry<T>      // Key-value pairs
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. lookup(key):
+ *    - Hash key → primary slot ID
+ *    - Search slot chain with fingerprint matching
+ *    - Return offset if found and visible
+ * 
+ * 2. insert(key, offset):
+ *    - Check for duplicates first
+ *    - Add to local storage
+ *    - Merge to disk on checkpoint
+ * 
+ * 3. delete(key):
+ *    - Mark entry invalid in slot
+ *    - Decrement numEntries
+ * 
+ * 4. checkpoint():
+ *    - Apply deletions from local storage
+ *    - Merge inserts via mergeBulkInserts()
+ *    - Split slots if needed (reserve())
+ * 
+ * Extensible Hashing:
+ * ```
+ * Level 0: 1 slot  (mask: 0x0)
+ * Level 1: 2 slots (mask: 0x1)
+ * Level 2: 4 slots (mask: 0x3)
+ * ...
+ * 
+ * Split: When load factor exceeds threshold
+ *   - Split nextSplitSlotId
+ *   - Rehash entries to new slot
+ *   - Increment level when all slots split
+ * ```
+ * 
+ * Fingerprints:
+ * - 8-bit hash summary per entry
+ * - Filter before expensive key comparison
+ * - Reduces I/O for negative lookups
+ * 
+ * Supported Key Types:
+ * - int8/16/32/64, uint8/16/32/64
+ * - float, double
+ * - int128, uint128
+ * - ku_string_t (with overflow file)
+ * 
+ * Local Storage:
+ * - Buffers uncommitted inserts/deletes
+ * - Merged on checkpoint
+ * - Supports transaction isolation
+ */
+
 #include <bitset>
 
 #include "common/assert.h"
