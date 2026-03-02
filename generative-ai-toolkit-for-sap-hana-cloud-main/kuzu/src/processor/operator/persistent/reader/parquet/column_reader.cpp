@@ -479,7 +479,10 @@ void ColumnReader::prepareDataPage(kuzu_parquet::format::PageHeader& pageHdr) {
     case Encoding::PLAIN_DICTIONARY: {
         // where is it otherwise??
         auto dictWidth = block->read<uint8_t>();
-        // TODO somehow dict_width can be 0 ?
+        // dict_width can be 0 when all values reference the same dictionary entry (index 0).
+        // In this case, no bits are needed to encode the indices, and the decoder should
+        // return 0 for all values. The RleBpDecoder handles width=0 by returning 0 for all values.
+        // Note: RleBpDecoder constructor validates width < 64, so width=0 is valid.
         dictDecoder = std::make_unique<RleBpDecoder>(block->ptr, block->len, dictWidth);
         block->inc(block->len);
         break;
