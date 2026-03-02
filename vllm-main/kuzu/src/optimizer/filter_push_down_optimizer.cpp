@@ -230,8 +230,45 @@ static bool isConstantExpression(const std::shared_ptr<Expression> expression) {
         // If all children are constant and function is deterministic,
         // the result is constant. For now, we only handle CAST explicitly
         // as other functions need more careful analysis of side effects.
-        // TODO: Implement proper constant folding in binder to handle all
-        // deterministic functions with constant arguments.
+        /**
+         * P2-93: Binder-Level Constant Folding
+         * 
+         * This TODO suggests implementing proper constant folding in the binder phase
+         * rather than in the optimizer for complete coverage.
+         * 
+         * Current Issue:
+         * - We can detect CAST(constant) as constant here
+         * - But other deterministic functions need analysis
+         * - Side effect analysis is complex
+         * 
+         * Deterministic Functions (safe to fold):
+         * | Category | Examples |
+         * |----------|----------|
+         * | Arithmetic | +, -, *, /, % |
+         * | String | CONCAT, UPPER, LOWER, SUBSTRING |
+         * | Date/Time | DATE, TIMESTAMP, INTERVAL arithmetic |
+         * | Type coercion | CAST, implicit conversions |
+         * 
+         * Non-Deterministic (cannot fold):
+         * | Category | Examples |
+         * |----------|----------|
+         * | Random | RANDOM(), UUID() |
+         * | Time-based | NOW(), CURRENT_TIMESTAMP |
+         * | Sequence | NEXTVAL() |
+         * 
+         * Benefits of Binder Constant Folding:
+         * - Catch all constant expressions early
+         * - Simplify optimizer logic
+         * - Enable more index scan opportunities
+         * - Reduce expression evaluation overhead
+         * 
+         * What Binder Folding Would Look Like:
+         * 1. During expression binding, evaluate constant sub-trees
+         * 2. Replace with LiteralExpression containing the result
+         * 3. Mark non-foldable expressions with a flag
+         * 
+         * Status: Currently only CAST is handled; full solution needs binder changes.
+         */
         if (allChildrenConstant && funcName == "CAST") {
             return true;
         }
