@@ -1,5 +1,85 @@
 #include "storage/shadow_file.h"
 
+/**
+ * P3-175: ShadowFile - Shadow Paging for Atomic Updates
+ * 
+ * Purpose:
+ * Implements shadow paging for atomic page updates during checkpoints.
+ * Modified pages are written to a shadow file first, then applied atomically.
+ * 
+ * Architecture:
+ * ```
+ * ShadowFile
+ *   ├── bm: BufferManager&              // For page management
+ *   ├── shadowFilePath: string          // Path to .shadow file
+ *   ├── vfs: VirtualFileSystem*
+ *   ├── shadowingFH: FileHandle*        // Shadow file handle
+ *   ├── shadowPagesMap: map<file_idx, map<page_idx, shadow_page_idx>>
+ *   └── shadowPageRecords: vector<ShadowPageRecord>
+ * ```
+ * 
+ * Shadow Page Flow:
+ * ```
+ * 1. Transaction modifies page
+ *    │
+ *    └── getOrCreateShadowPage(fileIdx, pageIdx)
+ *          ├── If exists: return existing shadow page
+ *          └── Else: allocate new shadow page
+ * 
+ * 2. Write changes to shadow page (not main file)
+ * 
+ * 3. At checkpoint:
+ *    flushAll()
+ *      ├── Write header with numShadowPages + UUID
+ *      ├── Flush all shadow pages to disk
+ *      └── Append shadow page records
+ * 
+ * 4. Apply changes:
+ *    applyShadowPages()
+ *      ├── Read each shadow page
+ *      ├── Write to main data file
+ *      └── Update buffer manager frames
+ * 
+ * 5. Cleanup:
+ *    clear()
+ *      └── Reset shadow file for reuse
+ * ```
+ * 
+ * Shadow File Format:
+ * | Offset | Content |
+ * |--------|---------|
+ * | Page 0 | Header (numShadowPages, databaseID) |
+ * | Page 1+ | Shadow page data |
+ * | End | ShadowPageRecord array |
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | getOrCreateShadowPage() | Get/allocate shadow page |
+ * | getShadowPage() | Lookup existing shadow page |
+ * | applyShadowPages() | Copy shadows to main file |
+ * | flushAll() | Persist all shadow data |
+ * | clear() | Reset for next checkpoint |
+ * | replayShadowPageRecords() | Recovery replay |
+ * 
+ * Recovery Scenario:
+ * ```
+ * Crash during checkpoint
+ *   │
+ *   └── Database restart
+ *         └── replayShadowPageRecords()
+ *               ├── Verify database UUID
+ *               └── Re-apply shadow pages
+ * ```
+ * 
+ * Benefits:
+ * - Atomic multi-page updates
+ * - Crash recovery without WAL replay
+ * - No in-place page modification during checkpoint
+ * 
+ * See P2-66 for shadow file cleanup design details.
+ */
+
 #include "common/exception/io.h"
 #include "common/file_system/virtual_file_system.h"
 #include "common/serializer/buffered_file.h"
