@@ -28,7 +28,49 @@ std::optional<WarningSourceData> getWarningSourceData(
     return ret;
 }
 
-// TODO(Guodong): Add short path for unfiltered case.
+/**
+ * P2-73: Index Lookup Unfiltered Optimization
+ * 
+ * This TODO and the one below suggest adding a "short path" for unfiltered cases.
+ * 
+ * Current Approach:
+ * - Always iterate through selection vector positions
+ * - For each position, check if key is null
+ * - This adds indirection even when all positions are valid
+ * 
+ * What "Unfiltered Short Path" Means:
+ * When the selection vector is unfiltered (sequential 0,1,2,...,N-1), we can:
+ * - Skip selection vector lookups
+ * - Use direct array indexing
+ * - Potentially use SIMD for batch null checks
+ * 
+ * Performance Comparison:
+ * ```
+ * Filtered:   for (i < numKeys) pos = selVector[i]; keyVector[pos]
+ * Unfiltered: for (i < numKeys) keyVector[i]  // Direct access
+ * ```
+ * 
+ * Why This Matters for Index Lookup:
+ * - During COPY FROM, keys are often dense/sequential
+ * - Bulk imports hit this code path frequently
+ * - Small overhead per-key adds up over millions of rows
+ * 
+ * Implementation Would Look Like:
+ * ```cpp
+ * if (keyVector->state->getSelVector().isUnfiltered()) {
+ *     // Fast path: direct iteration
+ *     for (auto i = 0u; i < numKeys; i++) {
+ *         if (!keyVector->isNull(i)) { ... }
+ *     }
+ * } else {
+ *     // Current path with selection vector
+ * }
+ * ```
+ * 
+ * Also Applies To:
+ * - fillOffsetArraysFromVector() below (same TODO)
+ * - Other batch operations on dense data
+ */
 bool checkNullKey(ValueVector* keyVector, offset_t vectorOffset,
     BatchInsertErrorHandler* errorHandler, const std::vector<ValueVector*>& warningDataVectors) {
     bool isNull = keyVector->isNull(vectorOffset);
@@ -71,7 +113,7 @@ struct OffsetVectorManager {
     offset_t insertOffset;
 };
 
-// TODO(Guodong): Add short path for unfiltered case.
+// Unfiltered optimization also applies here (see P2-73 comment above)
 template<bool hasNoNullsGuarantee>
 void fillOffsetArraysFromVector(transaction::Transaction* transaction, const IndexLookupInfo& info,
     ValueVector* keyVector, ValueVector* resultVector,
