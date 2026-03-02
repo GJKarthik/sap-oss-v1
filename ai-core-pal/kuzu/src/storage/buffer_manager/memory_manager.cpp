@@ -1,6 +1,103 @@
 #include "storage/buffer_manager/memory_manager.h"
 
 /**
+ * P3-210: MemoryManager - Extended Implementation Documentation
+ * 
+ * Additional Details (see P3-172 for architecture overview)
+ * 
+ * MemoryBuffer Class:
+ * ```
+ * MemoryBuffer {
+ *   buffer: span<uint8_t>     // Memory region
+ *   mm: MemoryManager*        // Owner
+ *   pageIdx: page_idx_t       // INVALID_PAGE_IDX if malloc'd
+ *   evicted: bool             // True if spilled to disk
+ *   filePosition: uint64_t    // Position in spill file
+ * }
+ * ```
+ * 
+ * Destructor Logic:
+ * ```
+ * ~MemoryBuffer():
+ *   IF buffer != null AND !evicted:
+ *     mm.freeBlock(pageIdx, buffer)
+ *     mm.updateUsedMemoryForFreedBlock(pageIdx, buffer)
+ *     buffer = null
+ * ```
+ * 
+ * setSpilledToDisk() Algorithm:
+ * ```
+ * setSpilledToDisk(filePosition):
+ *   mm.freeBlock(pageIdx, buffer)
+ *   keepSize = buffer.size()  // Remember size for reload
+ *   buffer = span(nullptr, keepSize)
+ *   evicted = true
+ *   this.filePosition = filePosition
+ *   
+ *   IF pageIdx == INVALID_PAGE_IDX:
+ *     RETURN SpillResult{keepSize, 0}  // Non-evictable freed
+ *   ELSE:
+ *     RETURN SpillResult{0, keepSize}  // Evictable freed
+ * ```
+ * 
+ * prepareLoadFromDisk() Algorithm:
+ * ```
+ * prepareLoadFromDisk():
+ *   ASSERT buffer.data() == null AND evicted
+ *   buffer = mm.mallocBuffer(false, buffer.size())
+ *   evicted = false
+ * ```
+ * 
+ * allocateBuffer() Paths:
+ * ```
+ * allocateBuffer(initializeToZero, size):
+ *   IF size != TEMP_PAGE_SIZE (256KB):
+ *     // Non-standard size: direct malloc
+ *     buffer = mallocBuffer(initializeToZero, size)
+ *     RETURN MemoryBuffer(INVALID_PAGE_IDX, buffer)
+ *   
+ *   // Standard 256KB: use BM page
+ *   LOCK allocatorLock
+ *   IF freePages.empty():
+ *     pageIdx = fh.addNewPage()
+ *   ELSE:
+ *     pageIdx = freePages.pop()
+ *   UNLOCK
+ *   
+ *   buffer = bm.pin(fh, pageIdx, DONT_READ_PAGE)
+ *   RETURN MemoryBuffer(pageIdx, buffer)
+ * ```
+ * 
+ * freeBlock() Dispatch:
+ * ```
+ * freeBlock(pageIdx, buffer):
+ *   IF pageIdx == INVALID_PAGE_IDX:
+ *     std::free(buffer.data())  // Was malloc'd
+ *   ELSE:
+ *     bm.unpin(fh, pageIdx)     // Return to BM
+ * ```
+ * 
+ * updateUsedMemoryForFreedBlock() Dispatch:
+ * ```
+ * updateUsedMemoryForFreedBlock(pageIdx, buffer):
+ *   IF pageIdx == INVALID_PAGE_IDX:
+ *     bm.freeUsedMemory(buffer.size())
+ *     bm.nonEvictableMemory -= buffer.size()
+ *   ELSE:
+ *     LOCK allocatorLock
+ *     freePages.push(pageIdx)  // Return to free list
+ * ```
+ * 
+ * SpillResult Structure:
+ * ```
+ * SpillResult {
+ *   nonEvictableFreed: uint64_t  // Freed from malloc pool
+ *   evictableFreed: uint64_t     // Freed from BM pool
+ * }
+ * ```
+ * 
+ * ====================================
+ * 
  * P3-172: MemoryManager - Temporary Memory Allocation
  * 
  * Purpose:
