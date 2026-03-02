@@ -98,8 +98,38 @@ std::shared_ptr<Expression> ExpressionBinder::bindPropertyExpression(
 std::shared_ptr<Expression> ExpressionBinder::bindNodeOrRelPropertyExpression(
     const Expression& child, const std::string& propertyName) {
     auto& nodeOrRel = child.constCast<NodeOrRelExpression>();
-    // TODO(Xiyang): we should be able to remove l97-l100 after removing propertyDataExprs from node
-    // & rel expression.
+    
+    /**
+     * P2-54: Internal ID Property Lookup Special Case
+     * 
+     * Why this special case exists:
+     * The internal ID (_ID) of a node is a special property that uniquely identifies
+     * each node in the database. Unlike regular properties that are stored in columns,
+     * the internal ID is part of the node's expression itself.
+     * 
+     * Current architecture:
+     * - Node expressions store properties in propertyDataExprs map
+     * - Internal ID is stored separately via getInternalID()
+     * - This requires special handling when looking up "_ID" property
+     * 
+     * Why we can't remove this yet:
+     * propertyDataExprs is used throughout the codebase for:
+     * 1. Property projection (RETURN n.name, n.age)
+     * 2. Property filtering (WHERE n.age > 25)
+     * 3. Property updates (SET n.name = 'John')
+     * 
+     * Removing propertyDataExprs would require refactoring to:
+     * - Store all properties (including internal ID) uniformly
+     * - Update all property access paths in planner/optimizer/processor
+     * - Ensure backward compatibility for serialized expressions
+     * 
+     * For now, we keep this special case as it correctly handles
+     * the internal ID lookup without breaking existing functionality.
+     * 
+     * Example queries that rely on this:
+     *   MATCH (n) RETURN n._ID     -- Uses this special case
+     *   MATCH (n) RETURN ID(n)     -- Uses getInternalID() directly
+     */
     if (propertyName == InternalKeyword::ID &&
         child.dataType.getLogicalTypeID() == common::LogicalTypeID::NODE) {
         auto& node = ku_dynamic_cast<const NodeExpression&>(child);
