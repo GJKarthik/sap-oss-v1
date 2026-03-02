@@ -1,5 +1,86 @@
 #include "parser/parser.h"
 
+/**
+ * P3-159: Parser - Cypher Query Parser
+ * 
+ * Purpose:
+ * Entry point for parsing Cypher query strings into AST (Abstract Syntax Tree).
+ * Uses ANTLR4 for lexical analysis and parsing, then transforms to Kuzu
+ * internal statement representation.
+ * 
+ * Architecture:
+ * ```
+ * Query String
+ *   │
+ *   ├── 1. String Preprocessing
+ *   │     └── Trim leading whitespace/newlines
+ *   │
+ *   ├── 2. Lexical Analysis (CypherLexer)
+ *   │     └── Query → Token Stream
+ *   │
+ *   ├── 3. Syntactic Analysis (KuzuCypherParser)
+ *   │     └── Token Stream → Parse Tree
+ *   │
+ *   └── 4. Transformation (Transformer)
+ *         └── Parse Tree → Statement Objects
+ * ```
+ * 
+ * ANTLR4 Pipeline:
+ * ```
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │  ANTLRInputStream ─→ CypherLexer ─→ CommonTokenStream       │
+ * │                                            │                │
+ * │                                            ▼                │
+ * │                                    KuzuCypherParser         │
+ * │                                            │                │
+ * │                                            ▼                │
+ * │                                    ku_Statements (CST)      │
+ * │                                            │                │
+ * │                                            ▼                │
+ * │                                    Transformer              │
+ * │                                            │                │
+ * │                                            ▼                │
+ * │                                  vector<Statement>          │
+ * └─────────────────────────────────────────────────────────────┘
+ * ```
+ * 
+ * Error Handling:
+ * - ParserErrorListener: Captures lexer/parser errors
+ * - ParserErrorStrategy: Custom error recovery
+ * - ParserException: Thrown on syntax errors
+ * 
+ * Grammar Location:
+ * - Cypher.g4: Main grammar file in antlr_parser/
+ * - CypherLexer.g4: Lexer rules
+ * - Generated files in build directory
+ * 
+ * Extension Support:
+ * - transformerExtensions: Custom statement transformers
+ * - Allows extensions to add new syntax
+ * 
+ * Key Classes:
+ * | Class | Description |
+ * |-------|-------------|
+ * | CypherLexer | ANTLR-generated lexer |
+ * | KuzuCypherParser | ANTLR-generated parser |
+ * | Transformer | CST → AST conversion |
+ * | ParserErrorListener | Error reporting |
+ * 
+ * Output:
+ * - vector<shared_ptr<Statement>>
+ * - Each Statement is a top-level query
+ * - Multiple statements supported (separated by semicolons)
+ * 
+ * Usage:
+ * ```cpp
+ * auto statements = Parser::parseQuery(
+ *     "MATCH (n:Person) RETURN n.name; MATCH (m:Movie) RETURN m.title",
+ *     transformerExtensions
+ * );
+ * // Returns 2 Statement objects
+ * ```
+ */
+
 // ANTLR4 generates code with unused parameters.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
