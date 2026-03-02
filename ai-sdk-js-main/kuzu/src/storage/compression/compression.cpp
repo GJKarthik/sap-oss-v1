@@ -1,5 +1,85 @@
 #include "storage/compression/compression.h"
 
+/**
+ * P3-190: Compression - Column Data Compression Algorithms
+ * 
+ * Purpose:
+ * Implements multiple compression algorithms for efficient storage of column data.
+ * Automatically selects the best algorithm based on data characteristics.
+ * 
+ * Compression Types:
+ * | Type | Description | Best For |
+ * |------|-------------|----------|
+ * | CONSTANT | Single value for all rows | Sparse/uniform columns |
+ * | UNCOMPRESSED | Raw bytes | High-entropy data |
+ * | INTEGER_BITPACKING | Frame-of-reference + bitpacking | Integer columns |
+ * | BOOLEAN_BITPACKING | 1-bit per value | Boolean columns |
+ * | ALP | Adaptive Lossless Precision | Float/double columns |
+ * 
+ * Architecture:
+ * ```
+ * CompressionMetadata
+ *   ├── min, max: StorageValue (zone map)
+ *   ├── compression: CompressionType
+ *   ├── extraMetadata: ALPMetadata (for floats)
+ *   └── children: vector<CompressionMetadata>
+ * 
+ * BitpackInfo<T>
+ *   ├── bitWidth: uint8_t (bits per value)
+ *   ├── hasNegative: bool
+ *   └── offset: T (frame-of-reference base)
+ * ```
+ * 
+ * Integer Bitpacking:
+ * ```
+ * 1. Analyze min/max values
+ * 2. Calculate required bit width
+ * 3. Apply frame-of-reference if beneficial:
+ *    - If all positive: offset = min
+ *    - If all negative: offset = max
+ * 4. Pack values using FastPFor library
+ * 
+ * Example:
+ *   Values: [100, 105, 102, 108]
+ *   Min=100, Max=108, Range=8
+ *   BitWidth: 4 bits (vs 8 bits for raw)
+ *   Offset: 100 (subtract before packing)
+ *   Stored: [0, 5, 2, 8] packed in 4-bit chunks
+ * ```
+ * 
+ * Boolean Bitpacking:
+ * - 1 bit per boolean value
+ * - Uses NullMask infrastructure
+ * - 8x compression ratio
+ * 
+ * ALP (Float Compression):
+ * - Encodes floats as scaled integers
+ * - Stores exceptions for values outside range
+ * - Uses child INTEGER_BITPACKING for encoded values
+ * 
+ * Constant Compression:
+ * - Stores single value in metadata
+ * - Zero storage for actual data
+ * - Requires all values identical
+ * 
+ * In-Place Update Check:
+ * ```
+ * canUpdateInPlace():
+ *   - UNCOMPRESSED/BOOLEAN: Always yes
+ *   - CONSTANT: Only if new value == stored value
+ *   - BITPACKING: Only if new value fits in bit width
+ *   - ALP: Complex check involving exceptions
+ * ```
+ * 
+ * Key Functions:
+ * - compressNextPage(): Compress source to page
+ * - decompressFromPage(): Decompress page to buffer
+ * - setValuesFromUncompressed(): Update values in-place
+ * - canUpdateInPlace(): Check if update avoids recompression
+ * 
+ * See P2-105 inline for dynamic algorithm selection details.
+ */
+
 #include <algorithm>
 #include <cstdint>
 #include <limits>
