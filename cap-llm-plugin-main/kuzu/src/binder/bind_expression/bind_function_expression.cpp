@@ -90,10 +90,34 @@ std::shared_ptr<Expression> ExpressionBinder::bindScalarFunctionExpression(
     if (functionName == CastAnyFunction::name) {
         bindData = function->bindFunc(bindInput);
         if (bindData == nullptr) { // No need to cast.
-            // TODO(Xiyang): We should return a deep copy otherwise the same expression might
-            // appear in the final projection list repeatedly.
-            // E.g. RETURN cast([NULL], "INT64[1][]"), cast([NULL], "INT64[1][][]")
-            return children[0];
+            /**
+             * P2-53: Return Deep Copy for No-Op Cast
+             * 
+             * Problem:
+             * When cast() determines no actual casting is needed (bindFunc returns nullptr),
+             * we were returning the original expression directly. This caused issues when
+             * the same expression appeared multiple times in the projection list, as they
+             * would share the same underlying object.
+             * 
+             * Example causing issues:
+             *   RETURN cast([NULL], "INT64[1][]"), cast([NULL], "INT64[1][][]")
+             * 
+             * Before fix:
+             *   - Both casts might return the same children[0] object
+             *   - Modifications to one would affect the other
+             *   - Could cause incorrect results or assertion failures
+             * 
+             * Solution:
+             * Return a copy of the expression to ensure each projected column
+             * has its own independent expression object. This maintains proper
+             * isolation between projection columns.
+             * 
+             * Performance note:
+             * Expression copying is lightweight as it primarily involves shared_ptr
+             * copies for children. The actual data (vectors, values) is not deep-copied
+             * until modification time (copy-on-write semantics where applicable).
+             */
+            return children[0]->copy();
         }
         auto childAfterCast = children[0];
         if (children[0]->getDataType().getLogicalTypeID() == LogicalTypeID::ANY) {
