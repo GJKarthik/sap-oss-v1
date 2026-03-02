@@ -1,5 +1,62 @@
 #include "graph/graph_entry.h"
 
+/**
+ * P3-169: GraphEntry - Named Graph Schema Definition
+ * 
+ * Purpose:
+ * Represents a named graph schema in Kuzu. A graph entry defines which node
+ * and relationship tables make up a named graph for GRAPH PROJECT queries.
+ * 
+ * Architecture:
+ * ```
+ * NativeGraphEntry
+ *   ├── nodeInfos: vector<NativeGraphEntryTableInfo>
+ *   │     └── entry: TableCatalogEntry*  (node table)
+ *   │
+ *   └── relInfos: vector<NativeGraphEntryTableInfo>
+ *         └── entry: TableCatalogEntry*  (rel table)
+ * ```
+ * 
+ * Graph Entry Hierarchy:
+ * ```
+ * GraphEntry (abstract)
+ *   ├── NativeGraphEntry     // Tables from current database
+ *   └── ExternalGraphEntry   // Tables from external source
+ * ```
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | getNodeTableIDs() | Get all node table IDs |
+ * | getNodeEntries() | Get node table catalog entries |
+ * | getRelEntries() | Get rel table catalog entries |
+ * | getRelInfo() | Get info for specific rel table |
+ * 
+ * Usage Pattern:
+ * ```cypher
+ * CALL CREATE_GRAPH('myGraph', ['Person', 'Company'], ['KNOWS', 'WORKS_AT'])
+ * 
+ * // Then query the named graph
+ * MATCH (n)-[r]->(m)
+ * ON GRAPH myGraph
+ * RETURN n, r, m
+ * ```
+ * 
+ * NativeGraphEntryTableInfo:
+ * - Wraps TableCatalogEntry for node/rel tables
+ * - Provides metadata about table participation in graph
+ * 
+ * Integration:
+ * - GraphEntrySet manages multiple named graphs
+ * - OnDiskGraph provides storage for graph data
+ * - Graph class provides runtime graph operations
+ * 
+ * Graph vs Schema:
+ * - Schema defines tables independently
+ * - Graph entry groups tables into logical graphs
+ * - Enables multi-graph queries
+ */
+
 #include "common/exception/runtime.h"
 
 using namespace kuzu::planner;
