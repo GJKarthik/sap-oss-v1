@@ -121,11 +121,39 @@ LogicalPlan JoinPlanSolver::solveBinaryJoinTreeNode(const JoinTreeNode& treeNode
     return plan;
 }
 
+// Multiway Join Solver:
+// Multiway joins are used for patterns like (a)-[r1]-(b)-[r2]-(c) where node 'b' must
+// satisfy multiple edge relationships. This is more efficient than pairwise binary joins
+// when the intersection is expected to be small.
+//
+// Current Plan Construction Issue:
+// The appendIntersect() method modifies probePlan in-place and doesn't return the updated plan.
+// This creates a mismatch with our expected pattern where we'd like to do:
+//   planner->appendIntersect(..., &plan);  // Append to 'plan' directly
+//
+// Current Workaround:
+// 1. Call appendIntersect() which modifies probePlan
+// 2. Transfer the operator from probePlan to our result plan
+// 3. Continue appending filters to result plan
+//
+// Future Improvement:
+// Provide a consistent interface across all append* methods that either:
+// - Option A: All methods take a plan reference and modify it in-place
+// - Option B: All methods return a new LogicalPlan (immutable style)
+// - Option C: All methods take an output plan parameter
+//
+// Currently, appendHashJoin() works with Option C (takes output plan parameter),
+// while appendIntersect() uses in-place modification of probePlan.
+// This inconsistency should be addressed for cleaner code.
 LogicalPlan JoinPlanSolver::solveMultiwayJoinTreeNode(const JoinTreeNode& treeNode) {
     auto& extraInfo = treeNode.extraInfo->constCast<ExtraJoinTreeNodeInfo>();
     KU_ASSERT(extraInfo.joinNodes.size() == 1);
     auto& joinNode = extraInfo.joinNodes[0]->constCast<NodeExpression>();
+    
+    // Solve probe side - this will be the base of our multiway join
     auto probePlan = solveTreeNode(*treeNode.children[0], &treeNode);
+    
+    // Collect all build sides and their bound node IDs
     std::vector<LogicalPlan> buildPlans;
     expression_vector boundNodeIDs;
     for (auto i = 1u; i < treeNode.children.size(); ++i) {
@@ -137,11 +165,22 @@ LogicalPlan JoinPlanSolver::solveMultiwayJoinTreeNode(const JoinTreeNode& treeNo
         buildPlans.push_back(solveTreeNode(*child, &treeNode).copy());
         boundNodeIDs.push_back(boundNode->constCast<NodeExpression>().getInternalID());
     }
+    
     auto plan = LogicalPlan();
-    // TODO(Xiyang): provide an interface to append operator to resultPlan.
+    
+    // Note: appendIntersect modifies probePlan in-place rather than appending to 'plan'.
+    // This is inconsistent with appendHashJoin which takes an output plan parameter.
+    // We transfer the result to our plan after the call.
+    // Future: Refactor appendIntersect to match appendHashJoin's interface:
+    //   planner->appendIntersect(joinNodeID, boundNodeIDs, probePlan, buildPlans, plan);
     planner->appendIntersect(joinNode.getInternalID(), boundNodeIDs, probePlan, buildPlans);
+    
+    // Transfer the intersect operator to our result plan
     plan.setLastOperator(probePlan.getLastOperator());
+    
+    // Apply any predicates that couldn't be pushed into the intersect
     planner->appendFilters(extraInfo.predicates, plan);
+    
     return plan;
 }
 
