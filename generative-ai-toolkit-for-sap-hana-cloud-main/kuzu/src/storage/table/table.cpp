@@ -1,6 +1,73 @@
 #include "storage/table/table.h"
 
 /**
+ * P3-219: Table - Extended Implementation Details
+ * 
+ * Additional Details (see P2-115 for architecture overview)
+ * 
+ * TableScanState Methods:
+ * ```
+ * resetOutVectors():
+ *   FOR each outputVector:
+ *     outputVector.resetAuxiliaryBuffer()  // Clear string/list buffers
+ *   outState.selVector.setToUnfiltered()   // Reset selection
+ * 
+ * setToTable(tx, table, columnIDs, predicates, direction):
+ *   this.table = table
+ *   this.columnIDs = columnIDs
+ *   this.columnPredicateSets = predicates
+ *   nodeGroupScanState.chunkStates.resize(columnIDs.size())
+ * ```
+ * 
+ * State Object Constructors:
+ * ```
+ * TableInsertState(propertyVectors):
+ *   this.propertyVectors = propertyVectors
+ *   this.logToWAL = true  // Default: durable
+ * 
+ * TableUpdateState(columnID, propertyVector):
+ *   this.columnID = columnID
+ *   this.propertyVector = propertyVector
+ *   this.logToWAL = true
+ * 
+ * TableDeleteState():
+ *   this.logToWAL = true
+ * ```
+ * 
+ * Table Constructor:
+ * ```
+ * Table(tableEntry, storageManager, memoryManager):
+ *   tableType = tableEntry.getTableType()
+ *   tableID = tableEntry.getTableID()
+ *   tableName = tableEntry.getName()
+ *   enableCompression = storageManager.compressionEnabled()
+ *   memoryManager = memoryManager
+ *   shadowFile = &storageManager.getShadowFile()
+ *   hasChanges = false  // No dirty data yet
+ * ```
+ * 
+ * scan() Pattern:
+ * ```
+ * scan(transaction, scanState):
+ *   RETURN scanInternal(transaction, scanState)  // Template method
+ * 
+ * // scanInternal is pure virtual - implemented by:
+ * // - NodeTable::scanInternal
+ * // - RelTable::scanInternal
+ * ```
+ * 
+ * constructDataChunk() Utility:
+ * ```
+ * constructDataChunk(mm, types):
+ *   chunk = DataChunk(types.size())
+ *   FOR i in 0..types.size():
+ *     vector = new ValueVector(types[i], mm)
+ *     chunk.insert(i, vector)
+ *   RETURN chunk
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-115: Base Table Class - Abstract Storage Interface
  * 
  * Purpose:
