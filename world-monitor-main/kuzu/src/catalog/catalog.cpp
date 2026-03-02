@@ -1,5 +1,102 @@
 #include "catalog/catalog.h"
 
+/**
+ * P3-139: Catalog - Central Database Metadata Repository
+ * 
+ * Purpose:
+ * The Catalog is the central repository for all database metadata including
+ * tables, sequences, functions, types, indexes, and macros. It provides
+ * transactional DDL operations with MVCC support via CatalogSets.
+ * 
+ * Architecture:
+ * ```
+ * Catalog
+ *   ├── version: uint64_t              // Incremented on schema changes
+ *   ├── tables: unique_ptr<CatalogSet> // Node/Rel table entries
+ *   ├── sequences: unique_ptr<CatalogSet>
+ *   ├── functions: unique_ptr<CatalogSet>
+ *   ├── types: unique_ptr<CatalogSet>  // User-defined types
+ *   ├── indexes: unique_ptr<CatalogSet>
+ *   ├── macros: unique_ptr<CatalogSet> // Scalar macros
+ *   ├── internalTables: unique_ptr<CatalogSet>
+ *   ├── internalSequences: unique_ptr<CatalogSet>
+ *   └── internalFunctions: unique_ptr<CatalogSet>
+ * ```
+ * 
+ * CatalogSet Organization:
+ * - Public sets: User-visible objects
+ * - Internal sets: System objects (isInternal=true)
+ * 
+ * Entry Types:
+ * 
+ * | Set | Entry Types |
+ * |-----|-------------|
+ * | tables | NODE_TABLE_ENTRY, REL_GROUP_ENTRY |
+ * | sequences | SEQUENCE_ENTRY (SERIAL auto-sequences) |
+ * | functions | SCALAR_FUNCTION_ENTRY, TABLE_FUNCTION_ENTRY |
+ * | types | TYPE_ENTRY (user-defined) |
+ * | indexes | INDEX_ENTRY |
+ * | macros | SCALAR_MACRO_ENTRY |
+ * 
+ * Key Operations:
+ * 
+ * 1. Table Management:
+ *    - createTableEntry(): Create node/rel table
+ *    - getTableCatalogEntry(): Lookup by name or ID
+ *    - dropTableEntry(): Remove table + SERIAL sequences
+ *    - alterTableEntry(): Modify table schema
+ * 
+ * 2. Sequence Management:
+ *    - createSequence(): Create sequence entry
+ *    - getSequenceEntry(): Lookup sequence
+ *    - createSerialSequence(): Auto-create for SERIAL columns
+ *    - dropSerialSequence(): Auto-drop with table
+ * 
+ * 3. Function Management:
+ *    - registerBuiltInFunctions(): Load system functions
+ *    - addFunction(): Register extension/UDF
+ *    - getFunctionEntry(): Lookup function
+ * 
+ * 4. Index Management:
+ *    - createIndex(): Register index metadata
+ *    - getIndex(): Lookup index by table+name
+ *    - dropAllIndexes(): Remove all indexes for table
+ * 
+ * 5. Type Management:
+ *    - createType(): Register user-defined type
+ *    - getType(): Lookup type definition
+ * 
+ * 6. Macro Management:
+ *    - addScalarMacroFunction(): Create macro
+ *    - getScalarMacroFunction(): Lookup macro
+ * 
+ * SERIAL Column Handling:
+ * ```
+ * CREATE TABLE t (id SERIAL)
+ *   │
+ *   └── createSerialSequence()
+ *         └── Creates: __serial_t_id sequence
+ * 
+ * DROP TABLE t
+ *   │
+ *   └── dropSerialSequence()
+ *         └── Drops: __serial_t_id sequence
+ * ```
+ * 
+ * Serialization:
+ * - serialize(): Write all CatalogSets to Serializer
+ * - deserialize(): Read CatalogSets + registerBuiltInFunctions()
+ * 
+ * Static Access:
+ * ```cpp
+ * Catalog* catalog = Catalog::Get(clientContext);
+ * ```
+ * 
+ * Version Tracking:
+ * - version incremented on schema changes
+ * - Used for prepared statement invalidation
+ */
+
 #include "binder/ddl/bound_create_sequence_info.h"
 #include "binder/ddl/bound_create_table_info.h"
 #include "catalog/catalog_entry/function_catalog_entry.h"
