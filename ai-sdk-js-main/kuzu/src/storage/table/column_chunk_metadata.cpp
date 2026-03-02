@@ -1,5 +1,96 @@
 #include "storage/table/column_chunk_metadata.h"
 
+/**
+ * P2-112: Column Chunk Metadata - Compression Decision and Statistics
+ * 
+ * Purpose:
+ * Computes and stores metadata for column chunks including compression type,
+ * min/max statistics, page ranges, and algorithm-specific parameters.
+ * Central to storage optimization decisions.
+ * 
+ * Metadata Structure:
+ * ```
+ * ColumnChunkMetadata
+ *   ├── pageRange: {startPageIdx, numPages}  // Physical storage location
+ *   ├── numValues: uint64_t                  // Row count in chunk
+ *   └── compMeta: CompressionMetadata
+ *       ├── min, max: StorageValue           // Statistics for predicate pushdown
+ *       ├── compression: CompressionType     // Selected algorithm
+ *       └── alpState (for floats)            // ALP encoding parameters
+ * ```
+ * 
+ * Compression Selection Logic (GetCompressionMetadata):
+ * ```
+ * if (min == max) → CONSTANT (0 pages!)
+ * else switch (physicalType):
+ *   BOOL       → BOOLEAN_BITPACKING (8:1 compression)
+ *   INT*/UINT* → INTEGER_BITPACKING (variable bit-width)
+ *   FLOAT      → ALP (adaptive lossless predictor)
+ *   DOUBLE     → ALP (adaptive lossless predictor)
+ *   default    → UNCOMPRESSED
+ * ```
+ * 
+ * Compression Types and Space Efficiency:
+ * | Type | Best Case | Typical | Algorithm |
+ * |------|-----------|---------|-----------|
+ * | CONSTANT | 100% | N/A | Store single value |
+ * | BOOLEAN_BITPACKING | 87.5% | 87.5% | 8 bools → 1 byte |
+ * | INTEGER_BITPACKING | 75-90% | 50% | Pack to min bit-width |
+ * | ALP (float) | 50-70% | 30-50% | Encode to integers |
+ * | UNCOMPRESSED | 0% | 0% | Raw storage |
+ * 
+ * ALP (Adaptive Lossless Predictor) for Floats:
+ * 1. Sample data to find optimal exponent/factor
+ * 2. Encode: encoded = round(value * 10^exp / 10^fac)
+ * 3. Track exceptions (values that don't roundtrip)
+ * 4. If exceptions > 1/MAX_EXCEPTION_FACTOR, fall back to uncompressed
+ * 
+ * Integer Bitpacking Decision:
+ * ```
+ * bitWidth = ceil(log2(max - min + 1))
+ * if (bitWidth >= sizeof(T) * 8)
+ *     → UNCOMPRESSED (no savings, worse perf)
+ * else
+ *     → INTEGER_BITPACKING
+ * ```
+ * 
+ * Statistics for Query Optimization:
+ * - min/max enable predicate pushdown (skip chunks)
+ * - numValues enables accurate cardinality estimation
+ * - pageRange enables direct page access
+ * 
+ * Serialization:
+ * Metadata is persisted with each column chunk, enabling:
+ * - Efficient scan planning without reading data
+ * - Crash recovery with correct decompression
+ * - Version compatibility checks
+ * 
+ * Optimization Opportunities:
+ * 
+ * 1. Dictionary Encoding Detection:
+ *    ```
+ *    if (uniqueValues < numValues * 0.1)
+ *        → DICTIONARY compression candidate
+ *    ```
+ * 
+ * 2. Run-Length Encoding:
+ *    For sorted or clustered data:
+ *    ```
+ *    if (avgRunLength > 4)
+ *        → RLE compression candidate
+ *    ```
+ * 
+ * 3. Histogram-based Selection:
+ *    Store value distribution for better predicate selectivity:
+ *    ```
+ *    histogram: array<count, 256>  // 256 buckets
+ *    ```
+ * 
+ * 4. Compression Cascade:
+ *    Apply multiple algorithms:
+ *    ALP → bitpack residuals → optional RLE
+ */
+
 #include "alp/decode.hpp"
 #include "alp/encode.hpp"
 #include "common/serializer/deserializer.h"
