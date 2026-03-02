@@ -100,6 +100,30 @@ void ProjectionPushDownOptimizer::visitNodeLabelFilter(LogicalOperator* op) {
     collectExpressionsInUse(filter.getNodeID());
 }
 
+// Hash Join Projection Push-Down:
+// This optimization prunes columns that aren't needed from the build side of hash joins.
+// 
+// Current behavior:
+// - Collect join keys as expressions in use
+// - Prune expressions not referenced downstream from build side materialization
+// - Pre-append a projection to the build side if pruning is beneficial
+//
+// Design consideration - Separate Optimizer:
+// The TODO suggests moving this to a separate HashJoinProjectionOptimizer because:
+// 1. Hash join has unique considerations (build vs probe side semantics)
+// 2. Materialization costs differ from simple projection push-down
+// 3. A dedicated optimizer could make cost-based decisions about pruning
+// 4. Could potentially eliminate entire columns from hash table construction
+//
+// Current approach is correct but could be enhanced with:
+// - Cost model for materialization savings vs projection overhead
+// - Integration with hash table sizing decisions
+// - Coordination with SIP (sideways information passing) optimizations
+//
+// For now, we keep this in ProjectionPushDownOptimizer for simplicity since:
+// - The logic is relatively straightforward
+// - It shares infrastructure with other projection push-down
+// - Separating it would require significant refactoring
 void ProjectionPushDownOptimizer::visitHashJoin(LogicalOperator* op) {
     auto& hashJoin = op->constCast<LogicalHashJoin>();
     for (auto& [probeJoinKey, buildJoinKey] : hashJoin.getJoinConditions()) {
@@ -112,7 +136,9 @@ void ProjectionPushDownOptimizer::visitHashJoin(LogicalOperator* op) {
     auto expressionsBeforePruning = hashJoin.getExpressionsToMaterialize();
     auto expressionsAfterPruning = pruneExpressions(expressionsBeforePruning);
     if (expressionsBeforePruning.size() == expressionsAfterPruning.size()) {
-        // TODO(Xiyang): replace this with a separate optimizer.
+        // No pruning possible - all expressions are in use
+        // Future: A dedicated HashJoinProjectionOptimizer could make cost-based decisions
+        // even when no columns can be pruned (e.g., reordering columns for better cache locality)
         return;
     }
     preAppendProjection(op, 1, expressionsAfterPruning);
