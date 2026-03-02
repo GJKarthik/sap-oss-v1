@@ -1,5 +1,87 @@
 #include "transaction/transaction_manager.h"
 
+/**
+ * P3-137: Transaction Manager - Transaction Lifecycle Coordination
+ * 
+ * Purpose:
+ * Central coordinator for all transaction operations in the database.
+ * Manages transaction lifecycle, concurrency control, and checkpointing.
+ * 
+ * Architecture:
+ * ```
+ * TransactionManager
+ *   ├── wal: WAL&                      // Write-ahead log reference
+ *   ├── lastTransactionID: transaction_t
+ *   ├── lastTimestamp: transaction_t   // For MVCC versioning
+ *   ├── activeTransactions: vector<unique_ptr<Transaction>>
+ *   ├── mtxForSerializingPublicFunctionCalls: mutex
+ *   ├── mtxForStartingNewTransactions: mutex
+ *   ├── checkpointWaitTimeoutInMicros: uint64_t
+ *   └── initCheckpointerFunc: function  // Factory for Checkpointer
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. beginTransaction(clientContext, type):
+ *    - READ_ONLY: Creates snapshot with current timestamp
+ *    - WRITE: Logs BEGIN to WAL, checks for concurrent writes
+ *    - RECOVERY: Same as WRITE, for crash recovery
+ *    - Single-writer by default (enableMultiWrites flag)
+ * 
+ * 2. commit(clientContext, transaction):
+ *    - READ_ONLY: Simply clears from active list
+ *    - WRITE: Increments timestamp, commits, may trigger checkpoint
+ *    - Auto-checkpoint if threshold exceeded
+ * 
+ * 3. rollback(clientContext, transaction):
+ *    - READ_ONLY: Clears from active list
+ *    - WRITE: Calls transaction->rollback(), clears
+ * 
+ * 4. checkpoint(clientContext):
+ *    - Manual checkpoint trigger
+ *    - Skipped for in-memory databases
+ * 
+ * Concurrency Control:
+ * ```
+ * Two-mutex design:
+ *   mtxForSerializingPublicFunctionCalls
+ *     └── Serializes commit/rollback/checkpoint
+ *   
+ *   mtxForStartingNewTransactions
+ *     └── Blocks new transactions during checkpoint
+ * 
+ * Checkpoint Process:
+ *   1. Acquire mtxForStartingNewTransactions
+ *   2. Wait for all active transactions to complete
+ *   3. Execute checkpoint
+ *   4. Release lock
+ * ```
+ * 
+ * Transaction ID Assignment:
+ * - Monotonically increasing lastTransactionID
+ * - Each new transaction gets ++lastTransactionID
+ * - Timestamp incremented only on WRITE commit
+ * 
+ * Checkpoint Coordination:
+ * ```
+ * stopNewTransactionsAndWaitUntilAllTransactionsLeave()
+ *   ├── Acquire start transaction lock
+ *   ├── Spin-wait until activeTransactions empty
+ *   ├── Timeout after checkpointWaitTimeoutInMicros
+ *   └── Return lock (held during checkpoint)
+ * ```
+ * 
+ * Static Access:
+ * ```cpp
+ * TransactionManager* tm = TransactionManager::Get(clientContext);
+ * ```
+ * 
+ * Thread Safety:
+ * - Two-mutex design prevents deadlocks
+ * - Readers can proceed while writers wait
+ * - Checkpoint blocks all new transactions
+ */
+
 #include <thread>
 
 #include "common/exception/checkpoint.h"
