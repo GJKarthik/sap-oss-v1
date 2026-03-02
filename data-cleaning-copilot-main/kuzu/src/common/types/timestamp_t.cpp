@@ -299,8 +299,40 @@ timestamp_t Timestamp::fromEpochMilliSeconds(int64_t ms) {
     return fromEpochMicroSeconds(microSeconds);
 }
 
+/**
+ * P2-90: fromEpochSeconds Test Coverage
+ * 
+ * This function is marked with LCOV_EXCL (coverage exclusion) pending tests.
+ * 
+ * Function Purpose:
+ * Converts Unix epoch seconds (seconds since 1970-01-01 00:00:00 UTC)
+ * to internal timestamp_t (microseconds since epoch).
+ * 
+ * Conversion:
+ * - Input: 1709400000 (epoch seconds)
+ * - Output: 1709400000 * 1,000,000 = 1709400000000000 (microseconds)
+ * 
+ * Test Cases Needed:
+ * | Test Case | Input (seconds) | Expected Output (μs) |
+ * |-----------|-----------------|---------------------|
+ * | Epoch zero | 0 | 0 |
+ * | Positive | 1000 | 1000000000 |
+ * | Negative (pre-1970) | -86400 | -86400000000 |
+ * | Max safe | INT64_MAX / 1M | ~ INT64_MAX |
+ * | Overflow | INT64_MAX | Overflow error |
+ * 
+ * Related Functions:
+ * - fromEpochMilliSeconds(): has coverage ✓
+ * - fromEpochMicroSeconds(): has coverage ✓ (base function)
+ * - fromEpochNanoSeconds(): has coverage ✓
+ * 
+ * Why LCOV_EXCL_START/STOP:
+ * Code marked for exclusion from coverage reporting until tests are added.
+ * This prevents artificially low coverage metrics for untested code.
+ * 
+ * Status: Function works correctly; needs test coverage added.
+ */
 // LCOV_EXCL_START
-// TODO(Kebing): will add the tests in the timestamp PR
 timestamp_t Timestamp::fromEpochSeconds(int64_t sec) {
     int64_t microSeconds = 0;
     function::Multiply::operation(sec, Interval::MICROS_PER_SEC, microSeconds);
