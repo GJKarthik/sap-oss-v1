@@ -1,6 +1,70 @@
 #include "storage/page_manager.h"
 
 /**
+ * P3-192: PageManager - Extended Documentation
+ * 
+ * Additional Details (see P2-133 for base documentation)
+ * 
+ * Allocation Algorithm:
+ * ```
+ * allocatePageRange(numPages):
+ *   IF ENABLE_FSM:
+ *     LOCK mtx
+ *     allocated = freeSpaceManager.popFreePages(numPages)
+ *     IF allocated.has_value():
+ *       ++version
+ *       RETURN PageRange{allocated}
+ *   
+ *   startIdx = fileHandle.addNewPages(numPages)
+ *   RETURN PageRange{startIdx, numPages}
+ * ```
+ * 
+ * Free Page States:
+ * ```
+ * | State | Description | Reusable |
+ * |-------|-------------|----------|
+ * | ALLOCATED | Currently in use | No |
+ * | UNCHECKPOINTED | Freed but not checkpointed | No |
+ * | FREE | Available after checkpoint | Yes |
+ * ```
+ * 
+ * Deferred Free vs Immediate Free:
+ * ```
+ * freePageRange():
+ *   - Pages go to UNCHECKPOINTED
+ *   - Safe: checkpoint recovery works
+ *   - Slower: must wait for checkpoint
+ * 
+ * freeImmediatelyRewritablePageRange():
+ *   - Pages go directly to FREE
+ *   - Used during rollback (no recovery needed)
+ *   - Evicts from buffer manager first
+ * ```
+ * 
+ * Checkpoint Integration Flow:
+ * ```
+ * 1. serialize() - Write FSM state to disk
+ * 2. [Checkpoint completes]
+ * 3. finalizeCheckpoint() - Move UNCHECKPOINTED → FREE
+ * 4. clearEvictedBMEntriesIfNeeded() - Cleanup buffer manager
+ * 5. resetVersion() - Clear change flag
+ * ```
+ * 
+ * Version Change Detection:
+ * ```
+ * changedSinceLastCheckpoint():
+ *   RETURN version != lastCheckpointVersion
+ * 
+ * resetVersion():
+ *   lastCheckpointVersion = version
+ * ```
+ * 
+ * ENABLE_FSM Flag:
+ * - true: Use FreeSpaceManager for page reuse
+ * - false: Always expand file (debugging/testing)
+ * 
+ * ====================================
+ * 
  * P2-133: Page Manager - Page Allocation with Free Space Management
  * 
  * Purpose:
