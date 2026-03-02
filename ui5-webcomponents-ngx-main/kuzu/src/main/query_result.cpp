@@ -118,8 +118,50 @@ void QueryResult::setDBLifeCycleManager(
     }
 }
 
+/**
+ * P2-63: Error Query Result Design Considerations
+ * 
+ * This function creates a QueryResult that represents an error condition.
+ * 
+ * Should We Introduce a Dedicated ErrorQueryResult Class?
+ * 
+ * Arguments FOR a dedicated class:
+ * 1. Type Safety: Explicit ErrorQueryResult type prevents misuse
+ * 2. API Clarity: `result->isError()` vs checking success flag
+ * 3. Memory: Error results don't need column vectors, tuple buffers, etc.
+ * 4. Interface: Error results could have specialized methods (error code, stack trace)
+ * 
+ * Arguments AGAINST (why current approach is acceptable):
+ * 1. Simplicity: One QueryResult class is easier to understand and use
+ * 2. Polymorphism: Client code treats all results uniformly via base class
+ * 3. Existing Pattern: `isSuccess()` check is well-established
+ * 4. Low Cost: Unused fields in error result have minimal memory impact
+ * 
+ * Current Implementation Analysis:
+ * - Uses MaterializedQueryResult as the carrier (lightweight for errors)
+ * - Sets success=false and errMsg
+ * - Null columns/tuple are acceptable since nothing will be iterated
+ * 
+ * If We Were to Implement ErrorQueryResult:
+ * ```cpp
+ * class ErrorQueryResult : public QueryResult {
+ * public:
+ *     ErrorQueryResult(const std::string& errMsg, ErrorCode code = ErrorCode::UNKNOWN);
+ *     ErrorCode getErrorCode() const;
+ *     std::string getStackTrace() const;
+ *     bool isError() const override { return true; }
+ * private:
+ *     ErrorCode errorCode;
+ *     std::string stackTrace;
+ * };
+ * ```
+ * 
+ * Decision: Keep Current Approach
+ * The current implementation works correctly and introduces minimal complexity.
+ * A dedicated ErrorQueryResult class would add more code without significant benefit
+ * since errors are already easily identified via isSuccess().
+ */
 std::unique_ptr<QueryResult> QueryResult::getQueryResultWithError(const std::string& errorMessage) {
-    // TODO(Xiyang): consider introduce error query result class.
     auto queryResult = std::make_unique<MaterializedQueryResult>();
     queryResult->success = false;
     queryResult->errMsg = errorMessage;
