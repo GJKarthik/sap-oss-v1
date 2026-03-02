@@ -1,5 +1,78 @@
 #include "catalog/catalog_entry/rel_group_catalog_entry.h"
 
+/**
+ * P3-142: RelGroupCatalogEntry - Relationship Table Metadata
+ * 
+ * Purpose:
+ * Catalog entry for relationship (edge) tables in the graph database.
+ * Manages relationship constraints, multiplicity, and FROM-TO node connections.
+ * 
+ * Architecture:
+ * ```
+ * CatalogEntry (base)
+ *   └── TableCatalogEntry (properties, tableID)
+ *         └── RelGroupCatalogEntry
+ *               ├── srcMultiplicity: RelMultiplicity (ONE/MANY)
+ *               ├── dstMultiplicity: RelMultiplicity (ONE/MANY)
+ *               ├── storageDirection: ExtendDirection (FWD/BWD/BOTH)
+ *               └── relTableInfos: vector<RelTableCatalogInfo>
+ *                     └── {nodePair: NodeTableIDPair, oid: oid_t}
+ * ```
+ * 
+ * Relationship Multiplicity:
+ * ```
+ * MANY_MANY: Person -[:KNOWS]-> Person     (default)
+ * ONE_MANY:  Country -[:HAS_CITY]-> City   (country has many cities)
+ * MANY_ONE:  City -[:IN_COUNTRY]-> Country (many cities in one country)
+ * ONE_ONE:   Person -[:SPOUSE]-> Person    (one spouse)
+ * ```
+ * 
+ * Storage Direction:
+ * ```
+ * FWD:  Store only forward adjacency lists
+ * BWD:  Store only backward adjacency lists
+ * BOTH: Store both directions (default, enables bi-directional traversal)
+ * ```
+ * 
+ * FROM-TO Connections:
+ * ```
+ * CREATE REL TABLE KNOWS (FROM Person TO Person, ...)
+ *   └── relTableInfos[0] = {nodePair: {srcTableID, dstTableID}, oid}
+ * 
+ * Multi-connection support:
+ * CREATE REL TABLE WORKS_AT (FROM Person TO Company, FROM Person TO Startup)
+ *   └── relTableInfos[0] = Person → Company
+ *   └── relTableInfos[1] = Person → Startup
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. addFromToConnection(src, dst, oid):
+ *    - Add new FROM-TO node table pair
+ *    - Used by ALTER ADD CONNECTION
+ * 
+ * 2. dropFromToConnection(src, dst):
+ *    - Remove FROM-TO pair
+ *    - Used by ALTER DROP CONNECTION
+ * 
+ * 3. isParent(tableID):
+ *    - Check if nodeTable is src or dst of any connection
+ *    - Used for dependency tracking
+ * 
+ * 4. getSrcNodeTableIDSet() / getDstNodeTableIDSet():
+ *    - Get unique source/destination table IDs
+ * 
+ * 5. getRelDataDirections():
+ *    - Convert storageDirection to RelDataDirection vector
+ *    - FWD/BWD/BOTH → {FWD}, {BWD}, {FWD,BWD}
+ * 
+ * 6. toCypher():
+ *    - Generate CREATE REL TABLE ... FROM ... TO ... statement
+ * 
+ * Entry Type:
+ * - CatalogEntryType::REL_GROUP_ENTRY
+ */
+
 #include <sstream>
 
 #include "binder/ddl/bound_create_table_info.h"
