@@ -533,7 +533,29 @@ void CSRNodeGroup::checkpointInMemAndOnDisk(const UniqLock& lock, NodeGroupCheck
     persistentChunkGroup->cast<ChunkedCSRNodeGroup>().scanCSRHeader(*state.mm, csrState);
     csrState.newHeader =
         std::make_unique<InMemChunkedCSRHeader>(*state.mm, false, StorageConfig::NODE_GROUP_SIZE);
-    // TODO(Guodong): Find max node offset in the node group.
+    
+    // Max Node Offset Calculation:
+    // The new header size should match the actual range of node offsets used.
+    // Currently we use NODE_GROUP_SIZE (the maximum), but we could optimize:
+    //
+    // Option 1 (Current): Use full NODE_GROUP_SIZE
+    //   - Pro: Simple, no computation needed
+    //   - Con: May allocate more space than needed for sparse node groups
+    //
+    // Option 2 (Optimized): Compute maxOffset = max(oldHeader.numValues, csrIndex.maxOffset)
+    //   - Pro: Saves memory for sparse groups
+    //   - Con: Need to track maxOffset in csrIndex, extra computation
+    //
+    // For now, using NODE_GROUP_SIZE is safe because:
+    // 1. CSR headers are small (2 columns: offset and length)
+    // 2. We need to handle gaps correctly at region boundaries
+    // 3. NODE_GROUP_SIZE is the maximum possible, covering all cases
+    //
+    // Future optimization: If memory becomes a concern for databases with many
+    // sparse node groups, we can compute the actual max offset:
+    //   offset_t maxOffset = csrState.oldHeader->getNumValues();
+    //   if (csrIndex) { maxOffset = std::max(maxOffset, csrIndex->getMaxOffsetWithRels() + 1); }
+    //   csrState.newHeader->setNumValues(maxOffset);
     csrState.newHeader->setNumValues(StorageConfig::NODE_GROUP_SIZE);
     csrState.newHeader->copyFrom(*csrState.oldHeader);
     auto leafRegions = collectLeafRegionsAndCSRLength(lock, csrState);
