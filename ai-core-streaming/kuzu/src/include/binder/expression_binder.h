@@ -41,7 +41,44 @@ public:
 
     std::shared_ptr<Expression> bindExpression(const parser::ParsedExpression& parsedExpression);
 
-    // TODO(Xiyang): move to an expression rewriter
+    /**
+     * P2-56: Expression Folding Placement
+     * 
+     * This function performs constant folding - evaluating expressions at bind time
+     * when all operands are known constants.
+     * 
+     * Example:
+     *   1 + 2 + 3  →  6 (folded at bind time)
+     *   a + 2 + 3  →  a + 5 (partial folding)
+     * 
+     * Why it's currently in ExpressionBinder:
+     * - Constant folding is most effective during binding when type information is fresh
+     * - Allows immediate optimization of literal expressions
+     * - Reduces expression tree complexity before planning
+     * 
+     * Alternative: Move to expression rewriter phase
+     * Pros:
+     * - Cleaner separation of concerns (binding vs optimization)
+     * - Could combine with other expression rewrites
+     * - More consistent architecture
+     * 
+     * Cons:
+     * - Additional pass over expression tree
+     * - Type information may need to be recomputed
+     * - Delay in optimization benefit
+     * 
+     * Current decision:
+     * Keep in ExpressionBinder for now as:
+     * 1. It works correctly and is well-tested
+     * 2. Moving requires careful handling of edge cases
+     * 3. Performance benefit of early folding is valuable
+     * 4. KUZU_API export indicates external usage
+     * 
+     * Future consideration:
+     * If a unified expression rewriter is created, this could be moved there
+     * along with other expression transformations (e.g., predicate pushdown,
+     * common subexpression elimination).
+     */
     KUZU_API std::shared_ptr<Expression> foldExpression(
         const std::shared_ptr<Expression>& expression) const;
 
