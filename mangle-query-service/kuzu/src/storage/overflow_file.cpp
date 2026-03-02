@@ -1,5 +1,89 @@
 #include "storage/overflow_file.h"
 
+/**
+ * P2-131: Overflow File - Long String Storage Management
+ * 
+ * Purpose:
+ * Manages storage for strings that exceed the inline length limit (12 bytes).
+ * Strings longer than ku_string_t::SHORT_STR_LENGTH are stored in overflow pages
+ * with pointers encoded in the ku_string_t structure.
+ * 
+ * Architecture:
+ * ```
+ * OverflowFile
+ *   ├── fileHandle: FileHandle*
+ *   ├── shadowFile: ShadowFile*
+ *   ├── memoryManager: MemoryManager&
+ *   ├── header: StringOverflowFileHeader
+ *   ├── headerPageIdx: page_idx_t
+ *   ├── handles: vector<OverflowFileHandle*>
+ *   └── pageCounter: atomic<page_idx_t>
+ * 
+ * OverflowFileHandle (per hash index)
+ *   ├── overflowFile: OverflowFile&
+ *   ├── startPageIdx: page_idx_t
+ *   ├── nextPosToWriteTo: PageCursor
+ *   └── pageWriteCache: map<page_idx_t, CachedPage>
+ * ```
+ * 
+ * Page Layout:
+ * ```
+ * [0..END_OF_PAGE-1]: String data bytes
+ * [END_OF_PAGE..KUZU_PAGE_SIZE-1]: Next page index (page_idx_t)
+ * 
+ * Multi-page strings form a linked list via next page pointers.
+ * ```
+ * 
+ * String Storage Flow:
+ * ```
+ * ku_string_t (inline)
+ *   ├── len: uint32_t        // Total string length
+ *   ├── prefix[12]: char     // First 12 bytes (inline)
+ *   └── overflowPtr: uint64_t // Encoded {pageIdx, offset}
+ *         │
+ *         └──▶ Overflow Page(s)
+ *               [data bytes...] [next_page_idx]
+ * ```
+ * 
+ * Key Operations (OverflowFileHandle):
+ * 
+ * 1. writeString(pageAllocator, rawString):
+ *    - Create ku_string_t with inline prefix
+ *    - If len > 12: call setStringOverflow()
+ *    - Return complete ku_string_t
+ * 
+ * 2. setStringOverflow(pageAllocator, src, len, diskDstString):
+ *    - Encode start position in overflowPtr
+ *    - Write bytes to pages, allocating new pages as needed
+ *    - Link pages via END_OF_PAGE pointer
+ * 
+ * 3. readString(trxType, ku_string_t):
+ *    - If short: return inline prefix
+ *    - Decode overflowPtr to get start position
+ *    - Follow page chain reading bytes
+ *    - Return reconstructed string
+ * 
+ * 4. equals(trxType, keyToLookup, keyInEntry):
+ *    - Compare strings without full materialization
+ *    - Short-circuit on first mismatch
+ * 
+ * Caching Strategy:
+ * - pageWriteCache: In-memory buffer during writes
+ * - Flush to disk on checkpoint()
+ * - Optimistic read from shadow file for concurrent access
+ * 
+ * Checkpoint/Recovery:
+ * - checkpoint(): Write cached pages to disk
+ * - checkpointInMemory(): Clear header changed flag
+ * - rollbackInMemory(): Restore header from disk
+ * - reclaimStorage(): Free all pages in chain
+ * 
+ * Performance:
+ * - Short strings (≤12): Zero overflow, fully inline
+ * - Long strings: O(len/PAGE_SIZE) page allocations
+ * - Read: O(len/PAGE_SIZE) page reads
+ */
+
 #include <memory>
 
 #include "common/type_utils.h"
