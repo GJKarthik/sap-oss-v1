@@ -1,5 +1,78 @@
 #include "processor/processor.h"
 
+/**
+ * P3-164: QueryProcessor - Physical Plan Execution
+ * 
+ * Purpose:
+ * Executes physical query plans. Decomposes plans into parallel tasks,
+ * schedules them on the task scheduler, and coordinates execution.
+ * 
+ * Architecture:
+ * ```
+ * PhysicalPlan
+ *   │
+ *   └── QueryProcessor::execute()
+ *         │
+ *         ├── 1. Get Sink operator (root)
+ *         ├── 2. Create root ProcessorTask
+ *         ├── 3. decomposePlanIntoTask()
+ *         │     └── Recursively create child tasks
+ *         ├── 4. initTask()
+ *         │     └── Mark single-threaded if needed
+ *         ├── 5. taskScheduler->scheduleTaskAndWaitOrError()
+ *         └── 6. Return QueryResult from Sink
+ * ```
+ * 
+ * Task Decomposition:
+ * ```
+ * Physical Operator Tree           Task Tree
+ * ─────────────────────           ──────────
+ * Sink (ResultCollector)    →     ProcessorTask (root)
+ *   │                               │
+ *   └── Scan                        └── (same task, linear)
+ * 
+ * Sink (ResultCollector)    →     ProcessorTask (root)
+ *   │                               │
+ *   └── HashJoin                    └── ProcessorTask (build child)
+ *         ├── Probe (linear)              └── Build pipeline
+ *         └── Build (child task)
+ * ```
+ * 
+ * Pipeline Concept:
+ * - Operators from source to sink form a pipeline
+ * - Sink operators (HashJoinBuild, Aggregate) break pipelines
+ * - Each pipeline becomes a ProcessorTask
+ * 
+ * Parallelism:
+ * - Each pipeline can run on multiple threads
+ * - Single-threaded if any operator is not parallel
+ * - initTask() marks tasks as single-threaded if needed
+ * 
+ * Execution Flow:
+ * 1. decomposePlanIntoTask: Traverse operator tree
+ *    - Source operators: Add to progress bar
+ *    - Sink operators: Create child task
+ *    - Other operators: Stay in current task
+ * 
+ * 2. initTask: Configure parallelism
+ *    - Traverse operators from sink to source
+ *    - Mark single-threaded if any operator is non-parallel
+ * 
+ * 3. scheduleTaskAndWaitOrError: Execute
+ *    - Task scheduler runs all tasks
+ *    - Child tasks complete before parents
+ *    - Progress bar shows pipeline progress
+ * 
+ * TaskScheduler:
+ * - Manages thread pool
+ * - Schedules tasks across available threads
+ * - Platform-specific QoS on macOS
+ * 
+ * Output:
+ * - QueryResult from sink->getQueryResult()
+ * - Contains materialized results or Arrow batches
+ */
+
 #include "common/task_system/progress_bar.h"
 #include "main/query_result.h"
 #include "processor/operator/sink.h"
