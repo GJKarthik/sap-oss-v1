@@ -1,5 +1,106 @@
 #include "storage/buffer_manager/spiller.h"
 
+/**
+ * P3-211: Spiller - Memory-to-Disk Spilling Manager
+ * 
+ * Purpose:
+ * Manages spilling of memory buffers to disk under memory pressure.
+ * Provides coordinated spilling of column chunks and partitioner groups.
+ * 
+ * Architecture:
+ * ```
+ * Spiller {
+ *   tmpFilePath: string           // Temp file for spilled data
+ *   bufferManager: BufferManager& // For file handle creation
+ *   vfs: VirtualFileSystem*       // File operations
+ *   dataFH: atomic<FileHandle*>   // Lazy-initialized temp file
+ *   fullPartitionerGroups: set<InMemChunkedNodeGroup*>
+ *   partitionerGroupsMtx: mutex   // Protects set
+ *   fileCreationMutex: mutex      // For lazy init
+ * }
+ * ```
+ * 
+ * Constructor:
+ * ```
+ * Spiller(tmpFilePath, bm, vfs):
+ *   // Remove existing temp file from previous run
+ *   vfs.removeFileIfExists(tmpFilePath)
+ * ```
+ * 
+ * getOrCreateDataFH() - Double-checked Locking:
+ * ```
+ * getOrCreateDataFH():
+ *   IF dataFH.load(): RETURN dataFH  // Fast path
+ *   
+ *   LOCK fileCreationMutex
+ *   IF dataFH.load(): RETURN dataFH  // Another thread created
+ *   
+ *   dataFH = bm.getFileHandle(tmpFilePath, O_PERSISTENT_CREATE)
+ *   RETURN dataFH
+ * ```
+ * 
+ * spillToDisk() Algorithm:
+ * ```
+ * spillToDisk(chunk):
+ *   buffer = chunk.buffer
+ *   ASSERT !buffer.evicted
+ *   
+ *   dataFH = getOrCreateDataFH()
+ *   pageSize = dataFH.getPageSize()
+ *   numPages = ceil(buffer.size / pageSize)
+ *   startPage = dataFH.addNewPages(numPages)
+ *   
+ *   dataFH.writePagesToFile(buffer.data, buffer.size, startPage)
+ *   RETURN buffer.setSpilledToDisk(startPage * pageSize)
+ * ```
+ * 
+ * loadFromDisk() Algorithm:
+ * ```
+ * loadFromDisk(chunk):
+ *   buffer = chunk.buffer
+ *   IF buffer.evicted:
+ *     buffer.prepareLoadFromDisk()  // Reallocate memory
+ *     dataFH.readFromFile(buffer.data, buffer.size, buffer.filePosition)
+ * ```
+ * 
+ * Partitioner Groups Management:
+ * ```
+ * addUnusedChunk(nodeGroup):
+ *   LOCK partitionerGroupsMtx
+ *   fullPartitionerGroups.insert(nodeGroup)
+ * 
+ * clearUnusedChunk(nodeGroup):
+ *   LOCK partitionerGroupsMtx
+ *   fullPartitionerGroups.erase(nodeGroup)
+ * 
+ * claimNextGroup():
+ *   LOCK partitionerGroupsMtx
+ *   IF fullPartitionerGroups.empty(): RETURN {}
+ *   groupToFlush = *begin()
+ *   fullPartitionerGroups.erase(begin())
+ *   UNLOCK
+ *   RETURN groupToFlush.spillToDisk()
+ * ```
+ * 
+ * Destructor:
+ * ```
+ * ~Spiller():
+ *   vfs.removeFileIfExists(tmpFilePath)  // Cleanup
+ * ```
+ * 
+ * Thread Safety:
+ * - fileCreationMutex for lazy file creation
+ * - partitionerGroupsMtx for group set access
+ * - atomic<FileHandle*> for double-checked locking
+ * 
+ * File Layout:
+ * ```
+ * [Page 0][Page 1]...[Page N]
+ * Each buffer gets consecutive pages
+ * Position stored in MemoryBuffer::filePosition
+ * ```
+ */
+
 #include <mutex>
 
 #include "common/assert.h"
