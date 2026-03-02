@@ -1,5 +1,106 @@
 #include "storage/predicate/column_predicate.h"
 
+/**
+ * P3-205: ColumnPredicate - Zone Map Filtering Predicates
+ * 
+ * Purpose:
+ * Converts query predicates into column predicates for zone map filtering.
+ * Enables skipping entire chunks based on min/max statistics.
+ * 
+ * Architecture:
+ * ```
+ * ColumnPredicate (abstract)
+ *   ├── ColumnConstantPredicate   // column op constant
+ *   └── ColumnNullPredicate       // IS NULL / IS NOT NULL
+ * 
+ * ColumnPredicateSet {
+ *   predicates: vector<unique_ptr<ColumnPredicate>>
+ * }
+ * ```
+ * 
+ * ZoneMapCheckResult:
+ * | Result | Description |
+ * |--------|-------------|
+ * | SKIP_SCAN | Entire chunk can be skipped |
+ * | ALWAYS_SCAN | Chunk must be scanned |
+ * 
+ * checkZoneMap() Logic:
+ * ```
+ * ColumnPredicateSet::checkZoneMap(stats):
+ *   FOR each predicate:
+ *     IF predicate.checkZoneMap(stats) == SKIP_SCAN:
+ *       RETURN SKIP_SCAN  // Short-circuit
+ *   RETURN ALWAYS_SCAN
+ * ```
+ * 
+ * Expression Analysis:
+ * ```
+ * isColumnRef(type):
+ *   RETURN type == PROPERTY || type == VARIABLE
+ * 
+ * isCastedColumnRef(expr):
+ *   IF expr is FUNCTION and name starts with "CAST":
+ *     RETURN isColumnRef(expr.getChild(0))
+ *   RETURN false
+ * ```
+ * 
+ * tryConvert() Dispatch:
+ * ```
+ * tryConvert(property, predicate):
+ *   IF predicate is comparison (=, <, >, <=, >=, <>):
+ *     RETURN tryConvertToConstColumnPredicate()
+ *   SWITCH predicate.type:
+ *     IS_NULL: RETURN tryConvertToIsNull()
+ *     IS_NOT_NULL: RETURN tryConvertToIsNotNull()
+ *   RETURN nullptr  // Cannot convert
+ * ```
+ * 
+ * tryConvertToConstColumnPredicate() Logic:
+ * ```
+ * tryConvertToConstColumnPredicate(column, predicate):
+ *   IF child[0] is column ref AND child[1] is literal:
+ *     value = literal.getValue()
+ *     RETURN ColumnConstantPredicate(column, op, value)
+ *   
+ *   IF child[1] is column ref AND child[0] is literal:
+ *     value = literal.getValue()
+ *     op = reverseComparisonDirection(op)  // e.g., < becomes >
+ *     RETURN ColumnConstantPredicate(column, op, value)
+ *   
+ *   RETURN nullptr
+ * ```
+ * 
+ * Supported Predicates:
+ * | Expression | Converts To |
+ * |------------|-------------|
+ * | col = 5 | ColumnConstantPredicate(col, =, 5) |
+ * | 5 < col | ColumnConstantPredicate(col, >, 5) |
+ * | col IS NULL | ColumnNullPredicate(col, IS_NULL) |
+ * | col IS NOT NULL | ColumnNullPredicate(col, IS_NOT_NULL) |
+ * 
+ * Zone Map Optimization:
+ * ```
+ * Example: WHERE age > 50
+ * 
+ * Chunk 1: min=20, max=40 → SKIP_SCAN (max < 50)
+ * Chunk 2: min=35, max=65 → ALWAYS_SCAN (overlaps)
+ * Chunk 3: min=60, max=80 → ALWAYS_SCAN (all qualify)
+ * ```
+ * 
+ * Usage:
+ * ```cpp
+ * auto predicate = ColumnPredicateUtil::tryConvert(property, expr);
+ * if (predicate) {
+ *   predicateSet.addPredicate(std::move(predicate));
+ * }
+ * 
+ * // During scan
+ * if (predicateSet.checkZoneMap(chunkStats) == SKIP_SCAN) {
+ *   continue;  // Skip entire chunk
+ * }
+ * ```
+ */
+
 #include "binder/expression/literal_expression.h"
 #include "binder/expression/scalar_function_expression.h"
 #include "storage/predicate/constant_predicate.h"
