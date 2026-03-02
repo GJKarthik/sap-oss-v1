@@ -1,5 +1,85 @@
 #include "main/connection.h"
 
+/**
+ * P3-154: Connection - Client Connection Interface
+ * 
+ * Purpose:
+ * Represents a client connection to a Kuzu database. Provides the primary
+ * interface for executing queries, preparing statements, and managing
+ * session-specific settings.
+ * 
+ * Architecture:
+ * ```
+ * Connection
+ *   ├── database: Database*           // Parent database
+ *   ├── clientContext: ClientContext  // Session state
+ *   └── dbLifeCycleManager: shared_ptr // Lifecycle tracking
+ * ```
+ * 
+ * Query Execution Flow:
+ * ```
+ * conn.query("MATCH (n) RETURN n")
+ *   │
+ *   ├── 1. Check database not closed
+ *   ├── 2. clientContext->query()
+ *   │     ├── Parse query
+ *   │     ├── Bind/semantic analysis
+ *   │     ├── Plan generation
+ *   │     ├── Execute plan
+ *   │     └── Return QueryResult
+ *   └── 3. Set lifecycle manager on result
+ * ```
+ * 
+ * Prepared Statement Flow:
+ * ```
+ * auto stmt = conn.prepare("MATCH (n) WHERE n.id = $id RETURN n");
+ * conn.executeWithParams(stmt, {{"id", Value(42)}});
+ *   │
+ *   ├── prepare(): Parse + Bind + Plan (cached)
+ *   └── executeWithParams(): Execute with parameter substitution
+ * ```
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | query() | Execute query string, return results |
+ * | queryAsArrow() | Execute and return Arrow format |
+ * | queryWithID() | Execute with explicit query ID |
+ * | prepare() | Prepare a statement for later execution |
+ * | executeWithParams() | Execute prepared statement with params |
+ * | interrupt() | Cancel running query |
+ * | setQueryTimeOut() | Set timeout in milliseconds |
+ * | setMaxNumThreadForExec() | Set parallel thread count |
+ * 
+ * UDF Registration:
+ * ```
+ * conn.addScalarFunction("my_func", definitions);
+ * conn.removeScalarFunction("my_func");
+ * ```
+ * 
+ * Thread Safety:
+ * - Connection is NOT thread-safe
+ * - Use one Connection per thread
+ * - Multiple Connections can share one Database
+ * 
+ * Lifecycle:
+ * - Checks dbLifeCycleManager->isDatabaseClosed before each operation
+ * - Destructor prevents transaction rollback if DB already closed
+ * 
+ * Usage:
+ * ```cpp
+ * Database db("./mydb");
+ * Connection conn(&db);
+ * 
+ * // Simple query
+ * auto result = conn.query("MATCH (n:Person) RETURN n.name");
+ * 
+ * // Prepared statement with params
+ * auto stmt = conn.prepare("MATCH (n) WHERE n.id = $id RETURN n");
+ * auto result = conn.executeWithParams(stmt.get(), {{"id", Value(5)}});
+ * ```
+ */
+
 #include <utility>
 
 #include "common/random_engine.h"
