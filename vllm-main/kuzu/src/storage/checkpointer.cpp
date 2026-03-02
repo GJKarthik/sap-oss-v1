@@ -1,5 +1,98 @@
 #include "storage/checkpointer.h"
 
+/**
+ * P2-129: Checkpointer - Database Checkpoint Management
+ * 
+ * Purpose:
+ * Manages database checkpointing for durability. Serializes catalog, metadata,
+ * and storage state to disk using shadow paging for crash safety.
+ * 
+ * Architecture:
+ * ```
+ * Checkpointer
+ *   ├── clientContext: ClientContext&
+ *   └── isInMemory: bool    // Skip checkpointing for in-memory DBs
+ * 
+ * Database File Layout:
+ *   Page 0: DatabaseHeader
+ *     ├── catalogPageRange: PageRange
+ *     └── metadataPageRange: PageRange
+ *   
+ *   Pages N..M: Serialized Catalog
+ *   Pages M..K: Serialized Metadata (storage + page manager)
+ * ```
+ * 
+ * Checkpoint Flow (writeCheckpoint):
+ * ```
+ * 1. checkpointStorage()
+ *    └── Flush all dirty data to shadow pages
+ * 
+ * 2. serializeCatalogAndMetadata()
+ *    ├── serializeCatalog() → Write catalog if changed
+ *    └── serializeMetadata() → Write storage + page manager
+ * 
+ * 3. writeDatabaseHeader()
+ *    └── Update header with new page ranges
+ * 
+ * 4. logCheckpointAndApplyShadowPages()
+ *    ├── Flush shadow file
+ *    ├── Write checkpoint marker to WAL
+ *    ├── Apply shadow pages to data file
+ *    └── Clear WAL and shadow file
+ * 
+ * 5. finalizeCheckpoint()
+ *    └── Evict freed pages from buffer manager
+ * ```
+ * 
+ * Recovery Flow (readCheckpoint):
+ * ```
+ * 1. Read DatabaseHeader from page 0
+ * 2. Read Catalog from catalogPageRange
+ * 3. Read Storage metadata from metadataPageRange
+ * 4. Deserialize page manager state
+ * 5. Auto-load linked extensions
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. serializeCatalog(catalog, storageManager):
+ *    - Write catalog to InMemFileWriter
+ *    - Flush to allocated pages
+ *    - Return PageRange
+ * 
+ * 2. serializeMetadata(catalog, storageManager):
+ *    - Write storage metadata
+ *    - Pre-allocate pages for page manager
+ *    - Serialize page manager state
+ *    - Return PageRange
+ * 
+ * 3. canAutoCheckpoint(context, transaction):
+ *    - Check if WAL size exceeds threshold
+ *    - Skip for in-memory or recovery transactions
+ * 
+ * 4. rollback():
+ *    - Revert freed pages during failed checkpoint
+ * 
+ * Shadow Paging Strategy:
+ * - Modified pages written to shadow file first
+ * - On successful checkpoint, shadow pages applied atomically
+ * - On crash before completion, original pages remain intact
+ * 
+ * Auto-Checkpoint:
+ * ```
+ * Triggered when:
+ *   localWAL.size + wal.fileSize > checkpointThreshold
+ * ```
+ * 
+ * Thread Safety:
+ * - Checkpoint runs exclusively (no concurrent writes)
+ * - Read operations use consistent snapshots
+ * 
+ * Performance:
+ * - Incremental: Only serialize changed components
+ * - Buffer eviction after checkpoint completion
+ */
+
 #include "catalog/catalog.h"
 #include "common/file_system/file_system.h"
 #include "common/file_system/virtual_file_system.h"
