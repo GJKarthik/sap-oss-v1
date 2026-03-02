@@ -39,17 +39,69 @@ uint64_t CostModel::computeMarkJoinCost(const binder::expression_vector& joinNod
     return computeHashJoinCost(joinNodeIDs, probe, build);
 }
 
+// Intersect Cost Model:
+// Intersect operator computes the intersection of multiple sorted lists (typically node IDs).
+// It's used for multi-hop graph patterns like (a)-[r1]-(b)-[r2]-(c) where we need nodes
+// that satisfy both edge patterns.
+//
+// Cost Calculation Strategy:
+// The intersect operator uses a merge-based algorithm on sorted lists:
+// 1. Build phase: Sort/organize each build side by join key
+// 2. Probe phase: For each probe tuple, scan matching ranges in all build sides
+// 3. Output: Only tuples present in ALL build sides
+//
+// Cost factors:
+// - Probe cardinality: Number of tuples to probe against build sides
+// - Build cardinalities: Size of each build side (determines lookup cost)
+// - Selectivity: Intersect typically has HIGH selectivity (few matches)
+//
+// Formula:
+//   Cost = probeCost + probeCardinality * log(avgBuildCardinality) + sum(buildCosts)
+//
+// The log factor models the binary search cost per probe tuple.
+// We add a small INTERSECT_PENALTY to prefer hash joins when costs are similar,
+// as hash joins are generally more robust.
+//
+// Design goal: Ensure intersect is picked for appropriate patterns:
+// - When multiple edges need to be intersected (natural for graph patterns)
+// - When build sides have similar cardinalities
+// - When the intersection result is expected to be small
 uint64_t CostModel::computeIntersectCost(const LogicalPlan& probePlan,
     const std::vector<LogicalPlan>& buildPlans) {
     uint64_t cost = 0ul;
+    
+    // Add probe side cost
     cost += probePlan.getCost();
-    // TODO(Xiyang): think of how to calculate intersect cost such that it will be picked in worst
-    // case.
-    cost += probePlan.getCardinality();
+    
+    // Calculate average build cardinality for logarithmic lookup cost
+    uint64_t totalBuildCardinality = 0;
     for (auto& buildPlan : buildPlans) {
         KU_ASSERT(buildPlan.getCardinality() >= 1);
+        totalBuildCardinality += buildPlan.getCardinality();
         cost += buildPlan.getCost();
     }
+    
+    // Average build cardinality (at least 1)
+    uint64_t avgBuildCardinality = std::max<uint64_t>(1, 
+        totalBuildCardinality / std::max<size_t>(1, buildPlans.size()));
+    
+    // Probe cost: each probe tuple requires log(n) work per build side
+    // Use integer approximation of log2
+    uint64_t logFactor = 0;
+    for (uint64_t n = avgBuildCardinality; n > 1; n >>= 1) {
+        logFactor++;
+    }
+    logFactor = std::max<uint64_t>(1, logFactor);
+    
+    // Probe cost scales with probe cardinality and number of build sides
+    cost += probePlan.getCardinality() * logFactor * buildPlans.size();
+    
+    // Add small penalty to prefer hash join when costs are very close
+    // Intersect is the right choice for specific patterns; don't want to
+    // accidentally pick it for general cases where hash join is better
+    constexpr uint64_t INTERSECT_PENALTY = 10;
+    cost += INTERSECT_PENALTY;
+    
     return cost;
 }
 
