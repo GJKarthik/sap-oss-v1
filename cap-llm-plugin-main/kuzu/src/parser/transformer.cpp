@@ -1,5 +1,79 @@
 #include "parser/transformer.h"
 
+/**
+ * P3-160: Transformer - CST to AST Conversion
+ * 
+ * Purpose:
+ * Transforms ANTLR4 parse tree (Concrete Syntax Tree) into Kuzu AST
+ * (Abstract Syntax Tree). Creates typed Statement objects from generic
+ * parser context objects.
+ * 
+ * Architecture:
+ * ```
+ * ANTLR4 Parse Tree (CST)
+ *   │
+ *   └── Transformer::transform()
+ *         │
+ *         ├── For each oC_Cypher statement:
+ *         │     ├── transformStatement() → Statement
+ *         │     └── Wrap with ExplainStatement if EXPLAIN/PROFILE
+ *         │
+ *         └── Return vector<Statement>
+ * ```
+ * 
+ * Statement Types (transformStatement dispatch):
+ * ```
+ * OC_StatementContext
+ *   ├── oC_Query        → RegularQuery/DDL
+ *   ├── kU_CreateNodeTable → CreateNodeTable
+ *   ├── kU_CreateRelTable  → CreateRelGroup
+ *   ├── kU_CreateSequence  → CreateSequence
+ *   ├── kU_CreateType      → CreateType
+ *   ├── kU_Drop            → Drop
+ *   ├── kU_AlterTable      → AlterTable
+ *   ├── kU_CopyFrom        → CopyFrom
+ *   ├── kU_CopyTO          → CopyTo
+ *   ├── kU_StandaloneCall  → StandaloneCall
+ *   ├── kU_CreateMacro     → CreateMacro
+ *   ├── kU_Transaction     → Transaction
+ *   ├── kU_Extension       → Extension
+ *   ├── kU_ExportDatabase  → ExportDatabase
+ *   ├── kU_ImportDatabase  → ImportDatabase
+ *   ├── kU_AttachDatabase  → AttachDatabase
+ *   └── kU_DetachDatabase  → DetachDatabase
+ * ```
+ * 
+ * Helper Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | transformWhere() | WHERE clause → Expression |
+ * | transformSchemaName() | Schema name extraction |
+ * | transformStringLiteral() | Unescape string literals |
+ * | transformVariable() | Variable name extraction |
+ * | transformSymbolicName() | Symbol name (with ` escape handling) |
+ * 
+ * String Literal Escaping:
+ * ```
+ * Escape | Result
+ * -------+--------
+ * \\     | \
+ * \'     | '
+ * \"     | "
+ * \n     | newline
+ * \t     | tab
+ * \uHHHH | Unicode (UTF-8)
+ * ```
+ * 
+ * Extension Support:
+ * - transformerExtensions vector allows custom statement parsing
+ * - Extensions can provide additional statement types
+ * - Falls back to ParserException if no extension handles statement
+ * 
+ * EXPLAIN Handling:
+ * - Wraps statement in ExplainStatement
+ * - ExplainType: LOGICAL_PLAN, PHYSICAL_PLAN, PROFILE
+ */
+
 #include <cstdlib>
 
 #include "common/assert.h"
