@@ -142,6 +142,53 @@ uint64_t HashAggregateSharedState::getNumTuples() const {
     return numTuples;
 }
 
+/**
+ * P2-70: Hash Aggregate Partition Finalization
+ * 
+ * This TODO notes that the distinct table merge and main table merge could ideally
+ * be combined into a single function.
+ * 
+ * Current Two-Phase Merge Process:
+ * 1. Merge distinct tables first (for each aggregate function)
+ * 2. Then merge main hash table queue
+ * 
+ * Why Two Phases Are Currently Required:
+ * - Distinct tables must exist BEFORE main table merge
+ * - Main table merge updates aggregate states
+ * - Those state updates reference the distinct tables
+ * - If distinct tables don't exist yet, crash or incorrect results
+ * 
+ * What "Single Function" Would Look Like:
+ * ```cpp
+ * partition.mergeAllTables();  // Handles ordering internally
+ * ```
+ * - Encapsulate the merge ordering inside AggregateHashTable
+ * - Caller doesn't need to know about distinct vs non-distinct
+ * - Simpler finalization code
+ * 
+ * Why Keep Separate For Now:
+ * 1. Explicit ordering is clearer for maintenance
+ * 2. Debugging: can inspect state between phases
+ * 3. Different merge strategies might be needed in future
+ * 4. Not a performance bottleneck (finalization is O(partitions))
+ * 
+ * Merge Sequence Diagram:
+ * ```
+ * ┌─────────────────────────────────────────────────────┐
+ * │ For each partition:                                  │
+ * │   1. Merge distinct queues → distinct hash tables    │
+ * │   2. Merge main queue → main hash table              │
+ * │      (updates agg states, references distinct tables)│
+ * │   3. Merge distinct aggregate info                   │
+ * │   4. Finalize aggregate states                       │
+ * └─────────────────────────────────────────────────────┘
+ * ```
+ * 
+ * Performance Note:
+ * - Merging is parallelized across partitions
+ * - Each partition is finalized independently
+ * - No cross-partition synchronization needed during merge
+ */
 void HashAggregateSharedState::finalizePartitions() {
     BaseAggregateSharedState::finalizePartitions(globalPartitions, [&](auto& partition) {
         if (!partition.hashTable) {
@@ -149,15 +196,14 @@ void HashAggregateSharedState::finalizePartitions() {
             partition.hashTable = std::make_unique<AggregateHashTable>(
                 globalPartitions[0].hashTable->createEmptyCopy());
         }
-        // TODO(bmwinger): ideally these can be merged into a single function.
-        // The distinct tables need to be merged first so that they exist when the other table
-        // updates the agg states when it merges
+        // Phase 1: Merge distinct tables (must complete before main table merge)
         for (size_t i = 0; i < partition.distinctTableQueues.size(); i++) {
             if (partition.distinctTableQueues[i]) {
                 partition.distinctTableQueues[i]->mergeInto(
                     *partition.hashTable->getDistinctHashTable(i));
             }
         }
+        // Phase 2: Merge main table (references distinct tables for agg state updates)
         partition.queue->mergeInto(*partition.hashTable);
         partition.hashTable->mergeDistinctAggregateInfo();
 
