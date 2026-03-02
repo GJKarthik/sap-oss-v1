@@ -1,5 +1,81 @@
 #include "function/built_in_function_utils.h"
 
+/**
+ * P3-168: BuiltInFunctionUtils - Function Resolution and Type Casting
+ * 
+ * Purpose:
+ * Provides utilities for function overload resolution and implicit type casting.
+ * Matches function calls to the best-fitting function signature based on
+ * argument types and casting costs.
+ * 
+ * Architecture:
+ * ```
+ * Function Call (name, inputTypes)
+ *   │
+ *   └── matchFunction()
+ *         │
+ *         ├── For each function in functionSet:
+ *         │     └── getFunctionCost(inputTypes, function)
+ *         │           └── matchParameters()
+ *         │                 └── getCastCost() for each parameter
+ *         │
+ *         ├── Select candidates with minimum cost
+ *         │
+ *         ├── If multiple candidates:
+ *         │     └── getBestMatch() - prefer non-string params
+ *         │
+ *         └── Return matched Function*
+ * ```
+ * 
+ * Cast Cost System:
+ * | Cast | Cost |
+ * |------|------|
+ * | Exact match | 0 |
+ * | ANY type | 1 |
+ * | Implicit widening | 100-160 |
+ * | Undefined | UINT32_MAX |
+ * 
+ * Type Widening Hierarchy:
+ * ```
+ * INT8 → INT16 → INT32 → INT64 → INT128 → DOUBLE
+ * UINT8 → UINT16 → UINT32 → UINT64 → INT128
+ * FLOAT → DOUBLE
+ * DATE → TIMESTAMP
+ * ```
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | matchFunction() | Match scalar/table function |
+ * | matchAggregateFunction() | Match aggregate with DISTINCT |
+ * | getCastCost() | Calculate implicit cast cost |
+ * | getBestMatch() | Resolve ties in matching |
+ * | matchParameters() | Match parameter list |
+ * 
+ * Target Type Costs:
+ * | Type | Cost | Priority |
+ * |------|------|----------|
+ * | INT16 | 100 | Highest |
+ * | INT64 | 101 | |
+ * | INT32 | 102 | |
+ * | INT128 | 103 | |
+ * | DECIMAL | 104 | |
+ * | DOUBLE | 105 | |
+ * | TIMESTAMP | 120 | |
+ * | STRING | 149 | |
+ * | Nested | 160 | Lowest |
+ * 
+ * Tie-Breaking (getBestMatch):
+ * 1. Prefer functions with STRING parameters (most permissive)
+ * 2. Prefer functions with fewer distinct parameter types
+ * 3. Lower total cost wins
+ * 
+ * Special Cases:
+ * - AddFunction: Prevents accidental string concatenation
+ * - VarLength functions: Match repeating parameter type
+ * - Aggregate DISTINCT: Must match exactly
+ */
+
 #include <sstream>
 
 #include "catalog/catalog_entry/function_catalog_entry.h"
