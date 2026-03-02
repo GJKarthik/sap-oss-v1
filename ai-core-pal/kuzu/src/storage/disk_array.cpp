@@ -120,21 +120,59 @@ void DiskArrayInternal::updatePage(uint64_t pageIdx, bool isNewPage,
     }
 }
 
+/**
+ * P2-67: DiskArray Size Management Design
+ * 
+ * DiskArrays currently only support growing in size, not shrinking.
+ * This is an intentional design decision with important implications.
+ * 
+ * Current Design (Grow-Only):
+ * - PIP (Page Index Page) entries are append-only
+ * - getAPPageIdxNoLock() assumes:
+ *   - apIdx < numAPs in previous PIP → search existing PIPs
+ *   - apIdx >= numAPs → search newly inserted PIPs
+ * 
+ * Why Shrinking Would Break Current Design:
+ * 1. PIP Index Invalidation:
+ *    If apIdx=0 could be deleted, pips[0] might not contain it anymore.
+ *    The simple mapping "apIdx → pipIdx" would break.
+ * 
+ * 2. Page Reclamation Complexity:
+ *    Freed pages need tracking for reuse.
+ *    Concurrent transactions might still reference freed pages.
+ * 
+ * 3. Shadow File Consistency:
+ *    Shadow pages reference original page indices.
+ *    Shrinking would create orphan shadow entries.
+ * 
+ * Use Cases for DiskArray:
+ * | Structure | Behavior | Why |
+ * |-----------|----------|-----|
+ * | Hash Index slots | Grow only | Entries deleted, pages reused |
+ * | Column data | Grow only | Node deletion marks null |
+ * | Metadata | Grow only | Append-only log style |
+ * 
+ * If Shrinking Were Needed:
+ * 1. Add PIP compaction phase
+ * 2. Track freed page indices for reuse
+ * 3. Update shadow file to handle page removal
+ * 4. Add MVCC support for shrink operations
+ * 
+ * Current Workaround for "Shrinking":
+ * - Mark elements as deleted/null (logical deletion)
+ * - Reclaim space during compaction/checkpoint
+ * - This preserves array structure while freeing logical space
+ * 
+ * Performance Note:
+ * Grow-only design enables O(1) page lookup via simple index arithmetic.
+ * Shrinking support would require O(log n) lookup with page maps.
+ */
 void DiskArrayInternal::update(const Transaction* transaction, uint64_t idx,
     std::span<std::byte> val) {
     std::unique_lock xLck{diskArraySharedMtx};
     hasTransactionalUpdates = true;
     KU_ASSERT(checkOutOfBoundAccess(transaction->getType(), idx));
     auto apCursor = getAPIdxAndOffsetInAP(storageInfo, idx);
-    // TODO: We are currently supporting only DiskArrays that can grow in size and not
-    // those that can shrink in size. That is why we can use
-    // getAPPageIdxNoLock(apIdx, Transaction::WRITE) directly to compute the physical page Idx
-    // because any apIdx is guaranteed to be either in an existing PIP or a new PIP we added, which
-    // getAPPageIdxNoLock will correctly locate: this function simply searches an existing PIP if
-    // apIdx < numAPs stored in "previous" PIP; otherwise one of the newly inserted PIPs stored in
-    // pipPageIdxsOfInsertedPIPs. If within a single transaction we could grow or shrink, then
-    // getAPPageIdxNoLock logic needs to change to give the same guarantee (e.g., an apIdx = 0, may
-    // no longer to be guaranteed to be in pips[0].)
     page_idx_t apPageIdx = getAPPageIdxNoLock(apCursor.pageIdx, transaction->getType());
     updatePage(apPageIdx, false /*isNewPage=*/, [&apCursor, &val](uint8_t* frame) -> void {
         memcpy(frame + apCursor.elemPosInPage, val.data(), val.size());
