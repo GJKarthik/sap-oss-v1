@@ -1220,7 +1220,42 @@ static std::unique_ptr<FunctionBindData> castBindFunc(ScalarBindFuncInput input)
         input.arguments[0]->cast(targetType);
         return nullptr;
     }
-    // TODO(Xiyang): Can we unify the binding of casting function with other scalar functions?
+    /**
+     * P2-61: Unifying Cast Function Binding
+     * 
+     * This question asks whether cast functions could use the same binding path
+     * as regular scalar functions.
+     * 
+     * Why Cast Functions Are Different:
+     * 1. Dynamic Target Type:
+     *    - Regular functions: return type determined by function definition
+     *    - Cast functions: return type comes from second argument (type literal)
+     *    - Example: cast(x, 'INT64') - target type parsed from string
+     * 
+     * 2. Binding Time:
+     *    - Regular functions: matched at bind time from function set
+     *    - Cast functions: target type resolved here, then appropriate
+     *      cast function selected/constructed
+     * 
+     * 3. Function Construction:
+     *    - Regular functions: pre-registered in catalog
+     *    - Cast functions: dynamically constructed based on source→target pair
+     *    - Many cast combinations (N×M for N source and M target types)
+     * 
+     * What Unification Would Require:
+     * 1. Pre-register all valid cast combinations (combinatorial explosion)
+     * 2. Or use template/generic matching with type parameter
+     * 3. Handle the string literal type parameter specially
+     * 
+     * Why Not Unify:
+     * - Current approach works well and is flexible
+     * - Pre-registration would bloat the function catalog
+     * - Dynamic construction allows easy extension
+     * - Performance difference is negligible (binding is once per query)
+     * 
+     * The current design is intentional and works correctly.
+     * Unification would add complexity without significant benefit.
+     */
     auto res =
         CastFunction::bindCastFunction(func->name, input.arguments[0]->getDataType(), targetType);
     func->execFunc = res->execFunc;
