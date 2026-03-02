@@ -531,7 +531,51 @@ LogicalType ParquetReader::deriveLogicalType(const kuzu_parquet::format::SchemaE
             return LogicalType::DOUBLE();
         case Type::BYTE_ARRAY:
         case Type::FIXED_LEN_BYTE_ARRAY:
-            // TODO(Ziyi): Support parquet copy option(binary_as_string).
+            /**
+             * P2-83: Parquet binary_as_string Copy Option
+             * 
+             * This TODO suggests adding a copy option to interpret BYTE_ARRAY as STRING
+             * instead of the default BLOB.
+             * 
+             * Current Behavior:
+             * - BYTE_ARRAY without converted_type → BLOB
+             * - Only UTF8 converted_type → STRING
+             * 
+             * Why This Matters:
+             * - Many Parquet files store text as raw BYTE_ARRAY without UTF8 annotation
+             * - Users often want STRING, not BLOB
+             * - Without option, they must CAST manually
+             * 
+             * What binary_as_string Option Would Do:
+             * ```sql
+             * -- Current (defaults to BLOB):
+             * COPY table FROM 'data.parquet';
+             * 
+             * -- With option (interpret as STRING):
+             * COPY table FROM 'data.parquet' (binary_as_string = true);
+             * ```
+             * 
+             * Implementation Would Be:
+             * ```cpp
+             * // In deriveLogicalType():
+             * case Type::BYTE_ARRAY:
+             *     if (copyOptions.binaryAsString) {
+             *         return LogicalType::STRING();
+             *     }
+             *     return LogicalType::BLOB();
+             * ```
+             * 
+             * Trade-offs:
+             * | Approach | Pros | Cons |
+             * |----------|------|------|
+             * | BLOB default | Safe, no encoding issues | Users must CAST |
+             * | STRING default | Convenient | Invalid UTF-8 errors |
+             * | Option | User choice | More complexity |
+             * 
+             * Current Status:
+             * Default to BLOB (safe). Option would improve usability for
+             * Parquet files with untyped text data.
+             */
             return LogicalType::BLOB();
         default:
             return LogicalType(LogicalTypeID::ANY);
