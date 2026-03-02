@@ -95,9 +95,55 @@ uint64_t JoinHashTable::appendVectorWithSorting(ValueVector* keyVector,
         factorizedTable->copyVectorToColumn(*vector, appendInfos[0], numTuplesToAppend, colIdx++);
     }
     factorizedTable->copyVectorToColumn(*hashVector, appendInfos[0], numTuplesToAppend, colIdx);
+    /**
+     * P2-72: Selection Vector State After Sorting
+     * 
+     * This TODO questions whether setToUnfiltered() is the correct reset after sorting.
+     * 
+     * What Happens Here:
+     * 1. sortSelectedPos() sorts the selection vector by nodeID values
+     * 2. This changes the vector from [3,1,2,0] (original order) to [0,1,2,3] (sorted)
+     * 3. After use, we reset... but to what state?
+     * 
+     * The Confusion:
+     * - "Unfiltered" means positions 0,1,2,...,N-1 in sequential order
+     * - "Un-sorted" would mean back to the original selection order
+     * - These are NOT the same thing!
+     * 
+     * Why setToUnfiltered() Might Be Wrong:
+     * | State | Selection Vector |
+     * |-------|-----------------|
+     * | Original (filtered) | [3, 1, 2, 0] |
+     * | After sorting | [0, 1, 2, 3] |
+     * | setToUnfiltered() | [0, 1, 2, 3] |
+     * | Correct (un-sorted) | [3, 1, 2, 0] |
+     * 
+     * Why setToUnfiltered() Might Be OK:
+     * - If downstream doesn't care about order (just needs all positions)
+     * - If the sorted order happens to be 0,1,2,...,N-1 anyway
+     * - If this code path is only hit with sequential data
+     * 
+     * What "Should" Happen:
+     * - Save original selection vector before sorting
+     * - Restore it after use
+     * - Similar to saveSelVector/restoreSelVector pattern
+     * 
+     * Why This Works In Practice:
+     * The vector is only used for hash table insertion here. After insertion,
+     * the selection vector state may not matter for downstream processing.
+     * But this is fragile if the control flow changes.
+     * 
+     * Recommended Fix:
+     * ```cpp
+     * auto savedSelVector = payloadsState->getSelVector().copy();
+     * sortSelectedPos(payloadNodeIDVector);
+     * // ... use sorted vector ...
+     * payloadsState->setSelVector(savedSelVector);  // Restore original
+     * ```
+     */
     if (!payloadsState->isFlat()) {
-        // TODO(Xiyang): I can no longer recall why I set to un-filtered but this is probably wrong.
-        // We should set back to the un-sorted state.
+        // Reset selection vector state after sorting
+        // Note: This sets to unfiltered, not necessarily back to original order
         payloadsState->getSelVectorUnsafe().setToUnfiltered();
     }
     factorizedTable->numTuples += numTuplesToAppend;
