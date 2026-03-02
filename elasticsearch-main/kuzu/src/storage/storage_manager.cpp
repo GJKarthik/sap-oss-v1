@@ -1,6 +1,75 @@
 #include "storage/storage_manager.h"
 
 /**
+ * P3-170: Storage Manager - Central Storage Coordination
+ * 
+ * Extended Documentation (see P2-130 for base documentation)
+ * 
+ * Database Lifecycle:
+ * ```
+ * 1. Construction:
+ *    StorageManager(databasePath, readOnly, ...)
+ *      ├── Create WAL
+ *      ├── Create ShadowFile
+ *      └── Register PrimaryKeyIndex
+ * 
+ * 2. Initialization:
+ *    initDataFileHandle()
+ *      ├── In-memory: Create memory-backed file
+ *      └── Persistent: Create/open file on disk
+ *            └── Write initial database header if new
+ * 
+ * 3. Recovery:
+ *    recover()
+ *      └── WALReplayer::replay()
+ *            └── Apply WAL entries to restore state
+ * 
+ * 4. Normal Operation:
+ *    createTable(), getTable(), etc.
+ * 
+ * 5. Checkpoint:
+ *    checkpoint() → finalizeCheckpoint()
+ *      └── Or rollbackCheckpoint() on failure
+ * ```
+ * 
+ * Database Header:
+ * - Contains database UUID
+ * - First page of data file
+ * - Initialized lazily on first access
+ * - Persistent across restarts
+ * 
+ * Index System:
+ * | Method | Description |
+ * |--------|-------------|
+ * | registerIndexType() | Add index type |
+ * | getIndexType() | Lookup by name |
+ * | Default: PrimaryKeyIndex |
+ * 
+ * Storage Access Patterns:
+ * ```cpp
+ * // Get storage manager
+ * auto* sm = StorageManager::Get(clientContext);
+ * 
+ * // Get table
+ * auto* table = sm->getTable(tableID);
+ * 
+ * // Create table
+ * sm->createTable(catalogEntry);
+ * ```
+ * 
+ * In-Memory vs Persistent:
+ * | Mode | databasePath | File Handle |
+ * |------|--------------|-------------|
+ * | In-Memory | ":memory:" | Memory-backed |
+ * | Persistent | "/path/db" | Disk file |
+ * 
+ * Checkpoint Process:
+ * 1. checkpoint(): Flush all tables to pages
+ * 2. finalizeCheckpoint(): Commit page changes
+ * 3. Cleanup: reclaimDroppedTables()
+ * 
+ * ====================================
+ * 
  * P2-130: Storage Manager - Central Storage Coordination
  * 
  * Purpose:
