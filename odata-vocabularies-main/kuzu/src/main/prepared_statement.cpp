@@ -1,5 +1,73 @@
 #include "main/prepared_statement.h"
 
+/**
+ * P3-156: PreparedStatement - Cached Query Plans
+ * 
+ * Purpose:
+ * Represents a prepared (compiled) query statement. Stores parameter metadata
+ * and summary information. Works with CachedPreparedStatement for plan reuse.
+ * 
+ * Architecture:
+ * ```
+ * PreparedStatement                 CachedPreparedStatement
+ *   ├── success: bool                 ├── parsedStatement: shared_ptr
+ *   ├── errMsg: string                ├── columns: vector<Expression*>
+ *   ├── readOnly: bool                ├── logicalPlan: unique_ptr
+ *   ├── parameterMap                  └── useInternalCatalogEntry
+ *   ├── unknownParameters
+ *   └── preparedSummary
+ * ```
+ * 
+ * Prepared Statement Flow:
+ * ```
+ * conn.prepare("MATCH (n) WHERE n.id = $id RETURN n")
+ *   │
+ *   ├── Parse query
+ *   ├── Bind (with parameter placeholders)
+ *   ├── Create logical plan
+ *   └── Return PreparedStatement
+ * 
+ * conn.executeWithParams(stmt, {{"id", Value(42)}})
+ *   │
+ *   ├── Rebind parameters with actual values
+ *   ├── Execute logical plan
+ *   └── Return QueryResult
+ * ```
+ * 
+ * Parameter Types:
+ * - Known: Parameters with values provided during prepare
+ * - Unknown: Parameters to be bound during execute
+ * 
+ * Key Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | isSuccess() | Check if prepare succeeded |
+ * | getErrorMessage() | Get error if failed |
+ * | isReadOnly() | Check if read-only query |
+ * | getStatementType() | Get statement type |
+ * | getKnownParameters() | Get parameters with values |
+ * | getUnknownParameters() | Get unbound parameters |
+ * | updateParameter() | Update existing param value |
+ * | addParameter() | Add new parameter value |
+ * 
+ * Validation:
+ * - Dataframe pointers must match between prepare and execute
+ * - Prevents subtle bugs from different dataframe references
+ * 
+ * CachedPreparedStatement:
+ * - Stores parsed statement and logical plan
+ * - Managed by cachedPreparedStatementManager in ClientContext
+ * - Enables plan reuse across multiple executions
+ * 
+ * Usage:
+ * ```cpp
+ * auto stmt = conn.prepare("MATCH (n:Person {id: $id}) RETURN n.name");
+ * auto result = conn.executeWithParams(stmt.get(), {{"id", Value(5)}});
+ * // Can execute multiple times with different parameters
+ * result = conn.executeWithParams(stmt.get(), {{"id", Value(10)}});
+ * ```
+ */
+
 #include "binder/expression/expression.h" // IWYU pragma: keep
 #include "common/exception/binder.h"
 #include "common/types/value/value.h"
