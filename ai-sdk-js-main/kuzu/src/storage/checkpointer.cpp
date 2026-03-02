@@ -1,6 +1,60 @@
 #include "storage/checkpointer.h"
 
 /**
+ * P3-176: Checkpointer - Extended Documentation
+ * 
+ * Additional Details (see P2-129 for base documentation)
+ * 
+ * Checkpoint Trigger Points:
+ * | Trigger | Condition |
+ * |---------|-----------|
+ * | Manual | CHECKPOINT command |
+ * | Auto | WAL size > threshold |
+ * | Shutdown | Database close |
+ * 
+ * Auto-Checkpoint Algorithm:
+ * ```cpp
+ * if (localWAL.size + wal.fileSize > checkpointThreshold) {
+ *     // Trigger checkpoint after current transaction commits
+ * }
+ * ```
+ * 
+ * Database Header Page Layout:
+ * ```
+ * Page 0 (DatabaseHeader):
+ *   ├── databaseID: ku_uuid_t
+ *   ├── catalogPageRange: {start, count}
+ *   └── metadataPageRange: {start, count}
+ * ```
+ * 
+ * Page Allocation During Checkpoint:
+ * 1. Catalog serialization allocates pages
+ * 2. Metadata serialization pre-allocates for PageManager
+ * 3. PageManager tracks its own serialization pages
+ * 4. Freed pages reclaimed after finalization
+ * 
+ * Rollback Handling:
+ * ```
+ * On checkpoint failure:
+ *   rollback()
+ *     └── rollbackCheckpoint()
+ *           └── Restore freed page tracking
+ * ```
+ * 
+ * Buffer Manager Interaction:
+ * - removeEvictedCandidates() cleans eviction queue
+ * - Prevents duplicate entries from freed/reused pages
+ * - Called after finalizeCheckpoint()
+ * 
+ * Version Reset:
+ * After successful checkpoint:
+ * - Catalog version reset
+ * - PageManager version reset  
+ * - WAL cleared
+ * - Shadow file removed
+ * 
+ * ====================================
+ * 
  * P2-129: Checkpointer - Database Checkpoint Management
  * 
  * Purpose:
