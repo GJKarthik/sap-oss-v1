@@ -41,12 +41,47 @@ std::unique_ptr<ColumnChunkData> StructColumn::flushChunkData(const ColumnChunkD
     return flushedChunk;
 }
 
+/**
+ * P2-68: Struct Column Child Size Synchronization
+ * 
+ * This TODO notes that fixing child sizes after parent scan shouldn't be necessary.
+ * 
+ * The Problem:
+ * Column::scanSegment() adjusts chunk size to match scanned values. For struct columns,
+ * this affects all child chunks, but children need their OWN scan to determine correct size.
+ * 
+ * Why Size Fix Is Currently Needed:
+ * 1. Parent scan modifies resultChunk->numValues
+ * 2. Child chunks inherit this size change
+ * 3. But children haven't been scanned yet
+ * 4. So we save size, let parent scan, restore size, then scan children
+ * 
+ * Why This Is Awkward:
+ * - Size should be set AFTER scanning, not during
+ * - Each column should manage its own chunk size
+ * - Coupling between parent and child scan order
+ * 
+ * Ideal Solution:
+ * - Separate "scan" from "resize" operations
+ * - Each column writes to its own size field
+ * - Or: children scan first, parent aggregates
+ * 
+ * Current Workaround:
+ * - Save sizeBeforeScan
+ * - Let parent Column::scanSegment run (modifies chunk)
+ * - For each child: restore size, then scan child
+ * - This ensures children start with correct pre-scan size
+ * 
+ * Performance Impact:
+ * - Minimal: just reading/writing numValues field
+ * - Alternative (scan children first) would require 2 passes
+ * 
+ * Similar Issue: list_column.cpp has the same pattern
+ * (referenced in comment as "see note in list_column.cpp")
+ */
 void StructColumn::scanSegment(const SegmentState& state, ColumnChunkData* resultChunk,
     common::offset_t startOffsetInSegment, common::row_idx_t numValuesToScan) const {
     KU_ASSERT(resultChunk->getDataType().getPhysicalType() == PhysicalTypeID::STRUCT);
-    // Fix size since Column::scanSegment will adjust the size of the child chunks to be equal to
-    // the size of the main one (see note in list_column.cpp)
-    // TODO(bmwinger): eventually this shouldn't be necessary
     auto sizeBeforeScan = resultChunk->getNumValues();
     Column::scanSegment(state, resultChunk, startOffsetInSegment, numValuesToScan);
     auto& structColumnChunk = resultChunk->cast<StructChunkData>();
