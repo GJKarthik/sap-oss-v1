@@ -1,5 +1,93 @@
 #include "storage/wal/wal.h"
 
+/**
+ * P3-174: WAL (Write-Ahead Log) - Durability and Recovery
+ * 
+ * Purpose:
+ * Implements write-ahead logging for transaction durability. All changes
+ * are logged to WAL before being applied, enabling crash recovery.
+ * 
+ * Architecture:
+ * ```
+ * WAL
+ *   ├── walPath: string             // Path to .wal file
+ *   ├── inMemory: bool              // Skip logging if in-memory DB
+ *   ├── readOnly: bool              // Disable logging if read-only
+ *   ├── enableChecksums: bool       // Enable checksum verification
+ *   ├── fileInfo: unique_ptr<FileInfo>
+ *   ├── serializer: unique_ptr<Serializer>
+ *   ├── vfs: VirtualFileSystem*
+ *   └── mtx: mutex                  // Thread safety
+ * ```
+ * 
+ * WAL Record Types:
+ * | Type | Description |
+ * |------|-------------|
+ * | CHECKPOINT | Marks checkpoint completion |
+ * | COMMIT | Transaction commit record |
+ * | PAGE_UPDATE | Page modification |
+ * | CREATE_TABLE | DDL for new table |
+ * | DROP_TABLE | DDL for table removal |
+ * | LOAD_EXTENSION | Extension loading |
+ * 
+ * Key Operations:
+ * 
+ * 1. logCommittedWAL(localWAL, context):
+ *    - Flushes local WAL to global WAL file
+ *    - LocalWAL buffers transaction changes
+ *    - Thread-safe with mutex lock
+ * 
+ * 2. logAndFlushCheckpoint(context):
+ *    - Writes checkpoint record
+ *    - Marks safe recovery point
+ *    - Syncs WAL to disk
+ * 
+ * 3. clear():
+ *    - Clears WAL buffer
+ *    - After successful checkpoint
+ * 
+ * 4. reset():
+ *    - Removes WAL file completely
+ *    - Full WAL cleanup
+ * 
+ * WAL File Format:
+ * ```
+ * Header:
+ *   - Database UUID
+ *   - enableChecksums flag
+ * 
+ * Records (sequence):
+ *   [ObjectBegin][Record Data][ObjectEnd]
+ *   ...
+ * ```
+ * 
+ * Checksum Support:
+ * - Optional checksums via ChecksumWriter
+ * - Wraps BufferedFileWriter
+ * - Detects corruption during replay
+ * 
+ * Recovery Flow:
+ * ```
+ * Database Start
+ *   │
+ *   └── WALReplayer::replay()
+ *         ├── Read header, verify DB UUID
+ *         ├── For each record:
+ *         │     └── Apply changes
+ *         └── Stop at CHECKPOINT or EOF
+ * ```
+ * 
+ * Thread Safety:
+ * - Mutex protects all WAL operations
+ * - One transaction commits at a time
+ * - Local WAL per transaction for isolation
+ * 
+ * In-Memory Databases:
+ * - WAL logging is skipped
+ * - No durability guarantees
+ * - Faster operation
+ */
+
 #include "common/file_system/file_info.h"
 #include "common/file_system/virtual_file_system.h"
 #include "common/serializer/buffered_file.h"
