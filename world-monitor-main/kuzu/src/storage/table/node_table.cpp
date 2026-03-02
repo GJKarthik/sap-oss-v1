@@ -1,6 +1,82 @@
 #include "storage/table/node_table.h"
 
 /**
+ * P3-179: NodeTable - Extended Documentation
+ * 
+ * Additional Details (see P2-113 for base documentation)
+ * 
+ * Visibility Check Chain:
+ * ```
+ * isVisible(transaction, offset)
+ *   └── nodeGroup->isVisible(transaction, offsetInGroup)
+ *         └── VersionInfo check
+ *               ├── If insertedBeforeCommit: visible
+ *               ├── If deletedBeforeCommit: not visible
+ *               └── Use transaction startTS for MVCC
+ * ```
+ * 
+ * Scan Sources:
+ * | Source | Description | NodeGroup Location |
+ * |--------|-------------|-------------------|
+ * | COMMITTED | Main storage | nodeGroups |
+ * | UNCOMMITTED | Transaction-local | LocalNodeTable |
+ * | NONE | Empty scan | N/A |
+ * 
+ * Insert Flow Detail:
+ * ```
+ * insert(transaction, state)
+ *   │
+ *   ├── validatePkNotExists() → check PK uniqueness
+ *   │     └── getPKIndex()->lookup()
+ *   │
+ *   ├── localTable->insert() → store in local
+ *   │     └── LocalNodeTable allocates uncommitted offset
+ *   │
+ *   ├── For each index:
+ *   │     └── index->insert()
+ *   │
+ *   └── If shouldLogToWAL:
+ *         └── wal.logTableInsertion()
+ * ```
+ * 
+ * Delete Flow Detail:
+ * ```
+ * delete_(transaction, state)
+ *   │
+ *   ├── For each index:
+ *   │     └── index->delete_()
+ *   │
+ *   ├── If uncommitted:
+ *   │     └── localTable->delete_()
+ *   │
+ *   └── Else:
+ *         ├── nodeGroup->delete_(rowIdxInGroup)
+ *         └── transaction->pushDeleteInfo() → undo buffer
+ * ```
+ * 
+ * Commit Flow Detail:
+ * ```
+ * commit(context, tableEntry, localTable)
+ *   │
+ *   ├── 1. nodeGroups->append(localNodeTable)
+ *   │
+ *   ├── 2. For deleted in local:
+ *   │       └── nodeGroups->delete_() + pushDeleteInfo
+ *   │
+ *   ├── 3. For each index needing commit:
+ *   │       └── scanIndexColumns() + commitInsert()
+ *   │
+ *   └── 4. localTable->clear()
+ * ```
+ * 
+ * Index Management Detail:
+ * | Index Type | Insert | Update | Delete |
+ * |------------|--------|--------|--------|
+ * | PK (Hash) | Required | Forbidden | Always |
+ * | Secondary | Optional | If column affected | Always |
+ * 
+ * ====================================
+ * 
  * P2-113: Node Table Storage Architecture - Complete Node CRUD Implementation
  * 
  * Purpose:
