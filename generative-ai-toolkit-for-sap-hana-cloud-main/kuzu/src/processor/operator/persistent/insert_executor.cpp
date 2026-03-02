@@ -62,7 +62,56 @@ static void writeColumnVector(ValueVector* columnVector, const ValueVector* data
     }
 }
 
-// TODO(Guodong/Xiyang): think we can reference data vector instead of copy.
+/**
+ * P2-82: Reference Data Vector Instead of Copy
+ * 
+ * This TODO suggests that we might be able to reference the data vector
+ * instead of copying values, which would improve INSERT performance.
+ * 
+ * Current Approach:
+ * - For each column, copy data from dataVector to columnVector
+ * - Uses copyFromVectorData() which does a deep copy
+ * - This ensures data independence but has overhead
+ * 
+ * Why Copy Is Currently Used:
+ * - columnVectors may have different lifetimes than dataVectors
+ * - dataVectors come from evaluators that may be re-evaluated
+ * - Results may be projected to different result sets
+ * - Null state is managed separately per vector
+ * 
+ * What "Reference Instead of Copy" Would Look Like:
+ * ```cpp
+ * // Instead of copying:
+ * columnVector->copyFromVectorData(columnPos, dataVector, dataPos);
+ * 
+ * // Reference (if safe):
+ * columnVector->setReference(dataVector, dataPos);
+ * // Or: columnVector = dataVector;  // Share underlying buffer
+ * ```
+ * 
+ * When Reference Would Be Safe:
+ * | Condition | Safe to Reference? |
+ * |-----------|-------------------|
+ * | Same result set | Yes |
+ * | Different lifetimes | No |
+ * | Vector will be mutated | No |
+ * | Single-value flat state | Maybe |
+ * 
+ * Performance Impact:
+ * - Copy: O(data size) per value
+ * - Reference: O(1) - just pointer assignment
+ * - For STRING/LIST types, copy is especially expensive
+ * 
+ * Challenges:
+ * - Ownership and lifetime management
+ * - Null buffer synchronization
+ * - Selection vector alignment
+ * - Thread safety if referenced across pipelines
+ * 
+ * Current Status:
+ * Copy is safe default. Reference optimization would require careful
+ * analysis of vector lifetimes in INSERT query plans.
+ */
 static void writeColumnVectors(const std::vector<ValueVector*>& columnVectors,
     const std::vector<ValueVector*>& dataVectors) {
     KU_ASSERT(columnVectors.size() == dataVectors.size());
