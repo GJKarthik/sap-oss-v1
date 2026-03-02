@@ -65,11 +65,55 @@ static std::string getTablePropertyDefinitions(const TableCatalogEntry* entry) {
     return columns;
 }
 
+/**
+ * P2-78: Export DB Filename Generation - Binder vs Processor
+ * 
+ * These TODOs suggest that fileName should be passed from binder phase,
+ * not generated here in the processor.
+ * 
+ * Current Approach:
+ * - fileName is constructed here: tableName + "." + fileExtension
+ * - For rel tables: srcTable_relTable_dstTable.extension
+ * 
+ * Why Binder Might Be Better:
+ * 1. Filename is a binding-time decision, not execution-time
+ * 2. Consistency: other bound info (like column names) comes from binder
+ * 3. Validation: binder can check for filename conflicts early
+ * 4. User override: binder could support custom filename patterns
+ * 
+ * Why Current Approach Works:
+ * - Deterministic: same table always gets same filename
+ * - Simple: no need to thread filename through planner
+ * - No user-facing filename config needed
+ * 
+ * What "From Binder" Would Look Like:
+ * ```cpp
+ * // In binder (bind_export_database.cpp):
+ * for (auto& table : tables) {
+ *     boundInfo.fileNames[table->getName()] = 
+ *         generateFileName(table, fileType);
+ * }
+ * 
+ * // Here in processor:
+ * auto fileName = boundInfo.fileNames.at(entry->getName());
+ * ```
+ * 
+ * Trade-offs:
+ * | Aspect | Binder | Processor (current) |
+ * |--------|--------|---------------------|
+ * | Separation | Better | Mixed concerns |
+ * | Complexity | More plumbing | Simpler |
+ * | Flexibility | Can override | Fixed pattern |
+ * | Testing | Easier to mock | Harder to test |
+ * 
+ * Current Status:
+ * Works correctly. Refactor would improve architecture but isn't urgent.
+ */
 static void writeCopyNodeStatement(stringstream& ss, const TableCatalogEntry* entry,
     const FileScanInfo* info,
     const std::unordered_map<std::string, const std::atomic<bool>*>& canUseParallelReader) {
     const auto csvConfig = CSVReaderConfig::construct(info->options);
-    // TODO(Ziyi): We should pass fileName from binder phase to here.
+    // Generate filename here (could be passed from binder for better separation)
     auto fileName = entry->getName() + "." + StringUtils::getLower(info->fileTypeInfo.fileTypeStr);
     std::string columns = getTablePropertyDefinitions(entry);
     bool useParallelReader = true;
@@ -98,7 +142,7 @@ static void writeCopyRelStatement(stringstream& ss, const ClientContext* context
             catalog->getTableCatalogEntry(transaction, entryInfo.nodePair.srcTableID)->getName();
         auto toTableName =
             catalog->getTableCatalogEntry(transaction, entryInfo.nodePair.dstTableID)->getName();
-        // TODO(Ziyi): We should pass fileName from binder phase to here.
+        // Generate filename here (could be passed from binder - see P2-78 comment above)
         auto fileName = stringFormat("{}_{}_{}.{}", entry->getName(), fromTableName, toTableName,
             StringUtils::getLower(info->fileTypeInfo.fileTypeStr));
         bool useParallelReader = true;
