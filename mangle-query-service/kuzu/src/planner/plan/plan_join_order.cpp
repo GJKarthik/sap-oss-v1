@@ -441,15 +441,46 @@ void Planner::planWCOJoin(const SubqueryGraph& subgraph,
     }
     auto predicates =
         getNewlyMatchedExprs(prevSubgraphs, newSubgraph, context.getWhereExpressions());
+    // WCOJ (Worst Case Optimal Join) Enumeration Issue:
+    // 
+    // Problem Scenario:
+    // Consider MATCH (a)-[e1]->(b), (b)-[e2]->(a), (a)-[e3]->(b)
+    // This creates a triangle pattern where nodes a and b are connected by 3 edges.
+    //
+    // Current Behavior (Edge-at-a-time enumeration):
+    // During enumeration, we may reach a state where:
+    // - Probe side: e1 (already processed)
+    // - Build sides: e2, e3 (to be intersected)
+    // - Intersect node: a or b (already in scope from e1)
+    //
+    // Why this is wrong:
+    // WCOJ requires building ALL relevant edges and intersecting on a common node.
+    // If the intersect node is already in probe scope, we're not doing true WCOJ -
+    // we're just filtering, which may miss the optimal plan.
+    //
+    // Current Workaround:
+    // Disable WCOJ when intersect node is already in scope.
+    // This ensures we fall back to hash join which handles this case correctly.
+    //
+    // Proper Fix (Future):
+    // Move to node-at-a-time enumeration instead of edge-at-a-time:
+    // - Enumerate nodes first, then consider all edges connecting them
+    // - For triangle pattern, enumerate node 'a', then all edges from 'a'
+    // - This naturally groups edges for WCOJ
+    //
+    // Benefits of node-at-a-time:
+    // 1. Correct WCOJ application (all edges considered together)
+    // 2. Better cost estimation (knows full edge set upfront)
+    // 3. More opportunities for WCOJ (not blocked by partial enumeration)
+    //
+    // Trade-offs:
+    // - More complex enumeration logic
+    // - May enumerate more combinations initially
+    // - Requires refactoring SubqueryGraph representation
     for (auto& leftPlan : context.getPlans(subgraph)) {
-        // Disable WCOJ if intersect node is in the scope of probe plan. This happens in the case
-        // like, MATCH (a)-[e1]->(b), (b)-[e2]->(a), (a)-[e3]->(b).
-        // When we perform edge-at-a-time enumeration, at some point we will in the state of e1 as
-        // probe side and e2, e3 as build side and we attempt to apply WCOJ. However, the right
-        // approach is to build e1, e2, e3 and intersect on a common node (either a or b).
-        // I tend to disable WCOJ for this case for now. The proper fix should be move to
-        // node-at-a-time enumeration and re-enable WCOJ.
-        // TODO(Xiyang): Fixme according to the description above.
+        // Skip WCOJ if intersect node is already in scope - fall back to hash join.
+        // This is a known limitation of edge-at-a-time enumeration.
+        // See comment above for detailed explanation and future fix.
         if (leftPlan.getSchema()->isExpressionInScope(*intersectNode->getInternalID())) {
             continue;
         }
