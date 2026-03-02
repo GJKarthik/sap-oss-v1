@@ -1,6 +1,94 @@
 #include "storage/table/struct_chunk_data.h"
 
 /**
+ * P3-213: StructChunkData - Extended Implementation Details
+ * 
+ * Additional Details (see P2-124 for architecture overview)
+ * 
+ * Constructor Variants:
+ * ```
+ * StructChunkData(mm, dataType, capacity, enableCompression, residencyState):
+ *   // New chunk from capacity
+ *   FOR each fieldType in StructType::getFieldTypes(dataType):
+ *     childChunks[i] = ColumnChunkFactory::create(fieldType, capacity)
+ * 
+ * StructChunkData(mm, dataType, enableCompression, metadata):
+ *   // From metadata (deserialization)
+ *   childChunks initialized empty, filled during deserialize()
+ * ```
+ * 
+ * finalize() Recursion:
+ * ```
+ * finalize():
+ *   FOR each childChunk:
+ *     childChunk.finalize()  // Important for nested strings
+ * ```
+ * 
+ * Memory Usage Calculation:
+ * ```
+ * getEstimatedMemoryUsage():
+ *   total = base.getEstimatedMemoryUsage()
+ *   FOR each childChunk:
+ *     total += childChunk.getEstimatedMemoryUsage()
+ *   RETURN total
+ * ```
+ * 
+ * append() from ColumnChunkData:
+ * ```
+ * append(other, startPos, count):
+ *   nullData.append(other.nullData, startPos, count)
+ *   FOR i in 0..childChunks.size():
+ *     childChunks[i].append(other.childChunks[i], startPos, count)
+ *   numValues += count
+ * ```
+ * 
+ * append() from ValueVector:
+ * ```
+ * append(vector, selView):
+ *   FOR i in 0..numFields:
+ *     childChunks[i].append(StructVector::getFieldVector(i), selView)
+ *   FOR i in 0..selView.size():
+ *     nullData.setNull(numValues + i, vector.isNull(selView[i]))
+ *   numValues += selView.size()
+ * ```
+ * 
+ * scan() Implementation:
+ * ```
+ * scan(output, offset, length, posInOutput):
+ *   nullData.scan(output, offset, length, posInOutput)
+ *   FOR i in 0..numFields:
+ *     childChunks[i].scan(output.fieldVector[i], offset, length)
+ * ```
+ * 
+ * write() Single Value:
+ * ```
+ * write(vector, offsetInVector, offsetInChunk):
+ *   nullData.setNull(offsetInChunk, vector.isNull(offsetInVector))
+ *   fields = StructVector::getFieldVectors(vector)
+ *   FOR i in 0..fields.size():
+ *     childChunks[i].write(fields[i], offsetInVector, offsetInChunk)
+ *   numValues = max(numValues, offsetInChunk + 1)
+ * ```
+ * 
+ * write() Batch:
+ * ```
+ * write(srcChunk, srcOffset, dstOffset, numValues):
+ *   nullData.write(src.nullData, srcOffset, dstOffset, numValues)
+ *   FOR i in 0..childChunks.size():
+ *     childChunks[i].write(src.childChunks[i], srcOffset, dstOffset, numValues)
+ * ```
+ * 
+ * Sanity Check:
+ * ```
+ * numValuesSanityCheck():
+ *   FOR each child:
+ *     IF child.numValues != this.numValues: RETURN false
+ *     IF !child.numValuesSanityCheck(): RETURN false
+ *   RETURN nullData.numValues == numValues
+ * ```
+ * 
+ * ====================================
+ * 
  * P2-124: Struct Chunk Data - Nested Struct Type Storage
  * 
  * Purpose:
