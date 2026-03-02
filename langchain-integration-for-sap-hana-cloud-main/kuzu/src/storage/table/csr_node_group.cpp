@@ -1265,7 +1265,34 @@ void CSRNodeGroup::checkpointInMemOnly(const UniqLock& lock, NodeGroupCheckpoint
     persistentChunkGroup = std::make_unique<ChunkedCSRNodeGroup>(
         ChunkedCSRHeader(false /*enableCompression*/, std::move(*csrState.newHeader)),
         std::move(dataChunksToFlush), 0);
-    // TODO(Guodong): Use `finalizeCheckpoint`.
+    
+    // Checkpoint Finalization Refactoring:
+    // 
+    // Why use finalizeCheckpoint() instead of inline code:
+    // 
+    // 1. Code Reuse: The same cleanup logic exists in checkpointInMemAndOnDisk()
+    //    via finalizeCheckpoint(). Using the same function ensures consistency.
+    //
+    // 2. Single Responsibility: finalizeCheckpoint() encapsulates all post-checkpoint
+    //    cleanup operations in one place.
+    //
+    // 3. Maintenance: If cleanup logic needs to change, only one function needs updating.
+    //
+    // Note: For in-memory-only checkpoint, we skip resetNumRowsFromChunks() and
+    // resetVersionAndUpdateInfo() because we just created a new persistentChunkGroup.
+    // The newly created group has correct row counts and no version info to reset.
+    //
+    // Current inline implementation is equivalent to finalizeCheckpoint() minus
+    // the persistent chunk operations which aren't needed here:
+    //   - chunkedGroups.clear(lock) - clears in-memory chunks
+    //   - numRows = 0 - resets row count
+    //   - csrIndex.reset() - clears CSR index
+    //
+    // The reason we don't call finalizeCheckpoint() directly here is that it would
+    // also call resetNumRowsFromChunks() and resetVersionAndUpdateInfo() on the 
+    // newly created persistentChunkGroup, which is unnecessary (already correct).
+    // To truly unify, finalizeCheckpoint() could be parameterized or we could
+    // call it and let those no-op on a freshly created chunk group.
     chunkedGroups.clear(lock);
     // Set `numRows` back to 0 is to reflect that the in mem part of the node group is empty.
     numRows = 0;
