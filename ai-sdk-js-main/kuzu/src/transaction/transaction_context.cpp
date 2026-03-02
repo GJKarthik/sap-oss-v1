@@ -1,5 +1,92 @@
 #include "transaction/transaction_context.h"
 
+/**
+ * P3-138: Transaction Context - Per-Client Transaction State
+ * 
+ * Purpose:
+ * Manages transaction state for each client connection. Provides the interface
+ * between user-facing transaction commands (BEGIN, COMMIT, ROLLBACK) and the
+ * underlying TransactionManager.
+ * 
+ * Architecture:
+ * ```
+ * TransactionContext (per ClientContext)
+ *   ├── clientContext: ClientContext&   // Owning client
+ *   ├── mode: TransactionMode           // AUTO or MANUAL
+ *   ├── activeTransaction: Transaction* // Current transaction
+ *   └── mtx: mutex                       // Thread safety
+ * 
+ * Owned by ClientContext → 1:1 relationship
+ * ```
+ * 
+ * Transaction Modes:
+ * 
+ * | Mode | Description |
+ * |------|-------------|
+ * | AUTO | Transaction per statement, auto-commit |
+ * | MANUAL | User-controlled BEGIN/COMMIT/ROLLBACK |
+ * 
+ * Lifecycle (MANUAL mode):
+ * ```
+ * BEGIN READ/WRITE
+ *   │
+ *   ├── beginReadTransaction()  → READ_ONLY tx
+ *   └── beginWriteTransaction() → WRITE tx
+ *   │
+ * Execute statements...
+ *   │
+ * COMMIT/ROLLBACK
+ *   ├── commit()   → TransactionManager::commit()
+ *   └── rollback() → TransactionManager::rollback()
+ *   │
+ * clearTransaction() → Reset to AUTO mode
+ * ```
+ * 
+ * Lifecycle (AUTO mode):
+ * ```
+ * Statement arrives
+ *   │
+ *   └── beginAutoTransaction(readOnlyStatement)
+ *         ├── READ_ONLY if readOnlyStatement
+ *         └── WRITE if write statement
+ *   │
+ * Execute statement
+ *   │
+ * Auto-commit at end
+ * ```
+ * 
+ * Key Operations:
+ * 
+ * 1. beginReadTransaction():
+ *    - Sets mode = MANUAL
+ *    - Creates READ_ONLY transaction
+ * 
+ * 2. beginWriteTransaction():
+ *    - Sets mode = MANUAL
+ *    - Creates WRITE transaction
+ * 
+ * 3. beginAutoTransaction(readOnly):
+ *    - Used for single-statement queries
+ *    - Creates appropriate transaction type
+ * 
+ * 4. validateManualTransaction(readOnly):
+ *    - Ensures write statements in write transactions
+ *    - Throws if write in read-only transaction
+ * 
+ * 5. commit/rollback():
+ *    - Delegates to TransactionManager
+ *    - Calls clearTransaction() after
+ * 
+ * Static Access:
+ * ```cpp
+ * TransactionContext* ctx = TransactionContext::Get(clientContext);
+ * ```
+ * 
+ * Thread Safety:
+ * - Mutex protects state transitions
+ * - One active transaction per context
+ */
+
 #include "common/exception/transaction_manager.h"
 #include "main/client_context.h"
 #include "main/database.h"
