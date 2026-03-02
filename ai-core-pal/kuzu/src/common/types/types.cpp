@@ -1,5 +1,84 @@
 #include "common/types/types.h"
 
+/**
+ * P3-167: Types - Kuzu Type System
+ * 
+ * Purpose:
+ * Defines and implements Kuzu's comprehensive type system. Handles logical
+ * types, physical representations, type conversions, and nested types.
+ * 
+ * Type Hierarchy:
+ * ```
+ * LogicalType
+ *   ├── typeID: LogicalTypeID      // Semantic type identity
+ *   ├── physicalType: PhysicalTypeID // Storage representation
+ *   ├── extraTypeInfo              // Additional type info (nested)
+ *   └── category: TypeCategory     // INTERNAL or UDT
+ * ```
+ * 
+ * LogicalTypeID Categories:
+ * | Category | Types |
+ * |----------|-------|
+ * | Numeric | INT8-INT128, UINT8-UINT128, FLOAT, DOUBLE, DECIMAL |
+ * | Temporal | DATE, TIMESTAMP, TIMESTAMP_*, INTERVAL |
+ * | String | STRING, BLOB, UUID |
+ * | Composite | LIST, ARRAY, STRUCT, MAP, UNION |
+ * | Graph | NODE, REL, RECURSIVE_REL, INTERNAL_ID |
+ * | Special | ANY, SERIAL, POINTER |
+ * 
+ * Physical Type Mapping:
+ * | LogicalTypeID | PhysicalTypeID |
+ * |---------------|----------------|
+ * | INT64, TIMESTAMP, SERIAL | INT64 |
+ * | INT32, DATE | INT32 |
+ * | STRING, BLOB | STRING |
+ * | LIST, MAP | LIST |
+ * | STRUCT, NODE, REL, UNION | STRUCT |
+ * | DECIMAL | INT16/INT32/INT64/INT128 (by precision) |
+ * 
+ * Nested Type Info Classes:
+ * | Type | ExtraTypeInfo |
+ * |------|---------------|
+ * | LIST | ListTypeInfo (childType) |
+ * | ARRAY | ArrayTypeInfo (childType, numElements) |
+ * | STRUCT | StructTypeInfo (fields) |
+ * | DECIMAL | DecimalTypeInfo (precision, scale) |
+ * | UDT | UDTTypeInfo (typeName) |
+ * 
+ * Key Features:
+ * 
+ * 1. Type Parsing:
+ *    convertFromString("INT64[]") → LIST(INT64)
+ *    convertFromString("STRUCT(a INT, b STRING)") → STRUCT
+ * 
+ * 2. Type Combination:
+ *    tryGetMaxLogicalType(INT32, INT64) → INT64
+ *    combineTypes(LIST(INT32), LIST(INT64)) → LIST(INT64)
+ * 
+ * 3. Type Utilities:
+ *    isNumerical(), isIntegral(), isNested(), isTimestamp()
+ * 
+ * 4. Serialization:
+ *    serialize()/deserialize() for persistence
+ * 
+ * Physical Size Mapping:
+ * | PhysicalTypeID | Size |
+ * |----------------|------|
+ * | BOOL | 1 |
+ * | INT8/UINT8 | 1 |
+ * | INT16/UINT16 | 2 |
+ * | INT32/UINT32 | 4 |
+ * | INT64/UINT64 | 8 |
+ * | INT128/UINT128 | 16 |
+ * 
+ * Type Helpers:
+ * - ListType::getChildType()
+ * - ArrayType::getNumElements()
+ * - StructType::getFieldTypes()
+ * - MapType::getKeyType()/getValueType()
+ * - DecimalType::getPrecision()/getScale()
+ */
+
 #include <set>
 
 #include "catalog/catalog.h"
