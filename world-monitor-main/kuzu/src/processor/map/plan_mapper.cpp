@@ -1,5 +1,74 @@
 #include "processor/plan_mapper.h"
 
+/**
+ * P3-165: PlanMapper - Logical to Physical Plan Mapping
+ * 
+ * Purpose:
+ * Transforms logical query plans into physical execution plans. Maps each
+ * LogicalOperator to corresponding PhysicalOperator(s).
+ * 
+ * Architecture:
+ * ```
+ * LogicalPlan
+ *   │
+ *   └── PlanMapper::getPhysicalPlan()
+ *         │
+ *         ├── mapOperator() - Recursive mapping
+ *         │     └── Dispatch by LogicalOperatorType
+ *         │
+ *         ├── Create ResultCollector (if needed)
+ *         │     ├── Regular: createResultCollector()
+ *         │     └── Arrow: createArrowResultCollector()
+ *         │
+ *         └── Return PhysicalPlan
+ * ```
+ * 
+ * Operator Type Dispatch (mapOperator):
+ * | LogicalOperatorType | Map Method |
+ * |---------------------|------------|
+ * | SCAN_NODE_TABLE | mapScanNodeTable() |
+ * | EXTEND | mapExtend() |
+ * | FILTER | mapFilter() |
+ * | HASH_JOIN | mapHashJoin() |
+ * | AGGREGATE | mapAggregate() |
+ * | ORDER_BY | mapOrderBy() |
+ * | PROJECTION | mapProjection() |
+ * | LIMIT | mapLimit() |
+ * | COPY_FROM | mapCopyFrom() |
+ * | INSERT | mapInsert() |
+ * | DELETE | mapDelete() |
+ * 
+ * Mapping Pattern:
+ * ```cpp
+ * std::unique_ptr<PhysicalOperator> mapSomeOperator(LogicalOperator* op) {
+ *     // 1. Get logical operator details
+ *     // 2. Map child operators recursively
+ *     // 3. Create physical operator with state
+ *     return make_unique<SomePhysicalOperator>(...);
+ * }
+ * ```
+ * 
+ * Result Collectors:
+ * - If root isn't a sink, wrap with ResultCollector
+ * - Regular: Materializes results in FTable
+ * - Arrow: Creates Arrow batches
+ * 
+ * Helper Methods:
+ * | Method | Description |
+ * |--------|-------------|
+ * | getDataPos() | Get column positions in schema |
+ * | createFlatFTableSchema() | Create factorized table schema |
+ * | createSemiMask() | Create semi-mask for semi-join |
+ * 
+ * Extension Support:
+ * - mapperExtensions allow custom operator mapping
+ * - Extensions can provide physical operators
+ * 
+ * State Management:
+ * - logicalOpToPhysicalOpMap tracks mappings
+ * - Used for operator reuse and debugging
+ */
+
 #include "main/client_context.h"
 #include "main/database.h"
 #include "planner/operator/logical_plan.h"
