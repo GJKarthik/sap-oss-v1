@@ -730,9 +730,10 @@ void IntegerBitpacking<T>::copyValuesToTempChunkWithOffset(const U* srcBuffer, U
     }
 }
 
-// Dynamic Compression Algorithm Selection:
-//
-// Current Implementation:
+/**
+ * P2-105: Dynamic Compression Algorithm Selection and Optimization Strategies
+ * 
+ * Current Implementation:
 // The compression type is checked at runtime in compressNextPage(). If metadata
 // indicates UNCOMPRESSED, we delegate to Uncompressed::compressNextPage() instead.
 // This allows runtime fallback but requires checking on every compression call.
