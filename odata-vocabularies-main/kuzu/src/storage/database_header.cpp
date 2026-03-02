@@ -1,5 +1,93 @@
 #include "storage/database_header.h"
 
+/**
+ * P3-203: DatabaseHeader - Extended Implementation Documentation
+ * 
+ * Additional Details (see P2-65 for version validation design)
+ * 
+ * DatabaseHeader Structure:
+ * ```
+ * DatabaseHeader {
+ *   catalogPageRange: PageRange   // Pages for serialized catalog
+ *   metadataPageRange: PageRange  // Pages for table metadata
+ *   databaseID: ku_uuid_t         // Unique database identifier
+ * }
+ * ```
+ * 
+ * Header Serialization Format:
+ * ```
+ * [MAGIC_BYTES (4)]["storage_version"][version: storage_version_t]
+ * ["catalog"][startPageIdx][numPages]
+ * ["metadata"][startPageIdx][numPages]
+ * ["databaseID"][uuid.value]
+ * ```
+ * 
+ * validateMagicBytes() Algorithm:
+ * ```
+ * validateMagicBytes(deSer):
+ *   magicBytes = read 4 bytes
+ *   IF memcmp(magicBytes, "KUZU") != 0:
+ *     THROW "Not a valid Kuzu database file"
+ * ```
+ * 
+ * validateStorageVersion() Algorithm:
+ * ```
+ * validateStorageVersion(deSer):
+ *   savedVersion = read storage_version_t
+ *   currentVersion = StorageVersionInfo::getStorageVersion()
+ *   IF savedVersion != currentVersion:
+ *     THROW "Version mismatch: saved={saved}, current={current}"
+ * ```
+ * 
+ * readDatabaseHeader() Flow:
+ * ```
+ * readDatabaseHeader(fileInfo):
+ *   IF fileInfo.getFileSize() < KUZU_PAGE_SIZE:
+ *     RETURN nullopt  // No header yet
+ *   
+ *   TRY:
+ *     reader = BufferedFileReader(fileInfo)
+ *     RETURN deserialize(reader)
+ *   CATCH RuntimeException:
+ *     // Magic bytes check failed - no valid header
+ *     RETURN nullopt
+ * ```
+ * 
+ * createInitialHeader() Flow:
+ * ```
+ * createInitialHeader(randomEngine):
+ *   uuid = UUID::generateRandomUUID(randomEngine)
+ *   RETURN DatabaseHeader{{}, {}, uuid}
+ * ```
+ * 
+ * Page Range Management:
+ * ```
+ * updateCatalogPageRange(pageManager, newRange):
+ *   IF catalogPageRange.startPageIdx != INVALID:
+ *     pageManager.freePageRange(catalogPageRange)  // Free old
+ *   catalogPageRange = newRange  // Set new
+ * 
+ * freeMetadataPageRange(pageManager):
+ *   IF metadataPageRange.startPageIdx != INVALID:
+ *     pageManager.freePageRange(metadataPageRange)
+ * ```
+ * 
+ * Usage in Recovery:
+ * ```
+ * 1. Database opens file
+ * 2. readDatabaseHeader() attempts to load header
+ * 3. IF header exists:
+ *      - Validate magic bytes
+ *      - Validate storage version
+ *      - Load catalog/metadata page ranges
+ *    ELSE:
+ *      - Create initial header with new UUID
+ * ```
+ * 
+ * ====================================
+ * See P2-65 inline for storage version validation design.
+ */
+
 #include <cstring>
 
 #include "common/exception/runtime.h"
