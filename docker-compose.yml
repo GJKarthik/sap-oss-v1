@@ -79,7 +79,7 @@ services:
   # Angular UI Microservice
   optimizer-ui:
     build:
-      context: ./optimizer-ui
+      context: ./nvidia-modelopt/ui
       dockerfile: Dockerfile
     ports:
       - "4200:80"
