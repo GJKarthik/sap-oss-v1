@@ -1,0 +1,1 @@
+"""OData Vocabularies Python Connector"""

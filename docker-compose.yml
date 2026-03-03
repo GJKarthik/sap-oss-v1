@@ -1,0 +1,117 @@
+# Microservice Architecture - Docker Compose
+# Orchestrates: model-optimizer, data-copilot, odata-service, optimizer-ui
+
+version: '3.8'
+
+services:
+  # Model Optimizer Microservice (T4 GPU quantization)
+  model-optimizer:
+    build:
+      context: ./nvidia-modelopt
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - LOG_LEVEL=INFO
+    volumes:
+      - model-cache:/app/models
+      - ./nvidia-modelopt/outputs:/app/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - platform-network
+
+  # Data Cleaning Copilot Microservice
+  data-copilot:
+    build:
+      context: ./data-cleaning-copilot-main
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - MODEL_OPTIMIZER_URL=http://model-optimizer:8001
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP}
+    depends_on:
+      - model-optimizer
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - platform-network
+
+  # OData Vocabularies Service
+  odata-service:
+    build:
+      context: ./odata-vocabularies-main
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+    volumes:
+      - ./odata-vocabularies-main/vocabularies:/app/vocabularies:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - platform-network
+
+  # Angular UI Microservice
+  optimizer-ui:
+    build:
+      context: ./optimizer-ui
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    environment:
+      - API_MODEL_OPTIMIZER=http://model-optimizer:8001
+      - API_DATA_COPILOT=http://data-copilot:8002
+      - API_ODATA_SERVICE=http://odata-service:8003
+    depends_on:
+      - model-optimizer
+      - data-copilot
+      - odata-service
+    networks:
+      - platform-network
+
+  # API Gateway (Kong/Nginx alternative - simple reverse proxy)
+  api-gateway:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - model-optimizer
+      - data-copilot
+      - odata-service
+    networks:
+      - platform-network
+
+volumes:
+  model-cache:
+    driver: local
+
+networks:
+  platform-network:
+    driver: bridge

@@ -1,0 +1,37 @@
+{
+  "name": "optimizer-ui",
+  "version": "1.0.0",
+  "description": "Angular UI for Model Optimizer with SAP UI5 Web Components",
+  "private": true,
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --port 4200",
+    "build": "ng build --configuration production",
+    "test": "ng test",
+    "lint": "ng lint"
+  },
+  "dependencies": {
+    "@angular/animations": "^20.0.0",
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-browser-dynamic": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@ui5/webcomponents": "^2.0.0",
+    "@ui5/webcomponents-fiori": "^2.0.0",
+    "@ui5/webcomponents-icons": "^2.0.0",
+    "@ui5/webcomponents-ngx": "^0.3.0",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.6.0",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^20.0.0",
+    "@angular/cli": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}
