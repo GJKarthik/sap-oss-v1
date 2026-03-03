@@ -12,11 +12,14 @@ import uuid
 import logging
 import os
 
+import asyncio
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .openai_compat import router as openai_router
+from .inference import detect_gpu, get_supported_formats
+from .job_executor import get_executor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -152,9 +155,33 @@ async def list_quant_formats():
     }
 
 
+async def update_job_status(
+    job_id: str,
+    status: str,
+    progress: float,
+    started_at: datetime = None,
+    completed_at: datetime = None,
+    output_path: str = None,
+    error: str = None
+):
+    """Callback to update job status from executor"""
+    if job_id in jobs_store:
+        job = jobs_store[job_id]
+        job.status = JobStatus(status)
+        job.progress = progress
+        if started_at:
+            job.started_at = started_at
+        if completed_at:
+            job.completed_at = completed_at
+        if output_path:
+            job.output_path = output_path
+        if error:
+            job.error = error
+
+
 @app.post("/jobs", response_model=JobResponse)
 async def create_job(job: JobCreate, background_tasks: BackgroundTasks):
-    """Create a new optimization job."""
+    """Create a new optimization job and execute it."""
     job_id = str(uuid.uuid4())
     response = JobResponse(
         id=job_id,
@@ -164,6 +191,19 @@ async def create_job(job: JobCreate, background_tasks: BackgroundTasks):
         created_at=datetime.utcnow(),
     )
     jobs_store[job_id] = response
+    
+    # Start job execution in background
+    executor = get_executor()
+    config_dict = {
+        "model_name": job.config.model_name,
+        "quant_format": job.config.quant_format.value,
+        "calib_samples": job.config.calib_samples,
+        "export_format": job.config.export_format.value,
+        "enable_pruning": job.config.enable_pruning,
+        "pruning_sparsity": job.config.pruning_sparsity,
+    }
+    background_tasks.add_task(executor.execute_job, job_id, config_dict, update_job_status)
+    
     return response
 
 
@@ -192,19 +232,49 @@ async def cancel_job(job_id: str):
     job = jobs_store[job_id]
     if job.status not in [JobStatus.PENDING, JobStatus.RUNNING]:
         raise HTTPException(status_code=400, detail="Job cannot be cancelled")
+    
+    # Cancel running job
+    if job.status == JobStatus.RUNNING:
+        executor = get_executor()
+        await executor.cancel_job(job_id)
+    
     job.status = JobStatus.CANCELLED
+    job.completed_at = datetime.utcnow()
     return {"message": "Job cancelled", "job_id": job_id}
 
 
 @app.get("/gpu/status")
 async def gpu_status():
-    """Get GPU status."""
-    return {
-        "gpu_name": "Tesla T4",
-        "compute_capability": "7.5",
-        "total_memory_gb": 16.0,
-        "supported_formats": ["int8", "int4_awq", "w4a16"],
-    }
+    """Get real GPU status using nvidia-smi."""
+    gpu = detect_gpu()
+    
+    if gpu:
+        return {
+            "gpu_name": gpu.name,
+            "compute_capability": gpu.compute_capability,
+            "total_memory_gb": round(gpu.memory_total_gb, 2),
+            "used_memory_gb": round(gpu.memory_used_gb, 2),
+            "free_memory_gb": round(gpu.memory_free_gb, 2),
+            "utilization_percent": gpu.utilization_percent,
+            "temperature_c": gpu.temperature_c,
+            "driver_version": gpu.driver_version,
+            "cuda_version": gpu.cuda_version,
+            "supported_formats": get_supported_formats(gpu),
+        }
+    else:
+        # Fallback when no GPU detected
+        return {
+            "gpu_name": "No GPU detected",
+            "compute_capability": "N/A",
+            "total_memory_gb": 0,
+            "used_memory_gb": 0,
+            "free_memory_gb": 0,
+            "utilization_percent": 0,
+            "temperature_c": 0,
+            "driver_version": "N/A",
+            "cuda_version": "N/A",
+            "supported_formats": ["int8", "int4_awq", "w4a16"],  # CPU fallback
+        }
 
 
 if __name__ == "__main__":
