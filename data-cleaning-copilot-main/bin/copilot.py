@@ -13,11 +13,11 @@ from dotenv import load_dotenv
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from definition.impl.database.finsight import FinSight, load_finsight_data
 from definition.impl.database.rel_stack import RelStack
 from definition.llm.session_manager import LLMSessionManager
 from definition.llm.models import LLMProvider, LLMSessionConfig
 from definition.llm.interactive.session import InteractiveSession
-from relbench.datasets import get_dataset
 
 
 def load_relstack_data(db, data_dir: Path | None = None):
@@ -59,6 +59,8 @@ def load_relstack_data(db, data_dir: Path | None = None):
         return loaded_count, len(table_mapping)
     else:
         # Load from RelBench
+        from relbench.datasets import get_dataset
+
         logger.info("Loading rel-stack dataset from RelBench...")
         dataset = get_dataset("rel-stack")
         db_relbench = dataset.get_db()
@@ -88,7 +90,11 @@ def main():
 
     # Database selection
     parser.add_argument(
-        "--database", "-d", choices=["rel-stack"], required=True, help="Database type to analyze"
+        "--database",
+        "-d",
+        choices=["rel-stack", "finsight"],
+        required=True,
+        help="Database type to analyze",
     )
 
     # Model selection for interactive session
@@ -123,7 +129,12 @@ def main():
     parser.add_argument(
         "--data-dir",
         default="",
-        help="Directory containing test data CSV files. If not specified, rel-stack loads from RelBench",
+        help=(
+            "Directory containing input data files. "
+            "For rel-stack: optional CSV directory (defaults to RelBench). "
+            "For finsight: optional machine-readable directory "
+            "(defaults to docs/Archive/machine-readable)."
+        ),
     )
 
     # Interactive options
@@ -222,6 +233,15 @@ def main():
                 table_scopes=table_scopes,
                 max_execution_time=args.timeout,
             )
+        elif args.database == "finsight":
+            phase2_dir = (Path(args.data_dir) / "odata_phase2") if args.data_dir else None
+            db = FinSight(
+                database_id="finsight_agent",
+                max_output_tokens=max_output_tokens,
+                table_scopes=table_scopes,
+                max_execution_time=args.timeout,
+                phase2_dir=phase2_dir,
+            )
         else:
             raise ValueError(f"Unknown database type: {args.database}")
 
@@ -229,6 +249,9 @@ def main():
         if args.database == "rel-stack":
             data_dir = Path(args.data_dir) if args.data_dir else None
             loaded_count, total_count = load_relstack_data(db, data_dir)
+        elif args.database == "finsight":
+            data_dir = Path(args.data_dir) if args.data_dir else None
+            loaded_count, total_count = load_finsight_data(db, data_dir)
         else:
             loaded_count, total_count = 0, 0
 

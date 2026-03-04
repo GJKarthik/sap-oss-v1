@@ -1,0 +1,372 @@
+{
+  "generated_at_utc": "2026-03-03T04:54:22.058258+00:00",
+  "source_inputs": {
+    "phase0_target_schemas": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/hana_phase0/phase0_target_schemas.yaml",
+    "phase0_field_catalog": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/hana_phase0/phase0_field_catalog.json",
+    "common_vocabulary": "/Users/user/Documents/sap-oss/odata-vocabularies-main/vocabularies/Common.xml",
+    "personaldata_vocabulary": "/Users/user/Documents/sap-oss/odata-vocabularies-main/vocabularies/PersonalData.xml"
+  },
+  "vocabularies": [
+    {
+      "namespace": "com.sap.vocabularies.Common.v1",
+      "alias": "Common",
+      "term_count": 108
+    },
+    {
+      "namespace": "com.sap.vocabularies.PersonalData.v1",
+      "alias": "PersonalData",
+      "term_count": 6
+    }
+  ],
+  "table_annotations": {
+    "FINSIGHT_CORE_RECORDS": {
+      "source_row_number": [
+        "IsDigitSequence"
+      ],
+      "btp_schema_name": [
+        "IsUpperCase"
+      ],
+      "personal_data": [
+        "IsPotentiallySensitive"
+      ],
+      "requester": [
+        "IsPotentiallyPersonal"
+      ],
+      "sensitivity": [
+        "IsPotentiallySensitive"
+      ],
+      "unique_id": [
+        "IsUpperCase"
+      ]
+    },
+    "FINSIGHT_CORE_FIELDS": {},
+    "FINSIGHT_CORE_SOURCE_FILES": {},
+    "FINSIGHT_RAG_CHUNKS": {
+      "chunk_index": [
+        "IsDigitSequence"
+      ],
+      "token_estimate": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_RAG_EMBEDDINGS": {
+      "vector_dim": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_RAG_EMBEDDING_MANIFEST": {
+      "record_count": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_GOV_QUALITY_ISSUES": {
+      "source_row_number": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_GOV_QUALITY_REPORTS": {
+      "total_issues": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_GOV_TABLE_PROFILE": {
+      "mandatory_fields": [
+        "IsDigitSequence"
+      ],
+      "populated_mandatory_fields": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_GOV_ODPS_VALIDATION": {
+      "schema_error_count": [
+        "IsDigitSequence"
+      ],
+      "missing_link_count": [
+        "IsDigitSequence"
+      ]
+    },
+    "FINSIGHT_GRAPH_VERTEX": {},
+    "FINSIGHT_GRAPH_EDGE": {
+      "edge_type": [
+        "IsUpperCase"
+      ]
+    },
+    "FINSIGHT_GRAPH_EDGE_TYPE": {
+      "edge_type": [
+        "IsUpperCase"
+      ]
+    }
+  },
+  "column_annotations": [
+    {
+      "schema": "FINSIGHT_CORE",
+      "table": "RECORDS",
+      "table_key": "FINSIGHT_CORE_RECORDS",
+      "column": "source_row_number",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_CORE",
+      "table": "RECORDS",
+      "table_key": "FINSIGHT_CORE_RECORDS",
+      "column": "btp_schema_name",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsUpperCase"
+      ],
+      "short_terms": [
+        "IsUpperCase"
+      ],
+      "reasons": [
+        "Technical code/identifier expected in uppercase format"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_CORE",
+      "table": "RECORDS",
+      "table_key": "FINSIGHT_CORE_RECORDS",
+      "column": "personal_data",
+      "qualified_terms": [
+        "com.sap.vocabularies.PersonalData.v1.IsPotentiallySensitive"
+      ],
+      "short_terms": [
+        "IsPotentiallySensitive"
+      ],
+      "reasons": [
+        "Column carries sensitivity/personal-data classification metadata"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_CORE",
+      "table": "RECORDS",
+      "table_key": "FINSIGHT_CORE_RECORDS",
+      "column": "requester",
+      "qualified_terms": [
+        "com.sap.vocabularies.PersonalData.v1.IsPotentiallyPersonal"
+      ],
+      "short_terms": [
+        "IsPotentiallyPersonal"
+      ],
+      "reasons": [
+        "Column may contain a natural person identifier"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_CORE",
+      "table": "RECORDS",
+      "table_key": "FINSIGHT_CORE_RECORDS",
+      "column": "sensitivity",
+      "qualified_terms": [
+        "com.sap.vocabularies.PersonalData.v1.IsPotentiallySensitive"
+      ],
+      "short_terms": [
+        "IsPotentiallySensitive"
+      ],
+      "reasons": [
+        "Column carries sensitivity/personal-data classification metadata"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_CORE",
+      "table": "RECORDS",
+      "table_key": "FINSIGHT_CORE_RECORDS",
+      "column": "unique_id",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsUpperCase"
+      ],
+      "short_terms": [
+        "IsUpperCase"
+      ],
+      "reasons": [
+        "Technical code/identifier expected in uppercase format"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_RAG",
+      "table": "CHUNKS",
+      "table_key": "FINSIGHT_RAG_CHUNKS",
+      "column": "chunk_index",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_RAG",
+      "table": "CHUNKS",
+      "table_key": "FINSIGHT_RAG_CHUNKS",
+      "column": "token_estimate",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_RAG",
+      "table": "EMBEDDINGS",
+      "table_key": "FINSIGHT_RAG_EMBEDDINGS",
+      "column": "vector_dim",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_RAG",
+      "table": "EMBEDDING_MANIFEST",
+      "table_key": "FINSIGHT_RAG_EMBEDDING_MANIFEST",
+      "column": "record_count",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GOV",
+      "table": "QUALITY_ISSUES",
+      "table_key": "FINSIGHT_GOV_QUALITY_ISSUES",
+      "column": "source_row_number",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GOV",
+      "table": "QUALITY_REPORTS",
+      "table_key": "FINSIGHT_GOV_QUALITY_REPORTS",
+      "column": "total_issues",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GOV",
+      "table": "TABLE_PROFILE",
+      "table_key": "FINSIGHT_GOV_TABLE_PROFILE",
+      "column": "mandatory_fields",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GOV",
+      "table": "TABLE_PROFILE",
+      "table_key": "FINSIGHT_GOV_TABLE_PROFILE",
+      "column": "populated_mandatory_fields",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GOV",
+      "table": "ODPS_VALIDATION",
+      "table_key": "FINSIGHT_GOV_ODPS_VALIDATION",
+      "column": "schema_error_count",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GOV",
+      "table": "ODPS_VALIDATION",
+      "table_key": "FINSIGHT_GOV_ODPS_VALIDATION",
+      "column": "missing_link_count",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsDigitSequence"
+      ],
+      "short_terms": [
+        "IsDigitSequence"
+      ],
+      "reasons": [
+        "Numeric sequence column used for row/index/count semantics"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GRAPH",
+      "table": "EDGE",
+      "table_key": "FINSIGHT_GRAPH_EDGE",
+      "column": "edge_type",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsUpperCase"
+      ],
+      "short_terms": [
+        "IsUpperCase"
+      ],
+      "reasons": [
+        "Technical code/identifier expected in uppercase format"
+      ]
+    },
+    {
+      "schema": "FINSIGHT_GRAPH",
+      "table": "EDGE_TYPE",
+      "table_key": "FINSIGHT_GRAPH_EDGE_TYPE",
+      "column": "edge_type",
+      "qualified_terms": [
+        "com.sap.vocabularies.Common.v1.IsUpperCase"
+      ],
+      "short_terms": [
+        "IsUpperCase"
+      ],
+      "reasons": [
+        "Technical code/identifier expected in uppercase format"
+      ]
+    }
+  ]
+}

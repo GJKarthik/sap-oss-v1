@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-03-03T04:20:43.960264+00:00",
+  "inputs": {
+    "records_jsonl": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.jsonl",
+    "quality_report_json": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/quality_report.json",
+    "quality_issues_csv": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/quality_issues.csv"
+  },
+  "outputs": {
+    "facts_mg": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/mangle/facts.mg",
+    "rules_mg": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/mangle/rules.mg",
+    "functions_mg": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/mangle/functions.mg",
+    "aggregations_mg": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/mangle/aggregations.mg",
+    "readme_md": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/mangle/README.md"
+  },
+  "counts": {
+    "records": 102695,
+    "quality_issues": 258,
+    "issue_types": {
+      "placeholder_cleared": 251,
+      "missing_unique_id_replaced": 5,
+      "datatype_score_to_decimal": 2
+    },
+    "record_facts": 102695,
+    "field_facts": 453329,
+    "mandatory_field_facts": 49,
+    "quality_issue_facts": 258,
+    "source_file_facts": 5,
+    "table_profile_facts": 5,
+    "allowed_datatype_facts": 18
+  }
+}

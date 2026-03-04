@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-03-03T03:19:52.113637+00:00",
+  "input_jsonl": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.jsonl",
+  "total_records": 102695,
+  "sources": {
+    "1_register.csv": 396,
+    "2_stagingschema.csv": 11268,
+    "2_stagingschema_logs.csv": 16762,
+    "2_stagingschema_nonstagingschema.csv": 74213,
+    "3_validations.csv": 56
+  },
+  "tables": {
+    "register": 396,
+    "staging_schema": 11268,
+    "staging_schema_logs": 16762,
+    "non_staging_schema": 74213,
+    "validations": 56
+  },
+  "fields": [
+    "embedding_id",
+    "chunk_id",
+    "record_id",
+    "source_csv",
+    "table",
+    "source_row_number",
+    "chunk_index_in_record",
+    "word_count",
+    "text_sha256",
+    "text",
+    "metadata"
+  ]
+}

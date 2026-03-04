@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-03-03T03:19:50.180684+00:00",
+  "input_directory": "/Users/user/Documents/sap-oss/docs/Archive",
+  "total_records": 102695,
+  "total_chunks": 102695,
+  "sources": {
+    "1_register.csv": 396,
+    "2_stagingschema.csv": 11268,
+    "2_stagingschema_logs.csv": 16762,
+    "2_stagingschema_nonstagingschema.csv": 74213,
+    "3_validations.csv": 56
+  },
+  "tables": {
+    "register": 396,
+    "staging_schema": 11268,
+    "staging_schema_logs": 16762,
+    "non_staging_schema": 74213,
+    "validations": 56
+  },
+  "outputs": {
+    "finsight_records_jsonl": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.jsonl",
+    "finsight_records_csv": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.csv",
+    "rag_chunks_jsonl": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.jsonl",
+    "rag_chunks_csv": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.csv"
+  }
+}

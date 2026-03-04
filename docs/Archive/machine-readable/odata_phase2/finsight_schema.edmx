@@ -1,0 +1,246 @@
+<?xml version="1.0" ?>
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns:ns1="http://docs.oasis-open.org/odata/ns/edm" Version="4.0">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/PersonalData.xml">
+    <edmx:Include Namespace="com.sap.vocabularies.PersonalData.v1" Alias="PersonalData"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <ns1:Schema Namespace="FinSight.Service" Alias="FinSight">
+      <ns1:EntityType Name="FINSIGHT_CORE_RECORDS">
+        <ns1:Key>
+          <ns1:PropertyRef Name="record_id"/>
+        </ns1:Key>
+        <ns1:Property Name="record_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="source_file" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="source_table" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="source_row_number" Type="Edm.Int64" Nullable="false">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="adf_approval_received" Type="Edm.String"/>
+        <ns1:Property Name="any_technical_debt" Type="Edm.String"/>
+        <ns1:Property Name="arf_approval_received" Type="Edm.String"/>
+        <ns1:Property Name="btp_field_name" Type="Edm.String"/>
+        <ns1:Property Name="btp_layer" Type="Edm.String"/>
+        <ns1:Property Name="btp_schema_name" Type="Edm.String">
+          <ns1:Annotation Term="Common.IsUpperCase"/>
+        </ns1:Property>
+        <ns1:Property Name="btp_staging_schema_name" Type="Edm.String"/>
+        <ns1:Property Name="btp_table_name" Type="Edm.String"/>
+        <ns1:Property Name="data_availability_implemented_e_g_t_2_1300_gmt" Type="Edm.String"/>
+        <ns1:Property Name="data_availability_required_by_business" Type="Edm.String"/>
+        <ns1:Property Name="data_category" Type="Edm.String"/>
+        <ns1:Property Name="data_cut_required_by_business" Type="Edm.String"/>
+        <ns1:Property Name="data_domain" Type="Edm.String"/>
+        <ns1:Property Name="data_owner_data_sme_agreement_received" Type="Edm.String"/>
+        <ns1:Property Name="data_retention" Type="Edm.String"/>
+        <ns1:Property Name="data_retention_implemented" Type="Edm.String"/>
+        <ns1:Property Name="data_retention_justification" Type="Edm.String"/>
+        <ns1:Property Name="data_theme" Type="Edm.String"/>
+        <ns1:Property Name="data_type" Type="Edm.String"/>
+        <ns1:Property Name="datatype" Type="Edm.String"/>
+        <ns1:Property Name="delivery_date_if_prioritized" Type="Edm.String"/>
+        <ns1:Property Name="feed_type_global_i_e_single_feed_for_all_entities_entity_wise_regional_e_g_apac_emea_ams" Type="Edm.String"/>
+        <ns1:Property Name="feed_volume_no_of_records_colums_or_file_size" Type="Edm.String"/>
+        <ns1:Property Name="filter_logic" Type="Edm.String"/>
+        <ns1:Property Name="ftc_approval_received" Type="Edm.String"/>
+        <ns1:Property Name="life_cycle_status" Type="Edm.String"/>
+        <ns1:Property Name="notes" Type="Edm.String"/>
+        <ns1:Property Name="personal_data" Type="Edm.String">
+          <ns1:Annotation Term="PersonalData.IsPotentiallySensitive"/>
+        </ns1:Property>
+        <ns1:Property Name="refresh_data_cut_implemented" Type="Edm.String"/>
+        <ns1:Property Name="refresh_frequency" Type="Edm.String"/>
+        <ns1:Property Name="refresh_frequency_implemented" Type="Edm.String"/>
+        <ns1:Property Name="refresh_mechanism_delta_full_load_full_load_intially_delta_thereafter_etc" Type="Edm.String"/>
+        <ns1:Property Name="refresh_rate" Type="Edm.String"/>
+        <ns1:Property Name="remarks" Type="Edm.String"/>
+        <ns1:Property Name="requester" Type="Edm.String">
+          <ns1:Annotation Term="PersonalData.IsPotentiallyPersonal"/>
+        </ns1:Property>
+        <ns1:Property Name="requirement" Type="Edm.String"/>
+        <ns1:Property Name="sensitivity" Type="Edm.String">
+          <ns1:Annotation Term="PersonalData.IsPotentiallySensitive"/>
+        </ns1:Property>
+        <ns1:Property Name="source_data_format" Type="Edm.String"/>
+        <ns1:Property Name="source_data_period_scope" Type="Edm.String"/>
+        <ns1:Property Name="source_field_name" Type="Edm.String"/>
+        <ns1:Property Name="source_schema" Type="Edm.String"/>
+        <ns1:Property Name="source_system" Type="Edm.String"/>
+        <ns1:Property Name="source_system_s" Type="Edm.String"/>
+        <ns1:Property Name="source_table_name_structured_location_for_unstructured_data" Type="Edm.String"/>
+        <ns1:Property Name="table_description" Type="Edm.String"/>
+        <ns1:Property Name="tags_keywords" Type="Edm.String"/>
+        <ns1:Property Name="technical_debt_description" Type="Edm.String"/>
+        <ns1:Property Name="unique_id" Type="Edm.String">
+          <ns1:Annotation Term="Common.IsUpperCase"/>
+        </ns1:Property>
+        <ns1:Property Name="use_case" Type="Edm.String"/>
+        <ns1:Property Name="yes_no" Type="Edm.String"/>
+        <ns1:Property Name="yes_no_not_applicable" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_CORE_FIELDS">
+        <ns1:Key>
+          <ns1:PropertyRef Name="record_id"/>
+          <ns1:PropertyRef Name="field_name"/>
+        </ns1:Key>
+        <ns1:Property Name="record_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="field_name" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="field_value" Type="Edm.String"/>
+        <ns1:Property Name="source_table" Type="Edm.String"/>
+        <ns1:Property Name="source_file" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_CORE_SOURCE_FILES">
+        <ns1:Key>
+          <ns1:PropertyRef Name="source_file"/>
+        </ns1:Key>
+        <ns1:Property Name="source_file" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="source_table" Type="Edm.String"/>
+        <ns1:Property Name="row_count" Type="Edm.Int64"/>
+        <ns1:Property Name="last_seen_utc" Type="Edm.DateTimeOffset"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_RAG_CHUNKS">
+        <ns1:Key>
+          <ns1:PropertyRef Name="chunk_id"/>
+        </ns1:Key>
+        <ns1:Property Name="chunk_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="record_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="chunk_index" Type="Edm.Int64" Nullable="false">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="text" Type="Edm.String"/>
+        <ns1:Property Name="token_estimate" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_RAG_EMBEDDINGS">
+        <ns1:Key>
+          <ns1:PropertyRef Name="embedding_id"/>
+        </ns1:Key>
+        <ns1:Property Name="embedding_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="chunk_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="model_name" Type="Edm.String"/>
+        <ns1:Property Name="vector_dim" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="vector_payload" Type="Edm.String"/>
+        <ns1:Property Name="text_sha256" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_RAG_EMBEDDING_MANIFEST">
+        <ns1:Key>
+          <ns1:PropertyRef Name="run_id"/>
+        </ns1:Key>
+        <ns1:Property Name="run_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="generated_at_utc" Type="Edm.DateTimeOffset"/>
+        <ns1:Property Name="record_count" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="model_name" Type="Edm.String"/>
+        <ns1:Property Name="manifest_json" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GOV_QUALITY_ISSUES">
+        <ns1:Key>
+          <ns1:PropertyRef Name="record_id"/>
+          <ns1:PropertyRef Name="issue_type"/>
+          <ns1:PropertyRef Name="field"/>
+          <ns1:PropertyRef Name="source_row_number"/>
+        </ns1:Key>
+        <ns1:Property Name="record_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="issue_type" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="field" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="source_row_number" Type="Edm.Int64" Nullable="false">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="issue_detail" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GOV_QUALITY_REPORTS">
+        <ns1:Key>
+          <ns1:PropertyRef Name="report_id"/>
+        </ns1:Key>
+        <ns1:Property Name="report_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="generated_at_utc" Type="Edm.DateTimeOffset"/>
+        <ns1:Property Name="mandatory_coverage_pct" Type="Edm.Decimal"/>
+        <ns1:Property Name="total_issues" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="report_json" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GOV_TABLE_PROFILE">
+        <ns1:Key>
+          <ns1:PropertyRef Name="table_name"/>
+          <ns1:PropertyRef Name="report_id"/>
+        </ns1:Key>
+        <ns1:Property Name="table_name" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="report_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="mandatory_fields" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="populated_mandatory_fields" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="coverage_pct" Type="Edm.Decimal"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GOV_ODPS_VALIDATION">
+        <ns1:Key>
+          <ns1:PropertyRef Name="validation_run_id"/>
+        </ns1:Key>
+        <ns1:Property Name="validation_run_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="generated_at_utc" Type="Edm.DateTimeOffset"/>
+        <ns1:Property Name="is_valid" Type="Edm.String"/>
+        <ns1:Property Name="schema_error_count" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="missing_link_count" Type="Edm.Int64">
+          <ns1:Annotation Term="Common.IsDigitSequence"/>
+        </ns1:Property>
+        <ns1:Property Name="report_json" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GRAPH_VERTEX">
+        <ns1:Key>
+          <ns1:PropertyRef Name="vertex_id"/>
+        </ns1:Key>
+        <ns1:Property Name="vertex_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="vertex_type" Type="Edm.String"/>
+        <ns1:Property Name="label" Type="Edm.String"/>
+        <ns1:Property Name="payload_json" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GRAPH_EDGE">
+        <ns1:Key>
+          <ns1:PropertyRef Name="edge_id"/>
+        </ns1:Key>
+        <ns1:Property Name="edge_id" Type="Edm.String" Nullable="false"/>
+        <ns1:Property Name="edge_type" Type="Edm.String">
+          <ns1:Annotation Term="Common.IsUpperCase"/>
+        </ns1:Property>
+        <ns1:Property Name="source_vertex_id" Type="Edm.String"/>
+        <ns1:Property Name="target_vertex_id" Type="Edm.String"/>
+        <ns1:Property Name="payload_json" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityType Name="FINSIGHT_GRAPH_EDGE_TYPE">
+        <ns1:Key>
+          <ns1:PropertyRef Name="edge_type"/>
+        </ns1:Key>
+        <ns1:Property Name="edge_type" Type="Edm.String" Nullable="false">
+          <ns1:Annotation Term="Common.IsUpperCase"/>
+        </ns1:Property>
+        <ns1:Property Name="description" Type="Edm.String"/>
+      </ns1:EntityType>
+      <ns1:EntityContainer Name="Container">
+        <ns1:EntitySet Name="FINSIGHT_CORE_RECORDS" EntityType="FinSight.Service.FINSIGHT_CORE_RECORDS"/>
+        <ns1:EntitySet Name="FINSIGHT_CORE_FIELDS" EntityType="FinSight.Service.FINSIGHT_CORE_FIELDS"/>
+        <ns1:EntitySet Name="FINSIGHT_CORE_SOURCE_FILES" EntityType="FinSight.Service.FINSIGHT_CORE_SOURCE_FILES"/>
+        <ns1:EntitySet Name="FINSIGHT_RAG_CHUNKS" EntityType="FinSight.Service.FINSIGHT_RAG_CHUNKS"/>
+        <ns1:EntitySet Name="FINSIGHT_RAG_EMBEDDINGS" EntityType="FinSight.Service.FINSIGHT_RAG_EMBEDDINGS"/>
+        <ns1:EntitySet Name="FINSIGHT_RAG_EMBEDDING_MANIFEST" EntityType="FinSight.Service.FINSIGHT_RAG_EMBEDDING_MANIFEST"/>
+        <ns1:EntitySet Name="FINSIGHT_GOV_QUALITY_ISSUES" EntityType="FinSight.Service.FINSIGHT_GOV_QUALITY_ISSUES"/>
+        <ns1:EntitySet Name="FINSIGHT_GOV_QUALITY_REPORTS" EntityType="FinSight.Service.FINSIGHT_GOV_QUALITY_REPORTS"/>
+        <ns1:EntitySet Name="FINSIGHT_GOV_TABLE_PROFILE" EntityType="FinSight.Service.FINSIGHT_GOV_TABLE_PROFILE"/>
+        <ns1:EntitySet Name="FINSIGHT_GOV_ODPS_VALIDATION" EntityType="FinSight.Service.FINSIGHT_GOV_ODPS_VALIDATION"/>
+        <ns1:EntitySet Name="FINSIGHT_GRAPH_VERTEX" EntityType="FinSight.Service.FINSIGHT_GRAPH_VERTEX"/>
+        <ns1:EntitySet Name="FINSIGHT_GRAPH_EDGE" EntityType="FinSight.Service.FINSIGHT_GRAPH_EDGE"/>
+        <ns1:EntitySet Name="FINSIGHT_GRAPH_EDGE_TYPE" EntityType="FinSight.Service.FINSIGHT_GRAPH_EDGE_TYPE"/>
+      </ns1:EntityContainer>
+    </ns1:Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

@@ -1,0 +1,370 @@
+#! Mojo: Common Types and Constants
+#!
+#! Converted from: kuzu/src/common/ and zig/src/common/common.zig
+#!
+#! Purpose:
+#! Core type definitions, constants, and utilities shared across the database.
+
+from collections import Dict
+from memory import UnsafePointer
+
+# ============================================================================
+# Constants
+# ============================================================================
+
+alias PAGE_SIZE: Int = 4096
+alias DEFAULT_VECTOR_CAPACITY: Int = 2048
+alias NUM_BYTES_PER_NODE_ID: Int = 8
+alias NULL_PAGE_IDX: UInt64 = 0xFFFFFFFFFFFFFFFF
+
+
+# ============================================================================
+# Logical Types
+# ============================================================================
+
+@value
+struct LogicalType:
+    """Database logical type enumeration"""
+    var value: Int
+    
+    alias BOOL = LogicalType(0)
+    alias INT8 = LogicalType(1)
+    alias INT16 = LogicalType(2)
+    alias INT32 = LogicalType(3)
+    alias INT64 = LogicalType(4)
+    alias UINT8 = LogicalType(5)
+    alias UINT16 = LogicalType(6)
+    alias UINT32 = LogicalType(7)
+    alias UINT64 = LogicalType(8)
+    alias FLOAT = LogicalType(9)
+    alias DOUBLE = LogicalType(10)
+    alias STRING = LogicalType(11)
+    alias BLOB = LogicalType(12)
+    alias DATE = LogicalType(13)
+    alias TIMESTAMP = LogicalType(14)
+    alias INTERVAL = LogicalType(15)
+    alias LIST = LogicalType(16)
+    alias MAP = LogicalType(17)
+    alias STRUCT = LogicalType(18)
+    alias NODE = LogicalType(19)
+    alias REL = LogicalType(20)
+    alias INTERNAL_ID = LogicalType(21)
+    alias ANY = LogicalType(22)
+    alias NULL_TYPE = LogicalType(23)
+    
+    fn __init__(inout self, value: Int):
+        self.value = value
+    
+    fn __eq__(self, other: LogicalType) -> Bool:
+        return self.value == other.value
+    
+    fn __ne__(self, other: LogicalType) -> Bool:
+        return self.value != other.value
+    
+    fn is_numeric(self) -> Bool:
+        """Check if type is numeric"""
+        return (self.value >= LogicalType.INT8.value and 
+                self.value <= LogicalType.DOUBLE.value)
+    
+    fn is_integer(self) -> Bool:
+        """Check if type is integer"""
+        return (self.value >= LogicalType.INT8.value and 
+                self.value <= LogicalType.UINT64.value)
+    
+    fn get_size(self) -> Int:
+        """Get size in bytes for fixed-size types"""
+        if self == LogicalType.BOOL:
+            return 1
+        elif self == LogicalType.INT8 or self == LogicalType.UINT8:
+            return 1
+        elif self == LogicalType.INT16 or self == LogicalType.UINT16:
+            return 2
+        elif self == LogicalType.INT32 or self == LogicalType.UINT32:
+            return 4
+        elif self == LogicalType.INT64 or self == LogicalType.UINT64:
+            return 8
+        elif self == LogicalType.FLOAT:
+            return 4
+        elif self == LogicalType.DOUBLE:
+            return 8
+        elif self == LogicalType.DATE:
+            return 4
+        elif self == LogicalType.TIMESTAMP:
+            return 8
+        elif self == LogicalType.INTERNAL_ID:
+            return 8
+        else:
+            return 0  # Variable size
+
+
+# ============================================================================
+# Value Types
+# ============================================================================
+
+@value
+struct InternalID:
+    """Internal node/edge ID"""
+    var table_id: UInt64
+    var offset: UInt64
+    
+    fn __init__(inout self, table_id: UInt64, offset: UInt64):
+        self.table_id = table_id
+        self.offset = offset
+    
+    @staticmethod
+    fn invalid() -> InternalID:
+        return InternalID(0, NULL_PAGE_IDX)
+    
+    fn is_valid(self) -> Bool:
+        return self.offset != NULL_PAGE_IDX
+
+
+@value
+struct Value:
+    """Runtime value representation"""
+    var data_type: LogicalType
+    var is_null: Bool
+    var int_value: Int64
+    var float_value: Float64
+    var string_value: String
+    
+    fn __init__(inout self):
+        self.data_type = LogicalType.NULL_TYPE
+        self.is_null = True
+        self.int_value = 0
+        self.float_value = 0.0
+        self.string_value = ""
+    
+    @staticmethod
+    fn null_value() -> Value:
+        return Value()
+    
+    @staticmethod
+    fn boolean(val: Bool) -> Value:
+        var v = Value()
+        v.data_type = LogicalType.BOOL
+        v.is_null = False
+        v.int_value = 1 if val else 0
+        return v
+    
+    @staticmethod
+    fn integer(val: Int64) -> Value:
+        var v = Value()
+        v.data_type = LogicalType.INT64
+        v.is_null = False
+        v.int_value = val
+        return v
+    
+    @staticmethod
+    fn double(val: Float64) -> Value:
+        var v = Value()
+        v.data_type = LogicalType.DOUBLE
+        v.is_null = False
+        v.float_value = val
+        return v
+    
+    @staticmethod
+    fn from_string(val: String) -> Value:
+        var v = Value()
+        v.data_type = LogicalType.STRING
+        v.is_null = False
+        v.string_value = val
+        return v
+    
+    fn to_bool(self) -> Bool:
+        if self.is_null:
+            return False
+        return self.int_value != 0
+    
+    fn to_int(self) -> Int64:
+        if self.is_null:
+            return 0
+        if self.data_type == LogicalType.DOUBLE:
+            return Int64(self.float_value)
+        return self.int_value
+    
+    fn to_float(self) -> Float64:
+        if self.is_null:
+            return 0.0
+        if self.data_type.is_integer():
+            return Float64(self.int_value)
+        return self.float_value
+
+
+# ============================================================================
+# Page and Buffer Types
+# ============================================================================
+
+@value
+struct PageIdx:
+    """Page index type"""
+    var value: UInt64
+    
+    fn __init__(inout self, value: UInt64):
+        self.value = value
+    
+    @staticmethod
+    fn invalid() -> PageIdx:
+        return PageIdx(NULL_PAGE_IDX)
+    
+    fn is_valid(self) -> Bool:
+        return self.value != NULL_PAGE_IDX
+
+
+@value
+struct FrameIdx:
+    """Frame index in buffer pool"""
+    var value: UInt64
+    
+    fn __init__(inout self, value: UInt64):
+        self.value = value
+
+
+# ============================================================================
+# Column and Table Identifiers
+# ============================================================================
+
+@value 
+struct TableID:
+    """Table identifier"""
+    var value: UInt64
+    
+    fn __init__(inout self, value: UInt64):
+        self.value = value
+    
+    @staticmethod
+    fn invalid() -> TableID:
+        return TableID(NULL_PAGE_IDX)
+
+
+@value
+struct ColumnID:
+    """Column identifier"""
+    var value: UInt32
+    
+    fn __init__(inout self, value: UInt32):
+        self.value = value
+
+
+@value
+struct PropertyID:
+    """Property identifier for graph nodes/edges"""
+    var value: UInt32
+    
+    fn __init__(inout self, value: UInt32):
+        self.value = value
+
+
+# ============================================================================
+# Transaction Types
+# ============================================================================
+
+@value
+struct TransactionID:
+    """Transaction identifier"""
+    var value: UInt64
+    
+    fn __init__(inout self, value: UInt64):
+        self.value = value
+    
+    @staticmethod
+    fn invalid() -> TransactionID:
+        return TransactionID(NULL_PAGE_IDX)
+
+
+@value
+struct TransactionType:
+    """Transaction type enumeration"""
+    var value: Int
+    
+    alias READ_ONLY = TransactionType(0)
+    alias WRITE = TransactionType(1)
+    
+    fn __init__(inout self, value: Int):
+        self.value = value
+
+
+# ============================================================================
+# Utility Functions
+# ============================================================================
+
+fn align_up(value: UInt64, alignment: UInt64) -> UInt64:
+    """Align value up to alignment boundary"""
+    return (value + alignment - 1) & ~(alignment - 1)
+
+
+fn is_power_of_two(n: UInt64) -> Bool:
+    """Check if n is a power of two"""
+    return n > 0 and (n & (n - 1)) == 0
+
+
+fn min_value(a: Int64, b: Int64) -> Int64:
+    """Return minimum of two values"""
+    return a if a < b else b
+
+
+fn max_value(a: Int64, b: Int64) -> Int64:
+    """Return maximum of two values"""
+    return a if a > b else b
+
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+fn test_logical_type():
+    """Test LogicalType"""
+    let int_type = LogicalType.INT64
+    assert_true(int_type.is_numeric())
+    assert_true(int_type.is_integer())
+    assert_equal(int_type.get_size(), 8)
+    
+    let string_type = LogicalType.STRING
+    assert_true(not string_type.is_numeric())
+    assert_equal(string_type.get_size(), 0)
+    print("✓ LogicalType tests passed")
+
+
+fn test_value():
+    """Test Value"""
+    let null_val = Value.null_value()
+    assert_true(null_val.is_null)
+    
+    let int_val = Value.integer(42)
+    assert_true(not int_val.is_null)
+    assert_equal(int_val.to_int(), 42)
+    
+    let bool_val = Value.boolean(True)
+    assert_true(bool_val.to_bool())
+    print("✓ Value tests passed")
+
+
+fn test_internal_id():
+    """Test InternalID"""
+    let id = InternalID(1, 100)
+    assert_true(id.is_valid())
+    assert_equal(id.table_id, 1)
+    assert_equal(id.offset, 100)
+    
+    let invalid = InternalID.invalid()
+    assert_true(not invalid.is_valid())
+    print("✓ InternalID tests passed")
+
+
+fn test_utilities():
+    """Test utility functions"""
+    assert_equal(align_up(100, 64), 128)
+    assert_equal(align_up(64, 64), 64)
+    assert_true(is_power_of_two(64))
+    assert_true(not is_power_of_two(100))
+    print("✓ Utility tests passed")
+
+
+fn main():
+    """Run all tests"""
+    print("Running Mojo common module tests...")
+    test_logical_type()
+    test_value()
+    test_internal_id()
+    test_utilities()
+    print("All tests passed! ✓")

@@ -1,0 +1,20 @@
+{
+  "phase": "Phase 3 - Copilot Session Blueprint",
+  "generated_at_utc": "2026-03-03T05:05:26.553599+00:00",
+  "default_database": "finsight",
+  "default_data_dir": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable",
+  "copilot_command": "cd /Users/user/Documents/sap-oss/data-cleaning-copilot-main && uv run python -m bin.copilot -d finsight --data-dir /Users/user/Documents/sap-oss/docs/Archive/machine-readable",
+  "api_command": "cd /Users/user/Documents/sap-oss/data-cleaning-copilot-main && uv run python -m bin.api -d finsight --data-dir /Users/user/Documents/sap-oss/docs/Archive/machine-readable --port 8000",
+  "recommended_table_scopes": [
+    "FINSIGHT_CORE_RECORDS",
+    "FINSIGHT_GOV_QUALITY_ISSUES",
+    "FINSIGHT_RAG_CHUNKS",
+    "FINSIGHT_GRAPH_EDGE"
+  ],
+  "starter_prompts": [
+    "Profile FINSIGHT_CORE_RECORDS and summarize data quality risk by column.",
+    "Run validation and list checks with the highest violation counts.",
+    "Investigate fields related to personal data and sensitivity classifications.",
+    "Analyze SOURCE_TO_TABLE and TABLE_TO_FIELD graph edges for coverage gaps."
+  ]
+}

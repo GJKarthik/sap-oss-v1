@@ -164,6 +164,7 @@ def _init_session(
 ) -> None:
     global _interactive_session, _session_manager, _session_id, _session_model, _agent_model
 
+    from definition.impl.database.finsight import FinSight, load_finsight_data
     from definition.impl.database.rel_stack import RelStack
     from definition.llm.session_manager import LLMSessionManager
     from definition.llm.models import LLMProvider, LLMSessionConfig
@@ -225,6 +226,18 @@ def _init_session(
         data_path = Path(data_dir) if data_dir else None
         loaded, total = load_relstack_data(db, data_path)
         logger.info(f"Loaded {loaded}/{total} tables")
+    elif database_type == "finsight":
+        phase2_dir = (Path(data_dir) / "odata_phase2") if data_dir else None
+        db = FinSight(
+            database_id="finsight_agent",
+            max_output_tokens=max_output_tokens,
+            table_scopes=table_scope_set,
+            max_execution_time=timeout,
+            phase2_dir=phase2_dir,
+        )
+        data_path = Path(data_dir) if data_dir else None
+        loaded, total = load_finsight_data(db, data_path)
+        logger.info(f"Loaded {loaded}/{total} tables")
     else:
         raise ValueError(f"Unsupported database type: {database_type}")
 
@@ -259,12 +272,20 @@ def main() -> None:
         return _parse
 
     parser = argparse.ArgumentParser(description="Data Cleaning Copilot - FastAPI Server")
-    parser.add_argument("--database", "-d", choices=["rel-stack"], required=True)
+    parser.add_argument("--database", "-d", choices=["rel-stack", "finsight"], required=True)
     parser.add_argument("--session-model", choices=["claude-3.7", "claude-4"], default="claude-4")
     parser.add_argument("--agent-model", choices=["claude-3.7", "claude-4"], default="claude-4")
     parser.add_argument("--session-deployment-id", type=str, default=None)
     parser.add_argument("--agent-deployment-id", type=str, default=None)
-    parser.add_argument("--data-dir", default="")
+    parser.add_argument(
+        "--data-dir",
+        default="",
+        help=(
+            "Input data directory. For rel-stack this is optional CSV input; "
+            "for finsight this should point to docs/Archive/machine-readable "
+            "(or omit to use default workspace path)."
+        ),
+    )
     parser.add_argument("--timeout", type=bounded_int("timeout", 1, 600), default=120)
     parser.add_argument("--max-tokens", type=bounded_int("max-tokens", 256, 64000), default=10000)
     parser.add_argument("--table-scopes", type=str, default="")

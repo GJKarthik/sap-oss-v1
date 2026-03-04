@@ -1,0 +1,349 @@
+#! Mojo: Catalog - Database Metadata Management
+#!
+#! Converted from: kuzu/src/catalog/ and zig/src/catalog/catalog.zig
+#!
+#! Purpose:
+#! Manages database schema metadata including tables, columns, properties.
+
+from collections import Dict, List
+from common import LogicalType, TableID, ColumnID, PropertyID
+
+# ============================================================================
+# Table Types
+# ============================================================================
+
+@value
+struct TableType:
+    """Table type enumeration"""
+    var value: Int
+    
+    alias NODE = TableType(0)
+    alias REL = TableType(1)
+    alias RDF = TableType(2)
+    
+    fn __init__(inout self, value: Int):
+        self.value = value
+    
+    fn __eq__(self, other: TableType) -> Bool:
+        return self.value == other.value
+
+
+# ============================================================================
+# Property Definition
+# ============================================================================
+
+@value
+struct Property:
+    """Property/column definition"""
+    var name: String
+    var data_type: LogicalType
+    var property_id: PropertyID
+    var is_primary_key: Bool
+    var is_nullable: Bool
+    var default_value: String
+    
+    fn __init__(inout self, name: String, data_type: LogicalType, prop_id: UInt32):
+        self.name = name
+        self.data_type = data_type
+        self.property_id = PropertyID(prop_id)
+        self.is_primary_key = False
+        self.is_nullable = True
+        self.default_value = ""
+    
+    @staticmethod
+    fn primary_key(name: String, data_type: LogicalType, prop_id: UInt32) -> Property:
+        var p = Property(name, data_type, prop_id)
+        p.is_primary_key = True
+        p.is_nullable = False
+        return p
+
+
+# ============================================================================
+# Table Schema
+# ============================================================================
+
+struct TableSchema:
+    """Schema definition for a table"""
+    var name: String
+    var table_id: TableID
+    var table_type: TableType
+    var properties: List[Property]
+    var primary_key_idx: Int
+    var comment: String
+    
+    fn __init__(inout self, name: String, table_id: UInt64, table_type: TableType):
+        self.name = name
+        self.table_id = TableID(table_id)
+        self.table_type = table_type
+        self.properties = List[Property]()
+        self.primary_key_idx = -1
+        self.comment = ""
+    
+    fn add_property(inout self, prop: Property):
+        if prop.is_primary_key:
+            self.primary_key_idx = len(self.properties)
+        self.properties.append(prop)
+    
+    fn get_property_by_name(self, name: String) -> Property:
+        for prop in self.properties:
+            if prop[].name == name:
+                return prop[]
+        # Return invalid property
+        return Property("", LogicalType.NULL_TYPE, 0)
+    
+    fn get_property_by_id(self, prop_id: UInt32) -> Property:
+        for prop in self.properties:
+            if prop[].property_id.value == prop_id:
+                return prop[]
+        return Property("", LogicalType.NULL_TYPE, 0)
+    
+    fn get_num_properties(self) -> Int:
+        return len(self.properties)
+    
+    fn get_primary_key(self) -> Property:
+        if self.primary_key_idx >= 0 and self.primary_key_idx < len(self.properties):
+            return self.properties[self.primary_key_idx]
+        return Property("", LogicalType.NULL_TYPE, 0)
+    
+    fn is_node_table(self) -> Bool:
+        return self.table_type == TableType.NODE
+    
+    fn is_rel_table(self) -> Bool:
+        return self.table_type == TableType.REL
+
+
+# ============================================================================
+# Relationship Schema Extension
+# ============================================================================
+
+struct RelTableSchema:
+    """Extended schema for relationship tables"""
+    var base: TableSchema
+    var src_table_id: TableID
+    var dst_table_id: TableID
+    var src_multiplicity: String  # ONE, MANY
+    var dst_multiplicity: String
+    
+    fn __init__(inout self, name: String, table_id: UInt64, 
+                src_id: UInt64, dst_id: UInt64):
+        self.base = TableSchema(name, table_id, TableType.REL)
+        self.src_table_id = TableID(src_id)
+        self.dst_table_id = TableID(dst_id)
+        self.src_multiplicity = "MANY"
+        self.dst_multiplicity = "MANY"
+
+
+# ============================================================================
+# Catalog Entry
+# ============================================================================
+
+@value
+struct CatalogEntryType:
+    """Catalog entry type"""
+    var value: Int
+    
+    alias TABLE = CatalogEntryType(0)
+    alias FUNCTION = CatalogEntryType(1)
+    alias INDEX = CatalogEntryType(2)
+    alias SEQUENCE = CatalogEntryType(3)
+    alias TYPE = CatalogEntryType(4)
+    alias MACRO = CatalogEntryType(5)
+    
+    fn __init__(inout self, value: Int):
+        self.value = value
+
+
+# ============================================================================
+# Catalog
+# ============================================================================
+
+struct Catalog:
+    """Database catalog - manages all schema metadata"""
+    var tables: Dict[String, TableSchema]
+    var table_id_map: Dict[UInt64, String]
+    var next_table_id: UInt64
+    var next_property_id: UInt32
+    var database_name: String
+    
+    fn __init__(inout self, db_name: String = "default"):
+        self.tables = Dict[String, TableSchema]()
+        self.table_id_map = Dict[UInt64, String]()
+        self.next_table_id = 0
+        self.next_property_id = 0
+        self.database_name = db_name
+    
+    fn create_node_table(inout self, name: String) -> TableID:
+        """Create a new node table"""
+        let table_id = self.next_table_id
+        self.next_table_id += 1
+        
+        var schema = TableSchema(name, table_id, TableType.NODE)
+        self.tables[name] = schema
+        self.table_id_map[table_id] = name
+        
+        return TableID(table_id)
+    
+    fn create_rel_table(inout self, name: String, 
+                        src_table: String, dst_table: String) -> TableID:
+        """Create a new relationship table"""
+        let table_id = self.next_table_id
+        self.next_table_id += 1
+        
+        # Get source and destination table IDs
+        var src_id: UInt64 = 0
+        var dst_id: UInt64 = 0
+        
+        if src_table in self.tables:
+            src_id = self.tables[src_table].table_id.value
+        if dst_table in self.tables:
+            dst_id = self.tables[dst_table].table_id.value
+        
+        var schema = TableSchema(name, table_id, TableType.REL)
+        self.tables[name] = schema
+        self.table_id_map[table_id] = name
+        
+        return TableID(table_id)
+    
+    fn add_property(inout self, table_name: String, 
+                    prop_name: String, data_type: LogicalType) -> PropertyID:
+        """Add property to existing table"""
+        if table_name not in self.tables:
+            return PropertyID(0)
+        
+        let prop_id = self.next_property_id
+        self.next_property_id += 1
+        
+        let prop = Property(prop_name, data_type, prop_id)
+        self.tables[table_name].add_property(prop)
+        
+        return PropertyID(prop_id)
+    
+    fn add_primary_key(inout self, table_name: String,
+                       prop_name: String, data_type: LogicalType) -> PropertyID:
+        """Add primary key property to table"""
+        if table_name not in self.tables:
+            return PropertyID(0)
+        
+        let prop_id = self.next_property_id
+        self.next_property_id += 1
+        
+        let prop = Property.primary_key(prop_name, data_type, prop_id)
+        self.tables[table_name].add_property(prop)
+        
+        return PropertyID(prop_id)
+    
+    fn get_table_schema(self, name: String) -> TableSchema:
+        """Get table schema by name"""
+        if name in self.tables:
+            return self.tables[name]
+        return TableSchema("", 0, TableType.NODE)
+    
+    fn get_table_by_id(self, table_id: UInt64) -> TableSchema:
+        """Get table schema by ID"""
+        if table_id in self.table_id_map:
+            let name = self.table_id_map[table_id]
+            return self.tables[name]
+        return TableSchema("", 0, TableType.NODE)
+    
+    fn has_table(self, name: String) -> Bool:
+        """Check if table exists"""
+        return name in self.tables
+    
+    fn drop_table(inout self, name: String) -> Bool:
+        """Drop a table from catalog"""
+        if name not in self.tables:
+            return False
+        
+        let table_id = self.tables[name].table_id.value
+        _ = self.tables.pop(name)
+        _ = self.table_id_map.pop(table_id)
+        return True
+    
+    fn get_num_tables(self) -> Int:
+        """Get total number of tables"""
+        return len(self.tables)
+    
+    fn get_node_table_names(self) -> List[String]:
+        """Get all node table names"""
+        var names = List[String]()
+        for item in self.tables.items():
+            if item[].value.table_type == TableType.NODE:
+                names.append(item[].key)
+        return names
+    
+    fn get_rel_table_names(self) -> List[String]:
+        """Get all relationship table names"""
+        var names = List[String]()
+        for item in self.tables.items():
+            if item[].value.table_type == TableType.REL:
+                names.append(item[].key)
+        return names
+
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+fn test_property():
+    """Test Property"""
+    let prop = Property("name", LogicalType.STRING, 1)
+    assert_equal(prop.name, "name")
+    assert_true(prop.data_type == LogicalType.STRING)
+    assert_true(not prop.is_primary_key)
+    
+    let pk = Property.primary_key("id", LogicalType.INT64, 0)
+    assert_true(pk.is_primary_key)
+    assert_true(not pk.is_nullable)
+    print("✓ Property tests passed")
+
+
+fn test_table_schema():
+    """Test TableSchema"""
+    var schema = TableSchema("Person", 1, TableType.NODE)
+    
+    let id_prop = Property.primary_key("id", LogicalType.INT64, 0)
+    schema.add_property(id_prop)
+    
+    let name_prop = Property("name", LogicalType.STRING, 1)
+    schema.add_property(name_prop)
+    
+    assert_equal(schema.get_num_properties(), 2)
+    assert_true(schema.is_node_table())
+    
+    let pk = schema.get_primary_key()
+    assert_equal(pk.name, "id")
+    print("✓ TableSchema tests passed")
+
+
+fn test_catalog():
+    """Test Catalog"""
+    var catalog = Catalog("test_db")
+    
+    # Create node tables
+    let person_id = catalog.create_node_table("Person")
+    let company_id = catalog.create_node_table("Company")
+    
+    # Add properties
+    _ = catalog.add_primary_key("Person", "id", LogicalType.INT64)
+    _ = catalog.add_property("Person", "name", LogicalType.STRING)
+    _ = catalog.add_property("Person", "age", LogicalType.INT32)
+    
+    # Create relationship
+    _ = catalog.create_rel_table("WORKS_FOR", "Person", "Company")
+    
+    assert_equal(catalog.get_num_tables(), 3)
+    assert_true(catalog.has_table("Person"))
+    assert_true(catalog.has_table("WORKS_FOR"))
+    
+    let person_schema = catalog.get_table_schema("Person")
+    assert_equal(person_schema.get_num_properties(), 3)
+    print("✓ Catalog tests passed")
+
+
+fn main():
+    """Run all tests"""
+    print("Running Mojo catalog module tests...")
+    test_property()
+    test_table_schema()
+    test_catalog()
+    print("All tests passed! ✓")

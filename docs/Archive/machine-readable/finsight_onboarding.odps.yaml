@@ -1,0 +1,210 @@
+schema: https://opendataproducts.org/v4.1/schema/odps.yaml
+version: "4.1"
+product:
+  details:
+    en:
+      name: FinSight Data Onboarding Register
+      productID: finsight-onboarding-register-001
+      valueProposition: >
+        Provides a machine-readable onboarding, staging-schema, and validation
+        data package for FinSight data ingestion and governance workflows.
+      description: >
+        Consolidated FinSight onboarding register exports from Archive CSV
+        sources, transformed into normalized records, RAG chunks, and
+        embedding-ready artifacts with quality reporting.
+      visibility: organisation
+      status: production
+      type: dataset
+      productVersion: v1.1.0
+      created: "2026-03-03"
+      updated: "2026-03-03"
+      categories:
+        - Data Onboarding
+        - Data Governance
+        - Metadata Management
+      standards:
+        - Open Data Product Specification v4.1
+        - Internal FinSight Data Governance
+      tags:
+        - finsight
+        - onboarding
+        - staging-schema
+        - rag
+        - embeddings
+      outputFileFormats:
+        - JSONL
+        - CSV
+      contentSample: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.jsonl
+
+  contract:
+    id: finsight-odcs-contract-001
+    type: ODCS
+    contractVersion: "2.2.2"
+    spec:
+      dataClassification: Internal
+      usagePolicy: Internal analytics and onboarding workflows only
+      redistribution: prohibited
+      dataRefresh:
+        trigger: Source archive refresh
+        process: Run prepare_finsight_machine_readable.py
+      artifacts:
+        finsight_records_jsonl: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.jsonl
+        finsight_records_csv: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.csv
+        rag_chunks_jsonl: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.jsonl
+        rag_embedding_records_jsonl: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_embedding_records.jsonl
+        quality_report_json: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/quality_report.json
+
+  dataHolder:
+    legalName: SAP OSS FinSight Data Team
+    businessDomain: Finance Data Platform
+    contactName: FinSight Data Product Owner
+    email: finsight-data-owner@example.com
+    description: Owner of FinSight onboarding and schema onboarding artifacts.
+    URL: https://github.com/SAP
+
+  dataQuality:
+    declarative:
+      - displayTitle:
+          - en: Onboarding Data Quality Baseline
+        description: Baseline quality targets for machine-readable onboarding exports.
+        dimensions:
+          - displayTitle: Accuracy
+            dimension: accuracy
+            objective: 98
+            unit: percentage
+            description: Values should accurately represent source onboarding sheets.
+          - displayTitle: Completeness
+            dimension: completeness
+            objective: 95
+            unit: percentage
+            description: Mandatory cells should be populated where required.
+          - displayTitle: Consistency
+            dimension: consistency
+            objective: 95
+            unit: percentage
+            description: Canonical enums and type values should be consistently applied.
+          - displayTitle: Timeliness
+            dimension: timeliness
+            objective: 95
+            unit: percentage
+            description: Exports should be regenerated promptly after source updates.
+    executable:
+      - displayTitle:
+          - en: FinSight Quality Checks
+        description: Executable quality checks performed by the export pipeline.
+        type: Custom
+        version: "1.0.0"
+        reference: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/scripts/prepare_finsight_machine_readable.py
+        spec:
+          checks:
+            - placeholder_token_cleanup
+            - unique_id_placeholder_replacement
+            - datatype_alias_and_anomaly_normalization
+            - mandatory_field_coverage_calculation
+            - issue_inventory_export
+        dimensions:
+          - displayTitle: Completeness
+            dimension: completeness
+            objective: 48
+            unit: percentage
+            description: Current measured mandatory-cell coverage baseline (rounded).
+          - displayTitle: Uniqueness
+            dimension: uniqueness
+            objective: 100
+            unit: percentage
+            description: Duplicate text hash rate should remain zero.
+
+  SLA:
+    declarative:
+      - name:
+          en: FinSight Export SLA
+        description:
+          en: Service expectations for regenerated machine-readable outputs.
+        dimensions:
+          - dimension: updateFrequency
+            objective: 1
+            unit: days
+            description: Exports should be refreshed within one day of source refresh.
+            displayTitle:
+              - en: Update Frequency
+          - dimension: uptime
+            objective: 99
+            unit: percent
+            description: Export package should be available for internal access.
+            displayTitle:
+              - en: Availability
+    executable:
+      - name:
+          en: Pipeline Validation Procedure
+        description:
+          en: Validation and quality checks for each export run.
+        type: Custom
+        reference: file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/scripts/validate_finsight_odps.py
+        spec: >
+          Run prepare_finsight_machine_readable.py followed by
+          validate_finsight_odps.py and review quality_report.json.
+        dimensions:
+          - dimension: updateFrequency
+            objective: 1
+            unit: days
+            displayTitle:
+              - en: Pipeline Cadence
+
+  license:
+    scope:
+      definition: Internal FinSight onboarding and schema governance use.
+      restrictions: External redistribution is not permitted.
+      permanent: true
+      exclusive: false
+      rights:
+        - Reproduction
+        - Display
+        - Adaptation
+    governance:
+      ownership: FinSight Data Team
+      confidentiality: Internal use only
+      applicableLaws: Internal governance policies and contractual obligations
+
+  productStrategy:
+    status: Active
+    startDate: "2026-03-03"
+    objectives:
+      - en: Improve onboarding data reliability and downstream AI discoverability.
+    strategicAlignment:
+      - en: FinSight data governance modernization
+    contributesToKPI:
+      id: bizkpi-finsight-onboarding-completeness
+      name: Onboarding Completeness
+      description: Mandatory-cell population level across onboarding package.
+      unit: percentage
+      target: 95
+      direction: at_least
+      frequency: daily
+      owner: FinSight Data Team
+      calculation: mandatory_filled_cells / mandatory_total_cells * 100
+    productKPIs:
+      - id: kpi-mandatory-coverage
+        name: Mandatory Coverage Baseline
+        unit: percentage
+        target: 47.15
+        direction: increase
+        frequency: daily
+        owner: FinSight Data Team
+        calculation: mandatory_filled_cells / mandatory_total_cells * 100
+      - id: kpi-quality-issues
+        name: Quality Issues Count
+        unit: number
+        target: 0
+        direction: decrease
+        frequency: daily
+        owner: FinSight Data Team
+        calculation: count(quality_issues.csv)
+    relatedKPIs:
+      - id: kpi-rag-readiness
+        name: RAG Readiness
+        unit: percentage
+        target: 100
+        direction: at_least
+        frequency: daily
+        owner: AI Platform Team
+        calculation: percent of records emitted to rag_chunks.jsonl

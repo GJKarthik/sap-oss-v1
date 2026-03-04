@@ -1,0 +1,60 @@
+{
+  "name": "hippocpp-smoke",
+  "cases": [
+    {
+      "name": "person_scan_ordered",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob', age: 25})"
+      ],
+      "query": "MATCH (p:Person) RETURN p.name, p.age ORDER BY p.name"
+    },
+    {
+      "name": "filter_and_aggregate",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE i.category = 'A' RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "parameterized_lookup",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(name STRING, score INT64, PRIMARY KEY(name))",
+        "CREATE (:User {name: 'u1', score: 5})",
+        "CREATE (:User {name: 'u2', score: 9})"
+      ],
+      "parameters": {
+        "target": "u2"
+      },
+      "query": "MATCH (u:User) WHERE u.name = $target RETURN u.score"
+    },
+    {
+      "name": "return_int_literal",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 AS one"
+    },
+    {
+      "name": "return_string_literal",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 'abc' AS s"
+    },
+    {
+      "name": "return_param_string",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "x": "zz"
+      },
+      "query": "RETURN $x AS val"
+    }
+  ]
+}

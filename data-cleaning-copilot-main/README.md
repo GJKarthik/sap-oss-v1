@@ -95,6 +95,13 @@ The interactive co-pilot provides a web-based interface for data exploration and
 # Basic usage with RelStack database
 uv run python -m bin.copilot -d rel-stack
 
+# Basic usage with FinSight machine-readable package
+uv run python -m bin.copilot -d finsight
+
+# With explicit FinSight machine-readable directory
+uv run python -m bin.copilot -d finsight \
+  --data-dir /Users/user/Documents/sap-oss/docs/Archive/machine-readable
+
 # With custom data directory
 uv run python -m bin.copilot -d rel-stack \
   --data-dir <path-to-your-data>
@@ -115,7 +122,7 @@ uv run python -m bin.copilot -d rel-stack \
 ```
 
 #### Parameters:
-- `-d, --database`: Database type (`rel-stack`)
+- `-d, --database`: Database type (`rel-stack`, `finsight`)
 - `--data-dir`: Directory containing CSV data files (optional)
 - `--session-model`: Model for interactive session (`claude-3.7` or `claude-4`)
 - `--agent-model`: Model for agent operations (`claude-3.7` or `claude-4`)

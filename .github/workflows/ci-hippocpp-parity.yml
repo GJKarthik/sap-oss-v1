@@ -1,0 +1,41 @@
+name: CI (HippoCPP Parity)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'mangle-query-service/hippocpp/**'
+      - 'mangle-query-service/kuzu/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mangle-query-service/hippocpp/**'
+      - 'mangle-query-service/kuzu/**'
+
+jobs:
+  parity-gate:
+    name: Parity Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install differential backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install kuzu
+
+      - name: Run structural parity gate
+        env:
+          HIPPOCPP_ENABLE_DIFF: ${{ vars.HIPPOCPP_ENABLE_DIFF || '1' }}
+          HIPPOCPP_BACKEND_MODE: ${{ vars.HIPPOCPP_BACKEND_MODE || 'upstream-kuzu' }}
+          HIPPOCPP_DIFF_LEFT_CMD: ${{ vars.HIPPOCPP_DIFF_LEFT_CMD }}
+          HIPPOCPP_DIFF_RIGHT_CMD: ${{ vars.HIPPOCPP_DIFF_RIGHT_CMD }}
+          HIPPOCPP_DIFF_LEFT_NAME: ${{ vars.HIPPOCPP_DIFF_LEFT_NAME }}
+          HIPPOCPP_DIFF_RIGHT_NAME: ${{ vars.HIPPOCPP_DIFF_RIGHT_NAME }}
+          HIPPOCPP_DIFF_CORPUS: ${{ vars.HIPPOCPP_DIFF_CORPUS }}
+        run: bash mangle-query-service/hippocpp/scripts/ci_parity_gate.sh

@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-03-03T03:27:15.314120+00:00",
+  "odps_path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_onboarding.odps.yaml",
+  "schema_url": "https://opendataproducts.org/v4.1/schema/odps.json",
+  "is_valid": true,
+  "schema_error_count": 0,
+  "missing_link_count": 0,
+  "schema_errors": [],
+  "link_checks": [
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.csv",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.csv",
+      "exists": true
+    },
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.jsonl",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/finsight_records.jsonl",
+      "exists": true
+    },
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/quality_report.json",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/quality_report.json",
+      "exists": true
+    },
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.jsonl",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_chunks.jsonl",
+      "exists": true
+    },
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_embedding_records.jsonl",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/rag_embedding_records.jsonl",
+      "exists": true
+    },
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/scripts/prepare_finsight_machine_readable.py",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/scripts/prepare_finsight_machine_readable.py",
+      "exists": true
+    },
+    {
+      "uri": "file:///Users/user/Documents/sap-oss/docs/Archive/machine-readable/scripts/validate_finsight_odps.py",
+      "path": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/scripts/validate_finsight_odps.py",
+      "exists": true
+    }
+  ]
+}

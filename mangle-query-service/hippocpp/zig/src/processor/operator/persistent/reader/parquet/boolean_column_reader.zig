@@ -1,0 +1,11 @@
+//! Boolean Parquet column reader.
+
+const base = @import("column_reader.zig");
+
+pub const BooleanColumnReader = struct {
+    inner: base.ColumnReader,
+
+    pub fn init(value_count: u64) BooleanColumnReader {
+        return .{ .inner = base.ColumnReader.init("bool", value_count) };
+    }
+};

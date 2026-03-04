@@ -1,0 +1,56 @@
+{"record_id": "validations:000001", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 2, "fields": {"source_system": "SCI", "data_type": "Structured", "life_cycle_status": "Not Prioritized", "data_domain": "Treasury", "data_category": "Liquidity", "refresh_rate": "Daily", "sensitivity": "Public", "yes_no": "Yes", "yes_no_not_applicable": "Yes", "btp_layer": "Staging"}}
+{"record_id": "validations:000002", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 3, "fields": {"source_system": "BPC", "data_type": "Unstructured", "life_cycle_status": "Prioritized", "data_domain": "Finance", "data_category": "FTP", "refresh_rate": "Weekly", "sensitivity": "Internal", "yes_no": "No", "yes_no_not_applicable": "No", "btp_layer": "Common"}}
+{"record_id": "validations:000003", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 4, "fields": {"source_system": "S4 GL", "life_cycle_status": "Development", "data_category": "IRRBB", "refresh_rate": "Fortnightly", "sensitivity": "Confidential", "yes_no_not_applicable": "Not Applicable", "btp_layer": "Use-Case Specific"}}
+{"record_id": "validations:000004", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 5, "fields": {"source_system": "FPSL (FM)", "life_cycle_status": "Testing", "data_category": "Capital", "refresh_rate": "Monthly"}}
+{"record_id": "validations:000005", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 6, "fields": {"source_system": "FPSL (Non FM)", "life_cycle_status": "Live", "data_category": "Trade + Accounting", "refresh_rate": "Quarterly"}}
+{"record_id": "validations:000006", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 7, "fields": {"source_system": "FDP (ACBS)", "life_cycle_status": "Deprecated", "data_category": "Trade", "refresh_rate": "Semi-Annually"}}
+{"record_id": "validations:000007", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 8, "fields": {"source_system": "Sales DB", "data_category": "Accounting", "refresh_rate": "Annually"}}
+{"record_id": "validations:000008", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 9, "fields": {"source_system": "FSDP (Murex)", "data_category": "Financials", "refresh_rate": "Adhoc"}}
+{"record_id": "validations:000009", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 10, "fields": {"source_system": "FSDP (Razor)", "data_category": "P&L", "refresh_rate": "Specific Business Day"}}
+{"record_id": "validations:000010", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 11, "fields": {"source_system": "FSDP (GPTM)", "data_category": "Market", "refresh_rate": "Specific Calendar Day"}}
+{"record_id": "validations:000011", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 12, "fields": {"source_system": "FDP (DTP)", "data_category": "PC"}}
+{"record_id": "validations:000012", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 13, "fields": {"source_system": "FDP (OTP)", "data_category": "Reference Data"}}
+{"record_id": "validations:000013", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 14, "fields": {"source_system": "FDP (TXP)"}}
+{"record_id": "validations:000014", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 15, "fields": {"source_system": "ODS (Hogan)"}}
+{"record_id": "validations:000015", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 16, "fields": {"source_system": "ODS (EFBS)"}}
+{"record_id": "validations:000016", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 17, "fields": {"source_system": "BCRS"}}
+{"record_id": "validations:000017", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 18, "fields": {"source_system": "TPACE"}}
+{"record_id": "validations:000018", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 19, "fields": {"source_system": "BPC"}}
+{"record_id": "validations:000019", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 20, "fields": {"source_system": "IDQ"}}
+{"record_id": "validations:000020", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 21, "fields": {"source_system": "FDP (EBBS)"}}
+{"record_id": "validations:000021", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 22, "fields": {"source_system": "FSDP (PCT2)"}}
+{"record_id": "validations:000022", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 23, "fields": {"source_system": "MDG"}}
+{"record_id": "validations:000023", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 24, "fields": {"source_system": "ODS (NCS)"}}
+{"record_id": "validations:000024", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 25, "fields": {"source_system": "RCO - Liquidity"}}
+{"record_id": "validations:000025", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 26, "fields": {"source_system": "RCO - IRRBB"}}
+{"record_id": "validations:000026", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 27, "fields": {"source_system": "WFP"}}
+{"record_id": "validations:000027", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 28, "fields": {"source_system": "BART"}}
+{"record_id": "validations:000028", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 29, "fields": {"source_system": "POSTGRES"}}
+{"record_id": "validations:000029", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 30, "fields": {"source_system": "ODS (OLTP)"}}
+{"record_id": "validations:000030", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 31, "fields": {"source_system": "FPSL (ICON)"}}
+{"record_id": "validations:000031", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 32, "fields": {"source_system": "FSDP (LoanIQ)"}}
+{"record_id": "validations:000032", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 33, "fields": {"source_system": "FSDP (S2BL)"}}
+{"record_id": "validations:000033", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 34, "fields": {"source_system": "ODS (DOTOPAL)"}}
+{"record_id": "validations:000034", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 35, "fields": {"source_system": "ODS (MTS)"}}
+{"record_id": "validations:000035", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 36, "fields": {"source_system": "ODS (SCLS)"}}
+{"record_id": "validations:000036", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 37, "fields": {"source_system": "CLARITY"}}
+{"record_id": "validations:000037", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 38, "fields": {"source_system": "ODS (CSSS)"}}
+{"record_id": "validations:000038", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 39, "fields": {"source_system": "ODS (SCPAY)"}}
+{"record_id": "validations:000039", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 40, "fields": {"source_system": "ODS (SEC)"}}
+{"record_id": "validations:000040", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 41, "fields": {"source_system": "ODS (BPC)"}}
+{"record_id": "validations:000041", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 42, "fields": {"source_system": "ODS (RCMS)"}}
+{"record_id": "validations:000042", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 43, "fields": {"source_system": "ODS (RDS)"}}
+{"record_id": "validations:000043", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 44, "fields": {"source_system": "ODS (CCMS)"}}
+{"record_id": "validations:000044", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 45, "fields": {"source_system": "ODS (VLPAY)"}}
+{"record_id": "validations:000045", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 46, "fields": {"source_system": "ODS (LOS)"}}
+{"record_id": "validations:000046", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 47, "fields": {"source_system": "ODS (GMFS)"}}
+{"record_id": "validations:000047", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 48, "fields": {"source_system": "ODS (STS)"}}
+{"record_id": "validations:000048", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 49, "fields": {"source_system": "ODS (RLSS)"}}
+{"record_id": "validations:000049", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 50, "fields": {"source_system": "ODS (TDMS)"}}
+{"record_id": "validations:000050", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 51, "fields": {"source_system": "AXIOM"}}
+{"record_id": "validations:000051", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 52, "fields": {"source_system": "CCIB-DAS"}}
+{"record_id": "validations:000052", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 53, "fields": {"source_system": "STARS"}}
+{"record_id": "validations:000053", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 54, "fields": {"source_system": "Manual Upload"}}
+{"record_id": "validations:000054", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 55, "fields": {"source_system": "FDP (MILES)"}}
+{"record_id": "validations:000055", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 56, "fields": {"source_system": "FDP (UTS)"}}
+{"record_id": "validations:000056", "source_file": "3_validations.csv", "table": "validations", "source_row_number": 57, "fields": {"source_system": "ATHENA"}}

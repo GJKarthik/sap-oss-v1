@@ -1,0 +1,58 @@
+version: "1.0"
+phase: "Phase 0"
+name: "FinSight Target HANA Schema Blueprint"
+schemas:
+  FINSIGHT_CORE:
+    purpose: "Machine-readable onboarding master model"
+    tables:
+      RECORDS:
+        description: "One row per source record from finsight_records"
+        primary_key: [record_id]
+      FIELDS:
+        description: "EAV projection of per-record normalized fields"
+        primary_key: [record_id, field_name]
+      SOURCE_FILES:
+        description: "Source file inventory and row counts"
+        primary_key: [source_file]
+
+  FINSIGHT_RAG:
+    purpose: "Retrieval and embedding layer"
+    tables:
+      CHUNKS:
+        description: "RAG chunks aligned to RECORDS"
+        primary_key: [chunk_id]
+      EMBEDDINGS:
+        description: "Embedding vectors and metadata"
+        primary_key: [embedding_id]
+      EMBEDDING_MANIFEST:
+        description: "Embedding generation run metadata"
+        primary_key: [run_id]
+
+  FINSIGHT_GOV:
+    purpose: "Quality and governance evidence"
+    tables:
+      QUALITY_ISSUES:
+        description: "Row-level normalization and data quality issues"
+        primary_key: [record_id, issue_type, field, source_row_number]
+      QUALITY_REPORTS:
+        description: "Run-level quality report snapshots"
+        primary_key: [report_id]
+      TABLE_PROFILE:
+        description: "Mandatory coverage and table-level completeness metrics"
+        primary_key: [table_name, report_id]
+      ODPS_VALIDATION:
+        description: "ODPS schema/link validation results"
+        primary_key: [validation_run_id]
+
+  FINSIGHT_GRAPH:
+    purpose: "Lineage and semantic graph"
+    tables:
+      VERTEX:
+        description: "Graph nodes: sources, tables, fields, records, issues"
+        primary_key: [vertex_id]
+      EDGE:
+        description: "Typed graph relationships between vertices"
+        primary_key: [edge_id]
+      EDGE_TYPE:
+        description: "Reference catalog of allowed relationship types"
+        primary_key: [edge_type]

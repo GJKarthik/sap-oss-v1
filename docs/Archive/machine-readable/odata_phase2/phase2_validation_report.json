@@ -1,0 +1,57 @@
+{
+  "phase": "Phase 2 - OData Vocabulary Projection",
+  "generated_at_utc": "2026-03-03T04:54:23.433595+00:00",
+  "inputs": {
+    "phase0_target_schemas": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/hana_phase0/phase0_target_schemas.yaml",
+    "phase0_field_catalog": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/hana_phase0/phase0_field_catalog.json",
+    "common_vocabulary": "/Users/user/Documents/sap-oss/odata-vocabularies-main/vocabularies/Common.xml",
+    "personaldata_vocabulary": "/Users/user/Documents/sap-oss/odata-vocabularies-main/vocabularies/PersonalData.xml",
+    "copilot_root": "/Users/user/Documents/sap-oss/data-cleaning-copilot-main"
+  },
+  "outputs": {
+    "schema_edmx": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/odata_phase2/finsight_schema.edmx",
+    "column_annotations": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/odata_phase2/finsight_column_annotations.json",
+    "derived_checks": "/Users/user/Documents/sap-oss/docs/Archive/machine-readable/odata_phase2/finsight_derived_checks.json"
+  },
+  "coverage": {
+    "table_count": 13,
+    "total_columns": 112,
+    "annotated_columns": 18,
+    "column_coverage_pct": 16.07,
+    "total_annotations": 18
+  },
+  "terms": {
+    "used_count": 4,
+    "used_terms": [
+      "com.sap.vocabularies.Common.v1.IsDigitSequence",
+      "com.sap.vocabularies.Common.v1.IsUpperCase",
+      "com.sap.vocabularies.PersonalData.v1.IsPotentiallyPersonal",
+      "com.sap.vocabularies.PersonalData.v1.IsPotentiallySensitive"
+    ],
+    "missing_in_vocab_count": 0,
+    "missing_in_vocab_terms": [],
+    "unmapped_to_checks_count": 3,
+    "unmapped_to_checks": [
+      {
+        "table_key": "FINSIGHT_CORE_RECORDS",
+        "column": "personal_data",
+        "term": "IsPotentiallySensitive"
+      },
+      {
+        "table_key": "FINSIGHT_CORE_RECORDS",
+        "column": "requester",
+        "term": "IsPotentiallyPersonal"
+      },
+      {
+        "table_key": "FINSIGHT_CORE_RECORDS",
+        "column": "sensitivity",
+        "term": "IsPotentiallySensitive"
+      }
+    ]
+  },
+  "derived_checks": {
+    "status": "generated_fallback",
+    "error": "ValidationError: 3 validation errors for CheckLogic\ndescription\n  Field required [type=missing, input_value={'function_name': 'OData_..., 'source_row_number')]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nparameters\n  Field required [type=missing, input_value={'function_name': 'OData_..., 'source_row_number')]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nreturn_statement\n  Field required [type=missing, input_value={'function_name': 'OData_..., 'source_row_number')]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing",
+    "check_count": 15
+  }
+}
