@@ -1,0 +1,90 @@
+/* Global Styles for NVIDIA Model Optimizer UI */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #f5f5f5;
+}
+
+a {
+  color: #76b900;
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* NVIDIA Brand Colors */
+:root {
+  --nvidia-green: #76b900;
+  --nvidia-green-dark: #5a8f00;
+  --nvidia-black: #1a1a1a;
+  --nvidia-dark-gray: #333333;
+  --nvidia-gray: #666666;
+  --nvidia-light-gray: #e0e0e0;
+  --nvidia-white: #ffffff;
+  
+  --success: #2e7d32;
+  --warning: #e65100;
+  --error: #c62828;
+  --info: #1565c0;
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 16px; }
+.mt-4 { margin-top: 24px; }
+
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 16px; }
+.mb-4 { margin-bottom: 24px; }
+
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 16px; }
+.p-4 { padding: 24px; }
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nvidia-light-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nvidia-gray);
+  border-radius: 4px;
+  
+  &:hover {
+    background: var(--nvidia-dark-gray);
+  }
+}
