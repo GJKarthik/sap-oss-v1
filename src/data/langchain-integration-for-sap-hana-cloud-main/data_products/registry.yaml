@@ -7,6 +7,10 @@ catalog:
   id: "langchain-hana-catalog"
   name: "LangChain HANA Cloud Data Product Catalog"
   description: "Data products for LangChain integration with SAP HANA Cloud"
+  sap_ai_experience:
+    tier: "ai_core"
+    service: "embedded-hana"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "hana_vector_store.yaml"

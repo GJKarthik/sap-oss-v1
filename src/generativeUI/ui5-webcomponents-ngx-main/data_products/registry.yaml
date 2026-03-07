@@ -7,6 +7,10 @@ catalog:
   id: "ui5-webcomponents-ngx-catalog"
   name: "UI5 Web Components Angular Data Product Catalog"
   description: "Data products for UI5 component generation and Angular development"
+  sap_ai_experience:
+    tier: "sap_analytics_cloud"
+    service: "ui5-webcomponents-ngx"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "ui5_angular_service.yaml"

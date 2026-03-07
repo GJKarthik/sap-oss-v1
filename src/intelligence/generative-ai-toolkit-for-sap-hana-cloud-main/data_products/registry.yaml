@@ -7,6 +7,10 @@ catalog:
   id: "gen-ai-toolkit-hana-catalog"
   name: "Generative AI Toolkit HANA Cloud Data Product Catalog"
   description: "Data products for generative AI with SAP HANA Cloud"
+  sap_ai_experience:
+    tier: "ai_core"
+    service: "ai-prompt-agent"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "gen_ai_hana_service.yaml"

@@ -7,6 +7,10 @@ catalog:
   id: "world-monitor-catalog"
   name: "World Monitor Data Product Catalog"
   description: "Data products for global event monitoring and analysis"
+  sap_ai_experience:
+    tier: "sap_analytics_cloud"
+    service: "world-monitor"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "world_monitor_service.yaml"

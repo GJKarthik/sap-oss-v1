@@ -1,22 +1,274 @@
-# Microservice Architecture - Docker Compose
-# Orchestrates: model-optimizer, data-copilot, odata-service, optimizer-ui
+# ════════════════════════════════════════════════════════════════════════════
+# SAP AI Experience – Microservice Architecture
+# Tiered topology per sap-ai-experience-map.yaml
+# ════════════════════════════════════════════════════════════════════════════
 
 version: '3.8'
 
 services:
-  # Model Optimizer Microservice (T4 GPU quantization)
+
+  # ── Tier 1 ─ SAP Analytics Cloud : Gen UI Experiences ────────────────────
+
+  world-monitor:
+    build:
+      context: ./src/generativeUI/world-monitor-main
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - VLLM_URL=http://vllm:8080
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - REDIS_URL=redis://redis:6379
+    labels:
+      sap.ai.tier: "sap_analytics_cloud"
+      sap.ai.service: "world-monitor"
+      sap.ai.data_security: "internal/confidential"
+    depends_on: [agent-router, elasticsearch, vllm]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks: [platform-network]
+
+  data-copilot:
+    build:
+      context: ./src/generativeUI/data-cleaning-copilot-main
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - ODATA_SERVICE_URL=http://odata-schema:8003
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP}
+    labels:
+      sap.ai.tier: "sap_analytics_cloud"
+      sap.ai.service: "data-cleaning-copilot"
+      sap.ai.data_security: "confidential"
+    depends_on: [agent-router, odata-schema, elasticsearch]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks: [platform-network]
+
+  # ── Tier 2 ─ SAP CAP : Custom AI App & Governance Control Tower ─────────
+
+  cap-llm-plugin:
+    build:
+      context: ./src/data/cap-llm-plugin-main
+      dockerfile: docker/Dockerfile
+    ports:
+      - "4004:4004"
+    environment:
+      - PORT=4004
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - HANA_URL=${HANA_URL}
+    labels:
+      sap.ai.tier: "sap_cap"
+      sap.ai.service: "cap-llm-plugin"
+      sap.ai.data_security: "internal/confidential"
+    depends_on: [agent-router, vllm]
+    networks: [platform-network]
+
+  # ── Tier 3 ─ AI Core ────────────────────────────────────────────────────
+
+  vllm:
+    build:
+      context: ./src/intelligence/vllm-main
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MODEL_PATH=/app/models
+    volumes:
+      - model-cache:/app/models
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "enterprise-sovereign-llm"
+      sap.ai.data_security: "on-premise-only"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks: [platform-network]
+
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "search"
+      sap.ai.data_security: "index-based"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks: [platform-network]
+
+  agent-router:
+    build:
+      context: ./src/data/mangle-query-service
+      dockerfile: Dockerfile
+    ports:
+      - "8010:8010"
+    environment:
+      - PORT=8010
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - VLLM_URL=http://vllm:8080
+      - ODATA_SERVICE_URL=http://odata-schema:8003
+      - HANA_URL=${HANA_URL}
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "agent-router"
+      sap.ai.data_security: "governance-hub"
+    depends_on: [elasticsearch, vllm, odata-schema]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks: [platform-network]
+
+  odata-schema:
+    build:
+      context: ./src/data/odata-vocabularies-main
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "odata-schema"
+      sap.ai.data_security: "public"
+    volumes:
+      - ./src/data/odata-vocabularies-main/vocabularies:/app/vocabularies:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks: [platform-network]
+
+  mcp-pal:
+    build:
+      context: ./src/intelligence/ai-core-pal
+      dockerfile: Dockerfile
+    ports:
+      - "8020:8020"
+    environment:
+      - PORT=8020
+      - HANA_URL=${HANA_URL}
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "mcp-pal-deep-learning"
+      sap.ai.data_security: "confidential"
+    depends_on: [agent-router, vllm]
+    networks: [platform-network]
+
+  ai-shared-fabric:
+    build:
+      context: ./src/data/ai-core-streaming
+      dockerfile: Dockerfile
+    ports:
+      - "8030:8030"
+    environment:
+      - PORT=8030
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - HANA_URL=${HANA_URL}
+      - XSUAA_URL=${XSUAA_URL}
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "ai-shared-fabric"
+      sap.ai.data_security: "public/internal"
+    depends_on: [agent-router, vllm]
+    networks: [platform-network]
+
+  ai-prompt-agent:
+    build:
+      context: ./src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
+      dockerfile: Dockerfile
+    ports:
+      - "8040:8040"
+    environment:
+      - PORT=8040
+      - HANA_URL=${HANA_URL}
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "ai-prompt-agent"
+      sap.ai.data_security: "confidential"
+    depends_on: [agent-router, vllm]
+    networks: [platform-network]
+
+  embedded-hana:
+    build:
+      context: ./src/data/langchain-integration-for-sap-hana-cloud-main
+      dockerfile: Dockerfile
+    ports:
+      - "8050:8050"
+    environment:
+      - PORT=8050
+      - HANA_URL=${HANA_URL}
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "embedded-hana"
+      sap.ai.data_security: "confidential"
+    depends_on: [agent-router, vllm]
+    networks: [platform-network]
+
+  # ── Tier 4 ─ FinSight SAP BTP/BDC ──────────────────────────────────────
+
   model-optimizer:
     build:
-      context: ./nvidia-modelopt
+      context: ./src/training/nvidia-modelopt
       dockerfile: Dockerfile
     ports:
       - "8001:8001"
     environment:
       - PORT=8001
       - LOG_LEVEL=INFO
+    labels:
+      sap.ai.tier: "finsight_btp_bdc"
+      sap.ai.service: "object-store-for-model"
+      sap.ai.data_security: "confidential"
     volumes:
       - model-cache:/app/models
-      - ./nvidia-modelopt/outputs:/app/outputs
+      - ./src/training/nvidia-modelopt/outputs:/app/outputs
     deploy:
       resources:
         reservations:
@@ -29,72 +281,18 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    networks:
-      - platform-network
+    networks: [platform-network]
 
-  # Data Cleaning Copilot Microservice
-  data-copilot:
-    build:
-      context: ./data-cleaning-copilot-main
-      dockerfile: Dockerfile
-    ports:
-      - "8002:8002"
-    environment:
-      - PORT=8002
-      - MODEL_OPTIMIZER_URL=http://model-optimizer:8001
-      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
-      - AICORE_BASE_URL=${AICORE_BASE_URL}
-      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
-      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
-      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP}
-    depends_on:
-      - model-optimizer
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - platform-network
+  # ── Infrastructure ─────────────────────────────────────────────────────
 
-  # OData Vocabularies Service
-  odata-service:
-    build:
-      context: ./odata-vocabularies-main
-      dockerfile: Dockerfile
+  redis:
+    image: redis:7-alpine
     ports:
-      - "8003:8003"
-    environment:
-      - PORT=8003
+      - "6379:6379"
     volumes:
-      - ./odata-vocabularies-main/vocabularies:/app/vocabularies:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - platform-network
+      - redis-data:/data
+    networks: [platform-network]
 
-  # Angular UI Microservice
-  optimizer-ui:
-    build:
-      context: ./nvidia-modelopt/ui
-      dockerfile: Dockerfile
-    ports:
-      - "4200:80"
-    environment:
-      - API_MODEL_OPTIMIZER=http://model-optimizer:8001
-      - API_DATA_COPILOT=http://data-copilot:8002
-      - API_ODATA_SERVICE=http://odata-service:8003
-    depends_on:
-      - model-optimizer
-      - data-copilot
-      - odata-service
-    networks:
-      - platform-network
-
-  # API Gateway (Kong/Nginx alternative - simple reverse proxy)
   api-gateway:
     image: nginx:alpine
     ports:
@@ -102,14 +300,18 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - model-optimizer
-      - data-copilot
-      - odata-service
-    networks:
-      - platform-network
+      - agent-router
+      - odata-schema
+      - vllm
+      - elasticsearch
+    networks: [platform-network]
 
 volumes:
   model-cache:
+    driver: local
+  es-data:
+    driver: local
+  redis-data:
     driver: local
 
 networks:

@@ -7,6 +7,10 @@ catalog:
   id: "data-cleaning-copilot-catalog"
   name: "Data Cleaning Copilot Data Product Catalog"
   description: "Data products for AI-assisted data cleaning and transformation"
+  sap_ai_experience:
+    tier: "sap_analytics_cloud"
+    service: "data-cleaning-copilot"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "data_cleaning_service.yaml"

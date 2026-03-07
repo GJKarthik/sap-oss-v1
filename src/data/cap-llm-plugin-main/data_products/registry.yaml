@@ -7,6 +7,10 @@ catalog:
   id: "cap-llm-plugin-catalog"
   name: "CAP LLM Plugin Data Product Catalog"
   description: "Data products for CAP application LLM integration"
+  sap_ai_experience:
+    tier: "sap_cap"
+    service: "cap-llm-plugin"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "cap_llm_service.yaml"

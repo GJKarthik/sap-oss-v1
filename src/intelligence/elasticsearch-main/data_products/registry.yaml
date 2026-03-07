@@ -7,6 +7,10 @@ catalog:
   id: "elasticsearch-catalog"
   name: "Elasticsearch Data Product Catalog"
   description: "Data products for Elasticsearch search and analytics"
+  sap_ai_experience:
+    tier: "ai_core"
+    service: "search"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "elasticsearch_search_service.yaml"

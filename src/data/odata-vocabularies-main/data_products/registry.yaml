@@ -7,6 +7,10 @@ catalog:
   id: "odata-vocabularies-catalog"
   name: "OData Vocabularies Data Product Catalog"
   description: "Data products for OData vocabulary annotations and metadata"
+  sap_ai_experience:
+    tier: "ai_core"
+    service: "odata-schema"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "odata_vocabulary_service.yaml"

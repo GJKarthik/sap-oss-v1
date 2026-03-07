@@ -8,6 +8,10 @@ catalog:
   id: "aicore-pal-catalog"
   name: "AI Core PAL Data Product Catalog"
   description: "MCP integration for SAP HANA PAL predictive analytics"
+  sap_ai_experience:
+    tier: "ai_core"
+    service: "mcp-pal-deep-learning"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "aicore_pal_service.yaml"

@@ -9,6 +9,10 @@ metadata:
   name: mangle-query-service
   version: "1.1.0"
   description: "OpenAI-compatible query routing service with governance"
+  sap_ai_experience:
+    tier: "ai_core"
+    service: "agent-router"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 # Agent Classification (2025-AI-Agent-Index.pdf)
 x-agent-classification:

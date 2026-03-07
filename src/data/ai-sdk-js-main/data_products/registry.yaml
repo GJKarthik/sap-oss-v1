@@ -7,6 +7,10 @@ catalog:
   id: "ai-sdk-js-catalog"
   name: "AI SDK JS Data Product Catalog"
   description: "Data products for AI Core inference services"
+  sap_ai_experience:
+    tier: "sap_cap"
+    service: "ai-sdk-js"
+    map_ref: "sap-ai-experience-map.yaml" 
 
 products:
   - ref: "ai_core_inference.yaml"
