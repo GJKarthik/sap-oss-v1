@@ -1,1 +1,0 @@
-{"version":3,"file":"content-filter-result-base.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/content-filter-result-base.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,kCAAkC,GAAG;IAC/C,QAAQ,EAAE,OAAO,CAAC;CACnB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

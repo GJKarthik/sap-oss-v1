@@ -1,1 +1,0 @@
-{"version":3,"file":"collections-list-response.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/collections-list-response.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,iBAAiB,CAAC;AAClD;;GAEG;AACH,MAAM,MAAM,uBAAuB,GAAG;IACpC,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,SAAS,EAAE,UAAU,EAAE,CAAC;CACzB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

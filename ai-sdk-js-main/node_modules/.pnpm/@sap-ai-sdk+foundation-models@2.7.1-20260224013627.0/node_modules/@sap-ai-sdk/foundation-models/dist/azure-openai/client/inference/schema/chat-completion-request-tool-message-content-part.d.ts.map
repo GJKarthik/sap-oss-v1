@@ -1,1 +1,0 @@
-{"version":3,"file":"chat-completion-request-tool-message-content-part.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/chat-completion-request-tool-message-content-part.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,sDAAsD,EAAE,MAAM,wDAAwD,CAAC;AACrI;;GAEG;AACH,MAAM,MAAM,sDAAsD,GAChE,sDAAsD,CAAC"}

@@ -1,1 +1,0 @@
-{"version":3,"file":"share-point-config-get-response.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/share-point-config-get-response.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,yBAAyB,EAAE,MAAM,oCAAoC,CAAC;AACpF;;GAEG;AACH,MAAM,MAAM,2BAA2B,GAAG;IACxC,IAAI,EAAE,yBAAyB,CAAC;CACjC,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

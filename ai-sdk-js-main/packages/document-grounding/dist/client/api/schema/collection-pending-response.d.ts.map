@@ -1,1 +1,0 @@
-{"version":3,"file":"collection-pending-response.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/collection-pending-response.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,yBAAyB,GAAG;IACtC,QAAQ,EAAE,MAAM,CAAC;IACjB,MAAM,EAAE,MAAM,CAAC;CAChB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

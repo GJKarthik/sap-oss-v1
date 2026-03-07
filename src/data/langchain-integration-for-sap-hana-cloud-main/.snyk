@@ -1,0 +1,27 @@
+# Snyk (https://snyk.io) policy file
+version: v1.25.0
+
+ignore:
+  CVE-2026-28277:
+    - langchain-hana > langchain-classic > langgraph:
+        reason: >
+          CVE-2026-28277: langgraph msgpack deserialization (CVSS 6.8 medium).
+          No patch exists as of 2026-03-07 (affects all versions <= 1.0.9).
+          langchain-hana does not use LangGraph checkpoints; langgraph is a
+          transitive dependency pulled in by langchain-classic and is never
+          instantiated by this package. Exploitation requires attacker write
+          access to the checkpoint backing store (post-exploitation only).
+        expires: 2026-09-07T00:00:00.000Z
+    - langchain-hana > langchain-classic > langgraph > langgraph-checkpoint:
+        reason: >
+          CVE-2026-28277: langgraph-checkpoint deserialization (same CVE chain).
+          No patch exists. langchain-hana does not use LangGraph checkpoints.
+          Transitive dep only; never instantiated by this package.
+        expires: 2026-09-07T00:00:00.000Z
+
+  SNYK-PYTHON-LANGCHAINCLASSIC-*:
+    - langchain-hana > langchain-classic:
+        reason: >
+          ReDoS in langchain-classic. No remediation available per Snyk
+          as of 2026-03-07. Monitor for upstream patch; review on expiry.
+        expires: 2026-09-07T00:00:00.000Z

@@ -1,0 +1,90 @@
+replicaCount: 1
+
+image:
+  repository: sap-ai-core/privatellm
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+model:
+  name: "llama2-7b"
+  file: "/models/llama2-7b-chat.gguf"
+  contextSize: 4096
+  gpuLayers: 35
+  format: "gguf"
+
+resources:
+  limits:
+    memory: "16Gi"
+    cpu: "4"
+  requests:
+    memory: "8Gi"
+    cpu: "2"
+
+service:
+  type: ClusterIP
+  port: 8080
+  metricsPort: 9090
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetConcurrency: 10
+
+gpu:
+  type: "nvidia-tesla-t4"
+  count: 1
+
+metrics:
+  enabled: true
+  port: 9090
+
+tls:
+  enabled: false
+  secretName: "privatellm-tls"
+
+otel:
+  enabled: false
+  endpoint: "http://otel-collector:4317"
+
+lora:
+  enabled: false
+  adaptersPath: "/models/lora-adapters"
+
+multiNode:
+  enabled: false
+  worldSize: 1
+  masterAddr: "privatellm-0.privatellm"
+
+kserve:
+  enabled: false
+  runtime: "kserve-llm-runtime"
+
+nodeSelector: {}
+
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+affinity: {}
+
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+security:
+  runAsNonRoot: false
+  readOnlyRootFilesystem: false
+

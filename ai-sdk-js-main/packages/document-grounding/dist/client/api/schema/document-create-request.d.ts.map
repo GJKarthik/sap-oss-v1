@@ -1,1 +1,0 @@
-{"version":3,"file":"document-create-request.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/document-create-request.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,oBAAoB,CAAC;AACvD;;GAEG;AACH,MAAM,MAAM,qBAAqB,GAAG;IAClC,SAAS,EAAE,YAAY,EAAE,CAAC;CAC3B,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

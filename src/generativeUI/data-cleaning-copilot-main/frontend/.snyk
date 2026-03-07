@@ -1,0 +1,11 @@
+# Snyk (https://snyk.io) policy file
+version: v1.25.0
+
+ignore:
+  SNYK-JS-ANGULARCORE-*:
+    - frontend > @angular/core:
+        reason: >
+          Already on @angular/core@21.1.6 which is the patched version for
+          CVE-2026-27970 (XSS in Angular i18n). Snyk IDE plugin false positive
+          on exact-pinned versions.
+        expires: 2026-12-31T00:00:00.000Z

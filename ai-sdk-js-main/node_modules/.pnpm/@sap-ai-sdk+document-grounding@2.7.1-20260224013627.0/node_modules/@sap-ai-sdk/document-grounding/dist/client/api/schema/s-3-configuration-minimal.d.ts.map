@@ -1,1 +1,0 @@
-{"version":3,"file":"s-3-configuration-minimal.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/s-3-configuration-minimal.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,0BAA0B,CAAC;AAClE;;GAEG;AACH,MAAM,MAAM,sBAAsB,GAAG;IACnC,EAAE,EAAE;QACF,YAAY,CAAC,EAAE,iBAAiB,CAAC;KAClC,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC;CACzB,CAAC"}

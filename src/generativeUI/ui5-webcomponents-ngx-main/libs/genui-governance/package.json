@@ -1,0 +1,43 @@
+{
+  "name": "@ui5/genui-governance",
+  "version": "0.1.0",
+  "description": "Security and governance layer for SAP Generative UI - action confirmation, audit logging, policy enforcement",
+  "author": "SAP SE (https://www.sap.com)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SAP/ui5-webcomponents-ngx.git",
+    "directory": "libs/genui-governance"
+  },
+  "keywords": [
+    "angular",
+    "governance",
+    "audit",
+    "compliance",
+    "sap",
+    "ui5",
+    "security",
+    "enterprise"
+  ],
+  "peerDependencies": {
+    "@angular/common": ">=16.0.0",
+    "@angular/core": ">=16.0.0",
+    "@ui5/ag-ui-angular": ">=0.1.0",
+    "@ui5/webcomponents-ngx": ">=0.1.0",
+    "rxjs": ">=7.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.4.0",
+    "uuid": "^9.0.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./fesm2022/ui5-genui-governance.mjs"
+    }
+  }
+}

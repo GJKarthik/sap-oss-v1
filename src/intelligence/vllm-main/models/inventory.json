@@ -1,0 +1,120 @@
+{
+  "models": {
+    "embeddings": {
+      "all-MiniLM-L6-v2": {
+        "source": "huggingface",
+        "repo": "sentence-transformers/all-MiniLM-L6-v2",
+        "files": ["all-MiniLM-L6-v2.bin", "config.json", "tokenizer.json", "tokenizer_config.json"],
+        "size_mb": 90,
+        "dimensions": 384,
+        "use_case": "semantic-search"
+      }
+    },
+    "llm": {
+      "phi-2.Q4_K_M": {
+        "source": "huggingface",
+        "repo": "TheBloke/phi-2-GGUF",
+        "files": ["phi-2.Q4_K_M.gguf"],
+        "size_mb": 1600,
+        "quantization": "Q4_K_M",
+        "use_case": "text-generation"
+      },
+      "qwen3.5-0.8b-instruct-q8_0": {
+        "source": "huggingface",
+        "repo": "Qwen/Qwen3.5-0.8B-Instruct-GGUF",
+        "files": ["Qwen3.5-0.8B-Instruct-Q8_0.gguf"],
+        "size_mb": 880,
+        "quantization": "Q8_0",
+        "architecture": "qwen3.5",
+        "params_b": 0.8,
+        "context_length": 32768,
+        "num_layers": 28,
+        "hidden_dim": 1024,
+        "num_kv_heads": 8,
+        "chat_template": "chatml",
+        "use_case": "fast-chat",
+        "t4_config": {
+          "recommended_quant": "Q8_0",
+          "vram_gb": 0.9,
+          "max_context": 32768,
+          "max_concurrent": 80,
+          "engine": "gguf"
+        }
+      },
+      "qwen3.5-9b-instruct-q4_k_m": {
+        "source": "huggingface",
+        "repo": "Qwen/Qwen3.5-9B-Instruct-GGUF",
+        "files": ["Qwen3.5-9B-Instruct-Q4_K_M.gguf"],
+        "size_mb": 5120,
+        "quantization": "Q4_K_M",
+        "architecture": "qwen3.5",
+        "params_b": 9.0,
+        "context_length": 32768,
+        "num_layers": 36,
+        "hidden_dim": 4096,
+        "num_kv_heads": 8,
+        "chat_template": "chatml",
+        "use_case": "general-chat",
+        "t4_config": {
+          "recommended_quant": "Q4_K_M",
+          "vram_gb": 5.0,
+          "max_context": 8192,
+          "max_concurrent": 14,
+          "engine": "gguf",
+          "also_fits_q8": true,
+          "q8_vram_gb": 9.0,
+          "q8_max_concurrent": 6
+        }
+      },
+      "qwen3.5-35b-instruct-q3_k_m": {
+        "source": "huggingface",
+        "repo": "Qwen/Qwen3.5-35B-Instruct-GGUF",
+        "files": ["Qwen3.5-35B-Instruct-Q3_K_M.gguf"],
+        "size_mb": 13440,
+        "quantization": "Q3_K_M",
+        "architecture": "qwen3.5",
+        "params_b": 35.0,
+        "context_length": 32768,
+        "num_layers": 64,
+        "hidden_dim": 7168,
+        "num_kv_heads": 8,
+        "chat_template": "chatml",
+        "use_case": "high-quality-chat",
+        "t4_config": {
+          "recommended_quant": "Q3_K_M",
+          "vram_gb": 13.4,
+          "max_context": 2048,
+          "max_concurrent": 3,
+          "engine": "gguf",
+          "note": "Q4_K_M (~19 GB) does not fit T4 16 GB VRAM. Q3_K_M is the minimum viable quant."
+        }
+      }
+    },
+    "vendor_symlinks": {
+      "LFM2.5-1.2B-Instruct-GGUF": {
+        "path": "vendor/layerModels/LFM2.5-1.2B-Instruct-GGUF"
+      },
+      "google-gemma-3-270m-it": {
+        "path": "vendor/layerModels/google-gemma-3-270m-it"
+      },
+      "microsoft-phi-2": {
+        "path": "vendor/layerModels/microsoft-phi-2"
+      }
+    }
+  },
+  "hardware_profile": {
+    "type": "nvidia_t4",
+    "vram_gb": 16,
+    "cuda_compute": "7.5",
+    "sm_count": 40,
+    "tensor_cores": 320,
+    "int8_tops": 130,
+    "fp16_tflops": 65,
+    "fp32_tflops": 8.1,
+    "memory_bandwidth_gbps": 300,
+    "metal_support": false,
+    "tensorrt_supported": true,
+    "brev_instance": "ec2-35-173-239-41.compute-1.amazonaws.com",
+    "brev_ssh_port": 2222
+  }
+}

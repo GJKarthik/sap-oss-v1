@@ -1,0 +1,15 @@
+apiVersion: v2
+name: ai-core-privatellm
+description: SAP AI Core Private LLM - OpenAI-compatible inference server
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - llm
+  - inference
+  - ai
+  - sap
+  - openai
+maintainers:
+  - name: SAP AI Core Team
+

@@ -1,1 +1,0 @@
-{"version":3,"file":"retrieval-chunk.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/retrieval-chunk.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,yBAAyB,EAAE,MAAM,oCAAoC,CAAC;AACpF;;GAEG;AACH,MAAM,MAAM,cAAc,GAAG;IAC3B,EAAE,EAAE,MAAM,CAAC;IACX,OAAO,EAAE,MAAM,CAAC;IAChB;;OAEG;IACH,QAAQ,CAAC,EAAE,yBAAyB,EAAE,CAAC;CACxC,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

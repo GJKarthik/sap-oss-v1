@@ -1,1 +1,0 @@
-{"version":3,"file":"chunk.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/chunk.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,0BAA0B,CAAC;AACjE;;GAEG;AACH,MAAM,MAAM,KAAK,GAAG;IAClB,EAAE,EAAE,MAAM,CAAC;IACX,OAAO,EAAE,MAAM,CAAC;IAChB;;OAEG;IACH,QAAQ,CAAC,EAAE,gBAAgB,EAAE,CAAC;CAC/B,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

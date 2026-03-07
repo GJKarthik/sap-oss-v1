@@ -1,0 +1,88 @@
+# =============================================================================
+# AI Core PAL - Data Product Registry (ODPS 4.1)
+# MCP Integration with SAP HANA Predictive Analysis Library
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "aicore-pal-catalog"
+  name: "AI Core PAL Data Product Catalog"
+  description: "MCP integration for SAP HANA PAL predictive analytics"
+
+products:
+  - ref: "aicore_pal_service.yaml"
+
+# Global policies - HANA data is confidential, always vLLM
+globalPolicies:
+  defaultSecurityClass: "confidential"
+  defaultLLMRouting: "vllm-only"
+  auditEnabled: true
+  
+# LLM Backend Configuration - vLLM only for HANA PAL data
+llmBackends:
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "llama-3.1-70b"
+      - "codellama-34b"
+    forSecurityClass: ["internal", "confidential", "restricted"]
+
+# =============================================================================
+# OData Vocabularies Integration - Analytics Vocabulary for PAL
+# =============================================================================
+dependencies:
+  # =========================================================================
+  # Upstream: HANA Training Data Products (training-main)
+  # =========================================================================
+  hanaTrainingData:
+    name: "HANA Training Data Products"
+    catalogRef: "../../training-main/data_products/registry.yaml"
+    description: >
+      Enterprise HANA metadata organized as ODPS 4.1 data products.
+      Treasury, ESG, and Performance domains with business-to-technical
+      field mappings, dimension hierarchies, and supervised prompt pairs.
+    inputPortBinding: "hana-tables"
+    products:
+      - ref: "treasury-capital-markets-v1"
+        description: "Bond/Issuance positions: MtM, Notional, RWA, Yield"
+        palFunctions: ["pal_forecast", "pal_anomaly", "pal_clustering"]
+      - ref: "esg-sustainability-v1"
+        description: "Net Zero emissions, Integrated Client, Sustainable Finance"
+        palFunctions: ["pal_forecast", "pal_anomaly", "pal_clustering", "pal_classification"]
+      - ref: "performance-bpc-v1"
+        description: "CRD Fact + NFRP dimensions (Account/Location/Product/Segment/Cost)"
+        palFunctions: ["pal_forecast", "pal_regression", "pal_anomaly"]
+    enrichment:
+      pipeline: "../../training-main/scripts/xlsx_to_odps.py"
+      copilot: "../../sap-oss/data-cleaning-copilot-main"
+      reports: "../../training-main/data_products/enriched/"
+
+  vocabularyService:
+    name: "OData Vocabularies"
+    endpoint: "http://localhost:9150/mcp"
+    openaiEndpoint: "http://localhost:9150/v1"
+    description: "Universal dictionary for OData annotations"
+    capabilities:
+      - "annotation-lookup"
+      - "analytics-vocabulary"
+      - "measure-annotation"
+      - "dimension-annotation"
+    vocabularies:
+      - name: "Analytics"
+        namespace: "com.sap.vocabularies.Analytics.v1"
+        usage: "KPI and measure annotations for PAL output"
+      - name: "Common"
+        namespace: "com.sap.vocabularies.Common.v1"
+        usage: "Labels and semantic keys"
+      - name: "Aggregation"
+        namespace: "Org.OData.Aggregation.V1"
+        usage: "Aggregation functions for measures"
+    models:
+      - id: "odata-vocab-annotator"
+        purpose: "Suggest Analytics annotations for PAL columns"
+      - id: "odata-vocab-search"
+        purpose: "Search Analytics vocabulary terms"
+    integrationPoints:
+      - palOutputAnnotation: "Annotate PAL output columns with Analytics.Measure/Dimension"
+      - kpiTemplates: "Generate KPI annotation templates"
+      - termLookup: "Look up Analytics vocabulary term definitions"

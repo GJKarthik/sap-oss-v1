@@ -1,0 +1,2597 @@
+{
+  "name": "hippocpp-smoke",
+  "cases": [
+    {
+      "name": "person_scan_ordered",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob', age: 25})"
+      ],
+      "query": "MATCH (p:Person) RETURN p.name, p.age ORDER BY p.name"
+    },
+    {
+      "name": "filter_and_aggregate",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE i.category = 'A' RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "parameterized_lookup",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(name STRING, score INT64, PRIMARY KEY(name))",
+        "CREATE (:User {name: 'u1', score: 5})",
+        "CREATE (:User {name: 'u2', score: 9})"
+      ],
+      "parameters": {
+        "target": "u2"
+      },
+      "query": "MATCH (u:User) WHERE u.name = $target RETURN u.score"
+    },
+    {
+      "name": "return_int_literal",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 AS one"
+    },
+    {
+      "name": "return_string_literal",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 'abc' AS s"
+    },
+    {
+      "name": "return_param_string",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "x": "zz"
+      },
+      "query": "RETURN $x AS val"
+    },
+    {
+      "name": "return_null_literal",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN NULL AS n"
+    },
+    {
+      "name": "return_param_null",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "p": null
+      },
+      "query": "RETURN $p AS n"
+    },
+    {
+      "name": "return_int_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 42"
+    },
+    {
+      "name": "return_param_no_alias",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "x": 7
+      },
+      "query": "RETURN $x"
+    },
+    {
+      "name": "return_param_null_no_alias",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "p": null
+      },
+      "query": "RETURN $p"
+    },
+    {
+      "name": "return_missing_param_no_alias_defaults_null",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN $missing"
+    },
+    {
+      "name": "return_extra_param_not_found",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "x": 1
+      },
+      "query": "RETURN 1"
+    },
+    {
+      "name": "return_used_and_extra_param_not_found",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "p": 1,
+        "x": 2
+      },
+      "query": "RETURN $p"
+    },
+    {
+      "name": "return_multi_literals",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 AS one, 'x' AS s"
+    },
+    {
+      "name": "return_multi_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1, 'x'"
+    },
+    {
+      "name": "return_null_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN NULL"
+    },
+    {
+      "name": "return_string_with_comma_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 'a,b'"
+    },
+    {
+      "name": "return_true_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN true"
+    },
+    {
+      "name": "return_false_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN false"
+    },
+    {
+      "name": "return_true_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN true AS b"
+    },
+    {
+      "name": "return_param_bool_no_alias",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "b": true
+      },
+      "query": "RETURN $b"
+    },
+    {
+      "name": "return_multi_bool_literals_params",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "b": false
+      },
+      "query": "RETURN true, $b"
+    },
+    {
+      "name": "ddl_case_insensitive_node_setup",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id int64, primary key(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN COUNT(*) AS c"
+    },
+    {
+      "name": "ddl_case_insensitive_rel_setup",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(from Person to Person, since int64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS c"
+    },
+    {
+      "name": "node_where_true_literal",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) WHERE true RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_false_literal",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) WHERE false RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "return_count_star_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT(*)"
+    },
+    {
+      "name": "return_count_star_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT(*) AS c"
+    },
+    {
+      "name": "return_count_literal_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT(1)"
+    },
+    {
+      "name": "return_count_distinct_literal_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT(DISTINCT 1)"
+    },
+    {
+      "name": "return_count_param_int",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "p": 1
+      },
+      "query": "RETURN COUNT($p)"
+    },
+    {
+      "name": "return_count_param_null",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "p": null
+      },
+      "query": "RETURN COUNT($p)"
+    },
+    {
+      "name": "return_count_missing_param_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT($p) AS c"
+    },
+    {
+      "name": "return_count_distinct_null",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT(DISTINCT NULL)"
+    },
+    {
+      "name": "return_count_with_literal_projection",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN COUNT(*) AS c, 1 AS one"
+    },
+    {
+      "name": "return_distinct_literal_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN DISTINCT 1"
+    },
+    {
+      "name": "return_distinct_multi_literals_no_alias",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN DISTINCT 1, 'x'"
+    },
+    {
+      "name": "return_order_by_constant_term",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 ORDER BY 1"
+    },
+    {
+      "name": "return_order_by_alias_desc",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 AS a, 2 AS b ORDER BY b DESC"
+    },
+    {
+      "name": "return_order_skip_limit",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN DISTINCT 1 AS a, 2 AS b ORDER BY 1 SKIP 1 LIMIT 1"
+    },
+    {
+      "name": "return_limit_before_skip_parser_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 LIMIT 1 SKIP 1"
+    },
+    {
+      "name": "node_match_limit_before_skip_parser_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id ORDER BY u.id LIMIT 2 SKIP 1"
+    },
+    {
+      "name": "node_set_limit_before_skip_parser_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 0})",
+        "CREATE (:User {id: 2, score: 0})"
+      ],
+      "query": "MATCH (u:User) SET u.score = 1 RETURN u.id ORDER BY u.id LIMIT 2 SKIP 1"
+    },
+    {
+      "name": "rel_match_limit_before_skip_parser_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE A(id INT64, PRIMARY KEY(id))",
+        "CREATE NODE TABLE B(id INT64, PRIMARY KEY(id))",
+        "CREATE REL TABLE R(FROM A TO B, w INT64)",
+        "CREATE (:A {id: 1})",
+        "CREATE (:A {id: 2})",
+        "CREATE (:B {id: 10})",
+        "CREATE (:B {id: 20})",
+        "MATCH (a:A), (b:B) WHERE a.id = 1 AND b.id = 10 CREATE (a)-[:R {w: 5}]->(b)",
+        "MATCH (a:A), (b:B) WHERE a.id = 2 AND b.id = 20 CREATE (a)-[:R {w: 6}]->(b)"
+      ],
+      "query": "MATCH (a:A)-[r:R]->(b:B) RETURN r.w ORDER BY r.w LIMIT 2 SKIP 1"
+    },
+    {
+      "name": "return_alias_without_as_parser_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 one"
+    },
+    {
+      "name": "node_match_alias_without_as_parser_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id x"
+    },
+    {
+      "name": "rel_match_alias_without_as_parser_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE A(id INT64, PRIMARY KEY(id))",
+        "CREATE NODE TABLE B(id INT64, PRIMARY KEY(id))",
+        "CREATE REL TABLE R(FROM A TO B, w INT64)",
+        "CREATE (:A {id: 1})",
+        "CREATE (:B {id: 2})",
+        "MATCH (a:A), (b:B) WHERE a.id=1 AND b.id=2 CREATE (a)-[:R {w: 5}]->(b)"
+      ],
+      "query": "MATCH (a:A)-[r:R]->(b:B) RETURN r.w weight"
+    },
+    {
+      "name": "return_duplicate_skip_parser_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 SKIP 1 SKIP 1"
+    },
+    {
+      "name": "return_duplicate_limit_parser_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 LIMIT 1 LIMIT 1"
+    },
+    {
+      "name": "return_nonint_skip_binder_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 SKIP x"
+    },
+    {
+      "name": "return_negative_limit_runtime_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 LIMIT -1"
+    },
+    {
+      "name": "node_duplicate_skip_parser_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id ORDER BY u.id SKIP 1 SKIP 1"
+    },
+    {
+      "name": "node_nonint_limit_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id ORDER BY u.id LIMIT x"
+    },
+    {
+      "name": "node_negative_skip_runtime_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id ORDER BY u.id SKIP -1"
+    },
+    {
+      "name": "return_order_unknown_identifier_binder_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 AS a ORDER BY x"
+    },
+    {
+      "name": "node_order_unknown_identifier_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id ORDER BY x"
+    },
+    {
+      "name": "node_order_unknown_variable_property_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id ORDER BY z.id"
+    },
+    {
+      "name": "node_group_order_unknown_identifier_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1, grp: 'a'})"
+      ],
+      "query": "MATCH (u:U) RETURN u.grp, COUNT(*) AS c ORDER BY x"
+    },
+    {
+      "name": "rel_order_unknown_identifier_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE A(id INT64, PRIMARY KEY(id))",
+        "CREATE NODE TABLE B(id INT64, PRIMARY KEY(id))",
+        "CREATE REL TABLE R(FROM A TO B, w INT64)",
+        "CREATE (:A {id: 1})",
+        "CREATE (:B {id: 2})",
+        "MATCH (a:A), (b:B) WHERE a.id=1 AND b.id=2 CREATE (a)-[:R {w: 5}]->(b)"
+      ],
+      "query": "MATCH (a:A)-[r:R]->(b:B) RETURN r.w ORDER BY x"
+    },
+    {
+      "name": "node_where_lower_and",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1, score:1})",
+        "CREATE (:U {id:2, score:2})"
+      ],
+      "query": "MATCH (u:U) WHERE u.id >= 1 and u.score <= 2 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_lower_or",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})",
+        "CREATE (:U {id:2})"
+      ],
+      "query": "MATCH (u:U) WHERE u.id = 1 or u.id = 2 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_lower_not",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})",
+        "CREATE (:U {id:2})"
+      ],
+      "query": "MATCH (u:U) WHERE not u.id = 1 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_lower_is_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})",
+        "CREATE (:U {id:2, score:2})"
+      ],
+      "query": "MATCH (u:U) WHERE u.score is null RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_lower_is_not_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})",
+        "CREATE (:U {id:2, score:2})"
+      ],
+      "query": "MATCH (u:U) WHERE u.score is not null RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_match_count_param_int",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})"
+      ],
+      "parameters": {
+        "p": 1
+      },
+      "query": "MATCH (u:U) RETURN COUNT($p)"
+    },
+    {
+      "name": "node_match_count_param_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})"
+      ],
+      "parameters": {
+        "p": null
+      },
+      "query": "MATCH (u:U) RETURN COUNT($p)"
+    },
+    {
+      "name": "node_match_count_missing_param_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1})",
+        "CREATE (:U {id:2})"
+      ],
+      "query": "MATCH (u:U) RETURN COUNT($p) AS c"
+    },
+    {
+      "name": "node_match_group_count_missing_param_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, g INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id:1, g:1})",
+        "CREATE (:U {id:2, g:1})",
+        "CREATE (:U {id:3, g:2})"
+      ],
+      "query": "MATCH (u:U) RETURN u.g, COUNT($p) AS c ORDER BY u.g"
+    },
+    {
+      "name": "node_match_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})",
+        "CREATE (:User {id: 3})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id ORDER BY u.id LIMIT 2"
+    },
+    {
+      "name": "node_set_return_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 0})",
+        "CREATE (:User {id: 2, score: 0})",
+        "CREATE (:User {id: 3, score: 0})"
+      ],
+      "query": "MATCH (u:User) SET u.score = 1 RETURN u.id ORDER BY u.id LIMIT 2"
+    },
+    {
+      "name": "node_count_limit_zero",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "query": "MATCH (u:User) RETURN COUNT(*) AS c LIMIT 0"
+    },
+    {
+      "name": "pk_duplicate_create",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'A'})"
+      ],
+      "query": "CREATE (:User {id: 1, name: 'B'})"
+    },
+    {
+      "name": "pk_missing_create",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))"
+      ],
+      "query": "CREATE (:User {name: 'A'})"
+    },
+    {
+      "name": "pk_null_create",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))"
+      ],
+      "query": "CREATE (:User {id: NULL, name: 'A'})"
+    },
+    {
+      "name": "pk_duplicate_set",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'A'})",
+        "CREATE (:User {id: 2, name: 'B'})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id = 2 SET u.id = 1"
+    },
+    {
+      "name": "pk_null_set",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'A'})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id = 1 SET u.id = NULL"
+    },
+    {
+      "name": "node_match_distinct_single",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A'})",
+        "CREATE (:User {id: 2, grp: 'A'})",
+        "CREATE (:User {id: 3, grp: 'B'})"
+      ],
+      "query": "MATCH (u:User) RETURN DISTINCT u.grp ORDER BY u.grp"
+    },
+    {
+      "name": "node_match_distinct_multi",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A', score: 1})",
+        "CREATE (:User {id: 3, grp: 'A', score: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN DISTINCT u.grp, u.score"
+    },
+    {
+      "name": "node_set_return_distinct",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 0})",
+        "CREATE (:User {id: 2, grp: 'A', score: 0})",
+        "CREATE (:User {id: 3, grp: 'B', score: 0})"
+      ],
+      "query": "MATCH (u:User) SET u.score = 1 RETURN DISTINCT u.grp ORDER BY u.grp"
+    },
+    {
+      "name": "rel_match_distinct",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN DISTINCT b.name ORDER BY b.name"
+    },
+    {
+      "name": "rel_set_return_distinct",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.since RETURN DISTINCT b.name ORDER BY b.name"
+    },
+    {
+      "name": "node_match_group_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3, score: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN u.score, COUNT(*) AS c ORDER BY u.score"
+    },
+    {
+      "name": "node_match_group_count_where",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1, grp: 'A'})",
+        "CREATE (:User {id: 2, score: 2, grp: 'A'})",
+        "CREATE (:User {id: 3, score: 3, grp: 'B'})"
+      ],
+      "query": "MATCH (u:User) WHERE u.score >= 2 RETURN u.grp, COUNT(*) AS c ORDER BY u.grp"
+    },
+    {
+      "name": "node_set_return_group_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 0, grp: 'A'})",
+        "CREATE (:User {id: 2, score: 0, grp: 'A'})",
+        "CREATE (:User {id: 3, score: 0, grp: 'B'})"
+      ],
+      "query": "MATCH (u:User) SET u.score = 1 RETURN u.grp, COUNT(*) AS c ORDER BY u.grp"
+    },
+    {
+      "name": "node_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2})",
+        "CREATE (:User {id: 3, score: 3})"
+      ],
+      "query": "MATCH (u:User) RETURN COUNT(u.score) AS c"
+    },
+    {
+      "name": "node_group_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A'})",
+        "CREATE (:User {id: 3, grp: 'B', score: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN u.grp, COUNT(u.score) AS c ORDER BY u.grp"
+    },
+    {
+      "name": "node_set_return_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.score RETURN COUNT(u.score) AS c"
+    },
+    {
+      "name": "node_set_return_group_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A'})",
+        "CREATE (:User {id: 3, grp: 'B', score: 2})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.score RETURN u.grp, COUNT(u.score) AS c ORDER BY u.grp"
+    },
+    {
+      "name": "node_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3, score: 2})",
+        "CREATE (:User {id: 4})"
+      ],
+      "query": "MATCH (u:User) RETURN COUNT(DISTINCT u.score) AS c"
+    },
+    {
+      "name": "node_group_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A', score: 1})",
+        "CREATE (:User {id: 3, grp: 'A', score: 2})",
+        "CREATE (:User {id: 4, grp: 'B'})",
+        "CREATE (:User {id: 5, grp: 'B', score: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN u.grp, COUNT(DISTINCT u.score) AS c ORDER BY u.grp"
+    },
+    {
+      "name": "node_set_return_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.score RETURN COUNT(DISTINCT u.score) AS c"
+    },
+    {
+      "name": "node_set_return_group_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A', score: 1})",
+        "CREATE (:User {id: 3, grp: 'A', score: 2})",
+        "CREATE (:User {id: 4, grp: 'B'})",
+        "CREATE (:User {id: 5, grp: 'B', score: 2})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.score RETURN u.grp, COUNT(DISTINCT u.score) AS c ORDER BY u.grp"
+    },
+    {
+      "name": "node_group_count_first_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A'})",
+        "CREATE (:User {id: 3, grp: 'B', score: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN COUNT(u.score) AS c, u.grp ORDER BY u.grp"
+    },
+    {
+      "name": "node_group_count_middle_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, bucket STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', bucket: 'X', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A', bucket: 'X'})",
+        "CREATE (:User {id: 3, grp: 'A', bucket: 'Y', score: 2})"
+      ],
+      "query": "MATCH (u:User) RETURN u.grp, COUNT(u.score) AS c, u.bucket ORDER BY u.grp, u.bucket"
+    },
+    {
+      "name": "node_set_group_count_first_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'A', score: 1})",
+        "CREATE (:User {id: 2, grp: 'A'})",
+        "CREATE (:User {id: 3, grp: 'B', score: 2})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.score RETURN COUNT(u.score) AS c, u.grp ORDER BY u.grp"
+    },
+    {
+      "name": "rel_match_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "CREATE (:Person {name: 'D'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='D' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name ORDER BY b.name LIMIT 2"
+    },
+    {
+      "name": "rel_set_return_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "CREATE (:Person {name: 'D'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='D' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.since RETURN b.name ORDER BY b.name LIMIT 2"
+    },
+    {
+      "name": "rel_count_group_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN r.since, COUNT(*) AS c ORDER BY r.since LIMIT 1"
+    },
+    {
+      "name": "node_match_skip",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})",
+        "CREATE (:User {id: 3})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id ORDER BY u.id SKIP 1"
+    },
+    {
+      "name": "node_match_skip_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})",
+        "CREATE (:User {id: 3})",
+        "CREATE (:User {id: 4})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id ORDER BY u.id SKIP 1 LIMIT 2"
+    },
+    {
+      "name": "node_set_return_skip_limit",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 0})",
+        "CREATE (:User {id: 2, score: 0})",
+        "CREATE (:User {id: 3, score: 0})",
+        "CREATE (:User {id: 4, score: 0})"
+      ],
+      "query": "MATCH (u:User) SET u.score = 1 RETURN u.id ORDER BY u.id SKIP 1 LIMIT 2"
+    },
+    {
+      "name": "rel_match_skip",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "CREATE (:Person {name: 'D'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='D' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name ORDER BY b.name SKIP 1"
+    },
+    {
+      "name": "rel_scan_order",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 2020}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Dave'})-[:Knows {since: 2021}]->(:Person {name: 'Carol'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN a.name, b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "rel_where_left_literal",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 2020}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Dave'})-[:Knows {since: 2021}]->(:Person {name: 'Carol'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' RETURN b.name, r.since"
+    },
+    {
+      "name": "rel_where_param",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 2020}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Dave'})-[:Knows {since: 2021}]->(:Person {name: 'Carol'})"
+      ],
+      "parameters": {
+        "y": 2021
+      },
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since = $y RETURN a.name, b.name"
+    },
+    {
+      "name": "rel_count_all",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 1}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {since: 1}]->(:Person {name: 'Dave'})",
+        "CREATE (:Person {name: 'Eve'})-[:Knows {since: 2}]->(:Person {name: 'Frank'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "rel_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 1}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {}]->(:Person {name: 'Dave'})",
+        "CREATE (:Person {name: 'Eve'})-[:Knows {since: 2}]->(:Person {name: 'Frank'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(r.since) AS cnt"
+    },
+    {
+      "name": "rel_count_missing_param_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 1}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {since: 2}]->(:Person {name: 'Dave'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT($p) AS c"
+    },
+    {
+      "name": "rel_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='C' AND b.name='A' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(DISTINCT r.since) AS c"
+    },
+    {
+      "name": "rel_count_group_by_rel_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 1}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {since: 1}]->(:Person {name: 'Dave'})",
+        "CREATE (:Person {name: 'Eve'})-[:Knows {since: 2}]->(:Person {name: 'Frank'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN r.since, COUNT(*) AS cnt ORDER BY r.since"
+    },
+    {
+      "name": "rel_group_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 1}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {}]->(:Person {name: 'Dave'})",
+        "CREATE (:Person {name: 'Eve'})-[:Knows {since: 2}]->(:Person {name: 'Frank'})"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN a.name, COUNT(r.since) AS cnt ORDER BY a.name"
+    },
+    {
+      "name": "rel_group_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='A' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN a.name, COUNT(DISTINCT r.since) AS c ORDER BY a.name"
+    },
+    {
+      "name": "rel_group_count_first_star",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS c, a.name ORDER BY a.name"
+    },
+    {
+      "name": "rel_count_where",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 1}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {since: 1}]->(:Person {name: 'Dave'})",
+        "CREATE (:Person {name: 'Eve'})-[:Knows {since: 2}]->(:Person {name: 'Frank'})"
+      ],
+      "parameters": {
+        "s": 1
+      },
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since = $s RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "node_where_and",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE i.category = 'A' AND i.id = 2 RETURN i.id"
+    },
+    {
+      "name": "rel_where_and",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})-[:Knows {since: 2021}]->(:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})-[:Knows {since: 2021}]->(:Person {name: 'Dave'})",
+        "CREATE (:Person {name: 'Eve'})-[:Knows {since: 2022}]->(:Person {name: 'Frank'})"
+      ],
+      "parameters": {
+        "s": 2021
+      },
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' AND r.since = $s RETURN b.name"
+    },
+    {
+      "name": "match_create_where_and",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 2020}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 2021}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN a.name, b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "match_create_cross_product",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "MATCH (a:Person), (b:Person) CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "set_in_setup_then_scan",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'u1', score: 5})",
+        "CREATE (:User {id: 2, name: 'u2', score: 9})",
+        "MATCH (u:User) WHERE u.id = 1 SET u.score = 7"
+      ],
+      "query": "MATCH (u:User) RETURN u.id, u.score ORDER BY u.id"
+    },
+    {
+      "name": "set_with_return_ordered",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'u1', score: 5})",
+        "CREATE (:User {id: 2, name: 'u2', score: 5})",
+        "CREATE (:User {id: 3, name: 'u3', score: 7})"
+      ],
+      "parameters": {
+        "old_score": 5,
+        "new_score": 8
+      },
+      "query": "MATCH (u:User) WHERE u.score = $old_score SET u.score = $new_score RETURN u.name, u.score ORDER BY u.name"
+    },
+    {
+      "name": "set_with_return_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 5})",
+        "CREATE (:User {id: 3, score: 7})"
+      ],
+      "query": "MATCH (u:User) WHERE u.score = 5 SET u.score = 6 RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "rel_set_in_setup_then_scan",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' SET r.since = 9"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' RETURN b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "rel_set_with_return_where_and_param",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "CREATE (:Person {name: 'Dave'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Dave' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "parameters": {
+        "old_since": 1,
+        "new_since": 6
+      },
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' AND r.since = $old_since SET r.since = $new_since RETURN a.name, b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "rel_set_with_return_group_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' SET r.since = 9 RETURN r.since, COUNT(*) AS cnt ORDER BY r.since"
+    },
+    {
+      "name": "rel_set_with_return_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' SET r.since = r.since RETURN COUNT(r.since) AS cnt"
+    },
+    {
+      "name": "rel_set_with_return_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.since RETURN COUNT(DISTINCT r.since) AS c"
+    },
+    {
+      "name": "rel_set_with_return_group_count_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'Alice' SET r.since = r.since RETURN a.name, COUNT(r.since) AS cnt ORDER BY a.name"
+    },
+    {
+      "name": "rel_set_with_return_group_count_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.since RETURN a.name, COUNT(DISTINCT r.since) AS c ORDER BY a.name"
+    },
+    {
+      "name": "rel_set_group_count_first_distinct_expr",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.since RETURN COUNT(DISTINCT r.since) AS c, a.name ORDER BY a.name"
+    },
+    {
+      "name": "rel_delete_in_setup_then_scan",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since = 1 DELETE r"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "node_delete_in_setup_then_scan",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'A'})",
+        "CREATE (:User {id: 2, name: 'B'})",
+        "MATCH (u:User) WHERE u.id = 1 DELETE u"
+      ],
+      "query": "MATCH (u:User) RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_detach_delete_in_setup_then_rel_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person) WHERE a.name = 'Alice' DETACH DELETE a"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "node_where_comparison_ops",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE i.id > 1 AND i.id <= 2 RETURN i.id"
+    },
+    {
+      "name": "rel_where_comparison_param",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "parameters": {
+        "min_since": 2
+      },
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since >= $min_since RETURN b.name"
+    },
+    {
+      "name": "set_where_comparison_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE u.score >= 7 SET u.score = 10 RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "match_create_where_comparison",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob', age: 25})",
+        "CREATE (:Person {name: 'Carol', age: 15})",
+        "MATCH (a:Person), (b:Person) WHERE a.age >= 25 AND b.age < 20 CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "node_where_or_basic",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'B'})",
+        "CREATE (:Item {id: 3, category: 'C'})"
+      ],
+      "query": "MATCH (i:Item) WHERE i.id = 1 OR i.id = 3 RETURN i.id ORDER BY i.id"
+    },
+    {
+      "name": "node_where_or_and_precedence",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})",
+        "CREATE (:Item {id: 4, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE i.category = 'A' OR i.category = 'B' AND i.id > 3 RETURN i.id ORDER BY i.id"
+    },
+    {
+      "name": "rel_where_or_basic",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since = 1 OR b.name = 'C' RETURN b.name ORDER BY b.name"
+    },
+    {
+      "name": "set_where_or_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id = 1 OR u.id = 3 SET u.score = 0 RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "delete_where_or",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})",
+        "MATCH (u:User) WHERE u.id = 1 OR u.id = 3 DELETE u"
+      ],
+      "query": "MATCH (u:User) RETURN u.id"
+    },
+    {
+      "name": "match_create_where_or",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.name = 'Bob' OR a.name = 'Alice' AND b.name = 'Carol' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name ORDER BY b.name"
+    },
+    {
+      "name": "node_where_not_basic",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'B'})",
+        "CREATE (:Item {id: 3, category: 'C'})"
+      ],
+      "query": "MATCH (i:Item) WHERE NOT i.id = 2 RETURN i.id ORDER BY i.id"
+    },
+    {
+      "name": "node_where_not_or_precedence",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})",
+        "CREATE (:Item {id: 4, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE NOT i.category = 'A' OR i.id = 1 RETURN i.id ORDER BY i.id"
+    },
+    {
+      "name": "rel_where_not_basic",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE NOT r.since = 1 RETURN b.name"
+    },
+    {
+      "name": "set_where_not_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE NOT u.id = 1 SET u.score = 0 RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "delete_where_not",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})",
+        "MATCH (u:User) WHERE NOT u.id = 2 DELETE u"
+      ],
+      "query": "MATCH (u:User) RETURN u.id"
+    },
+    {
+      "name": "match_create_where_not",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice'})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND NOT b.name = 'Bob' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name"
+    },
+    {
+      "name": "node_order_multi_desc",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})",
+        "CREATE (:Item {id: 4, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) RETURN i.category, i.id ORDER BY i.category DESC, i.id ASC"
+    },
+    {
+      "name": "rel_order_multi_desc",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN r.since, b.name ORDER BY r.since DESC, b.name DESC"
+    },
+    {
+      "name": "set_return_order_desc",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id >= 1 SET u.score = 10 RETURN u.score, u.id ORDER BY u.score DESC, u.id DESC"
+    },
+    {
+      "name": "rel_set_return_order_desc",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = 5 RETURN r.since, b.name ORDER BY r.since DESC, b.name DESC"
+    },
+    {
+      "name": "rel_group_order_desc",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN r.since, COUNT(*) AS cnt ORDER BY r.since DESC"
+    },
+    {
+      "name": "node_where_parenthesized",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})",
+        "CREATE (:Item {id: 4, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE (i.id = 1 OR i.id = 2) AND i.category = 'A' RETURN i.id ORDER BY i.id"
+    },
+    {
+      "name": "node_where_parenthesized_not",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, category STRING, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, category: 'A'})",
+        "CREATE (:Item {id: 2, category: 'A'})",
+        "CREATE (:Item {id: 3, category: 'B'})",
+        "CREATE (:Item {id: 4, category: 'B'})"
+      ],
+      "query": "MATCH (i:Item) WHERE NOT (i.category = 'A' OR i.id = 4) RETURN i.id"
+    },
+    {
+      "name": "rel_where_parenthesized",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='B' AND b.name='C' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE (r.since = 1 OR r.since = 2) AND b.name = 'C' RETURN r.since"
+    },
+    {
+      "name": "set_where_parenthesized",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE (u.id = 1 OR u.id = 3) AND NOT u.score = 7 SET u.score = 0 RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "delete_where_parenthesized",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 3, score: 9})",
+        "MATCH (u:User) WHERE (u.id = 1 OR u.id = 3) AND NOT u.score = 7 DELETE u"
+      ],
+      "query": "MATCH (u:User) RETURN u.id"
+    },
+    {
+      "name": "match_create_where_parenthesized",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob', age: 20})",
+        "CREATE (:Person {name: 'Carol', age: 25})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND (b.name = 'Bob' OR b.name = 'Carol') AND NOT b.age < 21 CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name"
+    },
+    {
+      "name": "node_match_return_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, name STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, name: 'Alice'})",
+        "CREATE (:User {id: 2, name: 'Bob'})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id AS id, u.name AS username ORDER BY u.id"
+    },
+    {
+      "name": "node_set_return_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id >= 1 SET u.score = 9 RETURN u.id AS id, u.score AS new_score ORDER BY u.id"
+    },
+    {
+      "name": "rel_match_return_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN a.name AS src, b.name AS dst, r.since AS since ORDER BY b.name"
+    },
+    {
+      "name": "rel_set_return_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE a.name = 'A' SET r.since = 5 RETURN b.name AS dst, r.since AS since ORDER BY b.name"
+    },
+    {
+      "name": "rel_group_return_alias",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "CREATE (:Person {name: 'D'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='C' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='D' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name AS dst, COUNT(*) AS cnt"
+    },
+    {
+      "name": "node_match_order_by_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})",
+        "CREATE (:User {id: 3, score: 8})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id AS id, u.score AS score ORDER BY score DESC, id ASC"
+    },
+    {
+      "name": "node_set_order_by_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})"
+      ],
+      "query": "MATCH (u:User) SET u.score = 10 RETURN u.id AS id, u.score AS score ORDER BY id DESC"
+    },
+    {
+      "name": "rel_match_order_by_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name AS dst, r.since AS since ORDER BY dst DESC"
+    },
+    {
+      "name": "rel_set_order_by_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = 5 RETURN b.name AS dst, r.since AS since ORDER BY dst"
+    },
+    {
+      "name": "rel_group_order_by_alias",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "CREATE (:Person {name: 'D'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='C' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='D' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name AS dst, COUNT(*) AS cnt ORDER BY dst DESC"
+    },
+    {
+      "name": "node_match_literal_left",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE 7 = u.score RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_set_literal_left",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE 7 = u.score SET u.score = 0 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_delete_literal_left",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})",
+        "MATCH (u:User) WHERE 7 = u.score DELETE u"
+      ],
+      "query": "MATCH (u:User) RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "rel_match_literal_left",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE 1 = r.since RETURN b.name"
+    },
+    {
+      "name": "rel_set_literal_left",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE 1 = r.since SET r.since = 9 RETURN b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "match_create_literal_left",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob', age: 20})",
+        "CREATE (:Person {name: 'Carol', age: 25})",
+        "MATCH (a:Person), (b:Person) WHERE 'Alice' = a.name AND 25 = b.age CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name"
+    },
+    {
+      "name": "node_where_prop_eq_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3, score: 3})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id = u.score RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_prop_gt_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 2})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3, score: 3})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id > u.score RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "set_where_prop_eq_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3, score: 3})"
+      ],
+      "query": "MATCH (u:User) WHERE u.id = u.score SET u.score = 0 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "delete_where_prop_eq_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 1})",
+        "CREATE (:User {id: 2, score: 1})",
+        "CREATE (:User {id: 3, score: 3})",
+        "MATCH (u:User) WHERE u.id = u.score DELETE u"
+      ],
+      "query": "MATCH (u:User) RETURN u.id"
+    },
+    {
+      "name": "rel_where_prop_eq_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A', age: 1})",
+        "CREATE (:Person {name: 'B', age: 2})",
+        "CREATE (:Person {name: 'C', age: 3})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since = b.age RETURN b.name"
+    },
+    {
+      "name": "rel_set_where_prop_eq_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A', age: 1})",
+        "CREATE (:Person {name: 'B', age: 2})",
+        "CREATE (:Person {name: 'C', age: 3})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 3}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since = b.age SET r.since = 7 RETURN b.name, r.since ORDER BY b.name"
+    },
+    {
+      "name": "match_create_prop_eq_prop",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob', age: 20})",
+        "CREATE (:Person {name: 'Carol', age: 30})",
+        "MATCH (a:Person), (b:Person) WHERE a.age = b.age CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN a.name, b.name ORDER BY a.name, b.name"
+    },
+    {
+      "name": "node_set_from_property",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.id RETURN u.id, u.score ORDER BY u.id"
+    },
+    {
+      "name": "node_set_from_property_multi_assign",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, backup INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7, backup: 0})",
+        "CREATE (:User {id: 2, score: 9, backup: 0})"
+      ],
+      "query": "MATCH (u:User) SET u.backup = u.score, u.score = u.id RETURN u.id, u.score, u.backup ORDER BY u.id"
+    },
+    {
+      "name": "rel_set_from_property",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A', age: 10})",
+        "CREATE (:Person {name: 'B', age: 20})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = b.age RETURN r.since"
+    },
+    {
+      "name": "rel_set_from_rel_property",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64, weight INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 5, weight: 11}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.weight RETURN r.since"
+    },
+    {
+      "name": "node_where_not_equal_angle",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE u.score <> 7 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_is_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE u.score IS NULL RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_is_not_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "query": "MATCH (u:User) WHERE u.score IS NOT NULL RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_param_is_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "parameters": {
+        "p": null
+      },
+      "query": "MATCH (u:User) WHERE $p IS NULL RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_param_is_not_null_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "parameters": {
+        "p": null
+      },
+      "query": "MATCH (u:User) WHERE $p IS NOT NULL RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_true_eq_false",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "query": "MATCH (u:User) WHERE true = false RETURN u.id"
+    },
+    {
+      "name": "node_where_true_eq_true",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "query": "MATCH (u:User) WHERE true = true RETURN u.id"
+    },
+    {
+      "name": "node_where_param_bool_eq_true_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "b": true
+      },
+      "query": "MATCH (u:User) WHERE $b = true RETURN u.id"
+    },
+    {
+      "name": "node_where_param_bool_eq_false_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "b": false
+      },
+      "query": "MATCH (u:User) WHERE $b = true RETURN u.id"
+    },
+    {
+      "name": "node_where_param_bool_is_null_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "b": true
+      },
+      "query": "MATCH (u:User) WHERE $b IS NULL RETURN u.id"
+    },
+    {
+      "name": "node_where_not_param_eq_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "p": 0
+      },
+      "query": "MATCH (u:User) WHERE NOT $p = 1 RETURN u.id"
+    },
+    {
+      "name": "node_where_not_paren_param_eq_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "p": 0
+      },
+      "query": "MATCH (u:User) WHERE NOT ($p = 1) RETURN u.id"
+    },
+    {
+      "name": "node_where_not_paren_param_is_null_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "b": true
+      },
+      "query": "MATCH (u:User) WHERE NOT ($b IS NULL) RETURN u.id"
+    },
+    {
+      "name": "node_where_bare_param_bool_false_kuzu_semantics",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "b": false
+      },
+      "query": "MATCH (u:User) WHERE $b RETURN u.id"
+    },
+    {
+      "name": "node_where_bare_param_int_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "p": 0
+      },
+      "query": "MATCH (u:User) WHERE $p RETURN u.id"
+    },
+    {
+      "name": "node_where_missing_param_defaults_null_truthy",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "query": "MATCH (u:User) WHERE $missing RETURN u.id"
+    },
+    {
+      "name": "node_where_param_eq_prop_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 7})",
+        "CREATE (:User {id: 2, score: 9})"
+      ],
+      "parameters": {
+        "p": null
+      },
+      "query": "MATCH (u:User) WHERE $p = u.score RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "rel_where_not_equal_angle",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since <> 1 RETURN b.name ORDER BY b.name"
+    },
+    {
+      "name": "rel_where_is_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since IS NULL RETURN b.name"
+    },
+    {
+      "name": "rel_where_is_not_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE r.since IS NOT NULL RETURN b.name"
+    },
+    {
+      "name": "match_create_where_is_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol', age: 25})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.age IS NULL CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name"
+    },
+    {
+      "name": "match_create_where_is_not_null",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'Alice', age: 30})",
+        "CREATE (:Person {name: 'Bob'})",
+        "CREATE (:Person {name: 'Carol', age: 25})",
+        "MATCH (a:Person), (b:Person) WHERE a.name = 'Alice' AND b.age IS NOT NULL CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN b.name ORDER BY b.name"
+    },
+    {
+      "name": "node_where_constant_true",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) WHERE 1 = 1 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "node_where_constant_false",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "query": "MATCH (u:User) WHERE 1 <> 1 RETURN u.id ORDER BY u.id"
+    },
+    {
+      "name": "set_where_constant_true",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})"
+      ],
+      "query": "MATCH (u:User) WHERE 1 = 1 SET u.score = 0 RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "rel_where_constant_true",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "CREATE (:Person {name: 'C'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='C' CREATE (a)-[:Knows {since: 2}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) WHERE 'x' = 'x' RETURN b.name ORDER BY b.name"
+    },
+    {
+      "name": "match_create_where_constant_true",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person), (b:Person) WHERE 1 = 1 CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "match_create_where_constant_false",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person), (b:Person) WHERE 1 = 0 CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "node_match_count_and_missing_param_scalar",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})",
+        "CREATE (:User {id: 2})"
+      ],
+      "parameters": {},
+      "query": "MATCH (u:User) RETURN COUNT(*) AS cnt, $missing"
+    },
+    {
+      "name": "rel_match_count_and_missing_param_scalar",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "parameters": {},
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) RETURN COUNT(*) AS cnt, $missing"
+    },
+    {
+      "name": "node_match_set_count_and_missing_param_scalar",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, score: 5})",
+        "CREATE (:User {id: 2, score: 7})"
+      ],
+      "parameters": {},
+      "query": "MATCH (u:User) SET u.score = u.score RETURN COUNT(*) AS cnt, $missing"
+    },
+    {
+      "name": "rel_match_set_count_and_missing_param_scalar",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Knows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person), (b:Person) WHERE a.name='A' AND b.name='B' CREATE (a)-[:Knows {since: 1}]->(b)"
+      ],
+      "parameters": {},
+      "query": "MATCH (a:Person)-[r:Knows]->(b:Person) SET r.since = r.since RETURN COUNT(*) AS cnt, $missing"
+    },
+    {
+      "name": "node_match_missing_param_alias_with_literal_slot",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {},
+      "query": "MATCH (u:User) RETURN $p, 1, $q"
+    },
+    {
+      "name": "top_return_partial_param_map_keeps_param_names",
+      "ordered": true,
+      "setup": [],
+      "parameters": {
+        "q": 9
+      },
+      "query": "RETURN $p, $q"
+    },
+    {
+      "name": "node_match_partial_param_map_keeps_param_names",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1})"
+      ],
+      "parameters": {
+        "q": 9
+      },
+      "query": "MATCH (u:User) RETURN $p, $q"
+    },
+    {
+      "name": "node_group_count_order_numeric_terms",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'a'})",
+        "CREATE (:User {id: 2, grp: 'a'})",
+        "CREATE (:User {id: 3, grp: 'b'})"
+      ],
+      "query": "MATCH (u:User) RETURN u.grp, COUNT(*) AS c ORDER BY 1,2"
+    },
+    {
+      "name": "node_group_count_distinct_order_numeric_terms",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 1, grp: 'a', score: 1})",
+        "CREATE (:User {id: 2, grp: 'a', score: 2})",
+        "CREATE (:User {id: 3, grp: 'b', score: 3})"
+      ],
+      "query": "MATCH (u:User) RETURN DISTINCT u.grp, COUNT(u.score) AS c ORDER BY 1"
+    },
+    {
+      "name": "rel_group_count_order_numeric_terms",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE REL TABLE Follows(FROM User TO User, weight INT64)",
+        "CREATE (:User {id: 1, grp: 'a'})",
+        "CREATE (:User {id: 2, grp: 'a'})",
+        "CREATE (:User {id: 3, grp: 'b'})",
+        "MATCH (a:User), (b:User) WHERE a.id=1 AND b.id=2 CREATE (a)-[:Follows {weight: 1}]->(b)",
+        "MATCH (a:User), (b:User) WHERE a.id=2 AND b.id=3 CREATE (a)-[:Follows {weight: 2}]->(b)"
+      ],
+      "query": "MATCH (a:User)-[r:Follows]->(b:User) RETURN b.grp, COUNT(*) AS c ORDER BY 1,2"
+    },
+    {
+      "name": "node_match_order_by_numeric_constant_term",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, grp STRING, PRIMARY KEY(id))",
+        "CREATE (:User {id: 2, grp: 'b'})",
+        "CREATE (:User {id: 1, grp: 'a'})"
+      ],
+      "query": "MATCH (u:User) RETURN u.id, u.grp ORDER BY 1"
+    },
+    {
+      "name": "rel_match_order_by_numeric_constant_term",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE A(id INT64, PRIMARY KEY(id))",
+        "CREATE NODE TABLE B(id INT64, PRIMARY KEY(id))",
+        "CREATE REL TABLE R(FROM A TO B, w INT64)",
+        "CREATE (:A {id: 1})",
+        "CREATE (:A {id: 2})",
+        "CREATE (:B {id: 10})",
+        "CREATE (:B {id: 20})",
+        "MATCH (a:A), (b:B) WHERE a.id = 2 AND b.id = 10 CREATE (a)-[:R {w: 5}]->(b)",
+        "MATCH (a:A), (b:B) WHERE a.id = 1 AND b.id = 20 CREATE (a)-[:R {w: 6}]->(b)"
+      ],
+      "query": "MATCH (a:A)-[r:R]->(b:B) RETURN a.id, b.id, r.w ORDER BY 2 DESC"
+    },
+    {
+      "name": "node_set_return_order_by_numeric_constant_term",
+      "ordered": false,
+      "setup": [
+        "CREATE NODE TABLE User(id INT64, score INT64, PRIMARY KEY(id))",
+        "CREATE (:User {id: 2, score: 7})",
+        "CREATE (:User {id: 1, score: 5})"
+      ],
+      "query": "MATCH (u:User) SET u.score = u.score RETURN u.id, u.score ORDER BY 1"
+    },
+    {
+      "name": "node_return_missing_property_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.missing"
+    },
+    {
+      "name": "node_order_missing_property_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) RETURN u.id ORDER BY u.missing"
+    },
+    {
+      "name": "node_where_missing_property_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) WHERE u.missing = 1 RETURN u.id"
+    },
+    {
+      "name": "node_set_missing_property_lhs_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE U(id INT64, PRIMARY KEY(id))",
+        "CREATE (:U {id: 1})"
+      ],
+      "query": "MATCH (u:U) SET u.missing = 1 RETURN u.id"
+    },
+    {
+      "name": "rel_return_missing_property_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE A(id INT64, PRIMARY KEY(id))",
+        "CREATE NODE TABLE B(id INT64, PRIMARY KEY(id))",
+        "CREATE REL TABLE R(FROM A TO B, w INT64)",
+        "CREATE (:A {id: 1})",
+        "CREATE (:B {id: 2})",
+        "MATCH (a:A), (b:B) WHERE a.id=1 AND b.id=2 CREATE (a)-[:R {w: 5}]->(b)"
+      ],
+      "query": "MATCH (a:A)-[r:R]->(b:B) RETURN r.missing"
+    },
+    {
+      "name": "rel_order_missing_property_binder_error",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE A(id INT64, PRIMARY KEY(id))",
+        "CREATE NODE TABLE B(id INT64, PRIMARY KEY(id))",
+        "CREATE REL TABLE R(FROM A TO B, w INT64)",
+        "CREATE (:A {id: 1})",
+        "CREATE (:B {id: 2})",
+        "MATCH (a:A), (b:B) WHERE a.id=1 AND b.id=2 CREATE (a)-[:R {w: 5}]->(b)"
+      ],
+      "query": "MATCH (a:A)-[r:R]->(b:B) RETURN r.w ORDER BY r.missing"
+    },
+    {
+      "name": "top_return_alias_property_access_type_binder_error",
+      "ordered": true,
+      "setup": [],
+      "query": "RETURN 1 AS a ORDER BY a.missing"
+    }
+  ]
+}

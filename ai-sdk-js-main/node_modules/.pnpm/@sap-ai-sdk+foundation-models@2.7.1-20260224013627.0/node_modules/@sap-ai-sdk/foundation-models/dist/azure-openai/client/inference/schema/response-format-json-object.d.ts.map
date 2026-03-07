@@ -1,1 +1,0 @@
-{"version":3,"file":"response-format-json-object.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/response-format-json-object.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,mCAAmC,GAAG;IAChD;;OAEG;IACH,IAAI,EAAE,aAAa,CAAC;CACrB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

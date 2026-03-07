@@ -1,1 +1,0 @@
-{"version":3,"file":"base-pipeline-response.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/base-pipeline-response.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,gBAAgB,CAAC;AAC/C;;GAEG;AACH,MAAM,MAAM,oBAAoB,GAAG;IACjC,EAAE,EAAE,MAAM,CAAC;IACX,IAAI,EAAE,MAAM,CAAC;IACb,QAAQ,CAAC,EAAE,QAAQ,CAAC;CACrB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

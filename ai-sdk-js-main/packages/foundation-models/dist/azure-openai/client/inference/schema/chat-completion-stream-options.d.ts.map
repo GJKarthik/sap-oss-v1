@@ -1,1 +1,0 @@
-{"version":3,"file":"chat-completion-stream-options.d.ts","sourceRoot":"","sources":["../../../../../src/azure-openai/client/inference/schema/chat-completion-stream-options.ts"],"names":[],"mappings":"AAMA;;;GAGG;AACH,MAAM,MAAM,sCAAsC,GAC9C,CAAC;IACC;;;OAGG;IACH,aAAa,CAAC,EAAE,OAAO,CAAC;CACzB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC,GACxB,IAAI,CAAC"}

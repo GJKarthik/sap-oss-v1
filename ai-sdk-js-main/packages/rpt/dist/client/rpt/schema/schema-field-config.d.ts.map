@@ -1,1 +1,0 @@
-{"version":3,"file":"schema-field-config.d.ts","sourceRoot":"","sources":["../../../../src/client/rpt/schema/schema-field-config.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,kBAAkB,CAAC;AACnD;;GAEG;AACH,MAAM,MAAM,iBAAiB,GAAG;IAC9B,KAAK,EAAE,UAAU,CAAC;CACnB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

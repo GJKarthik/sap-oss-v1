@@ -1,1 +1,0 @@
-{"version":3,"file":"share-point-config.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/share-point-config.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uBAAuB,CAAC;AAC5D;;GAEG;AACH,MAAM,MAAM,gBAAgB,GAAG;IAC7B,IAAI,EAAE,cAAc,CAAC;CACtB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

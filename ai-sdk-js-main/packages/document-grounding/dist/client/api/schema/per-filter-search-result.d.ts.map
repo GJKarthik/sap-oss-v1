@@ -1,1 +1,0 @@
-{"version":3,"file":"per-filter-search-result.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/per-filter-search-result.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,sBAAsB,CAAC;AAC3D;;GAEG;AACH,MAAM,MAAM,qBAAqB,GAAG;IAClC,QAAQ,EAAE,MAAM,CAAC;IACjB,OAAO,EAAE,cAAc,EAAE,CAAC;CAC3B,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}

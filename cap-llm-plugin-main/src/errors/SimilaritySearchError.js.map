@@ -1,1 +1,0 @@
-{"version":3,"file":"SimilaritySearchError.js","sourceRoot":"","sources":["SimilaritySearchError.ts"],"names":[],"mappings":";;;AAAA,2DAAwD;AAExD;;;;;GAKG;AACH,MAAa,qBAAsB,SAAQ,qCAAiB;IAC1D,YAAY,OAAe,EAAE,IAAY,EAAE,OAAiC;QAC1E,KAAK,CAAC,OAAO,EAAE,IAAI,EAAE,OAAO,CAAC,CAAC;QAC9B,IAAI,CAAC,IAAI,GAAG,uBAAuB,CAAC;IACtC,CAAC;CACF;AALD,sDAKC"}

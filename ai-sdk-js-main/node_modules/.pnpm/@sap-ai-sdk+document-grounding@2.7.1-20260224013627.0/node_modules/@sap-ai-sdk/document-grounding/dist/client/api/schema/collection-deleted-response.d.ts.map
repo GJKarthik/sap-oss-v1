@@ -1,1 +1,0 @@
-{"version":3,"file":"collection-deleted-response.d.ts","sourceRoot":"","sources":["../../../../src/client/api/schema/collection-deleted-response.ts"],"names":[],"mappings":"AAMA;;GAEG;AACH,MAAM,MAAM,yBAAyB,GAAG;IACtC,aAAa,EAAE,MAAM,CAAC;IACtB,MAAM,EAAE,MAAM,CAAC;CAChB,GAAG,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC"}
