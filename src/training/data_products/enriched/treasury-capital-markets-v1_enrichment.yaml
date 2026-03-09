@@ -1,0 +1,72 @@
+productId: treasury-capital-markets-v1
+source: DATA_DICTIONARY.xlsx
+sheet: Dictionary
+description: Treasury Bond/Issuance positions
+enrichedAt: '2026-03-06T21:49:11.518126Z'
+pipeline: xlsx_to_odps.py
+copilotIntegration:
+  profilerAvailable: false
+  columnMappingAvailable: true
+  copilotPath: /Users/user/Documents/sap-oss/data-cleaning-copilot-main
+profile:
+  rowCount: 16382
+  columnCount: 3
+  columns:
+  - COLUMN
+  - DESCRIPTION
+  - LONG DESCRIPTION
+fieldClassifications:
+  COLUMN:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 0
+  DESCRIPTION:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 1
+  LONG DESCRIPTION:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 2
+qualityIssues:
+- field: COLUMN
+  issue: high_null_rate
+  severity: error
+  detail: 99.8% null values
+  action: Review data source or add default value
+- field: DESCRIPTION
+  issue: high_null_rate
+  severity: error
+  detail: 99.8% null values
+  action: Review data source or add default value
+- field: LONG DESCRIPTION
+  issue: high_null_rate
+  severity: error
+  detail: 99.8% null values
+  action: Review data source or add default value
+qualitySummary:
+  totalFields: 3
+  classifiedFields: 3
+  measures: 0
+  dimensions: 3
+  identifiers: 0
+  dates: 0
+  issueCount: 3
+  errorCount: 3
+  warningCount: 0
+stagingGaps:
+- field: COLUMN
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: DESCRIPTION
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: LONG DESCRIPTION
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system

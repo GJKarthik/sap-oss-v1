@@ -1,0 +1,58 @@
+# =============================================================================
+# training-main — Root Python tooling config
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = [
+    "nvidia-modelopt/tests",
+    "hippocpp/python/tests",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks integration tests requiring running services",
+    "gpu: marks tests that require GPU hardware",
+]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = [
+    "nvidia-modelopt/api",
+    "hippocpp/python/hippocpp",
+]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "hippocpp"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+

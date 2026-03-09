@@ -1,0 +1,76 @@
+# NVIDIA Model Optimizer Configuration for Qwen3.5 on T4 GPU
+# This configuration uses INT8 quantization which is optimal for T4
+
+# Model Configuration
+model:
+  name: "Qwen/Qwen3.5-1.8B"  # Default model - change as needed
+  # Options for T4 (16GB VRAM):
+  # - Qwen/Qwen3.5-0.6B  (fits easily, no quantization needed)
+  # - Qwen/Qwen3.5-1.8B  (fits comfortably with INT8)
+  # - Qwen/Qwen3.5-4B    (requires INT8 quantization)
+  # - Qwen/Qwen3.5-9B    (requires aggressive INT4 + pruning)
+  trust_remote_code: true
+  torch_dtype: "float16"  # Load in FP16 initially
+
+# Quantization Configuration for T4 GPU
+quantization:
+  # Available formats for T4 (Turing architecture):
+  # - int8_sq: Smooth Quant INT8 (recommended for T4)
+  # - int4_awq: AWQ INT4 (4-bit, best compression)
+  # - w4a16_awq: Weight-only 4-bit
+  # NOT available on T4: fp8, nvfp4 (require newer GPUs)
+  
+  format: "int8_sq"  # SmoothQuant INT8 - best for T4
+  
+  # SmoothQuant specific settings
+  smoothquant:
+    alpha: 0.5  # Balance between weights and activations (0.0-1.0)
+    
+  # AWQ settings (for INT4)
+  awq:
+    w_bit: 4
+    q_group_size: 128
+    zero_point: true
+    
+  # Calibration settings
+  calibration:
+    dataset: "cnn_dailymail"  # Dataset for calibration
+    num_samples: 512  # Number of calibration samples
+    seq_length: 2048  # Sequence length for calibration
+    batch_size: 1  # Batch size (keep low for T4 memory)
+
+# Pruning Configuration (Optional)
+pruning:
+  enabled: false  # Set to true to enable pruning
+  method: "mcore_minitron"
+  target_sparsity: 0.2  # 20% parameter reduction
+  
+  # What to prune
+  prune_attention_heads: true
+  prune_ffn_hidden: true
+  prune_embedding: false  # Don't prune embeddings
+  
+  # Constraints
+  min_attention_heads: 8
+  min_ffn_hidden: 2048
+
+# Export Configuration
+export:
+  format: "hf_checkpoint"  # huggingface checkpoint format
+  # Options: hf_checkpoint, tensorrt_llm, vllm
+  output_dir: "./outputs/qwen_int8"
+  save_tokenizer: true
+
+# Hardware-specific settings for T4
+hardware:
+  device: "cuda:0"
+  max_memory: "14GB"  # Leave 2GB headroom on 16GB T4
+  
+# Evaluation settings
+evaluation:
+  enabled: true
+  tasks:
+    - "hellaswag"
+    - "arc_easy"
+  num_fewshot: 0
+  batch_size: 4

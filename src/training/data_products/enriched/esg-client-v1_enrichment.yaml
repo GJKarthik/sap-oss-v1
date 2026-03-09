@@ -1,0 +1,122 @@
+productId: esg-client-v1
+source: ESG_ DATA_DICTIONARY.xlsx
+sheet: Client
+description: Integrated Client ESG model
+enrichedAt: '2026-03-06T21:49:11.551315Z'
+pipeline: xlsx_to_odps.py
+copilotIntegration:
+  profilerAvailable: false
+  columnMappingAvailable: true
+  copilotPath: /Users/user/Documents/sap-oss/data-cleaning-copilot-main
+profile:
+  rowCount: 65
+  columnCount: 7
+  columns:
+  - col_0
+  - col_1
+  - col_2
+  - col_3
+  - col_4
+  - col_5
+  - col_6
+fieldClassifications:
+  col_0:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 0
+  col_1:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 1
+  col_2:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 2
+  col_3:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 3
+  col_4:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 4
+  col_5:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 5
+  col_6:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 6
+qualityIssues:
+- field: col_0
+  issue: high_null_rate
+  severity: error
+  detail: 100.0% null values
+  action: Review data source or add default value
+- field: col_3
+  issue: high_null_rate
+  severity: error
+  detail: 100.0% null values
+  action: Review data source or add default value
+- field: col_4
+  issue: high_null_rate
+  severity: error
+  detail: 100.0% null values
+  action: Review data source or add default value
+- field: col_5
+  issue: high_null_rate
+  severity: error
+  detail: 100.0% null values
+  action: Review data source or add default value
+- field: col_6
+  issue: high_null_rate
+  severity: error
+  detail: 100.0% null values
+  action: Review data source or add default value
+qualitySummary:
+  totalFields: 7
+  classifiedFields: 7
+  measures: 0
+  dimensions: 7
+  identifiers: 0
+  dates: 0
+  issueCount: 5
+  errorCount: 5
+  warningCount: 0
+stagingGaps:
+- field: col_0
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_1
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_2
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_3
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_4
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_5
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_6
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system

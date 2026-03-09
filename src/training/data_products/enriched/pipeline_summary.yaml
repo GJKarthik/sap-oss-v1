@@ -1,0 +1,46 @@
+pipeline: xlsx_to_odps
+runAt: '2026-03-06T21:49:11.741121Z'
+productsProcessed: 10
+totalIssues: 16
+totalErrors: 12
+products:
+- id: treasury-capital-markets-v1
+  rows: 16382
+  columns: 3
+  issues: 3
+- id: esg-net-zero-v1
+  rows: 47
+  columns: 3
+  issues: 1
+- id: esg-client-v1
+  rows: 65
+  columns: 7
+  issues: 5
+- id: esg-sustainable-v1
+  rows: 70
+  columns: 3
+  issues: 1
+- id: performance-account-dim
+  rows: 9
+  columns: 2
+  issues: 0
+- id: performance-location-dim
+  rows: 9
+  columns: 2
+  issues: 0
+- id: performance-product-dim
+  rows: 7
+  columns: 2
+  issues: 0
+- id: performance-segment-dim
+  rows: 14
+  columns: 2
+  issues: 2
+- id: performance-cost-dim
+  rows: 11
+  columns: 2
+  issues: 2
+- id: performance-crd-fact
+  rows: 23
+  columns: 2
+  issues: 2

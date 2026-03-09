@@ -1,0 +1,98 @@
+{
+  "name": "multi-statement",
+  "description": "Multi-step mutation and query workflows — verify state consistency.",
+  "cases": [
+    {
+      "name": "insert_then_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE N(id INT64, PRIMARY KEY(id))",
+        "CREATE (:N {id: 1})",
+        "CREATE (:N {id: 2})",
+        "CREATE (:N {id: 3})"
+      ],
+      "query": "MATCH (n:N) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "update_then_read",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, score INT64, PRIMARY KEY(name))",
+        "CREATE (:Person {name: 'Alice', score: 10})",
+        "MATCH (p:Person {name: 'Alice'}) SET p.score = 99"
+      ],
+      "query": "MATCH (p:Person {name: 'Alice'}) RETURN p.score"
+    },
+    {
+      "name": "delete_then_count",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE N(id INT64, PRIMARY KEY(id))",
+        "CREATE (:N {id: 1})",
+        "CREATE (:N {id: 2})",
+        "CREATE (:N {id: 3})",
+        "MATCH (n:N {id: 2}) DELETE n"
+      ],
+      "query": "MATCH (n:N) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "create_rel_then_traverse",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Likes(FROM Person TO Person)",
+        "CREATE (:Person {name: 'X'})",
+        "CREATE (:Person {name: 'Y'})",
+        "CREATE (:Person {name: 'Z'})",
+        "MATCH (x:Person {name: 'X'}), (y:Person {name: 'Y'}) CREATE (x)-[:Likes]->(y)",
+        "MATCH (y:Person {name: 'Y'}), (z:Person {name: 'Z'}) CREATE (y)-[:Likes]->(z)"
+      ],
+      "query": "MATCH (a:Person)-[:Likes]->(b:Person)-[:Likes]->(c:Person) RETURN a.name, c.name"
+    },
+    {
+      "name": "multiple_sets",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Item(id INT64, val INT64, PRIMARY KEY(id))",
+        "CREATE (:Item {id: 1, val: 0})",
+        "MATCH (i:Item {id: 1}) SET i.val = 10",
+        "MATCH (i:Item {id: 1}) SET i.val = 20"
+      ],
+      "query": "MATCH (i:Item {id: 1}) RETURN i.val"
+    },
+    {
+      "name": "bulk_insert_with_aggregate",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Metric(id INT64, value DOUBLE, PRIMARY KEY(id))",
+        "CREATE (:Metric {id: 1, value: 10.0})",
+        "CREATE (:Metric {id: 2, value: 20.0})",
+        "CREATE (:Metric {id: 3, value: 30.0})",
+        "CREATE (:Metric {id: 4, value: 40.0})",
+        "CREATE (:Metric {id: 5, value: 50.0})"
+      ],
+      "query": "MATCH (m:Metric) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "interleaved_create_and_read",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Seq(id INT64, PRIMARY KEY(id))",
+        "CREATE (:Seq {id: 1})",
+        "CREATE (:Seq {id: 2})"
+      ],
+      "query": "MATCH (s:Seq) RETURN s.id ORDER BY s.id"
+    },
+    {
+      "name": "parameterized_update",
+      "ordered": true,
+      "parameters": {"new_score": 42},
+      "setup": [
+        "CREATE NODE TABLE Player(name STRING, score INT64, PRIMARY KEY(name))",
+        "CREATE (:Player {name: 'p1', score: 0})"
+      ],
+      "query": "MATCH (p:Player {name: 'p1'}) RETURN p.score"
+    }
+  ]
+}
+

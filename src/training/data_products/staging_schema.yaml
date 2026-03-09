@@ -1,0 +1,128 @@
+# =============================================================================
+# Staging Schema Data Product (ODPS 4.1)
+# Source: CSV staging schema files, 3_validations.csv
+# =============================================================================
+
+dataProduct:
+  id: "staging-schema-v1"
+  version: "1.0.0"
+  name: "Data Ingestion Staging Schema"
+  description: >
+    Source-to-BTP field lineage mappings for all data ingestion pipelines.
+    Maps upstream source systems (BCRS, BPC, S4 GL, FPSL) through staging
+    schemas to use-case-specific layers.
+
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "governance"
+  domain: "Data Engineering"
+
+  owner:
+    name: "Data Engineering Team"
+    team: "Data Platform"
+
+  x-llm-policy:
+    routing: "vllm-only"
+    defaultBackend: "vllm"
+    auditLevel: "full"
+
+  # --- Lineage Schema ---
+  schema:
+    source: "data/2_stagingschema.csv"
+    type: "lineage"
+    registrySource: "data/1_register.csv"
+    validationSource: "data/3_validations.csv"
+
+    # Source system classification
+    sourceSystems:
+      - id: "BCRS"
+        name: "Bloomberg Capital Markets Risk"
+        dataType: "Structured"
+        domain: "Treasury"
+        refreshRate: "daily"
+        sensitivity: "Confidential"
+        btpLayer: "Staging"
+      - id: "BPC"
+        name: "SAP BPC"
+        dataType: "Unstructured"
+        domain: "Finance"
+        dataCategory: "FTP"
+        refreshRate: "Weekly"
+        sensitivity: "Internal"
+        btpLayer: "Common"
+      - id: "S4_GL"
+        name: "S4/HANA General Ledger"
+        domain: "Finance"
+        dataCategory: "IRRBB"
+        btpLayer: "Use-Case Specific"
+      - id: "FPSL"
+        name: "FPSL Financial Management"
+        domain: "Finance"
+        dataCategory: "Capital"
+        btpLayer: "Use-Case Specific"
+
+    # Key staging schema mappings
+    stagingSchemas:
+      - btpSchema: "STG_BCRS"
+        tables:
+          - btpTable: "BSI_REM_CONTROL_TABLE"
+            sourceTable: 'SCBI_DATACTRL."CONTROL_TABLE"'
+            sourceSystem: "BCRS"
+            fields:
+              - sourceField: "AS_OF_DATE"
+                btpField: "AS_OF_DATE"
+                dataType: "TIMESTAMP"
+              - sourceField: "CONTEXT"
+                btpField: "CONTEXT"
+                dataType: "NVARCHAR"
+          - btpTable: "ORMT_SC_DATE_CONFIG"
+            fields:
+              - btpField: "CAL_DATE"
+                dataType: "DECIMAL"
+              - btpField: "DATE_FILTER"
+                dataType: "NVARCHAR"
+              - btpField: "DATE_FILTER_DESC"
+                dataType: "NVARCHAR"
+
+      - btpSchema: "TRANSPHY"
+        tables:
+          - btpTable: "sap.transphy.table::account_map"
+            fields:
+              - btpField: "RACCT"
+                dataType: "NVARCHAR"
+
+      - btpSchema: "TREASURY"
+        tables:
+          - btpTable: "NSH_GROUP_SOLO_PF_T"
+            fields:
+              - btpField: "HOLDING"
+                dataType: "NVARCHAR"
+
+  # --- Quality: Data Validation Rules ---
+  x-data-cleaning:
+    copilotRef: "../sap-oss/data-cleaning-copilot-main"
+    validationRules:
+      - rule: "field_mapping_completeness"
+        description: "All source fields must map to a BTP field"
+        severity: "error"
+      - rule: "datatype_consistency"
+        description: "Source and BTP data types must be compatible"
+        severity: "warning"
+      - rule: "schema_existence"
+        description: "All referenced BTP schemas must exist in HANA"
+        severity: "error"
+
+  outputPort:
+    - id: "lineage-metadata"
+      name: "Data Lineage Metadata"
+      description: "Source-to-target field mappings for query generation"
+      dataSecurityClass: "internal"
+      downstreamConsumers:
+        - ref: "treasury-capital-markets-v1"
+        - ref: "esg-sustainability-v1"
+        - ref: "performance-bpc-v1"
+
+  quality:
+    completeness: "85%"
+    freshness: "on-change"
+    note: "Missing descriptions for many staging fields - enrichment needed"
+

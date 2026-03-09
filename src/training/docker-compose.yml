@@ -1,0 +1,81 @@
+# =============================================================================
+# training-main — Docker Compose
+# =============================================================================
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose up modelopt-api    # API only
+#   docker compose logs -f            # Follow logs
+#   docker compose down               # Stop all
+#
+# GPU support (requires nvidia-container-toolkit):
+#   docker compose --profile gpu up -d
+# =============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # ModelOpt API — FastAPI quantization & inference service
+  # --------------------------------------------------------------------------
+  modelopt-api:
+    build:
+      context: ./nvidia-modelopt
+      dockerfile: Dockerfile
+    container_name: modelopt-api
+    ports:
+      - "${PORT:-8001}:8001"
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - WORKERS=${WORKERS:-1}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MODELOPT_API_KEY=${MODELOPT_API_KEY:-}
+      - MODELOPT_REQUIRE_AUTH=${MODELOPT_REQUIRE_AUTH:-false}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:8080}
+      - HF_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - model-outputs:/app/outputs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # ModelOpt UI — Angular frontend served by nginx
+  # --------------------------------------------------------------------------
+  modelopt-ui:
+    build:
+      context: ./nvidia-modelopt/ui
+      dockerfile: Dockerfile
+      args:
+        API_URL: http://modelopt-api:8001
+    container_name: modelopt-ui
+    ports:
+      - "${UI_PORT:-8080}:80"
+    depends_on:
+      modelopt-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # ModelOpt API with GPU (opt-in via --profile gpu)
+  # --------------------------------------------------------------------------
+  modelopt-api-gpu:
+    extends:
+      service: modelopt-api
+    container_name: modelopt-api-gpu
+    profiles: ["gpu"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  model-outputs:
+    driver: local
+

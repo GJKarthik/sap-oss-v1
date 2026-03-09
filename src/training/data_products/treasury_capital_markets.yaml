@@ -1,0 +1,288 @@
+# =============================================================================
+# Treasury & Capital Markets Data Product (ODPS 4.1)
+# Source: DATA_DICTIONARY.xlsx, Prompt_samples.xlsx
+# =============================================================================
+
+dataProduct:
+  id: "treasury-capital-markets-v1"
+  version: "1.0.0"
+  name: "Treasury & Capital Markets"
+  description: >
+    Bond and Issuance positions with mark-to-market, notional, RWA, and yield
+    metrics across 8 booking countries. 32 technical columns with full
+    business glossary mappings.
+
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "analytics"
+  domain: "Treasury"
+
+  owner:
+    name: "Treasury Data Team"
+    team: "Capital Markets Analytics"
+
+  x-llm-policy:
+    routing: "vllm-only"
+    defaultBackend: "vllm"
+    auditLevel: "full"
+
+  x-prompting-policy:
+    systemPrompt: |
+      You are a Treasury analytics assistant for HANA. You help users query
+      bond and issuance positions. Use the field mappings below to translate
+      business terms to technical column names. All data is enterprise
+      confidential - use on-premise LLM only.
+    maxTokens: 4096
+    temperature: 0.3
+
+  # --- Schema: Technical-to-Business Field Mappings ---
+  schema:
+    source: "data/DATA_DICTIONARY.xlsx"
+    tableSchema: "STG_BCRS"
+    rowCount: 10323
+    columnCount: 32
+    fields:
+      # Dimension fields
+      - technicalName: "GLB_ASSET_CLASS_2"
+        businessName: "Asset Class"
+        description: "Security's product type"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+        analyticsAnnotation: "@Analytics.Dimension"
+      - technicalName: "GLB_COUPON_TYPE"
+        businessName: "Coupon Type"
+        description: "Grouped: float (FLOATING, FLOATING ABS) and fixed (FIXED, FIXED ABS, PAY-IN-KIND, STEP CPN, VARIABLE, ZERO COUPON)"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+        analyticsAnnotation: "@Analytics.Dimension"
+      - technicalName: "GLB_CUSIP"
+        businessName: "CUSIP"
+        description: "Security ID (CUSIP)"
+        fieldType: "identifier"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_INSTRUMENT"
+        businessName: "Instrument"
+        description: "Instrument description, Bloomberg ticker"
+        fieldType: "identifier"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_ISIN"
+        businessName: "ISIN"
+        description: "International Securities Identification Number"
+        fieldType: "identifier"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_FINAL_CCY"
+        businessName: "Currency"
+        description: "Currency code"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_FINAL_COUNTRY_NAME"
+        businessName: "Country"
+        description: "Booking Country"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+        filterValues: ["CHINA", "HONG KONG", "INDIA", "SINGAPORE", "TAIWAN", "UNITED ARAB EMIRATES", "UNITED KINGDOM", "UNITED STATES OF AMERICA"]
+      - technicalName: "GLB_FV_HTC"
+        businessName: "Accounting Treatment"
+        description: "FVOCI (fair value) or HTC (amortizing)"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_GLOBAL_REGION"
+        businessName: "Region"
+        description: "Global region"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+        analyticsAnnotation: "@Analytics.Dimension"
+      - technicalName: "GLB_HIGH_LVL_STRATEGY"
+        businessName: "Strategy"
+        description: "Purpose of portfolio"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_HQLA"
+        businessName: "HQLA"
+        description: "High Quality Liquid Assets classification"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_INDEX_NAME"
+        businessName: "Reference Index"
+        description: "Benchmark for floating bonds"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_ISSUE_RATING_SP"
+        businessName: "S&P Rating"
+        description: "S&P credit rating"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_ISSUER_NAME"
+        businessName: "Issuer Name"
+        description: "Name of the security's issuer"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_LAST_RESET_DATE"
+        businessName: "Last Reset Date"
+        description: "Last index reset date for floating bonds"
+        fieldType: "date"
+        dataType: "DATE"
+      - technicalName: "GLB_MAP_PORTFOLIO"
+        businessName: "Portfolio"
+        description: "Portfolio name"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+      - technicalName: "GLB_MATURITY_DATE"
+        businessName: "Maturity Date"
+        description: "Security expiry date"
+        fieldType: "date"
+        dataType: "DATE"
+      - technicalName: "GLB_PRODUCT_SUBTYPE"
+        businessName: "Product Subtype"
+        description: "BOND or ISSUANCE"
+        fieldType: "dimension"
+        dataType: "NVARCHAR"
+        filterValues: ["BOND", "ISSUANCE"]
+      - technicalName: "GLB_REPORT_DATE"
+        businessName: "Report Date"
+        description: "As of Date, CoB Date, month end, period"
+        fieldType: "date"
+        dataType: "DATE"
+        filterValues: ["2024-12-31", "2025-01-31", "2025-02-28", "2025-03-31", "2025-04-22"]
+      - technicalName: "GLB_SOLO_SUB"
+        businessName: "Solo/Sub"
+        description: "SOLO or SUB entity classification"
+      # Measure fields
+      - technicalName: "GLB_ASW_DM"
+        businessName: "ASW/DM"
+        description: "ASW for fixed coupon securities, DM (Discount Margin) for floating"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_BOOK_PRICE"
+        businessName: "Book Price"
+        description: "Book Price calculated from Book Value"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_BOOK_VALUE_USD"
+        businessName: "Book Value (USD)"
+        description: "Book value in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_CR_DELTA_TOTAL"
+        businessName: "CR Delta"
+        description: "CR Delta, CR01 in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_IR_PV01_TOTAL"
+        businessName: "PV01"
+        description: "PV01 in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_MARKET_PRICE"
+        businessName: "Market Price"
+        description: "Market Price calculated from Market Value"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_MARKET_VALUE_USD"
+        businessName: "Market Value (USD)"
+        description: "Market Value in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_MARKET_YIELD"
+        businessName: "Market Yield"
+        description: "Market yield at report date"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_MTM_USD"
+        businessName: "Mark-to-Market (USD)"
+        description: "Mark-to-Market value in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+        businessAliases: ["MtM", "MTM", "mark to market"]
+      - technicalName: "GLB_NOTIONAL_USD"
+        businessName: "Notional (USD)"
+        description: "Notional in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+        businessAliases: ["notional", "nominal"]
+      - technicalName: "GLB_RWA"
+        businessName: "RWA"
+        description: "Risk-Weighted Assets in USD"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        unit: "USD"
+        analyticsAnnotation: "@Analytics.Measure"
+      - technicalName: "GLB_YIELD_IMPACT"
+        businessName: "Holding Yield"
+        description: "Purchased yield at trade date"
+        fieldType: "measure"
+        dataType: "DECIMAL"
+        analyticsAnnotation: "@Analytics.Measure"
+
+  # --- Supervised Training Pairs ---
+  promptTemplates:
+    source: "data/Prompt_samples.xlsx"
+    totalPairs: 41
+    categories:
+      - category: "ISIN position"
+        product: "Bonds"
+        examples:
+          - template: "Provide total [select metric] for ISIN [input ISIN] in [select country] country."
+            example: "Provide total MtM for ISIN US91282CGB19 in HONG KONG country."
+            fieldMappings:
+              metric: ["GLB_MTM_USD", "GLB_NOTIONAL_USD", "GLB_RWA", "GLB_BOOK_VALUE_USD"]
+              isin: "GLB_ISIN"
+              country: "GLB_FINAL_COUNTRY_NAME"
+          - template: "Provide a list of countries where ISIN [input ISIN] was held."
+            example: "Provide a list of countries where ISIN US91282CGB19 was held."
+            fieldMappings:
+              isin: "GLB_ISIN"
+              result: "GLB_FINAL_COUNTRY_NAME"
+      - category: "Maturity snapshot"
+        product: "Issuances"
+        examples:
+          - template: "Provide [select metric] of [select coupon type] rate [select product] in [select country] country maturing in [month year]."
+            example: "Provide notional of Fixed rate Issuances in the US country maturing in August 2025."
+            fieldMappings:
+              metric: ["GLB_NOTIONAL_USD", "GLB_MTM_USD"]
+              couponType: "GLB_COUPON_TYPE"
+              product: "GLB_PRODUCT_SUBTYPE"
+              country: "GLB_FINAL_COUNTRY_NAME"
+              maturityDate: "GLB_MATURITY_DATE"
+
+  # --- Output Ports: Connects to ai-core-pal ---
+  outputPort:
+    - id: "treasury-positions"
+      name: "Treasury Bond/Issuance Positions"
+      description: "Full position data for PAL analytics"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+      downstreamConsumers:
+        - ref: "aicore-pal-service-v1"
+          inputPort: "hana-tables"
+          palFunctions: ["pal_forecast", "pal_anomaly", "pal_clustering"]
+
+  # --- Input Port: Data lineage ---
+  inputPort:
+    - id: "bcrs-source"
+      name: "BCRS Source System"
+      description: "Bloomberg/Capital Markets risk system"
+      sourceSchema: 'SCBI_DATACTRL."CONTROL_TABLE"'
+      btpSchema: "STG_BCRS"
+      refreshRate: "daily"
+
+  quality:
+    completeness: "95%"
+    freshness: "daily"
+    latencyP95: "2000ms"

@@ -1,0 +1,245 @@
+# =============================================================================
+# ESG & Sustainability Data Product (ODPS 4.1)
+# Source: ESG_DATA_DICTIONARY.xlsx, ESG_Prompt_samples.xlsx
+# =============================================================================
+
+dataProduct:
+  id: "esg-sustainability-v1"
+  version: "1.0.0"
+  name: "ESG & Sustainability Analytics"
+  description: >
+    Net Zero, Integrated Client, and Sustainable Finance models with financed
+    emissions, physical intensity, exposure, and revenue metrics. Covers PCAF
+    scoring, value chain analysis, and client segment hierarchies.
+
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "analytics"
+  domain: "ESG"
+
+  owner:
+    name: "Sustainability Data Team"
+    team: "ESG Analytics"
+
+  x-llm-policy:
+    routing: "vllm-only"
+    defaultBackend: "vllm"
+    auditLevel: "full"
+
+  x-prompting-policy:
+    systemPrompt: |
+      You are an ESG analytics assistant for HANA. You help users query
+      Net Zero emissions, client exposures, and sustainable finance metrics.
+      Translate business terms to technical column names using the field
+      mappings. All data is enterprise confidential.
+    maxTokens: 4096
+    temperature: 0.3
+
+  # --- Schema: Three ESG Models ---
+  schema:
+    source: "data/ESG_ DATA_DICTIONARY.xlsx"
+    models:
+      # ===== Net Zero Model =====
+      - modelId: "net-zero"
+        modelName: "Net Zero Model"
+        description: "Asset-level emissions, intensity, and alignment tracking"
+        fieldCount: 47
+        fields:
+          - technicalName: "ASSID"
+            businessName: "Asset ID"
+            fieldType: "identifier"
+          - technicalName: "EMIINTAL"
+            businessName: "Asset Intensity"
+            fieldType: "measure"
+            analyticsAnnotation: "@Analytics.Measure"
+          - technicalName: "ASSNAME"
+            businessName: "Asset Name"
+            fieldType: "dimension"
+          - technicalName: "ASSTY"
+            businessName: "Asset Type"
+            fieldType: "dimension"
+          - technicalName: "ATT_PROD"
+            businessName: "Attributed Production"
+            fieldType: "measure"
+            analyticsAnnotation: "@Analytics.Measure"
+          - technicalName: "ATTR_FACTOR"
+            businessName: "Attribution Factor"
+            fieldType: "measure"
+          - technicalName: "ATT_EMI"
+            businessName: "Financed Emission"
+            fieldType: "measure"
+            analyticsAnnotation: "@Analytics.Measure"
+            businessAliases: ["financed emission", "emission"]
+          - technicalName: "FEMISSSION_S12"
+            businessName: "Financed Emission Scope 1 & 2"
+            fieldType: "measure"
+          - technicalName: "F_EMISSION_S3"
+            businessName: "Financed Emission Scope 3"
+            fieldType: "measure"
+          - technicalName: "PE_ASS"
+            businessName: "Exposure"
+            fieldType: "measure"
+            businessAliases: ["cib pe asset", "exposure"]
+          - technicalName: "DD_SEC"
+            businessName: "Net Zero Sector"
+            fieldType: "dimension"
+          - technicalName: "CLGRD"
+            businessName: "NZ Alignment Grading"
+            fieldType: "dimension"
+          - technicalName: "CALMONTH"
+            businessName: "Period"
+            fieldType: "date"
+          - technicalName: "TRYTDTR"
+            businessName: "Revenue"
+            fieldType: "measure"
+          - technicalName: "BEBOOKINGLOCID"
+            businessName: "Booking Location"
+            fieldType: "dimension"
+          - technicalName: "C_SSEG_ID"
+            businessName: "Client Segment Hierarchy"
+            fieldType: "dimension"
+          - technicalName: "RWAASSTR"
+            businessName: "RWA"
+            fieldType: "measure"
+          - technicalName: "RAHDR"
+            businessName: "Risk Appetite Headroom"
+            fieldType: "measure"
+          - technicalName: "PCAF_S12_SC"
+            businessName: "Client PCAF Score for Scope 1 & 2"
+            fieldType: "measure"
+          - technicalName: "PCAFS3SC"
+            businessName: "Client PCAF Score for Scope 3"
+            fieldType: "measure"
+          - technicalName: "EMI_INTENSITY"
+            businessName: "Sector wise Physical Intensity"
+            fieldType: "measure"
+          - technicalName: "EVIC"
+            businessName: "EVIC"
+            fieldType: "measure"
+          - technicalName: "FoL_Location"
+            businessName: "Revised FAM Location"
+            fieldType: "dimension"
+          - technicalName: "Management_Prod_Hier"
+            businessName: "Management Product Hierarchy"
+            fieldType: "dimension"
+          - technicalName: "VAL_CH"
+            businessName: "Value Chain Sector Level"
+            fieldType: "dimension"
+          - technicalName: "VCSCOPE"
+            businessName: "Value Chain Client Level"
+            fieldType: "dimension"
+
+      # ===== Integrated Client Model =====
+      - modelId: "integrated-client"
+        modelName: "Integrated Client Model"
+        description: "Client-level CIB/SF revenue, RWA, and exposure with segment hierarchy"
+        fieldCount: 65
+        keyFields:
+          - technicalName: "CIB_PE_ASSETS,"
+            businessName: "CIB PE Asset"
+            fieldType: "measure"
+          - technicalName: "CIB_TOTAL_REVENUE_YTD,"
+            businessName: "CIB Total Revenue YTD"
+            fieldType: "measure"
+          - technicalName: "CIB_RWA,"
+            businessName: "CIB RWA"
+            fieldType: "measure"
+          - technicalName: "CARB_IMP_PE_ASSETS,"
+            businessName: "In-scope Exposure for Net Zero"
+            fieldType: "measure"
+          - technicalName: "FIN_EMISSIONS,"
+            businessName: "Financed Emission"
+
+      # ===== Sustainable Finance Model =====
+      - modelId: "sustainable-finance"
+        modelName: "Sustainable Finance Model"
+        description: "Client-level SF tagging, pureplay classification, and revenue"
+        fieldCount: 70
+        keyFields:
+          - technicalName: "PE_Assets"
+            businessName: "SF PE Asset"
+            fieldType: "measure"
+          - technicalName: "Total_Revenue_YTD"
+            businessName: "Total Revenue YTD"
+            fieldType: "measure"
+          - technicalName: "RWA"
+            businessName: "RWA"
+            fieldType: "measure"
+          - technicalName: "PUREPLAY"
+            businessName: "Pureplay"
+            fieldType: "dimension"
+          - technicalName: "SF_Category"
+            businessName: "SF Category"
+            fieldType: "dimension"
+          - technicalName: "SUSTAINABLE_FLAG"
+            businessName: "Sustainable Flag"
+            fieldType: "dimension"
+          - technicalName: "Strategic_Pillar"
+            businessName: "Strategic Pillar"
+            fieldType: "dimension"
+          - technicalName: "Industry"
+            businessName: "Industry"
+            fieldType: "dimension"
+
+  # --- Supervised Training Pairs ---
+  promptTemplates:
+    source: "data/ESG_Prompt_samples.xlsx"
+    totalPairs: 34
+    categories:
+      - category: "Integrated Client"
+        examples:
+          - template: "<select measure> and <select measure> for booking location [region] for [period]"
+            example: "financed emission and cib pe asset for booking location asean for dec 2024 in bar chart"
+            fieldMappings:
+              measure: ["ATT_EMI", "PE_ASS", "CIB_PE_ASSETS"]
+              location: ["BEBOOKINGLOCID", "FBE_Location"]
+              period: "CALMONTH"
+          - template: "cib total revenue ytd for net-zero sector [member] and management product hierarchy"
+            example: "cib total revenue ytd for net-zero sector AUTOMOTIVE MANUFACTURERS and management product hierarchy"
+            fieldMappings:
+              measure: "CIB_TOTAL_REVENUE_YTD"
+              sector: "DD_SEC"
+              hierarchy: "Management_Prod_Hier"
+          - template: "in-scope exposure for net zero by net-zero sector for revised fam location [region]"
+            example: "in-scope exposure for net zero by net-zero sector for revised fam location GCNA for dec 2024"
+            fieldMappings:
+              measure: "CARB_IMP_PE_ASSETS"
+              groupBy: "DD_SEC"
+              location: "FoL_Location"
+
+  # --- Output Ports ---
+  outputPort:
+    - id: "esg-net-zero"
+      name: "Net Zero Emissions Data"
+      description: "Asset-level emissions for PAL trend analysis"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+      downstreamConsumers:
+        - ref: "aicore-pal-service-v1"
+          inputPort: "hana-tables"
+          palFunctions: ["pal_forecast", "pal_anomaly"]
+
+    - id: "esg-client-exposure"
+      name: "Integrated Client Exposure"
+      description: "Client exposure and revenue for PAL clustering"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+      downstreamConsumers:
+        - ref: "aicore-pal-service-v1"
+          inputPort: "hana-tables"
+          palFunctions: ["pal_clustering", "pal_classification"]
+
+  quality:
+    completeness: "90%"
+    freshness: "monthly"
+          - technicalName: "NET_ZERO_SEC,"
+            businessName: "Net-Zero Sector"
+            fieldType: "dimension"
+          - technicalName: "FBE_Location,"
+            businessName: "Booking location"
+            fieldType: "dimension"
+          - technicalName: "Period_Date,"
+            businessName: "Period"
+            fieldType: "date"
+

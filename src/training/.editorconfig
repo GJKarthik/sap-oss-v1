@@ -1,0 +1,53 @@
+# EditorConfig — https://editorconfig.org
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+# Zig
+[*.zig]
+indent_size = 4
+
+# Python / Mojo
+[*.{py,mojo,🔥}]
+indent_size = 4
+
+# TypeScript / JavaScript / Angular templates
+[*.{ts,js,html,css,scss}]
+indent_size = 2
+
+# JSON / YAML / TOML / Config
+[*.{json,yaml,yml,toml}]
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Mangle (Datalog)
+[*.mg]
+indent_size = 2
+
+# Makefiles require tabs
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+# Dockerfile
+[Dockerfile]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+
+# Zig build files
+[build.zig.zon]
+indent_size = 4
+

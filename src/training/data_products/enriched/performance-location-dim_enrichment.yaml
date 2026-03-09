@@ -1,0 +1,47 @@
+productId: performance-location-dim
+source: NFRP_Location_AM.xlsx
+sheet: null
+description: Location dimension hierarchy
+enrichedAt: '2026-03-06T21:49:11.625662Z'
+pipeline: xlsx_to_odps.py
+copilotIntegration:
+  profilerAvailable: false
+  columnMappingAvailable: true
+  copilotPath: /Users/user/Documents/sap-oss/data-cleaning-copilot-main
+profile:
+  rowCount: 9
+  columnCount: 2
+  columns:
+  - Attributes
+  - Description
+fieldClassifications:
+  Attributes:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 0
+  Description:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 1
+qualityIssues: []
+qualitySummary:
+  totalFields: 2
+  classifiedFields: 2
+  measures: 0
+  dimensions: 2
+  identifiers: 0
+  dates: 0
+  issueCount: 0
+  errorCount: 0
+  warningCount: 0
+stagingGaps:
+- field: Attributes
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: Description
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system

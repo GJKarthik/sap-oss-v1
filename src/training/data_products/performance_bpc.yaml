@@ -1,0 +1,281 @@
+# =============================================================================
+# Performance BPC Data Product (ODPS 4.1)
+# Source: Performance CRD Fact, NFRP_*_AM.xlsx, BPC sample prompts
+# =============================================================================
+
+dataProduct:
+  id: "performance-bpc-v1"
+  version: "1.0.0"
+  name: "Performance BPC (Star Schema)"
+  description: >
+    Financial performance star schema with CRD Fact table and 5 NFRP dimension
+    hierarchies (Account, Location, Product, Segment, Cost). Supports income,
+    cost, RWA, capital, and balance sheet analysis across business units.
+
+  dataSecurityClass: "confidential"
+  dataGovernanceClass: "analytics"
+  domain: "Finance"
+
+  owner:
+    name: "Finance Performance Team"
+    team: "FP&A"
+
+  x-llm-policy:
+    routing: "vllm-only"
+    defaultBackend: "vllm"
+    auditLevel: "full"
+
+  x-prompting-policy:
+    systemPrompt: |
+      You are a financial performance analytics assistant for HANA BPC data.
+      You help users query income, cost, RWA, and balance sheet metrics across
+      business segments, products, locations, and cost centres. Use the CRD
+      fact table joined with NFRP dimension hierarchies. Understand hierarchy
+      levels (L0=broadest to L5=most granular). All data is confidential.
+    maxTokens: 4096
+    temperature: 0.3
+
+  # --- Star Schema Definition ---
+  schema:
+    type: "star"
+    factTable:
+      source: "data/Performance CRD - Fact table.xlsx"
+      tableName: "CRD_FACT"
+      attributes:
+        - name: "PERIOD_DATE"
+          description: "Reporting date"
+          dataType: "DATE"
+          fieldType: "date"
+        - name: "MEMO_FLAG"
+          description: "Memo line vs balance-impacting indicator"
+          dataType: "NVARCHAR"
+          fieldType: "dimension"
+        - name: "REPORTING"
+          description: "Business view: Corporate, CIB, WRB, FPNA"
+          dataType: "NVARCHAR"
+          fieldType: "dimension"
+        - name: "VERSION"
+          description: "MTD (Month-to-Date) or YTD (Year-to-Date)"
+          dataType: "NVARCHAR"
+          fieldType: "dimension"
+        - name: "SOLOSUB"
+          description: "Solo entities vs Subsidiaries"
+          dataType: "NVARCHAR"
+          fieldType: "dimension"
+        - name: "BOOKS"
+          description: "Actual, Budget, Forecast, or AOP (Annual Operating Plan)"
+          dataType: "NVARCHAR"
+          fieldType: "dimension"
+        # Foreign keys to dimensions
+        - name: "ACCOUNT"
+          description: "FK → NFRP_Account_AM"
+          dataType: "NVARCHAR"
+          fieldType: "foreignKey"
+          referencesTable: "NFRP_Account_AM"
+          referencesColumn: "ACCOUNT"
+        - name: "PRODUCT"
+          description: "FK → NFRP_Product_AM"
+          dataType: "NVARCHAR"
+          fieldType: "foreignKey"
+          referencesTable: "NFRP_Product_AM"
+          referencesColumn: "PRODUCT"
+        - name: "SEGMENT"
+          description: "FK → NFRP_Segment_AM"
+          dataType: "NVARCHAR"
+          fieldType: "foreignKey"
+          referencesTable: "NFRP_Segment_AM"
+          referencesColumn: "M_SEGMENT_CONCAT"
+        - name: "COST_CLUSTER_PK"
+          description: "FK → NFRP_Cost_AM"
+          dataType: "NVARCHAR"
+          fieldType: "foreignKey"
+          referencesTable: "NFRP_Cost_AM"
+          referencesColumn: "COST_CLUSTER_PK"
+        - name: "LOCATION_PK"
+          description: "FK → NFRP_Location_AM"
+          dataType: "NVARCHAR"
+          fieldType: "foreignKey"
+          referencesTable: "NFRP_Location_AM"
+          referencesColumn: "LOCATION_PK"
+        # Temporal columns
+        - name: "MONTH"
+          description: "Reporting month extracted from date"
+          dataType: "INTEGER"
+          fieldType: "date"
+        - name: "YEAR"
+          description: "Reporting year extracted from date"
+          dataType: "INTEGER"
+          fieldType: "date"
+        - name: "MONTH_ABR"
+          description: "Abbreviated month name (Jan, Feb, etc.)"
+          dataType: "NVARCHAR"
+          fieldType: "date"
+        - name: "MONTH_NUM"
+          description: "Month as integer for sorting"
+          dataType: "INTEGER"
+          fieldType: "date"
+        # Measures (currency variants)
+        - name: "Respective Currency"
+          description: "Measures at spot FX rates"
+          dataType: "DECIMAL"
+          fieldType: "measure"
+          analyticsAnnotation: "@Analytics.Measure"
+        - name: "Constant Currency"
+          description: "Historical data revised at reported month-end FX"
+          dataType: "DECIMAL"
+          fieldType: "measure"
+          analyticsAnnotation: "@Analytics.Measure"
+        - name: "Forward Currency"
+
+    # --- Dimension Tables (NFRP Attribute Masters) ---
+    dimensions:
+      - dimensionId: "account"
+        source: "data/NFRP_Account_AM.xlsx"
+        tableName: "NFRP_Account_AM"
+        rowCount: 1090
+        joinKey: "ACCOUNT"
+        hierarchyLevels:
+          - level: "L0"
+            description: "Highest level: Income, Total Cost, Capital, Non-Group Assets, etc."
+          - level: "L1"
+            description: "Subcategories: Funded Assets, Incurred Cost, Staff Bonus, etc."
+          - level: "L2"
+            description: "Refined: Controllable Cost, Staff Costs exc Bonus, etc."
+          - level: "L3"
+            description: "Specific: Legal & Professional Fees, Marketing, etc."
+          - level: "L4"
+            description: "Fine detail"
+          - level: "L5"
+            description: "Most granular: individual account lines"
+        additionalFields:
+          - name: "ACCOUNT_CRD_INDICATOR"
+            description: "Business unit indicator: CIB, WRB, FPNA, MOH"
+            values: ["CIB", "WRB", "FPNA", "MOH"]
+          - name: "ACCOUNT_PK"
+            description: "Concatenated primary key from all hierarchy levels"
+
+      - dimensionId: "location"
+        source: "data/NFRP_Location_AM.xlsx"
+        tableName: "NFRP_Location_AM"
+        rowCount: 1605
+        joinKey: "LOCATION_PK"
+        hierarchyLevels:
+          - level: "L0"
+            description: "Broadest: AFRICA, ASEAN, CHINA, GCNA, EUROPE, etc."
+          - level: "L1"
+            description: "Regional: East Africa, West Africa, Greater China, etc."
+          - level: "L2"
+            description: "Sub-regional"
+          - level: "L3"
+            description: "Country level"
+          - level: "L4"
+            description: "Sub-country level"
+          - level: "L5"
+            description: "City/branch level"
+          - level: "L6"
+            description: "Most granular location"
+
+      - dimensionId: "product"
+        source: "data/NFRP_Product_AM.xlsx"
+        tableName: "NFRP_Product_AM"
+        rowCount: 877
+        joinKey: "PRODUCT"
+        hierarchyLevels:
+          - level: "L0"
+            description: "Broadest: Wealth, Markets, Trade, etc."
+          - level: "L1"
+            description: "Product families"
+          - level: "L2"
+            description: "Product lines"
+          - level: "L3"
+            description: "Individual products"
+          - level: "L4"
+            description: "Most granular product"
+
+      - dimensionId: "segment"
+        source: "data/NFRP_Segment_AM.xlsx"
+        tableName: "NFRP_Segment_AM"
+        rowCount: 44
+        joinKey: "M_SEGMENT_CONCAT"
+        hierarchyLevels:
+          - level: "M_SEGMENT_0"
+            description: "Broadest: CIB, WRB, MOH, FPNA"
+          - level: "M_SEGMENT_1"
+            description: "Sub-segment level 1"
+          - level: "M_SEGMENT_2"
+            description: "Sub-segment level 2"
+          - level: "M_SEGMENT_3"
+            description: "Sub-segment level 3"
+          - level: "M_SEGMENT_4"
+            description: "Most granular segment"
+
+      - dimensionId: "cost"
+        source: "data/NFRP_Cost_AM.xlsx"
+        tableName: "NFRP_Cost_AM"
+        rowCount: 1509
+        joinKey: "COST_CLUSTER_PK"
+        hierarchyLevels:
+          - level: "L0"
+            description: "Broadest cost category"
+          - level: "L1"
+            description: "Secondary cost grouping"
+          - level: "L2"
+            description: "Tertiary cost grouping"
+          - level: "L3"
+            description: "Detailed cost centre"
+          - level: "L4"
+            description: "Specific cost centre"
+          - level: "L5"
+            description: "Most granular cost centre"
+
+  # --- Supervised Training Pairs ---
+  promptTemplates:
+    source: "data/Performance (BPC) - sample prompts.xlsx"
+    totalPairs: 46
+    categories:
+      - category: "Record Analysis"
+        examples:
+          - prompt: "Which quarter was the record quarter for Wealth product in the last 3 years?"
+            dimensions: "Period: Quarters (3 years) | Product: Wealth | Account: Income"
+            joinPath: "CRD_FACT → NFRP_Product_AM (Wealth) → NFRP_Account_AM (Income)"
+          - prompt: "Was Q1 2025 a record quarter for Markets product in the last 2 years?"
+            dimensions: "Period: Quarters (2 years) | Product: Markets | Account: Income"
+      - category: "Run Rate"
+        examples:
+          - prompt: "What is the current YTD monthly run rate for Credit Impairment?"
+            dimensions: "Period: Current Month YTD | Account: Credit Impairment"
+      - category: "Contribution Analysis"
+        examples:
+          - prompt: "What percentage does Trade product contribute to overall revenue of Bank?"
+            dimensions: "Period: Current FY | Product: Trade | Account: Income"
+          - prompt: "What percentage of CIB income is from Local Corporates and Middle Markets Segment?"
+            dimensions: "Period: Current YTD | Segment: CIB | Account: Income"
+          - prompt: "How much does Affluent segment contribute to WRB revenue?"
+            dimensions: "Period: Current YTD | Segment: WRB | Account: Income"
+      - category: "RWA Movement"
+        examples:
+          - prompt: "What is the YTD March 2025 MRWA movement at Group level?"
+            dimensions: "Period: Current YTD | Account: Market RWA"
+
+  # --- Output Ports ---
+  outputPort:
+    - id: "performance-fact"
+      name: "CRD Fact Table"
+      description: "Financial performance measures for PAL analysis"
+      dataSecurityClass: "confidential"
+      x-llm-policy:
+        routing: "vllm-only"
+      downstreamConsumers:
+        - ref: "aicore-pal-service-v1"
+          inputPort: "hana-tables"
+          palFunctions: ["pal_forecast", "pal_regression", "pal_anomaly"]
+
+    - id: "dimension-hierarchies"
+      name: "NFRP Dimension Hierarchies"
+      description: "Account/Location/Product/Segment/Cost hierarchies"
+      dataSecurityClass: "confidential"
+
+  quality:
+    completeness: "95%"
+    freshness: "monthly"
+

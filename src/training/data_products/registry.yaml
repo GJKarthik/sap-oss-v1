@@ -1,0 +1,97 @@
+# =============================================================================
+# HANA Training Data - Data Product Registry (ODPS 4.1)
+# Integrated with ai-core-pal and data-cleaning-copilot
+# =============================================================================
+
+version: "4.1"
+catalog:
+  id: "hana-training-catalog"
+  name: "HANA Training Data Product Catalog"
+  description: >
+    Enterprise HANA metadata organized as ODPS 4.1 data products for
+    Qwen 3.5 fine-tuning. Contains Treasury, ESG, and Performance domains
+    with full business-to-technical field mappings, dimension hierarchies,
+    and supervised prompt-to-query training pairs.
+  sap_ai_experience:
+    tier: "finsight_btp_bdc"
+    service: "sap-datasphere"
+    map_ref: "sap-ai-experience-map.yaml" 
+
+products:
+  - ref: "treasury_capital_markets.yaml"
+  - ref: "esg_sustainability.yaml"
+  - ref: "performance_bpc.yaml"
+  - ref: "staging_schema.yaml"
+
+# Global policies - HANA data is confidential, always vLLM
+globalPolicies:
+  defaultSecurityClass: "confidential"
+  defaultLLMRouting: "vllm-only"
+  auditEnabled: true
+
+# LLM Backend Configuration - vLLM only for HANA data
+llmBackends:
+  vllm:
+    endpoint: "http://localhost:9180/mcp"
+    models:
+      - "qwen-3.5-finetuned"
+      - "llama-3.1-70b"
+    forSecurityClass: ["internal", "confidential", "restricted"]
+
+# =============================================================================
+# Upstream Dependencies
+# =============================================================================
+dependencies:
+  aiCorePal:
+    name: "AI Core PAL Service"
+    catalogRef: "../sap-oss/ai-core-pal/data_products/registry.yaml"
+    description: "PAL predictive analytics - consumes our data products as input"
+    integrationPoints:
+      - inputPort: "hana-tables"
+        productsProviding:
+          - "treasury-capital-markets-v1"
+          - "esg-sustainability-v1"
+          - "performance-bpc-v1"
+
+  dataCleaningCopilot:
+    name: "Data Cleaning Copilot"
+    catalogRef: "../sap-oss/data-cleaning-copilot-main/data_products/registry.yaml"
+    description: "Data profiling, validation, and enrichment pipeline"
+    integrationPoints:
+      - enrichment: "Profile all data products for completeness and quality"
+      - validation: "Validate field mappings and hierarchy consistency"
+      - columnMapping: "Auto-detect business-to-technical field correspondences"
+
+  vocabularyService:
+    name: "OData Vocabularies"
+    endpoint: "http://localhost:9150/mcp"
+    description: "Analytics vocabulary annotations for measures and dimensions"
+    vocabularies:
+      - name: "Analytics"
+        namespace: "com.sap.vocabularies.Analytics.v1"
+        usage: "KPI and measure annotations for training data fields"
+      - name: "Common"
+        namespace: "com.sap.vocabularies.Common.v1"
+        usage: "Labels and semantic keys"
+
+# =============================================================================
+# Data Quality Requirements
+# =============================================================================
+qualityGates:
+  - gate: "field_completeness"
+    description: "All fields must have business name and technical name"
+    threshold: 100
+    unit: "percent"
+  - gate: "hierarchy_consistency"
+    description: "All dimension hierarchies must have valid parent-child paths"
+    threshold: 100
+    unit: "percent"
+  - gate: "prompt_coverage"
+    description: "Supervised prompts must cover all query categories"
+    threshold: 90
+    unit: "percent"
+  - gate: "schema_mapping_accuracy"
+    description: "Source-to-BTP field mappings must be validated"
+    threshold: 95
+    unit: "percent"
+

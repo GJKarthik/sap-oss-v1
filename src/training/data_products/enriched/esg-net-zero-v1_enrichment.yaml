@@ -1,0 +1,62 @@
+productId: esg-net-zero-v1
+source: ESG_ DATA_DICTIONARY.xlsx
+sheet: NetZero
+description: Net Zero emissions model
+enrichedAt: '2026-03-06T21:49:11.537163Z'
+pipeline: xlsx_to_odps.py
+copilotIntegration:
+  profilerAvailable: false
+  columnMappingAvailable: true
+  copilotPath: /Users/user/Documents/sap-oss/data-cleaning-copilot-main
+profile:
+  rowCount: 47
+  columnCount: 3
+  columns:
+  - col_0
+  - col_1
+  - col_2
+fieldClassifications:
+  col_0:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 0
+  col_1:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 1
+  col_2:
+    fieldType: dimension
+    analyticsAnnotation: '@Analytics.Dimension'
+    columnIndex: 2
+qualityIssues:
+- field: col_0
+  issue: high_null_rate
+  severity: error
+  detail: 100.0% null values
+  action: Review data source or add default value
+qualitySummary:
+  totalFields: 3
+  classifiedFields: 3
+  measures: 0
+  dimensions: 3
+  identifiers: 0
+  dates: 0
+  issueCount: 1
+  errorCount: 1
+  warningCount: 0
+stagingGaps:
+- field: col_0
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_1
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system
+- field: col_2
+  businessName: ''
+  issue: no_staging_mapping
+  detail: Field has no corresponding staging schema entry
+  action: Add to 2_stagingschema.csv or verify source system

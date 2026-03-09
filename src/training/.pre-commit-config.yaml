@@ -1,0 +1,59 @@
+# =============================================================================
+# Pre-commit hooks — https://pre-commit.com
+#
+# Install:  pip install pre-commit && pre-commit install
+# Run all:  pre-commit run --all-files
+# =============================================================================
+
+repos:
+  # ── General file hygiene ─────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # ── Python — Ruff (linter + formatter) ──────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.0
+    hooks:
+      - id: ruff
+        args: ['--fix', '--exit-non-zero-on-fix']
+        types_or: [python]
+      - id: ruff-format
+        types_or: [python]
+
+  # ── Python — Type checking ──────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
+    hooks:
+      - id: mypy
+        args: ['--ignore-missing-imports']
+        additional_dependencies: ['types-requests', 'fastapi', 'pydantic']
+        files: 'nvidia-modelopt/api/.*\.py$'
+
+  # ── TypeScript / JSON / YAML — Prettier ─────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [typescript, json, yaml, markdown]
+        exclude: '(node_modules|dist|\.angular|package-lock\.json)/'
+
+  # ── Security — detect secrets ───────────────────────────────────────────
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: '(\.lock|package-lock\.json)$'
+

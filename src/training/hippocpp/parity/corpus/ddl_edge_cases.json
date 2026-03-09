@@ -1,0 +1,87 @@
+{
+  "name": "ddl-edge-cases",
+  "description": "DDL edge cases — unusual table definitions, types, and constraints.",
+  "cases": [
+    {
+      "name": "empty_table_scan",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Empty(id INT64, PRIMARY KEY(id))"
+      ],
+      "query": "MATCH (e:Empty) RETURN COUNT(*) AS cnt"
+    },
+    {
+      "name": "all_supported_types",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE TypeTest(id INT64, b BOOLEAN, s STRING, d DOUBLE, PRIMARY KEY(id))",
+        "CREATE (:TypeTest {id: 1, b: true, s: 'hello', d: 3.14})"
+      ],
+      "query": "MATCH (t:TypeTest) RETURN t.id, t.b, t.s, t.d"
+    },
+    {
+      "name": "string_with_special_chars",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE S(val STRING, PRIMARY KEY(val))",
+        "CREATE (:S {val: 'it''s a test'})"
+      ],
+      "query": "MATCH (s:S) RETURN s.val"
+    },
+    {
+      "name": "boolean_filter",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Flag(id INT64, active BOOLEAN, PRIMARY KEY(id))",
+        "CREATE (:Flag {id: 1, active: true})",
+        "CREATE (:Flag {id: 2, active: false})",
+        "CREATE (:Flag {id: 3, active: true})"
+      ],
+      "query": "MATCH (f:Flag) WHERE f.active = true RETURN f.id ORDER BY f.id"
+    },
+    {
+      "name": "negative_integers",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Val(id INT64, v INT64, PRIMARY KEY(id))",
+        "CREATE (:Val {id: 1, v: -100})",
+        "CREATE (:Val {id: 2, v: 0})",
+        "CREATE (:Val {id: 3, v: 100})"
+      ],
+      "query": "MATCH (v:Val) WHERE v.v < 0 RETURN v.v"
+    },
+    {
+      "name": "double_precision",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE D(id INT64, val DOUBLE, PRIMARY KEY(id))",
+        "CREATE (:D {id: 1, val: 1.23456789012345})"
+      ],
+      "query": "MATCH (d:D) RETURN d.val"
+    },
+    {
+      "name": "multiple_node_tables",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE City(name STRING, PRIMARY KEY(name))",
+        "CREATE NODE TABLE Country(name STRING, PRIMARY KEY(name))",
+        "CREATE (:City {name: 'Berlin'})",
+        "CREATE (:Country {name: 'Germany'})"
+      ],
+      "query": "MATCH (c:City) RETURN c.name"
+    },
+    {
+      "name": "rel_with_properties",
+      "ordered": true,
+      "setup": [
+        "CREATE NODE TABLE Person(name STRING, PRIMARY KEY(name))",
+        "CREATE REL TABLE Follows(FROM Person TO Person, since INT64)",
+        "CREATE (:Person {name: 'A'})",
+        "CREATE (:Person {name: 'B'})",
+        "MATCH (a:Person {name: 'A'}), (b:Person {name: 'B'}) CREATE (a)-[:Follows {since: 2020}]->(b)"
+      ],
+      "query": "MATCH (a)-[r:Follows]->(b) RETURN a.name, r.since, b.name"
+    }
+  ]
+}
+
