@@ -1,0 +1,10 @@
+{
+  "name": "@sap-oss/sac-webcomponents-ngx-widgets",
+  "version": "1.0.0",
+  "private": true,
+  "peerDependencies": {
+    "@angular/common": "^17.0.0",
+    "@angular/core": "^17.0.0",
+    "rxjs": "^7.0.0"
+  }
+}

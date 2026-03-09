@@ -239,3 +239,52 @@ sbom-parity: sbom-full-audit sbom-sarif sbom-risk-report
 	@echo "  PwC + QuantumBlack + Mangle parity achieved."
 	@echo "  Run 'make sbom-vuln' for vulnerability data (network)."
 	@echo "========================================================"
+
+# ════════════════════════════════════════════════════════════════════════════
+# SAC AI Widget Build Pipeline
+#
+# Quick start:
+#   make sac-widget           # full build → widget.zip (production)
+#   make sac-widget-dev       # dev build (unminified)
+#   make sac-widget-libs      # build ng-packagr libraries only
+#   make sac-widget-clean     # remove all dist/ artifacts
+# ════════════════════════════════════════════════════════════════════════════
+
+SAC_DIR := src/generativeUI/sap-sac-webcomponents-ngx
+
+.PHONY: sac-widget sac-widget-dev sac-widget-libs sac-widget-clean sac-widget-install
+
+# Install all dependencies (single package)
+sac-widget-install:
+	@echo "→ Installing @sap-oss/sac-webcomponents-ngx dependencies..."
+	cd $(SAC_DIR) && npm install
+
+# Build ng-packagr Angular libraries
+sac-widget-libs:
+	@echo "→ Building Angular libraries..."
+	cd $(SAC_DIR) && npm run build
+
+# Production widget build + zip
+sac-widget: sac-widget-libs
+	@echo "→ Building SAC AI widget (production)..."
+	cd $(SAC_DIR) && npm run build:widget
+	@echo "→ Packaging widget.zip..."
+	cd $(SAC_DIR) && node scripts/package-widget.js
+	@echo ""
+	@echo "════════════════════════════════════════════════════════"
+	@echo "  widget.zip → $(SAC_DIR)/widget.zip"
+	@echo "  Upload via SAC Designer > Custom Widget > Import"
+	@echo "════════════════════════════════════════════════════════"
+
+# Dev build (unminified, faster iteration)
+sac-widget-dev: sac-widget-libs
+	@echo "→ Building SAC AI widget (development)..."
+	cd $(SAC_DIR) && npm run build:widget-dev
+	@echo "→ Packaging widget.zip..."
+	cd $(SAC_DIR) && node scripts/package-widget.js
+
+# Clean all dist artifacts
+sac-widget-clean:
+	rm -rf $(SAC_DIR)/dist
+	rm -f  $(SAC_DIR)/widget.zip
+	@echo "→ Cleaned all SAC widget dist artifacts."

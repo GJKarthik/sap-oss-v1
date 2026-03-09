@@ -1,6 +1,7 @@
 import { Panel } from './Panel';
 import {
   RUNTIME_FEATURES,
+  checkSecretStaleness,
   getEffectiveSecrets,
   getRuntimeConfigSnapshot,
   getSecretState,
@@ -254,10 +255,25 @@ export class RuntimeConfigPanel extends Panel {
       return;
     }
 
+    const staleness = checkSecretStaleness();
+    const stalenessBadgeColor: Record<typeof staleness.level, string> = {
+      fresh: '#22c55e',
+      amber: '#f59e0b',
+      red: '#ef4444',
+      unknown: '#6b7280',
+    };
+    const stalenessHtml = `
+      <div class="runtime-rotation-status" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9ca3af;margin-bottom:8px;">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stalenessBadgeColor[staleness.level]};flex-shrink:0;"></span>
+        <span>${escapeHtml(staleness.message)}</span>
+      </div>
+    `;
+
     this.content.innerHTML = `
       <div class="runtime-config-summary">
         ${desktop ? t('modals.runtimeConfig.summary.desktop') : t('modals.runtimeConfig.summary.web')} · ${features.filter(f => isFeatureAvailable(f.id)).length}/${features.length} ${t('modals.runtimeConfig.summary.available')}
       </div>
+      ${stalenessHtml}
       <div class="runtime-config-list">
         ${features.map(feature => this.renderFeature(feature)).join('')}
       </div>

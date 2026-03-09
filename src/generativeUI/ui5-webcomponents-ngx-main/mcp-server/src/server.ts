@@ -9,10 +9,191 @@
 
 import express, { Request, Response } from 'express';
 import { createServer } from 'http';
+import { URL } from 'url';
+import * as https from 'https';
+import * as http from 'http';
 
 const MAX_JSON_BODY_BYTES = 1024 * 1024;
 const MAX_COMPONENTS_PER_REQUEST = 64;
 const MAX_SEARCH_QUERY_LENGTH = 200;
+
+// =============================================================================
+// Finding 1: Mangle query service endpoint
+// =============================================================================
+
+const BLOCKED_HOST_PREFIXES = ['169.254.', '100.100.', 'fd00:', '::1'];
+
+function validateRemoteUrl(raw: string, varName: string): string {
+  if (!raw) return raw;
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch {
+    throw new Error(`${varName} is not a valid URL: ${raw}`);
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(`${varName} must use http or https (got '${parsed.protocol}'). Value: ${raw}`);
+  }
+  const host = parsed.hostname;
+  for (const prefix of BLOCKED_HOST_PREFIXES) {
+    if (host.startsWith(prefix)) {
+      throw new Error(`${varName} targets a blocked host prefix '${prefix}' (cloud metadata / link-local). Value: ${raw}`);
+    }
+  }
+  return raw.replace(/\/$/, '');
+}
+
+function safeEnvUrl(envVar: string, fallback: string): string {
+  const raw = (process.env[envVar] ?? '').trim();
+  if (!raw) return fallback;
+  try {
+    return validateRemoteUrl(raw, envVar);
+  } catch (e) {
+    console.error(`ERROR: ${String(e)} — falling back to ${fallback}`);
+    return fallback;
+  }
+}
+
+const MANGLE_ENDPOINT = safeEnvUrl('MANGLE_ENDPOINT', 'http://localhost:50051');
+
+async function callMangleService(predicate: string, args: unknown[]): Promise<{ results: unknown[]; wired: boolean }> {
+  return new Promise((resolve) => {
+    const payload = JSON.stringify({ predicate, args });
+    const url = new URL(`${MANGLE_ENDPOINT}/query`);
+    const lib = url.protocol === 'https:' ? https : http;
+    const req = lib.request(
+      { hostname: url.hostname, port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const body = JSON.parse(data) as { results?: unknown[] };
+            resolve({ results: body.results ?? [], wired: true });
+          } catch {
+            resolve({ results: [], wired: false });
+          }
+        });
+      },
+    );
+    req.on('error', () => resolve({ results: [], wired: false }));
+    req.setTimeout(5000, () => { req.destroy(); resolve({ results: [], wired: false }); });
+    req.write(payload);
+    req.end();
+  });
+}
+
+// =============================================================================
+// Finding 5: HANA MetricsBackend
+// =============================================================================
+
+const HANA_BASE_URL   = safeEnvUrl('HANA_BASE_URL', '');
+const HANA_AUTH_URL   = safeEnvUrl('HANA_AUTH_URL', '');
+const HANA_CLIENT_ID  = (process.env.HANA_CLIENT_ID  ?? '').trim();
+const HANA_CLIENT_SEC = (process.env.HANA_CLIENT_SECRET ?? '').trim();
+
+const HANA_METRICS_DDL = `
+CREATE TABLE IF NOT EXISTS UI5NGX_METRICS (
+    METRIC_NAME   NVARCHAR(256)  NOT NULL,
+    METRIC_VALUE  DOUBLE         NOT NULL,
+    LABELS        NVARCHAR(2000) DEFAULT '{}',
+    RECORDED_AT   TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (METRIC_NAME, RECORDED_AT)
+)`;
+
+interface MetricEntry { value: number; labels: Record<string, unknown>; timestamp: number; }
+
+class MetricsBackend {
+  private memory = new Map<string, MetricEntry>();
+  private hanaToken = '';
+  private hanaTokenExp = 0;
+  private tableReady = false;
+
+  private hanaAvailable(): boolean {
+    return !!(HANA_BASE_URL && HANA_AUTH_URL && HANA_CLIENT_ID && HANA_CLIENT_SEC);
+  }
+
+  private async getHanaToken(): Promise<string> {
+    if (this.hanaToken && Date.now() < this.hanaTokenExp) return this.hanaToken;
+    const creds = Buffer.from(`${HANA_CLIENT_ID}:${HANA_CLIENT_SEC}`).toString('base64');
+    const body = 'grant_type=client_credentials';
+    const url = new URL(HANA_AUTH_URL);
+    return new Promise((resolve, reject) => {
+      const lib = url.protocol === 'https:' ? https : http;
+      const req = lib.request(
+        { hostname: url.hostname, port: url.port || 443, path: url.pathname, method: 'POST',
+          headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(body) } },
+        (res) => {
+          let data = '';
+          res.on('data', (c: Buffer) => { data += c; });
+          res.on('end', () => {
+            try {
+              const j = JSON.parse(data) as { access_token: string; expires_in?: number };
+              this.hanaToken = j.access_token;
+              this.hanaTokenExp = Date.now() + (j.expires_in ?? 3600) * 1000 - 60000;
+              resolve(this.hanaToken);
+            } catch (e) { reject(e); }
+          });
+        },
+      );
+      req.on('error', reject);
+      req.write(body);
+      req.end();
+    });
+  }
+
+  private async hanaSql(statement: string, params?: unknown[]): Promise<void> {
+    const token = await this.getHanaToken();
+    const payload = JSON.stringify({ statement, ...(params ? { parameters: params } : {}) });
+    const url = new URL(`${HANA_BASE_URL}/v1/statement`);
+    return new Promise((resolve, reject) => {
+      const lib = url.protocol === 'https:' ? https : http;
+      const req = lib.request(
+        { hostname: url.hostname, port: url.port || 443, path: url.pathname, method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload) } },
+        (res) => { res.resume(); res.on('end', resolve); },
+      );
+      req.on('error', reject);
+      req.setTimeout(10000, () => { req.destroy(); reject(new Error('HANA timeout')); });
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  private async ensureTable(): Promise<void> {
+    if (this.tableReady) return;
+    await this.hanaSql(HANA_METRICS_DDL.trim());
+    this.tableReady = true;
+  }
+
+  async record(name: string, value: number, labels: Record<string, unknown> = {}): Promise<void> {
+    this.memory.set(name, { value, labels, timestamp: Date.now() });
+    if (!this.hanaAvailable()) return;
+    try {
+      await this.ensureTable();
+      await this.hanaSql(
+        'INSERT INTO UI5NGX_METRICS (METRIC_NAME, METRIC_VALUE, LABELS) VALUES (?, ?, ?)',
+        [name, value, JSON.stringify(labels)],
+      );
+    } catch (e) {
+      console.warn(`WARNING: HANA metrics write failed (${String(e)}); in-memory echo retained.`);
+    }
+  }
+
+  snapshot(): Record<string, MetricEntry> {
+    return Object.fromEntries(this.memory);
+  }
+}
+
+const metrics = new MetricsBackend();
+
+if (HANA_BASE_URL) {
+  console.log('INFO: HANA metrics backend enabled (HANA_BASE_URL is set).');
+} else {
+  console.log('INFO: Metrics backend is in-memory only. Set HANA_BASE_URL, HANA_CLIENT_ID, HANA_CLIENT_SECRET, and HANA_AUTH_URL to enable persistent HANA-backed metrics.');
+}
 
 // =============================================================================
 // Types
@@ -289,16 +470,25 @@ class MCPServer {
     return { valid: errors.length === 0, usedComponents, errors };
   }
 
-  private handleMangleQuery(args: Record<string, unknown>): Record<string, unknown> {
+  private async handleMangleQuery(args: Record<string, unknown>): Promise<Record<string, unknown>> {
     const predicate = args.predicate as string;
-    const facts = this.facts[predicate];
-    if (facts) {
-      return { predicate, results: facts };
+    let rawArgs: unknown[] = [];
+    if (args.args !== undefined) {
+      try { rawArgs = Array.isArray(args.args) ? args.args : (JSON.parse(String(args.args)) as unknown[]); }
+      catch { rawArgs = []; }
     }
-    return { predicate, results: [], message: "Unknown predicate" };
+    const remote = await callMangleService(predicate, rawArgs);
+    if (remote.wired) {
+      return { predicate, results: remote.results, wired: true };
+    }
+    // Fallback: local facts store
+    const facts = this.facts[predicate];
+    return facts
+      ? { predicate, results: facts, wired: false }
+      : { predicate, results: [], wired: false, message: 'Unknown predicate' };
   }
 
-  handleRequest(request: MCPRequest): MCPResponse {
+  async handleRequest(request: MCPRequest): Promise<MCPResponse> {
     if (!isValidJsonRpcRequest(request)) {
       return { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } };
     }
@@ -334,21 +524,27 @@ class MCPServer {
           return { jsonrpc: "2.0", id, error: { code: -32602, message: 'tools/call param "arguments" must be an object' } };
         }
         const args = (params.arguments || {}) as Record<string, unknown>;
-        const handlers: Record<string, (args: Record<string, unknown>) => Record<string, unknown>> = {
+        const syncHandlers: Record<string, (a: Record<string, unknown>) => Record<string, unknown>> = {
           list_components: () => this.handleListComponents(),
           get_component: (a) => this.handleGetComponent(a),
           generate_angular_template: (a) => this.handleGenerateAngularTemplate(a),
           generate_module_imports: (a) => this.handleGenerateModuleImports(a),
           search_components: (a) => this.handleSearchComponents(a),
           validate_template: (a) => this.handleValidateTemplate(a),
-          mangle_query: (a) => this.handleMangleQuery(a),
         };
-        const handler = handlers[toolName];
+        // mangle_query is async (calls real Mangle service)
+        if (toolName === 'mangle_query') {
+          return this.handleMangleQuery(args).then((result) => {
+            void metrics.record(`tool.${toolName}`, 1, { tool: toolName, ts: Date.now() });
+            return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } };
+          }).catch((e: unknown) => ({ jsonrpc: "2.0", id, error: { code: -32603, message: String(e) } }));
+        }
+        const handler = syncHandlers[toolName];
         if (!handler) {
           return { jsonrpc: "2.0", id, error: { code: -32602, message: `Unknown tool: ${toolName}` } };
         }
         const result = handler(args);
-        (this.facts.tool_invocation as unknown[]).push({ tool: toolName, timestamp: Date.now() });
+        void metrics.record(`tool.${toolName}`, 1, { tool: toolName, ts: Date.now() });
         return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } };
       }
 
@@ -382,20 +578,32 @@ const mcpServer = new MCPServer();
 const app = express();
 app.use(express.json({ limit: `${MAX_JSON_BODY_BYTES}b` }));
 
-const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "http://localhost:3000,http://127.0.0.1:3000")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
-const getCorsOrigin = (req: Request): string | undefined => {
-  const origin = req.headers.origin;
+// Finding 4: CORS with startup warning and dev escape
+const MCP_ALLOW_ALL_ORIGINS = ['1', 'true', 'yes'].includes((process.env.MCP_ALLOW_ALL_ORIGINS ?? '').trim().toLowerCase());
+const corsAllowedOrigins = (() => {
+  const raw = (process.env.CORS_ALLOWED_ORIGINS ?? '').trim();
+  if (raw) return raw.split(',').map(o => o.trim()).filter(Boolean);
+  if (!MCP_ALLOW_ALL_ORIGINS) {
+    console.warn(
+      'WARNING: CORS_ALLOWED_ORIGINS is not set. Defaulting to localhost only. ' +
+      'Non-localhost origins (Angular dev server on a named host, BTP, Docker) will be rejected. ' +
+      'Set CORS_ALLOWED_ORIGINS to a comma-separated list of allowed origins, or set ' +
+      'MCP_ALLOW_ALL_ORIGINS=1 for development.',
+    );
+  }
+  return ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:4200', 'http://127.0.0.1:4200'];
+})();
+const getCorsOrigin = (req: Request): string => {
+  if (MCP_ALLOW_ALL_ORIGINS) return '*';
+  const origin = (req.headers.origin ?? '').trim();
   if (origin && corsAllowedOrigins.includes(origin)) return origin;
-  return corsAllowedOrigins[0];
+  return corsAllowedOrigins[0] ?? '';
 };
 app.use((req, res, next) => {
   const corsOrigin = getCorsOrigin(req);
-  if (corsOrigin) res.header("Access-Control-Allow-Origin", corsOrigin);
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (corsOrigin) res.header('Access-Control-Allow-Origin', corsOrigin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
 
@@ -424,8 +632,10 @@ app.post("/mcp", (req: Request, res: Response) => {
   if (!isValidJsonRpcRequest(req.body)) {
     return res.status(400).json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } });
   }
-  const response = mcpServer.handleRequest(req.body);
-  return res.json(response);
+  void mcpServer.handleRequest(req.body).then((response) => res.json(response)).catch((e: unknown) => {
+    res.status(500).json({ jsonrpc: "2.0", id: null, error: { code: -32603, message: String(e) } });
+  });
+  return;
 });
 
 const requestedPort = parseInt(process.argv.find(a => a.startsWith("--port="))?.split("=")[1] || "9160", 10);

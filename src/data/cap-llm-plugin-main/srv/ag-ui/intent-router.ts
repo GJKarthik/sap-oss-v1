@@ -57,6 +57,7 @@ const SERVICE_ROUTING: Record<string, RouteBackend> = {
   'odata-vocabularies': 'aicore-streaming',
   'ui5-webcomponents-ngx': 'aicore-streaming',
   'world-monitor': 'aicore-streaming',
+  'sac-ai-widget': 'aicore-streaming',
 };
 
 /** Security class → backend mapping */

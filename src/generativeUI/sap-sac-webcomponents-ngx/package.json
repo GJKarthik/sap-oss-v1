@@ -1,0 +1,133 @@
+{
+  "name": "@sap-oss/sac-webcomponents-ngx",
+  "version": "1.0.0",
+  "description": "Angular Components for SAP Analytics Cloud Widget Integration with Mangle Datalog specs",
+  "files": [
+    "dist/**",
+    "README.md",
+    "RELEASE.md",
+    "widget.json"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./widget.json": "./widget.json",
+    "./sdk": {
+      "types": "./dist/sac-sdk/index.d.mts",
+      "import": "./dist/sac-sdk/index.mjs",
+      "default": "./dist/sac-sdk/index.mjs"
+    },
+    "./core": {
+      "types": "./dist/sac-core/index.d.ts",
+      "default": "./dist/sac-core/fesm2022/sap-oss-sac-webcomponents-ngx-core.mjs"
+    },
+    "./chart": {
+      "types": "./dist/sac-chart/index.d.ts",
+      "default": "./dist/sac-chart/fesm2022/sap-oss-sac-webcomponents-ngx-chart.mjs"
+    },
+    "./table": {
+      "types": "./dist/sac-table/index.d.ts",
+      "default": "./dist/sac-table/fesm2022/sap-oss-sac-webcomponents-ngx-table.mjs"
+    },
+    "./input": {
+      "types": "./dist/sac-input/index.d.ts",
+      "default": "./dist/sac-input/fesm2022/sap-oss-sac-webcomponents-ngx-input.mjs"
+    },
+    "./planning": {
+      "types": "./dist/sac-planning/index.d.ts",
+      "default": "./dist/sac-planning/fesm2022/sap-oss-sac-webcomponents-ngx-planning.mjs"
+    },
+    "./datasource": {
+      "types": "./dist/sac-datasource/index.d.ts",
+      "default": "./dist/sac-datasource/fesm2022/sap-oss-sac-webcomponents-ngx-datasource.mjs"
+    },
+    "./widgets": {
+      "types": "./dist/sac-widgets/index.d.ts",
+      "default": "./dist/sac-widgets/fesm2022/sap-oss-sac-webcomponents-ngx-widgets.mjs"
+    },
+    "./advanced": {
+      "types": "./dist/sac-advanced/index.d.ts",
+      "default": "./dist/sac-advanced/fesm2022/sap-oss-sac-webcomponents-ngx-advanced.mjs"
+    },
+    "./builtins": {
+      "types": "./dist/sac-builtins/index.d.ts",
+      "default": "./dist/sac-builtins/fesm2022/sap-oss-sac-webcomponents-ngx-builtins.mjs"
+    },
+    "./calendar": {
+      "types": "./dist/sac-calendar/index.d.ts",
+      "default": "./dist/sac-calendar/fesm2022/sap-oss-sac-webcomponents-ngx-calendar.mjs"
+    }
+  },
+  "scripts": {
+    "ng": "node ./node_modules/@angular/cli/bin/bootstrap.js",
+    "setup:dev-aliases": "node scripts/setup-dev-aliases.js",
+    "rewrite:dist-imports": "node scripts/rewrite-dist-imports.js",
+    "build": "npm run build:sdk && npm run setup:dev-aliases && npm run ng -- build sac-core && npm run ng -- build sac-chart && npm run ng -- build sac-table && npm run ng -- build sac-input && npm run ng -- build sac-planning && npm run ng -- build sac-datasource && npm run ng -- build sac-widgets && npm run ng -- build sac-advanced && npm run ng -- build sac-builtins && npm run ng -- build sac-calendar && npm run rewrite:dist-imports",
+    "build:core": "npm run ng -- build sac-core",
+    "build:sdk": "tsup --config tsup.sdk.config.ts",
+    "build:widget": "tsup --config tsup.config.ts --minify",
+    "build:widget-dev": "tsup --config tsup.config.ts",
+    "test:watch": "vitest",
+    "package": "node scripts/package-widget.js",
+    "prepack": "npm run build && npm run build:widget",
+    "release:check": "npm run lint && npm test && npm run build && npm run build:widget && npm run verify:widget-harness && npm run verify:pack && npm run package",
+    "verify:imports": "node scripts/verify-package-exports.js",
+    "verify:widget-harness": "node scripts/verify-widget-harness.js",
+    "verify:pack": "npm run verify:imports && npm pack --dry-run",
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings=0",
+    "generate": "node scripts/generate-from-mangle.js",
+    "mangle:validate": "node scripts/validate-mangle-specs.js"
+  },
+  "keywords": [
+    "sap",
+    "analytics-cloud",
+    "sac",
+    "angular",
+    "webcomponents",
+    "mangle",
+    "datalog",
+    "nucleus"
+  ],
+  "author": "Nucleus Platform Team",
+  "license": "MIT",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/common": ">=17.0.0",
+    "@angular/core": ">=17.0.0",
+    "@angular/forms": ">=17.0.0",
+    "rxjs": ">=7.0.0",
+    "tslib": ">=2.3.0",
+    "zone.js": ">=0.14.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@angular/animations": "^17.3.0",
+    "@angular/cli": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
+    "@angular/elements": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^20.0.0",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0",
+    "ng-packagr": "^17.3.0",
+    "playwright": "^1.58.2",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.6.0",
+    "tsup": "^8.0.0",
+    "typescript": "~5.4.0",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.0.18",
+    "zone.js": "^0.14.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/turrellcraigjohn-alt/ai-nucleus-ado.git",
+    "directory": "aiNucleusSdk/ainuc-sap-sdk/sap-sac-webcomponents-ngx"
+  }
+}

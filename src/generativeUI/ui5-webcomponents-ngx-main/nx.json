@@ -117,7 +117,7 @@
     }
   },
   "defaultProject": "documentation",
-  "nxCloudAccessToken": "YTA5ZjBmYWItOTIxOC00ODdkLTkzMGEtZGFmZDk3NTUyODhhfHJlYWQ=",
+  "nxCloudAccessToken": "${NX_CLOUD_ACCESS_TOKEN}",
   "useInferencePlugins": false,
   "defaultBase": "main"
 }

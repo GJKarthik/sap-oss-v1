@@ -472,6 +472,79 @@ export async function verifySecretWithApi(
   }
 }
 
+// =============================================================================
+// Finding 6: API key rotation staleness helpers
+// =============================================================================
+
+export type SecretStalenessLevel = 'fresh' | 'amber' | 'red' | 'unknown';
+
+export interface SecretStalenessResult {
+  level: SecretStalenessLevel;
+  rotationDate: Date | null;
+  ageInDays: number | null;
+  message: string;
+}
+
+const STALENESS_AMBER_DAYS = 60;
+const STALENESS_RED_DAYS = 90;
+
+/**
+ * Reads VITE_WORLDMONITOR_KEY_ROTATION_DATE (injected from
+ * WORLDMONITOR_KEY_ROTATION_DATE in .env) and returns a staleness level
+ * for use in the RuntimeConfigPanel badge.
+ *
+ *   green  (fresh)  — rotation date is within the last 60 days
+ *   amber           — 60–90 days since last rotation
+ *   red             — more than 90 days since last rotation
+ *   unknown         — env-var not set or not parseable
+ */
+export function checkSecretStaleness(): SecretStalenessResult {
+  const raw = (import.meta as { env?: Record<string, unknown> }).env?.['VITE_WORLDMONITOR_KEY_ROTATION_DATE'];
+  const dateStr = typeof raw === 'string' ? raw.trim() : '';
+
+  if (!dateStr) {
+    return { level: 'unknown', rotationDate: null, ageInDays: null, message: 'Rotation date not set' };
+  }
+
+  const rotationDate = new Date(dateStr);
+  if (isNaN(rotationDate.getTime())) {
+    return { level: 'unknown', rotationDate: null, ageInDays: null, message: `Unparseable date: ${dateStr}` };
+  }
+
+  const ageInDays = Math.floor((Date.now() - rotationDate.getTime()) / 86_400_000);
+
+  if (ageInDays > STALENESS_RED_DAYS) {
+    return {
+      level: 'red',
+      rotationDate,
+      ageInDays,
+      message: `Keys last rotated ${ageInDays} days ago — rotation overdue (> ${STALENESS_RED_DAYS} days)`,
+    };
+  }
+  if (ageInDays > STALENESS_AMBER_DAYS) {
+    return {
+      level: 'amber',
+      rotationDate,
+      ageInDays,
+      message: `Keys last rotated ${ageInDays} days ago — rotation recommended (> ${STALENESS_AMBER_DAYS} days)`,
+    };
+  }
+  return {
+    level: 'fresh',
+    rotationDate,
+    ageInDays,
+    message: `Keys rotated ${ageInDays} day${ageInDays === 1 ? '' : 's'} ago`,
+  };
+}
+
+/**
+ * Returns the age of the last rotation in days, or null if unknown.
+ * Convenience wrapper for display in panel subheadings.
+ */
+export function getSecretAge(): number | null {
+  return checkSecretStaleness().ageInDays;
+}
+
 export async function loadDesktopSecrets(): Promise<void> {
   if (!isDesktopRuntime()) return;
 

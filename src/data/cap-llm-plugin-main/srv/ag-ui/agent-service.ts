@@ -27,7 +27,9 @@ import {
   createDoneSentinel,
 } from './event-types';
 import { SchemaGenerator, createLoadingSchema, createErrorSchema } from './schema-generator';
+import { GENERATE_SAC_WIDGET_FUNCTION } from './sac-schema-generator';
 import { ToolHandler, ToolRegistry } from './tool-handler';
+import { SAC_TOOLS } from './sac-tool-handler';
 import { getTracer, SpanStatusCode } from '../../src/telemetry/tracer';
 import { IntentRouter, RouteDecision } from './intent-router';
 import { PalClient } from './pal-client';
@@ -103,6 +105,12 @@ export class AgUiAgentService {
       resourceGroup: config.resourceGroup,
     });
     this.toolHandler = new ToolHandler();
+    for (const tool of SAC_TOOLS) {
+      this.toolHandler.getRegistry().register(tool);
+    }
+    if (config.serviceId === 'sac-ai-widget') {
+      this.toolHandler.getRegistry().register(GENERATE_SAC_WIDGET_FUNCTION);
+    }
     this.intentRouter = new IntentRouter({
       vllmEndpoint: config.vllmEndpoint,
       palEndpoint: config.palEndpoint,

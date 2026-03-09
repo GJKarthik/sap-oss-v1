@@ -7,18 +7,36 @@ Provides tools for monitoring and observability operations.
 
 import json
 import os
+import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
 import urllib.request
 from urllib.parse import urlparse
 
-CORS_ALLOWED_ORIGINS = [
-    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
-    if o.strip()
-]
+# =============================================================================
+# Finding 4: CORS configuration with startup validation
+# =============================================================================
+
+_CORS_ORIGINS_RAW = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+MCP_ALLOW_ALL_ORIGINS: bool = os.environ.get("MCP_ALLOW_ALL_ORIGINS", "").strip().lower() in ("1", "true", "yes")
+
+if _CORS_ORIGINS_RAW.strip():
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _CORS_ORIGINS_RAW.split(",") if o.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    if not MCP_ALLOW_ALL_ORIGINS:
+        print(
+            "WARNING: CORS_ALLOWED_ORIGINS is not set. Defaulting to localhost only. "
+            "Non-localhost origins (Vercel, BTP, Docker) will be rejected by CORS preflight. "
+            "Set CORS_ALLOWED_ORIGINS to a comma-separated list of allowed origins, or set "
+            "MCP_ALLOW_ALL_ORIGINS=1 for development.",
+            file=sys.stderr,
+        )
 
 
 def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
+    if MCP_ALLOW_ALL_ORIGINS:
+        return "*"
     origin = (handler.headers.get("Origin") or "").strip()
     if origin and origin in CORS_ALLOWED_ORIGINS:
         return origin
@@ -29,6 +47,260 @@ MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)
 MAX_LOG_LIMIT = int(os.environ.get("MCP_MAX_LOG_LIMIT", "500"))
 MAX_HEALTH_TIMEOUT = int(os.environ.get("MCP_MAX_HEALTH_TIMEOUT", "30"))
 MAX_REFRESH_SERVICES = int(os.environ.get("MCP_MAX_REFRESH_SERVICES", "25"))
+
+# =============================================================================
+# Finding 1: Mangle query service endpoint
+# =============================================================================
+
+_BLOCKED_HOSTS = (
+    "169.254.",   # AWS/GCP/Azure IMDS link-local
+    "100.100.",   # Alibaba Cloud metadata
+    "fd00:",      # IPv6 ULA
+    "::1",        # IPv6 loopback (only block for remote-facing vars)
+)
+
+
+def _validate_remote_url(url: str, var_name: str) -> str:
+    """Validate that a URL from an environment variable is a safe http(s) target.
+
+    Rejects non-http(s) schemes and known cloud-metadata IP prefixes to prevent
+    SSRF via env-var injection.  Returns the cleaned URL or raises ValueError.
+    """
+    if not url:
+        return url
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(
+            f"{var_name} must use http or https scheme (got '{parsed.scheme}'). "
+            f"Value: {url!r}"
+        )
+    host = parsed.hostname or ""
+    for blocked in _BLOCKED_HOSTS:
+        if host.startswith(blocked):
+            raise ValueError(
+                f"{var_name} targets a blocked host prefix '{blocked}' "
+                f"(cloud metadata / link-local). Value: {url!r}"
+            )
+    return url
+
+
+try:
+    MANGLE_ENDPOINT = _validate_remote_url(
+        os.environ.get("MANGLE_ENDPOINT", "http://localhost:50051").rstrip("/"),
+        "MANGLE_ENDPOINT",
+    )
+except ValueError as _e:
+    print(f"ERROR: {_e}", file=sys.stderr)
+    MANGLE_ENDPOINT = "http://localhost:50051"
+
+
+def _call_mangle_service(predicate: str, args: list) -> dict:
+    """Call the real Mangle query service via HTTP.
+
+    Returns a dict with keys 'predicate', 'results', and 'wired' (bool).
+    Falls back to {'predicate': predicate, 'results': [], 'wired': False}
+    if the service is unreachable, so the MCP server stays functional
+    during local development without a running Mangle engine.
+    """
+    payload = json.dumps({"predicate": predicate, "args": args}).encode()
+    req = urllib.request.Request(
+        f"{MANGLE_ENDPOINT}/query",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = json.loads(resp.read().decode())
+            return {"predicate": predicate, "results": body.get("results", body), "wired": True}
+    except Exception as exc:
+        return {
+            "predicate": predicate,
+            "results": [],
+            "wired": False,
+            "fallback_reason": str(exc),
+        }
+
+# =============================================================================
+# Finding 5: MetricsBackend abstraction
+# =============================================================================
+
+# DDL executed once on first use if the table does not exist:
+_HANA_METRICS_DDL = """
+CREATE TABLE IF NOT EXISTS WORLDMONITOR_METRICS (
+    METRIC_NAME   NVARCHAR(256)  NOT NULL,
+    METRIC_VALUE  DOUBLE         NOT NULL,
+    LABELS        NVARCHAR(2000) DEFAULT '{}',
+    RECORDED_AT   TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (METRIC_NAME, RECORDED_AT)
+)
+"""
+
+
+class _InMemoryBackend:
+    """Default in-memory metrics store. Lost on restart."""
+
+    def __init__(self):
+        self._data: dict = {}
+
+    def record(self, name: str, value: float, labels: dict) -> None:
+        import time
+        self._data[name] = {"value": value, "labels": labels, "timestamp": time.time()}
+
+    def get(self, namespace: str = "", metric_name: str = "") -> dict:
+        if metric_name:
+            return {"metric": metric_name, "value": self._data.get(metric_name)}
+        if namespace:
+            filtered = {k: v for k, v in self._data.items() if k.startswith(namespace)}
+            return {"namespace": namespace, "metrics": filtered}
+        return {"metrics": self._data, "count": len(self._data)}
+
+    def raw(self) -> dict:
+        return self._data
+
+
+class _HanaBackend:
+    """HANA Cloud REST SQL API backed metrics store.
+
+    Activated when HANA_BASE_URL, HANA_CLIENT_ID, HANA_CLIENT_SECRET, and
+    HANA_AUTH_URL are all set.  Uses the same OAuth2 client-credentials token
+    pattern as sap_openai_server/server.ts.  Each metric record is an INSERT
+    into WORLDMONITOR_METRICS; reads use SELECT with optional WHERE filters.
+    Falls back transparently to _InMemoryBackend if any HANA call fails.
+    """
+
+    def __init__(self, base_url: str, client_id: str, client_secret: str, auth_url: str):
+        self._base_url = base_url.rstrip("/")
+        self._client_id = client_id
+        self._client_secret = client_secret
+        self._auth_url = auth_url
+        self._fallback = _InMemoryBackend()
+        self._token: str = ""
+        self._token_expires: float = 0.0
+        self._table_ready = False
+
+    # ------------------------------------------------------------------
+    # OAuth2 token (cached, refreshed when within 60 s of expiry)
+    # ------------------------------------------------------------------
+
+    def _get_token(self) -> str:
+        import time, base64
+        if self._token and time.time() < self._token_expires:
+            return self._token
+        creds = base64.b64encode(f"{self._client_id}:{self._client_secret}".encode()).decode()
+        req = urllib.request.Request(
+            self._auth_url,
+            data=b"grant_type=client_credentials",
+            headers={
+                "Authorization": f"Basic {creds}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = json.loads(resp.read().decode())
+        self._token = body["access_token"]
+        self._token_expires = time.time() + body.get("expires_in", 3600) - 60
+        return self._token
+
+    # ------------------------------------------------------------------
+    # Execute a SQL statement via HANA Cloud REST SQL API
+    # ------------------------------------------------------------------
+
+    def _sql(self, statement: str, params: list | None = None) -> list:
+        token = self._get_token()
+        payload = {"statement": statement}
+        if params:
+            payload["parameters"] = params
+        req = urllib.request.Request(
+            f"{self._base_url}/v1/statement",
+            data=json.dumps(payload).encode(),
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = json.loads(resp.read().decode())
+        return body.get("results", body.get("rows", []))
+
+    def _ensure_table(self) -> None:
+        if self._table_ready:
+            return
+        try:
+            self._sql(_HANA_METRICS_DDL.strip())
+            self._table_ready = True
+        except Exception as exc:
+            print(f"WARNING: HANA metrics table init failed ({exc}).", file=sys.stderr)
+
+    # ------------------------------------------------------------------
+    # MetricsBackend interface
+    # ------------------------------------------------------------------
+
+    def record(self, name: str, value: float, labels: dict) -> None:
+        try:
+            self._ensure_table()
+            self._sql(
+                "INSERT INTO WORLDMONITOR_METRICS (METRIC_NAME, METRIC_VALUE, LABELS) "
+                "VALUES (?, ?, ?)",
+                [name, value, json.dumps(labels)],
+            )
+            self._fallback.record(name, value, labels)  # keep in-memory echo for fast reads
+        except Exception as exc:
+            print(f"WARNING: HANA metrics write failed ({exc}); falling back to in-memory.", file=sys.stderr)
+            self._fallback.record(name, value, labels)
+
+    def get(self, namespace: str = "", metric_name: str = "") -> dict:
+        try:
+            self._ensure_table()
+            if metric_name:
+                rows = self._sql(
+                    "SELECT METRIC_NAME, METRIC_VALUE, LABELS, RECORDED_AT "
+                    "FROM WORLDMONITOR_METRICS WHERE METRIC_NAME = ? "
+                    "ORDER BY RECORDED_AT DESC LIMIT 1",
+                    [metric_name],
+                )
+                return {"metric": metric_name, "value": rows[0] if rows else None}
+            where = "WHERE METRIC_NAME LIKE ?" if namespace else ""
+            params = [f"{namespace}%"] if namespace else None
+            rows = self._sql(
+                "SELECT METRIC_NAME, METRIC_VALUE, LABELS, RECORDED_AT "
+                f"FROM WORLDMONITOR_METRICS {where} ORDER BY RECORDED_AT DESC",
+                params,
+            )
+            result = {r[0]: {"value": r[1], "labels": r[2], "recorded_at": str(r[3])} for r in rows}
+            if namespace:
+                return {"namespace": namespace, "metrics": result}
+            return {"metrics": result, "count": len(result)}
+        except Exception as exc:
+            print(f"WARNING: HANA metrics read failed ({exc}); falling back to in-memory.", file=sys.stderr)
+            return self._fallback.get(namespace, metric_name)
+
+    def raw(self) -> dict:
+        return self._fallback.raw()
+
+
+def _build_metrics_backend() -> "_InMemoryBackend | _HanaBackend":
+    hana_url    = os.environ.get("HANA_BASE_URL",      "").strip()
+    client_id   = os.environ.get("HANA_CLIENT_ID",     "").strip()
+    client_sec  = os.environ.get("HANA_CLIENT_SECRET",  "").strip()
+    auth_url    = os.environ.get("HANA_AUTH_URL",       "").strip()
+    if hana_url and client_id and client_sec and auth_url:
+        try:
+            hana_url = _validate_remote_url(hana_url, "HANA_BASE_URL")
+            auth_url = _validate_remote_url(auth_url, "HANA_AUTH_URL")
+        except ValueError as exc:
+            print(f"ERROR: {exc} — falling back to in-memory metrics.", file=sys.stderr)
+            return _InMemoryBackend()
+        print("INFO: HANA metrics backend enabled (HANA_BASE_URL is set).", file=sys.stderr)
+        return _HanaBackend(hana_url, client_id, client_sec, auth_url)
+    print(
+        "INFO: Metrics backend is in-memory only. Set HANA_BASE_URL, HANA_CLIENT_ID, "
+        "HANA_CLIENT_SECRET, and HANA_AUTH_URL to enable persistent HANA-backed metrics.",
+        file=sys.stderr,
+    )
+    return _InMemoryBackend()
 
 
 def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
@@ -88,7 +360,7 @@ class MCPServer:
         self.tools = {}
         self.resources = {}
         self.facts = {}
-        self.metrics = {}
+        self._metrics_backend = _build_metrics_backend()
         self._register_tools()
         self._register_resources()
         self._initialize_facts()
@@ -255,18 +527,12 @@ class MCPServer:
         ]
         self.facts["alerts"] = []
         self.facts["tool_invocation"] = []
-        self.metrics = {}
 
     # Tool Handlers
     def _handle_get_metrics(self, args: dict) -> dict:
         namespace = args.get("namespace", "")
         metric_name = args.get("metric_name", "")
-        if namespace:
-            filtered = {k: v for k, v in self.metrics.items() if k.startswith(namespace)}
-            return {"namespace": namespace, "metrics": filtered}
-        if metric_name:
-            return {"metric": metric_name, "value": self.metrics.get(metric_name)}
-        return {"metrics": self.metrics, "count": len(self.metrics)}
+        return self._metrics_backend.get(namespace=namespace, metric_name=metric_name)
 
     def _handle_record_metric(self, args: dict) -> dict:
         name = args.get("name", "")
@@ -274,8 +540,7 @@ class MCPServer:
         labels = parse_json_arg(args.get("labels", "{}"), {})
         if not isinstance(labels, dict):
             labels = {}
-        import time
-        self.metrics[name] = {"value": value, "labels": labels, "timestamp": time.time()}
+        self._metrics_backend.record(name, float(value), labels)
         return {"name": name, "value": value, "status": "recorded"}
 
     def _handle_health_check(self, args: dict) -> dict:
@@ -378,10 +643,21 @@ class MCPServer:
 
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
+        raw_args = parse_json_arg(args.get("args", "[]"), [])
+        if not isinstance(raw_args, list):
+            raw_args = []
+
+        result = _call_mangle_service(predicate, raw_args)
+        if result["wired"]:
+            return result
+
+        # Graceful fallback: serve from the local fact store when the Mangle
+        # engine is unreachable (e.g. local development without a running instance).
         facts = self.facts.get(predicate)
         if facts:
-            return {"predicate": predicate, "results": facts}
-        return {"predicate": predicate, "results": [], "message": "Unknown predicate"}
+            result["results"] = facts
+            result["fallback_source"] = "local_fact_store"
+        return result
 
     def handle_request(self, request: MCPRequest) -> MCPResponse:
         method = request.method

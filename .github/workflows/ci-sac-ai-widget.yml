@@ -1,0 +1,70 @@
+name: CI (SAC AI Widget)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/generativeUI/sap-sac-webcomponents-ngx/**'
+      - '.github/workflows/ci-sac-ai-widget.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/generativeUI/sap-sac-webcomponents-ngx/**'
+      - '.github/workflows/ci-sac-ai-widget.yml'
+
+jobs:
+  quality-gates:
+    name: Lint, Test, Build, And Pack
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/generativeUI/sap-sac-webcomponents-ngx
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/generativeUI/sap-sac-webcomponents-ngx/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build libraries
+        run: npm run build
+
+      - name: Build widget bundle
+        run: npm run build:widget
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify widget browser harness
+        run: npm run verify:widget-harness
+
+      - name: Verify package exports and tarball
+        run: npm run verify:pack
+
+      - name: Package widget.zip
+        run: npm run package
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sac-ngx-dist
+          path: src/generativeUI/sap-sac-webcomponents-ngx/dist/
+          retention-days: 7
+
+      - name: Upload widget.zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sac-ai-widget
+          path: src/generativeUI/sap-sac-webcomponents-ngx/dist/releases/widget.zip
+          retention-days: 30
