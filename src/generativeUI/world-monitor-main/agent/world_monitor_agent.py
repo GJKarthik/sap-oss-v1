@@ -160,7 +160,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "summarize_news", "analyze_trends", "search_events",
-            "get_headlines", "mangle_query"
+            "get_headlines", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         self.facts["agent_requires_approval"] = {

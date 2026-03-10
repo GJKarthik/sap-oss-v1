@@ -8,9 +8,13 @@ Index-based routing:
 """
 
 import json
+import logging
+import re
 import urllib.request
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+
+logger = logging.getLogger("elasticsearch-agent")
 
 
 class MangleEngine:
@@ -31,7 +35,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "search_query", "aggregation_query", "get_mapping",
-            "cluster_health", "list_indices", "mangle_query"
+            "cluster_health", "list_indices", "mangle_query",
+            "hana_search",
         }
         
         self.facts["agent_requires_approval"] = {
@@ -60,25 +65,40 @@ class MangleEngine:
             }
         }
     
+    @staticmethod
+    def _matches_index_pattern(request_lower: str, pattern: str) -> bool:
+        """Match an index name pattern with left-anchored word-boundary semantics.
+
+        A left word-boundary anchor (``\b``) ensures that 'customer' does not
+        match inside 'disorder', but the right side is intentionally a prefix
+        match so that plurals and suffixed forms (e.g. 'customers', 'orders',
+        'transactions') are caught by their stem patterns ('customer', 'order',
+        'transaction').
+
+        Patterns ending with '-' (e.g. 'logs-') match tokens that start with
+        that prefix (e.g. 'logs-app', 'logs-nginx').
+        """
+        if pattern.endswith("-"):
+            tokens = re.split(r"[\s,;/|]+", request_lower)
+            return any(t.startswith(pattern) for t in tokens)
+        pattern_re = re.compile(r"\b" + re.escape(pattern))
+        return bool(pattern_re.search(request_lower))
+
     def query(self, predicate: str, *args) -> List[Dict]:
         if predicate == "route_to_vllm":
             request = args[0] if args else ""
             request_lower = request.lower()
-            
-            # Check for confidential indices
+
+            # Check for confidential indices using word-boundary matching
             for idx in self.facts["confidential_indices"]:
-                if idx in request_lower:
+                if self._matches_index_pattern(request_lower, idx):
                     return [{"result": True, "reason": f"Confidential index: '{idx}'"}]
-            
-            # Check for log indices
+
+            # Check for log indices using prefix matching
             for idx in self.facts["log_indices"]:
-                if idx in request_lower:
+                if self._matches_index_pattern(request_lower, idx):
                     return [{"result": True, "reason": f"Log index: '{idx}'"}]
-            
-            # Check for search/query keywords
-            if "search" in request_lower or "query" in request_lower:
-                return [{"result": True, "reason": "Search query (default confidential)"}]
-            
+
             return []
         
         if predicate == "route_to_aicore":
@@ -239,18 +259,43 @@ class ElasticsearchAgent:
             return json.loads(resp.read().decode())
     
     def _log_audit(self, status: str, tool: str, backend: str, prompt: str, error: str = None):
+        import hashlib
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "agent": "elasticsearch-agent",
             "status": status,
             "tool": tool,
             "backend": backend,
-            "prompt_hash": hash(prompt),
-            "prompt_length": len(prompt)
+            "prompt_hash": hashlib.sha256(prompt.encode()).hexdigest()[:16],
+            "prompt_length": len(prompt),
         }
         if error:
             entry["error"] = error
         self.audit_log.append(entry)
+        self._persist_audit(entry)
+
+    def _persist_audit(self, entry: dict) -> None:
+        """Best-effort persist audit entry to Elasticsearch audit index."""
+        import os
+        es_host = os.environ.get("ES_HOST", "http://localhost:9200")
+        api_key = os.environ.get("ES_API_KEY", "")
+        username = os.environ.get("ES_USERNAME", "elastic")
+        password = os.environ.get("ES_PASSWORD", "")
+        url = f"{es_host}/sap_agent_audit/_doc"
+        data = json.dumps(entry).encode()
+        headers = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"ApiKey {api_key}"
+        elif password:
+            import base64
+            creds = base64.b64encode(f"{username}:{password}".encode()).decode()
+            headers["Authorization"] = f"Basic {creds}"
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=5) as _resp:
+                pass
+        except Exception as exc:
+            logger.warning("Audit persist failed: %s", exc)
     
     def get_audit_log(self) -> List[Dict]:
         return self.audit_log

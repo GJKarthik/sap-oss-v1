@@ -33,7 +33,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "hana_vector_search", "hana_similarity_search", "hana_query",
-            "get_schema_info", "list_tables", "mangle_query"
+            "get_schema_info", "list_tables", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         self.facts["agent_requires_approval"] = {

@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from mcp_server.server import (
     MCPRequest, MCPResponse, MCPServer,
-    clamp_int, parse_json_arg, get_es_config, get_aicore_config, aicore_config_ready
+    clamp_int, parse_json_arg, get_es_config, get_aicore_config, aicore_config_ready,
+    _cors_origin, _authenticate,
 )
 
 
@@ -198,7 +199,8 @@ class TestMCPServer(unittest.TestCase):
         expected_tools = [
             "es_search", "es_vector_search", "es_index",
             "es_cluster_health", "es_index_info",
-            "generate_embedding", "ai_semantic_search", "mangle_query"
+            "generate_embedding", "ai_semantic_search", "mangle_query",
+            "hana_search", "hana_index_to_es",
         ]
         for tool in expected_tools:
             self.assertIn(tool, self.server.tools)
@@ -236,7 +238,7 @@ class TestMCPServer(unittest.TestCase):
         
         self.assertIsNone(resp.error)
         self.assertIn("tools", resp.result)
-        self.assertTrue(len(resp.result["tools"]) >= 8)
+        self.assertTrue(len(resp.result["tools"]) >= 10)
     
     def test_resources_list_method(self):
         """Test resources/list method."""
@@ -328,10 +330,11 @@ class TestESSearchTool(unittest.TestCase):
         resp = self.server.handle_request(req)
         
         self.assertIsNone(resp.error)
-        mock_es.assert_called_once()
-        call_args = mock_es.call_args
-        self.assertEqual(call_args[0][0], "POST")
-        self.assertIn("test_index", call_args[0][1])
+        self.assertTrue(mock_es.called)
+        # First call is the search; subsequent calls are the audit trail POST.
+        first_call = mock_es.call_args_list[0]
+        self.assertEqual(first_call[0][0], "POST")
+        self.assertIn("test_index", first_call[0][1])
     
     @patch('mcp_server.server.es_request')
     def test_es_search_with_query(self, mock_es):
@@ -354,8 +357,9 @@ class TestESSearchTool(unittest.TestCase):
         resp = self.server.handle_request(req)
         
         self.assertIsNone(resp.error)
-        call_args = mock_es.call_args
-        body = call_args[0][2]
+        # First call is the search request; audit trail is the second call.
+        first_call = mock_es.call_args_list[0]
+        body = first_call[0][2]
         self.assertEqual(body["query"]["match"]["title"], "test")
         self.assertEqual(body["size"], 20)
     
@@ -378,8 +382,9 @@ class TestESSearchTool(unittest.TestCase):
         })
         resp = self.server.handle_request(req)
         
-        call_args = mock_es.call_args
-        body = call_args[0][2]
+        # First call is the search; audit trail POST is the second.
+        first_call = mock_es.call_args_list[0]
+        body = first_call[0][2]
         self.assertLessEqual(body["size"], 100)  # MAX_SEARCH_SIZE
 
 
@@ -449,6 +454,106 @@ class TestResourceRead(unittest.TestCase):
         self.assertIn("service_registry", facts)
 
 
+class TestAuthentication(unittest.TestCase):
+    """Test the _authenticate helper."""
+
+    def _make_handler(self, auth_header: str):
+        """Return a minimal mock handler with the given Authorization header."""
+        handler = unittest.mock.MagicMock()
+        handler.headers = {"Authorization": auth_header} if auth_header else {}
+        return handler
+
+    def test_auth_disabled_passes_all(self):
+        """When XSUAA_VERIFY_TOKEN=false every request is allowed."""
+        handler = self._make_handler("")
+        with patch.dict(os.environ, {"XSUAA_VERIFY_TOKEN": "false"}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            self.assertTrue(srv._authenticate(handler))
+
+    def test_no_auth_header_rejected(self):
+        """Missing Authorization header must return False."""
+        handler = self._make_handler("")
+        with patch.dict(os.environ, {"XSUAA_VERIFY_TOKEN": "true", "MCP_API_KEY": "", "XSUAA_PUBLIC_KEY": ""}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            self.assertFalse(srv._authenticate(handler))
+
+    def test_valid_api_key_accepted(self):
+        """Correct ApiKey credential must return True."""
+        handler = self._make_handler("ApiKey mysecret")
+        with patch.dict(os.environ, {"XSUAA_VERIFY_TOKEN": "true", "MCP_API_KEY": "mysecret", "XSUAA_PUBLIC_KEY": ""}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            self.assertTrue(srv._authenticate(handler))
+
+    def test_wrong_api_key_rejected(self):
+        """Incorrect ApiKey must return False."""
+        handler = self._make_handler("ApiKey wrongkey")
+        with patch.dict(os.environ, {"XSUAA_VERIFY_TOKEN": "true", "MCP_API_KEY": "mysecret", "XSUAA_PUBLIC_KEY": ""}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            self.assertFalse(srv._authenticate(handler))
+
+    def test_bearer_without_public_key_accepted(self):
+        """Non-empty Bearer token is accepted when no public key is configured."""
+        handler = self._make_handler("Bearer sometoken")
+        with patch.dict(os.environ, {"XSUAA_VERIFY_TOKEN": "true", "MCP_API_KEY": "", "XSUAA_PUBLIC_KEY": ""}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            self.assertTrue(srv._authenticate(handler))
+
+    def test_empty_bearer_rejected(self):
+        """Empty Bearer token must return False."""
+        handler = self._make_handler("Bearer ")
+        with patch.dict(os.environ, {"XSUAA_VERIFY_TOKEN": "true", "MCP_API_KEY": "", "XSUAA_PUBLIC_KEY": ""}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            self.assertFalse(srv._authenticate(handler))
+
+
+class TestCORSOrigin(unittest.TestCase):
+    """Test _cors_origin returns correct values."""
+
+    def _make_handler(self, origin: str):
+        handler = unittest.mock.MagicMock()
+        handler.headers = {"Origin": origin} if origin else {}
+        return handler
+
+    def test_allowed_origin_returned(self):
+        """Matching origin is echoed back."""
+        with patch.dict(os.environ, {"CORS_ALLOWED_ORIGINS": "http://localhost:3000"}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            handler = self._make_handler("http://localhost:3000")
+            self.assertEqual(srv._cors_origin(handler), "http://localhost:3000")
+
+    def test_unknown_origin_returns_none(self):
+        """Non-matching origin must return None, not the first allowed origin."""
+        with patch.dict(os.environ, {"CORS_ALLOWED_ORIGINS": "http://localhost:3000"}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            handler = self._make_handler("http://evil.example.com")
+            self.assertIsNone(srv._cors_origin(handler))
+
+    def test_no_origin_header_returns_none(self):
+        """Absent Origin header must return None (server-to-server case)."""
+        with patch.dict(os.environ, {"CORS_ALLOWED_ORIGINS": "http://localhost:3000"}):
+            import importlib
+            import mcp_server.server as srv
+            importlib.reload(srv)
+            handler = self._make_handler("")
+            self.assertIsNone(srv._cors_origin(handler))
+
+
 class TestToolInputSchemas(unittest.TestCase):
     """Test tool input schemas are correct."""
     
@@ -485,6 +590,90 @@ class TestToolInputSchemas(unittest.TestCase):
         self.assertEqual(schema["type"], "object")
         self.assertIn("text", schema["properties"])
         self.assertIn("text", schema.get("required", []))
+
+    def test_hana_search_schema(self):
+        """Test hana_search input schema."""
+        tool = self.server.tools["hana_search"]
+        schema = tool["inputSchema"]
+
+        self.assertEqual(schema["type"], "object")
+        self.assertIn("sql", schema["properties"])
+        self.assertIn("sql", schema.get("required", []))
+
+    def test_hana_index_to_es_schema(self):
+        """Test hana_index_to_es input schema."""
+        tool = self.server.tools["hana_index_to_es"]
+        schema = tool["inputSchema"]
+
+        self.assertEqual(schema["type"], "object")
+        self.assertIn("sql", schema["properties"])
+        self.assertIn("es_index", schema["properties"])
+        self.assertIn("sql", schema.get("required", []))
+        self.assertIn("es_index", schema.get("required", []))
+
+
+class TestHANASearchTool(unittest.TestCase):
+    """Test HANA search MCP tool handler."""
+
+    def setUp(self):
+        self.server = MCPServer()
+
+    def test_hana_search_rejects_non_select(self):
+        """hana_search must reject DML statements."""
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "hana_search", "arguments": {"sql": "DROP TABLE foo"}},
+        })
+        resp = self.server.handle_request(req)
+        self.assertIsNone(resp.error)
+        content = json.loads(resp.result["content"][0]["text"])
+        self.assertIn("error", content)
+        self.assertIn("SELECT", content["error"])
+
+    def test_hana_search_requires_sql(self):
+        """hana_search must return an error when sql is absent."""
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "hana_search", "arguments": {}},
+        })
+        resp = self.server.handle_request(req)
+        self.assertIsNone(resp.error)
+        content = json.loads(resp.result["content"][0]["text"])
+        self.assertIn("error", content)
+
+    def test_hana_index_to_es_requires_es_index(self):
+        """hana_index_to_es must return an error when es_index is absent."""
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "hana_index_to_es", "arguments": {"sql": "SELECT 1 FROM DUAL"}},
+        })
+        resp = self.server.handle_request(req)
+        self.assertIsNone(resp.error)
+        content = json.loads(resp.result["content"][0]["text"])
+        self.assertIn("error", content)
+
+    def test_hana_index_to_es_rejects_non_select(self):
+        """hana_index_to_es must reject DML statements."""
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "hana_index_to_es",
+                "arguments": {"sql": "INSERT INTO foo VALUES (1)", "es_index": "test"},
+            },
+        })
+        resp = self.server.handle_request(req)
+        self.assertIsNone(resp.error)
+        content = json.loads(resp.result["content"][0]["text"])
+        self.assertIn("error", content)
+        self.assertIn("SELECT", content["error"])
 
 
 if __name__ == "__main__":

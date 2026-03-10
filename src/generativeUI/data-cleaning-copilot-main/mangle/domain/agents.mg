@@ -28,6 +28,8 @@ agent_can_use("data-cleaning-agent", "suggest_cleaning_rules").
 agent_can_use("data-cleaning-agent", "generate_validation").
 agent_can_use("data-cleaning-agent", "profile_data").
 agent_can_use("data-cleaning-agent", "mangle_query").
+agent_can_use("data-cleaning-agent", "kuzu_index").
+agent_can_use("data-cleaning-agent", "kuzu_query").
 
 agent_requires_approval("data-cleaning-agent", "apply_transformation").
 agent_requires_approval("data-cleaning-agent", "delete_records").
@@ -108,6 +110,7 @@ guardrails_active("suggest_cleaning_rules").
 guardrails_active("generate_validation").
 guardrails_active("profile_data").
 guardrails_active("mangle_query").
+guardrails_active("kuzu_query").
 
 requires_guardrails("analyze_data_quality").
 requires_guardrails("suggest_cleaning_rules").

@@ -279,9 +279,10 @@ class TestHybridSearchIntegration(unittest.TestCase):
         
         scores = {doc: rrf_score(doc) for doc in ["doc1", "doc2", "doc3"]}
         
-        # doc2 should rank highest (rank 3 in BM25, rank 1 in kNN)
+        # doc1 should rank highest: rank 1 in BM25 + rank 2 in kNN
+        # gives a higher combined RRF score than doc2 (rank 3 BM25 + rank 1 kNN).
         sorted_docs = sorted(scores.keys(), key=lambda d: scores[d], reverse=True)
-        self.assertEqual(sorted_docs[0], "doc2")
+        self.assertEqual(sorted_docs[0], "doc1")
 
 
 class TestIndexSyncIntegration(unittest.TestCase):

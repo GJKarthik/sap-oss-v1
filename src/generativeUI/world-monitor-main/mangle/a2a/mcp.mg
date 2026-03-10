@@ -15,6 +15,9 @@ service_registry("langchain",       "http://localhost:9140/mcp",  "langchain").
 service_registry("odata-vocab",     "http://localhost:9150/mcp",  "odata").
 service_registry("ui5-ngx",         "http://localhost:9160/mcp",  "ui5").
 
+# Graph-RAG: embedded KùzuDB monitoring entity relationship graph
+service_registry("world-graph",     "http://localhost:9170/mcp",  "graph-rag").
+
 # 2. Intent Routing
 resolve_service_for_intent(/metrics, URL) :-
     service_registry("world-monitor", URL, _).
@@ -25,6 +28,12 @@ resolve_service_for_intent(/alerts, URL) :-
 resolve_service_for_intent(/health, URL) :-
     service_registry("world-monitor", URL, _).
 
+resolve_service_for_intent(/graph_index, URL) :-
+    service_registry("world-graph", URL, _).
+
+resolve_service_for_intent(/graph_query, URL) :-
+    service_registry("world-graph", URL, _).
+
 # 3. Tool Routing
 tool_service("get_metrics", "world-monitor").
 tool_service("record_metric", "world-monitor").
@@ -34,6 +43,8 @@ tool_service("get_alerts", "world-monitor").
 tool_service("create_alert", "world-monitor").
 tool_service("get_logs", "world-monitor").
 tool_service("mangle_query", "world-monitor").
+tool_service("kuzu_index",   "world-graph").
+tool_service("kuzu_query",   "world-graph").
 
 # 4. Alert Severity Rules
 alert_critical(Alert) :-

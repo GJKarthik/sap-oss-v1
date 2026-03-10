@@ -2,6 +2,36 @@
 # training-main — Root Python tooling config
 # =============================================================================
 
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "training-main"
+version = "0.1.0"
+description = "Text-to-SQL training data pipeline, model optimizer, and HippoCPP graph engine"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+
+[project.optional-dependencies]
+# Graph-RAG backend: prefer hippocpp (vendored Zig port), fall back to upstream kuzu
+graph = [
+    "hippocpp>=0.1.0",
+]
+graph-fallback = [
+    "kuzu>=0.7.0",
+]
+# Full development environment
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.0",
+    "httpx>=0.26",
+    "fastapi>=0.110",
+    "pydantic>=2.0",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+
 [tool.pytest.ini_options]
 testpaths = [
     "nvidia-modelopt/tests",

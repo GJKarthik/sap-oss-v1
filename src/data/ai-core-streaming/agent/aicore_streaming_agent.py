@@ -31,7 +31,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "stream_complete", "batch_complete", "health_check",
-            "list_models", "mangle_query"
+            "list_models", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         self.facts["agent_requires_approval"] = {

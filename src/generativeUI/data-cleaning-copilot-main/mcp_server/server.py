@@ -317,6 +317,55 @@ class MCPServer:
             },
         }
 
+        # Graph-RAG: index schema into KùzuDB
+        self.tools["kuzu_index"] = {
+            "name": "kuzu_index",
+            "description": (
+                "Parse a database schema definition and store table, column, and "
+                "foreign-key nodes in the embedded KùzuDB graph database. "
+                "Optionally records active quality checks and the columns they cover. "
+                "Use before data_quality_check to enable graph-context enrichment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "schema_definition": {
+                        "type": "string",
+                        "description": "Schema as JSON: {tables: [{name, columns: [{name, type}], foreign_keys: [{column, ref_table, ref_column}]}]}",
+                    },
+                    "checks": {
+                        "type": "string",
+                        "description": "JSON array of {table, check_type, status, score, columns} objects to record as QualityCheck nodes (optional)",
+                    },
+                },
+                "required": ["schema_definition"],
+            },
+        }
+
+        # Graph-RAG: run a Cypher query against KùzuDB
+        self.tools["kuzu_query"] = {
+            "name": "kuzu_query",
+            "description": (
+                "Execute a read-only Cypher query against the embedded KùzuDB graph "
+                "database and return matching rows as JSON. "
+                "Use for FK traversal, check-coverage discovery, and relationship analysis."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "cypher": {
+                        "type": "string",
+                        "description": "Cypher query string (MATCH … RETURN only)",
+                    },
+                    "params": {
+                        "type": "string",
+                        "description": "Query parameters as JSON object (optional)",
+                    },
+                },
+                "required": ["cypher"],
+            },
+        }
+
     def _register_resources(self):
         self.resources["data://schemas"] = {
             "uri": "data://schemas",
@@ -423,6 +472,11 @@ class MCPServer:
         response = {"table": table_name, "checks": results, "overall_status": overall_status}
         if context:
             response["external_context"] = {"source": context["source"], "result": context["result"]}
+
+        # M4 — enrich with graph context from KùzuDB when available
+        graph_context = self._graph_context_for_table(table_name)
+        if graph_context:
+            response["graph_context"] = graph_context
         return response
 
     def _handle_schema_analysis(self, args: dict) -> dict:
@@ -564,6 +618,146 @@ class MCPServer:
         except Exception as e:
             return {"content": str(e), "error": True}
 
+    def _graph_context_for_table(self, table_name: str) -> list[dict]:
+        """Return KùzuDB column/FK/check context for a table, or [] if unavailable.
+
+        Falls back silently so ``data_quality_check`` always degrades gracefully
+        when the kuzu package is absent or the table has not been indexed yet.
+        """
+        try:
+            from graph.kuzu_store import get_store as _get_store
+            store = _get_store()
+            if not store.available():
+                return []
+            return store.get_table_context(table_name, hops=2)
+        except Exception as exc:
+            import logging
+            logging.getLogger("data-cleaning-copilot.mcp").debug(
+                "graph context lookup skipped: %s", exc
+            )
+            return []
+
+    def _handle_kuzu_index(self, args: dict) -> dict:
+        """M2 — Parse a schema definition and index it into KùzuDB."""
+        schema_raw = args.get("schema_definition") or ""
+        if not schema_raw.strip():
+            return {"error": "schema_definition is required"}
+
+        schema = parse_json_arg(schema_raw, None)
+        if not isinstance(schema, dict):
+            return {"error": "schema_definition must be a JSON object"}
+
+        checks_raw = parse_json_arg(args.get("checks", "[]"), [])
+        if not isinstance(checks_raw, list):
+            checks_raw = []
+
+        try:
+            from graph.kuzu_store import get_store as _get_store
+            store = _get_store()
+        except Exception as exc:
+            return {"error": f"KùzuDB unavailable: {exc}"}
+
+        if not store.available():
+            return {"error": "KùzuDB not installed; add kuzu to pyproject.toml dependencies"}
+
+        tables_indexed = 0
+        columns_indexed = 0
+        fks_indexed = 0
+        checks_indexed = 0
+
+        for table_def in schema.get("tables", []):
+            if not isinstance(table_def, dict):
+                continue
+            tbl_name = str(table_def.get("name") or "").strip()
+            if not tbl_name:
+                continue
+            store.upsert_table(tbl_name)
+            tables_indexed += 1
+
+            for col_def in table_def.get("columns", []):
+                if not isinstance(col_def, dict):
+                    continue
+                col_name = str(col_def.get("name") or "").strip()
+                col_type = str(col_def.get("type") or "UNKNOWN")
+                if col_name:
+                    store.upsert_column(tbl_name, col_name, col_type)
+                    columns_indexed += 1
+
+            for fk_def in table_def.get("foreign_keys", []):
+                if not isinstance(fk_def, dict):
+                    continue
+                src_col = str(fk_def.get("column") or "").strip()
+                ref_table = str(fk_def.get("ref_table") or "").strip()
+                ref_col = str(fk_def.get("ref_column") or "").strip()
+                constraint = str(fk_def.get("constraint_name") or "")
+                if src_col and ref_table and ref_col:
+                    store.upsert_table(ref_table)
+                    store.link_fk(tbl_name, src_col, ref_table, ref_col, constraint)
+                    fks_indexed += 1
+
+        for check_def in checks_raw:
+            if not isinstance(check_def, dict):
+                continue
+            tbl = str(check_def.get("table") or "").strip()
+            chk_type = str(check_def.get("check_type") or "").strip()
+            if not tbl or not chk_type:
+                continue
+            cols = check_def.get("columns") or []
+            store.upsert_quality_check(
+                tbl, chk_type,
+                status=str(check_def.get("status") or ""),
+                score=str(check_def.get("score") or ""),
+                columns=[str(c) for c in cols if c],
+            )
+            checks_indexed += 1
+
+        self.facts["tool_invocation"].append({
+            "tool": "kuzu_index",
+            "tables": tables_indexed,
+            "columns": columns_indexed,
+            "fks": fks_indexed,
+            "checks": checks_indexed,
+            "timestamp": __import__("time").time(),
+        })
+        return {
+            "tables_indexed": tables_indexed,
+            "columns_indexed": columns_indexed,
+            "fks_indexed": fks_indexed,
+            "checks_indexed": checks_indexed,
+        }
+
+    def _handle_kuzu_query(self, args: dict) -> dict:
+        """M3 — Execute a read-only Cypher query against KùzuDB."""
+        cypher = (args.get("cypher") or "").strip()
+        if not cypher:
+            return {"error": "cypher is required"}
+
+        cypher_upper = cypher.upper().lstrip()
+        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
+            if cypher_upper.startswith(disallowed):
+                return {"error": "Write Cypher statements are not permitted via this tool"}
+
+        params = parse_json_arg(args.get("params", "{}"), {})
+        if not isinstance(params, dict):
+            params = {}
+
+        try:
+            from graph.kuzu_store import get_store as _get_store
+            store = _get_store()
+        except Exception as exc:
+            return {"error": f"KùzuDB unavailable: {exc}"}
+
+        if not store.available():
+            return {"error": "KùzuDB not installed; add kuzu to pyproject.toml dependencies"}
+
+        rows = store.run_query(cypher, params)
+        self.facts["tool_invocation"].append({
+            "tool": "kuzu_query",
+            "row_count": len(rows),
+            "timestamp": __import__("time").time(),
+        })
+        return {"rows": rows, "row_count": len(rows)}
+
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
         query_args = parse_json_arg(args.get("args", "[]"), [])
@@ -626,6 +820,8 @@ class MCPServer:
                     "generate_cleaning_query": self._handle_generate_cleaning_query,
                     "ai_chat": self._handle_ai_chat,
                     "mangle_query": self._handle_mangle_query,
+                    "kuzu_index": self._handle_kuzu_index,
+                    "kuzu_query": self._handle_kuzu_query,
                 }
 
                 handler = handlers.get(tool_name)

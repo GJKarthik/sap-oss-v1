@@ -17,11 +17,27 @@ service_registry("deductive-db", "http://deductive-db:8080", "ainuc-deductive-v1
 # OData Vocabularies Service - Universal Dictionary for Analytics/KPI annotations
 service_registry("odata-vocab", "http://localhost:9150/mcp", "odata-vocab-annotator").
 
+# KùzuDB / HippoCPP graph-RAG service (embedded, same host as ai-core-pal)
+service_registry("kuzu-graph", "http://localhost:9881/mcp", "aicore-pal-graph-v1").
+
 # 1.5 Tool Routing for Vocabulary Operations
 tool_service("lookup_kpi_annotation", "odata-vocab").
 tool_service("get_analytics_terms", "odata-vocab").
 tool_service("suggest_pal_annotations", "odata-vocab").
 tool_service("validate_measure_annotation", "odata-vocab").
+
+# 1.6 Tool Routing for Graph-RAG Operations
+tool_service("kuzu_index", "kuzu-graph").
+tool_service("kuzu_query", "kuzu-graph").
+
+# Intent routing for graph operations
+resolve_service_for_intent(/graph_index, URL) :-
+    service_registry("kuzu-graph", BaseURL, _),
+    URL = fn:concat(BaseURL, "/v1/chat/completions").
+
+resolve_service_for_intent(/kuzu_query, URL) :-
+    service_registry("kuzu-graph", BaseURL, _),
+    URL = fn:concat(BaseURL, "/v1/chat/completions").
 
 # 2. Standard Request Factory
 # Generates a strictly compliant OpenAI Chat Completion request body.

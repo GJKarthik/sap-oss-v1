@@ -83,17 +83,25 @@ class TestMangleEngine(unittest.TestCase):
         self.assertTrue(result[0]["result"])
         self.assertIn("log", result[0]["reason"].lower())
     
-    def test_route_to_vllm_search_keyword(self):
-        """Test routing to vLLM for search queries."""
+    def test_route_to_vllm_search_keyword_no_longer_triggers(self):
+        """Generic 'search' keyword must NOT route to vLLM.
+
+        The old catch-all 'search'/'query' → vLLM rule was removed because it
+        caused every search request to be treated as confidential.  A prompt
+        that mentions neither a confidential index name nor a log-index prefix
+        should now return an empty routing result (defaulting to vLLM via the
+        agent's own fallback, not via the Mangle classifier).
+        """
         result = self.engine.query("route_to_vllm", "search for something")
-        self.assertTrue(len(result) > 0)
-        self.assertTrue(result[0]["result"])
-    
-    def test_route_to_vllm_query_keyword(self):
-        """Test routing to vLLM for query keywords."""
+        self.assertEqual(len(result), 0)
+
+    def test_route_to_vllm_query_keyword_no_longer_triggers(self):
+        """Generic 'query' keyword must NOT route to vLLM.
+
+        Same rationale as test_route_to_vllm_search_keyword_no_longer_triggers.
+        """
         result = self.engine.query("route_to_vllm", "query the database")
-        self.assertTrue(len(result) > 0)
-        self.assertTrue(result[0]["result"])
+        self.assertEqual(len(result), 0)
     
     # =========================================================================
     # Route to AI Core Tests

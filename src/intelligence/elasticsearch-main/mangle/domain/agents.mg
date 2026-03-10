@@ -28,6 +28,8 @@ agent_can_use("elasticsearch-agent", "get_mapping").
 agent_can_use("elasticsearch-agent", "cluster_health").
 agent_can_use("elasticsearch-agent", "list_indices").
 agent_can_use("elasticsearch-agent", "mangle_query").
+agent_can_use("elasticsearch-agent", "kuzu_index").
+agent_can_use("elasticsearch-agent", "kuzu_query").
 
 agent_requires_approval("elasticsearch-agent", "create_index").
 agent_requires_approval("elasticsearch-agent", "delete_index").
@@ -150,6 +152,7 @@ guardrails_active("aggregation_query").
 guardrails_active("get_mapping").
 guardrails_active("cluster_health").
 guardrails_active("list_indices").
+guardrails_active("kuzu_query").
 
 requires_guardrails("search_query").
 requires_guardrails("aggregation_query").

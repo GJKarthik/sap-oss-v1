@@ -28,6 +28,8 @@ agent_can_use("aicore-pal-agent", "pal_clustering").
 agent_can_use("aicore-pal-agent", "pal_forecast").
 agent_can_use("aicore-pal-agent", "pal_anomaly").
 agent_can_use("aicore-pal-agent", "mangle_query").
+agent_can_use("aicore-pal-agent", "kuzu_index").
+agent_can_use("aicore-pal-agent", "kuzu_query").
 
 agent_requires_approval("aicore-pal-agent", "pal_train_model").
 agent_requires_approval("aicore-pal-agent", "pal_delete_model").

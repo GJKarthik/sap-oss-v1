@@ -12,6 +12,14 @@ from typing import Any
 import urllib.request
 import base64
 
+try:
+    from graph.kuzu_store import get_kuzu_store as _get_kuzu_store
+except ImportError:
+    try:
+        from mcp_server.graph.kuzu_store import get_kuzu_store as _get_kuzu_store
+    except ImportError:
+        _get_kuzu_store = None  # type: ignore[assignment]
+
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
     if o.strip()
@@ -263,6 +271,69 @@ class MCPServer:
             },
         }
 
+        # Graph-RAG: index streaming entities into KùzuDB
+        self.tools["kuzu_index"] = {
+            "name": "kuzu_index",
+            "description": (
+                "Index AI Core streaming entities into the embedded KùzuDB graph database. "
+                "Stores Deployment nodes, StreamSession nodes, RoutingDecision nodes, and their "
+                "relationships (SERVED_BY, ROUTED_AS, HANDLES). "
+                "Call before stream_status to enable graph-context enrichment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "deployments": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of deployment definitions: "
+                            "[{deployment_id, model_name?, resource_group?, status?, "
+                            "handles_decision?: string}]"
+                        ),
+                    },
+                    "streams": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of stream session definitions: "
+                            "[{stream_id, deployment_id?, status?, security_class?, "
+                            "served_by?: string, routed_as?: string}]"
+                        ),
+                    },
+                    "routing_decisions": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of routing decision definitions: "
+                            "[{decision_id, security_class?, route?}]"
+                        ),
+                    },
+                },
+            },
+        }
+
+        # Graph-RAG: run a read-only Cypher query against KùzuDB
+        self.tools["kuzu_query"] = {
+            "name": "kuzu_query",
+            "description": (
+                "Execute a read-only Cypher query against the embedded KùzuDB graph database "
+                "and return matching rows as JSON. "
+                "Use for stream correlation, deployment lookup, routing analysis."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "cypher": {
+                        "type": "string",
+                        "description": "Cypher query string (MATCH … RETURN only)",
+                    },
+                    "params": {
+                        "type": "string",
+                        "description": "Query parameters as JSON object (optional)",
+                    },
+                },
+                "required": ["cypher"],
+            },
+        }
+
     def _register_resources(self):
         self.resources["streaming://deployments"] = {
             "uri": "streaming://deployments",
@@ -342,10 +413,30 @@ class MCPServer:
         stream_id = args.get("stream_id", "")
         if stream_id:
             stream = self.streams.get(stream_id)
-            if stream:
-                return {"stream_id": stream_id, **stream}
-            return {"error": f"Stream {stream_id} not found"}
-        return {"active_streams": list(self.streams.keys()), "count": len(self.streams)}
+            if not stream:
+                return {"error": f"Stream {stream_id} not found"}
+            result = {"stream_id": stream_id, **stream}
+            # M4 — attach graph context when KùzuDB has indexed data
+            if _get_kuzu_store is not None:
+                store = _get_kuzu_store()
+                if store.available():
+                    ctx = store.get_stream_context(stream_id)
+                    if ctx:
+                        result["graph_context"] = ctx
+            return result
+
+        # No stream_id — return all active streams with optional enrichment
+        streams_out = []
+        for sid, sdata in self.streams.items():
+            entry = {"stream_id": sid, **sdata}
+            if _get_kuzu_store is not None:
+                store = _get_kuzu_store()
+                if store.available():
+                    ctx = store.get_stream_context(sid)
+                    if ctx:
+                        entry["graph_context"] = ctx
+            streams_out.append(entry)
+        return {"active_streams": streams_out, "count": len(streams_out)}
 
     def _handle_start_stream(self, args: dict) -> dict:
         import time
@@ -391,6 +482,105 @@ class MCPServer:
         self.streams[stream_id]["events"].append(event)
         return {"stream_id": stream_id, "event": event, "status": "published"}
 
+    def _handle_kuzu_index(self, args: dict) -> dict:
+        if _get_kuzu_store is None:
+            return {"error": "KùzuDB not available; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        store = _get_kuzu_store()
+        if not store.available():
+            return {"error": "KùzuDB not installed; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        store.ensure_schema()
+
+        deployments_indexed = 0
+        streams_indexed = 0
+        decisions_indexed = 0
+
+        # Index routing decisions first (nodes referenced by others)
+        raw_decisions = parse_json_arg(args.get("routing_decisions", "[]"), [])
+        if not isinstance(raw_decisions, list):
+            raw_decisions = []
+        for rd in raw_decisions:
+            if not isinstance(rd, dict):
+                continue
+            decision_id = str(rd.get("decision_id", "")).strip()
+            if not decision_id:
+                continue
+            store.upsert_routing_decision(
+                decision_id,
+                security_class=str(rd.get("security_class", "public")),
+                route=str(rd.get("route", "aicore")),
+            )
+            decisions_indexed += 1
+
+        # Index deployments
+        raw_deployments = parse_json_arg(args.get("deployments", "[]"), [])
+        if not isinstance(raw_deployments, list):
+            raw_deployments = []
+        for dep in raw_deployments:
+            if not isinstance(dep, dict):
+                continue
+            deployment_id = str(dep.get("deployment_id", "")).strip()
+            if not deployment_id:
+                continue
+            store.upsert_deployment(
+                deployment_id,
+                model_name=str(dep.get("model_name", "")),
+                resource_group=str(dep.get("resource_group", "default")),
+                status=str(dep.get("status", "unknown")),
+            )
+            deployments_indexed += 1
+            handles = str(dep.get("handles_decision", "")).strip()
+            if handles:
+                store.link_deployment_routing(deployment_id, handles)
+
+        # Index stream sessions
+        raw_streams = parse_json_arg(args.get("streams", "[]"), [])
+        if not isinstance(raw_streams, list):
+            raw_streams = []
+        for ss in raw_streams:
+            if not isinstance(ss, dict):
+                continue
+            stream_id = str(ss.get("stream_id", "")).strip()
+            if not stream_id:
+                continue
+            store.upsert_stream(
+                stream_id,
+                deployment_id=str(ss.get("deployment_id", "")),
+                status=str(ss.get("status", "active")),
+                security_class=str(ss.get("security_class", "public")),
+            )
+            streams_indexed += 1
+            served_by = str(ss.get("served_by", "") or ss.get("deployment_id", "")).strip()
+            if served_by:
+                store.link_session_deployment(stream_id, served_by)
+            routed_as = str(ss.get("routed_as", "")).strip()
+            if routed_as:
+                store.link_session_routing(stream_id, routed_as)
+
+        return {
+            "deployments_indexed": deployments_indexed,
+            "streams_indexed": streams_indexed,
+            "decisions_indexed": decisions_indexed,
+        }
+
+    def _handle_kuzu_query(self, args: dict) -> dict:
+        cypher = str(args.get("cypher", "") or "").strip()
+        if not cypher:
+            return {"error": "cypher is required"}
+        upper = cypher.upper().lstrip()
+        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
+            if upper.startswith(disallowed):
+                return {"error": "Write Cypher statements are not permitted via this tool"}
+        params = parse_json_arg(args.get("params", "{}"), {})
+        if not isinstance(params, dict):
+            params = {}
+        if _get_kuzu_store is None:
+            return {"error": "KùzuDB not available; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        store = _get_kuzu_store()
+        if not store.available():
+            return {"error": "KùzuDB not installed; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        rows = store.run_query(cypher, params)
+        return {"rows": rows, "row_count": len(rows)}
+
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
         facts = self.facts.get(predicate)
@@ -435,6 +625,8 @@ class MCPServer:
                     "stop_stream": self._handle_stop_stream,
                     "publish_event": self._handle_publish_event,
                     "mangle_query": self._handle_mangle_query,
+                    "kuzu_index": self._handle_kuzu_index,
+                    "kuzu_query": self._handle_kuzu_query,
                 }
                 handler = handlers.get(tool_name)
                 if not handler:
@@ -554,7 +746,7 @@ Server: http://localhost:{port}
 
 Tools: streaming_chat, streaming_generate, list_deployments,
        stream_status, start_stream, stop_stream, publish_event,
-       mangle_query
+       mangle_query, kuzu_index, kuzu_query
 
 Resources: streaming://deployments, streaming://active, mangle://facts
 """)

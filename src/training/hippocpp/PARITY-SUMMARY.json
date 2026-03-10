@@ -1,7 +1,7 @@
 {
   "generated_utc": "2026-03-05T12:54:01Z",
-  "kuzu_dir": "/Users/user/Documents/sap-oss/mangle-query-service/kuzu",
-  "hippocpp_dir": "/Users/user/Documents/sap-oss/mangle-query-service/hippocpp",
+  "kuzu_dir": "/Users/user/Documents/sap-oss/src/training/hippocpp/upstream",
+  "hippocpp_dir": "/Users/user/Documents/sap-oss/src/training/hippocpp",
   "mirror_status": "PASS",
   "kuzu_cpp_total": 735,
   "hippocpp_zig_total": 1251,

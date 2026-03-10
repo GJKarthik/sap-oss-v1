@@ -14,12 +14,16 @@ Usage:
 
 import os
 import json
+import logging
+import threading
 import uuid
 import time
 import urllib.request
 import urllib.parse
 from typing import List, Dict, Any, Optional, Union
 from dataclasses import dataclass
+
+logger = logging.getLogger("sap-openai-server")
 
 try:
     from fastapi import FastAPI, HTTPException, Request
@@ -88,36 +92,41 @@ class ElasticsearchConfig:
 # AI Core Client
 # =============================================================================
 
-_cached_token = {"token": None, "expires_at": 0}
+_cached_token: Dict = {"token": None, "expires_at": 0}
+_token_lock = threading.Lock()
 _cached_deployments: List[Dict] = []
+_deployments_lock = threading.Lock()
 
 
 def get_access_token(config: AICoreConfig) -> str:
-    """Get OAuth access token from SAP AI Core."""
-    global _cached_token
-    
-    if _cached_token["token"] and time.time() < _cached_token["expires_at"]:
-        return _cached_token["token"]
-    
+    """Get OAuth access token from SAP AI Core.
+
+    A threading.Lock serialises the check-then-fetch sequence so that
+    concurrent async callers never issue parallel token refresh requests.
+    """
     import base64
-    auth = base64.b64encode(f"{config.client_id}:{config.client_secret}".encode()).decode()
-    
-    data = "grant_type=client_credentials".encode()
-    req = urllib.request.Request(
-        config.auth_url,
-        data=data,
-        headers={
-            "Authorization": f"Basic {auth}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        method="POST"
-    )
-    
-    with urllib.request.urlopen(req) as resp:
-        result = json.loads(resp.read().decode())
-        _cached_token["token"] = result["access_token"]
-        _cached_token["expires_at"] = time.time() + result["expires_in"] - 60
-        return result["access_token"]
+    with _token_lock:
+        if _cached_token["token"] and time.time() < _cached_token["expires_at"]:
+            return _cached_token["token"]
+
+        auth = base64.b64encode(
+            f"{config.client_id}:{config.client_secret}".encode()
+        ).decode()
+        data = b"grant_type=client_credentials"
+        req = urllib.request.Request(
+            config.auth_url,
+            data=data,
+            headers={
+                "Authorization": f"Basic {auth}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read().decode())
+            _cached_token["token"] = result["access_token"]
+            _cached_token["expires_at"] = time.time() + result["expires_in"] - 60
+            return result["access_token"]
 
 
 def aicore_request(config: AICoreConfig, method: str, path: str, body: Optional[Dict] = None) -> Dict:
@@ -149,24 +158,28 @@ def aicore_request(config: AICoreConfig, method: str, path: str, body: Optional[
 
 def get_deployments(config: AICoreConfig) -> List[Dict]:
     """Get list of deployments from SAP AI Core."""
-    global _cached_deployments
-    
-    if _cached_deployments:
-        return _cached_deployments
-    
-    result = aicore_request(config, "GET", "/v2/lm/deployments")
-    _cached_deployments = []
-    
-    for d in result.get("resources", []):
-        model_name = d.get("details", {}).get("resources", {}).get("backend_details", {}).get("model", {}).get("name", "unknown")
-        _cached_deployments.append({
-            "id": d["id"],
-            "model": model_name,
-            "status": d.get("status", "unknown"),
-            "is_anthropic": "anthropic" in model_name.lower(),
-        })
-    
-    return _cached_deployments
+    with _deployments_lock:
+        if _cached_deployments:
+            return list(_cached_deployments)
+
+        result = aicore_request(config, "GET", "/v2/lm/deployments")
+        fresh: List[Dict] = []
+        for d in result.get("resources", []):
+            model_name = (
+                d.get("details", {})
+                .get("resources", {})
+                .get("backend_details", {})
+                .get("model", {})
+                .get("name", "unknown")
+            )
+            fresh.append({
+                "id": d["id"],
+                "model": model_name,
+                "status": d.get("status", "unknown"),
+                "is_anthropic": "anthropic" in model_name.lower(),
+            })
+        _cached_deployments.extend(fresh)
+        return list(_cached_deployments)
 
 
 def find_deployment(config: AICoreConfig, model_id: str) -> Optional[Dict]:
@@ -789,8 +802,8 @@ if USE_FASTAPI:
                                 "purpose": hit["_source"].get("metadata", {}).get("purpose", "search"),
                                 "status": "processed"
                             })
-                except:
-                    pass
+                except Exception as exc:
+                    logger.warning("ES file list failed: %s", exc)
         
         return {
             "object": "list",

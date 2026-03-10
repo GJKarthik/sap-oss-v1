@@ -11,6 +11,30 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 import asyncio
 
+# Graph-RAG: HippoCPP-backed KùzuDB store with graceful fallback
+_kuzu_store_factory = None
+try:
+    import sys as _sys
+    import os as _os
+    _mcp_dir = _os.path.join(_os.path.dirname(__file__), "..", "mcp_server")
+    if _os.path.isdir(_mcp_dir) and _mcp_dir not in _sys.path:
+        _sys.path.insert(0, _os.path.abspath(_mcp_dir))
+    from kuzu_store import get_kuzu_store as _get_kuzu_store
+    _kuzu_store_factory = _get_kuzu_store
+except ImportError:
+    _kuzu_store_factory = None
+
+
+def _parse_json_arg(value: Any, default: Any) -> Any:
+    if value is None:
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(str(value))
+    except Exception:
+        return default
+
 
 class VocabularyClient:
     """Client for OData Vocabularies service - Analytics vocabulary integration."""
@@ -122,7 +146,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "pal_classification", "pal_regression", "pal_clustering",
-            "pal_forecast", "pal_anomaly", "mangle_query"
+            "pal_forecast", "pal_anomaly", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         self.facts["agent_requires_approval"] = {
@@ -196,11 +221,136 @@ class AICorePALAgent:
         self.vocab_client = VocabularyClient("http://localhost:9150")
         self.audit_log: List[Dict] = []
     
+    async def handle_kuzu_index(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Index PAL algorithms, HANA tables, mesh services, and query intents into K\u00f9zuDB."""
+        if _kuzu_store_factory is None:
+            return {"error": "K\u00f9zuDB not available; install hippocpp or kuzu>=0.7.0"}
+        store = _kuzu_store_factory()
+        if not store.available():
+            return {"error": "K\u00f9zuDB backend unavailable; check hippocpp installation"}
+        store.ensure_schema()
+
+        algos_indexed = 0
+        tables_indexed = 0
+        services_indexed = 0
+        intents_indexed = 0
+
+        raw_algos = _parse_json_arg(args.get("algorithms", "[]"), [])
+        if isinstance(raw_algos, list):
+            for a in raw_algos:
+                if not isinstance(a, dict):
+                    continue
+                algo_id = str(a.get("algoId", "")).strip()
+                if not algo_id:
+                    continue
+                store.upsert_pal_algorithm(
+                    algo_id,
+                    str(a.get("name", "")),
+                    str(a.get("category", "")),
+                    str(a.get("procedure", "")),
+                    str(a.get("description", "")),
+                )
+                algos_indexed += 1
+                related = str(a.get("relatedAlgo", "")).strip()
+                if related:
+                    store.link_related_algos(algo_id, related)
+
+        raw_tables = _parse_json_arg(args.get("hana_tables", "[]"), [])
+        if isinstance(raw_tables, list):
+            for t in raw_tables:
+                if not isinstance(t, dict):
+                    continue
+                table_id = str(t.get("tableId", "")).strip()
+                if not table_id:
+                    continue
+                store.upsert_hana_table(
+                    table_id,
+                    str(t.get("name", "")),
+                    str(t.get("schema_name", "")),
+                    str(t.get("table_type", "")),
+                )
+                tables_indexed += 1
+                executes_on = str(t.get("executedBy", "")).strip()
+                if executes_on:
+                    store.link_algo_table(executes_on, table_id)
+
+        raw_services = _parse_json_arg(args.get("mesh_services", "[]"), [])
+        if isinstance(raw_services, list):
+            for s in raw_services:
+                if not isinstance(s, dict):
+                    continue
+                service_id = str(s.get("serviceId", "")).strip()
+                if not service_id:
+                    continue
+                store.upsert_mesh_service(
+                    service_id,
+                    str(s.get("name", "")),
+                    str(s.get("url", "")),
+                    int(s.get("port", 0)),
+                    int(s.get("priority", 1)),
+                )
+                services_indexed += 1
+
+        raw_intents = _parse_json_arg(args.get("query_intents", "[]"), [])
+        if isinstance(raw_intents, list):
+            for i in raw_intents:
+                if not isinstance(i, dict):
+                    continue
+                intent_id = str(i.get("intentId", "")).strip()
+                if not intent_id:
+                    continue
+                store.upsert_query_intent(
+                    intent_id,
+                    str(i.get("name", "")),
+                    str(i.get("pattern", "")),
+                    str(i.get("category", "")),
+                )
+                intents_indexed += 1
+                routes_to = str(i.get("routesTo", "")).strip()
+                if routes_to:
+                    store.link_intent_service(intent_id, routes_to)
+                served_by = str(i.get("servedBy", "")).strip()
+                if served_by:
+                    store.link_intent_algo(intent_id, served_by)
+
+        return {
+            "algos_indexed": algos_indexed,
+            "tables_indexed": tables_indexed,
+            "services_indexed": services_indexed,
+            "intents_indexed": intents_indexed,
+        }
+
+    async def handle_kuzu_query(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a read-only Cypher query against the K\u00f9zuDB graph (HippoCPP backend)."""
+        cypher = str(args.get("cypher", "") or "").strip()
+        if not cypher:
+            return {"error": "cypher is required"}
+        upper = cypher.upper().lstrip()
+        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
+            if upper.startswith(disallowed):
+                return {"error": "Write Cypher statements are not permitted via this tool"}
+        if _kuzu_store_factory is None:
+            return {"error": "K\u00f9zuDB not available; install hippocpp or kuzu>=0.7.0"}
+        store = _kuzu_store_factory()
+        if not store.available():
+            return {"error": "K\u00f9zuDB backend unavailable; check hippocpp installation"}
+        params = _parse_json_arg(args.get("params", "{}"), {})
+        if not isinstance(params, dict):
+            params = {}
+        rows = store.run_query(cypher, params)
+        return {"rows": rows, "rowCount": len(rows)}
+
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         context = context or {}
         tool = context.get("tool", "pal_classification")
         timestamp = datetime.now(timezone.utc).isoformat()
-        
+
+        # Dispatch graph-RAG tools directly
+        if tool == "kuzu_index":
+            return await self.handle_kuzu_index(context.get("args", {}))
+        if tool == "kuzu_query":
+            return await self.handle_kuzu_query(context.get("args", {}))
+
         # Always vLLM for HANA data
         backend = "vllm"
         endpoint = self.vllm_endpoint
@@ -247,13 +397,28 @@ class AICorePALAgent:
             
             self._log_audit("success", tool, backend, prompt)
             
-            return {
+            # A3 — attach graph context from KùzuDB when available
+            graph_context = None
+            if _kuzu_store_factory is not None:
+                try:
+                    store = _kuzu_store_factory()
+                    if store.available():
+                        ctx = store.get_algos_for_intent(tool)
+                        if ctx:
+                            graph_context = ctx
+                except Exception:
+                    pass
+
+            response = {
                 "status": "success",
                 "backend": backend,
                 "routing_reason": routing_reason,
                 "result": result,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
+            if graph_context is not None:
+                response["graphContext"] = graph_context
+            return response
             
         except Exception as e:
             self._log_audit("error", tool, backend, prompt, str(e))

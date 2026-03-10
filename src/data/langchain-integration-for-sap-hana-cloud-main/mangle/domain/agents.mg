@@ -29,6 +29,8 @@ agent_can_use("langchain-hana-agent", "hana_query").
 agent_can_use("langchain-hana-agent", "get_schema_info").
 agent_can_use("langchain-hana-agent", "list_tables").
 agent_can_use("langchain-hana-agent", "mangle_query").
+agent_can_use("langchain-hana-agent", "kuzu_index").
+agent_can_use("langchain-hana-agent", "kuzu_query").
 
 agent_requires_approval("langchain-hana-agent", "execute_sql").
 agent_requires_approval("langchain-hana-agent", "insert_embeddings").
@@ -144,6 +146,7 @@ guardrails_active("hana_query").
 guardrails_active("get_schema_info").
 guardrails_active("list_tables").
 guardrails_active("mangle_query").
+guardrails_active("kuzu_query").
 
 requires_guardrails("hana_vector_search").
 requires_guardrails("hana_query").

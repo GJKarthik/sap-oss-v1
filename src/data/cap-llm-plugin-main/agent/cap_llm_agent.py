@@ -31,8 +31,9 @@ class MangleEngine:
         }
         
         self.facts["agent_can_use"] = {
-            "cap_chat", "cap_rag_query", "cap_embed", 
-            "get_rag_response", "mangle_query"
+            "cap_chat", "cap_rag_query", "cap_embed",
+            "get_rag_response", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         self.facts["agent_requires_approval"] = {

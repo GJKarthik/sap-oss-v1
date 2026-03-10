@@ -28,6 +28,8 @@ agent_can_use("cap-llm-agent", "cap_rag_query").
 agent_can_use("cap-llm-agent", "cap_embed").
 agent_can_use("cap-llm-agent", "get_rag_response").
 agent_can_use("cap-llm-agent", "mangle_query").
+agent_can_use("cap-llm-agent", "kuzu_index").
+agent_can_use("cap-llm-agent", "kuzu_query").
 
 agent_requires_approval("cap-llm-agent", "update_vector_store").
 agent_requires_approval("cap-llm-agent", "delete_embeddings").
@@ -121,6 +123,7 @@ guardrails_active("cap_chat").
 guardrails_active("cap_rag_query").
 guardrails_active("cap_embed").
 guardrails_active("mangle_query").
+guardrails_active("kuzu_query").
 
 requires_guardrails("cap_chat").
 requires_guardrails("cap_rag_query").

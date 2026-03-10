@@ -10,6 +10,9 @@ service_registry("langchain-vector",    "http://localhost:9140/mcp",  "hana-vect
 service_registry("langchain-rag",       "http://localhost:9140/mcp",  "rag-chain").
 service_registry("langchain-embed",     "http://localhost:9140/mcp",  "text-embedding").
 
+# Graph-RAG: embedded KùzuDB vector-store/schema/deployment relationship graph
+service_registry("langchain-graph",    "http://localhost:9140/mcp",  "graph-rag").
+
 # 2. Intent Routing
 resolve_service_for_intent(/chat, URL) :-
     service_registry("langchain-chat", URL, _).
@@ -23,6 +26,12 @@ resolve_service_for_intent(/rag, URL) :-
 resolve_service_for_intent(/embed, URL) :-
     service_registry("langchain-embed", URL, _).
 
+resolve_service_for_intent(/graph_index, URL) :-
+    service_registry("langchain-graph", URL, _).
+
+resolve_service_for_intent(/graph_query, URL) :-
+    service_registry("langchain-graph", URL, _).
+
 # 3. Tool Routing
 tool_service("langchain_chat", "langchain-chat").
 tool_service("langchain_vector_store", "langchain-vector").
@@ -32,7 +41,9 @@ tool_service("langchain_rag_chain", "langchain-rag").
 tool_service("langchain_embeddings", "langchain-embed").
 tool_service("langchain_load_documents", "langchain-rag").
 tool_service("langchain_split_text", "langchain-rag").
-tool_service("mangle_query", "langchain-chat").
+tool_service("mangle_query",  "langchain-chat").
+tool_service("kuzu_index",    "langchain-graph").
+tool_service("kuzu_query",    "langchain-graph").
 
 # 4. Chain Configuration
 chain_type("rag", "retrieval-augmented-generation").

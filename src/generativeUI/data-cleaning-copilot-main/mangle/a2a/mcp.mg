@@ -14,6 +14,9 @@ service_registry("dcc-ai-chat",     "http://localhost:9110/mcp",  "claude-3.5-so
 # OData Vocabularies Service - Analytics/Aggregation for S/4 Finance
 service_registry("odata-vocab",     "http://localhost:9150/mcp",  "odata-vocab-annotator").
 
+# Graph-RAG: embedded KùzuDB schema/relationship graph
+service_registry("dcc-graph",       "http://localhost:9110/mcp",  "graph-rag").
+
 # 2. Intent Routing
 resolve_service_for_intent(/quality_check, URL) :-
     service_registry("dcc-quality", URL, _).
@@ -33,6 +36,12 @@ resolve_service_for_intent(/finance_field_classification, URL) :-
 resolve_service_for_intent(/gl_subledger_validation, URL) :-
     service_registry("odata-vocab", URL, _).
 
+resolve_service_for_intent(/graph_index, URL) :-
+    service_registry("dcc-graph", URL, _).
+
+resolve_service_for_intent(/graph_query, URL) :-
+    service_registry("dcc-graph", URL, _).
+
 # 3. Tool Routing
 tool_service("data_quality_check", "dcc-quality").
 tool_service("schema_analysis", "dcc-quality").
@@ -41,6 +50,8 @@ tool_service("anomaly_detection", "dcc-anomaly").
 tool_service("generate_cleaning_query", "dcc-ai-chat").
 tool_service("ai_chat", "dcc-ai-chat").
 tool_service("mangle_query", "dcc-quality").
+tool_service("kuzu_index",   "dcc-graph").
+tool_service("kuzu_query",   "dcc-graph").
 
 # OData Vocabulary Tools for S/4 Finance Data Classification
 tool_service("get_finance_vocabulary_terms", "odata-vocab").

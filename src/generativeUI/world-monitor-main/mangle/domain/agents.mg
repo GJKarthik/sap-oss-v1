@@ -27,6 +27,8 @@ agent_can_use("world-monitor-agent", "analyze_trends").
 agent_can_use("world-monitor-agent", "search_events").
 agent_can_use("world-monitor-agent", "get_headlines").
 agent_can_use("world-monitor-agent", "mangle_query").
+agent_can_use("world-monitor-agent", "kuzu_index").
+agent_can_use("world-monitor-agent", "kuzu_query").
 
 agent_requires_approval("world-monitor-agent", "impact_assessment").
 agent_requires_approval("world-monitor-agent", "competitor_analysis").
@@ -125,6 +127,7 @@ safety_check_passed(Tool) :-
 guardrails_active("summarize_news").
 guardrails_active("analyze_trends").
 guardrails_active("search_events").
+guardrails_active("kuzu_query").
 
 requires_guardrails("analyze_trends").
 

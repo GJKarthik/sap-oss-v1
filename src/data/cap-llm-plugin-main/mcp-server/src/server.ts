@@ -12,6 +12,16 @@ import * as https from 'https';
 import { URL } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 
+// Graph-RAG: load KùzuDB store with graceful fallback
+let _getKuzuStore: (() => import('./kuzu-store').KuzuStore) | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const kuzuMod = require('./kuzu-store');
+  _getKuzuStore = kuzuMod.getKuzuStore as () => import('./kuzu-store').KuzuStore;
+} catch {
+  _getKuzuStore = null;
+}
+
 const MAX_JSON_BODY_BYTES = 1024 * 1024;
 const MAX_TOOL_TOKENS = 8192;
 const MAX_TOP_K = 100;
@@ -345,6 +355,64 @@ class MCPServer {
       },
     });
     this.toolHandlers.set('mangle_query', this.handleMangleQuery.bind(this));
+
+    // Graph-RAG: index CAP LLM entities into KùzuDB
+    this.tools.set('kuzu_index', {
+      name: 'kuzu_index',
+      description:
+        'Index CAP LLM Plugin entities into the embedded KùzuDB graph database. ' +
+        'Stores CapService nodes, LlmDeployment nodes, RagTable nodes, and their ' +
+        'relationships (SERVED_BY, USES_TABLE, ROUTES_TO). ' +
+        'Call before cap_llm_rag to enable graph-context enrichment.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          services: {
+            type: 'string',
+            description:
+              'JSON array of service definitions: ' +
+              '[{serviceId, serviceName?, serviceType?, dataClass?, servedBy?: string, usesTable?: string, routesTo?: string}]',
+          },
+          deployments: {
+            type: 'string',
+            description:
+              'JSON array of deployment definitions: ' +
+              '[{deploymentId, modelName?, resourceGroup?, status?}]',
+          },
+          ragTables: {
+            type: 'string',
+            description:
+              'JSON array of RAG table definitions: ' +
+              '[{tableId, tableName?, description?, schema?}]',
+          },
+        },
+      },
+    });
+    this.toolHandlers.set('kuzu_index', this.handleKuzuIndexTool.bind(this));
+
+    // Graph-RAG: run a read-only Cypher query against KùzuDB
+    this.tools.set('kuzu_query', {
+      name: 'kuzu_query',
+      description:
+        'Execute a read-only Cypher query against the embedded KùzuDB graph database ' +
+        'and return matching rows as JSON. ' +
+        'Use for service graph traversal, deployment lookup, RAG table discovery.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          cypher: {
+            type: 'string',
+            description: 'Cypher query string (MATCH … RETURN only)',
+          },
+          params: {
+            type: 'string',
+            description: 'Query parameters as JSON object (optional)',
+          },
+        },
+        required: ['cypher'],
+      },
+    });
+    this.toolHandlers.set('kuzu_query', this.handleKuzuQueryTool.bind(this));
   }
 
   private registerResources(): void {
@@ -391,7 +459,24 @@ class MCPServer {
 
   private async handleRag(args: Record<string, unknown>): Promise<unknown> {
     const topK = clampInt(args.top_k, 5, 1, MAX_TOP_K);
-    return { query: args.query, table_name: args.table_name, top_k: topK, status: 'RAG query placeholder - connect to HANA Cloud' };
+    const base: Record<string, unknown> = { query: args.query, table_name: args.table_name, top_k: topK, status: 'RAG query placeholder - connect to HANA Cloud' };
+
+    // C4 — attach graph context from KùzuDB when available
+    if (_getKuzuStore) {
+      const store = _getKuzuStore();
+      if (store.available()) {
+        const serviceId = String(args.service_id ?? args.table_name ?? '').trim();
+        const tableId = String(args.table_name ?? '').trim();
+        const [svcCtx, tblCtx] = await Promise.all([
+          serviceId ? store.getServiceContext(serviceId) : Promise.resolve([]),
+          tableId   ? store.getRagContext(tableId)       : Promise.resolve([]),
+        ]);
+        const ctx = [...svcCtx, ...tblCtx];
+        if (ctx.length > 0) base['graphContext'] = ctx;
+      }
+    }
+
+    return base;
   }
 
   private async handleVectorSearch(args: Record<string, unknown>): Promise<unknown> {
@@ -444,6 +529,110 @@ class MCPServer {
     }
 
     return { predicate, results: [], message: 'Unknown predicate' };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Kuzu tool handlers
+  // ---------------------------------------------------------------------------
+
+  private async handleKuzuIndexTool(args: Record<string, unknown>): Promise<unknown> {
+    if (!_getKuzuStore) {
+      return { error: 'KùzuDB not available; add "kuzu": "^0.7.0" to mcp-server/package.json' };
+    }
+    const store = _getKuzuStore();
+    if (!store.available()) {
+      return { error: 'KùzuDB not installed; add "kuzu": "^0.7.0" to mcp-server/package.json' };
+    }
+    await store.ensureSchema();
+
+    let servicesIndexed = 0;
+    let deploymentsIndexed = 0;
+    let ragTablesIndexed = 0;
+
+    // Index deployments first (referenced by services)
+    const rawDeployments = safeJsonParse<unknown[]>(args['deployments'] as string ?? '[]', []);
+    if (Array.isArray(rawDeployments)) {
+      for (const d of rawDeployments) {
+        if (!d || typeof d !== 'object') continue;
+        const dep = d as Record<string, unknown>;
+        const deploymentId = String(dep['deploymentId'] ?? '').trim();
+        if (!deploymentId) continue;
+        await store.upsertDeployment(
+          deploymentId,
+          String(dep['modelName'] ?? ''),
+          String(dep['resourceGroup'] ?? 'default'),
+          String(dep['status'] ?? 'unknown'),
+        );
+        deploymentsIndexed++;
+      }
+    }
+
+    // Index RAG tables
+    const rawTables = safeJsonParse<unknown[]>(args['ragTables'] as string ?? '[]', []);
+    if (Array.isArray(rawTables)) {
+      for (const t of rawTables) {
+        if (!t || typeof t !== 'object') continue;
+        const tbl = t as Record<string, unknown>;
+        const tableId = String(tbl['tableId'] ?? '').trim();
+        if (!tableId) continue;
+        await store.upsertRagTable(
+          tableId,
+          String(tbl['tableName'] ?? ''),
+          String(tbl['description'] ?? ''),
+          String(tbl['schema'] ?? ''),
+        );
+        ragTablesIndexed++;
+      }
+    }
+
+    // Index services + links
+    const rawServices = safeJsonParse<unknown[]>(args['services'] as string ?? '[]', []);
+    if (Array.isArray(rawServices)) {
+      for (const s of rawServices) {
+        if (!s || typeof s !== 'object') continue;
+        const svc = s as Record<string, unknown>;
+        const serviceId = String(svc['serviceId'] ?? '').trim();
+        if (!serviceId) continue;
+        await store.upsertService(
+          serviceId,
+          String(svc['serviceName'] ?? ''),
+          String(svc['serviceType'] ?? ''),
+          String(svc['dataClass'] ?? 'internal'),
+        );
+        servicesIndexed++;
+        const servedBy = String(svc['servedBy'] ?? '').trim();
+        if (servedBy) await store.linkServiceDeployment(serviceId, servedBy);
+        const usesTable = String(svc['usesTable'] ?? '').trim();
+        if (usesTable) await store.linkServiceTable(serviceId, usesTable);
+        const routesTo = String(svc['routesTo'] ?? '').trim();
+        if (routesTo) await store.linkServiceRoute(serviceId, routesTo);
+      }
+    }
+
+    return { servicesIndexed, deploymentsIndexed, ragTablesIndexed };
+  }
+
+  private async handleKuzuQueryTool(args: Record<string, unknown>): Promise<unknown> {
+    const cypher = String(args['cypher'] ?? '').trim();
+    if (!cypher) {
+      return { error: 'cypher is required' };
+    }
+    const upper = cypher.toUpperCase().trimStart();
+    for (const disallowed of ['CREATE ', 'MERGE ', 'DELETE ', 'SET ', 'REMOVE ', 'DROP ']) {
+      if (upper.startsWith(disallowed)) {
+        return { error: 'Write Cypher statements are not permitted via this tool' };
+      }
+    }
+    if (!_getKuzuStore) {
+      return { error: 'KùzuDB not available; add "kuzu": "^0.7.0" to mcp-server/package.json' };
+    }
+    const store = _getKuzuStore();
+    if (!store.available()) {
+      return { error: 'KùzuDB not installed; add "kuzu": "^0.7.0" to mcp-server/package.json' };
+    }
+    const params = safeJsonParse<Record<string, unknown>>(args['params'] as string ?? '{}', {});
+    const rows = await store.runQuery(cypher, typeof params === 'object' && params !== null ? params : {});
+    return { rows, rowCount: rows.length };
   }
 
   // MCP Protocol
@@ -583,6 +772,7 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
+if (require.main === module) {
 httpServer.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -593,10 +783,13 @@ httpServer.listen(PORT, () => {
 Server: http://localhost:${PORT}
 
 Tools: cap_llm_chat, cap_llm_rag, cap_llm_vector_search,
-       cap_llm_anonymize, cap_llm_embed, mangle_query
+       cap_llm_anonymize, cap_llm_embed, mangle_query,
+       kuzu_index, kuzu_query
 
 Resources: cap://services, mangle://facts, mangle://rules
 `);
 });
+
+} // end if (require.main === module)
 
 export { MCPServer, httpServer };

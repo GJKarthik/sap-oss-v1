@@ -27,6 +27,8 @@ agent_can_use("aicore-streaming-agent", "batch_complete").
 agent_can_use("aicore-streaming-agent", "health_check").
 agent_can_use("aicore-streaming-agent", "list_models").
 agent_can_use("aicore-streaming-agent", "mangle_query").
+agent_can_use("aicore-streaming-agent", "kuzu_index").
+agent_can_use("aicore-streaming-agent", "kuzu_query").
 
 agent_requires_approval("aicore-streaming-agent", "change_config").
 agent_requires_approval("aicore-streaming-agent", "update_credentials").
@@ -100,6 +102,7 @@ safety_check_passed(Tool) :-
 
 guardrails_active("stream_complete").
 guardrails_active("batch_complete").
+guardrails_active("kuzu_query").
 
 # =============================================================================
 # AUTONOMY LEVEL RULES

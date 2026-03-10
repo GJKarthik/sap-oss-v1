@@ -1,9 +1,9 @@
 {
-  "corpus": "/Users/user/Documents/sap-oss/mangle-query-service/hippocpp/parity/corpus/smoke.json",
-  "left_command": "bash /Users/user/Documents/sap-oss/mangle-query-service/hippocpp/scripts/run_backend_kuzu.sh {corpus}",
+  "corpus": "/Users/user/Documents/sap-oss/src/training/hippocpp/parity/corpus/smoke.json",
+  "left_command": "bash /Users/user/Documents/sap-oss/src/training/hippocpp/scripts/run_backend_kuzu.sh {corpus}",
   "left_name": "kuzu",
   "mismatch_count": 0,
   "mismatches": [],
-  "right_command": "bash /Users/user/Documents/sap-oss/mangle-query-service/hippocpp/scripts/run_backend_hippocpp.sh {corpus}",
+  "right_command": "bash /Users/user/Documents/sap-oss/src/training/hippocpp/scripts/run_backend_hippocpp.sh {corpus}",
   "right_name": "hippocpp"
 }

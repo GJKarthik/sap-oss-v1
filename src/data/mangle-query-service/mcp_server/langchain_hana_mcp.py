@@ -26,6 +26,29 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Graph-RAG: HippoCPP-backed KùzuDB store with graceful fallback
+_kuzu_store_factory = None
+try:
+    from mcp_server.kuzu_store import get_kuzu_store as _get_kuzu_store
+    _kuzu_store_factory = _get_kuzu_store
+except ImportError:
+    try:
+        from kuzu_store import get_kuzu_store as _get_kuzu_store  # type: ignore[import]
+        _kuzu_store_factory = _get_kuzu_store
+    except ImportError:
+        _kuzu_store_factory = None
+
+
+def _parse_json_arg(value: Any, default: Any) -> Any:
+    if value is None:
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(str(value))
+    except Exception:
+        return default
+
 # Configuration
 MCP_HOST = os.getenv("MCP_HOST", "localhost")
 MCP_PORT = int(os.getenv("MCP_PORT", "9150"))
@@ -239,6 +262,71 @@ class LangChainHanaMCPServer:
                     "properties": {}
                 }
             },
+            {
+                "name": "kuzu_index",
+                "description": (
+                    "Index mangle-query-service routing entities into the embedded K\u00f9zuDB graph "
+                    "(HippoCPP backend). Stores ResolutionPath, DataSource, QueryCategory, "
+                    "ModelBackend nodes and their edges (RESOLVES_VIA, CLASSIFIES_TO, "
+                    "SERVED_BY, RELATED_PATH). Call before kuzu_query or hana_vector_search "
+                    "to enable graph-context enrichment."
+                ),
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "resolution_paths": {
+                            "type": "string",
+                            "description": (
+                                "JSON array: [{pathId, name?, priority?, score?, description?, "
+                                "servedBy?: backendId, relatedPath?: pathId}]"
+                            ),
+                        },
+                        "data_sources": {
+                            "type": "string",
+                            "description": (
+                                "JSON array: [{sourceId, name?, sourceType?, table_name?, "
+                                "schema_name?, resolvesVia?: pathId}]"
+                            ),
+                        },
+                        "query_categories": {
+                            "type": "string",
+                            "description": (
+                                "JSON array: [{categoryId, name?, confidence?, description?, "
+                                "classifiesTo?: pathId}]"
+                            ),
+                        },
+                        "model_backends": {
+                            "type": "string",
+                            "description": (
+                                "JSON array: [{backendId, name?, provider?, priority?, timeout_s?}]"
+                            ),
+                        },
+                    },
+                },
+            },
+            {
+                "name": "kuzu_query",
+                "description": (
+                    "Execute a read-only Cypher query against the embedded K\u00f9zuDB graph "
+                    "(HippoCPP backend) and return matching rows as JSON. "
+                    "Use for resolution path traversal, data source lookup, "
+                    "and routing context discovery."
+                ),
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "cypher": {
+                            "type": "string",
+                            "description": "Cypher query string (MATCH \u2026 RETURN only)",
+                        },
+                        "params": {
+                            "type": "string",
+                            "description": "Query parameters as JSON object (optional)",
+                        },
+                    },
+                    "required": ["cypher"],
+                },
+            },
         ]
     
     # =========================================================================
@@ -263,6 +351,8 @@ class LangChainHanaMCPServer:
             "hana_aggregate": self._handle_aggregate,
             "hana_timeseries": self._handle_timeseries,
             "hana_health": self._handle_health,
+            "kuzu_index": self._handle_kuzu_index,
+            "kuzu_query": self._handle_kuzu_query,
         }
         
         handler = handlers.get(tool_name)
@@ -283,7 +373,7 @@ class LangChainHanaMCPServer:
         
         results = await self._bridge.similarity_search(query, k, filter_dict)
         
-        return {
+        base = {
             "results": [
                 {
                     "content": r.content,
@@ -295,6 +385,19 @@ class LangChainHanaMCPServer:
             "count": len(results),
             "source": "hana_vector",
         }
+
+        # M3 — attach graph context from K\u00f9zuDB when available
+        if _kuzu_store_factory is not None:
+            try:
+                store = _kuzu_store_factory()
+                if store.available():
+                    ctx = store.get_paths_for_category("RAG_RETRIEVAL")
+                    if ctx:
+                        base["graphContext"] = ctx
+            except Exception:
+                pass
+
+        return base
     
     async def _handle_mmr_search(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Handle hana_mmr_search tool."""
@@ -308,7 +411,7 @@ class LangChainHanaMCPServer:
             query, k, fetch_k, lambda_mult, filter_dict
         )
         
-        return {
+        base = {
             "results": [
                 {
                     "content": r.content,
@@ -320,6 +423,19 @@ class LangChainHanaMCPServer:
             "count": len(results),
             "source": "hana_mmr",
         }
+
+        # M3 — attach graph context from K\u00f9zuDB when available
+        if _kuzu_store_factory is not None:
+            try:
+                store = _kuzu_store_factory()
+                if store.available():
+                    ctx = store.get_paths_for_category("RAG_RETRIEVAL")
+                    if ctx:
+                        base["graphContext"] = ctx
+            except Exception:
+                pass
+
+        return base
     
     async def _handle_embed(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Handle hana_embed tool."""
@@ -430,6 +546,134 @@ class LangChainHanaMCPServer:
     async def _handle_health(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Handle hana_health tool."""
         return await self._bridge.health_check()
+
+    # =========================================================================
+    # Kuzu / HippoCPP Graph-RAG handlers
+    # =========================================================================
+
+    async def _handle_kuzu_index(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle kuzu_index tool — index routing entities into K\u00f9zuDB."""
+        if _kuzu_store_factory is None:
+            return {"error": "K\u00f9zuDB not available; install hippocpp or kuzu>=0.7.0"}
+        store = _kuzu_store_factory()
+        if not store.available():
+            return {"error": "K\u00f9zuDB backend unavailable; check hippocpp installation"}
+        store.ensure_schema()
+
+        paths_indexed = 0
+        sources_indexed = 0
+        categories_indexed = 0
+        backends_indexed = 0
+
+        # Index model backends first (no deps)
+        raw_backends = _parse_json_arg(args.get("model_backends", "[]"), [])
+        if isinstance(raw_backends, list):
+            for b in raw_backends:
+                if not isinstance(b, dict):
+                    continue
+                backend_id = str(b.get("backendId", "")).strip()
+                if not backend_id:
+                    continue
+                store.upsert_model_backend(
+                    backend_id,
+                    str(b.get("name", "")),
+                    str(b.get("provider", "")),
+                    int(b.get("priority", 100)),
+                    int(b.get("timeout_s", 60)),
+                )
+                backends_indexed += 1
+
+        # Index resolution paths
+        raw_paths = _parse_json_arg(args.get("resolution_paths", "[]"), [])
+        if isinstance(raw_paths, list):
+            for p in raw_paths:
+                if not isinstance(p, dict):
+                    continue
+                path_id = str(p.get("pathId", "")).strip()
+                if not path_id:
+                    continue
+                store.upsert_resolution_path(
+                    path_id,
+                    str(p.get("name", "")),
+                    int(p.get("priority", 50)),
+                    int(p.get("score", 50)),
+                    str(p.get("description", "")),
+                )
+                paths_indexed += 1
+                served_by = str(p.get("servedBy", "")).strip()
+                if served_by:
+                    store.link_path_backend(path_id, served_by)
+                related = str(p.get("relatedPath", "")).strip()
+                if related:
+                    store.link_paths(path_id, related)
+
+        # Index data sources
+        raw_sources = _parse_json_arg(args.get("data_sources", "[]"), [])
+        if isinstance(raw_sources, list):
+            for s in raw_sources:
+                if not isinstance(s, dict):
+                    continue
+                source_id = str(s.get("sourceId", "")).strip()
+                if not source_id:
+                    continue
+                store.upsert_data_source(
+                    source_id,
+                    str(s.get("name", "")),
+                    str(s.get("sourceType", "")),
+                    str(s.get("table_name", "")),
+                    str(s.get("schema_name", "")),
+                )
+                sources_indexed += 1
+                resolves_via = str(s.get("resolvesVia", "")).strip()
+                if resolves_via:
+                    store.link_source_path(source_id, resolves_via)
+
+        # Index query categories
+        raw_cats = _parse_json_arg(args.get("query_categories", "[]"), [])
+        if isinstance(raw_cats, list):
+            for c in raw_cats:
+                if not isinstance(c, dict):
+                    continue
+                category_id = str(c.get("categoryId", "")).strip()
+                if not category_id:
+                    continue
+                store.upsert_query_category(
+                    category_id,
+                    str(c.get("name", "")),
+                    int(c.get("confidence", 70)),
+                    str(c.get("description", "")),
+                )
+                categories_indexed += 1
+                classifies_to = str(c.get("classifiesTo", "")).strip()
+                if classifies_to:
+                    store.link_category_path(category_id, classifies_to)
+
+        return {
+            "paths_indexed": paths_indexed,
+            "sources_indexed": sources_indexed,
+            "categories_indexed": categories_indexed,
+            "backends_indexed": backends_indexed,
+        }
+
+    async def _handle_kuzu_query(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle kuzu_query tool — read-only Cypher query against K\u00f9zuDB."""
+        cypher = str(args.get("cypher", "") or "").strip()
+        if not cypher:
+            return {"error": "cypher is required"}
+        upper = cypher.upper().lstrip()
+        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
+            if upper.startswith(disallowed):
+                return {"error": "Write Cypher statements are not permitted via this tool"}
+        if _kuzu_store_factory is None:
+            return {"error": "K\u00f9zuDB not available; install hippocpp or kuzu>=0.7.0"}
+        store = _kuzu_store_factory()
+        if not store.available():
+            return {"error": "K\u00f9zuDB backend unavailable; check hippocpp installation"}
+        params = _parse_json_arg(args.get("params", "{}"), {})
+        if not isinstance(params, dict):
+            params = {}
+        rows = store.run_query(cypher, params)
+        return {"rows": rows, "rowCount": len(rows)}
     
     # =========================================================================
     # JSON-RPC Server

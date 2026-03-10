@@ -28,6 +28,8 @@ agent_can_use("odata-vocab-agent", "generate_annotation").
 agent_can_use("odata-vocab-agent", "validate_annotation").
 agent_can_use("odata-vocab-agent", "list_vocabularies").
 agent_can_use("odata-vocab-agent", "mangle_query").
+agent_can_use("odata-vocab-agent", "kuzu_index").
+agent_can_use("odata-vocab-agent", "kuzu_query").
 
 # No approval required - public documentation
 # agent_requires_approval - none for this service
@@ -100,6 +102,7 @@ guardrails_active("lookup_vocabulary").
 guardrails_active("lookup_term").
 guardrails_active("generate_annotation").
 guardrails_active("validate_annotation").
+guardrails_active("kuzu_query").
 
 # =============================================================================
 # AUTONOMY LEVEL RULES - L3 (higher autonomy for public docs)

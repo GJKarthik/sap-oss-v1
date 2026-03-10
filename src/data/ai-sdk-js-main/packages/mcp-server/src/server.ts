@@ -12,6 +12,15 @@ import * as https from 'https';
 import { URL } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuid } from 'uuid';
+
+let _getKuzuStore: (() => import('./kuzu-store').KuzuStore) | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const kuzuMod = require('./kuzu-store');
+  _getKuzuStore = kuzuMod.getKuzuStore as () => import('./kuzu-store').KuzuStore;
+} catch {
+  _getKuzuStore = null;
+}
 const REMOTE_MCP_TIMEOUT_MS = 2500;
 
 // =============================================================================
@@ -341,6 +350,64 @@ class MCPServer {
       },
     });
     this.toolHandlers.set('mangle_query', this.handleMangleQueryTool.bind(this));
+
+    // Graph-RAG: index AI SDK entities into KùzuDB
+    this.tools.set('kuzu_index', {
+      name: 'kuzu_index',
+      description:
+        'Index SAP AI SDK entities into the embedded KùzuDB graph database. ' +
+        'Stores AiDeployment nodes, AiModel nodes, OrchestrationScenario nodes, and their ' +
+        'relationships (USES_MODEL, RUNS_SCENARIO, ROUTES_TO). ' +
+        'Call before list_deployments to enable graph-context enrichment.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          deployments: {
+            type: 'string',
+            description:
+              'JSON array of deployment definitions: ' +
+              '[{deploymentId, modelName?, resourceGroup?, status?, usesModel?: string, runsScenario?: string}]',
+          },
+          models: {
+            type: 'string',
+            description:
+              'JSON array of model definitions: ' +
+              '[{modelId, modelFamily?, provider?, capabilities?}]',
+          },
+          scenarios: {
+            type: 'string',
+            description:
+              'JSON array of scenario definitions: ' +
+              '[{scenarioId, name?, description?, dataClass?, routesTo?: string}]',
+          },
+        },
+      },
+    });
+    this.toolHandlers.set('kuzu_index', this.handleKuzuIndexTool.bind(this));
+
+    // Graph-RAG: run a read-only Cypher query against KùzuDB
+    this.tools.set('kuzu_query', {
+      name: 'kuzu_query',
+      description:
+        'Execute a read-only Cypher query against the embedded KùzuDB graph database ' +
+        'and return matching rows as JSON. ' +
+        'Use for deployment lookup, model graph traversal, scenario analysis.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          cypher: {
+            type: 'string',
+            description: 'Cypher query string (MATCH … RETURN only)',
+          },
+          params: {
+            type: 'string',
+            description: 'Query parameters as JSON object (optional)',
+          },
+        },
+        required: ['cypher'],
+      },
+    });
+    this.toolHandlers.set('kuzu_query', this.handleKuzuQueryTool.bind(this));
   }
 
   // ===========================================================================
@@ -538,11 +605,27 @@ class MCPServer {
 
   private async handleListDeploymentsTool(_args: Record<string, unknown>): Promise<unknown> {
     const config = getConfig();
-    const result = await aicoreRequest(config, 'GET', '/v2/lm/deployments') as { resources?: unknown[] };
-    
+    const result = await aicoreRequest(config, 'GET', '/v2/lm/deployments') as { resources?: Array<Record<string, unknown>> };
+
     // Update Mangle facts
     this.facts.set('deployment', result.resources || []);
-    
+
+    // M4 — attach graph context when KùzuDB has indexed data
+    if (_getKuzuStore) {
+      const store = _getKuzuStore();
+      if (store.available() && Array.isArray(result.resources)) {
+        const enriched = await Promise.all(
+          result.resources.map(async (dep) => {
+            const depId = (dep['id'] ?? dep['deploymentId'] ?? '') as string;
+            if (!depId) return dep;
+            const ctx = await store.getDeploymentContext(depId);
+            return ctx.length > 0 ? { ...dep, graphContext: ctx } : dep;
+          }),
+        );
+        return { ...result, resources: enriched };
+      }
+    }
+
     return result;
   }
 
@@ -572,6 +655,112 @@ class MCPServer {
       status: 'Orchestration not yet implemented',
       message: 'Use orchestration package for full support',
     };
+  }
+
+  private async handleKuzuIndexTool(args: Record<string, unknown>): Promise<unknown> {
+    if (!_getKuzuStore) {
+      return { error: "KùzuDB not available; add \"kuzu\": \"^0.7.0\" to packages/mcp-server/package.json" };
+    }
+    const store = _getKuzuStore();
+    if (!store.available()) {
+      return { error: "KùzuDB not installed; add \"kuzu\": \"^0.7.0\" to packages/mcp-server/package.json" };
+    }
+    await store.ensureSchema();
+
+    let deploymentsIndexed = 0;
+    let modelsIndexed = 0;
+    let scenariosIndexed = 0;
+
+    // Index models first (referenced by deployments)
+    const rawModels = safeJsonParse<unknown[]>(args['models'] as string ?? '[]', []);
+    if (Array.isArray(rawModels)) {
+      for (const m of rawModels) {
+        if (!m || typeof m !== 'object') continue;
+        const model = m as Record<string, unknown>;
+        const modelId = String(model['modelId'] ?? '').trim();
+        if (!modelId) continue;
+        await store.upsertModel(
+          modelId,
+          String(model['modelFamily'] ?? ''),
+          String(model['provider'] ?? ''),
+          String(model['capabilities'] ?? ''),
+        );
+        modelsIndexed++;
+      }
+    }
+
+    // Index scenarios
+    const rawScenarios = safeJsonParse<unknown[]>(args['scenarios'] as string ?? '[]', []);
+    if (Array.isArray(rawScenarios)) {
+      for (const s of rawScenarios) {
+        if (!s || typeof s !== 'object') continue;
+        const scenario = s as Record<string, unknown>;
+        const scenarioId = String(scenario['scenarioId'] ?? '').trim();
+        if (!scenarioId) continue;
+        await store.upsertScenario(
+          scenarioId,
+          String(scenario['name'] ?? ''),
+          String(scenario['description'] ?? ''),
+          String(scenario['dataClass'] ?? 'internal'),
+        );
+        scenariosIndexed++;
+        const routesTo = String(scenario['routesTo'] ?? '').trim();
+        if (routesTo) {
+          await store.linkScenarioDeployment(scenarioId, routesTo);
+        }
+      }
+    }
+
+    // Index deployments
+    const rawDeployments = safeJsonParse<unknown[]>(args['deployments'] as string ?? '[]', []);
+    if (Array.isArray(rawDeployments)) {
+      for (const d of rawDeployments) {
+        if (!d || typeof d !== 'object') continue;
+        const dep = d as Record<string, unknown>;
+        const deploymentId = String(dep['deploymentId'] ?? '').trim();
+        if (!deploymentId) continue;
+        await store.upsertDeployment(
+          deploymentId,
+          String(dep['modelName'] ?? ''),
+          String(dep['resourceGroup'] ?? 'default'),
+          String(dep['status'] ?? 'unknown'),
+        );
+        deploymentsIndexed++;
+        const usesModel = String(dep['usesModel'] ?? '').trim();
+        if (usesModel) {
+          await store.linkDeploymentModel(deploymentId, usesModel);
+        }
+        const runsScenario = String(dep['runsScenario'] ?? '').trim();
+        if (runsScenario) {
+          await store.linkDeploymentScenario(deploymentId, runsScenario);
+        }
+      }
+    }
+
+    return { deploymentsIndexed, modelsIndexed, scenariosIndexed };
+  }
+
+  private async handleKuzuQueryTool(args: Record<string, unknown>): Promise<unknown> {
+    const cypher = String(args['cypher'] ?? '').trim();
+    if (!cypher) {
+      return { error: 'cypher is required' };
+    }
+    const upper = cypher.toUpperCase().trimStart();
+    for (const disallowed of ['CREATE ', 'MERGE ', 'DELETE ', 'SET ', 'REMOVE ', 'DROP ']) {
+      if (upper.startsWith(disallowed)) {
+        return { error: 'Write Cypher statements are not permitted via this tool' };
+      }
+    }
+    const params = safeJsonParse<Record<string, unknown>>(args['params'] as string ?? '{}', {});
+    if (!_getKuzuStore) {
+      return { error: "KùzuDB not available; add \"kuzu\": \"^0.7.0\" to packages/mcp-server/package.json" };
+    }
+    const store = _getKuzuStore();
+    if (!store.available()) {
+      return { error: "KùzuDB not installed; add \"kuzu\": \"^0.7.0\" to packages/mcp-server/package.json" };
+    }
+    const rows = await store.runQuery(cypher, typeof params === 'object' && params !== null ? params : {});
+    return { rows, rowCount: rows.length };
   }
 
   private async handleMangleQueryTool(args: Record<string, unknown>): Promise<unknown> {
@@ -969,6 +1158,7 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
+if (require.main === module) {
 httpServer.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -992,6 +1182,8 @@ Tools:
   - list_deployments    - List AI Core deployments
   - orchestration_run   - Run orchestration scenarios
   - mangle_query        - Query Mangle reasoning engine
+  - kuzu_index          - Index AI SDK entities into KùzuDB graph
+  - kuzu_query          - Read-only Cypher query against KùzuDB graph
 
 Resources:
   - deployment://list   - AI Core deployments
@@ -1003,5 +1195,7 @@ Prompts:
   - data_analysis       - Data analysis template
 `);
 });
+
+} // end if (require.main === module)
 
 export { MCPServer, httpServer };

@@ -13,6 +13,9 @@ service_registry("hana-vector",     "http://localhost:9090/mcp",     "hana-cloud
 service_registry("orchestration",   "http://localhost:9090/mcp",     "orchestration-v1").
 service_registry("openai-compat",   "http://localhost:8080/v1",      "openai-compatible").
 
+# Graph-RAG: embedded KùzuDB deployment/model/scenario relationship graph
+service_registry("ai-sdk-graph",    "http://localhost:9090/mcp",     "graph-rag").
+
 # OData Vocabularies Service - Universal Dictionary for annotations
 service_registry("odata-vocab",     "http://localhost:9150/mcp",     "odata-vocab-annotator").
 service_registry("odata-vocab-api", "http://localhost:9150/v1",      "odata-vocab-search").
@@ -65,6 +68,14 @@ resolve_service_for_intent(/vocabulary_search, URL) :-
     service_registry("odata-vocab-api", BaseURL, _),
     URL = BaseURL.
 
+resolve_service_for_intent(/graph_index, URL) :-
+    service_registry("ai-sdk-graph", BaseURL, _),
+    URL = BaseURL.
+
+resolve_service_for_intent(/graph_query, URL) :-
+    service_registry("ai-sdk-graph", BaseURL, _),
+    URL = BaseURL.
+
 # 5. Tool Routing
 # Maps tool names to service endpoints
 
@@ -73,7 +84,9 @@ tool_service("ai_core_embed", "ai-core-embed").
 tool_service("hana_vector_search", "hana-vector").
 tool_service("list_deployments", "ai-core-chat").
 tool_service("orchestration_run", "orchestration").
-tool_service("mangle_query", "ai-core-chat").
+tool_service("mangle_query",  "ai-core-chat").
+tool_service("kuzu_index",    "ai-sdk-graph").
+tool_service("kuzu_query",    "ai-sdk-graph").
 
 # OData Vocabulary Tools
 tool_service("lookup_vocabulary_term", "odata-vocab").

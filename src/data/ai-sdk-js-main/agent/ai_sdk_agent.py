@@ -138,8 +138,9 @@ class MangleEngine:
         
         # Tool permissions
         self.facts["agent_can_use"] = {
-            "aicore_chat", "aicore_embed", "list_deployments", 
-            "get_deployment_info", "mangle_query"
+            "aicore_chat", "aicore_embed", "list_deployments",
+            "get_deployment_info", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         # Tools requiring approval

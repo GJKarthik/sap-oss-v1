@@ -20,6 +20,10 @@ langchain-classic = "^1.0.0"
 langchain = "^1.0.0"
 hdbcli = "^2.23.24"
 rdflib = "^7.0.0"
+kuzu = {version = ">=0.7.0", optional = true}
+
+[tool.poetry.extras]
+graph = ["kuzu"]
 
 [[tool.poetry.dependencies.numpy]]
 version = ">=1.26.4"

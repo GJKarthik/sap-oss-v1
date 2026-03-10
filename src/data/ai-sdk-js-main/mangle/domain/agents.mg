@@ -32,6 +32,8 @@ agent_can_use("ai-sdk-agent", "aicore_embed").
 agent_can_use("ai-sdk-agent", "list_deployments").
 agent_can_use("ai-sdk-agent", "get_deployment_info").
 agent_can_use("ai-sdk-agent", "mangle_query").
+agent_can_use("ai-sdk-agent", "kuzu_index").
+agent_can_use("ai-sdk-agent", "kuzu_query").
 
 # Tools requiring human approval
 agent_requires_approval("ai-sdk-agent", "create_deployment").
@@ -135,6 +137,7 @@ guardrails_active("aicore_chat").
 guardrails_active("aicore_embed").
 guardrails_active("list_deployments").
 guardrails_active("mangle_query").
+guardrails_active("kuzu_query").
 
 # Tools requiring guardrails
 requires_guardrails("aicore_chat").

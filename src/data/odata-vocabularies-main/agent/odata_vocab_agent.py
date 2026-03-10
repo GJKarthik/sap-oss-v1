@@ -29,7 +29,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "lookup_vocabulary", "lookup_term", "generate_annotation",
-            "validate_annotation", "list_vocabularies", "mangle_query"
+            "validate_annotation", "list_vocabularies", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         # No approval required for public docs

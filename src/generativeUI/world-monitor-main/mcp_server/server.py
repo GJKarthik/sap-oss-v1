@@ -13,6 +13,14 @@ from typing import Any
 import urllib.request
 from urllib.parse import urlparse
 
+try:
+    from graph.kuzu_store import get_kuzu_store as _get_kuzu_store
+except ImportError:
+    try:
+        from mcp_server.graph.kuzu_store import get_kuzu_store as _get_kuzu_store
+    except ImportError:
+        _get_kuzu_store = None  # type: ignore[assignment]
+
 # =============================================================================
 # Finding 4: CORS configuration with startup validation
 # =============================================================================
@@ -483,6 +491,69 @@ class MCPServer:
             },
         }
 
+        # Graph-RAG: index monitoring entities into KùzuDB
+        self.tools["kuzu_index"] = {
+            "name": "kuzu_index",
+            "description": (
+                "Index world-monitor entities into the embedded KùzuDB graph database. "
+                "Stores GeoEvent nodes, ServiceNode nodes, AlertRecord nodes, and their "
+                "relationships (TRIGGERS_ALERT, MONITORED_BY, AFFECTS_SERVICE). "
+                "Call before get_alerts to enable graph-context enrichment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "events": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of event definitions: "
+                            "[{event_id, event_type?, country?, region?, "
+                            "monitored_by?: string, triggers_alert?: string}]"
+                        ),
+                    },
+                    "services": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of service definitions: "
+                            "[{name, endpoint?, category?}]"
+                        ),
+                    },
+                    "alerts": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of alert definitions: "
+                            "[{alert_id, name?, severity?, service?, "
+                            "affects_service?: string, triggered_by_event?: string}]"
+                        ),
+                    },
+                },
+            },
+        }
+
+        # Graph-RAG: run a read-only Cypher query against KùzuDB
+        self.tools["kuzu_query"] = {
+            "name": "kuzu_query",
+            "description": (
+                "Execute a read-only Cypher query against the embedded KùzuDB graph database "
+                "and return matching rows as JSON. "
+                "Use for alert correlation, event lookup, service impact analysis."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "cypher": {
+                        "type": "string",
+                        "description": "Cypher query string (MATCH … RETURN only)",
+                    },
+                    "params": {
+                        "type": "string",
+                        "description": "Query parameters as JSON object (optional)",
+                    },
+                },
+                "required": ["cypher"],
+            },
+        }
+
     def _register_resources(self):
         self.resources["monitor://metrics"] = {
             "uri": "monitor://metrics",
@@ -618,6 +689,22 @@ class MCPServer:
         alerts = self.facts["alerts"]
         if severity:
             alerts = [a for a in alerts if a.get("severity") == severity]
+
+        # M4 — attach graph context when KùzuDB has indexed data
+        if _get_kuzu_store is not None:
+            store = _get_kuzu_store()
+            if store.available():
+                enriched = []
+                for alert in alerts:
+                    alert_copy = dict(alert)
+                    alert_id = alert.get("alert_id") or alert.get("name", "")
+                    if alert_id:
+                        ctx = store.get_alert_context(alert_id)
+                        if ctx:
+                            alert_copy["graph_context"] = ctx
+                    enriched.append(alert_copy)
+                return {"alerts": enriched, "count": len(enriched)}
+
         return {"alerts": alerts, "count": len(alerts)}
 
     def _handle_create_alert(self, args: dict) -> dict:
@@ -640,6 +727,114 @@ class MCPServer:
             "logs": [],
             "note": "Connect to actual log aggregator",
         }
+
+    def _handle_kuzu_index(self, args: dict) -> dict:
+        if _get_kuzu_store is None:
+            return {"error": "KùzuDB not available; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        store = _get_kuzu_store()
+        if not store.available():
+            return {"error": "KùzuDB not installed; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        store.ensure_schema()
+
+        events_indexed = 0
+        services_indexed = 0
+        alerts_indexed = 0
+
+        # Index services
+        raw_services = parse_json_arg(args.get("services", "[]"), [])
+        if not isinstance(raw_services, list):
+            raw_services = []
+        for svc in raw_services:
+            if not isinstance(svc, dict):
+                continue
+            name = str(svc.get("name", "")).strip()
+            if not name:
+                continue
+            store.upsert_service(
+                name,
+                endpoint=str(svc.get("endpoint", "")),
+                category=str(svc.get("category", "")),
+            )
+            services_indexed += 1
+
+        # Index events
+        raw_events = parse_json_arg(args.get("events", "[]"), [])
+        if not isinstance(raw_events, list):
+            raw_events = []
+        for evt in raw_events:
+            if not isinstance(evt, dict):
+                continue
+            event_id = str(evt.get("event_id", "")).strip()
+            if not event_id:
+                continue
+            store.upsert_event(
+                event_id,
+                event_type=str(evt.get("event_type", "")),
+                country=str(evt.get("country", "")),
+                region=str(evt.get("region", "")),
+            )
+            events_indexed += 1
+            monitored_by = str(evt.get("monitored_by", "")).strip()
+            if monitored_by:
+                store.link_event_service(event_id, monitored_by)
+            triggers_alert = str(evt.get("triggers_alert", "")).strip()
+            if triggers_alert:
+                store.link_event_alert(event_id, triggers_alert)
+
+        # Index alerts
+        raw_alerts = parse_json_arg(args.get("alerts", "[]"), [])
+        if not isinstance(raw_alerts, list):
+            raw_alerts = []
+        for alt in raw_alerts:
+            if not isinstance(alt, dict):
+                continue
+            alert_id = str(alt.get("alert_id", "")).strip()
+            if not alert_id:
+                continue
+            store.upsert_alert(
+                alert_id,
+                name=str(alt.get("name", "")),
+                severity=str(alt.get("severity", "warning")),
+                service=str(alt.get("service", "")),
+            )
+            alerts_indexed += 1
+            affects_service = str(alt.get("affects_service", "")).strip()
+            if affects_service:
+                store.link_alert_service(alert_id, affects_service)
+            triggered_by = str(alt.get("triggered_by_event", "")).strip()
+            if triggered_by:
+                store.link_event_alert(triggered_by, alert_id)
+
+        self._metrics_backend.record("tool.kuzu_index", 1.0, {
+            "events": events_indexed,
+            "services": services_indexed,
+            "alerts": alerts_indexed,
+        })
+        return {
+            "events_indexed": events_indexed,
+            "services_indexed": services_indexed,
+            "alerts_indexed": alerts_indexed,
+        }
+
+    def _handle_kuzu_query(self, args: dict) -> dict:
+        cypher = str(args.get("cypher", "") or "").strip()
+        if not cypher:
+            return {"error": "cypher is required"}
+        upper = cypher.upper().lstrip()
+        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
+            if upper.startswith(disallowed):
+                return {"error": "Write Cypher statements are not permitted via this tool"}
+        params = parse_json_arg(args.get("params", "{}"), {})
+        if not isinstance(params, dict):
+            params = {}
+        if _get_kuzu_store is None:
+            return {"error": "KùzuDB not available; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        store = _get_kuzu_store()
+        if not store.available():
+            return {"error": "KùzuDB not installed; add 'kuzu>=0.7.0' to mcp_server/requirements.txt"}
+        rows = store.run_query(cypher, params)
+        self._metrics_backend.record("tool.kuzu_query", 1.0, {"row_count": len(rows)})
+        return {"rows": rows, "row_count": len(rows)}
 
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
@@ -697,6 +892,8 @@ class MCPServer:
                     "create_alert": self._handle_create_alert,
                     "get_logs": self._handle_get_logs,
                     "mangle_query": self._handle_mangle_query,
+                    "kuzu_index": self._handle_kuzu_index,
+                    "kuzu_query": self._handle_kuzu_query,
                 }
                 handler = handlers.get(tool_name)
                 if not handler:
@@ -816,7 +1013,7 @@ def main():
 Server: http://localhost:{port}
 
 Tools: get_metrics, record_metric, health_check, list_services, refresh_services,
-       get_alerts, create_alert, get_logs, mangle_query
+       get_alerts, create_alert, get_logs, mangle_query, kuzu_index, kuzu_query
 
 Resources: monitor://metrics, monitor://alerts, monitor://services, mangle://facts
 """)

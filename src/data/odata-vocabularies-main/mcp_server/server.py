@@ -37,6 +37,18 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
+# Graph-RAG: load KùzuDB store with graceful fallback
+_kuzu_store_factory = None
+try:
+    from mcp_server.kuzu_store import get_kuzu_store as _get_kuzu_store
+    _kuzu_store_factory = _get_kuzu_store
+except ImportError:
+    try:
+        from kuzu_store import get_kuzu_store as _get_kuzu_store  # type: ignore[import]
+        _kuzu_store_factory = _get_kuzu_store
+    except ImportError:
+        _kuzu_store_factory = None
+
 # =============================================================================
 # Constants
 # =============================================================================
@@ -836,6 +848,67 @@ class MCPServer:
             },
         }
 
+        # Graph-RAG: index OData vocabulary entities into KùzuDB
+        self.tools["kuzu_index"] = {
+            "name": "kuzu_index",
+            "description": (
+                "Index OData vocabulary entities into the embedded KùzuDB graph database. "
+                "Stores ODataVocabulary nodes, VocabularyTerm nodes, AnnotationTarget nodes, "
+                "and their relationships (DEFINES_TERM, ANNOTATES, RELATED_VOCAB). "
+                "Call before get_rag_context to enable graph-context enrichment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "vocabularies": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of vocabulary definitions: "
+                            "[{vocabId, name?, namespace?, alias?, status?, relatedVocab?: string}]"
+                        ),
+                    },
+                    "terms": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of term definitions: "
+                            "[{termId, name?, type?, appliesTo?, description?, definingVocab?: string}]"
+                        ),
+                    },
+                    "annotation_targets": {
+                        "type": "string",
+                        "description": (
+                            "JSON array of annotation target definitions: "
+                            "[{targetId, entityType?, namespace?, usedInVocab?, annotatesTerm?: string}]"
+                        ),
+                    },
+                },
+            },
+        }
+
+        # Graph-RAG: run a read-only Cypher query against KùzuDB
+        self.tools["kuzu_query"] = {
+            "name": "kuzu_query",
+            "description": (
+                "Execute a read-only Cypher query against the embedded KùzuDB graph database "
+                "and return matching rows as JSON. "
+                "Use for vocabulary traversal, term lookup, annotation target discovery."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "cypher": {
+                        "type": "string",
+                        "description": "Cypher query string (MATCH … RETURN only)",
+                    },
+                    "params": {
+                        "type": "string",
+                        "description": "Query parameters as JSON object (optional)",
+                    },
+                },
+                "required": ["cypher"],
+            },
+        }
+
         # Get Annotation Suggestions
         self.tools["suggest_annotations"] = {
             "name": "suggest_annotations",
@@ -1308,6 +1381,109 @@ class MCPServer:
     # Phase 3.3: RAG Context Enrichment
     # =========================================================================
     
+    # =========================================================================
+    # Kuzu tool handlers
+    # =========================================================================
+
+    def _handle_kuzu_index(self, args: dict) -> dict:
+        if _kuzu_store_factory is None:
+            return {"error": 'KùzuDB not available; install kuzu>=0.7.0'}
+        store = _kuzu_store_factory()
+        if not store.available():
+            return {"error": 'KùzuDB not installed; install kuzu>=0.7.0'}
+        store.ensure_schema()
+
+        vocabs_indexed = 0
+        terms_indexed = 0
+        targets_indexed = 0
+
+        # Index vocabularies first
+        raw_vocabs = parse_json_arg(args.get("vocabularies", "[]"), [])
+        if isinstance(raw_vocabs, list):
+            for v in raw_vocabs:
+                if not isinstance(v, dict):
+                    continue
+                vocab_id = str(v.get("vocabId", "")).strip()
+                if not vocab_id:
+                    continue
+                store.upsert_vocabulary(
+                    vocab_id,
+                    str(v.get("name", "")),
+                    str(v.get("namespace", "")),
+                    str(v.get("alias", "")),
+                    str(v.get("status", "stable")),
+                )
+                vocabs_indexed += 1
+                related = str(v.get("relatedVocab", "")).strip()
+                if related:
+                    store.link_vocabs(vocab_id, related)
+
+        # Index terms
+        raw_terms = parse_json_arg(args.get("terms", "[]"), [])
+        if isinstance(raw_terms, list):
+            for t in raw_terms:
+                if not isinstance(t, dict):
+                    continue
+                term_id = str(t.get("termId", "")).strip()
+                if not term_id:
+                    continue
+                store.upsert_term(
+                    term_id,
+                    str(t.get("name", "")),
+                    str(t.get("type", "")),
+                    str(t.get("appliesTo", "")),
+                    str(t.get("description", "")),
+                )
+                terms_indexed += 1
+                defining_vocab = str(t.get("definingVocab", "")).strip()
+                if defining_vocab:
+                    store.link_vocab_term(defining_vocab, term_id)
+
+        # Index annotation targets
+        raw_targets = parse_json_arg(args.get("annotation_targets", "[]"), [])
+        if isinstance(raw_targets, list):
+            for a in raw_targets:
+                if not isinstance(a, dict):
+                    continue
+                target_id = str(a.get("targetId", "")).strip()
+                if not target_id:
+                    continue
+                store.upsert_annotation_target(
+                    target_id,
+                    str(a.get("entityType", "")),
+                    str(a.get("namespace", "")),
+                    str(a.get("usedInVocab", "")),
+                )
+                targets_indexed += 1
+                annotates_term = str(a.get("annotatesTerm", "")).strip()
+                if annotates_term:
+                    store.link_target_term(target_id, annotates_term)
+
+        return {"vocabs_indexed": vocabs_indexed, "terms_indexed": terms_indexed, "targets_indexed": targets_indexed}
+
+    def _handle_kuzu_query(self, args: dict) -> dict:
+        cypher = str(args.get("cypher", "") or "").strip()
+        if not cypher:
+            return {"error": "cypher is required"}
+        upper = cypher.upper().lstrip()
+        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
+            if upper.startswith(disallowed):
+                return {"error": "Write Cypher statements are not permitted via this tool"}
+        if _kuzu_store_factory is None:
+            return {"error": 'KùzuDB not available; install kuzu>=0.7.0'}
+        store = _kuzu_store_factory()
+        if not store.available():
+            return {"error": 'KùzuDB not installed; install kuzu>=0.7.0'}
+        params = parse_json_arg(args.get("params", "{}"), {})
+        if not isinstance(params, dict):
+            params = {}
+        rows = store.run_query(cypher, params)
+        return {"rows": rows, "rowCount": len(rows)}
+
+    # =========================================================================
+    # Phase 3.3: RAG Context Enrichment
+    # =========================================================================
+
     def _handle_get_rag_context(self, args: dict) -> dict:
         """Get enriched RAG context for a query"""
         query = args.get("query", "")
@@ -1369,7 +1545,21 @@ class MCPServer:
         for vocab in relevant_vocabs:
             vocab_facts = [f for f in self.mangle_facts if f'"{vocab}"' in f][:10]
             context["mangle_facts"].extend(vocab_facts)
-        
+
+        # 6. L4 — attach graph context from KùzuDB when available
+        if _kuzu_store_factory is not None:
+            try:
+                store = _kuzu_store_factory()
+                if store.available():
+                    graph_rows: list = []
+                    for vocab_name in list(relevant_vocabs)[:3]:
+                        rows = store.get_vocab_terms(vocab_name)
+                        graph_rows.extend(rows)
+                    if graph_rows:
+                        context["graphContext"] = graph_rows
+            except Exception:
+                pass
+
         return context
 
     def _get_annotation_context(self, entity_type: str) -> dict:
@@ -1561,6 +1751,8 @@ class MCPServer:
                     "semantic_search": self._handle_semantic_search,
                     "get_rag_context": self._handle_get_rag_context,
                     "suggest_annotations": self._handle_suggest_annotations,
+                    "kuzu_index": self._handle_kuzu_index,
+                    "kuzu_query": self._handle_kuzu_query,
                 }
                 handler = handlers.get(tool_name)
                 if not handler:
