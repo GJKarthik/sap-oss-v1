@@ -1,0 +1,41 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<div class="joule-layout">
+
+  <!-- Left: Joule chat panel -->
+  <section class="joule-chat-panel">
+    <joule-chat
+      [endpoint]="agUiEndpoint"
+      transport="sse"
+      title="Joule"
+      placeholder="Ask me to build a UI, fetch data, or start a workflow…"
+      [autoConnect]="true"
+      securityClass="internal">
+    </joule-chat>
+  </section>
+
+  <!-- Right: live-rendered GenUI output -->
+  <section class="joule-output-panel">
+
+    <div class="output-header">
+      <span class="state-label state-{{ state }}">{{ state }}</span>
+      <button
+        *ngIf="state !== 'idle'"
+        class="clear-btn"
+        (click)="clearSession()">
+        Clear
+      </button>
+    </div>
+
+    <ng-container *ngIf="schema; else empty">
+      <genui-outlet [schema]="schema"></genui-outlet>
+    </ng-container>
+
+    <ng-template #empty>
+      <div class="empty-state">
+        <p>Agent-generated UI will appear here.</p>
+      </div>
+    </ng-template>
+
+  </section>
+
+</div>

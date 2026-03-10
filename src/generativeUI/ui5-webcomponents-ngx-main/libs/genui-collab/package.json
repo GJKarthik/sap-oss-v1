@@ -1,6 +1,6 @@
 {
   "name": "@ui5/genui-collab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Real-time collaboration for SAP Generative UI - multi-user workspaces with presence and cursors",
   "author": "SAP SE (https://www.sap.com)",
   "license": "Apache-2.0",

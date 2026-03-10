@@ -118,7 +118,7 @@ export const COLLAB_CONFIG = new InjectionToken<CollabConfig>('COLLAB_CONFIG');
 // Collaboration Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class CollaborationService implements OnDestroy {
   private destroy$ = new Subject<void>();
   private config: CollabConfig | null = null;
@@ -421,19 +421,22 @@ export class CollaborationService implements OnDestroy {
    */
   private handleDisconnect(): void {
     const maxAttempts = this.config?.maxReconnectAttempts ?? 5;
-    const delay = this.config?.reconnectDelayMs ?? 3000;
+    const baseDelay = this.config?.reconnectDelayMs ?? 3000;
 
     if (this.currentRoomId && this.reconnectAttempts < maxAttempts) {
       this.connectionStateSubject.next('reconnecting');
       this.reconnectAttempts++;
 
+      // Exponential backoff with 30s ceiling: baseDelay * 2^(attempt-1)
+      const backoffDelay = Math.min(baseDelay * Math.pow(2, this.reconnectAttempts - 1), 30_000);
+
       setTimeout(() => {
         if (this.currentRoomId) {
           this.joinRoom(this.currentRoomId).catch(() => {
-            // Reconnect failed, will retry
+            // Reconnect failed, will retry on next disconnect event
           });
         }
-      }, delay * this.reconnectAttempts);
+      }, backoffDelay);
     }
   }
 
@@ -489,7 +492,7 @@ export class CollaborationService implements OnDestroy {
    * Generate unique ID
    */
   private generateId(): string {
-    return `collab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return crypto.randomUUID();
   }
 
   ngOnDestroy(): void {

@@ -1,6 +1,6 @@
 {
   "name": "@ui5/genui-streaming",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Progressive streaming UI composition for generative interfaces",
   "author": "SAP SE (https://www.sap.com)",
   "license": "Apache-2.0",

@@ -1,0 +1,186 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SchemaValidator — Fiori floorplan snapshots validates a form floorplan schema (snapshot) 1`] = `
+Object {
+  "errors": Array [
+    Object {
+      "code": "DENIED_COMPONENT",
+      "message": "Component 'ui5-form' is not allowed",
+      "path": ".component",
+      "severity": "error",
+    },
+    Object {
+      "code": "DENIED_COMPONENT",
+      "message": "Component 'ui5-form-group' is not allowed",
+      "path": ".children[0].component",
+      "severity": "error",
+    },
+    Object {
+      "code": "DENIED_COMPONENT",
+      "message": "Component 'ui5-form-item' is not allowed",
+      "path": ".children[0].children[0].component",
+      "severity": "error",
+    },
+    Object {
+      "code": "DENIED_COMPONENT",
+      "message": "Component 'ui5-form-item' is not allowed",
+      "path": ".children[0].children[1].component",
+      "severity": "error",
+    },
+  ],
+  "sanitizedSchema": Object {
+    "children": Array [
+      Object {
+        "children": Array [
+          Object {
+            "children": Array [
+              Object {
+                "children": undefined,
+                "component": "ui5-label",
+                "props": Object {
+                  "required": true,
+                  "text": "First Name",
+                },
+                "slots": undefined,
+              },
+              Object {
+                "children": undefined,
+                "component": "ui5-input",
+                "props": Object {
+                  "placeholder": "Enter first name",
+                },
+                "slots": undefined,
+              },
+            ],
+            "component": "ui5-form-item",
+            "props": undefined,
+            "slots": undefined,
+          },
+          Object {
+            "children": Array [
+              Object {
+                "children": undefined,
+                "component": "ui5-label",
+                "props": Object {
+                  "required": true,
+                  "text": "Last Name",
+                },
+                "slots": undefined,
+              },
+              Object {
+                "children": undefined,
+                "component": "ui5-input",
+                "props": Object {
+                  "placeholder": "Enter last name",
+                },
+                "slots": undefined,
+              },
+            ],
+            "component": "ui5-form-item",
+            "props": undefined,
+            "slots": undefined,
+          },
+        ],
+        "component": "ui5-form-group",
+        "props": Object {
+          "headerText": "Personal Data",
+        },
+        "slots": undefined,
+      },
+    ],
+    "component": "ui5-form",
+    "props": Object {
+      "headerText": "New Employee",
+    },
+    "schemaVersion": "1",
+    "slots": undefined,
+  },
+  "valid": false,
+  "warnings": Array [
+    Object {
+      "code": "INVALID_SCHEMA",
+      "message": "Component 'ui5-form' may not support children",
+      "path": ".children",
+      "severity": "warning",
+    },
+    Object {
+      "code": "INVALID_SCHEMA",
+      "message": "Component 'ui5-form-group' may not support children",
+      "path": ".children[0].children",
+      "severity": "warning",
+    },
+    Object {
+      "code": "INVALID_SCHEMA",
+      "message": "Component 'ui5-form-item' may not support children",
+      "path": ".children[0].children[0].children",
+      "severity": "warning",
+    },
+    Object {
+      "code": "INVALID_SCHEMA",
+      "message": "Component 'ui5-form-item' may not support children",
+      "path": ".children[0].children[1].children",
+      "severity": "warning",
+    },
+  ],
+}
+`;
+
+exports[`SchemaValidator — Fiori floorplan snapshots validates a list-detail floorplan schema (snapshot) 1`] = `
+Object {
+  "errors": Array [],
+  "sanitizedSchema": Object {
+    "children": undefined,
+    "component": "ui5-flexible-column-layout",
+    "props": Object {
+      "layout": "TwoColumnsMidExpanded",
+    },
+    "schemaVersion": "1",
+    "slots": Object {
+      "midColumn": Object {
+        "children": Array [
+          Object {
+            "children": undefined,
+            "component": "ui5-label",
+            "props": Object {
+              "text": "Name",
+            },
+            "slots": undefined,
+          },
+        ],
+        "component": "ui5-panel",
+        "props": Object {
+          "headerText": "Details",
+        },
+        "slots": undefined,
+      },
+      "startColumn": Object {
+        "children": Array [
+          Object {
+            "children": undefined,
+            "component": "ui5-li",
+            "props": Object {
+              "text": "Item 1",
+            },
+            "slots": undefined,
+          },
+          Object {
+            "children": undefined,
+            "component": "ui5-li",
+            "props": Object {
+              "text": "Item 2",
+            },
+            "slots": undefined,
+          },
+        ],
+        "component": "ui5-list",
+        "props": Object {
+          "headerText": "Items",
+        },
+        "slots": undefined,
+      },
+    },
+  },
+  "valid": true,
+  "warnings": Array [],
+}
+`;

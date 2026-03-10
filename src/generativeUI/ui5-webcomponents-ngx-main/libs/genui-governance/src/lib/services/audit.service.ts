@@ -10,7 +10,8 @@
 import { Injectable, OnDestroy, Inject, Optional, InjectionToken } from '@angular/core';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AgUiClient } from '@ui5/ag-ui-angular';
+import { AgUiClient, ToolCallResultEvent, UiComponentEvent } from '@ui5/ag-ui-angular';
+import type { AgUiEvent } from '@ui5/ag-ui-angular';
 import { ConfirmationResult } from './governance.service';
 
 // =============================================================================
@@ -144,7 +145,7 @@ const DEFAULT_CONFIG: AuditConfig = {
 // Audit Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class AuditService implements OnDestroy {
   private destroy$ = new Subject<void>();
   private config: AuditConfig = DEFAULT_CONFIG;
@@ -337,7 +338,7 @@ export class AuditService implements OnDestroy {
     // Log lifecycle events
     this.agUiClient.lifecycle$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
+      .subscribe((event: AgUiEvent) => {
         if (this.config.level === 'full') {
           this.log(
             {
@@ -352,22 +353,15 @@ export class AuditService implements OnDestroy {
     // Log tool events
     this.agUiClient.tool$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
+      .subscribe((event: AgUiEvent) => {
         if (event.type === 'tool.call_result') {
-          const toolEvent = event as {
-            toolCallId: string;
-            toolName?: string;
-            success?: boolean;
-            error?: string;
-          };
+          const toolEvent = event as ToolCallResultEvent;
           this.log(
             {
               type: 'tool_call',
-              toolName: toolEvent.toolName,
               description: `Tool result: ${toolEvent.toolCallId}`,
             },
-            toolEvent.success ? 'success' : 'failure',
-            { error: toolEvent.error }
+            toolEvent.success ? 'success' : 'failure'
           );
         }
       });
@@ -375,12 +369,13 @@ export class AuditService implements OnDestroy {
     // Log UI events
     this.agUiClient.ui$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
+      .subscribe((event: AgUiEvent) => {
         if (event.type === 'ui.component' && this.config.level !== 'minimal') {
-          const uiEvent = event as { componentId: string; schema?: { component: string } };
+          const uiEvent = event as UiComponentEvent;
+          const schema = uiEvent.schema as { component?: string } | undefined;
           this.logUiRender(
             uiEvent.componentId,
-            uiEvent.schema?.component || 'unknown'
+            schema?.component || 'unknown'
           );
         }
       });
@@ -473,14 +468,14 @@ export class AuditService implements OnDestroy {
    * Generate unique ID
    */
   private generateId(): string {
-    return `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return crypto.randomUUID();
   }
 
   /**
    * Generate session ID
    */
   private generateSessionId(): string {
-    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return crypto.randomUUID();
   }
 
   ngOnDestroy(): void {

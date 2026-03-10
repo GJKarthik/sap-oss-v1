@@ -73,6 +73,8 @@ export interface AgUiEventBase {
   runId: RunId;
   /** ISO 8601 timestamp */
   timestamp: Timestamp;
+  /** Monotonically increasing sequence number within a run (optional but recommended) */
+  seq?: number;
   /** Optional metadata */
   metadata?: Record<string, unknown>;
 }
@@ -418,7 +420,57 @@ export interface AgUiClientMessageBase {
   type: AgUiClientMessageType;
   runId?: RunId;
   timestamp?: Timestamp;
+  /** Monotonically increasing sequence number (auto-assigned by AgUiClient) */
+  seq?: number;
   metadata?: Record<string, unknown>;
+}
+
+// =============================================================================
+// Sequence Tracking
+// =============================================================================
+
+/**
+ * Tracks per-run sequence numbers for both outgoing client messages and
+ * incoming server events.  Detects gaps (out-of-order / dropped events).
+ */
+export class SequenceTracker {
+  private outSeq = new Map<string, number>();
+  private inSeq = new Map<string, number>();
+
+  /** Returns the next outgoing seq number for a run and advances the counter. */
+  nextOutSeq(runId: string): number {
+    const n = (this.outSeq.get(runId) ?? 0) + 1;
+    this.outSeq.set(runId, n);
+    return n;
+  }
+
+  /**
+   * Validate and track an incoming event's seq number.
+   * Returns 'ok', 'no-seq' (event has no seq — tolerated), or 'gap:<expected>:<actual>'.
+   */
+  trackIncoming(event: AgUiEventBase): 'ok' | 'no-seq' | string {
+    if (event.seq === undefined) return 'no-seq';
+    const last = this.inSeq.get(event.runId) ?? 0;
+    const expected = last + 1;
+    if (event.seq !== expected && event.seq !== 1) {
+      // seq=1 resets the run (reconnect / new run)
+      return `gap:${expected}:${event.seq}`;
+    }
+    this.inSeq.set(event.runId, event.seq);
+    return 'ok';
+  }
+
+  /** Reset tracking for a run (called on run_started). */
+  reset(runId: string): void {
+    this.outSeq.delete(runId);
+    this.inSeq.delete(runId);
+  }
+
+  /** Clear all state. */
+  clear(): void {
+    this.outSeq.clear();
+    this.inSeq.clear();
+  }
 }
 
 /** User message to the agent */

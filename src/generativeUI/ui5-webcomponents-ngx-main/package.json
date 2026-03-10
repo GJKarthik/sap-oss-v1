@@ -14,7 +14,10 @@
     "prepare": "husky install",
     "create:hotfix": "node scripts/release-hotfix.js",
     "postinstall": "yarn decorate:angular:cli && patch-package",
-    "decorate:angular:cli": "node ./decorate-angular-cli.js"
+    "decorate:angular:cli": "node ./decorate-angular-cli.js",
+    "audit:bundle": "node scripts/bundle-audit.mjs",
+    "audit:tree-shaking": "node scripts/tree-shaking-test.mjs",
+    "storybook:smoke": "node scripts/storybook-smoke.mjs"
   },
   "private": true,
   "dependencies": {
@@ -65,9 +68,9 @@
     "@angular/compiler-cli": "20.3.9",
     "@angular/language-service": "20.3.9",
     "@babel/core": "^7.21.8",
-    "@commitlint/cli": "17.3.0",
-    "@commitlint/config-angular": "17.3.0",
-    "@commitlint/config-conventional": "17.3.0",
+    "@commitlint/cli": "19.8.0",
+    "@commitlint/config-angular": "19.8.0",
+    "@commitlint/config-conventional": "19.8.0",
     "@nx/cypress": "22.0.2",
     "@nx/devkit": "22.0.2",
     "@nx/eslint": "22.0.2",

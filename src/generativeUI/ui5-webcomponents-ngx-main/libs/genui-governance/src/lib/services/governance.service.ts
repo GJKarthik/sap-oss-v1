@@ -10,7 +10,7 @@
 import { Injectable, OnDestroy, Inject, Optional, InjectionToken } from '@angular/core';
 import { Subject, BehaviorSubject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
-import { AgUiClient, AgUiToolRegistry } from '@ui5/ag-ui-angular';
+import { AgUiClient, AgUiToolRegistry, ToolCallStartEvent } from '@ui5/ag-ui-angular';
 
 // =============================================================================
 // Types
@@ -112,7 +112,7 @@ export interface GovernanceConfig {
 // Governance Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class GovernanceService implements OnDestroy {
   private destroy$ = new Subject<void>();
   private policy: PolicyConfig = DEFAULT_POLICY;
@@ -121,6 +121,8 @@ export class GovernanceService implements OnDestroy {
 
   // Pending actions
   private pendingActionsMap = new Map<string, PendingAction>();
+  /** Maps governance actionId → transport toolCallId for deferred gating */
+  private actionToToolCallId = new Map<string, string>();
   private pendingActionsSubject = new BehaviorSubject<PendingAction[]>([]);
   readonly pendingActions$ = this.pendingActionsSubject.asObservable();
 
@@ -148,7 +150,19 @@ export class GovernanceService implements OnDestroy {
    */
   configure(config: GovernanceConfig): void {
     if (config.policy) {
-      this.policy = { ...DEFAULT_POLICY, ...config.policy };
+      this.policy = {
+        ...DEFAULT_POLICY,
+        ...config.policy,
+        // Always merge arrays additively so partial config cannot silently wipe hardened defaults
+        blockedActions: [
+          ...DEFAULT_POLICY.blockedActions,
+          ...(config.policy.blockedActions ?? []),
+        ],
+        requireConfirmation: [
+          ...DEFAULT_POLICY.requireConfirmation,
+          ...(config.policy.requireConfirmation ?? []),
+        ],
+      };
     }
     if (config.userId) {
       this.userId = config.userId;
@@ -261,6 +275,13 @@ export class GovernanceService implements OnDestroy {
     };
     this.confirmationSubject.next(result);
 
+    // Resolve the deferred tool execution gate (if any)
+    const toolCallId = this.actionToToolCallId.get(actionId);
+    if (toolCallId) {
+      this.actionToToolCallId.delete(actionId);
+      this.toolRegistry.resolveDeferred(toolCallId);
+    }
+
     // Send confirmation to agent
     await this.agUiClient.confirmAction(actionId, modifications);
   }
@@ -288,6 +309,13 @@ export class GovernanceService implements OnDestroy {
     };
     this.confirmationSubject.next(result);
 
+    // Reject the deferred tool execution gate (if any)
+    const toolCallId = this.actionToToolCallId.get(actionId);
+    if (toolCallId) {
+      this.actionToToolCallId.delete(actionId);
+      this.toolRegistry.rejectDeferred(toolCallId, reason || 'User rejected');
+    }
+
     // Send rejection to agent
     await this.agUiClient.rejectAction(actionId, reason);
   }
@@ -307,32 +335,44 @@ export class GovernanceService implements OnDestroy {
   }
 
   /**
-   * Subscribe to tool calls and intercept those requiring confirmation
+   * Subscribe to tool calls and intercept those requiring confirmation.
+   * Blocked tools emit a violation and are not executed.
+   * Tools requiring confirmation are deferred via AgUiToolRegistry until the
+   * user confirms or rejects via confirmAction() / rejectAction().
    */
   private subscribeToToolCalls(): void {
     this.agUiClient.tool$
       .pipe(
         takeUntil(this.destroy$),
-        filter(e => e.type === 'tool.call_start')
+        filter((e): e is ToolCallStartEvent => (e as ToolCallStartEvent).type === 'tool.call_start')
       )
-      .subscribe(event => {
-        const toolEvent = event as {
-          toolCallId: string;
-          toolName: string;
-          location?: string;
-        };
+      .subscribe((event: ToolCallStartEvent) => {
+        // Skip frontend tools (handled by ToolRegistry directly)
+        if (event.location === 'frontend') return;
 
-        // Skip frontend tools (handled by ToolRegistry)
-        if (toolEvent.location === 'frontend') return;
-
-        // Check if blocked
-        if (this.isBlocked(toolEvent.toolName)) {
+        // Check if blocked — emit violation, do not gate (execution never started)
+        if (this.isBlocked(event.toolName)) {
           this.violationSubject.next({
             type: 'blocked_action',
-            toolName: toolEvent.toolName,
-            message: `Action '${toolEvent.toolName}' is blocked by policy`,
+            toolName: event.toolName,
+            message: `Action '${event.toolName}' is blocked by policy`,
           });
           return;
+        }
+
+        // Check if confirmation is required — defer and wait
+        if (this.requiresConfirmation(event.toolName)) {
+          const action = this.createPendingAction(event.toolName, {}, {
+            runId: event.runId,
+          });
+
+          // Map the governance actionId ↔ toolCallId for later resolution
+          this.actionToToolCallId.set(action.id, event.toolCallId);
+
+          // Pause tool execution until confirmed/rejected
+          this.toolRegistry.deferInvocation(event.toolCallId).catch(() => {
+            // Rejection is handled in rejectAction(); swallow the unhandled rejection here
+          });
         }
       });
   }
@@ -361,6 +401,13 @@ export class GovernanceService implements OnDestroy {
       this.pendingActionsMap.delete(actionId);
       this.emitPendingActions();
 
+      // Reject the deferred tool execution gate (if any)
+      const toolCallId = this.actionToToolCallId.get(actionId);
+      if (toolCallId) {
+        this.actionToToolCallId.delete(actionId);
+        this.toolRegistry.rejectDeferred(toolCallId, 'Action expired');
+      }
+
       // Emit as rejection
       this.confirmationSubject.next({
         actionId,
@@ -383,7 +430,7 @@ export class GovernanceService implements OnDestroy {
    * Generate unique ID
    */
   private generateId(): string {
-    return `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return crypto.randomUUID();
   }
 
   ngOnDestroy(): void {

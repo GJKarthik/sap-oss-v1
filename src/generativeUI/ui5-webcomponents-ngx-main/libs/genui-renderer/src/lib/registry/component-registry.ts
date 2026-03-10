@@ -159,13 +159,28 @@ const FIORI_STANDARD_COMPONENTS: ComponentMetadata[] = [
 ];
 
 // =============================================================================
+// Security Deny List — file I/O and exfiltration-capable components
+//
+// These components MUST NOT be rendered by an agent-generated schema because
+// they can exfiltrate data (file upload/download) or execute arbitrary scripts.
+// They are denied at registry initialisation and cannot be re-allowed via allow().
+// =============================================================================
+
+export const SECURITY_DENY_LIST: ReadonlySet<string> = new Set([
+  'ui5-file-uploader',    // triggers OS file-picker → potential data exfiltration
+  'ui5-file-chooser',     // same risk as ui5-file-uploader
+  'ui5-upload-collection',  // manages upload state; deny to prevent agent-driven upload flows
+  'ui5-upload-collection-item', // child of upload-collection
+]);
+
+// =============================================================================
 // Component Registry Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class ComponentRegistry {
   private registry = new Map<string, ComponentMetadata>();
-  private denyList = new Set<string>();
+  private denyList = new Set<string>(SECURITY_DENY_LIST);
 
   constructor() {
     // Initialize with Fiori standard components
@@ -177,22 +192,35 @@ export class ComponentRegistry {
    */
   loadFioriStandard(): void {
     FIORI_STANDARD_COMPONENTS.forEach(meta => {
-      this.registry.set(meta.tagName, meta);
+      // Never add security-denied components to the registry
+      if (!SECURITY_DENY_LIST.has(meta.tagName)) {
+        this.registry.set(meta.tagName, meta);
+      }
     });
+    // Ensure deny list is always enforced
+    SECURITY_DENY_LIST.forEach(tag => this.denyList.add(tag));
   }
 
   /**
-   * Register a component in the allowlist
+   * Register a component in the allowlist.
+   * Components in SECURITY_DENY_LIST cannot be registered.
    */
   register(metadata: ComponentMetadata): void {
+    if (SECURITY_DENY_LIST.has(metadata.tagName)) {
+      throw new Error(`Component '${metadata.tagName}' is in the security deny list and cannot be registered.`);
+    }
     this.registry.set(metadata.tagName, metadata);
     this.denyList.delete(metadata.tagName);
   }
 
   /**
-   * Allow a component by tag name (simplified registration)
+   * Allow a component by tag name (simplified registration).
+   * Components in SECURITY_DENY_LIST cannot be allowed.
    */
   allow(tagName: string, category: ComponentCategory = 'custom'): void {
+    if (SECURITY_DENY_LIST.has(tagName)) {
+      throw new Error(`Component '${tagName}' is in the security deny list and cannot be allowed.`);
+    }
     if (!this.registry.has(tagName)) {
       this.registry.set(tagName, { tagName, category });
     }

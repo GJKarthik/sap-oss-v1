@@ -207,8 +207,8 @@ async function parseBody(req: http.IncomingMessage): Promise<Record<string, unkn
   });
 }
 
-function sendJson(res: http.ServerResponse, status: number, data: unknown): void {
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+function sendJson(res: http.ServerResponse, status: number, data: unknown, corsOrigin = '*'): void {
+  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': corsOrigin });
   res.end(JSON.stringify(data));
 }
 
@@ -216,13 +216,48 @@ function sendError(res: http.ServerResponse, status: number, message: string): v
   sendJson(res, status, { error: { message, type: 'api_error', code: status } });
 }
 
+// =============================================================================
+// Internal-token guard for HANA vector routes
+// =============================================================================
+
+const OPENAI_INTERNAL_TOKEN = (process.env.OPENAI_INTERNAL_TOKEN ?? '').trim();
+const OPENAI_ALLOWED_ORIGINS = (process.env.OPENAI_ALLOWED_ORIGINS ?? '').trim()
+  .split(',').map(o => o.trim()).filter(Boolean);
+
+if (!OPENAI_INTERNAL_TOKEN) {
+  console.warn(
+    'WARNING: OPENAI_INTERNAL_TOKEN is not set. ' +
+    '/v1/hana/* endpoints are unauthenticated and proxy a production HANA Cloud instance. ' +
+    'Set OPENAI_INTERNAL_TOKEN to a secure random token and ensure this server is ' +
+    'accessible only within a trusted network segment.',
+  );
+}
+
+function checkInternalToken(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+  if (!OPENAI_INTERNAL_TOKEN) return true;
+  const provided = (req.headers['x-internal-token'] ?? '').toString().trim();
+  if (provided !== OPENAI_INTERNAL_TOKEN) {
+    sendJson(res, 401, { error: { message: 'Unauthorized: X-Internal-Token required for HANA routes', type: 'auth_error', code: 401 } });
+    return false;
+  }
+  return true;
+}
+
+function getAllowedOrigin(req: http.IncomingMessage): string {
+  if (OPENAI_ALLOWED_ORIGINS.length === 0) return '*';
+  const origin = (req.headers['origin'] ?? '').toString().trim();
+  if (origin && OPENAI_ALLOWED_ORIGINS.includes(origin)) return origin;
+  return OPENAI_ALLOWED_ORIGINS[0] ?? '';
+}
+
 async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   // CORS
   if (req.method === 'OPTIONS') {
+    const allowedOrigin = getAllowedOrigin(req);
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Internal-Token',
     });
     res.end();
     return;
@@ -507,12 +542,14 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return sendJson(res, 200, batch);
     }
 
-    // Vector Store
+    // Vector Store — protected by X-Internal-Token
     if (path === '/v1/hana/tables' && method === 'GET') {
+      if (!checkInternalToken(req, res)) return;
       return sendJson(res, 200, { object: 'list', data: Array.from(vectorTables.keys()), source: 'memory' });
     }
 
     if (path === '/v1/hana/vectors' && method === 'POST') {
+      if (!checkInternalToken(req, res)) return;
       const body = await parseBody(req);
       const tableName = body['table_name'] as string;
       if (!tableName) return sendError(res, 400, 'table_name is required');
@@ -540,6 +577,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 
     if (path === '/v1/hana/search' && method === 'POST') {
+      if (!checkInternalToken(req, res)) return;
       const body = await parseBody(req);
       const tableName = body['vector_table'] as string;
       if (!tableName) return sendError(res, 400, 'vector_table is required');

@@ -14,7 +14,17 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { takeUntil, filter, distinctUntilChanged } from 'rxjs/operators';
-import { AgUiClient } from '@ui5/ag-ui-angular';
+import {
+  AgUiClient,
+  RunStartedEvent,
+  RunFinishedEvent,
+  RunErrorEvent,
+  UiComponentEvent,
+  UiComponentUpdateEvent,
+  UiComponentRemoveEvent,
+  UiLayoutEvent,
+  CustomEvent as AgUiCustomEvent,
+} from '@ui5/ag-ui-angular';
 import { DynamicRenderer, A2UiSchema } from '@ui5/genui-renderer';
 
 /** AG-UI custom event name emitted by the server for schema snapshots */
@@ -55,7 +65,7 @@ export interface StreamingSession {
 // Streaming UI Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class StreamingUiService implements OnDestroy {
   private destroy$ = new Subject<void>();
   private session: StreamingSession | null = null;
@@ -66,6 +76,14 @@ export class StreamingUiService implements OnDestroy {
 
   // Schema observable — latest complete schema received from the agent
   private schemaSubject = new BehaviorSubject<A2UiSchema | null>(null);
+  /**
+   * Observable of the latest A2UiSchema snapshot pushed by the agent.
+   *
+   * **Contract:** This is a *data-push* observable only. It does NOT mount or
+   * materialise DOM nodes by itself. Consumers must either:
+   *   - Bind it to a `<genui-streaming-outlet [schema]="schema$ | async">` component, or
+   *   - Subscribe and call `DynamicRenderer.render(schema, container)` manually.
+   */
   readonly schema$: Observable<A2UiSchema | null> = this.schemaSubject.asObservable();
 
   // Events
@@ -138,21 +156,21 @@ export class StreamingUiService implements OnDestroy {
   // ---------------------------------------------------------------------------
 
   private subscribeToAgUiEvents(): void {
-    // 1. Lifecycle events
+    // 1. Lifecycle events — already filtered to lifecycle subtypes by AgUiClient.lifecycle$
     this.agUiClient.lifecycle$
       .pipe(takeUntil(this.destroy$))
-      .subscribe((event: any) => {
+      .subscribe(event => {
         switch (event.type) {
           case 'lifecycle.run_started':
-            this.handleRunStarted(event.runId as string);
+            this.handleRunStarted((event as RunStartedEvent).runId);
             break;
           case 'lifecycle.run_finished':
-            this.handleRunFinished(event.runId as string);
+            this.handleRunFinished((event as RunFinishedEvent).runId);
             break;
           case 'lifecycle.run_error':
             this.handleRunError(
-              event.runId as string,
-              new Error((event as { message?: string }).message || 'Run error')
+              (event as RunErrorEvent).runId,
+              new Error((event as RunErrorEvent).message || 'Run error')
             );
             break;
         }
@@ -162,28 +180,30 @@ export class StreamingUiService implements OnDestroy {
     this.agUiClient.events$
       .pipe(
         takeUntil(this.destroy$),
-        filter((event: any) => event.type === 'custom' && event.name === UI_SCHEMA_SNAPSHOT_EVENT)
+        filter((event): event is AgUiCustomEvent =>
+          (event as AgUiCustomEvent).type === 'custom' && (event as AgUiCustomEvent).name === UI_SCHEMA_SNAPSHOT_EVENT
+        )
       )
-      .subscribe((event: any) => {
-        this.handleSchemaSnapshot(event.payload ?? event.value);
+      .subscribe(event => {
+        this.handleSchemaSnapshot((event as AgUiCustomEvent & { payload?: unknown; value?: unknown }).payload ?? (event as AgUiCustomEvent & { payload?: unknown; value?: unknown }).value);
       });
 
     // 3. Legacy ui.component events (for backward compat)
     this.agUiClient.ui$
       .pipe(takeUntil(this.destroy$))
-      .subscribe((event: any) => {
+      .subscribe(event => {
         switch (event.type) {
           case 'ui.component':
-            this.handleComponentEvent(event);
+            this.handleComponentEvent(event as UiComponentEvent);
             break;
           case 'ui.component_update':
-            this.handleComponentUpdate(event);
+            this.handleComponentUpdate(event as UiComponentUpdateEvent);
             break;
           case 'ui.component_remove':
-            this.handleComponentRemove(event);
+            this.handleComponentRemove(event as UiComponentRemoveEvent);
             break;
           case 'ui.layout':
-            this.handleLayoutEvent(event);
+            this.handleLayoutEvent(event as UiLayoutEvent);
             break;
         }
       });
@@ -237,7 +257,7 @@ export class StreamingUiService implements OnDestroy {
 
     // Store per-component in session
     if (this.session) {
-      const componentId = (a2Schema as any).id ?? 'root';
+      const componentId = (a2Schema as A2UiSchema & { id?: string }).id ?? 'root';
       this.session.components.set(componentId, a2Schema);
       this.sessionSubject.next(this.session);
     }
@@ -251,55 +271,54 @@ export class StreamingUiService implements OnDestroy {
     );
   }
 
-  private handleComponentEvent(event: unknown): void {
-    const uiEvent = event as { componentId: string; schema: A2UiSchema };
+  private handleComponentEvent(event: UiComponentEvent): void {
     if (!this.session) return;
-    this.session.components.set(uiEvent.componentId, uiEvent.schema);
+    const schema = event.schema as unknown as A2UiSchema;
+    this.session.components.set(event.componentId, schema);
     this.sessionSubject.next(this.session);
-    this.schemaSubject.next(uiEvent.schema);
-    this.componentReceivedSubject.next(uiEvent.schema);
+    this.schemaSubject.next(schema);
+    this.componentReceivedSubject.next(schema);
   }
 
-  private handleComponentUpdate(event: unknown): void {
-    const updateEvent = event as { componentId: string; updates: Partial<A2UiSchema> };
+  private handleComponentUpdate(event: UiComponentUpdateEvent): void {
     if (!this.session) return;
 
-    const existing = this.session.components.get(updateEvent.componentId);
+    const existing = this.session.components.get(event.componentId);
     if (existing) {
-      const updated = { ...existing, ...updateEvent.updates };
-      this.session.components.set(updateEvent.componentId, updated);
+      const updates: Partial<A2UiSchema> = event.props ? { props: event.props } : {};
+      const updated = { ...existing, ...updates };
+      this.session.components.set(event.componentId, updated);
       this.sessionSubject.next(this.session);
-      this.renderer.update(updateEvent.componentId, updateEvent.updates, { data: {} });
+      this.renderer.update(event.componentId, updates, { data: {} });
       this.componentUpdatedSubject.next({
-        componentId: updateEvent.componentId,
-        updates: updateEvent.updates,
+        componentId: event.componentId,
+        updates,
         operation: 'update',
       });
     }
   }
 
-  private handleComponentRemove(event: unknown): void {
-    const removeEvent = event as { componentId: string };
+  private handleComponentRemove(event: UiComponentRemoveEvent): void {
     if (!this.session) return;
 
-    if (this.session.components.has(removeEvent.componentId)) {
-      this.session.components.delete(removeEvent.componentId);
+    if (this.session.components.has(event.componentId)) {
+      this.session.components.delete(event.componentId);
       this.sessionSubject.next(this.session);
-      this.renderer.remove(removeEvent.componentId, true);
+      this.renderer.remove(event.componentId, true);
       this.componentUpdatedSubject.next({
-        componentId: removeEvent.componentId,
+        componentId: event.componentId,
         updates: {},
         operation: 'remove',
       });
     }
   }
 
-  private handleLayoutEvent(event: unknown): void {
-    const layoutEvent = event as { layout: StreamingLayout };
+  private handleLayoutEvent(event: UiLayoutEvent): void {
     if (!this.session) return;
-    this.session.layout = layoutEvent.layout;
+    const layout = event.layout as unknown as StreamingLayout;
+    this.session.layout = layout;
     this.sessionSubject.next(this.session);
-    this.layoutChangedSubject.next(layoutEvent.layout);
+    this.layoutChangedSubject.next(layout);
   }
 
   ngOnDestroy(): void {

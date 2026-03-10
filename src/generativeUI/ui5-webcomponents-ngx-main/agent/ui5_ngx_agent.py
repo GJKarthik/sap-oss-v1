@@ -5,8 +5,10 @@ AI Core default for public code/documentation.
 Routes to vLLM only when user data is detected.
 """
 
+import asyncio
 import json
 import os
+import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
@@ -146,7 +148,8 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "generate_component", "complete_code", "lookup_documentation",
-            "list_components", "generate_template", "mangle_query"
+            "list_components", "generate_template", "mangle_query",
+            "kuzu_index", "kuzu_query"
         }
         
         # No approval required for public code tools
@@ -231,14 +234,66 @@ class MangleEngine:
         return []
 
 
+# =============================================================================
+# Async HTTP helper — replaces blocking urllib.request.urlopen in async paths
+# =============================================================================
+
+async def _async_post_json(url: str, payload: bytes, headers: Dict[str, str],
+                           timeout: float = 30.0) -> bytes:
+    """Non-blocking HTTP POST using asyncio streams. No third-party deps."""
+    parsed = urllib.parse.urlparse(url)
+    ssl_ctx: Any = None
+    if parsed.scheme == "https":
+        import ssl
+        ssl_ctx = ssl.create_default_context()
+    host = parsed.hostname or "localhost"
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+
+    header_lines = "\r\n".join(
+        f"{k}: {v}" for k, v in {**headers, "Content-Length": str(len(payload))}.items()
+    )
+    request_bytes = (
+        f"POST {path} HTTP/1.1\r\n"
+        f"Host: {host}\r\n"
+        f"{header_lines}\r\n"
+        f"Connection: close\r\n"
+        f"\r\n"
+    ).encode() + payload
+
+    reader, writer = await asyncio.wait_for(
+        asyncio.open_connection(host, port, ssl=ssl_ctx),
+        timeout=timeout,
+    )
+    try:
+        writer.write(request_bytes)
+        await writer.drain()
+        raw = await asyncio.wait_for(reader.read(4 * 1024 * 1024), timeout=timeout)
+    finally:
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+    # Strip HTTP headers — find double CRLF
+    sep = raw.find(b"\r\n\r\n")
+    return raw[sep + 4:] if sep != -1 else raw
+
+
 class UI5NgxAgent:
     """
     UI5 Web Components Angular Agent - AI Core default.
-    
+
     Higher autonomy (L3) for public code generation.
-    Routes to vLLM only when user data is involved.
+    Routes to vLLM when context.data_classification is set to a sensitive
+    value (e.g. 'personal', 'confidential', 'customer') or when the Mangle
+    governance engine returns a positive route_to_vllm result.
+    Keyword scanning of prompt text is no longer used for routing.
     """
-    
+
     def __init__(self):
         self.mangle = MangleEngine([
             "mangle/domain/agents.mg",
@@ -247,22 +302,47 @@ class UI5NgxAgent:
         self.mcp_endpoint = "http://localhost:9140/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.audit_log: List[Dict] = []
+
+        # MCP auth token — must match MCP_AUTH_TOKEN on the server
+        self._mcp_auth_token: str = os.environ.get("MCP_AUTH_TOKEN", "").strip()
     
+    def _resolve_routing(self, prompt: str, context: Dict) -> tuple:
+        """Determine backend from structured context.data_classification first,
+        then fall back to Mangle governance query. Never scans prompt text.
+
+        Returns (backend, endpoint, reason).
+        """
+        classification: str = str(context.get("data_classification", "")).strip().lower()
+        sensitive_classes = {"personal", "confidential", "customer", "restricted", "sensitive"}
+
+        if classification in sensitive_classes:
+            return (
+                "vllm",
+                self.vllm_endpoint,
+                f"Structured data_classification='{classification}' requires private inference",
+            )
+
+        # Mangle governance engine as secondary check
+        routing_result = self.mangle.query("route_to_vllm", prompt)
+        if routing_result:
+            return (
+                "vllm",
+                self.vllm_endpoint,
+                routing_result[0].get("reason", "Mangle governance: route to vLLM"),
+            )
+
+        return (
+            "aicore",
+            self.mcp_endpoint,
+            "Public code/documentation — AI Core OK",
+        )
+
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         context = context or {}
         tool = context.get("tool", "generate_component")
         timestamp = datetime.now(timezone.utc).isoformat()
-        
-        # Check routing - default to AI Core for public code
-        routing_result = self.mangle.query("route_to_vllm", prompt)
-        if routing_result:
-            backend = "vllm"
-            endpoint = self.vllm_endpoint
-            routing_reason = routing_result[0].get("reason", "Contains user data")
-        else:
-            backend = "aicore"
-            endpoint = self.mcp_endpoint
-            routing_reason = "Public code/documentation - AI Core OK"
+
+        backend, endpoint, routing_reason = self._resolve_routing(prompt, context)
         
         # Safety check
         if not self.mangle.query("safety_check_passed", tool):
@@ -312,22 +392,20 @@ class UI5NgxAgent:
             }
     
     async def _call_mcp(self, endpoint: str, tool: str, args: Dict) -> Any:
+        """Async MCP tool call — never blocks the event loop."""
         request_data = {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": {"name": tool, "arguments": args}
+            "params": {"name": tool, "arguments": args},
         }
-        
-        req = urllib.request.Request(
-            endpoint,
-            data=json.dumps(request_data).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            return json.loads(resp.read().decode())
+        payload = json.dumps(request_data).encode()
+        headers: Dict[str, str] = {"Content-Type": "application/json"}
+        if self._mcp_auth_token:
+            headers["Authorization"] = f"Bearer {self._mcp_auth_token}"
+
+        raw = await _async_post_json(endpoint, payload, headers, timeout=120.0)
+        return json.loads(raw.decode())
     
     def _persist_audit_entry(
         self, status: str, tool: str, backend: str,
@@ -377,24 +455,17 @@ class UI5NgxAgent:
     def get_audit_log(self) -> List[Dict]:
         return self.audit_log
     
-    def check_governance(self, prompt: str) -> Dict[str, Any]:
-        routing_result = self.mangle.query("route_to_vllm", prompt)
-        if routing_result:
-            backend = "vllm"
-            reason = routing_result[0].get("reason", "Contains user data")
-        else:
-            backend = "aicore"
-            reason = "Public code/documentation - AI Core OK"
-        
+    def check_governance(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        backend, _, reason = self._resolve_routing(prompt, context or {})
         prompting = self.mangle.query("get_prompting_policy", "ui5-angular-service-v1")
         autonomy = self.mangle.query("autonomy_level")
-        
+
         return {
             "routing": {"backend": backend, "reason": reason},
             "autonomy_level": autonomy[0]["level"] if autonomy else "L3",
             "prompting_policy": prompting[0] if prompting else {},
             "data_product": "ui5-angular-service-v1",
-            "requires_human_oversight": False
+            "requires_human_oversight": False,
         }
 
 

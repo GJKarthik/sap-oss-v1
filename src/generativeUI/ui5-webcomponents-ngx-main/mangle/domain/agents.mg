@@ -28,6 +28,8 @@ agent_can_use("ui5-ngx-agent", "lookup_documentation").
 agent_can_use("ui5-ngx-agent", "list_components").
 agent_can_use("ui5-ngx-agent", "generate_template").
 agent_can_use("ui5-ngx-agent", "mangle_query").
+agent_can_use("ui5-ngx-agent", "kuzu_index").
+agent_can_use("ui5-ngx-agent", "kuzu_query").
 
 # No approval required for public code generation tools
 # agent_requires_approval - none needed
@@ -93,6 +95,7 @@ safety_check_passed(Tool) :-
 guardrails_active("generate_component").
 guardrails_active("complete_code").
 guardrails_active("generate_template").
+guardrails_active("kuzu_query").
 
 # =============================================================================
 # AUTONOMY LEVEL RULES - L3 (higher autonomy for public code)

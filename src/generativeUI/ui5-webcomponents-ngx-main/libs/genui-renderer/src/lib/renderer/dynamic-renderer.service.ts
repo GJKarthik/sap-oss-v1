@@ -20,6 +20,7 @@ import {
   EnvironmentInjector,
 } from '@angular/core';
 import { Subject, BehaviorSubject } from 'rxjs';
+import DOMPurify from 'dompurify';
 import { ComponentRegistry, ComponentMetadata } from '../registry/component-registry';
 import { SchemaValidator, ValidationResult } from '../validation/schema-validator';
 
@@ -27,12 +28,21 @@ import { SchemaValidator, ValidationResult } from '../validation/schema-validato
 // Types
 // =============================================================================
 
+/** Current A2UI schema version produced by this library */
+export const A2UI_SCHEMA_VERSION = '1' as const;
+
 /** A2UI component schema */
 export interface A2UiSchema {
   /** Component tag name */
   component: string;
   /** Unique ID for this instance */
   id?: string;
+  /**
+   * Schema version for forward-compatibility.
+   * Agents should set this to the value of A2UI_SCHEMA_VERSION ('1').
+   * The renderer warns (never rejects) on unknown versions to stay backward-compatible.
+   */
+  schemaVersion?: string;
   /** Component properties */
   props?: Record<string, unknown>;
   /** Child components */
@@ -102,10 +112,30 @@ export interface RenderContext {
 }
 
 // =============================================================================
+// Security constants
+// =============================================================================
+
+/** CSS value patterns that can execute code or load external resources. */
+const DANGEROUS_CSS_PATTERNS = [
+  /javascript\s*:/gi,
+  /expression\s*\(/gi,
+  /url\s*\(\s*["']?\s*data\s*:/gi,
+  /url\s*\(\s*["']?\s*javascript\s*:/gi,
+  /-moz-binding\s*:/gi,
+  /behavior\s*:/gi,
+];
+
+/** Path segments that must never be traversed when resolving agent-provided paths. */
+const FORBIDDEN_PATH_SEGMENTS = new Set([
+  '__proto__', 'prototype', 'constructor',
+  '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
+]);
+
+// =============================================================================
 // Dynamic Renderer Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class DynamicRenderer {
   private renderer: Renderer2;
   private instances = new Map<string, RenderedComponent>();
@@ -431,11 +461,17 @@ export class DynamicRenderer {
       // Resolve value if it's a binding expression
       const resolvedValue = this.resolveValue(value, context);
 
+      // Sanitize string values before writing to DOM (defence-in-depth: validator
+      // already ran XSS checks, but DOMPurify catches anything the regex patterns miss)
+      const safeValue = typeof resolvedValue === 'string'
+        ? DOMPurify.sanitize(resolvedValue, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+        : resolvedValue;
+
       // Set as property or attribute
       if (key in element) {
-        (element as Record<string, unknown>)[key] = resolvedValue;
+        (element as unknown as Record<string, unknown>)[key] = safeValue;
       } else {
-        this.renderer.setAttribute(element, key, String(resolvedValue));
+        this.renderer.setAttribute(element, key, String(safeValue));
       }
     }
   }
@@ -453,7 +489,7 @@ export class DynamicRenderer {
           : value;
 
         if (prop in element) {
-          (element as Record<string, unknown>)[prop] = transformedValue;
+          (element as unknown as Record<string, unknown>)[prop] = transformedValue;
         } else {
           this.renderer.setAttribute(element, prop, String(transformedValue));
         }
@@ -478,6 +514,15 @@ export class DynamicRenderer {
    */
   private applyStyles(element: HTMLElement, styles: Record<string, string>): void {
     for (const [prop, value] of Object.entries(styles)) {
+      // Strip CSS values that could execute code or load attacker-controlled resources
+      const isSafe = !DANGEROUS_CSS_PATTERNS.some(pattern => {
+        pattern.lastIndex = 0;
+        return pattern.test(value);
+      });
+      if (!isSafe) {
+        console.warn(`[DynamicRenderer] Blocked dangerous CSS value for prop '${prop}'`);
+        continue;
+      }
       this.renderer.setStyle(element, prop, value);
     }
   }
@@ -514,8 +559,17 @@ export class DynamicRenderer {
    */
   private resolvePath(obj: unknown, path: string): unknown {
     if (!path) return obj;
-    
+
     const parts = path.split('.');
+
+    // Guard against prototype-chain traversal via agent-supplied paths
+    for (const part of parts) {
+      if (FORBIDDEN_PATH_SEGMENTS.has(part)) {
+        console.warn(`[DynamicRenderer] Blocked forbidden path segment '${part}'`);
+        return undefined;
+      }
+    }
+
     let current: unknown = obj;
 
     for (const part of parts) {

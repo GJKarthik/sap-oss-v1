@@ -1,6 +1,6 @@
 {
   "name": "@ui5/genui-governance",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Security and governance layer for SAP Generative UI - action confirmation, audit logging, policy enforcement",
   "author": "SAP SE (https://www.sap.com)",
   "license": "Apache-2.0",

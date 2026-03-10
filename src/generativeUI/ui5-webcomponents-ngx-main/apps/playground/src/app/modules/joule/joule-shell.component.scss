@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
+:host {
+  display: block;
+  height: 100%;
+}
+
+.joule-layout {
+  display: flex;
+  height: 100%;
+  gap: 0;
+}
+
+.joule-chat-panel {
+  width: 400px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+  display: flex;
+  flex-direction: column;
+
+  joule-chat {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.joule-output-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.output-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.state-label {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--sapNeutralBackground, #e0e0e0);
+  color: var(--sapNeutralColor, #333);
+
+  &.state-streaming,
+  &.state-rendering {
+    background: var(--sapInformationBackground, #e8f4fd);
+    color: var(--sapInformationColor, #0070f2);
+  }
+
+  &.state-complete {
+    background: var(--sapSuccessBackground, #f5fdf6);
+    color: var(--sapSuccessColor, #2b7c2b);
+  }
+
+  &.state-error {
+    background: var(--sapErrorBackground, #fdf4f4);
+    color: var(--sapErrorColor, #bb0000);
+  }
+}
+
+.clear-btn {
+  border: 1px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+genui-outlet {
+  flex: 1;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--sapContent_LabelColor, #6a6d70);
+  font-size: 0.9rem;
+}

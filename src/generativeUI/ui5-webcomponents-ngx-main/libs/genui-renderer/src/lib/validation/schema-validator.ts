@@ -9,7 +9,10 @@
 
 import { Injectable } from '@angular/core';
 import { ComponentRegistry } from '../registry/component-registry';
-import { A2UiSchema } from '../renderer/dynamic-renderer.service';
+import { A2UiSchema, A2UI_SCHEMA_VERSION } from '../renderer/dynamic-renderer.service';
+
+/** Known/supported schema versions. Schemas with other versions produce a warning. */
+const KNOWN_SCHEMA_VERSIONS: Set<string> = new Set([A2UI_SCHEMA_VERSION]);
 
 // =============================================================================
 // Types
@@ -93,7 +96,7 @@ const XSS_PATTERNS = [
 // Schema Validator Service
 // =============================================================================
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class SchemaValidator {
   private config: ValidatorConfig = DEFAULT_CONFIG;
 
@@ -113,6 +116,16 @@ export class SchemaValidator {
     const cfg = { ...this.config, ...config };
     const errors: ValidationError[] = [];
     const warnings: ValidationError[] = [];
+
+    // Schema version check — warn on unknown, never reject (backward-compatible)
+    if (schema.schemaVersion !== undefined && !KNOWN_SCHEMA_VERSIONS.has(schema.schemaVersion)) {
+      warnings.push({
+        path: 'schemaVersion',
+        message: `Unknown schema version '${schema.schemaVersion}'. Known versions: ${[...KNOWN_SCHEMA_VERSIONS].join(', ')}. Schema will still be rendered.`,
+        code: 'INVALID_SCHEMA',
+        severity: 'warning',
+      });
+    }
 
     // Validate recursively
     this.validateNode(schema, '', 0, cfg, errors, warnings, new Set());

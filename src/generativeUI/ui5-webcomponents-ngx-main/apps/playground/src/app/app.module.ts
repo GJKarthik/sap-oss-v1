@@ -55,6 +55,10 @@ const Russian = {
                     {
                         path: 'child-module',
                         loadChildren: () => import('./modules/child/child.module').then(m => m.ChildModule)
+                    },
+                    {
+                        path: 'joule',
+                        loadChildren: () => import('./modules/joule/joule.module').then(m => m.JouleModule)
                     }
                 ]
             },

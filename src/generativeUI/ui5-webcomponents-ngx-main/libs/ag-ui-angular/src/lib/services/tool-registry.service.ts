@@ -61,6 +61,9 @@ export class AgUiToolRegistry implements OnDestroy {
   private pendingArgs = new Map<string, string>();
   private destroySubject = new Subject<void>();
 
+  /** Deferred promises keyed by toolCallId, used by GovernanceService to gate execution. */
+  private deferred = new Map<string, { resolve: () => void; reject: (reason: string) => void }>();
+
   /** Observable of tool invocation updates */
   readonly invocations$ = new Subject<ToolInvocation>();
 
@@ -129,6 +132,38 @@ export class AgUiToolRegistry implements OnDestroy {
    */
   getInvocation(toolCallId: string): ToolInvocation | undefined {
     return this.invocations.get(toolCallId);
+  }
+
+  /**
+   * Defer execution of a tool call until GovernanceService resolves/rejects it.
+   * Returns a Promise that the caller awaits; GovernanceService drives resolution.
+   */
+  deferInvocation(toolCallId: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.deferred.set(toolCallId, { resolve, reject });
+    });
+  }
+
+  /**
+   * Allow a previously deferred tool call to proceed (called by GovernanceService on confirm).
+   */
+  resolveDeferred(toolCallId: string): void {
+    const entry = this.deferred.get(toolCallId);
+    if (entry) {
+      this.deferred.delete(toolCallId);
+      entry.resolve();
+    }
+  }
+
+  /**
+   * Cancel a previously deferred tool call (called by GovernanceService on reject/expire).
+   */
+  rejectDeferred(toolCallId: string, reason: string): void {
+    const entry = this.deferred.get(toolCallId);
+    if (entry) {
+      this.deferred.delete(toolCallId);
+      entry.reject(reason);
+    }
   }
 
   /**

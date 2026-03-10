@@ -68,7 +68,8 @@
           "buildTarget": "playground:build:production"
         },
         "development": {
-          "buildTarget": "playground:build:development"
+          "buildTarget": "playground:build:development",
+          "proxyConfig": "apps/playground/proxy.conf.js"
         }
       },
       "defaultConfiguration": "development",

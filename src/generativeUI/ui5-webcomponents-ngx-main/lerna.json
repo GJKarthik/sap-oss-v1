@@ -4,6 +4,6 @@
   "version": "0.5.11-rc.5",
   "conventionalCommits": true,
   "tagVersionPrefix": "v",
-  "message": "chore(release): publish %v",
+  "message": "chore(release): publish GenUI 0.2.0 [%v]",
   "npmClient": "yarn"
 }

@@ -12,6 +12,9 @@ import { takeUntil, retry, catchError, tap, finalize } from 'rxjs/operators';
 import { AgUiEvent, parseAgUiEvent } from '../types/ag-ui-events';
 import { AgUiTransport, TransportConfig, TransportState, ConnectionInfo } from './transport.interface';
 
+/** Maximum allowed byte length of a single SSE data field (512 KB). */
+const MAX_SSE_EVENT_BYTES = 512 * 1024;
+
 /** SSE-specific configuration options */
 export interface SseTransportConfig extends TransportConfig {
   /** Whether to use credentials (cookies) */
@@ -190,6 +193,14 @@ export class SseTransport implements AgUiTransport {
       // Track last event ID for resumption
       if (event.lastEventId) {
         this.lastEventId = event.lastEventId;
+      }
+
+      // Guard against oversized payloads from a runaway or malicious backend
+      if (typeof event.data === 'string' && event.data.length > MAX_SSE_EVENT_BYTES) {
+        console.warn(
+          `[SSE Transport] Dropped oversized event (${event.data.length} bytes > ${MAX_SSE_EVENT_BYTES} limit)`
+        );
+        return;
       }
 
       // Parse the event data

@@ -26,6 +26,7 @@ import {
   TextDeltaEvent,
   UiComponentEvent,
   ToolCallStartEvent,
+  SequenceTracker,
 } from '../types/ag-ui-events';
 
 import {
@@ -82,6 +83,7 @@ export class AgUiClient implements OnDestroy {
   private transport: AgUiTransport | null = null;
   private destroySubject = new Subject<void>();
   private currentRunId: string | null = null;
+  private seqTracker = new SequenceTracker();
 
   // Event subjects for categorized streams
   private allEventsSubject = new Subject<AgUiEvent>();
@@ -252,7 +254,8 @@ export class AgUiClient implements OnDestroy {
   }
 
   /**
-   * Send a raw message to the agent
+   * Send a raw message to the agent.
+   * Automatically stamps a per-run sequence number onto the message.
    */
   async send(message: AgUiClientMessage): Promise<void> {
     if (!this.transport) {
@@ -262,6 +265,10 @@ export class AgUiClient implements OnDestroy {
     if (this.transport.getState() !== 'connected') {
       throw new Error('Transport is not connected');
     }
+
+    // Stamp outgoing sequence number
+    const runId = message.runId ?? this.currentRunId ?? 'default';
+    (message as AgUiClientMessage & { seq: number }).seq = this.seqTracker.nextOutSeq(runId);
 
     await this.transport.send(message);
   }
@@ -298,11 +305,18 @@ export class AgUiClient implements OnDestroy {
    * Handle incoming AG-UI event
    */
   private handleEvent(event: AgUiEvent): void {
-    // Track run ID
+    // Reset sequence tracker on new run
     if (event.type === 'lifecycle.run_started') {
+      this.seqTracker.reset(event.runId);
       this.currentRunId = event.runId;
     } else if (event.type === 'lifecycle.run_finished' || event.type === 'lifecycle.run_error') {
       this.currentRunId = null;
+    }
+
+    // Validate incoming sequence number (warn on gaps, never drop events)
+    const seqResult = this.seqTracker.trackIncoming(event);
+    if (seqResult.startsWith('gap:')) {
+      console.warn(`[AgUiClient] Sequence gap on run '${event.runId}': ${seqResult}`);
     }
 
     // Emit to all subscribers

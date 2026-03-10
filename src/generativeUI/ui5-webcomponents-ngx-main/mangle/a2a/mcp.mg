@@ -9,6 +9,9 @@ service_registry("ui5-components",  "http://localhost:9160/mcp",  "component-reg
 service_registry("ui5-generator",   "http://localhost:9160/mcp",  "template-generator").
 service_registry("ui5-validator",   "http://localhost:9160/mcp",  "template-validator").
 
+# Graph-RAG: embedded KùzuDB component relationship graph
+service_registry("ui5-graph",       "http://localhost:9160/mcp",  "graph-rag").
+
 # 2. Intent Routing
 resolve_service_for_intent(/components, URL) :-
     service_registry("ui5-components", URL, _).
@@ -19,6 +22,12 @@ resolve_service_for_intent(/generate, URL) :-
 resolve_service_for_intent(/validate, URL) :-
     service_registry("ui5-validator", URL, _).
 
+resolve_service_for_intent(/graph_index, URL) :-
+    service_registry("ui5-graph", URL, _).
+
+resolve_service_for_intent(/graph_query, URL) :-
+    service_registry("ui5-graph", URL, _).
+
 # 3. Tool Routing
 tool_service("list_components", "ui5-components").
 tool_service("get_component", "ui5-components").
@@ -27,6 +36,8 @@ tool_service("generate_module_imports", "ui5-generator").
 tool_service("search_components", "ui5-components").
 tool_service("validate_template", "ui5-validator").
 tool_service("mangle_query", "ui5-components").
+tool_service("kuzu_index",   "ui5-graph").
+tool_service("kuzu_query",   "ui5-graph").
 
 # 4. Component Facts
 ui5_component("ui5-button", "Ui5ButtonModule").

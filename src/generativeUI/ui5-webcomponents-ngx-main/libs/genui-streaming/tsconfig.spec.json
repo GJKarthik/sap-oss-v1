@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/out-tsc",
+    "module": "CommonJS",
+    "target": "ES2022",
+    "moduleResolution": "node",
+    "useDefineForClassFields": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "lib": ["ES2022", "DOM"],
+    "types": ["jest", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@angular/core": ["../../node_modules/@angular/core"],
+      "@angular/common": ["../../node_modules/@angular/common"],
+      "rxjs": ["../../node_modules/rxjs"],
+      "rxjs/operators": ["../../node_modules/rxjs/operators"],
+      "@ui5/ag-ui-angular": ["./ag-ui-angular-test-entry.ts"],
+      "@ui5/genui-renderer": ["./genui-renderer-test-entry.ts"],
+      "dompurify": ["./dompurify-mock.ts"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": false,
+    "strictInputAccessModifiers": false,
+    "strictTemplates": false
+  },
+  "include": [
+    "jest.config.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.ts",
+    "ag-ui-angular-test-entry.ts",
+    "genui-renderer-test-entry.ts",
+    "dompurify-mock.ts"
+  ]
+}

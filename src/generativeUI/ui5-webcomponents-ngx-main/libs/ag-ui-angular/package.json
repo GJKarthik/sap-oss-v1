@@ -1,6 +1,6 @@
 {
   "name": "@ui5/ag-ui-angular",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Angular client library for the AG-UI (Agent-to-UI) protocol - enabling real-time communication between AI agents and Angular user interfaces",
   "author": "SAP SE (https://www.sap.com)",
   "license": "Apache-2.0",
