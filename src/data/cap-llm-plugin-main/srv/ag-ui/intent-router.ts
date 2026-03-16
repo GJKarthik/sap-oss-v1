@@ -39,13 +39,46 @@ export interface IntentRouterConfig {
 }
 
 // =============================================================================
-// Routing Tables (ported from MeshRouter)
+// Default Endpoints — must be set via environment variables in production.
+// Localhost fallbacks are provided only for local development convenience.
 // =============================================================================
 
-const DEFAULT_BACKENDS: Record<string, string> = {
-  'aicore-streaming': 'http://localhost:9190',
-  vllm: 'http://localhost:9180',
-  pal: 'http://localhost:8084',
+const BLOCKED_HOST_PREFIXES_IR = ['169.254.', '100.100.', 'fd00:', '::1'];
+
+function _irSafeEnvUrl(envVar: string, localFallback: string): string {
+  const raw = (process.env[envVar] ?? '').trim();
+  const value = raw || localFallback;
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    console.error(`IntentRouter: ${envVar} value "${value}" is not a valid URL — using fallback "${localFallback}"`);
+    return localFallback;
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    console.error(`IntentRouter: ${envVar} must use http or https — using fallback "${localFallback}"`);
+    return localFallback;
+  }
+  const host = parsed.hostname;
+  for (const prefix of BLOCKED_HOST_PREFIXES_IR) {
+    if (host.startsWith(prefix)) {
+      console.error(`IntentRouter: ${envVar} targets blocked host prefix "${prefix}" — using fallback "${localFallback}"`);
+      return localFallback;
+    }
+  }
+  if (!raw && value.includes('localhost')) {
+    console.warn(
+      `IntentRouter: ${envVar} is not set. Defaulting to "${localFallback}" (local dev only). ` +
+      `Set ${envVar} to the production service URL before deploying.`,
+    );
+  }
+  return value.replace(/\/$/, '');
+}
+
+const DEFAULT_ENDPOINTS: Record<string, string> = {
+  vllm:              _irSafeEnvUrl('VLLM_ENDPOINT',              'http://localhost:9180'),
+  pal:               _irSafeEnvUrl('PAL_ENDPOINT',               'http://localhost:9170'),
+  'aicore-streaming': _irSafeEnvUrl('AICORE_STREAMING_ENDPOINT', 'http://localhost:9190'),
 };
 
 /** Service-ID → backend mapping (mirrors MeshRouter.SERVICE_ROUTING) */
@@ -86,13 +119,26 @@ const MODEL_ALIASES: Record<string, string> = {
   'qwen3.5-9b-confidential': 'Qwen/Qwen3.5-9B',
 };
 
-/** Keywords that indicate confidential data — route to vLLM */
+/**
+ * Keywords that indicate confidential data — route to vLLM (on-premise).
+ * Canonical list shared across cap-llm-plugin, ai-core-streaming, and genui-renderer.
+ * Update all three repos when adding new entries.
+ */
 const DEFAULT_CONFIDENTIAL_KEYWORDS: string[] = [
-  'customer', 'personal', 'private', 'confidential',
-  'salary', 'ssn', 'credit_card', 'password', 'secret',
+  // Business entities
+  'customer', 'order', 'invoice', 'contract', 'supplier',
+  'business partner', 'cds entity', 'cap service',
+  // Financial
+  'revenue', 'profit', 'cost', 'budget', 'forecast',
+  // Personal / credential
+  'personal', 'private', 'confidential',
+  'salary', 'ssn', 'credit_card', 'password',
 ];
 
-/** Keywords indicating a restricted request — block entirely */
+/**
+ * Keywords indicating a restricted request — block entirely.
+ * Canonical list shared across cap-llm-plugin, ai-core-streaming, and genui-renderer.
+ */
 const RESTRICTED_KEYWORDS: string[] = [
   'restricted', 'classified', 'secret',
 ];
@@ -116,9 +162,9 @@ export class IntentRouter {
   private readonly confidentialKeywords: string[];
 
   constructor(config: IntentRouterConfig = {}) {
-    this.vllmEndpoint = config.vllmEndpoint ?? DEFAULT_BACKENDS['vllm'];
-    this.palEndpoint = config.palEndpoint ?? DEFAULT_BACKENDS['pal'];
-    this.mcpEndpoint = config.mcpEndpoint ?? DEFAULT_BACKENDS['aicore-streaming'];
+    this.vllmEndpoint = config.vllmEndpoint ?? DEFAULT_ENDPOINTS['vllm'];
+    this.palEndpoint = config.palEndpoint ?? DEFAULT_ENDPOINTS['pal'];
+    this.mcpEndpoint = config.mcpEndpoint ?? DEFAULT_ENDPOINTS['aicore-streaming'];
     this.palKeywords = config.palKeywords ?? DEFAULT_PAL_KEYWORDS;
     this.confidentialKeywords = config.confidentialKeywords ?? DEFAULT_CONFIDENTIAL_KEYWORDS;
   }

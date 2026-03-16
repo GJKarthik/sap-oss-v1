@@ -13,41 +13,76 @@ import type { A2UiSchema, A2UiComponent } from './event-types';
 // Allowed Fiori Components (Security Whitelist)
 // =============================================================================
 
-/** Whitelisted UI5 Web Components for schema generation */
-export const ALLOWED_COMPONENTS = new Set([
-  // Layout
-  'ui5-bar', 'ui5-card', 'ui5-card-header', 'ui5-panel', 'ui5-page',
-  'ui5-flexible-column-layout', 'ui5-dynamic-page', 'ui5-dynamic-page-header',
-  'ui5-dynamic-page-title', 'ui5-toolbar', 'ui5-toolbar-spacer', 'ui5-toolbar-separator',
+/**
+ * Security deny list — must stay in sync with genui-renderer's SECURITY_DENY_LIST
+ * (libs/genui-renderer/src/lib/registry/component-registry.ts).
+ * These components are blocked in the frontend renderer and MUST NOT be offered
+ * to the LLM for generation.
+ */
+export const SCHEMA_GEN_DENY_LIST = new Set([
+  'ui5-file-uploader',          // OS file-picker → potential data exfiltration
+  'ui5-file-chooser',           // same risk as ui5-file-uploader
+  'ui5-upload-collection',      // agent-driven upload flows
+  'ui5-upload-collection-item', // child of upload-collection
+]);
 
-  // Display
-  'ui5-title', 'ui5-label', 'ui5-text', 'ui5-badge', 'ui5-tag', 'ui5-icon',
-  'ui5-avatar', 'ui5-avatar-group', 'ui5-rating-indicator', 'ui5-progress-indicator',
+/**
+ * Whitelisted UI5 Web Components for schema generation.
+ * Canonical list — kept in sync with genui-renderer's FIORI_STANDARD_COMPONENTS
+ * (libs/genui-renderer/src/lib/registry/component-registry.ts).
+ * When adding components, update BOTH files.
+ */
+export const ALLOWED_COMPONENTS = new Set([
+  // Basic / Display
+  'ui5-button', 'ui5-toggle-button', 'ui5-label', 'ui5-link', 'ui5-icon',
+  'ui5-badge', 'ui5-tag', 'ui5-avatar', 'ui5-avatar-group',
+  'ui5-title', 'ui5-text',
+  'ui5-rating-indicator', 'ui5-progress-indicator',
   'ui5-illustrated-message', 'ui5-busy-indicator',
 
+  // Form components
+  'ui5-input', 'ui5-textarea', 'ui5-select', 'ui5-option',
+  'ui5-combobox', 'ui5-combobox-item',
+  'ui5-multi-combobox', 'ui5-multi-combobox-item',
+  'ui5-checkbox', 'ui5-radio-button', 'ui5-switch',
+  'ui5-slider', 'ui5-range-slider', 'ui5-step-input',
+  'ui5-date-picker', 'ui5-time-picker', 'ui5-datetime-picker',
+  'ui5-color-picker',
+
+  // Layout
+  'ui5-bar', 'ui5-card', 'ui5-card-header', 'ui5-panel', 'ui5-page',
+  'ui5-toolbar', 'ui5-toolbar-button', 'ui5-toolbar-spacer', 'ui5-toolbar-separator',
+  'ui5-segmented-button', 'ui5-segmented-button-item', 'ui5-split-button',
+  'ui5-popover', 'ui5-responsive-popover',
+  'ui5-flexible-column-layout', 'ui5-dynamic-page', 'ui5-dynamic-page-header',
+  'ui5-dynamic-page-title',
+
   // Data Display
-  'ui5-table', 'ui5-table-column', 'ui5-table-row', 'ui5-table-cell',
+  'ui5-table', 'ui5-table-column', 'ui5-table-row', 'ui5-table-cell', 'ui5-table-growing',
   'ui5-list', 'ui5-li', 'ui5-li-custom', 'ui5-li-groupheader',
-  'ui5-tree', 'ui5-tree-item',
-
-  // Forms
-  'ui5-input', 'ui5-textarea', 'ui5-select', 'ui5-option', 'ui5-combobox',
-  'ui5-combobox-item', 'ui5-multi-combobox', 'ui5-date-picker', 'ui5-time-picker',
-  'ui5-datetime-picker', 'ui5-checkbox', 'ui5-radio-button', 'ui5-switch',
-  'ui5-slider', 'ui5-range-slider', 'ui5-step-input', 'ui5-file-uploader',
-
-  // Actions
-  'ui5-button', 'ui5-segmented-button', 'ui5-segmented-button-item',
-  'ui5-split-button', 'ui5-toggle-button', 'ui5-menu', 'ui5-menu-item',
+  'ui5-tree', 'ui5-tree-item', 'ui5-tree-item-custom',
 
   // Navigation
-  'ui5-link', 'ui5-breadcrumbs', 'ui5-breadcrumbs-item', 'ui5-tabs',
-  'ui5-tab', 'ui5-tab-separator', 'ui5-side-navigation', 'ui5-side-navigation-item',
-  'ui5-side-navigation-sub-item', 'ui5-wizard', 'ui5-wizard-step',
+  // Note: genui-renderer uses ui5-tabcontainer; ui5-tabs is kept as a backward-compat alias
+  'ui5-tabcontainer', 'ui5-tabs', 'ui5-tab', 'ui5-tab-separator',
+  'ui5-breadcrumbs', 'ui5-breadcrumbs-item',
+  'ui5-menu', 'ui5-menu-item',
+  'ui5-side-navigation', 'ui5-side-navigation-item', 'ui5-side-navigation-sub-item',
+  'ui5-wizard', 'ui5-wizard-step',
 
-  // Dialogs
-  'ui5-dialog', 'ui5-popover', 'ui5-responsive-popover', 'ui5-message-strip',
-  'ui5-toast',
+  // Feedback / Dialogs
+  'ui5-dialog', 'ui5-message-strip', 'ui5-toast',
+
+  // Fiori-specific
+  'ui5-shellbar', 'ui5-shellbar-item',
+  'ui5-timeline', 'ui5-timeline-item',
+  'ui5-notification-list', 'ui5-notification-list-item', 'ui5-notification-list-group-item',
+  'ui5-view-settings-dialog', 'ui5-sort-item',
+  'ui5-filter-item', 'ui5-filter-item-option',
+  'ui5-product-switch', 'ui5-product-switch-item',
+
+  // AI components
+  'ui5-ai-button', 'ui5-ai-prompt-input',
 
   // Charts (Fiori compliant)
   'ui5-micro-bar-chart', 'ui5-radial-chart',
@@ -376,7 +411,15 @@ export class SchemaGenerator {
    * Recursively sanitize component tree
    */
   private sanitizeComponent(component: A2UiComponent): A2UiComponent {
-    // Validate component type against whitelist
+    // Reject explicitly denied components first (security deny list)
+    if (SCHEMA_GEN_DENY_LIST.has(component.type)) {
+      return {
+        id: component.id,
+        type: 'ui5-text',
+        props: { text: `[Denied component: ${component.type}]` },
+      };
+    }
+    // Validate component type against allowlist
     if (!ALLOWED_COMPONENTS.has(component.type)) {
       // Replace with safe fallback
       return {

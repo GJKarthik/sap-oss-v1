@@ -179,45 +179,59 @@ async function callMcpTool(
 }
 
 let cachedToken: { token: string | null; expiresAt: number } = { token: null, expiresAt: 0 };
+// In-flight refresh promise — coalesces concurrent callers to avoid thundering-herd on expiry
+let _tokenRefreshPromise: Promise<string> | null = null;
 
 async function getAccessToken(config: CapLlmConfig): Promise<string> {
   const configError = validateConfig(config);
   if (configError) throw new Error(configError);
 
+  // Fast path — return cached token if still valid
   if (cachedToken.token && Date.now() < cachedToken.expiresAt) {
     return cachedToken.token;
   }
-  const auth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-  return new Promise((resolve, reject) => {
-    const url = new URL(config.authUrl);
-    const req = https.request({
-      hostname: url.hostname,
-      port: url.port || 443,
-      path: `${url.pathname}${url.search}`,
-      method: 'POST',
-      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk: string) => data += chunk);
-      res.on('end', () => {
-        try {
-          if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
-            return reject(new Error(`token request failed (${res.statusCode || 0}): ${data}`));
-          }
-          const result = JSON.parse(data) as { access_token?: string; expires_in?: number };
-          if (!result.access_token) {
-            return reject(new Error('token response missing access_token'));
-          }
-          const expiresIn = Math.max(120, result.expires_in || 3600);
-          cachedToken = { token: result.access_token, expiresAt: Date.now() + (expiresIn - 60) * 1000 };
-          resolve(result.access_token);
-        } catch (e) { reject(e); }
+
+  // Coalesce concurrent refresh requests into one in-flight promise
+  if (_tokenRefreshPromise) return _tokenRefreshPromise;
+
+  _tokenRefreshPromise = (async (): Promise<string> => {
+    const auth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+    return new Promise<string>((resolve, reject) => {
+      const url = new URL(config.authUrl);
+      const req = https.request({
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: `${url.pathname}${url.search}`,
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk: string) => data += chunk);
+        res.on('end', () => {
+          try {
+            if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+              return reject(new Error(`token request failed (${res.statusCode || 0}): ${data}`));
+            }
+            const result = JSON.parse(data) as { access_token?: string; expires_in?: number };
+            if (!result.access_token) {
+              return reject(new Error('token response missing access_token'));
+            }
+            const expiresIn = Math.max(120, result.expires_in || 3600);
+            cachedToken = { token: result.access_token, expiresAt: Date.now() + (expiresIn - 60) * 1000 };
+            resolve(result.access_token);
+          } catch (e) { reject(e); }
+        });
       });
+      req.on('error', reject);
+      req.write('grant_type=client_credentials');
+      req.end();
     });
-    req.on('error', reject);
-    req.write('grant_type=client_credentials');
-    req.end();
+  })().finally(() => {
+    // Drop the in-flight promise so the next expiry triggers a fresh fetch
+    _tokenRefreshPromise = null;
   });
+
+  return _tokenRefreshPromise;
 }
 
 async function aiCoreRequest(config: CapLlmConfig, method: string, path: string, body?: unknown): Promise<unknown> {
@@ -691,6 +705,28 @@ const requestedPort = parseInt(process.env.MCP_PORT || process.argv.find(a => a.
 const PORT = Number.isInteger(requestedPort) && requestedPort > 0 && requestedPort <= 65535 ? requestedPort : 9100;
 const mcpServer = new MCPServer();
 
+// =============================================================================
+// Bearer-token authentication
+// Set MCP_AUTH_TOKEN to require a token on /mcp.
+// Leave unset ONLY for fully-isolated localhost-only development.
+// =============================================================================
+
+const MCP_AUTH_TOKEN = (process.env.MCP_AUTH_TOKEN ?? '').trim();
+
+if (!MCP_AUTH_TOKEN) {
+  console.warn(
+    'WARNING: MCP_AUTH_TOKEN is not set. The /mcp endpoint is unauthenticated. ' +
+    'Set MCP_AUTH_TOKEN to a secure random token before any non-localhost deployment.',
+  );
+}
+
+function checkBearerAuth(req: http.IncomingMessage): boolean {
+  if (!MCP_AUTH_TOKEN) return true;
+  const authHeader = (req.headers['authorization'] ?? '').trim();
+  if (!authHeader.startsWith('Bearer ')) return false;
+  return authHeader.slice('Bearer '.length).trim() === MCP_AUTH_TOKEN;
+}
+
 const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:3000,http://127.0.0.1:3000')
   .split(',')
   .map((o: string) => o.trim())
@@ -724,6 +760,11 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   if (url.pathname === '/mcp' && req.method === 'POST') {
+    if (!checkBearerAuth(req)) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Unauthorized: Bearer token required' } }));
+      return;
+    }
     let body = '';
     let rejected = false;
     req.on('data', (chunk: string) => {
@@ -755,8 +796,17 @@ const httpServer = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: 'Not found' }));
 });
 
-const wss = new WebSocketServer({ server: httpServer, path: '/mcp/ws' });
-wss.on('connection', (ws: WebSocket) => {
+const wss = new WebSocketServer({ server: httpServer, path: '/mcp/ws', handleProtocols: () => false });
+wss.on('headers', (headers: string[], req: http.IncomingMessage) => {
+  if (!checkBearerAuth(req)) {
+    headers.push('HTTP/1.1 401 Unauthorized');
+  }
+});
+wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
+  if (!checkBearerAuth(req)) {
+    ws.close(1008, 'Unauthorized');
+    return;
+  }
   ws.on('message', async (data: Buffer) => {
     if (data.length > MAX_JSON_BODY_BYTES) {
       ws.send(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Request too large' } }));

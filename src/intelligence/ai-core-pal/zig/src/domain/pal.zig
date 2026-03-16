@@ -341,3 +341,140 @@ fn extractNQuotedFields(line: []const u8, out: [][]const u8, n: usize) bool {
     }
     return field_idx == n;
 }
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+/// Build a small in-memory catalog without touching the filesystem.
+fn buildTestCatalog(allocator: std.mem.Allocator) !Catalog {
+    var cat = Catalog.init(allocator, "/nonexistent");
+    // Add categories manually
+    try cat.categories.append(allocator, .{
+        .id = "clustering",
+        .name = "Clustering",
+        .description = "Unsupervised clustering",
+        .count = 2,
+    });
+    try cat.categories.append(allocator, .{
+        .id = "timeseries",
+        .name = "Time Series",
+        .description = "Forecasting",
+        .count = 1,
+    });
+    // Add algorithms manually
+    try cat.algorithms.append(allocator, .{
+        .id = "kmeans",
+        .name = "K-Means",
+        .category = "clustering",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_KMEANS",
+        .stability = "stable",
+        .version = "2.0",
+    });
+    try cat.algorithms.append(allocator, .{
+        .id = "dbscan",
+        .name = "DBSCAN",
+        .category = "clustering",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_DBSCAN",
+        .stability = "stable",
+        .version = "1.0",
+    });
+    try cat.algorithms.append(allocator, .{
+        .id = "arima",
+        .name = "ARIMA",
+        .category = "timeseries",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_ARIMA",
+        .stability = "stable",
+        .version = "1.0",
+    });
+    return cat;
+}
+
+test "catalog getAlgorithm by id" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    const alg = cat.getAlgorithm("kmeans");
+    try std.testing.expect(alg != null);
+    try std.testing.expectEqualStrings("K-Means", alg.?.name);
+    try std.testing.expectEqualStrings("_SYS_AFL.PAL_KMEANS", alg.?.procedure);
+}
+
+test "catalog getAlgorithm returns null for unknown id" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    try std.testing.expect(cat.getAlgorithm("nonexistent") == null);
+}
+
+test "catalog findByName case-insensitive" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    const alg = cat.findByName("k-means");
+    try std.testing.expect(alg != null);
+    try std.testing.expectEqualStrings("kmeans", alg.?.id);
+}
+
+test "catalog searchAlgorithms finds by category" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    const result = try cat.searchAlgorithms(allocator, "clustering");
+    defer allocator.free(result);
+
+    try std.testing.expect(std.mem.indexOf(u8, result, "K-Means") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result, "DBSCAN") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result, "ARIMA") == null);
+}
+
+test "catalog searchAlgorithms no match" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    const result = try cat.searchAlgorithms(allocator, "xgboost");
+    defer allocator.free(result);
+
+    try std.testing.expect(std.mem.indexOf(u8, result, "No matching algorithms found.") != null);
+}
+
+test "catalog listCategories contains all categories" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    const result = try cat.listCategories(allocator);
+    defer allocator.free(result);
+
+    try std.testing.expect(std.mem.indexOf(u8, result, "Clustering") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result, "Time Series") != null);
+}
+
+test "catalog listByCategory filters correctly" {
+    const allocator = std.testing.allocator;
+    var cat = try buildTestCatalog(allocator);
+    defer cat.deinit();
+
+    const result = try cat.listByCategory(allocator, "timeseries");
+    defer allocator.free(result);
+
+    try std.testing.expect(std.mem.indexOf(u8, result, "ARIMA") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result, "K-Means") == null);
+}
+
+test "catalog default catalog loads 13 categories" {
+    const allocator = std.testing.allocator;
+    var cat = Catalog.init(allocator, "/nonexistent");
+    defer cat.deinit();
+    try cat.loadDefaultCatalog();
+
+    try std.testing.expectEqual(@as(usize, 13), cat.categories.items.len);
+}

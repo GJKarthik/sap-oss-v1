@@ -4,7 +4,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const enable_gpu = b.option(bool, "gpu", "Enable GPU CUDA modules") orelse false;
-    _ = enable_gpu;
     const source_file = b.path("src/main.zig");
 
     // =========================================================================
@@ -16,30 +15,50 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const gpu_kernels_mod = b.createModule(.{
+    // =========================================================================
+    // GPU Modules — only built when -Dgpu=true
+    // Stubs are provided when GPU is disabled so imports resolve at compile time.
+    // =========================================================================
+    const gpu_kernels_mod = if (enable_gpu) b.createModule(.{
         .root_source_file = b.path("deps/llama/src/gpu_kernels.zig"),
         .target = target,
         .optimize = optimize,
+    }) else b.createModule(.{
+        .root_source_file = b.path("src/gpu/stubs/gpu_kernels_stub.zig"),
+        .target = target,
+        .optimize = optimize,
     });
-    const serving_engine_mod = b.createModule(.{
+    const serving_engine_mod = if (enable_gpu) b.createModule(.{
         .root_source_file = b.path("deps/llama/src/serving_engine.zig"),
         .target = target,
         .optimize = optimize,
-    });
-    const quantization_mod = b.createModule(.{
-        .root_source_file = b.path("deps/llama/src/quantization.zig"),
+    }) else b.createModule(.{
+        .root_source_file = b.path("src/gpu/stubs/serving_engine_stub.zig"),
         .target = target,
         .optimize = optimize,
     });
+    const quantization_mod = if (enable_gpu) b.createModule(.{
+        .root_source_file = b.path("deps/llama/src/quantization.zig"),
+        .target = target,
+        .optimize = optimize,
+    }) else b.createModule(.{
+        .root_source_file = b.path("src/gpu/stubs/quantization_stub.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
     const fabric_mod = b.createModule(.{
         .root_source_file = b.path("../../ai-core-fabric/zig/src/fabric.zig"),
         .target = target,
         .optimize = optimize,
     });
-    const cuda_include = b.path("../../ai-core-fabric/zig/deps/cuda");
-    gpu_kernels_mod.addIncludePath(cuda_include);
-    serving_engine_mod.addIncludePath(cuda_include);
-    quantization_mod.addIncludePath(cuda_include);
+
+    if (enable_gpu) {
+        const cuda_include = b.path("../../ai-core-fabric/zig/deps/cuda");
+        gpu_kernels_mod.addIncludePath(cuda_include);
+        serving_engine_mod.addIncludePath(cuda_include);
+        quantization_mod.addIncludePath(cuda_include);
+    }
 
     // =========================================================================
     // Main Executable
@@ -60,8 +79,10 @@ pub fn build(b: *std.Build) void {
         .root_module = main_mod,
     });
     exe.linkLibC();
-    exe.addIncludePath(b.path("../../ai-core-fabric/zig/deps/cuda"));
-    exe.addIncludePath(b.path("deps/llama/csrc"));
+    if (enable_gpu) {
+        exe.addIncludePath(b.path("../../ai-core-fabric/zig/deps/cuda"));
+        exe.addIncludePath(b.path("deps/llama/csrc"));
+    }
     b.installArtifact(exe);
 
     // =========================================================================

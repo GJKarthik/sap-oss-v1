@@ -15,6 +15,8 @@ const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
 const schema_mod = @import("../mcp/schema.zig");
+const cb_mod = @import("circuit_breaker.zig");
+pub const CircuitBreaker = cb_mod.CircuitBreaker;
 
 // ============================================================================
 // OAuth 2.0 Token (ported from search-svc hana/rest_api.zig)
@@ -64,6 +66,9 @@ const PoolEntry = struct {
 const MAX_POOL_SIZE = 5;
 const POOL_IDLE_TIMEOUT_S: i64 = 300; // 5 minutes
 
+/// TCP connect/read/write timeout applied to every new socket.
+const SOCKET_TIMEOUT_S: u32 = 10;
+
 // ============================================================================
 // HANA Client
 // ============================================================================
@@ -78,6 +83,7 @@ pub const HanaClient = struct {
     oauth_config: OAuthConfig,
     oauth_token: ?OAuthToken,
     pool: [MAX_POOL_SIZE]?PoolEntry,
+    circuit_breaker: CircuitBreaker,
 
     pub fn init(
         allocator: Allocator,
@@ -97,6 +103,7 @@ pub const HanaClient = struct {
             .oauth_config = OAuthConfig.fromEnv(),
             .oauth_token = null,
             .pool = .{null} ** MAX_POOL_SIZE,
+            .circuit_breaker = CircuitBreaker.init(.{}),
         };
     }
 
@@ -268,6 +275,13 @@ pub const HanaClient = struct {
         };
 
         const sock = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, 0);
+        errdefer std.posix.close(sock);
+
+        // Apply send/recv timeouts so no call can block indefinitely.
+        const tv = std.posix.timeval{ .sec = SOCKET_TIMEOUT_S, .usec = 0 };
+        std.posix.setsockopt(sock, std.posix.SOL.SOCKET, std.posix.SO.RCVTIMEO, mem.asBytes(&tv)) catch {};
+        std.posix.setsockopt(sock, std.posix.SOL.SOCKET, std.posix.SO.SNDTIMEO, mem.asBytes(&tv)) catch {};
+
         try std.posix.connect(sock, &address.any, address.getOsSockLen());
 
         // Try to store in pool
@@ -306,8 +320,13 @@ pub const HanaClient = struct {
 
     /// Execute a SQL statement against HANA via HTTP.
     /// Uses OAuth if configured, otherwise Basic auth. Uses connection pooling.
+    /// Guarded by a circuit breaker — returns error.CircuitOpen when tripped.
     /// Returns the raw JSON response body.
     pub fn executeSQL(self: *HanaClient, sql: []const u8) ![]const u8 {
+        if (!self.circuit_breaker.allow()) {
+            std.log.warn("[hana] circuit breaker OPEN — rejecting SQL call", .{});
+            return error.CircuitOpen;
+        }
         // Build JSON request body: {"sql": "<statement>"}
         var body_buf: std.ArrayList(u8) = .{};
         var bw = body_buf.writer(self.allocator);
@@ -348,22 +367,51 @@ pub const HanaClient = struct {
         try rw.writeAll("\r\n");
         try rw.writeAll(req_body);
 
-        _ = try std.posix.write(sock, req.items);
+        std.posix.write(sock, req.items) catch |err| {
+            self.releaseConnection(sock);
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
 
         // Read full response
         var response: std.ArrayList(u8) = .{};
         var read_buf: [8192]u8 = undefined;
+        var read_ok = true;
         while (true) {
-            const n = std.posix.read(sock, &read_buf) catch break;
+            const n = std.posix.read(sock, &read_buf) catch {
+                read_ok = false;
+                break;
+            };
             if (n == 0) break;
-            try response.appendSlice(self.allocator, read_buf[0..n]);
+            response.appendSlice(self.allocator, read_buf[0..n]) catch {
+                read_ok = false;
+                break;
+            };
         }
 
         // Release connection back to pool
         self.releaseConnection(sock);
 
-        // Strip HTTP headers
+        if (!read_ok) {
+            response.deinit(self.allocator);
+            self.circuit_breaker.recordFailure();
+            return error.ReadFailed;
+        }
+
+        // Strip HTTP headers and check for HTTP error status
         const sep = mem.indexOf(u8, response.items, "\r\n\r\n") orelse 0;
+        const http_ok = mem.startsWith(u8, response.items, "HTTP/1") and
+            (mem.indexOf(u8, response.items[0..@min(response.items.len, 16)], " 2") != null);
+        if (!http_ok and response.items.len > 0) {
+            const status_end = mem.indexOf(u8, response.items, "\r\n") orelse response.items.len;
+            std.log.warn("[hana] HTTP error: {s}", .{response.items[0..@min(status_end, 64)]});
+            response.deinit(self.allocator);
+            self.circuit_breaker.recordFailure();
+            return error.HttpError;
+        }
+
+        self.circuit_breaker.recordSuccess();
+
         if (sep > 0) {
             const body_slice = response.items[sep + 4 ..];
             const owned = try self.allocator.dupe(u8, body_slice);

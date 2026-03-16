@@ -1,5 +1,9 @@
 const std = @import("std");
 const posix = std.posix;
+const cb_mod = @import("../hana/circuit_breaker.zig");
+const CircuitBreaker = cb_mod.CircuitBreaker;
+
+const SOCKET_TIMEOUT_S: u32 = 10;
 
 // ============================================================================
 // Search Service Client — HTTP proxy to ainuc-be-log-search-svc
@@ -16,6 +20,7 @@ pub const SearchClient = struct {
     host: []const u8,
     port: u16,
     use_tls: bool,
+    circuit_breaker: CircuitBreaker,
 
     pub fn init(allocator: std.mem.Allocator, url: []const u8) SearchClient {
         // Parse URL: http://host:port
@@ -44,6 +49,7 @@ pub const SearchClient = struct {
             .host = host,
             .port = port,
             .use_tls = use_tls,
+            .circuit_breaker = CircuitBreaker.init(.{}),
         };
     }
 
@@ -93,6 +99,11 @@ pub const SearchClient = struct {
     }
 
     fn post(self: *SearchClient, path: []const u8, body: []const u8) ![]const u8 {
+        if (!self.circuit_breaker.allow()) {
+            std.log.warn("[search] circuit breaker OPEN — rejecting call to {s}", .{path});
+            return error.CircuitOpen;
+        }
+
         // Build HTTP request
         var req_buf: std.ArrayList(u8) = .{};
         const rw = req_buf.writer(self.allocator);
@@ -108,27 +119,54 @@ pub const SearchClient = struct {
 
         // Connect via raw TCP
         const addr = std.net.Address.parseIp4(self.host, self.port) catch {
-            // Try resolving hostname
-            const list = try std.net.Address.resolveIp(self.host, self.port);
-            return self.doRequest(list, req_data);
+            self.circuit_breaker.recordFailure();
+            return error.UnableToResolve;
         };
 
-        const sock = try posix.socket(posix.AF.INET, posix.SOCK.STREAM, 0);
+        const sock = posix.socket(posix.AF.INET, posix.SOCK.STREAM, 0) catch |err| {
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
         defer posix.close(sock);
 
-        const sockaddr = addr.any;
-        try posix.connect(sock, &sockaddr, @sizeOf(@TypeOf(addr.in)));
+        // Apply send/recv timeouts so no call can block indefinitely.
+        const tv = posix.timeval{ .sec = SOCKET_TIMEOUT_S, .usec = 0 };
+        posix.setsockopt(sock, posix.SOL.SOCKET, posix.SO.RCVTIMEO, std.mem.asBytes(&tv)) catch {};
+        posix.setsockopt(sock, posix.SOL.SOCKET, posix.SO.SNDTIMEO, std.mem.asBytes(&tv)) catch {};
 
-        _ = try posix.write(sock, req_data);
+        posix.connect(sock, &addr.any, addr.getOsSockLen()) catch |err| {
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
+
+        posix.write(sock, req_data) catch |err| {
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
 
         // Read response
         var response: std.ArrayList(u8) = .{};
+        var read_ok = true;
         var read_buf: [8192]u8 = undefined;
         while (true) {
-            const n = posix.read(sock, &read_buf) catch break;
+            const n = posix.read(sock, &read_buf) catch {
+                read_ok = false;
+                break;
+            };
             if (n == 0) break;
-            try response.appendSlice(self.allocator, read_buf[0..n]);
+            response.appendSlice(self.allocator, read_buf[0..n]) catch {
+                read_ok = false;
+                break;
+            };
         }
+
+        if (!read_ok) {
+            response.deinit(self.allocator);
+            self.circuit_breaker.recordFailure();
+            return error.ReadFailed;
+        }
+
+        self.circuit_breaker.recordSuccess();
 
         const full = try response.toOwnedSlice(self.allocator);
         // Strip HTTP headers — find \r\n\r\n

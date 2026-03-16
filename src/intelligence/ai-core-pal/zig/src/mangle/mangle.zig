@@ -131,6 +131,11 @@ pub const Engine = struct {
         const content = try file.readToEndAlloc(self.allocator, 2 * 1024 * 1024);
         defer self.allocator.free(content);
 
+        // SHA-256 integrity check: look for companion <path>.sha256 sidecar.
+        // If the sidecar exists the hash MUST match; a missing sidecar is a
+        // warning only so existing deployments without sidecars keep working.
+        try verifyFileIntegrity(self.allocator, path, content);
+
         try self.parseContent(content);
     }
 
@@ -347,6 +352,61 @@ pub const Engine = struct {
     }
 };
 
+// ============================================================================
+// SHA-256 integrity helpers
+// ============================================================================
+
+/// Compute the lowercase hex SHA-256 of data into a 64-byte buffer.
+fn sha256Hex(out: *[64]u8, data: []const u8) void {
+    var hash: [32]u8 = undefined;
+    std.crypto.hash.sha2.Sha256.hash(data, &hash, .{});
+    const hex = "0123456789abcdef";
+    for (hash, 0..) |b, i| {
+        out[i * 2] = hex[b >> 4];
+        out[i * 2 + 1] = hex[b & 0xf];
+    }
+}
+
+/// Check <path>.sha256 sidecar against the SHA-256 of content.
+/// Returns error.IntegrityCheckFailed if sidecar exists and hash mismatches.
+/// Returns without error if the sidecar is absent (soft enforcement).
+fn verifyFileIntegrity(allocator: std.mem.Allocator, path: []const u8, content: []const u8) !void {
+    // Build sidecar path: <path>.sha256
+    const sidecar_path = try std.fmt.allocPrint(allocator, "{s}.sha256", .{path});
+    defer allocator.free(sidecar_path);
+
+    const sidecar_file = std.fs.openFileAbsolute(sidecar_path, .{}) catch |err| switch (err) {
+        error.FileNotFound => {
+            std.log.debug("Mangle: no integrity sidecar for {s} — skipping check", .{path});
+            return;
+        },
+        else => return err,
+    };
+    defer sidecar_file.close();
+
+    // Read expected hash (up to 64 hex chars + optional whitespace)
+    var expected_buf: [128]u8 = undefined;
+    const n = try sidecar_file.readAll(&expected_buf);
+    const expected = std.mem.trim(u8, expected_buf[0..n], " \t\r\n");
+
+    if (expected.len < 64) {
+        std.log.warn("Mangle: sidecar {s} is malformed (too short)", .{sidecar_path});
+        return error.IntegrityCheckFailed;
+    }
+
+    var actual_hex: [64]u8 = undefined;
+    sha256Hex(&actual_hex, content);
+
+    if (!std.mem.eql(u8, expected[0..64], &actual_hex)) {
+        std.log.err("Mangle: integrity check FAILED for {s}", .{path});
+        std.log.err("  expected: {s}", .{expected[0..64]});
+        std.log.err("  actual:   {s}", .{actual_hex});
+        return error.IntegrityCheckFailed;
+    }
+
+    std.log.info("Mangle: integrity verified for {s}", .{path});
+}
+
 fn resolveIntent(name: []const u8) Intent {
     if (std.mem.indexOf(u8, name, "catalog") != null or std.mem.indexOf(u8, name, "list") != null) return .pal_catalog;
     if (std.mem.indexOf(u8, name, "execute") != null or std.mem.indexOf(u8, name, "run") != null) return .pal_execute;
@@ -362,4 +422,86 @@ fn resolveIntent(name: []const u8) Intent {
     if (std.mem.indexOf(u8, name, "schema") != null or std.mem.indexOf(u8, name, "table") != null) return .schema_explore;
     if (std.mem.indexOf(u8, name, "describe") != null or std.mem.indexOf(u8, name, "column") != null) return .describe_table;
     return .unknown;
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+test "sha256 hex known value" {
+    var hex: [64]u8 = undefined;
+    sha256Hex(&hex, "hello");
+    try std.testing.expectEqualStrings(
+        "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        &hex,
+    );
+}
+
+test "integrity check passes when sidecar matches" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    const content = "intent_pattern(\"pal_catalog\", \"list algorithms\").";
+
+    // Write .mg file
+    const mg_file = try tmp.dir.createFile("rules.mg", .{});
+    try mg_file.writeAll(content);
+    mg_file.close();
+
+    // Write matching .sha256 sidecar
+    var expected_hex: [64]u8 = undefined;
+    sha256Hex(&expected_hex, content);
+    const sidecar = try tmp.dir.createFile("rules.mg.sha256", .{});
+    try sidecar.writeAll(&expected_hex);
+    sidecar.close();
+
+    // Build absolute paths
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const dir_path = try tmp.dir.realpath(".", &path_buf);
+    var full_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const mg_path = try std.fmt.bufPrint(&full_buf, "{s}/rules.mg", .{dir_path});
+
+    try verifyFileIntegrity(allocator, mg_path, content);
+}
+
+test "integrity check fails when sidecar mismatches" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    const content = "intent_pattern(\"pal_catalog\", \"list algorithms\").";
+
+    const mg_file = try tmp.dir.createFile("bad.mg", .{});
+    try mg_file.writeAll(content);
+    mg_file.close();
+
+    // Write deliberately wrong hash
+    const sidecar = try tmp.dir.createFile("bad.mg.sha256", .{});
+    try sidecar.writeAll("0000000000000000000000000000000000000000000000000000000000000000");
+    sidecar.close();
+
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const dir_path = try tmp.dir.realpath(".", &path_buf);
+    var full_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const mg_path = try std.fmt.bufPrint(&full_buf, "{s}/bad.mg", .{dir_path});
+
+    const result = verifyFileIntegrity(allocator, mg_path, content);
+    try std.testing.expectError(error.IntegrityCheckFailed, result);
+}
+
+test "integrity check skips when no sidecar" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    const content = "intent_pattern(\"pal_catalog\", \"list algorithms\").";
+
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const dir_path = try tmp.dir.realpath(".", &path_buf);
+    var full_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const mg_path = try std.fmt.bufPrint(&full_buf, "{s}/nosidecar.mg", .{dir_path});
+
+    // No sidecar written — should succeed silently
+    try verifyFileIntegrity(allocator, mg_path, content);
 }

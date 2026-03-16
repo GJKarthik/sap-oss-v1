@@ -1,9 +1,30 @@
-# Dockerfile for SAP Elasticsearch Components
-# Includes: MCP Server, OpenAI Server, Agent
+# Dockerfile for SAP Elasticsearch + Mangle Query Service (merged)
+# Includes: MCP Server, OpenAI Server, Agent, Go Mangle gRPC Engine
 #
 # Build: docker build -f Dockerfile.sap -t sap-elasticsearch:latest .
-# Run:   docker run -p 9120:9120 -p 9201:9201 sap-elasticsearch:latest
+# Run:   docker run -p 9120:9120 -p 9201:9201 -p 8080:8080 sap-elasticsearch:latest
 
+# ---------------------------------------------------------------------------
+# Go build stage: compile the Mangle gRPC engine
+# ---------------------------------------------------------------------------
+FROM golang:1.24-bookworm AS go-builder
+
+WORKDIR /go/src/app
+
+# Copy Go module files and vendor directory first for layer caching
+COPY go.mod go.sum ./
+COPY vendor/ vendor/
+
+# Copy Go source
+COPY cmd/ cmd/
+COPY internal/ internal/
+COPY api/ api/
+
+RUN go build -mod=vendor -o /mangle-engine ./cmd/server/main.go
+
+# ---------------------------------------------------------------------------
+# Python base image
+# ---------------------------------------------------------------------------
 FROM python:3.11-slim AS base
 
 # Set labels for SBOM and governance
@@ -71,6 +92,9 @@ FROM base AS production
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Copy Go Mangle engine binary from go-builder stage
+COPY --from=go-builder /mangle-engine /usr/local/bin/mangle-engine
+
 # Copy application code
 COPY mcp_server/ /app/mcp_server/
 COPY sap_openai_server/ /app/sap_openai_server/
@@ -78,6 +102,15 @@ COPY agent/ /app/agent/
 COPY middleware/ /app/middleware/
 COPY mangle/ /app/mangle/
 COPY data_products/ /app/data_products/
+COPY rules/ /app/rules/
+COPY cmd/ /app/cmd/
+COPY connectors/ /app/connectors/
+COPY intelligence/ /app/intelligence/
+COPY openai/ /app/openai/
+COPY performance/ /app/performance/
+COPY efficiency/ /app/efficiency/
+COPY observability/ /app/observability/
+COPY routing/ /app/routing/
 COPY scripts/entrypoint.sh /app/entrypoint.sh
 
 # Create middleware __init__.py if missing
@@ -94,8 +127,10 @@ USER sap
 
 # Expose ports
 # 9120: MCP Server
-# 9201: OpenAI-compatible Server
-EXPOSE 9120 9201
+# 9201: ES OpenAI-compatible Server
+# 8080: Mangle Query API
+# 50051: Go gRPC Mangle Engine (internal)
+EXPOSE 9120 9201 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

@@ -82,6 +82,61 @@ MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)
 MAX_SEARCH_SIZE = int(os.environ.get("MCP_MAX_SEARCH_SIZE", "100"))
 MAX_KNN_K = int(os.environ.get("MCP_MAX_KNN_K", "100"))
 
+GRPC_PORT = int(os.environ.get("GRPC_PORT", "50051"))
+
+
+class MangleGRPCClient:
+    """Thin gRPC client for the in-process Mangle Go engine.
+
+    Calls ``QueryService.Resolve`` over a local TCP connection.  Falls back
+    gracefully when grpc or the generated stub is unavailable (e.g. during
+    tests or when the Go binary is not running).
+
+    The client is intentionally stateless — it opens and closes a channel per
+    call so that transient gRPC failures never leave a stale channel around.
+    """
+
+    def __init__(self, port: int = GRPC_PORT):
+        self._port = port
+        self._available: bool | None = None
+
+    def _check_available(self) -> bool:
+        if self._available is None:
+            try:
+                import grpc  # type: ignore
+                import socket
+                with socket.create_connection(("localhost", self._port), timeout=0.5):
+                    pass
+                self._available = True
+            except Exception:
+                self._available = False
+        return self._available
+
+    def resolve(self, query: str) -> dict | None:
+        """Evaluate *query* against the Mangle rule engine.
+
+        Returns a dict with keys ``path`` and ``confidence`` on success, or
+        ``None`` when the gRPC server is unreachable or the call fails.
+        """
+        if not self._check_available():
+            return None
+        try:
+            import grpc  # type: ignore
+            from api.gen import query_pb2, query_pb2_grpc  # type: ignore
+            with grpc.insecure_channel(f"localhost:{self._port}") as channel:
+                stub = query_pb2_grpc.QueryServiceStub(channel)
+                req = query_pb2.ResolveRequest(query=query)
+                resp = stub.Resolve(req, timeout=5.0)
+                return {"path": resp.path, "confidence": resp.confidence,
+                        "answer": resp.answer}
+        except Exception as exc:
+            logger.debug("MangleGRPCClient.resolve failed: %s", exc)
+            self._available = None
+            return None
+
+
+_mangle_grpc_client = MangleGRPCClient()
+
 
 def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
     try:
@@ -708,6 +763,43 @@ class MCPServer:
         self._audit("es_index_info", index=index)
         return es_request("GET", f"/{index}")
 
+    def _resolve_embedding_deployment(self) -> tuple[str, dict | None]:
+        """Return (deployment_id, error_dict) for the configured embedding deployment.
+
+        Prefers the explicit ``AICORE_EMBEDDING_DEPLOYMENT_ID`` env var.  When
+        not set, discovers deployments dynamically and selects the first whose
+        details string contains 'embed'.  Logs a WARNING when the heuristic
+        fallback is used so operators are alerted to configure the env var.
+        Returns (id, None) on success or ("", error_dict) on failure.
+        """
+        explicit_id = os.environ.get("AICORE_EMBEDDING_DEPLOYMENT_ID", "")
+        if explicit_id:
+            return explicit_id, None
+        deployments = aicore_request("GET", "/v2/lm/deployments")
+        if "error" in deployments:
+            return "", {"error": f"Could not list AI Core deployments: {deployments['error']}"}
+        resources = deployments.get("resources", [])
+        embed_deployment = next(
+            (d for d in resources if "embed" in str(d.get("details", {})).lower()),
+            None,
+        )
+        if embed_deployment:
+            logger.warning(
+                "AICORE_EMBEDDING_DEPLOYMENT_ID not set; selected deployment '%s' via "
+                "heuristic (details contains 'embed'). Set the env var explicitly.",
+                embed_deployment.get("id", ""),
+            )
+            return embed_deployment["id"], None
+        if resources:
+            logger.warning(
+                "AICORE_EMBEDDING_DEPLOYMENT_ID not set and no embedding deployment found "
+                "via heuristic; falling back to first available deployment '%s'. "
+                "This may produce incorrect embeddings — set AICORE_EMBEDDING_DEPLOYMENT_ID.",
+                resources[0].get("id", ""),
+            )
+            return resources[0]["id"], None
+        return "", {"error": "No embedding deployment available; set AICORE_EMBEDDING_DEPLOYMENT_ID"}
+
     def _handle_generate_embedding_internal(self, text: str) -> dict:
         """Generate an embedding bypassing the governance check.
 
@@ -718,38 +810,47 @@ class MCPServer:
         text = str(text or "").strip()
         if not text:
             return {"error": "text is required"}
-        config = get_aicore_config()
-        embed_deployment_id = os.environ.get("AICORE_EMBEDDING_DEPLOYMENT_ID", "")
-        if embed_deployment_id:
-            return aicore_request(
-                "POST",
-                f"/v2/inference/deployments/{embed_deployment_id}/embeddings",
-                {"input": [text]},
-            )
-        deployments = aicore_request("GET", "/v2/lm/deployments")
-        resources = deployments.get("resources", [])
-        deployment = next(
-            (d for d in resources if "embed" in str(d.get("details", {})).lower()),
-            resources[0] if resources else None,
-        )
-        if not deployment:
-            return {"error": "No embedding deployment"}
-        return aicore_request(
+        deployment_id, err = self._resolve_embedding_deployment()
+        if err:
+            return err
+        result = aicore_request(
             "POST",
-            f"/v2/inference/deployments/{deployment['id']}/embeddings",
+            f"/v2/inference/deployments/{deployment_id}/embeddings",
             {"input": [text]},
         )
+        self._audit("generate_embedding", extra={"internal_caller": True})
+        return result
 
     def _governance_check(self, text: str, tool: str) -> dict | None:
-        """Return an error dict if the text references a confidential index
-        while targeting a tool that should not process raw confidential content.
+        """Return an error dict if the text references a confidential index.
 
-        This prevents callers from bypassing index-based routing by routing
-        a confidential payload through the public embedding/semantic-search path.
+        Evaluation order:
+        1. Try the in-process Go Mangle engine via gRPC (full 9-rule set).
+        2. Fall back to the Python ``MangleEngine`` offline replica when gRPC
+           is unavailable (e.g. unit tests, cold-start before the Go binary
+           is listening).
+
         Returns None when governance passes.
         """
         try:
-            from agent.elasticsearch_agent import MangleEngine as _ME
+            grpc_result = _mangle_grpc_client.resolve(text)
+        except Exception as exc:
+            logger.warning("MangleGRPCClient.resolve raised unexpectedly (%s); using fallback", exc)
+            grpc_result = None
+        if grpc_result is not None:
+            path = grpc_result.get("path", "")
+            if path in ("vllm", "route_to_vllm"):
+                self._audit(tool, extra={"blocked": True, "reason": "grpc:route_to_vllm",
+                                         "confidence": grpc_result.get("confidence", 0)})
+                return {
+                    "error": "Governance block: request references confidential data",
+                    "reason": "grpc:route_to_vllm",
+                    "tool": tool,
+                }
+            return None
+
+        try:
+            from agent.elasticsearch_agent import MangleEngine as _ME  # _OFFLINE_FALLBACK
             engine = _ME()
             results = engine.query("route_to_vllm", text)
             if results:
@@ -771,28 +872,14 @@ class MCPServer:
         blocked = self._governance_check(text, "generate_embedding")
         if blocked:
             return blocked
-        config = get_aicore_config()
-        embed_deployment_id = os.environ.get("AICORE_EMBEDDING_DEPLOYMENT_ID", "")
-        if embed_deployment_id:
-            result = aicore_request(
-                "POST",
-                f"/v2/inference/deployments/{embed_deployment_id}/embeddings",
-                {"input": [text]},
-            )
-        else:
-            deployments = aicore_request("GET", "/v2/lm/deployments")
-            resources = deployments.get("resources", [])
-            deployment = next(
-                (d for d in resources if "embed" in str(d.get("details", {})).lower()),
-                resources[0] if resources else None,
-            )
-            if not deployment:
-                return {"error": "No embedding deployment"}
-            result = aicore_request(
-                "POST",
-                f"/v2/inference/deployments/{deployment['id']}/embeddings",
-                {"input": [text]},
-            )
+        deployment_id, err = self._resolve_embedding_deployment()
+        if err:
+            return err
+        result = aicore_request(
+            "POST",
+            f"/v2/inference/deployments/{deployment_id}/embeddings",
+            {"input": [text]},
+        )
         self._audit("generate_embedding")
         return result
 
@@ -943,14 +1030,19 @@ class MCPServer:
         self._audit("kuzu_query", extra={"row_count": len(rows)})
         return {"rows": rows, "row_count": len(rows)}
 
+    # Predicates that may be read via mangle_query without elevation.
+    _MANGLE_PUBLIC_PREDICATES: frozenset = frozenset({"service_registry"})
+
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
-        # Redact tool_invocation details from external callers to limit
-        # information disclosure through the Mangle introspection channel.
+        # tool_invocation: return count only to prevent audit-history disclosure.
         if predicate == "tool_invocation":
             with self._audit_lock:
                 count = len(self.facts.get("tool_invocation", []))
             return {"predicate": predicate, "results": {"invocation_count": count}}
+        # Only expose explicitly allow-listed predicates to external callers.
+        if predicate not in self._MANGLE_PUBLIC_PREDICATES:
+            return {"predicate": predicate, "results": [], "message": "Unknown predicate"}
         facts = self.facts.get(predicate)
         if facts:
             return {"predicate": predicate, "results": facts}
@@ -1016,7 +1108,16 @@ class MCPServer:
                     result = es_request("GET", "/_cat/indices?format=json")
                     return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", "text": json.dumps(result, indent=2)}]})
                 if uri == "mangle://facts":
-                    return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", "text": json.dumps(self.facts, indent=2)}]})
+                    # Return only non-sensitive facts to limit information disclosure.
+                    # Raw tool_invocation history and any future internal facts are
+                    # excluded; callers that need counts should use mangle_query.
+                    with self._audit_lock:
+                        invocation_count = len(self.facts.get("tool_invocation", []))
+                    safe_facts = {
+                        "service_registry": self.facts.get("service_registry", []),
+                        "tool_invocation_count": invocation_count,
+                    }
+                    return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", "text": json.dumps(safe_facts, indent=2)}]})
                 return MCPResponse(id, error={"code": -32602, "message": f"Unknown resource: {uri}"})
 
             else:
@@ -1132,13 +1233,22 @@ class MCPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             aicore_cfg = get_aicore_config()
-            response = {
+            response: dict = {
                 "status": "healthy",
                 "service": "elasticsearch-mcp",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "es_host": get_es_config().get("host"),
                 "aicore_config_ready": aicore_config_ready(aicore_cfg),
             }
+            if _MIDDLEWARE_AVAILABLE:
+                try:
+                    from middleware.circuit_breaker import get_all_breaker_stats  # type: ignore
+                    response["middleware"] = {
+                        "rate_limiter": get_mcp_limiter().get_metrics(),
+                        "circuit_breakers": get_all_breaker_stats(),
+                    }
+                except Exception as _mw_exc:
+                    logger.debug("middleware health stats unavailable: %s", _mw_exc)
             self._write_json(200, response)
         else:
             self._write_json(404, {"error": "Not found"})

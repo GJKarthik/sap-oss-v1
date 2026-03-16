@@ -18,8 +18,7 @@ pub const Config = struct {
 
     pub const LogLevel = enum { debug, info, warn, err };
 
-    pub fn fromEnv(allocator: std.mem.Allocator) Config {
-        _ = allocator;
+    pub fn fromEnv() Config {
         return .{
             .port = getEnvPort(9881),
             .host = getEnvStr("MCPPAL_HOST", "0.0.0.0"),

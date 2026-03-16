@@ -22,10 +22,11 @@ class MangleEngine:
         self._load_rules()
     
     def _load_rules(self):
+        import os
         self.facts["agent_config"] = {
             ("aicore-streaming-agent", "autonomy_level"): "L2",
             ("aicore-streaming-agent", "service_name"): "aicore-streaming",
-            ("aicore-streaming-agent", "mcp_endpoint"): "http://localhost:9190/mcp",
+            ("aicore-streaming-agent", "mcp_endpoint"): os.environ.get("AICORE_STREAMING_MCP_ENDPOINT", "http://localhost:9190/mcp"),
             ("aicore-streaming-agent", "default_backend"): "aicore",
         }
         
@@ -39,12 +40,19 @@ class MangleEngine:
             "change_config", "update_credentials"
         }
         
-        # Confidential keywords (route to vLLM)
+        # Confidential keywords (route to vLLM) — canonical cross-repo list
         self.facts["confidential_keywords"] = {
-            "confidential", "customer", "personal", "private"
+            # Business entities
+            "customer", "order", "invoice", "contract", "supplier",
+            "business partner", "cds entity", "cap service",
+            # Financial
+            "revenue", "profit", "cost", "budget", "forecast",
+            # Personal / credential
+            "personal", "private", "confidential",
+            "salary", "ssn", "credit_card", "password",
         }
         
-        # Restricted keywords (block entirely)
+        # Restricted keywords (block entirely) — canonical cross-repo list
         self.facts["restricted_keywords"] = {"restricted", "classified", "secret"}
         
         self.facts["prompting_policy"] = {
@@ -138,12 +146,13 @@ class AICoreStreamingAgent:
     """
     
     def __init__(self):
+        import os
         self.mangle = MangleEngine([
             "mangle/domain/agents.mg",
             "../regulations/mangle/rules.mg"
         ])
-        self.mcp_endpoint = "http://localhost:9190/mcp"
-        self.vllm_endpoint = "http://localhost:9180/mcp"
+        self.mcp_endpoint = os.environ.get("AICORE_STREAMING_MCP_ENDPOINT", "http://localhost:9190/mcp")
+        self.vllm_endpoint = os.environ.get("VLLM_MCP_ENDPOINT", "http://localhost:9180/mcp")
         self.audit_log: List[Dict] = []
     
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:

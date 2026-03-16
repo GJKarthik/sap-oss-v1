@@ -22,10 +22,11 @@ class MangleEngine:
         self._load_rules()
     
     def _load_rules(self):
+        import os
         self.facts["agent_config"] = {
             ("cap-llm-agent", "autonomy_level"): "L2",
             ("cap-llm-agent", "service_name"): "cap-llm-plugin",
-            ("cap-llm-agent", "mcp_endpoint"): "http://localhost:9100/mcp",
+            ("cap-llm-agent", "mcp_endpoint"): os.environ.get("CAP_LLM_MCP_ENDPOINT", "http://localhost:9100/mcp"),
             ("cap-llm-agent", "default_backend"): "aicore",
             ("cap-llm-agent", "confidential_backend"): "vllm",
         }
@@ -41,9 +42,17 @@ class MangleEngine:
         }
         
         self.facts["confidential_keywords"] = {
+            # Business entities
             "customer", "order", "invoice", "contract", "supplier",
+            "business partner", "cds entity", "cap service",
+            # Financial
             "revenue", "profit", "cost", "budget", "forecast",
-            "cds entity", "cap service", "business partner"
+            # Personal / credential
+            "personal", "private", "confidential",
+            "salary", "ssn", "credit_card", "password",
+        }
+        self.facts["restricted_keywords"] = {
+            "restricted", "classified", "secret",
         }
         
         self.facts["prompting_policy"] = {
@@ -105,12 +114,13 @@ class CapLlmAgent:
     """
     
     def __init__(self):
+        import os
         self.mangle = MangleEngine([
             "mangle/domain/agents.mg",
             "../regulations/mangle/rules.mg"
         ])
-        self.mcp_endpoint = "http://localhost:9100/mcp"
-        self.vllm_endpoint = "http://localhost:9180/mcp"
+        self.mcp_endpoint = os.environ.get("CAP_LLM_MCP_ENDPOINT", "http://localhost:9100/mcp")
+        self.vllm_endpoint = os.environ.get("VLLM_MCP_ENDPOINT", "http://localhost:9180/mcp")
         self.audit_log: List[Dict] = []
     
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:

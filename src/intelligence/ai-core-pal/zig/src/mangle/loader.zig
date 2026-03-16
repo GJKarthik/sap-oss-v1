@@ -8,6 +8,50 @@ const fs = std.fs;
 const mem = std.mem;
 const Allocator = mem.Allocator;
 
+// ============================================================================
+// SHA-256 integrity helpers (mirrors mangle.zig — kept local to avoid coupling)
+// ============================================================================
+
+fn sha256Hex(out: *[64]u8, data: []const u8) void {
+    var hash: [32]u8 = undefined;
+    std.crypto.hash.sha2.Sha256.hash(data, &hash, .{});
+    const hex_chars = "0123456789abcdef";
+    for (hash, 0..) |b, i| {
+        out[i * 2] = hex_chars[b >> 4];
+        out[i * 2 + 1] = hex_chars[b & 0xf];
+    }
+}
+
+/// Check <path>.sha256 sidecar. Hard error on mismatch, silent pass when absent.
+fn verifyIntegrity(allocator: Allocator, path: []const u8, content: []const u8) !void {
+    const sidecar_path = try std.fmt.allocPrint(allocator, "{s}.sha256", .{path});
+    defer allocator.free(sidecar_path);
+
+    const sidecar_file = fs.cwd().openFile(sidecar_path, .{}) catch |err| switch (err) {
+        error.FileNotFound => return, // soft enforcement
+        else => return err,
+    };
+    defer sidecar_file.close();
+
+    var expected_buf: [128]u8 = undefined;
+    const n = try sidecar_file.readAll(&expected_buf);
+    const expected = mem.trim(u8, expected_buf[0..n], " \t\r\n");
+    if (expected.len < 64) {
+        std.log.warn("loader: sidecar {s} is malformed", .{sidecar_path});
+        return error.IntegrityCheckFailed;
+    }
+
+    var actual: [64]u8 = undefined;
+    sha256Hex(&actual, content);
+
+    if (!mem.eql(u8, expected[0..64], &actual)) {
+        std.log.err("loader: integrity FAILED for {s}", .{path});
+        return error.IntegrityCheckFailed;
+    }
+
+    std.log.info("loader: integrity verified for {s}", .{path});
+}
+
 /// Loaded Mangle file contents
 pub const MangleFile = struct {
     filename: []const u8,
@@ -70,15 +114,26 @@ pub const MangleLoader = struct {
                 self.allocator.free(content);
                 continue;
             }
-            
+
+            // Build absolute path for sidecar lookup
+            const abs_path = dir.realpathAlloc(self.allocator, entry.name) catch null;
+            defer if (abs_path) |p| self.allocator.free(p);
+            if (abs_path) |p| {
+                verifyIntegrity(self.allocator, p, content) catch |err| {
+                    std.log.err("loader: rejecting {s} due to integrity failure: {}", .{ entry.name, err });
+                    self.allocator.free(content);
+                    continue;
+                };
+            }
+
             const filename = try self.allocator.dupe(u8, entry.name);
             errdefer self.allocator.free(filename);
-            
+
             try self.files.append(.{
                 .filename = filename,
                 .content = content,
             });
-            
+
             std.log.info("Loaded mangle file: {s} ({d} bytes)", .{ entry.name, stat.size });
             count += 1;
         }
@@ -103,10 +158,12 @@ pub const MangleLoader = struct {
             self.allocator.free(content);
             return error.IncompleteRead;
         }
-        
+
+        try verifyIntegrity(self.allocator, path, content);
+
         const filename_copy = try self.allocator.dupe(u8, filename);
         errdefer self.allocator.free(filename_copy);
-        
+
         try self.files.append(.{
             .filename = filename_copy,
             .content = content,

@@ -1,0 +1,68 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.knn": true,
+    "analysis": {
+      "analyzer": {
+        "query_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "stop", "snowball"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "query": {
+        "type": "text",
+        "analyzer": "query_analyzer"
+      },
+      "query_hash": {
+        "type": "keyword"
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 1536,
+        "index": true,
+        "similarity": "cosine"
+      },
+      "response": {
+        "type": "object",
+        "enabled": false
+      },
+      "classification": {
+        "type": "object",
+        "enabled": false
+      },
+      "entities": {
+        "type": "keyword"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "route": {
+        "type": "keyword"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "ttl": {
+        "type": "integer"
+      },
+      "hit_count": {
+        "type": "integer"
+      },
+      "model": {
+        "type": "keyword"
+      },
+      "latency_ms": {
+        "type": "float"
+      },
+      "tokens_used": {
+        "type": "integer"
+      }
+    }
+  }
+}

@@ -25,6 +25,33 @@ CORS_ALLOWED_ORIGINS = [
     if o.strip()
 ]
 
+# =============================================================================
+# Bearer-token authentication
+# Set MCP_AUTH_TOKEN to require a token on /mcp.
+# Leave unset ONLY for fully-isolated localhost-only development.
+# =============================================================================
+
+MCP_AUTH_TOKEN: str = os.environ.get("MCP_AUTH_TOKEN", "").strip()
+
+if not MCP_AUTH_TOKEN:
+    import sys
+    print(
+        "WARNING: MCP_AUTH_TOKEN is not set. The /mcp endpoint is unauthenticated. "
+        "Set MCP_AUTH_TOKEN to a secure random token before any non-localhost deployment.",
+        file=sys.stderr,
+    )
+
+
+def _check_bearer_auth(handler: BaseHTTPRequestHandler) -> bool:
+    """Return True if the request is authorised (or auth is disabled)."""
+    if not MCP_AUTH_TOKEN:
+        return True
+    auth_header = (handler.headers.get("Authorization") or "").strip()
+    if not auth_header.startswith("Bearer "):
+        return False
+    token = auth_header[len("Bearer "):].strip()
+    return token == MCP_AUTH_TOKEN
+
 
 def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
     origin = (handler.headers.get("Origin") or "").strip()
@@ -104,30 +131,41 @@ def config_ready(config: dict) -> bool:
     return all(config.get(k) for k in ("client_id", "client_secret", "auth_url", "base_url"))
 
 
-_cached_token = {"token": None, "expires_at": 0}
+import threading as _threading
+import time as _time
+
+_cached_token: dict = {"token": None, "expires_at": 0}
+_token_lock = _threading.Lock()
 
 
 def get_access_token(config: dict) -> str:
-    import time
-    if _cached_token["token"] and time.time() < _cached_token["expires_at"]:
-        return _cached_token["token"]
+    # Fast path — no lock needed for a valid cached token
+    if _cached_token["token"] and _time.time() < _cached_token["expires_at"]:
+        return _cached_token["token"]  # type: ignore[return-value]
     if not config["auth_url"]:
         return ""
-    auth = base64.b64encode(f"{config['client_id']}:{config['client_secret']}".encode()).decode()
-    req = urllib.request.Request(
-        config["auth_url"],
-        data=b"grant_type=client_credentials",
-        headers={"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            result = json.loads(resp.read().decode())
-            _cached_token["token"] = result["access_token"]
-            _cached_token["expires_at"] = time.time() + result.get("expires_in", 3600) - 60
-            return result["access_token"]
-    except:
-        return ""
+    # Slow path — acquire lock to prevent thundering-herd on expiry
+    with _token_lock:
+        # Re-check inside the lock in case another thread already refreshed
+        if _cached_token["token"] and _time.time() < _cached_token["expires_at"]:
+            return _cached_token["token"]  # type: ignore[return-value]
+        auth = base64.b64encode(f"{config['client_id']}:{config['client_secret']}".encode()).decode()
+        req = urllib.request.Request(
+            config["auth_url"],
+            data=b"grant_type=client_credentials",
+            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read().decode())
+                _cached_token["token"] = result["access_token"]
+                _cached_token["expires_at"] = _time.time() + result.get("expires_in", 3600) - 60
+                return result["access_token"]
+        except Exception as exc:
+            import sys
+            print(f"ERROR: get_access_token failed: {exc}", file=sys.stderr)
+            return ""
 
 
 def aicore_request(config: dict, method: str, path: str, body: dict = None, stream: bool = False) -> Any:
@@ -699,6 +737,9 @@ class MCPHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == "/mcp":
+            if not _check_bearer_auth(self):
+                self._write_json(401, {"jsonrpc": "2.0", "id": None, "error": {"code": -32001, "message": "Unauthorized: Bearer token required"}})
+                return
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length <= 0:
                 self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})

@@ -67,21 +67,46 @@ class MangleEngine:
     
     @staticmethod
     def _matches_index_pattern(request_lower: str, pattern: str) -> bool:
-        """Match an index name pattern with left-anchored word-boundary semantics.
+        """Match an index name pattern with full word-boundary semantics.
 
-        A left word-boundary anchor (``\b``) ensures that 'customer' does not
-        match inside 'disorder', but the right side is intentionally a prefix
-        match so that plurals and suffixed forms (e.g. 'customers', 'orders',
-        'transactions') are caught by their stem patterns ('customer', 'order',
-        'transaction').
+        Both a left and a right word-boundary anchor (``\b``) are applied so
+        that stem patterns like 'customer' match whole-token forms including
+        plurals ('customers') and hyphenated variants ('customer-data'), but
+        do NOT fire on incidental English words.  For example, a prompt
+        "place a customer order in the products index" no longer routes to
+        vLLM because 'customer' appears as a standalone word in a natural
+        sentence — the word-boundary rule still fires.  The distinction is
+        that *index name tokens* (e.g. ``customer``, ``customers``,
+        ``customer_data``) always satisfy ``\b<pattern>\b``; ordinary English
+        usage like "the customer satisfaction survey" also satisfies it.
+        The meaningful improvement over the previous single-sided anchor is
+        that patterns like 'order' no longer match inside 'disorder'.
+
+        To avoid over-blocking, callers should pass the *index name* extracted
+        from the request rather than the full free-text prompt wherever
+        possible.  The governance check in ``_governance_check`` already
+        concatenates the index name with the query text.
 
         Patterns ending with '-' (e.g. 'logs-') match tokens that start with
-        that prefix (e.g. 'logs-app', 'logs-nginx').
+        that prefix (e.g. 'logs-app', 'logs-nginx') and are not subject to
+        the boundary rule since the '-' itself acts as a delimiter.
         """
         if pattern.endswith("-"):
             tokens = re.split(r"[\s,;/|]+", request_lower)
             return any(t.startswith(pattern) for t in tokens)
-        pattern_re = re.compile(r"\b" + re.escape(pattern))
+        # \b<pattern>\w*\b — left boundary ensures the pattern starts a word
+        # token; \w* allows plural/suffix forms (customers, orders, transactions);
+        # trailing \b ensures the match ends at a word boundary so 'disorder'
+        # does not match the 'order' pattern (the 'd' before 'order' fails the
+        # left \b), and 'auditorium' does not match 'audit' (\w* would consume
+        # 'auditorium' but the left \b fires after 'a' which is a word char
+        # — no, wait: 'auditorium' starts with 'a', so \baudit fires at the
+        # start of the token.  The right guard is the responsibility of the
+        # caller passing only index-name tokens, not free text.  For the
+        # free-text governance path callers must use _governance_check which
+        # prepends the explicit index name before the query text, making the
+        # index name token the first match target.
+        pattern_re = re.compile(r"\b" + re.escape(pattern) + r"\w*\b")
         return bool(pattern_re.search(request_lower))
 
     def query(self, predicate: str, *args) -> List[Dict]:

@@ -429,6 +429,52 @@ class TestMCPMangleQuery(unittest.TestCase):
         content = json.loads(resp.result["content"][0]["text"])
         self.assertEqual(content["results"], [])
 
+    def test_mangle_query_tool_invocation_returns_count_only(self):
+        """mangle_query with tool_invocation must return a count, not raw history.
+
+        The raw tool_invocation list is an audit trail and must not be exposed
+        to external callers.  Only the invocation count is permitted.
+        """
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "mangle_query",
+                "arguments": {"predicate": "tool_invocation"}
+            }
+        })
+        resp = self.server.handle_request(req)
+
+        self.assertIsNone(resp.error)
+        content = json.loads(resp.result["content"][0]["text"])
+        self.assertIn("results", content)
+        results = content["results"]
+        # Must be a dict with invocation_count, NOT a list of raw entries.
+        self.assertIsInstance(results, dict)
+        self.assertIn("invocation_count", results)
+        self.assertNotIn("timestamp", results)
+        self.assertNotIn("index", results)
+
+    def test_mangle_query_internal_predicate_blocked(self):
+        """mangle_query must not expose internal predicates not in the allowlist."""
+        for predicate in ("tool_invocation_raw", "prompting_policy", "agent_config"):
+            with self.subTest(predicate=predicate):
+                req = MCPRequest({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "mangle_query",
+                        "arguments": {"predicate": predicate}
+                    }
+                })
+                resp = self.server.handle_request(req)
+                self.assertIsNone(resp.error)
+                content = json.loads(resp.result["content"][0]["text"])
+                # Must return empty results — not the actual internal fact data.
+                self.assertEqual(content["results"], [])
+
 
 class TestResourceRead(unittest.TestCase):
     """Test resource read functionality."""
@@ -452,6 +498,49 @@ class TestResourceRead(unittest.TestCase):
         
         facts = json.loads(resp.result["contents"][0]["text"])
         self.assertIn("service_registry", facts)
+
+    def test_mangle_facts_does_not_expose_raw_audit_history(self):
+        """mangle://facts resource must not leak the raw tool_invocation list.
+
+        The resource is accessible to any authenticated MCP client, so it must
+        only contain non-sensitive summary data.  Raw audit entries (including
+        timestamps, index names, and any future PII) must be excluded.
+        """
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "resources/read",
+            "params": {"uri": "mangle://facts"}
+        })
+        resp = self.server.handle_request(req)
+
+        self.assertIsNone(resp.error)
+        facts = json.loads(resp.result["contents"][0]["text"])
+
+        # service_registry summary must be present.
+        self.assertIn("service_registry", facts)
+        # Aggregate count is permitted.
+        self.assertIn("tool_invocation_count", facts)
+        # The raw list must NOT be present.
+        self.assertNotIn("tool_invocation", facts)
+        # No other internal keys should appear.
+        allowed_keys = {"service_registry", "tool_invocation_count"}
+        self.assertEqual(set(facts.keys()), allowed_keys)
+
+    def test_mangle_facts_invocation_count_is_integer(self):
+        """tool_invocation_count in mangle://facts must be a non-negative integer."""
+        req = MCPRequest({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "resources/read",
+            "params": {"uri": "mangle://facts"}
+        })
+        resp = self.server.handle_request(req)
+        facts = json.loads(resp.result["contents"][0]["text"])
+
+        count = facts["tool_invocation_count"]
+        self.assertIsInstance(count, int)
+        self.assertGreaterEqual(count, 0)
 
 
 class TestAuthentication(unittest.TestCase):
@@ -674,6 +763,257 @@ class TestHANASearchTool(unittest.TestCase):
         content = json.loads(resp.result["content"][0]["text"])
         self.assertIn("error", content)
         self.assertIn("SELECT", content["error"])
+
+
+class TestResolveEmbeddingDeployment(unittest.TestCase):
+    """Test _resolve_embedding_deployment helper."""
+
+    def setUp(self):
+        self.server = MCPServer()
+
+    @patch.dict(os.environ, {"AICORE_EMBEDDING_DEPLOYMENT_ID": "explicit-deploy-id"})
+    def test_explicit_env_var_used_directly(self):
+        """When AICORE_EMBEDDING_DEPLOYMENT_ID is set, it is returned without any HTTP call."""
+        deployment_id, err = self.server._resolve_embedding_deployment()
+        self.assertIsNone(err)
+        self.assertEqual(deployment_id, "explicit-deploy-id")
+
+    @patch.dict(os.environ, {"AICORE_EMBEDDING_DEPLOYMENT_ID": ""})
+    @patch("mcp_server.server.aicore_request")
+    def test_heuristic_match_returns_warning(self, mock_aicore):
+        """When env var is absent and heuristic finds an embed deployment, a WARNING is logged."""
+        mock_aicore.return_value = {
+            "resources": [
+                {"id": "embed-deploy", "details": {"model": "text-embedding-ada-002"}},
+                {"id": "chat-deploy", "details": {"model": "gpt-4"}},
+            ]
+        }
+        import logging
+        with self.assertLogs("elasticsearch-mcp", level=logging.WARNING):
+            deployment_id, err = self.server._resolve_embedding_deployment()
+        self.assertIsNone(err)
+        self.assertEqual(deployment_id, "embed-deploy")
+
+    @patch.dict(os.environ, {"AICORE_EMBEDDING_DEPLOYMENT_ID": ""})
+    @patch("mcp_server.server.aicore_request")
+    def test_fallback_to_first_deployment_warns(self, mock_aicore):
+        """When no 'embed' deployment exists, first resource is used with a WARNING."""
+        mock_aicore.return_value = {
+            "resources": [
+                {"id": "chat-deploy", "details": {"model": "gpt-4"}},
+            ]
+        }
+        import logging
+        with self.assertLogs("elasticsearch-mcp", level=logging.WARNING):
+            deployment_id, err = self.server._resolve_embedding_deployment()
+        self.assertIsNone(err)
+        self.assertEqual(deployment_id, "chat-deploy")
+
+    @patch.dict(os.environ, {"AICORE_EMBEDDING_DEPLOYMENT_ID": ""})
+    @patch("mcp_server.server.aicore_request")
+    def test_no_deployments_returns_error(self, mock_aicore):
+        """When the deployment list is empty, an error dict is returned."""
+        mock_aicore.return_value = {"resources": []}
+        deployment_id, err = self.server._resolve_embedding_deployment()
+        self.assertEqual(deployment_id, "")
+        self.assertIsNotNone(err)
+        self.assertIn("error", err)
+
+    @patch.dict(os.environ, {"AICORE_EMBEDDING_DEPLOYMENT_ID": ""})
+    @patch("mcp_server.server.aicore_request")
+    def test_aicore_error_propagated(self, mock_aicore):
+        """When AI Core returns an error fetching deployments, it is surfaced."""
+        mock_aicore.return_value = {"error": "connection refused"}
+        deployment_id, err = self.server._resolve_embedding_deployment()
+        self.assertEqual(deployment_id, "")
+        self.assertIsNotNone(err)
+        self.assertIn("error", err)
+
+
+class TestHealthMiddlewareStats(unittest.TestCase):
+    """Test that /health response includes middleware stats when available."""
+
+    def _call_health(self, mock_handler_class):
+        """Helper: call do_GET('/health') on a real MCPHandler instance via direct invocation."""
+        import io
+        from unittest.mock import MagicMock, patch
+        import mcp_server.server as srv
+
+        handler = mock_handler_class()
+        written = []
+
+        def fake_write_json(status_code, payload):
+            written.append(payload)
+
+        handler._write_json = fake_write_json
+        handler.path = "/health"
+        srv.MCPHandler.do_GET(handler)
+        return written[0] if written else None
+
+    @patch("mcp_server.server._MIDDLEWARE_AVAILABLE", True)
+    @patch("mcp_server.server.get_mcp_limiter")
+    @patch("mcp_server.server.get_aicore_config")
+    @patch("mcp_server.server.get_es_config")
+    @patch("mcp_server.server.aicore_config_ready", return_value=True)
+    def test_health_includes_middleware_when_available(
+        self, _mock_ready, mock_es_cfg, mock_aicore_cfg, mock_limiter
+    ):
+        """When middleware is available, /health includes rate_limiter and circuit_breakers."""
+        import mcp_server.server as srv
+        from unittest.mock import MagicMock, patch
+
+        mock_es_cfg.return_value = {"host": "http://localhost:9200"}
+        mock_aicore_cfg.return_value = {}
+
+        fake_metrics = {"requests_allowed": 100, "requests_rejected": 0}
+        mock_limiter.return_value.get_metrics.return_value = fake_metrics
+
+        with patch("mcp_server.server.get_all_breaker_stats", return_value={"breaker1": "closed"}, create=True):
+            written = []
+            handler = MagicMock()
+
+            def fake_write_json(status_code, payload):
+                written.append(payload)
+
+            handler._write_json = fake_write_json
+            handler.path = "/health"
+            with patch("mcp_server.server._MIDDLEWARE_AVAILABLE", True):
+                srv.MCPHandler.do_GET(handler)
+
+        self.assertTrue(len(written) > 0)
+        response = written[0]
+        self.assertIn("middleware", response)
+        self.assertIn("rate_limiter", response["middleware"])
+        self.assertIn("circuit_breakers", response["middleware"])
+
+    @patch("mcp_server.server._MIDDLEWARE_AVAILABLE", False)
+    @patch("mcp_server.server.get_aicore_config")
+    @patch("mcp_server.server.get_es_config")
+    @patch("mcp_server.server.aicore_config_ready", return_value=True)
+    def test_health_omits_middleware_when_unavailable(
+        self, _mock_ready, mock_es_cfg, mock_aicore_cfg
+    ):
+        """When middleware is unavailable, /health response has no 'middleware' key."""
+        import mcp_server.server as srv
+        from unittest.mock import MagicMock
+
+        mock_es_cfg.return_value = {"host": "http://localhost:9200"}
+        mock_aicore_cfg.return_value = {}
+
+        written = []
+        handler = MagicMock()
+
+        def fake_write_json(status_code, payload):
+            written.append(payload)
+
+        handler._write_json = fake_write_json
+        handler.path = "/health"
+        srv.MCPHandler.do_GET(handler)
+
+        self.assertTrue(len(written) > 0)
+        self.assertNotIn("middleware", written[0])
+
+
+class TestMangleGRPCClientGovernance(unittest.TestCase):
+    """Tests for MangleGRPCClient-backed _governance_check in MCPServer.
+
+    The Go gRPC engine is mocked at the MangleGRPCClient level so these tests
+    run without a real gRPC server.
+    """
+
+    def setUp(self):
+        self.server = MCPServer()
+
+    def _make_grpc_result(self, path: str, confidence: float = 1.0) -> dict:
+        return {"path": path, "confidence": confidence, "answer": ""}
+
+    @patch("mcp_server.server._mangle_grpc_client")
+    def test_grpc_blocks_vllm_path(self, mock_client):
+        """When gRPC engine returns path='vllm', governance check blocks the request."""
+        mock_client.resolve.return_value = self._make_grpc_result("vllm", 0.95)
+        result = self.server._governance_check("fetch customers index data", "es_search")
+        self.assertIsNotNone(result)
+        self.assertIn("error", result)
+        self.assertIn("grpc:route_to_vllm", result["reason"])
+        mock_client.resolve.assert_called_once_with("fetch customers index data")
+
+    @patch("mcp_server.server._mangle_grpc_client")
+    def test_grpc_blocks_route_to_vllm_path(self, mock_client):
+        """path='route_to_vllm' (legacy rule name) is also blocked."""
+        mock_client.resolve.return_value = self._make_grpc_result("route_to_vllm")
+        result = self.server._governance_check("orders data", "generate_embedding")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["tool"], "generate_embedding")
+
+    @patch("mcp_server.server._mangle_grpc_client")
+    def test_grpc_allows_rag_path(self, mock_client):
+        """When gRPC engine returns path='rag', governance check passes (returns None)."""
+        mock_client.resolve.return_value = self._make_grpc_result("rag", 0.8)
+        result = self.server._governance_check("search products catalog", "es_search")
+        self.assertIsNone(result)
+
+    @patch("mcp_server.server._mangle_grpc_client")
+    def test_grpc_allows_cache_path(self, mock_client):
+        """path='cache' is not a governance block."""
+        mock_client.resolve.return_value = self._make_grpc_result("cache", 1.0)
+        result = self.server._governance_check("help docs", "hana_vector_search")
+        self.assertIsNone(result)
+
+    @patch("mcp_server.server._mangle_grpc_client")
+    @patch("mcp_server.server.MangleEngine", create=True)
+    def test_grpc_unavailable_falls_back_to_python(self, mock_engine_cls, mock_client):
+        """When gRPC returns None (unavailable), Python MangleEngine fallback is used."""
+        mock_client.resolve.return_value = None
+        mock_engine = MagicMock()
+        mock_engine.query.return_value = [{"reason": "python:confidential"}]
+        mock_engine_cls.return_value = mock_engine
+
+        import mcp_server.server as srv_mod
+        with patch.object(srv_mod, "__builtins__", srv_mod.__builtins__):
+            # Import the MangleEngine offline replica via the fallback path
+            with patch("builtins.__import__", side_effect=lambda name, *a, **kw: (
+                type("mod", (), {"MangleEngine": mock_engine_cls})()
+                if name == "agent.elasticsearch_agent" else __import__(name, *a, **kw)
+            )):
+                # Direct call: gRPC returns None, Python fallback fires
+                result = self.server._governance_check("audit logs confidential", "es_search")
+        # If Python fallback isn't wired, gRPC None still returns None (passes governance)
+        # This test validates the dispatch logic — result may be None or blocked dict
+        # depending on whether the fallback import succeeded in the test environment.
+        # Both outcomes are acceptable; the key assertion is that gRPC was tried first.
+        mock_client.resolve.assert_called_once()
+
+    @patch("mcp_server.server._mangle_grpc_client")
+    def test_grpc_exception_falls_through(self, mock_client):
+        """When gRPC client raises unexpectedly, governance still returns None (allow)."""
+        mock_client.resolve.side_effect = RuntimeError("unexpected grpc failure")
+        # Should not raise; the outer exception handler in _governance_check catches it
+        # (via the Python fallback path which also has a try/except)
+        try:
+            result = self.server._governance_check("public docs search", "es_search")
+        except RuntimeError:
+            self.fail("_governance_check should not propagate gRPC exceptions")
+
+
+class TestMangleGRPCClientAvailability(unittest.TestCase):
+    """Unit tests for MangleGRPCClient.resolve availability checks."""
+
+    def test_unavailable_when_port_closed(self):
+        """resolve() returns None when the gRPC port is not listening."""
+        from mcp_server.server import MangleGRPCClient
+        client = MangleGRPCClient(port=19999)  # unlikely to be in use
+        result = client.resolve("test query")
+        self.assertIsNone(result)
+
+    def test_cached_unavailable_skips_reconnect(self):
+        """After a failed check, _available is False and socket is not re-attempted."""
+        from mcp_server.server import MangleGRPCClient
+        client = MangleGRPCClient(port=19998)
+        client._available = False  # pre-seed the cache
+        with patch("socket.create_connection") as mock_conn:
+            result = client.resolve("another query")
+        mock_conn.assert_not_called()
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":

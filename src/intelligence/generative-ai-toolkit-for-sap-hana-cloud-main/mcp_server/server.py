@@ -91,10 +91,14 @@ def call_mcp_tool(endpoint: str, tool_name: str, tool_args: dict, timeout_second
             "arguments": tool_args,
         },
     }
+    headers = {"Content-Type": "application/json"}
+    auth_token = os.environ.get("MCP_FEDERATION_AUTH_TOKEN", "dev-token")
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
     req = urllib.request.Request(
         normalize_mcp_endpoint(endpoint),
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=max(1, int(timeout_seconds))) as resp:
@@ -195,6 +199,28 @@ def aicore_request(config: dict, method: str, path: str, body: dict = None) -> A
             return json.loads(resp.read().decode())
     except Exception as e:
         return {"error": str(e)}
+
+
+def deployment_descriptor(deployment: dict) -> str:
+    return " ".join([
+        str(deployment.get("id", "")),
+        str(deployment.get("configurationName", "")),
+        str(deployment.get("scenarioId", "")),
+        json.dumps(deployment.get("details", {})),
+    ]).lower()
+
+
+def select_deployment(resources: list, include_terms: tuple[str, ...] = (), exclude_terms: tuple[str, ...] = ()) -> dict | None:
+    running = [resource for resource in resources if str(resource.get("status", "")).upper() == "RUNNING"]
+    candidates = running or resources
+    for deployment in candidates:
+        descriptor = deployment_descriptor(deployment)
+        if include_terms and not any(term in descriptor for term in include_terms):
+            continue
+        if exclude_terms and any(term in descriptor for term in exclude_terms):
+            continue
+        return deployment
+    return candidates[0] if candidates else None
 
 
 # =============================================================================
@@ -435,8 +461,15 @@ class MCPServer:
         resources = deployments.get("resources", [])
         if not resources:
             return {"error": "No deployment available"}
-        deployment = resources[0]
-        is_anthropic = "anthropic" in str(deployment.get("details", {})).lower()
+        deployment = select_deployment(
+            resources,
+            include_terms=("anthropic", "claude"),
+            exclude_terms=("embed", "orchestration"),
+        ) or select_deployment(resources, exclude_terms=("embed", "orchestration"))
+        if not deployment:
+            return {"error": "No chat deployment available"}
+        descriptor = deployment_descriptor(deployment)
+        is_anthropic = "anthropic" in descriptor or "claude" in descriptor
         self.facts["tool_invocation"].append({"tool": "hana_chat", "deployment": deployment["id"], "timestamp": __import__("time").time()})
         if is_anthropic:
             result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/invoke", {
@@ -497,22 +530,30 @@ class MCPServer:
         if table_name == "" or query.strip() == "":
             return {"error": "table_name and query are required"}
 
-        delegation = self._federated_mcp_call(
-            "ai_semantic_search",
-            {"index": table_name, "query": query, "k": top_k},
-            preferred=[self.vector_mcp_endpoint],
-        )
-        if delegation:
+        try:
+            result = call_mcp_tool(
+                self.vector_mcp_endpoint,
+                "ai_semantic_search",
+                {"index": table_name, "query": query, "k": top_k},
+            )
             return {
                 "table_name": table_name,
                 "query": query,
                 "top_k": top_k,
                 "status": "federated",
-                "source": delegation["source"],
-                "result": delegation["result"],
+                "source": self.vector_mcp_endpoint,
+                "result": result,
             }
-
-        return {"table_name": table_name, "query": query, "top_k": top_k, "results": [], "status": "degraded-no-remote"}
+        except Exception as exc:
+            return {
+                "table_name": table_name,
+                "query": query,
+                "top_k": top_k,
+                "results": [],
+                "status": "degraded-no-remote",
+                "source": self.vector_mcp_endpoint,
+                "error": str(exc),
+            }
 
     def _handle_hana_rag(self, args: dict) -> dict:
         query = str(args.get("query", "") or "")
@@ -568,9 +609,12 @@ class MCPServer:
             return {"error": "input is required"}
         deployments = aicore_request(config, "GET", "/v2/lm/deployments")
         resources = deployments.get("resources", [])
-        deployment = next((d for d in resources if "embed" in str(d.get("details", {})).lower()), resources[0] if resources else None)
+        deployment = select_deployment(resources, include_terms=("embed",))
         if not deployment:
             return {"error": "No embedding deployment"}
+        descriptor = deployment_descriptor(deployment)
+        if "titan-embed" in descriptor or "embed-image" in descriptor:
+            return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/invoke", {"inputText": input_text})
         return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/embeddings", {"input": [input_text]})
 
     def _handle_hana_agent_run(self, args: dict) -> dict:
@@ -583,13 +627,10 @@ class MCPServer:
 
         max_iterations = clamp_int(args.get("max_iterations", 3), 3, 1, MAX_TOP_K)
         delegation = self._federated_mcp_call(
-            "vllm_chat",
+            "hybrid-search",
             {
-                "messages": json.dumps([
-                    {"role": "system", "content": "You are an autonomous task execution agent."},
-                    {"role": "user", "content": f"Task: {task}\nTools: {json.dumps(tools[:MAX_TOP_K])}\nMax iterations: {max_iterations}"},
-                ]),
-                "max_tokens": 1024,
+                "query": task,
+                "top_k": min(5, MAX_TOP_K),
             },
             preferred=[self.agent_mcp_endpoint],
         )
@@ -603,7 +644,20 @@ class MCPServer:
                 "result": delegation["result"],
             }
 
-        return {"task": task, "tools": tools[:MAX_TOP_K], "iterations": max_iterations, "status": "degraded-no-agent-backend"}
+        chat_result = self._handle_hana_chat({
+            "messages": json.dumps([
+                {"role": "system", "content": "You are an autonomous task execution agent."},
+                {"role": "user", "content": f"Task: {task}\nTools: {json.dumps(tools[:MAX_TOP_K])}\nMax iterations: {max_iterations}"},
+            ]),
+            "max_tokens": 1024,
+        })
+        return {
+            "task": task,
+            "tools": tools[:MAX_TOP_K],
+            "iterations": max_iterations,
+            "status": "fallback-chat",
+            "result": chat_result,
+        }
 
     def _handle_hana_memory_store(self, args: dict) -> dict:
         key = args.get("key", "")

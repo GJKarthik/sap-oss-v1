@@ -1,0 +1,25 @@
+# REUSE.toml — REUSE 3.0 machine-readable licence metadata for mangle-main.
+#
+# All Go source files in this repository are authored by Google LLC and
+# distributed under the Apache Licence 2.0.  They carry full long-form Apache
+# 2.0 licence headers rather than the compact SPDX short-form, which is
+# equally valid per the REUSE specification (§3.1.2 "other licence notice").
+#
+# This file covers the whole tree so that tools that require the compact
+# SPDX-License-Identifier form (e.g. scan_licenses.py, reuse lint) can
+# identify the correct licence without modifying Google-authored source files.
+#
+# Reference: https://reuse.software/spec/
+
+version = 1
+
+[[annotations]]
+path = "**"
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "2022 Google LLC"
+
+[[annotations]]
+path = "LICENSE"
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "2022 Google LLC"
+

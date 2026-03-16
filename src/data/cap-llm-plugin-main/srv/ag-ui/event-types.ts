@@ -304,11 +304,53 @@ export function createEvent<T extends AgUiEvent>(
   } as T;
 }
 
+// =============================================================================
+// Protocol Wire-Format Adapter
+// =============================================================================
+//
+// The Angular AG-UI client (libs/ag-ui-angular/src/lib/types/ag-ui-events.ts)
+// uses dot-notation string literals on the wire, e.g. 'lifecycle.run_started'.
+// The backend enum uses SCREAMING_SNAKE_CASE values ('RUN_STARTED').
+// This adapter normalises the event type before SSE serialisation so that
+// the frontend can parse events without a custom converter.
+//
+// Adding a new event type:
+//   1. Add the enum member in AgUiEventType above.
+//   2. Add the mapping below.
+//   3. Add it to the union type in the Angular client's ag-ui-events.ts.
+
+/** Map from backend AgUiEventType enum value → Angular client wire-format string. */
+export const AGUI_WIRE_TYPE: Readonly<Record<AgUiEventType, string>> = {
+  [AgUiEventType.RUN_STARTED]:          'lifecycle.run_started',
+  [AgUiEventType.RUN_FINISHED]:         'lifecycle.run_finished',
+  [AgUiEventType.RUN_ERROR]:            'lifecycle.run_error',
+  [AgUiEventType.STEP_STARTED]:         'lifecycle.step_started',
+  [AgUiEventType.STEP_FINISHED]:        'lifecycle.step_finished',
+  [AgUiEventType.TEXT_MESSAGE_START]:   'text.delta',
+  [AgUiEventType.TEXT_MESSAGE_CONTENT]: 'text.delta',
+  [AgUiEventType.TEXT_MESSAGE_END]:     'text.done',
+  [AgUiEventType.TOOL_CALL_START]:      'tool.call_start',
+  [AgUiEventType.TOOL_CALL_ARGS]:       'tool.call_args_delta',
+  [AgUiEventType.TOOL_CALL_END]:        'tool.call_args_done',
+  [AgUiEventType.TOOL_CALL_RESULT]:     'tool.call_result',
+  [AgUiEventType.STATE_SNAPSHOT]:       'state.snapshot',
+  [AgUiEventType.STATE_DELTA]:          'state.delta',
+  [AgUiEventType.MESSAGES_SNAPSHOT]:    'state.snapshot',
+  [AgUiEventType.RAW]:                  'custom',
+  [AgUiEventType.CUSTOM]:               'custom',
+} as const;
+
 /**
- * Serialize event for SSE transmission
+ * Serialize event for SSE transmission.
+ *
+ * The `type` field in the JSON payload is translated to the dot-notation wire
+ * format expected by the Angular AG-UI client.  The original enum value is
+ * preserved as `_backendType` for server-side logging/tracing purposes.
  */
 export function serializeEvent(event: AgUiEvent): string {
-  return `data: ${JSON.stringify(event)}\n\n`;
+  const wireType = AGUI_WIRE_TYPE[event.type] ?? event.type;
+  const payload = { ...event, _backendType: event.type, type: wireType };
+  return `data: ${JSON.stringify(payload)}\n\n`;
 }
 
 /**

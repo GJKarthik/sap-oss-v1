@@ -10,6 +10,10 @@ const hana_client_mod = @import("hana/hana_client.zig");
 const search_client_mod = @import("mcp/search_client.zig");
 const deductive_client_mod = @import("mcp/deductive_client.zig");
 const snapshot_mod = @import("domain/snapshot.zig");
+const audit_mod = @import("domain/audit.zig");
+const auth = @import("http/auth.zig");
+const metrics_mod = @import("metrics/http_server.zig");
+const graceful_shutdown_mod = @import("resilience/graceful_shutdown.zig");
 
 // Shared AI Fabric (cross-service state + tracing)
 const fabric = @import("fabric");
@@ -45,18 +49,41 @@ const quantization = @import("quantization");
 
 const max_http_request_bytes: usize = 1024 * 1024;
 
-var global_catalog: pal_mod.Catalog = undefined;
-var global_mangle: mangle_mod.Engine = undefined;
-var global_config: config_mod.Config = undefined;
-var global_database: schema_mod.Database = undefined;
-var global_hana_client: hana_client_mod.HanaClient = undefined;
-var global_search_client: search_client_mod.SearchClient = undefined;
-var global_deductive_client: deductive_client_mod.DeductiveClient = undefined;
-var global_schema_loaded: bool = false;
-var global_hana_schema: []const u8 = "";
-var global_search_rules_loaded: bool = false;
-var global_snapshot_manager: ?snapshot_mod.SnapshotManager = null;
-var global_fabric: ?fabric.FabricContext = null;
+// ============================================================================
+// ServerContext — replaces module-level globals for testability and safety.
+// All per-request handlers receive a *const ServerContext pointer so that
+// state can be injected, mocked, and deterministically cleaned up.
+// ============================================================================
+
+pub const ServerContext = struct {
+    allocator: std.mem.Allocator,
+    catalog: pal_mod.Catalog,
+    mangle: mangle_mod.Engine,
+    config: config_mod.Config,
+    database: schema_mod.Database,
+    hana_client: hana_client_mod.HanaClient,
+    search_client: search_client_mod.SearchClient,
+    deductive_client: deductive_client_mod.DeductiveClient,
+    schema_loaded: bool,
+    hana_schema: []const u8,
+    search_rules_loaded: bool,
+    snapshot_manager: ?*snapshot_mod.SnapshotManager,
+    fabric_ctx: ?fabric.FabricContext,
+    audit: audit_mod.AuditLog,
+    metrics: metrics_mod.McpPalMetrics,
+
+    pub fn deinit(self: *ServerContext) void {
+        self.catalog.deinit();
+        self.mangle.deinit();
+        self.database.deinit();
+        if (self.snapshot_manager) |sm| {
+            sm.deinit();
+            self.allocator.destroy(sm);
+        }
+        if (self.fabric_ctx) |*fc| fc.deinit();
+        self.audit.deinit();
+    }
+};
 
 // ============================================================================
 // GPU Configuration
@@ -167,19 +194,12 @@ fn generateDeterministicEmbedding(allocator: std.mem.Allocator, text: []const u8
     return embedding;
 }
 
-// Global GPU engine
-var global_gpu_manager: ?GpuEngineManager = null;
-
-pub fn initGpuEngine(allocator: std.mem.Allocator, config: GpuConfig) !void {
-    global_gpu_manager = try GpuEngineManager.init(allocator, config);
-}
-
 /// Initialize GPU engine with dynamic model discovery from /v1/models.
-pub fn initGpuEngineWithDiscovery(allocator: std.mem.Allocator) !void {
-    // Get model architecture from discovery
+/// Returns null on failure so the caller can continue without GPU.
+fn initGpuEngineWithDiscovery(allocator: std.mem.Allocator) ?GpuEngineManager {
     const model_name = std.posix.getenv("MODEL_NAME") orelse "phi3-lora";
     const model = fabric.getModel(model_name) catch |err| blk: {
-        std.log.warn("[mcppal] Model discovery failed: {s}", .{@errorName(err)});
+        std.log.warn("[mcppal] Model discovery failed: {s} — falling back to T4 config", .{@errorName(err)});
         break :blk null;
     };
 
@@ -190,22 +210,14 @@ pub fn initGpuEngineWithDiscovery(allocator: std.mem.Allocator) !void {
                 arch.vocab_size, arch.num_layers, arch.num_heads,
             });
         }
+    } else {
+        std.log.warn("[mcppal] Model discovery returned no model; GPU kernel sizing may be suboptimal", .{});
     }
 
-    // Fall back to default T4 config (GPU engine uses fabric for architecture)
-    global_gpu_manager = try GpuEngineManager.init(allocator, GpuConfig.forT4());
-}
-
-pub fn getGpuEngine() ?*GpuEngineManager {
-    if (global_gpu_manager) |*manager| return manager;
-    return null;
-}
-
-pub fn shutdownGpuEngine() void {
-    if (global_gpu_manager) |*manager| {
-        manager.deinit();
-        global_gpu_manager = null;
-    }
+    return GpuEngineManager.init(allocator, GpuConfig.forT4()) catch |err| {
+        std.log.warn("[mcppal] GPU engine init failed: {s}", .{@errorName(err)});
+        return null;
+    };
 }
 
 pub fn main() !void {
@@ -213,15 +225,15 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    global_config = config_mod.Config.fromEnv(allocator);
+    const cfg = config_mod.Config.fromEnv();
 
-    const sdk_path = resolveSdkPath(allocator, global_config.pal_sdk_path) catch |err| {
-        std.log.err("Failed to resolve PAL_SDK_PATH '{s}': {}", .{ global_config.pal_sdk_path, err });
+    const sdk_path = resolveSdkPath(allocator, cfg.pal_sdk_path) catch |err| {
+        std.log.err("Failed to resolve PAL_SDK_PATH '{s}': {}", .{ cfg.pal_sdk_path, err });
         return err;
     };
 
     // Initialize shared AI Fabric (blackboard + tracing)
-    global_fabric = fabric.FabricContext.init(allocator, .mcp_pal, "mcp-pal") catch |err| blk: {
+    const fabric_ctx = fabric.FabricContext.init(allocator, .mcp_pal, "mcp-pal") catch |err| blk: {
         std.log.warn("[mcppal] Fabric initialization failed: {s} — running without cross-service state", .{@errorName(err)});
         break :blk null;
     };
@@ -233,113 +245,104 @@ pub fn main() !void {
     };
 
     // Initialize GPU engine with dynamic model discovery
-    initGpuEngineWithDiscovery(allocator) catch |err| {
-        std.log.warn("[mcppal] GPU engine initialization failed: {s}", .{@errorName(err)});
-    };
+    var gpu_manager = initGpuEngineWithDiscovery(allocator);
+    defer if (gpu_manager) |*gm| gm.deinit();
 
     std.log.info("[mcppal] Starting mcppal-mesh-gateway v1.0.0 (GPU-Accelerated)", .{});
-    std.log.info("[mcppal] GPU Engine: {s}", .{if (global_gpu_manager != null) "ENABLED (T4 optimized)" else "DISABLED (CPU fallback)"});
+    std.log.info("[mcppal] GPU Engine: {s}", .{if (gpu_manager != null) "ENABLED (T4 optimized)" else "DISABLED (CPU fallback)"});
     std.log.info("[mcppal] PAL SDK path: {s}", .{sdk_path});
 
     // Load PAL catalog
-    global_catalog = pal_mod.Catalog.init(allocator, sdk_path);
-    try global_catalog.load();
+    var catalog = pal_mod.Catalog.init(allocator, sdk_path);
+    try catalog.load();
     std.log.info("[mcppal] Loaded {d} algorithms across {d} categories", .{
-        global_catalog.algorithms.items.len,
-        global_catalog.categories.items.len,
+        catalog.algorithms.items.len,
+        catalog.categories.items.len,
     });
 
     // Load Mangle engine + rules
-    global_mangle = mangle_mod.Engine.init(allocator);
-    try global_mangle.loadDefaultIntents();
+    var mangle_engine = mangle_mod.Engine.init(allocator);
+    try mangle_engine.loadDefaultIntents();
 
     const mangle_dir = try std.fs.path.join(allocator, &.{ sdk_path, "mangle" });
     defer allocator.free(mangle_dir);
-    global_mangle.loadDir(mangle_dir) catch |err| {
+    mangle_engine.loadDir(mangle_dir) catch |err| {
         std.log.warn("[mcppal] Could not load mangle dir: {}", .{err});
     };
 
     const facts_path = try std.fs.path.join(allocator, &.{ sdk_path, "facts", "pal_catalog.mg" });
     defer allocator.free(facts_path);
-    global_mangle.loadFile(facts_path) catch |err| {
+    mangle_engine.loadFile(facts_path) catch |err| {
         std.log.warn("[mcppal] Could not load catalog facts: {}", .{err});
     };
 
-    // Load SAP config from .vscode/sap_config.local.mg / .vscode/sap_config.mg (HANA credentials as Mangle facts)
+    // Load SAP config from .vscode/sap_config.local.mg / .vscode/sap_config.mg
     const sap_config_path = resolveSapConfigPath(allocator) catch |err| blk: {
-        std.log.info("[mcppal] No SAP config found (.vscode/sap_config.local.mg or .vscode/sap_config.mg): {}", .{err});
+        std.log.info("[mcppal] No SAP config found: {}", .{err});
         break :blk null;
     };
     if (sap_config_path) |cfg_path| {
         defer allocator.free(cfg_path);
-        global_mangle.loadFile(cfg_path) catch |err| {
+        mangle_engine.loadFile(cfg_path) catch |err| {
             std.log.warn("[mcppal] Could not load sap_config.mg: {}", .{err});
         };
         std.log.info("[mcppal] Loaded SAP config from {s}", .{cfg_path});
     }
 
-    // Load search-svc Mangle rules (pal_optimizer.mg, es_to_hana.mg, etc.)
-    if (resolveSdkPath(allocator, global_config.search_svc_path)) |svc_path| {
+    // Load search-svc Mangle rules
+    var search_rules_loaded = false;
+    if (resolveSdkPath(allocator, cfg.search_svc_path)) |svc_path| {
         const search_mangle_dir = std.fs.path.join(allocator, &.{ svc_path, "mangle" }) catch null;
         allocator.free(svc_path);
         if (search_mangle_dir) |smd| {
             defer allocator.free(smd);
-            global_mangle.loadDir(smd) catch |err| {
+            mangle_engine.loadDir(smd) catch |err| {
                 std.log.warn("[mcppal] Could not load search-svc mangle dir: {}", .{err});
             };
-            global_search_rules_loaded = true;
+            search_rules_loaded = true;
             std.log.info("[mcppal] Loaded search-svc Mangle rules from {s}", .{smd});
         }
     } else |_| {
         std.log.info("[mcppal] No search-svc path resolved — search rules disabled", .{});
     }
 
-    // Initialize search-svc HTTP client
-    global_search_client = search_client_mod.SearchClient.init(allocator, global_config.search_svc_url);
-
-    // Initialize deductive-db client
-    global_deductive_client = deductive_client_mod.DeductiveClient.init(allocator, global_config.deductive_db_url);
-    if (global_deductive_client.isConfigured()) {
-        std.log.info("[mcppal] Deductive DB client configured: {s}:{d}", .{ global_deductive_client.host, global_deductive_client.port });
-    }
-
     std.log.info("[mcppal] Mangle engine: {d} facts, {d} rules, {d} intent patterns", .{
-        global_mangle.factCount(),
-        global_mangle.ruleCount(),
-        global_mangle.intent_patterns.count(),
+        mangle_engine.factCount(),
+        mangle_engine.ruleCount(),
+        mangle_engine.intent_patterns.count(),
     });
 
     // Resolve HANA credentials: env vars take priority, fall back to Mangle facts
-    const hana_host = if (global_config.hana_host.len > 0 and !std.mem.eql(u8, global_config.hana_host, "localhost"))
-        global_config.hana_host
+    const hana_host = if (cfg.hana_host.len > 0 and !std.mem.eql(u8, cfg.hana_host, "localhost"))
+        cfg.hana_host
     else
-        global_mangle.queryFactValue("hana_credential", "host") orelse global_config.hana_host;
+        mangle_engine.queryFactValue("hana_credential", "host") orelse cfg.hana_host;
 
-    const hana_port = if (global_config.hana_port != 443)
-        global_config.hana_port
-    else if (global_mangle.queryFactValue("hana_credential", "port")) |p|
+    const hana_port = if (cfg.hana_port != 443)
+        cfg.hana_port
+    else if (mangle_engine.queryFactValue("hana_credential", "port")) |p|
         std.fmt.parseInt(u16, p, 10) catch 443
     else
-        global_config.hana_port;
+        cfg.hana_port;
 
-    const hana_user = if (global_config.hana_user.len > 0)
-        global_config.hana_user
+    const hana_user = if (cfg.hana_user.len > 0)
+        cfg.hana_user
     else
-        global_mangle.queryFactValue("hana_credential", "user") orelse global_config.hana_user;
+        mangle_engine.queryFactValue("hana_credential", "user") orelse cfg.hana_user;
 
-    const hana_password = if (global_config.hana_password.len > 0)
-        global_config.hana_password
+    const hana_password = if (cfg.hana_password.len > 0)
+        cfg.hana_password
     else
-        global_mangle.queryFactValue("hana_credential", "password") orelse global_config.hana_password;
+        mangle_engine.queryFactValue("hana_credential", "password") orelse cfg.hana_password;
 
-    const hana_schema = if (global_config.hana_schema.len > 0)
-        global_config.hana_schema
+    const hana_schema = if (cfg.hana_schema.len > 0)
+        cfg.hana_schema
     else
-        global_mangle.queryFactValue("hana_credential", "schema") orelse "DBADMIN";
+        mangle_engine.queryFactValue("hana_credential", "schema") orelse "DBADMIN";
 
     // Initialize HANA client + schema database
-    global_database = schema_mod.Database.init(allocator, "hana");
-    global_hana_client = hana_client_mod.HanaClient.init(
+    var database = schema_mod.Database.init(allocator, "hana");
+    var hana_client = hana_client_mod.HanaClient.init(
         allocator,
         hana_host,
         hana_port,
@@ -348,19 +351,18 @@ pub fn main() !void {
         hana_port == 443,
     );
 
-    global_hana_schema = hana_schema;
-
-    if (global_hana_client.isConfigured() and hana_schema.len > 0) {
+    var schema_loaded = false;
+    if (hana_client.isConfigured() and hana_schema.len > 0) {
         std.log.info("[mcppal] Discovering HANA schema '{s}' from {s}:{d}...", .{
             hana_schema, hana_host, hana_port,
         });
-        global_hana_client.discoverSchema(hana_schema, &global_database) catch |err| {
+        hana_client.discoverSchema(hana_schema, &database) catch |err| {
             std.log.warn("[mcppal] Schema discovery failed (will use manual schema): {}", .{err});
         };
-        global_schema_loaded = global_database.tableCount() > 0;
-        if (global_schema_loaded) {
+        schema_loaded = database.tableCount() > 0;
+        if (schema_loaded) {
             std.log.info("[mcppal] Discovered {d} tables in schema '{s}'", .{
-                global_database.tableCount(), hana_schema,
+                database.tableCount(), hana_schema,
             });
         }
     } else {
@@ -368,33 +370,82 @@ pub fn main() !void {
         std.log.info("[mcppal] Set HANA_HOST/USER/PASSWORD/SCHEMA env vars or provide .vscode/sap_config.local.mg", .{});
     }
 
-    // Start HTTP server — OpenAI-compliant surface only
-    const address = std.net.Address.parseIp4(global_config.host, global_config.port) catch
+    // Audit log path: $MCPPAL_AUDIT_LOG or default beside the binary
+    const audit_path = std.posix.getenv("MCPPAL_AUDIT_LOG") orelse "mcppal-audit.log";
+    const audit_max = blk: {
+        const s = std.posix.getenv("MCPPAL_AUDIT_MAX_BYTES") orelse break :blk audit_mod.DEFAULT_MAX_BYTES;
+        break :blk std.fmt.parseInt(u64, s, 10) catch audit_mod.DEFAULT_MAX_BYTES;
+    };
+
+    // Build ServerContext — single source of truth for all request handlers
+    var ctx = ServerContext{
+        .allocator = allocator,
+        .catalog = catalog,
+        .mangle = mangle_engine,
+        .config = cfg,
+        .database = database,
+        .hana_client = hana_client,
+        .search_client = search_client_mod.SearchClient.init(allocator, cfg.search_svc_url),
+        .deductive_client = deductive_client_mod.DeductiveClient.init(allocator, cfg.deductive_db_url),
+        .schema_loaded = schema_loaded,
+        .hana_schema = hana_schema,
+        .search_rules_loaded = search_rules_loaded,
+        .snapshot_manager = null,
+        .fabric_ctx = fabric_ctx,
+        .audit = audit_mod.AuditLog.init(allocator, audit_path, audit_max),
+        .metrics = .{},
+    };
+    defer ctx.deinit();
+
+    ctx.audit.write(.server_start, cfg.host);
+
+    if (ctx.deductive_client.isConfigured()) {
+        std.log.info("[mcppal] Deductive DB client configured: {s}:{d}", .{
+            ctx.deductive_client.host, ctx.deductive_client.port,
+        });
+    }
+
+    // Start HTTP server
+    const address = std.net.Address.parseIp4(cfg.host, cfg.port) catch
         std.net.Address.parseIp4("0.0.0.0", 9881) catch unreachable;
 
     var server = try address.listen(.{ .reuse_address = true });
-    std.log.info("[mcppal] HTTP server listening on {s}:{d}", .{ global_config.host, global_config.port });
-    std.log.info("[mcppal] Endpoints: POST /v1/chat/completions, POST /mcp, GET /v1/models, GET /health", .{});
+    std.log.info("[mcppal] HTTP server listening on {s}:{d}", .{ cfg.host, cfg.port });
+    std.log.info("[mcppal] Endpoints: POST /v1/chat/completions, POST /mcp, GET /v1/models, GET /health, GET /metrics", .{});
 
-    while (true) {
+    // Install SIGTERM/SIGINT handlers for graceful Kubernetes pod termination.
+    const gs = try graceful_shutdown_mod.GracefulShutdown.init(allocator, .{});
+    defer gs.deinit();
+    try graceful_shutdown_mod.installSignalHandlers(gs);
+
+    while (gs.isAcceptingRequests()) {
         const conn = server.accept() catch |err| {
+            if (!gs.isAcceptingRequests()) break;
             std.log.err("[mcppal] Accept error: {}", .{err});
             continue;
         };
 
-        // Spawn thread for each connection for high concurrency
-        const thread = std.Thread.spawn(.{}, handleConnectionThread, .{ allocator, conn }) catch |err| {
+        // Spawn thread for each connection; pass a pointer to the stack-allocated ctx.
+        // ctx outlives all threads because main() blocks in this loop.
+        _ = gs.requestStarted();
+        const thread = std.Thread.spawn(.{}, handleConnectionThread, .{ allocator, conn, &ctx, gs }) catch |err| {
             std.log.err("[mcppal] Thread spawn error: {}", .{err});
+            gs.requestCompleted();
             conn.stream.close();
             continue;
         };
         thread.detach();
     }
+
+    std.log.info("[mcppal] Shutdown signal received — draining in-flight requests", .{});
+    gs.waitForShutdown();
+    ctx.audit.write(.server_start, "shutdown");
 }
 
-fn handleConnectionThread(allocator: std.mem.Allocator, conn: std.net.Server.Connection) void {
+fn handleConnectionThread(allocator: std.mem.Allocator, conn: std.net.Server.Connection, ctx: *ServerContext, gs: *graceful_shutdown_mod.GracefulShutdown) void {
     defer conn.stream.close();
-    handleConnection(allocator, conn.stream) catch |err| {
+    defer gs.requestCompleted();
+    handleConnection(allocator, conn.stream, ctx) catch |err| {
         std.log.err("[mcppal] Connection error: {}", .{err});
     };
 }
@@ -416,16 +467,6 @@ fn resolveSapConfigPath(allocator: std.mem.Allocator) ![]const u8 {
         // Verify file exists
         std.fs.accessAbsolute(p, .{}) catch return error.FileNotFound;
         return allocator.dupe(u8, p);
-    }
-
-    // Try absolute well-known paths (repo-root anchored for dev)
-    const abs_candidates = [_][]const u8{
-        "/Users/user/Documents/nucleusai/.vscode/sap_config.local.mg",
-        "/Users/user/Documents/nucleusai/.vscode/sap_config.mg",
-    };
-    for (abs_candidates) |abs_path| {
-        std.fs.accessAbsolute(abs_path, .{}) catch continue;
-        return allocator.dupe(u8, abs_path);
     }
 
     // Try relative to exe dir
@@ -456,7 +497,7 @@ fn resolveSdkPath(allocator: std.mem.Allocator, raw_path: []const u8) ![]const u
 // HTTP Connection Handler — OpenAI API Surface Only
 // ============================================================================
 
-const Route = enum { health, chat_completions, models, mcp_jsonrpc, mcp_sse, gpu_info, not_found };
+const Route = enum { health, chat_completions, models, mcp_jsonrpc, mcp_sse, metrics, gpu_info, not_found };
 
 fn matchRoute(target: []const u8) Route {
     if (std.mem.eql(u8, target, "/health")) return .health;
@@ -464,11 +505,12 @@ fn matchRoute(target: []const u8) Route {
     if (std.mem.eql(u8, target, "/v1/models")) return .models;
     if (std.mem.eql(u8, target, "/mcp")) return .mcp_jsonrpc;
     if (std.mem.eql(u8, target, "/sse")) return .mcp_sse;
+    if (std.mem.eql(u8, target, "/metrics")) return .metrics;
     if (std.mem.eql(u8, target, "/api/gpu/info")) return .gpu_info;
     return .not_found;
 }
 
-fn handleConnection(allocator: std.mem.Allocator, stream: std.net.Stream) !void {
+fn handleConnection(allocator: std.mem.Allocator, stream: std.net.Stream, ctx: *ServerContext) !void {
     var read_buf: [64 * 1024]u8 = undefined;
     var write_buf: [64 * 1024]u8 = undefined;
     var net_reader = std.net.Stream.Reader.init(stream, &read_buf);
@@ -479,27 +521,45 @@ fn handleConnection(allocator: std.mem.Allocator, stream: std.net.Stream) !void 
         var request = http_server.receiveHead() catch return;
         const route = matchRoute(request.head.target);
 
+        // Enforce Bearer-token auth for all routes except health/ready/metrics.
+        if (auth.requiresAuth(request.head.target)) {
+            if (ctx.config.api_key.len > 0) {
+                const auth_header = request.head.headers.getFirstValue("authorization");
+                if (!auth.validateAuth(auth_header, ctx.config.api_key)) {
+                    try request.respond(
+                        "{\"error\":{\"message\":\"Unauthorized\",\"type\":\"auth_error\",\"code\":\"invalid_api_key\"}}",
+                        .{
+                            .status = .unauthorized,
+                            .extra_headers = &.{.{ .name = "content-type", .value = "application/json" }},
+                        },
+                    );
+                    continue;
+                }
+            }
+        }
+
         switch (route) {
-            .health => try handleHealth(&request),
-            .chat_completions => try handleChatCompletions(allocator, &request),
+            .health => try handleHealth(&request, ctx),
+            .chat_completions => try handleChatCompletions(allocator, &request, ctx),
             .models => try handleModels(allocator, &request),
-            .mcp_jsonrpc => try handleMcpJsonRpc(allocator, &request),
-            .mcp_sse => try handleMcpSse(allocator, &request, stream),
+            .mcp_jsonrpc => try handleMcpJsonRpc(allocator, &request, ctx),
+            .mcp_sse => try handleMcpSse(allocator, &request, stream, ctx),
+            .metrics => try handleMetrics(&request, ctx),
             .gpu_info => try handleGpuInfo(&request),
             .not_found => try handleNotFound(&request),
         }
     }
 }
 
-fn handleHealth(request: *std.http.Server.Request) !void {
-    const config_ready = global_config.hana_host.len > 0 and global_config.hana_user.len > 0 and global_config.hana_password.len > 0;
+fn handleHealth(request: *std.http.Server.Request, ctx: *const ServerContext) !void {
+    const config_ready = ctx.config.hana_host.len > 0 and ctx.config.hana_user.len > 0 and ctx.config.hana_password.len > 0;
     var body_buf: [512]u8 = undefined;
     const body = std.fmt.bufPrint(&body_buf,
         \\{{"status":"{s}","service":"mcppal-mesh-gateway","version":"1.0.0","algorithms":{d},"categories":{d},"config_ready":{s}}}
     , .{
         if (config_ready) "ok" else "degraded",
-        global_catalog.algorithms.items.len,
-        global_catalog.categories.items.len,
+        ctx.catalog.algorithms.items.len,
+        ctx.catalog.categories.items.len,
         if (config_ready) "true" else "false",
     }) catch "{\"status\":\"degraded\",\"service\":\"mcppal-mesh-gateway\"}";
 
@@ -515,8 +575,34 @@ fn handleNotFound(request: *std.http.Server.Request) !void {
     });
 }
 
+fn handleMetrics(request: *std.http.Server.Request, ctx: *ServerContext) !void {
+    var buf: [8192]u8 = undefined;
+    var fbs = std.io.fixedBufferStream(&buf);
+    const w = fbs.writer();
+
+    try w.print("# HELP mcp_requests_total Total MCP requests\n# TYPE mcp_requests_total counter\nmcp_requests_total {}\n\n", .{ctx.metrics.mcp_requests_total.load(.monotonic)});
+    try w.print("# HELP mcp_tool_calls_total Total tool calls\n# TYPE mcp_tool_calls_total counter\nmcp_tool_calls_total {}\n\n", .{ctx.metrics.mcp_tool_calls.load(.monotonic)});
+    try w.print("# HELP pal_procedure_calls_total Total PAL calls\n# TYPE pal_procedure_calls_total counter\npal_procedure_calls_total {}\n\n", .{ctx.metrics.pal_procedure_calls.load(.monotonic)});
+    try w.print("# HELP pal_sql_generations_total Total PAL SQL generations\n# TYPE pal_sql_generations_total counter\npal_sql_generations_total {}\n\n", .{ctx.metrics.pal_sql_generations.load(.monotonic)});
+    try w.print("# HELP hana_queries_total Total HANA queries\n# TYPE hana_queries_total counter\nhana_queries_total {}\n\n", .{ctx.metrics.hana_queries.load(.monotonic)});
+    try w.print("# HELP llm_requests_total Total LLM requests\n# TYPE llm_requests_total counter\nllm_requests_total {}\n\n", .{ctx.metrics.llm_requests.load(.monotonic)});
+    try w.print("# HELP mcp_errors_total Errors by category\n# TYPE mcp_errors_total counter\n", .{});
+    try w.print("mcp_errors_total{{category=\"mcp\"}} {}\n", .{ctx.metrics.mcp_errors.load(.monotonic)});
+    try w.print("mcp_errors_total{{category=\"hana\"}} {}\n", .{ctx.metrics.hana_errors.load(.monotonic)});
+    try w.print("mcp_errors_total{{category=\"pal\"}} {}\n\n", .{ctx.metrics.pal_validation_errors.load(.monotonic)});
+    const req_count = ctx.metrics.request_latency_count.load(.monotonic);
+    const req_sum = ctx.metrics.request_latency_sum.load(.monotonic);
+    try w.print("# HELP mcp_request_latency_seconds_sum Request latency sum\n# TYPE mcp_request_latency_seconds_sum gauge\nmcp_request_latency_seconds_sum {d:.6}\n", .{@as(f64, @floatFromInt(req_sum)) / 1e9});
+    try w.print("# HELP mcp_request_latency_seconds_count Request latency count\n# TYPE mcp_request_latency_seconds_count gauge\nmcp_request_latency_seconds_count {}\n", .{req_count});
+
+    const body = fbs.getWritten();
+    try request.respond(body, .{
+        .extra_headers = &.{.{ .name = "content-type", .value = "text/plain; version=0.0.4" }},
+    });
+}
+
 fn handleGpuInfo(request: *std.http.Server.Request) !void {
-    const gpu_enabled = global_gpu_manager != null;
+    const gpu_enabled = std.posix.getenv("CUDA_VISIBLE_DEVICES") != null;
 
     var body_buf: [1024]u8 = undefined;
     const body = std.fmt.bufPrint(&body_buf,
@@ -538,7 +624,7 @@ fn handleGpuInfo(request: *std.http.Server.Request) !void {
 // resources/list, resources/templates/list, resources/read, ping
 // ============================================================================
 
-fn handleMcpJsonRpc(allocator: std.mem.Allocator, request: *std.http.Server.Request) !void {
+fn handleMcpJsonRpc(allocator: std.mem.Allocator, request: *std.http.Server.Request, ctx: *ServerContext) !void {
     var body_reader_buf: [64 * 1024]u8 = undefined;
     const body_reader = request.readerExpectNone(&body_reader_buf);
     const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(max_http_request_bytes)) catch {
@@ -571,7 +657,8 @@ fn handleMcpJsonRpc(allocator: std.mem.Allocator, request: *std.http.Server.Requ
     // Extract params
     const params = if (root == .object) root.object.get("params") orelse null else null;
 
-    const result_json = try mcpDispatch(allocator, method, params);
+    ctx.metrics.recordMcpRequest(0);
+    const result_json = try mcpDispatch(allocator, method, params, ctx);
     defer allocator.free(result_json);
 
     var resp_buf: std.ArrayList(u8) = .{};
@@ -594,7 +681,7 @@ fn handleMcpJsonRpc(allocator: std.mem.Allocator, request: *std.http.Server.Requ
 // Each PAL execution phase emits a progress notification before the final result.
 // ============================================================================
 
-fn handleMcpSse(allocator: std.mem.Allocator, request: *std.http.Server.Request, stream: std.net.Stream) !void {
+fn handleMcpSse(allocator: std.mem.Allocator, request: *std.http.Server.Request, stream: std.net.Stream, ctx: *ServerContext) !void {
     var body_reader_buf: [64 * 1024]u8 = undefined;
     const body_reader = request.readerExpectNone(&body_reader_buf);
     const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(max_http_request_bytes)) catch {
@@ -639,7 +726,7 @@ fn handleMcpSse(allocator: std.mem.Allocator, request: *std.http.Server.Request,
 
     if (!is_streaming_tool) {
         // Non-streaming: fall back to buffered JSON-RPC response
-        const result_json = try mcpDispatch(allocator, method, params);
+        const result_json = try mcpDispatch(allocator, method, params, ctx);
         defer allocator.free(result_json);
 
         var resp_buf: std.ArrayList(u8) = .{};
@@ -700,7 +787,7 @@ fn handleMcpSse(allocator: std.mem.Allocator, request: *std.http.Server.Request,
     ) catch {};
     sse_writer.interface.flush() catch {};
 
-    const result_json = mcpDispatch(allocator, method, params) catch |err| {
+    const result_json = mcpDispatch(allocator, method, params, ctx) catch |err| {
         const err_msg = mcp.makeErrorResult(
             allocator,
             @errorName(err),
@@ -735,14 +822,14 @@ fn handleMcpSse(allocator: std.mem.Allocator, request: *std.http.Server.Request,
     sse_writer.interface.flush() catch {};
 }
 
-fn mcpDispatch(allocator: std.mem.Allocator, method: []const u8, params: ?std.json.Value) ![]const u8 {
+fn mcpDispatch(allocator: std.mem.Allocator, method: []const u8, params: ?std.json.Value, ctx: *ServerContext) ![]const u8 {
     if (std.mem.eql(u8, method, "initialize")) return mcpInitialize(allocator);
     if (std.mem.eql(u8, method, "ping")) return try allocator.dupe(u8, "{}");
     if (std.mem.eql(u8, method, "tools/list")) return mcpToolsList(allocator);
-    if (std.mem.eql(u8, method, "tools/call")) return mcpToolsCall(allocator, params);
-    if (std.mem.eql(u8, method, "resources/list")) return mcpResourcesList(allocator);
+    if (std.mem.eql(u8, method, "tools/call")) return mcpToolsCall(allocator, params, ctx);
+    if (std.mem.eql(u8, method, "resources/list")) return mcpResourcesList(allocator, ctx);
     if (std.mem.eql(u8, method, "resources/templates/list")) return mcpResourceTemplatesList(allocator);
-    if (std.mem.eql(u8, method, "resources/read")) return mcpResourcesRead(allocator, params);
+    if (std.mem.eql(u8, method, "resources/read")) return mcpResourcesRead(allocator, params, ctx);
 
     // Method not found
     return try allocator.dupe(u8, "{\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}");
@@ -784,9 +871,10 @@ fn mcpToolsList(allocator: std.mem.Allocator) ![]const u8 {
     return buf.toOwnedSlice(allocator);
 }
 
-fn mcpToolsCall(allocator: std.mem.Allocator, params: ?std.json.Value) ![]const u8 {
+fn mcpToolsCall(allocator: std.mem.Allocator, params: ?std.json.Value, ctx: *ServerContext) ![]const u8 {
     const p = params orelse return mcp.makeErrorResult(allocator, "Missing params");
     const tool_name = openai.getJsonStr(p, "name") orelse return mcp.makeErrorResult(allocator, "Missing tool name");
+    ctx.audit.write(.tool_call, tool_name);
 
     // Extract arguments.query or arguments.table_name if present
     var query: []const u8 = "";
@@ -801,90 +889,90 @@ fn mcpToolsCall(allocator: std.mem.Allocator, params: ?std.json.Value) ![]const 
 
     // Dispatch tool call to existing handlers
     if (std.mem.eql(u8, tool_name, "pal-catalog")) {
-        const result = try dispatchCatalog(allocator, query);
+        const result = try dispatchCatalog(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "pal-execute")) {
-        const result = try dispatchExecute(allocator, query);
+        const result = try dispatchExecute(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "pal-spec")) {
-        const result = try dispatchSpec(allocator, query);
+        const result = try dispatchSpec(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "pal-sql")) {
-        const result = try dispatchSqlTemplate(allocator, query);
+        const result = try dispatchSqlTemplate(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "schema-explore")) {
-        const result = try dispatchSchemaExplore(allocator, query);
+        const result = try dispatchSchemaExplore(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "describe-table")) {
         const msg = if (query.len > 0) query else "describe";
-        const result = try dispatchDescribeTable(allocator, msg);
+        const result = try dispatchDescribeTable(allocator, msg, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "schema-refresh")) {
-        const result = try dispatchSchemaRefresh(allocator);
+        const result = try dispatchSchemaRefresh(allocator, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "hybrid-search")) {
-        const result = try dispatchHybridSearch(allocator, query);
+        const result = try dispatchHybridSearch(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "es-translate")) {
-        const result = try dispatchEsTranslate(allocator, query);
+        const result = try dispatchEsTranslate(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "pal-optimize")) {
-        const result = try dispatchPalOptimize(allocator, query);
+        const result = try dispatchPalOptimize(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "graph-publish")) {
-        const result = try dispatchGraphPublish(allocator, query);
+        const result = try dispatchGraphPublish(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "graph-query")) {
-        const result = try dispatchGraphQuery(allocator, query);
+        const result = try dispatchGraphQuery(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "odata-fetch")) {
-        const result = try dispatchOdataFetch(allocator, query);
+        const result = try dispatchOdataFetch(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
 
     // Snapshot tools
     if (std.mem.eql(u8, tool_name, "snapshot-status")) {
-        const result = try dispatchSnapshotStatus(allocator);
+        const result = try dispatchSnapshotStatus(allocator, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "snapshot-create")) {
-        const result = try dispatchSnapshotCreate(allocator, query);
+        const result = try dispatchSnapshotCreate(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "snapshot-list")) {
-        const result = try dispatchSnapshotList(allocator, query);
+        const result = try dispatchSnapshotList(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
     if (std.mem.eql(u8, tool_name, "snapshot-delete")) {
-        const result = try dispatchSnapshotDelete(allocator, query);
+        const result = try dispatchSnapshotDelete(allocator, query, ctx);
         defer allocator.free(result);
         return mcp.makeTextResult(allocator, result);
     }
@@ -892,19 +980,19 @@ fn mcpToolsCall(allocator: std.mem.Allocator, params: ?std.json.Value) ![]const 
     return mcp.makeErrorResult(allocator, "Unknown tool");
 }
 
-fn mcpResourcesList(allocator: std.mem.Allocator) ![]const u8 {
+fn mcpResourcesList(allocator: std.mem.Allocator, ctx: *const ServerContext) ![]const u8 {
     var buf: std.ArrayList(u8) = .{};
     const w = buf.writer(allocator);
     try w.writeAll("{\"resources\":[");
 
     // Static resource: full schema
     try w.writeAll("{\"uri\":\"hana://schema\",\"name\":\"Database Schema\",");
-    try w.print("\"description\":\"Full HANA database schema for {s}\",", .{global_hana_schema});
+    try w.print("\"description\":\"Full HANA database schema for {s}\",", .{ctx.hana_schema});
     try w.writeAll("\"mimeType\":\"application/json\"}");
 
     // Dynamic resources: one per discovered table
-    if (global_schema_loaded) {
-        var iter = global_database.schemas.iterator();
+    if (ctx.schema_loaded) {
+        var iter = ctx.database.schemas.iterator();
         while (iter.next()) |entry| {
             try w.writeAll(",{\"uri\":\"hana://table/");
             try w.writeAll(entry.key_ptr.*);
@@ -928,7 +1016,7 @@ fn mcpResourceTemplatesList(allocator: std.mem.Allocator) ![]const u8 {
     );
 }
 
-fn mcpResourcesRead(allocator: std.mem.Allocator, params: ?std.json.Value) ![]const u8 {
+fn mcpResourcesRead(allocator: std.mem.Allocator, params: ?std.json.Value, ctx: *const ServerContext) ![]const u8 {
     const p = params orelse return mcp.makeErrorResult(allocator, "Missing params");
     const uri = openai.getJsonStr(p, "uri") orelse return mcp.makeErrorResult(allocator, "Missing uri");
 
@@ -937,7 +1025,7 @@ fn mcpResourcesRead(allocator: std.mem.Allocator, params: ?std.json.Value) ![]co
 
     if (std.mem.eql(u8, uri, "hana://schema")) {
         // Return full database schema as JSON
-        const schema_json = global_database.schemaToJson(allocator) catch
+        const schema_json = ctx.database.schemaToJson(allocator) catch
             return mcp.makeErrorResult(allocator, "Failed to serialize schema");
         defer allocator.free(schema_json);
 
@@ -951,7 +1039,7 @@ fn mcpResourcesRead(allocator: std.mem.Allocator, params: ?std.json.Value) ![]co
     const table_prefix = "hana://table/";
     if (std.mem.startsWith(u8, uri, table_prefix)) {
         const table_name = uri[table_prefix.len..];
-        const ts = global_database.getTableSchema(table_name) orelse {
+        const ts = ctx.database.getTableSchema(table_name) orelse {
             return mcp.makeErrorResult(allocator, "Table not found");
         };
         const table_json = ts.toJson(allocator) catch
@@ -970,25 +1058,27 @@ fn mcpResourcesRead(allocator: std.mem.Allocator, params: ?std.json.Value) ![]co
     return mcp.makeErrorResult(allocator, "Unknown resource URI");
 }
 
-fn dispatchSchemaRefresh(allocator: std.mem.Allocator) ![]const u8 {
-    if (!global_hana_client.isConfigured()) {
+fn dispatchSchemaRefresh(allocator: std.mem.Allocator, ctx: *ServerContext) ![]const u8 {
+    if (!ctx.hana_client.isConfigured()) {
         return try allocator.dupe(u8, "HANA client not configured. Cannot refresh schema.");
     }
-    if (global_hana_schema.len == 0) {
+    if (ctx.hana_schema.len == 0) {
         return try allocator.dupe(u8, "No HANA_SCHEMA configured. Cannot refresh schema.");
     }
 
     // Re-init database and re-discover
-    global_database = schema_mod.Database.init(allocator, "hana");
-    global_hana_client.discoverSchema(global_hana_schema, &global_database) catch |err| {
+    ctx.database.deinit();
+    ctx.database = schema_mod.Database.init(allocator, "hana");
+    ctx.hana_client.discoverSchema(ctx.hana_schema, &ctx.database) catch |err| {
         return try std.fmt.allocPrint(allocator, "Schema refresh failed: {}", .{err});
     };
-    global_schema_loaded = global_database.tableCount() > 0;
+    ctx.schema_loaded = ctx.database.tableCount() > 0;
+    ctx.audit.write(.schema_refresh, ctx.hana_schema);
 
     return try std.fmt.allocPrint(
         allocator,
         "Schema refreshed. Discovered {d} tables in schema '{s}'.",
-        .{ global_database.tableCount(), global_hana_schema },
+        .{ ctx.database.tableCount(), ctx.hana_schema },
     );
 }
 
@@ -1018,7 +1108,7 @@ fn handleModels(allocator: std.mem.Allocator, request: *std.http.Server.Request)
 //   ping            → "ping"
 // ============================================================================
 
-fn handleChatCompletions(allocator: std.mem.Allocator, request: *std.http.Server.Request) !void {
+fn handleChatCompletions(allocator: std.mem.Allocator, request: *std.http.Server.Request, ctx: *ServerContext) !void {
     var body_reader_buf: [64 * 1024]u8 = undefined;
     const body_reader = request.readerExpectNone(&body_reader_buf);
     const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(max_http_request_bytes)) catch {
@@ -1059,18 +1149,19 @@ fn handleChatCompletions(allocator: std.mem.Allocator, request: *std.http.Server
     const user_message = extractLastUserMessage(root);
 
     // Mangle intent detection → internal MCP tool dispatch
-    const intent = global_mangle.detectIntent(user_message);
+    const intent = ctx.mangle.detectIntent(user_message);
 
     // Inject detected intent as a fact for rule reasoning
-    try global_mangle.facts.append(allocator, .{
+    try ctx.mangle.facts.append(allocator, .{
         .predicate = "detected_intent",
         .args = &[_][]const u8{@tagName(intent)},
     });
 
     // Execute bidirectional flows defined in .mg files
-    try global_mangle.executeApiFlows();
+    try ctx.mangle.executeApiFlows();
 
-    const content = try dispatchIntent(allocator, intent, user_message);
+    ctx.metrics.recordLlmRequest(0);
+    const content = try dispatchIntent(allocator, intent, user_message, ctx);
     defer allocator.free(content);
 
     // Format using strictly compliant builder
@@ -1106,26 +1197,26 @@ fn extractLastUserMessage(root: std.json.Value) []const u8 {
 // Extracts algorithm names and parameters from the user message.
 // ============================================================================
 
-fn dispatchIntent(allocator: std.mem.Allocator, intent: mangle_mod.Intent, message: []const u8) ![]const u8 {
+fn dispatchIntent(allocator: std.mem.Allocator, intent: mangle_mod.Intent, message: []const u8, ctx: *ServerContext) ![]const u8 {
     return switch (intent) {
-        .pal_catalog => try dispatchCatalog(allocator, message),
-        .pal_search => try dispatchSearch(allocator, message),
-        .pal_execute => try dispatchExecute(allocator, message),
-        .pal_spec => try dispatchSpec(allocator, message),
-        .pal_sql => try dispatchSqlTemplate(allocator, message),
-        .schema_explore => try dispatchSchemaExplore(allocator, message),
-        .describe_table => try dispatchDescribeTable(allocator, message),
-        .hybrid_search => try dispatchHybridSearch(allocator, message),
-        .es_translate => try dispatchEsTranslate(allocator, message),
-        .pal_optimize => try dispatchPalOptimize(allocator, message),
-        .graph_publish => try dispatchGraphPublish(allocator, message),
-        .graph_query => try dispatchGraphQuery(allocator, message),
-        .odata_fetch => try dispatchOdataFetch(allocator, message),
-        .unknown => try dispatchDefault(allocator, message),
+        .pal_catalog => try dispatchCatalog(allocator, message, ctx),
+        .pal_search => try dispatchSearch(allocator, message, ctx),
+        .pal_execute => try dispatchExecute(allocator, message, ctx),
+        .pal_spec => try dispatchSpec(allocator, message, ctx),
+        .pal_sql => try dispatchSqlTemplate(allocator, message, ctx),
+        .schema_explore => try dispatchSchemaExplore(allocator, message, ctx),
+        .describe_table => try dispatchDescribeTable(allocator, message, ctx),
+        .hybrid_search => try dispatchHybridSearch(allocator, message, ctx),
+        .es_translate => try dispatchEsTranslate(allocator, message, ctx),
+        .pal_optimize => try dispatchPalOptimize(allocator, message, ctx),
+        .graph_publish => try dispatchGraphPublish(allocator, message, ctx),
+        .graph_query => try dispatchGraphQuery(allocator, message, ctx),
+        .odata_fetch => try dispatchOdataFetch(allocator, message, ctx),
+        .unknown => try dispatchDefault(allocator, message, ctx),
     };
 }
 
-fn dispatchCatalog(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchCatalog(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     // Check if user asks for a specific category
     const categories = [_][]const u8{
         "association",   "automl",       "classification", "clustering",
@@ -1135,13 +1226,13 @@ fn dispatchCatalog(allocator: std.mem.Allocator, message: []const u8) ![]const u
     };
     for (categories) |cat| {
         if (caseContains(message, cat)) {
-            return global_catalog.listByCategory(allocator, cat);
+            return ctx.catalog.listByCategory(allocator, cat);
         }
     }
-    return global_catalog.listCategories(allocator);
+    return ctx.catalog.listCategories(allocator);
 }
 
-fn dispatchSearch(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchSearch(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     // Check if this is really a category listing request
     const categories = [_][]const u8{
         "association",   "automl",       "classification", "clustering",
@@ -1157,20 +1248,20 @@ fn dispatchSearch(allocator: std.mem.Allocator, message: []const u8) ![]const u8
     };
     for (categories, 0..) |cat, i| {
         if (caseContains(message, cat)) {
-            return global_catalog.listByCategory(allocator, cat_ids[i]);
+            return ctx.catalog.listByCategory(allocator, cat_ids[i]);
         }
     }
     // Strip common prefixes and search
     const query = stripSearchDefaultPrefixes(message);
     if (query.len > 0) {
-        return global_catalog.searchAlgorithms(allocator, query);
+        return ctx.catalog.searchAlgorithms(allocator, query);
     }
-    return global_catalog.listCategories(allocator);
+    return ctx.catalog.listCategories(allocator);
 }
 
-fn dispatchExecute(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchExecute(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     // Try to find an algorithm name in the message
-    const alg = findAlgorithmInMessage(message) orelse {
+    const alg = findAlgorithmInCatalog(&ctx.catalog, message) orelse {
         return try allocator.dupe(
             u8,
             "Please specify which PAL algorithm to execute. " ++
@@ -1183,8 +1274,8 @@ fn dispatchExecute(allocator: std.mem.Allocator, message: []const u8) ![]const u
     const table_name = extractTableName(message) orelse "INPUT_DATA";
 
     // If schema is loaded and table exists, generate schema-aware SQL
-    if (global_schema_loaded) {
-        if (global_database.getTableSchema(table_name)) |table_schema| {
+    if (ctx.schema_loaded) {
+        if (ctx.database.getTableSchema(table_name)) |table_schema| {
             return generateSchemaAwareCall(allocator, alg, table_schema);
         }
     }
@@ -1193,15 +1284,15 @@ fn dispatchExecute(allocator: std.mem.Allocator, message: []const u8) ![]const u
     return hana.generateCall(allocator, alg, table_name, &.{});
 }
 
-fn dispatchSpec(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
-    const alg = findAlgorithmInMessage(message) orelse {
+fn dispatchSpec(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
+    const alg = findAlgorithmInCatalog(&ctx.catalog, message) orelse {
         return try allocator.dupe(
             u8,
             "Please specify which algorithm's specification you need. " ++
                 "Example: \"spec for kmeans\" or \"show specification of ARIMA\"",
         );
     };
-    const spec_content = global_catalog.readSpec(allocator, alg) catch {
+    const spec_content = ctx.catalog.readSpec(allocator, alg) catch {
         return try std.fmt.allocPrint(allocator, "Could not read spec file for {s}.", .{alg.name});
     };
     defer allocator.free(spec_content);
@@ -1218,15 +1309,15 @@ fn dispatchSpec(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
     return buf.toOwnedSlice(allocator);
 }
 
-fn dispatchSqlTemplate(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
-    const alg = findAlgorithmInMessage(message) orelse {
+fn dispatchSqlTemplate(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
+    const alg = findAlgorithmInCatalog(&ctx.catalog, message) orelse {
         return try allocator.dupe(
             u8,
             "Please specify which algorithm's SQL template you need. " ++
                 "Example: \"sql for kmeans\" or \"show sql template of ARIMA\"",
         );
     };
-    const sql_content = global_catalog.readSql(allocator, alg) catch {
+    const sql_content = ctx.catalog.readSql(allocator, alg) catch {
         return try std.fmt.allocPrint(allocator, "Could not read SQL template for {s}.", .{alg.name});
     };
     defer allocator.free(sql_content);
@@ -1245,8 +1336,8 @@ fn dispatchSqlTemplate(allocator: std.mem.Allocator, message: []const u8) ![]con
 // Schema Dispatch — list tables, describe columns
 // ============================================================================
 
-fn dispatchSchemaExplore(allocator: std.mem.Allocator, _: []const u8) ![]const u8 {
-    if (!global_schema_loaded) {
+fn dispatchSchemaExplore(allocator: std.mem.Allocator, _: []const u8, ctx: *ServerContext) ![]const u8 {
+    if (!ctx.schema_loaded) {
         return try allocator.dupe(u8,
             \\# Schema Not Available
             \\
@@ -1264,12 +1355,12 @@ fn dispatchSchemaExplore(allocator: std.mem.Allocator, _: []const u8) ![]const u
     var buf: std.ArrayList(u8) = .{};
     const w = buf.writer(allocator);
 
-    try w.print("# Database Schema — {s}\n\n", .{global_hana_schema});
-    try w.print("**{d} tables** discovered\n\n", .{global_database.tableCount()});
+    try w.print("# Database Schema — {s}\n\n", .{ctx.hana_schema});
+    try w.print("**{d} tables** discovered\n\n", .{ctx.database.tableCount()});
     try w.writeAll("| Table | Columns | Primary Keys |\n");
     try w.writeAll("|-------|---------|-------------|\n");
 
-    var iter = global_database.schemas.iterator();
+    var iter = ctx.database.schemas.iterator();
     while (iter.next()) |entry| {
         const ts = entry.value_ptr;
         const cols = ts.getColumns();
@@ -1286,8 +1377,8 @@ fn dispatchSchemaExplore(allocator: std.mem.Allocator, _: []const u8) ![]const u
     return buf.toOwnedSlice(allocator);
 }
 
-fn dispatchDescribeTable(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
-    if (!global_schema_loaded) {
+fn dispatchDescribeTable(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
+    if (!ctx.schema_loaded) {
         return try allocator.dupe(
             u8,
             "No HANA schema loaded. Set HANA_HOST, HANA_USER, HANA_PASSWORD, HANA_SCHEMA to enable schema discovery.",
@@ -1300,17 +1391,17 @@ fn dispatchDescribeTable(allocator: std.mem.Allocator, message: []const u8) ![]c
         var buf: std.ArrayList(u8) = .{};
         const w = buf.writer(allocator);
         try w.writeAll("Please specify a table name. Available tables:\n\n");
-        var iter = global_database.schemas.iterator();
+        var iter = ctx.database.schemas.iterator();
         while (iter.next()) |entry| {
             try w.print("- `{s}`\n", .{entry.key_ptr.*});
         }
         return buf.toOwnedSlice(allocator);
     };
 
-    const ts = global_database.getTableSchema(table_name) orelse {
+    const ts = ctx.database.getTableSchema(table_name) orelse {
         // Try case-insensitive match
         var found: ?*const schema_mod.TableSchema = null;
-        var siter = global_database.schemas.iterator();
+        var siter = ctx.database.schemas.iterator();
         while (siter.next()) |entry| {
             if (caseContains(entry.key_ptr.*, table_name) or caseContains(table_name, entry.key_ptr.*)) {
                 found = entry.value_ptr;
@@ -1323,7 +1414,7 @@ fn dispatchDescribeTable(allocator: std.mem.Allocator, message: []const u8) ![]c
         return try std.fmt.allocPrint(
             allocator,
             "Table `{s}` not found in schema `{s}`. Use \"list tables\" to see available tables.",
-            .{ table_name, global_hana_schema },
+            .{ table_name, ctx.hana_schema },
         );
     };
 
@@ -1487,7 +1578,7 @@ fn extractTableName(message: []const u8) ?[]const u8 {
 // Hybrid Search — proxy to search-svc or local Mangle-driven search
 // ============================================================================
 
-fn dispatchHybridSearch(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchHybridSearch(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     // Strip common search prefixes to extract the actual query
     const query = stripSearchPrefixes(message);
     if (query.len == 0) {
@@ -1504,19 +1595,19 @@ fn dispatchHybridSearch(allocator: std.mem.Allocator, message: []const u8) ![]co
     }
 
     // Try search-svc proxy first
-    if (global_search_client.isConfigured()) {
-        const result = global_search_client.hybridSearch(query, 10) catch |err| {
+    if (ctx.search_client.isConfigured()) {
+        const result = ctx.search_client.hybridSearch(query, 10) catch |err| {
             std.log.warn("[mcppal] search-svc hybrid search failed: {}", .{err});
-            return dispatchLocalSearch(allocator, query);
+            return dispatchLocalSearch(allocator, query, ctx);
         };
         return result;
     }
 
     // Fallback: local Mangle-driven search across PAL catalog
-    return dispatchLocalSearch(allocator, query);
+    return dispatchLocalSearch(allocator, query, ctx);
 }
 
-fn dispatchLocalSearch(allocator: std.mem.Allocator, query: []const u8) ![]const u8 {
+fn dispatchLocalSearch(allocator: std.mem.Allocator, query: []const u8, ctx: *ServerContext) ![]const u8 {
     var buf: std.ArrayList(u8) = .{};
     const w = buf.writer(allocator);
 
@@ -1527,7 +1618,7 @@ fn dispatchLocalSearch(allocator: std.mem.Allocator, query: []const u8) ![]const
     // Search PAL algorithms
     var match_count: usize = 0;
     try w.writeAll("## Matching PAL Algorithms\n\n");
-    for (global_catalog.algorithms.items) |*alg| {
+    for (ctx.catalog.algorithms.items) |*alg| {
         if (caseContains(alg.name, query) or caseContains(alg.id, query) or
             caseContains(alg.category, query))
         {
@@ -1543,10 +1634,10 @@ fn dispatchLocalSearch(allocator: std.mem.Allocator, query: []const u8) ![]const
     }
 
     // Search schema tables if loaded
-    if (global_schema_loaded) {
+    if (ctx.schema_loaded) {
         var table_matches: usize = 0;
         try w.writeAll("\n## Matching Tables\n\n");
-        var iter = global_database.schemas.iterator();
+        var iter = ctx.database.schemas.iterator();
         while (iter.next()) |entry| {
             if (caseContains(entry.key_ptr.*, query)) {
                 const ts = entry.value_ptr;
@@ -1563,7 +1654,7 @@ fn dispatchLocalSearch(allocator: std.mem.Allocator, query: []const u8) ![]const
     // Search Mangle facts for relevant rules
     var rule_matches: usize = 0;
     try w.writeAll("\n## Relevant Mangle Rules\n\n");
-    for (global_mangle.rules.items) |rule| {
+    for (ctx.mangle.rules.items) |rule| {
         if (caseContains(rule.head_predicate, query)) {
             const display_len = @min(rule.head_predicate.len, 120);
             try w.print("- `{s}`\n", .{rule.head_predicate[0..display_len]});
@@ -1603,7 +1694,7 @@ fn stripSearchPrefixes(message: []const u8) []const u8 {
 // ES→HANA Query Translation — uses es_to_hana.mg Mangle rules
 // ============================================================================
 
-fn dispatchEsTranslate(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchEsTranslate(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     const query = stripEsTranslatePrefixes(message);
     if (query.len == 0) {
         return try allocator.dupe(u8,
@@ -1621,18 +1712,18 @@ fn dispatchEsTranslate(allocator: std.mem.Allocator, message: []const u8) ![]con
     }
 
     // Try search-svc proxy
-    if (global_search_client.isConfigured()) {
-        const result = global_search_client.translateEsToHana(query) catch |err| {
+    if (ctx.search_client.isConfigured()) {
+        const result = ctx.search_client.translateEsToHana(query) catch |err| {
             std.log.warn("[mcppal] search-svc ES translate failed: {}", .{err});
-            return translateEsLocal(allocator, query);
+            return translateEsLocal(allocator, query, ctx);
         };
         return result;
     }
 
-    return translateEsLocal(allocator, query);
+    return translateEsLocal(allocator, query, ctx);
 }
 
-fn translateEsLocal(allocator: std.mem.Allocator, query: []const u8) ![]const u8 {
+fn translateEsLocal(allocator: std.mem.Allocator, query: []const u8, ctx: *const ServerContext) ![]const u8 {
     var buf: std.ArrayList(u8) = .{};
     const w = buf.writer(allocator);
 
@@ -1640,7 +1731,7 @@ fn translateEsLocal(allocator: std.mem.Allocator, query: []const u8) ![]const u8
     try w.print("**Input**: `{s}`\n\n", .{query});
 
     // Check if we have es_to_hana rules loaded
-    if (!global_search_rules_loaded) {
+    if (!ctx.search_rules_loaded) {
         try w.writeAll("⚠ Search-svc Mangle rules not loaded.\n");
         try w.writeAll("Set `SEARCH_SVC_PATH` to enable full ES→HANA translation.\n\n");
     }
@@ -1682,10 +1773,10 @@ fn translateEsLocal(allocator: std.mem.Allocator, query: []const u8) ![]const u8
     try w.writeAll("```\n\n");
 
     // Show relevant Mangle translation rules if loaded
-    if (global_search_rules_loaded) {
+    if (ctx.search_rules_loaded) {
         var rule_count: usize = 0;
         try w.writeAll("**Applicable Mangle rules**:\n");
-        for (global_mangle.rules.items) |rule| {
+        for (ctx.mangle.rules.items) |rule| {
             if (caseContains(rule.head_predicate, "hana_where") or
                 caseContains(rule.head_predicate, "hana_agg") or
                 caseContains(rule.head_predicate, "field_mapping"))
@@ -1750,7 +1841,7 @@ fn stripEsTranslatePrefixes(message: []const u8) []const u8 {
 // PAL Optimizer — uses pal_optimizer.mg rules for algorithm/parameter tuning
 // ============================================================================
 
-fn dispatchPalOptimize(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchPalOptimize(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     const query = stripOptimizePrefixes(message);
 
     if (query.len == 0) {
@@ -1776,7 +1867,7 @@ fn dispatchPalOptimize(allocator: std.mem.Allocator, message: []const u8) ![]con
     try w.writeAll("# PAL Optimization Recommendations\n\n");
 
     // Extract algorithm and table from query
-    const alg = findAlgorithmInMessage(query);
+    const alg = findAlgorithmInCatalog(&ctx.catalog, query);
     const table_name = extractTableName(query);
 
     if (alg) |a| {
@@ -1790,8 +1881,8 @@ fn dispatchPalOptimize(allocator: std.mem.Allocator, message: []const u8) ![]con
     // Check for data characteristics from Mangle facts
     try w.writeAll("## Data Analysis\n\n");
     if (table_name) |t| {
-        if (global_schema_loaded) {
-            if (global_database.getTableSchema(t)) |ts| {
+        if (ctx.schema_loaded) {
+            if (ctx.database.getTableSchema(t)) |ts| {
                 const cols = ts.getColumns();
                 try w.print("- **Columns**: {d}\n", .{cols.len});
                 try w.writeAll("- **Column types**: ");
@@ -1884,9 +1975,9 @@ fn dispatchPalOptimize(allocator: std.mem.Allocator, message: []const u8) ![]con
 
     // Mangle optimizer rules info
     try w.writeAll("\n## Optimization Rules\n\n");
-    if (global_search_rules_loaded) {
+    if (ctx.search_rules_loaded) {
         var opt_rules: usize = 0;
-        for (global_mangle.rules.items) |rule| {
+        for (ctx.mangle.rules.items) |rule| {
             if (caseContains(rule.head_predicate, "normalization_method") or
                 caseContains(rule.head_predicate, "pal_") or
                 caseContains(rule.head_predicate, "thread_ratio") or
@@ -1928,7 +2019,7 @@ fn stripOptimizePrefixes(message: []const u8) []const u8 {
 // Graph Publish — publish schema/results to deductive-db as graph nodes
 // ============================================================================
 
-fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     const query = stripPrefixes(message, &.{
         "publish to graph ",  "store in graph ", "save to graph ",
         "create graph node ", "publish schema ", "publish results ",
@@ -1951,7 +2042,7 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
         );
     }
 
-    if (!global_deductive_client.isConfigured()) {
+    if (!ctx.deductive_client.isConfigured()) {
         return try allocator.dupe(u8,
             \\# Graph Publish — Not Configured
             \\
@@ -1966,13 +2057,13 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
 
     // Publish schema tables as graph nodes
     if (caseContains(query, "schema") or caseContains(query, "tables")) {
-        if (!global_schema_loaded) {
+        if (!ctx.schema_loaded) {
             try w.writeAll("⚠ No HANA schema loaded. Run `schema-refresh` first.\n");
             return buf.toOwnedSlice(allocator);
         }
 
         var published: usize = 0;
-        var iter = global_database.schemas.iterator();
+        var iter = ctx.database.schemas.iterator();
         while (iter.next()) |entry| {
             const ts = entry.value_ptr;
             const cols = ts.getColumns();
@@ -1981,12 +2072,12 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
             var props: std.ArrayList(u8) = .{};
             const pw = props.writer(allocator);
             try pw.print("{{\"name\":\"{s}\",\"columns\":{d},\"schema\":\"{s}\"}}", .{
-                ts.name, cols.len, global_hana_schema,
+                ts.name, cols.len, ctx.hana_schema,
             });
             const props_json = try props.toOwnedSlice(allocator);
             defer allocator.free(props_json);
 
-            const result = global_deductive_client.createNode("Table", props_json) catch |err| {
+            const result = ctx.deductive_client.createNode("Table", props_json) catch |err| {
                 try w.print("- ❌ `{s}`: {}\n", .{ ts.name, err });
                 continue;
             };
@@ -2000,7 +2091,7 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
 
     // Publish PAL algorithm execution result
     if (caseContains(query, "result") or caseContains(query, "execution")) {
-        const alg = findAlgorithmInMessage(query);
+        const alg = findAlgorithmInCatalog(&ctx.catalog, query);
         const table_name = extractTableName(query);
 
         var props: std.ArrayList(u8) = .{};
@@ -2021,7 +2112,7 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
         const props_json = try props.toOwnedSlice(allocator);
         defer allocator.free(props_json);
 
-        const result = global_deductive_client.createNode("PalExecution", props_json) catch |err| {
+        const result = ctx.deductive_client.createNode("PalExecution", props_json) catch |err| {
             try w.print("❌ Failed to publish: {}\n", .{err});
             return buf.toOwnedSlice(allocator);
         };
@@ -2054,7 +2145,7 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
     const props_json = try props.toOwnedSlice(allocator);
     defer allocator.free(props_json);
 
-    const result = global_deductive_client.createNode("DataProduct", props_json) catch |err| {
+    const result = ctx.deductive_client.createNode("DataProduct", props_json) catch |err| {
         try w.print("❌ Failed to publish data product: {}\n", .{err});
         return buf.toOwnedSlice(allocator);
     };
@@ -2067,7 +2158,7 @@ fn dispatchGraphPublish(allocator: std.mem.Allocator, message: []const u8) ![]co
 // Graph Query — query deductive-db for lineage, dependencies, impact
 // ============================================================================
 
-fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     const query = stripPrefixes(message, &.{
         "graph query ",       "query graph ",  "show lineage ",
         "show dependencies ", "data product ", "impact analysis ",
@@ -2092,7 +2183,7 @@ fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]cons
         );
     }
 
-    if (!global_deductive_client.isConfigured()) {
+    if (!ctx.deductive_client.isConfigured()) {
         return try allocator.dupe(u8,
             \\# Graph Query — Not Configured
             \\
@@ -2111,7 +2202,7 @@ fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]cons
         try w.print("**Target**: `{s}`\n\n", .{target});
 
         // Use Mangle inference for transitive lineage
-        const result = global_deductive_client.infer(
+        const result = ctx.deductive_client.infer(
             "backward",
             "lineage",
             &.{ target, "_" },
@@ -2132,7 +2223,7 @@ fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]cons
         const target = extractEntityName(query);
         try w.print("**Target**: `{s}`\n\n", .{target});
 
-        const result = global_deductive_client.queryFacts(
+        const result = ctx.deductive_client.queryFacts(
             "transitive_depends",
             &.{ "_", target },
         ) catch |err| {
@@ -2152,7 +2243,7 @@ fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]cons
         const target = extractEntityName(query);
         try w.print("**Target**: `{s}`\n\n", .{target});
 
-        const result = global_deductive_client.infer(
+        const result = ctx.deductive_client.infer(
             "forward",
             "impacted_by",
             &.{ "_", target },
@@ -2170,7 +2261,7 @@ fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]cons
     // Data product list
     if (caseContains(query, "list") or caseContains(query, "all")) {
         try w.writeAll("# Data Products\n\n");
-        const result = global_deductive_client.chatQuery("list all data products") catch |err| {
+        const result = ctx.deductive_client.chatQuery("list all data products") catch |err| {
             try w.print("❌ Data product query failed: {}\n", .{err});
             return buf.toOwnedSlice(allocator);
         };
@@ -2182,7 +2273,7 @@ fn dispatchGraphQuery(allocator: std.mem.Allocator, message: []const u8) ![]cons
     // Generic NL query passthrough
     try w.writeAll("# Graph Query Results\n\n");
     try w.print("**Query**: \"{s}\"\n\n", .{query});
-    const result = global_deductive_client.chatQuery(query) catch |err| {
+    const result = ctx.deductive_client.chatQuery(query) catch |err| {
         try w.print("❌ Query failed: {}\n", .{err});
         return buf.toOwnedSlice(allocator);
     };
@@ -2222,7 +2313,7 @@ fn extractEntityName(query: []const u8) []const u8 {
 // OData Fetch — pull data from SAP OData services
 // ============================================================================
 
-fn dispatchOdataFetch(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchOdataFetch(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     const query = stripPrefixes(message, &.{
         "fetch odata ",    "odata service ", "sap odata ",
         "pull data from ", "import odata ",  "odata ",
@@ -2248,7 +2339,7 @@ fn dispatchOdataFetch(allocator: std.mem.Allocator, message: []const u8) ![]cons
     try w.writeAll("# OData Fetch\n\n");
 
     // Parse URL and entity set from query
-    var service_url = global_config.odata_service_url;
+    var service_url = ctx.config.odata_service_url;
     var entity_set: []const u8 = "";
     const top: usize = 100;
 
@@ -2298,8 +2389,8 @@ fn dispatchOdataFetch(allocator: std.mem.Allocator, message: []const u8) ![]cons
     try w.print("**$top**: {d}\n\n", .{top});
 
     // Try fetching via deductive-db proxy
-    if (global_deductive_client.isConfigured()) {
-        const result = global_deductive_client.odataFetch(service_url, entity_set, top) catch |err| {
+    if (ctx.deductive_client.isConfigured()) {
+        const result = ctx.deductive_client.odataFetch(service_url, entity_set, top) catch |err| {
             try w.print("❌ OData fetch via deductive-db failed: {}\n", .{err});
             try w.writeAll("\n_Falling back to direct description._\n\n");
             try writeOdataHelp(w, service_url, entity_set, top);
@@ -2353,9 +2444,9 @@ fn stripPrefixes(message: []const u8, prefixes: []const []const u8) []const u8 {
     return std.mem.trim(u8, message, " \t");
 }
 
-fn dispatchDefault(allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+fn dispatchDefault(allocator: std.mem.Allocator, message: []const u8, ctx: *ServerContext) ![]const u8 {
     // Try to find an algorithm mention even without explicit intent
-    if (findAlgorithmInMessage(message)) |alg| {
+    if (findAlgorithmInCatalog(&ctx.catalog, message)) |alg| {
         return try std.fmt.allocPrint(
             allocator,
             "# {s}\n\n" ++
@@ -2397,24 +2488,24 @@ fn dispatchDefault(allocator: std.mem.Allocator, message: []const u8) ![]const u
 // Algorithm Extraction from Natural Language
 // ============================================================================
 
-fn findAlgorithmInMessage(message: []const u8) ?*const pal_mod.Algorithm {
+fn findAlgorithmInCatalog(catalog: *const pal_mod.Catalog, message: []const u8) ?*const pal_mod.Algorithm {
     // Try exact ID match first (e.g. "clust_kmeans")
-    for (global_catalog.algorithms.items) |*alg| {
+    for (catalog.algorithms.items) |*alg| {
         if (caseContains(message, alg.id)) return alg;
     }
     // Try name match (e.g. "K-Means")
-    for (global_catalog.algorithms.items) |*alg| {
+    for (catalog.algorithms.items) |*alg| {
         if (alg.name.len >= 3 and caseContains(message, alg.name)) return alg;
     }
     // Try ID suffix match — strip category prefix (e.g. "kmeans" from "clust_kmeans")
-    for (global_catalog.algorithms.items) |*alg| {
+    for (catalog.algorithms.items) |*alg| {
         if (std.mem.indexOf(u8, alg.id, "_")) |idx| {
             const suffix = alg.id[idx + 1 ..];
             if (suffix.len >= 3 and caseContains(message, suffix)) return alg;
         }
     }
     // Try name without hyphens/spaces (e.g. "kmeans" matches "K-Means")
-    for (global_catalog.algorithms.items) |*alg| {
+    for (catalog.algorithms.items) |*alg| {
         if (normalizedNameMatch(message, alg.name)) return alg;
     }
     return null;
@@ -2457,30 +2548,32 @@ fn stripSearchDefaultPrefixes(message: []const u8) []const u8 {
 // Snapshot Dispatch Functions
 // ============================================================================
 
-fn getSnapshotManager(allocator: std.mem.Allocator) !*snapshot_mod.SnapshotManager {
-    if (global_snapshot_manager) |*mgr| {
-        return mgr;
-    }
-    global_snapshot_manager = snapshot_mod.SnapshotManager.init(
+fn getSnapshotManager(allocator: std.mem.Allocator, ctx: *ServerContext) !*snapshot_mod.SnapshotManager {
+    if (ctx.snapshot_manager) |mgr| return mgr;
+    const mgr = try allocator.create(snapshot_mod.SnapshotManager);
+    errdefer allocator.destroy(mgr);
+    mgr.* = snapshot_mod.SnapshotManager.init(
         allocator,
-        &global_mangle,
-        &global_hana_client,
+        &ctx.mangle,
+        &ctx.hana_client,
     ) catch |err| {
         std.log.warn("[snapshot] Failed to init snapshot manager: {}", .{err});
+        allocator.destroy(mgr);
         return error.SnapshotNotConfigured;
     };
-    return &global_snapshot_manager.?;
+    ctx.snapshot_manager = mgr;
+    return mgr;
 }
 
-fn dispatchSnapshotStatus(allocator: std.mem.Allocator) ![]const u8 {
-    const mgr = getSnapshotManager(allocator) catch {
+fn dispatchSnapshotStatus(allocator: std.mem.Allocator, ctx: *ServerContext) ![]const u8 {
+    const mgr = getSnapshotManager(allocator, ctx) catch {
         return snapshot_mod.handleSnapshotStatus(allocator, null);
     };
     return snapshot_mod.handleSnapshotStatus(allocator, mgr);
 }
 
-fn dispatchSnapshotCreate(allocator: std.mem.Allocator, query: []const u8) ![]const u8 {
-    const mgr = getSnapshotManager(allocator) catch {
+fn dispatchSnapshotCreate(allocator: std.mem.Allocator, query: []const u8, ctx: *ServerContext) ![]const u8 {
+    const mgr = getSnapshotManager(allocator, ctx) catch {
         return try allocator.dupe(u8,
             \\# Snapshot Create — Not Configured
             \\
@@ -2512,8 +2605,8 @@ fn dispatchSnapshotCreate(allocator: std.mem.Allocator, query: []const u8) ![]co
     return snapshot_mod.handleSnapshotCreate(allocator, mgr, repo, snap_id, empty_indices);
 }
 
-fn dispatchSnapshotList(allocator: std.mem.Allocator, query: []const u8) ![]const u8 {
-    const mgr = getSnapshotManager(allocator) catch {
+fn dispatchSnapshotList(allocator: std.mem.Allocator, query: []const u8, ctx: *ServerContext) ![]const u8 {
+    const mgr = getSnapshotManager(allocator, ctx) catch {
         return try allocator.dupe(u8,
             \\# Snapshot List — Not Configured
             \\
@@ -2525,8 +2618,8 @@ fn dispatchSnapshotList(allocator: std.mem.Allocator, query: []const u8) ![]cons
     return snapshot_mod.handleSnapshotList(allocator, mgr, repo);
 }
 
-fn dispatchSnapshotDelete(allocator: std.mem.Allocator, query: []const u8) ![]const u8 {
-    const mgr = getSnapshotManager(allocator) catch {
+fn dispatchSnapshotDelete(allocator: std.mem.Allocator, query: []const u8, ctx: *ServerContext) ![]const u8 {
+    const mgr = getSnapshotManager(allocator, ctx) catch {
         return try allocator.dupe(u8,
             \\# Snapshot Delete — Not Configured
             \\
@@ -2584,8 +2677,7 @@ fn caseContains(haystack: []const u8, needle: []const u8) bool {
 // ============================================================================
 
 test "config loads defaults" {
-    const allocator = std.testing.allocator;
-    const cfg = config_mod.Config.fromEnv(allocator);
+    const cfg = config_mod.Config.fromEnv();
     try std.testing.expectEqual(@as(u16, 9881), cfg.port);
 }
 

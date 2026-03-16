@@ -1,5 +1,9 @@
 const std = @import("std");
 const posix = std.posix;
+const cb_mod = @import("../hana/circuit_breaker.zig");
+const CircuitBreaker = cb_mod.CircuitBreaker;
+
+const SOCKET_TIMEOUT_S: u32 = 10;
 
 // ============================================================================
 // Deductive Database Client — HTTP client for neo4j-be-po-deductive-db
@@ -15,6 +19,7 @@ pub const DeductiveClient = struct {
     allocator: std.mem.Allocator,
     host: []const u8,
     port: u16,
+    circuit_breaker: CircuitBreaker,
 
     pub fn init(allocator: std.mem.Allocator, url: []const u8) DeductiveClient {
         var host: []const u8 = "localhost";
@@ -35,7 +40,12 @@ pub const DeductiveClient = struct {
             host = rest;
         }
 
-        return .{ .allocator = allocator, .host = host, .port = port };
+        return .{
+            .allocator = allocator,
+            .host = host,
+            .port = port,
+            .circuit_breaker = CircuitBreaker.init(.{}),
+        };
     }
 
     pub fn isConfigured(self: *const DeductiveClient) bool {
@@ -156,8 +166,17 @@ pub const DeductiveClient = struct {
         return self.post("/v1/chat/completions", req_body);
     }
 
-    /// Execute raw Cypher: POST /v1/cypher
+    /// Execute raw Cypher without any write guard (internal use / trusted callers only).
     pub fn executeCypher(self: *DeductiveClient, cypher: []const u8) ![]const u8 {
+        return self.post("/v1/cypher", cypher);
+    }
+
+    /// Execute a read-only Cypher query.
+    /// Scans the full token stream and rejects any query containing a mutating
+    /// keyword (CREATE, MERGE, SET, DELETE, REMOVE, DETACH, DROP, CALL …WRITE).
+    /// Returns error.CypherWriteGuard if a mutating keyword is detected.
+    pub fn executeCypherReadOnly(self: *DeductiveClient, cypher: []const u8) ![]const u8 {
+        try guardCypherReadOnly(cypher);
         return self.post("/v1/cypher", cypher);
     }
 
@@ -187,6 +206,11 @@ pub const DeductiveClient = struct {
     // ========================================================================
 
     fn post(self: *DeductiveClient, path: []const u8, req_body: []const u8) ![]const u8 {
+        if (!self.circuit_breaker.allow()) {
+            std.log.warn("[deductive] circuit breaker OPEN — rejecting call to {s}", .{path});
+            return error.CircuitOpen;
+        }
+
         var req: std.ArrayList(u8) = .{};
         const rw = req.writer(self.allocator);
         try rw.print("POST {s} HTTP/1.1\r\n", .{path});
@@ -200,23 +224,58 @@ pub const DeductiveClient = struct {
 
         const addr = std.net.Address.parseIp4(self.host, self.port) catch blk: {
             if (std.mem.eql(u8, self.host, "localhost")) {
-                break :blk try std.net.Address.parseIp4("127.0.0.1", self.port);
+                break :blk std.net.Address.parseIp4("127.0.0.1", self.port) catch {
+                    self.circuit_breaker.recordFailure();
+                    return error.UnableToResolve;
+                };
             }
+            self.circuit_breaker.recordFailure();
             return error.UnableToResolve;
         };
 
-        const sock = try posix.socket(posix.AF.INET, posix.SOCK.STREAM, 0);
+        const sock = posix.socket(posix.AF.INET, posix.SOCK.STREAM, 0) catch |err| {
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
         defer posix.close(sock);
-        try posix.connect(sock, &addr.any, addr.getOsSockLen());
-        _ = try posix.write(sock, req_data);
+
+        // Apply send/recv timeouts so no call can block indefinitely.
+        const tv = posix.timeval{ .sec = SOCKET_TIMEOUT_S, .usec = 0 };
+        posix.setsockopt(sock, posix.SOL.SOCKET, posix.SO.RCVTIMEO, std.mem.asBytes(&tv)) catch {};
+        posix.setsockopt(sock, posix.SOL.SOCKET, posix.SO.SNDTIMEO, std.mem.asBytes(&tv)) catch {};
+
+        posix.connect(sock, &addr.any, addr.getOsSockLen()) catch |err| {
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
+
+        posix.write(sock, req_data) catch |err| {
+            self.circuit_breaker.recordFailure();
+            return err;
+        };
 
         var response: std.ArrayList(u8) = .{};
+        var read_ok = true;
         var read_buf: [8192]u8 = undefined;
         while (true) {
-            const n = posix.read(sock, &read_buf) catch break;
+            const n = posix.read(sock, &read_buf) catch {
+                read_ok = false;
+                break;
+            };
             if (n == 0) break;
-            try response.appendSlice(self.allocator, read_buf[0..n]);
+            response.appendSlice(self.allocator, read_buf[0..n]) catch {
+                read_ok = false;
+                break;
+            };
         }
+
+        if (!read_ok) {
+            response.deinit(self.allocator);
+            self.circuit_breaker.recordFailure();
+            return error.ReadFailed;
+        }
+
+        self.circuit_breaker.recordSuccess();
 
         const full = try response.toOwnedSlice(self.allocator);
         if (std.mem.indexOf(u8, full, "\r\n\r\n")) |hdr_end| {
@@ -227,6 +286,94 @@ pub const DeductiveClient = struct {
         return full;
     }
 };
+
+// ============================================================================
+// Cypher write guard — full token-stream scan
+// ============================================================================
+
+/// Mutating Cypher keywords (uppercase).  CALL alone is allowed; it only becomes
+/// a write operation when combined with a write procedure, but we block it here
+/// conservatively because it can invoke arbitrary procedures.
+const WRITE_KEYWORDS = [_][]const u8{
+    "CREATE",
+    "MERGE",
+    "SET",
+    "DELETE",
+    "REMOVE",
+    "DETACH",
+    "DROP",
+    "CALL",
+    "FOREACH",
+    "LOAD",
+};
+
+/// Returns true if the byte is a token boundary (whitespace or punctuation).
+fn isBoundary(c: u8) bool {
+    return switch (c) {
+        ' ', '\t', '\r', '\n', '(', ')', '{', '}', '[', ']', ',', ';', '.' => true,
+        else => false,
+    };
+}
+
+/// Scan the full Cypher token stream and return error.CypherWriteGuard if any
+/// token matches a mutating keyword (case-insensitive).  Comments (// … \n and
+/// /* … */) are stripped before tokenising so they cannot be used to smuggle
+/// keywords past a prefix-only check.
+pub fn guardCypherReadOnly(cypher: []const u8) error{CypherWriteGuard}!void {
+    var i: usize = 0;
+    while (i < cypher.len) {
+        // Skip single-line comment: // … \n
+        if (i + 1 < cypher.len and cypher[i] == '/' and cypher[i + 1] == '/') {
+            while (i < cypher.len and cypher[i] != '\n') : (i += 1) {}
+            continue;
+        }
+        // Skip block comment: /* … */
+        if (i + 1 < cypher.len and cypher[i] == '/' and cypher[i + 1] == '*') {
+            i += 2;
+            while (i + 1 < cypher.len) : (i += 1) {
+                if (cypher[i] == '*' and cypher[i + 1] == '/') {
+                    i += 2;
+                    break;
+                }
+            }
+            continue;
+        }
+        // Skip string literals: '…' and "…"
+        if (cypher[i] == '\'' or cypher[i] == '"') {
+            const quote = cypher[i];
+            i += 1;
+            while (i < cypher.len) : (i += 1) {
+                if (cypher[i] == '\\') { i += 1; continue; }
+                if (cypher[i] == quote) { i += 1; break; }
+            }
+            continue;
+        }
+        // Skip non-identifier characters
+        if (isBoundary(cypher[i]) or !std.ascii.isAlphabetic(cypher[i])) {
+            i += 1;
+            continue;
+        }
+        // Collect a token (letters/digits/_)
+        const start = i;
+        while (i < cypher.len and (std.ascii.isAlphanumeric(cypher[i]) or cypher[i] == '_')) : (i += 1) {}
+        const token = cypher[start..i];
+
+        // Compare case-insensitively against write keywords
+        var upper_buf: [16]u8 = undefined;
+        if (token.len <= upper_buf.len) {
+            for (token, 0..) |c, j| {
+                upper_buf[j] = std.ascii.toUpper(c);
+            }
+            const upper_token = upper_buf[0..token.len];
+            for (WRITE_KEYWORDS) |kw| {
+                if (std.mem.eql(u8, upper_token, kw)) {
+                    std.log.warn("[cypher-guard] mutating keyword '{s}' rejected", .{kw});
+                    return error.CypherWriteGuard;
+                }
+            }
+        }
+    }
+}
 
 fn writeJsonStr(writer: anytype, s: []const u8) !void {
     try writer.writeByte('"');
@@ -246,6 +393,56 @@ fn writeJsonStr(writer: anytype, s: []const u8) !void {
 // ============================================================================
 // Tests
 // ============================================================================
+
+test "cypher guard allows read-only query" {
+    try guardCypherReadOnly("MATCH (n:Person) RETURN n.name LIMIT 10");
+}
+
+test "cypher guard blocks CREATE" {
+    const result = guardCypherReadOnly("CREATE (n:Person {name: 'Alice'})");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
+
+test "cypher guard blocks lowercase create" {
+    const result = guardCypherReadOnly("create (n:Person {name: 'Alice'})");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
+
+test "cypher guard blocks MERGE" {
+    const result = guardCypherReadOnly("MATCH (a) MERGE (b:Node {id: 1})");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
+
+test "cypher guard blocks SET after MATCH" {
+    const result = guardCypherReadOnly("MATCH (n) WHERE n.id = 1 SET n.name = 'Bob'");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
+
+test "cypher guard blocks DELETE" {
+    const result = guardCypherReadOnly("MATCH (n) DELETE n");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
+
+test "cypher guard blocks keyword hidden after single-line comment" {
+    // The comment is stripped; CREATE in code body must still be caught
+    const result = guardCypherReadOnly("MATCH (n) // read-only\nCREATE (m)");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
+
+test "cypher guard does not block keyword inside string literal" {
+    // 'CREATE' is a string value, not a keyword — should pass
+    try guardCypherReadOnly("MATCH (n) WHERE n.op = 'CREATE' RETURN n");
+}
+
+test "cypher guard does not block keyword inside block comment" {
+    // /* CREATE */ is a comment — the actual query is read-only
+    try guardCypherReadOnly("/* CREATE is not executed */ MATCH (n) RETURN n");
+}
+
+test "cypher guard blocks DETACH DELETE" {
+    const result = guardCypherReadOnly("MATCH (n) DETACH DELETE n");
+    try std.testing.expectError(error.CypherWriteGuard, result);
+}
 
 test "deductive client parse url" {
     const allocator = std.testing.allocator;

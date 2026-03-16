@@ -1,0 +1,112 @@
+# Unified SAP Elasticsearch + Mangle Query Service
+# Serves: MCP (9120), ES OpenAI (9201), Query API (8080), Metrics (9090)
+#
+# Quick start:
+#   docker compose up -d
+#   docker compose --profile hana up -d   # include HANA mock
+
+version: '3.8'
+
+services:
+  # --------------------------------------------------------------------------
+  # Merged SAP service: MCP + OpenAI + Query API + Go Mangle engine
+  # --------------------------------------------------------------------------
+  mangle-es:
+    build:
+      context: .
+      dockerfile: Dockerfile.sap
+    container_name: mangle-es
+    environment:
+      SERVICE: all
+      MCP_PORT: "9120"
+      OPENAI_PORT: "9201"
+      QUERY_PORT: "8080"
+      GRPC_PORT: "50051"
+      MQS_RULES_DIR: /app/rules
+      ES_HOST: http://elasticsearch:9200
+      AICORE_URL: ${AICORE_URL:-https://api.ai.core.sap.cloud}
+      AICORE_CLIENT_ID: ${AICORE_CLIENT_ID:-}
+      AICORE_CLIENT_SECRET: ${AICORE_CLIENT_SECRET:-}
+      AICORE_TOKEN_URL: ${AICORE_TOKEN_URL:-}
+      AICORE_RESOURCE_GROUP: ${AICORE_RESOURCE_GROUP:-default}
+      AICORE_EMBEDDING_DEPLOYMENT_ID: ${AICORE_EMBEDDING_DEPLOYMENT_ID:-}
+      HANA_HOST: ${HANA_HOST:-}
+      HANA_PORT: ${HANA_PORT:-443}
+      HANA_USER: ${HANA_USER:-}
+      HANA_PASSWORD: ${HANA_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    ports:
+      - "9120:9120"    # MCP Server
+      - "9201:9201"    # ES OpenAI-compatible API
+      - "8080:8080"    # Mangle Query API
+      - "9090:9090"    # Prometheus metrics
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - sap-oss
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9120/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # Upstream Elasticsearch
+  # --------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - sap-oss
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # HANA mock (optional — enable with: docker compose --profile hana up)
+  # --------------------------------------------------------------------------
+  hana-mock:
+    profiles: ["hana"]
+    image: python:3.11-slim
+    container_name: hana-mock
+    command: >
+      python -c "
+      import http.server, json
+      class H(http.server.BaseHTTPRequestHandler):
+          def do_POST(self):
+              self.send_response(200)
+              self.send_header('Content-Type','application/json')
+              self.end_headers()
+              self.wfile.write(json.dumps({'results':[]}).encode())
+          def log_message(self, *a): pass
+      http.server.HTTPServer(('0.0.0.0',30015),H).serve_forever()"
+    ports:
+      - "30015:30015"
+    networks:
+      - sap-oss
+
+volumes:
+  es_data:
+    driver: local
+
+networks:
+  sap-oss:
+    name: sap-oss-network
+    driver: bridge

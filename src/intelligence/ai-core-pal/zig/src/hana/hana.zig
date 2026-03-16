@@ -57,6 +57,108 @@ pub fn generateCall(
     return buf.toOwnedSlice(allocator);
 }
 
+// ============================================================================
+// Tests
+// ============================================================================
+
+test "generateCall produces DO BEGIN block" {
+    const allocator = std.testing.allocator;
+    const alg = pal.Algorithm{
+        .id = "kmeans",
+        .name = "K-Means",
+        .category = "clustering",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_KMEANS",
+        .stability = "stable",
+        .version = "2.0",
+    };
+    const sql = try generateCall(allocator, &alg, "MY_TABLE", &.{});
+    defer allocator.free(sql);
+
+    try std.testing.expect(std.mem.indexOf(u8, sql, "DO BEGIN") != null);
+    try std.testing.expect(std.mem.indexOf(u8, sql, "END;") != null);
+    try std.testing.expect(std.mem.indexOf(u8, sql, "_SYS_AFL.PAL_KMEANS") != null);
+    try std.testing.expect(std.mem.indexOf(u8, sql, "MY_TABLE") != null);
+}
+
+test "generateCall emits integer param row" {
+    const allocator = std.testing.allocator;
+    const alg = pal.Algorithm{
+        .id = "kmeans",
+        .name = "K-Means",
+        .category = "clustering",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_KMEANS",
+        .stability = "stable",
+        .version = "2.0",
+    };
+    const params = [_]Param{
+        .{ .name = "GROUP_NUMBER", .param_type = .integer, .value = "5" },
+    };
+    const sql = try generateCall(allocator, &alg, "DATA", &params);
+    defer allocator.free(sql);
+
+    try std.testing.expect(std.mem.indexOf(u8, sql, "'GROUP_NUMBER', 5, NULL, NULL") != null);
+}
+
+test "generateCall emits double param row" {
+    const allocator = std.testing.allocator;
+    const alg = pal.Algorithm{
+        .id = "arima",
+        .name = "ARIMA",
+        .category = "timeseries",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_ARIMA",
+        .stability = "stable",
+        .version = "1.0",
+    };
+    const params = [_]Param{
+        .{ .name = "THRESHOLD", .param_type = .double, .value = "0.95" },
+    };
+    const sql = try generateCall(allocator, &alg, "TS_DATA", &params);
+    defer allocator.free(sql);
+
+    try std.testing.expect(std.mem.indexOf(u8, sql, "'THRESHOLD', NULL, 0.95, NULL") != null);
+}
+
+test "generateCall emits string param row" {
+    const allocator = std.testing.allocator;
+    const alg = pal.Algorithm{
+        .id = "naive_bayes",
+        .name = "Naive Bayes",
+        .category = "classification",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_NAIVE_BAYES",
+        .stability = "stable",
+        .version = "1.0",
+    };
+    const params = [_]Param{
+        .{ .name = "LAPLACE", .param_type = .string, .value = "auto" },
+    };
+    const sql = try generateCall(allocator, &alg, "TRAIN", &params);
+    defer allocator.free(sql);
+
+    try std.testing.expect(std.mem.indexOf(u8, sql, "'LAPLACE', NULL, NULL, 'auto'") != null);
+}
+
+test "generateCall with no params still calls procedure" {
+    const allocator = std.testing.allocator;
+    const alg = pal.Algorithm{
+        .id = "pca",
+        .name = "PCA",
+        .category = "preprocessing",
+        .module = "PAL",
+        .procedure = "_SYS_AFL.PAL_PCA",
+        .stability = "stable",
+        .version = "1.0",
+    };
+    const sql = try generateCall(allocator, &alg, "INPUT_DATA", &.{});
+    defer allocator.free(sql);
+
+    try std.testing.expect(std.mem.indexOf(u8, sql, "CALL _SYS_AFL.PAL_PCA") != null);
+    try std.testing.expect(std.mem.indexOf(u8, sql, "SELECT * FROM :lt_result;") != null);
+}
+
 pub fn generateCallFromArgs(
     allocator: std.mem.Allocator,
     alg: *const pal.Algorithm,
