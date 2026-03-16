@@ -9,7 +9,11 @@ The following classes are available:
     * :class `TSMakeFutureTableForMassiveForecastTool`
 """
 
+from datetime import date, datetime
 import logging
+import math
+import numbers
+import re
 from typing import Optional, Type
 import uuid
 from pydantic import BaseModel, Field
@@ -18,6 +22,88 @@ from langchain_core.tools import BaseTool
 from hana_ml import ConnectionContext
 
 logger = logging.getLogger(__name__)
+
+_IDENTIFIER_PATTERN = re.compile(r'^[A-Za-z0-9_]+$')
+_NUMERIC_LITERAL_PATTERN = re.compile(r'^-?[0-9]+(?:\.[0-9]+)?$')
+_DATETIME_LITERAL_PATTERN = re.compile(r'^[0-9T:\-+ .]+$')
+_ALLOWED_INCREMENT_TYPES = {
+    'SECOND': ('SECONDS', 1, 1, 'second'),
+    'SECONDS': ('SECONDS', 1, 1, 'second'),
+    'DAY': ('DAYS', 86400, 1, 'day'),
+    'DAYS': ('DAYS', 86400, 1, 'day'),
+    'WEEK': ('DAYS', 604800, 7, 'week'),
+    'WEEKS': ('DAYS', 604800, 7, 'week'),
+    'MONTH': ('MONTHS', 2592000, 1, 'month'),
+    'MONTHS': ('MONTHS', 2592000, 1, 'month'),
+    'QUARTER': ('MONTHS', 7776000, 3, 'quarter'),
+    'QUARTERS': ('MONTHS', 7776000, 3, 'quarter'),
+    'YEAR': ('YEARS', 31536000, 1, 'year'),
+    'YEARS': ('YEARS', 31536000, 1, 'year'),
+}
+
+
+def _validate_identifier(value, field_name):
+    if not isinstance(value, str) or not _IDENTIFIER_PATTERN.fullmatch(value):
+        raise ValueError(field_name + ' must contain only letters, numbers, and underscores')
+    return value
+
+
+def _quote_identifier(value, field_name):
+    return '"' + _validate_identifier(value, field_name) + '"'
+
+
+def _validate_numeric_literal(value, field_name):
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
+        raise ValueError(field_name + ' must be numeric')
+    if not math.isfinite(float(value)):
+        raise ValueError(field_name + ' must be finite')
+    text = str(int(value)) if float(value).is_integer() else str(value)
+    if not _NUMERIC_LITERAL_PATTERN.fullmatch(text):
+        raise ValueError(field_name + ' must be a safe numeric literal')
+    return text
+
+
+def _validate_datetime_literal(value):
+    if isinstance(value, datetime):
+        literal = value.isoformat(sep=' ')
+    elif isinstance(value, date):
+        literal = value.isoformat()
+    else:
+        literal = str(value)
+
+    if not _DATETIME_LITERAL_PATTERN.fullmatch(literal):
+        raise ValueError('forecast_start must be a safe datetime string')
+
+    try:
+        if ' ' in literal or 'T' in literal:
+            datetime.fromisoformat(literal.replace(' ', 'T', 1))
+        else:
+            date.fromisoformat(literal)
+    except ValueError as exc:
+        raise ValueError('forecast_start must be a valid datetime string') from exc
+
+    return literal
+
+
+def _normalize_increment_type(increment_type, timedelta_seconds):
+    if not isinstance(increment_type, str):
+        raise ValueError('Unsupported increment_type')
+
+    increment_key = increment_type.strip().upper()
+    if increment_key not in _ALLOWED_INCREMENT_TYPES:
+        raise ValueError('Unsupported increment_type')
+
+    sql_increment, divisor, multiplier, interval_name = _ALLOWED_INCREMENT_TYPES[increment_key]
+    step = timedelta_seconds if divisor == 1 else round(timedelta_seconds / divisor)
+    if divisor != 1 and step == 0:
+        raise ValueError('The interval between the training time series is less than one ' + interval_name + '.')
+    return sql_increment, step * multiplier
+
+
+def _format_group_literal(group, group_id_type):
+    if 'INT' in group_id_type.upper():
+        return _validate_numeric_literal(group, 'group')
+    return "'" + _validate_identifier(str(group), 'group') + "'"
 
 
 def make_future_dataframe(data, key=None, periods=1, increment_type='seconds'):
@@ -57,38 +143,32 @@ def make_future_dataframe(data, key=None, periods=1, increment_type='seconds'):
             key = data.columns[0]
         else:
             key = data.index
+    key = _validate_identifier(key, 'key')
+    key_sql = _quote_identifier(key, 'key')
     max_ = data.select(key).max()
     sec_max_ = data.select(key).distinct().sort_values(key, ascending=False).head(2).collect().iat[1, 0]
     delta = max_ - sec_max_
     is_int = 'INT' in data.get_table_structure()[key]
     if is_int:
-        forecast_start, timedelta = max_ + delta, delta
+        forecast_start_sql = _validate_numeric_literal(max_ + delta, 'forecast_start')
+        timedelta_sql = _validate_numeric_literal(delta, 'timedelta')
     else:
-        forecast_start, timedelta = max_ + delta, delta.total_seconds()
+        forecast_start_sql = "'" + _validate_datetime_literal(max_ + delta) + "'"
+        sql_increment, normalized_timedelta = _normalize_increment_type(increment_type, delta.total_seconds())
+        timedelta_sql = _validate_numeric_literal(normalized_timedelta, 'timedelta')
     timeframe = []
-    if not is_int:
-        if 'day' in increment_type.lower():
-            increment_type = 'days'
-            timedelta = round(timedelta / 86400)
-            if timedelta == 0:
-                raise ValueError("The interval between the training time series is less than one day.")
-        elif 'month' in increment_type.lower():
-            increment_type = 'months'
-            timedelta = round(timedelta / 2592000)
-            if timedelta == 0:
-                raise ValueError("The interval between the training time series is less than one month.")
-        elif 'year' in increment_type.lower():
-            increment_type = 'years'
-            timedelta = round(timedelta / 31536000)
-            if timedelta == 0:
-                raise ValueError("The interval between the training time series is less than one year.")
-        else:
-            increment_type = 'seconds'
     for period in range(0, periods):
+        period_sql = _validate_numeric_literal(period, 'period')
         if is_int:
-            timeframe.append("SELECT TO_INT({} + {} * {}) AS \"{}\" FROM DUMMY".format(forecast_start, timedelta, period, key))
+            timeframe.append(''.join([
+                'SELECT TO_INT(', forecast_start_sql, ' + ', timedelta_sql, ' * ', period_sql,
+                ') AS ', key_sql, ' FROM DUMMY',
+            ]))
         else:
-            timeframe.append("SELECT ADD_{}('{}', {} * {}) AS \"{}\" FROM DUMMY".format(increment_type.upper(), forecast_start, timedelta, period, key))
+            timeframe.append(''.join([
+                'SELECT ADD_', sql_increment, '(', forecast_start_sql, ', ', timedelta_sql, ' * ', period_sql,
+                ') AS ', key_sql, ' FROM DUMMY',
+            ]))
     sql = ' UNION ALL '.join(timeframe)
     return data.connection_context.sql(sql).sort_values(key)
 
@@ -137,54 +217,41 @@ def make_future_dataframe_for_massive_forecast(data=None, key=None, group_key=No
             key = data.columns[1]
         else:
             key = data.index
+    group_key = _validate_identifier(group_key, 'group_key')
+    key = _validate_identifier(key, 'key')
+    group_key_sql = _quote_identifier(group_key, 'group_key')
+    key_sql = _quote_identifier(key, 'key')
     group_id_type = data.get_table_structure()[group_key]
     group_list = data.select(group_key).distinct().collect()[group_key]
     timeframe = []
     for group in group_list:
-        if 'INT' in group_id_type.upper():
-            m_data = data.filter(f"{group_key}={group}")
-        else:
-            m_data = data.filter(f"{group_key}='{group}'")
+        group_literal = _format_group_literal(group, group_id_type)
+        m_data = data.filter(''.join([group_key_sql, '=', group_literal]))
         max_ = m_data.select(key).max()
         sec_max_ = m_data.select(key).distinct().sort_values(key, ascending=False).head(2).collect().iat[1, 0]
         delta = max_ - sec_max_
         is_int = 'INT' in m_data.get_table_structure()[key]
         if is_int:
-            forecast_start, timedelta = max_ + delta, delta
+            forecast_start_sql = _validate_numeric_literal(max_ + delta, 'forecast_start')
+            timedelta_sql = _validate_numeric_literal(delta, 'timedelta')
         else:
-            forecast_start, timedelta = max_ + delta, delta.total_seconds()
-
-        if not is_int:
-            if 'day' in increment_type.lower():
-                increment_type = 'days'
-                timedelta = round(timedelta / 86400)
-                if timedelta == 0:
-                    raise ValueError("The interval between the training time series is less than one day.")
-            elif 'month' in increment_type.lower():
-                increment_type = 'months'
-                timedelta = round(timedelta / 2592000)
-                if timedelta == 0:
-                    raise ValueError("The interval between the training time series is less than one month.")
-            elif 'year' in increment_type.lower():
-                increment_type = 'years'
-                timedelta = round(timedelta / 31536000)
-                if timedelta == 0:
-                    raise ValueError("The interval between the training time series is less than one year.")
-            else:
-                increment_type = 'seconds'
-
-        increment_type = increment_type.upper()
+            forecast_start_sql = "'" + _validate_datetime_literal(max_ + delta) + "'"
+            sql_increment, normalized_timedelta = _normalize_increment_type(increment_type, delta.total_seconds())
+            timedelta_sql = _validate_numeric_literal(normalized_timedelta, 'timedelta')
         for period in range(0, periods):
-            if 'INT' in group_id_type.upper():
-                if is_int:
-                    timeframe.append(f"SELECT {group} AS \"{group_key}\", TO_INT({forecast_start} + {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
-                else:
-                    timeframe.append(f"SELECT {group} AS \"{group_key}\", ADD_{increment_type}('{forecast_start}', {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
+            period_sql = _validate_numeric_literal(period, 'period')
+            if is_int:
+                timeframe.append(''.join([
+                    'SELECT ', group_literal, ' AS ', group_key_sql,
+                    ', TO_INT(', forecast_start_sql, ' + ', timedelta_sql, ' * ', period_sql,
+                    ') AS ', key_sql, ' FROM DUMMY',
+                ]))
             else:
-                if is_int:
-                    timeframe.append(f"SELECT '{group}' AS \"{group_key}\", TO_INT({forecast_start} + {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
-                else:
-                    timeframe.append(f"SELECT '{group}' AS \"{group_key}\", ADD_{increment_type}('{forecast_start}', {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
+                timeframe.append(''.join([
+                    'SELECT ', group_literal, ' AS ', group_key_sql,
+                    ', ADD_', sql_increment, '(', forecast_start_sql, ', ', timedelta_sql, ' * ', period_sql,
+                    ') AS ', key_sql, ' FROM DUMMY',
+                ]))
     sql = ' UNION ALL '.join(timeframe)
 
     return data.connection_context.sql(sql).sort_values([group_key, key])
