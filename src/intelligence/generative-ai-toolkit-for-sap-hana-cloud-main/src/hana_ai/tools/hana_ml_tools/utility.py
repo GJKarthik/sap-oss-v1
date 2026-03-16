@@ -6,6 +6,8 @@ Utility functions for the HANA ML tools.
 import os
 import shutil
 import json
+import re
+import unicodedata
 from pathlib import Path
 import logging
 from datetime import datetime, date
@@ -16,6 +18,52 @@ from hana_ml.model_storage import ModelStorage
 #pylint: disable=too-many-nested-blocks, unexpected-keyword-arg, invalid-name
 
 logger = logging.getLogger(__name__)
+
+_IDENTIFIER_PATTERN = re.compile(r'^[A-Za-z0-9_]+$')
+ALLOWED_SQL_PREFIXES = ('SELECT', 'WITH')
+BLOCKED_SQL_KEYWORDS = ('DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE')
+
+
+def _validate_identifier(value: str, field_name: str) -> str:
+    if not isinstance(value, str) or not _IDENTIFIER_PATTERN.fullmatch(value):
+        raise ValueError(f'{field_name} must contain only letters, numbers, and underscores')
+    return value
+
+
+def _sanitize_select_statement(select_statement: str) -> str:
+    statement = select_statement.strip()
+    statement = re.sub(r'^```(?:sql)?\s*', '', statement, flags=re.IGNORECASE)
+    statement = re.sub(r'\s*```$', '', statement).strip()
+
+    for char in statement:
+        if unicodedata.category(char).startswith('C') and char not in ('\t', '\n', '\r'):
+            raise ValueError('Non-printable or format characters are not allowed in HANA ML SQL.')
+    try:
+        statement.encode('ascii')
+    except UnicodeEncodeError as exc:
+        raise ValueError('Only ASCII SQL statements are allowed in HANA ML tools.') from exc
+
+    sql_match = re.search(r'\b(WITH|SELECT)\b.*', statement, re.DOTALL | re.IGNORECASE)
+    if sql_match and statement[:sql_match.start()].strip():
+        raise ValueError('Only raw SELECT or WITH SQL statements are allowed.')
+    if not sql_match:
+        raise ValueError('Failed to extract a valid read-only SQL statement.')
+
+    statement = sql_match.group(0).strip()
+    normalized_statement = re.sub(r'\s+', ' ', statement).upper()
+
+    if not normalized_statement.startswith(ALLOWED_SQL_PREFIXES):
+        raise ValueError('Only SELECT or WITH statements are allowed.')
+    if ';' in statement:
+        raise ValueError('Multiple SQL statements are not allowed.')
+    if '--' in statement or '/*' in statement or '*/' in statement:
+        raise ValueError('SQL comments are not allowed in HANA ML tools.')
+
+    for keyword in BLOCKED_SQL_KEYWORDS:
+        if re.search(rf'\b{keyword}\b', normalized_statement):
+            raise ValueError(f'Dangerous SQL keyword is not allowed: {keyword}')
+
+    return statement
 
 def convert_cap_to_hdi(source_dir, target_dir, archive=True):
     """
@@ -135,7 +183,9 @@ def _create_temp_table(conn, select_statement: str, tool_name: str, additional_i
         additional_info = f"_{additional_info}_"
     else:
         additional_info = "_"
-    table_name = f"#{tool_name}{additional_info}{timestamp}".upper()
-    create_temp_table_sql = f"CREATE LOCAL TEMPORARY TABLE {table_name} AS ({select_statement})"
+    table_name_body = _validate_identifier(f"{tool_name}{additional_info}{timestamp}".upper(), 'table_name')
+    safe_table_name = f"#{table_name_body}"
+    sanitized_select_statement = _sanitize_select_statement(select_statement)
+    create_temp_table_sql = f"CREATE LOCAL TEMPORARY TABLE {safe_table_name} AS ({sanitized_select_statement})"
     conn.execute_sql(create_temp_table_sql)
-    return f"SELECT * FROM {table_name}"
+    return f"SELECT * FROM {safe_table_name}"

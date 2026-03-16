@@ -22,12 +22,21 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass
 import logging
+import re
 
 from hana_ai.mem0.hana_mem0_adapter import Mem0HanaAdapter, SearchResult
 from hana_ai.mem0.memory_classifier import Mem0IngestionClassifier
 from hana_ai.mem0.memory_entity_extractor import Mem0EntityExtractor
 
 logger = logging.getLogger(__name__)
+
+_IDENTIFIER_PATTERN = re.compile(r'^[A-Za-z0-9_]+$')
+
+
+def _validate_identifier(value: str, field_name: str) -> str:
+    if not isinstance(value, str) or not _IDENTIFIER_PATTERN.fullmatch(value):
+        raise ValueError(f'{field_name} must contain only letters, numbers, and underscores')
+    return value
 
 
 @dataclass
@@ -49,10 +58,11 @@ def default_hana_export_handler(connection_context: Any, table_name: str, filter
     """
     rows: List[Dict[str, Any]] = []
     try:
+        safe_table_name = _validate_identifier(table_name, 'table_name')
         conn = connection_context.connection  # DBAPI connection
         cur = conn.cursor()
         # Best-effort: select all then normalize
-        cur.execute(f'SELECT * FROM "{table_name}"')
+        cur.execute(f'SELECT * FROM "{safe_table_name}"')
         colnames = [d[0] for d in cur.description]
         for rec in cur.fetchall():
             row = {colnames[i]: rec[i] for i in range(len(colnames))}
