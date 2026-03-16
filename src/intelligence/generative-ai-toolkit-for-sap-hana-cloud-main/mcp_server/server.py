@@ -450,6 +450,79 @@ class MCPServer:
                 continue
         return None
 
+    def _extract_es_hits(self, result: Any) -> list:
+        if not isinstance(result, dict):
+            return []
+        hits = result.get("hits", {})
+        if not isinstance(hits, dict):
+            return []
+        raw_hits = hits.get("hits", [])
+        return raw_hits if isinstance(raw_hits, list) else []
+
+    def _search_es_text(self, endpoint: str, index: str, query: str, size: int) -> Any:
+        query_dsl = {
+            "multi_match": {
+                "query": query,
+                "fields": ["text^3", "content^2", "title", "body"],
+            }
+        }
+        return call_mcp_tool(endpoint, "es_search", {
+            "index": index,
+            "query": json.dumps(query_dsl),
+            "size": size,
+        })
+
+    def _find_vector_field(self, mapping: dict, prefix: str = "") -> str | None:
+        if not isinstance(mapping, dict):
+            return None
+        properties = mapping.get("properties", {})
+        if not isinstance(properties, dict):
+            return None
+        for field_name, field_mapping in properties.items():
+            if not isinstance(field_mapping, dict):
+                continue
+            field_path = f"{prefix}.{field_name}" if prefix else field_name
+            if field_mapping.get("type") in {"dense_vector", "sparse_vector", "knn_vector"}:
+                return field_path
+            nested = self._find_vector_field(field_mapping, field_path)
+            if nested:
+                return nested
+        return None
+
+    def _discover_vector_field(self, endpoint: str, index: str) -> str | None:
+        info = call_mcp_tool(endpoint, "es_index_info", {"index": index})
+        if not isinstance(info, dict):
+            return None
+        for details in info.values():
+            if not isinstance(details, dict):
+                continue
+            mappings = details.get("mappings", {})
+            if not isinstance(mappings, dict):
+                continue
+            vector_field = self._find_vector_field(mappings)
+            if vector_field:
+                return vector_field
+        return None
+
+    def _format_context_doc(self, hit: dict) -> str:
+        if not isinstance(hit, dict):
+            return json.dumps(hit, ensure_ascii=False)
+        source = hit.get("_source", {})
+        if not isinstance(source, dict):
+            return json.dumps(hit, ensure_ascii=False)
+        title = str(source.get("title", "") or "").strip()
+        text = str(
+            source.get("text")
+            or source.get("content")
+            or source.get("body")
+            or ""
+        ).strip()
+        if title and text:
+            return f"Title: {title}\n{text}"
+        if text:
+            return text
+        return json.dumps(source, ensure_ascii=False)
+
     # Tool Handlers
     def _handle_hana_chat(self, args: dict) -> dict:
         config = get_config()
@@ -477,7 +550,15 @@ class MCPServer:
                 "max_tokens": max_tokens,
                 "messages": messages,
             })
-            return {"content": result.get("content", [{}])[0].get("text", ""), "model": deployment["id"]}
+            if isinstance(result, dict) and "error" in result:
+                return result
+            content = result.get("content", []) if isinstance(result, dict) else []
+            text_parts = [
+                part.get("text", "")
+                for part in content
+                if isinstance(part, dict) and isinstance(part.get("text"), str)
+            ]
+            return {"content": "".join(text_parts), "model": deployment["id"]}
         result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/chat/completions", {
             "messages": messages,
             "max_tokens": max_tokens,
@@ -530,30 +611,68 @@ class MCPServer:
         if table_name == "" or query.strip() == "":
             return {"error": "table_name and query are required"}
 
-        try:
-            result = call_mcp_tool(
-                self.vector_mcp_endpoint,
-                "ai_semantic_search",
-                {"index": table_name, "query": query, "k": top_k},
-            )
-            return {
-                "table_name": table_name,
-                "query": query,
-                "top_k": top_k,
-                "status": "federated",
-                "source": self.vector_mcp_endpoint,
-                "result": result,
-            }
-        except Exception as exc:
-            return {
-                "table_name": table_name,
-                "query": query,
-                "top_k": top_k,
-                "results": [],
-                "status": "degraded-no-remote",
-                "source": self.vector_mcp_endpoint,
-                "error": str(exc),
-            }
+        errors = []
+        for endpoint in self._iter_federated_mcp_endpoints([self.vector_mcp_endpoint]):
+            text_result = None
+            try:
+                text_result = self._search_es_text(endpoint, table_name, query, top_k)
+                if not (isinstance(text_result, dict) and "error" in text_result):
+                    text_hits = self._extract_es_hits(text_result)
+                    if text_hits:
+                        return {
+                            "table_name": table_name,
+                            "query": query,
+                            "top_k": top_k,
+                            "status": "federated",
+                            "source": endpoint,
+                            "search_type": "text",
+                            "result": text_result,
+                        }
+            except Exception as exc:
+                errors.append(str(exc))
+
+            try:
+                vector_field = self._discover_vector_field(endpoint, table_name)
+                if vector_field:
+                    semantic_result = call_mcp_tool(
+                        endpoint,
+                        "ai_semantic_search",
+                        {"index": table_name, "query": query, "vector_field": vector_field, "k": top_k},
+                    )
+                    if not (isinstance(semantic_result, dict) and "error" in semantic_result):
+                        return {
+                            "table_name": table_name,
+                            "query": query,
+                            "top_k": top_k,
+                            "status": "federated",
+                            "source": endpoint,
+                            "search_type": "semantic",
+                            "vector_field": vector_field,
+                            "result": semantic_result,
+                        }
+            except Exception as exc:
+                errors.append(str(exc))
+
+            if text_result is not None and not (isinstance(text_result, dict) and "error" in text_result):
+                return {
+                    "table_name": table_name,
+                    "query": query,
+                    "top_k": top_k,
+                    "status": "federated",
+                    "source": endpoint,
+                    "search_type": "text",
+                    "result": text_result,
+                }
+
+        return {
+            "table_name": table_name,
+            "query": query,
+            "top_k": top_k,
+            "results": [],
+            "status": "degraded-no-remote",
+            "source": self.vector_mcp_endpoint,
+            "error": "; ".join(errors) if errors else "No remote search backend available",
+        }
 
     def _handle_hana_rag(self, args: dict) -> dict:
         query = str(args.get("query", "") or "")
@@ -562,31 +681,47 @@ class MCPServer:
         if query.strip() == "" or table_name == "":
             return {"error": "query and table_name are required"}
 
-        search_result = self._handle_hana_vector_search({"table_name": table_name, "query": query, "top_k": top_k})
-        context_docs = []
+        search_result = None
+        search_error = None
+        for endpoint in self._iter_federated_mcp_endpoints([self.vector_mcp_endpoint]):
+            try:
+                result = self._search_es_text(endpoint, table_name, query, top_k)
+                if isinstance(result, dict) and "error" in result:
+                    search_error = str(result["error"])
+                    continue
+                search_result = {
+                    "status": "federated",
+                    "source": endpoint,
+                    "search_type": "text",
+                    "result": result,
+                }
+                break
+            except Exception as exc:
+                search_error = str(exc)
+
+        context_hits = []
         if isinstance(search_result, dict):
-            remote = search_result.get("result")
-            if isinstance(remote, dict):
-                hits = remote.get("hits", {})
-                if isinstance(hits, dict):
-                    raw_hits = hits.get("hits", [])
-                    if isinstance(raw_hits, list):
-                        context_docs = raw_hits[:top_k]
+            context_hits = self._extract_es_hits(search_result.get("result"))[:top_k]
+        context_docs = [self._format_context_doc(hit) for hit in context_hits]
 
         if len(context_docs) == 0:
             return {
                 "query": query,
                 "table_name": table_name,
                 "context_docs": [],
-                "answer": "No context documents available from vector backend.",
+                "answer": "No context documents available from Elasticsearch search.",
                 "status": "degraded-no-context",
+                "error": search_error,
             }
 
-        prompt = "Use the provided context to answer the user query."
+        prompt = (
+            "Use only the context below to answer the question. "
+            "If the context is insufficient, say so clearly.\n\n"
+            f"Question: {query}\n\nContext:\n{chr(10).join(context_docs)}"
+        )
         chat_result = self._handle_hana_chat({
             "messages": json.dumps([
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": f"Query: {query}\nContext: {json.dumps(context_docs)}"},
+                {"role": "user", "content": prompt},
             ]),
             "max_tokens": 768,
         })
@@ -599,7 +734,8 @@ class MCPServer:
             "table_name": table_name,
             "context_docs": context_docs,
             "answer": answer or "RAG response generated with retrieval context.",
-            "status": "federated" if search_result.get("status") == "federated" else "degraded-fallback",
+            "status": "federated" if search_result and search_result.get("status") == "federated" else "degraded-fallback",
+            "source": search_result.get("source") if isinstance(search_result, dict) else None,
         }
 
     def _handle_hana_embed(self, args: dict) -> dict:
