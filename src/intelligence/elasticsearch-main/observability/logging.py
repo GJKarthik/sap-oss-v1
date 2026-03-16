@@ -299,8 +299,8 @@ class StreamHandler(LogHandler):
             with self._lock:
                 self.stream.write(msg + "\n")
                 self.stream.flush()
-        except Exception:
-            pass  # Silently ignore errors in logging
+        except Exception as e:
+            print(f"StreamHandler.emit failed: {e}", file=sys.stderr)
 
 
 class FileHandler(LogHandler):
@@ -325,8 +325,8 @@ class FileHandler(LogHandler):
             with self._lock:
                 with open(self.filename, self.mode) as f:
                     f.write(msg + "\n")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"FileHandler.emit failed for {self.filename}: {e}", file=sys.stderr)
 
 
 class MemoryHandler(LogHandler):
@@ -465,8 +465,8 @@ class StructuredLogger:
         for handler in handlers:
             try:
                 handler.handle(record)
-            except Exception:
-                pass  # Silently ignore handler errors
+            except Exception as e:
+                print(f"Log handler {handler.__class__.__name__} failed: {e}", file=sys.stderr)
     
     def debug(self, message: str, **kwargs) -> None:
         """Log at DEBUG level."""

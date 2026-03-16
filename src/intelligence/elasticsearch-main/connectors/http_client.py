@@ -235,7 +235,15 @@ class AsyncHTTPClient:
         """Generate unique request ID for tracing."""
         self._request_counter += 1
         return f"req-{int(time.time())}-{self._request_counter:06d}"
-    
+
+    @staticmethod
+    def _warn_insecure_url(url: str) -> None:
+        """Log warning if using HTTP for non-localhost URLs."""
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.scheme == "http" and parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
+            logger.warning("Insecure HTTP connection to non-localhost host: %s", parsed.hostname)
+
     def _log_request(
         self,
         request_id: str,
@@ -262,7 +270,7 @@ class AsyncHTTPClient:
                 "request_id": request_id,
                 "method": method,
                 "url": url,
-                "headers": {k: v for k, v in headers.items() if k.lower() != "authorization"},
+                "headers": {k: v for k, v in headers.items() if k.lower() not in {"authorization", "x-api-key", "x-auth-token", "cookie", "proxy-authorization"}},
                 "body_preview": body_preview,
             }
         )
@@ -327,12 +335,14 @@ class AsyncHTTPClient:
             ServerError: 5xx response
             ClientError: 4xx response
         """
+        self._warn_insecure_url(url)
+
         if self._client is None:
             await self.start()
-        
+
         request_id = self._generate_request_id()
         headers = headers or {}
-        
+
         # Add request ID to headers for tracing
         headers["X-Request-ID"] = request_id
         

@@ -9,10 +9,14 @@ Index-based routing:
 
 import json
 import logging
+import os
 import re
+import time
 import urllib.request
+from collections import deque
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 logger = logging.getLogger("elasticsearch-agent")
 
@@ -29,7 +33,7 @@ class MangleEngine:
         self.facts["agent_config"] = {
             ("elasticsearch-agent", "autonomy_level"): "L2",
             ("elasticsearch-agent", "service_name"): "elasticsearch",
-            ("elasticsearch-agent", "mcp_endpoint"): "http://localhost:9120/mcp",
+            ("elasticsearch-agent", "mcp_endpoint"): os.environ.get("MCP_ENDPOINT", "http://localhost:9120/mcp"),
             ("elasticsearch-agent", "default_backend"): "vllm",
         }
         
@@ -181,13 +185,31 @@ class ElasticsearchAgent:
             "mangle/domain/agents.mg",
             "../regulations/mangle/rules.mg"
         ])
-        self.mcp_endpoint = "http://localhost:9120/mcp"
-        self.vllm_endpoint = "http://localhost:9180/mcp"
+        self.mcp_endpoint = os.environ.get("MCP_ENDPOINT", "http://localhost:9120/mcp")
+        self.vllm_endpoint = os.environ.get("VLLM_ENDPOINT", "http://localhost:9180/mcp")
         self.audit_log: List[Dict] = []
+        self._audit_timestamps: deque = deque()
+        self._audit_rate_limit = 100
+        self._audit_rate_window = 60  # seconds
     
+    _TOOL_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]+$")
+
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        # Validate prompt parameter
+        if not isinstance(prompt, str) or not prompt.strip():
+            raise ValueError("prompt must be a non-empty string")
+        if len(prompt) > 500000:
+            raise ValueError("prompt exceeds maximum length of 500000 characters")
+
         context = context or {}
         tool = context.get("tool", "search_query")
+
+        # Validate tool parameter
+        if not isinstance(tool, str) or not tool.strip():
+            raise ValueError("tool must be a non-empty string")
+        if not self._TOOL_PATTERN.match(tool):
+            raise ValueError("tool contains invalid characters; only alphanumeric, underscore, and hyphen are allowed")
+
         timestamp = datetime.now(timezone.utc).isoformat()
         
         # Check routing based on index
@@ -301,7 +323,16 @@ class ElasticsearchAgent:
 
     def _persist_audit(self, entry: dict) -> None:
         """Best-effort persist audit entry to Elasticsearch audit index."""
-        import os
+        # Rate limiting: max _audit_rate_limit writes per _audit_rate_window seconds
+        now = time.monotonic()
+        while self._audit_timestamps and self._audit_timestamps[0] < now - self._audit_rate_window:
+            self._audit_timestamps.popleft()
+        if len(self._audit_timestamps) >= self._audit_rate_limit:
+            logger.warning("Audit persist rate limit exceeded (%d writes in %ds), skipping",
+                           self._audit_rate_limit, self._audit_rate_window)
+            return
+        self._audit_timestamps.append(now)
+
         es_host = os.environ.get("ES_HOST", "http://localhost:9200")
         api_key = os.environ.get("ES_API_KEY", "")
         username = os.environ.get("ES_USERNAME", "elastic")
@@ -309,6 +340,19 @@ class ElasticsearchAgent:
         url = f"{es_host}/sap_agent_audit/_doc"
         data = json.dumps(entry).encode()
         headers = {"Content-Type": "application/json"}
+
+        # HTTPS validation: do not send credentials over plaintext to non-local hosts
+        parsed = urlparse(url)
+        host = parsed.hostname or ""
+        is_local = host in ("localhost", "127.0.0.1")
+        if parsed.scheme != "https" and not is_local:
+            if api_key or password:
+                logger.warning(
+                    "Refusing to send credentials over non-HTTPS connection to %s", host
+                )
+                api_key = ""
+                password = ""
+
         if api_key:
             headers["Authorization"] = f"ApiKey {api_key}"
         elif password:

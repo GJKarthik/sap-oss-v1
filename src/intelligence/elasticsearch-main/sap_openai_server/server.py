@@ -394,7 +394,7 @@ if USE_FASTAPI:
                     es_status = "connected"
                 else:
                     es_status = "disconnected"
-            except:
+            except Exception:
                 es_status = "error"
         
         return {
@@ -831,11 +831,11 @@ if USE_FASTAPI:
                         "purpose": doc["_source"].get("metadata", {}).get("purpose", "search"),
                         "status": "processed"
                     }
-                except:
+                except Exception:
                     pass
-        
+
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     @app.delete("/v1/files/{file_id}")
     async def openai_files_delete(file_id: str):
         """
@@ -853,11 +853,11 @@ if USE_FASTAPI:
                         "object": "file",
                         "deleted": True
                     }
-                except:
+                except Exception:
                     pass
-        
+
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     # -------------------------------------------------------------------------
     # OpenAI /v1/fine-tunes (placeholder - maps to ES index operations)
     # -------------------------------------------------------------------------
@@ -883,9 +883,9 @@ if USE_FASTAPI:
                             "created_at": int(time.time()),
                             "status": "succeeded" if idx.get("health") == "green" else "pending"
                         })
-                except:
+                except Exception:
                     pass
-        
+
         return {
             "object": "list",
             "data": fine_tunes

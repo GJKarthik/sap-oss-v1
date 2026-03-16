@@ -311,38 +311,28 @@ class RequestValidator:
         
         return errors
     
+    def _check_pattern(self, pattern: re.Pattern, error_type: ValidationErrorType, message: str, value: str) -> Optional[ValidationError]:
+        """Check value against a security pattern."""
+        if pattern.search(value):
+            return ValidationError(
+                error_type=error_type,
+                field="input",
+                message=message,
+                value=self.sanitizer.sanitize_for_logging(value)
+            )
+        return None
+
     def check_sql_injection(self, value: str) -> Optional[ValidationError]:
         """Check for SQL injection patterns."""
-        if ValidationPatterns.SQL_INJECTION.search(value):
-            return ValidationError(
-                error_type=ValidationErrorType.INJECTION_DETECTED,
-                field="input",
-                message="Potential SQL injection detected",
-                value=self.sanitizer.sanitize_for_logging(value)
-            )
-        return None
-    
+        return self._check_pattern(ValidationPatterns.SQL_INJECTION, ValidationErrorType.INJECTION_DETECTED, "Potential SQL injection detected", value)
+
     def check_nosql_injection(self, value: str) -> Optional[ValidationError]:
         """Check for NoSQL injection patterns."""
-        if ValidationPatterns.NOSQL_INJECTION.search(value):
-            return ValidationError(
-                error_type=ValidationErrorType.INJECTION_DETECTED,
-                field="input",
-                message="Potential NoSQL injection detected",
-                value=self.sanitizer.sanitize_for_logging(value)
-            )
-        return None
-    
+        return self._check_pattern(ValidationPatterns.NOSQL_INJECTION, ValidationErrorType.INJECTION_DETECTED, "Potential NoSQL injection detected", value)
+
     def check_path_traversal(self, value: str) -> Optional[ValidationError]:
         """Check for path traversal attempts."""
-        if ValidationPatterns.PATH_TRAVERSAL.search(value):
-            return ValidationError(
-                error_type=ValidationErrorType.PATH_TRAVERSAL,
-                field="input",
-                message="Path traversal attempt detected",
-                value=self.sanitizer.sanitize_for_logging(value)
-            )
-        return None
+        return self._check_pattern(ValidationPatterns.PATH_TRAVERSAL, ValidationErrorType.PATH_TRAVERSAL, "Path traversal attempt detected", value)
     
     def validate_url_safe(self, url: str) -> Optional[ValidationError]:
         """Validate URL is safe (no SSRF)."""
@@ -549,8 +539,8 @@ class ValidationMiddleware(BaseHTTPMiddleware):
                 elif '/embeddings' in path:
                     errors.extend(self._validate_embeddings(body))
                 
-            except Exception:
-                pass  # Body parsing errors handled by FastAPI
+            except Exception as e:
+                logger.debug("Request body parsing skipped: %s", e)
         
         if errors:
             return self._error_response(errors, 400)
