@@ -285,22 +285,57 @@ class HANAMLRAGAgent:
     def _initialize_faiss_vectorstore(self):
         """Initialize or load FAISS vectorstore for long-term memory"""
 
+        import os
+
+        allowed_base_dir = os.path.realpath(
+            getattr(self, "vectorstore_allowed_base_dir", os.getcwd())
+        )
+        normalized_vectorstore_path = self.vectorstore_path.replace("\\", "/")
+        if ".." in normalized_vectorstore_path.split("/"):
+            raise ValueError(
+                f"Path traversal is not allowed for vectorstore_path: {self.vectorstore_path}"
+            )
+
+        resolved_vectorstore_path = os.path.realpath(
+            self.vectorstore_path
+            if os.path.isabs(self.vectorstore_path)
+            else os.path.join(allowed_base_dir, self.vectorstore_path)
+        )
+        if os.path.commonpath([allowed_base_dir, resolved_vectorstore_path]) != allowed_base_dir:
+            raise ValueError(
+                "vectorstore_path must be within the allowed base directory: "
+                f"{allowed_base_dir}"
+            )
+
+        logger.warning(
+            "Loading FAISS vectorstore with allow_dangerous_deserialization=True "
+            "for validated path %s under allowed base directory %s",
+            resolved_vectorstore_path,
+            allowed_base_dir,
+        )
+
         # Try loading existing vectorstore
         try:
             self.vectorstore = FAISS.load_local(
-                self.vectorstore_path,
+                resolved_vectorstore_path,
                 self.embedding_service,
                 allow_dangerous_deserialization=True
             )
-            logger.info("Loaded existing vectorstore from %s", self.vectorstore_path)
-        except:
+            logger.info("Loaded existing vectorstore from %s", resolved_vectorstore_path)
+        except Exception as e:
+            logger.error(
+                "Failed to load vectorstore from %s: %s",
+                resolved_vectorstore_path,
+                str(e),
+                exc_info=True,
+            )
             # Initialize new vectorstore if loading fails
             self.vectorstore = FAISS.from_texts(
                 texts=["Initialization text"],
                 embedding=self.embedding_service
             )
-            self.vectorstore.save_local(self.vectorstore_path)
-            logger.info("Created new vectorstore at %s", self.vectorstore_path)
+            self.vectorstore.save_local(resolved_vectorstore_path)
+            logger.info("Created new vectorstore at %s", resolved_vectorstore_path)
 
     def _initialize_hanadb_vectorstore(self):
         """Initialize or load HANA DB vectorstore for long-term memory"""
