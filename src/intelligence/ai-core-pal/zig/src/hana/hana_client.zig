@@ -6,7 +6,7 @@
 //!
 //! Features (ported from search-svc):
 //!   - OAuth 2.0 token acquisition and refresh
-//!   - Connection pooling with keep-alive
+//!   - std.http.Client transport with native TLS
 //!   - Basic auth fallback
 //!
 //! Adapted from lang-be-po-gen-foundry/zig/src/hana.zig
@@ -52,19 +52,6 @@ pub const OAuthConfig = struct {
 };
 
 // ============================================================================
-// Connection Pool Entry
-// ============================================================================
-
-const PoolEntry = struct {
-    sock: std.posix.socket_t,
-    last_used: i64,
-    in_use: bool,
-};
-
-const MAX_POOL_SIZE = 5;
-const POOL_IDLE_TIMEOUT_S: i64 = 300; // 5 minutes
-
-// ============================================================================
 // HANA Client
 // ============================================================================
 
@@ -77,7 +64,6 @@ pub const HanaClient = struct {
     use_ssl: bool,
     oauth_config: OAuthConfig,
     oauth_token: ?OAuthToken,
-    pool: [MAX_POOL_SIZE]?PoolEntry,
 
     pub fn init(
         allocator: Allocator,
@@ -96,18 +82,11 @@ pub const HanaClient = struct {
             .use_ssl = use_ssl,
             .oauth_config = OAuthConfig.fromEnv(),
             .oauth_token = null,
-            .pool = .{null} ** MAX_POOL_SIZE,
         };
     }
 
     pub fn deinit(self: *HanaClient) void {
-        // Close all pooled connections
-        for (&self.pool) |*entry| {
-            if (entry.*) |e| {
-                std.posix.close(e.sock);
-                entry.* = null;
-            }
-        }
+        self.clearOAuthToken();
     }
 
     pub fn isConfigured(self: *const HanaClient) bool {
@@ -144,6 +123,180 @@ pub const HanaClient = struct {
         return std.fmt.bufPrint(buf, "Basic {s}", .{b64_encoded}) catch return error.AuthTooLong;
     }
 
+    fn clearOAuthToken(self: *HanaClient) void {
+        if (self.oauth_token) |token| {
+            self.allocator.free(token.access_token);
+            self.allocator.free(token.token_type);
+            self.oauth_token = null;
+        }
+    }
+
+    fn setOAuthToken(self: *HanaClient, access_token: []const u8, token_type: []const u8, expires_in: i64) !void {
+        const owned_access_token = try self.allocator.dupe(u8, access_token);
+        errdefer self.allocator.free(owned_access_token);
+
+        const owned_token_type = try self.allocator.dupe(u8, token_type);
+        errdefer self.allocator.free(owned_token_type);
+
+        self.clearOAuthToken();
+        self.oauth_token = .{
+            .access_token = owned_access_token,
+            .token_type = owned_token_type,
+            .expires_in = expires_in,
+            .acquired_at = std.time.timestamp(),
+        };
+    }
+
+    fn postRequest(
+        self: *HanaClient,
+        url: []const u8,
+        content_type: []const u8,
+        auth_header: ?[]const u8,
+        body: []const u8,
+    ) ![]const u8 {
+        return self.postRequestWithStdHttp(url, content_type, auth_header, body) catch |err| switch (err) {
+            error.TlsInitializationFailed => {
+                if (!mem.startsWith(u8, url, "https://")) return error.ConnectionFailed;
+                std.log.warn("[hana] std.http TLS init failed for {s}; falling back to curl", .{url});
+                return self.postRequestWithCurl(url, content_type, auth_header, body);
+            },
+            else => {
+                std.log.warn("[hana] HTTP POST failed for {s}: {}", .{ url, err });
+                return error.ConnectionFailed;
+            },
+        };
+    }
+
+    fn postRequestWithStdHttp(
+        self: *HanaClient,
+        url: []const u8,
+        content_type: []const u8,
+        auth_header: ?[]const u8,
+        body: []const u8,
+    ) ![]const u8 {
+        var client = std.http.Client{ .allocator = self.allocator };
+        client.read_buffer_size = 32 * 1024;
+        client.write_buffer_size = 32 * 1024;
+        client.tls_buffer_size = 32 * 1024;
+        defer client.deinit();
+
+        var response_body: std.ArrayList(u8) = .{};
+        defer response_body.deinit(self.allocator);
+        var response_writer = response_body.writer(self.allocator);
+        var response_writer_buf: [1024]u8 = undefined;
+        var response_writer_adapter = response_writer.adaptToNewApi(&response_writer_buf);
+
+        var extra_headers_buf: [2]std.http.Header = undefined;
+        extra_headers_buf[0] = .{ .name = "Content-Type", .value = content_type };
+        const extra_headers = if (auth_header) |value| blk: {
+            extra_headers_buf[1] = .{ .name = "Authorization", .value = value };
+            break :blk extra_headers_buf[0..2];
+        } else extra_headers_buf[0..1];
+
+        const result = try client.fetch(.{
+            .location = .{ .url = url },
+            .method = .POST,
+            .payload = body,
+            .extra_headers = extra_headers,
+            .response_writer = &response_writer_adapter.new_interface,
+        });
+
+        try response_writer_adapter.new_interface.flush();
+
+        const status_code: u16 = @intFromEnum(result.status);
+        if (status_code < 200 or status_code >= 300) {
+            std.log.warn("[hana] HTTP POST returned status {d} for {s}: {s}", .{ status_code, url, response_body.items });
+        }
+
+        return response_body.toOwnedSlice(self.allocator);
+    }
+
+    fn postRequestWithCurl(
+        self: *HanaClient,
+        url: []const u8,
+        content_type: []const u8,
+        auth_header: ?[]const u8,
+        body: []const u8,
+    ) ![]const u8 {
+        const content_header = try std.fmt.allocPrint(self.allocator, "Content-Type: {s}", .{content_type});
+        defer self.allocator.free(content_header);
+
+        const auth_header_arg = if (auth_header) |value|
+            try std.fmt.allocPrint(self.allocator, "Authorization: {s}", .{value})
+        else
+            null;
+        defer if (auth_header_arg) |value| self.allocator.free(value);
+
+        var argv_buf: [12][]const u8 = undefined;
+        var argc: usize = 0;
+        argv_buf[argc] = "curl";
+        argc += 1;
+        argv_buf[argc] = "--silent";
+        argc += 1;
+        argv_buf[argc] = "--show-error";
+        argc += 1;
+        argv_buf[argc] = "--request";
+        argc += 1;
+        argv_buf[argc] = "POST";
+        argc += 1;
+        argv_buf[argc] = "--header";
+        argc += 1;
+        argv_buf[argc] = content_header;
+        argc += 1;
+        if (auth_header_arg) |value| {
+            argv_buf[argc] = "--header";
+            argc += 1;
+            argv_buf[argc] = value;
+            argc += 1;
+        }
+        argv_buf[argc] = "--data-binary";
+        argc += 1;
+        argv_buf[argc] = "@-";
+        argc += 1;
+        argv_buf[argc] = url;
+        argc += 1;
+
+        var child = std.process.Child.init(argv_buf[0..argc], self.allocator);
+        child.stdin_behavior = .Pipe;
+        child.stdout_behavior = .Pipe;
+        child.stderr_behavior = .Pipe;
+
+        try child.spawn();
+        errdefer _ = child.kill() catch {};
+
+        const stdin = child.stdin orelse return error.ConnectionFailed;
+        try stdin.writeAll(body);
+        stdin.close();
+        child.stdin = null;
+
+        var stdout: std.ArrayList(u8) = .{};
+        defer stdout.deinit(self.allocator);
+        var stderr: std.ArrayList(u8) = .{};
+        defer stderr.deinit(self.allocator);
+        try child.collectOutput(self.allocator, &stdout, &stderr, 8 * 1024 * 1024);
+
+        const term = try child.wait();
+        switch (term) {
+            .Exited => |code| {
+                if (code != 0) {
+                    std.log.warn("[hana] curl POST failed for {s} (exit {d}): {s}", .{ url, code, stderr.items });
+                    return error.ConnectionFailed;
+                }
+            },
+            else => {
+                std.log.warn("[hana] curl POST terminated abnormally for {s}: {s}", .{ url, stderr.items });
+                return error.ConnectionFailed;
+            },
+        }
+
+        return stdout.toOwnedSlice(self.allocator);
+    }
+
+    fn buildSqlUrl(self: *HanaClient) ![]const u8 {
+        const scheme = if (self.use_ssl) "https" else "http";
+        return std.fmt.allocPrint(self.allocator, "{s}://{s}:{d}/sql", .{ scheme, self.host, self.port });
+    }
+
     fn acquireOAuthToken(self: *HanaClient) !void {
         const cfg = self.oauth_config;
         if (!cfg.isConfigured()) return error.OAuthNotConfigured;
@@ -158,154 +311,22 @@ pub const HanaClient = struct {
         const body = try body_buf.toOwnedSlice(self.allocator);
         defer self.allocator.free(body);
 
-        // Parse token URL to get host/port/path
-        var token_host: []const u8 = "localhost";
-        var token_port: u16 = 443;
-        var token_path: []const u8 = "/oauth/token";
-        var rest = cfg.token_url;
-        if (mem.startsWith(u8, rest, "https://")) {
-            rest = rest["https://".len..];
-        } else if (mem.startsWith(u8, rest, "http://")) {
-            rest = rest["http://".len..];
-            token_port = 80;
-        }
-        if (mem.indexOf(u8, rest, "/")) |slash| {
-            token_path = rest[slash..];
-            rest = rest[0..slash];
-        }
-        if (mem.indexOf(u8, rest, ":")) |colon| {
-            token_host = rest[0..colon];
-            token_port = std.fmt.parseInt(u16, rest[colon + 1 ..], 10) catch token_port;
-        } else {
-            token_host = rest;
-        }
-
-        // Connect and send request
-        const addr = std.net.Address.parseIp4(token_host, token_port) catch blk: {
-            if (mem.eql(u8, token_host, "localhost")) {
-                break :blk std.net.Address.parseIp4("127.0.0.1", token_port) catch return error.UnableToResolve;
-            }
-
-            const addrs = std.net.getAddressList(self.allocator, token_host, token_port) catch return error.UnableToResolve;
-            defer addrs.deinit();
-            if (addrs.addrs.len == 0) return error.UnableToResolve;
-            break :blk addrs.addrs[0];
-        };
-
-        const sock = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, 0);
-        defer std.posix.close(sock);
-        try std.posix.connect(sock, &addr.any, addr.getOsSockLen());
-
-        var req: std.ArrayList(u8) = .{};
-        defer req.deinit(self.allocator);
-        const rw = req.writer(self.allocator);
-        try rw.print("POST {s} HTTP/1.1\r\n", .{token_path});
-        try rw.print("Host: {s}\r\n", .{token_host});
-        try rw.writeAll("Content-Type: application/x-www-form-urlencoded\r\n");
-        try rw.print("Content-Length: {d}\r\n", .{body.len});
-        try rw.writeAll("Connection: close\r\n\r\n");
-        try rw.writeAll(body);
-        _ = try std.posix.write(sock, req.items);
-
-        // Read response
-        var response: std.ArrayList(u8) = .{};
-        var read_buf: [4096]u8 = undefined;
-        while (true) {
-            const n = std.posix.read(sock, &read_buf) catch break;
-            if (n == 0) break;
-            try response.appendSlice(self.allocator, read_buf[0..n]);
-        }
+        const response = try self.postRequest(
+            cfg.token_url,
+            "application/x-www-form-urlencoded",
+            null,
+            body,
+        );
+        defer self.allocator.free(response);
 
         // Parse JSON for access_token
-        const resp_body = blk: {
-            if (mem.indexOf(u8, response.items, "\r\n\r\n")) |sep| {
-                break :blk response.items[sep + 4 ..];
-            }
-            break :blk response.items;
-        };
-
         // Simple JSON extraction
-        const token_val = extractStringValue(resp_body, "access_token") orelse return error.TokenParseError;
-        const token_type = extractStringValue(resp_body, "token_type") orelse "Bearer";
+        const token_val = extractStringValue(response, "access_token") orelse return error.TokenParseError;
+        const token_type = extractStringValue(response, "token_type") orelse "Bearer";
 
-        self.oauth_token = .{
-            .access_token = token_val,
-            .token_type = token_type,
-            .expires_in = 3600, // default 1hr
-            .acquired_at = std.time.timestamp(),
-        };
-        response.deinit(self.allocator);
+        try self.setOAuthToken(token_val, token_type, 3600);
 
         std.log.info("[hana] OAuth token acquired, expires in 3600s", .{});
-    }
-
-    // ========================================================================
-    // Connection Pool
-    // ========================================================================
-
-    fn acquireConnection(self: *HanaClient) !std.posix.socket_t {
-        const now = std.time.timestamp();
-
-        // Look for idle connection in pool
-        for (&self.pool) |*entry| {
-            if (entry.*) |*e| {
-                if (!e.in_use) {
-                    if (now - e.last_used > POOL_IDLE_TIMEOUT_S) {
-                        // Expired — close and replace
-                        std.posix.close(e.sock);
-                        entry.* = null;
-                        continue;
-                    }
-                    e.in_use = true;
-                    e.last_used = now;
-                    return e.sock;
-                }
-            }
-        }
-
-        // No idle connection — create new one
-        const address = std.net.Address.parseIp4(self.host, self.port) catch blk: {
-            if (mem.eql(u8, self.host, "localhost")) {
-                break :blk try std.net.Address.parseIp4("127.0.0.1", self.port);
-            }
-
-            const addrs = std.net.getAddressList(self.allocator, self.host, self.port) catch return error.UnableToResolve;
-            defer addrs.deinit();
-            if (addrs.addrs.len == 0) return error.UnableToResolve;
-            break :blk addrs.addrs[0];
-        };
-
-        const sock = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, 0);
-        try std.posix.connect(sock, &address.any, address.getOsSockLen());
-
-        // Try to store in pool
-        for (&self.pool) |*entry| {
-            if (entry.* == null) {
-                entry.* = .{
-                    .sock = sock,
-                    .last_used = now,
-                    .in_use = true,
-                };
-                return sock;
-            }
-        }
-
-        // Pool full — return unpooled socket
-        return sock;
-    }
-
-    fn releaseConnection(self: *HanaClient, sock: std.posix.socket_t) void {
-        for (&self.pool) |*entry| {
-            if (entry.*) |*e| {
-                if (e.sock == sock) {
-                    e.in_use = false;
-                    e.last_used = std.time.timestamp();
-                    return;
-                }
-            }
-        }
-        // Not in pool — close it
-        std.posix.close(sock);
     }
 
     // ========================================================================
@@ -313,7 +334,7 @@ pub const HanaClient = struct {
     // ========================================================================
 
     /// Execute a SQL statement against HANA via HTTP.
-    /// Uses OAuth if configured, otherwise Basic auth. Uses connection pooling.
+    /// Uses OAuth if configured, otherwise Basic auth.
     /// Returns the raw JSON response body.
     pub fn executeSQL(self: *HanaClient, sql: []const u8) ![]const u8 {
         // Build JSON request body: {"sql": "<statement>"}
@@ -338,48 +359,10 @@ pub const HanaClient = struct {
         var auth_header_buf: [2048]u8 = undefined;
         const auth_header = try self.getAuthHeader(&auth_header_buf);
 
-        // Acquire pooled connection
-        const sock = try self.acquireConnection();
-        errdefer self.releaseConnection(sock);
+        const url = try self.buildSqlUrl();
+        defer self.allocator.free(url);
 
-        // Build HTTP request
-        var req: std.ArrayList(u8) = .{};
-        defer req.deinit(self.allocator);
-        var rw = req.writer(self.allocator);
-
-        try rw.writeAll("POST /sql HTTP/1.1\r\n");
-        try rw.print("Host: {s}\r\n", .{self.host});
-        try rw.writeAll("Content-Type: application/json\r\n");
-        try rw.print("Authorization: {s}\r\n", .{auth_header});
-        try rw.print("Content-Length: {d}\r\n", .{req_body.len});
-        try rw.writeAll("Connection: keep-alive\r\n");
-        try rw.writeAll("\r\n");
-        try rw.writeAll(req_body);
-
-        _ = try std.posix.write(sock, req.items);
-
-        // Read full response
-        var response: std.ArrayList(u8) = .{};
-        var read_buf: [8192]u8 = undefined;
-        while (true) {
-            const n = std.posix.read(sock, &read_buf) catch break;
-            if (n == 0) break;
-            try response.appendSlice(self.allocator, read_buf[0..n]);
-        }
-
-        // Release connection back to pool
-        self.releaseConnection(sock);
-
-        // Strip HTTP headers
-        const sep = mem.indexOf(u8, response.items, "\r\n\r\n") orelse 0;
-        if (sep > 0) {
-            const body_slice = response.items[sep + 4 ..];
-            const owned = try self.allocator.dupe(u8, body_slice);
-            response.deinit(self.allocator);
-            return owned;
-        }
-
-        return response.toOwnedSlice(self.allocator);
+        return self.postRequest(url, "application/json", auth_header, req_body);
     }
 
     // ========================================================================
@@ -650,12 +633,10 @@ test "oauth config not configured by default" {
     try std.testing.expect(!cfg.isConfigured());
 }
 
-test "connection pool init" {
+test "hana client init preserves TLS flag" {
     const allocator = std.testing.allocator;
     var client = HanaClient.init(allocator, "localhost", 443, "user", "pass", true);
     defer client.deinit();
-    // Pool should be empty
-    for (client.pool) |entry| {
-        try std.testing.expect(entry == null);
-    }
+    try std.testing.expect(client.use_ssl);
+    try std.testing.expect(client.oauth_token == null);
 }
