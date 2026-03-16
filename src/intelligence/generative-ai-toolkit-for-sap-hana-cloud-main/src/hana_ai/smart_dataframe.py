@@ -7,6 +7,8 @@ The following class is available:
 
     * :class `SmartDataFrame`
 """
+import re
+import unicodedata
 from typing import List
 
 from hana_ml.dataframe import DataFrame
@@ -27,6 +29,48 @@ from hana_ai.tools.df_tools.fetch_tools import FetchDataTool
 from hana_ai.tools.df_tools.intermittent_forecast_tools import IntermittentForecast
 from hana_ai.tools.df_tools.ts_outlier_detection_tools import TSOutlierDetection
 from hana_ai.tools.df_tools.ts_visualizer_tools import TimeSeriesDatasetReport
+
+ALLOWED_SQL_PREFIXES = ('SELECT', 'WITH')
+BLOCKED_SQL_KEYWORDS = ('DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE')
+
+
+def _sanitize_select_statement(select_statement: str) -> str:
+    statement = select_statement.strip()
+    statement = re.sub(r'^```(?:sql)?\s*', '', statement, flags=re.IGNORECASE)
+    statement = re.sub(r'\s*```$', '', statement).strip()
+
+    for char in statement:
+        if unicodedata.category(char).startswith('C') and char not in ('\t', '\n', '\r'):
+            raise ValueError('Non-printable or format characters are not allowed in SmartDataFrame SQL.')
+    try:
+        statement.encode('ascii')
+    except UnicodeEncodeError as exc:
+        raise ValueError('Only ASCII SQL statements are allowed in SmartDataFrame transforms.') from exc
+
+    sql_match = re.search(r'\b(WITH|SELECT)\b.*', statement, re.DOTALL | re.IGNORECASE)
+    if sql_match and statement[:sql_match.start()].strip():
+        raise ValueError('Only raw SELECT or WITH SQL statements are allowed.')
+    if not sql_match:
+        raise ValueError(
+            'Failed to extract a valid read-only SQL statement from agent response: '
+            f'{select_statement[:100]}...'
+        )
+
+    statement = sql_match.group(0).strip()
+    normalized_statement = re.sub(r'\s+', ' ', statement).upper()
+
+    if not normalized_statement.startswith(ALLOWED_SQL_PREFIXES):
+        raise ValueError('Only SELECT or WITH statements are allowed.')
+    if ';' in statement:
+        raise ValueError('Multiple SQL statements are not allowed.')
+    if '--' in statement or '/*' in statement or '*/' in statement:
+        raise ValueError('SQL comments are not allowed in SmartDataFrame transforms.')
+
+    for keyword in BLOCKED_SQL_KEYWORDS:
+        if re.search(rf'\b{keyword}\b', normalized_statement):
+            raise ValueError(f'Dangerous SQL keyword is not allowed: {keyword}')
+
+    return statement
 
 class SmartDataFrame(DataFrame):
     """
@@ -175,24 +219,7 @@ class SmartDataFrame(DataFrame):
         }
 
         result = self.transform_executor.invoke(agent_input)
-        select_statement = result['output']
-
-        # Extract SQL from response if needed
-        if not select_statement.strip().upper().startswith(('SELECT')):
-            import re
-            # Regex to find SQL starting with SELECT/WITH
-            sql_match = re.search(
-                r'\b(SELECT)\b.*',
-                select_statement,
-                re.DOTALL | re.IGNORECASE
-            )
-            if sql_match:
-                select_statement = sql_match.group(0).strip()
-            else:
-                raise ValueError(
-                    "Failed to extract valid SQL from agent response: "
-                    f"{select_statement[:100]}..."
-                )
+        select_statement = _sanitize_select_statement(result['output'])
 
         # Create new SmartDataFrame with generated SQL
         sdf = self._construct(

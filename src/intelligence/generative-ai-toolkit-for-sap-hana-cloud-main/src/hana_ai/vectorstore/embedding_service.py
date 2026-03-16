@@ -13,7 +13,6 @@ The following classes are available:
 # pylint: disable=unnecessary-dunder-call
 # pylint: disable=unused-argument
 
-import re
 from typing import List
 import uuid
 
@@ -31,6 +30,19 @@ from langchain.embeddings.base import Embeddings
 from hana_ml.dataframe import ConnectionContext, create_dataframe_from_pandas
 from hana_ml.text.pal_embeddings import PALEmbeddings
 from hana_ml.algorithms.pal.pal_base import try_drop
+
+ALLOWED_MODEL_VERSIONS = ['SAP_NEB.20240715', 'SAP_GXY.20250407']
+
+
+def _validate_model_version(model_version):
+    if model_version is None:
+        return None
+    if model_version not in ALLOWED_MODEL_VERSIONS:
+        raise ValueError(
+            f"Unsupported model_version '{model_version}'. "
+            f"Allowed values: {ALLOWED_MODEL_VERSIONS}"
+        )
+    return model_version
 
 class PALModelEmbeddings(Embeddings):
     """
@@ -59,7 +71,7 @@ class PALModelEmbeddings(Embeddings):
         """
         Init PAL embedding model.
         """
-        self.model_version = model_version
+        self.model_version = _validate_model_version(model_version)
         self.connection_context = connection_context
         self.batch_size = batch_size
         self.thread_number = thread_number
@@ -145,7 +157,7 @@ class HANAVectorEmbeddings(Embeddings):
         """
         Init PAL embedding model.
         """
-        self.model_version = model_version
+        self.model_version = _validate_model_version(model_version)
         self.connection_context = connection_context
 
     def __call__(self, input):
@@ -297,39 +309,31 @@ def _cc_embed_query(connection_context, query, model_version='SAP_NEB.20240715')
     -------
     list of float when query is str, list of list of float when query is list of str
     """
-    def _safe_escape_single_quotes(text):
-        # 在需要时应用转义
-        if "'" in text:
-            # 检查是否已经包含转义序列
-            if "''" not in text:
-                escaped_prompt = re.sub(r"(?<!')'", "''", text)
-            else:
-                # 如果已经包含转义序列，直接使用原始prompt
-                escaped_prompt = text
-        else:
-            escaped_prompt = text
-        return escaped_prompt
-
+    model_version = _validate_model_version(model_version)
 
     # Normalize input to a list for consistent handling
     queries = list(query) if isinstance(query, (list, tuple)) else [query]
 
-    sql = ''
-    for i, q in enumerate(queries):
-        if i > 0:
-            sql += ' UNION ALL '
-        escaped_query = _safe_escape_single_quotes(q)
-        sql += f"SELECT '{escaped_query}' AS TEXT FROM DUMMY"
-
-    df = connection_context.sql(sql) \
-        .add_vector("TEXT", text_type='QUERY', embed_col="EMBEDDING", model_version=model_version) \
-        .select(["EMBEDDING"]).collect()
+    temporary_table = "#PAL_EMBED_QUERY_" + str(uuid.uuid4()).replace("-", "_")
+    input_df = create_dataframe_from_pandas(
+        connection_context,
+        pandas_df=pd.DataFrame({"ID": range(len(queries)), "TEXT": queries}),
+        table_name=temporary_table,
+        disable_progressbar=True,
+        table_type="COLUMN",
+    )
+    try:
+        df = input_df \
+            .add_vector("TEXT", text_type='QUERY', embed_col="EMBEDDING", model_version=model_version) \
+            .select(["ID", "EMBEDDING"]).sort("ID").collect()
+    finally:
+        try_drop(connection_context, temporary_table)
 
     # Convert to numpy-like array of rows, then extract the vector from first column
     rows = df.to_numpy()
     vectors: List[List[float]] = []
     for row in rows:
-        v = row[0]
+        v = row[1]
         seq = None
         # Try common iterable conversions
         try:
