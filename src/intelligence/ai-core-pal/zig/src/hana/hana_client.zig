@@ -181,11 +181,15 @@ pub const HanaClient = struct {
         }
 
         // Connect and send request
-        const addr = std.net.Address.parseIp4(token_host, token_port) catch {
+        const addr = std.net.Address.parseIp4(token_host, token_port) catch blk: {
             if (mem.eql(u8, token_host, "localhost")) {
-                return error.UnableToResolve;
+                break :blk std.net.Address.parseIp4("127.0.0.1", token_port) catch return error.UnableToResolve;
             }
-            return error.UnableToResolve;
+
+            const addrs = std.net.getAddressList(self.allocator, token_host, token_port) catch return error.UnableToResolve;
+            defer addrs.deinit();
+            if (addrs.addrs.len == 0) return error.UnableToResolve;
+            break :blk addrs.addrs[0];
         };
 
         const sock = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, 0);
@@ -264,7 +268,11 @@ pub const HanaClient = struct {
             if (mem.eql(u8, self.host, "localhost")) {
                 break :blk try std.net.Address.parseIp4("127.0.0.1", self.port);
             }
-            return error.UnableToResolve;
+
+            const addrs = std.net.getAddressList(self.allocator, self.host, self.port) catch return error.UnableToResolve;
+            defer addrs.deinit();
+            if (addrs.addrs.len == 0) return error.UnableToResolve;
+            break :blk addrs.addrs[0];
         };
 
         const sock = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.STREAM, 0);
