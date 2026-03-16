@@ -88,6 +88,108 @@
           "engine": "gguf",
           "note": "Q4_K_M (~19 GB) does not fit T4 16 GB VRAM. Q3_K_M is the minimum viable quant."
         }
+      },
+      "qwen3.5-0.8b-safetensors": {
+        "source": "huggingface",
+        "repo": "Qwen/Qwen3.5-0.8B",
+        "format": "safetensors",
+        "files": [
+          "chat_template.jinja",
+          "config.json",
+          "merges.txt",
+          "model.safetensors-*.safetensors",
+          "model.safetensors.index.json",
+          "preprocessor_config.json",
+          "tokenizer.json",
+          "tokenizer_config.json",
+          "video_preprocessor_config.json",
+          "vocab.json"
+        ],
+        "size_mb": 1688,
+        "safetensors_shards": 1,
+        "safetensors_total_bytes": 1746942600,
+        "architecture": "qwen3_5",
+        "params_b": 0.8,
+        "hf_access": "public",
+        "runtime_status": "artifact-validated",
+        "loader_status": "Exact repo layout was validated locally through model.safetensors.index.json discovery; current gateway runtime still serves the GGUF path for inference.",
+        "use_case": "source-model-staging"
+      },
+      "qwen3.5-9b-safetensors": {
+        "source": "huggingface",
+        "repo": "Qwen/Qwen3.5-9B",
+        "format": "safetensors",
+        "files": [
+          "chat_template.jinja",
+          "config.json",
+          "merges.txt",
+          "model.safetensors-*.safetensors",
+          "model.safetensors.index.json",
+          "preprocessor_config.json",
+          "tokenizer.json",
+          "tokenizer_config.json",
+          "video_preprocessor_config.json",
+          "vocab.json"
+        ],
+        "size_mb": 18434,
+        "safetensors_shards": 4,
+        "safetensors_total_bytes": 19306310880,
+        "architecture": "qwen3_5",
+        "params_b": 9.0,
+        "hf_access": "public",
+        "runtime_status": "staging-only",
+        "loader_status": "Exact repo is sharded safetensors; current gateway runtime still serves the GGUF path.",
+        "use_case": "source-model-staging"
+      },
+      "qwen3.5-35b-safetensors": {
+        "source": "huggingface",
+        "repo": "Qwen/Qwen3.5-35B",
+        "format": "safetensors",
+        "files": [
+          "chat_template.jinja",
+          "config.json",
+          "merges.txt",
+          "model.safetensors-*.safetensors",
+          "model.safetensors.index.json",
+          "preprocessor_config.json",
+          "tokenizer.json",
+          "tokenizer_config.json",
+          "video_preprocessor_config.json",
+          "vocab.json"
+        ],
+        "size_mb_estimate": 71680,
+        "architecture": "qwen3_5",
+        "params_b": 35.0,
+        "hf_access": "token-required-or-gated",
+        "runtime_status": "not-staged",
+        "loader_status": "Hugging Face API returned 401 Unauthorized during anonymous validation; runtime still needs sharded safetensors support.",
+        "use_case": "source-model-staging"
+      },
+      "nemotron-3-nano-30b-a3b-bf16": {
+        "source": "huggingface",
+        "repo": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+        "format": "safetensors",
+        "files": [
+          "chat_template.jinja",
+          "config.json",
+          "configuration_nemotron_h.py",
+          "generation_config.json",
+          "model-*.safetensors",
+          "model.safetensors.index.json",
+          "modeling_nemotron_h.py",
+          "special_tokens_map.json",
+          "tokenizer.json",
+          "tokenizer_config.json"
+        ],
+        "size_mb": 60248,
+        "safetensors_shards": 13,
+        "safetensors_total_bytes": 63156694272,
+        "architecture": "nemotron_h",
+        "params_b": 30.0,
+        "hf_access": "public",
+        "runtime_status": "staging-only",
+        "loader_status": "Requires new Nemotron-H runtime path: sharded safetensors, Mamba/hybrid blocks, and MoE routing.",
+        "use_case": "source-model-staging"
       }
     },
     "vendor_symlinks": {

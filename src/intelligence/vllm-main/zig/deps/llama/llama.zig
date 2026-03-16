@@ -82,8 +82,8 @@ pub const Architecture = enum {
     qwen2,
     deepseek,
     codellama,
-    lfm,    // Liquid Foundation Model
-    lfm2,   // LFM2 / LFM2.5
+    lfm, // Liquid Foundation Model
+    lfm2, // LFM2 / LFM2.5
     unknown,
 };
 
@@ -397,12 +397,14 @@ fn fillDeterministic(buf: []f32, scale: f32) void {
 pub const ModelFormat = enum {
     gguf,
     safetensors,
+    safetensors_index,
     pytorch,
     onnx,
     unknown,
 
     pub fn fromPath(path: []const u8) ModelFormat {
         if (std.mem.endsWith(u8, path, ".gguf")) return .gguf;
+        if (std.mem.endsWith(u8, path, "model.safetensors.index.json")) return .safetensors_index;
         if (std.mem.endsWith(u8, path, ".safetensors")) return .safetensors;
         if (std.mem.endsWith(u8, path, ".bin")) return .pytorch;
         if (std.mem.endsWith(u8, path, ".pt")) return .pytorch;
@@ -415,6 +417,7 @@ pub const ModelFormat = enum {
         return switch (self) {
             .gguf => "GGUF",
             .safetensors => "SafeTensors",
+            .safetensors_index => "SafeTensorsIndex",
             .pytorch => "PyTorch",
             .onnx => "ONNX",
             .unknown => "Unknown",
@@ -1234,6 +1237,101 @@ fn dequantINT8Symmetric(dst: []f32, src: [*]const u8, n_elements: usize, scale: 
 /// Load model from SafeTensors format
 /// SafeTensors format: [8-byte header_size (LE)] [JSON header] [tensor data]
 pub fn loadFromSafeTensors(allocator: Allocator, path: []const u8) !*Model {
+    const model_dir = std.fs.path.dirname(path) orelse ".";
+    var config = ModelConfig{ .model_path = path };
+    try applySafeTensorsConfigJson(allocator, model_dir, &config);
+
+    const data = try mapFileReadOnly(path);
+    defer std.posix.munmap(data);
+
+    const parsed = try parseSafeTensorFile(allocator, data, &config);
+    defer allocator.free(parsed.tensor_infos);
+
+    finalizeSafeTensorConfig(&config);
+
+    var weights = try TransformerWeights.allocateRaw(allocator, config);
+    errdefer weights.deinit(allocator);
+
+    loadSafeTensorFileIntoWeights(&weights, data, parsed, config);
+    return try createModelWithWeights(allocator, config, weights);
+}
+
+pub fn loadFromSafeTensorsIndex(allocator: Allocator, index_path: []const u8) !*Model {
+    const model_dir = std.fs.path.dirname(index_path) orelse ".";
+    var config = ModelConfig{ .model_path = index_path };
+    try applySafeTensorsConfigJson(allocator, model_dir, &config);
+
+    const index_data = try std.fs.cwd().readFileAlloc(allocator, index_path, 16 * 1024 * 1024);
+    defer allocator.free(index_data);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, index_data, .{});
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return error.InvalidSafeTensorsIndex;
+    const weight_map = parsed.value.object.get("weight_map") orelse return error.InvalidSafeTensorsIndex;
+    if (weight_map != .object) return error.InvalidSafeTensorsIndex;
+
+    var shard_files: std.ArrayListUnmanaged([]const u8) = .empty;
+    defer {
+        for (shard_files.items) |shard| allocator.free(shard);
+        shard_files.deinit(allocator);
+    }
+    var unique_shards = std.StringHashMap(void).init(allocator);
+    defer unique_shards.deinit();
+
+    var iter = weight_map.object.iterator();
+    while (iter.next()) |entry| {
+        if (entry.value_ptr.* != .string) continue;
+        const shard_rel = entry.value_ptr.*.string;
+        const shard_copy = try allocator.dupe(u8, shard_rel);
+        const gop = try unique_shards.getOrPut(shard_copy);
+        if (gop.found_existing) {
+            allocator.free(shard_copy);
+            continue;
+        }
+        try shard_files.append(allocator, shard_copy);
+    }
+
+    if (!safeTensorConfigIsComplete(config)) {
+        for (shard_files.items) |shard_rel| {
+            const shard_path = try std.fs.path.join(allocator, &.{ model_dir, shard_rel });
+            defer allocator.free(shard_path);
+
+            const shard_data = try mapFileReadOnly(shard_path);
+            defer std.posix.munmap(shard_data);
+
+            const shard_parsed = try parseSafeTensorFile(allocator, shard_data, &config);
+            allocator.free(shard_parsed.tensor_infos);
+        }
+    }
+
+    finalizeSafeTensorConfig(&config);
+
+    var weights = try TransformerWeights.allocateRaw(allocator, config);
+    errdefer weights.deinit(allocator);
+
+    for (shard_files.items) |shard_rel| {
+        const shard_path = try std.fs.path.join(allocator, &.{ model_dir, shard_rel });
+        defer allocator.free(shard_path);
+
+        const shard_data = try mapFileReadOnly(shard_path);
+        defer std.posix.munmap(shard_data);
+
+        const shard_parsed = try parseSafeTensorFile(allocator, shard_data, &config);
+        defer allocator.free(shard_parsed.tensor_infos);
+
+        loadSafeTensorFileIntoWeights(&weights, shard_data, shard_parsed, config);
+    }
+
+    return try createModelWithWeights(allocator, config, weights);
+}
+
+const ParsedSafeTensorFile = struct {
+    tensor_infos: []SafeTensorInfo,
+    tensor_data_start: usize,
+};
+
+fn mapFileReadOnly(path: []const u8) ![]align(std.heap.page_size_min) u8 {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
 
@@ -1241,50 +1339,43 @@ pub fn loadFromSafeTensors(allocator: Allocator, path: []const u8) !*Model {
     const file_size: usize = @intCast(stat.size);
     if (file_size < 8) return error.InvalidSafeTensors;
 
-    const data = try allocator.alloc(u8, file_size);
-    defer allocator.free(data);
+    return try std.posix.mmap(
+        null,
+        file_size,
+        std.posix.PROT.READ,
+        .{ .TYPE = .PRIVATE },
+        file.handle,
+        0,
+    );
+}
 
-    var offset: usize = 0;
-    while (offset < file_size) {
-        const bytes = try file.read(data[offset..]);
-        if (bytes == 0) return error.UnexpectedEOF;
-        offset += bytes;
-    }
+fn parseSafeTensorFile(allocator: Allocator, data: []const u8, config: *ModelConfig) !ParsedSafeTensorFile {
+    if (data.len < 8) return error.InvalidSafeTensors;
 
-    // Read header size (8 bytes, little-endian)
     const header_size = std.mem.readInt(u64, data[0..8], .little);
-    if (8 + header_size > file_size) return error.InvalidSafeTensors;
+    if (8 + header_size > data.len) return error.InvalidSafeTensors;
 
-    const header_json = data[8..][0..@intCast(header_size)];
     const tensor_data_start: usize = 8 + @as(usize, @intCast(header_size));
+    const header_json = data[8..tensor_data_start];
 
-    // Parse JSON header to extract tensor info
-    var tensor_infos = std.ArrayList(SafeTensorInfo).init(allocator);
-    defer tensor_infos.deinit();
+    var tensor_infos: std.ArrayListUnmanaged(SafeTensorInfo) = .empty;
+    errdefer tensor_infos.deinit(allocator);
 
-    var config = ModelConfig{};
-
-    // Simple JSON parser for SafeTensors header
-    // Format: {"tensor_name": {"dtype": "F32", "shape": [n, m], "data_offsets": [start, end]}, ...}
     var pos: usize = 0;
     while (pos < header_json.len) {
-        // Find tensor name
         if (std.mem.indexOfPos(u8, header_json, pos, "\"")) |name_start| {
             const ns = name_start + 1;
             if (std.mem.indexOfPos(u8, header_json, ns, "\"")) |name_end| {
                 const tensor_name = header_json[ns..name_end];
 
-                // Skip __metadata__
                 if (std.mem.eql(u8, tensor_name, "__metadata__")) {
                     pos = name_end + 1;
-                    // Skip the metadata object
                     if (std.mem.indexOfPos(u8, header_json, pos, "}")) |end| {
                         pos = end + 1;
                     }
                     continue;
                 }
 
-                // Look for dtype
                 var dtype = SafeTensorsDType.unknown;
                 if (std.mem.indexOfPos(u8, header_json, name_end, "\"dtype\"")) |dtype_pos| {
                     if (std.mem.indexOfPos(u8, header_json, dtype_pos + 8, "\"")) |ds| {
@@ -1294,7 +1385,6 @@ pub fn loadFromSafeTensors(allocator: Allocator, path: []const u8) !*Model {
                     }
                 }
 
-                // Look for shape
                 var shape = [4]usize{ 1, 1, 1, 1 };
                 var n_dims: usize = 0;
                 var n_elements: usize = 1;
@@ -1302,11 +1392,9 @@ pub fn loadFromSafeTensors(allocator: Allocator, path: []const u8) !*Model {
                     if (std.mem.indexOfPos(u8, header_json, shape_pos, "[")) |bracket| {
                         var sp = bracket + 1;
                         while (n_dims < 4) {
-                            // Skip whitespace
                             while (sp < header_json.len and (header_json[sp] == ' ' or header_json[sp] == ',')) sp += 1;
                             if (sp >= header_json.len or header_json[sp] == ']') break;
 
-                            // Parse number
                             var num_end = sp;
                             while (num_end < header_json.len and header_json[num_end] >= '0' and header_json[num_end] <= '9') num_end += 1;
                             if (num_end > sp) {
@@ -1320,53 +1408,26 @@ pub fn loadFromSafeTensors(allocator: Allocator, path: []const u8) !*Model {
                     }
                 }
 
-                // Look for data_offsets
                 var data_start: usize = 0;
                 var data_end: usize = 0;
                 if (std.mem.indexOfPos(u8, header_json, name_end, "\"data_offsets\"")) |off_pos| {
                     if (std.mem.indexOfPos(u8, header_json, off_pos, "[")) |bracket| {
                         var sp = bracket + 1;
-                        // First number (start)
                         while (sp < header_json.len and (header_json[sp] == ' ' or header_json[sp] == ',')) sp += 1;
                         var num_end = sp;
                         while (num_end < header_json.len and header_json[num_end] >= '0' and header_json[num_end] <= '9') num_end += 1;
-                        if (num_end > sp) {
-                            data_start = std.fmt.parseInt(usize, header_json[sp..num_end], 10) catch 0;
-                        }
+                        if (num_end > sp) data_start = std.fmt.parseInt(usize, header_json[sp..num_end], 10) catch 0;
                         sp = num_end;
-                        // Second number (end)
                         while (sp < header_json.len and (header_json[sp] == ' ' or header_json[sp] == ',')) sp += 1;
                         num_end = sp;
                         while (num_end < header_json.len and header_json[num_end] >= '0' and header_json[num_end] <= '9') num_end += 1;
-                        if (num_end > sp) {
-                            data_end = std.fmt.parseInt(usize, header_json[sp..num_end], 10) catch 0;
-                        }
+                        if (num_end > sp) data_end = std.fmt.parseInt(usize, header_json[sp..num_end], 10) catch 0;
                     }
                 }
 
-                // Infer config from tensor names
-                if (std.mem.indexOf(u8, tensor_name, "embed_tokens") != null or
-                    std.mem.indexOf(u8, tensor_name, "wte") != null)
-                {
-                    if (n_dims >= 2) {
-                        config.vocab_size = @intCast(shape[0]);
-                        config.n_embd = @intCast(shape[1]);
-                        config.dim = config.n_embd;
-                    }
-                }
-                if (std.mem.indexOf(u8, tensor_name, "layers.") != null) {
-                    // Extract layer number
-                    if (std.mem.indexOf(u8, tensor_name, "layers.")) |lp| {
-                        var layer_num_end = lp + 7;
-                        while (layer_num_end < tensor_name.len and tensor_name[layer_num_end] >= '0' and tensor_name[layer_num_end] <= '9') layer_num_end += 1;
-                        if (layer_num_end > lp + 7) {
-                            const layer_num = std.fmt.parseInt(u32, tensor_name[lp + 7 .. layer_num_end], 10) catch 0;
-                            if (layer_num + 1 > config.n_layers) config.n_layers = layer_num + 1;
-                        }
-                    }
-                }
+                inferSafeTensorConfig(config, tensor_name, shape, n_dims);
 
-                try tensor_infos.append(.{
+                try tensor_infos.append(allocator, .{
                     .name = tensor_name,
                     .dtype = dtype,
                     .shape = shape,
@@ -1385,64 +1446,183 @@ pub fn loadFromSafeTensors(allocator: Allocator, path: []const u8) !*Model {
         }
     }
 
-    // Set defaults
-    if (config.n_heads == 0) config.n_heads = 32;
-    if (config.n_kv_heads == 0) config.n_kv_heads = config.n_heads;
-    if (config.n_ff == 0) config.n_ff = config.n_embd * 4;
-    if (config.context_length == 0) config.context_length = 4096;
-    config.ff_dim = config.n_ff;
-    config.hidden_dim = config.n_embd;
+    return .{
+        .tensor_infos = try tensor_infos.toOwnedSlice(allocator),
+        .tensor_data_start = tensor_data_start,
+    };
+}
 
-    // Allocate weights
-    var weights = try TransformerWeights.allocateRaw(allocator, config);
-    errdefer weights.deinit(allocator);
+fn inferSafeTensorConfig(config: *ModelConfig, tensor_name: []const u8, shape: [4]usize, n_dims: usize) void {
+    if ((std.mem.indexOf(u8, tensor_name, "embed_tokens") != null or
+        std.mem.indexOf(u8, tensor_name, "wte") != null or
+        (std.mem.indexOf(u8, tensor_name, "embed") != null and
+            std.mem.indexOf(u8, tensor_name, "position") == null and
+            std.mem.indexOf(u8, tensor_name, "layers") == null)) and n_dims >= 2)
+    {
+        config.vocab_size = @intCast(shape[0]);
+        config.n_embd = @intCast(shape[1]);
+    } else if (std.mem.indexOf(u8, tensor_name, "lm_head") != null and n_dims >= 2 and config.vocab_size == 0) {
+        config.vocab_size = @intCast(@max(shape[0], shape[1]));
+    } else if ((std.mem.indexOf(u8, tensor_name, "gate_proj") != null or std.mem.indexOf(u8, tensor_name, "up_proj") != null) and n_dims >= 2 and config.n_ff == 0) {
+        config.n_ff = @intCast(@max(shape[0], shape[1]));
+    }
 
-    // Load tensors - complete layer weight mapping
-    for (tensor_infos.items) |ti| {
-        const src_ptr = data.ptr + tensor_data_start + ti.data_start;
-        const n_elem = ti.n_elements;
-        const name = ti.name;
-
-        // Global weights
-        if (std.mem.indexOf(u8, name, "embed_tokens") != null or std.mem.indexOf(u8, name, "wte") != null or
-            (std.mem.indexOf(u8, name, "embed") != null and std.mem.indexOf(u8, name, "position") == null and std.mem.indexOf(u8, name, "layers") == null))
-        {
-            loadSafeTensorData(weights.token_embedding, src_ptr, n_elem, ti.dtype) catch {};
-        } else if (std.mem.indexOf(u8, name, "lm_head") != null) {
-            loadSafeTensorData(weights.lm_head, src_ptr, n_elem, ti.dtype) catch {};
-        } else if ((std.mem.indexOf(u8, name, "model.norm") != null or std.mem.indexOf(u8, name, "ln_f") != null) and std.mem.indexOf(u8, name, "layers") == null) {
-            loadSafeTensorData(weights.final_norm, src_ptr, n_elem, ti.dtype) catch {};
-        } else {
-            // Layer weights - extract layer number
-            const layer_idx = extractLayerIndex(name);
-            if (layer_idx) |l| {
-                if (l < config.n_layers) {
-                    if (std.mem.indexOf(u8, name, "input_layernorm") != null or std.mem.indexOf(u8, name, "ln_1") != null) {
-                        loadSafeTensorData(weights.layers[l].attn_norm, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "q_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].wq, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "k_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].wk, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "v_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].wv, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "o_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].wo, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "post_attention_layernorm") != null or std.mem.indexOf(u8, name, "ln_2") != null) {
-                        loadSafeTensorData(weights.layers[l].ffn_norm, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "gate_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].w_gate, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "up_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].w_up, src_ptr, n_elem, ti.dtype) catch {};
-                    } else if (std.mem.indexOf(u8, name, "down_proj") != null) {
-                        loadSafeTensorData(weights.layers[l].w_down, src_ptr, n_elem, ti.dtype) catch {};
-                    }
-                }
-            }
+    if (std.mem.indexOf(u8, tensor_name, "layers.")) |lp| {
+        var layer_num_end = lp + 7;
+        while (layer_num_end < tensor_name.len and tensor_name[layer_num_end] >= '0' and tensor_name[layer_num_end] <= '9') layer_num_end += 1;
+        if (layer_num_end > lp + 7) {
+            const layer_num = std.fmt.parseInt(u32, tensor_name[lp + 7 .. layer_num_end], 10) catch 0;
+            if (layer_num + 1 > config.n_layers) config.n_layers = layer_num + 1;
         }
     }
 
-    // Create model
-    return try createModelWithWeights(allocator, config, weights);
+    if (config.n_embd != 0 and config.dim == 0) config.dim = config.n_embd;
+}
+
+fn loadSafeTensorFileIntoWeights(weights: *TransformerWeights, data: []const u8, parsed: ParsedSafeTensorFile, config: ModelConfig) void {
+    for (parsed.tensor_infos) |ti| {
+        const src_start = parsed.tensor_data_start + ti.data_start;
+        if (src_start >= data.len or src_start + (ti.data_end - ti.data_start) > data.len) continue;
+        const src_ptr: [*]const u8 = data.ptr + src_start;
+        loadSafeTensorTensorIntoWeights(weights, ti.name, src_ptr, ti.n_elements, ti.dtype, config);
+    }
+}
+
+fn loadSafeTensorTensorIntoWeights(weights: *TransformerWeights, name: []const u8, src_ptr: [*]const u8, n_elem: usize, dtype: SafeTensorsDType, config: ModelConfig) void {
+    if (std.mem.indexOf(u8, name, "embed_tokens") != null or std.mem.indexOf(u8, name, "wte") != null or
+        (std.mem.indexOf(u8, name, "embed") != null and std.mem.indexOf(u8, name, "position") == null and std.mem.indexOf(u8, name, "layers") == null))
+    {
+        loadSafeTensorData(weights.token_embedding, src_ptr, n_elem, dtype) catch {};
+    } else if (std.mem.indexOf(u8, name, "lm_head") != null) {
+        loadSafeTensorData(weights.lm_head, src_ptr, n_elem, dtype) catch {};
+    } else if ((std.mem.indexOf(u8, name, "model.norm") != null or std.mem.indexOf(u8, name, "ln_f") != null) and std.mem.indexOf(u8, name, "layers") == null) {
+        loadSafeTensorData(weights.final_norm, src_ptr, n_elem, dtype) catch {};
+    } else if (extractLayerIndex(name)) |l| {
+        if (l >= config.n_layers) return;
+        if (std.mem.indexOf(u8, name, "input_layernorm") != null or std.mem.indexOf(u8, name, "ln_1") != null) {
+            loadSafeTensorData(weights.layers[l].attn_norm, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "q_proj") != null) {
+            loadSafeTensorData(weights.layers[l].wq, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "k_proj") != null) {
+            loadSafeTensorData(weights.layers[l].wk, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "v_proj") != null) {
+            loadSafeTensorData(weights.layers[l].wv, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "o_proj") != null) {
+            loadSafeTensorData(weights.layers[l].wo, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "post_attention_layernorm") != null or std.mem.indexOf(u8, name, "ln_2") != null) {
+            loadSafeTensorData(weights.layers[l].ffn_norm, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "gate_proj") != null) {
+            loadSafeTensorData(weights.layers[l].w_gate, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "up_proj") != null) {
+            loadSafeTensorData(weights.layers[l].w_up, src_ptr, n_elem, dtype) catch {};
+        } else if (std.mem.indexOf(u8, name, "down_proj") != null) {
+            loadSafeTensorData(weights.layers[l].w_down, src_ptr, n_elem, dtype) catch {};
+        }
+    }
+}
+
+fn safeTensorConfigIsComplete(config: ModelConfig) bool {
+    return config.n_layers != 0 and config.n_heads != 0 and config.n_embd != 0 and config.n_ff != 0 and config.vocab_size != 0;
+}
+
+fn finalizeSafeTensorConfig(config: *ModelConfig) void {
+    if (config.n_heads == 0) config.n_heads = 32;
+    if (config.n_kv_heads == 0) config.n_kv_heads = config.n_heads;
+    if (config.n_ff == 0 and config.n_embd != 0) config.n_ff = config.n_embd * 4;
+    if (config.context_length == 0) config.context_length = 4096;
+    if (config.n_ctx == 0) config.n_ctx = config.context_length;
+    if (config.max_seq_len == 0) config.max_seq_len = config.context_length;
+    if (config.dim == 0) config.dim = config.n_embd;
+    if (config.hidden_dim == 0) config.hidden_dim = config.n_embd;
+    if (config.ff_dim == 0) config.ff_dim = config.n_ff;
+    if (config.intermediate_dim == 0) config.intermediate_dim = config.n_ff;
+}
+
+fn applySafeTensorsConfigJson(allocator: Allocator, model_dir: []const u8, config: *ModelConfig) !void {
+    const config_path = try std.fs.path.join(allocator, &.{ model_dir, "config.json" });
+    defer allocator.free(config_path);
+    const file = std.fs.cwd().openFile(config_path, .{}) catch |err| switch (err) {
+        error.FileNotFound => return,
+        else => return err,
+    };
+    defer file.close();
+
+    const stat = try file.stat();
+    const config_data = try allocator.alloc(u8, @intCast(stat.size));
+    defer allocator.free(config_data);
+
+    var offset: usize = 0;
+    while (offset < config_data.len) {
+        const n = try file.read(config_data[offset..]);
+        if (n == 0) return error.UnexpectedEOF;
+        offset += n;
+    }
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_data, .{});
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+
+    const object = parsed.value.object;
+    if (object.get("model_type")) |value| {
+        if (value == .string) {
+            const arch = try architectureFromModelType(value.string);
+            config.architecture = arch;
+            config.arch = arch;
+        }
+    }
+
+    if (object.get("hidden_size")) |value| {
+        if (jsonValueToU32(value)) |n| config.n_embd = n;
+    }
+    if (object.get("intermediate_size")) |value| {
+        if (jsonValueToU32(value)) |n| config.n_ff = n;
+    }
+    if (object.get("num_hidden_layers")) |value| {
+        if (jsonValueToU32(value)) |n| config.n_layers = n;
+    }
+    if (object.get("num_attention_heads")) |value| {
+        if (jsonValueToU32(value)) |n| config.n_heads = n;
+    }
+    if (object.get("num_key_value_heads")) |value| {
+        if (jsonValueToU32(value)) |n| config.n_kv_heads = n;
+    }
+    if (object.get("vocab_size")) |value| {
+        if (jsonValueToU32(value)) |n| config.vocab_size = n;
+    }
+    if (object.get("max_position_embeddings")) |value| {
+        if (jsonValueToU32(value)) |n| config.context_length = n;
+    }
+    if (object.get("rope_theta")) |value| {
+        if (jsonValueToF32(value)) |n| config.rope_freq_base = n;
+    }
+}
+
+fn architectureFromModelType(model_type: []const u8) !Architecture {
+    if (std.mem.indexOf(u8, model_type, "qwen") != null) return .qwen;
+    if (std.mem.indexOf(u8, model_type, "llama") != null) return .llama;
+    if (std.mem.indexOf(u8, model_type, "mistral") != null) return .mistral;
+    if (std.mem.indexOf(u8, model_type, "gemma") != null) return .gemma;
+    if (std.mem.indexOf(u8, model_type, "phi") != null) return .phi;
+    if (std.mem.indexOf(u8, model_type, "deepseek") != null) return .deepseek;
+    if (std.mem.indexOf(u8, model_type, "lfm") != null) return .lfm2;
+    if (std.mem.eql(u8, model_type, "nemotron_h")) return error.UnsupportedArchitecture;
+    return .llama;
+}
+
+fn jsonValueToU32(value: std.json.Value) ?u32 {
+    return switch (value) {
+        .integer => |n| if (n >= 0 and n <= std.math.maxInt(u32)) @intCast(n) else null,
+        .float => |n| if (n >= 0 and n <= @as(f64, @floatFromInt(std.math.maxInt(u32)))) @intFromFloat(n) else null,
+        else => null,
+    };
+}
+
+fn jsonValueToF32(value: std.json.Value) ?f32 {
+    return switch (value) {
+        .integer => |n| @floatFromInt(n),
+        .float => |n| @floatCast(n),
+        else => null,
+    };
 }
 
 fn loadSafeTensorData(dst: []f32, src: [*]const u8, n_elements: usize, dtype: SafeTensorsDType) !void {
@@ -1505,8 +1685,8 @@ const PyTorchTensorInfo = struct {
 
 fn loadFromPyTorchZip(allocator: Allocator, data: []const u8) !*Model {
     // Parse ZIP to find tensor files
-    var tensor_infos = std.ArrayList(PyTorchTensorInfo).init(allocator);
-    defer tensor_infos.deinit();
+    var tensor_infos: std.ArrayListUnmanaged(PyTorchTensorInfo) = .empty;
+    defer tensor_infos.deinit(allocator);
     var config = ModelConfig{};
 
     // ZIP local file header: PK\x03\x04
@@ -1536,7 +1716,7 @@ fn loadFromPyTorchZip(allocator: Allocator, data: []const u8) !*Model {
         {
             // Try to parse as raw tensor
             if (file_data_end <= data.len) {
-                try parsePyTorchTensor(data[file_data_start..file_data_end], filename, &tensor_infos, &config, file_data_start);
+                try parsePyTorchTensor(allocator, data[file_data_start..file_data_end], filename, &tensor_infos, &config, file_data_start);
             }
         }
 
@@ -1568,7 +1748,7 @@ fn loadFromPyTorchZip(allocator: Allocator, data: []const u8) !*Model {
     return try createModelWithWeights(allocator, config, weights);
 }
 
-fn parsePyTorchTensor(file_data: []const u8, filename: []const u8, infos: *std.ArrayList(PyTorchTensorInfo), config: *ModelConfig, abs_offset: usize) !void {
+fn parsePyTorchTensor(allocator: Allocator, file_data: []const u8, filename: []const u8, infos: *std.ArrayListUnmanaged(PyTorchTensorInfo), config: *ModelConfig, abs_offset: usize) !void {
     // Check for NumPy format (\x93NUMPY)
     if (file_data.len > 10 and file_data[0] == 0x93 and std.mem.eql(u8, file_data[1..6], "NUMPY")) {
         const header_len = std.mem.readInt(u16, file_data[8..10], .little);
@@ -1608,7 +1788,7 @@ fn parsePyTorchTensor(file_data: []const u8, filename: []const u8, infos: *std.A
             // Infer config from filename
             inferPyTorchConfig(filename, shape, n_dims, config);
 
-            try infos.append(.{
+            try infos.append(allocator, .{
                 .name = filename,
                 .dtype = dtype,
                 .shape = shape,
@@ -1626,7 +1806,7 @@ fn parsePyTorchTensor(file_data: []const u8, filename: []const u8, infos: *std.A
 
         inferPyTorchConfig(filename, shape, 1, config);
 
-        try infos.append(.{
+        try infos.append(allocator, .{
             .name = filename,
             .dtype = 0,
             .shape = shape,
@@ -2151,7 +2331,7 @@ fn parseTensorProto(allocator: Allocator, data: []const u8) !ONNXTensorInfo {
 }
 
 /// Parse ONNX GraphProto to extract initializers and infer config
-fn parseGraphProto(allocator: Allocator, data: []const u8, config: *ModelConfig, initializers: *std.ArrayList(ONNXTensorInfo)) !void {
+fn parseGraphProto(allocator: Allocator, data: []const u8, config: *ModelConfig, initializers: *std.ArrayListUnmanaged(ONNXTensorInfo)) !void {
     var pos: usize = 0;
     while (pos < data.len) {
         const tag = parseTag(data, &pos) catch break;
@@ -2162,7 +2342,7 @@ fn parseGraphProto(allocator: Allocator, data: []const u8, config: *ModelConfig,
                     const tensor_end = pos + @as(usize, @intCast(len));
                     if (tensor_end <= data.len) {
                         const tensor_info = try parseTensorProto(allocator, data[pos..tensor_end]);
-                        try initializers.append(tensor_info);
+                        try initializers.append(allocator, tensor_info);
 
                         // Infer config from tensor shapes
                         inferConfigFromTensor(tensor_info, config);
@@ -2281,8 +2461,8 @@ pub fn loadFromONNX(allocator: Allocator, path: []const u8) !*Model {
     }
 
     var config = ModelConfig{};
-    var initializers = std.ArrayList(ONNXTensorInfo).init(allocator);
-    defer initializers.deinit();
+    var initializers: std.ArrayListUnmanaged(ONNXTensorInfo) = .empty;
+    defer initializers.deinit(allocator);
 
     // Parse metadata from ModelProto envelope
     var meta = ONNXModelMeta{};
@@ -2584,6 +2764,7 @@ pub fn loadModel(allocator: Allocator, path: []const u8) !*Model {
     return switch (format) {
         .gguf => Model.loadFromGGUF(allocator, path),
         .safetensors => loadFromSafeTensors(allocator, path),
+        .safetensors_index => loadFromSafeTensorsIndex(allocator, path),
         .pytorch => loadFromPyTorch(allocator, path),
         .onnx => loadFromONNX(allocator, path),
         .unknown => error.UnknownModelFormat,
@@ -3780,6 +3961,162 @@ test "GGUF synthetic file round-trip" {
         try std.testing.expect(!math.isNan(v));
         try std.testing.expect(!math.isInf(v));
     }
+}
+
+test "SafeTensors synthetic index round-trip" {
+    const allocator = std.testing.allocator;
+
+    const TensorSpec = struct {
+        name: []const u8,
+        n_dims: u32,
+        d0: usize,
+        d1: usize,
+        n_elem: usize,
+        base: f32,
+    };
+
+    const writeShard = struct {
+        fn f(dir: std.fs.Dir, allocator_arg: Allocator, filename: []const u8, specs: []const TensorSpec) !void {
+            var header = std.ArrayList(u8).empty;
+            defer header.deinit(allocator_arg);
+            var tensor_data = std.ArrayList(u8).empty;
+            defer tensor_data.deinit(allocator_arg);
+
+            try header.append(allocator_arg, '{');
+            for (specs, 0..) |spec, idx| {
+                const data_start = tensor_data.items.len;
+                for (0..spec.n_elem) |i| {
+                    const val: f32 = spec.base + @as(f32, @floatFromInt(i)) * 0.01;
+                    try tensor_data.appendSlice(allocator_arg, &@as([4]u8, @bitCast(val)));
+                }
+                const data_end = tensor_data.items.len;
+
+                const shape_json = if (spec.n_dims == 1)
+                    try std.fmt.allocPrint(allocator_arg, "{d}", .{spec.d0})
+                else
+                    try std.fmt.allocPrint(allocator_arg, "{d},{d}", .{ spec.d0, spec.d1 });
+                defer allocator_arg.free(shape_json);
+
+                const entry = try std.fmt.allocPrint(
+                    allocator_arg,
+                    "\"{s}\":{{\"dtype\":\"F32\",\"shape\":[{s}],\"data_offsets\":[{d},{d}]}}",
+                    .{ spec.name, shape_json, data_start, data_end },
+                );
+                defer allocator_arg.free(entry);
+
+                if (idx != 0) try header.append(allocator_arg, ',');
+                try header.appendSlice(allocator_arg, entry);
+            }
+            try header.append(allocator_arg, '}');
+
+            const out_file = try dir.createFile(filename, .{});
+            defer out_file.close();
+
+            var header_size_buf: [8]u8 = @bitCast(std.mem.nativeToLittle(u64, header.items.len));
+            try out_file.writeAll(&header_size_buf);
+            try out_file.writeAll(header.items);
+            try out_file.writeAll(tensor_data.items);
+        }
+    }.f;
+
+    const buildIndexJson = struct {
+        fn f(allocator_arg: Allocator, shard_a: []const TensorSpec, shard_b: []const TensorSpec) ![]u8 {
+            var buf = std.ArrayList(u8).empty;
+            errdefer buf.deinit(allocator_arg);
+
+            try buf.appendSlice(allocator_arg, "{\"weight_map\":{");
+            var first = true;
+            for (shard_a) |spec| {
+                if (!first) try buf.append(allocator_arg, ',');
+                first = false;
+                const entry = try std.fmt.allocPrint(allocator_arg, "\"{s}\":\"model-00001-of-00002.safetensors\"", .{spec.name});
+                defer allocator_arg.free(entry);
+                try buf.appendSlice(allocator_arg, entry);
+            }
+            for (shard_b) |spec| {
+                if (!first) try buf.append(allocator_arg, ',');
+                first = false;
+                const entry = try std.fmt.allocPrint(allocator_arg, "\"{s}\":\"model-00002-of-00002.safetensors\"", .{spec.name});
+                defer allocator_arg.free(entry);
+                try buf.appendSlice(allocator_arg, entry);
+            }
+            try buf.appendSlice(allocator_arg, "}}");
+            return try buf.toOwnedSlice(allocator_arg);
+        }
+    }.f;
+
+    const shard_a = [_]TensorSpec{
+        .{ .name = "model.embed_tokens.weight", .n_dims = 2, .d0 = 8, .d1 = 4, .n_elem = 32, .base = 0.01 },
+        .{ .name = "model.norm.weight", .n_dims = 1, .d0 = 4, .d1 = 1, .n_elem = 4, .base = 0.11 },
+        .{ .name = "lm_head.weight", .n_dims = 2, .d0 = 8, .d1 = 4, .n_elem = 32, .base = 0.21 },
+        .{ .name = "model.layers.0.input_layernorm.weight", .n_dims = 1, .d0 = 4, .d1 = 1, .n_elem = 4, .base = 0.31 },
+        .{ .name = "model.layers.0.self_attn.q_proj.weight", .n_dims = 2, .d0 = 4, .d1 = 4, .n_elem = 16, .base = 0.41 },
+        .{ .name = "model.layers.0.self_attn.k_proj.weight", .n_dims = 2, .d0 = 4, .d1 = 4, .n_elem = 16, .base = 0.51 },
+    };
+    const shard_b = [_]TensorSpec{
+        .{ .name = "model.layers.0.self_attn.v_proj.weight", .n_dims = 2, .d0 = 4, .d1 = 4, .n_elem = 16, .base = 0.61 },
+        .{ .name = "model.layers.0.self_attn.o_proj.weight", .n_dims = 2, .d0 = 4, .d1 = 4, .n_elem = 16, .base = 0.71 },
+        .{ .name = "model.layers.0.post_attention_layernorm.weight", .n_dims = 1, .d0 = 4, .d1 = 1, .n_elem = 4, .base = 0.81 },
+        .{ .name = "model.layers.0.mlp.gate_proj.weight", .n_dims = 2, .d0 = 8, .d1 = 4, .n_elem = 32, .base = 0.91 },
+        .{ .name = "model.layers.0.mlp.up_proj.weight", .n_dims = 2, .d0 = 8, .d1 = 4, .n_elem = 32, .base = 1.01 },
+        .{ .name = "model.layers.0.mlp.down_proj.weight", .n_dims = 2, .d0 = 4, .d1 = 8, .n_elem = 32, .base = 1.11 },
+    };
+
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    try writeShard(tmp.dir, allocator, "model-00001-of-00002.safetensors", &shard_a);
+    try writeShard(tmp.dir, allocator, "model-00002-of-00002.safetensors", &shard_b);
+
+    const index_json = try buildIndexJson(allocator, &shard_a, &shard_b);
+    defer allocator.free(index_json);
+    try tmp.dir.writeFile(.{ .sub_path = "model.safetensors.index.json", .data = index_json });
+    try tmp.dir.writeFile(.{
+        .sub_path = "config.json",
+        .data =
+        \\{"model_type":"qwen3_5","hidden_size":4,"intermediate_size":8,"num_hidden_layers":1,"num_attention_heads":2,"num_key_value_heads":2,"vocab_size":8,"max_position_embeddings":16}
+        ,
+    });
+
+    const dir_path = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(dir_path);
+    const index_path = try std.fs.path.join(allocator, &.{ dir_path, "model.safetensors.index.json" });
+    defer allocator.free(index_path);
+
+    const model = try loadFromSafeTensorsIndex(allocator, index_path);
+    defer model.deinit();
+
+    try std.testing.expectEqual(@as(u32, 1), model.config.n_layers);
+    try std.testing.expectEqual(@as(u32, 4), model.config.n_embd);
+    try std.testing.expectEqual(@as(u32, 8), model.config.n_ff);
+    try std.testing.expectEqual(@as(u32, 2), model.config.n_heads);
+    try std.testing.expectEqual(@as(u32, 8), model.config.vocab_size);
+    try std.testing.expectEqual(Architecture.qwen, model.config.architecture);
+
+    const w = model.weights.?;
+    try std.testing.expectApproxEqAbs(@as(f32, 0.01), w.token_embedding[0], 0.001);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.21), w.lm_head[0], 0.001);
+    try std.testing.expectApproxEqAbs(@as(f32, 1.11), w.layers[0].w_down[0], 0.001);
+
+    var cache = try KVCache.init(allocator, model.config);
+    defer cache.deinit(allocator);
+    const logits = model.forward(1, 0, &cache);
+    try std.testing.expectEqual(@as(usize, 8), logits.len);
+}
+
+test "SafeTensors index rejects nemotron_h" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    try tmp.dir.writeFile(.{ .sub_path = "config.json", .data = "{\"model_type\":\"nemotron_h\"}" });
+
+    const dir_path = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(dir_path);
+    const index_path = try std.fs.path.join(allocator, &.{ dir_path, "model.safetensors.index.json" });
+    defer allocator.free(index_path);
+
+    try std.testing.expectError(error.UnsupportedArchitecture, loadFromSafeTensorsIndex(allocator, index_path));
 }
 
 test "dequantINT8PerTensor basic" {

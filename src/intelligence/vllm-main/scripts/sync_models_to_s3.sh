@@ -27,10 +27,16 @@ check_env() {
     fi
 }
 
-check_env "HF_TOKEN"
 check_env "S3_ACCESS_KEY_ID"
 check_env "S3_SECRET_ACCESS_KEY"
 check_env "S3_BUCKET"
+
+# Mirror the model-store S3 env names into the AWS CLI env names expected by
+# `aws s3` so the script works with a single set of credentials.
+export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$S3_ACCESS_KEY_ID}"
+export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$S3_SECRET_ACCESS_KEY}"
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-${S3_REGION:-us-east-1}}"
+export AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
 
 # Configuration
 MODELS_PREFIX="${MODELS_PREFIX:-models/}"
@@ -59,24 +65,65 @@ check_s3_exists() {
 download_hf_model() {
     local repo_id=$1
     local revision=${2:-main}
+    shift 2
+    local include_patterns=("$@")
     local output_dir="$HF_CACHE_DIR/$repo_id"
     
     echo "Downloading $repo_id (revision: $revision)..."
     
     # Use huggingface-cli if available, otherwise use curl
     if command -v huggingface-cli &> /dev/null; then
-        huggingface-cli download "$repo_id" \
-            --revision "$revision" \
-            --local-dir "$output_dir" \
-            --token "$HF_TOKEN"
-    else
-        # Fallback to git lfs
-        if [ ! -d "$output_dir" ]; then
-            GIT_LFS_SKIP_SMUDGE=1 git clone "https://huggingface.co/$repo_id" "$output_dir"
+        local cmd=(huggingface-cli download "$repo_id" --revision "$revision" --local-dir "$output_dir")
+        if [ -n "${HF_TOKEN:-}" ]; then
+            cmd+=(--token "$HF_TOKEN")
         fi
-        cd "$output_dir"
-        git lfs pull
-        cd -
+        if [ ${#include_patterns[@]} -gt 0 ]; then
+            for pattern in "${include_patterns[@]}"; do
+                cmd+=(--include "$pattern")
+            done
+        fi
+        "${cmd[@]}"
+    else
+        if [ ${#include_patterns[@]} -gt 0 ]; then
+            mkdir -p "$output_dir"
+            local api_url="https://huggingface.co/api/models/$repo_id?blobs=1"
+            local hf_headers=()
+            if [ -n "${HF_TOKEN:-}" ]; then
+                hf_headers=(-H "Authorization: Bearer $HF_TOKEN")
+            fi
+
+            local repo_files=()
+            while IFS= read -r repo_file; do
+                repo_files+=("$repo_file")
+            done < <(curl -L --fail --silent "${hf_headers[@]}" "$api_url" | jq -r '.siblings[].rfilename')
+
+            for repo_file in "${repo_files[@]}"; do
+                local matched=0
+                for pattern in "${include_patterns[@]}"; do
+                    case "$repo_file" in
+                        $pattern)
+                            matched=1
+                            break
+                            ;;
+                    esac
+                done
+
+                if [ "$matched" -eq 1 ]; then
+                    local local_path="$output_dir/$repo_file"
+                    mkdir -p "$(dirname "$local_path")"
+                    local file_url="https://huggingface.co/$repo_id/resolve/$revision/$repo_file"
+                    curl -L --fail --retry 3 "${hf_headers[@]}" -o "$local_path" "$file_url"
+                fi
+            done
+        else
+            if [ ! -d "$output_dir" ]; then
+                GIT_LFS_SKIP_SMUDGE=1 git clone "https://huggingface.co/$repo_id" "$output_dir"
+            fi
+            cd "$output_dir"
+            git lfs pull
+            git lfs checkout
+            cd -
+        fi
     fi
     
     echo "Downloaded to: $output_dir"
@@ -97,11 +144,13 @@ download_gguf_file() {
     fi
     
     echo "Downloading GGUF: $repo_id/$filename..."
-    
-    curl -L \
-        -H "Authorization: Bearer $HF_TOKEN" \
-        "https://huggingface.co/$repo_id/resolve/main/$filename" \
-        -o "$output_file"
+
+    local curl_args=(-L "https://huggingface.co/$repo_id/resolve/main/$filename" -o "$output_file")
+    if [ -n "${HF_TOKEN:-}" ]; then
+        curl_args=(-L -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$repo_id/resolve/main/$filename" -o "$output_file")
+    fi
+
+    curl "${curl_args[@]}"
     
     echo "Downloaded: $output_file"
 }
@@ -134,6 +183,7 @@ sync_dir_to_s3() {
 sync_model() {
     local repo_id=$1
     local revision=${2:-main}
+    shift 2
     local s3_prefix="${MODELS_PREFIX}${repo_id}/${revision}/"
     
     echo ""
@@ -142,7 +192,7 @@ sync_model() {
     echo "========================================"
     
     # Download from HuggingFace
-    download_hf_model "$repo_id" "$revision"
+    download_hf_model "$repo_id" "$revision" "$@"
     
     # Upload to S3
     sync_dir_to_s3 "$HF_CACHE_DIR/$repo_id" "$s3_prefix"
@@ -190,10 +240,10 @@ case "${1:-all}" in
         
     "model")
         if [ -z "$2" ]; then
-            echo "Usage: $0 model <repo_id> [revision]"
+            echo "Usage: $0 model <repo_id> [revision] [pattern ...]"
             exit 1
         fi
-        sync_model "$2" "${3:-main}"
+        sync_model "$2" "${3:-main}" "${@:4}"
         ;;
         
     "gguf")
@@ -214,17 +264,19 @@ case "${1:-all}" in
         echo ""
         echo "Commands:"
         echo "  all                            Sync all default models"
-        echo "  model <repo_id> [revision]     Sync specific model"
+        echo "  model <repo_id> [revision] [pattern ...]"
+        echo "                                 Sync specific model, optionally filtering files"
         echo "  gguf <repo_id> <filename>      Sync specific GGUF file"
         echo "  list                           List models in S3"
         echo ""
         echo "Examples:"
         echo "  $0 all"
         echo "  $0 model microsoft/phi-2"
+        echo "  $0 model Qwen/Qwen3.5-0.8B main config.json tokenizer.json model.safetensors"
         echo "  $0 gguf TheBloke/Llama-2-7B-GGUF llama-2-7b.Q4_K_M.gguf"
         echo ""
         echo "Environment Variables:"
-        echo "  HF_TOKEN              HuggingFace token (required)"
+        echo "  HF_TOKEN              HuggingFace token (optional for public repos)"
         echo "  S3_ACCESS_KEY_ID      S3 access key"
         echo "  S3_SECRET_ACCESS_KEY  S3 secret key"
         echo "  S3_BUCKET             S3 bucket name"

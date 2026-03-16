@@ -23,7 +23,7 @@ pub const S3Config = struct {
 };
 
 pub const HFConfig = struct {
-    token: []const u8,
+    token: ?[]const u8 = null,
     hub_url: []const u8 = "https://huggingface.co",
     cache_dir: []const u8 = "/tmp/hf_cache",
 };
@@ -563,6 +563,15 @@ pub const HFClient = struct {
         };
     }
 
+    fn buildAuthHeader(self: *Self) !?[]const u8 {
+        const token = self.config.token orelse return null;
+        return try std.fmt.allocPrint(
+            self.allocator,
+            "Bearer {s}",
+            .{token},
+        );
+    }
+
     /// Get model info from HuggingFace Hub API
     pub fn getModelInfo(self: *Self, repo_id: []const u8) !ModelMetadata {
         var metadata = ModelMetadata.init(self.allocator, repo_id);
@@ -578,19 +587,17 @@ pub const HFClient = struct {
         defer client.deinit();
 
         const uri = try std.Uri.parse(url);
+        const auth_header = try self.buildAuthHeader();
+        defer if (auth_header) |header| self.allocator.free(header);
 
-        const auth_header = try std.fmt.allocPrint(
-            self.allocator,
-            "Bearer {s}",
-            .{self.config.token},
-        );
-        defer self.allocator.free(auth_header);
-
-        var req = try client.open(.GET, uri, .{
-            .extra_headers = &.{
-                .{ .name = "Authorization", .value = auth_header },
-            },
-        });
+        var req = if (auth_header) |header|
+            try client.open(.GET, uri, .{
+                .extra_headers = &.{
+                    .{ .name = "Authorization", .value = header },
+                },
+            })
+        else
+            try client.open(.GET, uri, .{});
         defer req.deinit();
 
         try req.send();
@@ -669,19 +676,17 @@ pub const HFClient = struct {
         defer client.deinit();
 
         const uri = try std.Uri.parse(url);
+        const auth_header = try self.buildAuthHeader();
+        defer if (auth_header) |header| self.allocator.free(header);
 
-        const auth_header = try std.fmt.allocPrint(
-            self.allocator,
-            "Bearer {s}",
-            .{self.config.token},
-        );
-        defer self.allocator.free(auth_header);
-
-        var req = try client.open(.GET, uri, .{
-            .extra_headers = &.{
-                .{ .name = "Authorization", .value = auth_header },
-            },
-        });
+        var req = if (auth_header) |header|
+            try client.open(.GET, uri, .{
+                .extra_headers = &.{
+                    .{ .name = "Authorization", .value = header },
+                },
+            })
+        else
+            try client.open(.GET, uri, .{});
         defer req.deinit();
 
         try req.send();
@@ -742,24 +747,22 @@ pub const HFClient = struct {
             .{ self.config.hub_url, repo_id, revision, filename },
         );
         defer self.allocator.free(url);
-
-        const auth_header = try std.fmt.allocPrint(
-            self.allocator,
-            "Bearer {s}",
-            .{self.config.token},
-        );
-        defer self.allocator.free(auth_header);
+        const auth_header = try self.buildAuthHeader();
+        defer if (auth_header) |header| self.allocator.free(header);
 
         // Resolve redirect URL (LFS) if needed.
         const final_url = blk: {
             var client = std.http.Client{ .allocator = self.allocator };
             defer client.deinit();
             const uri = try std.Uri.parse(url);
-            var req = try client.open(.GET, uri, .{
-                .extra_headers = &.{
-                    .{ .name = "Authorization", .value = auth_header },
-                },
-            });
+            var req = if (auth_header) |header|
+                try client.open(.GET, uri, .{
+                    .extra_headers = &.{
+                        .{ .name = "Authorization", .value = header },
+                    },
+                })
+            else
+                try client.open(.GET, uri, .{});
             defer req.deinit();
             try req.send();
             try req.finish();
@@ -779,7 +782,14 @@ pub const HFClient = struct {
         var client = std.http.Client{ .allocator = self.allocator };
         defer client.deinit();
         const uri = try std.Uri.parse(final_url);
-        var req = try client.open(.GET, uri, .{});
+        var req = if (auth_header) |header|
+            try client.open(.GET, uri, .{
+                .extra_headers = &.{
+                    .{ .name = "Authorization", .value = header },
+                },
+            })
+        else
+            try client.open(.GET, uri, .{});
         defer req.deinit();
         try req.send();
         try req.finish();
@@ -827,6 +837,7 @@ pub const ModelStore = struct {
         file_patterns: ?[]const []const u8,
     ) !ModelMetadata {
         std.debug.print("Fetching model info for: {s}\n", .{repo_id});
+        try std.fs.cwd().makePath(self.config.hf.cache_dir);
 
         // Get model metadata from HuggingFace
         var metadata = try self.hf.getModelInfo(repo_id);
@@ -898,6 +909,7 @@ pub const ModelStore = struct {
         repo_id: []const u8,
         gguf_filename: []const u8,
     ) ![]const u8 {
+        try std.fs.cwd().makePath(self.config.hf.cache_dir);
         const s3_key = try std.fmt.allocPrint(
             self.allocator,
             "{s}{s}/main/{s}",
@@ -969,7 +981,7 @@ pub fn loadConfigFromEnv(_: Allocator) !ModelStoreConfig {
     };
 
     const hf_config = HFConfig{
-        .token = std.posix.getenv("HF_TOKEN") orelse return error.MissingHFToken,
+        .token = std.posix.getenv("HF_TOKEN") orelse std.posix.getenv("HUGGING_FACE_HUB_TOKEN"),
         .hub_url = std.posix.getenv("HF_HUB_URL") orelse "https://huggingface.co",
         .cache_dir = std.posix.getenv("HF_CACHE_DIR") orelse "/tmp/hf_cache",
     };
@@ -1020,6 +1032,17 @@ pub fn main() !void {
         std.debug.print("\nDownloaded model: {s}\n", .{metadata.repo_id});
         std.debug.print("Total size: {d} bytes\n", .{metadata.total_size_bytes});
         std.debug.print("Files: {d}\n", .{metadata.files.items.len});
+    } else if (std.mem.eql(u8, command, "download-filtered")) {
+        if (args.len < 5) {
+            std.debug.print("Usage: model_store download-filtered <repo_id> <revision> <pattern> [pattern...]\n", .{});
+            return;
+        }
+        const repo_id = args[2];
+        const revision = args[3];
+        const metadata = try store.downloadFromHuggingFace(repo_id, revision, args[4..]);
+        std.debug.print("\nDownloaded filtered model: {s}\n", .{metadata.repo_id});
+        std.debug.print("Total size: {d} bytes\n", .{metadata.total_size_bytes});
+        std.debug.print("Matched files: {d}\n", .{metadata.files.items.len});
     } else if (std.mem.eql(u8, command, "download-gguf")) {
         if (args.len < 4) {
             std.debug.print("Usage: model_store download-gguf <repo_id> <filename.gguf>\n", .{});
@@ -1059,12 +1082,15 @@ fn printUsage() void {
         \\
         \\Commands:
         \\  download <repo_id> [revision]     Download model from HuggingFace to S3
+        \\  download-filtered <repo_id> <revision> <pattern> [pattern...]
+        \\                                    Download only matching files from HuggingFace to S3
         \\  download-gguf <repo_id> <file>    Download specific GGUF file
         \\  list                              List models in S3
         \\  exists <repo_id> [revision]       Check if model exists in S3
         \\
         \\Examples:
         \\  model_store download microsoft/phi-2
+        \\  model_store download-filtered Qwen/Qwen3.5-0.8B main config.json tokenizer.json model.safetensors
         \\  model_store download-gguf TheBloke/Llama-2-7B-GGUF llama-2-7b.Q4_K_M.gguf
         \\  model_store list
         \\
@@ -1073,7 +1099,7 @@ fn printUsage() void {
         \\  S3_SECRET_ACCESS_KEY  S3 secret key
         \\  S3_BUCKET             S3 bucket name
         \\  S3_REGION             S3 region (default: us-east-1)
-        \\  HF_TOKEN              HuggingFace token
+        \\  HF_TOKEN              HuggingFace token (optional for public repos)
         \\
     , .{});
 }
@@ -1604,7 +1630,6 @@ fn parseGGUFTensorInfo(data: []const u8, pos: *usize) !GGUFTensor {
     };
 }
 
-
 // =============================================================================
 // Model Zoo — Model Family Registry & Auto-Discovery
 // =============================================================================
@@ -1752,6 +1777,7 @@ pub const ModelFamily = enum {
 };
 
 pub const QuantLevel = enum {
+    q3_k_m,
     q4_0,
     q4_k_m,
     q5_k_m,
@@ -1760,6 +1786,8 @@ pub const QuantLevel = enum {
     f32,
 
     pub fn fromFilename(name: []const u8) QuantLevel {
+        if (std.mem.indexOf(u8, name, "Q3_K_M") != null or
+            std.mem.indexOf(u8, name, "q3_k_m") != null) return .q3_k_m;
         if (std.mem.indexOf(u8, name, "Q4_0") != null or
             std.mem.indexOf(u8, name, "q4_0") != null) return .q4_0;
         if (std.mem.indexOf(u8, name, "Q4_K_M") != null or
@@ -1805,6 +1833,9 @@ pub const MODEL_ZOO = [_]ModelZooEntry{
     .{ .repo_id = "Qwen/Qwen2.5-72B-Instruct-GGUF", .family = .qwen, .parameter_count = "72B", .default_quant = .q4_k_m, .gguf_filename = "Qwen2.5-72B-Instruct-Q4_K_M.gguf", .description = "Qwen 2.5 72B Instruct" },
     .{ .repo_id = "Qwen/Qwen2.5-14B-Instruct-GGUF", .family = .qwen, .parameter_count = "14B", .default_quant = .q4_k_m, .gguf_filename = "Qwen2.5-14B-Instruct-Q4_K_M.gguf", .description = "Qwen 2.5 14B Instruct" },
     .{ .repo_id = "Qwen/Qwen2.5-3B-Instruct-GGUF", .family = .qwen, .parameter_count = "3B", .default_quant = .q4_k_m, .gguf_filename = "Qwen2.5-3B-Instruct-Q4_K_M.gguf", .description = "Qwen 2.5 3B Instruct" },
+    .{ .repo_id = "Qwen/Qwen3.5-0.8B-Instruct-GGUF", .family = .qwen, .parameter_count = "0.8B", .default_quant = .q8_0, .gguf_filename = "Qwen3.5-0.8B-Instruct-Q8_0.gguf", .description = "Qwen 3.5 0.8B Instruct" },
+    .{ .repo_id = "Qwen/Qwen3.5-9B-Instruct-GGUF", .family = .qwen, .parameter_count = "9B", .default_quant = .q4_k_m, .gguf_filename = "Qwen3.5-9B-Instruct-Q4_K_M.gguf", .description = "Qwen 3.5 9B Instruct" },
+    .{ .repo_id = "Qwen/Qwen3.5-35B-Instruct-GGUF", .family = .qwen, .parameter_count = "35B", .default_quant = .q3_k_m, .gguf_filename = "Qwen3.5-35B-Instruct-Q3_K_M.gguf", .description = "Qwen 3.5 35B Instruct" },
     // Gemma variants
     .{ .repo_id = "google/gemma-2-27b-it-GGUF", .family = .gemma, .parameter_count = "27B", .default_quant = .q4_k_m, .gguf_filename = "gemma-2-27b-it-Q4_K_M.gguf", .description = "Google Gemma 2 27B IT" },
     .{ .repo_id = "google/gemma-2-2b-it-GGUF", .family = .gemma, .parameter_count = "2B", .default_quant = .q8_0, .gguf_filename = "gemma-2-2b-it-Q8_0.gguf", .description = "Google Gemma 2 2B IT" },
@@ -1836,6 +1867,7 @@ pub const MODEL_ZOO = [_]ModelZooEntry{
 
 /// Thread-local Mangle engine reference for dynamic catalog queries
 var mangle_engine_ref: ?*mangle_query.MangleQueryEngine = null;
+threadlocal var mangle_resolved_entry: ?ModelZooEntry = null;
 
 /// Set the MangleQueryEngine to use for dynamic model resolution
 pub fn setMangleEngine(engine: *mangle_query.MangleQueryEngine) void {
@@ -1880,12 +1912,10 @@ fn resolveModelFromMangle(name: []const u8) ?ModelZooEntry {
         std.fmt.bufPrint(&param_buf, "{d}B", .{@as(u32, @intFromFloat(param_b))}) catch "?B"
     else
         std.fmt.bufPrint(&param_buf, "{d:.1}B", .{param_b}) catch "?B";
-    _ = param_str;
-
     return ModelZooEntry{
         .repo_id = name,
         .family = ModelFamily.fromRepoId(family_str),
-        .parameter_count = desc, // Use description as identifier
+        .parameter_count = param_str,
         .default_quant = QuantLevel.fromFilename(quant_str),
         .gguf_filename = gguf_name,
         .description = desc,
@@ -1910,7 +1940,10 @@ pub fn resolveModelName(name: []const u8) ?*const ModelZooEntry {
     // Dynamic lookup from Mangle catalog
     // Note: returns pointer to static, but Mangle-resolved entries are ephemeral
     // Callers should copy fields they need to persist
-    _ = resolveModelFromMangle(name);
+    if (resolveModelFromMangle(name)) |entry| {
+        mangle_resolved_entry = entry;
+        return &(mangle_resolved_entry.?);
+    }
     return null;
 }
 
@@ -1999,6 +2032,7 @@ test "ModelFamily.fromRepoId" {
 }
 
 test "QuantLevel.fromFilename" {
+    try std.testing.expectEqual(QuantLevel.q3_k_m, QuantLevel.fromFilename("model-Q3_K_M.gguf"));
     try std.testing.expectEqual(QuantLevel.q4_k_m, QuantLevel.fromFilename("model-Q4_K_M.gguf"));
     try std.testing.expectEqual(QuantLevel.q8_0, QuantLevel.fromFilename("model-Q8_0.gguf"));
     try std.testing.expectEqual(QuantLevel.f16, QuantLevel.fromFilename("model-f16.gguf"));
@@ -2008,6 +2042,13 @@ test "resolveModelName direct match" {
     const entry = resolveModelName("meta-llama/Llama-3.1-8B-Instruct-GGUF");
     try std.testing.expect(entry != null);
     try std.testing.expectEqual(ModelFamily.llama, entry.?.family);
+}
+
+test "resolveModelName finds qwen3.5 gguf variants" {
+    const entry = resolveModelName("Qwen/Qwen3.5-35B-Instruct-GGUF");
+    try std.testing.expect(entry != null);
+    try std.testing.expectEqualStrings("Qwen3.5-35B-Instruct-Q3_K_M.gguf", entry.?.gguf_filename);
+    try std.testing.expectEqual(QuantLevel.q3_k_m, entry.?.default_quant);
 }
 
 test "MODEL_ZOO has entries" {

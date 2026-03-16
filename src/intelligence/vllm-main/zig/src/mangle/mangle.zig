@@ -149,6 +149,11 @@ pub const Engine = struct {
         return self.runtime_facts.get(key);
     }
 
+    /// Advertise whether TensorRT is available for cost-aware routing.
+    pub fn setTensorRtAvailable(self: *Engine, available: bool) void {
+        self.tensorrt_available = available;
+    }
+
     /// Load rules from a JSON file
     pub fn loadRulesFromFile(self: *Engine, path: []const u8) !void {
         const file = try std.fs.cwd().openFile(path, .{});
@@ -566,6 +571,7 @@ test "cost-routing: normal load routes to /tensorrt" {
     const allocator = std.testing.allocator;
     var engine = try Engine.init(allocator, null);
     defer engine.deinit();
+    engine.setTensorRtAvailable(true);
 
     // Queue=10, well below both watermarks (48 / 56)
     try engine.assertRuntimeFact("gpu_queue_depth:/tensorrt", 10);
@@ -583,6 +589,7 @@ test "cost-routing: overflow routes to /gguf" {
     const allocator = std.testing.allocator;
     var engine = try Engine.init(allocator, null);
     defer engine.deinit();
+    engine.setTensorRtAvailable(true);
 
     // Queue=60 >= overflow threshold of 56
     try engine.assertRuntimeFact("gpu_queue_depth:/tensorrt", 60);
@@ -600,6 +607,7 @@ test "cost-routing: high watermark pre-emptive /gguf" {
     const allocator = std.testing.allocator;
     var engine = try Engine.init(allocator, null);
     defer engine.deinit();
+    engine.setTensorRtAvailable(true);
 
     // Queue=50 >= high watermark=48 but < overflow=56
     try engine.assertRuntimeFact("gpu_queue_depth:/tensorrt", 50);
@@ -617,6 +625,7 @@ test "cost-routing: retract restores default /tensorrt" {
     const allocator = std.testing.allocator;
     var engine = try Engine.init(allocator, null);
     defer engine.deinit();
+    engine.setTensorRtAvailable(true);
 
     // Assert overflow, confirm /gguf
     try engine.assertRuntimeFact("gpu_queue_depth:/tensorrt", 60);

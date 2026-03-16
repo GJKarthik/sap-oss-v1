@@ -32,6 +32,16 @@ struct CudaGraphInstance {
 static CudaGraphInstance g_graphs[MAX_GRAPHS] = {0};
 static int g_num_graphs = 0;
 
+struct GraphMemoryPool {
+    void* scratch;
+    size_t scratch_size;
+    void* kv_cache;
+    size_t kv_cache_size;
+    bool initialized;
+};
+
+static GraphMemoryPool g_graph_mem = {0};
+
 // ============================================================================
 // Stream Pool for Multi-Stream Execution
 // ============================================================================
@@ -64,9 +74,9 @@ extern "C" void cuda_stream_pool_destroy(void) {
     g_streams_init = false;
 }
 
-extern "C" cudaStream_t cuda_get_stream(int idx) {
+extern "C" void* cuda_get_stream(int idx) {
     if (!g_streams_init) cuda_stream_pool_init();
-    return g_streams[idx % NUM_STREAMS];
+    return (void*)g_streams[idx % NUM_STREAMS];
 }
 
 // ============================================================================
@@ -1209,16 +1219,6 @@ extern "C" int cuda_speculative_verify(
  * Pre-allocate memory for graph execution
  * Avoids allocation during graph replay
  */
-struct GraphMemoryPool {
-    void* scratch;
-    size_t scratch_size;
-    void* kv_cache;
-    size_t kv_cache_size;
-    bool initialized;
-};
-
-static GraphMemoryPool g_graph_mem = {0};
-
 extern "C" int cuda_graph_memory_init(
     size_t scratch_size,
     size_t kv_cache_size

@@ -9,6 +9,43 @@ pub fn build(b: *std.Build) void {
     const cuda_path_opt = b.option([]const u8, "cuda_path", "Path to CUDA toolkit (overrides CUDA_HOME/CUDA_PATH)");
     const cuda_lib_opt = b.option([]const u8, "cuda_lib", "Path to compiled CUDA kernels");
     const source_file = b.path("src/main.zig");
+    var cuda_kernels_build: ?*std.Build.Step.Run = null;
+
+    if (enable_gpu) {
+        const mkdir_cuda_lib = b.addSystemCommand(&.{ "mkdir", "-p", "deps/llama-zig-cuda/zig-out/lib" });
+        cuda_kernels_build = b.addSystemCommand(&.{
+            "nvcc",
+            "-O3",
+            "-arch=sm_75",
+            "-I",
+            "csrc",
+            "-lcublas",
+            "-shared",
+            "-Xcompiler",
+            "-fPIC",
+            "csrc/cuda_kernels.cu",
+            "csrc/continuous_batching.cu",
+            "csrc/cuda_graphs.cu",
+            "csrc/flash_attention.cu",
+            "csrc/flash_attention_v2.cu",
+            "csrc/fp8_quantization.cu",
+            "csrc/fused_kernels.cu",
+            "csrc/glm5_kernels.cu",
+            "csrc/gpu_tokenizer.cu",
+            "csrc/int8_kv_cache.cu",
+            "csrc/int8_quantization.cu",
+            "csrc/kimi25_kernels.cu",
+            "csrc/minimax25_kernels.cu",
+            "csrc/mla_kernels.cu",
+            "csrc/pipeline_parallel.cu",
+            "csrc/tensor_core_ops.cu",
+            "csrc/tensor_parallel.cu",
+            "-o",
+            "zig-out/lib/libcuda_kernels.so",
+        });
+        cuda_kernels_build.?.setCwd(b.path("deps/llama-zig-cuda"));
+        cuda_kernels_build.?.step.dependOn(&mkdir_cuda_lib.step);
+    }
 
     // ========================================================================
     // Generated SDK Types Module
@@ -126,6 +163,10 @@ pub fn build(b: *std.Build) void {
         .root_module = main_mod,
     });
     exe.linkLibC();
+    exe.addCSourceFile(.{
+        .file = b.path("deps/trt_wrapper/trt_wrapper.c"),
+        .flags = &.{},
+    });
     // Add stub CUDA header path for non-GPU builds
     exe.addIncludePath(b.path("deps/cuda"));
 
@@ -149,15 +190,14 @@ pub fn build(b: *std.Build) void {
         const cuda_lib_path = cuda_lib_opt orelse "deps/llama-zig-cuda/zig-out/lib";
         exe.addLibraryPath(.{ .cwd_relative = cuda_lib_path });
         exe.linkSystemLibrary("cuda_kernels");
+        exe.step.dependOn(&cuda_kernels_build.?.step);
 
-        // TensorRT wrapper library (provides pllm_trt_* functions)
-        // Pure C implementation - no C++ STL dependencies
-        exe.addLibraryPath(.{ .cwd_relative = "deps/trt_wrapper/zig-out/lib" });
-        exe.linkSystemLibrary("trt_wrapper");
-        exe.linkSystemLibrary("pthread");
         // Note: When integrating actual TensorRT, add: libnvinfer, libcudart
         // exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
         // exe.linkSystemLibrary("nvinfer");
+    }
+    if (target.result.os.tag == .linux) {
+        exe.linkSystemLibrary("pthread");
     }
     if (enable_webgpu) {
         const wgpu_lib_path = wgpu_lib_opt orelse "/usr/local/lib";
@@ -195,6 +235,10 @@ pub fn build(b: *std.Build) void {
         .root_module = test_mod,
     });
     tests.linkLibC();
+    tests.addCSourceFile(.{
+        .file = b.path("deps/trt_wrapper/trt_wrapper.c"),
+        .flags = &.{},
+    });
     tests.addIncludePath(b.path("deps/cuda"));
     // Link macOS frameworks for tests (needed by Accelerate + Metal paths)
     if (target.result.os.tag == .macos) {
@@ -202,6 +246,9 @@ pub fn build(b: *std.Build) void {
         tests.linkFramework("Foundation");
         tests.linkFramework("CoreGraphics");
         tests.linkFramework("Accelerate");
+    }
+    if (target.result.os.tag == .linux) {
+        tests.linkSystemLibrary("pthread");
     }
 
     // Connector types tests
@@ -225,6 +272,7 @@ pub fn build(b: *std.Build) void {
         tests.addLibraryPath(.{ .cwd_relative = cuda_lib_path });
         tests.linkSystemLibrary("cuda_kernels");
         tests.linkLibC();
+        tests.step.dependOn(&cuda_kernels_build.?.step);
     }
     if (enable_webgpu) {
         const wgpu_lib_path = wgpu_lib_opt orelse "/usr/local/lib";

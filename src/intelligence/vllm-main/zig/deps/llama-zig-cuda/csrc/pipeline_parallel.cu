@@ -312,7 +312,6 @@ extern "C" int pp_gpipe_forward(
     if (micro_batch_size <= 0) return CUDA_ERR_INVALID_ARG;
 
     PipelineStage* st = &g_pp.stages[g_pp.rank];
-    size_t micro_bytes = (size_t)hd * micro_batch_size * sizeof(float);
 
     for (int m = 0; m < num_micro_batches; m++) {
         int buf_idx = m % 2; // Double-buffer index
@@ -360,5 +359,4 @@ extern "C" int pp_get_first_layer(void)    {
 extern "C" int pp_is_initialized(void)     { return g_pp.initialized ? 1 : 0; }
 extern "C" int pp_get_hidden_dim(void)     { return g_pp.hidden_dim; }
 extern "C" int pp_get_num_micro_batches(void) { return g_pp.num_micro_batches; }
-
 

@@ -16,6 +16,10 @@ model_def("TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "gguf", 4.0, ["text-generati
 model_def("BAAI/bge-large-en-v1.5", "safetensors", 1.3, ["embedding", "retrieval"]).
 model_def("sentence-transformers/all-MiniLM-L6-v2", "safetensors", 0.09, ["embedding", "semantic-search"]).
 model_def("intfloat/e5-large-v2", "safetensors", 1.3, ["embedding", "retrieval", "multilingual"]).
+model_def("Qwen/Qwen3.5-0.8B", "safetensors", 1.65, ["text-generation", "chat", "qwen3.5", "multimodal"]).
+model_def("Qwen/Qwen3.5-9B", "safetensors", 18.01, ["text-generation", "chat", "qwen3.5", "multimodal"]).
+model_def("Qwen/Qwen3.5-35B", "safetensors", 70.0, ["text-generation", "chat", "qwen3.5", "multimodal"]).
+model_def("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "safetensors", 58.84, ["text-generation", "reasoning", "nemotron", "bf16"]).
 
 # Quantization variants
 gguf_variant("TheBloke/Llama-2-7B-GGUF", "llama-2-7b.Q4_K_M.gguf", 4.08).
@@ -23,6 +27,48 @@ gguf_variant("TheBloke/Llama-2-7B-GGUF", "llama-2-7b.Q5_K_M.gguf", 4.78).
 gguf_variant("TheBloke/Llama-2-7B-GGUF", "llama-2-7b.Q8_0.gguf", 7.16).
 gguf_variant("TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "mistral-7b-instruct-v0.2.Q4_K_M.gguf", 4.37).
 gguf_variant("TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "mistral-7b-instruct-v0.2.Q5_K_M.gguf", 5.13).
+
+# Essential file filters for sharded safetensors repos
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "chat_template.jinja").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "config.json").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "merges.txt").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "model.safetensors").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "model.safetensors.index.json").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "preprocessor_config.json").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "tokenizer.json").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "tokenizer_config.json").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "video_preprocessor_config.json").
+model_stage_pattern("Qwen/Qwen3.5-0.8B", "vocab.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "chat_template.jinja").
+model_stage_pattern("Qwen/Qwen3.5-9B", "config.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "merges.txt").
+model_stage_pattern("Qwen/Qwen3.5-9B", "model.safetensors").
+model_stage_pattern("Qwen/Qwen3.5-9B", "model.safetensors.index.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "preprocessor_config.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "tokenizer.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "tokenizer_config.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "video_preprocessor_config.json").
+model_stage_pattern("Qwen/Qwen3.5-9B", "vocab.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "chat_template.jinja").
+model_stage_pattern("Qwen/Qwen3.5-35B", "config.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "merges.txt").
+model_stage_pattern("Qwen/Qwen3.5-35B", "model.safetensors").
+model_stage_pattern("Qwen/Qwen3.5-35B", "model.safetensors.index.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "preprocessor_config.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "tokenizer.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "tokenizer_config.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "video_preprocessor_config.json").
+model_stage_pattern("Qwen/Qwen3.5-35B", "vocab.json").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "chat_template.jinja").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "config.json").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "configuration_nemotron_h.py").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "generation_config.json").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "model-").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "model.safetensors.index.json").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "modeling_nemotron_h.py").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "special_tokens_map.json").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "tokenizer.json").
+model_stage_pattern("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "tokenizer_config.json").
 
 # =============================================================================
 # Storage Configuration
@@ -32,12 +78,12 @@ gguf_variant("TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "mistral-7b-instruct-v0.2
 storage_config("bucket", "hcp-055af4b0-2344-40d2-88fe-ddc1c4aad6c5").
 storage_config("region", "us-east-1").
 storage_config("prefix", "models/").
-storage_config("max_model_size_gb", 50).
+storage_config("max_model_size_gb", 80).
 
 # Model storage path derivation
 model_s3_path(RepoId, Revision, Path) :-
     storage_config("prefix", Prefix),
-    Path = format("{}{}}/{}/", Prefix, RepoId, Revision).
+    Path = format("{}{}/{}/", Prefix, RepoId, Revision).
 
 # =============================================================================
 # Hardware Profiles
@@ -114,6 +160,10 @@ download_priority(2, "BAAI/bge-large-en-v1.5").                   # Better embed
 download_priority(3, "TheBloke/Mistral-7B-Instruct-v0.2-GGUF").  # Main LLM
 download_priority(4, "TheBloke/Llama-2-7B-GGUF").                 # Fallback LLM
 download_priority(5, "microsoft/phi-2").                          # Small LLM
+download_priority(6, "Qwen/Qwen3.5-0.8B").                        # Small exact safetensors source
+download_priority(7, "Qwen/Qwen3.5-9B").                          # Mid-size exact safetensors source
+download_priority(8, "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16"). # Exact Nemotron BF16 source
+download_priority(9, "Qwen/Qwen3.5-35B").                         # Large exact safetensors source
 
 # Get models to download based on available storage
 models_to_download(Models) :-

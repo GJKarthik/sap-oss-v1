@@ -22,8 +22,6 @@
 // ============================================================================
 
 #define BLOCK_SIZE 256
-#define INT8_MIN -128
-#define INT8_MAX 127
 
 // ============================================================================
 // Quantization Parameters
@@ -45,7 +43,6 @@ struct LayerQuantParams {
 // Global quantization state
 #define MAX_LAYERS 128
 static LayerQuantParams g_quant_params[MAX_LAYERS] = {0};
-static bool g_quant_calibrated = false;
 static cublasLtHandle_t g_cublaslt_handle = nullptr;
 
 // ============================================================================
@@ -136,7 +133,7 @@ __global__ void find_minmax_kernel(
     }
 }
 
-extern "C" int calibrate_layer(
+int calibrate_layer(
     int layer_idx,
     const float* weights,
     int weights_size,
@@ -197,7 +194,6 @@ extern "C" int calibrate_layer(
     cudaFree(d_min);
     cudaFree(d_max);
     
-    g_quant_calibrated = true;
     return 0;
 }
 
@@ -1079,5 +1075,4 @@ extern "C" void int8_quantization_shutdown(void) {
         cublasLtDestroy(g_cublaslt_handle);
         g_cublaslt_handle = nullptr;
     }
-    g_quant_calibrated = false;
 }

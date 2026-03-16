@@ -68,6 +68,8 @@ struct BpeVocab {
 
 static BpeVocab g_vocab = {0};
 
+static void gpu_tokenizer_unload_vocab_impl(void);
+
 // ============================================================================
 // Hash Table Helpers
 // ============================================================================
@@ -178,7 +180,7 @@ extern "C" int gpu_tokenizer_load_vocab(
     int num_merges
 ) {
     if (g_vocab.initialized) {
-        gpu_tokenizer_unload_vocab();
+        gpu_tokenizer_unload_vocab_impl();
     }
     
     // Allocate and copy token strings to device
@@ -226,12 +228,16 @@ extern "C" int gpu_tokenizer_load_vocab(
     return 0;
 }
 
-extern "C" void gpu_tokenizer_unload_vocab(void) {
+static void gpu_tokenizer_unload_vocab_impl(void) {
     if (g_vocab.tokens) { cudaFree(g_vocab.tokens); g_vocab.tokens = nullptr; }
     if (g_vocab.token_lengths) { cudaFree(g_vocab.token_lengths); g_vocab.token_lengths = nullptr; }
     if (g_vocab.merge_ht) { cudaFree(g_vocab.merge_ht); g_vocab.merge_ht = nullptr; }
     if (g_vocab.d_byte_tokens) { cudaFree(g_vocab.d_byte_tokens); g_vocab.d_byte_tokens = nullptr; }
     g_vocab.initialized = false;
+}
+
+extern "C" void gpu_tokenizer_unload_vocab(void) {
+    gpu_tokenizer_unload_vocab_impl();
 }
 
 // ============================================================================

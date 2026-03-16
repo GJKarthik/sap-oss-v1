@@ -54,6 +54,32 @@ struct FlashTileConfig {
 
 static FlashTileConfig g_tile_config = {0};
 
+__global__ void flash_attention_forward_kernel(
+    float* __restrict__ output,
+    const float* __restrict__ query,
+    const float* __restrict__ key,
+    const float* __restrict__ value,
+    const int batch_size,
+    const int num_heads,
+    const int seq_len,
+    const int head_dim,
+    const float scale,
+    const bool causal
+);
+
+__global__ void flash_attention_forward_fp16_kernel(
+    __half* __restrict__ output,
+    const __half* __restrict__ query,
+    const __half* __restrict__ key,
+    const __half* __restrict__ value,
+    const int batch_size,
+    const int num_heads,
+    const int seq_len,
+    const int head_dim,
+    const float scale,
+    const bool causal
+);
+
 /**
  * Query the GPU and select optimal tile sizes.
  * Safe to call multiple times; subsequent calls are no-ops.
@@ -125,17 +151,6 @@ static void flash_attention_auto_tune(void) {
         g_tile_config.tile_k_fp16 /= 2;
         fp16_smem = (size_t)(g_tile_config.tile_q_fp16 + 2 * g_tile_config.tile_k_fp16)
                     * HEAD_DIM * sizeof(__half);
-    }
-
-    // Request extended shared memory if needed (Ampere+)
-    if (sm >= 80) {
-        size_t needed = (fp32_smem > fp16_smem) ? fp32_smem : fp16_smem;
-        if (needed > 49152) {
-            cudaFuncSetAttribute(flash_attention_forward_kernel,
-                cudaFuncAttributeMaxDynamicSharedMemorySize, (int)needed);
-            cudaFuncSetAttribute(flash_attention_forward_fp16_kernel,
-                cudaFuncAttributeMaxDynamicSharedMemorySize, (int)needed);
-        }
     }
 
     g_tile_config.initialized = true;
@@ -543,12 +558,17 @@ extern "C" int flash_attention_forward(
     return (cudaGetLastError() == cudaSuccess) ? 0 : -1;
 }
 
-extern "C" int flash_attention_forward_fp16(
-    __half* output, const __half* query, const __half* key, const __half* value,
+int flash_attention_forward_fp16(
+    void* output_ptr, const void* query_ptr, const void* key_ptr, const void* value_ptr,
     int batch_size, int num_heads, int seq_len, int head_dim,
     float scale, int causal
 ) {
     flash_attention_auto_tune();
+
+    __half* output = static_cast<__half*>(output_ptr);
+    const __half* query = static_cast<const __half*>(query_ptr);
+    const __half* key = static_cast<const __half*>(key_ptr);
+    const __half* value = static_cast<const __half*>(value_ptr);
     
     const int tq = g_tile_config.tile_q_fp16;
     int num_q_blocks = (seq_len + tq - 1) / tq;

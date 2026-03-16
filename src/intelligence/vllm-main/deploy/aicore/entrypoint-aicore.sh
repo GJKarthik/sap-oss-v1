@@ -65,7 +65,15 @@ echo "[MODELS] Searching for models in ${MODEL_PATH}..."
 GGUF_FILES=$(find "${MODEL_PATH}" -name "*.gguf" 2>/dev/null || echo "")
 if [ -z "$GGUF_FILES" ]; then
     echo "[WARN] No .gguf files found in ${MODEL_PATH}"
-    
+
+    SAFETENSORS_INDEX=$(find "${MODEL_PATH}" -name "model.safetensors.index.json" -type f 2>/dev/null | head -1)
+    if [ -n "$SAFETENSORS_INDEX" ]; then
+        echo "[ERROR] Found sharded SafeTensors model directory: $(dirname "${SAFETENSORS_INDEX}")"
+        echo "[ERROR] This AI Core entrypoint launches llama-server, which is currently GGUF-only in this repo."
+        echo "[ERROR] Use the Zig gateway path for safetensors artifact validation, or stage a GGUF model for llama-server."
+        exit 1
+    fi
+
     # Check if model artifact is in nested directory
     NESTED_GGUF=$(find "${MODEL_PATH}" -type f -name "*.gguf" 2>/dev/null | head -1)
     if [ -n "$NESTED_GGUF" ]; then

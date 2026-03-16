@@ -172,7 +172,10 @@ pub const MojoLibrary = struct {
         }
 
         var handle = std.DynLib.open(lib_path) catch |err| {
-            std.log.err("Failed to load {s}: {}", .{ lib_path, err });
+            switch (err) {
+                error.FileNotFound => std.log.info("Optional Mojo library {s} not found", .{lib_path}),
+                else => std.log.warn("Failed to load Mojo library {s}: {}", .{ lib_path, err }),
+            }
             return error.LibraryNotFound;
         };
 

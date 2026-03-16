@@ -12,6 +12,7 @@ const posix = std.posix;
 const config_mod = @import("config.zig");
 const openai = @import("transport/openai.zig");
 const llm_backend = @import("llm/backend.zig");
+const model_artifact_mod = @import("llm/model_artifact.zig");
 const mangle = @import("mangle/mangle.zig");
 const service_router = @import("transport/service_router.zig");
 const batch_scheduler = @import("llm/batch_scheduler.zig");
@@ -125,6 +126,7 @@ pub const AppState = struct {
     router: service_router.Router,
     scheduler: batch_scheduler.BatchScheduler,
     toon_engine: ?llama_toon.ToonInferenceEngine, // Direct local inference with TOON
+    model_artifact: ?model_artifact_mod.ResolvedModelArtifact,
     engram_engine: ?*engram_draft_mod.EngramDraftEngine,
     engram_tokenizer: ?*gguf_tokenizer_mod.GgufTokenizer,
     engram_cache_path: ?[]const u8,
@@ -162,24 +164,74 @@ pub const AppState = struct {
             128, // head_dim
         );
 
-        const gguf_path_env = std.posix.getenv("GGUF_PATH");
+        const explicit_model_path = std.posix.getenv("GGUF_PATH") != null or
+            std.posix.getenv("SAFETENSORS_INDEX_PATH") != null or
+            std.posix.getenv("MODEL_PATH") != null;
+        const model_artifact: ?model_artifact_mod.ResolvedModelArtifact = model_artifact_mod.resolveFromEnv(allocator) catch |err| blk: {
+            std.log.warn("Model artifact discovery failed ({s}) — continuing without local model artifact", .{@errorName(err)});
+            break :blk null;
+        };
 
         // Initialize TOON inference engine (uses CUDA directly, no GpuContext needed)
         var toon_engine: ?llama_toon.ToonInferenceEngine = null;
         if (server_config.use_local_llama and server_config.toon_enabled) {
             var toon_config = llama_toon.ToonInferenceConfig.forT4();
-            if (gguf_path_env) |gguf_path| {
-                toon_config.gguf_path = gguf_path;
-                std.log.info("Loading GGUF model from: {s}", .{gguf_path});
+            var can_init_direct_toon = true;
+
+            if (model_artifact) |artifact| {
+                switch (artifact.kind) {
+                    .gguf_file => {
+                        const gguf_path = artifact.gguf_path.?;
+                        toon_config.gguf_path = gguf_path;
+                        std.log.info("Loading GGUF model from: {s}", .{gguf_path});
+                    },
+                    .safetensors_file, .safetensors_index => {
+                        std.log.info(
+                            "Validated local model artifact: kind={s} path={s} model_type={s}",
+                            .{
+                                artifact.kind.name(),
+                                artifact.primaryPath(),
+                                artifact.model_type orelse "unknown",
+                            },
+                        );
+                        if (artifact.kind == .safetensors_index) {
+                            std.log.info(
+                                "SafeTensors index references {d} shard(s) totalling {d} bytes",
+                                .{ artifact.shard_files.items.len, artifact.total_size_bytes },
+                            );
+                        }
+                        if (artifact.model_type) |model_type| {
+                            if (std.mem.eql(u8, model_type, "nemotron_h")) {
+                                can_init_direct_toon = false;
+                                std.log.warn(
+                                    "Nemotron-H artifacts are detected, but the runtime path is not implemented yet — direct inference remains disabled",
+                                    .{},
+                                );
+                            }
+                        }
+                        if (can_init_direct_toon) {
+                            toon_config.model_path = artifact.primaryPath();
+                            std.log.info("Loading SafeTensors model through CPU transformer path: {s}", .{artifact.primaryPath()});
+                        }
+                    },
+                }
+            } else if (explicit_model_path) {
+                can_init_direct_toon = false;
+                std.log.warn(
+                    "Local model path was configured but could not be resolved — direct TOON inference remains disabled",
+                    .{},
+                );
             }
 
-            toon_engine = llama_toon.ToonInferenceEngine.init(
-                allocator,
-                toon_config,
-            ) catch |err| blk: {
-                std.log.warn("TOON engine init failed ({}) — direct inference disabled", .{err});
-                break :blk null;
-            };
+            if (can_init_direct_toon) {
+                toon_engine = llama_toon.ToonInferenceEngine.init(
+                    allocator,
+                    toon_config,
+                ) catch |err| blk: {
+                    std.log.warn("TOON engine init failed ({}) — direct inference disabled", .{err});
+                    break :blk null;
+                };
+            }
         }
 
         var engram_cache_path: ?[]const u8 = null;
@@ -213,8 +265,8 @@ pub const AppState = struct {
 
         // Load GGUF tokenizer for real prompt token IDs in Engram signals.
         var engram_tokenizer: ?*gguf_tokenizer_mod.GgufTokenizer = null;
-        if (server_config.toon_enabled and gguf_path_env != null) {
-            engram_tokenizer = gguf_tokenizer_mod.GgufTokenizer.loadFromGGUF(allocator, gguf_path_env.?) catch |err| blk: {
+        if (server_config.toon_enabled and model_artifact != null and model_artifact.?.kind == .gguf_file) {
+            engram_tokenizer = gguf_tokenizer_mod.GgufTokenizer.loadFromGGUF(allocator, model_artifact.?.gguf_path.?) catch |err| blk: {
                 std.log.warn("GGUF tokenizer load failed ({}) — using hash fallback", .{err});
                 break :blk null;
             };
@@ -248,6 +300,9 @@ pub const AppState = struct {
             }
         }
 
+        var mangle_engine = try mangle.Engine.init(allocator, server_config.mangle_rules_path);
+        mangle_engine.setTensorRtAvailable(trt_engine != null);
+
         state.* = .{
             .allocator = allocator,
             .cfg = server_config,
@@ -255,10 +310,11 @@ pub const AppState = struct {
             .circuit_breaker = try cb.CircuitBreaker.init(allocator, "llm-backend", .{}),
             .gpu_context = state.gpu_context,
             .backend = try llm_backend.Client.init(allocator, server_config.backend_url),
-            .mangle_engine = try mangle.Engine.init(allocator, server_config.mangle_rules_path),
+            .mangle_engine = mangle_engine,
             .router = service_router.Router.init(allocator, svc_cfg),
             .scheduler = batch_scheduler.BatchScheduler.init(allocator, .{}, kv_cache),
             .toon_engine = toon_engine,
+            .model_artifact = model_artifact,
             .engram_engine = engram_engine,
             .engram_tokenizer = engram_tokenizer,
             .engram_cache_path = engram_cache_path,
@@ -308,6 +364,9 @@ pub const AppState = struct {
         if (self.toon_engine) |*engine| {
             engine.deinit();
         }
+        if (self.model_artifact) |*artifact| {
+            artifact.deinit();
+        }
         if (self.engram_engine) |engine| {
             if (self.engram_cache_path) |snapshot_path| {
                 engine.saveToFile(snapshot_path) catch |err| {
@@ -343,6 +402,18 @@ pub const AppState = struct {
             std.log.info("TOON format enabled — 40-60% token savings on LLM calls", .{});
             if (self.toon_engine != null) {
                 std.log.info("  Direct llama.cpp inference enabled", .{});
+            }
+            if (self.model_artifact) |artifact| {
+                std.log.info(
+                    "  Local model artifact: kind={s} path={s}",
+                    .{ artifact.kind.name(), artifact.primaryPath() },
+                );
+                if (artifact.model_type) |model_type| {
+                    std.log.info("  Artifact model_type: {s}", .{model_type});
+                }
+                if (self.toon_engine == null and !artifact.directToonReady()) {
+                    std.log.info("  Artifact validated, but direct inference is not wired for this format yet", .{});
+                }
             }
             if (self.engram_engine != null) {
                 std.log.info("  Engram ensemble memory enabled", .{});
@@ -880,6 +951,14 @@ fn handleMangleReload(state: *AppState, res: *http.Response) void {
 fn handleGpuInfo(state: *AppState, res: *http.Response) void {
     res.status = 200;
     res.setHeader("Content-Type", "application/json");
+    const artifact_kind = if (state.model_artifact) |artifact| artifact.kind.name() else "none";
+    const artifact_model_type = if (state.model_artifact) |artifact| artifact.model_type orelse "unknown" else "unknown";
+    const artifact_direct_ready = if (state.toon_engine != null)
+        "true"
+    else if (state.model_artifact) |artifact|
+        if (artifact.directToonReady()) "true" else "false"
+    else
+        "false";
     if (state.gpu_context) |ctx| {
         const device_info = ctx.getDeviceInfo();
         const gpu_stats = ctx.getStats();
@@ -914,7 +993,10 @@ fn handleGpuInfo(state: *AppState, res: *http.Response) void {
             \\  "inference": {{
             \\    "toon_enabled": {s},
             \\    "toon_engine_ready": {s},
-            \\    "streaming_enabled": {s}
+            \\    "streaming_enabled": {s},
+            \\    "model_artifact_kind": "{s}",
+            \\    "model_artifact_model_type": "{s}",
+            \\    "model_artifact_direct_ready": {s}
             \\  }}
             \\}}
         , .{
@@ -938,6 +1020,9 @@ fn handleGpuInfo(state: *AppState, res: *http.Response) void {
             if (state.cfg.toon_enabled) "true" else "false",
             if (state.toon_engine != null) "true" else "false",
             if (state.cfg.streaming_enabled) "true" else "false",
+            artifact_kind,
+            artifact_model_type,
+            artifact_direct_ready,
         }) catch {
             res.status = 500;
             res.body = "{\"error\":\"GPU info generation failed\"}";

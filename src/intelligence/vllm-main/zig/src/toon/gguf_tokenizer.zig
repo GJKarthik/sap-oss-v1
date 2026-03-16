@@ -62,11 +62,11 @@ pub const MergePair = struct {
 /// Chat template style auto-detected from GGUF metadata.
 /// Used by the inference engine to format prompts correctly for each model family.
 pub const ChatTemplateStyle = enum {
-    chatml,   // Qwen, Yi, OpenChat — im_start/im_end
-    llama3,   // LLaMA-3 — start_header_id/end_header_id/eot_id
-    zephyr,   // Zephyr/old-Mistral — system/user/assistant tags with </s>
-    mistral,  // Mistral-Instruct — [INST] / [/INST]
-    generic,  // Unknown model — plain text, no special framing
+    chatml, // Qwen, Yi, OpenChat — im_start/im_end
+    llama3, // LLaMA-3 — start_header_id/end_header_id/eot_id
+    zephyr, // Zephyr/old-Mistral — system/user/assistant tags with </s>
+    mistral, // Mistral-Instruct — [INST] / [/INST]
+    generic, // Unknown model — plain text, no special framing
 
     pub fn name(self: ChatTemplateStyle) []const u8 {
         return switch (self) {
@@ -100,7 +100,7 @@ pub const GgufTokenizer = struct {
     // -- Additional special token IDs detected from vocab --
     im_start_id: ?u32 = null,
     im_end_id: ?u32 = null,
-    eot_id: ?u32 = null,        // endoftext or eot_id
+    eot_id: ?u32 = null, // endoftext or eot_id
     start_header_id: ?u32 = null,
 
     // -- Model metadata detected from GGUF --
@@ -140,48 +140,68 @@ pub const GgufTokenizer = struct {
         if (version < 2 or version > 3) return error.UnsupportedGGUFVersion;
         const n_kv = std.mem.readInt(u64, data[16..24], .little);
 
-        const tok = try allocator.create(GgufTokenizer);
-        tok.* = .{
-            .allocator = allocator,
-            .vocab = &.{},
-            .scores = &.{},
-            .token_to_id = std.StringHashMap(u32).init(allocator),
-            .merges = &.{},
-            .merge_map = MergeMap.init(allocator),
-        };
+        const tok = try initEmpty(allocator);
         errdefer tok.deinit();
 
         try tok.parseMetadata(data, 24, n_kv);
+        tok.finalizeSpecialTokens();
+        log.info("GgufTokenizer loaded: vocab={} merges={} arch={s} chat_style={s}", .{ tok.vocab.len, tok.merges.len, tok.getModelArch(), tok.chat_style.name() });
+        return tok;
+    }
 
-        // Detect special token IDs from vocab strings
-        for (tok.vocab, 0..) |s, id| {
-            const tid: u32 = @intCast(id);
-            if (std.mem.eql(u8, s, "<s>") or std.mem.eql(u8, s, "<bos>")) tok.bos_id = tid;
-            if (std.mem.eql(u8, s, "</s>") or std.mem.eql(u8, s, "<eos>")) tok.eos_id = tid;
-            if (std.mem.eql(u8, s, "<unk>")) tok.unk_id = tid;
-            // ChatML tokens
-            if (std.mem.eql(u8, s, TOK_IM_START)) tok.im_start_id = tid;
-            if (std.mem.eql(u8, s, TOK_IM_END)) tok.im_end_id = tid;
-            if (std.mem.eql(u8, s, TOK_ENDOFTEXT)) tok.eot_id = tid;
-            // LLaMA-3 tokens
-            if (std.mem.eql(u8, s, TOK_EOT_ID)) tok.eot_id = tid;
-            if (std.mem.eql(u8, s, TOK_START_HEADER)) tok.start_header_id = tid;
+    pub fn loadFromHfAssets(allocator: Allocator, model_dir: []const u8) !*GgufTokenizer {
+        const tok = try initEmpty(allocator);
+        errdefer tok.deinit();
+
+        const vocab_path = try std.fs.path.join(allocator, &.{ model_dir, "vocab.json" });
+        defer allocator.free(vocab_path);
+        const merges_path = try std.fs.path.join(allocator, &.{ model_dir, "merges.txt" });
+        defer allocator.free(merges_path);
+
+        const vocab_data = try std.fs.cwd().readFileAlloc(allocator, vocab_path, 32 * 1024 * 1024);
+        defer allocator.free(vocab_data);
+        const parsed_vocab = try std.json.parseFromSlice(std.json.Value, allocator, vocab_data, .{});
+        defer parsed_vocab.deinit();
+        if (parsed_vocab.value != .object) return error.InvalidTokenizerAssets;
+
+        var max_id: usize = 0;
+        var count: usize = 0;
+        var vocab_iter = parsed_vocab.value.object.iterator();
+        while (vocab_iter.next()) |entry| {
+            if (entry.value_ptr.* != .integer) continue;
+            const id = entry.value_ptr.integer;
+            if (id < 0) continue;
+            const token_id: usize = @intCast(id);
+            if (token_id > max_id) max_id = token_id;
+            count += 1;
         }
 
-        // Auto-detect chat template style from metadata + vocab
-        tok.chat_style = tok.detectChatStyle();
+        tok.vocab = try allocator.alloc([]const u8, max_id + 1);
+        for (tok.vocab) |*slot| slot.* = "";
+        tok.scores = try allocator.alloc(f32, tok.vocab.len);
+        @memset(tok.scores, 0.0);
 
-        log.info("GgufTokenizer loaded: vocab={} merges={} arch={s} chat_style={s}", .{
-            tok.vocab.len,
-            tok.merges.len,
-            tok.getModelArch(),
-            tok.chat_style.name(),
-        });
+        vocab_iter = parsed_vocab.value.object.iterator();
+        while (vocab_iter.next()) |entry| {
+            if (entry.value_ptr.* != .integer) continue;
+            const id = entry.value_ptr.integer;
+            if (id < 0) continue;
+            const token_id: usize = @intCast(id);
+            const owned = try allocator.dupe(u8, entry.key_ptr.*);
+            tok.vocab[token_id] = owned;
+            try tok.token_to_id.put(owned, @intCast(token_id));
+        }
+
+        try tok.loadHfMerges(merges_path);
+        try tok.loadModelArchFromConfig(model_dir);
+        tok.finalizeSpecialTokens();
+
+        log.info("HF tokenizer loaded: vocab={} merges={} arch={s} chat_style={s}", .{ tok.vocab.len, tok.merges.len, tok.getModelArch(), tok.chat_style.name() });
         return tok;
     }
 
     pub fn deinit(self: *GgufTokenizer) void {
-        for (self.vocab) |s| self.allocator.free(s);
+        for (self.vocab) |s| if (s.len != 0) self.allocator.free(s);
         self.allocator.free(self.vocab);
         self.allocator.free(self.scores);
         self.token_to_id.deinit();
@@ -194,6 +214,97 @@ pub const GgufTokenizer = struct {
     pub fn getModelArch(self: *const GgufTokenizer) []const u8 {
         if (self.model_arch_len == 0) return "unknown";
         return self.model_arch[0..self.model_arch_len];
+    }
+
+    fn initEmpty(allocator: Allocator) !*GgufTokenizer {
+        const tok = try allocator.create(GgufTokenizer);
+        tok.* = .{
+            .allocator = allocator,
+            .vocab = &.{},
+            .scores = &.{},
+            .token_to_id = std.StringHashMap(u32).init(allocator),
+            .merges = &.{},
+            .merge_map = MergeMap.init(allocator),
+        };
+        return tok;
+    }
+
+    fn finalizeSpecialTokens(self: *GgufTokenizer) void {
+        for (self.vocab, 0..) |s, id| {
+            const tid: u32 = @intCast(id);
+            if (std.mem.eql(u8, s, "<s>") or std.mem.eql(u8, s, "<bos>")) self.bos_id = tid;
+            if (std.mem.eql(u8, s, "</s>") or std.mem.eql(u8, s, "<eos>")) self.eos_id = tid;
+            if (std.mem.eql(u8, s, "<unk>")) self.unk_id = tid;
+            if (std.mem.eql(u8, s, TOK_IM_START)) self.im_start_id = tid;
+            if (std.mem.eql(u8, s, TOK_IM_END)) self.im_end_id = tid;
+            if (std.mem.eql(u8, s, TOK_ENDOFTEXT)) self.eot_id = tid;
+            if (std.mem.eql(u8, s, TOK_EOT_ID)) self.eot_id = tid;
+            if (std.mem.eql(u8, s, TOK_START_HEADER)) self.start_header_id = tid;
+        }
+        self.chat_style = self.detectChatStyle();
+    }
+
+    fn loadHfMerges(self: *GgufTokenizer, merges_path: []const u8) !void {
+        const merges_data = try std.fs.cwd().readFileAlloc(self.allocator, merges_path, 16 * 1024 * 1024);
+        defer self.allocator.free(merges_data);
+
+        var merge_arr = std.ArrayListUnmanaged(MergePair).empty;
+        errdefer merge_arr.deinit(self.allocator);
+
+        var rank: u32 = 0;
+        var lines = std.mem.splitScalar(u8, merges_data, '\n');
+        while (lines.next()) |line| {
+            const raw = std.mem.trim(u8, line, " \r\t");
+            if (raw.len == 0 or raw[0] == '#') continue;
+
+            var parts = std.mem.splitScalar(u8, raw, ' ');
+            const left_str = parts.next() orelse continue;
+            const right_str = parts.next() orelse continue;
+            const left_id = self.token_to_id.get(left_str) orelse {
+                rank += 1;
+                continue;
+            };
+            const right_id = self.token_to_id.get(right_str) orelse {
+                rank += 1;
+                continue;
+            };
+            const merged_str = try std.mem.concat(self.allocator, u8, &.{ left_str, right_str });
+            defer self.allocator.free(merged_str);
+            const result_id = self.token_to_id.get(merged_str) orelse {
+                rank += 1;
+                continue;
+            };
+
+            try merge_arr.append(self.allocator, .{
+                .left = left_id,
+                .right = right_id,
+                .result = result_id,
+                .score = @floatFromInt(rank),
+            });
+            rank += 1;
+        }
+
+        self.merges = try merge_arr.toOwnedSlice(self.allocator);
+        for (self.merges) |merge| {
+            try self.merge_map.put(mergeKey(merge.left, merge.right), merge.result);
+        }
+    }
+
+    fn loadModelArchFromConfig(self: *GgufTokenizer, model_dir: []const u8) !void {
+        const config_path = try std.fs.path.join(self.allocator, &.{ model_dir, "config.json" });
+        defer self.allocator.free(config_path);
+        const config_data = std.fs.cwd().readFileAlloc(self.allocator, config_path, 4 * 1024 * 1024) catch return;
+        defer self.allocator.free(config_data);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, config_data, .{}) catch return;
+        defer parsed.deinit();
+        if (parsed.value != .object) return;
+        const model_type = parsed.value.object.get("model_type") orelse return;
+        if (model_type != .string) return;
+
+        const copy_len = @min(model_type.string.len, self.model_arch.len);
+        @memcpy(self.model_arch[0..copy_len], model_type.string[0..copy_len]);
+        self.model_arch_len = @intCast(copy_len);
     }
 
     // =========================================================================
@@ -235,8 +346,12 @@ pub const GgufTokenizer = struct {
     ///   - endoftext
     pub fn isEos(self: *const GgufTokenizer, token: u32) bool {
         if (token == self.eos_id) return true;
-        if (self.im_end_id) |id| { if (token == id) return true; }
-        if (self.eot_id) |id| { if (token == id) return true; }
+        if (self.im_end_id) |id| {
+            if (token == id) return true;
+        }
+        if (self.eot_id) |id| {
+            if (token == id) return true;
+        }
         return false;
     }
 
@@ -268,8 +383,9 @@ pub const GgufTokenizer = struct {
         if (tokens.items.len >= 6) {
             log.info("buildChatTokens: style={s} n={} first6=[{},{},{},{},{},{}]", .{
                 self.chat_style.name(), tokens.items.len,
-                tokens.items[0], tokens.items[1], tokens.items[2],
-                tokens.items[3], tokens.items[4], tokens.items[5],
+                tokens.items[0],        tokens.items[1],
+                tokens.items[2],        tokens.items[3],
+                tokens.items[4],        tokens.items[5],
             });
         }
 

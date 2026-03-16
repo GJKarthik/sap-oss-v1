@@ -64,27 +64,29 @@ pub const ToonInferenceConfig = struct {
     // Model configuration
     model_name: []const u8 = "phi-2", // Model name for Mangle lookup
     context_length: u32 = 4096,
-    
+
     // TOON output configuration
     toon_enabled: bool = true,
     max_output_tokens: u32 = 256, // TOON outputs are shorter
     request_timeout_ms: u32 = 120_000,
     decode_trace: bool = false,
     decode_trace_every: u32 = 16,
-    
+
     // GPU/Optimization
     n_gpu_layers: i32 = -1, // All layers on GPU
-    
+
     // Batching for concurrent users
     batch_size: u32 = 512,
-    
+
     // T4-optimized settings
     flash_attn: bool = true,
     kv_cache_type: KVCacheType = .q8_0,
 
     // Optional GGUF model path — if provided, loads real weights from file
     gguf_path: ?[]const u8 = null,
-    
+    // Optional generic model path — supports single-file and sharded safetensors
+    model_path: ?[]const u8 = null,
+
     pub fn forT4() ToonInferenceConfig {
         return .{
             .model_name = "phi-2",
@@ -122,22 +124,22 @@ pub const KVCacheType = enum {
 const SimpleTokenizer = struct {
     allocator: Allocator,
     vocab_size: u32,
-    
+
     // Special tokens
     bos_token: u32 = 1,
     eos_token: u32 = 2,
     pad_token: u32 = 0,
-    
+
     // Token offset: byte values are mapped to [byte_offset .. byte_offset+256)
     const byte_offset: u32 = 256;
-    
+
     pub fn init(allocator: Allocator, vocab_size: u32) SimpleTokenizer {
         return .{
             .allocator = allocator,
             .vocab_size = vocab_size,
         };
     }
-    
+
     /// Encode UTF-8 text to token IDs.
     /// Layout: [BOS] [byte tokens...]
     /// Each byte in the input is mapped to (byte_value + byte_offset).
@@ -146,24 +148,24 @@ const SimpleTokenizer = struct {
         errdefer tokens.deinit(self.allocator);
 
         try tokens.append(self.allocator, self.bos_token);
-        
+
         for (text) |byte| {
             const token = @as(u32, byte) + byte_offset;
             if (token < self.vocab_size) {
                 try tokens.append(self.allocator, token);
             }
         }
-        
+
         return try tokens.toOwnedSlice(self.allocator);
     }
-    
+
     /// Decode token IDs back to UTF-8 text.
     /// Skips special tokens (BOS, EOS, PAD) and maps byte-range tokens back
     /// to their original byte values.
     pub fn decode(self: *const SimpleTokenizer, tokens: []const u32) ![]u8 {
         var text: std.ArrayListUnmanaged(u8) = .empty;
         errdefer text.deinit(self.allocator);
-        
+
         for (tokens) |token| {
             if (token == self.bos_token or token == self.eos_token or token == self.pad_token) {
                 continue;
@@ -172,10 +174,10 @@ const SimpleTokenizer = struct {
                 try text.append(self.allocator, @intCast(token - byte_offset));
             }
         }
-        
+
         return try text.toOwnedSlice(self.allocator);
     }
-    
+
     pub fn isEos(self: *const SimpleTokenizer, token: u32) bool {
         return token == self.eos_token;
     }
@@ -335,17 +337,17 @@ pub const ToonSampler = struct {
     top_p: f32 = 0.9,
     top_k: u32 = 40,
     repeat_penalty: f32 = 1.1,
-    
+
     // TOON-specific stop tokens
     toon_stop_tokens: []const []const u8 = &[_][]const u8{
         "\n\n", // Double newline ends TOON
-        " \n",  // Space-newline
+        " \n", // Space-newline
     },
-    
+
     pub fn init(allocator: Allocator) ToonSampler {
         return .{ .allocator = allocator };
     }
-    
+
     /// Check if output should stop (TOON-aware)
     pub fn shouldStop(self: *ToonSampler, output: []const u8) bool {
         for (self.toon_stop_tokens) |stop| {
@@ -355,7 +357,7 @@ pub const ToonSampler = struct {
         }
         return false;
     }
-    
+
     /// Sample next token from logits using top-k + top-p
     pub fn sample(self: *ToonSampler, logits: []f32) u32 {
         // Apply temperature
@@ -364,11 +366,11 @@ pub const ToonSampler = struct {
                 l.* /= self.temperature;
             }
         }
-        
+
         // Simple greedy for now (real impl would do top-k, top-p)
         return llama.sampleGreedy(logits);
     }
-    
+
     /// Validate TOON output structure
     pub fn validateToonOutput(self: *ToonSampler, output: []const u8) bool {
         _ = self;
@@ -385,7 +387,7 @@ pub const ToonInferenceEngine = struct {
     allocator: Allocator,
     config: ToonInferenceConfig,
     toon_sampler: ToonSampler,
-    
+
     // llama model components (CPU fallback)
     model: ?*Model = null,
     model_config: ?ModelConfig = null,
@@ -393,13 +395,13 @@ pub const ToonInferenceEngine = struct {
     tokenizer: ?SimpleTokenizer = null,
     /// BPE tokenizer loaded from GGUF vocab (preferred over SimpleTokenizer when available)
     gguf_tokenizer: ?*GgufTokenizer = null,
-    
+
     // CUDA GPU forward pass (used when available — 91.5 TPS on T4)
     cuda_forward: ?*CudaForwardPass = null,
     cuda_backend: ?*CudaBackend = null,
     gpu_weights: ?*GpuModelWeights = null,
     mmap_data: ?[]align(std.heap.page_size_min) u8 = null,
-    
+
     // Speculative decoding (DART): batch logits buffer + n-gram draft table
     batch_logits: ?[]f32 = null, // K * vocab_size for batch verification
     spec_k: u32 = 8, // number of draft tokens per cycle
@@ -414,7 +416,7 @@ pub const ToonInferenceEngine = struct {
     total_output_tokens: u64 = 0,
     total_json_equivalent_tokens: u64 = 0, // Measured JSON-equivalent for savings calculation
     total_requests: u64 = 0,
-    
+
     pub fn init(allocator: Allocator, config: ToonInferenceConfig) !ToonInferenceEngine {
         var resolved_config = config;
         resolved_config.request_timeout_ms = envU32("PRIVATELLM_TOON_TIMEOUT_MS", resolved_config.request_timeout_ms);
@@ -426,7 +428,7 @@ pub const ToonInferenceEngine = struct {
             .config = resolved_config,
             .toon_sampler = ToonSampler.init(allocator),
         };
-        
+
         // Load model weights — try GPU path first (CUDA), fall back to CPU.
         if (resolved_config.gguf_path) |gguf_path| {
             // Try GPU path: mmap GGUF → upload tensors to GPU → CudaForwardPass
@@ -450,12 +452,25 @@ pub const ToonInferenceEngine = struct {
                 std.log.warn("GgufTokenizer load failed ({s}), using byte-level fallback", .{@errorName(err)});
                 break :blk null;
             };
+        } else if (resolved_config.model_path) |model_path| {
+            std.log.info("Loading model via generic loader: {s}", .{model_path});
+            engine.model = try llama.loadModel(allocator, model_path);
+            const actual_cfg = engine.model.?.config;
+            engine.model_config = actual_cfg;
+            engine.kv_cache = try KVCache.init(allocator, actual_cfg);
+            engine.tokenizer = SimpleTokenizer.init(allocator, actual_cfg.vocab_size);
+
+            const model_dir = std.fs.path.dirname(model_path) orelse ".";
+            engine.gguf_tokenizer = GgufTokenizer.loadFromHfAssets(allocator, model_dir) catch |err| blk: {
+                std.log.warn("HF tokenizer load failed ({s}), using byte-level fallback", .{@errorName(err)});
+                break :blk null;
+            };
         } else {
             // No GGUF file — use default config from model name
             var cfg = ModelConfig.fromName(resolved_config.model_name);
             cfg.context_length = resolved_config.context_length;
             engine.model_config = cfg;
-            
+
             engine.model = try Model.load(allocator, cfg);
             engine.kv_cache = try KVCache.init(allocator, cfg);
             engine.tokenizer = SimpleTokenizer.init(allocator, cfg.vocab_size);
@@ -463,7 +478,7 @@ pub const ToonInferenceEngine = struct {
 
         return engine;
     }
-    
+
     pub fn deinit(self: *ToonInferenceEngine) void {
         if (self.gguf_tokenizer) |gt| gt.deinit();
         if (self.model) |m| m.deinit();
@@ -473,7 +488,7 @@ pub const ToonInferenceEngine = struct {
         if (self.cuda_backend) |cb| cb.deinit();
         if (self.mmap_data) |md| std.posix.munmap(md);
     }
-    
+
     // TOON system prompt — plain text, no model-specific framing.
     // The framing (ChatML, LLaMA-3, etc.) is handled by GgufTokenizer.buildChatTokens()
     // using special token IDs detected from the GGUF vocab at load time.
@@ -521,7 +536,7 @@ pub const ToonInferenceEngine = struct {
 
         return toon_output;
     }
-    
+
     /// Estimate how many tokens the equivalent JSON output would require.
     /// Counts TOON key:value pairs and adds the JSON structural overhead
     /// (braces, quotes, commas, colons with quotes) per field.
@@ -678,7 +693,6 @@ pub const ToonInferenceEngine = struct {
             std.log.warn("generate() called but no model weights loaded for '{s}'", .{self.config.model_name});
             return error.ModelNotLoaded;
         }
-
 
         const prefill_start_ns: i128 = std.time.nanoTimestamp();
         std.log.info("generate: prefill {} tokens ({s})", .{ tokens.len, if (use_gpu) "GPU" else "CPU" });
@@ -884,7 +898,7 @@ pub const ToonInferenceEngine = struct {
         else
             self.tokenizer.?.decode(output_tokens.items);
     }
-    
+
     /// Extract and validate TOON output from raw model output.
     /// The decoded output has special tokens already stripped by GgufTokenizer.decode(),
     /// so no need to search for model-specific markers.
@@ -899,7 +913,7 @@ pub const ToonInferenceEngine = struct {
 
         return try self.allocator.dupe(u8, trimmed);
     }
-    
+
     /// Get stats about TOON token savings based on actual measurements.
     /// Savings are calculated from the measured JSON-equivalent token counts
     /// rather than an assumed multiplier.
@@ -914,17 +928,17 @@ pub const ToonInferenceEngine = struct {
                 .json_equivalent_tokens = 0,
                 .savings_percent = 0,
             };
-        
+
         const avg_input = @as(f32, @floatFromInt(self.total_input_tokens)) / req_f;
         const avg_output = @as(f32, @floatFromInt(self.total_output_tokens)) / req_f;
         const avg_json_equiv = @as(f32, @floatFromInt(self.total_json_equivalent_tokens)) / req_f;
-        
+
         // Savings = (json_tokens - toon_tokens) / json_tokens * 100
         const savings = if (avg_json_equiv > 0)
             (avg_json_equiv - avg_output) / avg_json_equiv * 100.0
         else
             0;
-        
+
         return .{
             .total_requests = self.total_requests,
             .avg_input_tokens = avg_input,
@@ -933,7 +947,7 @@ pub const ToonInferenceEngine = struct {
             .savings_percent = savings,
         };
     }
-    
+
     /// Check if model is loaded and ready for inference
     pub fn isModelLoaded(self: *ToonInferenceEngine) bool {
         return self.cuda_forward != null or self.model != null;
@@ -1020,30 +1034,12 @@ pub const ToonInferenceEngine = struct {
                 const val = std.mem.readInt(u32, mmap_data[gpos..][0..4], .little);
                 // Order matters: longer/more-specific suffixes must come first
                 // because endsWith("expert_used_count", "expert_count") == true.
-                if (endsWith(key, "embedding_length")) model_dim = val
-                else if (endsWith(key, "attention.head_count_kv")) model_n_kv_heads = val
-                else if (endsWith(key, "attention.head_count")) model_n_heads = val
-                else if (endsWith(key, "attention.key_length")) model_head_dim = val
-                else if (endsWith(key, "expert_feed_forward_length")) model_expert_ff = val
-                else if (endsWith(key, "feed_forward_length")) model_ff_dim = val
-                else if (endsWith(key, "expert_used_count")) model_n_experts_used = val
-                else if (endsWith(key, "expert_shared_count")) model_shared_expert_count = val
-                else if (endsWith(key, "expert_count")) model_n_experts = val
-                else if (endsWith(key, "context_length")) model_ctx_len = val
-                else if (endsWith(key, "block_count")) model_n_layers = val
-                // Hybrid DeltaNet fields (Qwen3.5)
-                else if (endsWith(key, "ssm.conv_kernel")) model_ssm_conv_kernel = val
-                else if (endsWith(key, "ssm.state_size")) model_ssm_state_size = val
-                else if (endsWith(key, "ssm.group_count")) model_ssm_group_count = val
-                else if (endsWith(key, "ssm.time_step_rank")) model_ssm_time_step_rank = val
-                else if (endsWith(key, "ssm.inner_size")) model_ssm_inner_size = val
-                else if (endsWith(key, "full_attention_interval")) model_full_attn_interval = val
-                else if (endsWith(key, "rope.dimension_count")) model_rope_dim = val
-                else if (endsWith(key, "attention.value_length")) model_attn_head_dim = val;
+                if (endsWith(key, "embedding_length")) model_dim = val else if (endsWith(key, "attention.head_count_kv")) model_n_kv_heads = val else if (endsWith(key, "attention.head_count")) model_n_heads = val else if (endsWith(key, "attention.key_length")) model_head_dim = val else if (endsWith(key, "expert_feed_forward_length")) model_expert_ff = val else if (endsWith(key, "feed_forward_length")) model_ff_dim = val else if (endsWith(key, "expert_used_count")) model_n_experts_used = val else if (endsWith(key, "expert_shared_count")) model_shared_expert_count = val else if (endsWith(key, "expert_count")) model_n_experts = val else if (endsWith(key, "context_length")) model_ctx_len = val else if (endsWith(key, "block_count")) model_n_layers = val
+                    // Hybrid DeltaNet fields (Qwen3.5)
+                else if (endsWith(key, "ssm.conv_kernel")) model_ssm_conv_kernel = val else if (endsWith(key, "ssm.state_size")) model_ssm_state_size = val else if (endsWith(key, "ssm.group_count")) model_ssm_group_count = val else if (endsWith(key, "ssm.time_step_rank")) model_ssm_time_step_rank = val else if (endsWith(key, "ssm.inner_size")) model_ssm_inner_size = val else if (endsWith(key, "full_attention_interval")) model_full_attn_interval = val else if (endsWith(key, "rope.dimension_count")) model_rope_dim = val else if (endsWith(key, "attention.value_length")) model_attn_head_dim = val;
             } else if (vtype == 6) { // F32
                 const val: f32 = @bitCast(std.mem.readInt(u32, mmap_data[gpos..][0..4], .little));
-                if (endsWith(key, "rope.freq_base")) model_rope_base = val
-                else if (endsWith(key, "layer_norm_rms_epsilon")) model_eps = val;
+                if (endsWith(key, "rope.freq_base")) model_rope_base = val else if (endsWith(key, "layer_norm_rms_epsilon")) model_eps = val;
             }
             gpos = skipGGUFValue(mmap_data, gpos, vtype);
         }
@@ -1187,7 +1183,7 @@ pub const ToonInferenceEngine = struct {
                     lw.w_up = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ffn_down.weight")) {
                     lw.w_down = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
-                // Gated DeltaNet tensors (Qwen3.5 hybrid layers)
+                    // Gated DeltaNet tensors (Qwen3.5 hybrid layers)
                 } else if (std.mem.eql(u8, suffix, "attn_qkv.weight")) {
                     lw.attn_qkv = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_gate.weight")) {
@@ -1466,19 +1462,19 @@ pub const ToonInferenceEngine = struct {
     fn skipGGUFValue(data: []const u8, start: usize, vtype: u32) usize {
         var p = start;
         switch (vtype) {
-            0 => p += 1,  // UINT8
-            1 => p += 1,  // INT8
-            2 => p += 2,  // UINT16
-            3 => p += 2,  // INT16
-            4 => p += 4,  // UINT32
-            5 => p += 4,  // INT32
-            6 => p += 4,  // FLOAT32
-            7 => p += 1,  // BOOL
-            8 => {        // STRING
+            0 => p += 1, // UINT8
+            1 => p += 1, // INT8
+            2 => p += 2, // UINT16
+            3 => p += 2, // INT16
+            4 => p += 4, // UINT32
+            5 => p += 4, // INT32
+            6 => p += 4, // FLOAT32
+            7 => p += 1, // BOOL
+            8 => { // STRING
                 const len = std.mem.readInt(u64, data[p..][0..8], .little);
                 p += 8 + @as(usize, @intCast(len));
             },
-            9 => {        // ARRAY
+            9 => { // ARRAY
                 const elem_type = std.mem.readInt(u32, data[p..][0..4], .little);
                 p += 4;
                 const count = std.mem.readInt(u64, data[p..][0..8], .little);
@@ -1530,7 +1526,7 @@ pub const ToonBatchEngine = struct {
     pipeline: *async_pipeline.AsyncPipeline,
     pending: std.ArrayListUnmanaged(ToonBatchRequest),
     max_batch_size: u32,
-    
+
     pub fn init(allocator: Allocator, ctx: *async_pipeline.gpu_context.GpuContext, config: ToonInferenceConfig) !ToonBatchEngine {
         const pipeline = try async_pipeline.AsyncPipeline.init(allocator, ctx, .{
             .num_slots = 3, // Triple buffering
@@ -1547,34 +1543,34 @@ pub const ToonBatchEngine = struct {
             .max_batch_size = 32, // T4 can handle 30-40 with TOON
         };
     }
-    
+
     pub fn deinit(self: *ToonBatchEngine) void {
         self.pending.deinit(self.allocator);
         self.engine.deinit();
         self.pipeline.deinit();
     }
-    
+
     /// Add request to batch
     pub fn addRequest(self: *ToonBatchEngine, request: ToonBatchRequest) !void {
         try self.pending.append(self.allocator, request);
-        
+
         // Auto-flush if batch is full
         if (self.pending.items.len >= self.max_batch_size) {
             _ = try self.flush();
         }
     }
-    
+
     /// Process all pending requests using the high-performance Async Pipeline
     pub fn flush(self: *ToonBatchEngine) ![]ToonBatchResponse {
         if (self.pending.items.len == 0) {
             return &[_]ToonBatchResponse{};
         }
-        
+
         var responses: std.ArrayListUnmanaged(ToonBatchResponse) = .empty;
-        
+
         // Strategy: Pipeline each request through the overlapped GPU stages
         // In a more complex engine, we would batch MULTIPLE requests into ONE slot.
-        // For this optimization, we map requests to pipeline slots to maximize 
+        // For this optimization, we map requests to pipeline slots to maximize
         // concurrent H2D/Compute/D2H throughput.
         for (self.pending.items) |request| {
             const start_time = std.time.milliTimestamp();
@@ -1606,13 +1602,13 @@ pub const ToonBatchEngine = struct {
                 .latency_ms = @intCast(end_time - start_time),
             });
         }
-        
+
         // Clear pending
         self.pending.clearRetainingCapacity();
-        
+
         return try responses.toOwnedSlice(self.allocator);
     }
-    
+
     /// Get current batch size
     pub fn pendingCount(self: *ToonBatchEngine) usize {
         return self.pending.items.len;
@@ -1626,7 +1622,7 @@ pub const ToonBatchEngine = struct {
 test "toon sampler stop detection" {
     const allocator = std.testing.allocator;
     var sampler = ToonSampler.init(allocator);
-    
+
     try std.testing.expect(sampler.shouldStop("answer:yes\n\n"));
     try std.testing.expect(!sampler.shouldStop("answer:yes"));
 }
@@ -1634,7 +1630,7 @@ test "toon sampler stop detection" {
 test "toon output validation" {
     const allocator = std.testing.allocator;
     var sampler = ToonSampler.init(allocator);
-    
+
     try std.testing.expect(sampler.validateToonOutput("answer:yes confidence:0.95"));
     try std.testing.expect(!sampler.validateToonOutput("invalid output"));
 }

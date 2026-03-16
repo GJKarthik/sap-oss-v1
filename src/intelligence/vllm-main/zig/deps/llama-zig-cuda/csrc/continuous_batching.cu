@@ -718,11 +718,14 @@ embedding_gather_kernel(
  *       then their KV entries are written to pages.
  */
 extern "C" int continuous_batch_step(
-    __half* output_logits,     // [num_sequences, vocab_size]
-    const __half* model_weights,
+    void* output_logits_ptr,   // [num_sequences, vocab_size] FP16
+    const void* model_weights_ptr,
     int vocab_size
 ) {
     if (g_batch.num_sequences == 0) return 0;
+
+    const __half* model_weights = static_cast<const __half*>(model_weights_ptr);
+    (void)output_logits_ptr;
     
     const int num_seq = g_batch.num_sequences;
     const int hidden_dim = g_kv_cache.num_heads * g_kv_cache.head_dim;
@@ -1045,16 +1048,6 @@ extern "C" int beam_search_fork(int parent_seq_id) {
 // Memory Stats
 // ============================================================================
 
-struct MemoryStats {
-    int total_pages;
-    int used_pages;
-    int free_pages;
-    int active_sequences;
-    size_t total_memory_bytes;
-    size_t used_memory_bytes;
-    float utilization;
-};
-
 extern "C" void get_memory_stats(MemoryStats* stats) {
     stats->total_pages = MAX_PAGES;
     stats->used_pages = 0;
@@ -1320,13 +1313,16 @@ extern "C" void batch_decode_graph_invalidate(void) {
  * @return 0 on success, -1 on error.
  */
 extern "C" int batch_decode_step_graphed(
-    __half* output,
-    const __half* query,
+    void* output_ptr,
+    const void* query_ptr,
     int batch_size,
     int max_seq_len,
     float scale
 ) {
     if (!g_kv_cache.initialized) return -1;
+
+    __half* output = static_cast<__half*>(output_ptr);
+    const __half* query = static_cast<const __half*>(query_ptr);
 
     // Ensure stream exists
     if (!g_decode_graph.stream) {

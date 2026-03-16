@@ -216,7 +216,6 @@ __global__ void fused_rope_attention_kernel(
 ) {
     extern __shared__ float smem[];
     float* q_rope = smem;
-    float* k_rope = smem + head_dim;
     
     int batch_idx = blockIdx.z;
     int head_idx = blockIdx.y;

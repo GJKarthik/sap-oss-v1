@@ -634,8 +634,9 @@ int int8_quantization_init(void);
 void int8_quantization_shutdown(void);
 
 int calibrate_layer(
-    float* min_val, float* max_val,
-    const float* activations, int n
+    int layer_idx,
+    const float* weights, int weights_size,
+    const float* activations, int activations_size
 );
 
 int quantize_fp32_to_int8(
