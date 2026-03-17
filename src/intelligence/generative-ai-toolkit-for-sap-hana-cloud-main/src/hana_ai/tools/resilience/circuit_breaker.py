@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, TypeVar
 
+from hana_ai.mangle.client import get_config_value
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -87,15 +89,15 @@ class ToolCircuitBreaker:
     def __init__(
         self,
         name: str,
-        failure_threshold: int = 5,
-        success_threshold: int = 2,
-        recovery_timeout: float = 30.0,
+        failure_threshold: int = None,
+        success_threshold: int = None,
+        recovery_timeout: float = None,
         half_open_requests: int = 3,
     ):
         self.name = name
-        self.failure_threshold = failure_threshold
-        self.success_threshold = success_threshold
-        self.recovery_timeout = recovery_timeout
+        self.failure_threshold = failure_threshold if failure_threshold is not None else get_config_value("circuit_breaker", "failure_threshold", 5)
+        self.success_threshold = success_threshold if success_threshold is not None else get_config_value("circuit_breaker", "success_threshold", 2)
+        self.recovery_timeout = recovery_timeout if recovery_timeout is not None else get_config_value("circuit_breaker", "recovery_timeout", 30.0)
         self.half_open_requests = half_open_requests
         
         self._state = CircuitState.CLOSED

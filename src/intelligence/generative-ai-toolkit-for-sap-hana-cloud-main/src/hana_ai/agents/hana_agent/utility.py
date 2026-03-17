@@ -6,9 +6,22 @@ This module contains utility functions used for agents.
 import json
 import logging
 import os
+import re
 
 
 logger = logging.getLogger(__name__)
+
+_SAFE_IDENTIFIER = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.]*$')
+
+def _validate_identifier(name: str) -> str:
+    """Validate SQL identifier to prevent injection."""
+    if not name or not _SAFE_IDENTIFIER.match(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
+
+def _escape_sql_string(value: str, max_length: int = 10000) -> str:
+    """Escape a string value for safe SQL embedding."""
+    return value.replace("'", "''")[:max_length]
 
 DEFAULT_REQUEST_TIMEOUT = 30
 REQUEST_TIMEOUT_ENV_VAR = "HANA_AI_HTTP_TIMEOUT"
@@ -170,7 +183,9 @@ def _create_pse_sql_string(credentials: dict, pse_name: str) -> str:
         The PSE SQL string.
     """
     certificate_string = _concatenate_ai_core_certificate_string(credentials)
-    pse_sql = f"CREATE PSE {pse_name};\nALTER PSE {pse_name} SET OWN CERTIFICATE '\n{certificate_string}';"
+    safe_pse = _validate_identifier(pse_name)
+    safe_cert = _escape_sql_string(certificate_string) if certificate_string else ""
+    pse_sql = f"CREATE PSE {safe_pse};\nALTER PSE {safe_pse} SET OWN CERTIFICATE '\n{safe_cert}';"
     return pse_sql
 
 def _create_ai_core_remote_source_sql_string(credentials: dict, remote_source_name: str, pse_name: str) -> str:
@@ -196,6 +211,9 @@ def _create_ai_core_remote_source_sql_string(credentials: dict, remote_source_na
     client_id = credentials.get("clientid")
     deployment_id = _get_deployment_id(credentials)
 
+    safe_remote_source = _validate_identifier(remote_source_name)
+    safe_pse = _validate_identifier(pse_name)
+
     configuration = "\n".join([
         f"aiApiUrl={ai_api_url};",
         f"     authUrl={auth_url};",
@@ -203,12 +221,9 @@ def _create_ai_core_remote_source_sql_string(credentials: dict, remote_source_na
         f"     deploymentId={deployment_id};",
         f"     clientId={client_id}",
     ])
+    safe_configuration = _escape_sql_string(configuration)
 
-    remote_source_sql = "CREATE REMOTE SOURCE {remote_source_name} ADAPTER \"sapgenaihub\" CONFIGURATION\n    '{configuration}'\nWITH CREDENTIAL TYPE 'X509' PSE {pse_name};".format(
-        remote_source_name=remote_source_name,
-        configuration=configuration,
-        pse_name=pse_name
-    )
+    remote_source_sql = f"CREATE REMOTE SOURCE {safe_remote_source} ADAPTER \"sapgenaihub\" CONFIGURATION\n    '{safe_configuration}'\nWITH CREDENTIAL TYPE 'X509' PSE {safe_pse};"
     return remote_source_sql
 
 def _execute_sql_string(connection_context, sql_string: str):
@@ -255,8 +270,11 @@ def _add_x1root_certificate_to_pse(connection_context, pse_name):
         _create_certificate_and_add_to_pse(connection_context, "X1ROOT", certificate, pse_name)
 
 def _create_certificate_and_add_to_pse(connection_context, certificate_name, certificate_content, pse_name):
-    connection_context.execute_sql("CREATE CERTIFICATE %s FROM '%s'" % (certificate_name, certificate_content))
-    connection_context.execute_sql("ALTER PSE %s ADD CERTIFICATE %s" % (pse_name, certificate_name))
+    safe_cert_name = _validate_identifier(certificate_name)
+    safe_cert_content = _escape_sql_string(certificate_content)
+    safe_pse = _validate_identifier(pse_name)
+    connection_context.execute_sql("CREATE CERTIFICATE %s FROM '%s'" % (safe_cert_name, safe_cert_content))
+    connection_context.execute_sql("ALTER PSE %s ADD CERTIFICATE %s" % (safe_pse, safe_cert_name))
 
 def _create_ai_core_remote_source(connection_context, credentials: dict, pse_name: str, remote_source_name: str, create_pse: bool = True):
     """
@@ -308,7 +326,8 @@ def _delete_ai_core_pse(connection_context, pse_name: str, cascade: bool = True)
     cascade : bool, optional
         Whether to drop dependent objects as well. Defaults to True.
     """
-    drop_pse_sql_string = f"DROP PSE {pse_name}{' CASCADE' if cascade else ''};"
+    safe_pse = _validate_identifier(pse_name)
+    drop_pse_sql_string = f"DROP PSE {safe_pse}{' CASCADE' if cascade else ''};"
     try:
         _execute_sql_string(connection_context, drop_pse_sql_string)
     except Exception as exc:
@@ -327,8 +346,9 @@ def _drop_ai_core_remote_source(connection_context, remote_source_name: str, cas
     cascade : bool, optional
         Whether to drop dependent objects as well. Defaults to True.
     """
+    safe_remote_source = _validate_identifier(remote_source_name)
     drop_remote_source_sql_string = (
-        f"DROP REMOTE SOURCE {remote_source_name}{' CASCADE' if cascade else ''};"
+        f"DROP REMOTE SOURCE {safe_remote_source}{' CASCADE' if cascade else ''};"
     )
     try:
         _execute_sql_string(connection_context, drop_remote_source_sql_string)
@@ -346,7 +366,8 @@ def _drop_certificate(connection_context, certificate_name: str):
     certificate_name : str
         The name of the certificate.
     """
-    drop_certificate_sql_string = f"DROP CERTIFICATE {certificate_name};"
+    safe_cert_name = _validate_identifier(certificate_name)
+    drop_certificate_sql_string = f"DROP CERTIFICATE {safe_cert_name};"
     try:
         _execute_sql_string(connection_context, drop_certificate_sql_string)
     except Exception as exc:
@@ -372,9 +393,11 @@ def _call_agent_sql(query: str, config: dict, schema_name: str, procedure_name: 
     str
         The SQL string to call the specified procedure.
     """
-    config_json = json.dumps(config).replace("'", "''")
-    query = json.dumps(query).replace("'", "''")
+    safe_schema = _validate_identifier(schema_name)
+    safe_procedure = _validate_identifier(procedure_name)
+    config_json = _escape_sql_string(json.dumps(config))
+    query = _escape_sql_string(json.dumps(query))
     return (
         "DO\nBEGIN\nDECLARE output NCLOB;\nCALL %s.%s('%s', '%s', output);\nselect :output FROM DUMMY;\nEND"
-        % (schema_name, procedure_name, query, config_json)
+        % (safe_schema, safe_procedure, query, config_json)
     )

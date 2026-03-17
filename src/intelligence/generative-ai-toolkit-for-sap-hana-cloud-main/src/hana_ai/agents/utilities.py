@@ -23,7 +23,7 @@ def _check_generated_cap_for_bas(intermediate_steps):
     """
     try:
         ss = json.loads(intermediate_steps)
-    except:
+    except (json.JSONDecodeError, KeyError, TypeError):
         return False
     if intermediate_steps is None:
         return False
@@ -41,7 +41,7 @@ def _check_generated_cap_for_bas(intermediate_steps):
 def _inspect_python_code(intermediate_steps, tools):
     try:
         ss = json.loads(intermediate_steps)
-    except:
+    except (json.JSONDecodeError, KeyError, TypeError):
         return None
     if intermediate_steps is None:
         return None

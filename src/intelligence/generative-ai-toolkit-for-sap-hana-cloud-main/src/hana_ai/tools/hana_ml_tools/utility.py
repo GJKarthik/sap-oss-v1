@@ -4,6 +4,7 @@
 Utility functions for the HANA ML tools.
 """
 import os
+import re
 import shutil
 import json
 from pathlib import Path
@@ -16,6 +17,14 @@ from hana_ml.model_storage import ModelStorage
 #pylint: disable=too-many-nested-blocks, unexpected-keyword-arg, invalid-name
 
 logger = logging.getLogger(__name__)
+
+_SAFE_IDENTIFIER = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.#]*$')
+
+def _validate_identifier(name: str) -> str:
+    """Validate SQL identifier to prevent injection."""
+    if not name or not _SAFE_IDENTIFIER.match(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
 
 def convert_cap_to_hdi(source_dir, target_dir, archive=True):
     """
@@ -136,6 +145,7 @@ def _create_temp_table(conn, select_statement: str, tool_name: str, additional_i
     else:
         additional_info = "_"
     table_name = f"#{tool_name}{additional_info}{timestamp}".upper()
+    _validate_identifier(table_name)
     create_temp_table_sql = f"CREATE LOCAL TEMPORARY TABLE {table_name} AS ({select_statement})"
     conn.execute_sql(create_temp_table_sql)
     return f"SELECT * FROM {table_name}"

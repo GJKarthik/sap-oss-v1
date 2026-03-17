@@ -12,6 +12,7 @@ The following class is available:
 
 from typing import Any, List
 from datetime import datetime
+import hashlib
 import logging
 import pandas as pd
 from sqlalchemy import delete
@@ -282,24 +283,62 @@ class HANAMLRAGAgent:
         except Exception as e:
             logger.error("Failed to delete message with ID %s: %s", message_id, str(e))
 
+    def _verify_faiss_checksum(self, path: str) -> bool:
+        """Verify FAISS index file integrity via SHA256 checksum."""
+        import os
+        index_file = os.path.join(path, "index.faiss")
+        checksum_file = os.path.join(path, ".faiss_checksum")
+        if not os.path.exists(checksum_file):
+            logger.warning("No checksum file found for FAISS index at %s, skipping verification", path)
+            return True  # Allow first load without checksum
+        try:
+            with open(index_file, "rb") as f:
+                actual = hashlib.sha256(f.read()).hexdigest()
+            with open(checksum_file, "r") as f:
+                expected = f.read().strip()
+            if actual != expected:
+                logger.error("FAISS index checksum mismatch at %s", path)
+                return False
+            return True
+        except (OSError, IOError) as e:
+            logger.error("Failed to verify FAISS checksum: %s", e)
+            return False
+
+    @staticmethod
+    def _save_faiss_checksum(path: str) -> None:
+        """Save SHA256 checksum for FAISS index file."""
+        import os
+        index_file = os.path.join(path, "index.faiss")
+        checksum_file = os.path.join(path, ".faiss_checksum")
+        try:
+            with open(index_file, "rb") as f:
+                checksum = hashlib.sha256(f.read()).hexdigest()
+            with open(checksum_file, "w") as f:
+                f.write(checksum)
+        except (OSError, IOError) as e:
+            logger.warning("Failed to save FAISS checksum: %s", e)
+
     def _initialize_faiss_vectorstore(self):
         """Initialize or load FAISS vectorstore for long-term memory"""
 
         # Try loading existing vectorstore
         try:
+            if not self._verify_faiss_checksum(self.vectorstore_path):
+                raise ValueError("FAISS index checksum verification failed at %s" % self.vectorstore_path)
             self.vectorstore = FAISS.load_local(
                 self.vectorstore_path,
-                self.embedding_service,
-                allow_dangerous_deserialization=True
+                self.embedding_service
             )
             logger.info("Loaded existing vectorstore from %s", self.vectorstore_path)
-        except:
+        except (FileNotFoundError, ValueError, RuntimeError) as e:
+            logger.error("Failed to load vectorstore: %s", e)
             # Initialize new vectorstore if loading fails
             self.vectorstore = FAISS.from_texts(
                 texts=["Initialization text"],
                 embedding=self.embedding_service
             )
             self.vectorstore.save_local(self.vectorstore_path)
+            self._save_faiss_checksum(self.vectorstore_path)
             logger.info("Created new vectorstore at %s", self.vectorstore_path)
 
     def _initialize_hanadb_vectorstore(self):
@@ -362,6 +401,7 @@ class HANAMLRAGAgent:
         self.vectorstore.add_documents(documents)
         if self.vectorstore_type.lower() == "faiss":
             self.vectorstore.save_local(self.vectorstore_path)
+            self._save_faiss_checksum(self.vectorstore_path)
 
         # Clean up oldest memories if needed
         self._forget_old_memories()
@@ -427,6 +467,7 @@ class HANAMLRAGAgent:
                         self.embedding_service
                     )
                     self.vectorstore.save_local(self.vectorstore_path)
+                    self._save_faiss_checksum(self.vectorstore_path)
                     logger.info("Rebuilt vectorstore with %s documents", len(documents))
                 except Exception as e:
                     logger.error("Error rebuilding vectorstore: %s", str(e))
@@ -548,6 +589,7 @@ class HANAMLRAGAgent:
         if self.vectorstore_type.lower() == "faiss":
             self.vectorstore = FAISS.from_texts([""], embedding=self.embedding_service)  # 空文本占位
             self.vectorstore.save_local(self.vectorstore_path)
+            self._save_faiss_checksum(self.vectorstore_path)
         else:
             self.hana_connection_context.drop_table(self.hana_vector_table)
             self.vectorstore = HanaDB.from_texts(

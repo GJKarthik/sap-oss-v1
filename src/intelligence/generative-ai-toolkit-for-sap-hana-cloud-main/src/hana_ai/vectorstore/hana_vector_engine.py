@@ -12,12 +12,28 @@ The following class is available:
 #pylint: disable=redefined-builtin
 
 import logging
+import re
 import pandas as pd
 from hana_ml import ConnectionContext, dataframe
 
 from hana_ai.vectorstore.code_templates import get_code_templates
+from hana_ai.mangle.client import get_config_value
 
 logger = logging.getLogger(__name__) #pylint: disable=invalid-name
+
+_DEFAULT_MODEL_VERSION = get_config_value("default_model_version", "embedding", "SAP_NEB.20240715")
+
+_SAFE_IDENTIFIER = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.]*$')
+
+def _validate_identifier(name: str) -> str:
+    """Validate SQL identifier to prevent injection."""
+    if not name or not _SAFE_IDENTIFIER.match(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
+
+def _escape_sql_string(value: str, max_length: int = 10000) -> str:
+    """Escape a string value for safe SQL embedding."""
+    return value.replace("'", "''")[:max_length]
 
 class HANAMLinVectorEngine(object):
     """
@@ -39,22 +55,23 @@ class HANAMLinVectorEngine(object):
     schema: str = None
     vector_length: int = None
     columns: list = None
-    def __init__(self, connection_context, table_name, schema=None, model_version='SAP_NEB.20240715'):
+    def __init__(self, connection_context, table_name, schema=None, model_version=_DEFAULT_MODEL_VERSION):
         self.connection_context = connection_context
         self.table_name = table_name
         self.schema = schema
-        self.model_version = model_version
+        self.model_version = _validate_identifier(model_version)
         self.current_query_distance = None
         self.current_query_rows = None
         if schema is None:
             self.schema = self.connection_context.get_current_schema()
         if not self.connection_context.has_table(table=self.table_name, schema=self.schema):
+            safe_model_version = _escape_sql_string(self.model_version)
             self.connection_context.create_table(table=self.table_name,
                                                  schema=self.schema,
                                                  table_structure={"id": "VARCHAR(5000) PRIMARY KEY",
                                                                   "description": "VARCHAR(5000)",
                                                                   "example": "NCLOB",
-                                                                  "embeddings": f"REAL_VECTOR GENERATED ALWAYS AS VECTOR_EMBEDDING(\"description\", 'DOCUMENT', '{self.model_version}')"})
+                                                                  "embeddings": f"REAL_VECTOR GENERATED ALWAYS AS VECTOR_EMBEDDING(\"description\", 'DOCUMENT', '{safe_model_version}')"})
 
     def get_knowledge(self):
         """
@@ -91,7 +108,7 @@ class HANAMLinVectorEngine(object):
                                                table_structure={"id": "VARCHAR(5000) PRIMARY KEY",
                                                                 "description": "VARCHAR(5000)",
                                                                 "example": "NCLOB",
-                                                                "embeddings": f"REAL_VECTOR GENERATED ALWAYS AS VECTOR_EMBEDDING(\"description\", 'DOCUMENT', {self.model_version}"})
+                                                                "embeddings": f"REAL_VECTOR GENERATED ALWAYS AS VECTOR_EMBEDDING(\"description\", 'DOCUMENT', '{_escape_sql_string(self.model_version)}')"})
 
     def query(self, input, top_n=1, distance='cosine_similarity'):
         """
@@ -112,7 +129,16 @@ class HANAMLinVectorEngine(object):
         if self.schema is None:
             schema = self.connection_context.get_current_schema()
 
-        sql = """SELECT TOP {} "{}", {}("{}", TO_REAL_VECTOR(VECTOR_EMBEDDING('{}', 'QUERY', '{}'))) AS "DISTANCE", "{}" "MODEL_TYPE" FROM "{}"."{}" ORDER BY "DISTANCE" DESC""".format(top_n, self.columns[2], distance.upper(), self.columns[3], input, self.model_version, self.columns[0], schema, self.table_name)
+        safe_input = _escape_sql_string(input)
+        safe_model_version = _escape_sql_string(self.model_version)
+        safe_distance = _validate_identifier(distance.upper())
+        safe_schema = _validate_identifier(schema)
+        safe_table = _validate_identifier(self.table_name)
+        safe_col0 = _validate_identifier(self.columns[0])
+        safe_col2 = _validate_identifier(self.columns[2])
+        safe_col3 = _validate_identifier(self.columns[3])
+        top_n = int(top_n)
+        sql = """SELECT TOP {} "{}", {}("{}", TO_REAL_VECTOR(VECTOR_EMBEDDING('{}', 'QUERY', '{}'))) AS "DISTANCE", "{}" "MODEL_TYPE" FROM "{}"."{}" ORDER BY "DISTANCE" DESC""".format(top_n, safe_col2, safe_distance, safe_col3, safe_input, safe_model_version, safe_col0, safe_schema, safe_table)
         result = self.connection_context.sql(sql).collect()
         self.current_query_rows = result.shape[0]
         if self.current_query_rows < top_n:

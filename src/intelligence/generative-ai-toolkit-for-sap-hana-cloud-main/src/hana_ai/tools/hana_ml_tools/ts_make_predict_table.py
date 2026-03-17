@@ -10,6 +10,7 @@ The following classes are available:
 """
 
 import logging
+import re
 from typing import Optional, Type
 import uuid
 from pydantic import BaseModel, Field
@@ -18,6 +19,18 @@ from langchain_core.tools import BaseTool
 from hana_ml import ConnectionContext
 
 logger = logging.getLogger(__name__)
+
+_SAFE_IDENTIFIER = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.]*$')
+
+def _validate_identifier(name: str) -> str:
+    """Validate SQL identifier to prevent injection."""
+    if not name or not _SAFE_IDENTIFIER.match(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
+
+def _escape_sql_string(value: str, max_length: int = 10000) -> str:
+    """Escape a string value for safe SQL embedding."""
+    return value.replace("'", "''")[:max_length]
 
 
 def make_future_dataframe(data, key=None, periods=1, increment_type='seconds'):
@@ -84,11 +97,14 @@ def make_future_dataframe(data, key=None, periods=1, increment_type='seconds'):
                 raise ValueError("The interval between the training time series is less than one year.")
         else:
             increment_type = 'seconds'
+    safe_key = _validate_identifier(key)
     for period in range(0, periods):
         if is_int:
-            timeframe.append("SELECT TO_INT({} + {} * {}) AS \"{}\" FROM DUMMY".format(forecast_start, timedelta, period, key))
+            timeframe.append("SELECT TO_INT({} + {} * {}) AS \"{}\" FROM DUMMY".format(int(forecast_start), int(timedelta), int(period), safe_key))
         else:
-            timeframe.append("SELECT ADD_{}('{}', {} * {}) AS \"{}\" FROM DUMMY".format(increment_type.upper(), forecast_start, timedelta, period, key))
+            safe_increment = _validate_identifier(increment_type.upper())
+            safe_forecast_start = _escape_sql_string(str(forecast_start))
+            timeframe.append("SELECT ADD_{}('{}', {} * {}) AS \"{}\" FROM DUMMY".format(safe_increment, safe_forecast_start, int(timedelta), int(period), safe_key))
     sql = ' UNION ALL '.join(timeframe)
     return data.connection_context.sql(sql).sort_values(key)
 
@@ -141,10 +157,12 @@ def make_future_dataframe_for_massive_forecast(data=None, key=None, group_key=No
     group_list = data.select(group_key).distinct().collect()[group_key]
     timeframe = []
     for group in group_list:
+        safe_gk = _validate_identifier(group_key)
         if 'INT' in group_id_type.upper():
-            m_data = data.filter(f"{group_key}={group}")
+            m_data = data.filter(f"\"{safe_gk}\"={int(group)}")
         else:
-            m_data = data.filter(f"{group_key}='{group}'")
+            safe_grp = _escape_sql_string(str(group))
+            m_data = data.filter(f"\"{safe_gk}\"='{safe_grp}'")
         max_ = m_data.select(key).max()
         sec_max_ = m_data.select(key).distinct().sort_values(key, ascending=False).head(2).collect().iat[1, 0]
         delta = max_ - sec_max_
@@ -173,18 +191,22 @@ def make_future_dataframe_for_massive_forecast(data=None, key=None, group_key=No
             else:
                 increment_type = 'seconds'
 
-        increment_type = increment_type.upper()
+        safe_increment = _validate_identifier(increment_type.upper())
+        safe_group_key = _validate_identifier(group_key)
+        safe_key = _validate_identifier(key)
         for period in range(0, periods):
+            safe_forecast_start = _escape_sql_string(str(forecast_start))
             if 'INT' in group_id_type.upper():
                 if is_int:
-                    timeframe.append(f"SELECT {group} AS \"{group_key}\", TO_INT({forecast_start} + {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
+                    timeframe.append(f"SELECT {int(group)} AS \"{safe_group_key}\", TO_INT({int(forecast_start)} + {int(timedelta)} * {int(period)}) AS \"{safe_key}\" FROM DUMMY")
                 else:
-                    timeframe.append(f"SELECT {group} AS \"{group_key}\", ADD_{increment_type}('{forecast_start}', {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
+                    timeframe.append(f"SELECT {int(group)} AS \"{safe_group_key}\", ADD_{safe_increment}('{safe_forecast_start}', {int(timedelta)} * {int(period)}) AS \"{safe_key}\" FROM DUMMY")
             else:
+                safe_group = _escape_sql_string(str(group))
                 if is_int:
-                    timeframe.append(f"SELECT '{group}' AS \"{group_key}\", TO_INT({forecast_start} + {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
+                    timeframe.append(f"SELECT '{safe_group}' AS \"{safe_group_key}\", TO_INT({int(forecast_start)} + {int(timedelta)} * {int(period)}) AS \"{safe_key}\" FROM DUMMY")
                 else:
-                    timeframe.append(f"SELECT '{group}' AS \"{group_key}\", ADD_{increment_type}('{forecast_start}', {timedelta} * {period}) AS \"{key}\" FROM DUMMY")
+                    timeframe.append(f"SELECT '{safe_group}' AS \"{safe_group_key}\", ADD_{safe_increment}('{safe_forecast_start}', {int(timedelta)} * {int(period)}) AS \"{safe_key}\" FROM DUMMY")
     sql = ' UNION ALL '.join(timeframe)
 
     return data.connection_context.sql(sql).sort_values([group_key, key])

@@ -7,6 +7,7 @@ The following class is available:
 
     * :class `SmartDataFrame`
 """
+import re
 from typing import List
 
 from hana_ml.dataframe import DataFrame
@@ -27,6 +28,20 @@ from hana_ai.tools.df_tools.fetch_tools import FetchDataTool
 from hana_ai.tools.df_tools.intermittent_forecast_tools import IntermittentForecast
 from hana_ai.tools.df_tools.ts_outlier_detection_tools import TSOutlierDetection
 from hana_ai.tools.df_tools.ts_visualizer_tools import TimeSeriesDatasetReport
+
+_SQL_DANGEROUS_PATTERN = re.compile(
+    r'\b(DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|TRUNCATE|EXEC|GRANT|REVOKE|MERGE)\b',
+    re.IGNORECASE
+)
+
+def _validate_select_only(sql: str) -> str:
+    """Validate that SQL is a SELECT-only statement."""
+    stripped = sql.strip().rstrip(';').strip()
+    if not stripped.upper().startswith('SELECT'):
+        raise ValueError("Only SELECT statements are permitted")
+    if _SQL_DANGEROUS_PATTERN.search(stripped):
+        raise ValueError(f"SQL contains prohibited DDL/DML keywords")
+    return stripped
 
 class SmartDataFrame(DataFrame):
     """
@@ -193,6 +208,9 @@ class SmartDataFrame(DataFrame):
                     "Failed to extract valid SQL from agent response: "
                     f"{select_statement[:100]}..."
                 )
+
+        # Validate SQL before execution
+        select_statement = _validate_select_only(select_statement)
 
         # Create new SmartDataFrame with generated SQL
         sdf = self._construct(

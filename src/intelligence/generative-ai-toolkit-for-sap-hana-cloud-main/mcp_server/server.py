@@ -8,11 +8,14 @@ Provides tools for HANA Cloud AI operations: vector store, RAG, agents, memory.
 """
 
 import json
+import logging
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
 import urllib.request
 import urllib.error
+
+logger = logging.getLogger(__name__)
 
 MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
 MAX_TOOL_TOKENS = int(os.environ.get("MCP_MAX_TOOL_TOKENS", "8192"))
@@ -179,7 +182,8 @@ def get_access_token(config: dict) -> str:
             _cached_token["token"] = result["access_token"]
             _cached_token["expires_at"] = time.time() + result.get("expires_in", 3600) - 60
             return result["access_token"]
-    except:
+    except Exception as e:
+        logger.warning("Token acquisition failed: %s", e)
         return ""
 
 

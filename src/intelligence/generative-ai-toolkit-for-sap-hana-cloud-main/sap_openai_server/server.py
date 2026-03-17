@@ -15,6 +15,7 @@ Usage:
 
 import os
 import json
+import logging
 import uuid
 import time
 import urllib.request
@@ -29,6 +30,8 @@ try:
     USE_FASTAPI = True
 except ImportError:
     USE_FASTAPI = False
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Configuration
@@ -588,8 +591,8 @@ if USE_FASTAPI:
                     {"input": [request.file]}
                 )
                 embedding = result.get("data", [{}])[0].get("embedding")
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to compute embedding for file: %s", e)
         
         _file_storage[file_id] = {
             "id": file_id,
@@ -1134,7 +1137,8 @@ if USE_FASTAPI:
             """).collect()
             tables = result["TABLE_NAME"].tolist() if not result.empty else []
             return {"object": "list", "data": tables, "source": "hana"}
-        except:
+        except Exception as e:
+            logger.warning("Failed to list HANA tables, falling back to memory: %s", e)
             return {"object": "list", "data": list(_vector_tables.keys()), "source": "memory"}
     
     @app.post("/v1/hana/vectors")

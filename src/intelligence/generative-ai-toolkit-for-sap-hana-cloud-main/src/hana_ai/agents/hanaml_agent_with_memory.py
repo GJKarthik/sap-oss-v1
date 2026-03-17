@@ -38,6 +38,7 @@ from hana_ai.agents.hanaml_rag_agent import stateless_chat
 #from hana_ai.agents.utilities import _inspect_python_code, _check_generated_cap_for_bas
 
 logging.getLogger().setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 CHATBOT_SYSTEM_PROMPT = """You're an assistant skilled in data science using hana-ml tools.
 Ask for missing parameters if needed. Regardless of whether this tool has been called before, it must be called."""
@@ -300,7 +301,8 @@ class HANAMLAgentWithMemory(object):
             if "action" in response and "action_input" in response:
                 try:
                     response = json.loads(response)
-                except:
+                except (json.JSONDecodeError, KeyError, TypeError) as e:
+                    logger.debug("Failed to parse intermediate steps: %s", e)
                     pass
             if isinstance(response, str) and response.strip() == "":
                 response = "I'm sorry, I don't understand. Please ask me again."

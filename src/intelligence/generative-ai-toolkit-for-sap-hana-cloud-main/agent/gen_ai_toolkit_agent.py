@@ -8,9 +8,19 @@ Provides RAG, embeddings, and text generation with governance.
 """
 
 import json
+import os
 import urllib.request
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+
+
+def _get_mangle_config(predicate: str, key: str, default=None):
+    """Query Mangle for configuration, with fallback to default."""
+    try:
+        from hana_ai.mangle.client import get_config_value
+        return get_config_value(predicate, key, default)
+    except ImportError:
+        return default
 
 
 class MangleEngine:
@@ -25,7 +35,10 @@ class MangleEngine:
         self.facts["agent_config"] = {
             ("gen-ai-hana-agent", "autonomy_level"): "L2",
             ("gen-ai-hana-agent", "service_name"): "gen-ai-toolkit-hana",
-            ("gen-ai-hana-agent", "mcp_endpoint"): "http://localhost:9130/mcp",
+            ("gen-ai-hana-agent", "mcp_endpoint"): os.environ.get(
+                "MCP_ENDPOINT",
+                f"http://localhost:{_get_mangle_config('service_port', 'mcp_server', 9130)}/mcp"
+            ),
             ("gen-ai-hana-agent", "default_backend"): "vllm",
         }
         
@@ -40,8 +53,8 @@ class MangleEngine:
         
         self.facts["prompting_policy"] = {
             "gen-ai-hana-service-v1": {
-                "max_tokens": 4096,
-                "temperature": 0.7,
+                "max_tokens": _get_mangle_config("prompting_policy", "max_tokens", 4096),
+                "temperature": _get_mangle_config("prompting_policy", "temperature", 0.7),
                 "system_prompt": (
                     "You are a generative AI assistant integrated with SAP HANA Cloud. "
                     "Generate responses using RAG patterns with HANA vector store. "
@@ -99,7 +112,8 @@ class GenAiToolkitAgent:
             "../regulations/mangle/rules.mg"
         ])
         # Always use vLLM for HANA generative AI
-        self.vllm_endpoint = "http://localhost:9180/mcp"
+        _vllm_port = _get_mangle_config("service_port", "vllm", 9180)
+        self.vllm_endpoint = os.environ.get("VLLM_ENDPOINT", f"http://localhost:{_vllm_port}/mcp")
         self.audit_log: List[Dict] = []
     
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
@@ -147,8 +161,8 @@ class GenAiToolkitAgent:
                     "role": "user", 
                     "content": prompt
                 }]),
-                "max_tokens": prompting_policy.get("max_tokens", 4096),
-                "temperature": prompting_policy.get("temperature", 0.7)
+                "max_tokens": prompting_policy.get("max_tokens", _get_mangle_config("prompting_policy", "max_tokens", 4096)),
+                "temperature": prompting_policy.get("temperature", _get_mangle_config("prompting_policy", "temperature", 0.7))
             })
             
             self._log_audit("success", tool, backend, prompt)

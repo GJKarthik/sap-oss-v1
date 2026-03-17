@@ -26,6 +26,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Tuple, Union
 
+from hana_ai.mangle.client import get_config_value
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,8 +59,8 @@ class AICoreConfig:
     cache_max_size: int = 1000
     
     # Rate limiting
-    rate_limit_requests_per_minute: int = 60
-    rate_limit_tokens_per_minute: int = 100000
+    rate_limit_requests_per_minute: int = None
+    rate_limit_tokens_per_minute: int = None
     
     @classmethod
     def from_env(cls) -> "AICoreConfig":
@@ -75,10 +77,16 @@ class AICoreConfig:
             max_retries=int(os.environ.get("AICORE_MAX_RETRIES", "3")),
             cache_enabled=os.environ.get("AICORE_CACHE_ENABLED", "true").lower() == "true",
             cache_ttl_seconds=int(os.environ.get("AICORE_CACHE_TTL", "3600")),
-            rate_limit_requests_per_minute=int(os.environ.get("AICORE_RATE_LIMIT_RPM", "60")),
-            rate_limit_tokens_per_minute=int(os.environ.get("AICORE_RATE_LIMIT_TPM", "100000")),
+            rate_limit_requests_per_minute=int(os.environ.get("AICORE_RATE_LIMIT_RPM", str(get_config_value("rate_limit", "requests_per_minute", 60)))),
+            rate_limit_tokens_per_minute=int(os.environ.get("AICORE_RATE_LIMIT_TPM", str(get_config_value("rate_limit", "tokens_per_minute", 100000)))),
         )
     
+    def __post_init__(self):
+        if self.rate_limit_requests_per_minute is None:
+            self.rate_limit_requests_per_minute = get_config_value("rate_limit", "requests_per_minute", 60)
+        if self.rate_limit_tokens_per_minute is None:
+            self.rate_limit_tokens_per_minute = get_config_value("rate_limit", "tokens_per_minute", 100000)
+
     def is_ready(self) -> bool:
         """Check if configuration is complete."""
         return all([self.client_id, self.client_secret, self.auth_url, self.base_url])

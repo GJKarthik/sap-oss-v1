@@ -46,6 +46,7 @@ except ImportError:
 
 from hana_ml import ConnectionContext
 from hana_ai.langchain_compat import BaseToolkit, BaseTool
+from hana_ai.mangle.client import get_config_value
 
 from hana_ai.tools.code_template_tools import GetCodeTemplateFromVectorDB
 from hana_ai.tools.hana_ml_tools.fetch_tools import FetchDataTool
@@ -244,7 +245,7 @@ class HANAMLToolkit(BaseToolkit):
         server_name: str = "HANATools",
         host: str = "127.0.0.1",
         transport: str = "stdio",
-        port: int = 8001,
+        port: int = None,
         auth_token: Optional[str] = None,
         max_retries: int = 5
     ):
@@ -268,6 +269,8 @@ class HANAMLToolkit(BaseToolkit):
         max_retries : int
             Maximum number of retries to find an available port. Default is 5.
         """
+        if port is None:
+            port = get_config_value("service_port", "mcp_toolkit", 8001)
         attempts = 0
         original_port = port
 
@@ -569,7 +572,7 @@ class HANAMLToolkit(BaseToolkit):
     def stop_mcp_server(
         self,
         host: str = "127.0.0.1",
-        port: int = 8001,
+        port: int = None,
         transport: str = "sse",
         force: bool = False,
         timeout: float = 5.0,
@@ -595,6 +598,8 @@ class HANAMLToolkit(BaseToolkit):
         bool
             若成功触发关闭并线程在超时前结束，返回 True；否则返回 False。
         """
+        if port is None:
+            port = get_config_value("service_port", "mcp_toolkit", 8001)
         key = (host, port, transport)
         info = HANAMLToolkit._global_mcp_servers.get(key)
         if not info:
