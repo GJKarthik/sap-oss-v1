@@ -11,7 +11,7 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
 import urllib.request
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 try:
     from graph.kuzu_store import get_kuzu_store as _get_kuzu_store
@@ -20,6 +20,11 @@ except ImportError:
         from mcp_server.graph.kuzu_store import get_kuzu_store as _get_kuzu_store
     except ImportError:
         _get_kuzu_store = None  # type: ignore[assignment]
+
+try:
+    from audit_store import get_audit_store
+except ImportError:
+    from mcp_server.audit_store import get_audit_store
 
 # =============================================================================
 # Finding 4: CORS configuration with startup validation
@@ -466,13 +471,21 @@ class MCPServer:
         # Get Logs
         self.tools["get_logs"] = {
             "name": "get_logs",
-            "description": "Query logs",
+            "description": "Query durable audit logs",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "service": {"type": "string", "description": "Service name"},
-                    "level": {"type": "string", "description": "Log level"},
+                    "source": {"type": "string", "description": "Audit source/service name"},
+                    "agentId": {"type": "string", "description": "Agent identifier"},
+                    "action": {"type": "string", "description": "Action name"},
+                    "status": {"type": "string", "description": "Execution status"},
+                    "toolName": {"type": "string", "description": "Tool name"},
+                    "backend": {"type": "string", "description": "Backend name"},
+                    "userId": {"type": "string", "description": "User identifier"},
+                    "from": {"type": "string", "description": "Inclusive ISO8601 start timestamp"},
+                    "to": {"type": "string", "description": "Inclusive ISO8601 end timestamp"},
                     "limit": {"type": "number", "description": "Max logs to return"},
+                    "offset": {"type": "number", "description": "Rows to skip"},
                 },
             },
         }
@@ -719,14 +732,38 @@ class MCPServer:
         return {"alert": alert, "status": "created"}
 
     def _handle_get_logs(self, args: dict) -> dict:
-        limit = clamp_int(args.get("limit", 100), 100, 1, MAX_LOG_LIMIT)
-        return {
-            "service": args.get("service", "all"),
-            "level": args.get("level", "all"),
-            "limit": limit,
-            "logs": [],
-            "note": "Connect to actual log aggregator",
+        filters = {
+            "source": args.get("source") or args.get("service"),
+            "agentId": args.get("agentId"),
+            "action": args.get("action"),
+            "status": args.get("status") or args.get("level"),
+            "toolName": args.get("toolName"),
+            "backend": args.get("backend"),
+            "userId": args.get("userId"),
+            "from": args.get("from"),
+            "to": args.get("to"),
+            "limit": clamp_int(args.get("limit", 100), 100, 1, MAX_LOG_LIMIT),
+            "offset": clamp_int(args.get("offset", 0), 0, 0, 10000),
         }
+        store = get_audit_store()
+        logs = store.query(filters)
+        return {
+            "filters": {k: v for k, v in filters.items() if v not in (None, "")},
+            "logs": logs,
+            "count": len(logs),
+            "retentionDays": store.retention_days,
+        }
+
+    def ingest_audit_logs(self, payload: Any) -> dict:
+        if isinstance(payload, dict):
+            entries = payload.get("entries", [payload])
+        elif isinstance(payload, list):
+            entries = payload
+        else:
+            entries = []
+        store = get_audit_store()
+        inserted = store.append_many([entry for entry in entries if isinstance(entry, dict)])
+        return {"status": "ok", "inserted": len(inserted), "retentionDays": store.retention_days}
 
     def _handle_kuzu_index(self, args: dict) -> dict:
         if _get_kuzu_store is None:
@@ -952,7 +989,8 @@ class MCPHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path == "/health":
+        parsed = urlparse(self.path)
+        if parsed.path == "/health":
             from datetime import datetime, timezone
             response = {
                 "status": "healthy",
@@ -962,11 +1000,39 @@ class MCPHandler(BaseHTTPRequestHandler):
                 "active_alerts": len(mcp_server.facts.get("alerts", [])),
             }
             self._write_json(200, response)
+        elif parsed.path == "/audit/logs":
+            query = parse_qs(parsed.query)
+            result = mcp_server._handle_get_logs({
+                "source": query.get("source", [""])[0],
+                "agentId": query.get("agentId", [""])[0],
+                "action": query.get("action", [""])[0],
+                "status": query.get("status", [""])[0],
+                "toolName": query.get("toolName", [""])[0],
+                "backend": query.get("backend", [""])[0],
+                "userId": query.get("userId", [""])[0],
+                "from": query.get("from", [""])[0],
+                "to": query.get("to", [""])[0],
+                "limit": query.get("limit", [100])[0],
+                "offset": query.get("offset", [0])[0],
+            })
+            self._write_json(200, result)
         else:
             self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
-        if self.path == "/mcp":
+        if self.path == "/audit/logs":
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length <= 0:
+                self._write_json(400, {"error": "Request body required"})
+                return
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                self._write_json(400, {"error": "Invalid JSON body"})
+                return
+            self._write_json(200, mcp_server.ingest_audit_logs(payload))
+        elif self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length <= 0:
                 self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})

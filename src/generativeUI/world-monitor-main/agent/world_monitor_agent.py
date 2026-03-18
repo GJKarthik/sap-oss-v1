@@ -6,11 +6,19 @@ Content-based routing:
 - Internal analysis/impact assessments → vLLM
 """
 
+import hashlib
 import json
 import os
+import sys
 import urllib.request
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from mcp_server.audit_store import get_audit_store
 
 # =============================================================================
 # SSRF guard: validate env-var URLs before any network call
@@ -279,10 +287,12 @@ class WorldMonitorAgent:
         self.mcp_endpoint = "http://localhost:9160/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.audit_log: List[Dict] = []
+        self._audit_store = get_audit_store()
     
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         context = context or {}
         tool = context.get("tool", "summarize_news")
+        user_id = str(context.get("userId") or context.get("user_id") or "anonymous")
         timestamp = datetime.now(timezone.utc).isoformat()
         
         # Check routing based on content
@@ -304,7 +314,7 @@ class WorldMonitorAgent:
         
         # Check if human review required
         if self.mangle.query("requires_human_review", tool):
-            self._log_audit("pending_approval", tool, backend, prompt)
+            self._log_audit("pending_approval", tool, backend, prompt, user_id=user_id)
             return {
                 "status": "pending_approval",
                 "message": f"Action '{tool}' requires human review before execution",
@@ -315,7 +325,7 @@ class WorldMonitorAgent:
         
         # Safety check
         if not self.mangle.query("safety_check_passed", tool):
-            self._log_audit("blocked", tool, backend, prompt)
+            self._log_audit("blocked", tool, backend, prompt, user_id=user_id)
             return {
                 "status": "blocked",
                 "message": f"Safety check failed for tool '{tool}'",
@@ -341,7 +351,7 @@ class WorldMonitorAgent:
                 "temperature": prompting_policy.get("temperature", 0.4)
             })
             
-            self._log_audit("success", tool, backend, prompt)
+            self._log_audit("success", tool, backend, prompt, user_id=user_id)
             
             return {
                 "status": "success",
@@ -352,7 +362,7 @@ class WorldMonitorAgent:
             }
             
         except Exception as e:
-            self._log_audit("error", tool, backend, prompt, str(e))
+            self._log_audit("error", tool, backend, prompt, str(e), user_id=user_id)
             return {
                 "status": "error",
                 "message": str(e),
@@ -378,72 +388,52 @@ class WorldMonitorAgent:
         with urllib.request.urlopen(req, timeout=120) as resp:
             return json.loads(resp.read().decode())
     
-    def _log_audit(self, status: str, tool: str, backend: str, prompt: str, error: str = None):
-        import time
-        now_ms = int(time.time() * 1000)
-        entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "agent": "world-monitor-agent",
-            "status": status,
-            "tool": tool,
-            "backend": backend,
-            "prompt_hash": hash(prompt),
-            "prompt_length": len(prompt)
-        }
-        if error:
-            entry["error"] = error
-        self.audit_log.append(entry)
-        self._persist_audit_entry(status, tool, backend, now_ms, error)
-
-    def _persist_audit_entry(
+    def _log_audit(
         self,
         status: str,
         tool: str,
         backend: str,
-        timestamp_ms: int,
-        error: Optional[str] = None,
-    ) -> None:
-        """Write audit entry to HANA Cloud via the REST SQL API.
+        prompt: str,
+        error: str = None,
+        user_id: str = "anonymous",
+    ):
+        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": "world-monitor-agent",
+            "agentId": "world-monitor-agent",
+            "action": "invoke",
+            "status": status,
+            "tool": tool,
+            "toolName": tool,
+            "backend": backend,
+            "prompt_hash": prompt_hash,
+            "promptHash": prompt_hash,
+            "prompt_length": len(prompt),
+            "userId": user_id,
+            "source": "world-monitor-main",
+        }
+        if error:
+            entry["error"] = error
+        self.audit_log.append(entry)
+        self._persist_audit_entry(entry)
 
-        The record lands in WORLDMONITOR_AUDIT_LOG, which is created on first
-        use.  The write is best-effort — any exception is suppressed so that
-        HANA unavailability never interrupts agent execution.
-
-        Required env-vars (same as sap_openai_server/server.ts):
-            HANA_BASE_URL       — HANA Cloud REST endpoint base URL
-            HANA_CLIENT_ID      — OAuth2 client ID
-            HANA_CLIENT_SECRET  — OAuth2 client secret
-            HANA_AUTH_URL       — OAuth2 token URL (hana.ondemand.com/oauth/token)
-        """
-        if not _hana_available():
-            return  # HANA not configured; in-process log is the only record
-
-        outcome = "blocked" if status in ("blocked", "error") else (
-            "anonymised" if status == "pending_approval" else "allowed"
-        )
-        audit_id = f"{timestamp_ms:016x}-{hash(tool) & 0xFFFFFFFF:08x}"
+    def _persist_audit_entry(self, entry: Dict[str, Any]) -> None:
         try:
-            _hana_ensure_audit_table()
-            _hana_sql(
-                "INSERT INTO WORLDMONITOR_AUDIT_LOG "
-                "(AUDIT_ID, AGENT, STATUS, TOOL, BACKEND, OUTCOME, PROMPT_HASH, PROMPT_LENGTH, ERROR_MSG) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    audit_id,
-                    "world-monitor-agent",
-                    status,
-                    tool,
-                    backend,
-                    outcome,
-                    self.audit_log[-1].get("prompt_hash", 0) if self.audit_log else 0,
-                    self.audit_log[-1].get("prompt_length", 0) if self.audit_log else 0,
-                    error or "",
-                ],
-            )
+            self._audit_store.append(entry)
         except Exception:
             pass  # Audit persistence is best-effort; do not disrupt agent execution
     
     def get_audit_log(self) -> List[Dict]:
+        try:
+            persisted = self._audit_store.query({
+                "agentId": "world-monitor-agent",
+                "source": "world-monitor-main",
+                "limit": 500,
+            })
+            return [record.get("payload", record) for record in persisted]
+        except Exception:
+            pass
         return self.audit_log
     
     def check_governance(self, prompt: str) -> Dict[str, Any]:

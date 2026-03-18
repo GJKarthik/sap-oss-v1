@@ -11,7 +11,7 @@
  */
 
 import { Subject, BehaviorSubject } from 'rxjs';
-import { AuditService } from './audit.service';
+import { AuditConfig, AuditEntry, AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Minimal stubs
@@ -30,12 +30,16 @@ function makeClientStub() {
   };
 }
 
-function makeService() {
+function makeService(config?: Partial<AuditConfig>) {
   const client = makeClientStub();
-  const service = new AuditService(client as never);
-  service.configure({ level: 'standard' });
+  const service = new AuditService(client as never, { level: 'standard', ...config });
   service.setUserId('test-user');
   return { service, client };
+}
+
+async function flushAsyncWork(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 // ---------------------------------------------------------------------------
@@ -154,5 +158,65 @@ describe('AuditService — query() and export()', () => {
     const remaining = service.query({ actionType: 'tool_call' });
     expect(remaining).toHaveLength(1);
     expect(remaining[0].action.toolName).toBe('new_call');
+  });
+});
+
+describe('AuditService — durable persistence', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('posts normalized durable audit records to the configured endpoint', async () => {
+    globalThis.fetch = jest.fn().mockImplementation(async (_input: unknown, init?: RequestInit) => ({
+      ok: true,
+      status: 200,
+      json: async () => (init?.method === 'GET' ? { logs: [] } : { status: 'ok' }),
+    })) as typeof fetch;
+
+    const { service } = makeService({ endpoint: '/audit/logs', batchSize: 1, agentId: 'agent-42', backend: 'world-monitor-mcp' });
+    const entry = service.logToolCall('get_products', { category: 'all' }, 'success');
+    await flushAsyncWork();
+
+    const postCall = (globalThis.fetch as jest.Mock).mock.calls.find(([, init]) => init?.method === 'POST');
+    expect(postCall).toBeTruthy();
+    const payload = JSON.parse(String(postCall?.[1]?.body));
+    expect(payload.entries[0]).toMatchObject({
+      agentId: 'agent-42',
+      action: 'tool_call',
+      status: 'success',
+      toolName: 'get_products',
+      backend: 'world-monitor-mcp',
+      userId: 'test-user',
+      source: 'genui-governance',
+    });
+    expect(payload.entries[0].promptHash).toBeTruthy();
+    expect(payload.entries[0].payload.id).toBe(entry.id);
+  });
+
+  it('refreshFromEndpoint hydrates remote entries into the queryable cache', async () => {
+    const remoteEntry: AuditEntry = {
+      id: 'remote-1',
+      timestamp: new Date().toISOString(),
+      userId: 'remote-user',
+      sessionId: 'session-1',
+      runId: 'run-1',
+      action: { type: 'tool_call', toolName: 'remote_tool', description: 'Remote tool' },
+      outcome: 'success',
+      context: { userAgent: 'jest', timezone: 'UTC', language: 'en' },
+    };
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ logs: [{ payload: remoteEntry }] }),
+    } as never) as typeof fetch;
+
+    const { service } = makeService({ endpoint: 'http://audit.example/audit/logs' });
+    await service.refreshFromEndpoint({ actionType: 'tool_call' });
+
+    const results = service.query({ actionType: 'tool_call' });
+    expect(results.some(entry => entry.id === 'remote-1')).toBe(true);
+    expect(results.find(entry => entry.id === 'remote-1')?.action.toolName).toBe('remote_tool');
   });
 });
