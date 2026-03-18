@@ -97,6 +97,23 @@ class TestMCPMangleTool(unittest.TestCase):
         self.assertIn("reason", result["results"][0])
         self.assertIn("result", result["results"][0])
 
+    def test_mcp_tool_uses_hana_governance_facts_before_local_stub(self):
+        with patch.object(server_mod, "MANGLE_ENDPOINT", "grpc://localhost:50051"):
+            srv = server_mod.MCPServer()
+            with patch.object(
+                srv._mangle_client,
+                "_query_grpc",
+                side_effect=RuntimeError("grpc down"),
+            ):
+                result = srv._handle_mangle_query({
+                    "predicate": "subject_to_review",
+                    "args": '["impact_assessment"]',
+                })
+
+        self.assertEqual(result["fallback_source"], "hana_toolkit")
+        self.assertEqual(len(result["results"]), 2)
+        self.assertEqual(result["hana"]["service"], "hana-toolkit")
+
     def test_health_payload_reports_mangle_status(self):
         srv = server_mod.MCPServer()
         with patch.object(
@@ -117,6 +134,7 @@ class TestMCPMangleTool(unittest.TestCase):
         self.assertEqual(payload["status"], "degraded")
         self.assertEqual(payload["mangle"]["transport"], "grpc")
         self.assertEqual(payload["mangle"]["circuit_breaker"]["state"], "open")
+        self.assertIn("hana_toolkit", payload)
 
 
 if __name__ == "__main__":
