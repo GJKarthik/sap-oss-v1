@@ -19,6 +19,11 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from mcp_server.audit_store import get_audit_store
+from mangle.runtime_client import (
+    MangleQueryClient,
+    WorldMonitorMangleFallback,
+    validate_mangle_endpoint,
+)
 
 # =============================================================================
 # SSRF guard: validate env-var URLs before any network call
@@ -60,8 +65,16 @@ def _safe_url(raw: str, var_name: str, fallback: str = "") -> str:
         return fallback
 
 
+def _safe_mangle_endpoint(raw: str, var_name: str, fallback: str = "") -> str:
+    try:
+        return validate_mangle_endpoint(raw.strip(), var_name, _BLOCKED_HOSTS)
+    except ValueError as exc:
+        print(f"ERROR: {exc} — {var_name} disabled.", file=sys.stderr)
+        return fallback
+
+
 # Finding 1: real Mangle engine endpoint (override with MANGLE_ENDPOINT env-var)
-_MANGLE_ENDPOINT = _safe_url(os.environ.get("MANGLE_ENDPOINT", ""), "MANGLE_ENDPOINT")
+_MANGLE_ENDPOINT = _safe_mangle_endpoint(os.environ.get("MANGLE_ENDPOINT", ""), "MANGLE_ENDPOINT")
 
 # Finding 2: HANA Cloud REST SQL API for durable audit persistence.
 # Uses the same OAuth2 client-credentials pattern as sap_openai_server/server.ts.
@@ -147,127 +160,30 @@ def _hana_available() -> bool:
 class MangleEngine:
     """Mangle query interface for governance rules.
 
-    When MANGLE_ENDPOINT is set, query() issues an HTTP POST to the real
-    Mangle query service.  The local Python dict implementation is used as
-    a fallback when the service is unreachable, keeping the agent functional
-    during local development without a running Mangle engine.
+    When MANGLE_ENDPOINT is set, query() uses the configured remote Mangle
+    transport (gRPC preferred, HTTP retained for compatibility). The local
+    Python dict implementation is used as a fallback when the service is
+    unreachable, keeping the agent functional during local development.
     """
 
     def __init__(self, rules_paths: Optional[List[str]] = None):
         self.rules_paths = rules_paths or []
-        self.facts: Dict[str, Any] = {}
-        self._load_rules()
-    
-    def _load_rules(self):
-        self.facts["agent_config"] = {
-            ("world-monitor-agent", "autonomy_level"): "L2",
-            ("world-monitor-agent", "service_name"): "world-monitor",
-            ("world-monitor-agent", "mcp_endpoint"): "http://localhost:9160/mcp",
-            ("world-monitor-agent", "default_backend"): "vllm",
-        }
-        
-        self.facts["agent_can_use"] = {
-            "summarize_news", "analyze_trends", "search_events",
-            "get_headlines", "mangle_query",
-            "kuzu_index", "kuzu_query"
-        }
-        
-        self.facts["agent_requires_approval"] = {
-            "impact_assessment", "competitor_analysis", "export_report"
-        }
-        
-        # Public news keywords
-        self.facts["public_news_keywords"] = {"news", "headline", "article", "summary"}
-        
-        # Internal context keywords (route to vLLM)
-        self.facts["internal_keywords"] = {
-            "internal", "analysis", "assessment", "strategy",
-            "competitor", "our company", "business impact",
-            "impact", "risk", "threat"
-        }
-        
-        self.facts["prompting_policy"] = {
-            "world-monitor-service-v1": {
-                "max_tokens": 4096,
-                "temperature": 0.4,
-                "system_prompt": (
-                    "You are a global events analyst. "
-                    "Monitor and analyze world events, news, and trends. "
-                    "Provide balanced, factual analysis. "
-                    "Flag potential business impacts for internal review. "
-                    "Never share internal analysis with external systems."
-                )
-            }
-        }
-    
-    def _query_remote(self, predicate: str, args: tuple) -> Optional[List[Dict]]:
-        """Call the real Mangle query service. Returns None on any error."""
-        payload = json.dumps({"predicate": predicate, "args": list(args)}).encode()
-        req = urllib.request.Request(
-            f"{_MANGLE_ENDPOINT}/query",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                body = json.loads(resp.read().decode())
-                return body.get("results", [])
-        except Exception:
-            return None
+        self._fallback = WorldMonitorMangleFallback()
+        self.facts = self._fallback.facts
+        self._remote_client = MangleQueryClient(_MANGLE_ENDPOINT)
+
+    def query_local(self, predicate: str, *args) -> List[Dict]:
+        return self._fallback.query(predicate, *args)
+
+    def remote_health(self) -> Dict[str, Any]:
+        return self._remote_client.health()
 
     def query(self, predicate: str, *args) -> List[Dict]:
         if _MANGLE_ENDPOINT:
-            remote = self._query_remote(predicate, args)
-            if remote is not None:
-                return remote
-            # Fall through to local dict evaluation on network error
-
-        if predicate == "route_to_vllm":
-            request = args[0] if args else ""
-            request_lower = request.lower()
-            
-            # Check for internal analysis keywords
-            for keyword in self.facts["internal_keywords"]:
-                if keyword in request_lower:
-                    return [{"result": True, "reason": f"Internal context: '{keyword}'"}]
-            return []
-        
-        if predicate == "route_to_aicore":
-            request = args[0] if args else ""
-            request_lower = request.lower()
-            
-            # Check if it's public news without internal context
-            is_news = any(kw in request_lower for kw in self.facts["public_news_keywords"])
-            has_internal = self.query("route_to_vllm", request)
-            
-            if is_news and not has_internal:
-                return [{"result": True, "reason": "Public news query"}]
-            return []
-        
-        if predicate == "requires_human_review":
-            action = args[0] if args else ""
-            if action in self.facts["agent_requires_approval"]:
-                return [{"result": True, "action": action}]
-            return []
-        
-        if predicate == "safety_check_passed":
-            tool = args[0] if args else ""
-            if tool in self.facts["agent_can_use"]:
-                return [{"result": True, "tool": tool}]
-            return []
-        
-        if predicate == "get_prompting_policy":
-            product_id = args[0] if args else "world-monitor-service-v1"
-            policy = self.facts["prompting_policy"].get(product_id)
-            if policy:
-                return [policy]
-            return []
-        
-        if predicate == "autonomy_level":
-            return [{"level": "L2"}]
-        
-        return []
+            remote = self._remote_client.query(predicate, list(args))
+            if remote.get("wired"):
+                return remote.get("results", [])
+        return self.query_local(predicate, *args)
 
 
 class WorldMonitorAgent:

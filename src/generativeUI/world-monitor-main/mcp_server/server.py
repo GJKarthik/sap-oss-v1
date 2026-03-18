@@ -13,6 +13,10 @@ from typing import Any
 import urllib.request
 from urllib.parse import parse_qs, urlparse
 
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
 try:
     from graph.kuzu_store import get_kuzu_store as _get_kuzu_store
 except ImportError:
@@ -25,6 +29,12 @@ try:
     from audit_store import get_audit_store
 except ImportError:
     from mcp_server.audit_store import get_audit_store
+
+from mangle.runtime_client import (
+    MangleQueryClient,
+    WorldMonitorMangleFallback,
+    validate_mangle_endpoint,
+)
 
 # =============================================================================
 # Finding 4: CORS configuration with startup validation
@@ -98,41 +108,14 @@ def _validate_remote_url(url: str, var_name: str) -> str:
 
 
 try:
-    MANGLE_ENDPOINT = _validate_remote_url(
-        os.environ.get("MANGLE_ENDPOINT", "http://localhost:50051").rstrip("/"),
+    MANGLE_ENDPOINT = validate_mangle_endpoint(
+        os.environ.get("MANGLE_ENDPOINT", "").strip(),
         "MANGLE_ENDPOINT",
+        _BLOCKED_HOSTS,
     )
 except ValueError as _e:
     print(f"ERROR: {_e}", file=sys.stderr)
-    MANGLE_ENDPOINT = "http://localhost:50051"
-
-
-def _call_mangle_service(predicate: str, args: list) -> dict:
-    """Call the real Mangle query service via HTTP.
-
-    Returns a dict with keys 'predicate', 'results', and 'wired' (bool).
-    Falls back to {'predicate': predicate, 'results': [], 'wired': False}
-    if the service is unreachable, so the MCP server stays functional
-    during local development without a running Mangle engine.
-    """
-    payload = json.dumps({"predicate": predicate, "args": args}).encode()
-    req = urllib.request.Request(
-        f"{MANGLE_ENDPOINT}/query",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            body = json.loads(resp.read().decode())
-            return {"predicate": predicate, "results": body.get("results", body), "wired": True}
-    except Exception as exc:
-        return {
-            "predicate": predicate,
-            "results": [],
-            "wired": False,
-            "fallback_reason": str(exc),
-        }
+    MANGLE_ENDPOINT = ""
 
 # =============================================================================
 # Finding 5: MetricsBackend abstraction
@@ -374,6 +357,8 @@ class MCPServer:
         self.resources = {}
         self.facts = {}
         self._metrics_backend = _build_metrics_backend()
+        self._mangle_client = MangleQueryClient(MANGLE_ENDPOINT)
+        self._mangle_fallback = WorldMonitorMangleFallback()
         self._register_tools()
         self._register_resources()
         self._initialize_facts()
@@ -879,17 +864,29 @@ class MCPServer:
         if not isinstance(raw_args, list):
             raw_args = []
 
-        result = _call_mangle_service(predicate, raw_args)
+        result = self._mangle_client.query(predicate, raw_args)
         if result["wired"]:
             return result
 
-        # Graceful fallback: serve from the local fact store when the Mangle
-        # engine is unreachable (e.g. local development without a running instance).
-        facts = self.facts.get(predicate)
-        if facts:
-            result["results"] = facts
-            result["fallback_source"] = "local_fact_store"
+        local_results = self._mangle_fallback.query(predicate, *raw_args)
+        if local_results:
+            result["results"] = local_results
+            result["fallback_source"] = "world_monitor_python_simulation"
         return result
+
+    def get_health_payload(self) -> dict:
+        from datetime import datetime, timezone
+
+        mangle_health = self._mangle_client.health()
+        status = "healthy" if mangle_health["status"] in ("healthy", "unconfigured") else "degraded"
+        return {
+            "status": status,
+            "service": "world-monitor-mcp",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "registered_services": len(self.facts.get("service_registry", [])),
+            "active_alerts": len(self.facts.get("alerts", [])),
+            "mangle": mangle_health,
+        }
 
     def handle_request(self, request: MCPRequest) -> MCPResponse:
         method = request.method
@@ -991,14 +988,7 @@ class MCPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/health":
-            from datetime import datetime, timezone
-            response = {
-                "status": "healthy",
-                "service": "world-monitor-mcp",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "registered_services": len(mcp_server.facts.get("service_registry", [])),
-                "active_alerts": len(mcp_server.facts.get("alerts", [])),
-            }
+            response = mcp_server.get_health_payload()
             self._write_json(200, response)
         elif parsed.path == "/audit/logs":
             query = parse_qs(parsed.query)
