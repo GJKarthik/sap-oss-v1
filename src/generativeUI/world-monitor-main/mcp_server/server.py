@@ -30,6 +30,11 @@ try:
 except ImportError:
     from mcp_server.audit_store import get_audit_store
 
+try:
+    from hana_toolkit import HanaToolkitServer
+except ImportError:
+    from mcp_server.hana_toolkit import HanaToolkitServer
+
 from mangle.runtime_client import (
     MangleQueryClient,
     WorldMonitorMangleFallback,
@@ -357,6 +362,7 @@ class MCPServer:
         self.resources = {}
         self.facts = {}
         self._metrics_backend = _build_metrics_backend()
+        self._hana_toolkit = HanaToolkitServer()
         self._mangle_client = MangleQueryClient(MANGLE_ENDPOINT)
         self._mangle_fallback = WorldMonitorMangleFallback()
         self._register_tools()
@@ -584,7 +590,15 @@ class MCPServer:
             {"name": "cap-llm-mcp", "endpoint": "http://localhost:9100/mcp", "health_url": "http://localhost:9100/health", "status": "unknown"},
             {"name": "data-cleaning-mcp", "endpoint": "http://localhost:9110/mcp", "health_url": "http://localhost:9110/health", "status": "unknown"},
             {"name": "elasticsearch-mcp", "endpoint": "http://localhost:9120/mcp", "health_url": "http://localhost:9120/health", "status": "unknown"},
-            {"name": "hana-toolkit-mcp", "endpoint": "http://localhost:9130/mcp", "health_url": "http://localhost:9130/health", "status": "unknown"},
+            {
+                "name": "hana-toolkit",
+                "endpoint": "http://localhost:9130/mcp",
+                "health_url": "http://localhost:9130/health",
+                "status": "unknown",
+                "required_env": ["HANA_HOST", "HANA_PORT", "HANA_USER", "HANA_PASSWORD"],
+                "capabilities": ["query", "vector_search", "get_governance_facts", "get_audit_logs"],
+                "schema": "AI_GOVERNANCE",
+            },
             {"name": "langchain-mcp", "endpoint": "http://localhost:9140/mcp", "health_url": "http://localhost:9140/health", "status": "unknown"},
             {"name": "odata-vocab-mcp", "endpoint": "http://localhost:9150/mcp", "health_url": "http://localhost:9150/health", "status": "unknown"},
             {"name": "ui5-ngx-mcp", "endpoint": "http://localhost:9160/mcp", "health_url": "http://localhost:9160/health", "status": "unknown"},
@@ -868,6 +882,13 @@ class MCPServer:
         if result["wired"]:
             return result
 
+        hana_results = self._hana_toolkit.resolve_mangle_predicate(predicate, raw_args)
+        if hana_results:
+            result["results"] = hana_results
+            result["fallback_source"] = "hana_toolkit"
+            result["hana"] = self._hana_toolkit.health()
+            return result
+
         local_results = self._mangle_fallback.query(predicate, *raw_args)
         if local_results:
             result["results"] = local_results
@@ -878,7 +899,12 @@ class MCPServer:
         from datetime import datetime, timezone
 
         mangle_health = self._mangle_client.health()
-        status = "healthy" if mangle_health["status"] in ("healthy", "unconfigured") else "degraded"
+        hana_health = self._hana_toolkit.health()
+        status = "healthy"
+        if mangle_health["status"] not in ("healthy", "unconfigured"):
+            status = "degraded"
+        if hana_health["status"] == "degraded":
+            status = "degraded"
         return {
             "status": status,
             "service": "world-monitor-mcp",
@@ -886,6 +912,7 @@ class MCPServer:
             "registered_services": len(self.facts.get("service_registry", [])),
             "active_alerts": len(self.facts.get("alerts", [])),
             "mangle": mangle_health,
+            "hana_toolkit": hana_health,
         }
 
     def handle_request(self, request: MCPRequest) -> MCPResponse:
@@ -1070,6 +1097,8 @@ Server: http://localhost:{port}
 
 Tools: get_metrics, record_metric, health_check, list_services, refresh_services,
        get_alerts, create_alert, get_logs, mangle_query, kuzu_index, kuzu_query
+
+HANA Toolkit: http://localhost:9130/mcp (env: HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD)
 
 Resources: monitor://metrics, monitor://alerts, monitor://services, mangle://facts
 """)
