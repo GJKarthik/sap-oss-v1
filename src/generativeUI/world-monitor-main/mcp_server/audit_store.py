@@ -15,6 +15,24 @@ MAX_AUDIT_QUERY_LIMIT = 500
 _DEFAULT_RETENTION_DAYS = 90
 _STORE: "AuditStore | None" = None
 
+# Sensitive field names that should be masked before storage (case-insensitive matching)
+_SENSITIVE_FIELDS = frozenset({
+    # Authentication
+    "password", "passwd", "pwd", "secret", "token", "api_key", "apikey",
+    "access_token", "refresh_token", "bearer", "auth", "authorization",
+    "credential", "credentials", "private_key", "privatekey",
+    # Personal Identifiable Information (PII)
+    "ssn", "social_security", "socialsecurity", "tax_id", "taxid",
+    "credit_card", "creditcard", "card_number", "cardnumber", "cvv", "cvc",
+    "account_number", "accountnumber", "bank_account", "bankaccount", "iban",
+    "email", "phone", "telephone", "mobile", "address", "zip", "postal",
+    # SAP-specific sensitive fields
+    "salary", "compensation", "balance", "amount", "price",
+    "kunnr", "lifnr",  # Customer/Vendor numbers in SAP
+})
+_MASK_VALUE = "***MASKED***"
+_MAX_MASK_DEPTH = 10  # Prevent infinite recursion
+
 _CREATE_AUDIT_SCHEMA = """
 CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY,
@@ -75,6 +93,52 @@ def _clamp_retention_days(value: Any, default: int = _DEFAULT_RETENTION_DAYS) ->
     return max(1, min(parsed, 3650))
 
 
+def _is_sensitive_field(field_name: str) -> bool:
+    """Check if a field name matches any sensitive field pattern."""
+    if not isinstance(field_name, str):
+        return False
+    lower_name = field_name.lower().replace("-", "_").replace(" ", "_")
+    # Direct match
+    if lower_name in _SENSITIVE_FIELDS:
+        return True
+    # Partial match (e.g., "user_password", "api_token_secret")
+    for sensitive in _SENSITIVE_FIELDS:
+        if sensitive in lower_name:
+            return True
+    return False
+
+
+def _mask_sensitive_data(data: Any, depth: int = 0) -> Any:
+    """Recursively mask sensitive fields in a data structure.
+
+    Args:
+        data: The data to mask (dict, list, or scalar)
+        depth: Current recursion depth to prevent infinite loops
+
+    Returns:
+        A copy of the data with sensitive fields masked
+    """
+    if depth > _MAX_MASK_DEPTH:
+        return data
+
+    if isinstance(data, dict):
+        masked = {}
+        for key, value in data.items():
+            if _is_sensitive_field(str(key)):
+                # Mask the entire value
+                masked[key] = _MASK_VALUE
+            else:
+                # Recursively check nested structures
+                masked[key] = _mask_sensitive_data(value, depth + 1)
+        return masked
+
+    if isinstance(data, list):
+        return [_mask_sensitive_data(item, depth + 1) for item in data]
+
+    # Scalars pass through unchanged
+    return data
+
+
 class AuditStore:
     def __init__(self, db_path: str | None = None, retention_days: int | None = None):
         root = Path(__file__).resolve().parent.parent
@@ -100,11 +164,24 @@ class AuditStore:
                 conn.commit()
             self._schema_ready = True
 
-    def _normalise_entry(self, entry: dict[str, Any]) -> dict[str, Any]:
+    def _normalise_entry(self, entry: dict[str, Any], mask_sensitive: bool = True) -> dict[str, Any]:
+        """Normalise and optionally mask an audit entry before storage.
+
+        Args:
+            entry: The raw audit entry dict
+            mask_sensitive: Whether to mask sensitive fields in the payload (default: True)
+
+        Returns:
+            Normalised entry ready for database insertion
+        """
         now = _utc_now()
         timestamp = _parse_timestamp(entry.get("timestamp"), now)
         retention_days = _clamp_retention_days(entry.get("retentionDays"), self.retention_days)
-        payload = entry.get("payload", entry)
+
+        # Get payload and apply masking if enabled
+        raw_payload = entry.get("payload", entry)
+        payload = _mask_sensitive_data(raw_payload) if mask_sensitive else raw_payload
+
         return {
             "id": str(entry.get("id") or uuid4()),
             "timestamp": timestamp.isoformat(),
