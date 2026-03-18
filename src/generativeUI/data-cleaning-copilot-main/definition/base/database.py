@@ -574,6 +574,7 @@ class Database:
         max_execution_time: int = 30,
         max_output_tokens: Optional[int] = None,
         table_scopes: Optional[Set[str]] = None,
+        max_sandbox_memory_mb: int = 512,
     ):
         self.database_id = database_id
         self.table_classes: Dict[str, Type[Table]] = {}
@@ -582,6 +583,7 @@ class Database:
         self.corruptors: Dict[str, CorruptionLogic] = {}  # Stores agent-generated corruptors
         self.rule_based_checks: Dict[str, CheckLogic] = {}  # Stores rule-based checks (read-only after initialization)
         self.max_execution_time = max_execution_time  # Maximum execution time in seconds for each method
+        self.max_sandbox_memory_mb = max_sandbox_memory_mb  # Max memory per generated-code subprocess
         self.max_output_tokens = max_output_tokens  # Maximum character count for DataFrame outputs
         self.table_scopes = table_scopes or set()  # Set of table names to limit operations to
 
@@ -1097,6 +1099,7 @@ class Database:
                 args=(filtered_data,),
                 namespace=check._get_namespace(),
                 timeout=self.max_execution_time,
+                memory_limit_mb=self.max_sandbox_memory_mb,
             )
 
             if error:
@@ -1566,6 +1569,7 @@ class Database:
             args=(self.scoped_table_data,),
             namespace=query._get_namespace(),
             timeout=30,
+            memory_limit_mb=self.max_sandbox_memory_mb,
         )
 
         if error:
