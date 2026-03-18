@@ -14218,3 +14218,202 @@ body.has-critical-banner .panels-grid {
     grid-row: unset !important;
   }
 }
+
+/* ============================================================
+   Audit Panel - Accessibility Enhancements
+   WCAG AA Compliant: Focus states, contrast, semantic structure
+   ============================================================ */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Audit Summary Region */
+.audit-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: var(--overlay-subtle);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.audit-stat {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: var(--overlay-light);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Filter Toolbar - Toggle Buttons */
+.audit-filters {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.audit-filter-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audit-filter-btn:hover {
+  border-color: var(--text-faint);
+  color: var(--text-secondary);
+  background: var(--overlay-subtle);
+}
+
+/* Active filter state - pressed toggle */
+.audit-filter-btn.active,
+.audit-filter-btn[aria-pressed="true"] {
+  background: var(--overlay-medium);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Focus visible - keyboard navigation */
+.audit-filter-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Audit Data Table */
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.audit-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.audit-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.audit-row:hover {
+  background: var(--surface-hover);
+}
+
+/* Focus within row for keyboard navigation */
+.audit-row:focus-within {
+  background: var(--surface-active);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Service Badge */
+.audit-svc-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--overlay-light);
+  border-radius: 3px;
+  color: var(--text);
+}
+
+/* Security Classification Badge */
+.audit-sec-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Outcome Badge - Colors + Text for Accessibility */
+.audit-outcome {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Provide underlines for colorblind users */
+.audit-outcome--blocked {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+}
+
+.audit-outcome--anonymised {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+/* Rules cell with tooltip alternative */
+.audit-rules {
+  cursor: help;
+  color: var(--text-dim);
+}
+
+.audit-rules:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Status message for filtered results */
+.audit-status {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .audit-filter-btn,
+  .audit-row {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (forced-colors: active) {
+  .audit-filter-btn.active,
+  .audit-filter-btn[aria-pressed="true"] {
+    border: 2px solid CanvasText;
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .audit-sec-badge,
+  .audit-outcome {
+    forced-color-adjust: none;
+  }
+
+  .audit-outcome--blocked,
+  .audit-outcome--anonymised {
+    text-decoration-color: CanvasText;
+  }
+
+  .audit-row:focus-within {
+    outline: 2px solid Highlight;
+  }
+}

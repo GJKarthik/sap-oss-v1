@@ -28,6 +28,15 @@ resolve_service_for_intent(/alerts, URL) :-
 resolve_service_for_intent(/health, URL) :-
     service_registry("world-monitor", URL, _).
 
+resolve_service_for_intent(/governance, URL) :-
+    service_registry("hana-toolkit", URL, _).
+
+resolve_service_for_intent(/audit_decisions, URL) :-
+    service_registry("hana-toolkit", URL, _).
+
+resolve_service_for_intent(/vector_search, URL) :-
+    service_registry("hana-toolkit", URL, _).
+
 resolve_service_for_intent(/graph_index, URL) :-
     service_registry("world-graph", URL, _).
 
@@ -43,6 +52,10 @@ tool_service("get_alerts", "world-monitor").
 tool_service("create_alert", "world-monitor").
 tool_service("get_logs", "world-monitor").
 tool_service("mangle_query", "world-monitor").
+tool_service("query", "hana-toolkit").
+tool_service("vector_search", "hana-toolkit").
+tool_service("get_governance_facts", "hana-toolkit").
+tool_service("get_audit_logs", "hana-toolkit").
 tool_service("kuzu_index",   "world-graph").
 tool_service("kuzu_query",   "world-graph").
 
