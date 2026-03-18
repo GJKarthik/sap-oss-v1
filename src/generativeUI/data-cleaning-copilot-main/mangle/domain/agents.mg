@@ -4,7 +4,7 @@
 # ============================================================================
 
 # Import regulations knowledge base
-include "../../../regulations/mangle/rules.mg".
+include "../../../../regulations/mangle/rules.mg".
 
 # Import ODPS-generated data product rules
 include "data_products.mg".
