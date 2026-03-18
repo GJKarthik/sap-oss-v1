@@ -198,6 +198,15 @@ pub fn vecMatMul(out: []f32, x: []const f32, W: []const f32, K: usize, N: usize)
     }
 }
 
+/// Like vecMatMul but W is []f16 — converts each weight on-the-fly to f32.
+pub fn vecMatMulF16W(out: []f32, x: []const f32, W: []const f16, K: usize, N: usize) void {
+    for (0..N) |j| {
+        var sum: f32 = 0.0;
+        for (0..K) |k| sum += x[k] * @as(f32, W[k * N + j]);
+        out[j] = sum;
+    }
+}
+
 /// Rotary Position Embeddings (RoPE) — applies rotation to Q and K vectors
 pub fn rope(q: []f32, k: []f32, pos: usize, head_dim: usize, base_freq: f32, n_heads: usize, n_kv_heads: usize) void {
     // Apply RoPE to each Q head
@@ -283,22 +292,22 @@ pub fn sampleGreedy(logits: []const f32) u32 {
 /// Weights for a single transformer layer (LLaMA / Mistral / etc.)
 pub const TransformerLayer = struct {
     attn_norm: []f32, // [dim]        — pre-attention RMSNorm
-    wq: []f32, // [dim × qkv_dim]     — Q projection
-    wk: []f32, // [dim × kv_dim]      — K projection
-    wv: []f32, // [dim × kv_dim]      — V projection
-    wo: []f32, // [qkv_dim × dim]     — output projection
-    ffn_norm: []f32, // [dim]         — pre-FFN RMSNorm
-    w_gate: []f32, // [dim × ff_dim]  — gate projection (SwiGLU)
-    w_up: []f32, // [dim × ff_dim]    — up projection
-    w_down: []f32, // [ff_dim × dim]  — down projection
+    wq: []f16, // [dim × qkv_dim]     — Q projection (f16 halves RAM vs f32)
+    wk: []f16, // [dim × kv_dim]      — K projection
+    wv: []f16, // [dim × kv_dim]      — V projection
+    wo: []f16, // [qkv_dim × dim]     — output projection
+    ffn_norm: []f32, // [dim]         — pre-FFN RMSNorm (kept f32: tiny + used in rmsNorm)
+    w_gate: []f16, // [dim × ff_dim]  — gate projection (SwiGLU)
+    w_up: []f16, // [dim × ff_dim]    — up projection
+    w_down: []f16, // [ff_dim × dim]  — down projection
 };
 
 /// All weights for a complete transformer model
 pub const TransformerWeights = struct {
-    token_embedding: []f32, // [vocab_size × dim]
+    token_embedding: []f16, // [vocab_size × dim]  — f16: largest tensor, dominates RAM
     layers: []TransformerLayer,
-    final_norm: []f32, // [dim]
-    lm_head: []f32, // [dim × vocab_size]
+    final_norm: []f32, // [dim]                — kept f32: tiny + used directly in rmsNorm
+    lm_head: []f16, // [dim × vocab_size]      — f16
 
     /// Allocate weight buffers without initialization (for GGUF loading).
     pub fn allocateRaw(allocator: Allocator, cfg: ModelConfig) !TransformerWeights {
@@ -313,22 +322,22 @@ pub const TransformerWeights = struct {
         const vocab: usize = cfg.vocab_size;
 
         var weights: TransformerWeights = undefined;
-        weights.token_embedding = try allocator.alloc(f32, vocab * dim);
-        weights.final_norm = try allocator.alloc(f32, dim);
-        weights.lm_head = try allocator.alloc(f32, dim * vocab);
+        weights.token_embedding = try allocator.alloc(f16, vocab * dim);
+        weights.final_norm = try allocator.alloc(f32, dim); // norm weight stays f32
+        weights.lm_head = try allocator.alloc(f16, dim * vocab);
         weights.layers = try allocator.alloc(TransformerLayer, n_layers);
 
         for (0..n_layers) |l| {
             weights.layers[l] = .{
                 .attn_norm = try allocator.alloc(f32, dim),
-                .wq = try allocator.alloc(f32, dim * qkv_dim),
-                .wk = try allocator.alloc(f32, dim * kv_dim),
-                .wv = try allocator.alloc(f32, dim * kv_dim),
-                .wo = try allocator.alloc(f32, qkv_dim * dim),
-                .ffn_norm = try allocator.alloc(f32, dim),
-                .w_gate = try allocator.alloc(f32, dim * ff),
-                .w_up = try allocator.alloc(f32, dim * ff),
-                .w_down = try allocator.alloc(f32, ff * dim),
+                .wq = try allocator.alloc(f16, dim * qkv_dim),
+                .wk = try allocator.alloc(f16, dim * kv_dim),
+                .wv = try allocator.alloc(f16, dim * kv_dim),
+                .wo = try allocator.alloc(f16, qkv_dim * dim),
+                .ffn_norm = try allocator.alloc(f32, dim), // norm stays f32
+                .w_gate = try allocator.alloc(f16, dim * ff),
+                .w_up = try allocator.alloc(f16, dim * ff),
+                .w_down = try allocator.alloc(f16, ff * dim),
             };
         }
 
@@ -362,22 +371,23 @@ pub const TransformerWeights = struct {
 };
 
 fn initWeightsSmallRandom(weights: TransformerWeights, dim: usize, n_layers: usize) void {
-    // Initialize norm weights to 1.0 (standard initialization)
+    // norm weights: f32, set to 1.0
     @memset(weights.final_norm, 1.0);
-    // Initialize embedding and lm_head with small values
-    fillDeterministic(weights.token_embedding, 0.02);
-    fillDeterministic(weights.lm_head, 0.02);
+    // f16 weight matrices: use f16-aware fill
+    fillDeterministicF16(weights.token_embedding, 0.02);
+    fillDeterministicF16(weights.lm_head, 0.02);
 
     for (0..n_layers) |l| {
-        @memset(weights.layers[l].attn_norm, 1.0);
-        @memset(weights.layers[l].ffn_norm, 1.0);
-        fillDeterministic(weights.layers[l].wq, 0.02 / @as(f32, @floatFromInt(dim)));
-        fillDeterministic(weights.layers[l].wk, 0.02 / @as(f32, @floatFromInt(dim)));
-        fillDeterministic(weights.layers[l].wv, 0.02 / @as(f32, @floatFromInt(dim)));
-        fillDeterministic(weights.layers[l].wo, 0.02 / @as(f32, @floatFromInt(dim)));
-        fillDeterministic(weights.layers[l].w_gate, 0.02 / @as(f32, @floatFromInt(dim)));
-        fillDeterministic(weights.layers[l].w_up, 0.02 / @as(f32, @floatFromInt(dim)));
-        fillDeterministic(weights.layers[l].w_down, 0.02 / @as(f32, @floatFromInt(dim)));
+        @memset(weights.layers[l].attn_norm, 1.0); // f32 norm, ok
+        @memset(weights.layers[l].ffn_norm, 1.0);  // f32 norm, ok
+        const ws = 0.02 / @as(f32, @floatFromInt(dim));
+        fillDeterministicF16(weights.layers[l].wq, ws);
+        fillDeterministicF16(weights.layers[l].wk, ws);
+        fillDeterministicF16(weights.layers[l].wv, ws);
+        fillDeterministicF16(weights.layers[l].wo, ws);
+        fillDeterministicF16(weights.layers[l].w_gate, ws);
+        fillDeterministicF16(weights.layers[l].w_up, ws);
+        fillDeterministicF16(weights.layers[l].w_down, ws);
     }
 }
 
@@ -387,6 +397,14 @@ fn fillDeterministic(buf: []f32, scale: f32) void {
         const bits: u32 = @truncate(i *% 2654435761);
         const norm = @as(f32, @floatFromInt(bits)) / @as(f32, @floatFromInt(@as(u32, math.maxInt(u32))));
         v.* = (norm - 0.5) * 2.0 * scale;
+    }
+}
+
+fn fillDeterministicF16(buf: []f16, scale: f32) void {
+    for (buf, 0..) |*v, i| {
+        const bits: u32 = @truncate(i *% 2654435761);
+        const norm = @as(f32, @floatFromInt(bits)) / @as(f32, @floatFromInt(@as(u32, math.maxInt(u32))));
+        v.* = @floatCast((norm - 0.5) * 2.0 * scale);
     }
 }
 
@@ -432,7 +450,7 @@ pub const ModelFormat = enum {
 const builtin = @import("builtin");
 
 /// GGUF magic bytes and version constants.
-const GGUF_MAGIC: u32 = 0x46475547; // "GGUF" little-endian
+const GGUF_MAGIC: u32 = 0x46554747; // "GGUF" little-endian
 const GGUF_VERSION_3: u32 = 3;
 
 /// GGUF tensor data types.
@@ -839,6 +857,116 @@ fn dequantQ8_K(dst: []f32, src: [*]const u8, n_elements: usize) void {
     }
 }
 
+// ---- Dequant-to-f16: decode raw GGUF bytes into f16 destination (halves RAM) ----
+
+/// Dequantize Q8_0 blocks → f16.
+fn dequantQ8_0ToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    const n_blocks = (n_elements + 31) / 32;
+    var dst_idx: usize = 0;
+    for (0..n_blocks) |b| {
+        const block_ptr = src + b * 34;
+        const scale_bits = @as(u16, block_ptr[0]) | (@as(u16, block_ptr[1]) << 8);
+        const scale = f16ToF32(scale_bits);
+        const quants = block_ptr + 2;
+        const remaining = @min(32, n_elements - dst_idx);
+        for (0..remaining) |q| {
+            const qval: i8 = @bitCast(quants[q]);
+            dst[dst_idx] = @floatCast(@as(f32, @floatFromInt(qval)) * scale);
+            dst_idx += 1;
+        }
+    }
+}
+
+/// Copy native f32 bytes → f16.
+fn dequantF32ToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    for (0..n_elements) |i| {
+        const off = i * 4;
+        const v: f32 = @bitCast([4]u8{ src[off], src[off + 1], src[off + 2], src[off + 3] });
+        dst[i] = @floatCast(v);
+    }
+}
+
+/// Copy native f16 bytes → f16 (identity, just bit-copy).
+fn dequantF16ToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    for (0..n_elements) |i| {
+        const off = i * 2;
+        const bits: u16 = @as(u16, src[off]) | (@as(u16, src[off + 1]) << 8);
+        dst[i] = @bitCast(bits);
+    }
+}
+
+/// Dequantize BF16 → f16 (via f32 intermediate).
+fn dequantBF16ToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    for (0..n_elements) |i| {
+        const off = i * 2;
+        const h: u16 = @as(u16, src[off]) | (@as(u16, src[off + 1]) << 8);
+        dst[i] = @floatCast(bf16ToF32(h));
+    }
+}
+
+/// Dequantize Q4_0 blocks → f16.
+fn dequantQ4_0ToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    const n_blocks = (n_elements + 31) / 32;
+    var dst_idx: usize = 0;
+    for (0..n_blocks) |b| {
+        const block_ptr = src + b * 18;
+        const scale_bits = @as(u16, block_ptr[0]) | (@as(u16, block_ptr[1]) << 8);
+        const scale = f16ToF32(scale_bits);
+        const quants = block_ptr + 2;
+        const remaining = @min(32, n_elements - dst_idx);
+        for (0..remaining) |q| {
+            const byte = quants[q / 2];
+            const nibble: u4 = if (q % 2 == 0) @truncate(byte & 0x0F) else @truncate(byte >> 4);
+            const val: f32 = @as(f32, @floatFromInt(@as(i8, @as(i8, nibble) - 8))) * scale;
+            dst[dst_idx] = @floatCast(val);
+            dst_idx += 1;
+        }
+    }
+}
+
+/// Dequantize Q4_K blocks → f16.
+fn dequantQ4_KToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    const block_size: usize = 256;
+    const bytes_per_block: usize = 144;
+    const n_blocks = (n_elements + block_size - 1) / block_size;
+    var dst_idx: usize = 0;
+    for (0..n_blocks) |b| {
+        const block_ptr = src + b * bytes_per_block;
+        const d_bits = @as(u16, block_ptr[0]) | (@as(u16, block_ptr[1]) << 8);
+        const dmin_bits = @as(u16, block_ptr[2]) | (@as(u16, block_ptr[3]) << 8);
+        const d = f16ToF32(d_bits);
+        const dmin = f16ToF32(dmin_bits);
+        const scales = block_ptr + 4;
+        const qs = block_ptr + 20;
+        const remaining = @min(block_size, n_elements - dst_idx);
+        for (0..remaining) |i| {
+            const group = i / 32;
+            const sc: f32 = @as(f32, @floatFromInt(scales[group] & 0x3F)) * d;
+            const mn: f32 = @as(f32, @floatFromInt(scales[group] >> 6)) * dmin;
+            const byte_idx = i / 2;
+            const nibble: u4 = if (i % 2 == 0) @truncate(qs[byte_idx] & 0x0F) else @truncate(qs[byte_idx] >> 4);
+            dst[dst_idx] = @floatCast(sc * @as(f32, @floatFromInt(nibble)) - mn);
+            dst_idx += 1;
+        }
+    }
+}
+
+/// Dispatch: dequantize any GGUF format into an f16 destination slice.
+fn dequantTensorF16(dst: []f16, src: [*]const u8, n_elements: usize, dtype: GGUFDataType) !void {
+    switch (dtype) {
+        .f32 => dequantF32ToF16(dst, src, n_elements),
+        .f16 => dequantF16ToF16(dst, src, n_elements),
+        .bf16 => dequantBF16ToF16(dst, src, n_elements),
+        .q8_0 => dequantQ8_0ToF16(dst, src, n_elements),
+        .q4_0 => dequantQ4_0ToF16(dst, src, n_elements),
+        // K-quants: fall back via Q4_K path (good enough approximation)
+        .q2_k, .q3_k, .q4_k, .q5_k, .q6_k, .q8_k,
+        .iq2_xxs, .iq2_xs, .iq2_s, .iq3_xxs, .iq3_s, .iq4_nl, .iq4_xs, .iq1_s,
+        .q4_1, .q5_0, .q5_1, .q8_1 => dequantQ4_KToF16(dst, src, n_elements),
+        else => return error.UnsupportedQuantType,
+    }
+}
+
 /// Dequantize a tensor from raw GGUF bytes into an f32 slice.
 fn dequantTensor(dst: []f32, src: [*]const u8, n_elements: usize, dtype: GGUFDataType) !void {
     switch (dtype) {
@@ -970,31 +1098,34 @@ fn ggufReadMetadata(data: []const u8, start_pos: usize, n_kv: u64) !struct { con
             const str_result = ggufReadString(data, pos) catch break;
             pos = str_result.new_pos;
             const val = str_result.str;
-            if (endsWith(key, "general.architecture")) {
-                if (std.mem.eql(u8, val, "llama")) {
-                    config.architecture = .llama;
-                    config.arch = .llama;
-                } else if (std.mem.eql(u8, val, "mistral")) {
-                    config.architecture = .mistral;
-                    config.arch = .mistral;
-                } else if (std.mem.eql(u8, val, "phi") or std.mem.eql(u8, val, "phi2") or std.mem.eql(u8, val, "phi3")) {
-                    config.architecture = .phi;
-                    config.arch = .phi;
-                } else if (std.mem.eql(u8, val, "gemma")) {
-                    config.architecture = .gemma;
-                    config.arch = .gemma;
-                } else if (std.mem.eql(u8, val, "qwen") or std.mem.eql(u8, val, "qwen2")) {
-                    config.architecture = .qwen;
-                    config.arch = .qwen;
-                } else if (std.mem.eql(u8, val, "deepseek")) {
-                    config.architecture = .deepseek;
-                    config.arch = .deepseek;
-                } else if (std.mem.eql(u8, val, "lfm") or std.mem.eql(u8, val, "lfm2")) {
-                    // Liquid Foundation Model - uses LLaMA-compatible transformer
-                    config.architecture = .lfm2;
-                    config.arch = .lfm2;
+                if (endsWith(key, "general.architecture")) {
+                    if (std.mem.eql(u8, val, "llama")) {
+                        config.architecture = .llama;
+                        config.arch = .llama;
+                    } else if (std.mem.eql(u8, val, "mistral")) {
+                        config.architecture = .mistral;
+                        config.arch = .mistral;
+                    } else if (std.mem.eql(u8, val, "phi") or std.mem.eql(u8, val, "phi2") or std.mem.eql(u8, val, "phi3")) {
+                        config.architecture = .phi;
+                        config.arch = .phi;
+                    } else if (std.mem.eql(u8, val, "gemma")) {
+                        config.architecture = .gemma;
+                        config.arch = .gemma;
+                    } else if (std.mem.eql(u8, val, "qwen") or std.mem.eql(u8, val, "qwen2") or
+                        std.mem.eql(u8, val, "qwen3") or std.mem.eql(u8, val, "qwen35") or
+                        std.mem.startsWith(u8, val, "qwen"))
+                    {
+                        config.architecture = .qwen;
+                        config.arch = .qwen;
+                    } else if (std.mem.eql(u8, val, "deepseek")) {
+                        config.architecture = .deepseek;
+                        config.arch = .deepseek;
+                    } else if (std.mem.eql(u8, val, "lfm") or std.mem.eql(u8, val, "lfm2")) {
+                        // Liquid Foundation Model - uses LLaMA-compatible transformer
+                        config.architecture = .lfm2;
+                        config.arch = .lfm2;
+                    }
                 }
-            }
         } else if (vtype == 10) { // uint64 — vocab_size sometimes stored as u64
             if (pos + 8 > data.len) break;
             const val = std.mem.readInt(u64, data[pos..][0..8], .little);
@@ -1492,31 +1623,31 @@ fn loadSafeTensorTensorIntoWeights(weights: *TransformerWeights, name: []const u
     if (std.mem.indexOf(u8, name, "embed_tokens") != null or std.mem.indexOf(u8, name, "wte") != null or
         (std.mem.indexOf(u8, name, "embed") != null and std.mem.indexOf(u8, name, "position") == null and std.mem.indexOf(u8, name, "layers") == null))
     {
-        loadSafeTensorData(weights.token_embedding, src_ptr, n_elem, dtype) catch {};
+        loadSafeTensorDataF16(weights.token_embedding, src_ptr, n_elem, dtype) catch {};
     } else if (std.mem.indexOf(u8, name, "lm_head") != null) {
-        loadSafeTensorData(weights.lm_head, src_ptr, n_elem, dtype) catch {};
+        loadSafeTensorDataF16(weights.lm_head, src_ptr, n_elem, dtype) catch {};
     } else if ((std.mem.indexOf(u8, name, "model.norm") != null or std.mem.indexOf(u8, name, "ln_f") != null) and std.mem.indexOf(u8, name, "layers") == null) {
-        loadSafeTensorData(weights.final_norm, src_ptr, n_elem, dtype) catch {};
+        loadSafeTensorData(weights.final_norm, src_ptr, n_elem, dtype) catch {}; // f32 norm
     } else if (extractLayerIndex(name)) |l| {
         if (l >= config.n_layers) return;
         if (std.mem.indexOf(u8, name, "input_layernorm") != null or std.mem.indexOf(u8, name, "ln_1") != null) {
-            loadSafeTensorData(weights.layers[l].attn_norm, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorData(weights.layers[l].attn_norm, src_ptr, n_elem, dtype) catch {}; // f32
         } else if (std.mem.indexOf(u8, name, "q_proj") != null) {
-            loadSafeTensorData(weights.layers[l].wq, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].wq, src_ptr, n_elem, dtype) catch {};
         } else if (std.mem.indexOf(u8, name, "k_proj") != null) {
-            loadSafeTensorData(weights.layers[l].wk, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].wk, src_ptr, n_elem, dtype) catch {};
         } else if (std.mem.indexOf(u8, name, "v_proj") != null) {
-            loadSafeTensorData(weights.layers[l].wv, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].wv, src_ptr, n_elem, dtype) catch {};
         } else if (std.mem.indexOf(u8, name, "o_proj") != null) {
-            loadSafeTensorData(weights.layers[l].wo, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].wo, src_ptr, n_elem, dtype) catch {};
         } else if (std.mem.indexOf(u8, name, "post_attention_layernorm") != null or std.mem.indexOf(u8, name, "ln_2") != null) {
-            loadSafeTensorData(weights.layers[l].ffn_norm, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorData(weights.layers[l].ffn_norm, src_ptr, n_elem, dtype) catch {}; // f32
         } else if (std.mem.indexOf(u8, name, "gate_proj") != null) {
-            loadSafeTensorData(weights.layers[l].w_gate, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].w_gate, src_ptr, n_elem, dtype) catch {};
         } else if (std.mem.indexOf(u8, name, "up_proj") != null) {
-            loadSafeTensorData(weights.layers[l].w_up, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].w_up, src_ptr, n_elem, dtype) catch {};
         } else if (std.mem.indexOf(u8, name, "down_proj") != null) {
-            loadSafeTensorData(weights.layers[l].w_down, src_ptr, n_elem, dtype) catch {};
+            loadSafeTensorDataF16(weights.layers[l].w_down, src_ptr, n_elem, dtype) catch {};
         }
     }
 }
@@ -1631,6 +1762,16 @@ fn loadSafeTensorData(dst: []f32, src: [*]const u8, n_elements: usize, dtype: Sa
         .f32 => dequantF32(dst, src, n),
         .f16 => dequantF16(dst, src, n),
         .bf16 => dequantBF16(dst, src, n),
+        else => return error.UnsupportedDType,
+    }
+}
+
+fn loadSafeTensorDataF16(dst: []f16, src: [*]const u8, n_elements: usize, dtype: SafeTensorsDType) !void {
+    const n = @min(n_elements, dst.len);
+    switch (dtype) {
+        .f32 => dequantF32ToF16(dst, src, n),
+        .f16 => dequantF16ToF16(dst, src, n),
+        .bf16 => dequantBF16ToF16(dst, src, n),
         else => return error.UnsupportedDType,
     }
 }
@@ -1842,33 +1983,33 @@ fn loadPyTorchTensorToWeights(weights: *TransformerWeights, ti: PyTorchTensorInf
     if (std.mem.indexOf(u8, name, "embed_tokens") != null or std.mem.indexOf(u8, name, "wte") != null or
         (std.mem.indexOf(u8, name, "embed") != null and std.mem.indexOf(u8, name, "position") == null and std.mem.indexOf(u8, name, "layers") == null))
     {
-        loadPyTorchData(weights.token_embedding, src_ptr, n_elem, ti.dtype);
+        loadPyTorchDataF16(weights.token_embedding, src_ptr, n_elem, ti.dtype);
     } else if (std.mem.indexOf(u8, name, "lm_head") != null) {
-        loadPyTorchData(weights.lm_head, src_ptr, n_elem, ti.dtype);
+        loadPyTorchDataF16(weights.lm_head, src_ptr, n_elem, ti.dtype);
     } else if ((std.mem.indexOf(u8, name, "model.norm") != null or std.mem.indexOf(u8, name, "ln_f") != null) and std.mem.indexOf(u8, name, "layers") == null) {
-        loadPyTorchData(weights.final_norm, src_ptr, n_elem, ti.dtype);
+        loadPyTorchData(weights.final_norm, src_ptr, n_elem, ti.dtype); // f32 norm
     } else {
         const layer_idx = extractLayerIndex(name);
         if (layer_idx) |l| {
             if (l < config.n_layers) {
                 if (std.mem.indexOf(u8, name, "input_layernorm") != null or std.mem.indexOf(u8, name, "ln_1") != null) {
-                    loadPyTorchData(weights.layers[l].attn_norm, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchData(weights.layers[l].attn_norm, src_ptr, n_elem, ti.dtype); // f32
                 } else if (std.mem.indexOf(u8, name, "q_proj") != null) {
-                    loadPyTorchData(weights.layers[l].wq, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].wq, src_ptr, n_elem, ti.dtype);
                 } else if (std.mem.indexOf(u8, name, "k_proj") != null) {
-                    loadPyTorchData(weights.layers[l].wk, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].wk, src_ptr, n_elem, ti.dtype);
                 } else if (std.mem.indexOf(u8, name, "v_proj") != null) {
-                    loadPyTorchData(weights.layers[l].wv, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].wv, src_ptr, n_elem, ti.dtype);
                 } else if (std.mem.indexOf(u8, name, "o_proj") != null) {
-                    loadPyTorchData(weights.layers[l].wo, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].wo, src_ptr, n_elem, ti.dtype);
                 } else if (std.mem.indexOf(u8, name, "post_attention_layernorm") != null or std.mem.indexOf(u8, name, "ln_2") != null) {
-                    loadPyTorchData(weights.layers[l].ffn_norm, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchData(weights.layers[l].ffn_norm, src_ptr, n_elem, ti.dtype); // f32
                 } else if (std.mem.indexOf(u8, name, "gate_proj") != null) {
-                    loadPyTorchData(weights.layers[l].w_gate, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].w_gate, src_ptr, n_elem, ti.dtype);
                 } else if (std.mem.indexOf(u8, name, "up_proj") != null) {
-                    loadPyTorchData(weights.layers[l].w_up, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].w_up, src_ptr, n_elem, ti.dtype);
                 } else if (std.mem.indexOf(u8, name, "down_proj") != null) {
-                    loadPyTorchData(weights.layers[l].w_down, src_ptr, n_elem, ti.dtype);
+                    loadPyTorchDataF16(weights.layers[l].w_down, src_ptr, n_elem, ti.dtype);
                 }
             }
         }
@@ -1882,6 +2023,16 @@ fn loadPyTorchData(dst: []f32, src: [*]const u8, n_elements: usize, dtype: u8) v
         1 => dequantF16(dst, src, n),
         2 => dequantBF16(dst, src, n),
         else => fillDeterministic(dst[0..n], 0.02),
+    }
+}
+
+fn loadPyTorchDataF16(dst: []f16, src: [*]const u8, n_elements: usize, dtype: u8) void {
+    const n = @min(n_elements, dst.len);
+    switch (dtype) {
+        0 => dequantF32ToF16(dst, src, n),
+        1 => dequantF16ToF16(dst, src, n),
+        2 => dequantBF16ToF16(dst, src, n),
+        else => fillDeterministicF16(dst[0..n], 0.02),
     }
 }
 
@@ -2576,23 +2727,6 @@ pub fn loadFromONNX(allocator: Allocator, path: []const u8) !*Model {
             continue;
         };
 
-        // Determine destination buffer
-        const dst: ?[]f32 = switch (mapping.target) {
-            .token_embedding => weights.token_embedding,
-            .lm_head => weights.lm_head,
-            .final_norm => weights.final_norm,
-            .attn_norm => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].attn_norm else null else null,
-            .ffn_norm => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].ffn_norm else null else null,
-            .wq => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].wq else null else null,
-            .wk => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].wk else null else null,
-            .wv => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].wv else null else null,
-            .wo => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].wo else null else null,
-            .w_gate => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].w_gate else null else null,
-            .w_up => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].w_up else null else null,
-            .w_down => if (mapping.layer) |l| if (l < config.n_layers) weights.layers[l].w_down else null else null,
-            .fused_qkv => null, // Handled separately below
-        };
-
         if (mapping.target == .fused_qkv) {
             if (mapping.layer) |l| {
                 if (l < config.n_layers) {
@@ -2603,9 +2737,22 @@ pub fn loadFromONNX(allocator: Allocator, path: []const u8) !*Model {
             continue;
         }
 
-        if (dst) |dest| {
-            loadONNXDataToBuffer(dest, tensor, &tensor_index);
-            loaded_count += 1;
+        // f32 destinations: final_norm, attn_norm, ffn_norm
+        // f16 destinations: token_embedding, lm_head, wq/wk/wv/wo, w_gate/w_up/w_down
+        switch (mapping.target) {
+            .final_norm => { loadONNXDataToBuffer(weights.final_norm, tensor, &tensor_index); loaded_count += 1; },
+            .attn_norm => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBuffer(weights.layers[l].attn_norm, tensor, &tensor_index); loaded_count += 1; },
+            .ffn_norm => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBuffer(weights.layers[l].ffn_norm, tensor, &tensor_index); loaded_count += 1; },
+            .token_embedding => { loadONNXDataToBufferF16(weights.token_embedding, tensor); loaded_count += 1; },
+            .lm_head => { loadONNXDataToBufferF16(weights.lm_head, tensor); loaded_count += 1; },
+            .wq => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].wq, tensor); loaded_count += 1; },
+            .wk => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].wk, tensor); loaded_count += 1; },
+            .wv => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].wv, tensor); loaded_count += 1; },
+            .wo => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].wo, tensor); loaded_count += 1; },
+            .w_gate => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].w_gate, tensor); loaded_count += 1; },
+            .w_up => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].w_up, tensor); loaded_count += 1; },
+            .w_down => if (mapping.layer) |l| if (l < config.n_layers) { loadONNXDataToBufferF16(weights.layers[l].w_down, tensor); loaded_count += 1; },
+            .fused_qkv => unreachable,
         }
     }
 
@@ -2632,13 +2779,13 @@ fn splitFusedQKV(weights: *TransformerWeights, layer: usize, tensor: ONNXTensorI
     const bytes_per_elem = tensor.dtype.bytesPerElement();
 
     // Q: rows [0, q_size)
-    loadONNXDataToBufferRaw(weights.layers[layer].wq, src_ptr, q_size, tensor.dtype);
+    loadONNXDataToBufferRawF16(weights.layers[layer].wq, src_ptr, q_size, tensor.dtype);
     // K: rows [q_size, q_size + k_size)
     const k_offset = q_size * bytes_per_elem;
-    loadONNXDataToBufferRaw(weights.layers[layer].wk, src_ptr + k_offset, k_size, tensor.dtype);
+    loadONNXDataToBufferRawF16(weights.layers[layer].wk, src_ptr + k_offset, k_size, tensor.dtype);
     // V: rows [q_size + k_size, q_size + k_size + v_size)
     const v_offset = (q_size + k_size) * bytes_per_elem;
-    loadONNXDataToBufferRaw(weights.layers[layer].wv, src_ptr + v_offset, v_size, tensor.dtype);
+    loadONNXDataToBufferRawF16(weights.layers[layer].wv, src_ptr + v_offset, v_size, tensor.dtype);
 }
 
 /// Extract layer index from tensor name (e.g., "layers.5.xxx" -> 5)
@@ -2728,6 +2875,19 @@ fn loadONNXDataToBuffer(dst: []f32, tensor: ONNXTensorInfo, tensor_index: *const
     }
 }
 
+/// F16 variant: load ONNX tensor into f16 destination (no quant param lookup needed for float types).
+fn loadONNXDataToBufferF16(dst: []f16, tensor: ONNXTensorInfo) void {
+    const src: ?[*]const u8 = if (tensor.raw_data) |rd| rd.ptr else if (tensor.float_data) |fd| @ptrCast(fd.ptr) else null;
+    if (src == null) return;
+    const n = @min(tensor.n_elements, dst.len);
+    switch (tensor.dtype) {
+        .float32 => dequantF32ToF16(dst, src.?, n),
+        .float16 => dequantF16ToF16(dst, src.?, n),
+        .bfloat16 => dequantBF16ToF16(dst, src.?, n),
+        else => fillDeterministicF16(dst[0..n], 0.02),
+    }
+}
+
 /// Raw version for split QKV — takes src pointer directly without tensor index lookup.
 fn loadONNXDataToBufferRaw(dst: []f32, src: [*]const u8, n_elements: usize, dtype: ONNXDataType) void {
     const n = @min(n_elements, dst.len);
@@ -2736,6 +2896,17 @@ fn loadONNXDataToBufferRaw(dst: []f32, src: [*]const u8, n_elements: usize, dtyp
         .float16 => dequantF16(dst, src, n),
         .bfloat16 => dequantBF16(dst, src, n),
         else => fillDeterministic(dst[0..n], 0.02),
+    }
+}
+
+/// F16 raw version for split QKV — writes directly into f16 destination.
+fn loadONNXDataToBufferRawF16(dst: []f16, src: [*]const u8, n_elements: usize, dtype: ONNXDataType) void {
+    const n = @min(n_elements, dst.len);
+    switch (dtype) {
+        .float32 => dequantF32ToF16(dst, src, n),
+        .float16 => dequantF16ToF16(dst, src, n),
+        .bfloat16 => dequantBF16ToF16(dst, src, n),
+        else => fillDeterministicF16(dst[0..n], 0.02),
     }
 }
 
@@ -2964,24 +3135,13 @@ pub const Model = struct {
 
     /// Load a model from a GGUF file, dequantizing all tensors into f32 weight buffers.
     pub fn loadFromGGUF(allocator: Allocator, path: []const u8) !*Model {
-        // Open and read the GGUF file
-        const file = try std.fs.cwd().openFile(path, .{});
-        defer file.close();
+        // Memory-map the GGUF file — avoids a large heap copy and lets the OS
+        // page in only the tensor blocks we actually dequantize.
+        const data = try mapFileReadOnly(path);
+        defer std.posix.munmap(data);
 
-        const stat = try file.stat();
-        const file_size: usize = @intCast(stat.size);
+        const file_size = data.len;
         if (file_size < 24) return error.InvalidGGUF;
-
-        const data = try allocator.alloc(u8, file_size);
-        defer allocator.free(data);
-
-        // Read entire file
-        var offset: usize = 0;
-        while (offset < file_size) {
-            const bytes = try file.read(data[offset..]);
-            if (bytes == 0) return error.UnexpectedEOF;
-            offset += bytes;
-        }
 
         // Parse GGUF header
         const magic = std.mem.readInt(u32, data[0..4], .little);
@@ -3026,12 +3186,44 @@ pub const Model = struct {
         if (config.intermediate_dim == 0) config.intermediate_dim = config.n_ff;
         if (config.n_ctx == 0) config.n_ctx = config.context_length;
         if (config.max_seq_len == 0) config.max_seq_len = config.context_length;
+        // Default n_kv_heads if not set (Qwen 3.5 and others with GQA)
+        if (config.n_kv_heads == 0) config.n_kv_heads = config.n_heads;
+        // Default vocab from token_embd tensor if still 0
+        if (config.vocab_size == 0 or config.n_embd == 0 or config.n_layers == 0 or config.n_heads == 0) {
+            std.log.err("GGUF: missing required model dimensions: vocab={} dim={} layers={} heads={}", .{
+                config.vocab_size, config.n_embd, config.n_layers, config.n_heads,
+            });
+            return error.InvalidGGUF;
+        }
+
+        // Memory guard: weights stored as f16 use 2 bytes each.
+        // Calculate estimated f16 RAM footprint and reject models that would OOM.
+        {
+            const v: u64 = config.vocab_size;
+            const d: u64 = config.n_embd;
+            const ff64: u64 = config.n_ff;
+            const l: u64 = config.n_layers;
+            // f16 = 2 bytes per element (halved vs f32)
+            const embed_bytes: u64 = v * d * 2 * 2; // token_embedding + lm_head (f16)
+            const layer_bytes: u64 = l * (d * d + d * d + d * d + d * d + d * ff64 * 2 + ff64 * d) * 2;
+            const total_est: u64 = embed_bytes + layer_bytes;
+            const max_cpu: u64 = 4096 * 1024 * 1024; // 4 GB f16 limit — safe on 16 GB systems
+            if (total_est > max_cpu) {
+                std.log.warn(
+                    "GGUF: estimated f16 footprint ~{d} MB exceeds 4 GB limit",
+                    .{total_est / (1024 * 1024)},
+                );
+                return error.ModelTooLarge;
+            }
+        }
 
         // Allocate weights without initialization
         var weights = try TransformerWeights.allocateRaw(allocator, config);
         errdefer weights.deinit(allocator);
 
-        // Fill weights from GGUF tensor data
+        // Fill weights from GGUF tensor data.
+        // Norm weights (attn_norm, ffn_norm, final_norm) stay f32.
+        // Weight matrices (wq, wk, wv, wo, w_gate, w_up, w_down, token_embedding, lm_head) use f16.
         var found_output = false;
         for (tensor_infos) |ti| {
             const src_start = tensor_data_start + @as(usize, @intCast(ti.data_offset));
@@ -3040,26 +3232,28 @@ pub const Model = struct {
             const n_elem: usize = @intCast(ti.n_elements);
 
             if (std.mem.eql(u8, ti.name, "token_embd.weight")) {
-                try dequantTensor(weights.token_embedding, src_ptr, n_elem, ti.dtype);
+                try dequantTensorF16(weights.token_embedding, src_ptr, n_elem, ti.dtype);
             } else if (std.mem.eql(u8, ti.name, "output_norm.weight")) {
-                try dequantTensor(weights.final_norm, src_ptr, n_elem, ti.dtype);
+                try dequantTensor(weights.final_norm, src_ptr, n_elem, ti.dtype); // f32 norm
             } else if (std.mem.eql(u8, ti.name, "output.weight")) {
-                try dequantTensor(weights.lm_head, src_ptr, n_elem, ti.dtype);
+                try dequantTensorF16(weights.lm_head, src_ptr, n_elem, ti.dtype);
                 found_output = true;
             } else if (parseLayerTensor(ti.name)) |layer_info| {
                 if (layer_info.layer < weights.layers.len) {
-                    const dst = switch (layer_info.kind) {
-                        .attn_norm => weights.layers[layer_info.layer].attn_norm,
-                        .wq => weights.layers[layer_info.layer].wq,
-                        .wk => weights.layers[layer_info.layer].wk,
-                        .wv => weights.layers[layer_info.layer].wv,
-                        .wo => weights.layers[layer_info.layer].wo,
-                        .ffn_norm => weights.layers[layer_info.layer].ffn_norm,
-                        .w_gate => weights.layers[layer_info.layer].w_gate,
-                        .w_up => weights.layers[layer_info.layer].w_up,
-                        .w_down => weights.layers[layer_info.layer].w_down,
-                    };
-                    try dequantTensor(dst, src_ptr, n_elem, ti.dtype);
+                    const layer = &weights.layers[layer_info.layer];
+                    switch (layer_info.kind) {
+                        // f32 norm weights
+                        .attn_norm => try dequantTensor(layer.attn_norm, src_ptr, n_elem, ti.dtype),
+                        .ffn_norm  => try dequantTensor(layer.ffn_norm,  src_ptr, n_elem, ti.dtype),
+                        // f16 weight matrices
+                        .wq     => try dequantTensorF16(layer.wq,     src_ptr, n_elem, ti.dtype),
+                        .wk     => try dequantTensorF16(layer.wk,     src_ptr, n_elem, ti.dtype),
+                        .wv     => try dequantTensorF16(layer.wv,     src_ptr, n_elem, ti.dtype),
+                        .wo     => try dequantTensorF16(layer.wo,     src_ptr, n_elem, ti.dtype),
+                        .w_gate => try dequantTensorF16(layer.w_gate, src_ptr, n_elem, ti.dtype),
+                        .w_up   => try dequantTensorF16(layer.w_up,   src_ptr, n_elem, ti.dtype),
+                        .w_down => try dequantTensorF16(layer.w_down, src_ptr, n_elem, ti.dtype),
+                    }
                 }
             }
         }
@@ -3154,10 +3348,10 @@ pub const Model = struct {
         const use_accel = comptime accelerate.isAvailable();
         const inv_sqrt_hd = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
 
-        // 1. Token embedding lookup → hidden_buf
+        // 1. Token embedding lookup → hidden_buf (convert f16 → f32)
         const tok: usize = @min(token, @as(u32, @intCast(vocab - 1)));
         const emb_off = tok * dim;
-        @memcpy(self.hidden_buf, weights.token_embedding[emb_off..][0..dim]);
+        for (0..dim) |i| self.hidden_buf[i] = @as(f32, weights.token_embedding[emb_off + i]);
 
         // 2. Transformer layers
         for (0..n_layers) |l| {
@@ -3174,13 +3368,13 @@ pub const Model = struct {
 
             // 2b. Q / K / V linear projections (Accelerate cblas_sgemv)
             if (use_accel) {
-                accelerate.gemv(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                accelerate.gemv(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                accelerate.gemv(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
+                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
+                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
+                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
             } else {
-                vecMatMul(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                vecMatMul(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                vecMatMul(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
+                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
+                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
+                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
             }
 
             // 2c. Rotary Position Embeddings
@@ -3224,10 +3418,10 @@ pub const Model = struct {
 
             // 2f. Output projection + residual
             if (use_accel) {
-                accelerate.gemv(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
+                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
                 accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
             } else {
-                vecMatMul(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
+                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
                 vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
             }
 
@@ -3242,16 +3436,16 @@ pub const Model = struct {
 
             // 2h. FFN: SwiGLU(gate, up) → down → residual
             if (use_accel) {
-                accelerate.gemv(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                accelerate.gemv(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
+                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
+                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
                 swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                accelerate.gemv(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
+                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
                 accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
             } else {
-                vecMatMul(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                vecMatMul(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
+                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
+                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
                 swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                vecMatMul(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
+                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
                 vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
             }
         }
@@ -3267,9 +3461,9 @@ pub const Model = struct {
 
         // 4. LM head → logits (largest matmul: dim → vocab_size)
         if (use_accel) {
-            accelerate.gemv(self.logits_buf[0..vocab], self.norm_buf, weights.lm_head, dim, vocab);
+            vecMatMulF16W(self.logits_buf[0..vocab], self.norm_buf, weights.lm_head, dim, vocab);
         } else {
-            vecMatMul(self.logits_buf[0..vocab], self.norm_buf, weights.lm_head, dim, vocab);
+            vecMatMulF16W(self.logits_buf[0..vocab], self.norm_buf, weights.lm_head, dim, vocab);
         }
 
         // 5. Update KV cache sequence length
@@ -3310,9 +3504,9 @@ pub const Model = struct {
         const use_accel = comptime accelerate.isAvailable();
         const inv_sqrt_hd = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
 
-        // 1. Token embedding lookup
+        // 1. Token embedding lookup (convert f16 → f32)
         const tok: usize = @min(token, @as(u32, @intCast(vocab - 1)));
-        @memcpy(self.hidden_buf, weights.token_embedding[tok * dim ..][0..dim]);
+        for (0..dim) |i| self.hidden_buf[i] = @as(f32, weights.token_embedding[tok * dim + i]);
 
         // 2. Transformer layers (same as forward() but no logits at the end)
         for (0..n_layers) |l| {
@@ -3329,13 +3523,13 @@ pub const Model = struct {
 
             // Q / K / V projections
             if (use_accel) {
-                accelerate.gemv(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                accelerate.gemv(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                accelerate.gemv(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
+                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
+                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
+                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
             } else {
-                vecMatMul(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                vecMatMul(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                vecMatMul(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
+                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
+                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
+                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
             }
 
             rope(self.q_buf, self.k_buf, pos, head_dim, self.config.rope_freq_base, n_heads, n_kv_heads);
@@ -3370,10 +3564,10 @@ pub const Model = struct {
 
             // Output projection + residual
             if (use_accel) {
-                accelerate.gemv(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
+                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
                 accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
             } else {
-                vecMatMul(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
+                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
                 vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
             }
 
@@ -3388,16 +3582,16 @@ pub const Model = struct {
 
             // FFN
             if (use_accel) {
-                accelerate.gemv(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                accelerate.gemv(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
+                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
+                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
                 swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                accelerate.gemv(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
+                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
                 accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
             } else {
-                vecMatMul(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                vecMatMul(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
+                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
+                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
                 swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                vecMatMul(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
+                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
                 vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
             }
         }
@@ -3947,10 +4141,10 @@ test "GGUF synthetic file round-trip" {
     try std.testing.expect(model.loaded);
     try std.testing.expect(model.weights != null);
 
-    // Verify token_embedding (first tensor, base=0.01)
+    // Verify token_embedding (first tensor, base=0.01; stored as f16, cast to f32 for comparison)
     const w = model.weights.?;
-    try std.testing.expectApproxEqAbs(@as(f32, 0.01), w.token_embedding[0], 0.001);
-    try std.testing.expectApproxEqAbs(@as(f32, 0.02), w.token_embedding[1], 0.001);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.01), @as(f32, w.token_embedding[0]), 0.002);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.02), @as(f32, w.token_embedding[1]), 0.002);
 
     // Verify we can run a forward pass with GGUF-loaded weights
     var cache = try KVCache.init(allocator, model.config);
@@ -4094,9 +4288,9 @@ test "SafeTensors synthetic index round-trip" {
     try std.testing.expectEqual(Architecture.qwen, model.config.architecture);
 
     const w = model.weights.?;
-    try std.testing.expectApproxEqAbs(@as(f32, 0.01), w.token_embedding[0], 0.001);
-    try std.testing.expectApproxEqAbs(@as(f32, 0.21), w.lm_head[0], 0.001);
-    try std.testing.expectApproxEqAbs(@as(f32, 1.11), w.layers[0].w_down[0], 0.001);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.01), @as(f32, w.token_embedding[0]), 0.002);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.21), @as(f32, w.lm_head[0]), 0.002);
+    try std.testing.expectApproxEqAbs(@as(f32, 1.11), @as(f32, w.layers[0].w_down[0]), 0.002);
 
     var cache = try KVCache.init(allocator, model.config);
     defer cache.deinit(allocator);
@@ -4382,13 +4576,13 @@ test "ONNX weight bridge roundtrip with HF naming" {
     try std.testing.expect(model.loaded);
     try std.testing.expect(model.weights != null);
 
-    // Verify embedding weights loaded correctly (first few values)
+    // Verify embedding weights loaded correctly (stored as f16, cast to f32)
     const w = model.weights.?;
-    try std.testing.expectApproxEqAbs(@as(f32, 0.1), w.token_embedding[0], 0.01);
-    try std.testing.expectApproxEqAbs(@as(f32, 0.11), w.token_embedding[1], 0.01);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.1), @as(f32, w.token_embedding[0]), 0.01);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.11), @as(f32, w.token_embedding[1]), 0.01);
 
     // Verify wq for layer 0
-    try std.testing.expectApproxEqAbs(@as(f32, 0.2), w.layers[0].wq[0], 0.01);
+    try std.testing.expectApproxEqAbs(@as(f32, 0.2), @as(f32, w.layers[0].wq[0]), 0.01);
 
     // Verify forward pass produces valid output
     var cache = try KVCache.init(allocator, model.config);
