@@ -11,7 +11,11 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
 import urllib.request
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 try:
     from graph.kuzu_store import get_kuzu_store as _get_kuzu_store
@@ -20,6 +24,17 @@ except ImportError:
         from mcp_server.graph.kuzu_store import get_kuzu_store as _get_kuzu_store
     except ImportError:
         _get_kuzu_store = None  # type: ignore[assignment]
+
+try:
+    from audit_store import get_audit_store
+except ImportError:
+    from mcp_server.audit_store import get_audit_store
+
+from mangle.runtime_client import (
+    MangleQueryClient,
+    WorldMonitorMangleFallback,
+    validate_mangle_endpoint,
+)
 
 # =============================================================================
 # Finding 4: CORS configuration with startup validation
@@ -93,41 +108,14 @@ def _validate_remote_url(url: str, var_name: str) -> str:
 
 
 try:
-    MANGLE_ENDPOINT = _validate_remote_url(
-        os.environ.get("MANGLE_ENDPOINT", "http://localhost:50051").rstrip("/"),
+    MANGLE_ENDPOINT = validate_mangle_endpoint(
+        os.environ.get("MANGLE_ENDPOINT", "").strip(),
         "MANGLE_ENDPOINT",
+        _BLOCKED_HOSTS,
     )
 except ValueError as _e:
     print(f"ERROR: {_e}", file=sys.stderr)
-    MANGLE_ENDPOINT = "http://localhost:50051"
-
-
-def _call_mangle_service(predicate: str, args: list) -> dict:
-    """Call the real Mangle query service via HTTP.
-
-    Returns a dict with keys 'predicate', 'results', and 'wired' (bool).
-    Falls back to {'predicate': predicate, 'results': [], 'wired': False}
-    if the service is unreachable, so the MCP server stays functional
-    during local development without a running Mangle engine.
-    """
-    payload = json.dumps({"predicate": predicate, "args": args}).encode()
-    req = urllib.request.Request(
-        f"{MANGLE_ENDPOINT}/query",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            body = json.loads(resp.read().decode())
-            return {"predicate": predicate, "results": body.get("results", body), "wired": True}
-    except Exception as exc:
-        return {
-            "predicate": predicate,
-            "results": [],
-            "wired": False,
-            "fallback_reason": str(exc),
-        }
+    MANGLE_ENDPOINT = ""
 
 # =============================================================================
 # Finding 5: MetricsBackend abstraction
@@ -369,6 +357,8 @@ class MCPServer:
         self.resources = {}
         self.facts = {}
         self._metrics_backend = _build_metrics_backend()
+        self._mangle_client = MangleQueryClient(MANGLE_ENDPOINT)
+        self._mangle_fallback = WorldMonitorMangleFallback()
         self._register_tools()
         self._register_resources()
         self._initialize_facts()
@@ -466,13 +456,21 @@ class MCPServer:
         # Get Logs
         self.tools["get_logs"] = {
             "name": "get_logs",
-            "description": "Query logs",
+            "description": "Query durable audit logs",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "service": {"type": "string", "description": "Service name"},
-                    "level": {"type": "string", "description": "Log level"},
+                    "source": {"type": "string", "description": "Audit source/service name"},
+                    "agentId": {"type": "string", "description": "Agent identifier"},
+                    "action": {"type": "string", "description": "Action name"},
+                    "status": {"type": "string", "description": "Execution status"},
+                    "toolName": {"type": "string", "description": "Tool name"},
+                    "backend": {"type": "string", "description": "Backend name"},
+                    "userId": {"type": "string", "description": "User identifier"},
+                    "from": {"type": "string", "description": "Inclusive ISO8601 start timestamp"},
+                    "to": {"type": "string", "description": "Inclusive ISO8601 end timestamp"},
                     "limit": {"type": "number", "description": "Max logs to return"},
+                    "offset": {"type": "number", "description": "Rows to skip"},
                 },
             },
         }
@@ -719,14 +717,38 @@ class MCPServer:
         return {"alert": alert, "status": "created"}
 
     def _handle_get_logs(self, args: dict) -> dict:
-        limit = clamp_int(args.get("limit", 100), 100, 1, MAX_LOG_LIMIT)
-        return {
-            "service": args.get("service", "all"),
-            "level": args.get("level", "all"),
-            "limit": limit,
-            "logs": [],
-            "note": "Connect to actual log aggregator",
+        filters = {
+            "source": args.get("source") or args.get("service"),
+            "agentId": args.get("agentId"),
+            "action": args.get("action"),
+            "status": args.get("status") or args.get("level"),
+            "toolName": args.get("toolName"),
+            "backend": args.get("backend"),
+            "userId": args.get("userId"),
+            "from": args.get("from"),
+            "to": args.get("to"),
+            "limit": clamp_int(args.get("limit", 100), 100, 1, MAX_LOG_LIMIT),
+            "offset": clamp_int(args.get("offset", 0), 0, 0, 10000),
         }
+        store = get_audit_store()
+        logs = store.query(filters)
+        return {
+            "filters": {k: v for k, v in filters.items() if v not in (None, "")},
+            "logs": logs,
+            "count": len(logs),
+            "retentionDays": store.retention_days,
+        }
+
+    def ingest_audit_logs(self, payload: Any) -> dict:
+        if isinstance(payload, dict):
+            entries = payload.get("entries", [payload])
+        elif isinstance(payload, list):
+            entries = payload
+        else:
+            entries = []
+        store = get_audit_store()
+        inserted = store.append_many([entry for entry in entries if isinstance(entry, dict)])
+        return {"status": "ok", "inserted": len(inserted), "retentionDays": store.retention_days}
 
     def _handle_kuzu_index(self, args: dict) -> dict:
         if _get_kuzu_store is None:
@@ -842,17 +864,29 @@ class MCPServer:
         if not isinstance(raw_args, list):
             raw_args = []
 
-        result = _call_mangle_service(predicate, raw_args)
+        result = self._mangle_client.query(predicate, raw_args)
         if result["wired"]:
             return result
 
-        # Graceful fallback: serve from the local fact store when the Mangle
-        # engine is unreachable (e.g. local development without a running instance).
-        facts = self.facts.get(predicate)
-        if facts:
-            result["results"] = facts
-            result["fallback_source"] = "local_fact_store"
+        local_results = self._mangle_fallback.query(predicate, *raw_args)
+        if local_results:
+            result["results"] = local_results
+            result["fallback_source"] = "world_monitor_python_simulation"
         return result
+
+    def get_health_payload(self) -> dict:
+        from datetime import datetime, timezone
+
+        mangle_health = self._mangle_client.health()
+        status = "healthy" if mangle_health["status"] in ("healthy", "unconfigured") else "degraded"
+        return {
+            "status": status,
+            "service": "world-monitor-mcp",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "registered_services": len(self.facts.get("service_registry", [])),
+            "active_alerts": len(self.facts.get("alerts", [])),
+            "mangle": mangle_health,
+        }
 
     def handle_request(self, request: MCPRequest) -> MCPResponse:
         method = request.method
@@ -952,21 +986,43 @@ class MCPHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path == "/health":
-            from datetime import datetime, timezone
-            response = {
-                "status": "healthy",
-                "service": "world-monitor-mcp",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "registered_services": len(mcp_server.facts.get("service_registry", [])),
-                "active_alerts": len(mcp_server.facts.get("alerts", [])),
-            }
+        parsed = urlparse(self.path)
+        if parsed.path == "/health":
+            response = mcp_server.get_health_payload()
             self._write_json(200, response)
+        elif parsed.path == "/audit/logs":
+            query = parse_qs(parsed.query)
+            result = mcp_server._handle_get_logs({
+                "source": query.get("source", [""])[0],
+                "agentId": query.get("agentId", [""])[0],
+                "action": query.get("action", [""])[0],
+                "status": query.get("status", [""])[0],
+                "toolName": query.get("toolName", [""])[0],
+                "backend": query.get("backend", [""])[0],
+                "userId": query.get("userId", [""])[0],
+                "from": query.get("from", [""])[0],
+                "to": query.get("to", [""])[0],
+                "limit": query.get("limit", [100])[0],
+                "offset": query.get("offset", [0])[0],
+            })
+            self._write_json(200, result)
         else:
             self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
-        if self.path == "/mcp":
+        if self.path == "/audit/logs":
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length <= 0:
+                self._write_json(400, {"error": "Request body required"})
+                return
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                self._write_json(400, {"error": "Invalid JSON body"})
+                return
+            self._write_json(200, mcp_server.ingest_audit_logs(payload))
+        elif self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length <= 0:
                 self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})

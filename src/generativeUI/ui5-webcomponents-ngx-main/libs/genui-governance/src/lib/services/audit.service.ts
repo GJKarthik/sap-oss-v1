@@ -30,6 +30,12 @@ export interface AuditEntry {
   sessionId: string;
   /** Run ID (agent run) */
   runId?: string;
+  /** Normalized durable agent ID */
+  agentId?: string;
+  /** Backend or service name */
+  backend?: string;
+  /** Stable prompt or argument hash */
+  promptHash?: string;
   
   /** Action details */
   action: AuditAction;
@@ -128,8 +134,26 @@ export interface AuditConfig {
   retentionDays?: number;
   /** External audit endpoint */
   endpoint?: string;
+  /** Default agent identifier for durable records */
+  agentId?: string;
+  /** Default backend name for durable records */
+  backend?: string;
   /** Batch size for sending */
   batchSize?: number;
+}
+
+interface PersistedAuditEntry {
+  timestamp: string;
+  agentId: string;
+  action: string;
+  status: string;
+  toolName: string;
+  backend: string;
+  promptHash: string;
+  userId: string;
+  source: string;
+  retentionDays?: number;
+  payload: AuditEntry;
 }
 
 export const AUDIT_CONFIG = new InjectionToken<AuditConfig>('AUDIT_CONFIG');
@@ -169,6 +193,9 @@ export class AuditService implements OnDestroy {
       this.config = { ...DEFAULT_CONFIG, ...config };
     }
     this.subscribeToEvents();
+    if (this.config.endpoint) {
+      void this.refreshFromEndpoint().catch(() => undefined);
+    }
   }
 
   /**
@@ -176,6 +203,9 @@ export class AuditService implements OnDestroy {
    */
   configure(config: Partial<AuditConfig>): void {
     this.config = { ...this.config, ...config };
+    if (config.endpoint) {
+      void this.refreshFromEndpoint().catch(() => undefined);
+    }
   }
 
   /**
@@ -306,6 +336,22 @@ export class AuditService implements OnDestroy {
     const offset = options.offset || 0;
     const limit = options.limit || 100;
     return results.slice(offset, offset + limit);
+  }
+
+  async refreshFromEndpoint(options: AuditQuery = {}): Promise<AuditEntry[]> {
+    if (!this.config.endpoint) {
+      return this.query(options);
+    }
+    const response = await fetch(this.buildQueryUrl(options), { method: 'GET' });
+    if (!response.ok) {
+      throw new Error(`Audit query failed: ${response.status}`);
+    }
+    const body = await response.json() as { logs?: Array<{ payload?: AuditEntry }> };
+    const remoteEntries = (body.logs ?? [])
+      .map(log => this.deserializeRemoteEntry(log))
+      .filter((entry): entry is AuditEntry => !!entry);
+    this.entries = this.mergeEntries(remoteEntries, this.entries);
+    return this.query(options);
   }
 
   /**
@@ -443,7 +489,9 @@ export class AuditService implements OnDestroy {
       await fetch(this.config.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(batch),
+        body: JSON.stringify({
+          entries: await this.toPersistedEntries(batch),
+        }),
       });
     } catch (error) {
       console.error('[AuditService] Failed to send batch:', error);
@@ -476,6 +524,73 @@ export class AuditService implements OnDestroy {
    */
   private generateSessionId(): string {
     return crypto.randomUUID();
+  }
+
+  private buildQueryUrl(options: AuditQuery): string {
+    const url = new URL(this.config.endpoint!, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+    url.searchParams.set('source', 'genui-governance');
+    if (options.userId) url.searchParams.set('userId', options.userId);
+    if (options.actionType) url.searchParams.set('action', options.actionType);
+    if (options.outcome) url.searchParams.set('status', options.outcome);
+    if (options.from) url.searchParams.set('from', options.from.toISOString());
+    if (options.to) url.searchParams.set('to', options.to.toISOString());
+    if (options.limit) url.searchParams.set('limit', String(options.limit));
+    if (options.offset) url.searchParams.set('offset', String(options.offset));
+    return url.toString();
+  }
+
+  private mergeEntries(incoming: AuditEntry[], existing: AuditEntry[]): AuditEntry[] {
+    const merged = new Map<string, AuditEntry>();
+    for (const entry of [...existing, ...incoming]) {
+      merged.set(entry.id, entry);
+    }
+    return [...merged.values()].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }
+
+  private deserializeRemoteEntry(log: { payload?: AuditEntry }): AuditEntry | null {
+    return log?.payload ?? null;
+  }
+
+  private async toPersistedEntries(entries: AuditEntry[]): Promise<PersistedAuditEntry[]> {
+    return Promise.all(entries.map(entry => this.toPersistedEntry(entry)));
+  }
+
+  private async toPersistedEntry(entry: AuditEntry): Promise<PersistedAuditEntry> {
+    return {
+      timestamp: entry.timestamp,
+      agentId: entry.agentId || this.config.agentId || entry.runId || 'genui-governance',
+      action: entry.action.type,
+      status: entry.outcome,
+      toolName: entry.action.toolName || entry.action.componentType || entry.action.description || entry.action.type,
+      backend: entry.backend || this.config.backend || 'genui-governance',
+      promptHash: entry.promptHash || await this.hashPrompt(entry),
+      userId: entry.userId,
+      source: 'genui-governance',
+      retentionDays: this.config.retentionDays,
+      payload: entry,
+    };
+  }
+
+  private async hashPrompt(entry: AuditEntry): Promise<string> {
+    const raw = JSON.stringify({
+      action: entry.action.type,
+      toolName: entry.action.toolName,
+      description: entry.action.description,
+      arguments: entry.action.arguments || {},
+      context: entry.context,
+    });
+    if (typeof crypto !== 'undefined' && crypto.subtle && typeof TextEncoder !== 'undefined') {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    let hash = 2166136261;
+    for (let i = 0; i < raw.length; i += 1) {
+      hash ^= raw.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return Math.abs(hash >>> 0).toString(16).padStart(8, '0');
   }
 
   ngOnDestroy(): void {
