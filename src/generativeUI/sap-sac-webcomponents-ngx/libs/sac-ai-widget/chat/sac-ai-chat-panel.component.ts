@@ -42,105 +42,299 @@ export interface ChatMessage {
 // Component
 // =============================================================================
 
+/**
+ * SacAiChatPanelComponent — Accessible Chat Interface
+ *
+ * WCAG AA Compliance:
+ * - role="log" with aria-live for screen reader announcements
+ * - Semantic HTML (section, article) for structure
+ * - SAP Fiori design tokens (no hardcoded colors)
+ * - Visible focus indicators with :focus-visible
+ * - Touch targets ≥44px for mobile accessibility
+ * - prefers-reduced-motion support
+ * - High contrast mode support
+ */
 @Component({
   selector: 'sac-ai-chat-panel',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="sac-chat-panel">
-      <div class="sac-chat-messages" #scrollAnchor>
-        <div
+    <section class="sac-chat-panel" aria-label="SAC AI Chat">
+      <!-- Messages container with ARIA live region -->
+      <div class="sac-chat-messages"
+           #scrollAnchor
+           role="log"
+           aria-live="polite"
+           aria-atomic="false"
+           aria-relevant="additions"
+           aria-label="Chat messages"
+           tabindex="0">
+
+        <article
           *ngFor="let msg of messages; trackBy: trackById"
           class="sac-chat-message"
           [class.sac-chat-message--user]="msg.role === 'user'"
           [class.sac-chat-message--assistant]="msg.role === 'assistant'"
+          [attr.aria-label]="msg.role === 'user' ? 'You said' : 'AI responded'"
         >
           <span class="sac-chat-message__content">{{ msg.content }}</span>
-          <span *ngIf="msg.streaming" class="sac-chat-cursor">▌</span>
-        </div>
+          <span *ngIf="msg.streaming" class="sac-chat-cursor" aria-hidden="true">▌</span>
+        </article>
       </div>
 
-      <div class="sac-chat-input-row">
+      <!-- Screen reader status announcements -->
+      <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {{ announcement }}
+      </div>
+
+      <!-- Input area -->
+      <div class="sac-chat-input-row" role="form" aria-label="Send a message">
+        <label for="sac-chat-input" class="sr-only">Message input</label>
         <input
+          id="sac-chat-input"
           class="sac-chat-input"
           type="text"
           [placeholder]="placeholder"
           [value]="inputText"
           [disabled]="streaming"
+          [attr.aria-describedby]="streaming ? 'input-disabled-hint' : null"
           (input)="handleInput($event)"
           (keyup.enter)="send()"
         />
+        <span id="input-disabled-hint" class="sr-only" *ngIf="streaming">
+          Input disabled while AI is responding
+        </span>
         <button
           class="sac-chat-send"
           [disabled]="!inputText.trim() || streaming"
+          [attr.aria-label]="streaming ? 'Processing request' : 'Send message'"
           (click)="send()"
         >
           {{ streaming ? '…' : 'Ask' }}
         </button>
       </div>
-    </div>
+    </section>
   `,
   styles: [`
+    /* ==========================================================================
+       Design Tokens (SAP Fiori)
+       ========================================================================== */
+
+    :host {
+      /* 8px Grid Spacing Scale */
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+
+      /* Touch target minimum (WCAG 2.5.8) */
+      --touch-target-min: 44px;
+    }
+
+    /* ==========================================================================
+       Layout
+       ========================================================================== */
+
     .sac-chat-panel {
       display: flex;
       flex-direction: column;
       height: 100%;
-      font-family: '72', Arial, sans-serif;
-      font-size: 14px;
+      font-family: var(--sapFontFamily, '72', Arial, sans-serif);
+      font-size: var(--sapFontSize, 14px);
+      background: var(--sapBackgroundColor, #fff);
     }
+
+    /* ==========================================================================
+       Messages Container
+       ========================================================================== */
+
     .sac-chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 12px;
+      padding: var(--space-2);
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: var(--space-1);
     }
+
+    /* Focus styles for keyboard navigation */
+    .sac-chat-messages:focus {
+      outline: 2px solid var(--sapContent_FocusColor, #0854a0);
+      outline-offset: -2px;
+    }
+
+    .sac-chat-messages:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    /* ==========================================================================
+       Message Bubbles
+       ========================================================================== */
+
     .sac-chat-message {
       max-width: 85%;
-      padding: 8px 12px;
-      border-radius: 8px;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--space-1);
       line-height: 1.5;
     }
+
     .sac-chat-message--user {
       align-self: flex-end;
-      background: #0070f2;
-      color: #fff;
+      background: var(--sapButton_Emphasized_Background, #0a6ed1);
+      color: var(--sapButton_Emphasized_TextColor, #fff);
     }
+
     .sac-chat-message--assistant {
       align-self: flex-start;
-      background: #f5f6f7;
-      color: #32363a;
+      background: var(--sapList_Background, #f5f6f7);
+      color: var(--sapTextColor, #32363a);
     }
+
+    /* Focus-within for accessibility */
+    .sac-chat-message:focus-within {
+      outline: 1px dashed var(--sapContent_FocusColor, #0854a0);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       Streaming Cursor
+       ========================================================================== */
+
     .sac-chat-cursor {
       animation: blink 1s step-end infinite;
     }
-    @keyframes blink { 50% { opacity: 0; } }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .sac-chat-cursor {
+        animation: none;
+      }
+    }
+
+    /* ==========================================================================
+       Input Area
+       ========================================================================== */
+
     .sac-chat-input-row {
       display: flex;
-      gap: 8px;
-      padding: 8px 12px;
-      border-top: 1px solid #e5e5e5;
+      gap: var(--space-1);
+      padding: var(--space-1) var(--space-2);
+      border-top: 1px solid var(--sapList_BorderColor, #e5e5e5);
+      background: var(--sapBackgroundColor, #fff);
     }
+
     .sac-chat-input {
       flex: 1;
-      padding: 6px 10px;
-      border: 1px solid #c0c0c0;
+      padding: var(--space-1) var(--space-2);
+      min-height: var(--touch-target-min);
+      border: 1px solid var(--sapField_BorderColor, #c0c0c0);
       border-radius: 4px;
-      font-size: 14px;
+      font-size: var(--sapFontSize, 14px);
+      font-family: inherit;
+      background: var(--sapField_Background, #fff);
+      color: var(--sapTextColor, #32363a);
     }
-    .sac-chat-input:disabled { background: #f5f6f7; }
+
+    .sac-chat-input:focus {
+      outline: none;
+      border-color: var(--sapContent_FocusColor, #0854a0);
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, #0854a0);
+    }
+
+    .sac-chat-input:focus:not(:focus-visible) {
+      box-shadow: none;
+      border-color: var(--sapField_BorderColor, #c0c0c0);
+    }
+
+    .sac-chat-input:focus-visible {
+      border-color: var(--sapContent_FocusColor, #0854a0);
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, #0854a0);
+    }
+
+    .sac-chat-input:disabled {
+      background: var(--sapField_ReadOnly_Background, #f5f6f7);
+      color: var(--sapContent_DisabledTextColor, #6a7a8e);
+    }
+
+    /* ==========================================================================
+       Send Button
+       ========================================================================== */
+
     .sac-chat-send {
-      padding: 6px 16px;
-      background: #0070f2;
-      color: #fff;
+      padding: var(--space-1) var(--space-2);
+      min-width: var(--touch-target-min);
+      min-height: var(--touch-target-min);
+      background: var(--sapButton_Emphasized_Background, #0a6ed1);
+      color: var(--sapButton_Emphasized_TextColor, #fff);
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: var(--sapFontSize, 14px);
+      font-family: inherit;
+      font-weight: 600;
+      transition: background-color 0.15s, transform 0.1s;
     }
-    .sac-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .sac-chat-send:hover:not(:disabled) {
+      background: var(--sapButton_Emphasized_Hover_Background, #085caf);
+    }
+
+    .sac-chat-send:active:not(:disabled) {
+      background: var(--sapButton_Emphasized_Active_Background, #0854a0);
+      transform: scale(0.98);
+    }
+
+    .sac-chat-send:focus {
+      outline: 2px solid var(--sapContent_FocusColor, #0854a0);
+      outline-offset: 2px;
+    }
+
+    .sac-chat-send:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    .sac-chat-send:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ==========================================================================
+       Screen Reader Only Utility
+       ========================================================================== */
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ==========================================================================
+       High Contrast Mode Support
+       ========================================================================== */
+
+    @media (forced-colors: active) {
+      .sac-chat-message {
+        border: 1px solid currentColor;
+      }
+
+      .sac-chat-send {
+        border: 2px solid currentColor;
+      }
+
+      .sac-chat-input {
+        border: 2px solid currentColor;
+      }
+    }
   `],
 })
 export class SacAiChatPanelComponent implements OnDestroy {
@@ -150,6 +344,7 @@ export class SacAiChatPanelComponent implements OnDestroy {
   messages: ChatMessage[] = [];
   inputText = '';
   streaming = false;
+  announcement = '';
 
   private streamSub: Subscription | null = null;
   private pendingToolArgs = new Map<string, string>();
@@ -159,11 +354,24 @@ export class SacAiChatPanelComponent implements OnDestroy {
   private session = inject(SacAiSessionService);
   private cdr = inject(ChangeDetectorRef);
 
+  /**
+   * Announce status changes to screen readers
+   */
+  private announce(message: string): void {
+    this.announcement = '';
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.announcement = message;
+      this.cdr.markForCheck();
+    }, 50);
+  }
+
   send(): void {
     const text = this.inputText.trim();
     if (!text || this.streaming) return;
 
     this.inputText = '';
+    this.announce('Message sent');
     this.messages.push({ id: this.uid(), role: 'user', content: text });
 
     const assistantMsg: ChatMessage = { id: this.uid(), role: 'assistant', content: '', streaming: true };
@@ -183,11 +391,13 @@ export class SacAiChatPanelComponent implements OnDestroy {
           assistantMsg.content = `Error: ${err.message}`;
           assistantMsg.streaming = false;
           this.streaming = false;
+          this.announce('Error receiving response');
           this.cdr.markForCheck();
         },
         complete: () => {
           assistantMsg.streaming = false;
           this.streaming = false;
+          this.announce('AI finished responding');
           this.cdr.markForCheck();
         },
       });
