@@ -90,7 +90,7 @@ adaptive-ui-architecture/
 | Layer 0: Context | ✅ **Complete** | Role, task, device, temporal, data context |
 | Layer 1: Capture | ✅ **Complete** | Interaction recording with privacy controls |
 | Layer 2: Modeling | ✅ **Complete** | User profile building with inference |
-| Layer 3: Adaptation | 🟡 Basic Engine | Decision engine with default rules |
+| Layer 3: Adaptation | ✅ **Complete** | Decision engine with coordinator |
 | Layer 4: Components | 🟡 Example Only | Adaptive table, filter examples |
 
 ## Phase 1 Deliverables (Complete)
@@ -209,6 +209,66 @@ const filterPatterns = captureService.getFilterPatterns('main-filter');
 ### Tests
 - `modeling-service.test.ts` — Service tests
 - `expertise-inference.test.ts` — Inference tests
+
+## Phase 3 Deliverables (Complete)
+
+### Adaptation Coordinator (`core/adaptation/coordinator.ts`)
+- Connects Context + Model → Engine → UI
+- Real-time CSS variable generation
+- User override management
+- Debounced change handling
+- SSR-compatible variable export
+
+### Extended Rules (`core/adaptation/rules/`)
+- `accessibility-rules.ts` — WCAG compliance (non-overridable)
+  - Reduced motion
+  - High contrast
+  - Keyboard-only navigation
+  - Touch target sizing
+  - Screen reader optimization
+- `data-rules.ts` — Data-based adaptation
+  - Large dataset optimization
+  - Empty state handling
+  - Sensitive data protection
+  - Real-time data display
+- `temporal-rules.ts` — Time-based adaptation
+  - Evening mode
+  - Long session comfort
+  - End of day workflows
+  - Weekend mode
+
+### Framework Integrations
+- `react/use-adaptation.ts` — React hooks
+  - `useAdaptation()` — Full decision
+  - `useAdaptiveLayout()` — CSS-ready values
+  - `useAdaptiveInteraction()` — Animation styles
+  - `useAdaptationOverrides()` — Override management
+- `angular/adaptation.service.ts` — Angular service
+  - RxJS observables
+  - CSS helpers
+  - Override management
+
+### CSS Variables Generated
+```css
+--adaptive-spacing-unit: 8px;
+--adaptive-spacing-xs: 4px;
+--adaptive-spacing-sm: 8px;
+--adaptive-spacing-md: 16px;
+--adaptive-spacing-lg: 24px;
+--adaptive-spacing-xl: 32px;
+--adaptive-grid-columns: 12;
+--adaptive-density-scale: 1;
+--adaptive-touch-target-min: 44px;
+--adaptive-animation-duration: 150ms;
+--adaptive-transition-duration: 200ms;
+--adaptive-hover-delay: 200ms;
+--adaptive-tooltip-delay: 500ms;
+--adaptive-sidebar-width: 280px;
+```
+
+### Tests
+- `adaptation-coordinator.test.ts` — Coordinator tests
+- `rules.test.ts` — Rule priority and condition tests
 
 ## License
 

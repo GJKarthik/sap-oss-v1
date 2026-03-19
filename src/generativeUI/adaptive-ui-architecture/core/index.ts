@@ -3,7 +3,7 @@
  *
  * Phase 1: Context & Capture ✅
  * Phase 2: User Modeling ✅
- * Phase 3: Adaptation (types + basic engine)
+ * Phase 3: Adaptation Engine ✅
  */
 
 // Layer 0: Context
@@ -16,6 +16,5 @@ export * from './capture';
 export * from './modeling';
 
 // Layer 3: Adaptation
-export * from './adaptation/types';
-export { AdaptationEngineImpl, adaptationEngine } from './adaptation/engine';
+export * from './adaptation';
 
