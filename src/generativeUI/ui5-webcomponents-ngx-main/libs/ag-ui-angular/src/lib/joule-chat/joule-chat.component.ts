@@ -6,6 +6,13 @@
  * Bridges the AG-UI SSE transport with a SAP Fiori-style chat shell.
  * Exported as a custom element via createCustomElement().
  *
+ * WCAG AA Compliance:
+ * - role="log" with aria-live="polite" for screen reader announcements
+ * - Semantic HTML (<section>, <article>) for structure
+ * - Visible focus indicators on all interactive elements
+ * - Touch targets >= 44px
+ * - SAP Fiori design tokens
+ *
  * Usage as Angular component:
  *   <joule-chat endpoint="/ag-ui/run" [threadId]="tid" [securityClass]="'internal'"></joule-chat>
  *
@@ -64,43 +71,43 @@ export interface JouleChatConfig {
 
 @Component({
   selector: 'joule-chat',
-  template: `
-    <div class="joule-chat-shell"
-         [class.joule-chat--loading]="isLoading"
-         role="region"
-         [attr.aria-label]="title + ' chat'"
-         [attr.aria-busy]="isLoading">
+  template: \`
+    <section class="joule-chat-shell" [class.joule-chat--loading]="isLoading" aria-label="Joule AI Assistant">
+      <!-- Screen reader announcements (visually hidden) -->
+      <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {{ announcement }}
+      </div>
 
       <!-- Header -->
       <header class="joule-chat-header">
-        <ui5-title level="H5" id="joule-chat-title">{{ title }}</ui5-title>
-        <span *ngIf="showRouteBadge && lastRoute"
-              class="joule-route-badge joule-route-badge--{{ lastRoute }}"
-              role="status"
-              [attr.aria-label]="'Processing via ' + lastRoute">
+        <ui5-title level="H5" aria-hidden="true">{{ title }}</ui5-title>
+        <span
+          *ngIf="showRouteBadge && lastRoute"
+          class="joule-route-badge joule-route-badge--{{ lastRoute }}"
+          role="status"
+          [attr.aria-label]="'Using ' + lastRoute + ' backend'">
           {{ lastRoute }}
         </span>
         <ui5-button
           design="Transparent"
           icon="decline"
-          (click)="onClose()"
-          aria-label="Close chat"
-          tooltip="Close"></ui5-button>
+          accessible-name="Close chat"
+          (click)="onClose()">
+        </ui5-button>
       </header>
 
-      <!-- Message list with proper ARIA attributes -->
-      <div class="joule-chat-messages"
-           #messagesContainer
-           role="log"
-           aria-label="Chat messages"
-           aria-live="polite"
-           aria-atomic="false"
-           aria-relevant="additions"
-           tabindex="0">
-
-        <article *ngFor="let msg of messages; trackBy: trackMessage"
-                 class="joule-chat-message joule-chat-message--{{ msg.role }}"
-                 [attr.aria-label]="getMessageAriaLabel(msg)">
+      <!-- Message log with ARIA live region -->
+      <div
+        class="joule-chat-messages"
+        #messagesContainer
+        role="log"
+        aria-label="Chat conversation"
+        aria-live="polite"
+        aria-relevant="additions">
+        <article
+          *ngFor="let msg of messages"
+          class="joule-chat-message joule-chat-message--{{ msg.role }}"
+          [attr.aria-label]="msg.role === 'user' ? 'You said' : 'Joule response'">
           <ui5-avatar
             *ngIf="msg.role === 'assistant'"
             class="joule-chat-avatar"
@@ -111,41 +118,34 @@ export interface JouleChatConfig {
           </ui5-avatar>
           <div class="joule-chat-bubble">
             <span class="joule-chat-content">{{ msg.content }}</span>
-            <span *ngIf="msg.isStreaming"
-                  class="joule-chat-cursor"
-                  aria-hidden="true">▋</span>
+            <span *ngIf="msg.isStreaming" class="joule-chat-cursor" aria-hidden="true">▋</span>
+            <span *ngIf="msg.isStreaming" class="sr-only">Response in progress</span>
           </div>
         </article>
 
         <!-- Loading skeleton -->
-        <div *ngIf="isLoading && !currentAssistantMsgId"
-             class="joule-chat-message joule-chat-message--assistant"
-             role="status"
-             aria-label="Joule is thinking">
-          <ui5-busy-indicator active size="Small" aria-label="Loading response"></ui5-busy-indicator>
+        <div
+          *ngIf="isLoading && !currentAssistantMsgId"
+          class="joule-chat-message joule-chat-message--assistant"
+          role="status"
+          aria-label="Loading response">
+          <ui5-busy-indicator active size="Small" aria-label="Processing"></ui5-busy-indicator>
         </div>
 
         <!-- GenUI outlet for rendered schemas -->
-        <div *ngIf="currentSchema"
-             class="joule-chat-genui-outlet"
-             #genUiOutlet
-             role="region"
-             aria-label="Generated interface"></div>
-      </div>
-
-      <!-- Visually hidden live region for streaming announcements -->
-      <div class="sr-only"
-           role="status"
-           aria-live="polite"
-           aria-atomic="true">
-        {{ streamingAnnouncement }}
+        <div
+          *ngIf="currentSchema"
+          class="joule-chat-genui-outlet"
+          #genUiOutlet
+          role="region"
+          aria-label="Generated UI content">
+        </div>
       </div>
 
       <!-- Error strip -->
       <ui5-message-strip
         *ngIf="errorMessage"
         design="Negative"
-        role="alert"
         (close)="errorMessage = null">
         {{ errorMessage }}
       </ui5-message-strip>
@@ -157,18 +157,16 @@ export interface JouleChatConfig {
           [value]="inputValue"
           [placeholder]="placeholder"
           [disabled]="isLoading"
-          [attr.aria-describedby]="isLoading ? 'joule-input-disabled-hint' : null"
-          (input)="onInputChange($event)"
+          accessible-name="Message input"
+          (input)="onInputChange(\$event)"
           (submit)="onSubmit()">
         </ui5-ai-prompt-input>
-        <span id="joule-input-disabled-hint" class="sr-only" *ngIf="isLoading">
-          Input disabled while Joule is responding
-        </span>
         <ui5-button
           design="Emphasized"
           icon="paper-plane"
           [disabled]="isLoading || !inputValue.trim()"
-          [attr.aria-label]="isLoading ? 'Send (disabled, waiting for response)' : 'Send message'"
+          [attr.aria-disabled]="isLoading || !inputValue.trim()"
+          accessible-name="Send message"
           (click)="onSubmit()">
           Send
         </ui5-button>
@@ -176,13 +174,28 @@ export interface JouleChatConfig {
 
       <!-- Connection state indicator -->
       <div class="joule-chat-status" role="status" aria-live="polite">
-        <span class="joule-chat-status-dot joule-chat-status-dot--{{ connectionState }}"
-              aria-hidden="true"></span>
+        <span
+          class="joule-chat-status-dot joule-chat-status-dot--{{ connectionState }}"
+          aria-hidden="true">
+        </span>
         <ui5-label>{{ connectionStateLabel }}</ui5-label>
       </div>
-    </div>
-  `,
-  styles: [`
+    </section>
+  \`,
+  styles: [\`
+    /* === Screen Reader Only === */
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
     :host {
       display: block;
       font-family: var(--sapFontFamily, '72'), sans-serif;
@@ -235,6 +248,17 @@ export interface JouleChatConfig {
       display: flex;
       flex-direction: column;
       gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .joule-chat-messages {
+        scroll-behavior: auto;
+      }
+      .joule-chat-cursor,
+      .joule-chat-status-dot--connecting {
+        animation: none;
+      }
     }
 
     .joule-chat-message {
@@ -291,6 +315,13 @@ export interface JouleChatConfig {
       flex: 1;
     }
 
+    /* Focus indicators for non-UI5 elements */
+    .joule-chat-input-area ui5-button:focus-visible,
+    .joule-chat-header ui5-button:focus-visible {
+      outline: 2px solid var(--sapContent_FocusColor, #0070f2);
+      outline-offset: 2px;
+    }
+
     .joule-chat-status {
       display: flex;
       align-items: center;
@@ -316,52 +347,15 @@ export interface JouleChatConfig {
       50% { opacity: 0.3; }
     }
 
-    /* Visually hidden but accessible to screen readers */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* Focus styles for keyboard navigation */
-    .joule-chat-messages:focus {
-      outline: 2px solid var(--sapContent_FocusColor, #0854a0);
-      outline-offset: -2px;
-    }
-
-    .joule-chat-messages:focus:not(:focus-visible) {
-      outline: none;
-    }
-
-    .joule-chat-message:focus-within {
-      outline: 1px dashed var(--sapContent_FocusColor, #0854a0);
-      outline-offset: 2px;
-    }
-
-    /* Respect reduced motion preference */
-    @media (prefers-reduced-motion: reduce) {
-      .joule-chat-cursor,
-      .joule-chat-status-dot--connecting {
-        animation: none;
-      }
-    }
-
-    /* High contrast mode support */
+    /* === High Contrast Mode === */
     @media (forced-colors: active) {
+      .joule-chat-shell,
+      .joule-chat-bubble,
       .joule-chat-status-dot {
-        forced-color-adjust: none;
-      }
-      .joule-route-badge {
-        border: 1px solid currentColor;
+        border: 1px solid CanvasText;
       }
     }
-  `],
+  \`],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
@@ -407,12 +401,11 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   connectionState = 'disconnected';
   lastRoute: string | null = null;
   currentSchema: unknown = null;
-  streamingAnnouncement = '';
+  announcement = '';
+  currentAssistantMsgId: string | null = null;
 
   private destroy$ = new Subject<void>();
   private currentRunId: string | null = null;
-  currentAssistantMsgId: string | null = null;  // Made public for template access
-  private announcementDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private agUiClient: AgUiClient,
@@ -460,6 +453,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
 
   async connect(): Promise<void> {
     this.connectionState = 'connecting';
+    this.announceStatus('Connecting to assistant');
     this.cdr.markForCheck();
     try {
       await this.agUiClient.connect({
@@ -467,9 +461,11 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
         transport: this.transport,
         autoConnect: false,
       });
+      this.announceStatus('Connected to assistant');
     } catch (e) {
       this.connectionState = 'error';
-      this.errorMessage = `Connection failed: ${(e as Error).message}`;
+      this.errorMessage = \`Connection failed: \${(e as Error).message}\`;
+      this.announceStatus(\`Connection failed: \${(e as Error).message}\`);
       this.cdr.markForCheck();
     }
   }
@@ -482,6 +478,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
     this.inputValue = '';
     this.isLoading = true;
     this.errorMessage = null;
+    this.announceStatus('Message sent, processing');
     this.cdr.markForCheck();
 
     try {
@@ -489,7 +486,8 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       this.messageSent.emit(text);
     } catch (e) {
       this.isLoading = false;
-      this.errorMessage = `Send failed: ${(e as Error).message}`;
+      this.errorMessage = \`Send failed: \${(e as Error).message}\`;
+      this.announceStatus(\`Error: \${(e as Error).message}\`);
       this.cdr.markForCheck();
     }
   }
@@ -505,55 +503,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   clearMessages(): void {
     this.messages = [];
     this.currentSchema = null;
-    this.streamingAnnouncement = 'Chat cleared';
     this.cdr.markForCheck();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Accessibility helpers
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Track function for ngFor to optimize DOM updates
-   */
-  trackMessage(index: number, msg: ChatMessage): string {
-    return msg.id;
-  }
-
-  /**
-   * Generate accessible label for a message
-   */
-  getMessageAriaLabel(msg: ChatMessage): string {
-    const sender = msg.role === 'user' ? 'You said' : 'Joule replied';
-    const time = msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const streaming = msg.isStreaming ? ', still typing' : '';
-    return `${sender} at ${time}${streaming}: ${msg.content.slice(0, 100)}${msg.content.length > 100 ? '...' : ''}`;
-  }
-
-  /**
-   * Announce streaming text to screen readers (debounced)
-   */
-  private announceStreaming(content: string): void {
-    if (this.announcementDebounceTimer) {
-      clearTimeout(this.announcementDebounceTimer);
-    }
-    this.announcementDebounceTimer = setTimeout(() => {
-      // Only announce the last ~50 characters to avoid verbosity
-      const snippet = content.length > 50 ? '...' + content.slice(-50) : content;
-      this.streamingAnnouncement = `Joule is responding: ${snippet}`;
-      this.cdr.markForCheck();
-    }, 1500); // Announce every 1.5 seconds at most
-  }
-
-  /**
-   * Clear streaming announcement
-   */
-  private clearStreamingAnnouncement(): void {
-    if (this.announcementDebounceTimer) {
-      clearTimeout(this.announcementDebounceTimer);
-      this.announcementDebounceTimer = null;
-    }
-    this.streamingAnnouncement = '';
   }
 
   // ---------------------------------------------------------------------------
@@ -582,11 +532,13 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
           case 'lifecycle.run_finished':
             this.isLoading = false;
             this.finalizeAssistantMessage();
+            this.announceStatus('Response complete');
             break;
           case 'lifecycle.run_error':
             this.isLoading = false;
             this.errorMessage = event.message ?? 'Agent error';
             this.removeStreamingMessage();
+            this.announceStatus(\`Error: \${event.message ?? 'Agent error'}\`);
             break;
         }
         this.cdr.markForCheck();
@@ -610,6 +562,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
           const schema = event.payload ?? event.value;
           this.currentSchema = schema;
           this.schemaReceived.emit(schema);
+          this.announceStatus('Generated UI content available');
           this.cdr.markForCheck();
         }
         // Route badge
@@ -626,14 +579,14 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   // ---------------------------------------------------------------------------
 
   private addMessage(role: ChatMessage['role'], content: string): string {
-    const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const id = \`msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}\`;
     this.messages = [...this.messages, { id, role, content, timestamp: new Date() }];
     this.scrollToBottom();
     return id;
   }
 
   private startAssistantMessage(): void {
-    const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const id = \`msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}\`;
     this.currentAssistantMsgId = id;
     this.messages = [...this.messages, {
       id, role: 'assistant', content: '', timestamp: new Date(), isStreaming: true,
@@ -651,28 +604,14 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
         : m
     );
     this.scrollToBottom();
-
-    // Announce streaming content to screen readers (debounced)
-    const currentMsg = this.messages.find(m => m.id === this.currentAssistantMsgId);
-    if (currentMsg) {
-      this.announceStreaming(currentMsg.content);
-    }
   }
 
   private finalizeAssistantMessage(): void {
     if (this.currentAssistantMsgId) {
-      const finalMsg = this.messages.find(m => m.id === this.currentAssistantMsgId);
       this.messages = this.messages.map(m =>
         m.id === this.currentAssistantMsgId ? { ...m, isStreaming: false } : m
       );
       this.currentAssistantMsgId = null;
-
-      // Clear streaming announcement and announce completion
-      this.clearStreamingAnnouncement();
-      if (finalMsg) {
-        this.streamingAnnouncement = `Joule finished: ${finalMsg.content.slice(0, 100)}${finalMsg.content.length > 100 ? '...' : ''}`;
-        this.cdr.markForCheck();
-      }
     }
   }
 
@@ -690,5 +629,14 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
         el.scrollTop = el.scrollHeight;
       }
     }, 0);
+  }
+
+  private announceStatus(message: string): void {
+    // Clear and re-set to trigger aria-live announcement
+    this.announcement = '';
+    setTimeout(() => {
+      this.announcement = message;
+      this.cdr.markForCheck();
+    }, 50);
   }
 }
