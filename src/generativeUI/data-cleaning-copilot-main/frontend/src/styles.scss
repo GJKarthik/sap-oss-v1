@@ -1,8 +1,33 @@
 /* UI5 theming is loaded via main.ts JS imports */
 
+/**
+ * Data Cleaning Copilot Global Styles
+ *
+ * WCAG AA Compliance:
+ * - SAP Fiori design tokens for consistent theming
+ * - 8px grid system for spacing
+ * - Focus indicators for keyboard navigation
+ * - prefers-reduced-motion support
+ * - High contrast mode support
+ */
+
+/* =============================================================================
+   Design Tokens & Custom Properties
+   ============================================================================= */
 
 :root {
   --_ui5-v2-shellbar-height: 3rem;
+
+  /* 8px Grid Spacing Scale */
+  --space-1: 8px;   /* Base unit */
+  --space-2: 16px;  /* 2× */
+  --space-3: 24px;  /* 3× */
+  --space-4: 32px;  /* 4× */
+  --space-5: 40px;  /* 5× */
+  --space-6: 48px;  /* 6× — minimum touch target */
+
+  /* Touch target minimum (WCAG 2.5.8) */
+  --touch-target-min: 44px;
 }
 
 * {
@@ -18,6 +43,10 @@ body {
   background: var(--sapBackgroundColor, #f7f7f7);
 }
 
+/* =============================================================================
+   Layout
+   ============================================================================= */
+
 .copilot-layout {
   display: flex;
   flex-direction: column;
@@ -29,18 +58,21 @@ body {
   display: flex;
   flex: 1;
   overflow: hidden;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: var(--space-1);  /* 8px */
+  padding: var(--space-2);  /* 16px */
 }
 
-/* === Chat Panel === */
+/* =============================================================================
+   Chat Panel — Accessible Chat Interface
+   ============================================================================= */
+
 .chat-panel {
   display: flex;
   flex-direction: column;
   flex: 2;
   min-width: 0;
   background: var(--sapBaseColor, #fff);
-  border-radius: 0.5rem;
+  border-radius: var(--space-1);  /* 8px */
   border: 1px solid var(--sapList_BorderColor, #e5e5e5);
   overflow: hidden;
 }
@@ -48,10 +80,10 @@ body {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: var(--space-2);  /* 16px */
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-2);  /* 16px */
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -63,9 +95,23 @@ body {
   border-radius: 3px;
 }
 
+/* Focus styles for keyboard navigation */
+.chat-messages:focus {
+  outline: 2px solid var(--sapContent_FocusColor, #0854a0);
+  outline-offset: -2px;
+}
+
+.chat-messages:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* =============================================================================
+   Message Bubbles
+   ============================================================================= */
+
 .message {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-1);  /* 8px */
   max-width: 90%;
   animation: fadeIn 0.15s ease-in;
 }
@@ -82,6 +128,13 @@ body {
   }
 }
 
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .message {
+    animation: none;
+  }
+}
+
 .message.user {
   align-self: flex-end;
   flex-direction: row-reverse;
@@ -92,8 +145,8 @@ body {
 }
 
 .message-bubble {
-  padding: 0.6rem 0.9rem;
-  border-radius: 1rem;
+  padding: var(--space-1) var(--space-2);  /* 8px 16px */
+  border-radius: var(--space-2);  /* 16px */
   font-size: 0.9rem;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -104,18 +157,28 @@ body {
 .message.user .message-bubble {
   background: var(--sapButton_Emphasized_Background, #0a6ed1);
   color: var(--sapButton_Emphasized_TextColor, #fff);
-  border-bottom-right-radius: 0.2rem;
+  border-bottom-right-radius: 4px;
 }
 
 .message.assistant .message-bubble {
   background: var(--sapList_Background, #f0f4f9);
   color: var(--sapTextColor, #1d2d3e);
-  border-bottom-left-radius: 0.2rem;
+  border-bottom-left-radius: 4px;
 }
 
+/* Focus-within for accessibility */
+.message:focus-within {
+  outline: 1px dashed var(--sapContent_FocusColor, #0854a0);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   Avatars
+   ============================================================================= */
+
 .message-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: var(--space-4);  /* 32px */
+  height: var(--space-4);  /* 32px */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -128,13 +191,17 @@ body {
 
 .message.user .message-avatar {
   background: var(--sapButton_Emphasized_Background, #0a6ed1);
-  color: #fff;
+  color: var(--sapButton_Emphasized_TextColor, #fff);
 }
 
 .message.assistant .message-avatar {
   background: var(--sapSuccessColor, #107e3e);
-  color: #fff;
+  color: var(--sapButton_Emphasized_TextColor, #fff);
 }
+
+/* =============================================================================
+   Empty State
+   ============================================================================= */
 
 .empty-chat {
   display: flex;
@@ -142,9 +209,10 @@ body {
   align-items: center;
   justify-content: center;
   flex: 1;
-  gap: 0.5rem;
+  gap: var(--space-1);  /* 8px */
   color: var(--sapContent_LabelColor, #6a7a8e);
   font-size: 0.95rem;
+  padding: var(--space-4);  /* 32px */
 }
 
 .empty-chat-icon {
@@ -152,13 +220,41 @@ body {
   opacity: 0.4;
 }
 
+/* =============================================================================
+   Input Area
+   ============================================================================= */
+
 .chat-input-area {
-  padding: 0.75rem;
+  padding: var(--space-2);  /* 16px */
   border-top: 1px solid var(--sapList_BorderColor, #e5e5e5);
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-1);  /* 8px */
   align-items: flex-end;
   background: var(--sapBaseColor, #fff);
+}
+
+/* Ensure buttons meet touch target minimum */
+.chat-input-area ui5-button {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+/* =============================================================================
+   High Contrast Mode Support
+   ============================================================================= */
+
+@media (forced-colors: active) {
+  .message-avatar {
+    border: 1px solid currentColor;
+  }
+
+  .message-bubble {
+    border: 1px solid currentColor;
+  }
+
+  .chat-panel {
+    border: 2px solid currentColor;
+  }
 }
 
 .chat-input-area ui5-textarea {
