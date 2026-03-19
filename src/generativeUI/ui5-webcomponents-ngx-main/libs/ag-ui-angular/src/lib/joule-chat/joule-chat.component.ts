@@ -29,10 +29,18 @@ import {
   Inject,
   Optional,
 } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AgUiClient, AgUiClientConfig, AG_UI_CONFIG } from '../services/ag-ui-client.service';
 import { AgUiToolRegistry } from '../services/tool-registry.service';
+
+// Adaptive UI Architecture
+import {
+  AdaptationService,
+  AdaptiveChatCaptureDirective,
+  contextProvider,
+  type LayoutAdaptation,
+} from '../../../../../../adaptive-ui-architecture/angular';
 
 // =============================================================================
 // Types
@@ -64,9 +72,14 @@ export interface JouleChatConfig {
 
 @Component({
   selector: 'joule-chat',
+  providers: [AdaptationService],
   template: `
     <div class="joule-chat-shell"
          [class.joule-chat--loading]="isLoading"
+         [class.density-compact]="layoutDensity === 'compact'"
+         [class.density-spacious]="layoutDensity === 'spacious'"
+         [adaptiveChatCapture]="{chatId: 'joule-chat', channel: 'joule'}"
+         #chatCapture="adaptiveChatCapture"
          role="region"
          [attr.aria-label]="title + ' chat'"
          [attr.aria-busy]="isLoading">
@@ -198,6 +211,24 @@ export interface JouleChatConfig {
       border-radius: var(--sapElement_BorderCornerRadius, 8px);
       overflow: hidden;
       background: var(--sapBackgroundColor, #fff);
+
+      /* Adaptive spacing variables */
+      --chat-spacing: var(--adaptive-spacing-md, 16px);
+      --chat-gap: var(--adaptive-spacing-sm, 12px);
+      --chat-font-size: calc(14px * var(--adaptive-density-scale, 1));
+    }
+
+    /* Adaptive density variations */
+    .joule-chat-shell.density-compact {
+      --chat-spacing: 8px;
+      --chat-gap: 6px;
+      --chat-font-size: 13px;
+    }
+
+    .joule-chat-shell.density-spacious {
+      --chat-spacing: 24px;
+      --chat-gap: 16px;
+      --chat-font-size: 15px;
     }
 
     .joule-chat-header {
@@ -231,15 +262,16 @@ export interface JouleChatConfig {
     .joule-chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: var(--chat-spacing);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: var(--chat-gap);
+      font-size: var(--chat-font-size);
     }
 
     .joule-chat-message {
       display: flex;
-      gap: 8px;
+      gap: var(--chat-gap);
       max-width: 85%;
     }
 
@@ -395,6 +427,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
 
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLElement>;
   @ViewChild('promptInput') promptInput?: ElementRef;
+  @ViewChild('chatCapture') chatCapture?: AdaptiveChatCaptureDirective;
 
   // ---------------------------------------------------------------------------
   // State
@@ -409,15 +442,21 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   currentSchema: unknown = null;
   streamingAnnouncement = '';
 
+  // Adaptive UI state
+  layoutDensity: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
+
   private destroy$ = new Subject<void>();
   private currentRunId: string | null = null;
   currentAssistantMsgId: string | null = null;  // Made public for template access
   private announcementDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private adaptiveSubscriptions: Subscription[] = [];
+  private streamingStartTime = 0;
 
   constructor(
     private agUiClient: AgUiClient,
     private toolRegistry: AgUiToolRegistry,
     private cdr: ChangeDetectorRef,
+    private adaptationService: AdaptationService,
     @Optional() @Inject(AG_UI_CONFIG) private injectedConfig: AgUiClientConfig | null,
   ) {}
 
@@ -437,6 +476,9 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnInit(): void {
     this.subscribeToEvents();
+    this.subscribeToAdaptations();
+    this.setUserContext();
+
     if (this.autoConnect) {
       this.connect();
     }
@@ -451,7 +493,40 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.adaptiveSubscriptions.forEach(sub => sub.unsubscribe());
     this.agUiClient.disconnect().catch(() => {});
+  }
+
+  /**
+   * Subscribe to adaptive UI changes
+   */
+  private subscribeToAdaptations(): void {
+    this.adaptiveSubscriptions.push(
+      this.adaptationService.getLayout().subscribe((layout: LayoutAdaptation) => {
+        this.layoutDensity = layout.density;
+        this.cdr.markForCheck();
+      })
+    );
+  }
+
+  /**
+   * Set user context for adaptive learning
+   */
+  private setUserContext(): void {
+    contextProvider.setUserContext({
+      userId: 'joule-user',
+      role: {
+        id: 'user',
+        name: 'Joule User',
+        permissionLevel: 'editor',
+        expertiseLevel: 'intermediate',
+      },
+      organization: 'SAP',
+      locale: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+
+    contextProvider.setTaskMode('collaborate');
   }
 
   // ---------------------------------------------------------------------------
@@ -478,10 +553,15 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
     const text = this.inputValue.trim();
     if (!text || this.isLoading) return;
 
+    // Capture user message
+    this.chatCapture?.captureUserMessage(text.length, false);
+
     this.addMessage('user', text);
     this.inputValue = '';
     this.isLoading = true;
+    this.streamingStartTime = Date.now();
     this.errorMessage = null;
+    this.chatCapture?.captureStreamingStart();
     this.cdr.markForCheck();
 
     try {
@@ -670,6 +750,12 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       // Clear streaming announcement and announce completion
       this.clearStreamingAnnouncement();
       if (finalMsg) {
+        // Capture streaming complete
+        this.chatCapture?.captureStreamingComplete(
+          finalMsg.content.length,
+          Date.now() - this.streamingStartTime
+        );
+
         this.streamingAnnouncement = `Joule finished: ${finalMsg.content.slice(0, 100)}${finalMsg.content.length > 100 ? '...' : ''}`;
         this.cdr.markForCheck();
       }

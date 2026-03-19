@@ -10,14 +10,25 @@ import {
     ViewChild,
     ElementRef,
     AfterViewChecked,
+    OnInit,
+    OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import type { ChatMessage } from '../copilot.service';
 
 // Register UI5 components we use here
 import '@ui5/webcomponents/dist/TextArea.js';
 import '@ui5/webcomponents/dist/Button.js';
 import '@ui5/webcomponents/dist/BusyIndicator.js';
+
+// Adaptive UI Architecture
+import {
+    AdaptationService,
+    AdaptiveChatCaptureDirective,
+    contextProvider,
+    type LayoutAdaptation,
+} from '@adaptive-ui/angular';
 
 /**
  * ChatComponent — Accessible chat interface for Data Cleaning Copilot
@@ -33,10 +44,16 @@ import '@ui5/webcomponents/dist/BusyIndicator.js';
 @Component({
     selector: 'app-chat',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, AdaptiveChatCaptureDirective],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    providers: [AdaptationService],
     template: `
-    <section class="chat-panel" aria-label="Data Cleaning Copilot Chat">
+    <section class="chat-panel"
+             [class.density-compact]="layoutDensity === 'compact'"
+             [class.density-spacious]="layoutDensity === 'spacious'"
+             [adaptiveChatCapture]="{chatId: 'data-cleaning-chat', channel: 'data-cleaning'}"
+             #chatCapture="adaptiveChatCapture"
+             aria-label="Data Cleaning Copilot Chat">
       <!-- Messages container with ARIA live region -->
       <div class="chat-messages"
            #messageContainer
@@ -130,6 +147,31 @@ import '@ui5/webcomponents/dist/BusyIndicator.js';
       border: 0;
     }
 
+    /* Adaptive density classes */
+    .chat-panel {
+      --chat-spacing: var(--adaptive-spacing-md, 16px);
+      --chat-font-size: calc(14px * var(--adaptive-density-scale, 1));
+    }
+
+    .chat-panel.density-compact {
+      --chat-spacing: var(--adaptive-spacing-sm, 8px);
+      --chat-font-size: 13px;
+    }
+
+    .chat-panel.density-spacious {
+      --chat-spacing: var(--adaptive-spacing-lg, 24px);
+      --chat-font-size: 15px;
+    }
+
+    .chat-messages {
+      gap: var(--chat-spacing);
+      font-size: var(--chat-font-size);
+    }
+
+    .message {
+      padding: var(--chat-spacing);
+    }
+
     /* Focus styles for keyboard navigation */
     .chat-messages:focus {
       outline: 2px solid var(--sapContent_FocusColor, #0854a0);
@@ -149,6 +191,7 @@ import '@ui5/webcomponents/dist/BusyIndicator.js';
     @media (prefers-reduced-motion: reduce) {
       .message {
         animation: none !important;
+        transition-duration: 0ms !important;
       }
       .loading-text {
         animation: none !important;
@@ -166,20 +209,59 @@ import '@ui5/webcomponents/dist/BusyIndicator.js';
     }
   `],
 })
-export class ChatComponent implements AfterViewChecked {
+export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     @Input() messages: ChatMessage[] = [];
     @Output() messageSent = new EventEmitter<string>();
     @Output() clearRequested = new EventEmitter<void>();
 
     @ViewChild('messageContainer') messageContainer?: ElementRef<HTMLElement>;
+    @ViewChild('chatCapture') chatCapture?: AdaptiveChatCaptureDirective;
 
     readonly loading = signal(false);
     readonly inputValue = signal('');
     announcement = '';
 
+    // Adaptive UI state
+    layoutDensity: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
+    showKeyboardHints = false;
+
     private cdr = inject(ChangeDetectorRef);
+    private adaptationService = inject(AdaptationService);
     private shouldScrollToBottom = false;
     private previousMessageCount = 0;
+    private subscriptions: Subscription[] = [];
+    private streamingStartTime = 0;
+
+    ngOnInit(): void {
+        // Subscribe to adaptation changes
+        this.subscriptions.push(
+            this.adaptationService.getLayout().subscribe((layout: LayoutAdaptation) => {
+                this.layoutDensity = layout.density;
+                this.cdr.markForCheck();
+            })
+        );
+
+        // Set user context (in real app, get from auth service)
+        contextProvider.setUserContext({
+            userId: 'data-cleaning-user',
+            role: {
+                id: 'analyst',
+                name: 'Data Analyst',
+                permissionLevel: 'editor',
+                expertiseLevel: 'intermediate',
+            },
+            organization: 'SAP',
+            locale: navigator.language,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+
+        // Set task context
+        contextProvider.setTaskMode('explore');
+    }
+
+    ngOnDestroy(): void {
+        this.subscriptions.forEach(sub => sub.unsubscribe());
+    }
 
     ngAfterViewChecked(): void {
         if (this.shouldScrollToBottom && this.messageContainer) {
@@ -193,6 +275,18 @@ export class ChatComponent implements AfterViewChecked {
         this.loading.set(v);
         if (v) {
             this.announce('AI is thinking...');
+            this.streamingStartTime = Date.now();
+            this.chatCapture?.captureStreamingStart();
+        } else if (this.streamingStartTime > 0) {
+            // Capture streaming complete
+            const lastMessage = this.messages[this.messages.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant') {
+                this.chatCapture?.captureStreamingComplete(
+                    lastMessage.content.length,
+                    Date.now() - this.streamingStartTime
+                );
+            }
+            this.streamingStartTime = 0;
         }
     }
 
@@ -209,6 +303,11 @@ export class ChatComponent implements AfterViewChecked {
     sendMessage() {
         const text = this.inputValue().trim();
         if (!text || this.loading()) return;
+
+        // Capture user message interaction
+        const hasCode = text.includes('```') || text.includes('SELECT') || text.includes('def ');
+        this.chatCapture?.captureUserMessage(text.length, hasCode);
+
         this.inputValue.set('');
         this.messageSent.emit(text);
         this.shouldScrollToBottom = true;

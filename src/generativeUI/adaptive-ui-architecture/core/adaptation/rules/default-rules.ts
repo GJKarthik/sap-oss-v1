@@ -183,6 +183,7 @@ export const executeTaskRule: AdaptationRule = {
   apply: (current) => ({
     ...current,
     layout: {
+      density: current.layout?.density || 'comfortable',
       ...current.layout,
       autoCollapsePanels: ['filters', 'history'],
       autoExpandPanels: ['actions'],

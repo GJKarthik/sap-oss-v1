@@ -16,81 +16,81 @@ export interface LayoutAdaptation {
   /** Information density to apply */
   density: 'compact' | 'comfortable' | 'spacious';
   /** Grid column count */
-  gridColumns: number;
+  gridColumns?: number;
   /** Spacing scale (multiplier of base 8px) */
-  spacingScale: number;
+  spacingScale?: number;
   /** Sidebar state */
-  sidebarState: 'expanded' | 'collapsed' | 'hidden';
+  sidebarState?: 'expanded' | 'collapsed' | 'hidden';
   /** Panel order */
-  panelOrder: string[];
+  panelOrder?: string[];
   /** Panels to auto-expand */
-  autoExpandPanels: string[];
+  autoExpandPanels?: string[];
   /** Panels to auto-collapse */
-  autoCollapsePanels: string[];
+  autoCollapsePanels?: string[];
 }
 
 export interface ContentAdaptation {
   /** Columns to show (for tables) */
-  visibleColumns: string[];
+  visibleColumns?: string[];
   /** Column order */
-  columnOrder: string[];
+  columnOrder?: string[];
   /** Default sort */
   defaultSort?: { column: string; direction: 'asc' | 'desc' };
   /** Page size */
-  pageSize: number;
+  pageSize?: number;
   /** Pre-applied filters */
-  preAppliedFilters: Record<string, unknown>;
+  preAppliedFilters?: Record<string, unknown>;
   /** Suggested filters (shown but not applied) */
-  suggestedFilters: Array<{ field: string; value: unknown; reason: string }>;
+  suggestedFilters?: Array<{ field: string; value: unknown; reason: string }>;
   /** Data to preload */
-  preloadData: string[];
+  preloadData?: string[];
 }
 
 export interface InteractionAdaptation {
   /** Touch target size multiplier */
-  touchTargetScale: number;
+  touchTargetScale?: number;
   /** Enable keyboard shortcuts */
-  enableKeyboardShortcuts: boolean;
+  enableKeyboardShortcuts?: boolean;
   /** Show shortcut hints */
-  showShortcutHints: boolean;
+  showShortcutHints?: boolean;
   /** Enable drag and drop */
-  enableDragDrop: boolean;
+  enableDragDrop?: boolean;
   /** Hover delay (ms) */
-  hoverDelayMs: number;
+  hoverDelayMs?: number;
   /** Tooltip delay (ms) */
-  tooltipDelayMs: number;
+  tooltipDelayMs?: number;
   /** Animation duration multiplier (0 = disabled) */
-  animationScale: number;
+  animationScale?: number;
 }
 
 export interface FeedbackAdaptation {
   /** Show onboarding hints */
-  showOnboardingHints: boolean;
+  showOnboardingHints?: boolean;
   /** Hint complexity level */
-  hintComplexity: 'basic' | 'intermediate' | 'advanced';
+  hintComplexity?: 'basic' | 'intermediate' | 'advanced';
   /** Show feature discovery prompts */
-  showFeatureDiscovery: boolean;
+  showFeatureDiscovery?: boolean;
   /** Confirmation level for actions */
-  confirmationLevel: 'none' | 'destructive' | 'all';
+  confirmationLevel?: 'none' | 'destructive' | 'all';
   /** Auto-save frequency */
-  autoSaveIntervalMs: number;
+  autoSaveIntervalMs?: number;
   /** Show progress indicators */
-  showProgressIndicators: boolean;
+  showProgressIndicators?: boolean;
 }
 
 export interface PredictiveAdaptation {
   /** Predicted next actions */
-  predictedActions: Array<{
+  predictedActions?: Array<{
     action: string;
     probability: number;
     shortcut?: string;
   }>;
   /** Recommended view for current context */
-  recommendedView: string;
+  recommendedView?: string;
   /** Data to prefetch based on prediction */
-  prefetchData: string[];
+  prefetchData?: string[];
   /** Suggested workflow shortcuts */
-  workflowShortcuts: Array<{
+  workflowShortcuts?: Array<{
     name: string;
     description: string;
     action: () => void;

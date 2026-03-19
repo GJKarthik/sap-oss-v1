@@ -12,6 +12,10 @@ import { AgUiClient, AgUiClientConfig, AG_UI_CONFIG } from './services/ag-ui-cli
 import { AgUiToolRegistry } from './services/tool-registry.service';
 import { JouleChatComponent } from './joule-chat/joule-chat.component';
 
+// Adaptive UI Architecture - Import only the chat directive
+// The core module needs proper npm linking for full directive support
+import { AdaptiveChatCaptureDirective } from '../../../../../adaptive-ui-architecture/angular/adaptive-chat.directive';
+
 /**
  * AG-UI Module
  *
@@ -32,7 +36,7 @@ import { JouleChatComponent } from './joule-chat/joule-chat.component';
  * ```
  */
 @NgModule({
-  imports: [CommonModule],
+  imports: [CommonModule, AdaptiveChatCaptureDirective],
   declarations: [JouleChatComponent],
   exports: [JouleChatComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

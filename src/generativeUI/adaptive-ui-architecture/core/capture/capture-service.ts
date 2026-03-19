@@ -276,8 +276,8 @@ export class CaptureServiceImpl implements CaptureService {
     let startTime = 0;
 
     for (const event of filterEvents) {
-      const field = event.metadata.field as string;
-      const value = event.metadata.value;
+      const field = event.metadata['field'] as string;
+      const value = event.metadata['value'];
 
       if (!currentPattern || currentPattern.field !== field) {
         if (currentPattern) {
@@ -300,7 +300,7 @@ export class CaptureServiceImpl implements CaptureService {
         currentPattern.completionTimeMs = event.timestamp.getTime() - startTime;
       }
 
-      if (event.metadata.reset) {
+      if (event.metadata['reset']) {
         currentPattern.wasReset = true;
       }
     }
@@ -325,19 +325,19 @@ export class CaptureServiceImpl implements CaptureService {
     let pageSizePreference = 25;
 
     for (const event of tableEvents) {
-      if (event.type === 'sort' && event.metadata.column) {
+      if (event.type === 'sort' && event.metadata['column']) {
         sortPreferences.push({
-          column: event.metadata.column as string,
-          direction: (event.metadata.direction as 'asc' | 'desc') || 'asc',
+          column: event.metadata['column'] as string,
+          direction: (event.metadata['direction'] as 'asc' | 'desc') || 'asc',
         });
       }
 
-      if (event.type === 'expand' && typeof event.metadata.rowIndex === 'number') {
-        expandedRows.push(event.metadata.rowIndex);
+      if (event.type === 'expand' && typeof event.metadata['rowIndex'] === 'number') {
+        expandedRows.push(event.metadata['rowIndex'] as number);
       }
 
-      if (event.type === 'scroll' && event.metadata.visibleColumns) {
-        const cols = event.metadata.visibleColumns as string[];
+      if (event.type === 'scroll' && event.metadata['visibleColumns']) {
+        const cols = event.metadata['visibleColumns'] as string[];
         for (const col of cols) {
           if (!columnsViewed.includes(col)) {
             columnsViewed.push(col);
@@ -345,8 +345,8 @@ export class CaptureServiceImpl implements CaptureService {
         }
       }
 
-      if (event.metadata.pageSize) {
-        pageSizePreference = event.metadata.pageSize as number;
+      if (event.metadata['pageSize']) {
+        pageSizePreference = event.metadata['pageSize'] as number;
       }
     }
 

@@ -57,8 +57,8 @@ export function inferDensity(
   // Track panel order from interactions
   const panelInteractions: Record<string, number> = {};
   for (const event of events) {
-    if (event.metadata.panel) {
-      const panel = event.metadata.panel as string;
+    if (event.metadata['panel']) {
+      const panel = event.metadata['panel'] as string;
       panelInteractions[panel] = (panelInteractions[panel] || 0) + 1;
     }
   }
@@ -92,8 +92,8 @@ export function inferTablePrefs(
   
   for (const event of sortEvents) {
     const tableId = event.componentId;
-    const column = event.metadata.column as string;
-    const direction = (event.metadata.direction as string) || 'asc';
+    const column = event.metadata['column'] as string;
+    const direction = (event.metadata['direction'] as string) || 'asc';
     const key = `${column}:${direction}`;
     
     if (!sortCounts[tableId]) sortCounts[tableId] = {};
@@ -115,21 +115,21 @@ export function inferTablePrefs(
   // Track column visibility (which columns user scrolls to see)
   const columnVisibility = { ...current.columnVisibility };
   for (const event of tableEvents) {
-    if (event.metadata.visibleColumns) {
+    if (event.metadata['visibleColumns']) {
       const tableId = event.componentId;
-      const cols = event.metadata.visibleColumns as string[];
+      const cols = event.metadata['visibleColumns'] as string[];
       columnVisibility[tableId] = cols;
     }
   }
-  
+
   // Infer page size preference
   let pageSize = current.pageSize;
   const paginationEvents = tableEvents.filter(
-    e => e.type === 'navigate' && typeof e.metadata.pageSize === 'number'
+    e => e.type === 'navigate' && typeof e.metadata['pageSize'] === 'number'
   );
-  
+
   if (paginationEvents.length >= 3) {
-    const sizes = paginationEvents.map(e => e.metadata.pageSize as number);
+    const sizes = paginationEvents.map(e => e.metadata['pageSize'] as number);
     // Use mode (most common) rather than average
     const sizeCounts: Record<number, number> = {};
     for (const size of sizes) {
@@ -175,8 +175,8 @@ export function inferFilterPrefs(
   
   for (const event of filterEvents) {
     const context = event.componentId || 'default';
-    const field = event.metadata.field as string;
-    const value = event.metadata.value;
+    const field = event.metadata['field'] as string;
+    const value = event.metadata['value'];
     
     if (field && value !== undefined && value !== '' && value !== null) {
       if (!filterCounts[context]) filterCounts[context] = {};

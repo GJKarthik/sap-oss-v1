@@ -153,7 +153,7 @@ export interface ModelingService {
   /** Get current user model */
   getModel(userId: string): UserModel | null;
   /** Update model from new interactions */
-  updateModel(userId: string, events: import('./types').InteractionEvent[]): void;
+  updateModel(userId: string, events: import('../capture/types').InteractionEvent[]): void;
   /** Reset model to defaults */
   resetModel(userId: string): void;
   /** Export model (for debugging/portability) */

@@ -10,8 +10,8 @@
  */
 
 import {
-  Component, Input, OnDestroy, ChangeDetectionStrategy,
-  ChangeDetectorRef, inject,
+  Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy,
+  ChangeDetectorRef, inject, ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
@@ -24,6 +24,14 @@ import {
 } from '../ag-ui/sac-ag-ui.service';
 import { SacToolDispatchService } from './sac-tool-dispatch.service';
 import { SacAiSessionService } from '../session/sac-ai-session.service';
+
+// Adaptive UI Architecture
+import {
+  AdaptationService,
+  AdaptiveChatCaptureDirective,
+  contextProvider,
+  type LayoutAdaptation,
+} from '../../../../adaptive-ui-architecture/angular';
 
 // =============================================================================
 // Message model
@@ -57,10 +65,16 @@ export interface ChatMessage {
 @Component({
   selector: 'sac-ai-chat-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AdaptiveChatCaptureDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [AdaptationService],
   template: `
-    <section class="sac-chat-panel" aria-label="SAC AI Chat">
+    <section class="sac-chat-panel"
+             [class.density-compact]="layoutDensity === 'compact'"
+             [class.density-spacious]="layoutDensity === 'spacious'"
+             [adaptiveChatCapture]="{chatId: 'sac-ai-chat', channel: 'sac'}"
+             #chatCapture="adaptiveChatCapture"
+             aria-label="SAC AI Chat">
       <!-- Messages container with ARIA live region -->
       <div class="sac-chat-messages"
            #scrollAnchor
@@ -142,6 +156,24 @@ export interface ChatMessage {
       font-family: var(--sapFontFamily, '72', Arial, sans-serif);
       font-size: var(--sapFontSize, 14px);
       background: var(--sapBackgroundColor, #fff);
+
+      /* Adaptive spacing variables */
+      --chat-spacing: var(--adaptive-spacing-md, var(--space-2));
+      --chat-gap: var(--adaptive-spacing-sm, var(--space-1));
+      --chat-font-size: calc(14px * var(--adaptive-density-scale, 1));
+    }
+
+    /* Adaptive density variations */
+    .sac-chat-panel.density-compact {
+      --chat-spacing: var(--space-1);
+      --chat-gap: 4px;
+      --chat-font-size: 13px;
+    }
+
+    .sac-chat-panel.density-spacious {
+      --chat-spacing: var(--space-3);
+      --chat-gap: var(--space-2);
+      --chat-font-size: 15px;
     }
 
     /* ==========================================================================
@@ -151,10 +183,11 @@ export interface ChatMessage {
     .sac-chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: var(--space-2);
+      padding: var(--chat-spacing);
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--chat-gap);
+      font-size: var(--chat-font-size);
     }
 
     /* Focus styles for keyboard navigation */
@@ -173,7 +206,7 @@ export interface ChatMessage {
 
     .sac-chat-message {
       max-width: 85%;
-      padding: var(--space-1) var(--space-2);
+      padding: var(--chat-gap) var(--chat-spacing);
       border-radius: var(--space-1);
       line-height: 1.5;
     }
@@ -337,22 +370,57 @@ export interface ChatMessage {
     }
   `],
 })
-export class SacAiChatPanelComponent implements OnDestroy {
+export class SacAiChatPanelComponent implements OnInit, OnDestroy {
   @Input() placeholder = 'Ask a question about your data…';
   @Input() modelId?: string;
+
+  @ViewChild('chatCapture') chatCapture?: AdaptiveChatCaptureDirective;
 
   messages: ChatMessage[] = [];
   inputText = '';
   streaming = false;
   announcement = '';
 
+  // Adaptive UI state
+  layoutDensity: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
+
   private streamSub: Subscription | null = null;
   private pendingToolArgs = new Map<string, string>();
+  private subscriptions: Subscription[] = [];
+  private streamingStartTime = 0;
 
   private agUiService = inject(SacAgUiService);
   private toolDispatch = inject(SacToolDispatchService);
   private session = inject(SacAiSessionService);
   private cdr = inject(ChangeDetectorRef);
+  private adaptationService = inject(AdaptationService);
+
+  ngOnInit(): void {
+    // Subscribe to adaptation changes
+    this.subscriptions.push(
+      this.adaptationService.getLayout().subscribe((layout: LayoutAdaptation) => {
+        this.layoutDensity = layout.density;
+        this.cdr.markForCheck();
+      })
+    );
+
+    // Set user context (in real app, get from SAC session)
+    contextProvider.setUserContext({
+      userId: 'sac-user',
+      role: {
+        id: 'analyst',
+        name: 'Business Analyst',
+        permissionLevel: 'editor',
+        expertiseLevel: 'intermediate',
+      },
+      organization: 'SAP',
+      locale: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+
+    // Set task context
+    contextProvider.setTaskMode('explore');
+  }
 
   /**
    * Announce status changes to screen readers
@@ -370,6 +438,9 @@ export class SacAiChatPanelComponent implements OnDestroy {
     const text = this.inputText.trim();
     if (!text || this.streaming) return;
 
+    // Capture user message
+    this.chatCapture?.captureUserMessage(text.length, false);
+
     this.inputText = '';
     this.announce('Message sent');
     this.messages.push({ id: this.uid(), role: 'user', content: text });
@@ -377,6 +448,8 @@ export class SacAiChatPanelComponent implements OnDestroy {
     const assistantMsg: ChatMessage = { id: this.uid(), role: 'assistant', content: '', streaming: true };
     this.messages.push(assistantMsg);
     this.streaming = true;
+    this.streamingStartTime = Date.now();
+    this.chatCapture?.captureStreamingStart();
     this.cdr.markForCheck();
 
     this.streamSub = this.agUiService
@@ -397,6 +470,11 @@ export class SacAiChatPanelComponent implements OnDestroy {
         complete: () => {
           assistantMsg.streaming = false;
           this.streaming = false;
+          // Capture streaming complete
+          this.chatCapture?.captureStreamingComplete(
+            assistantMsg.content.length,
+            Date.now() - this.streamingStartTime
+          );
           this.announce('AI finished responding');
           this.cdr.markForCheck();
         },
@@ -405,6 +483,7 @@ export class SacAiChatPanelComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.streamSub?.unsubscribe();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   trackById(_: number, msg: ChatMessage): string {
@@ -450,14 +529,19 @@ export class SacAiChatPanelComponent implements OnDestroy {
       args = JSON.parse(argsJson) as Record<string, unknown>;
     } catch {
       this.agUiService.dispatchToolResult(toolCallId, { success: false, error: 'Invalid tool args JSON' });
+      this.chatCapture?.captureToolCall(toolName, false);
       return;
     }
 
     this.toolDispatch.execute(toolName, args)
-      .then((result: unknown) => this.agUiService.dispatchToolResult(toolCallId, result))
-      .catch((err: Error) =>
-        this.agUiService.dispatchToolResult(toolCallId, { success: false, error: err.message }),
-      );
+      .then((result: unknown) => {
+        this.agUiService.dispatchToolResult(toolCallId, result);
+        this.chatCapture?.captureToolCall(toolName, true);
+      })
+      .catch((err: Error) => {
+        this.agUiService.dispatchToolResult(toolCallId, { success: false, error: err.message });
+        this.chatCapture?.captureToolCall(toolName, false);
+      });
   }
 
   private uid(): string {
