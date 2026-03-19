@@ -1,0 +1,335 @@
+/**
+ * Adaptive Table Styles
+ * 
+ * Uses CSS custom properties from the Adaptation Coordinator.
+ * All spacing follows 8px grid. All interactive elements have focus states.
+ */
+
+.adaptive-table {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  width: 100%;
+}
+
+/* ============================================================================
+   DENSITY VARIANTS
+   ============================================================================ */
+
+.density-compact table {
+  font-size: 13px;
+}
+.density-compact th,
+.density-compact td {
+  padding: 4px 8px;
+}
+
+.density-comfortable table {
+  font-size: 14px;
+}
+.density-comfortable th,
+.density-comfortable td {
+  padding: 8px 16px;
+}
+
+.density-spacious table {
+  font-size: 15px;
+}
+.density-spacious th,
+.density-spacious td {
+  padding: 12px 24px;
+}
+
+/* ============================================================================
+   TABLE STRUCTURE
+   ============================================================================ */
+
+.adaptive-table table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--surface-primary, #ffffff);
+}
+
+.adaptive-table th {
+  background: var(--surface-secondary, #f5f5f5);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color, #e0e0e0);
+  color: var(--text-primary, #1a1a1a);
+}
+
+.adaptive-table td {
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  color: var(--text-primary, #1a1a1a);
+}
+
+/* ============================================================================
+   INTERACTIVE STATES
+   ============================================================================ */
+
+/* Sortable headers */
+.adaptive-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--adaptive-transition-duration, 200ms) ease;
+}
+
+.adaptive-table th.sortable:hover {
+  background: var(--hover-bg, #e8e8e8);
+}
+
+.adaptive-table th.sortable:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: -2px;
+  background: var(--focus-bg, #e3f2fd);
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  font-size: 0.85em;
+}
+
+/* Row states */
+.adaptive-table .table-row {
+  transition: background-color var(--adaptive-transition-duration, 200ms) ease;
+}
+
+.adaptive-table .table-row:hover {
+  background: var(--hover-bg, #f5f5f5);
+}
+
+.adaptive-table .table-row:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: -2px;
+  background: var(--focus-bg, #e3f2fd);
+}
+
+/* ============================================================================
+   SUGGESTED FILTERS
+   ============================================================================ */
+
+.suggested-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--adaptive-spacing-sm, 8px);
+  background: var(--surface-secondary, #f5f5f5);
+  border-radius: 4px;
+  margin-bottom: var(--adaptive-spacing-sm, 8px);
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: var(--text-secondary, #666666);
+  font-weight: 500;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color, #cccccc);
+  background: var(--surface-primary, #ffffff);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+}
+
+.filter-chip:hover {
+  background: var(--hover-bg, #eeeeee);
+  border-color: var(--border-color-hover, #999999);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.filter-chip:active {
+  transform: scale(0.98);
+}
+
+.filter-reason {
+  font-size: 11px;
+  color: var(--text-tertiary, #888888);
+}
+
+/* ============================================================================
+   PAGINATION
+   ============================================================================ */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--adaptive-spacing-sm, 8px) 0;
+  margin-top: var(--adaptive-spacing-sm, 8px);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-secondary, #666666);
+}
+
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-controls button {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color, #cccccc);
+  border-radius: 4px;
+  background: var(--surface-primary, #ffffff);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+}
+
+.page-controls button:hover:not(:disabled) {
+  background: var(--hover-bg, #eeeeee);
+  border-color: var(--border-color-hover, #999999);
+}
+
+.page-controls button:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.page-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-number {
+  font-size: 13px;
+  color: var(--text-secondary, #666666);
+  min-width: 100px;
+  text-align: center;
+}
+
+/* ============================================================================
+   ONBOARDING HINT
+   ============================================================================ */
+
+.onboarding-hint {
+  padding: var(--adaptive-spacing-md, 16px);
+  background: var(--info-bg, #e3f2fd);
+  border: 1px solid var(--info-border, #90caf9);
+  border-radius: 4px;
+  margin-top: var(--adaptive-spacing-sm, 8px);
+  font-size: 13px;
+  color: var(--info-text, #0d47a1);
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--adaptive-spacing-xl, 32px);
+  color: var(--text-secondary, #666666);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: var(--adaptive-spacing-sm, 8px);
+}
+
+.empty-state-message {
+  font-size: 16px;
+  margin-bottom: var(--adaptive-spacing-md, 16px);
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
+.adaptive-table[aria-busy="true"] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================================================
+   RESPONSIVE — MOBILE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .adaptive-table table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-controls {
+    justify-content: center;
+  }
+
+  .suggested-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .adaptive-table th.sortable,
+  .adaptive-table .table-row,
+  .filter-chip,
+  .page-controls button {
+    transition: none;
+  }
+
+  .filter-chip:active {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   HIGH CONTRAST
+   ============================================================================ */
+
+@media (prefers-contrast: more) {
+  .adaptive-table table {
+    border-width: 2px;
+  }
+
+  .adaptive-table th {
+    border-bottom-width: 3px;
+  }
+
+  .filter-chip {
+    border-width: 2px;
+  }
+
+  .page-controls button {
+    border-width: 2px;
+  }
+}
+

@@ -1,0 +1,320 @@
+/**
+ * Adaptive Filter Styles
+ * 
+ * Uses CSS custom properties from the Adaptation Coordinator.
+ * All spacing follows 8px grid. All interactive elements have focus states.
+ */
+
+.adaptive-filter {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  background: var(--surface-secondary, #f5f5f5);
+  border-radius: 8px;
+  padding: var(--adaptive-spacing-md, 16px);
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: var(--adaptive-spacing-sm, 8px);
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary, #1a1a1a);
+  border-radius: 4px;
+  transition: background-color var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+}
+
+.filter-toggle:hover {
+  background: var(--hover-bg, #e0e0e0);
+}
+
+.filter-toggle:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  width: 16px;
+  text-align: center;
+}
+
+.active-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--accent-color, #0066cc);
+  color: white;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.clear-btn {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--border-color, #cccccc);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-secondary, #666666);
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+}
+
+.clear-btn:hover {
+  background: var(--hover-bg, #e0e0e0);
+  border-color: var(--border-color-hover, #999999);
+}
+
+.clear-btn:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   FILTER FIELDS
+   ============================================================================ */
+
+.filter-fields {
+  display: grid;
+  gap: var(--adaptive-spacing-md, 16px);
+  overflow: hidden;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+}
+
+.filter-fields.collapsed {
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+}
+
+.filter-fields.expanded {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, #666666);
+}
+
+.filter-field input,
+.filter-field select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #cccccc);
+  border-radius: 4px;
+  font-size: 14px;
+  background: var(--surface-primary, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  transition: border-color var(--adaptive-transition-duration, 200ms) ease;
+}
+
+.filter-field input:hover,
+.filter-field select:hover {
+  border-color: var(--border-color-hover, #999999);
+}
+
+.filter-field input:focus,
+.filter-field select:focus {
+  outline: none;
+  border-color: var(--focus-color, #0066cc);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
+}
+
+/* Checkbox */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--adaptive-touch-target-min, 44px);
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  font-size: 14px;
+  color: var(--text-primary, #1a1a1a);
+}
+
+/* ============================================================================
+   SUGGESTIONS
+   ============================================================================ */
+
+.field-suggestions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.suggestion-chip {
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #cccccc);
+  background: var(--surface-primary, #ffffff);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+}
+
+.suggestion-chip:hover {
+  background: var(--hover-bg, #eeeeee);
+  border-color: var(--accent-color, #0066cc);
+}
+
+.suggestion-chip:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   APPLY BUTTON
+   ============================================================================ */
+
+.apply-btn {
+  padding: 12px 24px;
+  background: var(--accent-color, #0066cc);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+  margin-top: var(--adaptive-spacing-sm, 8px);
+}
+
+.apply-btn:hover {
+  background: var(--accent-color-hover, #0052a3);
+}
+
+.apply-btn:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.apply-btn:active {
+  transform: scale(0.98);
+}
+
+/* ============================================================================
+   DENSITY VARIANTS
+   ============================================================================ */
+
+.density-compact .filter-field {
+  gap: 2px;
+}
+
+.density-compact .filter-field label {
+  font-size: 12px;
+}
+
+.density-compact .filter-field input,
+.density-compact .filter-field select {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.density-spacious .filter-field {
+  gap: 8px;
+}
+
+.density-spacious .filter-field label {
+  font-size: 14px;
+}
+
+.density-spacious .filter-field input,
+.density-spacious .filter-field select {
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (min-width: 768px) {
+  .filter-fields {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .apply-btn {
+    grid-column: -2 / -1;
+    justify-self: end;
+  }
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-toggle,
+  .clear-btn,
+  .filter-fields,
+  .filter-field input,
+  .filter-field select,
+  .suggestion-chip,
+  .apply-btn {
+    transition: none;
+  }
+
+  .apply-btn:active {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   HIGH CONTRAST
+   ============================================================================ */
+
+@media (prefers-contrast: more) {
+  .filter-field input,
+  .filter-field select {
+    border-width: 2px;
+  }
+
+  .filter-field input:focus,
+  .filter-field select:focus {
+    box-shadow: none;
+    border-color: var(--text-primary, #1a1a1a);
+  }
+
+  .suggestion-chip {
+    border-width: 2px;
+  }
+}
+

@@ -91,7 +91,7 @@ adaptive-ui-architecture/
 | Layer 1: Capture | ✅ **Complete** | Interaction recording with privacy controls |
 | Layer 2: Modeling | ✅ **Complete** | User profile building with inference |
 | Layer 3: Adaptation | ✅ **Complete** | Decision engine with coordinator |
-| Layer 4: Components | 🟡 Example Only | Adaptive table, filter examples |
+| Layer 4: Components | ✅ **Complete** | Adaptive table, filter, layout |
 
 ## Phase 1 Deliverables (Complete)
 
@@ -269,6 +269,46 @@ const filterPatterns = captureService.getFilterPatterns('main-filter');
 ### Tests
 - `adaptation-coordinator.test.ts` — Coordinator tests
 - `rules.test.ts` — Rule priority and condition tests
+
+## Phase 4 Deliverables (Complete)
+
+### React Components (`components/react/`)
+
+#### AdaptiveTable
+- Learns column preferences from user behavior
+- Adapts density based on device/preference
+- Shows suggested filters from capture patterns
+- Keyboard navigation (Arrow keys, Enter to sort)
+- WCAG AA compliant (aria-sort, scope="col", focus states)
+
+#### AdaptiveFilter
+- Shows frequently used filters first
+- Suggests filter values from learned patterns
+- Auto-apply based on user preference
+- Collapsible with proper ARIA states
+- Touch-friendly targets
+
+#### AdaptiveLayout
+- Responsive grid with adaptive columns
+- Collapsible sidebar with learned state
+- Ordered panels based on user preferences
+- Proper landmarks (main, aside, nav)
+
+#### AdaptiveGrid & AdaptiveCard
+- Density-aware spacing
+- Collapsible cards with ARIA
+- CSS variable integration
+
+### CSS Architecture
+- Uses CSS custom properties from Coordinator
+- 8px grid spacing system
+- Density variants (compact/comfortable/spacious)
+- Reduced motion support
+- High contrast support
+- Mobile-first responsive
+
+### Tests
+- `adaptive-table.test.tsx` — Table accessibility and interaction tests
 
 ## License
 
