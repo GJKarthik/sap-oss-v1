@@ -26,7 +26,7 @@ export { feedbackService } from '../core/feedback';
 
 // Directives
 export { AdaptiveCaptureDirective, AdaptiveCaptureTableDirective } from '../core/capture/angular/capture.directive';
-export { AdaptiveFilterCaptureDirective } from '../core/capture/angular/filter-capture.directive';
+export { AdaptiveCaptureFilterDirective } from '../core/capture/angular/filter-capture.directive';
 export { AdaptiveChatCaptureDirective, type ChatCaptureConfig } from './adaptive-chat.directive';
 
 // Types (re-exported from core)
@@ -47,14 +47,14 @@ export type {
 
 export type {
   UserModel,
-  ExpertiseLevel,
+  ExpertiseModel,
   FilterPreferences,
   TablePreferences,
   LayoutPreferences,
 } from '../core/modeling/types';
 
 export type {
-  CaptureEvent,
+  InteractionEvent,
   InteractionType,
   CaptureConfig,
 } from '../core/capture/types';

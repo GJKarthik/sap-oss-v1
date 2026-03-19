@@ -419,7 +419,7 @@ export class SacAiChatPanelComponent implements OnInit, OnDestroy {
     });
 
     // Set task context
-    contextProvider.setTaskMode('exploration');
+    contextProvider.setTaskMode('explore');
   }
 
   /**

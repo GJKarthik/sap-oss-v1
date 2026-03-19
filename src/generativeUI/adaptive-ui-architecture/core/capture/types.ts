@@ -28,7 +28,11 @@ export type InteractionType =
   | 'search'
   | 'export'
   | 'undo'
-  | 'redo';
+  | 'redo'
+  // Chat-specific interactions
+  | 'submit'    // Message submission
+  | 'execute'   // Tool execution
+  | 'copy';     // Content copy
 
 export interface InteractionEvent {
   /** Unique event ID */

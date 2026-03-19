@@ -28,7 +28,7 @@ import {
     AdaptiveChatCaptureDirective,
     contextProvider,
     type LayoutAdaptation,
-} from '../../../../adaptive-ui-architecture/angular';
+} from '../../../../../adaptive-ui-architecture/angular';
 
 /**
  * ChatComponent — Accessible chat interface for Data Cleaning Copilot
@@ -256,7 +256,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         });
 
         // Set task context
-        contextProvider.setTaskMode('exploration');
+        contextProvider.setTaskMode('explore');
     }
 
     ngOnDestroy(): void {

@@ -75,7 +75,7 @@ export class AdaptiveChatCaptureDirective implements OnInit, OnDestroy {
     });
 
     // Update context with task activity
-    contextProvider.setTaskMode('active');
+    contextProvider.setTaskMode('execute');
   }
 
   /**

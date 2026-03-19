@@ -22,7 +22,7 @@ import { feedbackService } from '../core/feedback';
 
 // Directives
 import { AdaptiveCaptureDirective, AdaptiveCaptureTableDirective } from '../core/capture/angular/capture.directive';
-import { AdaptiveFilterCaptureDirective } from '../core/capture/angular/filter-capture.directive';
+import { AdaptiveCaptureFilterDirective } from '../core/capture/angular/filter-capture.directive';
 import { AdaptiveChatCaptureDirective } from './adaptive-chat.directive';
 
 // Configuration
@@ -58,11 +58,14 @@ const DEFAULT_CONFIG: AdaptiveUiConfig = {
  */
 function configureAdaptiveServices(config: AdaptiveUiConfig): void {
   // Configure capture service
+  const anonymizationLevel = config.privacyLevel === 'high' ? 'full'
+    : config.privacyLevel === 'low' ? 'none'
+    : 'partial';
+
   captureService.configure({
     enabled: config.privacyLevel !== 'none',
-    privacyLevel: config.privacyLevel || 'medium',
-    anonymize: config.anonymize ?? true,
-    excludeFields: config.excludeFields || [],
+    anonymizationLevel,
+    excludedComponents: config.excludeFields || [],
   });
 
   // Start auto-modeler (bridges capture → user model)
@@ -81,14 +84,14 @@ function configureAdaptiveServices(config: AdaptiveUiConfig): void {
     // Standalone directives
     AdaptiveCaptureDirective,
     AdaptiveCaptureTableDirective,
-    AdaptiveFilterCaptureDirective,
+    AdaptiveCaptureFilterDirective,
     AdaptiveChatCaptureDirective,
   ],
   exports: [
     // Re-export directives for use in templates
     AdaptiveCaptureDirective,
     AdaptiveCaptureTableDirective,
-    AdaptiveFilterCaptureDirective,
+    AdaptiveCaptureFilterDirective,
     AdaptiveChatCaptureDirective,
   ],
   providers: [
@@ -145,12 +148,12 @@ export { feedbackService } from '../core/feedback';
 
 // Re-export directives
 export { AdaptiveCaptureDirective, AdaptiveCaptureTableDirective } from '../core/capture/angular/capture.directive';
-export { AdaptiveFilterCaptureDirective } from '../core/capture/angular/filter-capture.directive';
+export { AdaptiveCaptureFilterDirective } from '../core/capture/angular/filter-capture.directive';
 export { AdaptiveChatCaptureDirective, type ChatCaptureConfig } from './adaptive-chat.directive';
 
 // Re-export types
 export type { AdaptationDecision, LayoutAdaptation, ContentAdaptation, InteractionAdaptation } from '../core/adaptation/types';
 export type { AdaptiveContext, UserContext, DeviceContext, TaskContext } from '../core/context/types';
 export type { UserModel } from '../core/modeling/types';
-export type { CaptureEvent, InteractionType } from '../core/capture/types';
+export type { InteractionEvent, InteractionType, CaptureConfig } from '../core/capture/types';
 

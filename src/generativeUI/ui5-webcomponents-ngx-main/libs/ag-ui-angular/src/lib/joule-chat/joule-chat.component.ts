@@ -526,7 +526,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
 
-    contextProvider.setTaskMode('conversation');
+    contextProvider.setTaskMode('collaborate');
   }
 
   // ---------------------------------------------------------------------------
