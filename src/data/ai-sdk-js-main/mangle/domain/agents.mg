@@ -1,13 +1,46 @@
 # ============================================================================
 # AI SDK JS - Agent Domain Rules
-# Integrates with regulations/mangle for governance
+# Self-contained governance rules (no external dependencies)
 # ============================================================================
-
-# Import regulations knowledge base
-include "../../../regulations/mangle/rules.mg".
 
 # Import ODPS-generated data product rules
 include "data_products.mg".
+
+# =============================================================================
+# REGULATORY FRAMEWORKS (inlined from regulations knowledge base)
+# =============================================================================
+
+# Core regulatory frameworks
+regulatory_framework("MGF-Agentic-AI").
+regulatory_framework("AI-Agent-Index").
+regulatory_framework("GDPR-Data-Processing").
+regulatory_framework("Infrastructure-Security").
+
+# Autonomy level definitions
+autonomy_level("L1", 1).  # Fully supervised
+autonomy_level("L2", 2).  # Human approval for destructive actions
+autonomy_level("L3", 3).  # Autonomous with monitoring
+autonomy_level("L4", 4).  # Fully autonomous
+
+# Standard safety controls
+standard_safety_control("guardrails").
+standard_safety_control("monitoring").
+standard_safety_control("audit-logging").
+standard_safety_control("rate-limiting").
+standard_safety_control("input-validation").
+standard_safety_control("output-filtering").
+
+# Audit level definitions
+audit_level_value("none", 0).
+audit_level_value("minimal", 1).
+audit_level_value("basic", 2).
+audit_level_value("standard", 3).
+audit_level_value("full", 4).
+
+# Governance dimensions
+governance_dimension("ai-sdk-js", "accountability").
+governance_dimension("ai-sdk-js", "transparency").
+governance_dimension("ai-sdk-js", "fairness").
 
 # =============================================================================
 # AGENT CONFIGURATION

@@ -1810,12 +1810,40 @@ CORS_ALLOWED_ORIGINS = [
     if o.strip()
 ]
 
+# =============================================================================
+# Bearer-token authentication
+# Set MCP_AUTH_TOKEN to require a token on /mcp.
+# Leave unset ONLY for fully-isolated localhost-only development.
+# =============================================================================
+
+MCP_AUTH_TOKEN: str = os.environ.get("MCP_AUTH_TOKEN", "").strip()
+
+if not MCP_AUTH_TOKEN:
+    import sys
+    print(
+        "WARNING: MCP_AUTH_TOKEN is not set. The /mcp endpoint is unauthenticated. "
+        "Set MCP_AUTH_TOKEN to a secure random token before any non-localhost deployment.",
+        file=sys.stderr,
+    )
+
+
+def _check_bearer_auth(handler: BaseHTTPRequestHandler) -> bool:
+    """Return True if the request is authorised (or auth is disabled)."""
+    if not MCP_AUTH_TOKEN:
+        return True
+    auth_header = (handler.headers.get("Authorization") or "").strip()
+    if not auth_header.startswith("Bearer "):
+        return False
+    token = auth_header[len("Bearer "):].strip()
+    return token == MCP_AUTH_TOKEN
+
 
 def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
     origin = (handler.headers.get("Origin") or "").strip()
     if origin and origin in CORS_ALLOWED_ORIGINS:
         return origin
-    return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
+    # Return None for non-matching origins instead of defaulting to first origin
+    return None
 
 
 mcp_server = MCPServer()
@@ -1862,6 +1890,11 @@ class MCPHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == "/mcp":
+            # Check Bearer token authentication
+            if not _check_bearer_auth(self):
+                self._write_json(401, {"jsonrpc": "2.0", "id": None, "error": {"code": -32001, "message": "Unauthorized: Bearer token required"}})
+                return
+            
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length <= 0:
                 self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})

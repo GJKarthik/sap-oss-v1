@@ -1,0 +1,63 @@
+# L4 24GB Training Configuration for Specialist Models
+# 
+# Hardware: NVIDIA L4 (24 GiB)
+# Best for: 7B models with 4-bit quantization
+# Training time: ~3 hours per specialist
+
+# Model Configuration
+model:
+  name: "Qwen/Qwen2.5-7B-Instruct"
+
+# Quantization - Required for L4
+quantization:
+  enabled: true
+  method: "nf4"  # 4-bit NormalFloat
+  double_quant: true
+  compute_dtype: "bfloat16"
+
+# LoRA Configuration
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Training Parameters
+training:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  effective_batch_size: 16
+  
+  learning_rate: 2e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  
+  num_train_epochs: 3
+  
+  optim: "adamw_torch_fused"
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  
+  bf16: true
+  gradient_checkpointing: true
+  
+  logging_steps: 50
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 2
+  
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+
+# Hardware Configuration
+hardware:
+  gpu: "L4-24GB"
+  expected_memory_usage: "~18 GB"
+  expected_training_time: "~3 hours per specialist"

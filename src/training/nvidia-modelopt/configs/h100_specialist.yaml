@@ -1,0 +1,116 @@
+# H100 80GB Training Configuration for Specialist Models
+# 
+# Target: 4 specialists (Performance, Balance Sheet, Treasury, ESG)
+# Each specialist: 100K examples, Qwen 7B base
+# Training time: ~1.5-2 hours per specialist on H100
+
+# Model Configuration
+model:
+  name: "Qwen/Qwen2.5-7B-Instruct"
+  # Can also use larger models on H100:
+  # name: "Qwen/Qwen2.5-14B-Instruct"  # ~3 hours
+  # name: "Qwen/Qwen2.5-32B-Instruct"  # ~6 hours
+
+# Quantization - H100 supports native FP8
+quantization:
+  enabled: true
+  method: "fp8"  # Native H100 FP8 support
+  # Alternative: "8bit" for bitsandbytes
+  compute_dtype: "bfloat16"
+  
+# LoRA Configuration
+lora:
+  r: 16  # Higher rank on H100 for better quality
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"  # Also include MLP layers
+    - "up_proj"
+    - "down_proj"
+
+# Training Parameters
+training:
+  # H100 can handle larger batches
+  per_device_train_batch_size: 8
+  gradient_accumulation_steps: 4
+  effective_batch_size: 32
+  
+  # Learning rate
+  learning_rate: 2e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  
+  # Training duration
+  num_train_epochs: 3
+  # For 100K examples with batch 32: ~3125 steps per epoch
+  # Total: ~9375 steps
+  
+  # Optimization
+  optim: "adamw_torch_fused"  # Fused Adam for speed
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  
+  # Precision
+  bf16: true
+  tf32: true  # Enable TF32 for Ampere+
+  
+  # Checkpointing
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  
+  # Logging
+  logging_steps: 50
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 3
+  eval_strategy: "steps"
+  eval_steps: 500
+  
+  # Performance
+  dataloader_num_workers: 8
+  dataloader_pin_memory: true
+
+# Data Configuration
+data:
+  max_seq_length: 2048
+  packing: true  # Enable example packing for efficiency
+  
+# Output Configuration
+output:
+  base_dir: "/opt/models/specialists"
+  specialists:
+    - name: "performance"
+      output_dir: "/opt/models/specialists/performance"
+      train_file: "data/specialist_training/train_performance.json"
+    - name: "balance_sheet"
+      output_dir: "/opt/models/specialists/balance_sheet"
+      train_file: "data/specialist_training/train_balance_sheet.json"
+    - name: "treasury"
+      output_dir: "/opt/models/specialists/treasury"
+      train_file: "data/specialist_training/train_treasury.json"
+    - name: "esg"
+      output_dir: "/opt/models/specialists/esg"
+      train_file: "data/specialist_training/train_esg.json"
+    - name: "router"
+      output_dir: "/opt/models/specialists/router"
+      train_file: "data/specialist_training/train_router.json"
+      # Router uses smaller model
+      model_override: "Qwen/Qwen2.5-0.5B-Instruct"
+
+# Hardware Configuration
+hardware:
+  gpu: "H100-80GB"
+  expected_memory_usage: "~45 GB"
+  expected_training_time: "~1.5 hours per specialist"
+  
+# Total Estimated Time and Cost
+estimates:
+  per_specialist_time: "1.5 hours"
+  total_time: "7.5 hours (4 specialists + router)"
+  lambda_labs_cost: "$2.49/hr * 7.5 = ~$19"
+  aws_p5_cost: "$98/hr / 8 GPUs * 7.5 = ~$92"

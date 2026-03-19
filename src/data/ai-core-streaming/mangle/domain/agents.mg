@@ -1,13 +1,39 @@
 # ============================================================================
 # AI Core Streaming - Agent Domain Rules
-# Integrates with regulations/mangle for governance
+# Self-contained governance rules (no external dependencies)
 # ============================================================================
-
-# Import regulations knowledge base
-include "../../../regulations/mangle/rules.mg".
 
 # Import ODPS-generated data product rules
 include "data_products.mg".
+
+# =============================================================================
+# REGULATORY FRAMEWORKS (inlined from regulations knowledge base)
+# =============================================================================
+
+regulatory_framework("MGF-Agentic-AI").
+regulatory_framework("AI-Agent-Index").
+regulatory_framework("GDPR-Data-Processing").
+regulatory_framework("Infrastructure-Security").
+
+autonomy_level("L1", 1).
+autonomy_level("L2", 2).
+autonomy_level("L3", 3).
+autonomy_level("L4", 4).
+
+standard_safety_control("guardrails").
+standard_safety_control("monitoring").
+standard_safety_control("audit-logging").
+standard_safety_control("rate-limiting").
+standard_safety_control("streaming-controls").
+
+audit_level_value("none", 0).
+audit_level_value("minimal", 1).
+audit_level_value("basic", 2).
+audit_level_value("standard", 3).
+audit_level_value("full", 4).
+
+governance_dimension("aicore-streaming", "accountability").
+governance_dimension("aicore-streaming", "transparency").
 
 # =============================================================================
 # AGENT CONFIGURATION - External AI Core Backend

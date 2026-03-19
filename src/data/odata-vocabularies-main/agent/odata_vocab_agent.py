@@ -3,8 +3,12 @@ OData Vocabularies Agent with ODPS + Regulations Integration
 
 Public documentation service - AI Core OK for most queries.
 Routes to vLLM only when actual entity data is involved.
+
+Self-contained agent with no external dependencies.
 """
 
+import asyncio
+import hashlib
 import json
 import urllib.request
 from typing import Any, Dict, List, Optional
@@ -177,6 +181,7 @@ class ODataVocabAgent:
             }
     
     async def _call_mcp(self, endpoint: str, tool: str, args: Dict) -> Any:
+        """Call MCP endpoint asynchronously without blocking the event loop."""
         request_data = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -184,24 +189,31 @@ class ODataVocabAgent:
             "params": {"name": tool, "arguments": args}
         }
         
-        req = urllib.request.Request(
-            endpoint,
-            data=json.dumps(request_data).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
+        def _sync_request() -> Any:
+            req = urllib.request.Request(
+                endpoint,
+                data=json.dumps(request_data).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                return json.loads(resp.read().decode())
         
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            return json.loads(resp.read().decode())
+        # Run the blocking request in a thread pool to avoid blocking the event loop
+        return await asyncio.to_thread(_sync_request)
     
     def _log_audit(self, status: str, tool: str, backend: str, prompt: str, error: str = None):
+        """Log audit entry with deterministic SHA-256 hash for forensic reproducibility."""
+        # Use SHA-256 instead of hash() for deterministic, reproducible content identifiers
+        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+        
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "agent": "odata-vocab-agent",
             "status": status,
             "tool": tool,
             "backend": backend,
-            "prompt_hash": hash(prompt),
+            "prompt_hash": prompt_hash,
             "prompt_length": len(prompt)
         }
         if error:

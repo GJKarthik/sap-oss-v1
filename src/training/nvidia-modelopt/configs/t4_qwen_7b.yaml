@@ -1,0 +1,224 @@
+# T4 GPU Configuration for Qwen 7B Pruning and Fine-tuning
+# Optimized for NVIDIA T4 (16GB VRAM) on AWS EC2
+#
+# Usage:
+#   python scripts/prune_retrain_workflow.py --config configs/t4_qwen_7b.yaml
+#
+# Requirements:
+#   - NVIDIA T4 16GB GPU (AWS g4dn instances)
+#   - CUDA 12.1+
+#   - PyTorch 2.2+
+
+# =============================================================================
+# Model Configuration
+# =============================================================================
+model:
+  name: "Qwen/Qwen2.5-7B-Instruct"
+  revision: "main"
+  torch_dtype: "float16"  # T4 has better FP16 than BF16 support
+  trust_remote_code: true
+  max_length: 2048  # Reduced for T4 memory
+  
+  # Model loading options - 4-bit quantization required for T4
+  load_in_8bit: false
+  load_in_4bit: true  # Required for T4 16GB
+  device_map: "auto"
+  
+  # Attention implementation
+  attn_implementation: "eager"  # flash_attention may have issues on T4
+
+  # BitsAndBytes quantization config
+  bnb_config:
+    load_in_4bit: true
+    bnb_4bit_compute_dtype: "float16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+
+# =============================================================================
+# Pruning Configuration
+# =============================================================================
+pruning:
+  # Pruning method: magnitude works well with quantized models
+  method: "magnitude"
+  
+  # Target sparsity (40% for T4 to maintain quality)
+  target_sparsity: 0.4
+  
+  # Sparsity schedule
+  schedule:
+    type: "linear"
+    warmup_steps: 50
+    cooldown_steps: 25
+  
+  # Layer-wise sparsity configuration
+  layer_sparsity:
+    attention: 0.4
+    mlp: 0.5
+    embedding: 0.0
+    lm_head: 0.0
+  
+  # Pruning granularity
+  granularity: "unstructured"
+  
+  # Importance scoring
+  importance_score: "magnitude"
+  
+  # Calibration for importance scoring - reduced for T4
+  calibration:
+    num_samples: 64
+    seq_length: 512
+
+# =============================================================================
+# Training Configuration (Post-Pruning Fine-tuning)
+# =============================================================================
+training:
+  # Output directory
+  output_dir: "./outputs/qwen-7b-pruned-t4"
+  
+  # Training hyperparameters - Optimized for T4 16GB
+  num_train_epochs: 1  # Start with 1 epoch for testing
+  per_device_train_batch_size: 1  # Minimum for T4
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 32  # Effective batch = 32
+  
+  # Learning rate schedule
+  learning_rate: 1.0e-4  # Higher LR for LoRA
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  
+  # Optimizer - memory efficient
+  optim: "paged_adamw_8bit"  # 8-bit optimizer for memory
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+  
+  # Precision - FP16 for T4
+  fp16: true
+  bf16: false  # T4 doesn't have native BF16
+  tf32: false
+  
+  # Memory optimization - Critical for T4
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  
+  # Logging
+  logging_steps: 5
+  logging_first_step: true
+  
+  # Evaluation
+  eval_strategy: "steps"
+  eval_steps: 50
+  
+  # Checkpointing
+  save_strategy: "steps"
+  save_steps: 100
+  save_total_limit: 2  # Limited disk space
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  
+  # Reproducibility
+  seed: 42
+  data_seed: 42
+  
+  # Max steps for testing
+  max_steps: 200  # Quick test run
+
+# =============================================================================
+# LoRA Configuration (Required for T4)
+# =============================================================================
+lora:
+  enabled: true
+  r: 8  # Small rank for T4
+  lora_alpha: 16
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# =============================================================================
+# Dataset Configuration
+# =============================================================================
+dataset:
+  train_file: "../schema_pipeline/output/prepared/train.jsonl"
+  validation_file: "../schema_pipeline/output/prepared/validation.jsonl"
+  validation_split: null  # Using explicit validation file
+  
+  # Data processing - reduced for T4
+  max_seq_length: 2048
+  preprocessing_num_workers: 2
+  
+  # Data format
+  format: "alpaca"
+  
+  # Column mapping
+  instruction_column: "instruction"
+  input_column: "input"
+  output_column: "output"
+  
+  # Full dataset training - 434K examples
+  max_train_samples: null  # Use full dataset
+  max_eval_samples: null   # Use full validation set
+
+# =============================================================================
+# Hardware Configuration
+# =============================================================================
+hardware:
+  # GPU settings for T4
+  gpu_memory_utilization: 0.95  # Maximize usage
+  
+  # Single GPU only
+  distributed:
+    enabled: false
+  
+  # No DeepSpeed for T4 single GPU
+  deepspeed:
+    enabled: false
+
+# =============================================================================
+# Monitoring Configuration
+# =============================================================================
+monitoring:
+  # Weights & Biases
+  wandb:
+    enabled: false  # Disable for quick tests
+    project: "qwen-pruning-t4"
+  
+  # TensorBoard
+  tensorboard:
+    enabled: true
+    log_dir: "./outputs/tensorboard"
+
+# =============================================================================
+# Validation Configuration
+# =============================================================================
+validation:
+  sql_execution:
+    enabled: false
+  
+  metrics:
+    - "exact_match"
+  
+  thresholds:
+    min_exact_match: 0.60
+    max_perplexity: 5.0
+
+# =============================================================================
+# Export Configuration
+# =============================================================================
+export:
+  formats:
+    - "safetensors"
+  
+  onnx:
+    enabled: false
+    
+  quantization:
+    enabled: false

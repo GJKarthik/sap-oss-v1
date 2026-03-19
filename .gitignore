@@ -56,3 +56,4 @@ yarn-error.log*
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .cursor/rules/snyk_rules.mdc
+src/training/data/massive_semantic/training_data.json

@@ -1,0 +1,278 @@
+# A100 GPU Configuration for Qwen 9B Pruning and Fine-tuning
+# Fallback config for NVIDIA A100 (40GB/80GB) when H200 is unavailable
+#
+# Usage:
+#   python scripts/prune_retrain_workflow.py --config configs/a100_qwen_9b.yaml
+#
+# Requirements:
+#   - NVIDIA A100 40GB or 80GB GPU
+#   - CUDA 12.1+
+#   - PyTorch 2.2+
+
+# =============================================================================
+# Model Configuration
+# =============================================================================
+model:
+  name: "Qwen/Qwen2.5-7B-Instruct"
+  revision: "main"
+  torch_dtype: "bfloat16"
+  trust_remote_code: true
+  max_length: 4096  # Reduced from 8192 for A100 memory
+  
+  # Model loading options
+  load_in_8bit: false
+  load_in_4bit: false  # Enable for A100-40GB
+  device_map: "auto"
+  
+  # Attention implementation
+  attn_implementation: "flash_attention_2"
+
+# =============================================================================
+# Pruning Configuration
+# =============================================================================
+pruning:
+  # Pruning method: magnitude, movement, wanda, sparsegpt
+  method: "magnitude"
+  
+  # Target sparsity (50% = remove 50% of weights)
+  target_sparsity: 0.5
+  
+  # Sparsity schedule
+  schedule:
+    type: "cubic"  # linear, cubic, exponential
+    warmup_steps: 100
+    cooldown_steps: 50
+  
+  # Layer-wise sparsity configuration
+  layer_sparsity:
+    attention: 0.5
+    mlp: 0.6  # MLPs can handle more sparsity
+    embedding: 0.0  # Don't prune embeddings
+    lm_head: 0.0  # Don't prune output layer
+  
+  # Pruning granularity
+  granularity: "unstructured"  # unstructured, 2:4, 4:8
+  
+  # Importance scoring
+  importance_score: "magnitude"  # magnitude, gradient, taylor
+  
+  # Calibration for importance scoring
+  calibration:
+    num_samples: 256  # Reduced from 512 for memory
+    seq_length: 1024  # Reduced from 2048 for memory
+
+# =============================================================================
+# Training Configuration (Post-Pruning Fine-tuning)
+# =============================================================================
+training:
+  # Output directory
+  output_dir: "./outputs/qwen-9b-pruned-a100"
+  
+  # Training hyperparameters - Optimized for A100
+  num_train_epochs: 3
+  per_device_train_batch_size: 2  # Reduced from 8 for A100-40GB
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 16  # Increased to maintain effective batch
+  
+  # Learning rate schedule
+  learning_rate: 2.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  
+  # Optimizer
+  optim: "adamw_torch_fused"
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+  
+  # Precision
+  bf16: true
+  tf32: true
+  
+  # Memory optimization - Critical for A100
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  
+  # Logging
+  logging_steps: 10
+  logging_first_step: true
+  
+  # Evaluation
+  eval_strategy: "steps"
+  eval_steps: 100
+  
+  # Checkpointing
+  save_strategy: "steps"
+  save_steps: 200
+  save_total_limit: 3
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  
+  # Reproducibility
+  seed: 42
+  data_seed: 42
+
+# =============================================================================
+# LoRA Configuration (for memory efficiency on A100)
+# =============================================================================
+lora:
+  enabled: true
+  r: 32  # Reduced from 64 for memory
+  lora_alpha: 64
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  
+  # Quantization (enable for A100-40GB)
+  use_rslora: false
+  use_dora: false
+
+# =============================================================================
+# Dataset Configuration
+# =============================================================================
+dataset:
+  train_file: "../schema_pipeline/output/text2sql_alpaca/training_data.jsonl"
+  validation_split: 0.1
+  
+  # Data processing
+  max_seq_length: 4096  # Reduced for A100
+  preprocessing_num_workers: 4
+  
+  # Data format
+  format: "alpaca"  # alpaca, sharegpt, raw
+  
+  # Column mapping
+  instruction_column: "instruction"
+  input_column: "input"
+  output_column: "output"
+
+# =============================================================================
+# Hardware Configuration
+# =============================================================================
+hardware:
+  # GPU settings for A100
+  gpu_memory_utilization: 0.90  # Slightly lower for stability
+  
+  # Multi-GPU (if available)
+  distributed:
+    enabled: false  # Enable for multi-GPU
+    backend: "nccl"
+    world_size: 1
+  
+  # DeepSpeed configuration (recommended for A100)
+  deepspeed:
+    enabled: true
+    config:
+      zero_optimization:
+        stage: 2  # Stage 2 for A100 memory
+        offload_optimizer:
+          device: "cpu"  # Offload optimizer states to CPU
+          pin_memory: true
+        offload_param:
+          device: "none"
+        overlap_comm: true
+        contiguous_gradients: true
+        reduce_bucket_size: 5e7
+        stage3_prefetch_bucket_size: 5e7
+        stage3_param_persistence_threshold: 1e5
+      bf16:
+        enabled: true
+      gradient_accumulation_steps: 16
+      gradient_clipping: 1.0
+      train_batch_size: "auto"
+      train_micro_batch_size_per_gpu: "auto"
+
+# =============================================================================
+# Monitoring Configuration
+# =============================================================================
+monitoring:
+  # Weights & Biases
+  wandb:
+    enabled: true
+    project: "qwen-pruning-a100"
+    entity: null  # Set via WANDB_ENTITY env var
+    run_name: "qwen-9b-50pct-sparse-a100"
+    tags:
+      - "pruning"
+      - "qwen"
+      - "text2sql"
+      - "a100"
+    log_model: false  # Disable to save bandwidth
+  
+  # TensorBoard
+  tensorboard:
+    enabled: true
+    log_dir: "./outputs/tensorboard"
+
+# =============================================================================
+# Validation Configuration
+# =============================================================================
+validation:
+  # SQL execution accuracy (if HANA available)
+  sql_execution:
+    enabled: false
+    hana_host: null
+    hana_port: null
+  
+  # Text-to-SQL metrics
+  metrics:
+    - "exact_match"
+    - "execution_accuracy"
+    - "partial_match"
+  
+  # Validation thresholds
+  thresholds:
+    min_exact_match: 0.70
+    min_execution_accuracy: 0.75
+    max_perplexity: 3.0
+
+# =============================================================================
+# Export Configuration
+# =============================================================================
+export:
+  # Save formats
+  formats:
+    - "safetensors"
+    - "pytorch"
+  
+  # ONNX export (for deployment)
+  onnx:
+    enabled: false  # Enable if needed
+    opset_version: 17
+    
+  # Quantization for deployment
+  quantization:
+    enabled: false
+    method: "gptq"  # gptq, awq, bnb
+    bits: 4
+
+# =============================================================================
+# A100-40GB Specific Overrides
+# =============================================================================
+# Uncomment for A100-40GB (vs 80GB default above)
+# a100_40gb:
+#   model:
+#     load_in_4bit: true
+#   training:
+#     per_device_train_batch_size: 1
+#     gradient_accumulation_steps: 32
+#   lora:
+#     r: 16
+#   dataset:
+#     max_seq_length: 2048
+#   pruning:
+#     calibration:
+#       num_samples: 128
+#       seq_length: 512

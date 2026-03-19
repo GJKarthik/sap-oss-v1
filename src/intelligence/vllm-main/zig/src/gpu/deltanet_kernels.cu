@@ -202,62 +202,74 @@ extern "C" __global__ void deltanet_gates(
 }
 
 // ============================================================================
-// 4. DeltaNet Recurrent State Update + Readout
+// 4. DeltaNet Recurrent State Update + Readout  [OPTIMIZED]
 // ============================================================================
-// The core recurrent computation per output head:
-//   S[h] = S[h] * alpha[h]                              (decay)
-//   kv_mem[h,d2] = sum_d1(S[h,d1,d2] * k[g,d1])        (retrieve, g=GQA group)
-//   delta[h,d2] = (v[h,d2] - kv_mem[h,d2]) * beta[h]   (update, v uses direct head)
-//   S[h,d1,d2] += k[g,d1] * delta[h,d2]                (write)
-//   y[h,d2] = sum_d1(S[h,d1,d2] * q[g,d1])             (read, q uses GQA group)
+// State layout: S[h][d1][d2] (original row-major, d1 is outer).
+// Each thread owns one d2 column. Threads stride over d2 values.
 //
-// In Qwen3.5 DeltaNet: Q/K have group_count heads, V has num_v_heads (more).
-// Each output head h maps to Q/K group g = h * num_kv_heads / num_v_heads.
-// State S: [num_v_heads × D × D] where D = state_size.
-// One block per output (V) head; threads parallelize over d2.
+// Optimizations vs. naive:
+//  - K and Q loaded into shared memory once per block (eliminates repeated
+//    global reads of k_h[d1] and q_h[d1] across all d2 threads)
+//  - 3 passes over d1 fused into 2: decay+retrieve in pass1, write+readout
+//    fused in pass2 (was 3 separate loops = 3× S[][] traffic)
+//
+// Grid: (num_v_heads, 1)  Block: min(D, 256) threads
+// Shared memory: 2*D*sizeof(float) for K and Q
 extern "C" __global__ void deltanet_recurrent(
-    float* __restrict__ y_out,     // [num_v_heads × D] readout
-    float* __restrict__ S,         // [num_v_heads × D × D] persistent state (in-place)
-    const float* __restrict__ q,   // [num_kv_heads × D] L2-normed query (GQA: fewer heads)
-    const float* __restrict__ k,   // [num_kv_heads × D] L2-normed key (GQA: fewer heads)
-    const float* __restrict__ v,   // [num_v_heads × D] value (direct: one per output head)
-    const float* __restrict__ alpha, // [num_v_heads] decay per output head
-    const float* __restrict__ beta,  // [num_v_heads] update per output head
-    int D,  // head_dim = state_size
-    int num_kv_heads)  // Q/K group count (may be < num_v_heads for grouped QK)
+    float* __restrict__ y_out,       // [num_v_heads × D]
+    float* __restrict__ S,           // [num_v_heads × D × D]  layout: S[h][d1][d2]
+    const float* __restrict__ q,     // [num_kv_heads × D]
+    const float* __restrict__ k,     // [num_kv_heads × D]
+    const float* __restrict__ v,     // [num_v_heads × D]
+    const float* __restrict__ alpha, // [num_v_heads]
+    const float* __restrict__ beta,  // [num_v_heads]
+    int D,
+    int num_kv_heads)
 {
-    int h = blockIdx.x; // one block per output (V) head
-    int num_v_heads = gridDim.x;
-    int kv_h = h * num_kv_heads / num_v_heads; // GQA: map V-head to Q/K group
+    int h     = blockIdx.x;
+    int num_v = gridDim.x;
+    int kv_h  = h * num_kv_heads / num_v;
+
     float a = alpha[h];
     float b = beta[h];
 
-    float* S_h = S + (size_t)h * D * D;
-    const float* q_h = q + kv_h * D;   // Q uses GQA group index
-    const float* k_h = k + kv_h * D;   // K uses GQA group index
-    const float* v_h = v + h * D;      // V uses direct head index
-    float* y_h = y_out + h * D;
+    // Shared memory: k_smem[D] | q_smem[D]
+    extern __shared__ float smem[];
+    float* k_smem = smem;
+    float* q_smem = smem + D;
 
-    // Each thread handles one d2 index
+    const float* k_h = k + kv_h * D;
+    const float* q_h = q + kv_h * D;
+    for (int i = threadIdx.x; i < D; i += blockDim.x) {
+        k_smem[i] = k_h[i];
+        q_smem[i] = q_h[i];
+    }
+    __syncthreads();
+
+    float* S_h       = S + (size_t)h * D * D;
+    const float* v_h = v + h * D;
+    float* y_h       = y_out + h * D;
+
+    // Each thread handles one d2
     for (int d2 = threadIdx.x; d2 < D; d2 += blockDim.x) {
-        // Step 1: Decay S and retrieve kv_mem
+
+        // Pass 1: decay all S[d1][d2] in-place, accumulate kv_mem
         float kv_mem = 0.0f;
         for (int d1 = 0; d1 < D; d1++) {
-            float s_val = S_h[d1 * D + d2] * a;  // decay
-            S_h[d1 * D + d2] = s_val;
-            kv_mem += s_val * k_h[d1];  // retrieve
+            float s = S_h[d1 * D + d2] * a;
+            S_h[d1 * D + d2] = s;
+            kv_mem += s * k_smem[d1];
         }
 
-        // Step 2: Compute delta and write to S
+        // Delta
         float delta = (v_h[d2] - kv_mem) * b;
-        for (int d1 = 0; d1 < D; d1++) {
-            S_h[d1 * D + d2] += k_h[d1] * delta;  // write
-        }
 
-        // Step 3: Read from updated S (Q already scaled by 1/sqrt(D) in L2 norm)
+        // Pass 2: write delta + readout (fused — 1 pass instead of 2)
         float y_val = 0.0f;
         for (int d1 = 0; d1 < D; d1++) {
-            y_val += S_h[d1 * D + d2] * q_h[d1];  // read
+            float s = S_h[d1 * D + d2] + k_smem[d1] * delta;
+            S_h[d1 * D + d2] = s;
+            y_val += s * q_smem[d1];
         }
         y_h[d2] = y_val;
     }

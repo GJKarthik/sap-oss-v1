@@ -810,8 +810,9 @@ pub const CudaBackend = struct {
             @ptrCast(&p_b), @ptrCast(&d), @ptrCast(&nkv),
         };
         const threads = @min(D, @as(u32, 128));
+        const smem_dn: u32 = 2 * D * @as(u32, 4);
         const stream_ptr: ?*anyopaque = self.stream;
-        if (cuda.cuLaunchKernel(func, num_q_heads, 1, 1, threads, 1, 1, 0, stream_ptr, &params, null) != .success)
+        if (cuda.cuLaunchKernel(func, num_q_heads, 1, 1, threads, 1, 1, smem_dn, stream_ptr, &params, null) != .success)
             return error.KernelLaunchFailed;
     }
 
@@ -869,8 +870,9 @@ pub const CudaBackend = struct {
             @ptrCast(&rd), @ptrCast(&fb), @ptrCast(&nh),
         };
         const threads = @min(rope_dim / 2, @as(u32, 128));
+        const smem_rope: u32 = rope_dim * @as(u32, 4);
         const stream_ptr: ?*anyopaque = self.stream;
-        if (cuda.cuLaunchKernel(func, n_heads, 1, 1, threads, 1, 1, 0, stream_ptr, &params, null) != .success)
+        if (cuda.cuLaunchKernel(func, n_heads, 1, 1, threads, 1, 1, smem_rope, stream_ptr, &params, null) != .success)
             return error.KernelLaunchFailed;
     }
 
@@ -896,8 +898,9 @@ pub const CudaBackend = struct {
             @ptrCast(&rd), @ptrCast(&fb), @ptrCast(&nh),
         };
         const threads = @min(rope_dim / 2, @as(u32, 128));
+        const smem_rope_k: u32 = rope_dim * @as(u32, 4);
         const stream_ptr: ?*anyopaque = self.stream;
-        if (cuda.cuLaunchKernel(func, n_kv_heads, 1, 1, threads, 1, 1, 0, stream_ptr, &params, null) != .success)
+        if (cuda.cuLaunchKernel(func, n_kv_heads, 1, 1, threads, 1, 1, smem_rope_k, stream_ptr, &params, null) != .success)
             return error.KernelLaunchFailed;
     }
 

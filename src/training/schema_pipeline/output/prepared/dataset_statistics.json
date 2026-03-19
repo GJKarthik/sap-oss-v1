@@ -1,0 +1,59 @@
+{
+  "total_examples": 510762,
+  "train_size": 434092,
+  "val_size": 51021,
+  "test_size": 25649,
+  "by_source": {
+    "massive_generator": 518839
+  },
+  "train_by_domain": {
+    "balance_sheet": 52009,
+    "performance": 85575,
+    "trade_finance": 21426,
+    "regulatory": 53335,
+    "treasury": 77695,
+    "risk": 57367,
+    "consumer": 17767,
+    "esg": 57635,
+    "wealth": 11283
+  },
+  "train_by_type": {
+    "aggregate": 117057,
+    "comparison": 46263,
+    "filtered": 137088,
+    "complex": 49567,
+    "simple": 23329,
+    "trend": 10875,
+    "join_filter": 16400,
+    "group_by": 10875,
+    "yoy": 5136,
+    "join": 4098,
+    "qoq": 5136,
+    "top_n": 4128,
+    "multi_group": 1374,
+    "subquery": 1383,
+    "cte": 1383
+  },
+  "val_by_domain": {
+    "performance": 10063,
+    "treasury": 9134,
+    "risk": 6747,
+    "balance_sheet": 6114,
+    "esg": 6774,
+    "regulatory": 6269,
+    "consumer": 2084,
+    "trade_finance": 2515,
+    "wealth": 1321
+  },
+  "test_by_domain": {
+    "performance": 5045,
+    "treasury": 4586,
+    "regulatory": 3151,
+    "wealth": 677,
+    "risk": 3382,
+    "balance_sheet": 3070,
+    "esg": 3405,
+    "trade_finance": 1271,
+    "consumer": 1062
+  }
+}

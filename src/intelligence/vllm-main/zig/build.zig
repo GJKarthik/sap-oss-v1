@@ -8,15 +8,29 @@ pub fn build(b: *std.Build) void {
     const wgpu_lib_opt = b.option([]const u8, "wgpu_lib", "Path to wgpu-native library dir (default: /usr/local/lib)");
     const cuda_path_opt = b.option([]const u8, "cuda_path", "Path to CUDA toolkit (overrides CUDA_HOME/CUDA_PATH)");
     const cuda_lib_opt = b.option([]const u8, "cuda_lib", "Path to compiled CUDA kernels");
+    // GPU architecture: sm_75=T4, sm_89=L4, sm_90=H200/H100. Defaults to sm_75.
+    const gpu_arch = b.option([]const u8, "gpu_arch", "CUDA GPU architecture (sm_75/sm_89/sm_90)") orelse "sm_75";
     const source_file = b.path("src/main.zig");
     var cuda_kernels_build: ?*std.Build.Step.Run = null;
 
     if (enable_gpu) {
+        // Compile arch-specific PTX for deltanet_kernels so the binary embeds
+        // the correct ISA for the target GPU.
+        const arch_flag = b.fmt("-arch={s}", .{gpu_arch});
+        const ptx_out   = b.fmt("src/gpu/deltanet_kernels.ptx", .{});
+        const compile_ptx = b.addSystemCommand(&.{
+            "nvcc", "-O3", arch_flag, "-ptx",
+            "-o", ptx_out,
+            "src/gpu/deltanet_kernels.cu",
+        });
+        compile_ptx.setCwd(b.path("."));
+        _ = compile_ptx; // will be used as dependency below
+
         const mkdir_cuda_lib = b.addSystemCommand(&.{ "mkdir", "-p", "deps/llama-zig-cuda/zig-out/lib" });
         cuda_kernels_build = b.addSystemCommand(&.{
             "nvcc",
             "-O3",
-            "-arch=sm_75",
+            arch_flag,
             "-I",
             "csrc",
             "-lcublas",
