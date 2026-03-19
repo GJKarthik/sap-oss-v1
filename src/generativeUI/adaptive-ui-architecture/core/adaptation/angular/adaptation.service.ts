@@ -54,31 +54,31 @@ export class AdaptationService implements OnDestroy {
   /** Get layout adaptations */
   getLayout(): Observable<LayoutAdaptation> {
     return this.decision$.pipe(
-      map(d => d?.layout || this.getDefaultLayout()),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+      map((d: AdaptationDecision | null) => d?.layout || this.getDefaultLayout()),
+      distinctUntilChanged((a: LayoutAdaptation, b: LayoutAdaptation) => JSON.stringify(a) === JSON.stringify(b))
     );
   }
-  
+
   /** Get content adaptations */
   getContent(): Observable<ContentAdaptation> {
     return this.decision$.pipe(
-      map(d => d?.content || this.getDefaultContent()),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+      map((d: AdaptationDecision | null) => d?.content || this.getDefaultContent()),
+      distinctUntilChanged((a: ContentAdaptation, b: ContentAdaptation) => JSON.stringify(a) === JSON.stringify(b))
     );
   }
-  
+
   /** Get interaction adaptations */
   getInteraction(): Observable<InteractionAdaptation> {
     return this.decision$.pipe(
-      map(d => d?.interaction || this.getDefaultInteraction()),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+      map((d: AdaptationDecision | null) => d?.interaction || this.getDefaultInteraction()),
+      distinctUntilChanged((a: InteractionAdaptation, b: InteractionAdaptation) => JSON.stringify(a) === JSON.stringify(b))
     );
   }
-  
+
   /** Get confidence level */
   getConfidence(): Observable<number> {
     return this.decision$.pipe(
-      map(d => d?.confidence || 0),
+      map((d: AdaptationDecision | null) => d?.confidence || 0),
       distinctUntilChanged()
     );
   }
@@ -119,14 +119,14 @@ export class AdaptationService implements OnDestroy {
   /** Get density class name */
   getDensityClass(): Observable<string> {
     return this.getLayout().pipe(
-      map(layout => `density-${layout.density}`)
+      map((layout: LayoutAdaptation) => `density-${layout.density}`)
     );
   }
-  
+
   /** Get spacing value in pixels */
   getSpacing(multiplier = 1): Observable<number> {
     return this.getLayout().pipe(
-      map(layout => layout.spacingScale * 8 * multiplier)
+      map((layout: LayoutAdaptation) => layout.spacingScale * 8 * multiplier)
     );
   }
   

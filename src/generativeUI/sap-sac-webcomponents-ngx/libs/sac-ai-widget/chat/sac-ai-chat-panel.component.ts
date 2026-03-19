@@ -410,7 +410,7 @@ export class SacAiChatPanelComponent implements OnInit, OnDestroy {
       role: {
         id: 'analyst',
         name: 'Business Analyst',
-        permissionLevel: 'standard',
+        permissionLevel: 'editor',
         expertiseLevel: 'intermediate',
       },
       organization: 'SAP',

@@ -518,7 +518,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       role: {
         id: 'user',
         name: 'Joule User',
-        permissionLevel: 'standard',
+        permissionLevel: 'editor',
         expertiseLevel: 'intermediate',
       },
       organization: 'SAP',

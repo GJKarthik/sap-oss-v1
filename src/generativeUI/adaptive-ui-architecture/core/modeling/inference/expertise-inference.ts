@@ -23,7 +23,7 @@ const expertiseSignals: ExpertiseSignal[] = [
     weight: 0.25,
     evaluate: (events) => {
       const keyboardEvents = events.filter(
-        e => e.metadata.triggeredBy === 'keyboard' || e.metadata.shortcut
+        e => e.metadata['triggeredBy'] === 'keyboard' || e.metadata['shortcut']
       );
       return Math.min(keyboardEvents.length / events.length * 2, 1);
     },

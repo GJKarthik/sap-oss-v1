@@ -247,7 +247,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
             role: {
                 id: 'analyst',
                 name: 'Data Analyst',
-                permissionLevel: 'standard',
+                permissionLevel: 'editor',
                 expertiseLevel: 'intermediate',
             },
             organization: 'SAP',

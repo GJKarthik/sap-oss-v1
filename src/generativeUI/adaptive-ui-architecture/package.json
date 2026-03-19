@@ -1,0 +1,51 @@
+{
+  "name": "@adaptive-ui/core",
+  "version": "0.1.0",
+  "description": "Adaptive UI Architecture - Core library for building adaptive user interfaces",
+  "main": "index.ts",
+  "types": "index.ts",
+  "keywords": [
+    "adaptive-ui",
+    "user-modeling",
+    "personalization",
+    "angular",
+    "sap"
+  ],
+  "peerDependencies": {
+    "@angular/core": ">=17.0.0",
+    "@angular/common": ">=17.0.0",
+    "rxjs": ">=7.0.0",
+    "tslib": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular/core": {
+      "optional": false
+    },
+    "@angular/common": {
+      "optional": false
+    },
+    "rxjs": {
+      "optional": false
+    },
+    "tslib": {
+      "optional": false
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./angular": {
+      "types": "./angular/index.ts",
+      "default": "./angular/index.ts"
+    },
+    "./core/*": {
+      "types": "./core/*.ts",
+      "default": "./core/*.ts"
+    }
+  },
+  "sideEffects": false,
+  "license": "Apache-2.0"
+}
+

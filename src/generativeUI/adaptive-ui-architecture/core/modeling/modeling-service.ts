@@ -157,21 +157,21 @@ function inferTablePreferences(
   const defaultSort = { ...current.defaultSort };
   for (const event of sortEvents) {
     const tableId = event.componentId;
-    const column = event.metadata.column as string;
-    const direction = (event.metadata.direction as 'asc' | 'desc') || 'asc';
-    
+    const column = event.metadata['column'] as string;
+    const direction = (event.metadata['direction'] as 'asc' | 'desc') || 'asc';
+
     if (column) {
       defaultSort[tableId] = { column, direction };
     }
   }
-  
+
   // Infer page size preference
   let pageSize = current.pageSize;
   const paginationEvents = tableEvents.filter(
-    e => e.type === 'navigate' && e.metadata.pageSize
+    e => e.type === 'navigate' && e.metadata['pageSize']
   );
   if (paginationEvents.length > 0) {
-    const sizes = paginationEvents.map(e => e.metadata.pageSize as number);
+    const sizes = paginationEvents.map(e => e.metadata['pageSize'] as number);
     pageSize = Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length);
   }
   
@@ -195,8 +195,8 @@ function inferFilterPreferences(
 
   for (const event of filterEvents) {
     const context = event.componentId || 'default';
-    const field = event.metadata.field as string;
-    const value = event.metadata.value;
+    const field = event.metadata['field'] as string;
+    const value = event.metadata['value'];
 
     if (field && value !== undefined && value !== '') {
       if (!filterCounts[context]) filterCounts[context] = {};
@@ -257,7 +257,7 @@ function inferNavigationPreferences(
 
   // Detect keyboard shortcut usage
   const keyboardEvents = events.filter(
-    e => e.metadata.triggeredBy === 'keyboard' || e.metadata.shortcut
+    e => e.metadata['triggeredBy'] === 'keyboard' || e.metadata['shortcut']
   );
   const usesKeyboardShortcuts = keyboardEvents.length > events.length * 0.1;
 
@@ -286,7 +286,7 @@ function inferExpertise(
   // - Less reliance on help/tooltips
 
   const keyboardUsage = events.filter(
-    e => e.metadata.triggeredBy === 'keyboard' || e.metadata.shortcut
+    e => e.metadata['triggeredBy'] === 'keyboard' || e.metadata['shortcut']
   ).length / Math.max(events.length, 1);
 
   const advancedFeatures = ['export', 'undo', 'redo', 'drag', 'drop'];
@@ -395,7 +395,7 @@ function inferAccessibilityNeeds(
     e => e.type === 'click' || e.type === 'hover'
   );
   const keyboardEvents = events.filter(
-    e => e.metadata.triggeredBy === 'keyboard' || e.type === 'focus'
+    e => e.metadata['triggeredBy'] === 'keyboard' || e.type === 'focus'
   );
 
   const keyboardOnly = events.length > 20 &&

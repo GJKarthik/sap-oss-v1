@@ -266,12 +266,12 @@ export class AdaptationCoordinator {
 
     const decision = this.currentDecision;
     const prefix = this.config.cssVariablePrefix;
-    const spacing = decision.layout.spacingScale * 8;
+    const spacing = (decision.layout.spacingScale ?? 1) * 8;
     const densityScale = {
       compact: 0.85,
       comfortable: 1,
       spacious: 1.2,
-    }[decision.layout.density];
+    }[decision.layout.density] ?? 1;
 
     return {
       [`${prefix}-spacing-unit`]: `${spacing}px`,
@@ -280,13 +280,13 @@ export class AdaptationCoordinator {
       [`${prefix}-spacing-md`]: `${spacing * 2}px`,
       [`${prefix}-spacing-lg`]: `${spacing * 3}px`,
       [`${prefix}-spacing-xl`]: `${spacing * 4}px`,
-      [`${prefix}-grid-columns`]: `${decision.layout.gridColumns}`,
+      [`${prefix}-grid-columns`]: `${decision.layout.gridColumns ?? 12}`,
       [`${prefix}-density-scale`]: `${densityScale}`,
-      [`${prefix}-touch-target-min`]: `${44 * decision.interaction.touchTargetScale}px`,
-      [`${prefix}-animation-duration`]: `${150 * decision.interaction.animationScale}ms`,
-      [`${prefix}-transition-duration`]: `${200 * decision.interaction.animationScale}ms`,
-      [`${prefix}-hover-delay`]: `${decision.interaction.hoverDelayMs}ms`,
-      [`${prefix}-tooltip-delay`]: `${decision.interaction.tooltipDelayMs}ms`,
+      [`${prefix}-touch-target-min`]: `${44 * (decision.interaction.touchTargetScale ?? 1)}px`,
+      [`${prefix}-animation-duration`]: `${150 * (decision.interaction.animationScale ?? 1)}ms`,
+      [`${prefix}-transition-duration`]: `${200 * (decision.interaction.animationScale ?? 1)}ms`,
+      [`${prefix}-hover-delay`]: `${decision.interaction.hoverDelayMs ?? 200}ms`,
+      [`${prefix}-tooltip-delay`]: `${decision.interaction.tooltipDelayMs ?? 500}ms`,
       [`${prefix}-sidebar-width`]: decision.layout.sidebarState === 'expanded' ? '280px' :
         decision.layout.sidebarState === 'collapsed' ? '64px' : '0px',
     };
