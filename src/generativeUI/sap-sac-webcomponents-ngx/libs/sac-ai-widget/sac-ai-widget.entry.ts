@@ -33,6 +33,13 @@ import { SAC_AI_BACKEND_URL, SAC_TENANT_URL, SAC_MODEL_ID } from './tokens';
 import { SacAiChatPanelComponent } from './chat/sac-ai-chat-panel.component';
 import { SacAiDataWidgetComponent } from './data-widget/sac-ai-data-widget.component';
 
+// P2-002: Import expanded widget components
+import { SacFilterDropdownComponent, SacFilterCheckboxComponent } from './components/sac-filter.component';
+import { SacSliderComponent } from './components/sac-slider.component';
+import { SacHeadingComponent, SacTextBlockComponent, SacDividerComponent } from './components/sac-text.component';
+import { SacFlexContainerComponent, SacGridContainerComponent, SacGridItemComponent } from './components/sac-layout.component';
+import type { SacWidgetType } from './types/sac-widget-schema';
+
 // =============================================================================
 // SAC Custom Widget property bag (from widget.json schema)
 // =============================================================================
@@ -41,7 +48,8 @@ interface SacWidgetProperties {
   capBackendUrl?: string;
   tenantUrl?: string;
   modelId?: string;
-  widgetType?: 'chart' | 'table' | 'kpi';
+  /** P2-002: Expanded widget types (was: 'chart' | 'table' | 'kpi') */
+  widgetType?: SacWidgetType;
   /** SAC injects the session bearer token here at runtime */
   sacBearerToken?: string;
 }
