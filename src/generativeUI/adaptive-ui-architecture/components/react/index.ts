@@ -1,6 +1,6 @@
 /**
  * Adaptive UI Components — React
- * 
+ *
  * Accessible, adaptive components that respond to user behavior and context.
  * All components meet WCAG AA requirements.
  */
@@ -16,4 +16,8 @@ export type { AdaptiveFilterProps, FilterField } from './AdaptiveFilter';
 // Layout
 export { AdaptiveLayout, AdaptiveGrid, AdaptiveCard } from './AdaptiveLayout';
 export type { AdaptiveLayoutProps, AdaptiveGridProps, AdaptiveCardProps, Panel } from './AdaptiveLayout';
+
+// Feedback
+export { FeedbackWidget, RatingFeedback, ChoiceFeedback } from './FeedbackWidget';
+export type { FeedbackWidgetProps, RatingFeedbackProps, ChoiceFeedbackProps } from './FeedbackWidget';
 

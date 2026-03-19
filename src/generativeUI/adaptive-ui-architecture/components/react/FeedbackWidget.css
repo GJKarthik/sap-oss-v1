@@ -1,0 +1,292 @@
+/**
+ * Feedback Widget Styles
+ * 
+ * Accessible feedback collection UI with proper focus states.
+ */
+
+.feedback-widget {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-secondary, #f5f5f5);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+/* ============================================================================
+   VARIANTS
+   ============================================================================ */
+
+.feedback-widget.popover {
+  position: absolute;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.feedback-widget.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideIn var(--adaptive-transition-duration, 200ms) ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   SIZE VARIANTS
+   ============================================================================ */
+
+.feedback-widget.small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.feedback-widget.small .feedback-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+.feedback-widget.medium {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.feedback-widget.medium .feedback-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+
+/* ============================================================================
+   QUESTION
+   ============================================================================ */
+
+.feedback-question {
+  color: var(--text-secondary, #666666);
+  font-size: inherit;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.feedback-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color, #cccccc);
+  background: var(--surface-primary, #ffffff);
+  cursor: pointer;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+  min-width: var(--adaptive-touch-target-min, 44px);
+}
+
+.feedback-btn:hover {
+  transform: scale(1.1);
+}
+
+.feedback-btn.positive:hover {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.feedback-btn.negative:hover {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.feedback-btn:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.feedback-btn:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================================
+   RATING STARS
+   ============================================================================ */
+
+.rating-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.rating-star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: var(--text-tertiary, #cccccc);
+  padding: 4px;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+  min-width: var(--adaptive-touch-target-min, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-star.filled {
+  color: #ffc107;
+}
+
+.rating-star:hover {
+  transform: scale(1.2);
+}
+
+.rating-star:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================================
+   CHOICE OPTIONS
+   ============================================================================ */
+
+.choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choice-option {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color, #cccccc);
+  border-radius: 20px;
+  background: var(--surface-primary, #ffffff);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all var(--adaptive-transition-duration, 200ms) ease;
+  min-height: var(--adaptive-touch-target-min, 44px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.choice-option:hover {
+  background: var(--hover-bg, #f0f0f0);
+  border-color: var(--accent-color, #0066cc);
+}
+
+.choice-option:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.choice-option.current {
+  border-color: var(--accent-color, #0066cc);
+  background: rgba(0, 102, 204, 0.1);
+}
+
+.current-badge {
+  font-size: 11px;
+  color: var(--accent-color, #0066cc);
+  font-weight: 500;
+}
+
+/* ============================================================================
+   SUBMITTED STATE
+   ============================================================================ */
+
+.feedback-widget.submitted {
+  background: var(--success-bg, #e8f5e9);
+  border-color: var(--success-border, #81c784);
+}
+
+.feedback-thanks {
+  color: var(--success-text, #2e7d32);
+  font-weight: 500;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  .feedback-widget {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .feedback-widget.toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .choice-options {
+    width: 100%;
+  }
+
+  .choice-option {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-widget.toast {
+    animation: none;
+  }
+
+  .feedback-btn,
+  .rating-star,
+  .choice-option {
+    transition: none;
+  }
+
+  .feedback-btn:hover,
+  .rating-star:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   HIGH CONTRAST
+   ============================================================================ */
+
+@media (prefers-contrast: more) {
+  .feedback-widget {
+    border-width: 2px;
+  }
+
+  .feedback-btn,
+  .choice-option {
+    border-width: 2px;
+  }
+
+  .rating-star.filled {
+    color: #000000;
+  }
+}
+
