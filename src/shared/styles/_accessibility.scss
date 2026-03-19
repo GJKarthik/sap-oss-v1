@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
+/**
+ * Shared Accessibility SCSS Mixins
+ *
+ * Standard accessibility patterns for all UI channels.
+ * Import: @use 'src/shared/styles/accessibility' as a11y;
+ */
+
+// =============================================================================
+// Focus Indicators
+// =============================================================================
+
+/// Standard focus-visible indicator following SAP Fiori patterns.
+/// Uses high-contrast outline with offset for visibility.
+@mixin focus-visible($color: var(--sapContent_FocusColor, #0070f2), $width: 2px, $offset: 2px) {
+  &:focus {
+    outline: none; // Remove default
+  }
+
+  &:focus-visible {
+    outline: $width solid $color;
+    outline-offset: $offset;
+    border-radius: var(--sapElement_BorderCornerRadius, 4px);
+  }
+}
+
+/// Focus trap indicator for modal/overlay contexts.
+@mixin focus-trap-indicator {
+  &:focus-visible {
+    box-shadow: 0 0 0 3px var(--sapContent_FocusColor, #0070f2);
+    outline: none;
+  }
+}
+
+// =============================================================================
+// Reduced Motion
+// =============================================================================
+
+/// Honor prefers-reduced-motion for animations and transitions.
+/// Wrap animation-heavy styles in this mixin.
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/// Apply reduced motion to specific properties only.
+@mixin motion-safe($properties...) {
+  @media (prefers-reduced-motion: no-preference) {
+    @each $prop in $properties {
+      transition-property: $prop;
+    }
+  }
+}
+
+// =============================================================================
+// High Contrast Mode (Windows)
+// =============================================================================
+
+/// Support Windows High Contrast Mode.
+@mixin high-contrast {
+  @media (forced-colors: active) {
+    @content;
+  }
+}
+
+/// Ensure borders are visible in high contrast mode.
+@mixin high-contrast-border($width: 1px) {
+  @include high-contrast {
+    border: $width solid CanvasText;
+    outline: $width solid transparent; // Fallback
+  }
+}
+
+// =============================================================================
+// Touch Targets
+// =============================================================================
+
+/// Ensure minimum 44x44px touch target (WCAG 2.5.5).
+@mixin touch-target($size: 44px) {
+  min-width: $size;
+  min-height: $size;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/// Expand clickable area without changing visual size.
+@mixin expand-click-area($expansion: 8px) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -$expansion;
+  }
+}
+
+// =============================================================================
+// Screen Reader Only Content
+// =============================================================================
+
+/// Visually hide content but keep it accessible to screen readers.
+@mixin sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/// Allow sr-only content to become visible on focus.
+@mixin sr-only-focusable {
+  &:focus,
+  &:focus-visible {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: inherit !important;
+    margin: inherit !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: inherit !important;
+  }
+}
+
+// =============================================================================
+// 8px Grid Spacing
+// =============================================================================
+
+/// Standard spacing scale based on 8px grid.
+$spacing-xs: 4px;  // Exception for tight spaces
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+/// Apply consistent spacing using 8px grid.
+@mixin spacing($property, $size: 'md') {
+  $sizes: (
+    'xs': $spacing-xs,
+    'sm': $spacing-sm,
+    'md': $spacing-md,
+    'lg': $spacing-lg,
+    'xl': $spacing-xl,
+    'xxl': $spacing-xxl,
+  );
+  #{$property}: map-get($sizes, $size);
+}
+
+// =============================================================================
+// ARIA Live Region Styles
+// =============================================================================
+
+/// Style for visually hidden live region announcement container.
+@mixin live-region {
+  @include sr-only;
+}
+
+/// Container for chat/log role elements.
+@mixin chat-log-container {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+
+  @include reduced-motion {
+    scroll-behavior: auto;
+  }
+}
+
