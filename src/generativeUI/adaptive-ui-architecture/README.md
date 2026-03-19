@@ -92,6 +92,7 @@ adaptive-ui-architecture/
 | Layer 2: Modeling | ✅ **Complete** | User profile building with inference |
 | Layer 3: Adaptation | ✅ **Complete** | Decision engine with coordinator |
 | Layer 4: Components | ✅ **Complete** | Adaptive table, filter, layout |
+| Layer 5: Feedback | ✅ **Complete** | Feedback collection & model refinement |
 
 ## Phase 1 Deliverables (Complete)
 
@@ -309,6 +310,61 @@ const filterPatterns = captureService.getFilterPatterns('main-filter');
 
 ### Tests
 - `adaptive-table.test.tsx` — Table accessibility and interaction tests
+
+## Phase 5 Deliverables (Complete)
+
+### Feedback Service (`core/feedback/`)
+
+#### Types (`types.ts`)
+- `FeedbackEvent` — Structured feedback records
+- `FeedbackPrompt` — Configurable feedback triggers
+- `RefinementSuggestion` — Model improvement suggestions
+
+#### Feedback Service (`feedback-service.ts`)
+- Records user feedback (thumbs, rating, choice, correction)
+- Tracks prompt display frequency (prevent fatigue)
+- Aggregates feedback by setting
+- LocalStorage persistence
+- Subscription API
+
+#### Model Refinement (`model-refinement.ts`)
+- Analyzes feedback patterns
+- Suggests model improvements
+- Auto-applies high-confidence refinements
+- Tracks correction preferences
+
+### React Components
+
+#### FeedbackWidget
+- Thumbs up/down feedback
+- Accessible (ARIA roles, focus states)
+- Toast/popover/inline variants
+
+#### RatingFeedback
+- 1-5 star rating
+- Keyboard navigable
+- Visual hover states
+
+#### ChoiceFeedback
+- A/B choice between options
+- Marks current value
+- Records preferred alternatives
+
+### Default Prompts
+- Layout density satisfaction
+- Filter suggestion usefulness
+- Page size preference
+- Low-confidence overall rating
+
+### Continuous Learning Loop
+
+```
+User Action → Capture → Model → Decisions → Components
+     ↑                                        ↓
+     │                                   Feedback ←── NEW!
+     │                                        ↓
+     └──────────── Model Refinement ──────────┘
+```
 
 ## License
 
