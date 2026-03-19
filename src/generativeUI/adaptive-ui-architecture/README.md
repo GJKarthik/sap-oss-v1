@@ -89,7 +89,7 @@ adaptive-ui-architecture/
 |-------|--------|-------------|
 | Layer 0: Context | ✅ **Complete** | Role, task, device, temporal, data context |
 | Layer 1: Capture | ✅ **Complete** | Interaction recording with privacy controls |
-| Layer 2: Modeling | 🟡 Types Only | User profile building |
+| Layer 2: Modeling | ✅ **Complete** | User profile building with inference |
 | Layer 3: Adaptation | 🟡 Basic Engine | Decision engine with default rules |
 | Layer 4: Components | 🟡 Example Only | Adaptive table, filter examples |
 
@@ -130,7 +130,13 @@ adaptive-ui-architecture/
 ## Quick Start
 
 ```typescript
-import { contextProvider, captureService, createCaptureHooks } from './core';
+import {
+  contextProvider,
+  captureService,
+  createCaptureHooks,
+  modelingService,
+  autoModeler
+} from './core';
 
 // 1. Set up user context (on login)
 contextProvider.setUserContext({
@@ -147,20 +153,62 @@ const capture = createCaptureHooks({
   componentId: 'main-filter',
 });
 
-// 3. Capture interactions
+// 3. Capture interactions (auto-modeler updates user profile automatically)
 capture.captureFilter('status', 'active');
 capture.captureSort('date', 'desc');
 
-// 4. Subscribe to context changes
-contextProvider.subscribe((ctx) => {
-  console.log('Device:', ctx.device.type);
-  console.log('Task mode:', ctx.task.mode);
+// 4. Get learned user preferences
+const userModel = modelingService.getModel('user-123');
+console.log('Expertise:', userModel?.expertise.level);
+console.log('Frequent filters:', userModel?.filters.frequentFilters);
+console.log('Default sort:', userModel?.tables.defaultSort);
+
+// 5. Subscribe to model updates
+modelingService.subscribe('user-123', (model) => {
+  console.log('Model confidence:', model.confidence);
+  console.log('Layout density:', model.layout.density);
 });
 
-// 5. Query capture history
-const recentEvents = captureService.getRecentEvents(30); // Last 30 minutes
+// 6. Query capture history for custom analysis
+const recentEvents = captureService.getRecentEvents(30);
 const filterPatterns = captureService.getFilterPatterns('main-filter');
 ```
+
+## Phase 2 Deliverables (Complete)
+
+### Modeling Service (`core/modeling/`)
+- `types.ts` — Complete user model types
+- `modeling-service.ts` — Full implementation
+  - User profile management
+  - Preference inference
+  - Model persistence to localStorage
+  - Cross-device model merging
+  - Confidence calculation
+  - Subscription API
+- `auto-modeler.ts` — Automatic capture-to-model pipeline
+  - Batched event processing
+  - Configurable update intervals
+  - Privacy-respecting processing
+
+### Inference Modules (`core/modeling/inference/`)
+- `expertise-inference.ts` — Multi-signal expertise detection
+  - Keyboard shortcut usage
+  - Advanced feature usage
+  - Task velocity
+  - Exploration depth
+  - Error recovery patterns
+  - Filter complexity
+- `preference-inference.ts` — UI preference extraction
+  - Layout density from expand/collapse patterns
+  - Table sort preferences
+  - Column visibility tracking
+  - Page size preferences
+  - Filter frequency analysis
+  - Auto-apply detection
+
+### Tests
+- `modeling-service.test.ts` — Service tests
+- `expertise-inference.test.ts` — Inference tests
 
 ## License
 
