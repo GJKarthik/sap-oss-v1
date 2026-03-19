@@ -25,8 +25,8 @@ export { adaptationCoordinator } from '../core/adaptation/coordinator';
 export { feedbackService } from '../core/feedback';
 
 // Directives
-export { AdaptiveCaptureDirective, AdaptiveCaptureTableDirective } from '../core/capture/angular/capture.directive';
-export { AdaptiveCaptureFilterDirective } from '../core/capture/angular/filter-capture.directive';
+// Note: Core directives are not re-exported to avoid Angular compilation issues
+// in monorepo setup. Import AdaptiveChatCaptureDirective from this module.
 export { AdaptiveChatCaptureDirective, type ChatCaptureConfig } from './adaptive-chat.directive';
 
 // Types (re-exported from core)

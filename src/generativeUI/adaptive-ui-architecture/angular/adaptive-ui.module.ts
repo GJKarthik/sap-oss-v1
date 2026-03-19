@@ -20,9 +20,9 @@ import { modelingService, autoModeler } from '../core/modeling';
 import { adaptationCoordinator } from '../core/adaptation/coordinator';
 import { feedbackService } from '../core/feedback';
 
-// Directives
-import { AdaptiveCaptureDirective, AdaptiveCaptureTableDirective } from '../core/capture/angular/capture.directive';
-import { AdaptiveCaptureFilterDirective } from '../core/capture/angular/filter-capture.directive';
+// Directives - Only import the chat directive we created
+// Note: Core directives (AdaptiveCaptureDirective, etc.) should be imported
+// directly by consumers if needed, once this package is properly linked
 import { AdaptiveChatCaptureDirective } from './adaptive-chat.directive';
 
 // Configuration
@@ -82,16 +82,10 @@ function configureAdaptiveServices(config: AdaptiveUiConfig): void {
   imports: [
     CommonModule,
     // Standalone directives
-    AdaptiveCaptureDirective,
-    AdaptiveCaptureTableDirective,
-    AdaptiveCaptureFilterDirective,
     AdaptiveChatCaptureDirective,
   ],
   exports: [
     // Re-export directives for use in templates
-    AdaptiveCaptureDirective,
-    AdaptiveCaptureTableDirective,
-    AdaptiveCaptureFilterDirective,
     AdaptiveChatCaptureDirective,
   ],
   providers: [
@@ -147,8 +141,8 @@ export { adaptationCoordinator } from '../core/adaptation/coordinator';
 export { feedbackService } from '../core/feedback';
 
 // Re-export directives
-export { AdaptiveCaptureDirective, AdaptiveCaptureTableDirective } from '../core/capture/angular/capture.directive';
-export { AdaptiveCaptureFilterDirective } from '../core/capture/angular/filter-capture.directive';
+// Note: Core directives are not re-exported to avoid Angular compilation issues
+// in monorepo setup. Import AdaptiveChatCaptureDirective from this module.
 export { AdaptiveChatCaptureDirective, type ChatCaptureConfig } from './adaptive-chat.directive';
 
 // Re-export types

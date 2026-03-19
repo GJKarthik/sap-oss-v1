@@ -126,7 +126,7 @@ export class AdaptationService implements OnDestroy {
   /** Get spacing value in pixels */
   getSpacing(multiplier = 1): Observable<number> {
     return this.getLayout().pipe(
-      map((layout: LayoutAdaptation) => layout.spacingScale * 8 * multiplier)
+      map((layout: LayoutAdaptation) => (layout.spacingScale ?? 1) * 8 * multiplier)
     );
   }
   

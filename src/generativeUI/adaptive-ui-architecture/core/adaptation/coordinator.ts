@@ -158,7 +158,7 @@ export class AdaptationCoordinator {
     const prefix = this.config.cssVariablePrefix;
 
     // Layout variables
-    const spacing = decision.layout.spacingScale * 8;
+    const spacing = (decision.layout.spacingScale ?? 1) * 8;
     root.style.setProperty(`${prefix}-spacing-unit`, `${spacing}px`);
     root.style.setProperty(`${prefix}-spacing-xs`, `${spacing * 0.5}px`);
     root.style.setProperty(`${prefix}-spacing-sm`, `${spacing}px`);
@@ -167,28 +167,28 @@ export class AdaptationCoordinator {
     root.style.setProperty(`${prefix}-spacing-xl`, `${spacing * 4}px`);
 
     // Grid columns
-    root.style.setProperty(`${prefix}-grid-columns`, `${decision.layout.gridColumns}`);
+    root.style.setProperty(`${prefix}-grid-columns`, `${decision.layout.gridColumns ?? 12}`);
 
     // Density-based sizing
     const densityScale = {
       compact: 0.85,
       comfortable: 1,
       spacious: 1.2,
-    }[decision.layout.density];
+    }[decision.layout.density] ?? 1;
     root.style.setProperty(`${prefix}-density-scale`, `${densityScale}`);
 
     // Touch targets
-    const touchScale = decision.interaction.touchTargetScale;
+    const touchScale = decision.interaction.touchTargetScale ?? 1;
     root.style.setProperty(`${prefix}-touch-target-min`, `${44 * touchScale}px`);
 
     // Animation duration
-    const animScale = decision.interaction.animationScale;
+    const animScale = decision.interaction.animationScale ?? 1;
     root.style.setProperty(`${prefix}-animation-duration`, `${150 * animScale}ms`);
     root.style.setProperty(`${prefix}-transition-duration`, `${200 * animScale}ms`);
 
     // Tooltip/hover delays
-    root.style.setProperty(`${prefix}-hover-delay`, `${decision.interaction.hoverDelayMs}ms`);
-    root.style.setProperty(`${prefix}-tooltip-delay`, `${decision.interaction.tooltipDelayMs}ms`);
+    root.style.setProperty(`${prefix}-hover-delay`, `${decision.interaction.hoverDelayMs ?? 200}ms`);
+    root.style.setProperty(`${prefix}-tooltip-delay`, `${decision.interaction.tooltipDelayMs ?? 500}ms`);
 
     // Sidebar state
     root.style.setProperty(

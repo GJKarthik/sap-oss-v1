@@ -28,7 +28,7 @@ import {
     AdaptiveChatCaptureDirective,
     contextProvider,
     type LayoutAdaptation,
-} from '../../../../../adaptive-ui-architecture/angular';
+} from '@adaptive-ui/angular';
 
 /**
  * ChatComponent — Accessible chat interface for Data Cleaning Copilot
