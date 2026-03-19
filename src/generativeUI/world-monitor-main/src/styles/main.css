@@ -14417,3 +14417,93 @@ body.has-critical-banner .panels-grid {
     outline: 2px solid Highlight;
   }
 }
+
+/* ============================================================
+   AuditPanel Fiori POC - UI5 Web Components Integration
+   Demonstrates migration from custom DOM to SAP Fiori components
+   ============================================================ */
+
+.audit-panel-fiori {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-panel-fiori ui5-card {
+  height: 100%;
+  --sapContent_HeaderBackground: var(--surface);
+  --sapTile_Background: var(--surface);
+}
+
+.audit-summary-fiori {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.audit-summary-fiori ui5-badge {
+  font-size: 11px;
+}
+
+.audit-filters-fiori {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.audit-filters-fiori ui5-segmented-button {
+  --sapButton_BorderWidth: 1px;
+}
+
+.audit-table-fiori {
+  flex: 1;
+  overflow: auto;
+}
+
+/* UI5 Table customization for World Monitor theme */
+.audit-table-fiori ui5-table-header-cell {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.audit-table-fiori ui5-table-cell {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.audit-table-fiori ui5-table-row:hover {
+  background: var(--surface-hover);
+}
+
+/* Focus visible for keyboard navigation */
+.audit-table-fiori ui5-table-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Ensure badges inside cells maintain contrast */
+.audit-table-fiori ui5-badge {
+  font-size: 10px;
+}
+
+/* UI5 Busy Indicator styling */
+.audit-panel-fiori ui5-busy-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+/* UI5 Message Strip styling */
+.audit-panel-fiori ui5-message-strip {
+  margin: 16px;
+}
+
+/* Reduced motion support for UI5 components */
+@media (prefers-reduced-motion: reduce) {
+  .audit-panel-fiori ui5-busy-indicator {
+    --sapContent_BusyIndicatorAnimation: none;
+  }
+}
