@@ -22,6 +22,7 @@ import { ShellComponent } from './components/shell/shell.component';
 
 // Pages
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { DeploymentsComponent } from './pages/deployments/deployments.component';
 import { StreamingComponent } from './pages/streaming/streaming.component';
 import { PlaygroundComponent } from './pages/playground/playground.component';
 import { RagStudioComponent } from './pages/rag-studio/rag-studio.component';
@@ -42,6 +43,7 @@ import { AuthGuard } from './guards/auth.guard';
     AppComponent,
     ShellComponent,
     DashboardComponent,
+    DeploymentsComponent,
     StreamingComponent,
     PlaygroundComponent,
     RagStudioComponent,

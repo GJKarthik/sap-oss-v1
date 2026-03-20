@@ -7,6 +7,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { ShellComponent } from './components/shell/shell.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { DeploymentsComponent } from './pages/deployments/deployments.component';
 import { StreamingComponent } from './pages/streaming/streaming.component';
 import { PlaygroundComponent } from './pages/playground/playground.component';
 import { RagStudioComponent } from './pages/rag-studio/rag-studio.component';
@@ -29,11 +30,12 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'streaming', component: StreamingComponent },
-      { path: 'playground', component: PlaygroundComponent },
+      { path: 'deployments', component: DeploymentsComponent },
       { path: 'rag', component: RagStudioComponent },
-      { path: 'data', component: DataExplorerComponent },
-      { path: 'lineage', component: LineageComponent },
       { path: 'governance', component: GovernanceComponent },
+      { path: 'data', component: DataExplorerComponent },
+      { path: 'playground', component: PlaygroundComponent },
+      { path: 'lineage', component: LineageComponent },
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

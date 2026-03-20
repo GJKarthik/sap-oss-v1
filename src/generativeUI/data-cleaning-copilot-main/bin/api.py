@@ -51,6 +51,10 @@ _workflow_audit_counter = 0
 _workflow_audit_limit = 250
 _latest_workflow_run: Optional[Dict[str, Any]] = None
 _latest_pending_review: Optional[Dict[str, Any]] = None
+_workflow_event_logs: Dict[str, List[Dict[str, Any]]] = {}
+_workflow_event_counter = 0
+_workflow_event_limit = 200
+_latest_workflow_run_id: Optional[str] = None
 
 
 def _aicore_config_ready() -> bool:
@@ -216,6 +220,31 @@ def _set_workflow_state(*, workflow_run: Optional[Dict[str, Any]] = None, pendin
 
     _latest_workflow_run = workflow_run
     _latest_pending_review = pending_review
+
+
+def _append_workflow_event(*, run_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    global _workflow_event_counter, _latest_workflow_run_id
+
+    _workflow_event_counter += 1
+    _latest_workflow_run_id = run_id
+    entry = {
+        "id": f"workflow-event-{_workflow_event_counter}",
+        "sequence": _workflow_event_counter,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "runId": run_id,
+        "type": payload.get("type", "unknown"),
+        "payload": payload,
+    }
+    log = _workflow_event_logs.setdefault(run_id, [])
+    log.append(entry)
+    if len(log) > _workflow_event_limit:
+        del log[0 : len(log) - _workflow_event_limit]
+    return entry
+
+
+def _emit_workflow_event(run_id: str, payload: Dict[str, Any]) -> str:
+    _append_workflow_event(run_id=run_id, payload=payload)
+    return _sse_event(payload)
 
 
 def _sse_event(payload: Dict[str, Any]) -> str:
@@ -464,7 +493,8 @@ async def run_workflow(req: WorkflowRunRequest):
             pending_review=approved_review["review"] if approved_review else None,
         )
 
-        yield _sse_event(
+        yield _emit_workflow_event(
+            run_id,
             {
                 "type": "run.started",
                 "runId": run_id,
@@ -499,7 +529,8 @@ async def run_workflow(req: WorkflowRunRequest):
                 ),
                 pending_review=None,
             )
-            yield _sse_event(
+            yield _emit_workflow_event(
+                run_id,
                 {
                     "type": "run.error",
                     "runId": run_id,
@@ -540,7 +571,8 @@ async def run_workflow(req: WorkflowRunRequest):
                     ),
                     pending_review=review,
                 )
-                yield _sse_event(
+                yield _emit_workflow_event(
+                    run_id,
                     {
                         "type": "approval.required",
                         "runId": run_id,
@@ -571,7 +603,8 @@ async def run_workflow(req: WorkflowRunRequest):
                 ),
                 pending_review=None,
             )
-            yield _sse_event(
+            yield _emit_workflow_event(
+                run_id,
                 {
                     "type": "run.status",
                     "runId": run_id,
@@ -598,7 +631,8 @@ async def run_workflow(req: WorkflowRunRequest):
             ),
             pending_review=None,
         )
-        yield _sse_event(
+        yield _emit_workflow_event(
+            run_id,
             {
                 "type": "run.status",
                 "runId": run_id,
@@ -619,14 +653,16 @@ async def run_workflow(req: WorkflowRunRequest):
                 previous_check_names=previous_check_names,
             )
 
-            yield _sse_event(
+            yield _emit_workflow_event(
+                run_id,
                 {
                     "type": "assistant.message",
                     "runId": run_id,
                     "content": response,
                 }
             )
-            yield _sse_event(
+            yield _emit_workflow_event(
+                run_id,
                 {
                     "type": "workflow.snapshot",
                     "runId": run_id,
@@ -636,7 +672,8 @@ async def run_workflow(req: WorkflowRunRequest):
             _set_workflow_state(workflow_run=snapshot, pending_review=None)
 
             result_type = "run.error" if snapshot["summary"]["status"] == "error" else "run.finished"
-            yield _sse_event(
+            yield _emit_workflow_event(
+                run_id,
                 {
                     "type": result_type,
                     "runId": run_id,
@@ -675,7 +712,8 @@ async def run_workflow(req: WorkflowRunRequest):
                 ),
                 pending_review=None,
             )
-            yield _sse_event(
+            yield _emit_workflow_event(
+                run_id,
                 {
                     "type": "run.error",
                     "runId": run_id,
@@ -707,6 +745,14 @@ async def get_workflow_state():
         "workflowRun": _latest_workflow_run,
         "pendingReview": _latest_pending_review,
     }
+
+
+@app.get("/api/workflow/events")
+async def get_workflow_events(run_id: Optional[str] = Query(None), limit: int = Query(100, ge=1, le=200)):
+    target_run_id = run_id or _latest_workflow_run_id
+    if not target_run_id:
+        return []
+    return _workflow_event_logs.get(target_run_id, [])[-limit:]
 
 
 @app.post("/api/workflow/reviews/{review_id}/reject")
@@ -744,11 +790,15 @@ async def reject_workflow_review(review_id: str):
 
 @app.delete("/api/session", response_model=ClearResponse)
 async def clear_session():
+    global _latest_workflow_run_id
+
     if _interactive_session is None or _session_manager is None:
         raise HTTPException(status_code=503, detail="Session not initialised.")
     _session_manager.clear_session_history(_session_id)
     _pending_workflow_reviews.clear()
     _workflow_audit_log.clear()
+    _workflow_event_logs.clear()
+    _latest_workflow_run_id = None
     _set_workflow_state(workflow_run=None, pending_review=None)
     return ClearResponse(status="cleared")
 

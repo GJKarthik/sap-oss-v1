@@ -7,6 +7,7 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { McpService } from '../../services/mcp.service';
 
 interface NavItem {
@@ -26,8 +27,7 @@ interface NavItem {
       secondary-title="Enterprise AI Platform"
       show-notifications
       show-product-switch
-      (profile-click)="onProfileClick($event)"
-      (logo-click)="navigateTo('/')">
+      (logo-click)="navigateTo('/dashboard')">
       
       <!-- Logo -->
       <img slot="logo" src="assets/sap-logo.svg" alt="SAP Logo" />
@@ -38,7 +38,7 @@ interface NavItem {
       </ui5-input>
       
       <!-- Profile Menu -->
-      <ui5-avatar slot="profile" initials="AI" color-scheme="Accent6"></ui5-avatar>
+      <ui5-avatar slot="profile" [attr.initials]="getUserInitials()" color-scheme="Accent6"></ui5-avatar>
     </ui5-shellbar>
 
     <!-- Side Navigation -->
@@ -52,7 +52,7 @@ interface NavItem {
           (click)="navigateTo(item.route)">
         </ui5-side-navigation-item>
         
-        <ui5-side-navigation-item slot="fixedItems" text="Settings" icon="action-settings" (click)="navigateTo('/settings')">
+        <ui5-side-navigation-item slot="fixedItems" text="Logout" icon="log" (click)="logout()">
         </ui5-side-navigation-item>
       </ui5-side-navigation>
 
@@ -136,19 +136,22 @@ interface NavItem {
 export class ShellComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private readonly mcpService = inject(McpService);
 
   sideNavCollapsed = false;
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown' = 'unknown';
+  currentUser = this.authService.getUser();
   
   navItems: NavItem[] = [
-    { id: 'dashboard', text: 'Dashboard', icon: 'home', route: '/' },
+    { id: 'dashboard', text: 'Dashboard', icon: 'home', route: '/dashboard' },
     { id: 'streaming', text: 'Streaming', icon: 'play', route: '/streaming' },
-    { id: 'playground', text: 'Playground', icon: 'lab', route: '/playground' },
+    { id: 'deployments', text: 'Deployments', icon: 'machine', route: '/deployments' },
     { id: 'rag', text: 'RAG Studio', icon: 'documents', route: '/rag' },
-    { id: 'data', text: 'Data Explorer', icon: 'database', route: '/data' },
-    { id: 'lineage', text: 'Lineage', icon: 'org-chart', route: '/lineage' },
     { id: 'governance', text: 'Governance', icon: 'shield', route: '/governance' },
+    { id: 'data', text: 'Data Explorer', icon: 'database', route: '/data' },
+    { id: 'playground', text: 'Playground', icon: 'lab', route: '/playground' },
+    { id: 'lineage', text: 'Lineage', icon: 'org-chart', route: '/lineage' },
   ];
 
   ngOnInit(): void {
@@ -164,12 +167,21 @@ export class ShellComponent implements OnInit {
   }
 
   isActive(route: string): boolean {
-    return this.router.url === route || 
-           (route === '/' && this.router.url === '/dashboard');
+    return this.router.url === route;
   }
 
-  onProfileClick(event: Event): void {
-    console.log('Profile clicked', event);
+  getUserInitials(): string {
+    const username = this.currentUser?.username?.trim();
+    if (!username) {
+      return 'AI';
+    }
+
+    return username.slice(0, 2).toUpperCase();
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   getStatusText(): string {

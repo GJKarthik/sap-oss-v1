@@ -115,6 +115,11 @@ class TestWorkflowGovernanceApi(unittest.TestCase):
         self.assertEqual(workflow_state["workflowRun"]["summary"]["runId"], events[0]["runId"])
         self.assertEqual(workflow_state["workflowRun"]["summary"]["status"], "awaiting_approval")
 
+        replay_response = self.client.get("/api/workflow/events", params={"run_id": events[0]["runId"]})
+        self.assertEqual(replay_response.status_code, 200)
+        replay_events = replay_response.json()
+        self.assertEqual([entry["type"] for entry in replay_events], ["run.started", "approval.required"])
+
     def test_approved_review_resumes_same_run_and_executes_stored_plan(self):
         session, _ = self._set_interactive_session(
             [FakeCall("corrupt", corruptor_name="swap_values", percentage=0.15)],
@@ -150,6 +155,14 @@ class TestWorkflowGovernanceApi(unittest.TestCase):
         self.assertIsNone(workflow_state["pendingReview"])
         self.assertEqual(workflow_state["workflowRun"]["summary"]["runId"], run_id)
         self.assertEqual(workflow_state["workflowRun"]["summary"]["status"], "completed")
+
+        replay_response = self.client.get("/api/workflow/events", params={"run_id": run_id})
+        self.assertEqual(replay_response.status_code, 200)
+        replay_events = replay_response.json()
+        self.assertEqual(
+            [entry["type"] for entry in replay_events],
+            ["run.started", "approval.required", "run.started", "run.status", "run.status", "assistant.message", "workflow.snapshot", "run.finished"],
+        )
 
     def test_reject_workflow_review_records_audit_and_removes_pending_review(self):
         self._set_interactive_session(

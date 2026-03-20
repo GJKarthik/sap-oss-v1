@@ -12,6 +12,7 @@ import type {
   ChatMessage,
   SessionConfig,
   WorkflowAuditEntry,
+  WorkflowReplayEvent,
   WorkflowReview,
   WorkflowSnapshot,
 } from '../copilot.service';
@@ -60,6 +61,25 @@ import '@ui5/webcomponents/dist/Tag.js';
                     <div>{{ workflowRun.summary.assistantResponse }}</div>
                   </div>
                 </div>
+
+                @if (workflowReplayLog.length > 0) {
+                  <div class="check-card">
+                    <div class="check-card-header">
+                      <h4>Replay Timeline</h4>
+                    </div>
+                    <div class="check-card-body">
+                      @for (entry of workflowReplayLog; track entry.id) {
+                        <div class="history-item">
+                          <div class="history-role">{{ formatReplayLabel(entry.type) }}</div>
+                          <div>
+                            <div><b>{{ entry.timestamp }}</b></div>
+                            <div>{{ formatReplayDetail(entry) }}</div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
 
                 @if (workflowRun.summary.generatedChecks.length > 0) {
                   <div class="check-card">
@@ -280,6 +300,7 @@ export class ChecksPanelComponent {
   @Input() checkHistory: ChatMessage[] = [];
   @Input() sessionConfig: SessionConfig | null = null;
   @Input() workflowRun: WorkflowSnapshot | null = null;
+  @Input() workflowReplayLog: WorkflowReplayEvent[] = [];
   @Input() pendingReview: WorkflowReview | null = null;
   @Input() workflowAudit: WorkflowAuditEntry[] = [];
   @Input() reviewBusy = false;
@@ -331,6 +352,31 @@ export class ChecksPanelComponent {
 
   formatAuditLabel(eventType: string): string {
     return eventType.replace(/\./g, ' ');
+  }
+
+  formatReplayLabel(eventType: string): string {
+    return eventType.replace(/\./g, ' ');
+  }
+
+  formatReplayDetail(entry: WorkflowReplayEvent): string {
+    const payload = entry.payload;
+    if (entry.type === 'run.status' && 'phase' in payload) {
+      return `Processing ${String(payload.phase).replace(/_/g, ' ')}.`;
+    }
+    if (entry.type === 'approval.required' && 'review' in payload) {
+      const review = payload.review as WorkflowReview;
+      return review.summary;
+    }
+    if (entry.type === 'assistant.message' && 'content' in payload) {
+      return String(payload.content);
+    }
+    if (entry.type === 'run.error' && 'error' in payload) {
+      return String(payload.error);
+    }
+    if ('status' in payload) {
+      return `Status: ${String(payload.status)}`;
+    }
+    return 'Workflow event recorded.';
   }
 
   formatJson(obj: Record<string, unknown>): string {

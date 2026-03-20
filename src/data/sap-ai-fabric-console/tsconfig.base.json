@@ -16,13 +16,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "@sap-ai-fabric/mcp-client": ["packages/mcp-client/src/index.ts"],
-      "@sap-ai-fabric/mcp-client/*": ["packages/mcp-client/src/*"],
-      "@sap-ai-fabric/ui-components": ["packages/ui-components/src/index.ts"],
-      "@sap-ai-fabric/ui-components/*": ["packages/ui-components/src/*"]
-    }
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "tmp"]
 }

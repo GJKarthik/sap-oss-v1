@@ -9,7 +9,6 @@
   "scripts": {
     "nx": "nx",
     "start": "nx serve angular-shell",
-    "start:react": "nx serve shell",
     "build": "nx run-many -t build",
     "lint": "nx run-many -t lint",
     "test": "nx run-many -t test",

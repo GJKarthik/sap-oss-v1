@@ -6,6 +6,7 @@ import {
   ElementRef,
   afterNextRender,
   inject,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';
@@ -17,8 +18,10 @@ import {
   CheckInfo,
   SessionConfig,
   WorkflowAuditEntry,
+  WorkflowReplayEvent,
   WorkflowReview,
   WorkflowSnapshot,
+  WorkflowStreamEvent,
 } from './copilot.service';
 
 // Register UI5 Fiori Shell Bar
@@ -65,6 +68,7 @@ import '@ui5/webcomponents-icons/dist/refresh.js';
           [checkHistory]="checkHistory()"
           [sessionConfig]="sessionConfig()"
           [workflowRun]="workflowRun()"
+          [workflowReplayLog]="workflowReplayLog()"
           [pendingReview]="pendingReview()"
           [workflowAudit]="workflowAudit()"
           [reviewBusy]="reviewBusy()"
@@ -82,8 +86,10 @@ import '@ui5/webcomponents-icons/dist/refresh.js';
     <ui5-toast #toast placement="BottomCenter">{{ toastMessage() }}</ui5-toast>
   `,
 })
-export class App {
+export class App implements OnDestroy {
   private readonly svc = inject(CopilotService);
+  private recoveryPollHandle: ReturnType<typeof window.setTimeout> | null = null;
+  private readonly recoveryPollIntervalMs = 1500;
 
   // State signals
   readonly messages = signal<ChatMessage[]>([]);
@@ -91,6 +97,7 @@ export class App {
   readonly checkHistory = signal<ChatMessage[]>([]);
   readonly sessionConfig = signal<SessionConfig | null>(null);
   readonly workflowRun = signal<WorkflowSnapshot | null>(null);
+  readonly workflowReplayLog = signal<WorkflowReplayEvent[]>([]);
   readonly pendingReview = signal<WorkflowReview | null>(null);
   readonly workflowAudit = signal<WorkflowAuditEntry[]>([]);
   readonly reviewBusy = signal(false);
@@ -111,6 +118,10 @@ export class App {
       this.loadWorkflowAudit();
       this.loadWorkflowState();
     });
+  }
+
+  ngOnDestroy() {
+    this.stopRecoveryPolling();
   }
 
   // ---- Handlers ----
@@ -170,9 +181,11 @@ export class App {
         this.checkHistory.set([]);
         this.checks.set({});
         this.workflowRun.set(null);
+        this.workflowReplayLog.set([]);
         this.pendingReview.set(null);
         this.workflowAudit.set([]);
         this.notifCount.set('');
+        this.stopRecoveryPolling();
         this.showToast('Chat cleared');
       },
       error: () => {
@@ -180,9 +193,11 @@ export class App {
         this.checkHistory.set([]);
         this.checks.set({});
         this.workflowRun.set(null);
+        this.workflowReplayLog.set([]);
         this.pendingReview.set(null);
         this.workflowAudit.set([]);
         this.notifCount.set('');
+        this.stopRecoveryPolling();
       },
     });
   }
@@ -227,20 +242,22 @@ export class App {
     });
   }
 
+  loadWorkflowReplay(runId?: string) {
+    if (!runId) {
+      this.workflowReplayLog.set([]);
+      return;
+    }
+
+    this.svc.getWorkflowEvents(runId).subscribe({
+      next: data => this.workflowReplayLog.set(data),
+      error: () => { },
+    });
+  }
+
   loadWorkflowState() {
     this.svc.getWorkflowState().subscribe({
       next: (state) => {
-        this.pendingReview.set(state.pendingReview);
-        this.workflowRun.set(state.workflowRun);
-        if (!state.workflowRun) {
-          return;
-        }
-
-        this.messages.set(state.workflowRun.sessionHistory);
-        this.checks.set(state.workflowRun.checks);
-        this.checkHistory.set(state.workflowRun.checkHistory);
-        this.sessionConfig.set(state.workflowRun.sessionConfig);
-        this.notifCount.set(this.formatCheckCount(state.workflowRun.checks));
+        this.applyWorkflowState(state.workflowRun, state.pendingReview);
       },
       error: () => { },
     });
@@ -303,6 +320,8 @@ export class App {
       this.pendingReview.set(null);
     }
     this.reviewBusy.set(Boolean(options?.reviewId));
+    this.workflowReplayLog.set([]);
+    this.stopRecoveryPolling();
     chat?.setLoading(true);
     this.seedWorkflowRun(text);
 
@@ -318,6 +337,7 @@ export class App {
       )
       .subscribe({
         next: (event) => {
+          this.appendWorkflowReplay(event);
           switch (event.type) {
             case 'run.started':
               this.updateWorkflowRun((current) => ({
@@ -354,6 +374,7 @@ export class App {
                   assistantResponse: `Approval required: ${event.review.summary}`,
                 },
               }));
+              this.syncRecoveryPolling(event.runId, 'awaiting_approval');
               this.showToast('Approval required before continuing');
               break;
             case 'assistant.message':
@@ -371,6 +392,7 @@ export class App {
             case 'workflow.snapshot':
               this.pendingReview.set(null);
               this.workflowRun.set(event.snapshot);
+              this.messages.set(event.snapshot.sessionHistory);
               this.checks.set(event.snapshot.checks);
               this.checkHistory.set(event.snapshot.checkHistory);
               this.sessionConfig.set(event.snapshot.sessionConfig);
@@ -386,6 +408,7 @@ export class App {
                   finishedAt: event.finishedAt,
                 },
               }));
+              this.syncRecoveryPolling(event.runId, 'completed');
               break;
             case 'run.error': {
               const errorMessage = `⚠️ Error: ${event.error}`;
@@ -401,6 +424,7 @@ export class App {
                   assistantResponse: event.error,
                 },
               }));
+              this.syncRecoveryPolling(event.runId, 'error');
               break;
             }
           }
@@ -422,8 +446,92 @@ export class App {
               assistantResponse: errorMsg,
             },
           }));
+          this.stopRecoveryPolling();
         },
       });
+  }
+
+  private applyWorkflowState(
+    workflowRun: WorkflowSnapshot | null,
+    pendingReview: WorkflowReview | null,
+  ) {
+    this.pendingReview.set(pendingReview);
+    this.workflowRun.set(workflowRun);
+    if (!workflowRun) {
+      this.workflowReplayLog.set([]);
+      this.stopRecoveryPolling();
+      return;
+    }
+
+    this.messages.set(workflowRun.sessionHistory);
+    this.checks.set(workflowRun.checks);
+    this.checkHistory.set(workflowRun.checkHistory);
+    this.sessionConfig.set(workflowRun.sessionConfig);
+    this.notifCount.set(this.formatCheckCount(workflowRun.checks));
+    this.loadWorkflowReplay(workflowRun.summary.runId);
+    this.syncRecoveryPolling(workflowRun.summary.runId, workflowRun.summary.status);
+  }
+
+  private appendWorkflowReplay(event: WorkflowStreamEvent) {
+    const currentRunId = event.runId || this.workflowRun()?.summary.runId || 'unknown-run';
+    this.workflowReplayLog.update((entries) => [
+      ...entries,
+      {
+        id: `live-${entries.length + 1}-${event.type}`,
+        sequence: entries.length + 1,
+        timestamp: new Date().toISOString(),
+        runId: currentRunId,
+        type: event.type,
+        payload: event,
+      },
+    ]);
+  }
+
+  private syncRecoveryPolling(runId: string, status: WorkflowSnapshot['summary']['status']) {
+    if (status === 'processing') {
+      this.ensureRecoveryPolling(runId);
+      return;
+    }
+
+    this.stopRecoveryPolling();
+  }
+
+  private ensureRecoveryPolling(runId: string) {
+    if (this.recoveryPollHandle !== null) {
+      return;
+    }
+
+    const tick = () => {
+      this.svc.getWorkflowState().subscribe({
+        next: (state) => {
+          if (!state.workflowRun || state.workflowRun.summary.runId !== runId) {
+            this.stopRecoveryPolling();
+            return;
+          }
+
+          this.applyWorkflowState(state.workflowRun, state.pendingReview);
+          this.loadWorkflowAudit();
+          if (state.workflowRun.summary.status !== 'processing') {
+            this.stopRecoveryPolling();
+            return;
+          }
+
+          this.recoveryPollHandle = window.setTimeout(tick, this.recoveryPollIntervalMs);
+        },
+        error: () => {
+          this.recoveryPollHandle = window.setTimeout(tick, this.recoveryPollIntervalMs);
+        },
+      });
+    };
+
+    this.recoveryPollHandle = window.setTimeout(tick, this.recoveryPollIntervalMs);
+  }
+
+  private stopRecoveryPolling() {
+    if (this.recoveryPollHandle !== null) {
+      window.clearTimeout(this.recoveryPollHandle);
+      this.recoveryPollHandle = null;
+    }
   }
 
   private updateWorkflowRun(

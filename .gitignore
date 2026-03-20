@@ -21,7 +21,7 @@ node_modules/
 dist/
 build/
 *.tgz
-.angular/cache/
+**/.angular/cache/
 
 # Python
 __pycache__/

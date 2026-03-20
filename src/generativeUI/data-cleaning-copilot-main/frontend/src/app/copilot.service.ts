@@ -80,6 +80,15 @@ export interface WorkflowState {
     pendingReview: WorkflowReview | null;
 }
 
+export interface WorkflowReplayEvent {
+    id: string;
+    sequence: number;
+    timestamp: string;
+    runId: string;
+    type: WorkflowStreamEvent['type'];
+    payload: WorkflowStreamEvent | Record<string, unknown>;
+}
+
 export type WorkflowStreamEvent =
     | { type: 'run.started'; runId: string; startedAt: string; userMessage: string }
     | { type: 'run.status'; runId: string; status: 'processing'; phase: string }
@@ -189,6 +198,14 @@ export class CopilotService {
 
     getWorkflowState(): Observable<WorkflowState> {
         return this.http.get<WorkflowState>(`${this.base}/workflow/state`);
+    }
+
+    getWorkflowEvents(runId?: string, limit = 100): Observable<WorkflowReplayEvent[]> {
+        const params: Record<string, string | number> = { limit };
+        if (runId) {
+            params['run_id'] = runId;
+        }
+        return this.http.get<WorkflowReplayEvent[]>(`${this.base}/workflow/events`, { params });
     }
 
     rejectWorkflowReview(reviewId: string): Observable<{ status: string; reviewId: string }> {
