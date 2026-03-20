@@ -1,0 +1,8 @@
+{
+  "name": "api-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "packages/api-server/src",
+  "tags": ["type:service", "runtime:python", "scope:backend"],
+  "targets": {}
+}

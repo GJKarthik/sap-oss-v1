@@ -5,11 +5,12 @@ import { SAC_AUTH_TOKEN } from '../tokens';
 @Injectable()
 export class SacAuthService {
   private readonly authenticated$ = new BehaviorSubject<boolean>(false);
+  private readonly initialToken = inject(SAC_AUTH_TOKEN, { optional: true }) ?? '';
   private token: string | null = null;
 
-  constructor(initialToken: string = inject(SAC_AUTH_TOKEN, { optional: true }) ?? '') {
-    if (initialToken) {
-      this.setToken(initialToken);
+  constructor() {
+    if (this.initialToken) {
+      this.setToken(this.initialToken);
     }
   }
 

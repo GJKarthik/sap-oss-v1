@@ -13,10 +13,11 @@ const DEFAULT_TIMEOUT = 30000;
 
 @Injectable({ providedIn: 'root' })
 export class SacConfigService {
+  private readonly injectedConfig = inject(SAC_CONFIG, { optional: true });
   private readonly config: SacConfig;
 
-  constructor(config: SacConfig | undefined = inject(SAC_CONFIG, { optional: true }) ?? undefined) {
-    this.config = config ?? {
+  constructor() {
+    this.config = this.injectedConfig ?? {
       apiUrl: '',
       authToken: '',
       tenant: '',

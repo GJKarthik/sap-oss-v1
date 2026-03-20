@@ -5,7 +5,7 @@
  * Derived from mangle/sac_planning.mg service_method "DataAction" facts.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { SacApiService } from '@sap-oss/sac-ngx-core';
@@ -48,8 +48,7 @@ export class SacDataActionService {
   private readonly executionStatus$ = new BehaviorSubject<DataActionStatus>(DataActionStatus.Pending);
   private readonly lastResult$ = new BehaviorSubject<DataActionResult | null>(null);
   private currentParameters = new Map<string, unknown>();
-
-  constructor(private readonly api: SacApiService) {}
+  private readonly api = inject(SacApiService);
 
   /** Observable: execution status */
   get status$(): Observable<DataActionStatus> {

@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024 SAP SE
 
+jest.mock('@angular/core', () => {
+  const actual = jest.requireActual('@angular/core');
+  return {
+    ...actual,
+    createComponent: jest.fn(actual.createComponent),
+  };
+});
+
+import * as ngCore from '@angular/core';
+import DOMPurify from 'dompurify';
 import { DynamicRenderer, RenderedComponent, A2UiSchema } from './dynamic-renderer.service';
 import { ComponentRegistry } from '../registry/component-registry';
 import { SchemaValidator } from '../validation/schema-validator';
@@ -19,11 +29,13 @@ function makeRegistry(allowed = true): ComponentRegistry {
   } as unknown as ComponentRegistry;
 }
 
-function makeValidator(valid = true): SchemaValidator {
+function makeValidator(valid = true, sanitizedSchema?: A2UiSchema): SchemaValidator {
   return {
     validate: jest.fn().mockReturnValue({
       valid,
       errors: valid ? [] : [{ type: 'INVALID_SCHEMA', message: 'denied', path: '/', severity: 'error' }],
+      warnings: [],
+      sanitizedSchema,
     }),
   } as unknown as SchemaValidator;
 }
@@ -57,10 +69,11 @@ function makeRendererFactory(el: HTMLElement) {
 function makeDynamicRenderer(
   registry: ComponentRegistry,
   validator: SchemaValidator,
-  el: HTMLElement
+  el: HTMLElement,
+  environmentInjector: ngCore.EnvironmentInjector | null = null,
 ): DynamicRenderer {
   const factory = makeRendererFactory(el);
-  return new DynamicRenderer(registry, validator, factory as never, null);
+  return new DynamicRenderer(registry, validator, factory as never, environmentInjector);
 }
 
 const simpleSchema = (): A2UiSchema => ({
@@ -82,6 +95,7 @@ describe('DynamicRenderer', () => {
 
   afterEach(() => {
     container.remove();
+    (ngCore.createComponent as jest.MockedFunction<typeof ngCore.createComponent>).mockReset();
   });
 
   it('returns null when SchemaValidator rejects the schema', () => {
@@ -120,6 +134,27 @@ describe('DynamicRenderer', () => {
     expect(result?.schema.component).toBe('ui5-button');
   });
 
+  it('renders the validator sanitized schema instead of the raw agent schema', () => {
+    const registry = makeRegistry(true);
+    const sanitizedSchema: A2UiSchema = {
+      component: 'ui5-button',
+      props: { text: 'Safe text' },
+    };
+    const validator = makeValidator(true, sanitizedSchema);
+    const el = mockElement();
+    const renderer = makeDynamicRenderer(registry, validator, el);
+    const rawSchema: A2UiSchema = {
+      component: 'ui5-button',
+      props: { text: '<script>alert(1)</script>' },
+    };
+
+    const result = renderer.render(rawSchema, container);
+
+    expect(result).not.toBeNull();
+    expect(result?.schema).toEqual(sanitizedSchema);
+    expect(result?.schema).not.toEqual(rawSchema);
+  });
+
   it('emits the rendered instance on componentRendered$', () => {
     const registry = makeRegistry(true);
     const validator = makeValidator(true);
@@ -147,6 +182,38 @@ describe('DynamicRenderer', () => {
     r.remove(rendered!.id);
 
     expect(destroyed).toContain(rendered!.id);
+  });
+
+  it('destroys tracked Angular component refs when an instance is removed', () => {
+    const hostElement = document.createElement('ui5-button');
+    const destroy = jest.fn();
+    const registry = {
+      ...makeRegistry(true),
+      get: jest.fn().mockReturnValue({
+        tagName: 'ui5-button',
+        category: 'basic',
+        componentClass: class MockButtonComponent {},
+      }),
+    } as unknown as ComponentRegistry;
+    const validator = makeValidator(true);
+    (ngCore.createComponent as jest.MockedFunction<typeof ngCore.createComponent>).mockReturnValue({
+      location: { nativeElement: hostElement },
+      destroy,
+    } as unknown as ngCore.ComponentRef<unknown>);
+    const renderer = makeDynamicRenderer(
+      registry,
+      validator,
+      hostElement,
+      {} as ngCore.EnvironmentInjector,
+    );
+
+    const rendered = renderer.render(simpleSchema(), container);
+    expect(rendered).not.toBeNull();
+
+    renderer.remove(rendered!.id);
+
+    expect(ngCore.createComponent).toHaveBeenCalled();
+    expect(destroy).toHaveBeenCalledTimes(1);
   });
 
   it('clear() removes all tracked instances', () => {
@@ -206,5 +273,41 @@ describe('DynamicRenderer', () => {
     expect(result).toBeUndefined();
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Blocked forbidden path segment'));
     warnSpy.mockRestore();
+  });
+
+  it('sanitizes string values coming from runtime bindings before writing to DOM', () => {
+    const registry = makeRegistry(true);
+    const validator = makeValidator(true);
+    const sanitizeSpy = jest.spyOn(DOMPurify, 'sanitize').mockReturnValue('clean-html');
+
+    const renderer = makeDynamicRenderer(registry, validator, document.createElement('ui5-button'));
+    const result = renderer.render(
+      {
+        component: 'ui5-button',
+        bindings: {
+          innerHTML: {
+            source: 'ctx',
+            path: 'html',
+          },
+        },
+      },
+      container,
+      {
+        data: {
+          ctx: {
+            html: '<img src=x onerror=alert(1)>',
+          },
+        },
+      },
+    );
+
+    expect(result).not.toBeNull();
+    expect(sanitizeSpy).toHaveBeenCalledWith('<img src=x onerror=alert(1)>', {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    });
+    expect(result?.element.innerHTML).toBe('clean-html');
+
+    sanitizeSpy.mockRestore();
   });
 });

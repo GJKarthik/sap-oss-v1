@@ -14,18 +14,7 @@ pub fn build(b: *std.Build) void {
     var cuda_kernels_build: ?*std.Build.Step.Run = null;
 
     if (enable_gpu) {
-        // Compile arch-specific PTX for deltanet_kernels so the binary embeds
-        // the correct ISA for the target GPU.
         const arch_flag = b.fmt("-arch={s}", .{gpu_arch});
-        const ptx_out   = b.fmt("src/gpu/deltanet_kernels.ptx", .{});
-        const compile_ptx = b.addSystemCommand(&.{
-            "nvcc", "-O3", arch_flag, "-ptx",
-            "-o", ptx_out,
-            "src/gpu/deltanet_kernels.cu",
-        });
-        compile_ptx.setCwd(b.path("."));
-        _ = compile_ptx; // will be used as dependency below
-
         const mkdir_cuda_lib = b.addSystemCommand(&.{ "mkdir", "-p", "deps/llama-zig-cuda/zig-out/lib" });
         cuda_kernels_build = b.addSystemCommand(&.{
             "nvcc",

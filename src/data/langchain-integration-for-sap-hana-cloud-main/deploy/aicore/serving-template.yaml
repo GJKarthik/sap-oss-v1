@@ -1,0 +1,85 @@
+# LangChain HANA - KServe InferenceService
+# OpenAI-Compatible Vector Service
+
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: langchain-hana-vector
+  annotations:
+    scenarios.ai.sap.com/description: "OpenAI-compatible embeddings and vector search with HANA Cloud"
+    scenarios.ai.sap.com/name: "langchain-hana-vector"
+    executables.ai.sap.com/name: "langchain-hana-vector-exec"
+  labels:
+    scenarios.ai.sap.com/id: "langchain-hana-vector"
+    executables.ai.sap.com/id: "langchain-hana-vector-exec"
+    ai.sap.com/version: "1.0.0"
+spec:
+  inputs:
+    parameters:
+      - name: HANA_HOST
+        type: string
+        description: "HANA Cloud host"
+      - name: HANA_PORT
+        type: string
+        default: "443"
+      - name: VECTOR_TABLE
+        type: string
+        default: "EMBEDDINGS"
+  template:
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "5"
+      labels:
+        ai.sap.com/resourcePlan: "infer.s"
+    spec:
+      predictor:
+        imagePullSecrets:
+          - name: docker-registry-secret
+        minReplicas: 1
+        maxReplicas: 5
+        containers:
+          - name: kserve-container
+            image: "{{DOCKER_REGISTRY}}/langchain-hana-vector:{{VERSION}}"
+            ports:
+              - containerPort: 8080
+            env:
+              - name: HANA_HOST
+                value: "{{HANA_HOST}}"
+              - name: HANA_PORT
+                value: "{{HANA_PORT}}"
+              - name: HANA_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: hana-credentials
+                    key: user
+              - name: HANA_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: hana-credentials
+                    key: password
+              - name: VECTOR_TABLE
+                value: "{{VECTOR_TABLE}}"
+              - name: PORT
+                value: "8080"
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 10
+              periodSeconds: 30
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 5
+              periodSeconds: 10

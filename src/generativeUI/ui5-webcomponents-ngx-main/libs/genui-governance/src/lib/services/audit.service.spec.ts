@@ -40,6 +40,7 @@ function makeService(config?: Partial<AuditConfig>) {
 async function flushAsyncWork(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
+  await new Promise(resolve => setTimeout(resolve, 0));
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +109,109 @@ describe('AuditService — convenience loggers', () => {
     expect(args['username']).toBe('alice');
     expect(args['password']).toBe('***MASKED***');
     expect(args['token']).toBe('***MASKED***');
+  });
+});
+
+describe('AuditService — automatic tool lifecycle logging', () => {
+  it('logs a pending tool entry when full args arrive', () => {
+    const { service, client } = makeService();
+
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_start',
+      toolCallId: 'tc-1',
+      toolName: 'delete_item',
+      location: 'backend',
+      id: 'evt-1',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_args_done',
+      toolCallId: 'tc-1',
+      arguments: { id: '42', token: 'secret-token' },
+      id: 'evt-2',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+
+    const entries = service.query({ actionType: 'tool_call', outcome: 'pending' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].action.toolName).toBe('delete_item');
+    expect(entries[0].action.arguments).toEqual({ id: '42', token: '***MASKED***' });
+  });
+
+  it('logs tool success with tracked tool name and args', () => {
+    const { service, client } = makeService();
+
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_start',
+      toolCallId: 'tc-2',
+      toolName: 'approve_request',
+      location: 'backend',
+      id: 'evt-3',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_args_done',
+      toolCallId: 'tc-2',
+      arguments: { requestId: 'r-7' },
+      id: 'evt-4',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_result',
+      toolCallId: 'tc-2',
+      result: { ok: true },
+      success: true,
+      id: 'evt-5',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+
+    const entries = service.query({ actionType: 'tool_call' });
+    const successEntries = entries.filter(entry => entry.outcome === 'success');
+    expect(successEntries).toHaveLength(1);
+    expect(successEntries[0].action.toolName).toBe('approve_request');
+    expect(successEntries[0].action.arguments).toEqual({ requestId: 'r-7' });
+    expect(successEntries[0].durationMs).toBeDefined();
+  });
+
+  it('logs tool errors with tracked tool context', () => {
+    const { service, client } = makeService();
+
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_start',
+      toolCallId: 'tc-3',
+      toolName: 'submit_payment',
+      location: 'backend',
+      id: 'evt-6',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_args_done',
+      toolCallId: 'tc-3',
+      arguments: { paymentId: 'p-9' },
+      id: 'evt-7',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_error',
+      toolCallId: 'tc-3',
+      error: 'Downstream service unavailable',
+      id: 'evt-8',
+      runId: 'run-lifecycle',
+      timestamp: '',
+    });
+
+    const entries = service.query({ actionType: 'tool_call' });
+    const failureEntries = entries.filter(entry => entry.outcome === 'failure');
+    expect(failureEntries).toHaveLength(1);
+    expect(failureEntries[0].action.toolName).toBe('submit_payment');
+    expect(failureEntries[0].error).toBe('Downstream service unavailable');
   });
 });
 

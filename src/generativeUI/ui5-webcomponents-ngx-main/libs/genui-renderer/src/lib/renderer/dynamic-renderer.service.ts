@@ -139,6 +139,7 @@ const FORBIDDEN_PATH_SEGMENTS = new Set([
 export class DynamicRenderer {
   private renderer: Renderer2;
   private instances = new Map<string, RenderedComponent>();
+  private componentRefs = new Map<string, ComponentRef<unknown>>();
   private idCounter = 0;
 
   /** Observable of rendered instances */
@@ -173,6 +174,7 @@ export class DynamicRenderer {
       console.error('[DynamicRenderer] Schema validation failed:', validation.errors);
       return null;
     }
+    const renderSchema = validation.sanitizedSchema ?? schema;
 
     // Get container element
     const containerEl = container instanceof HTMLElement
@@ -180,7 +182,7 @@ export class DynamicRenderer {
       : (container as ViewContainerRef).element.nativeElement;
 
     // Render the component
-    return this.renderComponent(schema, containerEl, context);
+    return this.renderComponent(renderSchema, containerEl, context);
   }
 
   /**
@@ -224,6 +226,7 @@ export class DynamicRenderer {
           hostElement: this.renderer.createElement(schema.component) as HTMLElement,
         });
         element = angularRef.location.nativeElement as HTMLElement;
+        this.componentRefs.set(id, angularRef);
       } catch (e) {
         console.warn(`[DynamicRenderer] createComponent failed for '${schema.component}', falling back to createElement:`, e);
         element = this.renderer.createElement(schema.component) as HTMLElement;
@@ -413,14 +416,21 @@ export class DynamicRenderer {
       this.remove(child.id, false);
     }
 
+    const parentNode = instance.element.parentNode;
+    this.destroyComponentRef(id);
+
     // Remove from DOM
     if (animate) {
       instance.element.classList.add('genui-removing');
       setTimeout(() => {
-        this.renderer.removeChild(instance.element.parentNode, instance.element);
+        if (parentNode && instance.element.parentNode === parentNode) {
+          this.renderer.removeChild(parentNode, instance.element);
+        }
       }, 300);
     } else {
-      this.renderer.removeChild(instance.element.parentNode, instance.element);
+      if (parentNode && instance.element.parentNode === parentNode) {
+        this.renderer.removeChild(parentNode, instance.element);
+      }
     }
 
     // Remove from registry
@@ -435,7 +445,7 @@ export class DynamicRenderer {
    * Clear all rendered components
    */
   clear(): void {
-    for (const id of this.instances.keys()) {
+    for (const id of Array.from(this.instances.keys())) {
       this.remove(id);
     }
   }
@@ -460,19 +470,7 @@ export class DynamicRenderer {
 
       // Resolve value if it's a binding expression
       const resolvedValue = this.resolveValue(value, context);
-
-      // Sanitize string values before writing to DOM (defence-in-depth: validator
-      // already ran XSS checks, but DOMPurify catches anything the regex patterns miss)
-      const safeValue = typeof resolvedValue === 'string'
-        ? DOMPurify.sanitize(resolvedValue, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-        : resolvedValue;
-
-      // Set as property or attribute
-      if (key in element) {
-        (element as unknown as Record<string, unknown>)[key] = safeValue;
-      } else {
-        this.renderer.setAttribute(element, key, String(safeValue));
-      }
+      this.writeElementValue(element, key, resolvedValue);
     }
   }
 
@@ -487,14 +485,45 @@ export class DynamicRenderer {
         const transformedValue = binding.transform
           ? this.applyTransform(value, binding.transform)
           : value;
-
-        if (prop in element) {
-          (element as unknown as Record<string, unknown>)[prop] = transformedValue;
-        } else {
-          this.renderer.setAttribute(element, prop, String(transformedValue));
-        }
+        this.writeElementValue(element, prop, transformedValue);
       }
     }
+  }
+
+  /**
+   * Sanitize values before they are written into the DOM.
+   * This applies to both static props and runtime bindings.
+   */
+  private toSafeDomValue(value: unknown): unknown {
+    return typeof value === 'string'
+      ? DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+      : value;
+  }
+
+  /**
+   * Write a sanitized value to a DOM property or attribute.
+   */
+  private writeElementValue(element: HTMLElement, key: string, value: unknown): void {
+    const safeValue = this.toSafeDomValue(value);
+
+    if (key in element) {
+      (element as unknown as Record<string, unknown>)[key] = safeValue;
+    } else {
+      this.renderer.setAttribute(element, key, String(safeValue));
+    }
+  }
+
+  /**
+   * Destroy an Angular component instance tracked for a rendered node.
+   */
+  private destroyComponentRef(id: string): void {
+    const componentRef = this.componentRefs.get(id);
+    if (!componentRef) {
+      return;
+    }
+
+    this.componentRefs.delete(id);
+    componentRef.destroy();
   }
 
   /**

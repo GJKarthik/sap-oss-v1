@@ -91,7 +91,9 @@
     };
   }
 
-  function buildStateSyncEvents(payload) {
+  function buildStateSyncEvents(payload, requestPath) {
+    const reconnected = requestPath.includes('mock-cap-v2');
+
     return [
       {
         type: 'RUN_STARTED',
@@ -106,12 +108,13 @@
         threadId: payload.threadId,
         name: 'UI_SCHEMA_SNAPSHOT',
         value: {
-          title: 'Regional Revenue',
+          title: reconnected ? 'Regional Revenue (Reconnected)' : 'Regional Revenue',
           widgetType: 'chart',
           chartType: 'bar',
           modelId: payload.modelId,
           dimensions: ['Region'],
           measures: ['Revenue'],
+          subtitle: reconnected ? 'Recovered after backend reconnect' : undefined,
         },
       },
       {
@@ -128,97 +131,125 @@
     return [json.slice(0, pivot), json.slice(pivot)];
   }
 
-  function buildChatEvents(payload) {
+  function resolveChatScenario(payload, requestPath) {
+    const message = String(payload.messages?.[0]?.content ?? '');
+    const normalized = message.toLowerCase();
+    const region = normalized.includes('apj')
+      ? 'APJ'
+      : normalized.includes('amer')
+        ? 'AMER'
+        : 'EMEA';
+    const chartType = normalized.includes('column')
+      ? 'column'
+      : normalized.includes('bar')
+        ? 'bar'
+        : 'line';
+    const loopId = requestPath.includes('mock-cap-v2') ? 'v2' : 'v1';
+
+    return {
+      region,
+      chartType,
+      loopId,
+      message: requestPath.includes('mock-cap-v2')
+        ? 'Updating the widget after reconnect.'
+        : 'Updating the widget.',
+    };
+  }
+
+  function buildChatEvents(payload, requestPath) {
+    const scenario = resolveChatScenario(payload, requestPath);
     const filterArgs = splitArgs(JSON.stringify({
       dimension: 'Region',
-      value: 'EMEA',
+      value: scenario.region,
       filterType: 'SingleValue',
     }));
-    const chartArgs = splitArgs(JSON.stringify({ chartType: 'line' }));
+    const chartArgs = splitArgs(JSON.stringify({ chartType: scenario.chartType }));
+    const filterToolCallId = `${scenario.loopId}-${scenario.region.toLowerCase()}-filter`;
+    const chartToolCallId = `${scenario.loopId}-${scenario.chartType}-chart`;
 
     return [
       {
         type: 'RUN_STARTED',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
       },
       {
         type: 'TEXT_MESSAGE_CONTENT',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
         messageId: 'assistant-1',
-        delta: 'Updating the widget.',
+        delta: scenario.message,
       },
       {
         type: 'TOOL_CALL_START',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-filter',
+        toolCallId: filterToolCallId,
         toolName: 'set_datasource_filter',
       },
       {
         type: 'TOOL_CALL_ARGS',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-filter',
+        toolCallId: filterToolCallId,
         delta: filterArgs[0],
       },
       {
         type: 'TOOL_CALL_ARGS',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-filter',
+        toolCallId: filterToolCallId,
         delta: filterArgs[1],
       },
       {
         type: 'TOOL_CALL_END',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-filter',
+        toolCallId: filterToolCallId,
         toolName: 'set_datasource_filter',
       },
       {
         type: 'TOOL_CALL_START',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-chart',
+        toolCallId: chartToolCallId,
         toolName: 'set_chart_type',
       },
       {
         type: 'TOOL_CALL_ARGS',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-chart',
+        toolCallId: chartToolCallId,
         delta: chartArgs[0],
       },
       {
         type: 'TOOL_CALL_ARGS',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-chart',
+        toolCallId: chartToolCallId,
         delta: chartArgs[1],
       },
       {
         type: 'TOOL_CALL_END',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
-        toolCallId: 'tool-chart',
+        toolCallId: chartToolCallId,
         toolName: 'set_chart_type',
       },
       {
         type: 'RUN_FINISHED',
         timestamp: now(),
-        runId: `chat-${payload.threadId}`,
+        runId: `chat-${scenario.loopId}-${payload.threadId}-${scenario.region.toLowerCase()}-${scenario.chartType}`,
         threadId: payload.threadId,
       },
     ];
@@ -255,8 +286,8 @@
       const message = payload.messages?.[0]?.content;
       return buildSseResponse(
         message === '__state_sync__'
-          ? buildStateSyncEvents(payload)
-          : buildChatEvents(payload),
+          ? buildStateSyncEvents(payload, url.pathname)
+          : buildChatEvents(payload, url.pathname),
       );
     }
 

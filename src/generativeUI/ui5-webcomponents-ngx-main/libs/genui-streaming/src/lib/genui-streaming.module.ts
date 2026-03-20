@@ -4,23 +4,10 @@
  * GenUI Streaming Module
  */
 
-import { NgModule, ModuleWithProviders, InjectionToken } from '@angular/core';
+import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StreamingUiService } from './services/streaming-ui.service';
-
-/** Configuration for GenUI Streaming */
-export interface GenUiStreamingConfig {
-  /** Enable skeleton loading states */
-  enableSkeletons?: boolean;
-  /** Transition duration in ms */
-  transitionDuration?: number;
-  /** Buffer size for event batching */
-  bufferSize?: number;
-  /** Debounce time for rapid updates */
-  debounceMs?: number;
-}
-
-export const GENUI_STREAMING_CONFIG = new InjectionToken<GenUiStreamingConfig>('GENUI_STREAMING_CONFIG');
+import { GENUI_STREAMING_CONFIG, GenUiStreamingConfig } from './genui-streaming.config';
 
 @NgModule({
   imports: [CommonModule],

@@ -10,7 +10,10 @@
 import { Injectable, OnDestroy, Inject, Optional, InjectionToken } from '@angular/core';
 import { Subject, BehaviorSubject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
-import { AgUiClient, AgUiToolRegistry, ToolCallStartEvent } from '@ui5/ag-ui-angular';
+import { AgUiClient } from '../../../../ag-ui-angular/src/lib/services/ag-ui-client.service';
+import { AgUiToolRegistry } from '../../../../ag-ui-angular/src/lib/services/tool-registry.service';
+import { ToolCallArgsDoneEvent, ToolCallStartEvent } from '../../../../ag-ui-angular/src/lib/types/ag-ui-events';
+import { AuditService } from './audit.service';
 
 // =============================================================================
 // Types
@@ -38,6 +41,34 @@ export interface PendingAction {
   runId?: string;
   /** Whether modifications are allowed */
   allowModifications: boolean;
+}
+
+/** Human-readable review model for a pending action */
+export interface PendingActionReview {
+  action: PendingAction;
+  riskLabel: string;
+  riskDescription: string;
+  affectedScope: AffectedScopeSummary;
+  finalArguments: Record<string, unknown>;
+  diff: ActionDiffEntry[];
+}
+
+/** Human-readable summary of affected scope */
+export interface AffectedScopeSummary {
+  entityCount: number;
+  entities: string[];
+  fieldCount: number;
+  fields: string[];
+  changeTypes: string[];
+  summary: string;
+}
+
+/** Diff row for action arguments */
+export interface ActionDiffEntry {
+  path: string;
+  before: unknown;
+  after: unknown;
+  changeType: 'added' | 'removed' | 'changed' | 'unchanged';
 }
 
 /** Data affected by an action */
@@ -121,6 +152,8 @@ export class GovernanceService implements OnDestroy {
 
   // Pending actions
   private pendingActionsMap = new Map<string, PendingAction>();
+  /** Holds backend tool metadata until full args arrive via tool.call_args_done. */
+  private pendingToolMetadata = new Map<string, { toolName: string; runId?: string }>();
   /** Maps governance actionId → transport toolCallId for deferred gating */
   private actionToToolCallId = new Map<string, string>();
   private pendingActionsSubject = new BehaviorSubject<PendingAction[]>([]);
@@ -137,7 +170,8 @@ export class GovernanceService implements OnDestroy {
   constructor(
     private agUiClient: AgUiClient,
     private toolRegistry: AgUiToolRegistry,
-    @Optional() @Inject(GOVERNANCE_CONFIG) config?: GovernanceConfig
+    @Optional() @Inject(GOVERNANCE_CONFIG) config?: GovernanceConfig,
+    @Optional() private auditService?: AuditService
   ) {
     if (config) {
       this.configure(config);
@@ -224,7 +258,7 @@ export class GovernanceService implements OnDestroy {
       arguments: args,
       description: options?.description || `Execute ${toolName}`,
       riskLevel: options?.riskLevel || this.assessRiskLevel(toolName),
-      affectedData: options?.affectedData,
+      affectedData: options?.affectedData || this.inferAffectedData(toolName, args),
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + this.policy.confirmationTimeout),
       runId: options?.runId || this.agUiClient.getCurrentRunId() || undefined,
@@ -274,6 +308,7 @@ export class GovernanceService implements OnDestroy {
       confirmedAt: new Date(),
     };
     this.confirmationSubject.next(result);
+    this.auditService?.logConfirmation(result);
 
     // Resolve the deferred tool execution gate (if any)
     const toolCallId = this.actionToToolCallId.get(actionId);
@@ -308,6 +343,7 @@ export class GovernanceService implements OnDestroy {
       confirmedAt: new Date(),
     };
     this.confirmationSubject.next(result);
+    this.auditService?.logConfirmation(result);
 
     // Reject the deferred tool execution gate (if any)
     const toolCallId = this.actionToToolCallId.get(actionId);
@@ -335,10 +371,41 @@ export class GovernanceService implements OnDestroy {
   }
 
   /**
+   * Build a UI-facing review model for a pending action.
+   */
+  buildPendingActionReview(
+    actionOrId: string | PendingAction,
+    modifications: Record<string, unknown> = {}
+  ): PendingActionReview | undefined {
+    const action = typeof actionOrId === 'string'
+      ? this.pendingActionsMap.get(actionOrId)
+      : actionOrId;
+
+    if (!action) {
+      return undefined;
+    }
+
+    const finalArguments = {
+      ...action.arguments,
+      ...modifications,
+    };
+
+    return {
+      action,
+      riskLabel: this.getRiskLabel(action.riskLevel),
+      riskDescription: this.getRiskDescription(action.riskLevel),
+      affectedScope: this.summarizeAffectedScope(action, finalArguments),
+      finalArguments,
+      diff: this.buildArgumentDiff(action.arguments, finalArguments),
+    };
+  }
+
+  /**
    * Subscribe to tool calls and intercept those requiring confirmation.
    * Blocked tools emit a violation and are not executed.
-   * Tools requiring confirmation are deferred via AgUiToolRegistry until the
-   * user confirms or rejects via confirmAction() / rejectAction().
+   * Tools requiring confirmation are deferred on tool.call_start, but the
+   * user-facing approval item is created only once tool.call_args_done arrives
+   * with the complete argument payload.
    */
   private subscribeToToolCalls(): void {
     this.agUiClient.tool$
@@ -360,20 +427,40 @@ export class GovernanceService implements OnDestroy {
           return;
         }
 
-        // Check if confirmation is required — defer and wait
+        // For tools requiring confirmation, pause execution immediately but do
+        // not create the approval item until the complete args payload arrives.
         if (this.requiresConfirmation(event.toolName)) {
-          const action = this.createPendingAction(event.toolName, {}, {
+          this.pendingToolMetadata.set(event.toolCallId, {
+            toolName: event.toolName,
             runId: event.runId,
           });
-
-          // Map the governance actionId ↔ toolCallId for later resolution
-          this.actionToToolCallId.set(action.id, event.toolCallId);
 
           // Pause tool execution until confirmed/rejected
           this.toolRegistry.deferInvocation(event.toolCallId).catch(() => {
             // Rejection is handled in rejectAction(); swallow the unhandled rejection here
           });
         }
+      });
+
+    this.agUiClient.tool$
+      .pipe(
+        takeUntil(this.destroy$),
+        filter((e): e is ToolCallArgsDoneEvent => (e as ToolCallArgsDoneEvent).type === 'tool.call_args_done')
+      )
+      .subscribe((event: ToolCallArgsDoneEvent) => {
+        const metadata = this.pendingToolMetadata.get(event.toolCallId);
+        if (!metadata) {
+          return;
+        }
+
+        this.pendingToolMetadata.delete(event.toolCallId);
+
+        const action = this.createPendingAction(metadata.toolName, event.arguments, {
+          runId: metadata.runId,
+        });
+
+        // Map the governance actionId ↔ toolCallId for later resolution
+        this.actionToToolCallId.set(action.id, event.toolCallId);
       });
   }
 
@@ -390,6 +477,221 @@ export class GovernanceService implements OnDestroy {
     if (highRisk.some(k => lower.includes(k))) return 'high';
     if (lower.includes('update') || lower.includes('modify')) return 'medium';
     return 'low';
+  }
+
+  private getRiskLabel(riskLevel: PendingAction['riskLevel']): string {
+    switch (riskLevel) {
+      case 'critical':
+        return 'Critical risk';
+      case 'high':
+        return 'High risk';
+      case 'medium':
+        return 'Medium risk';
+      default:
+        return 'Low risk';
+    }
+  }
+
+  private getRiskDescription(riskLevel: PendingAction['riskLevel']): string {
+    switch (riskLevel) {
+      case 'critical':
+        return 'This action can change sensitive system or security state.';
+      case 'high':
+        return 'This action changes or removes important business data.';
+      case 'medium':
+        return 'This action modifies existing data and should be verified.';
+      default:
+        return 'This action has limited scope but should still be reviewed.';
+    }
+  }
+
+  private summarizeAffectedScope(
+    action: PendingAction,
+    finalArguments: Record<string, unknown>
+  ): AffectedScopeSummary {
+    const affectedData = action.affectedData && action.affectedData.length > 0
+      ? action.affectedData
+      : this.inferAffectedData(action.toolName, finalArguments);
+
+    const entities = Array.from(new Set(
+      affectedData.map(item => `${item.entityType}:${item.entityId}`)
+    ));
+    const fields = Array.from(new Set(
+      affectedData.flatMap(item => item.fields ?? [])
+    ));
+    const changeTypes = Array.from(new Set(
+      affectedData.map(item => item.changeType)
+    ));
+    const entityCount = entities.length;
+    const fieldCount = fields.length;
+    const primaryEntityType = affectedData[0]?.entityType ?? 'record';
+
+    return {
+      entityCount,
+      entities,
+      fieldCount,
+      fields,
+      changeTypes,
+      summary: `${entityCount} ${this.pluralize(primaryEntityType, entityCount)} · ${changeTypes.join(', ') || 'review'} · ${fieldCount} field${fieldCount === 1 ? '' : 's'}`,
+    };
+  }
+
+  private buildArgumentDiff(
+    beforeArgs: Record<string, unknown>,
+    afterArgs: Record<string, unknown>
+  ): ActionDiffEntry[] {
+    const before = this.flattenArguments(beforeArgs);
+    const after = this.flattenArguments(afterArgs);
+    const paths = Array.from(new Set([...before.keys(), ...after.keys()])).sort();
+
+    if (paths.length === 0) {
+      return [{
+        path: 'arguments',
+        before: undefined,
+        after: undefined,
+        changeType: 'unchanged',
+      }];
+    }
+
+    return paths.map(path => {
+      const hasBefore = before.has(path);
+      const hasAfter = after.has(path);
+      const beforeValue = before.get(path);
+      const afterValue = after.get(path);
+
+      let changeType: ActionDiffEntry['changeType'] = 'unchanged';
+      if (!hasBefore && hasAfter) {
+        changeType = 'added';
+      } else if (hasBefore && !hasAfter) {
+        changeType = 'removed';
+      } else if (!this.valuesEqual(beforeValue, afterValue)) {
+        changeType = 'changed';
+      }
+
+      return {
+        path,
+        before: beforeValue,
+        after: afterValue,
+        changeType,
+      };
+    });
+  }
+
+  private inferAffectedData(toolName: string, args: Record<string, unknown>): AffectedData[] {
+    const entityType = this.inferEntityType(toolName);
+    const changeType = this.inferChangeType(toolName);
+    const idKeys = Object.keys(args).filter(key => this.isIdentifierKey(key));
+    const fieldKeys = Object.keys(args).filter(key => !this.isIdentifierKey(key));
+
+    const entityIds = idKeys.length > 0
+      ? idKeys.map(key => `${key}:${String(args[key])}`)
+      : ['pending'];
+
+    return entityIds.map(entityId => ({
+      entityType,
+      entityId,
+      fields: fieldKeys,
+      changeType,
+    }));
+  }
+
+  private inferEntityType(toolName: string): string {
+    const verbs = new Set(['create', 'update', 'modify', 'change', 'delete', 'remove', 'approve', 'submit', 'execute']);
+    const parts = toolName.toLowerCase().split(/[_\-.]+/).filter(Boolean);
+    const nounParts = parts.filter(part => !verbs.has(part));
+    return nounParts[0] ?? 'record';
+  }
+
+  private inferChangeType(toolName: string): AffectedData['changeType'] {
+    const lower = toolName.toLowerCase();
+    if (lower.includes('delete') || lower.includes('remove')) return 'delete';
+    if (lower.includes('create')) return 'create';
+    if (lower.includes('execute') || lower.includes('approve') || lower.includes('submit')) return 'execute';
+    return 'update';
+  }
+
+  private flattenArguments(
+    value: Record<string, unknown>,
+    prefix = ''
+  ): Map<string, unknown> {
+    const entries = new Map<string, unknown>();
+
+    for (const [key, nested] of Object.entries(value)) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      if (Array.isArray(nested)) {
+        if (nested.length === 0) {
+          entries.set(path, []);
+          continue;
+        }
+        nested.forEach((item, index) => {
+          if (item && typeof item === 'object') {
+            this.flattenObjectValue(item as Record<string, unknown>, `${path}[${index}]`, entries);
+          } else {
+            entries.set(`${path}[${index}]`, item);
+          }
+        });
+        continue;
+      }
+
+      if (nested && typeof nested === 'object') {
+        this.flattenObjectValue(nested as Record<string, unknown>, path, entries);
+        continue;
+      }
+
+      entries.set(path, nested);
+    }
+
+    return entries;
+  }
+
+  private flattenObjectValue(
+    value: Record<string, unknown>,
+    prefix: string,
+    entries: Map<string, unknown>
+  ): void {
+    const keys = Object.keys(value);
+    if (keys.length === 0) {
+      entries.set(prefix, {});
+      return;
+    }
+
+    keys.forEach(key => {
+      const nested = value[key];
+      const path = `${prefix}.${key}`;
+      if (Array.isArray(nested)) {
+        if (nested.length === 0) {
+          entries.set(path, []);
+          return;
+        }
+        nested.forEach((item, index) => {
+          if (item && typeof item === 'object') {
+            this.flattenObjectValue(item as Record<string, unknown>, `${path}[${index}]`, entries);
+          } else {
+            entries.set(`${path}[${index}]`, item);
+          }
+        });
+        return;
+      }
+
+      if (nested && typeof nested === 'object') {
+        this.flattenObjectValue(nested as Record<string, unknown>, path, entries);
+        return;
+      }
+
+      entries.set(path, nested);
+    });
+  }
+
+  private valuesEqual(left: unknown, right: unknown): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+
+  private isIdentifierKey(key: string): boolean {
+    return /(^id$|Id$|_id$|Ids$|_ids$)/i.test(key);
+  }
+
+  private pluralize(noun: string, count: number): string {
+    return count === 1 ? noun : `${noun}s`;
   }
 
   /**
@@ -416,6 +718,14 @@ export class GovernanceService implements OnDestroy {
         confirmedBy: 'system',
         confirmedAt: new Date(),
       });
+      this.auditService?.log(
+        {
+          type: 'rejection',
+          description: `Action ${action.toolName} expired`,
+        },
+        'expired',
+        { runId: action.runId }
+      );
     }
   }
 
@@ -436,6 +746,7 @@ export class GovernanceService implements OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.pendingToolMetadata.clear();
     this.pendingActionsSubject.complete();
     this.confirmationSubject.complete();
     this.violationSubject.complete();

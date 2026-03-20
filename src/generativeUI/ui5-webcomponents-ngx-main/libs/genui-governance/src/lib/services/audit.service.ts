@@ -10,8 +10,15 @@
 import { Injectable, OnDestroy, Inject, Optional, InjectionToken } from '@angular/core';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AgUiClient, ToolCallResultEvent, UiComponentEvent } from '@ui5/ag-ui-angular';
-import type { AgUiEvent } from '@ui5/ag-ui-angular';
+import { AgUiClient } from '../../../../ag-ui-angular/src/lib/services/ag-ui-client.service';
+import type {
+  AgUiEvent,
+  ToolCallArgsDoneEvent,
+  ToolCallErrorEvent,
+  ToolCallResultEvent,
+  ToolCallStartEvent,
+  UiComponentEvent,
+} from '../../../../ag-ui-angular/src/lib/types/ag-ui-events';
 import { ConfirmationResult } from './governance.service';
 
 // =============================================================================
@@ -156,6 +163,14 @@ interface PersistedAuditEntry {
   payload: AuditEntry;
 }
 
+interface TrackedToolCall {
+  toolName: string;
+  args: Record<string, unknown>;
+  startedAt: number;
+  runId?: string;
+  pendingLogged: boolean;
+}
+
 export const AUDIT_CONFIG = new InjectionToken<AuditConfig>('AUDIT_CONFIG');
 
 const DEFAULT_CONFIG: AuditConfig = {
@@ -183,6 +198,7 @@ export class AuditService implements OnDestroy {
 
   // Batch buffer for external sending
   private batchBuffer: AuditEntry[] = [];
+  private trackedToolCalls = new Map<string, TrackedToolCall>();
 
   constructor(
     private agUiClient: AgUiClient,
@@ -271,7 +287,8 @@ export class AuditService implements OnDestroy {
     args: Record<string, unknown>,
     outcome: AuditEntry['outcome'],
     durationMs?: number,
-    error?: string
+    error?: string,
+    details?: Partial<AuditEntry>
   ): AuditEntry {
     return this.log(
       {
@@ -281,7 +298,7 @@ export class AuditService implements OnDestroy {
         description: `Tool call: ${toolName}`,
       },
       outcome,
-      { durationMs, error }
+      { durationMs, error, ...details }
     );
   }
 
@@ -400,15 +417,93 @@ export class AuditService implements OnDestroy {
     this.agUiClient.tool$
       .pipe(takeUntil(this.destroy$))
       .subscribe((event: AgUiEvent) => {
+        if (event.type === 'tool.call_start') {
+          const toolEvent = event as ToolCallStartEvent;
+          this.trackedToolCalls.set(toolEvent.toolCallId, {
+            toolName: toolEvent.toolName,
+            args: {},
+            startedAt: Date.now(),
+            runId: toolEvent.runId,
+            pendingLogged: false,
+          });
+          return;
+        }
+
+        if (event.type === 'tool.call_args_done') {
+          const toolEvent = event as ToolCallArgsDoneEvent;
+          const tracked = this.trackedToolCalls.get(toolEvent.toolCallId) ?? {
+            toolName: `unknown:${toolEvent.toolCallId}`,
+            args: {},
+            startedAt: Date.now(),
+            runId: toolEvent.runId,
+            pendingLogged: false,
+          };
+          tracked.args = toolEvent.arguments;
+          tracked.runId = tracked.runId ?? toolEvent.runId;
+          this.trackedToolCalls.set(toolEvent.toolCallId, tracked);
+
+          if (this.config.level !== 'minimal' && !tracked.pendingLogged) {
+            this.logToolCall(
+              tracked.toolName,
+              tracked.args,
+              'pending',
+              undefined,
+              undefined,
+              { runId: tracked.runId }
+            );
+            tracked.pendingLogged = true;
+          }
+          return;
+        }
+
         if (event.type === 'tool.call_result') {
           const toolEvent = event as ToolCallResultEvent;
-          this.log(
-            {
-              type: 'tool_call',
-              description: `Tool result: ${toolEvent.toolCallId}`,
-            },
-            toolEvent.success ? 'success' : 'failure'
-          );
+          const tracked = this.trackedToolCalls.get(toolEvent.toolCallId);
+          if (tracked) {
+            this.logToolCall(
+              tracked.toolName,
+              tracked.args,
+              toolEvent.success ? 'success' : 'failure',
+              Date.now() - tracked.startedAt,
+              toolEvent.success ? undefined : `Tool result reported failure for ${toolEvent.toolCallId}`,
+              { runId: tracked.runId ?? toolEvent.runId }
+            );
+            this.trackedToolCalls.delete(toolEvent.toolCallId);
+          } else {
+            this.log(
+              {
+                type: 'tool_call',
+                description: `Tool result: ${toolEvent.toolCallId}`,
+              },
+              toolEvent.success ? 'success' : 'failure'
+            );
+          }
+          return;
+        }
+
+        if (event.type === 'tool.call_error') {
+          const toolEvent = event as ToolCallErrorEvent;
+          const tracked = this.trackedToolCalls.get(toolEvent.toolCallId);
+          if (tracked) {
+            this.logToolCall(
+              tracked.toolName,
+              tracked.args,
+              'failure',
+              Date.now() - tracked.startedAt,
+              toolEvent.error,
+              { runId: tracked.runId ?? toolEvent.runId }
+            );
+            this.trackedToolCalls.delete(toolEvent.toolCallId);
+          } else {
+            this.log(
+              {
+                type: 'tool_call',
+                description: `Tool error: ${toolEvent.toolCallId}`,
+              },
+              'failure',
+              { error: toolEvent.error, runId: toolEvent.runId }
+            );
+          }
         }
       });
 
@@ -599,6 +694,7 @@ export class AuditService implements OnDestroy {
     
     this.destroy$.next();
     this.destroy$.complete();
+    this.trackedToolCalls.clear();
     this.entriesSubject.complete();
   }
 }

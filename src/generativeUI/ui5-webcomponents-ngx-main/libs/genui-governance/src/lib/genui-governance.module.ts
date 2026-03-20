@@ -8,6 +8,7 @@ import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GovernanceService, GOVERNANCE_CONFIG, GovernanceConfig } from './services/governance.service';
 import { AuditService, AUDIT_CONFIG, AuditConfig } from './services/audit.service';
+import { GovernanceReviewPanelComponent } from './components/governance-review-panel.component';
 
 /** Combined configuration */
 export interface GenUiGovernanceConfig {
@@ -16,7 +17,8 @@ export interface GenUiGovernanceConfig {
 }
 
 @NgModule({
-  imports: [CommonModule],
+  imports: [CommonModule, GovernanceReviewPanelComponent],
+  exports: [GovernanceReviewPanelComponent],
 })
 export class GenUiGovernanceModule {
   static forRoot(config?: GenUiGovernanceConfig): ModuleWithProviders<GenUiGovernanceModule> {

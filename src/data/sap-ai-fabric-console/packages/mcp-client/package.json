@@ -1,0 +1,47 @@
+{
+  "name": "@sap-ai-fabric/mcp-client",
+  "version": "1.0.0",
+  "description": "MCP Client for SAP AI Fabric Console - connects to LangChain HANA and Streaming MCP servers",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.28",
+    "react": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "5.9.3"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "sap",
+    "ai",
+    "mcp",
+    "langchain",
+    "hana",
+    "streaming"
+  ]
+}

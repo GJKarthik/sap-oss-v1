@@ -35,7 +35,7 @@ import '@ui5/webcomponents/dist/Icon.js';
     standalone: true,
     imports: [CommonModule],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    template: \`
+    template: `
     <section class="chat-panel" aria-label="Data Cleaning Copilot Chat">
       <!-- Screen reader announcements (visually hidden) -->
       <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -58,7 +58,7 @@ import '@ui5/webcomponents/dist/Icon.js';
           </div>
         }
 
-        @for (msg of messages; track \$index) {
+        @for (msg of messages; track $index) {
           <article
             class="message"
             [class]="msg.role"
@@ -91,8 +91,8 @@ import '@ui5/webcomponents/dist/Icon.js';
           growing
           growing-max-rows="6"
           [value]="inputValue()"
-          (input)="onInput(\$event)"
-          (keydown)="onKeydown(\$event)"
+          (input)="onInput($event)"
+          (keydown)="onKeydown($event)"
           [disabled]="loading()"
           accessible-name="Message input">
         </ui5-textarea>
@@ -114,7 +114,7 @@ import '@ui5/webcomponents/dist/Icon.js';
         </ui5-button>
       </div>
     </section>
-  \`,
+  `,
 })
 export class ChatComponent implements AfterViewChecked {
     @Input() messages: ChatMessage[] = [];

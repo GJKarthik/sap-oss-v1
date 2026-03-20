@@ -1,33 +1,55 @@
+# SAP AI Core Streaming - KServe InferenceService
+# OpenAI-Compatible API Server
+#
+# Endpoints:
+#   - POST /v1/chat/completions  (streaming supported)
+#   - POST /v1/completions       (streaming supported)
+#   - POST /v1/embeddings
+#   - GET  /v1/models
+#   - GET  /health
+#
+# Deploy with: ai-core-sdk deployment create --template serving-template.yaml
+
 apiVersion: ai.sap.com/v1alpha1
 kind: ServingTemplate
 metadata:
-  name: ai-core-streaming
+  name: ai-core-streaming-openai
   annotations:
-    scenarios.ai.sap.com/description: "Pulsar-based streaming broker with HANA persistence and GPU acceleration"
-    scenarios.ai.sap.com/name: "ai-core-streaming"
-    executables.ai.sap.com/description: "GPU-accelerated streaming broker for real-time event processing"
-    executables.ai.sap.com/name: "ai-core-streaming-exec"
+    scenarios.ai.sap.com/description: "OpenAI-compatible API server with smart routing to AI Core models"
+    scenarios.ai.sap.com/name: "ai-core-streaming-openai"
+    executables.ai.sap.com/description: "OpenAI API proxy with governance-based routing"
+    executables.ai.sap.com/name: "ai-core-streaming-openai-exec"
   labels:
-    scenarios.ai.sap.com/id: "ai-core-streaming"
-    executables.ai.sap.com/id: "ai-core-streaming-exec"
+    scenarios.ai.sap.com/id: "ai-core-streaming-openai"
+    executables.ai.sap.com/id: "ai-core-streaming-openai-exec"
     ai.sap.com/version: "1.0.0"
 spec:
   inputs:
     parameters:
-      - name: HANA_SCHEMA
+      - name: AI_CORE_RESOURCE_GROUP
         type: string
-        default: "PULSAR_STORAGE"
-      - name: PULSAR_HOME
+        default: "default"
+        description: "AI Core resource group for model deployments"
+      - name: VLLM_URL
         type: string
-        default: "/opt/pulsar"
+        default: ""
+        description: "Optional vLLM endpoint for confidential workloads"
+      - name: LOG_LEVEL
+        type: string
+        default: "INFO"
+        description: "Logging level (DEBUG, INFO, WARNING, ERROR)"
   template:
     apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
     metadata:
       annotations:
+        # Autoscaling configuration
         autoscaling.knative.dev/metric: "concurrency"
-        autoscaling.knative.dev/target: "10"
+        autoscaling.knative.dev/target: "100"
         autoscaling.knative.dev/minScale: "1"
-        autoscaling.knative.dev/maxScale: "4"
+        autoscaling.knative.dev/maxScale: "10"
+        # Allow longer requests for streaming
+        autoscaling.knative.dev/window: "120s"
       labels:
         ai.sap.com/resourcePlan: "infer.s"
     spec:
@@ -35,49 +57,68 @@ spec:
         imagePullSecrets:
           - name: docker-registry-secret
         minReplicas: 1
-        maxReplicas: 4
+        maxReplicas: 10
+        containerConcurrency: 100
+        timeout: 300
         containers:
           - name: kserve-container
-            image: "{{DOCKER_REGISTRY}}/ai-core-streaming:{{VERSION}}"
+            image: "{{DOCKER_REGISTRY}}/ai-core-streaming-openai:{{VERSION}}"
             ports:
-              - containerPort: 6650
-                protocol: TCP
-              - containerPort: 6651
-                protocol: TCP
               - containerPort: 8080
                 protocol: TCP
-              - containerPort: 8443
-                protocol: TCP
             env:
-              - name: HANA_SCHEMA
-                value: "{{HANA_SCHEMA}}"
-              - name: PULSAR_HOME
-                value: "{{PULSAR_HOME}}"
-              - name: PULSAR_CONF_DIR
-                value: "{{PULSAR_HOME}}/conf"
-              - name: PULSAR_DATA_DIR
-                value: "{{PULSAR_HOME}}/data"
-              - name: PULSAR_LOG_DIR
-                value: "{{PULSAR_HOME}}/logs"
+              # AI Core connection (auto-injected by AI Core runtime)
+              - name: AI_CORE_URL
+                value: "{{AI_CORE_URL}}"
+              - name: AI_CORE_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: ai-core-credentials
+                    key: clientid
+              - name: AI_CORE_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: ai-core-credentials
+                    key: clientsecret
+              - name: AI_CORE_RESOURCE_GROUP
+                value: "{{AI_CORE_RESOURCE_GROUP}}"
+              # Optional vLLM for confidential routing
+              - name: VLLM_URL
+                value: "{{VLLM_URL}}"
+              # Server configuration
+              - name: PORT
+                value: "8080"
+              - name: LOG_LEVEL
+                value: "{{LOG_LEVEL}}"
             resources:
               requests:
-                memory: "4Gi"
-                cpu: "2"
-                nvidia.com/gpu: "1"
+                memory: "512Mi"
+                cpu: "250m"
               limits:
-                memory: "8Gi"
-                cpu: "4"
-                nvidia.com/gpu: "1"
+                memory: "2Gi"
+                cpu: "2000m"
+            # KServe health checks (OpenAI-compatible endpoints)
             livenessProbe:
               httpGet:
-                path: /admin/v2/brokers/health
-                port: 8080
-              initialDelaySeconds: 30
-              periodSeconds: 30
-            readinessProbe:
-              httpGet:
-                path: /admin/v2/brokers/ready
+                path: /health
                 port: 8080
               initialDelaySeconds: 10
+              periodSeconds: 30
+              timeoutSeconds: 10
+              failureThreshold: 3
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 5
               periodSeconds: 10
-
+              timeoutSeconds: 5
+              failureThreshold: 3
+            startupProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 5
+              failureThreshold: 12

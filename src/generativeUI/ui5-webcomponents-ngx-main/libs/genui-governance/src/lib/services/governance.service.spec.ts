@@ -49,11 +49,18 @@ function makeToolRegistryStub() {
   };
 }
 
-function makeService(config?: GovernanceConfig) {
+function makeAuditStub() {
+  return {
+    logConfirmation: jest.fn(),
+    log: jest.fn(),
+  };
+}
+
+function makeService(config?: GovernanceConfig, audit = makeAuditStub()) {
   const client = makeClientStub();
   const registry = makeToolRegistryStub();
-  const service = new GovernanceService(client as never, registry as never, config);
-  return { service, client, registry };
+  const service = new GovernanceService(client as never, registry as never, config, audit as never);
+  return { service, client, registry, audit };
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +172,7 @@ describe('GovernanceService — pending action lifecycle', () => {
   });
 
   it('confirmAction removes the action from pending list', async () => {
-    const { service } = makeService();
+    const { service, audit } = makeService();
     const action = service.createPendingAction('approve_request', { requestId: 'r-1' });
 
     await service.confirmAction(action.id);
@@ -174,10 +181,16 @@ describe('GovernanceService — pending action lifecycle', () => {
       service.pendingActions$.subscribe(a => resolve(a));
     });
     expect(pending).toHaveLength(0);
+    expect(audit.logConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionId: action.id,
+        confirmed: true,
+      })
+    );
   });
 
   it('rejectAction removes the action from pending list', async () => {
-    const { service } = makeService();
+    const { service, audit } = makeService();
     const action = service.createPendingAction('delete_record', { id: 'd-42' });
 
     await service.rejectAction(action.id, 'Not authorised');
@@ -186,6 +199,13 @@ describe('GovernanceService — pending action lifecycle', () => {
       service.pendingActions$.subscribe(a => resolve(a));
     });
     expect(pending).toHaveLength(0);
+    expect(audit.logConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionId: action.id,
+        confirmed: false,
+        reason: 'Not authorised',
+      })
+    );
   });
 
   it('confirmAction throws if action does not exist', async () => {
@@ -195,7 +215,7 @@ describe('GovernanceService — pending action lifecycle', () => {
 
   it('expired action is auto-rejected after confirmationTimeout and removed from pending', async () => {
     jest.useFakeTimers();
-    const { service } = makeService({
+    const { service, audit } = makeService({
       policy: { confirmationTimeout: 5000 },
     });
 
@@ -214,9 +234,50 @@ describe('GovernanceService — pending action lifecycle', () => {
 
     // Action should have been removed from pending list
     expect(pendings[pendings.length - 1]).toHaveLength(0);
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'rejection',
+        description: expect.stringContaining('expired'),
+      }),
+      'expired',
+      expect.any(Object)
+    );
 
     jest.useRealTimers();
     service.ngOnDestroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review model
+// ---------------------------------------------------------------------------
+
+describe('GovernanceService — buildPendingActionReview()', () => {
+  it('builds risk, affected scope, and argument diff for operator review', () => {
+    const { service } = makeService();
+    const action = service.createPendingAction('modify_user', {
+      userId: 'u-42',
+      role: 'viewer',
+    });
+
+    const review = service.buildPendingActionReview(action, {
+      role: 'admin',
+    });
+
+    expect(review).toBeDefined();
+    expect(review?.riskLabel).toBe('Medium risk');
+    expect(review?.affectedScope.summary).toContain('user');
+    expect(review?.affectedScope.fields).toContain('role');
+    expect(review?.diff).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'role',
+          before: 'viewer',
+          after: 'admin',
+          changeType: 'changed',
+        }),
+      ])
+    );
   });
 });
 
@@ -246,7 +307,7 @@ describe('GovernanceService — tool$ gating', () => {
     });
   });
 
-  it('calls deferInvocation for a tool that requires confirmation', () => {
+  it('calls deferInvocation on tool.call_start but waits for tool.call_args_done before creating approval', async () => {
     const { service, client, registry } = makeService();
 
     (client as ReturnType<typeof makeClientStub>).tool$.next({
@@ -260,12 +321,35 @@ describe('GovernanceService — tool$ gating', () => {
     });
 
     expect(registry.deferInvocation).toHaveBeenCalledWith('tc-2');
+
+    const pendingAfterStart = await new Promise<unknown[]>(resolve => {
+      service.pendingActions$.subscribe(a => resolve(a));
+    });
+    expect(pendingAfterStart).toHaveLength(0);
+
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_args_done',
+      toolCallId: 'tc-2',
+      arguments: { amount: 1250, currency: 'EUR' },
+      id: 'e2-args',
+      runId: 'r1',
+      timestamp: '',
+    });
+
+    const pendingAfterArgs = await new Promise<unknown[]>(resolve => {
+      service.pendingActions$.subscribe(a => { if (a.length > 0) resolve(a); });
+    });
+    expect(pendingAfterArgs).toHaveLength(1);
+    expect((pendingAfterArgs[0] as { arguments: Record<string, unknown> }).arguments).toEqual({
+      amount: 1250,
+      currency: 'EUR',
+    });
   });
 
   it('confirmAction() calls resolveDeferred with the matching toolCallId (full round-trip)', async () => {
     const { service, client, registry } = makeService();
 
-    // Step 1 — tool.call_start causes deferInvocation and records actionId→toolCallId mapping
+    // Step 1 — tool.call_start pauses execution
     (client as ReturnType<typeof makeClientStub>).tool$.next({
       type: 'tool.call_start',
       toolCallId: 'tc-rt',
@@ -278,18 +362,32 @@ describe('GovernanceService — tool$ gating', () => {
 
     expect(registry.deferInvocation).toHaveBeenCalledWith('tc-rt');
 
-    // Step 2 — there should be exactly one pending action created by the gating logic
+    // Step 2 — approval should only appear after full args arrive
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_args_done',
+      toolCallId: 'tc-rt',
+      arguments: { amount: 900, currency: 'USD' },
+      id: 'e-rt-args',
+      runId: 'r1',
+      timestamp: '',
+    });
+
+    // Step 3 — there should be exactly one pending action created by the gating logic
     const pending = await new Promise<unknown[]>(resolve => {
       service.pendingActions$.subscribe(a => { if (a.length > 0) resolve(a); });
     });
     expect(pending).toHaveLength(1);
+    expect((pending[0] as { arguments: Record<string, unknown> }).arguments).toEqual({
+      amount: 900,
+      currency: 'USD',
+    });
     const actionId = (pending[0] as { id: string }).id;
 
-    // Step 3 — confirm the action; resolveDeferred must be called with tc-rt
+    // Step 4 — confirm the action; resolveDeferred must be called with tc-rt
     await service.confirmAction(actionId);
     expect(registry.resolveDeferred).toHaveBeenCalledWith('tc-rt');
 
-    // Step 4 — pending list is now empty
+    // Step 5 — pending list is now empty
     const afterConfirm = await new Promise<unknown[]>(resolve => {
       service.pendingActions$.subscribe(a => resolve(a));
     });
@@ -307,6 +405,15 @@ describe('GovernanceService — tool$ gating', () => {
       toolName: 'create_purchase_order',
       location: 'backend',
       id: 'e-rej',
+      runId: 'r1',
+      timestamp: '',
+    });
+
+    (client as ReturnType<typeof makeClientStub>).tool$.next({
+      type: 'tool.call_args_done',
+      toolCallId: 'tc-rej',
+      arguments: { recordId: '42' },
+      id: 'e-rej-args',
       runId: 'r1',
       timestamp: '',
     });

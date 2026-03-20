@@ -5,7 +5,7 @@
  * Derived from mangle/sac_planning.mg service_method facts.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { DataLockingState, SacApiService } from '@sap-oss/sac-ngx-core';
@@ -47,8 +47,7 @@ export class SacPlanningModelService {
   private readonly lockStatus$ = new BehaviorSubject<LockInfo | null>(null);
   private readonly dirty$ = new BehaviorSubject<boolean>(false);
   private currentModelId: string | null = null;
-
-  constructor(private readonly api: SacApiService) {}
+  private readonly api = inject(SacApiService);
 
   /** Observable: all versions */
   get allVersions$(): Observable<VersionInfo[]> {

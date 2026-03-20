@@ -13,12 +13,18 @@ export {
   GOVERNANCE_CONFIG,
   GovernanceConfig,
   PendingAction,
+  PendingActionReview,
   AffectedData,
+  AffectedScopeSummary,
+  ActionDiffEntry,
   ConfirmationResult,
   PolicyConfig,
   RoleRule,
   PolicyViolation,
 } from './lib/services/governance.service';
+
+// Components
+export { GovernanceReviewPanelComponent } from './lib/components/governance-review-panel.component';
 
 // Audit
 export {

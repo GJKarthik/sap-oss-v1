@@ -92,6 +92,25 @@ const XSS_PATTERNS = [
   /<embed/gi,
 ];
 
+const ALLOWED_BINDING_TRANSFORMS = new Set([
+  'uppercase',
+  'lowercase',
+  'number',
+  'string',
+  'boolean',
+  'json',
+]);
+
+const FORBIDDEN_BINDING_PATH_SEGMENTS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
+]);
+
 // =============================================================================
 // Schema Validator Service
 // =============================================================================
@@ -372,6 +391,16 @@ export class SchemaValidator {
     warnings: ValidationError[]
   ): void {
     for (const [prop, binding] of Object.entries(bindings)) {
+      if (prop.toLowerCase().startsWith('on')) {
+        errors.push({
+          path: `${path}.${prop}`,
+          message: `Binding target '${prop}' is not allowed`,
+          code: 'INVALID_BINDING',
+          severity: 'error',
+        });
+        continue;
+      }
+
       if (!binding || typeof binding !== 'object') {
         errors.push({
           path: `${path}.${prop}`,
@@ -387,6 +416,36 @@ export class SchemaValidator {
         errors.push({
           path: `${path}.${prop}`,
           message: `Binding requires 'source' and 'path' properties`,
+          code: 'INVALID_BINDING',
+          severity: 'error',
+        });
+        continue;
+      }
+
+      if (typeof b['source'] !== 'string' || typeof b['path'] !== 'string') {
+        errors.push({
+          path: `${path}.${prop}`,
+          message: `Binding 'source' and 'path' must be strings`,
+          code: 'INVALID_BINDING',
+          severity: 'error',
+        });
+        continue;
+      }
+
+      const segments = `${b['source']}.${b['path']}`.split('.');
+      if (segments.some(segment => FORBIDDEN_BINDING_PATH_SEGMENTS.has(segment))) {
+        errors.push({
+          path: `${path}.${prop}`,
+          message: `Binding path contains a forbidden object traversal segment`,
+          code: 'INVALID_BINDING',
+          severity: 'error',
+        });
+      }
+
+      if (b['transform'] !== undefined && !ALLOWED_BINDING_TRANSFORMS.has(String(b['transform']))) {
+        errors.push({
+          path: `${path}.${prop}.transform`,
+          message: `Binding transform '${String(b['transform'])}' is not supported`,
           code: 'INVALID_BINDING',
           severity: 'error',
         });

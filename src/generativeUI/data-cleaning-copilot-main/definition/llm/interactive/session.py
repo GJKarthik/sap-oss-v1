@@ -454,15 +454,8 @@ class InteractiveSession:
             Response to user
         """
         try:
-            # Send message to LLM with structured output format for tool calling
-            logger.debug(f"Sending message to LLM session {self.session_id} with tool calling")
-            llm_response = self.session_manager.send_message(
-                message=user_input, session_id=self.session_id, response_format=MultipleInteractiveCalls
-            )
-
-            # Process the response
-            response_text = self._handle_llm_response(llm_response)
-            return response_text
+            llm_response = self.plan_request(user_input)
+            return self.execute_planned_response(user_input, llm_response)
 
         except Exception as e:
             logger.error(f"Error processing request with structured output: {e}")
@@ -471,6 +464,23 @@ class InteractiveSession:
 
             logger.error(f"Traceback:\n{traceback.format_exc()}")
             return f"Error: {str(e)}"
+
+    def plan_request(self, user_input: str) -> LLMResponse:
+        """Plan an LLM response with tool calls without executing the calls yet."""
+        logger.debug(f"Planning message for LLM session {self.session_id} with tool calling")
+        llm_response = self.session_manager.send_message(
+            message=user_input,
+            session_id=self.session_id,
+            response_format=MultipleInteractiveCalls,
+            record_history=False,
+        )
+        return self._normalize_llm_response(llm_response)
+
+    def execute_planned_response(self, user_input: str, response: LLMResponse) -> str:
+        """Execute a previously planned LLM response and record the final rendered turn."""
+        response_text = self._handle_llm_response(response)
+        self.session_manager.append_turn(self.session_id, user_input, response_text)
+        return response_text
 
     def _format_dataframe_for_display(self, df: pd.DataFrame, max_rows: int = 10) -> str:
         """Format a DataFrame for display in Gradio markdown."""
@@ -592,6 +602,15 @@ class InteractiveSession:
             header += "**Parameters:** _None_\n"
         return header + "\n"
 
+    def _normalize_llm_response(self, response: LLMResponse) -> LLMResponse:
+        """Normalize varied response shapes into MultipleInteractiveCalls."""
+        if not isinstance(response.output, MultipleInteractiveCalls):
+            if isinstance(response.output, MultipleDatabaseCalls):
+                return response.model_copy(update={"output": MultipleInteractiveCalls(calls=response.output.calls)})
+            else:
+                return response.model_copy(update={"output": MultipleInteractiveCalls(calls=[response.output])})
+        return response
+
     def _handle_llm_response(self, response: LLMResponse) -> str:
         """
         Handle LLM response and execute function calls if present.
@@ -606,13 +625,7 @@ class InteractiveSession:
         str
             Response text or function execution results
         """
-        # Normalize all outputs to MultipleInteractiveCalls
-        if not isinstance(response.output, MultipleInteractiveCalls):
-            if isinstance(response.output, MultipleDatabaseCalls):
-                response.output = MultipleInteractiveCalls(calls=response.output.calls)
-            else:
-                # Wrap single call in a list
-                response.output = MultipleInteractiveCalls(calls=[response.output])
+        response = self._normalize_llm_response(response)
 
         if isinstance(response.output, MultipleInteractiveCalls):
             # Setup progress tracking for agent operations if needed

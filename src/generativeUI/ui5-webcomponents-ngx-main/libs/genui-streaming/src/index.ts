@@ -5,11 +5,8 @@
  */
 
 // Module
-export {
-  GenUiStreamingModule,
-  GenUiStreamingConfig,
-  GENUI_STREAMING_CONFIG,
-} from './lib/genui-streaming.module';
+export { GenUiStreamingModule } from './lib/genui-streaming.module';
+export { GenUiStreamingConfig, GENUI_STREAMING_CONFIG } from './lib/genui-streaming.config';
 
 // Service
 export {
@@ -18,4 +15,6 @@ export {
   StreamingLayout,
   StreamingSession,
   ComponentUpdate,
+  StreamingSchemaPatch,
+  StreamingSessionLogEntry,
 } from './lib/services/streaming-ui.service';

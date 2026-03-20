@@ -101,7 +101,11 @@ class LLMSession:
         return messages
 
     def send_message(
-        self, message: str, response_format: Optional[Type[BaseModel]] = None, include_history: bool = True
+        self,
+        message: str,
+        response_format: Optional[Type[BaseModel]] = None,
+        include_history: bool = True,
+        record_history: bool = True,
     ) -> LLMResponse:
         """Send a message to the LLM and get a response using instructor.
 
@@ -165,23 +169,26 @@ class LLMSession:
         except Exception as e:
             raise StructuredOutputError(f"Instructor API call failed: {e}", raw_output=str(e))
 
-        # Add messages to conversation history
+        if record_history:
+            self.append_turn(message, response_content)
+
+        return LLMResponse(session_id=self.session_id, output=output)
+
+    def append_turn(self, user_content: str, assistant_content: str) -> None:
+        """Append a finalized user/assistant turn to session history."""
         user_message = ConversationMessage(
             role=MessageRole.USER,
-            content=message,  # Store original message without context
+            content=user_content,
             timestamp=datetime.now().isoformat(),
         )
         assistant_message = ConversationMessage(
-            role=MessageRole.ASSISTANT, content=response_content, timestamp=datetime.now().isoformat()
+            role=MessageRole.ASSISTANT,
+            content=assistant_content,
+            timestamp=datetime.now().isoformat(),
         )
-
         self.conversation_history.append(user_message)
         self.conversation_history.append(assistant_message)
-
-        # Update last activity
         self.last_activity = datetime.now().isoformat()
-
-        return LLMResponse(session_id=self.session_id, output=output)
 
     def get_conversation_history(self) -> List[ConversationMessage]:
         """Get conversation history."""
@@ -259,6 +266,7 @@ class LLMSessionManager:
         message: str,
         response_format: Optional[Type[BaseModel]] = None,
         include_history: bool = True,
+        record_history: bool = True,
     ) -> LLMResponse:
         """
         Send a message to a specific session.
@@ -288,8 +296,17 @@ class LLMSessionManager:
             raise SessionNotFoundError(session_id)
 
         return self._sessions[session_id].send_message(
-            message=message, response_format=response_format, include_history=include_history
+            message=message,
+            response_format=response_format,
+            include_history=include_history,
+            record_history=record_history,
         )
+
+    def append_turn(self, session_id: str, user_content: str, assistant_content: str) -> None:
+        """Append a finalized conversation turn to an existing session."""
+        if session_id not in self._sessions:
+            raise SessionNotFoundError(session_id)
+        self._sessions[session_id].append_turn(user_content, assistant_content)
 
     def delete_session(self, session_id: str) -> None:
         """

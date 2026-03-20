@@ -131,6 +131,86 @@ describe('SchemaValidator — XSS detection', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Red-team binding validation
+// ---------------------------------------------------------------------------
+
+describe('SchemaValidator — hostile binding payloads', () => {
+  let validator: SchemaValidator;
+
+  beforeEach(() => { validator = makeValidator(); });
+
+  it('rejects bindings targeting handler-like props', () => {
+    const schema: A2UiSchema = {
+      component: 'ui5-button',
+      bindings: {
+        onclick: {
+          source: 'ctx',
+          path: 'payload',
+        },
+      },
+    };
+
+    const result = validator.validate(schema);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'INVALID_BINDING',
+          path: '.bindings.onclick',
+        }),
+      ])
+    );
+  });
+
+  it('rejects prototype-polluting binding paths', () => {
+    const schema: A2UiSchema = {
+      component: 'ui5-text',
+      bindings: {
+        text: {
+          source: 'ctx',
+          path: '__proto__.polluted',
+        },
+      },
+    };
+
+    const result = validator.validate(schema);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'INVALID_BINDING',
+          path: '.bindings.text',
+        }),
+      ])
+    );
+  });
+
+  it('rejects unsupported binding transforms', () => {
+    const schema: A2UiSchema = {
+      component: 'ui5-text',
+      bindings: {
+        text: {
+          source: 'ctx',
+          path: 'value',
+          transform: 'constructor',
+        },
+      },
+    };
+
+    const result = validator.validate(schema);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'INVALID_BINDING',
+          path: '.bindings.text.transform',
+        }),
+      ])
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Max depth
 // ---------------------------------------------------------------------------
 

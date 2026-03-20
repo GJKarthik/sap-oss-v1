@@ -1,0 +1,105 @@
+# CAP LLM Plugin - KServe InferenceService
+# RAG-Enhanced OpenAI-Compatible API
+#
+# Features:
+#   - RAG context injection from HANA Vector
+#   - OpenAI-compatible /v1/chat/completions
+#   - Automatic document retrieval
+
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: cap-llm-rag
+  annotations:
+    scenarios.ai.sap.com/description: "RAG-enhanced OpenAI API with HANA Vector integration"
+    scenarios.ai.sap.com/name: "cap-llm-rag"
+    executables.ai.sap.com/description: "CAP LLM Plugin with RAG capabilities"
+    executables.ai.sap.com/name: "cap-llm-rag-exec"
+  labels:
+    scenarios.ai.sap.com/id: "cap-llm-rag"
+    executables.ai.sap.com/id: "cap-llm-rag-exec"
+    ai.sap.com/version: "1.0.0"
+spec:
+  inputs:
+    parameters:
+      - name: AI_CORE_RESOURCE_GROUP
+        type: string
+        default: "default"
+      - name: HANA_HOST
+        type: string
+        description: "HANA Cloud host"
+      - name: HANA_PORT
+        type: string
+        default: "443"
+      - name: VECTOR_TABLE
+        type: string
+        default: "EMBEDDINGS"
+      - name: TOP_K
+        type: string
+        default: "5"
+  template:
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "5"
+      labels:
+        ai.sap.com/resourcePlan: "infer.s"
+    spec:
+      predictor:
+        imagePullSecrets:
+          - name: docker-registry-secret
+        minReplicas: 1
+        maxReplicas: 5
+        timeout: 300
+        containers:
+          - name: kserve-container
+            image: "{{DOCKER_REGISTRY}}/cap-llm-rag:{{VERSION}}"
+            ports:
+              - containerPort: 8080
+            env:
+              - name: AICORE_SERVICE_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: ai-core-service-key
+                    key: service-key
+              - name: HANA_HOST
+                value: "{{HANA_HOST}}"
+              - name: HANA_PORT
+                value: "{{HANA_PORT}}"
+              - name: HANA_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: hana-credentials
+                    key: user
+              - name: HANA_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: hana-credentials
+                    key: password
+              - name: VECTOR_TABLE
+                value: "{{VECTOR_TABLE}}"
+              - name: TOP_K
+                value: "{{TOP_K}}"
+              - name: PORT
+                value: "8080"
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "2Gi"
+                cpu: "2000m"
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 15
+              periodSeconds: 30
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 10
+              periodSeconds: 10

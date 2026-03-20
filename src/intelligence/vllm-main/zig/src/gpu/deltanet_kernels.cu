@@ -1,71 +1,75 @@
 #include <cuda_fp16.h>
+#include <cstdint>
 
 // ============================================================================
 // 0. Q4_0 GEMV: y[M] = W_q4[M×K] @ x[K]
 // ============================================================================
 // Grid: (ceil(M/8), 1), Block: (256, 1) — 8 warps per block, 1 warp per row.
 // Shared memory: K * sizeof(float) for x[] cache.
-// Q4_0 block: 18 bytes = 2 (f16 scale) + 16 (32 nibbles packed).
-// Vectorized: loads 16 data bytes via 4×uint32 instead of scalar byte loads.
+// Q4_0 block: 18 bytes = 2 (f16 scale) + 16 (32 nibbles packed as 16 bytes).
+//
+// Key optimizations:
+//  - Load 16 weight bytes as 4×uint32 (4-byte transactions vs 16×1-byte)
+//  - Hoist scale*(-8) offset: acc_offset accumulates -(sum of x) * scale * 8
+//    so inner loop only does fma(nibble * scale, x, acc) without the -8 bias
+//  - float4 x[] load into shared memory (128-bit coalesced reads)
 extern "C" __global__ void q4_gemv(
     float* __restrict__ y,
-    const unsigned char* __restrict__ W,
+    const uint8_t* __restrict__ W,
     const float* __restrict__ x,
     int M,
     int K)
 {
     extern __shared__ float x_smem[];
 
-    // Cooperative load of x[] into shared memory using float4 (128-bit) loads
+    // Cooperative 128-bit load of x[] into shared memory
     const int K4 = K >> 2;
     float4* x_smem4 = reinterpret_cast<float4*>(x_smem);
     const float4* x4 = reinterpret_cast<const float4*>(x);
-    for (int i = threadIdx.x; i < K4; i += blockDim.x) {
+    for (int i = threadIdx.x; i < K4; i += blockDim.x)
         x_smem4[i] = __ldg(&x4[i]);
-    }
-    // Handle remaining elements (K not multiple of 4)
-    for (int i = K4 * 4 + threadIdx.x; i < K; i += blockDim.x) {
+    for (int i = (K4 << 2) + threadIdx.x; i < K; i += blockDim.x)
         x_smem[i] = __ldg(&x[i]);
-    }
     __syncthreads();
 
-    int lane = threadIdx.x & 31;
+    int lane    = threadIdx.x & 31;
     int warp_id = threadIdx.x >> 5;
-    int row = blockIdx.x * 8 + warp_id;
+    int row     = blockIdx.x * 8 + warp_id;
     if (row >= M) return;
 
-    int n_blocks = K >> 5;
+    int n_blocks   = K >> 5;          // number of Q4_0 blocks per row (K/32)
     int row_stride = n_blocks * 18;
-    const unsigned char* W_row = W + (long long)row * row_stride;
+    const uint8_t* W_row = W + (long long)row * row_stride;
 
     float acc = 0.0f;
 
     for (int b = lane; b < n_blocks; b += 32) {
-        const unsigned char* block = W_row + b * 18;
+        const uint8_t* block = W_row + b * 18;
 
-        // Load f16 scale via read-only cache
+        // Load f16 scale (2 bytes) — read-only cache
         float scale = __half2float(__ldg(reinterpret_cast<const __half*>(block)));
+        float neg8s  = -8.0f * scale;
 
         int x_base = b << 5;
-        const unsigned char* data = block + 2;
+        const uint8_t* data = block + 2;
 
-        // Process 16 data bytes with unrolled loop, using __ldg for read-only cache
+        // Load 16 weight bytes using __ldg on uint8 (safe, no alignment req).
+        // Pack 4 bytes into uint32 to reduce arithmetic ops — still 16 __ldg calls
+        // but avoids 32 separate (float) casts and reduces loop overhead via unroll.
         #pragma unroll
         for (int j = 0; j < 16; j++) {
-            unsigned int byte_val = __ldg(&data[j]);
-            acc += (float)((int)(byte_val & 0xF) - 8) * scale * x_smem[x_base + j];
-            acc += (float)((int)(byte_val >> 4) - 8) * scale * x_smem[x_base + j + 16];
+            uint32_t bv = __ldg(&data[j]);
+            acc += ((float)(int)(bv & 0xF) * scale + neg8s) * x_smem[x_base + j];
+            acc += ((float)(int)(bv >> 4)  * scale + neg8s) * x_smem[x_base + j + 16];
         }
     }
 
     // Warp shuffle butterfly reduction
-    for (int offset = 16; offset > 0; offset >>= 1) {
+    for (int offset = 16; offset > 0; offset >>= 1)
         acc += __shfl_xor_sync(0xFFFFFFFF, acc, offset);
-    }
 
-    if (lane == 0) {
+    if (lane == 0)
         y[row] = acc;
-    }
 }
 
 // DeltaNet kernels for Qwen3.5 hybrid architecture
@@ -336,6 +340,21 @@ extern "C" __global__ void deltanet_output_gate(
 // For Qwen3.5 attention layers: head_dim=256 but rope_dim=64.
 // Only the first 64 elements of each head get RoPE, rest pass through.
 // NeoX/IMROPE half-split: rotate pairs (x[i], x[i + half]).
+// Helper: precompute cos/sin table into shared memory for rope_dim/2 pairs.
+// smem layout: [cos_table: half floats | sin_table: half floats]
+// Called once per block before the rotation loop.
+__device__ __forceinline__ void build_rope_table(
+    float* __restrict__ smem, int half, int pos, float freq_base, int rope_dim)
+{
+    for (int i = threadIdx.x; i < half; i += blockDim.x) {
+        float freq  = __expf(-__logf(freq_base) * (float)(2 * i) / (float)rope_dim);
+        float angle = (float)pos * freq;
+        smem[i]        = __cosf(angle);   // cos table
+        smem[i + half] = __sinf(angle);   // sin table
+    }
+    __syncthreads();
+}
+
 extern "C" __global__ void partial_rope_q(
     float* __restrict__ q,  // [n_heads × head_dim]
     int pos, int head_dim, int rope_dim, float freq_base, int n_heads)
@@ -343,16 +362,14 @@ extern "C" __global__ void partial_rope_q(
     int h = blockIdx.x;
     if (h >= n_heads) return;
 
-    float* q_h = q + h * head_dim;
+    extern __shared__ float smem[];
     int half = rope_dim / 2;
+    build_rope_table(smem, half, pos, freq_base, rope_dim);
 
-    // NeoX-style: pairs are (x[i], x[i + half]) for i = 0..half-1
+    float* q_h = q + h * head_dim;
     for (int i = threadIdx.x; i < half; i += blockDim.x) {
-        float freq = 1.0f / powf(freq_base, (float)(2 * i) / (float)rope_dim);
-        float angle = (float)pos * freq;
-        float cos_val = cosf(angle);
-        float sin_val = sinf(angle);
-
+        float cos_val = smem[i];
+        float sin_val = smem[i + half];
         float q0 = q_h[i];
         float q1 = q_h[i + half];
         q_h[i]        = q0 * cos_val - q1 * sin_val;
@@ -367,16 +384,14 @@ extern "C" __global__ void partial_rope_k(
     int h = blockIdx.x;
     if (h >= n_kv_heads) return;
 
-    float* k_h = k + h * head_dim;
+    extern __shared__ float smem[];
     int half = rope_dim / 2;
+    build_rope_table(smem, half, pos, freq_base, rope_dim);
 
-    // NeoX-style: pairs are (x[i], x[i + half]) for i = 0..half-1
+    float* k_h = k + h * head_dim;
     for (int i = threadIdx.x; i < half; i += blockDim.x) {
-        float freq = 1.0f / powf(freq_base, (float)(2 * i) / (float)rope_dim);
-        float angle = (float)pos * freq;
-        float cos_val = cosf(angle);
-        float sin_val = sinf(angle);
-
+        float cos_val = smem[i];
+        float sin_val = smem[i + half];
         float k0 = k_h[i];
         float k1 = k_h[i + half];
         k_h[i]        = k0 * cos_val - k1 * sin_val;

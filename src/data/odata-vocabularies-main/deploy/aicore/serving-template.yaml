@@ -1,0 +1,65 @@
+# OData Vocabularies - KServe InferenceService
+# OpenAI-Compatible Vocabulary Assistant
+
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: odata-vocab-assistant
+  annotations:
+    scenarios.ai.sap.com/description: "OpenAI-compatible chat for OData annotation guidance"
+    scenarios.ai.sap.com/name: "odata-vocab-assistant"
+    executables.ai.sap.com/name: "odata-vocab-assistant-exec"
+  labels:
+    scenarios.ai.sap.com/id: "odata-vocab-assistant"
+    executables.ai.sap.com/id: "odata-vocab-assistant-exec"
+    ai.sap.com/version: "1.0.0"
+spec:
+  inputs:
+    parameters:
+      - name: LOG_LEVEL
+        type: string
+        default: "INFO"
+  template:
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "3"
+      labels:
+        ai.sap.com/resourcePlan: "infer.s"
+    spec:
+      predictor:
+        imagePullSecrets:
+          - name: docker-registry-secret
+        minReplicas: 1
+        maxReplicas: 3
+        containers:
+          - name: kserve-container
+            image: "{{DOCKER_REGISTRY}}/odata-vocab-assistant:{{VERSION}}"
+            ports:
+              - containerPort: 8080
+            env:
+              - name: PORT
+                value: "8080"
+              - name: LOG_LEVEL
+                value: "{{LOG_LEVEL}}"
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "50m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 5
+              periodSeconds: 30
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 3
+              periodSeconds: 10

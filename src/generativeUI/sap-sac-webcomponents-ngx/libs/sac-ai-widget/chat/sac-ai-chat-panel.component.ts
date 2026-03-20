@@ -28,9 +28,10 @@ import {
   AgUiTextContentEvent,
   AgUiToolCallStartEvent,
   AgUiToolCallArgsEvent,
+  AgUiToolCallEndEvent,
 } from '../ag-ui/sac-ag-ui.service';
-import { SacToolDispatchService } from './sac-tool-dispatch.service';
-import { SacAiSessionService } from '../session/sac-ai-session.service';
+import { SacToolDispatchService, ToolExecutionReview, ToolResult } from './sac-tool-dispatch.service';
+import { SacAiAuditEntry, SacAiSessionService } from '../session/sac-ai-session.service';
 
 // =============================================================================
 // Message model
@@ -45,6 +46,16 @@ export interface ChatMessage {
   streaming?: boolean;
 }
 
+interface PendingToolCallBuffer {
+  toolName: string;
+  argsJson: string;
+}
+
+interface PendingToolConfirmation {
+  toolCallId: string;
+  review: ToolExecutionReview;
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -54,7 +65,7 @@ export interface ChatMessage {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
+  template: `
     <section class="sac-chat-panel" aria-label="SAC AI Chat Assistant">
       <!-- Screen reader announcements (visually hidden) -->
       <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -80,6 +91,94 @@ export interface ChatMessage {
           <span *ngIf="msg.streaming" class="sr-only">Response in progress</span>
         </article>
       </div>
+
+      <section
+        *ngIf="activeConfirmation"
+        class="sac-chat-review"
+        role="region"
+        aria-label="Planning action review">
+        <div class="sac-chat-review__header">
+          <div>
+            <div class="sac-chat-review__eyebrow">Approval required</div>
+            <h3 class="sac-chat-review__title">{{ activeConfirmation.review.title }}</h3>
+          </div>
+          <span
+            class="sac-chat-review__risk"
+            [class.sac-chat-review__risk--high]="activeConfirmation.review.riskLevel === 'high'">
+            {{ activeConfirmation.review.riskLevel }} risk
+          </span>
+        </div>
+
+        <p class="sac-chat-review__summary">{{ activeConfirmation.review.summary }}</p>
+
+        <div class="sac-chat-review__section">
+          <div class="sac-chat-review__label">Affected scope</div>
+          <ul class="sac-chat-review__list">
+            <li *ngFor="let item of activeConfirmation.review.affectedScope">{{ item }}</li>
+          </ul>
+        </div>
+
+        <div class="sac-chat-review__section">
+          <div class="sac-chat-review__label">Rollback preview</div>
+          <p class="sac-chat-review__summary">{{ activeConfirmation.review.rollbackPreview.label }}</p>
+          <ul class="sac-chat-review__list">
+            <li *ngFor="let warning of activeConfirmation.review.rollbackPreview.warnings">{{ warning }}</li>
+          </ul>
+        </div>
+
+        <div class="sac-chat-review__section">
+          <div class="sac-chat-review__label">Normalized arguments</div>
+          <pre class="sac-chat-review__args">{{ formatJson(activeConfirmation.review.normalizedArgs) }}</pre>
+        </div>
+
+        <p *ngIf="confirmationError" class="sac-chat-review__error" role="alert">
+          {{ confirmationError }}
+        </p>
+
+        <div class="sac-chat-review__actions">
+          <button
+            class="sac-chat-review__button sac-chat-review__button--secondary"
+            type="button"
+            [disabled]="confirmationBusy"
+            (click)="rejectActiveConfirmation()">
+            Reject
+          </button>
+          <button
+            class="sac-chat-review__button sac-chat-review__button--primary"
+            type="button"
+            [disabled]="confirmationBusy"
+            (click)="approveActiveConfirmation()">
+            {{ confirmationBusy ? 'Working…' : activeConfirmation.review.confirmationLabel }}
+          </button>
+        </div>
+      </section>
+
+      <section
+        *ngIf="auditEntries.length"
+        class="sac-chat-audit"
+        role="region"
+        aria-label="Workflow audit">
+        <div class="sac-chat-audit__header">
+          <h3 class="sac-chat-audit__title">Recent activity</h3>
+        </div>
+        <div class="sac-chat-audit__list">
+          <article
+            *ngFor="let entry of auditEntries; trackBy: trackByAuditId"
+            class="sac-chat-audit__entry">
+            <div class="sac-chat-audit__meta">
+              <span
+                class="sac-chat-audit__status"
+                [class.sac-chat-audit__status--approved]="entry.status === 'approved' || entry.status === 'completed'"
+                [class.sac-chat-audit__status--error]="entry.status === 'error' || entry.status === 'rejected'">
+                {{ entry.status }}
+              </span>
+              <span>{{ formatAuditEvent(entry.eventType) }}</span>
+            </div>
+            <div class="sac-chat-audit__detail">{{ entry.detail }}</div>
+            <div class="sac-chat-audit__timestamp">{{ entry.timestamp }}</div>
+          </article>
+        </div>
+      </section>
 
       <!-- Input area with proper labeling -->
       <div class="sac-chat-input-row" role="form" aria-label="Send a message">
@@ -110,8 +209,8 @@ export interface ChatMessage {
         </button>
       </div>
     </section>
-  \`,
-  styles: [\`
+  `,
+  styles: [`
     /* === Screen Reader Only === */
     .sr-only {
       position: absolute !important;
@@ -138,6 +237,196 @@ export interface ChatMessage {
       font-family: var(--sapFontFamily, '72', Arial, sans-serif);
       font-size: var(--sapFontSize, 14px);
       background: var(--sapBackgroundColor, #f7f7f7);
+    }
+
+    .sac-chat-review {
+      margin: 0 var(--sac-spacing-md) var(--sac-spacing-md);
+      padding: var(--sac-spacing-md);
+      border: 1px solid var(--sapWarningBorderColor, #e9730c);
+      border-radius: var(--sapElement_BorderCornerRadius, 8px);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--sapWarningBackground, #fff3d7) 70%, white), #fff);
+      color: var(--sapTextColor, #32363a);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .sac-chat-review__header {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sac-spacing-md);
+      align-items: flex-start;
+    }
+
+    .sac-chat-review__eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--sapNeutralTextColor, #5b738b);
+    }
+
+    .sac-chat-review__title {
+      margin: var(--sac-spacing-xs) 0 0;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .sac-chat-review__risk {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--sapList_Background, #fff);
+      border: 1px solid var(--sapWarningBorderColor, #e9730c);
+      font-size: 12px;
+      font-weight: var(--sapFontBoldWeight, 700);
+      text-transform: uppercase;
+    }
+
+    .sac-chat-review__risk--high {
+      background: color-mix(in srgb, var(--sapWarningBackground, #fff3d7) 65%, white);
+    }
+
+    .sac-chat-review__section {
+      margin-top: var(--sac-spacing-md);
+    }
+
+    .sac-chat-review__label {
+      margin-bottom: var(--sac-spacing-xs);
+      font-size: 12px;
+      font-weight: var(--sapFontBoldWeight, 700);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--sapNeutralTextColor, #5b738b);
+    }
+
+    .sac-chat-review__summary {
+      margin: var(--sac-spacing-sm) 0 0;
+      line-height: 1.5;
+    }
+
+    .sac-chat-review__list {
+      margin: var(--sac-spacing-xs) 0 0;
+      padding-left: 18px;
+    }
+
+    .sac-chat-review__args {
+      margin: 0;
+      padding: var(--sac-spacing-sm);
+      overflow-x: auto;
+      border-radius: 6px;
+      background: var(--sapGroup_ContentBackground, #fff);
+      border: 1px solid var(--sapList_BorderColor, #d9d9d9);
+      font-family: var(--sapFontMonospaceFamily, '72 Mono', monospace);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .sac-chat-review__error {
+      margin: var(--sac-spacing-md) 0 0;
+      color: var(--sapNegativeTextColor, #bb0000);
+      font-weight: var(--sapFontBoldWeight, 700);
+    }
+
+    .sac-chat-review__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--sac-spacing-sm);
+      margin-top: var(--sac-spacing-md);
+    }
+
+    .sac-chat-review__button {
+      min-height: 44px;
+      padding: var(--sac-spacing-sm) var(--sac-spacing-md);
+      border-radius: var(--sapButton_BorderCornerRadius, 4px);
+      font-size: var(--sapFontSize, 14px);
+      font-family: inherit;
+      font-weight: var(--sapFontBoldWeight, 700);
+      cursor: pointer;
+    }
+
+    .sac-chat-review__button--primary {
+      background: var(--sapButton_Emphasized_Background, #0070f2);
+      color: var(--sapButton_Emphasized_TextColor, #fff);
+      border: none;
+    }
+
+    .sac-chat-review__button--secondary {
+      background: var(--sapButton_Lite_Background, #fff);
+      color: var(--sapButton_TextColor, #0a6ed1);
+      border: 1px solid var(--sapButton_BorderColor, #85baf1);
+    }
+
+    .sac-chat-review__button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .sac-chat-audit {
+      margin: 0 var(--sac-spacing-md) var(--sac-spacing-md);
+      padding: var(--sac-spacing-md);
+      border: 1px solid var(--sapList_BorderColor, #d9d9d9);
+      border-radius: var(--sapElement_BorderCornerRadius, 8px);
+      background: var(--sapGroup_ContentBackground, #fff);
+    }
+
+    .sac-chat-audit__header {
+      margin-bottom: var(--sac-spacing-sm);
+    }
+
+    .sac-chat-audit__title {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .sac-chat-audit__list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sac-spacing-sm);
+    }
+
+    .sac-chat-audit__entry {
+      padding: var(--sac-spacing-sm);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--sapList_Background, #fff) 92%, #eef4fb);
+      border: 1px solid var(--sapList_BorderColor, #e5e5e5);
+    }
+
+    .sac-chat-audit__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--sac-spacing-sm);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--sapNeutralTextColor, #5b738b);
+    }
+
+    .sac-chat-audit__status {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sapButton_Lite_Background, #fff) 88%, #f3f6f8);
+      border: 1px solid var(--sapList_BorderColor, #d9d9d9);
+      color: var(--sapTextColor, #32363a);
+      font-weight: var(--sapFontBoldWeight, 700);
+    }
+
+    .sac-chat-audit__status--approved {
+      background: color-mix(in srgb, #dff5e3 78%, white);
+      border-color: #7cc58c;
+    }
+
+    .sac-chat-audit__status--error {
+      background: color-mix(in srgb, #fde2e1 78%, white);
+      border-color: #e7827b;
+    }
+
+    .sac-chat-audit__detail {
+      margin-top: var(--sac-spacing-xs);
+      line-height: 1.5;
+    }
+
+    .sac-chat-audit__timestamp {
+      margin-top: var(--sac-spacing-xs);
+      font-size: 12px;
+      color: var(--sapContent_LabelColor, #6a6d70);
     }
 
     .sac-chat-messages {
@@ -265,7 +554,7 @@ export interface ChatMessage {
         border: 1px solid CanvasText;
       }
     }
-  \`],
+  `],
 })
 export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   @Input() placeholder = 'Ask a question about your data…';
@@ -277,9 +566,12 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   inputText = '';
   streaming = false;
   announcement = '';
-
+  activeConfirmation: PendingToolConfirmation | null = null;
+  confirmationBusy = false;
+  confirmationError = '';
   private streamSub: Subscription | null = null;
-  private pendingToolArgs = new Map<string, string>();
+  private pendingToolCalls = new Map<string, PendingToolCallBuffer>();
+  private queuedConfirmations: PendingToolConfirmation[] = [];
   private lastMessageCount = 0;
 
   private agUiService = inject(SacAgUiService);
@@ -308,6 +600,8 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     this.inputText = '';
     this.messages.push({ id: this.uid(), role: 'user', content: text });
     this.announceMessage('Message sent');
+    this.clearConfirmationState();
+    this.recordAudit('request.sent', 'processing', text);
 
     const assistantMsg: ChatMessage = { id: this.uid(), role: 'assistant', content: '', streaming: true };
     this.messages.push(assistantMsg);
@@ -324,15 +618,21 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       .subscribe({
         next: (event: AgUiEvent) => this.handleEvent(event, assistantMsg),
         error: (err: Error) => {
-          assistantMsg.content = \`Error: \${err.message}\`;
+          this.resetPendingToolCalls();
+          this.clearConfirmationState();
+          assistantMsg.content = `Error: ${err.message}`;
           assistantMsg.streaming = false;
           this.streaming = false;
-          this.announceMessage(\`Error: \${err.message}\`);
+          this.recordAudit('stream.error', 'error', err.message);
+          this.announceMessage(`Error: ${err.message}`);
           this.cdr.markForCheck();
         },
         complete: () => {
+          this.resetPendingToolCalls();
+          this.clearConfirmationState();
           assistantMsg.streaming = false;
           this.streaming = false;
+          this.recordAudit('stream.complete', 'completed', 'Assistant response finished');
           this.announceMessage('Response complete');
           this.cdr.markForCheck();
         },
@@ -341,14 +641,91 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     this.streamSub?.unsubscribe();
+    this.resetPendingToolCalls();
+    this.clearConfirmationState();
   }
 
   trackById(_: number, msg: ChatMessage): string {
     return msg.id;
   }
 
+  trackByAuditId(_: number, entry: SacAiAuditEntry): string {
+    return entry.id;
+  }
+
   handleInput(event: Event): void {
     this.inputText = (event.target as HTMLInputElement | null)?.value ?? '';
+  }
+
+  async approveActiveConfirmation(): Promise<void> {
+    if (!this.activeConfirmation || this.confirmationBusy) {
+      return;
+    }
+
+    this.confirmationBusy = true;
+    this.confirmationError = '';
+    this.cdr.markForCheck();
+
+    const confirmation = this.activeConfirmation;
+    try {
+      const result = await this.toolDispatch.execute(
+        confirmation.review.toolName,
+        confirmation.review.normalizedArgs,
+      );
+      this.agUiService.dispatchToolResult(confirmation.toolCallId, result);
+      this.recordAudit(
+        'approval.approved',
+        result.success ? 'approved' : 'error',
+        result.success
+          ? `Approved ${confirmation.review.toolName}`
+          : (result.error ?? `Approved ${confirmation.review.toolName} but execution failed`),
+      );
+      this.advanceConfirmationQueue();
+      this.announceMessage(`Approved ${confirmation.review.toolName}`);
+    } catch (error) {
+      this.recordAudit(
+        'approval.error',
+        'error',
+        error instanceof Error ? error.message : 'Failed to execute the reviewed action',
+      );
+      this.confirmationError = error instanceof Error
+        ? error.message
+        : 'Failed to execute the reviewed action';
+    } finally {
+      this.confirmationBusy = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  rejectActiveConfirmation(): void {
+    if (!this.activeConfirmation || this.confirmationBusy) {
+      return;
+    }
+
+    const confirmation = this.activeConfirmation;
+    const result: ToolResult = {
+      success: false,
+      error: 'Rejected by user before executing planning action',
+      data: {
+        code: 'USER_REJECTED',
+        toolName: confirmation.review.toolName,
+        actionId: confirmation.review.actionId,
+        modelId: confirmation.review.modelId,
+      },
+    };
+    this.agUiService.dispatchToolResult(confirmation.toolCallId, result);
+    this.recordAudit('approval.rejected', 'rejected', `Rejected ${confirmation.review.toolName}`);
+    this.advanceConfirmationQueue();
+    this.announceMessage(`Rejected ${confirmation.review.toolName}`);
+    this.cdr.markForCheck();
+  }
+
+  formatJson(value: unknown): string {
+    return JSON.stringify(value, null, 2);
+  }
+
+  formatAuditEvent(eventType: string): string {
+    return eventType.replace(/\./g, ' ');
   }
 
   private handleEvent(event: AgUiEvent, assistantMsg: ChatMessage): void {
@@ -361,43 +738,120 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       }
       case 'TOOL_CALL_START': {
         const e = event as AgUiToolCallStartEvent;
-        this.pendingToolArgs.set(e.toolCallId, '');
+        this.pendingToolCalls.set(e.toolCallId, {
+          toolName: e.toolName,
+          argsJson: '',
+        });
         break;
       }
       case 'TOOL_CALL_ARGS': {
         const e = event as AgUiToolCallArgsEvent;
-        const existing = this.pendingToolArgs.get(e.toolCallId) ?? '';
-        this.pendingToolArgs.set(e.toolCallId, existing + e.delta);
+        const pendingToolCall = this.pendingToolCalls.get(e.toolCallId);
+        if (!pendingToolCall) {
+          break;
+        }
+
+        this.pendingToolCalls.set(e.toolCallId, {
+          ...pendingToolCall,
+          argsJson: pendingToolCall.argsJson + e.delta,
+        });
         break;
       }
       case 'TOOL_CALL_END': {
-        const e = event as AgUiToolCallStartEvent;
-        const argsJson = this.pendingToolArgs.get(e.toolCallId) ?? '{}';
-        this.pendingToolArgs.delete(e.toolCallId);
-        this.executeTool(e.toolCallId, e.toolName, argsJson);
+        const e = event as AgUiToolCallEndEvent;
+        const pendingToolCall = this.pendingToolCalls.get(e.toolCallId);
+        if (!pendingToolCall) {
+          break;
+        }
+
+        this.pendingToolCalls.delete(e.toolCallId);
+        void this.executeTool(
+          e.toolCallId,
+          e.toolName || pendingToolCall.toolName,
+          pendingToolCall.argsJson || '{}',
+        );
         break;
       }
     }
   }
 
-  private executeTool(toolCallId: string, toolName: string, argsJson: string): void {
+  private async executeTool(toolCallId: string, toolName: string, argsJson: string): Promise<void> {
     let args: Record<string, unknown>;
     try {
       args = JSON.parse(argsJson) as Record<string, unknown>;
     } catch {
+      this.recordAudit('tool.invalid_args', 'error', `Invalid JSON for ${toolName}`);
       this.agUiService.dispatchToolResult(toolCallId, { success: false, error: 'Invalid tool args JSON' });
       return;
     }
 
-    this.toolDispatch.execute(toolName, args)
-      .then((result: unknown) => this.agUiService.dispatchToolResult(toolCallId, result))
-      .catch((err: Error) =>
-        this.agUiService.dispatchToolResult(toolCallId, { success: false, error: err.message }),
+    try {
+      this.recordAudit('tool.requested', 'processing', `${toolName} requested`);
+      const review = await this.toolDispatch.getConfirmationReview(toolName, args);
+      if (review) {
+        this.queueConfirmation(toolCallId, review);
+        return;
+      }
+
+      const result = await this.toolDispatch.execute(toolName, args);
+      this.recordAudit(
+        'tool.executed',
+        result.success ? 'completed' : 'error',
+        result.success
+          ? `${toolName} completed successfully`
+          : (result.error ?? `${toolName} failed`),
       );
+      this.agUiService.dispatchToolResult(toolCallId, result);
+    } catch (error) {
+      this.recordAudit(
+        'tool.error',
+        'error',
+        error instanceof Error ? error.message : `${toolName} execution failed`,
+      );
+      this.agUiService.dispatchToolResult(toolCallId, {
+        success: false,
+        error: error instanceof Error ? error.message : 'Tool execution failed',
+      });
+    }
   }
 
   private uid(): string {
     return Math.random().toString(36).slice(2);
+  }
+
+  private resetPendingToolCalls(): void {
+    this.pendingToolCalls.clear();
+  }
+
+  private queueConfirmation(toolCallId: string, review: ToolExecutionReview): void {
+    const pendingConfirmation: PendingToolConfirmation = {
+      toolCallId,
+      review,
+    };
+
+    if (!this.activeConfirmation) {
+      this.activeConfirmation = pendingConfirmation;
+      this.confirmationError = '';
+      this.recordAudit('approval.required', 'processing', review.summary);
+      this.announceMessage(`${review.title}. Review required.`);
+    } else {
+      this.queuedConfirmations.push(pendingConfirmation);
+      this.recordAudit('approval.queued', 'processing', `Queued review for ${review.toolName}`);
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  private advanceConfirmationQueue(): void {
+    this.activeConfirmation = this.queuedConfirmations.shift() ?? null;
+    this.confirmationError = '';
+  }
+
+  private clearConfirmationState(): void {
+    this.activeConfirmation = null;
+    this.queuedConfirmations = [];
+    this.confirmationBusy = false;
+    this.confirmationError = '';
   }
 
   private scrollToBottom(): void {
@@ -414,5 +868,18 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       this.announcement = message;
       this.cdr.markForCheck();
     }, 50);
+  }
+
+  private recordAudit(
+    eventType: string,
+    status: SacAiAuditEntry['status'],
+    detail: string,
+  ): void {
+    this.session.recordAudit(eventType, status, detail);
+    this.cdr.markForCheck();
+  }
+
+  get auditEntries(): SacAiAuditEntry[] {
+    return this.session.getAuditEntries();
   }
 }

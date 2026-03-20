@@ -5,12 +5,11 @@ import { SacConfigService } from './sac-config.service';
 
 @Injectable()
 export class SacApiService {
+  private readonly authService = inject(SacAuthService);
+  private readonly configService = inject(SacConfigService);
   private readonly client: SACRestAPIClient;
 
-  constructor(
-    private readonly authService: SacAuthService = inject(SacAuthService),
-    private readonly configService: SacConfigService = inject(SacConfigService),
-  ) {
+  constructor() {
     const config = this.configService.getConfig();
 
     this.client = new SACRestAPIClient({

@@ -1,0 +1,68 @@
+{
+  "name": "sap-ai-fabric-console",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "nx": "nx",
+    "start": "nx serve angular-shell",
+    "start:react": "nx serve shell",
+    "build": "nx run-many -t build",
+    "lint": "nx run-many -t lint",
+    "test": "nx run-many -t test",
+    "format": "nx format:write",
+    "format:check": "nx format:check",
+    "graph": "nx graph",
+    "prepare": "husky install",
+    "clean": "nx reset"
+  },
+  "devDependencies": {
+    "@angular-devkit/core": "20.3.9",
+    "@angular-devkit/schematics": "20.3.9",
+    "@angular-eslint/eslint-plugin": "20.5.1",
+    "@angular-eslint/eslint-plugin-template": "20.5.1",
+    "@angular-eslint/template-parser": "20.5.1",
+    "@commitlint/cli": "19.8.0",
+    "@commitlint/config-conventional": "19.8.0",
+    "@nx/angular": "22.0.2",
+    "@nx/eslint": "22.0.2",
+    "@nx/eslint-plugin": "22.0.2",
+    "@nx/js": "22.0.2",
+    "@nx/workspace": "22.0.2",
+    "@schematics/angular": "20.3.9",
+    "@types/node": "18.16.9",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "@typescript-eslint/types": "7.18.0",
+    "@typescript-eslint/utils": "^7.16.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "10.1.1",
+    "husky": "8.0.2",
+    "jsonc-eslint-parser": "2.1.0",
+    "lint-staged": "^15.2.10",
+    "nx": "22.0.2",
+    "prettier": "3.2.4",
+    "prettier-plugin-organize-imports": "^3.2.4",
+    "rxjs": "7.8.1",
+    "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "nx": "22.0.2",
+    "rollup": "4.44.1"
+  },
+  "lint-staged": {
+    "*": [
+      "yarn nx format:write --uncommitted"
+    ],
+    "*.{js,jsx,ts,tsx,html,md,json,yml,css,scss}": [
+      "yarn eslint --fix"
+    ]
+  },
+  "packageManager": "yarn@4.11.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

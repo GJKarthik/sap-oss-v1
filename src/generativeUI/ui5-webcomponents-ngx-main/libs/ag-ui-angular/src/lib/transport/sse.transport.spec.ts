@@ -54,10 +54,12 @@ function makeEsStub(initialReadyState = ES_CONNECTING): EsEventHandlers & {
 }
 
 let latestEsStub: ReturnType<typeof makeEsStub>;
+let esInstances: Array<ReturnType<typeof makeEsStub>> = [];
 
 function installEsMock(autoTriggerError?: boolean) {
   const MockEventSource = jest.fn((_url: string) => {
     latestEsStub = makeEsStub();
+    esInstances.push(latestEsStub);
     if (autoTriggerError) {
       // Defer close so onmessage/onerror handlers are set first
       Promise.resolve().then(() => latestEsStub.triggerError(ES_CLOSED));
@@ -77,11 +79,13 @@ function installEsMock(autoTriggerError?: boolean) {
 describe('SseTransport — oversized payload drop', () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    esInstances = [];
     installEsMock();
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    esInstances = [];
     delete (globalThis as unknown as Record<string, unknown>).EventSource;
   });
 
@@ -129,8 +133,13 @@ describe('SseTransport — oversized payload drop', () => {
 });
 
 describe('SseTransport — reconnect state machine', () => {
+  beforeEach(() => {
+    esInstances = [];
+  });
+
   afterEach(() => {
     jest.useRealTimers();
+    esInstances = [];
     delete (globalThis as unknown as Record<string, unknown>).EventSource;
   });
 
@@ -177,6 +186,44 @@ describe('SseTransport — reconnect state machine', () => {
 
     transport.destroy();
     await connectPromise;
+  });
+
+  it('receives events from the replacement EventSource after reconnect', async () => {
+    jest.useFakeTimers();
+    installEsMock();
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+
+    const transport = createSseTransport('http://localhost:9090/events', {
+      reconnect: true,
+      reconnectAttempts: 2,
+      reconnectDelay: 0,
+    });
+
+    const received: unknown[] = [];
+    transport.events$.subscribe(event => received.push(event));
+
+    const connectPromise = transport.connect();
+    latestEsStub.triggerOpen();
+    await connectPromise;
+
+    latestEsStub.triggerError(ES_CLOSED);
+    jest.runOnlyPendingTimers();
+    await Promise.resolve();
+
+    const replacement = esInstances[1];
+    expect(replacement).toBeDefined();
+
+    replacement.triggerOpen();
+    replacement.triggerMessage(
+      JSON.stringify({ type: 'text.delta', delta: 'recovered', runId: 'r1', timestamp: '' })
+    );
+
+    expect(received).toHaveLength(1);
+    expect((received[0] as { delta: string }).delta).toBe('recovered');
+
+    Math.random = originalRandom;
+    transport.destroy();
   });
 
   it('transitions to error state after maxRetries exceeded', async () => {

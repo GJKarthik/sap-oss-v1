@@ -21,8 +21,7 @@ import type { FilterValue } from '../types/filter.types';
 @Injectable({ providedIn: 'root' })
 export class SacDataSourceService {
   private dataSources = new Map<string, DataSourceInstance>();
-
-  constructor(private readonly api: SacApiService = inject(SacApiService)) {}
+  private readonly api = inject(SacApiService);
 
   /**
    * Create a new datasource instance.

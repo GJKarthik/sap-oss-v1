@@ -1,0 +1,93 @@
+{
+  "name": "angular-shell",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/angular-shell/src",
+  "prefix": "app",
+  "tags": ["type:app", "framework:angular", "scope:frontend"],
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:browser",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/angular-shell",
+        "index": "apps/angular-shell/src/index.html",
+        "main": "apps/angular-shell/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/angular-shell/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [],
+        "styles": ["apps/angular-shell/src/styles.scss"],
+        "scripts": [],
+        "allowedCommonJsDependencies": [
+          "@ui5/webcomponents",
+          "@ui5/webcomponents-base",
+          "@ui5/webcomponents-fiori",
+          "@ui5/webcomponents-icons"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "2mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "angular-shell:build:production"
+        },
+        "development": {
+          "buildTarget": "angular-shell:build:development"
+        }
+      },
+      "defaultConfiguration": "development",
+      "continuous": true
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "angular-shell:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/angular-shell/**/*.ts", "apps/angular-shell/**/*.html"]
+      }
+    },
+    "test": {
+      "executor": "@angular-devkit/build-angular:karma",
+      "options": {
+        "polyfills": ["zone.js", "zone.js/testing"],
+        "tsConfig": "apps/angular-shell/tsconfig.spec.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [],
+        "styles": ["apps/angular-shell/src/styles.scss"],
+        "scripts": []
+      }
+    }
+  }
+}
