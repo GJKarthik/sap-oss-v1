@@ -34,33 +34,40 @@ def setup_logging(gpu_type: str):
 
 
 def get_gpu_config(gpu_type: str) -> dict:
-    """Get GPU-specific configuration."""
+    """Get GPU-specific configuration optimized for Brev servers.
+
+    T4 (16GB):  3B model with 4-bit quant - best quality/memory tradeoff
+    L4 (24GB):  7B model with 4-bit quant - high quality, fits comfortably
+    A100 (40GB): 14B model with 4-bit quant - production quality
+    """
     configs = {
         "t4": {
-            "model_id": "Qwen/Qwen2.5-0.5B-Instruct",  # Smaller model for T4
-            "max_seq_length": 512,
-            "batch_size": 4,
-            "gradient_accumulation": 8,
+            "model_id": "Qwen/Qwen2.5-3B-Instruct",  # 3B: better quality than 0.5B, fits T4
+            "max_seq_length": 1024,
+            "batch_size": 1,
+            "gradient_accumulation": 32,  # effective batch = 32
             "lora_r": 16,
             "lora_alpha": 32,
             "learning_rate": 2e-4,
             "epochs": 3,
             "fp16": True,
-            "bf16": False,
+            "bf16": False,  # T4 lacks native BF16
             "quantize_4bit": True,
+            "optim": "paged_adamw_8bit",
         },
         "l4": {
             "model_id": "Qwen/Qwen2.5-7B-Instruct",
-            "max_seq_length": 1024,
+            "max_seq_length": 2048,  # L4 has headroom for longer context
             "batch_size": 2,
-            "gradient_accumulation": 16,
+            "gradient_accumulation": 16,  # effective batch = 32
             "lora_r": 32,
             "lora_alpha": 64,
             "learning_rate": 1e-4,
             "epochs": 3,
-            "fp16": False,
-            "bf16": True,
+            "fp16": True,   # More reliable across Brev driver versions
+            "bf16": False,
             "quantize_4bit": True,
+            "optim": "paged_adamw_8bit",
         },
         "a100": {
             "model_id": "Qwen/Qwen2.5-14B-Instruct",
@@ -74,6 +81,7 @@ def get_gpu_config(gpu_type: str) -> dict:
             "fp16": False,
             "bf16": True,
             "quantize_4bit": True,
+            "optim": "adamw_torch_fused",
         },
     }
     return configs.get(gpu_type, configs["t4"])
@@ -113,6 +121,66 @@ You are an expert SAP HANA SQL generator. Generate precise, executable SQL queri
 {output}
 <|im_end|>"""
     return formatted
+
+
+def format_training_example(item: dict, tokenizer=None) -> str:
+    """Format legacy or routed examples into a prompt string.
+
+    Supports both:
+    - legacy SFT rows: instruction/input/output
+    - routed rows: system_prompt/context/question/sql/response/allowed_tables
+    - multi-turn rows: turns[] with role/content/sql
+    """
+    system_prompt = (
+        item.get("system_prompt")
+        or item.get("instruction")
+        or "Generate SAP HANA SQL for the user's request."
+    )
+
+    if item.get("turns"):
+        lines = [f"system: {system_prompt.strip()}"]
+        for turn in item.get("turns", []):
+            role = turn.get("role", "user")
+            content = (turn.get("content") or "").strip()
+            if turn.get("sql"):
+                content = f"{content}\nSQL: {turn['sql']}".strip()
+            lines.append(f"{role}: {content}")
+        return "\n".join(lines)
+
+    question = item.get("question")
+    answer = item.get("sql") or item.get("response") or item.get("output") or ""
+
+    user_parts = []
+    context = item.get("context")
+    domain = item.get("domain")
+    allowed_tables = item.get("allowed_tables")
+    ex_type = item.get("type")
+
+    if context:
+        user_parts.append(f"Context: {context}")
+    if domain:
+        user_parts.append(f"Domain: {domain}")
+    if allowed_tables:
+        if isinstance(allowed_tables, list):
+            allowed_tables = ", ".join(str(t) for t in allowed_tables)
+        user_parts.append(f"Allowed tables: {allowed_tables}")
+    if ex_type:
+        user_parts.append(f"Example type: {ex_type}")
+
+    if question:
+        user_parts.append(f"Question: {question}")
+    elif item.get("input"):
+        user_parts.append(str(item.get("input", "")))
+
+    user_content = "\n".join(p for p in user_parts if p).strip()
+    if not user_content:
+        user_content = str(item.get("input", "")).strip()
+
+    return "\n".join([
+        f"system: {system_prompt.strip()}",
+        f"user: {user_content}",
+        f"assistant: {str(answer).strip()}",
+    ])
 
 
 def main():
@@ -210,7 +278,7 @@ def main():
     
     # Prepare dataset
     print("\nPreparing dataset...")
-    texts = [format_example(item, tokenizer) for item in training_data]
+    texts = [format_training_example(item, tokenizer) for item in training_data]
     dataset = Dataset.from_dict({"text": texts})
     
     def tokenize_function(examples):
@@ -238,16 +306,21 @@ def main():
         per_device_train_batch_size=config["batch_size"],
         gradient_accumulation_steps=config["gradient_accumulation"],
         learning_rate=config["learning_rate"],
-        warmup_ratio=0.1,
+        lr_scheduler_type="cosine",
+        warmup_ratio=0.05,
+        weight_decay=0.01,
+        max_grad_norm=1.0,
         logging_steps=10,
         save_steps=500,
         save_total_limit=3,
         fp16=config["fp16"],
         bf16=config["bf16"],
-        optim="paged_adamw_8bit",
+        optim=config.get("optim", "paged_adamw_8bit"),
         report_to="none",
         gradient_checkpointing=True,
+        gradient_checkpointing_kwargs={"use_reentrant": False},
         dataloader_num_workers=2,
+        dataloader_pin_memory=True,
         seed=42,
     )
     

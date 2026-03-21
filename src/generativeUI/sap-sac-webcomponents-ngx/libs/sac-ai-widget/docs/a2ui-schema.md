@@ -62,10 +62,7 @@ interface SacWidgetSchema {
   // Component-specific
   slider?: SacSliderConfig;
   text?: SacTextConfig;
-  animation?: SacAnimationConfig;
-  condition?: SacConditionalConfig;
-  theme?: SacThemeConfig;
-  
+
   // Accessibility
   ariaLabel?: string;
   ariaDescription?: string;
@@ -146,47 +143,4 @@ interface SacWidgetSchema {
 }
 ```
 
-## Animation Support
-
-Animations **MUST** respect `prefers-reduced-motion`:
-```json
-{
-  "animation": {
-    "type": "fade",
-    "duration": 200,
-    "timing": "ease-out",
-    "respectReducedMotion": true
-  }
-}
-```
-
-## Conditional Rendering
-
-Show/hide widgets based on data state:
-```json
-{
-  "condition": {
-    "conditions": [
-      { "field": "revenue", "operator": "gt", "value": 0 }
-    ],
-    "logic": "and",
-    "fallbackWidgetId": "no-data-message"
-  }
-}
-```
-
-## Theme Integration
-
-Inherit SAC story theme or override tokens:
-```json
-{
-  "theme": {
-    "inherit": true,
-    "tokens": {
-      "primaryColor": "#0854a0",
-      "borderRadius": 8
-    }
-  }
-}
-```
 

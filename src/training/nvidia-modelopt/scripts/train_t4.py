@@ -26,55 +26,82 @@ from datasets import Dataset
 
 @dataclass
 class TrainingConfig:
-    """Training configuration for T4 GPU"""
+    """Training configuration for T4 GPU (16GB VRAM)
+
+    Optimized for Brev T4 instances:
+    - 4-bit NF4 quantization to fit 7B model
+    - LoRA on attention + MLP for better quality
+    - Gradient checkpointing for memory
+    - FP16 (T4 lacks native BF16)
+    """
     model_name: str = "Qwen/Qwen2.5-7B-Instruct"
     output_dir: str = "./outputs/qwen-7b-text2sql-t4"
-    
-    # Training params optimized for T4
-    num_train_epochs: int = 1
+
+    # Training params optimized for T4 16GB
+    num_train_epochs: int = 3
     per_device_train_batch_size: int = 1
-    gradient_accumulation_steps: int = 16
-    learning_rate: float = 1e-4
-    max_steps: int = 100  # Quick training run
-    
-    # LoRA config
-    lora_r: int = 8
-    lora_alpha: int = 16
+    gradient_accumulation_steps: int = 32  # effective batch = 32
+    learning_rate: float = 2e-4
+    max_steps: int = -1  # Use full epochs
+    warmup_ratio: float = 0.05
+
+    # LoRA config - include MLP layers for better quality
+    lora_r: int = 16
+    lora_alpha: int = 32
     lora_dropout: float = 0.05
-    
+
     # Data config
     max_seq_length: int = 1024
-    max_samples: int = 500
+    max_samples: int = None  # Use all available data
+
+    # Data path (override with --data flag)
+    data_dir: str = "data/specialist_training"
 
 
-def create_training_data():
-    """Create synthetic text-to-SQL training data"""
-    examples = [
-        {"instruction": "Generate SQL for SAP HANA", "input": "Show total amount by country", 
-         "output": "SELECT COUNTRY_CODE, SUM(AMOUNT_USD) AS total FROM BTP.FACT GROUP BY COUNTRY_CODE"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "List top 10 entities by revenue",
-         "output": "SELECT ENTITY_CODE, SUM(AMOUNT_USD) AS revenue FROM BTP.FACT GROUP BY ENTITY_CODE ORDER BY revenue DESC LIMIT 10"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "What is the average RWA per country?",
-         "output": "SELECT COUNTRY_CODE, AVG(RWA) AS avg_rwa FROM BTP.CLIENT_MI GROUP BY COUNTRY_CODE"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Show ESG metrics for energy sector",
-         "output": "SELECT * FROM BTP.ESG_METRIC WHERE NET_ZERO_SECTOR = 'Energy'"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Count positions by product type",
-         "output": "SELECT PRODUCT_CODE, COUNT(*) AS count FROM BTP.TREASURY_POSITION GROUP BY PRODUCT_CODE"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Find entities in UK with amount over 1 million",
-         "output": "SELECT ENTITY_CODE, AMOUNT_USD FROM BTP.FACT WHERE COUNTRY_CODE = 'UK' AND AMOUNT_USD > 1000000"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Show monthly totals for 2024",
-         "output": "SELECT EXTRACT(MONTH FROM COB_DATE) AS month, SUM(AMOUNT_USD) AS total FROM BTP.FACT WHERE EXTRACT(YEAR FROM COB_DATE) = 2024 GROUP BY EXTRACT(MONTH FROM COB_DATE)"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Get treasury positions with DV01 > 10000",
-         "output": "SELECT * FROM BTP.TREASURY_POSITION WHERE DV01 > 10000"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Show entity names with their total amounts",
-         "output": "SELECT e.ENTITY_NAME, SUM(f.AMOUNT_USD) AS total FROM BTP.FACT f JOIN BTP.DIM_ENTITY e ON f.ENTITY_CODE = e.ENTITY_CODE GROUP BY e.ENTITY_NAME"},
-        {"instruction": "Generate SQL for SAP HANA", "input": "Calculate financed emissions by sector",
-         "output": "SELECT NET_ZERO_SECTOR, SUM(FINANCED_EMISSION) AS total_emissions FROM BTP.ESG_METRIC GROUP BY NET_ZERO_SECTOR ORDER BY total_emissions DESC"},
-    ]
-    
-    # Repeat to get more samples
-    all_examples = examples * 50
-    return all_examples[:500]
+def load_training_data(data_dir: str, max_samples: int = None):
+    """Load real training data from specialist_training directory.
+
+    Tries JSONL first, then JSON, then falls back to synthetic examples
+    if no training data is found.
+    """
+    data_path = Path(data_dir)
+    examples = []
+
+    # Try JSONL files first (434K dataset format)
+    for jsonl_file in sorted(data_path.glob("*.jsonl")):
+        with open(jsonl_file) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        examples.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        if max_samples and len(examples) >= max_samples:
+            break
+
+    # Try JSON files (specialist format)
+    if not examples:
+        for json_file in sorted(data_path.glob("train_*.json")):
+            with open(json_file) as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    examples.extend(data)
+            if max_samples and len(examples) >= max_samples:
+                break
+
+    if not examples:
+        print("WARNING: No training data found, using minimal synthetic examples")
+        examples = [
+            {"instruction": "Generate SQL for SAP HANA", "input": "Show total amount by country",
+             "output": "SELECT COUNTRY_CODE, SUM(AMOUNT_USD) AS total FROM BTP.FACT GROUP BY COUNTRY_CODE"},
+            {"instruction": "Generate SQL for SAP HANA", "input": "List top 10 entities by revenue",
+             "output": "SELECT ENTITY_CODE, SUM(AMOUNT_USD) AS revenue FROM BTP.FACT GROUP BY ENTITY_CODE ORDER BY revenue DESC LIMIT 10"},
+        ] * 50
+
+    if max_samples:
+        examples = examples[:max_samples]
+    return examples
 
 
 def format_example(example: dict, tokenizer) -> dict:
@@ -142,7 +169,7 @@ def main():
     lora_config = LoraConfig(
         r=config.lora_r,
         lora_alpha=config.lora_alpha,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         lora_dropout=config.lora_dropout,
         bias="none",
         task_type="CAUSAL_LM",
@@ -155,8 +182,9 @@ def main():
     print(f"LoRA: {trainable:,} trainable / {total:,} total ({100*trainable/total:.2f}%)")
     
     # Prepare dataset
-    print("\nPreparing training data...")
-    raw_data = create_training_data()
+    print(f"\nLoading training data from {config.data_dir}...")
+    raw_data = load_training_data(config.data_dir, config.max_samples)
+    print(f"Loaded {len(raw_data):,} examples")
     
     # Tokenize
     def tokenize(example):
@@ -183,22 +211,30 @@ def main():
     
     print(f"Dataset size: {len(tokenized_dataset)}")
     
-    # Training arguments
+    # Training arguments - optimized for T4 16GB on Brev
     training_args = TrainingArguments(
         output_dir=config.output_dir,
         num_train_epochs=config.num_train_epochs,
         per_device_train_batch_size=config.per_device_train_batch_size,
         gradient_accumulation_steps=config.gradient_accumulation_steps,
         learning_rate=config.learning_rate,
+        warmup_ratio=config.warmup_ratio,
+        lr_scheduler_type="cosine",
         max_steps=config.max_steps,
         fp16=True,
-        logging_steps=5,
-        save_steps=50,
-        save_total_limit=2,
+        bf16=False,  # T4 lacks native BF16
+        logging_steps=10,
+        save_steps=500,
+        save_total_limit=3,
+        eval_strategy="no",
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         optim="paged_adamw_8bit",
-        report_to="none",  # Disable wandb for now
+        weight_decay=0.01,
+        max_grad_norm=1.0,
+        report_to="none",
+        dataloader_num_workers=2,
+        dataloader_pin_memory=True,
         seed=42,
     )
     

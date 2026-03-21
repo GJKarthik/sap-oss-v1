@@ -720,7 +720,6 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
       ...child,
       modelId: child.modelId || this.schema.modelId,
       filters: child.filters?.length ? child.filters : this.schema.filters,
-      theme: child.theme ?? this.schema.theme,
     });
   }
 
@@ -1155,9 +1154,6 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
       children: schema.children?.map((child) => this.normalizeSchema(child)),
       slider: schema.slider,
       text: schema.text,
-      animation: schema.animation,
-      condition: schema.condition,
-      theme: schema.theme,
       ariaLabel: schema.ariaLabel?.trim() || undefined,
       ariaDescription: schema.ariaDescription?.trim() || undefined,
     };
@@ -1185,9 +1181,6 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
       children: current.children?.length ? current.children : remote.children,
       slider: current.slider ?? remote.slider,
       text: current.text ?? remote.text,
-      animation: current.animation ?? remote.animation,
-      condition: current.condition ?? remote.condition,
-      theme: current.theme ?? remote.theme,
       ariaLabel: current.ariaLabel || remote.ariaLabel,
       ariaDescription: current.ariaDescription || remote.ariaDescription,
     });

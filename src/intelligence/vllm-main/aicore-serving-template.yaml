@@ -1,19 +1,26 @@
 apiVersion: ai.sap.com/v1alpha1
 kind: ServingTemplate
 metadata:
-  name: privatellm-tinyllama
+  name: privatellm-inference
   annotations:
-    scenarios.ai.sap.com/description: "Pure Zig LLM inference with TinyLlama - Direct GGUF loading from S3"
+    scenarios.ai.sap.com/description: "Pure Zig LLM inference - Direct GGUF loading with T4/L4 GPU support"
     scenarios.ai.sap.com/name: "privatellm"
     executables.ai.sap.com/description: "OpenAI-compatible LLM gateway with built-in GGUF inference"
     executables.ai.sap.com/name: "privatellm"
   labels:
     scenarios.ai.sap.com/id: "privatellm"
-    ai.sap.com/version: "1.0"
+    ai.sap.com/version: "2.1.0"
 spec:
   inputs:
+    parameters:
+      - name: dockerImage
+        type: string
+        default: "ghcr.io/sap/ai-core-privatellm:v2.1.0"
+      - name: resourcePlan
+        type: string
+        default: "infer.s"
     artifacts:
-      - name: tinyllamamodel
+      - name: llmmodel
   template:
     apiVersion: "serving.kserve.io/v1beta1"
     metadata:
@@ -22,16 +29,14 @@ spec:
         autoscaling.knative.dev/target: 1
         autoscaling.knative.dev/targetBurstCapacity: 0
       labels: |
-        ai.sap.com/resourcePlan: infer.s
+        ai.sap.com/resourcePlan: "{{inputs.parameters.resourcePlan}}"
     spec: |
       predictor:
-        imagePullSecrets:
-        - name: ollamadocker
         minReplicas: 1
         maxReplicas: 1
         containers:
         - name: kserve-container
-          image: docker.io/gjkarthik/ai-core-privatellm:v1.0-tinyllama
+          image: "{{inputs.parameters.dockerImage}}"
           ports:
           - containerPort: 8080
             protocol: TCP
@@ -42,17 +47,19 @@ spec:
           resources:
             limits:
               nvidia.com/gpu: "1"
-              memory: "8Gi"
+              memory: "16Gi"
               cpu: "4"
             requests:
               nvidia.com/gpu: "1"
-              memory: "4Gi"
+              memory: "8Gi"
               cpu: "2"
           env:
           - name: PORT
             value: "8080"
           - name: MODEL_PATH
             value: "/mnt/models"
+          - name: METRICS_BIND
+            value: "127.0.0.1"
           - name: CUDA_VISIBLE_DEVICES
             value: "0"
           - name: NVIDIA_VISIBLE_DEVICES
@@ -64,4 +71,4 @@ spec:
         volumes:
         - name: model-volume
           persistentVolumeClaim:
-            claimName: "{{inputs.artifacts.tinyllamamodel}}"
+            claimName: "{{inputs.artifacts.llmmodel}}"

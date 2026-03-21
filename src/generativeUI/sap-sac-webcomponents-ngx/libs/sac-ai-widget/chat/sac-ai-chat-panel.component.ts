@@ -31,7 +31,7 @@ import {
   AgUiToolCallEndEvent,
 } from '../ag-ui/sac-ag-ui.service';
 import { SacToolDispatchService, ToolExecutionReview, ToolResult } from './sac-tool-dispatch.service';
-import { SacAiAuditEntry, SacAiSessionService } from '../session/sac-ai-session.service';
+import { SacAiAuditEntry, SacAiReplayEntry, SacAiSessionService } from '../session/sac-ai-session.service';
 
 // =============================================================================
 // Message model
@@ -150,6 +150,28 @@ interface PendingToolConfirmation {
             (click)="approveActiveConfirmation()">
             {{ confirmationBusy ? 'Working…' : activeConfirmation.review.confirmationLabel }}
           </button>
+        </div>
+      </section>
+
+      <section
+        *ngIf="replayEntries.length"
+        class="sac-chat-audit"
+        role="region"
+        aria-label="Workflow replay timeline">
+        <div class="sac-chat-audit__header">
+          <h3 class="sac-chat-audit__title">Replay timeline</h3>
+        </div>
+        <div class="sac-chat-audit__list">
+          <article
+            *ngFor="let entry of replayEntries; trackBy: trackByReplayId"
+            class="sac-chat-audit__entry">
+            <div class="sac-chat-audit__meta">
+              <span>{{ formatReplayKind(entry.kind) }}</span>
+              <span>#{{ entry.sequence }}</span>
+            </div>
+            <div class="sac-chat-audit__detail">{{ entry.detail }}</div>
+            <div class="sac-chat-audit__timestamp">{{ entry.timestamp }}</div>
+          </article>
         </div>
       </section>
 
@@ -602,6 +624,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     this.announceMessage('Message sent');
     this.clearConfirmationState();
     this.recordAudit('request.sent', 'processing', text);
+    this.recordReplay('request.sent', text);
 
     const assistantMsg: ChatMessage = { id: this.uid(), role: 'assistant', content: '', streaming: true };
     this.messages.push(assistantMsg);
@@ -624,6 +647,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
           assistantMsg.streaming = false;
           this.streaming = false;
           this.recordAudit('stream.error', 'error', err.message);
+          this.recordReplay('stream.error', err.message);
           this.announceMessage(`Error: ${err.message}`);
           this.cdr.markForCheck();
         },
@@ -633,6 +657,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
           assistantMsg.streaming = false;
           this.streaming = false;
           this.recordAudit('stream.complete', 'completed', 'Assistant response finished');
+          this.recordReplay('stream.complete', 'Assistant response finished');
           this.announceMessage('Response complete');
           this.cdr.markForCheck();
         },
@@ -650,6 +675,10 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   }
 
   trackByAuditId(_: number, entry: SacAiAuditEntry): string {
+    return entry.id;
+  }
+
+  trackByReplayId(_: number, entry: SacAiReplayEntry): string {
     return entry.id;
   }
 
@@ -680,12 +709,22 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
           ? `Approved ${confirmation.review.toolName}`
           : (result.error ?? `Approved ${confirmation.review.toolName} but execution failed`),
       );
+      this.recordReplay(
+        result.success ? 'approval.approved' : 'tool.error',
+        result.success
+          ? `Approved ${confirmation.review.toolName}`
+          : (result.error ?? `Approved ${confirmation.review.toolName} but execution failed`),
+      );
       this.advanceConfirmationQueue();
       this.announceMessage(`Approved ${confirmation.review.toolName}`);
     } catch (error) {
       this.recordAudit(
         'approval.error',
         'error',
+        error instanceof Error ? error.message : 'Failed to execute the reviewed action',
+      );
+      this.recordReplay(
+        'tool.error',
         error instanceof Error ? error.message : 'Failed to execute the reviewed action',
       );
       this.confirmationError = error instanceof Error
@@ -715,6 +754,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     };
     this.agUiService.dispatchToolResult(confirmation.toolCallId, result);
     this.recordAudit('approval.rejected', 'rejected', `Rejected ${confirmation.review.toolName}`);
+    this.recordReplay('approval.rejected', `Rejected ${confirmation.review.toolName}`);
     this.advanceConfirmationQueue();
     this.announceMessage(`Rejected ${confirmation.review.toolName}`);
     this.cdr.markForCheck();
@@ -728,11 +768,16 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     return eventType.replace(/\./g, ' ');
   }
 
+  formatReplayKind(kind: string): string {
+    return kind.replace(/\./g, ' ');
+  }
+
   private handleEvent(event: AgUiEvent, assistantMsg: ChatMessage): void {
     switch (event.type) {
       case 'TEXT_MESSAGE_CONTENT': {
         const e = event as AgUiTextContentEvent;
         assistantMsg.content += e.delta;
+        this.recordReplay('stream.chunk', e.delta);
         this.cdr.markForCheck();
         break;
       }
@@ -781,12 +826,14 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       args = JSON.parse(argsJson) as Record<string, unknown>;
     } catch {
       this.recordAudit('tool.invalid_args', 'error', `Invalid JSON for ${toolName}`);
+      this.recordReplay('tool.error', `Invalid JSON for ${toolName}`);
       this.agUiService.dispatchToolResult(toolCallId, { success: false, error: 'Invalid tool args JSON' });
       return;
     }
 
     try {
       this.recordAudit('tool.requested', 'processing', `${toolName} requested`);
+      this.recordReplay('tool.requested', `${toolName} requested`);
       const review = await this.toolDispatch.getConfirmationReview(toolName, args);
       if (review) {
         this.queueConfirmation(toolCallId, review);
@@ -801,11 +848,21 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
           ? `${toolName} completed successfully`
           : (result.error ?? `${toolName} failed`),
       );
+      this.recordReplay(
+        result.success ? 'tool.result' : 'tool.error',
+        result.success
+          ? `${toolName} completed successfully`
+          : (result.error ?? `${toolName} failed`),
+      );
       this.agUiService.dispatchToolResult(toolCallId, result);
     } catch (error) {
       this.recordAudit(
         'tool.error',
         'error',
+        error instanceof Error ? error.message : `${toolName} execution failed`,
+      );
+      this.recordReplay(
+        'tool.error',
         error instanceof Error ? error.message : `${toolName} execution failed`,
       );
       this.agUiService.dispatchToolResult(toolCallId, {
@@ -833,10 +890,12 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       this.activeConfirmation = pendingConfirmation;
       this.confirmationError = '';
       this.recordAudit('approval.required', 'processing', review.summary);
+      this.recordReplay('approval.required', review.summary);
       this.announceMessage(`${review.title}. Review required.`);
     } else {
       this.queuedConfirmations.push(pendingConfirmation);
       this.recordAudit('approval.queued', 'processing', `Queued review for ${review.toolName}`);
+      this.recordReplay('approval.queued', `Queued review for ${review.toolName}`);
     }
 
     this.cdr.markForCheck();
@@ -879,7 +938,19 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     this.cdr.markForCheck();
   }
 
+  private recordReplay(
+    kind: SacAiReplayEntry['kind'],
+    detail: string,
+  ): void {
+    this.session.recordReplay(kind, detail);
+    this.cdr.markForCheck();
+  }
+
   get auditEntries(): SacAiAuditEntry[] {
     return this.session.getAuditEntries();
+  }
+
+  get replayEntries(): SacAiReplayEntry[] {
+    return this.session.getReplayEntries();
   }
 }

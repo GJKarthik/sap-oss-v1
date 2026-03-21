@@ -147,8 +147,9 @@ lora:
 # Dataset Configuration
 # =============================================================================
 dataset:
-  train_file: "../schema_pipeline/output/prepared/train.jsonl"
-  validation_file: "../schema_pipeline/output/prepared/validation.jsonl"
+  # Paths resolved relative to project root; override with TRAIN_FILE / VALIDATION_FILE env vars
+  train_file: "data/specialist_training/train.jsonl"
+  validation_file: "data/specialist_training/validation.jsonl"
   validation_split: null  # Using explicit validation file
   
   # Data processing - reduced for T4

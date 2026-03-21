@@ -240,39 +240,46 @@ def train_specialist(specialist: str, model_name: str = "Qwen/Qwen2.5-7B-Instruc
     
     tokenized_dataset = dataset.map(tokenize, batched=True, remove_columns=["text"])
     
-    # L4 optimized training arguments
+    # L4 optimized training arguments (24GB VRAM on Brev)
     batch_size = 2 if use_quantization else 8
-    grad_accum = 8 if use_quantization else 2
-    
+    grad_accum = 16 if use_quantization else 2
+
+    # L4 supports BF16 but FP16 is more reliable across driver versions
+    use_fp16 = True
+    use_bf16 = False
+
     training_args = TrainingArguments(
         output_dir=config["output_dir"],
-        
+
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps=grad_accum,
-        
-        learning_rate=2e-4,
+
+        learning_rate=1e-4,
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
-        
+
         num_train_epochs=3,
-        
-        bf16=True,
-        gradient_checkpointing=use_quantization,  # Only for quantized models
-        
-        optim="adamw_torch_fused",
+
+        fp16=use_fp16,
+        bf16=use_bf16,
+        gradient_checkpointing=True,
+        gradient_checkpointing_kwargs={"use_reentrant": False},
+
+        optim="paged_adamw_8bit",  # More portable than adamw_torch_fused
         weight_decay=0.01,
         max_grad_norm=1.0,
-        
+
         logging_steps=50,
         logging_dir=f"{config['output_dir']}/logs",
         report_to=["tensorboard"],
-        
+
         save_strategy="steps",
         save_steps=500,
-        save_total_limit=2,
-        
+        save_total_limit=3,
+
         dataloader_num_workers=4,
         dataloader_pin_memory=True,
+        seed=42,
     )
     
     # Data collator

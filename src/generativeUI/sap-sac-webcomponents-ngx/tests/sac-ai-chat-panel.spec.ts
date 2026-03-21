@@ -23,6 +23,24 @@ function createSessionStub() {
     status: 'processing' | 'approved' | 'rejected' | 'completed' | 'error';
     detail: string;
   }> = [];
+  const replayEntries: Array<{
+    id: string;
+    sequence: number;
+    timestamp: string;
+    kind:
+      | 'request.sent'
+      | 'stream.chunk'
+      | 'stream.complete'
+      | 'stream.error'
+      | 'tool.requested'
+      | 'tool.result'
+      | 'tool.error'
+      | 'approval.required'
+      | 'approval.queued'
+      | 'approval.approved'
+      | 'approval.rejected';
+    detail: string;
+  }> = [];
 
   return {
     getThreadId: vi.fn().mockReturnValue('thread-chat'),
@@ -40,6 +58,21 @@ function createSessionStub() {
     getAuditEntries: vi.fn(() => [...auditEntries]),
     clearAudit: vi.fn(() => {
       auditEntries.length = 0;
+    }),
+    recordReplay: vi.fn((kind: typeof replayEntries[number]['kind'], detail: string) => {
+      const entry = {
+        id: `replay-${replayEntries.length + 1}`,
+        sequence: replayEntries.length + 1,
+        timestamp: new Date().toISOString(),
+        kind,
+        detail,
+      };
+      replayEntries.unshift(entry);
+      return entry;
+    }),
+    getReplayEntries: vi.fn(() => [...replayEntries]),
+    clearReplay: vi.fn(() => {
+      replayEntries.length = 0;
     }),
   };
 }
@@ -126,6 +159,9 @@ describe('SacAiChatPanelComponent', () => {
       data: { chartType: 'line' },
     });
     expect(component.auditEntries.some((entry) => entry.eventType === 'tool.executed' && entry.status === 'completed')).toBe(true);
+    expect(component.replayEntries.some((entry) => entry.kind === 'request.sent')).toBe(true);
+    expect(component.replayEntries.some((entry) => entry.kind === 'tool.result')).toBe(true);
+    expect(component.replayEntries.some((entry) => entry.kind === 'stream.complete')).toBe(true);
 
     component.ngOnDestroy();
   });
@@ -229,6 +265,8 @@ describe('SacAiChatPanelComponent', () => {
     });
     expect(component.activeConfirmation).toBeNull();
     expect(component.auditEntries.some((entry) => entry.eventType === 'approval.approved')).toBe(true);
+    expect(component.replayEntries.some((entry) => entry.kind === 'approval.required')).toBe(true);
+    expect(component.replayEntries.some((entry) => entry.kind === 'approval.approved')).toBe(true);
 
     component.ngOnDestroy();
   });
@@ -316,6 +354,7 @@ describe('SacAiChatPanelComponent', () => {
     });
     expect(component.activeConfirmation).toBeNull();
     expect(component.auditEntries.some((entry) => entry.eventType === 'approval.rejected')).toBe(true);
+    expect(component.replayEntries.some((entry) => entry.kind === 'approval.rejected')).toBe(true);
 
     component.ngOnDestroy();
   });

@@ -81,23 +81,24 @@ data:
   packing: true  # Enable example packing for efficiency
   
 # Output Configuration
+# base_dir is resolved at runtime: $MODELS_DIR env var, or ./outputs/specialists
 output:
-  base_dir: "/opt/models/specialists"
+  base_dir: "./outputs/specialists"
   specialists:
     - name: "performance"
-      output_dir: "/opt/models/specialists/performance"
+      output_dir: "./outputs/specialists/performance"
       train_file: "data/specialist_training/train_performance.json"
     - name: "balance_sheet"
-      output_dir: "/opt/models/specialists/balance_sheet"
+      output_dir: "./outputs/specialists/balance_sheet"
       train_file: "data/specialist_training/train_balance_sheet.json"
     - name: "treasury"
-      output_dir: "/opt/models/specialists/treasury"
+      output_dir: "./outputs/specialists/treasury"
       train_file: "data/specialist_training/train_treasury.json"
     - name: "esg"
-      output_dir: "/opt/models/specialists/esg"
+      output_dir: "./outputs/specialists/esg"
       train_file: "data/specialist_training/train_esg.json"
     - name: "router"
-      output_dir: "/opt/models/specialists/router"
+      output_dir: "./outputs/specialists/router"
       train_file: "data/specialist_training/train_router.json"
       # Router uses smaller model
       model_override: "Qwen/Qwen2.5-0.5B-Instruct"

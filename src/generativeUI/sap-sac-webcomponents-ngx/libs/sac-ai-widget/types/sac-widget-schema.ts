@@ -117,58 +117,6 @@ export interface SacTextConfig {
 }
 
 // =============================================================================
-// P2-002: Animation/Transition Configuration
-// =============================================================================
-
-export type SacAnimationType = 'fade' | 'slide' | 'scale' | 'none';
-export type SacAnimationTiming = 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear';
-
-export interface SacAnimationConfig {
-  type?: SacAnimationType;
-  duration?: number; // ms
-  timing?: SacAnimationTiming;
-  delay?: number; // ms
-  /** Respect prefers-reduced-motion */
-  respectReducedMotion?: boolean;
-}
-
-// =============================================================================
-// P2-002: Conditional Rendering
-// =============================================================================
-
-export type SacConditionOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'empty' | 'notEmpty';
-
-export interface SacCondition {
-  field: string;
-  operator: SacConditionOperator;
-  value?: unknown;
-}
-
-export interface SacConditionalConfig {
-  conditions: SacCondition[];
-  logic?: 'and' | 'or';
-  /** Widget ID to show when condition is false */
-  fallbackWidgetId?: string;
-}
-
-// =============================================================================
-// P2-002: Theme Configuration
-// =============================================================================
-
-export interface SacThemeConfig {
-  /** Inherit from SAC story context */
-  inherit?: boolean;
-  /** Override specific tokens */
-  tokens?: {
-    primaryColor?: string;
-    secondaryColor?: string;
-    backgroundColor?: string;
-    textColor?: string;
-    borderRadius?: number;
-  };
-}
-
-// =============================================================================
 // Expanded Widget Schema
 // =============================================================================
 
@@ -203,13 +151,6 @@ export interface SacWidgetSchema {
   slider?: SacSliderConfig;
   /** Text/heading configuration */
   text?: SacTextConfig;
-  /** Animation/transition configuration */
-  animation?: SacAnimationConfig;
-  /** Conditional rendering */
-  condition?: SacConditionalConfig;
-  /** Theme overrides */
-  theme?: SacThemeConfig;
-
   // Accessibility
   /** Accessible label (for screen readers) */
   ariaLabel?: string;

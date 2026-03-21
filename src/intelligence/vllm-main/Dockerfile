@@ -24,7 +24,9 @@ COPY zig/ ./zig/
 
 # Build pure Zig gateway (includes CUDA kernels compiled to PTX via LLVM)
 # No nvcc required - Zig's LLVM backend targets nvptx64-nvidia-cuda
-RUN cd zig && zig build -Doptimize=ReleaseFast
+# GPU_ARCH: sm_75=T4, sm_89=L4, sm_90=H100 (default: sm_75 for Brev T4)
+ARG GPU_ARCH=sm_75
+RUN cd zig && zig build -Doptimize=ReleaseFast -Dgpu=true -Dgpu_arch=${GPU_ARCH}
 
 # =============================================================================
 # Stage 2: Production runtime (NVIDIA GPU optimized)
@@ -69,12 +71,12 @@ USER 1001
 # Environment configuration
 ENV PORT=8080 \
     METRICS_PORT=9090 \
+    METRICS_BIND=127.0.0.1 \
     MODEL_PATH=/app/models \
     CACHE_DIR=/app/cache \
     CUDA_VISIBLE_DEVICES=all \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    # Pure Zig kernel configuration
     FLASH_ATTENTION_ENABLED=true \
     KERNEL_BACKEND=pure-zig
 

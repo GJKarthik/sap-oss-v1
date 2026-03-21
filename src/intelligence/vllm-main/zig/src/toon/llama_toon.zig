@@ -16,6 +16,7 @@ const Allocator = mem.Allocator;
 const toon = @import("toon.zig");
 const async_pipeline = @import("../gpu/async_pipeline.zig");
 const GgufTokenizer = @import("gguf_tokenizer.zig").GgufTokenizer;
+const native_mtp_mod = @import("native_mtp_drafter.zig");
 
 // CUDA forward pass — real GPU inference (91.5 TPS on T4)
 const cuda_fwd_mod = @import("../gpu/cuda_forward.zig");
@@ -56,6 +57,24 @@ fn envU32(name: []const u8, fallback: u32) u32 {
     return fallback;
 }
 
+fn looksLikeNativeMtpTensorName(name: []const u8) bool {
+    return std.mem.indexOf(u8, name, ".mtp.") != null or
+        std.mem.indexOf(u8, name, ".mtp_") != null or
+        std.mem.startsWith(u8, name, "mtp.") or
+        std.mem.startsWith(u8, name, "mtp_") or
+        std.mem.indexOf(u8, name, ".nextn.") != null or
+        std.mem.indexOf(u8, name, ".nextn_") != null or
+        std.mem.startsWith(u8, name, "nextn.") or
+        std.mem.startsWith(u8, name, "nextn_") or
+        std.mem.indexOf(u8, name, "nextn_predict") != null or
+        std.mem.indexOf(u8, name, "qwen3_next") != null or
+        std.mem.indexOf(u8, name, "eh_proj") != null or
+        std.mem.indexOf(u8, name, "enorm") != null or
+        std.mem.indexOf(u8, name, "hnorm") != null or
+        std.mem.indexOf(u8, name, "shared_head.norm") != null or
+        std.mem.indexOf(u8, name, "shared_head.head") != null;
+}
+
 // ============================================================================
 // LLama-TOON Inference Engine
 // ============================================================================
@@ -71,6 +90,7 @@ pub const ToonInferenceConfig = struct {
     request_timeout_ms: u32 = 120_000,
     decode_trace: bool = false,
     decode_trace_every: u32 = 16,
+    enable_native_mtp: bool = false,
 
     // GPU/Optimization
     n_gpu_layers: i32 = -1, // All layers on GPU
@@ -401,6 +421,10 @@ pub const ToonInferenceEngine = struct {
     cuda_backend: ?*CudaBackend = null,
     gpu_weights: ?*GpuModelWeights = null,
     mmap_data: ?[]align(std.heap.page_size_min) u8 = null,
+    native_mtp_drafter: ?native_mtp_mod.NativeMtpDrafter = null,
+    native_mtp_hidden_cpu: ?[]f32 = null,
+    native_mtp_hidden_valid: bool = false,
+    native_mtp_output_f32: ?[]f32 = null,
 
     // Speculative decoding (DART): batch logits buffer + n-gram draft table
     batch_logits: ?[]f32 = null, // K * vocab_size for batch verification
@@ -422,6 +446,7 @@ pub const ToonInferenceEngine = struct {
         resolved_config.request_timeout_ms = envU32("PRIVATELLM_TOON_TIMEOUT_MS", resolved_config.request_timeout_ms);
         resolved_config.decode_trace = envBool("PRIVATELLM_TOON_DECODE_TRACE", resolved_config.decode_trace);
         resolved_config.decode_trace_every = @max(@as(u32, 1), envU32("PRIVATELLM_TOON_DECODE_TRACE_EVERY", resolved_config.decode_trace_every));
+        resolved_config.enable_native_mtp = envBool("PLLM_ENABLE_NATIVE_MTP", resolved_config.enable_native_mtp);
 
         var engine = ToonInferenceEngine{
             .allocator = allocator,
@@ -480,6 +505,14 @@ pub const ToonInferenceEngine = struct {
     }
 
     pub fn deinit(self: *ToonInferenceEngine) void {
+        if (self.native_mtp_drafter) |*drafter| drafter.deinit();
+        if (self.native_mtp_hidden_cpu) |buf| self.allocator.free(buf);
+        if (self.native_mtp_output_f32) |buf| self.allocator.free(buf);
+        if (self.batch_logits) |buf| self.allocator.free(buf);
+        if (self.ngram_keys) |buf| self.allocator.free(buf);
+        if (self.ngram_vals) |buf| self.allocator.free(buf);
+        if (self.bigram_keys) |buf| self.allocator.free(buf);
+        if (self.bigram_vals) |buf| self.allocator.free(buf);
         if (self.gguf_tokenizer) |gt| gt.deinit();
         if (self.model) |m| m.deinit();
         if (self.kv_cache) |*kv| kv.deinit(self.allocator);
@@ -709,11 +742,13 @@ pub const ToonInferenceEngine = struct {
                 };
                 if (p == 0) std.log.info("generate: first prefill forward OK, logits.len={}", .{logits.len});
             }
+            self.native_mtp_hidden_valid = self.native_mtp_drafter != null;
         } else {
             var kv_cache = &self.kv_cache.?;
             kv_cache.clear();
             _ = self.model.?.forwardBatch(tokens, kv_cache);
             logits = self.model.?.forward(tokens[tokens.len - 1], tokens.len - 1, kv_cache);
+            self.native_mtp_hidden_valid = false;
         }
 
         const prefill_elapsed_ns = std.time.nanoTimestamp() - prefill_start_ns;
@@ -777,8 +812,10 @@ pub const ToonInferenceEngine = struct {
                 var draft_buf: [16]u32 = undefined;
                 draft_buf[0] = next_token;
 
-                // Draft K-1 more tokens from n-gram table
-                const n_drafted = self.ngramDraft(context_buf.items, draft_buf[1..K]);
+                var n_drafted = self.tryNativeMtpDraft(fwd, next_token, pos - 1, draft_buf[1..K]);
+                if (n_drafted == 0) {
+                    n_drafted = self.ngramDraft(context_buf.items, draft_buf[1..K]);
+                }
                 if (n_drafted == 0) break :spec_path; // fall through to normal decode
 
                 // Adaptive disable: if acceptance too low after 5 cycles, stop trying
@@ -830,6 +867,7 @@ pub const ToonInferenceEngine = struct {
                 // Use batch logits of last accepted token for next iteration
                 logits = bl[(num_accepted - 1) * vocab_size .. num_accepted * vocab_size];
                 pos += num_accepted;
+                self.native_mtp_hidden_valid = false;
 
                 // Update n-gram table
                 self.ngramUpdate(context_buf.items);
@@ -847,8 +885,10 @@ pub const ToonInferenceEngine = struct {
             // --- Normal single-token decode path ---
             if (use_gpu) {
                 logits = try fwd.forward(next_token, pos);
+                self.native_mtp_hidden_valid = self.native_mtp_drafter != null;
             } else {
                 logits = self.model.?.forward(next_token, pos, &self.kv_cache.?);
+                self.native_mtp_hidden_valid = false;
             }
             pos += 1;
 
@@ -897,6 +937,96 @@ pub const ToonInferenceEngine = struct {
             gt.decode(output_tokens.items)
         else
             self.tokenizer.?.decode(output_tokens.items);
+    }
+
+    fn tryNativeMtpDraft(
+        self: *ToonInferenceEngine,
+        fwd: *CudaForwardPass,
+        previous_token: u32,
+        current_position: usize,
+        draft_out: []u32,
+    ) u32 {
+        if (draft_out.len == 0 or !self.native_mtp_hidden_valid) return 0;
+        const hidden_buf = self.native_mtp_hidden_cpu orelse return 0;
+        if (self.native_mtp_drafter) |*drafter| {
+            var ids_storage: [16][1]u32 = undefined;
+            var score_storage: [16][1]f32 = undefined;
+            var id_slices: [16][]u32 = undefined;
+            var score_slices: [16][]f32 = undefined;
+            const wanted = @min(@min(draft_out.len, drafter.supportedPositions()), ids_storage.len);
+            if (wanted == 0) return 0;
+
+            fwd.backend.syncStream() catch return 0;
+            fwd.activations.hidden.downloadF32(hidden_buf) catch return 0;
+
+            for (0..wanted) |i| {
+                id_slices[i] = ids_storage[i][0..];
+                score_slices[i] = score_storage[i][0..];
+            }
+
+            const ok = drafter.fillContinuation(
+                hidden_buf,
+                previous_token,
+                current_position,
+                id_slices[0..wanted],
+                score_slices[0..wanted],
+            ) catch return 0;
+            if (!ok) return 0;
+
+            for (0..wanted) |i| draft_out[i] = ids_storage[i][0];
+            return @intCast(wanted);
+        }
+        return 0;
+    }
+
+    fn initNativeMtpDrafter(
+        self: *ToonInferenceEngine,
+        dim: usize,
+        vocab_size: usize,
+        n_heads: usize,
+        n_kv_heads: usize,
+        head_dim: usize,
+        rope_dim: usize,
+        rope_freq_base: f32,
+        eps: f32,
+        tensors: []const native_mtp_mod.NativeMtpTensorView,
+    ) !void {
+        if (self.native_mtp_drafter) |*drafter| drafter.deinit();
+        self.native_mtp_drafter = null;
+
+        if (self.native_mtp_hidden_cpu) |buf| {
+            if (buf.len != dim) {
+                self.allocator.free(buf);
+                self.native_mtp_hidden_cpu = null;
+            }
+        }
+        if (self.native_mtp_hidden_cpu == null) {
+            self.native_mtp_hidden_cpu = try self.allocator.alloc(f32, dim);
+        }
+
+        var drafter = try native_mtp_mod.NativeMtpDrafter.init(
+            self.allocator,
+            dim,
+            vocab_size,
+            self.spec_k,
+            n_heads,
+            n_kv_heads,
+            head_dim,
+            rope_dim,
+            rope_freq_base,
+            eps,
+            tensors,
+        );
+        if (!drafter.hasAny()) {
+            drafter.deinit();
+            return;
+        }
+
+        std.log.info("Native MTP drafter ready: positions={} tensors={}", .{
+            drafter.supportedPositions(),
+            tensors.len,
+        });
+        self.native_mtp_drafter = drafter;
     }
 
     /// Extract and validate TOON output from raw model output.
@@ -961,6 +1091,11 @@ pub const ToonInferenceEngine = struct {
     /// Returns true if GPU init succeeded, false if CUDA is unavailable.
     fn initCudaFromGguf(self: *ToonInferenceEngine, gguf_path: []const u8) !bool {
         const allocator = self.allocator;
+        self.native_mtp_hidden_valid = false;
+        if (self.native_mtp_output_f32) |buf| {
+            allocator.free(buf);
+            self.native_mtp_output_f32 = null;
+        }
 
         // Step 1: Initialize CUDA backend
         const backend = try CudaBackend.init(allocator, .{
@@ -1118,7 +1253,12 @@ pub const ToonInferenceEngine = struct {
         var output_weight_rows: usize = 0;
         var output_weight_cols: usize = 0;
         var output_weight_n_elem: usize = 0;
+        var output_weight_n_dims: u32 = 0;
+        var output_weight_dims: [4]u64 = .{ 0, 0, 0, 0 };
         var cpu_embedding_q4_data: ?[]const u8 = null;
+        var native_mtp_views = std.ArrayList(native_mtp_mod.NativeMtpTensorView).init(allocator);
+        defer native_mtp_views.deinit();
+        var saw_native_mtp = false;
 
         for (tensor_infos) |ti| {
             const abs_offset = tensor_data_start + @as(usize, @intCast(ti.data_offset));
@@ -1129,6 +1269,21 @@ pub const ToonInferenceEngine = struct {
             const size = ggml_dtype.tensorBytes(n_elem);
             if (abs_offset + size > mmap_data.len) continue;
             const data_slice = mmap_data[abs_offset..][0..size];
+
+            if (self.config.enable_native_mtp) {
+                if (looksLikeNativeMtpTensorName(ti.name)) saw_native_mtp = true;
+                if (!std.mem.eql(u8, ti.name, "output.weight")) {
+                    try native_mtp_views.append(.{
+                        .name = ti.name,
+                        .dtype = ggml_dtype,
+                        .host_data = data_slice,
+                        .n_dims = ti.n_dims,
+                        .dims = ti.dims,
+                        .rows = rows,
+                        .cols = cols,
+                    });
+                }
+            }
 
             if (std.mem.eql(u8, ti.name, "token_embd.weight")) {
                 // Store Q4_0 data for CPU embedding fallback; actual GPU upload
@@ -1151,6 +1306,8 @@ pub const ToonInferenceEngine = struct {
                 output_weight_rows = rows;
                 output_weight_cols = cols;
                 output_weight_n_elem = n_elem;
+                output_weight_n_dims = ti.n_dims;
+                output_weight_dims = ti.dims;
                 uploaded += 1;
             } else if (std.mem.startsWith(u8, ti.name, "blk.")) {
                 const after_blk = ti.name[4..];
@@ -1254,7 +1411,11 @@ pub const ToonInferenceEngine = struct {
             } else if (output_weight_dtype == .q6_k) {
                 // Q6_K → F32 → Q4_0: re-quantize for fast GEMV (167 MB vs 1187 MB F32)
                 const fp32_buf = try dequantQ6KToF32(allocator, output_weight_data, output_weight_n_elem);
-                defer allocator.free(fp32_buf);
+                if (self.config.enable_native_mtp and saw_native_mtp) {
+                    self.native_mtp_output_f32 = fp32_buf;
+                } else {
+                    defer allocator.free(fp32_buf);
+                }
                 const q4_buf = try quantizeF32ToQ4(allocator, fp32_buf);
                 defer allocator.free(q4_buf);
                 std.log.info("Re-quantized output.weight Q6_K -> Q4_0 ({} elements, {} MB Q4_0)", .{
@@ -1263,6 +1424,22 @@ pub const ToonInferenceEngine = struct {
                 gpu_weights.lm_head = try GpuTensor.upload(.q4_0, q4_buf, output_weight_rows, output_weight_cols);
             } else {
                 gpu_weights.lm_head = try GpuTensor.upload(output_weight_dtype, output_weight_data, output_weight_rows, output_weight_cols);
+            }
+            if (self.config.enable_native_mtp and saw_native_mtp) {
+                const native_output_dtype: GGMLType = if (output_weight_dtype == .q6_k) .f32 else output_weight_dtype;
+                const native_output_data: []const u8 = if (output_weight_dtype == .q6_k)
+                    std.mem.sliceAsBytes(self.native_mtp_output_f32.?)
+                else
+                    output_weight_data;
+                try native_mtp_views.append(.{
+                    .name = "output.weight",
+                    .dtype = native_output_dtype,
+                    .host_data = native_output_data,
+                    .n_dims = output_weight_n_dims,
+                    .dims = output_weight_dims,
+                    .rows = output_weight_rows,
+                    .cols = output_weight_cols,
+                });
             }
             total_bytes += output_weight_data.len;
             // token_embd stays on CPU → forward pass uses cpu_embedding_q4_data
@@ -1285,6 +1462,21 @@ pub const ToonInferenceEngine = struct {
         self.gpu_weights = gpu_weights;
 
         std.log.info("GPU weights uploaded: {} tensors, {} MB", .{ uploaded, total_bytes / (1024 * 1024) });
+        if (self.config.enable_native_mtp and saw_native_mtp) {
+            self.initNativeMtpDrafter(
+                DIM,
+                VOCAB,
+                N_HEADS,
+                N_KV_HEADS,
+                ATTN_HEAD_DIM,
+                ROPE_DIM,
+                model_rope_base,
+                model_eps,
+                native_mtp_views.items,
+            ) catch |err| {
+                std.log.warn("Native MTP drafter init failed ({s})", .{@errorName(err)});
+            };
+        }
 
         // Step 6: Create CudaForwardPass
         const fwd = try CudaForwardPass.init(allocator, .{
@@ -1640,6 +1832,18 @@ test "toon config for T4" {
     try std.testing.expectEqual(@as(u32, 4096), config.context_length);
     try std.testing.expectEqual(@as(u32, 128), config.max_output_tokens);
     try std.testing.expect(config.flash_attn);
+}
+
+test "native mtp draft returns zero when unavailable" {
+    const allocator = std.testing.allocator;
+    var engine = ToonInferenceEngine{
+        .allocator = allocator,
+        .config = .{},
+        .toon_sampler = ToonSampler.init(allocator),
+    };
+    var draft = [_]u32{ 0, 0 };
+    const drafted = engine.tryNativeMtpDraft(undefined, 1, 0, draft[0..]);
+    try std.testing.expectEqual(@as(u32, 0), drafted);
 }
 
 test "simple tokenizer" {

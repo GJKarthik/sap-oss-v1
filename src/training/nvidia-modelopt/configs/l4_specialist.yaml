@@ -1,24 +1,26 @@
 # L4 24GB Training Configuration for Specialist Models
-# 
+# Optimized for Brev L4 GPU instances
+#
 # Hardware: NVIDIA L4 (24 GiB)
 # Best for: 7B models with 4-bit quantization
-# Training time: ~3 hours per specialist
+# Training time: ~3 hours per specialist (100K examples)
 
 # Model Configuration
 model:
   name: "Qwen/Qwen2.5-7B-Instruct"
+  torch_dtype: "float16"  # FP16 more reliable across Brev driver versions
 
-# Quantization - Required for L4
+# Quantization - Required for L4 with 7B model
 quantization:
   enabled: true
   method: "nf4"  # 4-bit NormalFloat
   double_quant: true
-  compute_dtype: "bfloat16"
+  compute_dtype: "float16"
 
-# LoRA Configuration
+# LoRA Configuration - attention + MLP for quality
 lora:
-  r: 16
-  alpha: 32
+  r: 32
+  alpha: 64
   dropout: 0.05
   target_modules:
     - "q_proj"
@@ -29,35 +31,45 @@ lora:
     - "up_proj"
     - "down_proj"
 
-# Training Parameters
+# Training Parameters - tuned for L4 on Brev
 training:
   per_device_train_batch_size: 2
-  gradient_accumulation_steps: 8
-  effective_batch_size: 16
-  
-  learning_rate: 2e-4
+  gradient_accumulation_steps: 16
+  effective_batch_size: 32
+
+  learning_rate: 1e-4
   lr_scheduler_type: "cosine"
   warmup_ratio: 0.05
-  
+
   num_train_epochs: 3
-  
-  optim: "adamw_torch_fused"
+
+  optim: "paged_adamw_8bit"  # More portable than adamw_torch_fused
   weight_decay: 0.01
   max_grad_norm: 1.0
-  
-  bf16: true
+
+  fp16: true
+  bf16: false
   gradient_checkpointing: true
-  
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+
   logging_steps: 50
   save_strategy: "steps"
   save_steps: 500
-  save_total_limit: 2
-  
+  save_total_limit: 3
+
   dataloader_num_workers: 4
   dataloader_pin_memory: true
+
+# Data Configuration
+data:
+  max_seq_length: 2048
+  train_file: "data/specialist_training/train.jsonl"
+  validation_file: "data/specialist_training/validation.jsonl"
 
 # Hardware Configuration
 hardware:
   gpu: "L4-24GB"
+  platform: "brev"
   expected_memory_usage: "~18 GB"
   expected_training_time: "~3 hours per specialist"

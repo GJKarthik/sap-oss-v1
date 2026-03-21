@@ -129,10 +129,13 @@ export class SacAgUiService implements OnDestroy {
   private activeControllers = new Set<AbortController>();
   private pendingToolCalls = new Map<string, PendingToolCallContext>();
   private inFlightToolResults = new Set<string>();
-  private readonly authService = inject(SacAuthService);
-  private readonly backendUrl = inject(SAC_AI_BACKEND_URL, { optional: true }) ?? '';
+  private readonly authService: SacAuthService;
+  private readonly backendUrl: string;
 
-  constructor() {}
+  constructor(authService?: SacAuthService, backendUrl?: string) {
+    this.authService = authService ?? inject(SacAuthService);
+    this.backendUrl = backendUrl ?? inject(SAC_AI_BACKEND_URL, { optional: true }) ?? '';
+  }
 
   /**
    * Start an AG-UI run against the CAP LLM Plugin backend.

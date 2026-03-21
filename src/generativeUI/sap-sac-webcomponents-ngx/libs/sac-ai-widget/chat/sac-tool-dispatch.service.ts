@@ -74,8 +74,16 @@ export interface ToolExecutionReview {
 @Injectable({ providedIn: 'root' })
 export class SacToolDispatchService {
   private target: WidgetStateTarget | null = null;
-  private readonly dataActionService = inject(SacDataActionService);
-  private readonly planningModelService = inject(SacPlanningModelService);
+  private readonly dataActionService: SacDataActionService;
+  private readonly planningModelService: SacPlanningModelService;
+
+  constructor(
+    dataActionService?: SacDataActionService,
+    planningModelService?: SacPlanningModelService,
+  ) {
+    this.dataActionService = dataActionService ?? inject(SacDataActionService);
+    this.planningModelService = planningModelService ?? inject(SacPlanningModelService);
+  }
 
   /** Called by SacAiDataWidgetComponent to register as the current render target. */
   registerTarget(target: WidgetStateTarget): void {

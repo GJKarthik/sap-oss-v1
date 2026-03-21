@@ -56,7 +56,10 @@ aicore_plan_spec("infer.l", 0, 4, 25).
 # =============================================================================
 
 # SAP AI Core object store settings
-aicore_storage("bucket", "hcp-055af4b0-2344-40d2-88fe-ddc1c4aad6c5").
+# Bucket ID injected at runtime via AICORE_OBJECT_STORE_BUCKET env var.
+# The gateway asserts this as a Mangle fact on startup (see main.zig).
+# Fallback for local development only:
+aicore_storage("bucket", "local-dev-bucket").
 aicore_storage("prefix", "ai://default/").
 aicore_storage("models_path", "llm-models/").
 aicore_storage("embeddings_path", "embeddings/").
