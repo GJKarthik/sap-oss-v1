@@ -76,8 +76,8 @@ class HANAMLRAGAgent:
                  long_term_db: str = None,
                  long_term_memory_limit: int = 1000,
                  skip_large_data_threshold: int = 100000,
-                 chunk_size: int = 500,
-                 chunk_overlap: int = 50,
+                 chunk_size: int = 1000,
+                 chunk_overlap: int = 200,
                  forget_percentage: float = 0.1,
                  max_iterations: int = 20,
                  cross_encoder: CrossEncoder = None,
@@ -120,11 +120,11 @@ class HANAMLRAGAgent:
         chunk_size : int
             Text chunk size for embeddings.
 
-            Defaults to 500.
+            Defaults to 1000.
         chunk_overlap : int
             Text chunk overlap for embeddings.
 
-            Defaults to 50.
+            Defaults to 200.
         forget_percentage : float
             Percentage of oldest memories to forget when long-term memory limit is reached.
 
@@ -318,6 +318,42 @@ class HANAMLRAGAgent:
         except (OSError, IOError) as e:
             logger.warning("Failed to save FAISS checksum: %s", e)
 
+    def _create_empty_faiss_vectorstore(self):
+        """Create an empty FAISS vectorstore without placeholder documents."""
+        try:
+            return FAISS.from_texts(texts=[], embedding=self.embedding_service)
+        except Exception as e:
+            logger.debug("FAISS.from_texts([], ...) failed, using manual empty index: %s", e)
+
+        from langchain_community.docstore.in_memory import InMemoryDocstore
+        import faiss
+
+        dimension = len(self.embedding_service.embed_query("dimension probe"))
+        return FAISS(
+            self.embedding_service,
+            faiss.IndexFlatL2(dimension),
+            InMemoryDocstore({}),
+            {}
+        )
+
+    def _reset_faiss_vectorstore(self) -> None:
+        """Reset the FAISS vectorstore to an empty persisted index."""
+        self.vectorstore = self._create_empty_faiss_vectorstore()
+        self.vectorstore.save_local(self.vectorstore_path)
+        self._save_faiss_checksum(self.vectorstore_path)
+
+    def _contains_special_content(self, value: Any) -> bool:
+        """Detect content types that should not be stored as chat memories."""
+        if isinstance(value, pd.DataFrame):
+            return True
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            return True
+        if isinstance(value, dict):
+            return any(self._contains_special_content(item) for item in value.values())
+        if isinstance(value, (list, tuple, set)):
+            return any(self._contains_special_content(item) for item in value)
+        return False
+
     def _initialize_faiss_vectorstore(self):
         """Initialize or load FAISS vectorstore for long-term memory"""
 
@@ -333,12 +369,7 @@ class HANAMLRAGAgent:
         except (FileNotFoundError, ValueError, RuntimeError) as e:
             logger.error("Failed to load vectorstore: %s", e)
             # Initialize new vectorstore if loading fails
-            self.vectorstore = FAISS.from_texts(
-                texts=["Initialization text"],
-                embedding=self.embedding_service
-            )
-            self.vectorstore.save_local(self.vectorstore_path)
-            self._save_faiss_checksum(self.vectorstore_path)
+            self._reset_faiss_vectorstore()
             logger.info("Created new vectorstore at %s", self.vectorstore_path)
 
     def _initialize_hanadb_vectorstore(self):
@@ -366,10 +397,13 @@ class HANAMLRAGAgent:
         else:
             self._initialize_hanadb_vectorstore()
 
-    def _should_store(self, text: str) -> bool:
+    def _should_store(self, text: Any) -> bool:
         """Determine if text should be stored in memory"""
-        # condition for the future expansion
-        return True
+        if text is None:
+            return False
+        if self._contains_special_content(text):
+            return False
+        return len(str(text)) <= self.skip_large_data_threshold
 
     def _update_long_term_memory(self, user_input: str, response: Any):
         """Update long-term memory with new conversation"""
@@ -390,12 +424,17 @@ class HANAMLRAGAgent:
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
+            separators=["\nUser: ", "\nAssistant: ", "\n\n", "\n", " "],
         )
 
         documents = splitter.create_documents(
             texts=[f"User: {user_input}\nAssistant: {response_str}"],
             metadatas=[{"timestamp": current_time}]
         )
+        total_chunks = len(documents)
+        for chunk_index, document in enumerate(documents):
+            document.metadata["chunk_index"] = chunk_index
+            document.metadata["total_chunks"] = total_chunks
 
         # Update vector store
         self.vectorstore.add_documents(documents)
@@ -436,15 +475,13 @@ class HANAMLRAGAgent:
                     remaining_messages = self.long_term_store.messages
                     # Skip if no messages left
                     if not remaining_messages:
-                        self.vectorstore = FAISS.from_texts(
-                            [""],
-                            embedding=self.embedding_service
-                        )
+                        self._reset_faiss_vectorstore()
                         return
                     # Recreate documents from remaining messages
                     splitter = RecursiveCharacterTextSplitter(
                         chunk_size=self.chunk_size,
                         chunk_overlap=self.chunk_overlap,
+                        separators=["\nUser: ", "\nAssistant: ", "\n\n", "\n", " "],
                     )
                     documents = []
                     for i in range(0, len(remaining_messages), 2):
@@ -460,7 +497,14 @@ class HANAMLRAGAgent:
                             texts=[text],
                             metadatas=[metadata]
                         )
+                        total_chunks = len(docs)
+                        for chunk_index, document in enumerate(docs):
+                            document.metadata["chunk_index"] = chunk_index
+                            document.metadata["total_chunks"] = total_chunks
                         documents.extend(docs)
+                    if not documents:
+                        self._reset_faiss_vectorstore()
+                        return
                     # Rebuild vectorstore
                     self.vectorstore = FAISS.from_documents(
                         documents,
@@ -472,10 +516,7 @@ class HANAMLRAGAgent:
                 except Exception as e:
                     logger.error("Error rebuilding vectorstore: %s", str(e))
                     # Fallback to empty vectorstore
-                    self.vectorstore = FAISS.from_texts(
-                        [""],
-                        embedding=self.embedding_service
-                    )
+                    self._reset_faiss_vectorstore()
             else:
                 self._forget_past_messages_in_hana_db(last_timestamp)
 
@@ -587,13 +628,10 @@ class HANAMLRAGAgent:
 
         # 重建空向量库（无需前置检查）
         if self.vectorstore_type.lower() == "faiss":
-            self.vectorstore = FAISS.from_texts([""], embedding=self.embedding_service)  # 空文本占位
-            self.vectorstore.save_local(self.vectorstore_path)
-            self._save_faiss_checksum(self.vectorstore_path)
+            self._reset_faiss_vectorstore()
         else:
             self.hana_connection_context.drop_table(self.hana_vector_table)
-            self.vectorstore = HanaDB.from_texts(
-                texts=[""],
+            self.vectorstore = HanaDB(
                 embedding=self.embedding_service,
                 connection=self.hana_connection_context.connection,
                 table_name=self.hana_vector_table
