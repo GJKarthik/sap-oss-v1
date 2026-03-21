@@ -100,6 +100,8 @@ def _validate_embeddings(result, source):
             raise ValueError(
                 f"{source} returned inconsistent embedding dimensions within the batch."
             )
+        if any(value != value for value in vector):
+            raise ValueError(f"{source} returned a NaN embedding value at index {index}.")
         if all(value == 0.0 for value in vector):
             raise ValueError(f"{source} returned an all-zero embedding vector at index {index}.")
 
@@ -113,6 +115,14 @@ def _validate_embeddings(result, source):
             )
 
     return vectors
+
+
+def _build_cc_embed_query_statements(temporary_table: str):
+    return (
+        'CREATE LOCAL TEMPORARY COLUMN TABLE {} ("ID" INTEGER, "TEXT" NCLOB)'.format(temporary_table),
+        'INSERT INTO {} ("ID", "TEXT") VALUES (?, ?)'.format(temporary_table),
+        'SELECT "TEXT" FROM {} ORDER BY "ID"'.format(temporary_table),
+    )
 
 class PALModelEmbeddings(Embeddings):
     """
@@ -388,9 +398,7 @@ def _cc_embed_query(connection_context, query, model_version='SAP_NEB.20240715')
     queries = list(query) if isinstance(query, (list, tuple)) else [query]
 
     temporary_table = "#CC_EMBED_QUERY_" + uuid.uuid4().hex.upper()
-    create_sql = f'CREATE LOCAL TEMPORARY COLUMN TABLE {temporary_table} ("ID" INTEGER, "TEXT" NCLOB)'
-    insert_sql = f'INSERT INTO {temporary_table} ("ID", "TEXT") VALUES (?, ?)'
-    select_sql = f'SELECT "TEXT" FROM {temporary_table} ORDER BY "ID"'
+    create_sql, insert_sql, select_sql = _build_cc_embed_query_statements(temporary_table)
 
     try:
         with connection_context.connection.cursor() as cursor:
