@@ -58,6 +58,7 @@ from hana_ai.langchain_compat import (
     get_conversation_buffer_window_memory,
 )
 from hana_ai.agents.utilities import _check_generated_cap_for_bas, _get_user_info, _inspect_python_code
+from hana_ai.guardrails import GuardrailChain
 from hana_ai.vectorstore.embedding_service import GenAIHubEmbeddings, HANAVectorEmbeddings
 from hana_ai.vectorstore.pal_cross_encoder import PALCrossEncoder
 
@@ -91,6 +92,7 @@ class HANAMLRAGAgent:
                  drop_existing_hana_vector_table: bool = False,
                  verbose: bool = False,
                  session_id: str = "global_session",
+                 output_guardrails: GuardrailChain = None,
                  **kwargs):
         """
         Initialize the chatbot with integrated tools and memory systems.
@@ -192,6 +194,7 @@ class HANAMLRAGAgent:
         self.rerank_k = rerank_k
         self.score_threshold = score_threshold
         self.verbose = verbose
+        self.output_guardrails = output_guardrails
         self.cross_encoder = cross_encoder
         self.vectorstore_type = vector_store_type
         self.hana_connection_context = None
@@ -646,6 +649,28 @@ class HANAMLRAGAgent:
         self.short_term_memory.clear()
         logger.info("Short-term memory cleared.")
 
+    def _apply_output_guardrails(self, output: Any) -> str:
+        """Apply optional output guardrails and return sanitized output."""
+        if self.output_guardrails is None:
+            return output
+
+        result = self.output_guardrails.run(output)
+        warning_messages = [
+            f"{violation.guardrail}: {violation.message}"
+            for violation in result.violations
+            if violation.action == "warn"
+        ]
+        if warning_messages:
+            logger.warning("Output guardrail warnings: %s", "; ".join(warning_messages))
+        if not result.passed:
+            blocking_messages = [
+                f"{violation.guardrail}: {violation.message}"
+                for violation in result.violations
+                if violation.action == "block"
+            ]
+            raise ValueError("; ".join(blocking_messages) or "Output failed guardrail validation")
+        return result.sanitized_output
+
     def chat(self, user_input: str) -> str:
         """
         Main chat method to handle user input and return response.
@@ -669,10 +694,11 @@ class HANAMLRAGAgent:
             }]
         }
         response = self.executor.invoke(agent_input)
+        response_output = self._apply_output_guardrails(response['output'])
 
         # 更新长期记忆
-        self._update_long_term_memory(user_input, response['output'])
-        return response['output']
+        self._update_long_term_memory(user_input, response_output)
+        return response_output
 
 def stateless_chat(
     query: str,

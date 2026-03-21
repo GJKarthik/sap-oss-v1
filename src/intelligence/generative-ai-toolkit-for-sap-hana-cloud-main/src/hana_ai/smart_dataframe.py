@@ -11,6 +11,7 @@ import re
 from typing import List
 
 from hana_ml.dataframe import DataFrame
+from hana_ai.guardrails import GuardrailChain, SQLSafetyGuardrail
 
 from hana_ai.langchain_compat import (
     AgentExecutor,
@@ -29,19 +30,11 @@ from hana_ai.tools.df_tools.intermittent_forecast_tools import IntermittentForec
 from hana_ai.tools.df_tools.ts_outlier_detection_tools import TSOutlierDetection
 from hana_ai.tools.df_tools.ts_visualizer_tools import TimeSeriesDatasetReport
 
-_SQL_DANGEROUS_PATTERN = re.compile(
-    r'\b(DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|TRUNCATE|EXEC|GRANT|REVOKE|MERGE)\b',
-    re.IGNORECASE
-)
+_SQL_OUTPUT_GUARDRAILS = GuardrailChain([SQLSafetyGuardrail()])
 
 def _validate_select_only(sql: str) -> str:
     """Validate that SQL is a SELECT-only statement."""
-    stripped = sql.strip().rstrip(';').strip()
-    if not stripped.upper().startswith('SELECT'):
-        raise ValueError("Only SELECT statements are permitted")
-    if _SQL_DANGEROUS_PATTERN.search(stripped):
-        raise ValueError(f"SQL contains prohibited DDL/DML keywords")
-    return stripped
+    return _SQL_OUTPUT_GUARDRAILS.validate_or_raise(sql)
 
 class SmartDataFrame(DataFrame):
     """
