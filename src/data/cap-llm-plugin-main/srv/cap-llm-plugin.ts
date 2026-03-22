@@ -92,8 +92,9 @@ export interface RagResponse {
     usedContext: boolean;
     warnings: string[];
     faithfulnessScore?: number;
-    claims?: Array<{ claim: string; verdict: string; evidence: string }>;
+    claims?: Array<{ claim: string; verdict: string; confidence: number; evidence: string }>;
     contradictions?: Array<{ claim: string; evidence: string }>;
+    unsupported?: Array<{ claim: string; evidence: string }>;
   };
 }
 
@@ -655,25 +656,35 @@ class CAPLLMPlugin extends cds.Service {
       }
 
       // Deep grounding check (opt-in via chatParams.enableGroundingCheck)
+      // Use a separate judge model (chatParams.groundingModelConfig) to avoid self-judge bias.
+      // Falls back to the generation model if no judge config is provided.
       if (chatParams?.enableGroundingCheck && selectedContent.length > 0) {
         try {
+          const judgeConfig = (chatParams.groundingModelConfig as ChatConfig) ?? chatConfig;
           const grounding = await assessGroundingViaLLM(
             chatCompletionResp,
             selectedContent,
             async (messages: Array<{ role: string; content: string }>) => {
-              const resp = await this.getChatCompletionWithConfig(chatConfig, { messages });
+              const resp = await this.getChatCompletionWithConfig(judgeConfig, { messages });
               return (resp as any)?.getContent?.() ?? "";
             }
           );
           quality.faithfulnessScore = grounding.faithfulnessScore;
           quality.claims = grounding.claims;
           quality.contradictions = grounding.contradictions;
+          quality.unsupported = grounding.unsupported;
           span.setAttribute("rag.faithfulness_score", grounding.faithfulnessScore);
           span.setAttribute("rag.claim_count", grounding.claims.length);
           span.setAttribute("rag.contradiction_count", grounding.contradictions.length);
+          span.setAttribute("rag.unsupported_count", grounding.unsupported.length);
           if (grounding.contradictions.length > 0) {
             quality.warnings.push(
               `${grounding.contradictions.length} claim(s) contradict the provided context`
+            );
+          }
+          if (grounding.unsupported.length > 0) {
+            quality.warnings.push(
+              `${grounding.unsupported.length} claim(s) are not supported by the provided context`
             );
           }
         } catch (groundingErr) {
