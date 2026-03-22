@@ -124,6 +124,8 @@ def test_validation_helpers_reject_invalid_inputs(embedding_service):
 def test_validate_embeddings_rejects_invalid_vectors_and_warns_on_near_zero(embedding_service, caplog):
     with pytest.raises(ValueError, match="all-zero embedding vector"):
         embedding_service._validate_embeddings([[0.0, 0.0]], "TestEmbeddings")
+    with pytest.raises(ValueError, match="NaN embedding value"):
+        embedding_service._validate_embeddings([[float("nan"), 1.0]], "TestEmbeddings")
     with pytest.raises(ValueError, match="inconsistent embedding dimensions"):
         embedding_service._validate_embeddings([[1.0, 2.0], [3.0]], "TestEmbeddings")
 
