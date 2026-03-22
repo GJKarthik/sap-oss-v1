@@ -1,10 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   template: `
     <div class="login-container">
       <ui5-card class="login-card">
@@ -30,6 +35,7 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   username = '';
   password = '';
@@ -39,9 +45,11 @@ export class LoginComponent {
   login(): void {
     this.loading = true;
     this.error = '';
-    this.authService.login(this.username, this.password).subscribe({
-      next: () => { this.router.navigate(['/dashboard']); },
-      error: () => { this.error = 'Invalid credentials'; this.loading = false; }
-    });
+    this.authService.login(this.username, this.password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => { this.router.navigate(['/dashboard']); },
+        error: (err) => { this.error = err.message || 'Invalid credentials'; this.loading = false; }
+      });
   }
 }

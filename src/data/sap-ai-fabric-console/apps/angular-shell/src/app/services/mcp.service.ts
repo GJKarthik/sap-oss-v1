@@ -386,32 +386,27 @@ export class McpService {
   // ===========================================================================
 
   getDashboardStats(): Observable<DashboardStats> {
-    return new Observable(observer => {
-      Promise.all([
-        this.fetchDeployments().toPromise(),
-        this.fetchStreams().toPromise(),
-        this.fetchVectorStores().toPromise()
-      ]).then(([deployments, streams, stores]) => {
+    return forkJoin({
+      deployments: this.fetchDeployments(),
+      streams: this.fetchStreams(),
+      stores: this.fetchVectorStores(),
+    }).pipe(
+      map(({ deployments, streams, stores }) => {
         const health = this.healthSubject.getValue();
-        
-        const stats: DashboardStats = {
+
+        return {
           servicesHealthy: (health.langchain?.status === 'healthy' ? 1 : 0) +
                           (health.streaming?.status === 'healthy' ? 1 : 0),
           totalServices: 2,
-          activeDeployments: (deployments || []).filter(d => d.status === 'RUNNING' || d.status === 'active').length,
-          totalDeployments: (deployments || []).length,
-          activeStreams: (streams || []).filter(s => s.status === 'active').length,
-          totalStreams: (streams || []).length,
-          vectorStores: (stores || []).length,
-          documentsIndexed: (stores || []).reduce((sum, s) => sum + (s.documents_added || 0), 0),
-          overallHealth: health.overall
-        };
-        
-        observer.next(stats);
-        observer.complete();
-      }).catch(err => {
-        observer.error(err);
-      });
-    });
+          activeDeployments: deployments.filter(d => d.status === 'RUNNING' || d.status === 'active').length,
+          totalDeployments: deployments.length,
+          activeStreams: streams.filter(s => s.status === 'active').length,
+          totalStreams: streams.length,
+          vectorStores: stores.length,
+          documentsIndexed: stores.reduce((sum, s) => sum + (s.documents_added || 0), 0),
+          overallHealth: health.overall,
+        } satisfies DashboardStats;
+      })
+    );
   }
 }

@@ -17,9 +17,8 @@ sqlalchemy>=2.0.25
 asyncpg>=0.29.0
 alembic>=1.13.0
 
-# Redis for caching
+# Redis for caching (async support included since v4.2+)
 redis>=5.0.0
-aioredis>=2.0.1
 
 # HTTP Client
 httpx>=0.26.0
@@ -47,4 +46,3 @@ tenacity>=8.2.3
 # Testing
 pytest>=7.4.0
 pytest-asyncio>=0.23.0
-httpx>=0.26.0

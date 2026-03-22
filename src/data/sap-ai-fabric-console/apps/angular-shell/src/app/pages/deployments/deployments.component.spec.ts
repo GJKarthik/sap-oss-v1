@@ -1,5 +1,7 @@
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 import { Deployment, McpService } from '../../services/mcp.service';
 import { DeploymentsComponent } from './deployments.component';
@@ -15,8 +17,12 @@ describe('DeploymentsComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      declarations: [DeploymentsComponent],
-      providers: [{ provide: McpService, useValue: mcpService }],
+      imports: [DeploymentsComponent],
+      providers: [
+        { provide: McpService, useValue: mcpService },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     }).compileComponents();
   });
@@ -53,6 +59,8 @@ describe('DeploymentsComponent', () => {
   });
 
   it('maps status values to UI5 tag designs', () => {
+    mcpService.fetchDeployments.mockReturnValue(of([]));
+
     fixture = TestBed.createComponent(DeploymentsComponent);
     component = fixture.componentInstance;
 

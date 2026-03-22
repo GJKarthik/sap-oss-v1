@@ -1,9 +1,13 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Deployment, McpService } from '../../services/mcp.service';
 
 @Component({
   selector: 'app-deployments',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, Ui5WebcomponentsModule],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -68,6 +72,7 @@ import { Deployment, McpService } from '../../services/mcp.service';
 })
 export class DeploymentsComponent implements OnInit {
   private readonly mcpService = inject(McpService);
+  private readonly destroyRef = inject(DestroyRef);
 
   deployments: Deployment[] = [];
   loading = false;
@@ -81,16 +86,18 @@ export class DeploymentsComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.mcpService.fetchDeployments().subscribe({
-      next: deployments => {
-        this.deployments = deployments;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load deployment data.';
-        this.loading = false;
-      }
-    });
+    this.mcpService.fetchDeployments()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: deployments => {
+          this.deployments = deployments;
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'Failed to load deployment data.';
+          this.loading = false;
+        }
+      });
   }
 
   getStatusDesign(status: string): 'Positive' | 'Critical' | 'Negative' | 'Neutral' {

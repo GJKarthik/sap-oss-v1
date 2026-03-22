@@ -1,17 +1,22 @@
 /**
  * Dashboard Component - Angular/UI5 Version
- * 
+ *
  * Uses UI5 Web Components following ui5-webcomponents-ngx standards
  * Connects to real MCP backends (langchain-hana, ai-core-streaming)
  */
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.service';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, Ui5WebcomponentsModule],
   template: `
     <!-- Page Header -->
     <ui5-page background-design="Solid">
@@ -233,9 +238,9 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
     }
   `]
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnInit {
   private readonly mcpService = inject(McpService);
-  private destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
   
   loading = true;
   showActions = true;
@@ -269,26 +274,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
-    // Subscribe to health updates
     this.mcpService.health$
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(health => {
         this.health = health;
       });
     
-    // Load dashboard stats
     this.refresh();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   refresh(): void {
     this.loading = true;
     this.mcpService.getDashboardStats()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (stats) => {
           this.stats = stats;

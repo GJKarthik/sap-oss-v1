@@ -1,26 +1,18 @@
 /**
  * App Routing Module - Angular/UI5 Version
+ * Uses lazy loading for all page components.
  */
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { ShellComponent } from './components/shell/shell.component';
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { DeploymentsComponent } from './pages/deployments/deployments.component';
-import { StreamingComponent } from './pages/streaming/streaming.component';
-import { PlaygroundComponent } from './pages/playground/playground.component';
-import { RagStudioComponent } from './pages/rag-studio/rag-studio.component';
-import { DataExplorerComponent } from './pages/data-explorer/data-explorer.component';
-import { LineageComponent } from './pages/lineage/lineage.component';
-import { GovernanceComponent } from './pages/governance/governance.component';
-import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
   {
     path: 'login',
-    component: LoginComponent
+    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
   },
   {
     path: '',
@@ -28,14 +20,38 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'streaming', component: StreamingComponent },
-      { path: 'deployments', component: DeploymentsComponent },
-      { path: 'rag', component: RagStudioComponent },
-      { path: 'governance', component: GovernanceComponent },
-      { path: 'data', component: DataExplorerComponent },
-      { path: 'playground', component: PlaygroundComponent },
-      { path: 'lineage', component: LineageComponent },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
+      },
+      {
+        path: 'streaming',
+        loadComponent: () => import('./pages/streaming/streaming.component').then(m => m.StreamingComponent),
+      },
+      {
+        path: 'deployments',
+        loadComponent: () => import('./pages/deployments/deployments.component').then(m => m.DeploymentsComponent),
+      },
+      {
+        path: 'rag',
+        loadComponent: () => import('./pages/rag-studio/rag-studio.component').then(m => m.RagStudioComponent),
+      },
+      {
+        path: 'governance',
+        loadComponent: () => import('./pages/governance/governance.component').then(m => m.GovernanceComponent),
+      },
+      {
+        path: 'data',
+        loadComponent: () => import('./pages/data-explorer/data-explorer.component').then(m => m.DataExplorerComponent),
+      },
+      {
+        path: 'playground',
+        loadComponent: () => import('./pages/playground/playground.component').then(m => m.PlaygroundComponent),
+      },
+      {
+        path: 'lineage',
+        loadComponent: () => import('./pages/lineage/lineage.component').then(m => m.LineageComponent),
+      },
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

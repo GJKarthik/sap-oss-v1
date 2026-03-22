@@ -1,12 +1,17 @@
 /**
  * RAG Studio Component - Angular/UI5 Version
  */
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
 
 @Component({
   selector: 'app-rag-studio',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -17,6 +22,10 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
       </ui5-bar>
 
       <div class="rag-container">
+        <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="true">
+          {{ error }}
+        </ui5-message-strip>
+
         <div class="left-panel">
           <ui5-card>
             <ui5-card-header slot="header" title-text="Knowledge Bases"></ui5-card-header>
@@ -25,6 +34,9 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
                 {{ store.table_name }}
               </ui5-li>
             </ui5-list>
+            <div *ngIf="!storesLoading && vectorStores.length === 0" class="empty-state">
+              No knowledge bases found.
+            </div>
           </ui5-card>
         </div>
 
@@ -33,8 +45,8 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
             <ui5-card-header slot="header" [titleText]="'Query: ' + selectedStore.table_name"></ui5-card-header>
             <div class="query-area">
               <ui5-textarea [(ngModel)]="queryText" placeholder="Enter your question..." [rows]="3"></ui5-textarea>
-              <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="loading">
-                {{ loading ? 'Searching...' : 'Search' }}
+              <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="queryLoading">
+                {{ queryLoading ? 'Searching...' : 'Search' }}
               </ui5-button>
             </div>
             <div *ngIf="ragResult" class="result-area">
@@ -51,25 +63,38 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
     </ui5-page>
   `,
   styles: [`
-    .rag-container { display: flex; gap: 1rem; padding: 1rem; height: 100%; }
-    .left-panel { width: 300px; }
+    .rag-container { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; height: 100%; }
+    @media (min-width: 768px) { .rag-container { flex-direction: row; } }
+    .left-panel { width: 100%; }
+    @media (min-width: 768px) { .left-panel { width: 300px; } }
     .right-panel { flex: 1; }
     .query-area { padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .result-area { padding: 1rem; border-top: 1px solid var(--sapList_BorderColor); }
+    .empty-state { padding: 1rem; color: var(--sapContent_LabelColor); }
+    ui5-message-strip { margin-bottom: 1rem; }
   `]
 })
 export class RagStudioComponent implements OnInit {
   private readonly mcpService = inject(McpService);
+  private readonly destroyRef = inject(DestroyRef);
 
   vectorStores: VectorStore[] = [];
   selectedStore: VectorStore | null = null;
   queryText = '';
   ragResult: RAGResult | null = null;
-  loading = false;
+  storesLoading = false;
+  queryLoading = false;
   showCreateDialog = false;
+  error = '';
 
   ngOnInit(): void {
-    this.mcpService.fetchVectorStores().subscribe(stores => this.vectorStores = stores);
+    this.storesLoading = true;
+    this.mcpService.fetchVectorStores()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: stores => { this.vectorStores = stores; this.storesLoading = false; },
+        error: () => { this.error = 'Failed to load knowledge bases.'; this.storesLoading = false; }
+      });
   }
 
   selectStore(event: Event): void {
@@ -87,10 +112,13 @@ export class RagStudioComponent implements OnInit {
 
   runQuery(): void {
     if (!this.selectedStore || !this.queryText.trim()) return;
-    this.loading = true;
-    this.mcpService.ragQuery(this.queryText, this.selectedStore.table_name).subscribe({
-      next: (result) => { this.ragResult = result; this.loading = false; },
-      error: () => { this.loading = false; }
-    });
+    this.queryLoading = true;
+    this.error = '';
+    this.mcpService.ragQuery(this.queryText, this.selectedStore.table_name)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => { this.ragResult = result; this.queryLoading = false; },
+        error: () => { this.error = 'RAG query failed.'; this.queryLoading = false; }
+      });
   }
 }

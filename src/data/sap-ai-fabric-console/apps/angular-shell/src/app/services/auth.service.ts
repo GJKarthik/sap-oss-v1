@@ -1,9 +1,23 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, map, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface UserInfo {
+  username: string;
+  role: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly http = inject(HttpClient);
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.checkToken());
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
@@ -11,25 +25,68 @@ export class AuthService {
     return !!localStorage.getItem('auth_token');
   }
 
-  login(username: string, password: string): Observable<{ token: string }> {
-    // Mock authentication - replace with real auth
-    if (username && password) {
-      const token = 'mock-jwt-token-' + Date.now();
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('user', JSON.stringify({ username, role: 'admin' }));
-      this.isAuthenticatedSubject.next(true);
-      return of({ token }).pipe(delay(500));
+  login(username: string, password: string): Observable<AuthTokens> {
+    if (!username || !password) {
+      return throwError(() => new Error('Invalid credentials'));
     }
-    return throwError(() => new Error('Invalid credentials'));
+
+    const body = new URLSearchParams();
+    body.set('username', username);
+    body.set('password', password);
+
+    return this.http.post<AuthTokens>(
+      `${environment.apiBaseUrl}/auth/login`,
+      body.toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    ).pipe(
+      map(tokens => {
+        localStorage.setItem('auth_token', tokens.access_token);
+        localStorage.setItem('refresh_token', tokens.refresh_token);
+        localStorage.setItem('user', JSON.stringify({ username, role: 'admin' }));
+        this.isAuthenticatedSubject.next(true);
+        return tokens;
+      }),
+      catchError(err => {
+        return throwError(() => new Error(err.error?.detail || 'Invalid credentials'));
+      })
+    );
+  }
+
+  refreshToken(): Observable<AuthTokens> {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    return this.http.post<AuthTokens>(
+      `${environment.apiBaseUrl}/auth/refresh`,
+      { refresh_token: refreshToken }
+    ).pipe(
+      map(tokens => {
+        localStorage.setItem('auth_token', tokens.access_token);
+        localStorage.setItem('refresh_token', tokens.refresh_token);
+        this.isAuthenticatedSubject.next(true);
+        return tokens;
+      }),
+      catchError(err => {
+        this.logout();
+        return throwError(() => new Error(err.error?.detail || 'Token refresh failed'));
+      })
+    );
   }
 
   logout(): void {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     this.isAuthenticatedSubject.next(false);
   }
 
-  getUser(): { username: string; role: string } | null {
+  getToken(): string | null {
+    return localStorage.getItem('auth_token');
+  }
+
+  getUser(): UserInfo | null {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   }

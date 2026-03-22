@@ -3,12 +3,17 @@
  * Chat interface using UI5 Web Components
  */
 
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService } from '../../services/mcp.service';
 
 @Component({
   selector: 'app-playground',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -57,6 +62,7 @@ import { McpService } from '../../services/mcp.service';
 })
 export class PlaygroundComponent {
   private readonly mcpService = inject(McpService);
+  private readonly destroyRef = inject(DestroyRef);
 
   messages: Array<{ role: string; content: string }> = [];
   inputText = '';
@@ -71,15 +77,17 @@ export class PlaygroundComponent {
     this.inputText = '';
     this.loading = true;
 
-    this.mcpService.streamingChat(this.messages).subscribe({
-      next: (result) => {
-        this.messages.push({ role: 'assistant', content: result.content });
-        this.loading = false;
-      },
-      error: () => {
-        this.messages.push({ role: 'assistant', content: 'Error: Failed to get response' });
-        this.loading = false;
-      }
-    });
+    this.mcpService.streamingChat(this.messages)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.messages.push({ role: 'assistant', content: result.content });
+          this.loading = false;
+        },
+        error: () => {
+          this.messages.push({ role: 'assistant', content: 'Error: Failed to get response from AI backend.' });
+          this.loading = false;
+        }
+      });
   }
 }

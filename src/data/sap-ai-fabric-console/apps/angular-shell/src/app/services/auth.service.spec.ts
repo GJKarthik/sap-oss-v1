@@ -1,59 +1,76 @@
+import { TestBed } from '@angular/core/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
+import { AuthService, AuthTokens } from './auth.service';
 
 describe('AuthService', () => {
+  let service: AuthService;
+  let httpMock: HttpTestingController;
+
   beforeEach(() => {
-    jest.useFakeTimers();
     localStorage.clear();
+
+    TestBed.configureTestingModule({
+      providers: [AuthService, provideHttpClient(), provideHttpClientTesting()],
+    });
+
+    service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    httpMock.verify();
     localStorage.clear();
   });
 
-  it('logs in, persists auth state, and exposes the stored user', async () => {
-    const service = new AuthService();
+  it('logs in via the backend and stores tokens', async () => {
+    const mockTokens: AuthTokens = {
+      access_token: 'test-access-token',
+      refresh_token: 'test-refresh-token',
+      token_type: 'bearer',
+      expires_in: 1800,
+    };
 
     const loginPromise = firstValueFrom(service.login('alice', 'secret'));
-    jest.advanceTimersByTime(500);
 
-    await expect(loginPromise).resolves.toEqual({
-      token: expect.any(String),
-    });
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
+    expect(req.request.method).toBe('POST');
+    req.flush(mockTokens);
+
+    const result = await loginPromise;
+    expect(result.access_token).toBe('test-access-token');
     expect(service.isAuthenticated()).toBe(true);
-    expect(service.getUser()).toEqual({ username: 'alice', role: 'admin' });
-    expect(localStorage.getItem('auth_token')).toEqual(expect.any(String));
+    expect(service.getToken()).toBe('test-access-token');
+    expect(localStorage.getItem('auth_token')).toBe('test-access-token');
   });
 
   it('restores existing auth state from localStorage', () => {
     localStorage.setItem('auth_token', 'existing-token');
     localStorage.setItem('user', JSON.stringify({ username: 'persisted', role: 'admin' }));
 
-    const service = new AuthService();
-
-    expect(service.isAuthenticated()).toBe(true);
-    expect(service.getUser()).toEqual({ username: 'persisted', role: 'admin' });
+    const freshService = new AuthService();
+    expect(freshService.isAuthenticated()).toBe(true);
+    expect(freshService.getUser()).toEqual({ username: 'persisted', role: 'admin' });
   });
 
-  it('rejects invalid credentials and leaves auth state unchanged', async () => {
-    const service = new AuthService();
-
+  it('rejects invalid credentials (empty username/password)', async () => {
     await expect(firstValueFrom(service.login('', ''))).rejects.toThrow('Invalid credentials');
     expect(service.isAuthenticated()).toBe(false);
     expect(service.getUser()).toBeNull();
   });
 
   it('clears auth state on logout', async () => {
-    const service = new AuthService();
-    const loginPromise = firstValueFrom(service.login('alice', 'secret'));
-    jest.advanceTimersByTime(500);
-    await loginPromise;
+    localStorage.setItem('auth_token', 'token');
+    localStorage.setItem('refresh_token', 'refresh');
+    localStorage.setItem('user', JSON.stringify({ username: 'alice', role: 'admin' }));
 
     service.logout();
 
     expect(service.isAuthenticated()).toBe(false);
     expect(service.getUser()).toBeNull();
     expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
   });
 });
