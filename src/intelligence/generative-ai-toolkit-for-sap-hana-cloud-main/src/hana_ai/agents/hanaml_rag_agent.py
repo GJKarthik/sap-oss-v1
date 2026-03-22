@@ -58,6 +58,7 @@ from hana_ai.langchain_compat import (
     get_conversation_buffer_window_memory,
 )
 from hana_ai.agents.utilities import _check_generated_cap_for_bas, _get_user_info, _inspect_python_code
+from hana_ai.guardrails import GuardrailChain
 from hana_ai.vectorstore.embedding_service import GenAIHubEmbeddings, HANAVectorEmbeddings
 from hana_ai.vectorstore.pal_cross_encoder import PALCrossEncoder
 
@@ -76,8 +77,8 @@ class HANAMLRAGAgent:
                  long_term_db: str = None,
                  long_term_memory_limit: int = 1000,
                  skip_large_data_threshold: int = 100000,
-                 chunk_size: int = 500,
-                 chunk_overlap: int = 50,
+                 chunk_size: int = 1000,
+                 chunk_overlap: int = 200,
                  forget_percentage: float = 0.1,
                  max_iterations: int = 20,
                  cross_encoder: CrossEncoder = None,
@@ -91,6 +92,8 @@ class HANAMLRAGAgent:
                  drop_existing_hana_vector_table: bool = False,
                  verbose: bool = False,
                  session_id: str = "global_session",
+                 grounding_guardrail: Any = None,
+                 output_guardrails: GuardrailChain = None,
                  **kwargs):
         """
         Initialize the chatbot with integrated tools and memory systems.
@@ -120,11 +123,11 @@ class HANAMLRAGAgent:
         chunk_size : int
             Text chunk size for embeddings.
 
-            Defaults to 500.
+            Defaults to 1000.
         chunk_overlap : int
             Text chunk overlap for embeddings.
 
-            Defaults to 50.
+            Defaults to 200.
         forget_percentage : float
             Percentage of oldest memories to forget when long-term memory limit is reached.
 
@@ -192,6 +195,8 @@ class HANAMLRAGAgent:
         self.rerank_k = rerank_k
         self.score_threshold = score_threshold
         self.verbose = verbose
+        self.grounding_guardrail = grounding_guardrail
+        self.output_guardrails = output_guardrails
         self.cross_encoder = cross_encoder
         self.vectorstore_type = vector_store_type
         self.hana_connection_context = None
@@ -219,6 +224,7 @@ class HANAMLRAGAgent:
                 self.long_term_db = self.hana_connection_context.to_sqlalchemy()
             else:
                 self.long_term_db = f"sqlite:///chat_history_{self.user}.db"
+        self._configure_grounding_guardrails()
         self.session_id = session_id
         # Initialize memory systems
         self._initialize_memory()
@@ -318,6 +324,42 @@ class HANAMLRAGAgent:
         except (OSError, IOError) as e:
             logger.warning("Failed to save FAISS checksum: %s", e)
 
+    def _create_empty_faiss_vectorstore(self):
+        """Create an empty FAISS vectorstore without placeholder documents."""
+        try:
+            return FAISS.from_texts(texts=[], embedding=self.embedding_service)
+        except Exception as e:
+            logger.debug("FAISS.from_texts([], ...) failed, using manual empty index: %s", e)
+
+        from langchain_community.docstore.in_memory import InMemoryDocstore
+        import faiss
+
+        dimension = len(self.embedding_service.embed_query("dimension probe"))
+        return FAISS(
+            self.embedding_service,
+            faiss.IndexFlatL2(dimension),
+            InMemoryDocstore({}),
+            {}
+        )
+
+    def _reset_faiss_vectorstore(self) -> None:
+        """Reset the FAISS vectorstore to an empty persisted index."""
+        self.vectorstore = self._create_empty_faiss_vectorstore()
+        self.vectorstore.save_local(self.vectorstore_path)
+        self._save_faiss_checksum(self.vectorstore_path)
+
+    def _contains_special_content(self, value: Any) -> bool:
+        """Detect content types that should not be stored as chat memories."""
+        if isinstance(value, pd.DataFrame):
+            return True
+        if isinstance(value, (bytes, bytearray, memoryview)):
+            return True
+        if isinstance(value, dict):
+            return any(self._contains_special_content(item) for item in value.values())
+        if isinstance(value, (list, tuple, set)):
+            return any(self._contains_special_content(item) for item in value)
+        return False
+
     def _initialize_faiss_vectorstore(self):
         """Initialize or load FAISS vectorstore for long-term memory"""
 
@@ -333,12 +375,7 @@ class HANAMLRAGAgent:
         except (FileNotFoundError, ValueError, RuntimeError) as e:
             logger.error("Failed to load vectorstore: %s", e)
             # Initialize new vectorstore if loading fails
-            self.vectorstore = FAISS.from_texts(
-                texts=["Initialization text"],
-                embedding=self.embedding_service
-            )
-            self.vectorstore.save_local(self.vectorstore_path)
-            self._save_faiss_checksum(self.vectorstore_path)
+            self._reset_faiss_vectorstore()
             logger.info("Created new vectorstore at %s", self.vectorstore_path)
 
     def _initialize_hanadb_vectorstore(self):
@@ -366,10 +403,13 @@ class HANAMLRAGAgent:
         else:
             self._initialize_hanadb_vectorstore()
 
-    def _should_store(self, text: str) -> bool:
+    def _should_store(self, text: Any) -> bool:
         """Determine if text should be stored in memory"""
-        # condition for the future expansion
-        return True
+        if text is None:
+            return False
+        if self._contains_special_content(text):
+            return False
+        return len(str(text)) <= self.skip_large_data_threshold
 
     def _update_long_term_memory(self, user_input: str, response: Any):
         """Update long-term memory with new conversation"""
@@ -390,12 +430,17 @@ class HANAMLRAGAgent:
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
+            separators=["\nUser: ", "\nAssistant: ", "\n\n", "\n", " "],
         )
 
         documents = splitter.create_documents(
             texts=[f"User: {user_input}\nAssistant: {response_str}"],
             metadatas=[{"timestamp": current_time}]
         )
+        total_chunks = len(documents)
+        for chunk_index, document in enumerate(documents):
+            document.metadata["chunk_index"] = chunk_index
+            document.metadata["total_chunks"] = total_chunks
 
         # Update vector store
         self.vectorstore.add_documents(documents)
@@ -436,15 +481,13 @@ class HANAMLRAGAgent:
                     remaining_messages = self.long_term_store.messages
                     # Skip if no messages left
                     if not remaining_messages:
-                        self.vectorstore = FAISS.from_texts(
-                            [""],
-                            embedding=self.embedding_service
-                        )
+                        self._reset_faiss_vectorstore()
                         return
                     # Recreate documents from remaining messages
                     splitter = RecursiveCharacterTextSplitter(
                         chunk_size=self.chunk_size,
                         chunk_overlap=self.chunk_overlap,
+                        separators=["\nUser: ", "\nAssistant: ", "\n\n", "\n", " "],
                     )
                     documents = []
                     for i in range(0, len(remaining_messages), 2):
@@ -460,7 +503,14 @@ class HANAMLRAGAgent:
                             texts=[text],
                             metadatas=[metadata]
                         )
+                        total_chunks = len(docs)
+                        for chunk_index, document in enumerate(docs):
+                            document.metadata["chunk_index"] = chunk_index
+                            document.metadata["total_chunks"] = total_chunks
                         documents.extend(docs)
+                    if not documents:
+                        self._reset_faiss_vectorstore()
+                        return
                     # Rebuild vectorstore
                     self.vectorstore = FAISS.from_documents(
                         documents,
@@ -472,10 +522,7 @@ class HANAMLRAGAgent:
                 except Exception as e:
                     logger.error("Error rebuilding vectorstore: %s", str(e))
                     # Fallback to empty vectorstore
-                    self.vectorstore = FAISS.from_texts(
-                        [""],
-                        embedding=self.embedding_service
-                    )
+                    self._reset_faiss_vectorstore()
             else:
                 self._forget_past_messages_in_hana_db(last_timestamp)
 
@@ -587,13 +634,10 @@ class HANAMLRAGAgent:
 
         # 重建空向量库（无需前置检查）
         if self.vectorstore_type.lower() == "faiss":
-            self.vectorstore = FAISS.from_texts([""], embedding=self.embedding_service)  # 空文本占位
-            self.vectorstore.save_local(self.vectorstore_path)
-            self._save_faiss_checksum(self.vectorstore_path)
+            self._reset_faiss_vectorstore()
         else:
             self.hana_connection_context.drop_table(self.hana_vector_table)
-            self.vectorstore = HanaDB.from_texts(
-                texts=[""],
+            self.vectorstore = HanaDB(
                 embedding=self.embedding_service,
                 connection=self.hana_connection_context.connection,
                 table_name=self.hana_vector_table
@@ -607,6 +651,73 @@ class HANAMLRAGAgent:
         """
         self.short_term_memory.clear()
         logger.info("Short-term memory cleared.")
+
+    def _apply_output_guardrails(self, output: Any) -> str:
+        """Apply optional output guardrails and return sanitized output."""
+        current_output = output
+        results = []
+
+        grounding_guardrail = getattr(self, "grounding_guardrail", None)
+        chain_guardrails = getattr(getattr(self, "output_guardrails", None), "guardrails", []) or []
+        if grounding_guardrail is not None and grounding_guardrail not in chain_guardrails:
+            result = grounding_guardrail.validate(current_output)
+            current_output = result.sanitized_output
+            results.append(result)
+
+        if self.output_guardrails is not None:
+            result = self.output_guardrails.run(current_output)
+            current_output = result.sanitized_output
+            results.append(result)
+
+        if not results:
+            return output
+
+        violations = []
+        passed = True
+        for result in results:
+            violations.extend(result.violations)
+            passed = passed and result.passed
+
+        warning_messages = [
+            f"{violation.guardrail}: {violation.message}"
+            for violation in violations
+            if violation.action == "warn"
+        ]
+        if warning_messages:
+            logger.warning("Output guardrail warnings: %s", "; ".join(warning_messages))
+        if not passed:
+            blocking_messages = [
+                f"{violation.guardrail}: {violation.message}"
+                for violation in violations
+                if violation.action == "block"
+            ]
+            raise ValueError("; ".join(blocking_messages) or "Output failed guardrail validation")
+        return current_output
+
+    def _configure_grounding_guardrails(self):
+        """Attach connection context to grounding guardrails when supported."""
+        connection_context = getattr(self, "hana_connection_context", None)
+        grounding_guardrail = getattr(self, "grounding_guardrail", None)
+        if grounding_guardrail is not None and hasattr(grounding_guardrail, "set_connection_context"):
+            grounding_guardrail.set_connection_context(connection_context)
+
+        if self.output_guardrails is None:
+            return
+        for guardrail in self.output_guardrails.guardrails:
+            if hasattr(guardrail, "set_connection_context"):
+                guardrail.set_connection_context(connection_context)
+
+    def _set_grounding_context(self, context_str: str):
+        """Provide retrieved context to any guardrail that supports grounding validation."""
+        grounding_guardrail = getattr(self, "grounding_guardrail", None)
+        if grounding_guardrail is not None and hasattr(grounding_guardrail, "set_context"):
+            grounding_guardrail.set_context(context_str)
+
+        if self.output_guardrails is None:
+            return
+        for guardrail in self.output_guardrails.guardrails:
+            if hasattr(guardrail, "set_context"):
+                guardrail.set_context(context_str)
 
     def chat(self, user_input: str) -> str:
         """
@@ -624,6 +735,7 @@ class HANAMLRAGAgent:
             self.clear_short_term_memory()
             return "Short-term memory has been cleared."
         context_str = self._build_long_term_context(user_input)  # Returns string
+        self._set_grounding_context(context_str)
         agent_input = {
             "input": [{
                 "type": "text", 
@@ -631,10 +743,11 @@ class HANAMLRAGAgent:
             }]
         }
         response = self.executor.invoke(agent_input)
+        response_output = self._apply_output_guardrails(response['output'])
 
         # 更新长期记忆
-        self._update_long_term_memory(user_input, response['output'])
-        return response['output']
+        self._update_long_term_memory(user_input, response_output)
+        return response_output
 
 def stateless_chat(
     query: str,

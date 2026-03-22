@@ -14,19 +14,16 @@ The following class is available:
 # pylint: disable=import-error
 
 import logging
-from typing import Dict, TypedDict
-# try to import langgraph, if not installed, install it
+from typing import Any, Dict, TypedDict
+
 try:
     from langgraph.graph import END, StateGraph
-except ImportError:
-    import subprocess
-    import sys
-
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "langgraph"])
-    from langgraph.graph import END, StateGraph
+except ImportError as exc:
+    raise ImportError("Package 'langgraph' is required. Please install the missing dependency.") from exc
 from pydantic import BaseModel, Field
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+from hana_ai.guardrails import _NLIBackend, _resolve_connection_context
 from hana_ai.langchain_compat import PydanticToolsParser, PromptTemplate
 
 logger = logging.getLogger(__name__) #pylint: disable=invalid-name
@@ -70,6 +67,10 @@ class CorrectiveRetriever(object):
         self.llm = llm
         self.recursion_limit = recursion_limit
         self.workflow = StateGraph(GraphState)
+        self._nli_backend = _NLIBackend(
+            model_name="cross-encoder/nli-deberta-v3-base",
+            connection_context=_resolve_connection_context(vectordb),
+        )
 
     def _retrieve(self, state):
         """
@@ -106,6 +107,31 @@ class CorrectiveRetriever(object):
         documents = state_dict["documents"]
         top_k = state_dict["top_k"]
         init_k = state_dict["init_k"]
+
+        nli_prediction = self._score_with_nli(documents, question)
+        if nli_prediction is not None:
+            label = nli_prediction["label"]
+            search = "No"
+            if label in {"entailment", "neutral"}:
+                logger.info("---GRADE: DOCUMENT RELEVANT (%s)---", label.upper())
+            else:
+                logger.info("---GRADE: DOCUMENT NOT RELEVANT (%s)---", label.upper())
+                search = "Yes"
+                init_k = init_k + 1
+
+            if init_k > top_k:
+                logger.info("exceed the maximum iterations!")
+                raise
+
+            return {
+                "keys": {
+                    "documents": documents,
+                    "question": question,
+                    "top_k" : top_k,
+                    "init_k" : init_k,
+                    "run_second_search": search,
+                }
+            }
 
         # Data model
         class grade(BaseModel):
@@ -269,3 +295,17 @@ class CorrectiveRetriever(object):
         # Final generation
         logger.info(result["keys"]["generation"])
         return result["keys"]["generation"]
+
+    def _score_with_nli(self, document: Any, question: str):
+        """Return NLI prediction for (document, question) or None when backend unavailable."""
+        if document is None:
+            return None
+
+        doc_text = str(document).strip()
+        if not doc_text or not question:
+            return None
+
+        predictions = self._nli_backend.predict([(doc_text, question)])
+        if not predictions:
+            return None
+        return predictions[0]

@@ -356,19 +356,7 @@ pub const PromptCompressor = struct {
         
         switch (self.config.budget_allocation) {
             .proportional => {
-                var total_len: u32 = 0;
-                for (segments) |seg| total_len += @intCast(seg.len);
-                
-                var allocated: u32 = 0;
-                for (segments, 0..) |seg, i| {
-                    const seg_len: u32 = @intCast(seg.len);
-                    if (i == num_segments - 1) {
-                        budgets_out[i] = total_budget - allocated;
-                    } else {
-                        budgets_out[i] = (seg_len * total_budget) / total_len;
-                        allocated += budgets_out[i];
-                    }
-                }
+                self.allocateProportionalBudget(segments, total_budget, budgets_out);
             },
             .recency_weighted => {
                 // Give more budget to later segments
@@ -393,10 +381,100 @@ pub const PromptCompressor = struct {
                 for (budgets_out) |*b| b.* = per_segment;
             },
             .density_weighted => {
-                // Simplified: treat as proportional for now
-                self.allocateBudget(segments, total_budget, budgets_out);
+                var densities = self.allocator.alloc(f32, num_segments) catch {
+                    self.allocateProportionalBudget(segments, total_budget, budgets_out);
+                    return;
+                };
+                defer self.allocator.free(densities);
+
+                var weights_sum: f32 = 0.0;
+                for (segments, 0..) |seg, i| {
+                    const density = self.estimateSegmentDensity(seg);
+                    const length_factor = @sqrt(@as(f32, @floatFromInt(@max(seg.len, 1))));
+                    densities[i] = @max(0.01, density) * length_factor;
+                    weights_sum += densities[i];
+                }
+
+                if (weights_sum <= 0.0) {
+                    self.allocateProportionalBudget(segments, total_budget, budgets_out);
+                    return;
+                }
+
+                var allocated: u32 = 0;
+                for (segments, 0..) |_, i| {
+                    if (i == num_segments - 1) {
+                        budgets_out[i] = total_budget - allocated;
+                    } else {
+                        budgets_out[i] = @intFromFloat(@as(f32, @floatFromInt(total_budget)) * (densities[i] / weights_sum));
+                        allocated += budgets_out[i];
+                    }
+                }
             },
         }
+    }
+
+    fn allocateProportionalBudget(
+        self: *const PromptCompressor,
+        segments: []const []const u32,
+        total_budget: u32,
+        budgets_out: []u32,
+    ) void {
+        _ = self;
+        var total_len: u32 = 0;
+        for (segments) |seg| total_len += @intCast(seg.len);
+
+        if (total_len == 0) {
+            for (budgets_out) |*budget| budget.* = 0;
+            return;
+        }
+
+        var allocated: u32 = 0;
+        for (segments, 0..) |seg, i| {
+            const seg_len: u32 = @intCast(seg.len);
+            if (i == segments.len - 1) {
+                budgets_out[i] = total_budget - allocated;
+            } else {
+                budgets_out[i] = (seg_len * total_budget) / total_len;
+                allocated += budgets_out[i];
+            }
+        }
+    }
+
+    fn estimateSegmentDensity(self: *const PromptCompressor, tokens: []const u32) f32 {
+        if (tokens.len == 0) {
+            return 0.0;
+        }
+
+        var token_freq = std.AutoHashMap(u32, u32).init(self.allocator);
+        defer token_freq.deinit();
+
+        for (tokens) |token| {
+            const entry = token_freq.getOrPut(token) catch continue;
+            if (entry.found_existing) {
+                entry.value_ptr.* += 1;
+            } else {
+                entry.value_ptr.* = 1;
+            }
+        }
+
+        const unique_count = token_freq.count();
+        if (unique_count == 0) {
+            return 0.0;
+        }
+
+        const mean = @as(f32, @floatFromInt(tokens.len)) /
+            @as(f32, @floatFromInt(unique_count));
+        var variance: f32 = 0.0;
+        var it = token_freq.valueIterator();
+        while (it.next()) |count| {
+            const diff = @as(f32, @floatFromInt(count.*)) - mean;
+            variance += diff * diff;
+        }
+        variance /= @as(f32, @floatFromInt(unique_count));
+
+        const unique_ratio = @as(f32, @floatFromInt(unique_count)) /
+            @as(f32, @floatFromInt(tokens.len));
+        return unique_ratio + (variance / @as(f32, @floatFromInt(tokens.len)));
     }
     
     fn compressSegmentWithBudget(
@@ -710,6 +788,24 @@ test "compression statistics" {
     try std.testing.expectEqual(@as(u64, 10), stats.total_original);
     try std.testing.expect(stats.total_compressed <= 10);
     try std.testing.expectEqual(@as(u64, 1), stats.compressions);
+}
+
+test "density weighted budget favors information-dense segments" {
+    const allocator = std.testing.allocator;
+    var compressor = try PromptCompressor.init(allocator, CompressionConfig{
+        .budget_allocation = .density_weighted,
+    });
+    defer compressor.deinit();
+
+    const repetitive = [_]u32{ 1, 1, 1, 1, 1, 1, 1, 1 };
+    const dense = [_]u32{ 2, 3, 4, 5, 6, 7, 8, 9 };
+    const segments = [_][]const u32{ repetitive[0..], dense[0..] };
+    var budgets: [2]u32 = undefined;
+
+    compressor.allocateBudget(&segments, 8, &budgets);
+
+    try std.testing.expectEqual(@as(u32, 8), budgets[0] + budgets[1]);
+    try std.testing.expect(budgets[1] > budgets[0]);
 }
 
 test "truncation strategy" {
