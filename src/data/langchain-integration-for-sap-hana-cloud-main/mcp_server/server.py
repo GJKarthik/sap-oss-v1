@@ -10,6 +10,7 @@ Provides tools for LangChain + HANA Cloud operations.
 import json
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from typing import Any
 import urllib.request
 import urllib.error
@@ -570,7 +571,7 @@ class MCPServer:
             {"name": "langchain-mcp", "endpoint": self.local_mcp_endpoint, "model": "langchain-hana-mcp"},
             {"name": "hana-toolkit-mcp", "endpoint": self.hana_mcp_endpoint, "model": "hana-ai-toolkit-mcp"},
             {"name": "odata-vocab-mcp", "endpoint": self.odata_mcp_endpoint, "model": "odata-vocab-mcp"},
-            {"name": "langchain-chat", "endpoint": "lc://chat", "model": "claude-3.5-sonnet"},
+            {"name": "langchain-chat", "endpoint": "lc://chat", "model": os.environ.get("LANGCHAIN_CHAT_MODEL", "claude-3.5-sonnet")},
             {"name": "langchain-vector", "endpoint": "lc://vector", "model": "hana-vector"},
             {"name": "langchain-rag", "endpoint": "lc://rag", "model": "rag-chain"},
             {"name": "langchain-embed", "endpoint": "lc://embed", "model": "text-embedding"},
@@ -1163,6 +1164,11 @@ class MCPHandler(BaseHTTPRequestHandler):
         pass
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in separate threads for concurrent access."""
+    daemon_threads = True
+
+
 def main():
     import sys
     port = 9140
@@ -1170,7 +1176,7 @@ def main():
         if arg.startswith("--port="):
             port = int(arg.split("=")[1])
 
-    server = HTTPServer(("", port), MCPHandler)
+    server = ThreadedHTTPServer(("", port), MCPHandler)
     print(f"""
 ╔══════════════════════════════════════════════════════════╗
 ║   LangChain HANA Integration MCP Server                  ║

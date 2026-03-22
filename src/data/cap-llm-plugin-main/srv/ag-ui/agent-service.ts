@@ -574,7 +574,10 @@ export class AgUiAgentService {
   }
 
   private generateId(prefix: string): string {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+      : Math.random().toString(36).substr(2, 12);
+    return `${prefix}-${Date.now()}-${id}`;
   }
 }
 

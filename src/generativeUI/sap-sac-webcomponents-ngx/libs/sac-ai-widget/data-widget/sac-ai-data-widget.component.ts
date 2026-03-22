@@ -174,14 +174,16 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
                   type="date"
                   [value]="resolvedDateRange.low"
                   [disabled]="!resolvedInteractiveDimension"
+                  [attr.aria-label]="'Start date for ' + resolvedFilterLabel"
                   (change)="handleDateRangeChange('low', $event)"
                 />
-                <span class="sac-ai-data-widget__date-separator">to</span>
+                <span class="sac-ai-data-widget__date-separator" aria-hidden="true">to</span>
                 <input
                   class="sac-ai-data-widget__date-input"
                   type="date"
                   [value]="resolvedDateRange.high"
                   [disabled]="!resolvedInteractiveDimension"
+                  [attr.aria-label]="'End date for ' + resolvedFilterLabel"
                   (change)="handleDateRangeChange('high', $event)"
                 />
               </div>
@@ -202,7 +204,8 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
               (sliderChange)="handleSliderChange($event)"
             ></sac-slider>
 
-            <div *ngSwitchCase="'range-slider'" class="sac-ai-data-widget__range-slider">
+            <div *ngSwitchCase="'range-slider'" class="sac-ai-data-widget__range-slider"
+                 role="group" [attr.aria-label]="resolvedSliderLabel + ' range'">
               <label class="sac-ai-data-widget__control-label">{{ resolvedSliderLabel }}</label>
               <sac-slider
                 [label]="'Low'"

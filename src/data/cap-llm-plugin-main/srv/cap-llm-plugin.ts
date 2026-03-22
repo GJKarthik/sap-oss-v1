@@ -81,6 +81,18 @@ export interface SimilaritySearchResult {
   [key: string]: unknown;
 }
 
+/** Optional parameters for getRagResponseWithConfig. */
+export interface RagChatParams {
+  minSimilarityScore?: number;
+  maxL2Distance?: number;
+  maxContextTokens?: number;
+  charsPerToken?: number;
+  enableReranking?: boolean;
+  enableGroundingCheck?: boolean;
+  groundingModelConfig?: ChatConfig;
+  [key: string]: unknown;
+}
+
 /** Response from the RAG pipeline. */
 export interface RagResponse {
   completion: unknown;
@@ -96,6 +108,7 @@ export interface RagResponse {
     claims?: Array<{ claim: string; verdict: string; confidence: number; evidence: string }>;
     contradictions?: Array<{ claim: string; evidence: string }>;
     unsupported?: Array<{ claim: string; evidence: string }>;
+    groundingDetail?: { wordOverlap: number; bigramOverlap: number };
   };
 }
 
@@ -271,12 +284,15 @@ class CAPLLMPlugin extends cds.Service {
         // Use parameterized query with positional placeholders for sequenceIds
         const placeholders = sequenceIds.map(() => "?").join(", ");
         const query = `SELECT * FROM "${viewName}" WHERE "${seqColName}" IN (${placeholders})`;
-        return await cds.db.run(query, sequenceIds);
+        const filteredResult = await cds.db.run(query, sequenceIds);
+        span.addEvent("anonymized_data_fetched", { "anonymization.filtered": true, "anonymization.count": sequenceIds.length });
+        span.setStatus({ code: SpanStatusCode.OK });
+        return filteredResult;
       }
 
       const query = `SELECT * FROM "${viewName}"`;
       const result = await cds.db.run(query);
-      span.addEvent("anonymized_data_fetched");
+      span.addEvent("anonymized_data_fetched", { "anonymization.filtered": false });
       span.setStatus({ code: SpanStatusCode.OK });
       return result;
     } catch (e) {
@@ -539,7 +555,7 @@ class CAPLLMPlugin extends cds.Service {
     context: unknown[] | undefined,
     topK: number = 3,
     algoName: string = "COSINE_SIMILARITY",
-    chatParams?: Record<string, unknown>
+    chatParams?: RagChatParams
   ): Promise<RagResponse> {
     const span = getTracer().startSpan("cap-llm-plugin.getRagResponseWithConfig");
     span.setAttribute("llm.embedding.model", embeddingConfig.modelName ?? "");
@@ -574,9 +590,9 @@ class CAPLLMPlugin extends cds.Service {
       // Cosine: higher is better (default threshold 0.3). L2: lower is better (default threshold 1.5).
       const allResults = similaritySearchResults as SimilaritySearchResult[];
       const isCosineSimilarity = algoName === "COSINE_SIMILARITY";
-      const minScore = (chatParams?.minSimilarityScore as number)
+      const minScore = chatParams?.minSimilarityScore
         ?? (isCosineSimilarity ? 0.3 : undefined);
-      const maxL2Distance = (chatParams?.maxL2Distance as number) ?? 1.5;
+      const maxL2Distance = chatParams?.maxL2Distance ?? 1.5;
       let filteredResults = isCosineSimilarity
         ? allResults.filter(r => r.SCORE >= (minScore as number))
         : allResults.filter(r => r.SCORE <= maxL2Distance);
@@ -604,16 +620,16 @@ class CAPLLMPlugin extends cds.Service {
       }
 
       // Fix 3: Budget context to fit within model limits
-      // Approximate: 1 token ≈ 4 characters.
-      // Reserve budget for: chatInstruction, document headers, user query, conversation history, completion.
-      const maxTotalContextTokens = (chatParams?.maxContextTokens as number) ?? 3000;
+      // Default: 1 token ≈ 4 characters (English). For CJK use charsPerToken: 2.
+      const maxTotalContextTokens = chatParams?.maxContextTokens ?? 3000;
+      const charsPerToken = chatParams?.charsPerToken ?? 4;
       const instructionChars = chatInstruction.length + "\n\nRetrieved context:\n".length;
       const queryChars = input.length;
       const historyChars = context ? context.reduce((sum: number, m: any) => sum + ((m?.content as string)?.length ?? 0), 0) : 0;
       // Per-document header overhead: "[Document N] (relevance: 0.XXX)\n" ≈ 40 chars
       const perDocOverhead = 40;
       const reservedChars = instructionChars + queryChars + historyChars + 200; // 200 for message framing
-      const maxContextChars = Math.max(0, maxTotalContextTokens * 4 - reservedChars);
+      const maxContextChars = Math.max(0, maxTotalContextTokens * charsPerToken - reservedChars);
       let contextBudget = maxContextChars;
       const selectedContent: string[] = [];
 
@@ -689,7 +705,7 @@ class CAPLLMPlugin extends cds.Service {
       // Falls back to the generation model if no judge config is provided.
       if (chatParams?.enableGroundingCheck && selectedContent.length > 0) {
         try {
-          const judgeConfig = (chatParams.groundingModelConfig as ChatConfig) ?? chatConfig;
+          const judgeConfig = chatParams.groundingModelConfig ?? chatConfig;
           const grounding = await assessGroundingViaLLM(
             chatCompletionResp,
             selectedContent,

@@ -146,9 +146,20 @@ function assessResponseQuality(response, context) {
     const contextNorm = normalize(context.join(" "));
     const responseNorm = normalize(content);
 
-    // Keyword overlap (words > 4 chars, filters stopwords by length)
-    const contextWords = new Set(contextNorm.split(/\s+/).filter(w => w.length > 4));
-    const responseWords = responseNorm.split(/\s+/).filter(w => w.length > 4);
+    // Keyword overlap: filter common stopwords explicitly instead of by length,
+    // so domain terms like "SAP", "HANA", "AI", "API", "SQL", "CDS" are preserved.
+    const STOPWORDS = new Set([
+      "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+      "have", "has", "had", "do", "does", "did", "will", "would", "shall",
+      "should", "may", "might", "must", "can", "could", "and", "but", "or",
+      "nor", "not", "so", "yet", "for", "of", "in", "on", "at", "to", "by",
+      "with", "from", "as", "into", "about", "that", "this", "it", "its",
+      "if", "then", "than", "when", "what", "which", "who", "whom", "how",
+      "all", "each", "every", "both", "few", "more", "most", "some", "any",
+      "no", "only", "own", "same", "very", "just", "also", "now",
+    ]);
+    const contextWords = new Set(contextNorm.split(/\s+/).filter(w => w.length > 1 && !STOPWORDS.has(w)));
+    const responseWords = responseNorm.split(/\s+/).filter(w => w.length > 1 && !STOPWORDS.has(w));
     let wordOverlap = 0;
     for (const word of responseWords) {
       if (contextWords.has(word)) wordOverlap++;
@@ -183,10 +194,11 @@ function assessResponseQuality(response, context) {
 }
 
 /**
- * Maximum character budget for the grounding prompt (context + claims).
+ * Default maximum character budget for the grounding prompt (context + claims).
  * Prevents exceeding model context windows. ~3000 tokens * 4 chars/token.
+ * Override via options.maxPromptChars in assessGroundingViaLLM.
  */
-const GROUNDING_MAX_PROMPT_CHARS = 12000;
+const GROUNDING_MAX_PROMPT_CHARS_DEFAULT = 12000;
 
 /**
  * Extract text content from an LLM response (string, SDK response object, or OpenAI format).
@@ -206,6 +218,11 @@ function _extractContent(response) {
  */
 function _parseJSONArray(text) {
   if (!text || typeof text !== "string") return null;
+  // Length guard: skip regex extraction on very large strings to prevent ReDoS
+  const MAX_PARSE_LENGTH = 100_000;
+  if (text.length > MAX_PARSE_LENGTH) {
+    text = text.slice(0, MAX_PARSE_LENGTH);
+  }
   // Direct parse
   try {
     const parsed = JSON.parse(text);
@@ -248,8 +265,9 @@ async function _decomposeClaims(content, chatFn) {
   if (content.length < 40) return [content];
 
   // Truncate to budget
-  const truncated = content.length > GROUNDING_MAX_PROMPT_CHARS / 2
-    ? content.slice(0, GROUNDING_MAX_PROMPT_CHARS / 2)
+  const decomposeLimit = GROUNDING_MAX_PROMPT_CHARS_DEFAULT / 2;
+  const truncated = content.length > decomposeLimit
+    ? content.slice(0, decomposeLimit)
     : content;
 
   const prompt = `Decompose the following text into atomic, independently verifiable factual claims.
@@ -305,8 +323,9 @@ Return a JSON array of strings, each being one atomic claim. Example:
  *   to avoid self-judge bias. The caller controls which model this routes to.
  * @returns {Promise<{faithfulnessScore: number, claims: Array<{claim: string, verdict: string, confidence: number, evidence: string}>, contradictions: Array<{claim: string, evidence: string}>, unsupported: Array<{claim: string, evidence: string}>}>}
  */
-async function assessGroundingViaLLM(responseText, contextDocs, chatFn) {
+async function assessGroundingViaLLM(responseText, contextDocs, chatFn, options = {}) {
   const fallback = { faithfulnessScore: 0, claims: [], contradictions: [], unsupported: [], checkCompleted: false };
+  const maxPromptChars = options.maxPromptChars ?? GROUNDING_MAX_PROMPT_CHARS_DEFAULT;
 
   if (!responseText || !contextDocs || contextDocs.length === 0 || typeof chatFn !== "function") {
     return fallback;
@@ -322,7 +341,7 @@ async function assessGroundingViaLLM(responseText, contextDocs, chatFn) {
   // Phase 2: NLI classification with few-shot examples and confidence scoring
   // Budget guard: truncate context to fit within prompt limits
   let contextBlock = "";
-  let contextBudget = GROUNDING_MAX_PROMPT_CHARS;
+  let contextBudget = maxPromptChars;
   for (let i = 0; i < contextDocs.length; i++) {
     const docHeader = `[Document ${i + 1}]\n`;
     const docContent = contextDocs[i] || "";
