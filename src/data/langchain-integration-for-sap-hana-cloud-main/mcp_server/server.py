@@ -129,22 +129,29 @@ def _recursive_split(text: str, separators: list, chunk_size: int, overlap: int)
     return chunks
 
 
+import threading
+
 _rerank_model = None
 _rerank_model_name = os.environ.get("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+_rerank_lock = threading.Lock()
 
 
 def _get_rerank_model():
     global _rerank_model
     if _rerank_model is not None:
         return _rerank_model
-    try:
-        from sentence_transformers import CrossEncoder
-        _rerank_model = CrossEncoder(_rerank_model_name)
-        return _rerank_model
-    except ImportError:
-        return None
-    except Exception:
-        return None
+    with _rerank_lock:
+        # Double-check after acquiring lock
+        if _rerank_model is not None:
+            return _rerank_model
+        try:
+            from sentence_transformers import CrossEncoder
+            _rerank_model = CrossEncoder(_rerank_model_name)
+            return _rerank_model
+        except ImportError:
+            return None
+        except Exception:
+            return None
 
 
 def normalize_mcp_endpoint(endpoint: str) -> str:
@@ -256,6 +263,7 @@ def config_ready(config: dict) -> bool:
 
 
 _cached_token = {"token": None, "expires_at": 0}
+_token_lock = threading.Lock()
 
 
 def get_access_token(config: dict) -> str:
@@ -263,23 +271,27 @@ def get_access_token(config: dict) -> str:
     import base64
     if _cached_token["token"] and time.time() < _cached_token["expires_at"]:
         return _cached_token["token"]
-    if not config["auth_url"]:
-        return ""
-    auth = base64.b64encode(f"{config['client_id']}:{config['client_secret']}".encode()).decode()
-    req = urllib.request.Request(
-        config["auth_url"],
-        data=b"grant_type=client_credentials",
-        headers={"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            result = json.loads(resp.read().decode())
-            _cached_token["token"] = result["access_token"]
-            _cached_token["expires_at"] = time.time() + result.get("expires_in", 3600) - 60
-            return result["access_token"]
-    except Exception:
-        return ""
+    with _token_lock:
+        # Double-check after acquiring lock
+        if _cached_token["token"] and time.time() < _cached_token["expires_at"]:
+            return _cached_token["token"]
+        if not config["auth_url"]:
+            return ""
+        auth = base64.b64encode(f"{config['client_id']}:{config['client_secret']}".encode()).decode()
+        req = urllib.request.Request(
+            config["auth_url"],
+            data=b"grant_type=client_credentials",
+            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read().decode())
+                _cached_token["token"] = result["access_token"]
+                _cached_token["expires_at"] = time.time() + result.get("expires_in", 3600) - 60
+                return result["access_token"]
+        except Exception:
+            return ""
 
 
 def aicore_request(config: dict, method: str, path: str, body: dict = None) -> Any:

@@ -1068,6 +1068,11 @@ class CAPLLMPlugin extends cds.Service {
 
       span.addEvent("stream_started");
 
+      // Stream safety guards: max duration (5 minutes) and max content size (1MB)
+      const MAX_STREAM_MS = 5 * 60 * 1000;
+      const MAX_CONTENT_BYTES = 1024 * 1024;
+      const streamDeadline = setTimeout(() => controller.abort(), MAX_STREAM_MS);
+
       let fullContent = "";
 
       for await (const chunk of streamResponse.stream) {
@@ -1075,11 +1080,19 @@ class CAPLLMPlugin extends cds.Service {
         if (!delta) continue;
         fullContent += delta;
 
+        if (fullContent.length > MAX_CONTENT_BYTES) {
+          controller.abort();
+          span.addEvent("stream_content_limit_exceeded", { "stream.content_bytes": fullContent.length });
+          break;
+        }
+
         if (isStreaming) {
           const frame = JSON.stringify({ delta, index: 0 });
           httpRes!.write(`data: ${frame}\n\n`);
         }
       }
+
+      clearTimeout(streamDeadline);
 
       const finishReason = streamResponse.getFinishReason();
       const totalTokens = streamResponse.getTokenUsage()?.total_tokens;
@@ -1106,7 +1119,11 @@ class CAPLLMPlugin extends cds.Service {
       span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
 
       if (isStreaming) {
-        const errFrame = JSON.stringify({ code: "CHAT_STREAM_FAILED", message: err.message });
+        // Sanitize error message — don't leak internal details to client
+        const safeMessage = err.message?.includes("aborted")
+          ? "Stream was aborted"
+          : "An error occurred during streaming";
+        const errFrame = JSON.stringify({ code: "CHAT_STREAM_FAILED", message: safeMessage });
         try {
           httpRes!.write(`event: error\ndata: ${errFrame}\n\n`);
           httpRes!.end();

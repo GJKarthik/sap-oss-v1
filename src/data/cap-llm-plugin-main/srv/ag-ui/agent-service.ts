@@ -94,6 +94,9 @@ export class AgUiAgentService {
   private toolHandler: ToolHandler;
   private intentRouter: IntentRouter;
   private palClient: PalClient;
+  private static readonly MAX_SESSIONS = 1000;
+  private static readonly SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+  private static readonly MAX_SESSION_MESSAGES = 50;
   private sessions = new Map<string, AgentSession>();
   private llmPlugin: unknown;
 
@@ -123,6 +126,24 @@ export class AgUiAgentService {
     );
   }
 
+  /** Evict expired sessions and enforce max session count. */
+  private evictStaleSessions(): void {
+    const now = Date.now();
+    for (const [id, session] of this.sessions) {
+      if (now - session.lastActivityAt > AgUiAgentService.SESSION_TTL_MS) {
+        this.sessions.delete(id);
+      }
+    }
+    // If still over limit, evict oldest first
+    if (this.sessions.size > AgUiAgentService.MAX_SESSIONS) {
+      const sorted = [...this.sessions.entries()].sort((a, b) => a[1].lastActivityAt - b[1].lastActivityAt);
+      const toEvict = sorted.slice(0, this.sessions.size - AgUiAgentService.MAX_SESSIONS);
+      for (const [id] of toEvict) {
+        this.sessions.delete(id);
+      }
+    }
+  }
+
   getToolRegistry(): ToolRegistry {
     return this.toolHandler.getRegistry();
   }
@@ -139,6 +160,9 @@ export class AgUiAgentService {
     httpRes.flushHeaders();
 
     try {
+      // Evict stale sessions periodically
+      this.evictStaleSessions();
+
       let session = this.sessions.get(threadId);
       if (!session) {
         session = { threadId, runId, messages: [], state: {}, createdAt: Date.now(), lastActivityAt: Date.now() };
@@ -156,6 +180,11 @@ export class AgUiAgentService {
           throw new Error('Each message must have string "role" and "content" fields');
         }
         session.messages.push({ role: msg.role, content: msg.content });
+      }
+
+      // Cap session messages to rolling window to prevent unbounded memory growth
+      if (session.messages.length > AgUiAgentService.MAX_SESSION_MESSAGES) {
+        session.messages = session.messages.slice(-AgUiAgentService.MAX_SESSION_MESSAGES);
       }
 
       const userMessage = request.messages.find(m => m.role === 'user')?.content ?? '';
@@ -345,9 +374,12 @@ export class AgUiAgentService {
       content = response?.choices?.[0]?.message?.content ?? '';
     } else {
       // Fallback: raw HTTP to vLLM OpenAI-compat endpoint
+      const vllmAbort = new AbortController();
+      const vllmTimeout = setTimeout(() => vllmAbort.abort(), 60_000);
       const resp = await fetch(`${vllmEndpoint}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: vllmAbort.signal,
         body: JSON.stringify({
           model,
           messages: [
@@ -358,6 +390,7 @@ export class AgUiAgentService {
           temperature: 0.7,
         }),
       });
+      clearTimeout(vllmTimeout);
       const json = await resp.json() as any;
       content = json?.choices?.[0]?.message?.content ?? '';
     }
@@ -491,11 +524,15 @@ export class AgUiAgentService {
           },
         },
       };
+      const mcpAbort = new AbortController();
+      const mcpTimeout = setTimeout(() => mcpAbort.abort(), 60_000);
       const resp = await fetch(mcpEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: mcpAbort.signal,
         body: JSON.stringify(body),
       });
+      clearTimeout(mcpTimeout);
       const json = await resp.json() as any;
       const textContent = json?.result?.content?.find((c: any) => c.type === 'text');
       content = textContent?.text ?? '';
