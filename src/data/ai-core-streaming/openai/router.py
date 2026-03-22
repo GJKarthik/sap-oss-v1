@@ -100,15 +100,36 @@ class MeshRouter:
         Returns:
             Tuple of (backend_id, endpoint_url, reason)
         """
-        # 0. Validate security headers
+        # 0. Validate security headers — reject if validation fails
         validation_error = self.validate_request(request, service_id, security_class)
         if validation_error:
             import logging
-            logging.getLogger(__name__).warning("Security validation: %s", validation_error)
+            logging.getLogger(__name__).warning("Security validation failed: %s", validation_error)
+            # Route to vllm (secure default) when security headers are missing
+            return (
+                "vllm",
+                self.BACKENDS["vllm"],
+                f"Security validation enforced: {validation_error}"
+            )
 
         # 1. Check forced backend (X-Mesh-Routing header)
+        # Prevent force_backend from downgrading security class to a less secure backend
         if force_backend:
             if force_backend in self.BACKENDS:
+                # Block if security class requires vllm but force_backend targets ai-core
+                if security_class and security_class in ("confidential", "restricted"):
+                    required = self.SECURITY_ROUTING.get(security_class, "vllm")
+                    if force_backend != required:
+                        import logging
+                        logging.getLogger(__name__).warning(
+                            "Blocked forced routing to %s: security class '%s' requires %s",
+                            force_backend, security_class, required,
+                        )
+                        return (
+                            required,
+                            self.BACKENDS[required],
+                            f"Forced routing blocked: security class '{security_class}' requires {required}"
+                        )
                 return (
                     force_backend,
                     self.BACKENDS[force_backend],
@@ -195,9 +216,10 @@ class MeshRouter:
         return " ".join(content_parts).lower()
     
     def _contains_confidential(self, content: str) -> bool:
-        """Check if content contains confidential keywords."""
+        """Check if content contains confidential keywords (word-boundary matching)."""
+        import re
         for keyword in self.CONFIDENTIAL_KEYWORDS:
-            if keyword in content:
+            if re.search(r'\b' + re.escape(keyword) + r'\b', content):
                 return True
         return False
     

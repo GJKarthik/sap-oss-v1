@@ -22,7 +22,7 @@ import {
   SecurityContext,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import type { SacHeadingLevel, SacTextAlign } from '../types/sac-widget-schema';
 
 // =============================================================================
@@ -126,16 +126,22 @@ export class SacTextBlockComponent {
 
   constructor(private sanitizer: DomSanitizer) {}
 
-  get sanitizedContent(): SafeHtml {
-    // Simple markdown-like parsing (for POC - production would use marked.js)
-    let html = this.content
+  get sanitizedContent(): string {
+    // Escape raw HTML first to prevent injection, then apply markdown transforms
+    let escaped = this.content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    // Markdown transforms on escaped content (safe — no raw HTML can survive)
+    let html = escaped
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+      .replace(/\[(.*?)\]\((https?:\/\/[^)]*?)\)/g, '<a href="$2" rel="noopener noreferrer">$1</a>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>');
     html = `<p>${html}</p>`;
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    return this.sanitizer.sanitize(SecurityContext.HTML, html) ?? '';
   }
 }
 

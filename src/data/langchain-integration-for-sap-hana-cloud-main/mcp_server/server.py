@@ -39,6 +39,7 @@ def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
     return CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else None
 
 
+MCP_API_KEY = os.environ.get("MCP_API_KEY", "")
 MAX_REQUEST_BYTES = int(os.environ.get("MCP_MAX_REQUEST_BYTES", str(1024 * 1024)))
 MAX_TOOL_TOKENS = int(os.environ.get("MCP_MAX_TOOL_TOKENS", "8192"))
 MAX_TOP_K = int(os.environ.get("MCP_MAX_TOP_K", "100"))
@@ -277,7 +278,7 @@ def get_access_token(config: dict) -> str:
             _cached_token["token"] = result["access_token"]
             _cached_token["expires_at"] = time.time() + result.get("expires_in", 3600) - 60
             return result["access_token"]
-    except:
+    except Exception:
         return ""
 
 
@@ -800,9 +801,14 @@ class MCPServer:
                 "result": delegation["result"],
             }
 
-        if os.path.isfile(source):
+        # Local file loading restricted to allowed directories (prevent path traversal)
+        _allowed_dirs = [d.strip() for d in os.environ.get("MCP_ALLOWED_FILE_DIRS", "").split(",") if d.strip()]
+        if os.path.isfile(source) and _allowed_dirs:
+            resolved = os.path.realpath(source)
+            if not any(resolved.startswith(os.path.realpath(d) + os.sep) for d in _allowed_dirs):
+                return {"error": f"Access denied: '{source}' is outside allowed directories"}
             try:
-                with open(source, "r", encoding="utf-8", errors="ignore") as f:
+                with open(resolved, "r", encoding="utf-8", errors="ignore") as f:
                     text = f.read(MAX_CHUNK_SIZE)
                 return {
                     "source": source,
@@ -976,10 +982,12 @@ class MCPServer:
         cypher = str(args.get("cypher", "") or "").strip()
         if not cypher:
             return {"error": "cypher is required"}
-        upper = cypher.upper().lstrip()
-        for disallowed in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
-            if upper.startswith(disallowed):
-                return {"error": "Write Cypher statements are not permitted via this tool"}
+        # Only allow MATCH, RETURN, WITH, UNWIND, OPTIONAL, CALL (read-only) at any position.
+        # Reject any write keyword anywhere in the query to prevent subquery/UNION bypass.
+        import re
+        _WRITE_KEYWORDS = re.compile(r'\b(CREATE|MERGE|DELETE|DETACH|SET|REMOVE|DROP|ALTER)\b', re.IGNORECASE)
+        if _WRITE_KEYWORDS.search(cypher):
+            return {"error": "Write Cypher statements are not permitted via this tool"}
         if _kuzu_store_factory is None:
             return {"error": 'KùzuDB not available; add kuzu>=0.7.0 to pyproject.toml'}
         store = _kuzu_store_factory()
@@ -1100,7 +1108,19 @@ class MCPHandler(BaseHTTPRequestHandler):
         else:
             self._write_json(404, {"error": "Not found"})
 
+    def _check_auth(self) -> bool:
+        """Validate API key if MCP_API_KEY is configured. Returns True if authorized."""
+        if not MCP_API_KEY:
+            return True  # No key configured — allow (dev mode)
+        auth = self.headers.get("Authorization", "")
+        if auth == f"Bearer {MCP_API_KEY}":
+            return True
+        self._write_json(401, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Unauthorized: invalid or missing API key"}})
+        return False
+
     def do_POST(self):
+        if not self._check_auth():
+            return
         if self.path == "/mcp":
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length <= 0:

@@ -1290,9 +1290,21 @@ pub const ToonInferenceEngine = struct {
                 // decision is deferred until after we know if output.weight exists.
                 if (ggml_dtype == .q4_0) {
                     cpu_embedding_q4_data = data_slice;
-                } else if (ggml_dtype == .f32 or ggml_dtype == .f16) {
+                } else if (ggml_dtype == .f32) {
                     gpu_weights.token_embedding = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
                     total_bytes += size;
+                } else if (ggml_dtype == .f16) {
+                    // Convert F16 embedding to F32 — embeddingGpu kernel requires F32
+                    const emb_f16_n = rows * cols;
+                    const fp32_emb = try allocator.alloc(f32, emb_f16_n);
+                    defer allocator.free(fp32_emb);
+                    const f16_words = @as([*]const u16, @ptrCast(@alignCast(data_slice.ptr)))[0..emb_f16_n];
+                    for (f16_words, 0..) |h, i| {
+                        fp32_emb[i] = @floatCast(@as(f16, @bitCast(h)));
+                    }
+                    gpu_weights.token_embedding = try GpuTensor.upload(.f32, std.mem.sliceAsBytes(fp32_emb), rows, cols);
+                    total_bytes += emb_f16_n * @sizeOf(f32);
+                    std.log.info("Converted f16 embedding to F32 ({} MB VRAM)", .{emb_f16_n * @sizeOf(f32) / (1024 * 1024)});
                 } else {
                     // Quantized embedding (Q6_K, Q8_0, etc.): dequant to F32 for GPU lookup.
                     // embeddingGpu kernel expects float32 data.

@@ -13,7 +13,7 @@ import asyncio
 from typing import Any, Dict, List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Response, HTTPException, Header
+from fastapi import FastAPI, Request, Response, HTTPException, Header, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -104,14 +104,28 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# CORS middleware
+# CORS middleware — restrict to configured origins (env: CORS_ALLOWED_ORIGINS)
+_cors_origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Mesh-Service", "X-Mesh-Security-Class", "X-Mesh-Routing", "X-Correlation-ID", "traceparent"],
 )
+
+# API key authentication
+_API_KEY = os.getenv("STREAMING_API_KEY", "")
+
+
+async def _verify_api_key(request: Request):
+    """Validate Bearer token if STREAMING_API_KEY is configured."""
+    if not _API_KEY:
+        return  # No key configured — allow (dev mode)
+    auth = request.headers.get("Authorization", "")
+    if auth == f"Bearer {_API_KEY}":
+        return
+    raise HTTPException(status_code=401, detail="Unauthorized: invalid or missing API key")
 
 # Initialize handlers
 router = MeshRouter()
@@ -183,7 +197,7 @@ def _extract_trace_id(traceparent: Optional[str], correlation_id: Optional[str])
     return correlation_id
 
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", dependencies=[Depends(_verify_api_key)])
 async def chat_completions(
     request: ChatCompletionRequest,
     x_mesh_service: Optional[str] = Header(None, alias="X-Mesh-Service"),
@@ -278,7 +292,7 @@ async def stream_chat_completion(request: Dict, headers: Dict, trace_id: Optiona
 
 
 # Completions endpoint (legacy)
-@app.post("/v1/completions")
+@app.post("/v1/completions", dependencies=[Depends(_verify_api_key)])
 async def completions(
     request: CompletionRequest,
     x_mesh_service: Optional[str] = Header(None, alias="X-Mesh-Service"),
@@ -358,7 +372,7 @@ async def stream_completion(request: Dict, headers: Dict):
 
 
 # Embeddings endpoint
-@app.post("/v1/embeddings")
+@app.post("/v1/embeddings", dependencies=[Depends(_verify_api_key)])
 async def embeddings(
     request: EmbeddingRequest,
     x_mesh_service: Optional[str] = Header(None, alias="X-Mesh-Service"),
@@ -390,21 +404,25 @@ async def embeddings(
     return response
 
 
-# Routing info endpoint (SAP extension)
-@app.get("/v1/routing/info")
+# Routing info endpoint (SAP extension) — requires auth, disabled in production
+@app.get("/v1/routing/info", dependencies=[Depends(_verify_api_key)])
 async def routing_info():
-    """Get routing configuration (SAP extension)."""
+    """Get routing configuration (SAP extension). Requires API key."""
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
     return {
-        "backends": router.BACKENDS,
+        "backends": {k: "***" for k in router.BACKENDS},  # Mask URLs
         "security_routing": router.SECURITY_ROUTING,
         "model_backend": router.MODEL_BACKEND,
         "service_routing": router.SERVICE_ROUTING
     }
 
 
-@app.get("/v1/routing/audit")
+@app.get("/v1/routing/audit", dependencies=[Depends(_verify_api_key)])
 async def routing_audit():
-    """Get routing audit log (SAP extension)."""
+    """Get routing audit log (SAP extension). Requires API key."""
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
     return {
         "audit_log": router.get_audit_log()
     }
