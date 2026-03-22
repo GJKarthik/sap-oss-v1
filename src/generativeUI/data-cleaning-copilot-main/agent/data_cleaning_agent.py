@@ -564,10 +564,12 @@ class DataCleaningAgent:
             }, trace_id=trace_id)
 
             backend = result.get("x_mesh_backend", "unknown")
-            self._log_audit("success", tool, backend, prompt, trace_id=trace_id)
+            is_mock = result.get("x_mesh_mock", False)
+            status = "mock_fallback" if is_mock else "success"
+            self._log_audit(status, tool, backend, prompt, trace_id=trace_id)
 
             return {
-                "status": "success",
+                "status": status,
                 "backend": backend,
                 "result": result,
                 "timestamp": timestamp
@@ -603,7 +605,9 @@ class DataCleaningAgent:
         except Exception as e:
             logger.warning("Mesh chat call failed, using mock response: %s", e, exc_info=True)
             self._log_audit("mock_fallback", "mesh_chat", "mock", str(request.get("model", "")), str(e))
-            return self._mock_mesh_response(request)
+            mock = self._mock_mesh_response(request)
+            mock["x_mesh_mock"] = True
+            return mock
     
     def _mock_mesh_response(self, request: Dict) -> Dict[str, Any]:
         return {

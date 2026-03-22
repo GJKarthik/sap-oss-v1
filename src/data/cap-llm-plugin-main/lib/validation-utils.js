@@ -420,7 +420,7 @@ Return ONLY a JSON array:
       .filter(c => c.verdict === "NOT_SUPPORTED")
       .map(c => ({ claim: c.claim, evidence: c.evidence }));
 
-    return { faithfulnessScore, claims: validatedClaims, contradictions, unsupported };
+    return { faithfulnessScore, claims: validatedClaims, contradictions, unsupported, checkCompleted: true };
   } catch {
     return fallback;
   }

@@ -92,6 +92,7 @@ export interface RagResponse {
     usedContext: boolean;
     warnings: string[];
     faithfulnessScore?: number;
+    groundingCheckCompleted?: boolean;
     claims?: Array<{ claim: string; verdict: string; confidence: number; evidence: string }>;
     contradictions?: Array<{ claim: string; evidence: string }>;
     unsupported?: Array<{ claim: string; evidence: string }>;
@@ -334,6 +335,23 @@ class CAPLLMPlugin extends cds.Service {
         throw new EmbeddingError(`The config is missing the parameter: "resourceGroup".`, "EMBEDDING_CONFIG_INVALID", {
           missingField: "resourceGroup",
         });
+      }
+
+      // Validate input is a non-empty string or string array
+      if (typeof input === "string") {
+        if (input.trim().length === 0) {
+          throw new EmbeddingError(`Input must be a non-empty string.`, "EMBEDDING_INPUT_INVALID", { receivedType: "empty string" });
+        }
+      } else if (Array.isArray(input)) {
+        if (input.length === 0 || !input.every((item: unknown) => typeof item === "string" && item.trim().length > 0)) {
+          throw new EmbeddingError(`Input must be a non-empty array of non-empty strings.`, "EMBEDDING_INPUT_INVALID", { receivedType: "invalid array" });
+        }
+      } else {
+        throw new EmbeddingError(
+          `Input must be a string or string array. Received: ${typeof input}`,
+          "EMBEDDING_INPUT_INVALID",
+          { receivedType: typeof input }
+        );
       }
 
       const { OrchestrationEmbeddingClient } = await import("@sap-ai-sdk/orchestration");
@@ -681,6 +699,7 @@ class CAPLLMPlugin extends cds.Service {
             }
           );
           quality.faithfulnessScore = grounding.faithfulnessScore;
+          quality.groundingCheckCompleted = grounding.checkCompleted;
           quality.claims = grounding.claims;
           quality.contradictions = grounding.contradictions;
           quality.unsupported = grounding.unsupported;

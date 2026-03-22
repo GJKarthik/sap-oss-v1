@@ -147,7 +147,14 @@ export class AgUiAgentService {
       session.runId = runId;
       session.lastActivityAt = Date.now();
 
+      // Validate messages structure before processing
+      if (!Array.isArray(request.messages) || request.messages.length === 0) {
+        throw new Error('request.messages must be a non-empty array');
+      }
       for (const msg of request.messages) {
+        if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') {
+          throw new Error('Each message must have string "role" and "content" fields');
+        }
         session.messages.push({ role: msg.role, content: msg.content });
       }
 
