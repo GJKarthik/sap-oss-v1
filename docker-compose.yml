@@ -285,12 +285,50 @@ services:
 
   # ── Infrastructure ─────────────────────────────────────────────────────
 
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=sap_ai_fabric
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sap_ai_fabric"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks: [platform-network]
+
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    networks: [platform-network]
+
+  api-server:
+    build:
+      context: ./src/data/sap-ai-fabric-console/packages/api-server
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-change-me}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/sap_ai_fabric
+      - REDIS_URL=redis://redis:6379/0
+      - LANGCHAIN_MCP_URL=http://embedded-hana:8050/mcp
+      - STREAMING_MCP_URL=http://ai-shared-fabric:8030/mcp
+      - CORS_ORIGINS=http://localhost:4200,http://localhost:3000
+    depends_on: [postgres, redis]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks: [platform-network]
 
   api-gateway:
@@ -304,6 +342,7 @@ services:
       - odata-schema
       - vllm
       - elasticsearch
+      - api-server
     networks: [platform-network]
 
 volumes:
@@ -312,6 +351,8 @@ volumes:
   es-data:
     driver: local
   redis-data:
+    driver: local
+  postgres-data:
     driver: local
 
 networks:
