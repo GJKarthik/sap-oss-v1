@@ -1,9 +1,7 @@
 /**
  * MCP Service - Angular Service for Backend Communication
  * 
- * Connects to the existing MCP servers in src/data:
- * - LangChain HANA MCP (port 9140)
- * - AI Core Streaming MCP (port 9190)
+ * Routes MCP JSON-RPC calls through the FastAPI backend proxy.
  */
 
 import { Injectable, inject } from '@angular/core';
@@ -100,9 +98,10 @@ export class McpService {
 
   private requestId = 0;
   private correlationCounter = 0;
-  private langchainUrl = environment.langchainMcpUrl;
-  private streamingUrl = environment.streamingMcpUrl;
-  private authToken = environment.mcpAuthToken;
+  private langchainUrl = `${environment.apiBaseUrl}/mcp/langchain`;
+  private streamingUrl = `${environment.apiBaseUrl}/mcp/streaming`;
+  private langchainHealthUrl = `${environment.apiBaseUrl}/mcp/langchain/health`;
+  private streamingHealthUrl = `${environment.apiBaseUrl}/mcp/streaming/health`;
 
   // Reactive state
   private healthSubject = new BehaviorSubject<{
@@ -141,7 +140,7 @@ export class McpService {
 
   checkAllHealth(): Observable<void> {
     const langchainHealth$ = this.http.get<ServiceHealth>(
-      this.langchainUrl.replace('/mcp', '/health')
+      this.langchainHealthUrl
     ).pipe(
       catchError(err => of<ServiceHealth>({
         status: 'error',
@@ -151,7 +150,7 @@ export class McpService {
     );
 
     const streamingHealth$ = this.http.get<ServiceHealth>(
-      this.streamingUrl.replace('/mcp', '/health')
+      this.streamingHealthUrl
     ).pipe(
       catchError(err => of<ServiceHealth>({
         status: 'error',
@@ -184,14 +183,10 @@ export class McpService {
   // ===========================================================================
 
   private getHeaders(): HttpHeaders {
-    let headers = new HttpHeaders({
+    return new HttpHeaders({
       'Content-Type': 'application/json',
       'X-Correlation-ID': this.generateCorrelationId(),
     });
-    if (this.authToken) {
-      headers = headers.set('Authorization', `Bearer ${this.authToken}`);
-    }
-    return headers;
   }
 
   private generateCorrelationId(): string {
