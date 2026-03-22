@@ -10,24 +10,97 @@ Queries Elasticsearch for cached S/4 field mappings.
 """
 
 import json
+import os
+import time
 import urllib.request
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from datetime import datetime, timezone
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _sync_urlopen(req, timeout):
+    """Synchronous urllib open, meant to be called via asyncio.to_thread()."""
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode())
+
+
+class CircuitBreaker:
+    """Simple circuit breaker: opens after `threshold` consecutive failures,
+    half-opens after `reset_timeout` seconds."""
+
+    def __init__(self, threshold: int = 5, reset_timeout: float = 30.0):
+        self.threshold = threshold
+        self.reset_timeout = reset_timeout
+        self._failure_count = 0
+        self._last_failure_time: float = 0
+        self._state = "closed"  # closed | open | half-open
+
+    @property
+    def state(self) -> str:
+        if self._state == "open":
+            if time.monotonic() - self._last_failure_time >= self.reset_timeout:
+                self._state = "half-open"
+        return self._state
+
+    def record_success(self) -> None:
+        self._failure_count = 0
+        self._state = "closed"
+
+    def record_failure(self) -> None:
+        self._failure_count += 1
+        self._last_failure_time = time.monotonic()
+        if self._failure_count >= self.threshold:
+            self._state = "open"
+
+    def allow_request(self) -> bool:
+        s = self.state
+        return s in ("closed", "half-open")
+
+
+async def retry_with_backoff(
+    fn: Callable,
+    max_retries: int = 3,
+    base_delay: float = 0.5,
+    circuit: Optional[CircuitBreaker] = None,
+):
+    """Retry an async-compatible callable with exponential backoff."""
+    last_error = None
+    for attempt in range(max_retries):
+        if circuit and not circuit.allow_request():
+            logger.debug("Circuit breaker open, skipping attempt %d", attempt)
+            break
+        try:
+            result = await fn()
+            if circuit:
+                circuit.record_success()
+            return result
+        except Exception as e:
+            last_error = e
+            if circuit:
+                circuit.record_failure()
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt)
+                logger.debug("Retry %d/%d after %.1fs: %s", attempt + 1, max_retries, delay, e)
+                await asyncio.sleep(delay)
+    raise last_error if last_error else RuntimeError("retry_with_backoff: no attempts made")
 
 
 class MangleQueryClient:
     """
     Client for querying Mangle rules via mangle-query-service.
-    
+
     Field classification rules are defined in mangle/a2a/mcp.mg, not hardcoded.
     """
-    
+
     def __init__(self, endpoint: str = "http://localhost:9200"):
         self.endpoint = endpoint
         self.mcp_endpoint = f"{endpoint}/mcp"
         self.rules_loaded = False
-        
+        self._circuit = CircuitBreaker(threshold=5, reset_timeout=30.0)
+
     async def query(self, predicate: str, *args) -> List[Dict]:
         """
         Query Mangle for field classification.
@@ -56,12 +129,14 @@ class MangleQueryClient:
                 headers={"Content-Type": "application/json"},
                 method="POST"
             )
-            
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                result = json.loads(resp.read().decode())
-                return result.get("result", {}).get("content", [])
-        except Exception:
-            # Service unavailable - rules must come from external source
+
+            async def _do_request():
+                return await asyncio.to_thread(_sync_urlopen, req, 30)
+
+            result = await retry_with_backoff(_do_request, max_retries=2, base_delay=0.3, circuit=self._circuit)
+            return result.get("result", {}).get("content", [])
+        except Exception as e:
+            logger.debug("MangleQueryClient.query(%s) unavailable: %s", predicate, e)
             return []
 
 
@@ -76,6 +151,7 @@ class ODataVocabularyDiscoveryClient:
         self.endpoint = endpoint
         self.mcp_endpoint = f"{endpoint}/mcp"
         self.openai_endpoint = f"{endpoint}/v1"
+        self._circuit = CircuitBreaker(threshold=5, reset_timeout=30.0)
         
     async def discover_entity_schema(self, entity_name: str) -> Dict:
         """Discover entity schema from OData Vocabularies service."""
@@ -110,11 +186,12 @@ class ODataVocabularyDiscoveryClient:
                 method="POST"
             )
             
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                return json.loads(resp.read().decode())
+            result = await asyncio.to_thread(_sync_urlopen, req, 30)
+            return result
         except Exception as e:
+            logger.warning("suggest_annotations failed: %s", e)
             return {"error": str(e), "status": "failed"}
-    
+
     async def _call_tool(self, tool_name: str, args: Dict) -> Dict:
         """Call MCP tool on vocabulary service."""
         request_data = {
@@ -123,7 +200,7 @@ class ODataVocabularyDiscoveryClient:
             "method": "tools/call",
             "params": {"name": tool_name, "arguments": args}
         }
-        
+
         try:
             req = urllib.request.Request(
                 self.mcp_endpoint,
@@ -131,10 +208,13 @@ class ODataVocabularyDiscoveryClient:
                 headers={"Content-Type": "application/json"},
                 method="POST"
             )
-            
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                return json.loads(resp.read().decode())
+
+            async def _do_request():
+                return await asyncio.to_thread(_sync_urlopen, req, 30)
+
+            return await retry_with_backoff(_do_request, max_retries=2, base_delay=0.3, circuit=self._circuit)
         except Exception as e:
+            logger.warning("_call_tool(%s) failed: %s", tool_name, e)
             return {"error": str(e), "status": "failed"}
 
 
@@ -147,7 +227,8 @@ class ElasticsearchFieldCacheClient:
     
     def __init__(self, endpoint: str = "http://localhost:9200"):
         self.endpoint = endpoint
-        
+        self._circuit = CircuitBreaker(threshold=5, reset_timeout=30.0)
+
     async def search_field_mapping(self, field_name: str) -> Dict:
         """Search for field mapping in Elasticsearch cache."""
         query = {
@@ -169,14 +250,17 @@ class ElasticsearchFieldCacheClient:
                 headers={"Content-Type": "application/json"},
                 method="POST"
             )
-            
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                result = json.loads(resp.read().decode())
-                hits = result.get("hits", {}).get("hits", [])
-                if hits:
-                    return {"status": "found", "mapping": hits[0].get("_source", {})}
-                return {"status": "not_found"}
+
+            async def _do_request():
+                return await asyncio.to_thread(_sync_urlopen, req, 10)
+
+            result = await retry_with_backoff(_do_request, max_retries=2, base_delay=0.3, circuit=self._circuit)
+            hits = result.get("hits", {}).get("hits", [])
+            if hits:
+                return {"status": "found", "mapping": hits[0].get("_source", {})}
+            return {"status": "not_found"}
         except Exception as e:
+            logger.warning("search_field_mapping(%s) failed: %s", field_name, e)
             return {"error": str(e), "status": "failed"}
     
     async def get_acdoca_fields(self) -> List[Dict]:
@@ -194,10 +278,10 @@ class ElasticsearchFieldCacheClient:
                 method="POST"
             )
             
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                result = json.loads(resp.read().decode())
-                return [hit.get("_source", {}) for hit in result.get("hits", {}).get("hits", [])]
-        except Exception:
+            result = await asyncio.to_thread(_sync_urlopen, req, 10)
+            return [hit.get("_source", {}) for hit in result.get("hits", {}).get("hits", [])]
+        except Exception as e:
+            logger.warning("get_acdoca_fields failed: %s", e)
             return []
 
 
@@ -287,20 +371,20 @@ class DataCleaningAgent:
     3. Elasticsearch field cache
     """
     
-    MESH_ENDPOINT = "http://localhost:9190/v1"
+    MESH_ENDPOINT = os.environ.get("MESH_ENDPOINT", "http://localhost:9190/v1")
     SERVICE_ID = "data-cleaning-copilot"
     SECURITY_CLASS = "confidential"
-    
+
     def __init__(self):
         self.mangle_governance = MangleEngine([
             "mangle/domain/agents.mg",
             "../regulations/mangle/rules.mg"
         ])
-        
+
         # External services for field classification
-        self.mangle_query = MangleQueryClient("http://localhost:9200")
-        self.vocab_discovery = ODataVocabularyDiscoveryClient("http://localhost:9150")
-        self.es_cache = ElasticsearchFieldCacheClient("http://localhost:9200")
+        self.mangle_query = MangleQueryClient(os.environ.get("MANGLE_QUERY_ENDPOINT", "http://localhost:9200"))
+        self.vocab_discovery = ODataVocabularyDiscoveryClient(os.environ.get("ODATA_VOCAB_ENDPOINT", "http://localhost:9150"))
+        self.es_cache = ElasticsearchFieldCacheClient(os.environ.get("ES_CACHE_ENDPOINT", "http://localhost:9200"))
         
         self.audit_log: List[Dict] = []
     
@@ -444,29 +528,30 @@ class DataCleaningAgent:
         """Invoke agent with governance checks."""
         context = context or {}
         tool = context.get("tool", "analyze_data_quality")
+        trace_id = context.get("trace_id")
         timestamp = datetime.now(timezone.utc).isoformat()
-        
+
         if self.mangle_governance.query("requires_human_review", tool):
-            self._log_audit("pending_approval", tool, "pending", prompt)
+            self._log_audit("pending_approval", tool, "pending", prompt, trace_id=trace_id)
             return {
                 "status": "pending_approval",
                 "message": f"Action '{tool}' requires human review",
                 "tool": tool,
                 "timestamp": timestamp
             }
-        
+
         if not self.mangle_governance.query("safety_check_passed", tool):
-            self._log_audit("blocked", tool, "blocked", prompt)
+            self._log_audit("blocked", tool, "blocked", prompt, trace_id=trace_id)
             return {
                 "status": "blocked",
                 "message": f"Safety check failed for tool '{tool}'",
                 "tool": tool,
                 "timestamp": timestamp
             }
-        
+
         prompting = self.mangle_governance.query("get_prompting_policy", "data-cleaning-service-v1")
         prompting_policy = prompting[0] if prompting else {}
-        
+
         try:
             result = await self._call_mesh_chat({
                 "model": "gpt-4",
@@ -476,31 +561,34 @@ class DataCleaningAgent:
                 ],
                 "max_tokens": prompting_policy.get("max_tokens", 4096),
                 "temperature": prompting_policy.get("temperature", 0.3)
-            })
-            
+            }, trace_id=trace_id)
+
             backend = result.get("x_mesh_backend", "unknown")
-            self._log_audit("success", tool, backend, prompt)
-            
+            self._log_audit("success", tool, backend, prompt, trace_id=trace_id)
+
             return {
                 "status": "success",
                 "backend": backend,
                 "result": result,
                 "timestamp": timestamp
             }
-            
+
         except Exception as e:
-            self._log_audit("error", tool, "error", prompt, str(e))
+            self._log_audit("error", tool, "error", prompt, str(e), trace_id=trace_id)
             return {"status": "error", "message": str(e), "timestamp": timestamp}
     
-    async def _call_mesh_chat(self, request: Dict) -> Dict[str, Any]:
+    async def _call_mesh_chat(self, request: Dict, trace_id: Optional[str] = None) -> Dict[str, Any]:
         """Call central mesh for chat completions."""
         url = f"{self.MESH_ENDPOINT}/chat/completions"
-        
+
         headers = {
             "Content-Type": "application/json",
             "X-Mesh-Service": self.SERVICE_ID,
-            "X-Mesh-Security-Class": self.SECURITY_CLASS
+            "X-Mesh-Security-Class": self.SECURITY_CLASS,
         }
+        if trace_id:
+            span_id = trace_id[:16]
+            headers["traceparent"] = f"00-{trace_id}-{span_id}-01"
         
         req = urllib.request.Request(
             url,
@@ -510,9 +598,11 @@ class DataCleaningAgent:
         )
         
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                return json.loads(resp.read().decode())
-        except:
+            result = await asyncio.to_thread(_sync_urlopen, req, 120)
+            return result
+        except Exception as e:
+            logger.warning("Mesh chat call failed, using mock response: %s", e, exc_info=True)
+            self._log_audit("mock_fallback", "mesh_chat", "mock", str(request.get("model", "")), str(e))
             return self._mock_mesh_response(request)
     
     def _mock_mesh_response(self, request: Dict) -> Dict[str, Any]:
@@ -533,7 +623,7 @@ class DataCleaningAgent:
             "x_mesh_routing_reason": f"Service policy: {self.SERVICE_ID} -> vllm"
         }
     
-    def _log_audit(self, status: str, tool: str, backend: str, prompt: str, error: str = None):
+    def _log_audit(self, status: str, tool: str, backend: str, prompt: str, error: str = None, trace_id: str = None):
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "agent": "data-cleaning-agent",
@@ -542,8 +632,10 @@ class DataCleaningAgent:
             "tool": tool,
             "backend": backend,
             "prompt_hash": hash(prompt),
-            "architecture": "mangle_discovery"  # Not hardcoded
+            "architecture": "mangle_discovery",
         }
+        if trace_id:
+            entry["trace_id"] = trace_id
         if error:
             entry["error"] = error
         self.audit_log.append(entry)

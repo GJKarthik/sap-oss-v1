@@ -4,6 +4,7 @@ Routes requests to AI Core (external) or vLLM (local) based on governance rules.
 """
 
 import json
+import os
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone
@@ -20,8 +21,8 @@ class MeshRouter:
     
     # Backend endpoints
     BACKENDS = {
-        "ai-core-streaming": "http://localhost:9190/v1",
-        "vllm": "http://localhost:9180/v1"
+        "ai-core-streaming": os.environ.get("AICORE_STREAMING_URL", "http://localhost:9190/v1"),
+        "vllm": os.environ.get("VLLM_URL", "http://localhost:9180/v1"),
     }
     
     # Security class to backend mapping
@@ -76,13 +77,22 @@ class MeshRouter:
     
     def __init__(self):
         self.audit_log: List[Dict] = []
-    
+
+    def validate_request(self, request: Dict, service_id: Optional[str], security_class: Optional[str]) -> Optional[str]:
+        """Return an error message if the request violates security policy, or None if OK."""
+        if service_id and service_id in self.SERVICE_ROUTING:
+            required_backend = self.SERVICE_ROUTING[service_id]
+            if required_backend == "vllm" and not security_class:
+                return f"Service '{service_id}' requires security_class header for routing"
+        return None
+
     def route(
         self,
         request: Dict[str, Any],
         service_id: Optional[str] = None,
         security_class: Optional[str] = None,
-        force_backend: Optional[str] = None
+        force_backend: Optional[str] = None,
+        trace_id: Optional[str] = None
     ) -> Tuple[str, str, str]:
         """
         Determine which backend to route to.
@@ -90,6 +100,12 @@ class MeshRouter:
         Returns:
             Tuple of (backend_id, endpoint_url, reason)
         """
+        # 0. Validate security headers
+        validation_error = self.validate_request(request, service_id, security_class)
+        if validation_error:
+            import logging
+            logging.getLogger(__name__).warning("Security validation: %s", validation_error)
+
         # 1. Check forced backend (X-Mesh-Routing header)
         if force_backend:
             if force_backend in self.BACKENDS:
@@ -225,17 +241,21 @@ class MeshRouter:
         backend: str,
         reason: str,
         model: str,
-        status: str
+        status: str,
+        trace_id: Optional[str] = None
     ):
         """Log routing decision for audit."""
-        self.audit_log.append({
+        entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": request_id,
             "backend": backend,
             "reason": reason,
             "model": model,
-            "status": status
-        })
+            "status": status,
+        }
+        if trace_id:
+            entry["trace_id"] = trace_id
+        self.audit_log.append(entry)
     
     def get_audit_log(self) -> List[Dict]:
         """Get routing audit log."""

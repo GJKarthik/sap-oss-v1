@@ -293,6 +293,15 @@ export class AgUiAgentService {
     this.sessions.delete(threadId);
   }
 
+  health(): { status: string; service: string; activeSessions: number; timestamp: number } {
+    return {
+      status: 'healthy',
+      service: 'ag-ui-agent',
+      activeSessions: this.sessions.size,
+      timestamp: Date.now(),
+    };
+  }
+
   // ---------------------------------------------------------------------------
   // Route B: vLLM (confidential data)
   // Uses @sap-ai-sdk/vllm VllmChatClient when available, falls back to fetch
@@ -558,6 +567,10 @@ export function createAgUiServiceHandler(config: AgUiAgentConfig) {
     async clearSession(req: any): Promise<{ success: boolean }> {
       this.agent.clearSession(req.data.threadId);
       return { success: true };
+    }
+
+    async health(): Promise<{ status: string; service: string; activeSessions: number; timestamp: number }> {
+      return this.agent.health();
     }
 
     getAgent(): AgUiAgentService {

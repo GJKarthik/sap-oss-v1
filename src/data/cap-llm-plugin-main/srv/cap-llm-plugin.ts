@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2023 SAP SE
 import * as cds from "@sap/cds";
 import InvalidSimilaritySearchAlgoNameError = require("./errors/InvalidSimilaritySearchAlgoNameError");
-import { validateSqlIdentifier, validatePositiveInteger, validateEmbeddingVector } from "../lib/validation-utils";
+import { validateSqlIdentifier, validatePositiveInteger, validateEmbeddingVector, validateEmbeddingDimensions, assessResponseQuality, assessGroundingViaLLM } from "../lib/validation-utils";
 import * as legacy from "./legacy";
 import { AnonymizationError } from "../src/errors/AnonymizationError";
 import { EmbeddingError } from "../src/errors/EmbeddingError";
@@ -85,6 +85,16 @@ export interface SimilaritySearchResult {
 export interface RagResponse {
   completion: unknown;
   additionalContents: SimilaritySearchResult[];
+  quality?: {
+    hasContent: boolean;
+    contentLength: number;
+    estimatedTokens: number;
+    usedContext: boolean;
+    warnings: string[];
+    faithfulnessScore?: number;
+    claims?: Array<{ claim: string; verdict: string; evidence: string }>;
+    contradictions?: Array<{ claim: string; evidence: string }>;
+  };
 }
 
 /** Flags for getHarmonizedChatCompletion. */
@@ -114,6 +124,72 @@ export interface StreamChatParams {
 class CAPLLMPlugin extends cds.Service {
   async init(): Promise<void> {
     await super.init();
+  }
+
+  /**
+   * Rerank similarity search results via the LangChain MCP server's cross-encoder tool.
+   * Returns null on failure so the caller can keep original ordering.
+   */
+  private async rerankViaMcp(
+    query: string,
+    results: SimilaritySearchResult[],
+    mcpEndpoint?: string
+  ): Promise<SimilaritySearchResult[] | null> {
+    const endpoint = mcpEndpoint
+      ?? process.env.LANGCHAIN_MCP_ENDPOINT
+      ?? "http://localhost:9140/mcp";
+
+    const payload = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "rerank_results",
+        arguments: {
+          query,
+          documents: JSON.stringify(
+            results.map(r => ({ content: r.PAGE_CONTENT ?? "", score: r.SCORE ?? 0 }))
+          ),
+          top_k: results.length,
+        },
+      },
+    };
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      const rpcResp = (await response.json()) as Record<string, unknown>;
+      const result = rpcResp.result as Record<string, unknown> | undefined;
+      if (!result) return null;
+
+      // Unwrap MCP content envelope
+      const content = (result.content as Array<Record<string, unknown>>)?.[0];
+      const text = content?.text as string | undefined;
+      if (!text) return null;
+
+      const parsed = JSON.parse(text) as { documents?: Array<Record<string, unknown>>; reranked?: boolean };
+      if (!parsed.reranked || !Array.isArray(parsed.documents)) return null;
+
+      // Map reranked documents back to SimilaritySearchResult format
+      return parsed.documents.map((doc) => {
+        const original = results.find(r => (r.PAGE_CONTENT ?? "") === (doc.content ?? ""));
+        return {
+          ...(original ?? {}),
+          PAGE_CONTENT: (doc.content as string) ?? "",
+          SCORE: (doc.rerank_score as number) ?? (doc.original_score as number) ?? 0,
+        } as SimilaritySearchResult;
+      });
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -348,6 +424,14 @@ class CAPLLMPlugin extends cds.Service {
           ],
         }
       );
+      // Fix 6: Log token usage for cost/quality observability
+      const usage = (response as any)?.getTokenUsage?.();
+      if (usage) {
+        span.setAttribute("llm.usage.prompt_tokens", usage.prompt_tokens ?? 0);
+        span.setAttribute("llm.usage.completion_tokens", usage.completion_tokens ?? 0);
+        span.setAttribute("llm.usage.total_tokens", usage.total_tokens ?? 0);
+      }
+
       span.addEvent("chat_completion_response_received");
       span.setStatus({ code: SpanStatusCode.OK });
       return response;
@@ -447,6 +531,9 @@ class CAPLLMPlugin extends cds.Service {
 
       span.addEvent("embedding_generated", { "embedding.dimensions": queryEmbedding.length });
 
+      // Fix 5: Validate embedding dimensions match expected model output
+      validateEmbeddingDimensions(queryEmbedding, embeddingConfig.modelName);
+
       //perform similarity search on the vector db
       const similaritySearchResults = await this.similaritySearch(
         tableName,
@@ -456,16 +543,91 @@ class CAPLLMPlugin extends cds.Service {
         algoName,
         topK
       );
-      const similarContent = (similaritySearchResults as SimilaritySearchResult[]).map(
-        (obj: SimilaritySearchResult) => obj.PAGE_CONTENT
-      );
 
-      span.addEvent("similarity_search_completed", {
-        "search.result_count": (similaritySearchResults as SimilaritySearchResult[]).length,
+      // Fix 2: Filter by minimum similarity score
+      // Cosine: higher is better (default threshold 0.3). L2: lower is better (default threshold 1.5).
+      const allResults = similaritySearchResults as SimilaritySearchResult[];
+      const isCosineSimilarity = algoName === "COSINE_SIMILARITY";
+      const minScore = (chatParams?.minSimilarityScore as number)
+        ?? (isCosineSimilarity ? 0.3 : undefined);
+      const maxL2Distance = (chatParams?.maxL2Distance as number) ?? 1.5;
+      let filteredResults = isCosineSimilarity
+        ? allResults.filter(r => r.SCORE >= (minScore as number))
+        : allResults.filter(r => r.SCORE <= maxL2Distance);
+
+      span.addEvent("similarity_results_filtered", {
+        "search.pre_filter_count": allResults.length,
+        "search.post_filter_count": filteredResults.length,
+        "search.threshold": isCosineSimilarity ? (minScore as number) : maxL2Distance,
       });
 
-      //system prompt for the RagResponse.
-      const systemPrompt = ` ${chatInstruction} \`\`\` ${similarContent} \`\`\` `;
+      // Optional cross-encoder reranking via MCP
+      if (chatParams?.enableReranking !== false && filteredResults.length > 1) {
+        const reranked = await this.rerankViaMcp(input, filteredResults);
+        if (reranked) {
+          filteredResults = reranked;
+          span.addEvent("results_reranked", { "rerank.count": reranked.length });
+        }
+      }
+
+      if (filteredResults.length > 0) {
+        const scores = filteredResults.map(r => r.SCORE);
+        span.setAttribute("rag.min_score", Math.min(...scores));
+        span.setAttribute("rag.max_score", Math.max(...scores));
+        span.setAttribute("rag.avg_score", scores.reduce((a, b) => a + b, 0) / scores.length);
+      }
+
+      // Fix 3: Budget context to fit within model limits
+      // Approximate: 1 token ≈ 4 characters.
+      // Reserve budget for: chatInstruction, document headers, user query, conversation history, completion.
+      const maxTotalContextTokens = (chatParams?.maxContextTokens as number) ?? 3000;
+      const instructionChars = chatInstruction.length + "\n\nRetrieved context:\n".length;
+      const queryChars = input.length;
+      const historyChars = context ? context.reduce((sum: number, m: any) => sum + ((m?.content as string)?.length ?? 0), 0) : 0;
+      // Per-document header overhead: "[Document N] (relevance: 0.XXX)\n" ≈ 40 chars
+      const perDocOverhead = 40;
+      const reservedChars = instructionChars + queryChars + historyChars + 200; // 200 for message framing
+      const maxContextChars = Math.max(0, maxTotalContextTokens * 4 - reservedChars);
+      let contextBudget = maxContextChars;
+      const selectedContent: string[] = [];
+
+      for (const result of filteredResults) {
+        const content = result.PAGE_CONTENT ?? "";
+        if (contextBudget <= perDocOverhead) break;
+        const available = contextBudget - perDocOverhead;
+        if (content.length <= available) {
+          selectedContent.push(content);
+          contextBudget -= content.length + perDocOverhead;
+        } else {
+          // Truncate last chunk to fit budget (at sentence boundary if possible)
+          const truncated = content.slice(0, available);
+          const lastSentence = truncated.lastIndexOf(". ");
+          selectedContent.push(lastSentence > 0 ? truncated.slice(0, lastSentence + 1) : truncated);
+          break;
+        }
+      }
+
+      span.setAttribute("rag.context_chars", maxContextChars - contextBudget);
+      span.setAttribute("rag.context_budget", maxContextChars);
+      span.setAttribute("rag.documents_used", selectedContent.length);
+
+      let systemPrompt: string;
+      if (selectedContent.length === 0) {
+        // Zero-result fallback: warn the model there's no retrieved context
+        span.addEvent("rag_no_relevant_context", {
+          "search.total_results": allResults.length,
+          "search.filtered_results": filteredResults.length,
+        });
+        systemPrompt = `${chatInstruction}\n\nNo sufficiently relevant documents were found in the knowledge base. ` +
+          `Answer based on your general knowledge and clearly state when you are not certain.`;
+      } else {
+        // Structured context injection with document numbers and scores
+        const contextBlock = selectedContent.map((content, i) => {
+          const score = filteredResults[i]?.SCORE ?? 0;
+          return `[Document ${i + 1}] (relevance: ${score.toFixed(3)})\n${content}`;
+        }).join("\n\n");
+        systemPrompt = `${chatInstruction}\n\nRetrieved context:\n${contextBlock}`;
+      }
 
       //construct a unified messages array — SDK handles model-specific formatting
       const messages: Record<string, unknown>[] = [{ role: "system", content: systemPrompt }];
@@ -484,10 +646,47 @@ class CAPLLMPlugin extends cds.Service {
 
       span.addEvent("chat_completion_received");
 
+      // Fix 4: Assess response quality
+      const quality = assessResponseQuality(chatCompletionResp, selectedContent);
+      span.setAttribute("rag.response.estimated_tokens", quality.estimatedTokens);
+      span.setAttribute("rag.response.grounded", quality.usedContext);
+      if (quality.warnings.length > 0) {
+        span.addEvent("quality_warnings", { warnings: quality.warnings.join("; ") });
+      }
+
+      // Deep grounding check (opt-in via chatParams.enableGroundingCheck)
+      if (chatParams?.enableGroundingCheck && selectedContent.length > 0) {
+        try {
+          const grounding = await assessGroundingViaLLM(
+            chatCompletionResp,
+            selectedContent,
+            async (messages: Array<{ role: string; content: string }>) => {
+              const resp = await this.getChatCompletionWithConfig(chatConfig, { messages });
+              return (resp as any)?.getContent?.() ?? "";
+            }
+          );
+          quality.faithfulnessScore = grounding.faithfulnessScore;
+          quality.claims = grounding.claims;
+          quality.contradictions = grounding.contradictions;
+          span.setAttribute("rag.faithfulness_score", grounding.faithfulnessScore);
+          span.setAttribute("rag.claim_count", grounding.claims.length);
+          span.setAttribute("rag.contradiction_count", grounding.contradictions.length);
+          if (grounding.contradictions.length > 0) {
+            quality.warnings.push(
+              `${grounding.contradictions.length} claim(s) contradict the provided context`
+            );
+          }
+        } catch (groundingErr) {
+          LOG.warn("Grounding check failed, continuing without NLI:", groundingErr);
+          span.addEvent("grounding_check_failed", { "error": (groundingErr as Error).message });
+        }
+      }
+
       //construct the final response payload
       const ragResponse: RagResponse = {
-        completion: chatCompletionResp, //complete response from chat completion model
-        additionalContents: similaritySearchResults as SimilaritySearchResult[], //complete similarity search results
+        completion: chatCompletionResp,
+        additionalContents: filteredResults,
+        quality,
       };
 
       span.setStatus({ code: SpanStatusCode.OK });
@@ -714,6 +913,14 @@ class CAPLLMPlugin extends cds.Service {
 
       // Call the chatCompletion method with the provided chat completion configuration
       const response = await orchestrationClient.chatCompletion(chatCompletionConfig as any);
+
+      // Fix 6: Log token usage for cost/quality observability
+      const usage = (response as any)?.getTokenUsage?.();
+      if (usage) {
+        span.setAttribute("llm.usage.prompt_tokens", usage.prompt_tokens ?? 0);
+        span.setAttribute("llm.usage.completion_tokens", usage.completion_tokens ?? 0);
+        span.setAttribute("llm.usage.total_tokens", usage.total_tokens ?? 0);
+      }
 
       span.addEvent("harmonized_chat_completion_received");
       span.setStatus({ code: SpanStatusCode.OK });

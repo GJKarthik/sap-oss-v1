@@ -119,3 +119,22 @@ Decl toon_pointer(
   toon_path: string,
   value_type: atom
 ).
+
+# =============================================================================
+# AG-UI PROTOCOL EVENT TYPES
+# =============================================================================
+# Shared between SAC widget frontend and CAP backend
+
+Decl agui_event_type(event_type: atom).
+
+agui_event_type(/RUN_STARTED).
+agui_event_type(/RUN_FINISHED).
+agui_event_type(/RUN_ERROR).
+agui_event_type(/TEXT_MESSAGE_START).
+agui_event_type(/TEXT_MESSAGE_CONTENT).
+agui_event_type(/TEXT_MESSAGE_END).
+agui_event_type(/TOOL_CALL_START).
+agui_event_type(/TOOL_CALL_ARGS).
+agui_event_type(/TOOL_CALL_END).
+agui_event_type(/STATE_DELTA).
+agui_event_type(/CUSTOM).

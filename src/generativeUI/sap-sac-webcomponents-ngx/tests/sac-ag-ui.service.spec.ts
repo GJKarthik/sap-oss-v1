@@ -5,6 +5,7 @@ import {
   AgUiToolCallEndEvent,
   SacAgUiService,
 } from '../libs/sac-ai-widget/ag-ui/sac-ag-ui.service';
+import { SacAiSessionService } from '../libs/sac-ai-widget/session/sac-ai-session.service';
 
 function createSseResponse(...frames: string[]): Response {
   const encoder = new TextEncoder();
@@ -64,6 +65,7 @@ describe('SacAgUiService', () => {
     const service = new SacAgUiService(
       { getToken: () => 'token-1' } as never,
       'https://backend.example',
+      new SacAiSessionService(),
     );
 
     const events = await collectEvents(service.run({
@@ -98,6 +100,7 @@ describe('SacAgUiService', () => {
     const service = new SacAgUiService(
       { getToken: () => 'token-2' } as never,
       'https://backend.example',
+      new SacAiSessionService(),
     );
 
     await collectEvents(service.run({
@@ -133,6 +136,7 @@ describe('SacAgUiService', () => {
     const service = new SacAgUiService(
       { getToken: () => null } as never,
       'https://backend.example',
+      new SacAiSessionService(),
     );
 
     await expect(collectEvents(service.run({

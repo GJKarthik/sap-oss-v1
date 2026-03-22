@@ -18,6 +18,10 @@ import {
   type LockInfo,
   type VersionInfo,
 } from '@sap-oss/sac-webcomponents-ngx/planning';
+import {
+  VALID_WIDGET_TYPES,
+  validateWidgetType,
+} from '../types/sac-widget-schema';
 import type {
   SacWidgetSchema,
   SacDimensionFilter,
@@ -307,8 +311,28 @@ export class SacToolDispatchService {
   private async generateSacWidget(args: Record<string, unknown>): Promise<ToolResult> {
     if (!this.target) return { success: false, error: 'No widget target registered' };
 
+    const rawWidgetType = args['widgetType'];
+    if (!validateWidgetType(rawWidgetType)) {
+      return {
+        success: false,
+        error: `generate_sac_widget: invalid widgetType '${String(rawWidgetType)}'. Valid types: ${Array.from(VALID_WIDGET_TYPES).join(', ')}`,
+      };
+    }
+
+    const widgetType = rawWidgetType;
+    const rawModelId = args['modelId'];
+    if (
+      (widgetType === 'chart' || widgetType === 'table' || widgetType === 'kpi')
+      && (!rawModelId || typeof rawModelId !== 'string' || !rawModelId.trim())
+    ) {
+      return {
+        success: false,
+        error: `generate_sac_widget: modelId is required for data widget type '${widgetType}'`,
+      };
+    }
+
     const schema = {
-      widgetType: args['widgetType'] as SacWidgetSchema['widgetType'],
+      widgetType,
       chartType: args['chartType'] as string | undefined,
       modelId: args['modelId'] as string,
       dimensions: this.parseStringList(args['dimensions']),
@@ -443,7 +467,10 @@ export class SacToolDispatchService {
       return undefined;
     }
 
-    return parsedValue.filter((item): item is SacWidgetSchema => Boolean(item) && typeof item === 'object') as SacWidgetSchema[];
+    return parsedValue.filter(
+      (item): item is SacWidgetSchema =>
+        Boolean(item) && typeof item === 'object' && 'widgetType' in item,
+    ) as SacWidgetSchema[];
   }
 
   private parseWidgetFilters(value: unknown): SacDimensionFilter[] | undefined {

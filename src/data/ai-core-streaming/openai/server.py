@@ -174,59 +174,73 @@ async def get_model(model_id: str):
 
 
 # Chat completions endpoint
+def _extract_trace_id(traceparent: Optional[str], correlation_id: Optional[str]) -> Optional[str]:
+    """Extract trace ID from W3C traceparent header or X-Correlation-ID."""
+    if traceparent:
+        parts = traceparent.split("-")
+        if len(parts) >= 2:
+            return parts[1]
+    return correlation_id
+
+
 @app.post("/v1/chat/completions")
 async def chat_completions(
     request: ChatCompletionRequest,
     x_mesh_service: Optional[str] = Header(None, alias="X-Mesh-Service"),
     x_mesh_security_class: Optional[str] = Header(None, alias="X-Mesh-Security-Class"),
     x_mesh_routing: Optional[str] = Header(None, alias="X-Mesh-Routing"),
+    traceparent: Optional[str] = Header(None),
+    x_correlation_id: Optional[str] = Header(None, alias="X-Correlation-ID"),
 ):
     """
     OpenAI-compatible chat completions endpoint.
-    
+
     Supports streaming via SSE when stream=true.
     Routes to AI Core or vLLM based on governance rules.
     """
+    trace_id = _extract_trace_id(traceparent, x_correlation_id)
     headers = {
         "X-Mesh-Service": x_mesh_service,
         "X-Mesh-Security-Class": x_mesh_security_class,
         "X-Mesh-Routing": x_mesh_routing,
     }
     headers = {k: v for k, v in headers.items() if v is not None}
-    
+
     # Convert to dict for handler
     req_dict = request.model_dump(exclude_none=True)
     req_dict["messages"] = [m.model_dump(exclude_none=True) for m in request.messages]
-    
+
     if request.stream:
         return StreamingResponse(
-            stream_chat_completion(req_dict, headers),
+            stream_chat_completion(req_dict, headers, trace_id=trace_id),
             media_type="text/event-stream"
         )
-    
+
     response = await chat_handler.handle(req_dict, headers)
-    
+
     if "error" in response:
         raise HTTPException(
             status_code=response["error"].get("code", 500),
             detail=response["error"]["message"]
         )
-    
+
     return response
 
 
-async def stream_chat_completion(request: Dict, headers: Dict):
+async def stream_chat_completion(request: Dict, headers: Dict, trace_id: Optional[str] = None):
     """Generate SSE stream for chat completion."""
     request_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
     model = request.get("model", "gpt-4")
-    
+
     # Route to determine backend
     backend, endpoint, reason = router.route(
         request,
         service_id=headers.get("X-Mesh-Service"),
         security_class=headers.get("X-Mesh-Security-Class"),
-        force_backend=headers.get("X-Mesh-Routing")
+        force_backend=headers.get("X-Mesh-Routing"),
+        trace_id=trace_id,
     )
+    router.log_routing(request_id, backend, reason, model, "streaming", trace_id=trace_id)
     
     # For demo, yield mock streaming response
     # In production, this would proxy to backend SSE

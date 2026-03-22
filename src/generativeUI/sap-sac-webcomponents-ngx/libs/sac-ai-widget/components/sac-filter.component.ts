@@ -73,13 +73,13 @@ export interface FilterChangeEvent {
   styles: [`
     .sac-filter { display: flex; flex-direction: column; gap: 4px; }
     .sac-filter__label {
-      font-size: 12px; font-weight: 600; color: var(--sapTextColor, #333);
+      font-size: 12px; font-weight: 600; color: var(--sapTextColor, #32363a);
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     .sac-filter__select {
       padding: 8px 12px; border: 1px solid var(--sapField_BorderColor, #89919a);
       border-radius: 4px; font-size: 14px; background: var(--sapField_Background, #fff);
-      color: var(--sapTextColor, #333); cursor: pointer;
+      color: var(--sapTextColor, #32363a); cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .sac-filter__select:hover:not(:disabled) {
@@ -87,7 +87,7 @@ export interface FilterChangeEvent {
     }
     .sac-filter__select:focus-visible {
       outline: none; border-color: var(--sapField_Focus_BorderColor, #0854a0);
-      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, rgba(8, 84, 160, 0.25));
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
     }
     .sac-filter__select:disabled {
       opacity: 0.5; cursor: not-allowed; background: var(--sapField_ReadOnly_Background, #f7f7f7);
@@ -171,7 +171,7 @@ export class SacFilterDropdownComponent {
   styles: [`
     .sac-filter--checkbox { border: none; padding: 0; margin: 0; }
     .sac-filter--checkbox .sac-filter__label {
-      font-size: 12px; font-weight: 600; color: var(--sapTextColor, #333);
+      font-size: 12px; font-weight: 600; color: var(--sapTextColor, #32363a);
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
     }
     .sac-filter__options { display: flex; flex-direction: column; gap: 8px; }
@@ -187,10 +187,10 @@ export class SacFilterDropdownComponent {
       accent-color: var(--sapBrandColor, #0854a0);
     }
     .sac-filter__checkbox:focus-visible {
-      outline: 2px solid var(--sapContent_FocusColor, #0854a0);
+      outline: 2px solid var(--sapContent_FocusColor, #0070f2);
       outline-offset: 2px;
     }
-    .sac-filter__checkbox-text { font-size: 14px; color: var(--sapTextColor, #333); }
+    .sac-filter__checkbox-text { font-size: 14px; color: var(--sapTextColor, #32363a); }
     .sac-filter--disabled { opacity: 0.6; }
     .sac-filter--disabled * { cursor: not-allowed; }
   `],

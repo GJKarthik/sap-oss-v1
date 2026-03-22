@@ -30,6 +30,23 @@ export type SacWidgetType =
   | SacWidgetTypeText
   | SacWidgetTypeLayout;
 
+/** Set of all valid widget type strings for runtime validation. */
+export const VALID_WIDGET_TYPES = new Set<SacWidgetType>([
+  'chart', 'table', 'kpi',
+  'filter-dropdown', 'filter-checkbox', 'filter-date-range',
+  'slider', 'range-slider',
+  'text-block', 'heading', 'divider',
+  'grid-container', 'flex-container',
+]);
+
+/** Max recursion depth for nested child widgets. */
+export const MAX_CHILDREN_DEPTH = 8;
+
+/** Validates whether a value is a known widget type at runtime. */
+export function validateWidgetType(value: unknown): value is SacWidgetType {
+  return typeof value === 'string' && VALID_WIDGET_TYPES.has(value as SacWidgetType);
+}
+
 // =============================================================================
 // Filter Value Types
 // =============================================================================

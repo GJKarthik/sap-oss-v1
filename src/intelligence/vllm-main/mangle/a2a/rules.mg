@@ -196,3 +196,16 @@ Decl resolve_fractal(pointer_id: string, full_url: string) :-
 Decl deep_pointer(pointer_id: string) :-
   fractal_pointer(pointer_id, _, _, depth),
   depth > 1.
+
+# =============================================================================
+# SERVICE HEALTH CONTRACT
+# =============================================================================
+
+# Health contract: every registered service must expose /health
+Decl service_health_endpoint(service_name: string, health_url: string) :-
+  service_registry(service_name, base_url, _),
+  health_url = fn:concat(base_url, "/../health").
+
+# All services in mesh are compliant when they follow the contract
+Decl mesh_compliant() :-
+  forall(service_registry(S, _, _), service_status(S, /available)).

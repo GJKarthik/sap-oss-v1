@@ -76,7 +76,7 @@ export interface SliderChangeEvent {
     .sac-slider { display: flex; flex-direction: column; gap: 8px; }
     .sac-slider__header { display: flex; justify-content: space-between; align-items: center; }
     .sac-slider__label {
-      font-size: 12px; font-weight: 600; color: var(--sapTextColor, #333);
+      font-size: 12px; font-weight: 600; color: var(--sapTextColor, #32363a);
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     .sac-slider__value {
@@ -99,7 +99,7 @@ export interface SliderChangeEvent {
       outline: none;
     }
     .sac-slider__input:focus-visible::-webkit-slider-thumb {
-      box-shadow: 0 0 0 3px var(--sapContent_FocusColor, rgba(8, 84, 160, 0.4));
+      box-shadow: 0 0 0 3px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
     }
     .sac-slider__input:disabled {
       opacity: 0.5; cursor: not-allowed;

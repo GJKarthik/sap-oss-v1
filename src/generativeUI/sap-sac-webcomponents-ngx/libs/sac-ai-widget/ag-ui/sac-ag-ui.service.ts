@@ -18,6 +18,7 @@ import { Injectable, OnDestroy, inject } from '@angular/core';
 import { Observable, Subscriber } from 'rxjs';
 import { SacAuthService } from '@sap-oss/sac-webcomponents-ngx/core';
 import { SAC_AI_BACKEND_URL } from '../tokens';
+import { SacAiSessionService } from '../session/sac-ai-session.service';
 
 // =============================================================================
 // AG-UI Event Types (client-side mirror of srv/ag-ui/event-types.ts)
@@ -130,10 +131,12 @@ export class SacAgUiService implements OnDestroy {
   private pendingToolCalls = new Map<string, PendingToolCallContext>();
   private inFlightToolResults = new Set<string>();
   private readonly authService: SacAuthService;
+  private readonly sessionService: SacAiSessionService;
   private readonly backendUrl: string;
 
-  constructor(authService?: SacAuthService, backendUrl?: string) {
+  constructor(authService?: SacAuthService, backendUrl?: string, sessionService?: SacAiSessionService) {
     this.authService = authService ?? inject(SacAuthService);
+    this.sessionService = sessionService ?? inject(SacAiSessionService);
     this.backendUrl = backendUrl ?? inject(SAC_AI_BACKEND_URL, { optional: true }) ?? '';
   }
 
@@ -159,9 +162,12 @@ export class SacAgUiService implements OnDestroy {
       };
 
       const token = this.authService.getToken();
+      const traceId = this.sessionService.getTraceId();
+      const spanId = traceId.slice(0, 16);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        traceparent: `00-${traceId}-${spanId}-01`,
       };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -247,7 +253,12 @@ export class SacAgUiService implements OnDestroy {
     }
 
     const token = this.authService.getToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const toolTraceId = this.sessionService.getTraceId();
+    const toolSpanId = toolTraceId.slice(0, 16);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      traceparent: `00-${toolTraceId}-${toolSpanId}-01`,
+    };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     this.inFlightToolResults.add(toolCallId);
 

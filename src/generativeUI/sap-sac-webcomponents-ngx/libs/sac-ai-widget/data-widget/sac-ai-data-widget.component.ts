@@ -40,6 +40,7 @@ import { SacToolDispatchService, WidgetBindingInfo, WidgetStateTarget } from '..
 import { SacAiSessionService } from '../session/sac-ai-session.service';
 import {
   DEFAULT_SAC_WIDGET_SCHEMA,
+  MAX_CHILDREN_DEPTH,
   isContainerWidget,
   isFilterWidget,
   isSliderWidget,
@@ -289,18 +290,18 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       flex-direction: column;
       height: 100%;
       min-height: 0;
-      font-family: '72', Arial, sans-serif;
-      background: #fff;
+      font-family: var(--sapFontFamily, '72', Arial, sans-serif);
+      background: var(--sapField_Background, #fff);
     }
     .sac-ai-data-widget__title {
       font-size: 16px;
       font-weight: 600;
-      color: #32363a;
+      color: var(--sapTextColor, #32363a);
       padding: 8px 12px 4px;
     }
     .sac-ai-data-widget__status {
       padding: 0 12px 8px;
-      color: #6a6d70;
+      color: var(--sapContent_LabelColor, #6a6d70);
       font-size: 12px;
     }
     .sac-ai-data-widget__content {
@@ -312,9 +313,9 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     .sac-ai-data-widget__child {
       min-width: 0;
       min-height: 200px;
-      border: 1px solid #e5e5e5;
+      border: 1px solid var(--sapList_BorderColor, #e5e5e5);
       border-radius: 12px;
-      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+      background: linear-gradient(180deg, var(--sapList_Background, #fff) 0%, var(--sapBackgroundColor, #fafcff) 100%);
       box-shadow: 0 10px 24px rgba(15, 36, 64, 0.06);
       padding: 12px;
     }
@@ -337,7 +338,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       justify-content: center;
       height: 100%;
       width: 100%;
-      color: #8396a1;
+      color: var(--sapContent_LabelColor, #6a6d70);
       font-size: 13px;
       padding: 0 24px;
       text-align: center;
@@ -359,7 +360,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     .sac-ai-data-widget__control-label {
       font-size: 12px;
       font-weight: 700;
-      color: #5b738b;
+      color: var(--sapNeutralTextColor, #5b738b);
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -371,21 +372,21 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     .sac-ai-data-widget__date-input {
       flex: 1;
       min-height: 40px;
-      border: 1px solid #89919a;
+      border: 1px solid var(--sapField_BorderColor, #89919a);
       border-radius: 8px;
       padding: 8px 12px;
       font: inherit;
-      background: #fff;
-      color: #32363a;
+      background: var(--sapField_Background, #fff);
+      color: var(--sapTextColor, #32363a);
     }
     .sac-ai-data-widget__date-separator {
-      color: #5b738b;
+      color: var(--sapNeutralTextColor, #5b738b);
       font-size: 12px;
       text-transform: uppercase;
     }
     .sac-ai-data-widget__filter-chip {
-      background: #e8f2ff;
-      color: #0070f2;
+      background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, white);
+      color: var(--sapButton_Emphasized_Background, #0070f2);
       border-radius: 12px;
       padding: 2px 10px;
       font-size: 12px;
@@ -1133,7 +1134,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
     return 'neutral';
   }
 
-  private normalizeSchema(schema: Partial<SacWidgetSchema>): SacWidgetSchema {
+  private normalizeSchema(schema: Partial<SacWidgetSchema>, depth = 0): SacWidgetSchema {
     const topK = schema.topK == null || Number.isNaN(Number(schema.topK))
       ? undefined
       : Math.max(1, Math.trunc(Number(schema.topK)));
@@ -1151,7 +1152,9 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
       subtitle: schema.subtitle?.trim() || undefined,
       topK,
       layout: schema.layout,
-      children: schema.children?.map((child) => this.normalizeSchema(child)),
+      children: depth < MAX_CHILDREN_DEPTH
+        ? schema.children?.map((child) => this.normalizeSchema(child, depth + 1))
+        : undefined,
       slider: schema.slider,
       text: schema.text,
       ariaLabel: schema.ariaLabel?.trim() || undefined,

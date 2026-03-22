@@ -72,6 +72,67 @@ extern "C" __global__ void q4_gemv(
         y[row] = acc;
 }
 
+// ============================================================================
+// 0b. Q4_1 GEMV: y[M] = W_q4_1[M×K] @ x[K]
+// ============================================================================
+// Same structure as q4_gemv but for Q4_1 format:
+//   Block = 20 bytes: 2 (f16 scale) + 2 (f16 min) + 16 (32 nibbles).
+//   Value = nibble * scale + min  (no -8 bias; min acts as zero-point).
+extern "C" __global__ void q4_1_gemv(
+    float* __restrict__ y,
+    const uint8_t* __restrict__ W,
+    const float* __restrict__ x,
+    int M,
+    int K)
+{
+    extern __shared__ float x_smem[];
+
+    const int K4 = K >> 2;
+    float4* x_smem4 = reinterpret_cast<float4*>(x_smem);
+    const float4* x4 = reinterpret_cast<const float4*>(x);
+    for (int i = threadIdx.x; i < K4; i += blockDim.x)
+        x_smem4[i] = __ldg(&x4[i]);
+    for (int i = (K4 << 2) + threadIdx.x; i < K; i += blockDim.x)
+        x_smem[i] = __ldg(&x[i]);
+    __syncthreads();
+
+    int lane    = threadIdx.x & 31;
+    int warp_id = threadIdx.x >> 5;
+    int row     = blockIdx.x * 8 + warp_id;
+    if (row >= M) return;
+
+    int n_blocks   = K >> 5;           // Q4_1 blocks per row (K/32)
+    int row_stride = n_blocks * 20;    // 20 bytes per Q4_1 block
+    const uint8_t* W_row = W + (long long)row * row_stride;
+
+    float acc = 0.0f;
+
+    for (int b = lane; b < n_blocks; b += 32) {
+        const uint8_t* block = W_row + b * 20;
+
+        // Q4_1: 2 bytes scale (f16) + 2 bytes min (f16) + 16 bytes data
+        float scale = __half2float(__ldg(reinterpret_cast<const __half*>(block)));
+        float min_v = __half2float(__ldg(reinterpret_cast<const __half*>(block + 2)));
+
+        int x_base = b << 5;
+        const uint8_t* data = block + 4;
+
+        #pragma unroll
+        for (int j = 0; j < 16; j++) {
+            uint32_t bv = __ldg(&data[j]);
+            acc += ((float)(int)(bv & 0xF) * scale + min_v) * x_smem[x_base + j];
+            acc += ((float)(int)(bv >> 4)  * scale + min_v) * x_smem[x_base + j + 16];
+        }
+    }
+
+    // Warp shuffle butterfly reduction
+    for (int offset = 16; offset > 0; offset >>= 1)
+        acc += __shfl_xor_sync(0xFFFFFFFF, acc, offset);
+
+    if (lane == 0)
+        y[row] = acc;
+}
+
 // DeltaNet kernels for Qwen3.5 hybrid architecture
 // Compile: nvcc -ptx -arch=sm_75 -o deltanet_kernels.ptx deltanet_kernels.cu
 //

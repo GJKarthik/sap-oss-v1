@@ -1290,9 +1290,30 @@ pub const ToonInferenceEngine = struct {
                 // decision is deferred until after we know if output.weight exists.
                 if (ggml_dtype == .q4_0) {
                     cpu_embedding_q4_data = data_slice;
-                } else {
+                } else if (ggml_dtype == .f32 or ggml_dtype == .f16) {
                     gpu_weights.token_embedding = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
                     total_bytes += size;
+                } else {
+                    // Quantized embedding (Q6_K, Q8_0, etc.): dequant to F32 for GPU lookup.
+                    // embeddingGpu kernel expects float32 data.
+                    const emb_n_elem = rows * cols;
+                    const fp32_buf = if (ggml_dtype == .q6_k)
+                        try dequantQ6KToF32(allocator, data_slice, emb_n_elem)
+                    else if (ggml_dtype == .q4_0)
+                        try dequantQ4ToF32(allocator, data_slice, emb_n_elem)
+                    else blk: {
+                        // Unsupported quant — fall back to CPU embedding
+                        cpu_embedding_q4_data = data_slice;
+                        break :blk @as(?[]f32, null);
+                    };
+                    if (fp32_buf) |buf| {
+                        defer allocator.free(buf);
+                        gpu_weights.token_embedding = try GpuTensor.upload(.f32, std.mem.sliceAsBytes(buf), rows, cols);
+                        total_bytes += emb_n_elem * @sizeOf(f32);
+                        std.log.info("Dequantized {s} embedding to F32 ({} MB VRAM)", .{
+                            @tagName(ggml_dtype), emb_n_elem * @sizeOf(f32) / (1024 * 1024),
+                        });
+                    }
                 }
                 model_vocab = @intCast(rows);
                 uploaded += 1;

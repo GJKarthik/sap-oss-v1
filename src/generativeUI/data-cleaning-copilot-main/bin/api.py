@@ -16,15 +16,33 @@ from uuid import uuid4
 
 from loguru import logger
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 app = FastAPI(title="Data Cleaning Copilot API", version="1.0.0")
+
+
+class TraceContextMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        traceparent = request.headers.get("traceparent", "")
+        if traceparent:
+            parts = traceparent.split("-")
+            trace_id = parts[1] if len(parts) >= 2 else str(uuid4())
+        else:
+            trace_id = request.headers.get("x-correlation-id", str(uuid4()))
+        request.state.trace_id = trace_id
+        response = await call_next(request)
+        response.headers["X-Trace-ID"] = trace_id
+        return response
+
+
+app.add_middleware(TraceContextMiddleware)
 
 # CORS: use CORS_ALLOWED_ORIGINS (comma-separated). Do not use allow_credentials with "*".
 _cors_origins_raw = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").strip()
@@ -242,7 +260,9 @@ def _append_workflow_event(*, run_id: str, payload: Dict[str, Any]) -> Dict[str,
     return entry
 
 
-def _emit_workflow_event(run_id: str, payload: Dict[str, Any]) -> str:
+def _emit_workflow_event(run_id: str, payload: Dict[str, Any], trace_id: Optional[str] = None) -> str:
+    if trace_id:
+        payload["trace_id"] = trace_id
     _append_workflow_event(run_id=run_id, payload=payload)
     return _sse_event(payload)
 
@@ -260,6 +280,7 @@ def _append_workflow_audit(
     request_kind: Optional[str] = None,
     review_id: Optional[str] = None,
     detail: Optional[str] = None,
+    trace_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     global _workflow_audit_counter
 
@@ -278,6 +299,8 @@ def _append_workflow_audit(
         entry["reviewId"] = review_id
     if detail:
         entry["detail"] = detail
+    if trace_id:
+        entry["trace_id"] = trace_id
 
     _workflow_audit_log.append(entry)
     if len(_workflow_audit_log) > _workflow_audit_limit:
@@ -459,9 +482,10 @@ async def get_session_config():
 
 
 @app.post("/api/workflow/run")
-async def run_workflow(req: WorkflowRunRequest):
+async def run_workflow(req: WorkflowRunRequest, request: Request):
     if _interactive_session is None:
         raise HTTPException(status_code=503, detail="Session not initialised. Start the server with --database flag.")
+    trace_id = getattr(request.state, "trace_id", None)
     message = req.message.strip()
     if not message:
         raise HTTPException(status_code=400, detail="Message must not be blank.")
@@ -500,7 +524,8 @@ async def run_workflow(req: WorkflowRunRequest):
                 "runId": run_id,
                 "startedAt": started_at,
                 "userMessage": message,
-            }
+            },
+            trace_id=trace_id,
         )
 
         try:
@@ -619,6 +644,7 @@ async def run_workflow(req: WorkflowRunRequest):
             status="processing",
             message=message,
             request_kind=request_kind,
+            trace_id=trace_id,
         )
         _set_workflow_state(
             workflow_run=_build_workflow_state_snapshot(
@@ -680,7 +706,8 @@ async def run_workflow(req: WorkflowRunRequest):
                     "status": snapshot["summary"]["status"],
                     "finishedAt": finished_at,
                     **({"error": response} if result_type == "run.error" else {}),
-                }
+                },
+                trace_id=trace_id,
             )
             _append_workflow_audit(
                 run_id=run_id,
@@ -689,6 +716,7 @@ async def run_workflow(req: WorkflowRunRequest):
                 message=message,
                 request_kind=snapshot["summary"]["requestKind"],
                 detail=snapshot["summary"]["assistantResponse"][:500],
+                trace_id=trace_id,
             )
         except Exception as exc:
             logger.error(f"Workflow run error: {exc}")
@@ -699,6 +727,7 @@ async def run_workflow(req: WorkflowRunRequest):
                 message=message,
                 request_kind=request_kind,
                 detail=str(exc),
+                trace_id=trace_id,
             )
             _set_workflow_state(
                 workflow_run=_build_workflow_state_snapshot(

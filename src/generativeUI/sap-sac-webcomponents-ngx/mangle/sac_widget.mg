@@ -187,6 +187,77 @@ module_component("planning", "DataAction").
 module_component("planning", "Allocation").
 
 # =============================================================================
+# SAC AI Widget Schema — 13 Widget Types (from sac-widget-schema.ts)
+# =============================================================================
+# Aligned with VALID_WIDGET_TYPES and MAX_CHILDREN_DEPTH from TypeScript schema.
+# These declarations enable queryable validation of generated widget schemas.
+
+# Widget type taxonomy: sac_ai_widget_type(type, category, role)
+sac_ai_widget_type("chart", "core", "visualization").
+sac_ai_widget_type("table", "core", "visualization").
+sac_ai_widget_type("kpi", "core", "visualization").
+
+sac_ai_widget_type("filter-dropdown", "filter", "interactive").
+sac_ai_widget_type("filter-checkbox", "filter", "interactive").
+sac_ai_widget_type("filter-date-range", "filter", "interactive").
+
+sac_ai_widget_type("slider", "slider", "interactive").
+sac_ai_widget_type("range-slider", "slider", "interactive").
+
+sac_ai_widget_type("text-block", "text", "display").
+sac_ai_widget_type("heading", "text", "display").
+sac_ai_widget_type("divider", "text", "display").
+
+sac_ai_widget_type("grid-container", "layout", "container").
+sac_ai_widget_type("flex-container", "layout", "container").
+
+# Max nesting depth for children
+sac_max_children_depth(8).
+
+# Only container widgets can have children
+sac_can_have_children(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "layout", "container").
+
+# Data widgets require modelId, dimensions, and measures
+sac_requires_data_binding(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "core", "visualization").
+
+# Filter widgets require dimension binding
+sac_requires_dimension(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "filter", "interactive").
+
+# Chart widgets require a chartType configuration
+sac_requires_chart_type("chart").
+
+# Slider widgets require slider configuration (min/max)
+sac_requires_slider_config(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "slider", "interactive").
+
+# Text widgets require text configuration (content)
+sac_requires_text_config(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "text", "display").
+
+# Layout widgets require layout configuration
+sac_requires_layout_config(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "layout", "container").
+
+# Type guard predicates
+sac_is_container_widget(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "layout", "container").
+
+sac_is_filter_widget(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "filter", "interactive").
+
+sac_is_data_widget(WidgetType) :-
+    sac_ai_widget_type(WidgetType, "core", "visualization").
+
+# Filter value type compatibility
+sac_filter_value_compat("filter-dropdown", "SingleValue").
+sac_filter_value_compat("filter-dropdown", "MultipleValue").
+sac_filter_value_compat("filter-checkbox", "MultipleValue").
+sac_filter_value_compat("filter-date-range", "RangeValue").
+
+# =============================================================================
 # API Endpoint Mapping
 # =============================================================================
 

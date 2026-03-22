@@ -1652,7 +1652,7 @@ pub const CudaForwardPass = struct {
         // 1. Embedding for all K tokens
         for (0..K) |t| {
             const off = t * dim * @sizeOf(f32);
-            if (gw.token_embedding.dptr != 0) {
+            if (gw.token_embedding.dptr != 0 and gw.token_embedding.dtype == .f32) {
                 try b.embeddingGpu(d_hidden_k + off, gw.token_embedding.dptr, tokens[t], dim);
             } else if (self.cpu_embedding_q4_data) |emb_data| {
                 const scratch = self.cpu_embedding_scratch orelse return error.EmbeddingScratchNotAllocated;
@@ -1864,7 +1864,7 @@ pub const CudaForwardPass = struct {
         var t_other: i128 = 0;
         const t_total_start = std.time.nanoTimestamp();
 
-        if (gw.token_embedding.dptr != 0) {
+        if (gw.token_embedding.dptr != 0 and gw.token_embedding.dtype == .f32) {
             try b.embeddingGpu(act.hidden.dptr, gw.token_embedding.dptr, token, dim);
         } else if (self.cpu_embedding_q4_data) |emb_data| {
             const scratch = self.cpu_embedding_scratch orelse return error.EmbeddingScratchNotAllocated;
@@ -2028,27 +2028,33 @@ pub const CudaForwardPass = struct {
         const kv_dim = cfg.ssmKVDim();
         const channels = cfg.ssmQKVDim();
 
+        // Debug: log dimensions on first layer for diagnostics
+        if (l == 0) log.info("DeltaNet L0: dim={} ch={} kv={} vdim={} state={} vheads={} kvheads={}", .{
+            dim, channels, kv_dim, v_dim, state_size, num_v_heads, num_kv_heads_dn,
+        });
+
         // 1. Fused QKV projection: qkv = W_qkv @ norm → [channels]
-        // Per-tensor dtype dispatch: mixed-quant models (Qwen3.5) have Q4_0/Q4_1/Q8_0/Q5_K
         if (layer.attn_qkv.dtype == .q4_0) {
             try b.q4GemvGpu(ds.d_qkv, layer.attn_qkv.dptr, act.norm.dptr, channels, dim);
         } else {
             try b.sgemvGpu(ds.d_qkv, layer.attn_qkv.dptr, act.norm.dptr, channels, dim);
         }
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 1 (QKV gemv, dtype={s}): {}", .{ l, @tagName(layer.attn_qkv.dtype), e }); return e; };
 
         // 2. Conv1d on QKV (autoregressive with state shift)
-        // NOTE: SiLU activation is fused inside the deltanet_conv1d CUDA kernel
         try b.deltanetConv1d(ds.d_qkv, ds.convPtr(dn_idx), ds.d_qkv, layer.ssm_conv1d.dptr, channels, cfg.ssm_conv_kernel);
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 2 (conv1d ch={} k={}): {}", .{ l, channels, cfg.ssm_conv_kernel, e }); return e; };
 
         // QKV split: [Q(kv_dim), K(kv_dim), V(v_dim)]
         const d_q = ds.d_qkv;
         const d_k = ds.d_qkv + kv_dim * @sizeOf(f32);
         const d_v = ds.d_qkv + 2 * kv_dim * @sizeOf(f32);
 
-        // 3. L2-norm Q (with 1/sqrt(D) scale) and K (no scale)
+        // 3. L2-norm Q and K
         const q_scale = 1.0 / @sqrt(@as(f32, @floatFromInt(state_size)));
         try b.deltanetL2Norm(d_q, d_q, state_size, num_kv_heads_dn, q_scale);
         try b.deltanetL2Norm(d_k, d_k, state_size, num_kv_heads_dn, 1.0);
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 3 (L2norm state={} heads={}): {}", .{ l, state_size, num_kv_heads_dn, e }); return e; };
 
         // 4. Gate projection: gate = W_gate @ norm → [v_dim]
         if (layer.attn_gate.dtype == .q4_0) {
@@ -2056,8 +2062,9 @@ pub const CudaForwardPass = struct {
         } else {
             try b.sgemvGpu(ds.d_gate, layer.attn_gate.dptr, act.norm.dptr, v_dim, dim);
         }
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 4 (gate gemv vdim={}): {}", .{ l, v_dim, e }); return e; };
 
-        // 5. Alpha/beta projections → [num_v_heads] each (often Q8_0 → dequanted to F32)
+        // 5. Alpha/beta projections → [num_v_heads] each
         if (layer.ssm_alpha.dtype == .q4_0) {
             try b.q4GemvGpu(ds.d_alpha, layer.ssm_alpha.dptr, act.norm.dptr, num_v_heads, dim);
         } else {
@@ -2068,24 +2075,29 @@ pub const CudaForwardPass = struct {
         } else {
             try b.sgemvGpu(ds.d_beta, layer.ssm_beta.dptr, act.norm.dptr, num_v_heads, dim);
         }
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 5 (alpha/beta gemv heads={}): {}", .{ l, num_v_heads, e }); return e; };
 
         // 6. Compute gates (alpha decay, beta update)
         try b.deltanetGates(ds.d_alpha, ds.d_beta, ds.d_alpha, ds.d_beta, layer.ssm_a.dptr, layer.ssm_dt_bias.dptr, num_v_heads);
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 6 (gates heads={}): {}", .{ l, num_v_heads, e }); return e; };
 
         // 7. Recurrent state update + readout
         try b.deltanetRecurrent(ds.d_y, ds.sPtr(dn_idx), d_q, d_k, d_v, ds.d_alpha, ds.d_beta, state_size, num_v_heads, num_kv_heads_dn);
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 7 (recurrent state={} vheads={} kvheads={}): {}", .{ l, state_size, num_v_heads, num_kv_heads_dn, e }); return e; };
 
         // 8. Output gating: out = rms_norm(y) * silu(gate)
         const norm_stride: u32 = if (layer.ssm_norm.cols > state_size) state_size else 0;
         try b.deltanetOutputGate(ds.d_y, ds.d_y, ds.d_gate, layer.ssm_norm.dptr, state_size, num_v_heads, cfg.eps, norm_stride);
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 8 (output_gate heads={} stride={}): {}", .{ l, num_v_heads, norm_stride, e }); return e; };
 
-        // 9. Output projection + residual: hidden += W_out @ gated_y (often Q5_K → dequanted to F32)
+        // 9. Output projection + residual: hidden += W_out @ gated_y
         if (layer.ssm_out.dtype == .q4_0) {
             try b.q4GemvGpu(act.norm.dptr, layer.ssm_out.dptr, ds.d_y, dim, v_dim);
         } else {
             try b.sgemvGpu(act.norm.dptr, layer.ssm_out.dptr, ds.d_y, dim, v_dim);
         }
         try b.vectorAddGpu(act.hidden.dptr, act.hidden.dptr, act.norm.dptr, dim);
+        b.syncStream() catch |e| { log.err("DeltaNet L{} step 9 (out_proj+resid dtype={s}): {}", .{ l, @tagName(layer.ssm_out.dtype), e }); return e; };
     }
 
     /// Hybrid attention layer (Qwen3.5): fused Q+gate, partial RoPE, gated output.
@@ -2197,7 +2209,9 @@ pub const CudaForwardPass = struct {
         const cur_seq: u32 = @intCast(pos + 1);
 
         // 1. Embedding lookup: hidden = embedding_table[token]
-        if (gw.token_embedding.dptr != 0) {
+        // NOTE: embeddingGpu kernel treats table as float32; Q4_0 embeddings
+        // must use the CPU dequant path to avoid out-of-bounds GPU access.
+        if (gw.token_embedding.dptr != 0 and gw.token_embedding.dtype == .f32) {
             try b.embeddingGpu(act.hidden.dptr, gw.token_embedding.dptr, token, dim);
         } else if (self.cpu_embedding_q4_data) |emb_data| {
             // CPU fallback: dequant one Q4_0 row, upload via HtoD
@@ -2209,6 +2223,9 @@ pub const CudaForwardPass = struct {
                 return error.UploadFailed;
         } else return error.NoEmbeddingData;
 
+        // Debug sync: verify embedding succeeded before entering layer loop
+        b.syncStream() catch |e| { log.err("embedding sync failed: {}", .{e}); return e; };
+
         // 2. Transformer layers
         var dn_idx: usize = 0; // DeltaNet layer counter (for state indexing)
         const n_layers_to_run = if (cfg.debug_max_layers > 0) @min(cfg.debug_max_layers, cfg.n_layers) else cfg.n_layers;
@@ -2217,6 +2234,7 @@ pub const CudaForwardPass = struct {
 
             // 2a. Pre-attention RMSNorm: norm = rms_norm(hidden, attn_norm_weight)
             try b.rmsNormGpu(act.norm.dptr, act.hidden.dptr, layer.attn_norm.dptr, dim, cfg.eps);
+            b.syncStream() catch |e| { log.err("rmsNorm L{} sync failed: {}", .{ l, e }); return e; };
 
             // 2b. Attention/DeltaNet block (hybrid dispatch)
             if (cfg.isHybrid() and !cfg.isAttnLayer(@intCast(l))) {

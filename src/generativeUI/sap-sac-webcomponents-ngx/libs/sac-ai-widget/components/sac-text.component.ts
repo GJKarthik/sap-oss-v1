@@ -48,7 +48,7 @@ import type { SacHeadingLevel, SacTextAlign } from '../types/sac-widget-schema';
     :host { display: block; }
     .sac-heading {
       margin: 0; padding: 0;
-      color: var(--sapTextColor, #333);
+      color: var(--sapTextColor, #32363a);
       font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
     }
     .sac-heading--1 { font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 16px; }
@@ -91,7 +91,7 @@ export class SacHeadingComponent {
   styles: [`
     :host { display: block; }
     .sac-text-block {
-      color: var(--sapTextColor, #333);
+      color: var(--sapTextColor, #32363a);
       font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
       font-size: 14px; line-height: 1.6;
     }
@@ -105,7 +105,7 @@ export class SacHeadingComponent {
     }
     .sac-text-block__content a:hover { text-decoration: none; }
     .sac-text-block__content a:focus-visible {
-      outline: 2px solid var(--sapContent_FocusColor, #0854a0);
+      outline: 2px solid var(--sapContent_FocusColor, #0070f2);
       outline-offset: 2px;
     }
     .sac-text-block__content ul, .sac-text-block__content ol {
@@ -164,7 +164,7 @@ export class SacTextBlockComponent {
     }
     .sac-divider--light { background: var(--sapShell_BorderColor, #ebebeb); }
     .sac-divider--heavy {
-      height: 2px; background: var(--sapTextColor, #333);
+      height: 2px; background: var(--sapTextColor, #32363a);
     }
   `],
 })

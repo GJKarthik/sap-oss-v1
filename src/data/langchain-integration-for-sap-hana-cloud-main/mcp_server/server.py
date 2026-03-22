@@ -69,6 +69,83 @@ def parse_json_arg(value: Any, fallback: Any):
     return value if value is not None else fallback
 
 
+def _recursive_split(text: str, separators: list, chunk_size: int, overlap: int) -> list:
+    """Recursively split text using decreasing separator granularity.
+
+    Separator is preserved at the end of each part (e.g. splitting on ". "
+    keeps the period+space attached to the preceding chunk) so no text is lost.
+    """
+    if len(text) <= chunk_size:
+        return [text] if text.strip() else []
+
+    sep = separators[0] if separators else ""
+    remaining_seps = separators[1:] if len(separators) > 1 else [""]
+
+    if not sep:
+        # Base case: hard character split with overlap
+        chunks = []
+        step = max(chunk_size - overlap, 1)
+        for i in range(0, len(text), step):
+            chunk = text[i:i + chunk_size]
+            if chunk.strip():
+                chunks.append(chunk)
+            if i + chunk_size >= len(text):
+                break
+        return chunks
+
+    # Split then re-attach separator to each part so no text is lost.
+    # "A. B. C" split on ". " → raw ["A", "B", "C"] → ["A. ", "B. ", "C"]
+    raw_parts = text.split(sep)
+    parts = []
+    for i, p in enumerate(raw_parts):
+        parts.append(p + sep if i < len(raw_parts) - 1 else p)
+
+    chunks = []
+    current = ""
+
+    for part in parts:
+        candidate = current + part
+        if len(candidate) <= chunk_size:
+            current = candidate
+        else:
+            if current.strip():
+                chunks.append(current)
+            # If this single part exceeds chunk_size, recurse with finer separator
+            if len(part) > chunk_size:
+                chunks.extend(_recursive_split(part, remaining_seps, chunk_size, overlap))
+                current = ""
+            else:
+                # Start new chunk with overlap from previous
+                if overlap > 0 and current:
+                    tail = current[-overlap:]
+                    current = tail + part if tail.strip() else part
+                else:
+                    current = part
+
+    if current.strip():
+        chunks.append(current)
+
+    return chunks
+
+
+_rerank_model = None
+_rerank_model_name = os.environ.get("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+
+def _get_rerank_model():
+    global _rerank_model
+    if _rerank_model is not None:
+        return _rerank_model
+    try:
+        from sentence_transformers import CrossEncoder
+        _rerank_model = CrossEncoder(_rerank_model_name)
+        return _rerank_model
+    except ImportError:
+        return None
+    except Exception:
+        return None
+
+
 def normalize_mcp_endpoint(endpoint: str) -> str:
     normalized = (endpoint or "").strip().rstrip("/")
     if normalized == "":
@@ -352,15 +429,30 @@ class MCPServer:
         # Text Splitter
         self.tools["langchain_split_text"] = {
             "name": "langchain_split_text",
-            "description": "Split text using LangChain text splitters",
+            "description": "Split text using sentence-aware recursive splitter (paragraph → sentence → word boundaries)",
             "inputSchema": {
                 "type": "object",
                 "properties": {
                     "text": {"type": "string", "description": "Text to split"},
-                    "chunk_size": {"type": "number", "description": "Chunk size"},
-                    "chunk_overlap": {"type": "number", "description": "Overlap between chunks"},
+                    "chunk_size": {"type": "number", "description": "Target chunk size in characters (default 1000, max 4000)"},
+                    "chunk_overlap": {"type": "number", "description": "Overlap between chunks in characters (default 200)"},
                 },
                 "required": ["text"],
+            },
+        }
+
+        # Cross-Encoder Reranking
+        self.tools["rerank_results"] = {
+            "name": "rerank_results",
+            "description": "Rerank documents using cross-encoder for improved retrieval precision",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                    "documents": {"type": "string", "description": "JSON array of {content, score}"},
+                    "top_k": {"type": "number", "description": "Max results to return (default 5)"},
+                },
+                "required": ["query", "documents"],
             },
         }
 
@@ -725,11 +817,22 @@ class MCPServer:
 
     def _handle_langchain_split_text(self, args: dict) -> dict:
         text = args.get("text", "")
+        if not text:
+            return {"chunks": 0, "chunk_size": 0, "overlap": 0, "texts": []}
+
         chunk_size = clamp_int(args.get("chunk_size", 1000), 1000, 1, MAX_CHUNK_SIZE)
         overlap = clamp_int(args.get("chunk_overlap", 200), 200, 0, chunk_size - 1)
-        # Deterministic splitter fallback when no dedicated text splitter backend is configured.
-        chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size - overlap)] if text else []
-        return {"chunks": len(chunks), "chunk_size": chunk_size, "overlap": overlap}
+
+        # Sentence-aware recursive splitting: try paragraph → sentence → word → char
+        separators = ["\n\n", "\n", ". ", "! ", "? ", "; ", ", ", " ", ""]
+        chunks = _recursive_split(text, separators, chunk_size, overlap)
+
+        return {
+            "chunks": len(chunks),
+            "chunk_size": chunk_size,
+            "overlap": overlap,
+            "texts": chunks,
+        }
 
     def _handle_mangle_query(self, args: dict) -> dict:
         predicate = args.get("predicate", "")
@@ -751,6 +854,46 @@ class MCPServer:
             if isinstance(results, list) and len(results) > 0:
                 return {"predicate": predicate, "results": results, "source": delegation["source"]}
         return {"predicate": predicate, "results": [], "message": "Unknown predicate"}
+
+    def _handle_rerank_results(self, args: dict) -> dict:
+        query = str(args.get("query", "") or "").strip()
+        if not query:
+            return {"error": "query is required"}
+        docs = parse_json_arg(args.get("documents", "[]"), [])
+        if not isinstance(docs, list) or len(docs) == 0:
+            return {"error": "documents must be a non-empty JSON array of {content, score}"}
+        top_k = clamp_int(args.get("top_k", 5), 5, 1, MAX_TOP_K)
+
+        model = _get_rerank_model()
+        if model is None:
+            # Graceful fallback: return documents in original order
+            return {
+                "documents": docs[:top_k],
+                "reranked": False,
+                "reason": "sentence-transformers not available",
+            }
+
+        pairs = []
+        for doc in docs:
+            content = doc.get("content", "") if isinstance(doc, dict) else str(doc)
+            pairs.append((query, content))
+
+        try:
+            scores = model.predict(pairs)
+            scored_docs = []
+            for i, doc in enumerate(docs):
+                entry = dict(doc) if isinstance(doc, dict) else {"content": str(doc)}
+                entry["rerank_score"] = float(scores[i])
+                entry["original_score"] = entry.get("score", 0)
+                scored_docs.append(entry)
+            scored_docs.sort(key=lambda d: d["rerank_score"], reverse=True)
+            return {"documents": scored_docs[:top_k], "reranked": True}
+        except Exception as e:
+            return {
+                "documents": docs[:top_k],
+                "reranked": False,
+                "reason": str(e),
+            }
 
     # -------------------------------------------------------------------------
     # Kuzu tool handlers
@@ -885,6 +1028,7 @@ class MCPServer:
                     "langchain_embeddings": self._handle_langchain_embeddings,
                     "langchain_load_documents": self._handle_langchain_load_documents,
                     "langchain_split_text": self._handle_langchain_split_text,
+                    "rerank_results": self._handle_rerank_results,
                     "mangle_query": self._handle_mangle_query,
                     "kuzu_index": self._handle_kuzu_index,
                     "kuzu_query": self._handle_kuzu_query,
@@ -1005,8 +1149,8 @@ Server: http://localhost:{port}
 
 Tools: langchain_chat, langchain_vector_store, langchain_add_documents,
        langchain_similarity_search, langchain_rag_chain, langchain_embeddings,
-       langchain_load_documents, langchain_split_text, mangle_query,
-       kuzu_index, kuzu_query
+       langchain_load_documents, langchain_split_text, rerank_results,
+       mangle_query, kuzu_index, kuzu_query
 
 Resources: langchain://vectorstores, langchain://chains, mangle://facts
 """)

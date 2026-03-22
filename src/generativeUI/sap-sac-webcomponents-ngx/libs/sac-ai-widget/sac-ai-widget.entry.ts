@@ -139,7 +139,7 @@ class SacAiWidgetEntry extends HTMLElement {
 
     // Chat panel (left column)
     const chatHost = document.createElement('div');
-    chatHost.style.cssText = 'width:320px;min-width:280px;border-right:1px solid #e5e5e5;flex-shrink:0;';
+    chatHost.style.cssText = 'width:320px;min-width:280px;border-right:1px solid var(--sapList_BorderColor, #e5e5e5);flex-shrink:0;';
     host.appendChild(chatHost);
 
     // Data widget (right column)

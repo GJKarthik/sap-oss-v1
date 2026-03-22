@@ -1,0 +1,1109 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings,xcolor,hyperref,booktabs,longtable,amsmath,amssymb}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,numbers=left,numberstyle=\tiny\color{gray},
+language=C,morekeywords={kernel,__global__,__shared__,__device__}}
+\title{Private LLM Kernel Acceleration \& Quality Controls:\\Zig--CUDA Hybrid Inference Engine}
+\author{SAP OSS Technical Documentation}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report documents the architecture, kernel design, and quality controls of a
+private LLM inference engine built as a pure Zig + CUDA pipeline. The system is
+\emph{not} a fork of vLLM or any Python framework; it is a ground-up
+implementation targeting NVIDIA T4 (sm\_75) and L4 (sm\_89) GPUs via Zig 0.15.1
+with hand-written CUDA kernels compiled to PTX. The engine supports DeltaNet
+hybrid architectures (Qwen3.5), speculative decoding with multi-token prediction,
+and multi-backend GPU dispatch across CUDA, Metal, and WebGPU. We present
+exact code evidence with file paths and line numbers throughout.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{System Architecture}
+\label{sec:architecture}
+% ============================================================================
+
+The inference engine is a pure Zig application with native CUDA kernel
+integration. It does \textbf{not} depend on Python, PyTorch, or the vLLM
+serving framework. The entire forward pass, memory management, and kernel
+dispatch are implemented in Zig 0.15.1.
+
+\subsection{Build System}
+
+The top-level build configuration resides in:
+\begin{center}
+\texttt{src/intelligence/vllm-main/zig/build.zig}
+\end{center}
+
+The GPU build is invoked with architecture-specific flags:
+
+\begin{lstlisting}[language=bash,caption={Build commands for T4 and L4 targets}]
+# Tesla T4 (sm_75, 15GB VRAM, CUDA 13.0)
+zig build -Doptimize=ReleaseFast -Dgpu=true -Dgpu_arch=sm_75
+
+# NVIDIA L4 (sm_89, 23GB VRAM, CUDA 12.8)
+zig build -Doptimize=ReleaseFast -Dgpu=true -Dgpu_arch=sm_89
+\end{lstlisting}
+
+The architecture flag is resolved at \texttt{build.zig} line 12:
+
+\begin{lstlisting}[language=C,caption={GPU architecture option (build.zig:12)}]
+// GPU architecture: sm_75=T4, sm_89=L4, sm_90=H200/H100.
+// Defaults to sm_75.
+const gpu_arch = b.option([]const u8, "gpu_arch",
+    "CUDA GPU architecture (sm_75/sm_89/sm_90)")
+    orelse "sm_75";
+\end{lstlisting}
+
+When \texttt{-Dgpu=true} is set, the build system invokes \texttt{nvcc} to
+compile 16 CUDA source files into a shared library
+(\texttt{build.zig} lines 19--48):
+
+\begin{lstlisting}[language=C,caption={CUDA kernel compilation (build.zig:19--48)}]
+cuda_kernels_build = b.addSystemCommand(&.{
+    "nvcc", "-O3", arch_flag, "-I", "csrc",
+    "-lcublas", "-shared", "-Xcompiler", "-fPIC",
+    "csrc/cuda_kernels.cu",
+    "csrc/continuous_batching.cu",
+    "csrc/cuda_graphs.cu",
+    "csrc/flash_attention.cu",
+    "csrc/flash_attention_v2.cu",
+    "csrc/fp8_quantization.cu",
+    "csrc/fused_kernels.cu",
+    "csrc/glm5_kernels.cu",
+    "csrc/gpu_tokenizer.cu",
+    "csrc/int8_kv_cache.cu",
+    "csrc/int8_quantization.cu",
+    "csrc/kimi25_kernels.cu",
+    "csrc/minimax25_kernels.cu",
+    "csrc/mla_kernels.cu",
+    "csrc/pipeline_parallel.cu",
+    "csrc/tensor_core_ops.cu",
+    "csrc/tensor_parallel.cu",
+    "-o", "zig-out/lib/libcuda_kernels.so",
+});
+\end{lstlisting}
+
+\subsection{GPU Source File Inventory}
+
+The \texttt{src/gpu/} directory contains 15 Zig modules plus 3 kernel sub-modules,
+totaling 18 GPU source files:
+
+\begin{longtable}{lp{3.2in}}
+\toprule
+\textbf{File} & \textbf{Purpose} \\
+\midrule
+\texttt{cuda\_forward.zig} & Full transformer forward pass on GPU \\
+\texttt{cuda\_weights.zig} & GPU-resident quantized weight storage (Q4\_0, Q4\_K, Q5\_K) \\
+\texttt{cuda\_backend.zig} & CUDA backend with PTX kernel discovery \\
+\texttt{cuda\_bindings.zig} & CUDA driver API bindings \\
+\texttt{cuda\_kernels.zig} & Zig-compiled PTX kernels \\
+\texttt{backend.zig} & Unified GPU backend abstraction \\
+\texttt{metal\_backend.zig} & Apple Metal compute backend \\
+\texttt{metal\_shaders.zig} & Metal shader library management \\
+\texttt{metal\_bindings.zig} & Metal Objective-C runtime bindings \\
+\texttt{webgpu\_backend.zig} & WebGPU/Vulkan via wgpu-native \\
+\texttt{accelerate\_backend.zig} & Apple Accelerate framework (BLAS/vDSP) \\
+\texttt{memory\_pool.zig} & Triple-buffered GPU memory allocator \\
+\texttt{zero\_copy\_pipeline.zig} & Zero-copy HTTP-to-GPU data transfer \\
+\texttt{async\_pipeline.zig} & Asynchronous compute/transfer overlap \\
+\texttt{context.zig} & GPU context and buffer management \\
+\texttt{kernels/kernel\_fusion.zig} & Fused JSON$\to$tokenize$\to$inference pipeline \\
+\texttt{kernels/json\_parser.zig} & GPU-side JSON field extraction \\
+\texttt{kernels/tokenizer.zig} & GPU-native BPE/SentencePiece tokenizer \\
+\bottomrule
+\end{longtable}
+
+Additionally, the CUDA-specific kernel files reside alongside:
+\begin{itemize}
+  \item \texttt{deltanet\_kernels.cu} --- 588 lines of CUDA C source
+  \item \texttt{deltanet\_kernels.ptx} --- 2441 lines of compiled PTX assembly
+\end{itemize}
+
+\subsection{Module Dependency Graph}
+
+The build system links the following module chain (\texttt{build.zig} lines 113--162):
+
+\begin{enumerate}
+  \item \texttt{cuda\_forward\_mod} imports \texttt{cuda\_build\_options} (line 118)
+  \item \texttt{main\_mod} imports \texttt{llama}, \texttt{metal\_bindings}, \texttt{metal\_shaders}, and \texttt{cuda\_build\_options} (lines 149--162)
+  \item CUDA modules use relative \texttt{@import} within \texttt{src/gpu/} to avoid file-ownership conflicts (comment at lines 158--161)
+  \item macOS builds link Metal, Foundation, CoreGraphics, and Accelerate frameworks (lines 177--182)
+\end{enumerate}
+
+% ============================================================================
+\section{DeltaNet Hybrid Architecture}
+\label{sec:deltanet}
+% ============================================================================
+
+The engine supports the Qwen3.5 hybrid architecture which interleaves
+standard multi-head attention layers with DeltaNet linear attention layers.
+Configuration and state management are in:
+\begin{center}
+\texttt{src/intelligence/vllm-main/zig/src/gpu/cuda\_forward.zig} (lines 149--416)
+\end{center}
+
+\subsection{CudaForwardConfig Hybrid Fields}
+
+The \texttt{CudaForwardConfig} struct (line 124) extends the standard transformer
+configuration with DeltaNet-specific fields at lines 149--157:
+
+\begin{lstlisting}[language=C,caption={DeltaNet hybrid fields (cuda\_forward.zig:149--157)}]
+// Gated DeltaNet / hybrid fields (Qwen3.5)
+// zero = pure transformer
+ssm_inner_size: u32 = 0,     // DeltaNet V heads * state_size (e.g. 2048)
+ssm_state_size: u32 = 0,     // DeltaNet head_dim (e.g. 128)
+ssm_group_count: u32 = 0,    // DeltaNet QK heads (e.g. 16)
+ssm_conv_kernel: u32 = 0,    // conv1d kernel size (e.g. 4)
+ssm_time_step_rank: u32 = 0, // num_heads for decay (e.g. 16)
+attn_head_dim: u32 = 0,      // attention head_dim (e.g. 256)
+rope_dim: u32 = 0,           // partial RoPE dimension (e.g. 64)
+full_attn_interval: u32 = 0, // every Nth layer is full attention
+\end{lstlisting}
+
+\subsection{Layer Type Dispatch Methods}
+
+Three key methods determine the execution path per layer (lines 164--177):
+
+\begin{lstlisting}[language=C,caption={Hybrid dispatch methods (cuda\_forward.zig:164--177)}]
+/// True if hybrid DeltaNet+Attention architecture (Qwen3.5)
+pub fn isHybrid(self: CudaForwardConfig) bool {
+    return self.full_attn_interval > 0;
+}
+
+/// True if layer `l` is a full attention layer (vs DeltaNet)
+pub fn isAttnLayer(self: CudaForwardConfig, l: u32) bool {
+    if (self.full_attn_interval == 0) return true; // pure transformer
+    return (l + 1) % self.full_attn_interval == 0;
+}
+
+/// Number of DeltaNet V/output heads (= time_step_rank)
+pub fn ssmNumHeads(self: CudaForwardConfig) u32 {
+    return self.ssm_time_step_rank;
+}
+\end{lstlisting}
+
+The \texttt{isAttnLayer} method implements the interleaved pattern: given
+\texttt{full\_attn\_interval = 4}, layers 3, 7, 11, \ldots use standard
+multi-head attention, while all others use DeltaNet linear attention.
+
+\subsection{Dimension Computation Helpers}
+
+Lines 179--217 provide dimension accessors for the asymmetric Q/K/V structure:
+
+\begin{itemize}
+  \item \texttt{ssmVDim()} = \texttt{time\_step\_rank} $\times$ \texttt{state\_size} (V dimension, line 181)
+  \item \texttt{ssmKVDim()} = \texttt{group\_count} $\times$ \texttt{state\_size} (KV dimension, line 186)
+  \item \texttt{ssmQKVDim()} = $2 \times$ \texttt{ssmKVDim()} + \texttt{ssmVDim()} (total projection, line 191)
+  \item \texttt{attnHeadDim()} returns \texttt{attn\_head\_dim} or fallback (line 201)
+  \item \texttt{ropeDim()} returns partial RoPE dimension or full head\_dim (line 206)
+\end{itemize}
+
+\subsection{DeltaNetState: Persistent Recurrent State}
+
+The \texttt{DeltaNetState} struct (lines 296--416) manages GPU-resident recurrent
+state that persists across tokens within a sequence:
+
+\begin{lstlisting}[language=C,caption={DeltaNetState layout (cuda\_forward.zig:296--316)}]
+const DeltaNetState = struct {
+    n_dn_layers: u32,   // number of DeltaNet layers
+    num_v_heads: u32,   // Q/output heads (= time_step_rank)
+    num_kv_heads: u32,  // KV heads (= group_count)
+    state_size: u32,    // head_dim for DeltaNet (e.g. 128)
+    conv_kernel: u32,
+    ssm_inner: u32,     // ssm_inner_size (V heads * state_size)
+    kv_dim: u32,        // group_count * state_size
+    qkv_dim: u32,       // ssm_inner + 2 * kv_dim
+    num_heads: u32,     // time_step_rank
+
+    // Persistent state (survives across tokens)
+    d_S: cuda.CUdeviceptr = 0,    // [n_dn * V_heads * D * D] f32
+    d_conv: cuda.CUdeviceptr = 0, // [n_dn * (K-1) * qkv_dim] f32
+
+    // Scratch buffers (reused each token)
+    d_qkv: cuda.CUdeviceptr = 0,   // [qkv_dim] f32
+    d_gate: cuda.CUdeviceptr = 0,  // [ssm_inner] f32
+    d_alpha: cuda.CUdeviceptr = 0, // [num_heads] f32
+    d_beta: cuda.CUdeviceptr = 0,  // [num_heads] f32
+    d_y: cuda.CUdeviceptr = 0,     // [ssm_inner] f32
+};
+\end{lstlisting}
+
+\subsubsection{GPU Memory Layout}
+
+The per-layer S matrix has layout:
+\[
+S[\text{layer}][\text{head}][d_1][d_2] \in \mathbb{R}^{n_{\text{dn}} \times n_v \times D \times D}
+\]
+where $D = \texttt{state\_size}$. Per-layer byte computation (line 318):
+
+\begin{lstlisting}[language=C,caption={Per-layer S matrix bytes (cuda\_forward.zig:318--320)}]
+fn sLayerBytes(self: DeltaNetState) usize {
+    return @as(usize, self.num_v_heads)
+         * self.state_size * self.state_size * @sizeOf(f32);
+}
+\end{lstlisting}
+
+Layer-indexed device pointers (lines 327--334):
+
+\begin{lstlisting}[language=C,caption={Device pointer indexing (cuda\_forward.zig:327--334)}]
+fn sPtr(self: DeltaNetState, dn_layer: usize) cuda.CUdeviceptr {
+    return self.d_S + dn_layer * self.sLayerBytes();
+}
+
+pub fn convPtr(self: DeltaNetState, dn_layer: usize) cuda.CUdeviceptr {
+    return self.d_conv + dn_layer * self.convLayerBytes();
+}
+\end{lstlisting}
+
+\subsubsection{State Lifecycle}
+
+\begin{itemize}
+  \item \textbf{Init} (line 336): Counts DeltaNet layers, allocates S and conv
+        state via \texttt{cuMemAlloc}, zero-initializes with \texttt{cuMemsetD32}.
+  \item \textbf{Clear} (line 410): Resets persistent state to zero for new sequences
+        via \texttt{cuMemsetD32}.
+  \item \textbf{Deinit} (line 396): Frees all GPU buffers via \texttt{cuMemFree},
+        nulls pointers.
+\end{itemize}
+
+% ============================================================================
+\section{CUDA Kernels}
+\label{sec:kernels}
+% ============================================================================
+
+The DeltaNet-specific kernels are in two files:
+\begin{itemize}
+  \item \texttt{src/intelligence/vllm-main/zig/src/gpu/deltanet\_kernels.cu} (588 lines, CUDA C)
+  \item \texttt{src/intelligence/vllm-main/zig/src/gpu/deltanet\_kernels.ptx} (2441 lines, PTX assembly)
+\end{itemize}
+
+The PTX was generated by NVVM 7.0.1, CUDA 12.1, targeting \texttt{sm\_75}
+(PTX header, lines 1--11):
+
+\begin{lstlisting}[language=C,caption={PTX header (deltanet\_kernels.ptx:1--11)}]
+// Generated by NVIDIA NVVM Compiler
+// Compiler Build ID: CL-32688072
+// Cuda compilation tools, release 12.1, V12.1.105
+// Based on NVVM 7.0.1
+.version 8.1
+.target sm_75
+.address_size 64
+\end{lstlisting}
+
+\subsection{Kernel Entry Points}
+
+The PTX contains 12 kernel entry points, discovered via \texttt{.visible .entry}
+declarations:
+
+\begin{longtable}{rlp{2.8in}}
+\toprule
+\textbf{PTX Line} & \textbf{Kernel} & \textbf{Function} \\
+\midrule
+18 & \texttt{q4\_gemv} & Q4\_0 quantized GEMV with shared memory \\
+406 & \texttt{q4\_1\_gemv} & Q4\_1 quantized GEMV (min+scale) \\
+801 & \texttt{deltanet\_conv1d} & Depthwise conv1d with state shift \\
+1017 & \texttt{deltanet\_l2norm} & Per-head L2 normalization \\
+1122 & \texttt{deltanet\_gates} & Alpha (decay) and beta (update) gates \\
+1279 & \texttt{deltanet\_recurrent} & Core recurrent state update + readout \\
+1583 & \texttt{deltanet\_output\_gate} & RMSNorm $\times$ SiLU gating \\
+1725 & \texttt{partial\_rope\_q} & Partial RoPE on Q (64 of 256 dims) \\
+1829 & \texttt{partial\_rope\_k} & Partial RoPE on K \\
+1933 & \texttt{split\_q\_gate} & Split fused Q+gate for hybrid attention \\
+1984 & \texttt{decode\_attention} & GQA decode attention (arbitrary head\_dim) \\
+2381 & \texttt{gated\_attn\_output} & Gated sigmoid attention output \\
+\bottomrule
+\end{longtable}
+
+\subsection{Q4\_0 Quantized GEMV}
+
+The \texttt{q4\_gemv} kernel (\texttt{deltanet\_kernels.cu} lines 16--73)
+implements $\mathbf{y}[M] = \mathbf{W}_{q4}[M \times K] \cdot \mathbf{x}[K]$
+with the following optimizations:
+
+\begin{enumerate}
+  \item \textbf{Cooperative shared memory load}: Input vector $\mathbf{x}$ loaded via
+        128-bit coalesced reads (\texttt{float4}) into shared memory (lines 26--33).
+  \item \textbf{Hoisted bias}: The $-8$ offset is folded into a pre-multiplied
+        \texttt{neg8s = -8.0f * scale}, eliminating per-element subtraction (line 51).
+  \item \textbf{Warp shuffle reduction}: Butterfly reduction via
+        \texttt{\_\_shfl\_xor\_sync} avoids shared memory bank conflicts (lines 68--69).
+\end{enumerate}
+
+\begin{lstlisting}[caption={Q4\_0 GEMV core loop (deltanet\_kernels.cu:46--69)}]
+for (int b = lane; b < n_blocks; b += 32) {
+    const uint8_t* block = W_row + b * 18;
+    float scale = __half2float(
+        __ldg(reinterpret_cast<const __half*>(block)));
+    float neg8s  = -8.0f * scale;
+    int x_base = b << 5;
+    const uint8_t* data = block + 2;
+    #pragma unroll
+    for (int j = 0; j < 16; j++) {
+        uint32_t bv = __ldg(&data[j]);
+        acc += ((float)(int)(bv & 0xF) * scale + neg8s)
+               * x_smem[x_base + j];
+        acc += ((float)(int)(bv >> 4) * scale + neg8s)
+               * x_smem[x_base + j + 16];
+    }
+}
+// Warp shuffle butterfly reduction
+for (int offset = 16; offset > 0; offset >>= 1)
+    acc += __shfl_xor_sync(0xFFFFFFFF, acc, offset);
+\end{lstlisting}
+
+Grid configuration: $(\lceil M/8 \rceil, 1)$ blocks of $(256, 1)$ threads ---
+8 warps per block, 1 warp per output row.
+
+\subsection{DeltaNet Recurrent Kernel}
+
+The core recurrent update (\texttt{deltanet\_kernels.cu} lines 283--341) implements
+the gated delta rule with optimized memory access:
+
+\[
+S_{t} = \alpha \cdot S_{t-1} + \beta \cdot \mathbf{k} \otimes (\mathbf{v} - \mathbf{k}^\top S_{t-1})
+\]
+\[
+\mathbf{y} = S_t^\top \mathbf{q}
+\]
+
+Key optimizations over the naive 3-pass approach:
+
+\begin{enumerate}
+  \item K and Q vectors loaded into shared memory once (lines 301--312),
+        eliminating repeated global reads.
+  \item Three logical passes (decay, write, readout) fused into two physical
+        passes: decay+retrieve in pass 1, write+readout in pass 2
+        (lines 321--340).
+\end{enumerate}
+
+\begin{lstlisting}[caption={DeltaNet recurrent core (deltanet\_kernels.cu:319--340)}]
+for (int d2 = threadIdx.x; d2 < D; d2 += blockDim.x) {
+    // Pass 1: decay S[d1][d2], accumulate kv_mem
+    float kv_mem = 0.0f;
+    for (int d1 = 0; d1 < D; d1++) {
+        float s = S_h[d1 * D + d2] * a;
+        S_h[d1 * D + d2] = s;
+        kv_mem += s * k_smem[d1];
+    }
+    // Delta
+    float delta = (v_h[d2] - kv_mem) * b;
+    // Pass 2: write delta + readout (fused)
+    float y_val = 0.0f;
+    for (int d1 = 0; d1 < D; d1++) {
+        float s = S_h[d1 * D + d2] + k_smem[d1] * delta;
+        S_h[d1 * D + d2] = s;
+        y_val += s * q_smem[d1];
+    }
+    y_h[d2] = y_val;
+}
+\end{lstlisting}
+
+\subsection{DeltaNet Gate Computation}
+
+The gate kernel (\texttt{deltanet\_kernels.cu} lines 244--267) computes:
+\begin{align}
+\alpha_h &= \exp\!\bigl(A_h \cdot \text{softplus}(\text{proj}_h + \text{bias}_h)\bigr) \\
+\beta_h &= \sigma(\text{proj}_h)
+\end{align}
+where $A_h = -\exp(A_{\log,h})$ is pre-negated in the GGUF weight converter.
+
+\subsection{Partial RoPE}
+
+For Qwen3.5 attention layers with \texttt{head\_dim=256} and \texttt{rope\_dim=64},
+only the first 64 elements per head receive rotary position embeddings
+(\texttt{deltanet\_kernels.cu} lines 398--461). The kernel uses a shared-memory
+cos/sin lookup table built via a \texttt{\_\_device\_\_} helper
+(\texttt{build\_rope\_table}, lines 407--417).
+
+\subsection{PTX Instruction Highlights}
+
+The compiled PTX uses several performance-critical ISA features:
+\begin{itemize}
+  \item \texttt{ld.global.nc.v4.f32} --- Non-coherent texture cache loads for
+        read-only data (PTX line 50).
+  \item \texttt{fma.rn.f32} --- Fused multiply-add with round-to-nearest,
+        used throughout Q4 dequantization.
+  \item \texttt{bar.sync} --- Warp/block synchronization barriers for shared
+        memory coordination.
+  \item \texttt{shfl.sync.bfly} --- Butterfly shuffle for warp-level reductions
+        without shared memory.
+\end{itemize}
+
+% ============================================================================
+\section{Speculative Decoding}
+\label{sec:spec-decode}
+% ============================================================================
+
+Speculative decoding is implemented in:
+\begin{center}
+\texttt{src/intelligence/vllm-main/zig/src/toon/llama\_toon.zig} (lines 809--882)
+\end{center}
+
+The system employs a dual-strategy draft generation pipeline with adaptive
+disabling.
+
+\subsection{Draft Generation Strategies}
+
+Two complementary strategies are tried in order (lines 815--819):
+
+\begin{lstlisting}[language=C,caption={Dual draft strategy (llama\_toon.zig:815--819)}]
+var n_drafted = self.tryNativeMtpDraft(
+    fwd, next_token, pos - 1, draft_buf[1..K]);
+if (n_drafted == 0) {
+    n_drafted = self.ngramDraft(
+        context_buf.items, draft_buf[1..K]);
+}
+if (n_drafted == 0) break :spec_path;
+\end{lstlisting}
+
+\begin{enumerate}
+  \item \textbf{Native MTP Draft} (\texttt{tryNativeMtpDraft}, lines 942--979):
+        Uses the model's own multi-token prediction heads to generate draft tokens.
+        Downloads hidden states from GPU (\texttt{fwd.activations.hidden.downloadF32}),
+        then runs \texttt{drafter.fillContinuation} for up to
+        \texttt{drafter.supportedPositions()} tokens.
+
+  \item \textbf{N-gram Table Fallback} (\texttt{ngramDraft}, lines 665--686):
+        Uses a hash-based trigram + bigram table to predict continuations.
+        Tries trigram lookup first, falls back to bigram:
+\begin{lstlisting}[language=C,caption={N-gram draft logic (llama\_toon.zig:674--678)}]
+const pred = if (have_trigram or count > 0)
+    (self.ngramLookup(t0, t1, t2)
+     orelse self.bigramLookup(t1, t2))
+else
+    self.bigramLookup(t1, t2);
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Batch Verification}
+
+All $K$ draft tokens (including the verified token) are verified in a single
+batch forward pass via \texttt{forwardBatchMoE} (lines 836--840):
+
+\begin{lstlisting}[language=C,caption={Batch verification (llama\_toon.zig:836--840)}]
+fwd.forwardBatchMoE(
+    draft_buf[0..total_draft],
+    positions_buf[0..total_draft],
+    bl[0 .. @as(usize, total_draft) * vocab_size],
+) catch break :spec_path;
+\end{lstlisting}
+
+\subsection{Acceptance Criterion}
+
+The engine uses a strict \textbf{argmax acceptance} criterion (lines 844--852):
+draft token $i$ is accepted if and only if \texttt{argmax(logits[i-1])} equals
+\texttt{draft\_buf[i]}. Acceptance is sequential --- the first rejection
+terminates the chain:
+
+\begin{lstlisting}[language=C,caption={Argmax acceptance (llama\_toon.zig:844--852)}]
+var num_accepted: u32 = 1;
+for (1..total_draft) |i| {
+    const predicted = argmaxLogits(
+        bl[(i-1) * vocab_size .. i * vocab_size]);
+    if (predicted == draft_buf[i]) {
+        num_accepted += 1;
+    } else {
+        break;
+    }
+}
+\end{lstlisting}
+
+\subsection{Adaptive Disabling}
+
+If no draft tokens are accepted after the first cycle, speculation is disabled
+for the remainder of the request (lines 822--824):
+
+\begin{lstlisting}[language=C,caption={Adaptive disable (llama\_toon.zig:822--824)}]
+if (spec_cycles >= 1 and spec_accepted_total == 0) {
+    break :spec_path;
+}
+\end{lstlisting}
+
+\subsection{Position Tracking and Logits Reuse}
+
+After acceptance, the position counter advances by \texttt{num\_accepted}
+(line 869), and the logits from the last accepted token's batch output are
+reused for the next sampling step (line 868):
+
+\begin{lstlisting}[language=C,caption={Logits reuse (llama\_toon.zig:868--869)}]
+logits = bl[(num_accepted-1) * vocab_size
+            .. num_accepted * vocab_size];
+pos += num_accepted;
+\end{lstlisting}
+
+% ============================================================================
+\section{Inference Pipeline}
+\label{sec:inference}
+% ============================================================================
+
+The full token generation loop resides in \texttt{llama\_toon.zig} method
+\texttt{generateFromTokens} (lines 720--940).
+
+\subsection{Prefill Phase}
+
+Prompt tokens are fed sequentially through the GPU forward pass (lines 735--744):
+
+\begin{lstlisting}[language=C,caption={GPU prefill (llama\_toon.zig:735--744)}]
+if (use_gpu) {
+    const fwd = self.cuda_forward.?;
+    fwd.reset();
+    for (tokens, 0..) |tok, p| {
+        logits = fwd.forward(tok, p) catch |err| {
+            std.log.err("GPU forward failed at pos={}", .{p});
+            return err;
+        };
+    }
+}
+\end{lstlisting}
+
+\subsection{Decode Loop}
+
+The main decode loop (lines 788--913) supports both GPU and CPU paths:
+
+\begin{lstlisting}[language=C,caption={GPU/CPU forward dispatch (llama\_toon.zig:886--892)}]
+if (use_gpu) {
+    logits = try fwd.forward(next_token, pos);
+    self.native_mtp_hidden_valid =
+        self.native_mtp_drafter != null;
+} else {
+    logits = self.model.?.forward(
+        next_token, pos, &self.kv_cache.?);
+}
+pos += 1;
+\end{lstlisting}
+
+\subsection{EOS Detection}
+
+EOS checking supports both GGUF-embedded and custom tokenizers (line 803):
+
+\begin{lstlisting}[language=C,caption={Dual EOS check (llama\_toon.zig:803)}]
+const is_eos = if (self.gguf_tokenizer) |gt|
+    gt.isEos(next_token)
+else
+    self.tokenizer.?.isEos(next_token);
+if (is_eos) break;
+\end{lstlisting}
+
+EOS is also checked within accepted speculative draft tokens (lines 861--862).
+
+\subsection{Performance Timing}
+
+The engine tracks three timing metrics:
+\begin{itemize}
+  \item \texttt{first\_token\_step\_ns} --- Time to first output token (line 780)
+  \item \texttt{decode\_step\_sum\_ns} --- Cumulative decode step time (line 779)
+  \item \texttt{avg\_step\_us} --- Per-token average (line 919)
+\end{itemize}
+
+For speculative decoding, additional metrics are logged (lines 927--933):
+acceptance rate (\texttt{alpha\_pct}), effective TPS (\texttt{eff\_tps}),
+total drafted vs.\ accepted tokens.
+
+% ============================================================================
+\section{GPU Memory Subsystem}
+\label{sec:memory}
+% ============================================================================
+
+\subsection{Memory Pool (memory\_pool.zig)}
+
+File: \texttt{src/intelligence/vllm-main/zig/src/gpu/memory\_pool.zig}
+
+The \texttt{PoolConfig} struct (line 14) configures triple-buffered GPU memory:
+
+\begin{lstlisting}[language=C,caption={Memory pool config (memory\_pool.zig:14--25)}]
+pub const PoolConfig = struct {
+    num_slots: usize = 3,              // triple buffering
+    slot_size_bytes: usize = 64*1024*1024, // 64MB per slot
+    max_elements_per_slot: usize = 1024,
+    element_stride: usize = 4096,      // 1024 floats * 4B
+    use_pinned_memory: bool = true,
+};
+\end{lstlisting}
+
+Each \texttt{BufferSlot} (line 31) tracks its lifecycle through 5 states:
+\texttt{free} $\to$ \texttt{cpu\_filling} $\to$ \texttt{ready\_for\_transfer}
+$\to$ \texttt{gpu\_processing} $\to$ \texttt{gpu\_complete}.
+
+\subsection{GPU Weight Storage (cuda\_weights.zig)}
+
+File: \texttt{src/intelligence/vllm-main/zig/src/gpu/cuda\_weights.zig}
+
+The \texttt{GGMLType} enum (line 26) supports 13 quantization formats from F32
+down to Q2\_K. The Q4\_0 format uses 18 bytes per 32 values (line 56):
+
+\begin{lstlisting}[language=C,caption={Q4\_0 block format (cuda\_weights.zig:5--9)}]
+// Q4_0 block format (18 bytes per 32 values):
+//   f16 d;       // scale factor
+//   u8 qs[16];   // 32 nibbles packed into 16 bytes
+//   dequant: val = (nibble - 8) * d
+\end{lstlisting}
+
+For a 7B parameter model in Q4\_0: $\approx$3.6 GB VRAM (vs.\ $\approx$28 GB in FP32).
+
+\subsection{Zero-Copy Pipeline (zero\_copy\_pipeline.zig)}
+
+File: \texttt{src/intelligence/vllm-main/zig/src/gpu/zero\_copy\_pipeline.zig}
+
+Data flow bypasses CPU entirely:
+\[
+\text{HTTP Body} \xrightarrow{\text{DMA}} \text{VRAM}
+\xrightarrow{\text{GPU Parse}} \text{GPU Tokenize}
+\xrightarrow{} \text{GPU Inference} \to \text{Response}
+\]
+
+The \texttt{ZeroCopySlot} (line 41) uses 4096-byte aligned pinned memory for
+DMA transfers and tracks 6 lifecycle states from \texttt{idle} through
+\texttt{complete} (lines 69--76).
+
+\subsection{Async Pipeline (async\_pipeline.zig)}
+
+File: \texttt{src/intelligence/vllm-main/zig/src/gpu/async\_pipeline.zig}
+
+Overlaps four stages using triple-buffered command slots:
+\begin{enumerate}
+  \item CPU batch preparation (\texttt{cpu\_filling})
+  \item Host-to-device transfer (\texttt{h2d\_transfer})
+  \item GPU compute (\texttt{gpu\_compute})
+  \item Device-to-host transfer (\texttt{d2h\_transfer})
+\end{enumerate}
+
+Each \texttt{CommandSlot} (line 47) contains hardware-mapped \texttt{GpuBuffer}
+instances for input tokens and output embeddings, with atomic state tracking
+and \texttt{ResetEvent} completion signaling.
+
+% ============================================================================
+\section{Multi-Backend Support}
+\label{sec:backends}
+% ============================================================================
+
+The engine abstracts GPU compute behind a unified interface supporting four
+backends. All backend implementations reside in
+\texttt{src/intelligence/vllm-main/zig/src/gpu/}.
+
+\subsection{Backend Abstraction (backend.zig)}
+
+The \texttt{GpuBackend} tagged union (line 49) dispatches to the active backend:
+
+\begin{lstlisting}[language=C,caption={Unified backend dispatch (backend.zig:49--66)}]
+pub const GpuBackend = union(BackendType) {
+    metal: *MetalBackend,
+    webgpu: *WebGPUBackend,
+    cuda: *CudaBackend,
+    cpu: *CpuFallback,
+
+    pub fn submitBatch(self: GpuBackend,
+                       batch: *const Batch) !BatchResult {
+        return switch (self) {
+            .metal  => |m| try m.submitBatch(batch),
+            .webgpu => |w| try w.submitBatch(batch),
+            .cuda   => |c| try c.submitBatch(batch),
+            .cpu    => |f| try f.submitBatch(batch),
+        };
+    }
+};
+\end{lstlisting}
+
+\texttt{BackendCapabilities} (line 33) reports hardware features including
+\texttt{supports\_fp16}, \texttt{supports\_int8}, \texttt{supports\_async\_compute},
+and \texttt{unified\_memory}.
+
+\subsection{CUDA Backend (cuda\_backend.zig)}
+
+Targets NVIDIA T4 (SM75), A100 (SM80), H100 (SM90). Features compile-time PTX
+kernel discovery (lines 52--77): the embedded PTX binary is scanned at
+\texttt{comptime} for \texttt{.visible .entry} declarations, populating a
+kernel registry without runtime parsing.
+
+\begin{lstlisting}[language=C,caption={Comptime PTX discovery (cuda\_backend.zig:52--77)}]
+fn discoverPtxKernels() PtxKernelDiscovery {
+    const ptx = @embedFile("cuda_kernels_ptx.bin");
+    const marker = ".visible .entry ";
+    var result = PtxKernelDiscovery{ .names = undefined,
+                                     .count = 0 };
+    @setEvalBranchQuota(500_000);
+    while (pos + marker.len < ptx.len) : (pos += 1) {
+        if (std.mem.startsWith(u8, ptx[pos..], marker)) {
+            // extract kernel name...
+            result.names[result.count] = ptx[name_start..name_end];
+            result.count += 1;
+        }
+    }
+    return result;
+}
+\end{lstlisting}
+
+\subsection{Metal Backend (metal\_backend.zig)}
+
+Targets Apple Silicon (M1/M2/M3) and Intel+AMD GPUs on macOS. Uses
+triple-buffered command submission with Metal Performance Shaders (MPS)
+support. Shared memory mode for Apple Silicon provides unified CPU/GPU
+addressing. Configuration (line 34): up to 3 in-flight buffers at 64 MB each.
+
+\subsection{WebGPU Backend (webgpu\_backend.zig)}
+
+Cross-platform backend using wgpu-native (Vulkan on Linux/AWS). Enabled via
+\texttt{zig build -Dwebgpu=true}. Extern declarations bind to 28 wgpu-native
+C functions (lines 26--53) for instance creation, buffer management, compute
+pipeline dispatch, and synchronization.
+
+\subsection{Apple Accelerate Backend (accelerate\_backend.zig)}
+
+Provides SIMD-optimized BLAS via the macOS Accelerate framework. Key functions:
+\begin{itemize}
+  \item \texttt{cblas\_sgemm} --- Single-precision matrix multiply (line 17)
+  \item \texttt{cblas\_sgemv} --- Matrix-vector multiply (line 35)
+  \item \texttt{vDSP\_vadd} --- Element-wise vector add (line 52)
+\end{itemize}
+
+\subsection{Metal Shader Infrastructure}
+
+\begin{itemize}
+  \item \texttt{metal\_shaders.zig} --- Shader library management and pipeline
+        state caching
+  \item \texttt{metal\_bindings.zig} --- Objective-C runtime bindings for Metal
+        C API types (\texttt{MTLDevice}, \texttt{MTLCommandQueue}, etc.)
+\end{itemize}
+
+Build-time framework linking (\texttt{build.zig} lines 177--182):
+\begin{lstlisting}[language=C,caption={macOS framework linking (build.zig:177--182)}]
+if (target.result.os.tag == .macos) {
+    exe.linkFramework("Metal");
+    exe.linkFramework("Foundation");
+    exe.linkFramework("CoreGraphics");
+    exe.linkFramework("Accelerate");
+}
+\end{lstlisting}
+
+% ============================================================================
+\section{Kernel Fusion}
+\label{sec:fusion}
+% ============================================================================
+
+The kernel fusion engine eliminates CPU round-trips by chaining three GPU stages
+in a single dispatch. All files are in:
+\begin{center}
+\texttt{src/intelligence/vllm-main/zig/src/gpu/kernels/}
+\end{center}
+
+\subsection{Fusion Pipeline (kernel\_fusion.zig)}
+
+The three-stage pipeline (\texttt{kernel\_fusion.zig} lines 1--9):
+
+\begin{lstlisting}[language=C,caption={Kernel fusion architecture (kernel\_fusion.zig:4--9)}]
+//! Stage 1: JSON Parser kernel extracts prompt text bounds
+//! Stage 2: Tokenizer kernel converts text to tokens
+//!          (no CPU roundtrip)
+//! Stage 3: Inference kernel generates output
+//!          (no CPU roundtrip)
+//! All stages execute in GPU memory without returning to CPU
+\end{lstlisting}
+
+The \texttt{FusedResult} struct (line 47) captures per-stage timing and error
+information:
+
+\begin{lstlisting}[language=C,caption={Fused result structure (kernel\_fusion.zig:47--70)}]
+pub const FusedResult = extern struct {
+    json_status: u32,    text_start: u32,
+    text_end: u32,       json_time_ns: u64,
+    token_status: u32,   num_tokens: u32,
+    token_time_ns: u64,
+    inference_status: u32, output_tokens: u32,
+    inference_time_ns: u64,
+    total_time_ns: u64,
+    error_stage: u32,    // 0=none, 1=parser,
+                         // 2=tokenizer, 3=inference
+    error_code: u32,
+};
+\end{lstlisting}
+
+\subsection{GPU JSON Parser (json\_parser.zig)}
+
+Pattern-based field extraction for OpenAI-compatible requests. The
+\texttt{GpuParseResult} (line 24) returns byte offsets (\texttt{text\_start},
+\texttt{text\_end}) directly readable by subsequent GPU kernels.
+\texttt{MultiMessageParseResult} (line 40) supports up to 64 messages with
+per-message role and content bounds.
+
+\subsection{GPU Tokenizer (tokenizer.zig)}
+
+Zero-CPU-touch tokenization supporting four algorithms:
+\begin{itemize}
+  \item BPE (GPT-2/GPT-3 style)
+  \item WordPiece (BERT style)
+  \item SentencePiece (T5/LLaMA style)
+  \item Tiktoken (OpenAI style)
+\end{itemize}
+
+The tokenizer receives text bounds from the JSON parser and outputs token IDs
+directly to GPU buffer, triggering inference via kernel fusion.
+
+% ============================================================================
+\section{Mangle A2A Rules}
+\label{sec:mangle}
+% ============================================================================
+
+The agent-to-agent reasoning layer uses Mangle (a Datalog variant) for
+declarative service routing and model selection. Rule files are in:
+\begin{center}
+\texttt{src/intelligence/vllm-main/mangle/a2a/}
+\end{center}
+
+\subsection{Fact Declarations (facts.mg)}
+
+The fact schema (\texttt{facts.mg}, 141 lines) declares predicates without
+hardcoded ground facts (loaded from config at runtime):
+
+\begin{itemize}
+  \item \texttt{service\_registry(name, base\_url, default\_model)} --- Service mesh entries
+  \item \texttt{service\_status(name, status)} --- Temporal availability atoms (\texttt{/available}, \texttt{/unavailable}, \texttt{/degraded})
+  \item \texttt{model\_registry(model\_name, service\_name, context\_length)} --- Model catalog
+  \item \texttt{model\_specialization(model\_name, specialization)} --- Capability tags (\texttt{/code}, \texttt{/analysis}, \texttt{/reasoning})
+  \item \texttt{agui\_event\_type(event\_type)} --- AG-UI protocol events (11 event types, lines 128--140)
+\end{itemize}
+
+\subsection{Derived Rules (rules.mg)}
+
+The rules file (\texttt{rules.mg}, 212 lines) defines derived predicates:
+
+\subsubsection{Service Routing}
+
+\begin{lstlisting}[language=Prolog,caption={Intent resolution (rules.mg:25--29)}]
+Decl resolve_service_for_intent(intent_id, url) :-
+  intent_service_mapping(intent_id, service_name, endpoint_path),
+  routable(service_name),
+  service_registry(service_name, base_url, _),
+  url = fn:concat(base_url, endpoint_path).
+\end{lstlisting}
+
+With fallback routing when the primary service is unavailable (lines 32--38):
+
+\begin{lstlisting}[language=Prolog,caption={Fallback routing (rules.mg:32--38)}]
+Decl resolve_fallback_service(intent_id, url) :-
+  intent_service_mapping(intent_id, primary_service, _),
+  !routable(primary_service),
+  service_capability(fallback_service, /chat),
+  routable(fallback_service),
+  service_registry(fallback_service, base_url, _),
+  url = fn:concat(base_url, "/v1/chat/completions").
+\end{lstlisting}
+
+\subsubsection{Model Selection}
+
+\begin{lstlisting}[language=Prolog,caption={Model selection rules (rules.mg:109--118)}]
+Decl best_model_for(specialization, model_name, service_name) :-
+  model_specialization(model_name, specialization),
+  model_registry(model_name, service_name, _),
+  routable(service_name).
+
+Decl model_for_context(min_context, model_name, service_name) :-
+  model_registry(model_name, service_name, context_length),
+  context_length >= min_context,
+  routable(service_name).
+\end{lstlisting}
+
+\subsubsection{Quality Gates}
+
+Service health monitoring via response latency (lines 91--102):
+
+\begin{lstlisting}[language=Prolog,caption={Health quality gates (rules.mg:91--102)}]
+Decl service_healthy(service_name) :-
+  api_response(req_id, _, latency_ms, _),
+  api_request(req_id, service_name, _, _, _),
+  latency_ms < 1000.
+
+Decl service_slow(service_name, avg_latency) :-
+  service_registry(service_name, _, _),
+  avg_latency = avg { api_response(req_id, _, latency, _) :
+                      api_request(req_id, service_name, _, _, _),
+                      latency },
+  avg_latency > 2000.
+\end{lstlisting}
+
+\subsubsection{Mesh Compliance}
+
+Universal quantification ensures all registered services are available
+(line 211):
+
+\begin{lstlisting}[language=Prolog,caption={Mesh compliance (rules.mg:211)}]
+Decl mesh_compliant() :-
+  forall(service_registry(S, _, _),
+         service_status(S, /available)).
+\end{lstlisting}
+
+% ============================================================================
+\section{Quality Controls}
+\label{sec:quality}
+% ============================================================================
+
+Quality is enforced at multiple levels of the inference pipeline.
+
+\subsection{Token Validation}
+
+\subsubsection{EOS Checking Across Tokenizer Types}
+
+The engine supports two tokenizer backends. EOS checking dispatches to the
+correct one (\texttt{llama\_toon.zig} line 803):
+
+\begin{lstlisting}[language=C,caption={Dual tokenizer EOS check (llama\_toon.zig:803)}]
+const is_eos = if (self.gguf_tokenizer) |gt|
+    gt.isEos(next_token)
+else
+    self.tokenizer.?.isEos(next_token);
+\end{lstlisting}
+
+EOS is checked for both primary sampling (line 804: \texttt{if (is\_eos) break})
+and within accepted speculative drafts (lines 861--862).
+
+\subsubsection{TOON Stop Sequences}
+
+The engine also detects double-newline stop sequences for TOON-formatted output
+(lines 906--912):
+
+\begin{lstlisting}[language=C,caption={TOON stop detection (llama\_toon.zig:906--912)}]
+if (n_out >= 2) {
+    const last = output_tokens.items[n_out - 1];
+    const prev = output_tokens.items[n_out - 2];
+    const last_is_nl = (last == 13 or last == 10);
+    const prev_is_nl = (prev == 13 or prev == 10);
+    if (last_is_nl and prev_is_nl) break;
+}
+\end{lstlisting}
+
+\subsection{Speculative Decode Acceptance Rates}
+
+After all decode steps, the engine logs detailed speculation metrics
+(\texttt{llama\_toon.zig} lines 927--933):
+
+\begin{lstlisting}[language=C,caption={Speculation metrics (llama\_toon.zig:927--933)}]
+if (spec_cycles > 0) {
+    const alpha_pct: u64 = if (spec_drafted_total > 0)
+        (spec_accepted_total * 100) / spec_drafted_total
+    else 0;
+    const eff_tps: u64 = if (decode_elapsed_ms > 0)
+        (decoded_tokens * 1000) / decode_elapsed_ms
+    else 0;
+    std.log.info("spec_decode cycles={} drafted={} "
+        ++ "accepted={} alpha={}% eff_tps={}", .{
+        spec_cycles, spec_drafted_total,
+        spec_accepted_total, alpha_pct, eff_tps,
+    });
+}
+\end{lstlisting}
+
+\subsection{Adaptive Disabling of Speculation}
+
+When acceptance rates are too low (zero accepted tokens after the first cycle),
+speculation is automatically disabled for the remainder of the request
+(line 822). This prevents wasted batch-verification GPU cycles on inputs
+where the draft model diverges from the target model.
+
+\subsection{Timeout Guards}
+
+Every decode iteration checks elapsed wall-clock time against a configurable
+timeout (\texttt{llama\_toon.zig} lines 789--796):
+
+\begin{lstlisting}[language=C,caption={Timeout guard (llama\_toon.zig:789--796)}]
+const elapsed_ns = std.time.nanoTimestamp() - request_start_ns;
+const elapsed_ms: u64 = @intCast(
+    @max(elapsed_ns, 0) / std.time.ns_per_ms);
+if (elapsed_ms >= request_timeout_ms) {
+    std.log.err("generate timeout: elapsed_ms={} ...", .{...});
+    return error.InferenceTimeout;
+}
+\end{lstlisting}
+
+\subsection{DeltaNet State Management}
+
+Memory safety for the recurrent DeltaNet state is enforced through:
+
+\begin{enumerate}
+  \item \textbf{Init with errdefer} (lines 363--366): If any allocation fails,
+        previously allocated buffers are freed via \texttt{errdefer}:
+\begin{lstlisting}[language=C,caption={errdefer safety (cuda\_forward.zig:363--366)}]
+if (cuda.cuMemAlloc(&state.d_S, s_total) != .success)
+    return error.OutOfMemory;
+errdefer _ = cuda.cuMemFree(state.d_S);
+\end{lstlisting}
+
+  \item \textbf{Clear} (lines 410--415): Zero-fills all persistent state for
+        new sequences via \texttt{cuMemsetD32}, preventing state leakage between
+        requests.
+
+  \item \textbf{Deinit} (lines 396--407): Iterates all device pointer fields,
+        frees non-null pointers, and nulls them to prevent double-free.
+\end{enumerate}
+
+\subsection{Expert Cache with Hit/Miss Tracking}
+
+The \texttt{ExpertCache} struct (\texttt{cuda\_forward.zig} lines 422--434)
+maintains per-layer FP16 expert weight caches with explicit hit/miss counters.
+On cache miss, Q4$\to$FP16 dequantization is performed and cached. On hit,
+the expensive dequantization is skipped entirely, tracked via
+\texttt{hits} and \texttt{misses} counters for operational monitoring.
+
+\subsection{GPU Buffer Lifecycle}
+
+All GPU buffer structs (\texttt{DartBatchBuffers} line 222,
+\texttt{MoeBatchBuffers} line 260, \texttt{DeltaNetState} line 296) follow
+a consistent pattern:
+\begin{enumerate}
+  \item Initialize pointers to zero.
+  \item Allocate via \texttt{cuMemAlloc} with error propagation.
+  \item In \texttt{deinit}, iterate all pointer fields, free non-null,
+        set to zero.
+\end{enumerate}
+
+This pattern eliminates dangling pointers and provides deterministic cleanup
+even under partial initialization failure.
+
+\subsection{Mangle Quality Gates}
+
+At the service mesh level, Mangle rules enforce:
+\begin{itemize}
+  \item \textbf{Routability}: Only services with \texttt{/available} status
+        are routable (\texttt{rules.mg} line 10)
+  \item \textbf{Latency thresholds}: Services with $>2000$ms average latency
+        are flagged as slow (\texttt{rules.mg} line 97)
+  \item \textbf{Mesh compliance}: Universal check that all registered services
+        are available (\texttt{rules.mg} line 211)
+  \item \textbf{Fallback routing}: Automatic reroute to \texttt{/chat}-capable
+        services when primary is unavailable (\texttt{rules.mg} lines 32--38)
+  \item \textbf{Intent fulfillment}: Explicit tracking of unfulfillable intents
+        with reason strings (\texttt{rules.mg} lines 134--137)
+\end{itemize}
+
+% ============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% ============================================================================
+
+This document has presented a private LLM inference engine built entirely in
+Zig with hand-written CUDA kernels. The key architectural decisions are:
+
+\begin{enumerate}
+  \item \textbf{No Python dependency}: The entire forward pass, memory management,
+        kernel dispatch, and speculative decoding are implemented in Zig 0.15.1.
+  \item \textbf{DeltaNet hybrid support}: First-class support for Qwen3.5-style
+        interleaved attention + linear attention architectures via 12 custom
+        CUDA kernels compiled to PTX.
+  \item \textbf{Multi-backend portability}: Unified abstraction across CUDA,
+        Metal, WebGPU, and CPU backends with runtime capability negotiation.
+  \item \textbf{Speculative decoding with adaptive control}: Dual-strategy draft
+        generation (native MTP + n-gram fallback) with argmax acceptance and
+        automatic disabling when speculation is unproductive.
+  \item \textbf{Defense-in-depth quality controls}: Token validation, timeout
+        guards, memory safety patterns, service health monitoring via Mangle
+        rules, and operational metrics logging.
+  \item \textbf{Kernel fusion}: Zero-CPU-touch pipeline from HTTP body to
+        inference output, eliminating CPU-GPU round-trips for JSON parsing
+        and tokenization.
+\end{enumerate}
+
+\end{document}

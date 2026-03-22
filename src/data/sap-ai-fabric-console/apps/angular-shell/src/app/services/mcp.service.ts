@@ -99,6 +99,7 @@ export class McpService {
   private readonly http = inject(HttpClient);
 
   private requestId = 0;
+  private correlationCounter = 0;
   private langchainUrl = environment.langchainMcpUrl;
   private streamingUrl = environment.streamingMcpUrl;
   private authToken = environment.mcpAuthToken;
@@ -183,11 +184,18 @@ export class McpService {
   // ===========================================================================
 
   private getHeaders(): HttpHeaders {
-    let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'X-Correlation-ID': this.generateCorrelationId(),
+    });
     if (this.authToken) {
       headers = headers.set('Authorization', `Bearer ${this.authToken}`);
     }
     return headers;
+  }
+
+  private generateCorrelationId(): string {
+    return `console-${Date.now()}-${++this.correlationCounter}`;
   }
 
   private mcpRequest<T>(endpoint: string, method: string, params: Record<string, unknown> = {}): Observable<T> {

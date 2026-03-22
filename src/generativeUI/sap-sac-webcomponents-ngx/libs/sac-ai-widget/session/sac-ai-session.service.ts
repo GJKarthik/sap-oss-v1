@@ -9,6 +9,7 @@ export interface SacAiAuditEntry {
   eventType: string;
   status: 'processing' | 'approved' | 'rejected' | 'completed' | 'error';
   detail: string;
+  traceId?: string;
 }
 
 export interface SacAiReplayEntry {
@@ -28,11 +29,13 @@ export interface SacAiReplayEntry {
     | 'approval.approved'
     | 'approval.rejected';
   detail: string;
+  traceId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class SacAiSessionService {
   private threadId: string | null = null;
+  private traceId: string | null = null;
   private auditEntries: SacAiAuditEntry[] = [];
   private replayEntries: SacAiReplayEntry[] = [];
   private readonly auditLimit = 20;
@@ -46,8 +49,16 @@ export class SacAiSessionService {
     return this.threadId;
   }
 
+  getTraceId(): string {
+    if (!this.traceId) {
+      this.traceId = this.generateTraceId();
+    }
+    return this.traceId;
+  }
+
   reset(threadId?: string): string {
     this.threadId = threadId?.trim() || this.generateThreadId();
+    this.traceId = null;
     this.clearAudit();
     this.clearReplay();
     return this.threadId;
@@ -64,6 +75,7 @@ export class SacAiSessionService {
       eventType,
       status,
       detail,
+      traceId: this.getTraceId(),
     };
 
     this.auditEntries = [entry, ...this.auditEntries].slice(0, this.auditLimit);
@@ -82,6 +94,7 @@ export class SacAiSessionService {
       timestamp: new Date().toISOString(),
       kind,
       detail,
+      traceId: this.getTraceId(),
     };
 
     this.replayEntries = [entry, ...this.replayEntries].slice(0, this.replayLimit);
@@ -103,6 +116,13 @@ export class SacAiSessionService {
 
   private generateThreadId(): string {
     return `sac-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  private generateTraceId(): string {
+    // W3C trace-context compatible: 32 hex chars (128-bit)
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
   }
 
   private generateAuditId(): string {
