@@ -1,5 +1,6 @@
 import importlib
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -70,3 +71,64 @@ def test_pii_detection_guardrail_blocks_credit_card_like_content(guardrails_modu
     assert result.passed is False
     assert result.violations[0].action == "block"
     assert any("4111 1111 1111 1111" in match for match in result.violations[0].matches)
+
+
+def test_nli_grounding_guardrail_warns_on_low_grounding_score(guardrails_module):
+    guardrail = guardrails_module.NLIGroundingGuardrail(threshold=0.6, action="warn")
+    guardrail.set_context("SAP HANA stores vectors in the database. Retrieval uses semantic search.")
+
+    class StubBackend:
+        backend_name = "sentence_transformers"
+
+        def predict(self, _pairs):
+            return [
+                {"label": "entailment", "scores": {"contradiction": 0.1, "entailment": 0.8, "neutral": 0.1}},
+                {"label": "contradiction", "scores": {"contradiction": 0.9, "entailment": 0.05, "neutral": 0.05}},
+            ]
+
+    guardrail._backend = StubBackend()
+
+    result = guardrail.validate("SAP HANA stores vectors. It never uses semantic search.")
+
+    assert result.passed is True
+    assert result.violations[0].action == "warn"
+    assert result.violations[0].details["grounding_score"] == pytest.approx(0.5)
+    assert result.violations[0].details["backend"] == "sentence_transformers"
+    assert result.violations[0].details["contradicted_pairs"]
+
+
+def test_nli_grounding_guardrail_passes_through_without_backend(guardrails_module):
+    guardrail = guardrails_module.NLIGroundingGuardrail(action="block")
+    guardrail.set_context("Context that would normally be checked.")
+
+    class StubBackend:
+        backend_name = "pass_through"
+
+        def predict(self, _pairs):
+            return []
+
+    guardrail._backend = StubBackend()
+
+    result = guardrail.validate("Any answer")
+
+    assert result.passed is True
+    assert result.violations == []
+
+
+def test_guardrails_import_does_not_load_sentence_transformers(monkeypatch):
+    src_dir = Path(__file__).resolve().parents[1] / "src"
+    monkeypatch.syspath_prepend(str(src_dir))
+
+    real_import = __import__
+
+    def guarded_import(name, *args, **kwargs):
+        if name.startswith("sentence_transformers"):
+            raise AssertionError("sentence_transformers should not be imported at module import time")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", guarded_import)
+    sys.modules.pop("hana_ai.guardrails", None)
+
+    module = importlib.import_module("hana_ai.guardrails")
+
+    assert isinstance(module, types.ModuleType)

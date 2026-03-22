@@ -207,3 +207,32 @@ def test_guardrail_integration_rag_chat_blocks_guardrail_failures(monkeypatch):
         agent.chat("hello")
 
     agent._update_long_term_memory.assert_not_called()
+
+
+def test_guardrail_integration_rag_chat_sets_grounding_context(monkeypatch):
+    rag_module = _import_rag_module(monkeypatch)
+
+    class StubGroundingGuardrail:
+        def __init__(self):
+            self.contexts = []
+
+        def set_context(self, context):
+            self.contexts.append(context)
+
+        def validate(self, output):
+            return types.SimpleNamespace(passed=True, violations=[], sanitized_output=output)
+
+    grounding_guardrail = StubGroundingGuardrail()
+    agent = rag_module.HANAMLRAGAgent.__new__(rag_module.HANAMLRAGAgent)
+    agent.executor = MagicMock(invoke=MagicMock(return_value={"output": "grounded output"}))
+    agent.output_guardrails = None
+    agent.grounding_guardrail = grounding_guardrail
+    agent._build_long_term_context = lambda _user_input: "retrieved context"
+    agent._update_long_term_memory = MagicMock()
+    agent.clear_long_term_memory = MagicMock()
+    agent.clear_short_term_memory = MagicMock()
+
+    result = agent.chat("hello")
+
+    assert result == "grounded output"
+    assert grounding_guardrail.contexts == ["retrieved context"]

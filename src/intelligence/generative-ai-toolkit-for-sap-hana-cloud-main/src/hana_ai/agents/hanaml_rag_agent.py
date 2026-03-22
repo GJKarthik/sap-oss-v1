@@ -92,6 +92,7 @@ class HANAMLRAGAgent:
                  drop_existing_hana_vector_table: bool = False,
                  verbose: bool = False,
                  session_id: str = "global_session",
+                 grounding_guardrail: Any = None,
                  output_guardrails: GuardrailChain = None,
                  **kwargs):
         """
@@ -194,6 +195,7 @@ class HANAMLRAGAgent:
         self.rerank_k = rerank_k
         self.score_threshold = score_threshold
         self.verbose = verbose
+        self.grounding_guardrail = grounding_guardrail
         self.output_guardrails = output_guardrails
         self.cross_encoder = cross_encoder
         self.vectorstore_type = vector_store_type
@@ -222,6 +224,7 @@ class HANAMLRAGAgent:
                 self.long_term_db = self.hana_connection_context.to_sqlalchemy()
             else:
                 self.long_term_db = f"sqlite:///chat_history_{self.user}.db"
+        self._configure_grounding_guardrails()
         self.session_id = session_id
         # Initialize memory systems
         self._initialize_memory()
@@ -651,25 +654,70 @@ class HANAMLRAGAgent:
 
     def _apply_output_guardrails(self, output: Any) -> str:
         """Apply optional output guardrails and return sanitized output."""
-        if self.output_guardrails is None:
+        current_output = output
+        results = []
+
+        grounding_guardrail = getattr(self, "grounding_guardrail", None)
+        chain_guardrails = getattr(getattr(self, "output_guardrails", None), "guardrails", []) or []
+        if grounding_guardrail is not None and grounding_guardrail not in chain_guardrails:
+            result = grounding_guardrail.validate(current_output)
+            current_output = result.sanitized_output
+            results.append(result)
+
+        if self.output_guardrails is not None:
+            result = self.output_guardrails.run(current_output)
+            current_output = result.sanitized_output
+            results.append(result)
+
+        if not results:
             return output
 
-        result = self.output_guardrails.run(output)
+        violations = []
+        passed = True
+        for result in results:
+            violations.extend(result.violations)
+            passed = passed and result.passed
+
         warning_messages = [
             f"{violation.guardrail}: {violation.message}"
-            for violation in result.violations
+            for violation in violations
             if violation.action == "warn"
         ]
         if warning_messages:
             logger.warning("Output guardrail warnings: %s", "; ".join(warning_messages))
-        if not result.passed:
+        if not passed:
             blocking_messages = [
                 f"{violation.guardrail}: {violation.message}"
-                for violation in result.violations
+                for violation in violations
                 if violation.action == "block"
             ]
             raise ValueError("; ".join(blocking_messages) or "Output failed guardrail validation")
-        return result.sanitized_output
+        return current_output
+
+    def _configure_grounding_guardrails(self):
+        """Attach connection context to grounding guardrails when supported."""
+        connection_context = getattr(self, "hana_connection_context", None)
+        grounding_guardrail = getattr(self, "grounding_guardrail", None)
+        if grounding_guardrail is not None and hasattr(grounding_guardrail, "set_connection_context"):
+            grounding_guardrail.set_connection_context(connection_context)
+
+        if self.output_guardrails is None:
+            return
+        for guardrail in self.output_guardrails.guardrails:
+            if hasattr(guardrail, "set_connection_context"):
+                guardrail.set_connection_context(connection_context)
+
+    def _set_grounding_context(self, context_str: str):
+        """Provide retrieved context to any guardrail that supports grounding validation."""
+        grounding_guardrail = getattr(self, "grounding_guardrail", None)
+        if grounding_guardrail is not None and hasattr(grounding_guardrail, "set_context"):
+            grounding_guardrail.set_context(context_str)
+
+        if self.output_guardrails is None:
+            return
+        for guardrail in self.output_guardrails.guardrails:
+            if hasattr(guardrail, "set_context"):
+                guardrail.set_context(context_str)
 
     def chat(self, user_input: str) -> str:
         """
@@ -687,6 +735,7 @@ class HANAMLRAGAgent:
             self.clear_short_term_memory()
             return "Short-term memory has been cleared."
         context_str = self._build_long_term_context(user_input)  # Returns string
+        self._set_grounding_context(context_str)
         agent_input = {
             "input": [{
                 "type": "text", 
