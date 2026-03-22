@@ -256,7 +256,7 @@ interface PendingToolConfirmation {
       display: flex;
       flex-direction: column;
       height: 100%;
-      font-family: var(--sapFontFamily, '72', Arial, sans-serif);
+      font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
       font-size: var(--sapFontSize, 14px);
       background: var(--sapBackgroundColor, #f7f7f7);
     }
@@ -267,9 +267,9 @@ interface PendingToolConfirmation {
       border: 1px solid var(--sapWarningBorderColor, #e9730c);
       border-radius: var(--sapElement_BorderCornerRadius, 8px);
       background:
-        linear-gradient(180deg, color-mix(in srgb, var(--sapWarningBackground, #fff3d7) 70%, white), #fff);
+        linear-gradient(180deg, color-mix(in srgb, var(--sapWarningBackground, #fff3d7) 70%, var(--sapBackgroundColor, #fff)), var(--sapBackgroundColor, #fff));
       color: var(--sapTextColor, #32363a);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--sapContent_Shadow2, 0 8px 24px rgba(0, 0, 0, 0.08));
     }
 
     .sac-chat-review__header {
@@ -303,7 +303,7 @@ interface PendingToolConfirmation {
     }
 
     .sac-chat-review__risk--high {
-      background: color-mix(in srgb, var(--sapWarningBackground, #fff3d7) 65%, white);
+      background: color-mix(in srgb, var(--sapWarningBackground, #fff3d7) 65%, var(--sapBackgroundColor, #fff));
     }
 
     .sac-chat-review__section {
@@ -333,7 +333,7 @@ interface PendingToolConfirmation {
       margin: 0;
       padding: var(--sac-spacing-sm);
       overflow-x: auto;
-      border-radius: 6px;
+      border-radius: var(--sapField_BorderCornerRadius, 4px);
       background: var(--sapGroup_ContentBackground, #fff);
       border: 1px solid var(--sapList_BorderColor, #d9d9d9);
       font-family: var(--sapFontMonospaceFamily, '72 Mono', monospace);
@@ -362,6 +362,7 @@ interface PendingToolConfirmation {
       font-family: inherit;
       font-weight: var(--sapFontBoldWeight, 700);
       cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
 
     .sac-chat-review__button--primary {
@@ -370,10 +371,38 @@ interface PendingToolConfirmation {
       border: none;
     }
 
+    .sac-chat-review__button--primary:hover:not(:disabled) {
+      background: var(--sapButton_Emphasized_Hover_Background, #0064d9);
+    }
+
+    .sac-chat-review__button--primary:active:not(:disabled) {
+      background: var(--sapButton_Emphasized_Active_Background, #0058c5);
+    }
+
+    .sac-chat-review__button--primary:focus-visible {
+      outline: 2px solid var(--sapContent_FocusColor, #0070f2);
+      outline-offset: 2px;
+    }
+
     .sac-chat-review__button--secondary {
       background: var(--sapButton_Lite_Background, #fff);
       color: var(--sapButton_TextColor, #0a6ed1);
       border: 1px solid var(--sapButton_BorderColor, #85baf1);
+    }
+
+    .sac-chat-review__button--secondary:hover:not(:disabled) {
+      background: var(--sapButton_Hover_Background, #ebf5fe);
+      border-color: var(--sapButton_Hover_BorderColor, #0854a0);
+    }
+
+    .sac-chat-review__button--secondary:active:not(:disabled) {
+      background: var(--sapButton_Active_Background, #0854a0);
+      color: var(--sapButton_Active_TextColor, #fff);
+    }
+
+    .sac-chat-review__button--secondary:focus-visible {
+      outline: 2px solid var(--sapContent_FocusColor, #0070f2);
+      outline-offset: 2px;
     }
 
     .sac-chat-review__button:disabled {
@@ -406,8 +435,8 @@ interface PendingToolConfirmation {
 
     .sac-chat-audit__entry {
       padding: var(--sac-spacing-sm);
-      border-radius: 6px;
-      background: color-mix(in srgb, var(--sapList_Background, #fff) 92%, #eef4fb);
+      border-radius: var(--sapField_BorderCornerRadius, 4px);
+      background: color-mix(in srgb, var(--sapList_Background, #fff) 92%, var(--sapInformationBackground, #eef4fb));
       border: 1px solid var(--sapList_BorderColor, #e5e5e5);
     }
 
@@ -424,20 +453,20 @@ interface PendingToolConfirmation {
     .sac-chat-audit__status {
       padding: 2px 8px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--sapButton_Lite_Background, #fff) 88%, #f3f6f8);
+      background: color-mix(in srgb, var(--sapButton_Lite_Background, #fff) 88%, var(--sapShell_Background, #f3f6f8));
       border: 1px solid var(--sapList_BorderColor, #d9d9d9);
       color: var(--sapTextColor, #32363a);
       font-weight: var(--sapFontBoldWeight, 700);
     }
 
     .sac-chat-audit__status--approved {
-      background: color-mix(in srgb, #dff5e3 78%, white);
-      border-color: #7cc58c;
+      background: color-mix(in srgb, var(--sapPositiveBackground, #dff5e3) 78%, var(--sapBackgroundColor, #fff));
+      border-color: var(--sapPositiveBorderColor, #7cc58c);
     }
 
     .sac-chat-audit__status--error {
-      background: color-mix(in srgb, #fde2e1 78%, white);
-      border-color: #e7827b;
+      background: color-mix(in srgb, var(--sapNegativeBackground, #fde2e1) 78%, var(--sapBackgroundColor, #fff));
+      border-color: var(--sapNegativeBorderColor, #e7827b);
     }
 
     .sac-chat-audit__detail {
@@ -467,11 +496,23 @@ interface PendingToolConfirmation {
       }
     }
 
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .sac-chat-message {
       max-width: 85%;
       padding: var(--sac-spacing-sm) var(--sac-spacing-md);
       border-radius: var(--sapElement_BorderCornerRadius, 8px);
       line-height: 1.5;
+      animation: messageIn 0.2s ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sac-chat-message {
+        animation: none;
+      }
     }
 
     .sac-chat-message--user {
@@ -519,6 +560,10 @@ interface PendingToolConfirmation {
       color: var(--sapField_TextColor, #32363a);
     }
 
+    .sac-chat-input:hover:not(:disabled) {
+      border-color: var(--sapField_Hover_BorderColor, #0854a0);
+    }
+
     .sac-chat-input:focus {
       outline: none;
       border-color: var(--sapField_Focus_BorderColor, #0070f2);
@@ -548,6 +593,7 @@ interface PendingToolConfirmation {
       font-size: var(--sapFontSize, 14px);
       font-family: inherit;
       font-weight: var(--sapFontBoldWeight, 700);
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
 
     .sac-chat-send:hover:not(:disabled) {

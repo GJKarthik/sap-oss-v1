@@ -52,9 +52,9 @@ import type { SacHeadingLevel, SacTextAlign } from '../types/sac-widget-schema';
       font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
     }
     .sac-heading--1 { font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 16px; }
-    .sac-heading--2 { font-size: 24px; font-weight: 600; line-height: 1.3; margin-bottom: 12px; }
+    .sac-heading--2 { font-size: 24px; font-weight: 600; line-height: 1.3; margin-bottom: 8px; }
     .sac-heading--3 { font-size: 20px; font-weight: 600; line-height: 1.35; margin-bottom: 8px; }
-    .sac-heading--4 { font-size: 18px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
+    .sac-heading--4 { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
     .sac-heading--5 { font-size: 16px; font-weight: 600; line-height: 1.45; margin-bottom: 8px; }
     .sac-heading--6 { font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 8px; }
   `],
@@ -102,6 +102,7 @@ export class SacHeadingComponent {
     .sac-text-block__content a {
       color: var(--sapLinkColor, #0854a0);
       text-decoration: underline;
+      transition: color 0.15s;
     }
     .sac-text-block__content a:hover { text-decoration: none; }
     .sac-text-block__content a:focus-visible {
@@ -114,8 +115,8 @@ export class SacHeadingComponent {
     .sac-text-block__content li { margin: 4px 0; }
     .sac-text-block__content code {
       background: var(--sapShell_Background, #f5f5f5);
-      padding: 2px 6px; border-radius: 4px;
-      font-family: monospace; font-size: 13px;
+      padding: 4px 8px; border-radius: 4px;
+      font-family: var(--sapFontMonospaceFamily, '72 Mono', monospace); font-size: 13px;
     }
   `],
 })

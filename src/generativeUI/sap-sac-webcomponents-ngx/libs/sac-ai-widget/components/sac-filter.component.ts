@@ -73,12 +73,13 @@ export interface FilterChangeEvent {
   styles: [`
     .sac-filter { display: flex; flex-direction: column; gap: 4px; }
     .sac-filter__label {
+      font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
       font-size: 12px; font-weight: 600; color: var(--sapTextColor, #32363a);
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     .sac-filter__select {
-      padding: 8px 12px; border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 4px; font-size: 14px; background: var(--sapField_Background, #fff);
+      padding: 8px; border: 1px solid var(--sapField_BorderColor, #89919a);
+      border-radius: var(--sapField_BorderCornerRadius, 4px); font-size: 14px; background: var(--sapField_Background, #fff);
       color: var(--sapTextColor, #32363a); cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
@@ -171,6 +172,7 @@ export class SacFilterDropdownComponent {
   styles: [`
     .sac-filter--checkbox { border: none; padding: 0; margin: 0; }
     .sac-filter--checkbox .sac-filter__label {
+      font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
       font-size: 12px; font-weight: 600; color: var(--sapTextColor, #32363a);
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
     }
@@ -183,7 +185,7 @@ export class SacFilterDropdownComponent {
       background: var(--sapList_Hover_Background, rgba(0,0,0,0.04));
     }
     .sac-filter__checkbox {
-      width: 18px; height: 18px; cursor: pointer;
+      width: 16px; height: 16px; cursor: pointer;
       accent-color: var(--sapBrandColor, #0854a0);
     }
     .sac-filter__checkbox:focus-visible {

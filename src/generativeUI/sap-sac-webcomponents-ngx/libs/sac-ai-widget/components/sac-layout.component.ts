@@ -60,7 +60,7 @@ import type {
     .sac-flex--wrap { flex-wrap: wrap; }
 
     /* Responsive: stack on small screens */
-    @media (max-width: 600px) {
+    @media (max-width: 599px) {
       .sac-flex--row { flex-direction: column; }
     }
   `],
@@ -114,17 +114,17 @@ export class SacFlexContainerComponent {
     .sac-grid { display: grid; }
 
     /* Responsive grid: fewer columns on smaller screens */
-    @media (max-width: 1200px) {
+    @media (max-width: 1439px) {
       :host[data-responsive="true"] .sac-grid {
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
       }
     }
-    @media (max-width: 768px) {
+    @media (max-width: 1023px) {
       :host[data-responsive="true"] .sac-grid {
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
       }
     }
-    @media (max-width: 480px) {
+    @media (max-width: 599px) {
       :host[data-responsive="true"] .sac-grid {
         grid-template-columns: 1fr !important;
       }

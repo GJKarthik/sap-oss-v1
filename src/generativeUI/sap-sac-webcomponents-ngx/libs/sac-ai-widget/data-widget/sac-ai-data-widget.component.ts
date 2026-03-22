@@ -293,17 +293,17 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       flex-direction: column;
       height: 100%;
       min-height: 0;
-      font-family: var(--sapFontFamily, '72', Arial, sans-serif);
-      background: var(--sapField_Background, #fff);
+      font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
+      background: var(--sapBackgroundColor, #fafafa);
     }
     .sac-ai-data-widget__title {
       font-size: 16px;
       font-weight: 600;
       color: var(--sapTextColor, #32363a);
-      padding: 8px 12px 4px;
+      padding: 8px 16px 4px;
     }
     .sac-ai-data-widget__status {
-      padding: 0 12px 8px;
+      padding: 0 16px 8px;
       color: var(--sapContent_LabelColor, #6a6d70);
       font-size: 12px;
     }
@@ -317,10 +317,10 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       min-width: 0;
       min-height: 200px;
       border: 1px solid var(--sapList_BorderColor, #e5e5e5);
-      border-radius: 12px;
+      border-radius: var(--sapElement_BorderCornerRadius, 8px);
       background: linear-gradient(180deg, var(--sapList_Background, #fff) 0%, var(--sapBackgroundColor, #fafcff) 100%);
-      box-shadow: 0 10px 24px rgba(15, 36, 64, 0.06);
-      padding: 12px;
+      box-shadow: var(--sapContent_Shadow1, 0 2px 8px rgba(0, 0, 0, 0.08));
+      padding: 16px;
     }
     .sac-ai-data-widget__fill {
       flex: 1;
@@ -342,7 +342,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       height: 100%;
       width: 100%;
       color: var(--sapContent_LabelColor, #6a6d70);
-      font-size: 13px;
+      font-size: var(--sapFontSmallSize, 12px);
       padding: 0 24px;
       text-align: center;
     }
@@ -350,15 +350,15 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
-      padding: 4px 12px 8px;
+      padding: 4px 16px 8px;
     }
     .sac-ai-data-widget__date-range,
     .sac-ai-data-widget__range-slider {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       width: 100%;
-      padding: 12px;
+      padding: 16px;
     }
     .sac-ai-data-widget__control-label {
       font-size: 12px;
@@ -374,13 +374,26 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     }
     .sac-ai-data-widget__date-input {
       flex: 1;
-      min-height: 40px;
+      min-height: 44px;
       border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 8px;
-      padding: 8px 12px;
+      border-radius: var(--sapField_BorderCornerRadius, 4px);
+      padding: 8px 16px;
       font: inherit;
       background: var(--sapField_Background, #fff);
       color: var(--sapTextColor, #32363a);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .sac-ai-data-widget__date-input:hover:not(:disabled) {
+      border-color: var(--sapField_Hover_BorderColor, #0854a0);
+    }
+    .sac-ai-data-widget__date-input:focus-visible {
+      outline: 2px solid var(--sapContent_FocusColor, #0070f2);
+      outline-offset: 2px;
+    }
+    .sac-ai-data-widget__date-input:disabled {
+      background: var(--sapField_ReadOnly_Background, #f5f6f7);
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     .sac-ai-data-widget__date-separator {
       color: var(--sapNeutralTextColor, #5b738b);
@@ -388,10 +401,10 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       text-transform: uppercase;
     }
     .sac-ai-data-widget__filter-chip {
-      background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, white);
+      background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, var(--sapBackgroundColor, #fff));
       color: var(--sapButton_Emphasized_Background, #0070f2);
-      border-radius: 12px;
-      padding: 2px 10px;
+      border-radius: 999px;
+      padding: 4px 8px;
       font-size: 12px;
     }
   `],
