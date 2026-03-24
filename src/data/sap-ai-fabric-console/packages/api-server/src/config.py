@@ -88,6 +88,7 @@ class Settings(BaseSettings):
     # MCP service endpoints (used by metrics health probes)
     langchain_mcp_url: str = "http://localhost:9140/mcp"
     streaming_mcp_url: str = "http://localhost:9190/mcp"
+    data_cleaning_mcp_url: str = "http://localhost:9110/mcp"
 
     # Logging
     log_level: str = "INFO"
@@ -175,8 +176,9 @@ class Settings(BaseSettings):
                     for field_name, value in (
                         ("LANGCHAIN_MCP_URL", self.langchain_mcp_url),
                         ("STREAMING_MCP_URL", self.streaming_mcp_url),
+                        ("DATA_CLEANING_MCP_URL", self.data_cleaning_mcp_url),
                     )
-                    if _is_local_url(value)
+                    if _is_local_url(value) and value
                 ]
                 if local_upstreams:
                     raise ValueError(

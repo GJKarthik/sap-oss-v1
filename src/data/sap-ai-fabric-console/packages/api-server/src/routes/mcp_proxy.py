@@ -1,9 +1,10 @@
 """
 MCP Proxy routes for SAP AI Fabric Console.
 
-Proxies JSON-RPC requests from the Angular frontend to the two MCP servers:
-  - LangChain HANA MCP  (langchain_mcp_url)
-  - AI Core Streaming MCP (streaming_mcp_url)
+Proxies JSON-RPC requests from the Angular frontend to the MCP servers:
+  - LangChain HANA MCP  (langchain_mcp_url) - RAG and vector store operations
+  - AI Core Streaming MCP (streaming_mcp_url) - Streaming LLM sessions
+  - Data Cleaning Copilot MCP (data_cleaning_mcp_url) - Data quality validation
 
 This centralises all traffic through the FastAPI backend so that:
   1. Auth is enforced on every MCP call (Bearer token validated here).
@@ -85,6 +86,8 @@ def _service_name(target_url: str) -> str:
         return "langchain-hana-mcp"
     if target_url == settings.streaming_mcp_url:
         return "ai-core-streaming-mcp"
+    if target_url == settings.data_cleaning_mcp_url:
+        return "data-cleaning-copilot-mcp"
     return target_url
 
 
@@ -107,7 +110,7 @@ def recent_mcp_failures(window_seconds: int) -> dict[str, int]:
 
 
 def mcp_metrics_snapshot(window_seconds: int) -> dict:
-    services = ("langchain-hana-mcp", "ai-core-streaming-mcp")
+    services = ("langchain-hana-mcp", "ai-core-streaming-mcp", "data-cleaning-copilot-mcp")
     recent_failures = recent_mcp_failures(window_seconds)
     return {
         "recent_failures": recent_failures,
@@ -300,5 +303,51 @@ async def streaming_health(_: UserInfo = Depends(get_current_user)):
     return await probe_health(
         service_name="ai-core-streaming-mcp",
         target_url=settings.streaming_mcp_url,
+        timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Data Cleaning Copilot MCP proxy
+# ---------------------------------------------------------------------------
+
+@router.post("/data-cleaning", summary="Proxy to Data Cleaning Copilot MCP")
+async def data_cleaning_proxy(
+    request: Request,
+    _: UserInfo = Depends(get_current_user),
+):
+    """
+    Forward JSON-RPC requests to the Data Cleaning Copilot MCP server.
+    Auth is enforced here — the downstream MCP server need not check tokens.
+    
+    Available tools:
+    - data_quality_check: Run data quality checks on a table
+    - schema_analysis: Analyze database schema for quality recommendations
+    - data_profiling: Generate statistical profile of table data
+    - anomaly_detection: Detect anomalies in column data
+    - generate_cleaning_query: Generate SQL to fix data issues (requires approval)
+    - ai_chat: General AI assistance
+    - mangle_query: Query Mangle fact store for governance rules
+    - kuzu_index: Index schema into graph database
+    - kuzu_query: Query relationship graph
+    """
+    body = await _read_json_body(request)
+    if body is None:
+        return Response(status_code=204)
+    corr_id = _get_correlation_id(request)
+    logger.info(
+        "MCP proxy → data-cleaning",
+        method=body.get("method"),
+        correlation_id=corr_id,
+    )
+    return await _forward(settings.data_cleaning_mcp_url, body, corr_id)
+
+
+@router.get("/data-cleaning/health", summary="Data Cleaning Copilot MCP health")
+async def data_cleaning_health(_: UserInfo = Depends(get_current_user)):
+    """Probe the Data Cleaning Copilot MCP /health endpoint."""
+    return await probe_health(
+        service_name="data-cleaning-copilot-mcp",
+        target_url=settings.data_cleaning_mcp_url,
         timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
     )
