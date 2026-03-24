@@ -1,0 +1,22 @@
+{
+  "name": "genui-governance",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/genui-governance/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/genui-governance/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/genui-governance"],
+      "options": {
+        "jestConfig": "libs/genui-governance/jest.config.ts"
+      }
+    }
+  }
+}

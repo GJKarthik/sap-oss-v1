@@ -1,0 +1,22 @@
+{
+  "name": "genui-streaming",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/genui-streaming/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/genui-streaming/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/genui-streaming"],
+      "options": {
+        "jestConfig": "libs/genui-streaming/jest.config.ts"
+      }
+    }
+  }
+}

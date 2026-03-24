@@ -11,6 +11,8 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { StreamingUiService, StreamingState } from '@ui5/genui-streaming';
 import { A2UiSchema } from '@ui5/genui-renderer';
+import { GovernanceService, PendingAction } from '@ui5/genui-governance';
+import { CollaborationService, Participant } from '@ui5/genui-collab';
 
 @Component({
   selector: 'playground-joule-shell',
@@ -24,11 +26,16 @@ export class JouleShellComponent implements OnInit, OnDestroy {
 
   state: StreamingState = 'idle';
   schema: A2UiSchema | null = null;
+  pendingActions: PendingAction[] = [];
+  participants: Participant[] = [];
+  showGovernancePanel = false;
 
   readonly agUiEndpoint = '/ag-ui/run';
 
   constructor(
     private streamingUi: StreamingUiService,
+    private governance: GovernanceService,
+    private collab: CollaborationService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -46,10 +53,31 @@ export class JouleShellComponent implements OnInit, OnDestroy {
         this.schema = s;
         this.cdr.markForCheck();
       });
+
+    this.governance.pendingActions$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((actions) => {
+        this.pendingActions = actions;
+        if (actions.length > 0) {
+          this.showGovernancePanel = true;
+        }
+        this.cdr.markForCheck();
+      });
+
+    this.collab.participants$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((participants) => {
+        this.participants = participants;
+        this.cdr.markForCheck();
+      });
   }
 
   clearSession(): void {
     this.streamingUi.clearSession();
+  }
+
+  toggleGovernancePanel(): void {
+    this.showGovernancePanel = !this.showGovernancePanel;
   }
 
   ngOnDestroy(): void {

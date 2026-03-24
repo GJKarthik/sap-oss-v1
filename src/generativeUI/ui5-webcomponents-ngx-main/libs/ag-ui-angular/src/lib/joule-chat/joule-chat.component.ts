@@ -507,6 +507,16 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
     this.cdr.markForCheck();
   }
 
+  getMessageAriaLabel(msg: ChatMessage): string {
+    const MAX_CONTENT = 150;
+    const prefix = msg.role === 'user' ? 'You said' : 'Joule replied';
+    const content = msg.content.length > MAX_CONTENT
+      ? msg.content.slice(0, MAX_CONTENT) + '...'
+      : msg.content;
+    const streaming = msg.isStreaming ? ', still typing' : '';
+    return `${prefix}: ${content}${streaming}`;
+  }
+
   // ---------------------------------------------------------------------------
   // Private: event subscriptions
   // ---------------------------------------------------------------------------

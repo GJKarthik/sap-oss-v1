@@ -1,0 +1,22 @@
+{
+  "name": "genui-collab",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/genui-collab/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/genui-collab/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/genui-collab"],
+      "options": {
+        "jestConfig": "libs/genui-collab/jest.config.ts"
+      }
+    }
+  }
+}

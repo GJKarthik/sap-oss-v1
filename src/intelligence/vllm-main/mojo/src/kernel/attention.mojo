@@ -34,10 +34,12 @@ fn flash_attention[
     comptime Bc = 64  # Column block size
 
     # Initialize output and softmax state (m, l)
+    # SAFETY FIX G1: Use Float32.MIN instead of -1e9 to properly handle
+    # edge cases where all logits might be extremely negative
     var m = alloc[Float32](seq_len) # Max scores
     var l = alloc[Float32](seq_len) # Sum of exps
     for i in range(seq_len):
-        m[i] = -1e9
+        m[i] = Float32.MIN  # G1 FIX: Proper negative infinity initialization
         l[i] = 0.0
         for j in range(head_dim):
             (output + i * head_dim)[j] = 0.0

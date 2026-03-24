@@ -47,21 +47,29 @@ const Russian = {
         }),
         RouterModule.forRoot([
             {
-                path: '', component: AppComponent, children: [
-                    {
-                        path: '',
-                        component: MainComponent
-                    },
-                    {
-                        path: 'child-module',
-                        loadChildren: () => import('./modules/child/child.module').then(m => m.ChildModule)
-                    },
-                    {
-                        path: 'joule',
-                        loadChildren: () => import('./modules/joule/joule.module').then(m => m.JouleModule)
-                    }
-                ]
+                path: '',
+                component: MainComponent
             },
+            {
+                path: 'forms',
+                loadChildren: () => import('./modules/forms/forms.module').then(m => m.FormsModule)
+            },
+            {
+                path: 'child-module',
+                loadChildren: () => import('./modules/child/child.module').then(m => m.ChildModule)
+            },
+            {
+                path: 'joule',
+                loadChildren: () => import('./modules/joule/joule.module').then(m => m.JouleModule)
+            },
+            {
+                path: 'collab',
+                loadChildren: () => import('./modules/collab/collab.module').then(m => m.CollabModule)
+            },
+            {
+                path: '**',
+                loadChildren: () => import('./modules/not-found/not-found.module').then(m => m.NotFoundModule)
+            }
         ]),
         Ui5WebcomponentsModule,
         Ui5WebcomponentsThemingModule.forRoot(),

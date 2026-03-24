@@ -615,7 +615,7 @@ export function deserializeCrdtValue<T>(value: T): T {
     return value;
   }
 
-  const crdtType = value.__crdtType;
+  const crdtType = value['__crdtType'];
   if (crdtType === 'GCounter') {
     return new GCounter((value as unknown as SerializedGCounter).counts) as T;
   }

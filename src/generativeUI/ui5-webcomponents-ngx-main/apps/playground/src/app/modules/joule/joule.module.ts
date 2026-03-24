@@ -7,16 +7,18 @@ import { AgUiModule } from '@ui5/ag-ui-angular';
 import { GenUiRendererModule } from '@ui5/genui-renderer';
 import { GenUiStreamingModule } from '@ui5/genui-streaming';
 import { GenUiGovernanceModule } from '@ui5/genui-governance';
+import { GenUiCollabModule } from '@ui5/genui-collab';
 import { JouleShellComponent } from './joule-shell.component';
 
 @NgModule({
   declarations: [JouleShellComponent],
   imports: [
     CommonModule,
-    AgUiModule,
-    GenUiRendererModule,
-    GenUiStreamingModule,
-    GenUiGovernanceModule,
+    AgUiModule.forRoot({ endpoint: '/ag-ui/run', transport: 'sse', autoConnect: false }),
+    GenUiRendererModule.forRoot({ allowedComponents: 'fiori-standard', sanitize: true }),
+    GenUiStreamingModule.forRoot(),
+    GenUiGovernanceModule.forRoot(),
+    GenUiCollabModule.forRoot(),
     RouterModule.forChild([
       { path: '', component: JouleShellComponent },
     ]),

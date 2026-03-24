@@ -3,6 +3,19 @@
 
   <!-- Left: Joule chat panel -->
   <section class="joule-chat-panel">
+
+    <!-- Collab presence strip -->
+    <div class="presence-strip" *ngIf="participants.length > 0">
+      <span class="presence-label">Live:</span>
+      <span
+        *ngFor="let p of participants"
+        class="presence-avatar"
+        [title]="p.displayName"
+        [style.background]="p.color">
+        {{ p.displayName.charAt(0).toUpperCase() }}
+      </span>
+    </div>
+
     <joule-chat
       [endpoint]="agUiEndpoint"
       transport="sse"
@@ -19,11 +32,28 @@
     <div class="output-header">
       <span class="state-label state-{{ state }}">{{ state }}</span>
       <button
+        *ngIf="pendingActions.length > 0"
+        class="governance-btn"
+        [class.has-pending]="pendingActions.length > 0"
+        (click)="toggleGovernancePanel()">
+        <span class="badge">{{ pendingActions.length }}</span>
+        Review Actions
+      </button>
+      <button
         *ngIf="state !== 'idle'"
         class="clear-btn"
         (click)="clearSession()">
         Clear
       </button>
+    </div>
+
+    <!-- Governance Review Panel -->
+    <div class="governance-panel-wrapper" *ngIf="showGovernancePanel && pendingActions.length > 0">
+      <div class="governance-panel-header">
+        <span>Pending Actions ({{ pendingActions.length }})</span>
+        <button class="clear-btn" (click)="toggleGovernancePanel()">✕</button>
+      </div>
+      <genui-governance-review-panel></genui-governance-review-panel>
     </div>
 
     <ng-container *ngIf="schema; else empty">

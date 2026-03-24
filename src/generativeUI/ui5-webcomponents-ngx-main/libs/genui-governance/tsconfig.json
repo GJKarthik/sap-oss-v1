@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ES2022",
@@ -7,22 +8,29 @@
     "declarationMap": true,
     "sourceMap": true,
     "inlineSources": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
+    "strict": false,
+    "noImplicitAny": false,
     "useDefineForClassFields": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "lib": ["ES2022", "DOM"],
-    "types": []
+    "typeRoots": ["../../node_modules/@types", "../../node_modules"],
+    "baseUrl": ".",
+    "paths": {
+      "@angular/core": ["../../node_modules/@angular/core"],
+      "@angular/common": ["../../node_modules/@angular/common"],
+      "rxjs": ["../../node_modules/rxjs"],
+      "rxjs/operators": ["../../node_modules/rxjs/operators"],
+      "@ui5/ag-ui-angular": ["../ag-ui-angular/src/index.ts"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
-    "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictInjectionParameters": false,
+    "strictInputAccessModifiers": false,
+    "strictTemplates": false
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts"]

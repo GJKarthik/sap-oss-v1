@@ -23,9 +23,9 @@ import {
   UiComponentRemoveEvent,
   UiLayoutEvent,
   CustomEvent as AgUiCustomEvent,
-} from '../../../../ag-ui-angular/src/lib/types/ag-ui-events';
-import { AgUiClient } from '../../../../ag-ui-angular/src/lib/services/ag-ui-client.service';
-import { DynamicRenderer, A2UiSchema } from '../../../../genui-renderer/src/lib/renderer/dynamic-renderer.service';
+} from '@ui5/ag-ui-angular';
+import { AgUiClient } from '@ui5/ag-ui-angular';
+import { DynamicRenderer, A2UiSchema } from '@ui5/genui-renderer';
 import { GENUI_STREAMING_CONFIG, GenUiStreamingConfig } from '../genui-streaming.config';
 
 /** AG-UI custom event name emitted by the server for schema snapshots */

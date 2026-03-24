@@ -91,6 +91,113 @@ Every form-capable component can be used with Angular's native form approaches. 
 
 Angular Versions Support: Our versions offer Angular support. More information can be found [here](https://github.com/SAP/ui5-webcomponents-ngx/wiki/Angular-Versions-Support).
 
+---
+
+## Generative AI Playground — Development Setup
+
+This monorepo includes a full **Generative UI** stack on top of the Angular wrapper library. The following services are needed to use the Joule AI and Collaboration features.
+
+### Prerequisites
+
+| Tool | Version |
+|------|---------|
+| Node.js | 18 LTS or 20 LTS |
+| Yarn | 4.x (`corepack enable`) |
+| nx | installed via workspace devDependencies |
+
+### 1. Install Dependencies
+
+```bash
+# Root monorepo (Angular + Nx)
+yarn install
+
+# MCP server (standalone Node package)
+npm --prefix mcp-server install
+```
+
+### 2. Configure Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and fill in the values for the services you want to use:
+
+| Variable | Description | Required for |
+|----------|-------------|--------------|
+| `MANGLE_ENDPOINT` | Mangle reasoning engine URL | Joule AI |
+| `HANA_BASE_URL` / `HANA_AUTH_URL` / `HANA_CLIENT_ID` / `HANA_CLIENT_SECRET` | SAP HANA Cloud REST SQL | Persistent audit/metrics |
+| `AICORE_CLIENT_ID` / `AICORE_CLIENT_SECRET` / `AICORE_AUTH_URL` / `AICORE_BASE_URL` | SAP AI Core credentials | OpenAI-compat server |
+| `MCP_AUTH_TOKEN` | Bearer token for `/mcp` endpoint | MCP server (optional for localhost) |
+| `OPENAI_INTERNAL_TOKEN` | Internal token for `/v1/hana/*` routes | OpenAI-compat server |
+| `KUZU_DB_PATH` | KùzuDB directory path (`:memory:` for dev) | Graph-RAG features |
+
+> **Note:** All services degrade gracefully when credentials are not set — the app starts and in-memory fallbacks are used.
+
+### 3. Start All Services
+
+```bash
+# Start everything (playground + MCP server + OpenAI-compat server)
+yarn start:all
+```
+
+Or start services individually:
+
+```bash
+yarn start:playground   # Angular dev server on http://localhost:4200
+yarn start:mcp          # MCP server on http://localhost:9160
+yarn start:openai       # OpenAI-compat server on http://localhost:8400
+```
+
+The Angular dev server proxies `/ag-ui/*` to the MCP server automatically via `apps/playground/proxy.conf.js`. Override the target with:
+
+```bash
+AGENT_URL=http://my-agent:9160 yarn start:playground
+```
+
+### 4. Playground Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page — links to all demos |
+| `/forms` | UI5 form components with Angular reactive forms |
+| `/joule` | Joule AI — generative UI driven by AG-UI streaming |
+| `/collab` | Real-time multi-user collaboration demo |
+| `/**` | 404 Not Found page |
+
+### 5. Building for Production
+
+```bash
+yarn build:prod
+# Output: dist/apps/playground/
+```
+
+### 6. Running Unit Tests
+
+```bash
+yarn nx test ui5-angular
+```
+
+### 7. Architecture Overview
+
+```
+apps/
+  playground/          Angular app — Fiori shell, lazy-loaded feature modules
+
+libs/
+  ui5-angular/         Angular wrapper for @ui5/webcomponents (main library)
+  ag-ui-angular/       AG-UI client (SSE/WebSocket), tool registry, JouleChatComponent
+  genui-renderer/      Dynamic UI renderer from A2UiSchema
+  genui-streaming/     SSE streaming session management (StreamingUiService)
+  genui-governance/    Action review panel, audit log, policy enforcement
+  genui-collab/        Real-time CRDT-backed collaboration (WebSocket)
+  openai-server/       OpenAI-compatible proxy → SAP AI Core + HANA Vector
+
+mcp-server/            MCP server — Express + Mangle reasoning, KùzuDB graph-RAG
+```
+
+---
+
 ## Support, Feedback, Contributing
 
 For an overview on how this library works, see the [SAP Contribution Guidelines](https://github.com/SAP/.github/blob/main/CONTRIBUTING.md), the [Maintainers](https://github.com/SAP/ui5-webcomponents-ngx/blob/main/MAINTAINERS.md) documentation.

@@ -5,28 +5,146 @@
   <title>SAP AI Fabric Console</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SAP AI Fabric Console - Enterprise AI Platform for managing AI deployments, RAG workflows, and data governance">
+  <meta name="theme-color" content="#0a6ed1">
+  
+  <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="assets/sap-logo.svg">
+  <link rel="apple-touch-icon" href="assets/sap-logo.svg">
+  
+  <!-- Preconnect to improve performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  
+  <!-- Runtime configuration -->
   <script src="runtime-config.js"></script>
   
   <!-- UI5 Web Components Theming -->
   <style>
-    /* SAP Fiori 3 Theme Variables */
+    /* SAP Fiori 3 Theme Variables - Enhanced for WCAG AA compliance */
     :root {
+      /* Brand Colors */
       --sapBrandColor: #0a6ed1;
       --sapHighlightColor: #0a6ed1;
+      
+      /* Background Colors */
       --sapBackgroundColor: #f7f7f7;
       --sapList_Background: #ffffff;
+      --sapShellColor: #354a5f;
+      
+      /* Border Colors */
       --sapList_BorderColor: #e5e5e5;
-      --sapContent_LabelColor: #6a6d70;
+      --sapGroup_TitleBorderColor: #d9d9d9;
+      
+      /* Text Colors - Enhanced for contrast */
+      --sapTextColor: #32363a;
+      --sapContent_LabelColor: #556b82;
+      --sapContent_FocusColor: #0854a0;
+      
+      /* Status Colors */
+      --sapPositiveColor: #107e3e;
+      --sapNegativeColor: #bb0000;
+      --sapCriticalColor: #e9730c;
+      --sapNeutralColor: #6a6d70;
+      --sapInformativeColor: #0a6ed1;
+      
+      /* Font Sizes */
+      --sapFontFamily: "72", "72full", Arial, Helvetica, sans-serif;
+      --sapFontSize: 0.875rem;
       --sapFontSmallSize: 0.75rem;
+      --sapFontLargeSize: 1rem;
+      --sapFontHeader1Size: 2.25rem;
+      --sapFontHeader2Size: 1.5rem;
+      --sapFontHeader3Size: 1.25rem;
+      --sapFontHeader4Size: 1.125rem;
+      
+      /* Spacing */
+      --sapElement_LineHeight: 1.5;
+      --sapContent_GridSize: 1rem;
+      
+      /* Shadows */
+      --sapContent_Shadow0: 0 0 0 1px rgba(0,0,0,0.1);
+      --sapContent_Shadow1: 0 0.125rem 0.5rem 0 rgba(0,0,0,0.15);
+      --sapContent_Shadow2: 0 0.625rem 1.875rem 0 rgba(0,0,0,0.15);
+      
+      /* Border Radius */
+      --sapElement_BorderCornerRadius: 0.25rem;
     }
     
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: "72", "72full", Arial, Helvetica, sans-serif; }
-    body { background: var(--sapBackgroundColor); }
+    /* Dark mode support (system preference) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --sapBackgroundColor: #1c2228;
+        --sapList_Background: #29313a;
+        --sapList_BorderColor: #3d4751;
+        --sapTextColor: #ffffff;
+        --sapContent_LabelColor: #a3b2c2;
+      }
+    }
+    
+    /* Base reset */
+    *, *::before, *::after { 
+      box-sizing: border-box; 
+    }
+    
+    html { 
+      height: 100%; 
+      font-size: 16px;
+    }
+    
+    body { 
+      height: 100%; 
+      margin: 0;
+      padding: 0;
+      font-family: var(--sapFontFamily);
+      font-size: var(--sapFontSize);
+      line-height: var(--sapElement_LineHeight);
+      background: var(--sapBackgroundColor);
+      color: var(--sapTextColor);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Loading state before Angular bootstraps */
+    .app-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: 1rem;
+      color: var(--sapContent_LabelColor);
+    }
+    
+    .app-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--sapList_BorderColor);
+      border-top-color: var(--sapBrandColor);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Hide loading state once app is ready */
+    app-root:not(:empty) + .app-loading,
+    app-root:not(:empty) ~ .app-loading {
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <!-- Main application root -->
   <app-root></app-root>
+  
+  <!-- Loading state (shown before Angular bootstraps) -->
+  <noscript>
+    <div class="app-loading" style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <p>JavaScript is required to run SAP AI Fabric Console.</p>
+      <p>Please enable JavaScript in your browser settings.</p>
+    </div>
+  </noscript>
 </body>
 </html>

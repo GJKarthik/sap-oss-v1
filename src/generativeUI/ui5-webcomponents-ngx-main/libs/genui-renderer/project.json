@@ -1,0 +1,22 @@
+{
+  "name": "genui-renderer",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/genui-renderer/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/genui-renderer/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/genui-renderer"],
+      "options": {
+        "jestConfig": "libs/genui-renderer/jest.config.ts"
+      }
+    }
+  }
+}

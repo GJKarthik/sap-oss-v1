@@ -13,12 +13,14 @@ from src.config import settings
 
 def _production_settings_kwargs(**overrides):
     values = {
+        "_env_file": None,
         "environment": "production",
         "jwt_secret_key": "not-the-default-secret",
         "store_backend": "hana",
         "hana_host": "hana.example.test",
         "hana_user": "DBADMIN",
         "hana_password": "super-secret-password",
+        "expose_api_docs": False,
         "langchain_mcp_url": "https://langchain.example.test/mcp",
         "streaming_mcp_url": "https://streaming.example.test/mcp",
     }

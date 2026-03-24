@@ -11,7 +11,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
+from starlette.datastructures import MutableHeaders
 from starlette.requests import ClientDisconnect
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import settings
 from .database import close_database, init_database
@@ -117,20 +119,48 @@ def _rate_limit_policy(path: str) -> tuple[str, int, str] | None:
     return None
 
 
-@app.middleware("http")
-async def security_headers_middleware(request: Request, call_next):
-    response = await call_next(request)
-    _apply_security_headers(response, request.url.path)
-    return response
+class SecurityHeadersMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request_path = scope.get("path", "")
+
+        async def send_with_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                for header, value in SECURITY_HEADERS.items():
+                    headers.setdefault(header, value)
+                if request_path.startswith("/api/v1/auth/"):
+                    headers.setdefault("Cache-Control", "no-store")
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
 
 
-@app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    policy = _rate_limit_policy(request.url.path)
-    if policy is not None:
-        scope, limit, message = policy
-        bucket_ip = request.client.host if request.client else "unknown"
-        bucket_key = f"{scope}:{bucket_ip}"
+class RateLimitMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request_path = scope.get("path", "")
+        policy = _rate_limit_policy(request_path)
+        if policy is None:
+            await self.app(scope, receive, send)
+            return
+
+        limit_scope, limit, message = policy
+        client = scope.get("client")
+        bucket_ip = client[0] if client else "unknown"
+        bucket_key = f"{limit_scope}:{bucket_ip}"
         result = get_store().consume_rate_limit(
             bucket_key=bucket_key,
             limit=limit,
@@ -144,15 +174,21 @@ async def rate_limit_middleware(request: Request, call_next):
             response.headers["Retry-After"] = str(result["retry_after"])
             response.headers["X-RateLimit-Limit"] = str(result["limit"])
             response.headers["X-RateLimit-Remaining"] = str(result["remaining"])
-            _apply_security_headers(response, request.url.path)
+            _apply_security_headers(response, request_path)
             return response
 
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(result["limit"])
-        response.headers["X-RateLimit-Remaining"] = str(result["remaining"])
-        return response
+        async def send_with_rate_limit_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["X-RateLimit-Limit"] = str(result["limit"])
+                headers["X-RateLimit-Remaining"] = str(result["remaining"])
+            await send(message)
 
-    return await call_next(request)
+        await self.app(scope, receive, send_with_rate_limit_headers)
+
+
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 def _store_health_snapshot() -> dict:

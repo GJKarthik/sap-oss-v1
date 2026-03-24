@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/data/sap-ai-fabric-console
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up backend virtualenv
+        run: |
+          python -m venv packages/api-server/.venv
+          packages/api-server/.venv/bin/pip install --upgrade pip
+          packages/api-server/.venv/bin/pip install -r packages/api-server/requirements.txt
+
+      - name: Run backend tests
+        env:
+          JWT_SECRET_KEY: ci-unit-secret
+          ENVIRONMENT: test
+          STORE_DATABASE_PATH: /tmp/sap-ai-fabric-console-ci.sqlite3
+        run: packages/api-server/.venv/bin/python -m pytest packages/api-server/tests
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/data/sap-ai-fabric-console
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: src/data/sap-ai-fabric-console/yarn.lock
+
+      - name: Install frontend dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+
+      - name: Run Angular tests
+        run: yarn nx test angular-shell --runInBand --skip-nx-cache
+
+      - name: Run Angular production build
+        run: yarn nx build angular-shell --skip-nx-cache
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs:
+      - backend-tests
+      - frontend-tests
+    defaults:
+      run:
+        working-directory: src/data/sap-ai-fabric-console
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: src/data/sap-ai-fabric-console/yarn.lock
+
+      - id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install workspace dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+          python -m venv packages/api-server/.venv
+          packages/api-server/.venv/bin/pip install --upgrade pip
+          packages/api-server/.venv/bin/pip install -r packages/api-server/requirements.txt
+
+      - name: Run real browser smoke
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          JWT_SECRET_KEY: ci-smoke-secret
+          ENVIRONMENT: development
+          STORE_BACKEND: sqlite
+          STORE_DATABASE_PATH: /tmp/sap-ai-fabric-console-smoke.sqlite3
+          REQUIRE_MCP_DEPENDENCIES: "false"
+          E2E_LOGIN_MODE: component
+        run: yarn e2e:smoke

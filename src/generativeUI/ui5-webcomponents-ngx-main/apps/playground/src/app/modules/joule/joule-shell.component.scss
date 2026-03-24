@@ -73,6 +73,80 @@
   border-radius: 0.25rem;
 }
 
+.governance-btn {
+  border: 1px solid var(--sapWarningBorderColor, #e9730c);
+  background: var(--sapWarningBackground, #fef7f1);
+  color: var(--sapWarningColor, #e9730c);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 0.6rem;
+  background: var(--sapErrorColor, #bb0000);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0 0.25rem;
+}
+
+.governance-panel-wrapper {
+  border: 1px solid var(--sapWarningBorderColor, #e9730c);
+  border-radius: 0.5rem;
+  background: var(--sapWarningBackground, #fef7f1);
+  overflow: hidden;
+}
+
+.governance-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--sapWarningBackground, #fef7f1);
+  border-bottom: 1px solid var(--sapWarningBorderColor, #e9730c);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sapWarningColor, #e9730c);
+}
+
+.presence-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--sapInfoBackground, #e8f4fd);
+  border-bottom: 1px solid var(--sapInfoBorderColor, #0070f2);
+  font-size: 0.75rem;
+}
+
+.presence-label {
+  color: var(--sapInformationColor, #0070f2);
+  font-weight: 600;
+}
+
+.presence-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: default;
+}
+
 genui-outlet {
   flex: 1;
 }

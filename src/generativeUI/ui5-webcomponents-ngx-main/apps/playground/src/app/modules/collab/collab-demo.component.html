@@ -1,0 +1,126 @@
+<!-- Collaboration Demo Page -->
+<ui5-page background-design="Solid">
+  <ui5-bar slot="header" design="Header">
+    <ui5-title slot="startContent" level="H3">Collaboration Demo</ui5-title>
+    <div slot="endContent" style="display:flex;align-items:center;gap:0.5rem;">
+      <ui5-badge
+        [attr.color-scheme]="connectionState === 'connected' ? '8' : connectionState === 'connecting' ? '6' : '1'">
+        {{ connectionState }}
+      </ui5-badge>
+    </div>
+  </ui5-bar>
+
+  <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.5rem;">
+
+    <!-- Connection card -->
+    <ui5-card>
+      <ui5-card-header slot="header" title-text="Session" subtitle-text="Join a collaboration room"></ui5-card-header>
+      <div style="padding:1rem;display:flex;flex-direction:column;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <ui5-label show-colon>Room ID</ui5-label>
+          <ui5-input
+            [value]="roomId"
+            (input)="roomId = $any($event.target).value"
+            style="min-width:220px;">
+          </ui5-input>
+          <ui5-button
+            design="Emphasized"
+            [disabled]="connectionState === 'connected' || connectionState === 'connecting'"
+            (click)="joinRoom()">
+            Join Room
+          </ui5-button>
+          <ui5-button
+            design="Negative"
+            [disabled]="connectionState === 'disconnected'"
+            (click)="leaveRoom()">
+            Leave Room
+          </ui5-button>
+        </div>
+        <ui5-message-strip *ngIf="connectionState !== 'connected'" design="Information">
+          No live collaboration server is needed for this demo — connection attempts are gracefully handled.
+        </ui5-message-strip>
+      </div>
+    </ui5-card>
+
+    <!-- Participants card -->
+    <ui5-card>
+      <ui5-card-header slot="header" title-text="Participants" [subtitle-text]="participants.length + ' online'"></ui5-card-header>
+      <div style="padding:1rem;">
+        <div *ngIf="participants.length === 0" style="color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
+          No participants yet. Join a room to see live presence.
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+          <div
+            *ngFor="let p of participants"
+            style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--sapGroup_TitleBorderColor,#d9d9d9);background:var(--sapBackgroundColor,#fff);">
+            <span
+              [style.background]="p.color"
+              style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;color:white;font-weight:700;font-size:0.8rem;">
+              {{ p.displayName.charAt(0).toUpperCase() }}
+            </span>
+            <div>
+              <div style="font-weight:600;font-size:0.875rem;">{{ p.displayName }}</div>
+              <div style="font-size:0.75rem;color:var(--sapContent_LabelColor,#6a6d70);">
+                {{ p.status }}
+                <span *ngIf="p.location"> · {{ p.location }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ui5-card>
+
+    <!-- Cursor canvas card -->
+    <ui5-card>
+      <ui5-card-header slot="header" title-text="Cursor Tracking" subtitle-text="Move mouse over canvas to broadcast position"></ui5-card-header>
+      <div style="padding:1rem;">
+        <div
+          (mousemove)="broadcastCursor($event)"
+          style="
+            position:relative;
+            width:100%;
+            height:240px;
+            border:2px dashed var(--sapGroup_TitleBorderColor,#d9d9d9);
+            border-radius:0.5rem;
+            background:var(--sapBackgroundColor,#f5f5f5);
+            cursor:crosshair;
+            overflow:hidden;">
+          <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;pointer-events:none;">
+            Move mouse here to broadcast cursor
+          </span>
+          <span
+            *ngFor="let c of cursors"
+            [style.left.px]="c.x"
+            [style.top.px]="c.y"
+            style="position:absolute;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;"
+            [style.background]="'#0070f2'"
+            [title]="c.userId">
+          </span>
+        </div>
+      </div>
+    </ui5-card>
+
+    <!-- Event log card -->
+    <ui5-card>
+      <ui5-card-header slot="header" title-text="Event Log">
+        <ui5-button slot="action" design="Transparent" (click)="clearLog()">Clear</ui5-button>
+      </ui5-card-header>
+      <div style="padding:1rem;">
+        <div
+          style="
+            font-family:monospace;
+            font-size:0.75rem;
+            max-height:200px;
+            overflow-y:auto;
+            background:var(--sapBackgroundColor,#f5f5f5);
+            border:1px solid var(--sapGroup_TitleBorderColor,#d9d9d9);
+            border-radius:0.25rem;
+            padding:0.5rem;">
+          <div *ngFor="let entry of log" style="margin-bottom:0.2rem;">{{ entry }}</div>
+          <div *ngIf="log.length === 0" style="color:var(--sapContent_LabelColor,#6a6d70);">No events yet.</div>
+        </div>
+      </div>
+    </ui5-card>
+
+  </div>
+</ui5-page>

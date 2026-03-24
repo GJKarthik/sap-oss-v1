@@ -5,6 +5,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
+import { EmptyStateComponent } from '../../shared';
 
 function readErrorMessage(error: unknown, fallback: string): string {
   const detail = (error as { error?: { detail?: string } | string; message?: string })?.error;
@@ -21,65 +22,134 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-rag-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">RAG Studio</ui5-title>
-        <ui5-button *ngIf="canManage" slot="endContent" design="Emphasized" icon="add" (click)="toggleCreateForm()">
+        <ui5-button 
+          slot="endContent" 
+          icon="refresh" 
+          (click)="refreshStores()" 
+          [disabled]="storesLoading"
+          aria-label="Refresh knowledge bases"
+          class="hide-mobile">
+          {{ storesLoading ? 'Loading...' : 'Refresh' }}
+        </ui5-button>
+        <ui5-button 
+          *ngIf="canManage" 
+          slot="endContent" 
+          design="Emphasized" 
+          icon="add" 
+          (click)="toggleCreateForm()"
+          aria-label="Create new knowledge base">
           {{ showCreateForm ? 'Close Form' : 'New Knowledge Base' }}
         </ui5-button>
       </ui5-bar>
 
-      <div class="rag-container">
-        <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="true">
+      <div class="rag-container" role="region" aria-label="RAG Studio workspace">
+        <!-- Loading indicator -->
+        <div class="loading-container" *ngIf="storesLoading && vectorStores.length === 0" role="status" aria-live="polite">
+          <ui5-busy-indicator active size="M"></ui5-busy-indicator>
+          <span class="loading-text">Loading knowledge bases...</span>
+        </div>
+
+        <ui5-message-strip 
+          *ngIf="error" 
+          design="Negative" 
+          [hideCloseButton]="false"
+          (close)="error = ''"
+          role="alert">
           {{ error }}
         </ui5-message-strip>
-        <ui5-message-strip *ngIf="success" design="Positive" [hideCloseButton]="true">
+        <ui5-message-strip 
+          *ngIf="success" 
+          design="Positive" 
+          [hideCloseButton]="false"
+          (close)="success = ''"
+          role="status">
           {{ success }}
         </ui5-message-strip>
-        <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true">
+        <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true" role="note">
           Viewer mode: knowledge base management is disabled.
         </ui5-message-strip>
 
-        <ui5-card *ngIf="showCreateForm && canManage" class="full-width-card">
+        <ui5-card *ngIf="showCreateForm && canManage" class="create-form-card">
           <ui5-card-header slot="header" title-text="Create Knowledge Base" subtitle-text="Register a vector store in HANA"></ui5-card-header>
-          <div class="form-grid">
-            <label class="field-label">
-              Table Name
-              <ui5-input ngDefaultControl [(ngModel)]="draftStore.table_name" placeholder="KB_CUSTOMER_SUPPORT"></ui5-input>
-            </label>
-            <label class="field-label">
-              Embedding Model
-              <ui5-input ngDefaultControl [(ngModel)]="draftStore.embedding_model" placeholder="default"></ui5-input>
-            </label>
+          <form class="form-grid" (ngSubmit)="createStore()">
+            <div class="field-group">
+              <label for="table-name-input" class="field-label">
+                Table Name <span class="required">*</span>
+              </label>
+              <ui5-input 
+                id="table-name-input"
+                ngDefaultControl 
+                [(ngModel)]="draftStore.table_name" 
+                name="tableName"
+                placeholder="KB_CUSTOMER_SUPPORT"
+                accessible-name="Knowledge base table name"
+                required>
+              </ui5-input>
+            </div>
+            <div class="field-group">
+              <label for="embedding-model-input" class="field-label">Embedding Model</label>
+              <ui5-input 
+                id="embedding-model-input"
+                ngDefaultControl 
+                [(ngModel)]="draftStore.embedding_model" 
+                name="embeddingModel"
+                placeholder="default"
+                accessible-name="Embedding model name">
+              </ui5-input>
+            </div>
             <div class="form-actions">
-              <ui5-button design="Emphasized" (click)="createStore()" [disabled]="mutating">Create</ui5-button>
+              <ui5-button 
+                design="Emphasized" 
+                type="Submit"
+                (click)="createStore()" 
+                [disabled]="mutating || !draftStore.table_name.trim()">
+                {{ mutating ? 'Creating...' : 'Create' }}
+              </ui5-button>
               <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating">Cancel</ui5-button>
             </div>
-          </div>
+          </form>
         </ui5-card>
 
         <div class="columns">
           <div class="left-panel">
-            <ui5-card>
-              <ui5-card-header slot="header" title-text="Knowledge Bases" [additionalText]="vectorStores.length + ''"></ui5-card-header>
-              <ui5-list mode="SingleSelect" (item-click)="selectStore($event)">
+            <ui5-card [class.card-loading]="storesLoading">
+              <ui5-card-header 
+                slot="header" 
+                title-text="Knowledge Bases" 
+                subtitle-text="Vector stores for RAG"
+                [additionalText]="vectorStores.length + ''">
+              </ui5-card-header>
+              <ui5-list 
+                mode="SingleSelect" 
+                (item-click)="selectStore($event)"
+                aria-label="Select a knowledge base">
                 <ui5-li
-                  *ngFor="let store of vectorStores; let i = index"
+                  *ngFor="let store of vectorStores; let i = index; trackBy: trackByTableName"
                   [attr.data-index]="i"
-                  [description]="store.documents_added + ' documents · ' + store.embedding_model">
+                  [description]="store.documents_added + ' documents · ' + store.embedding_model"
+                  [attr.aria-selected]="selectedStore?.table_name === store.table_name">
                   {{ store.table_name }}
                 </ui5-li>
               </ui5-list>
-              <div *ngIf="!storesLoading && vectorStores.length === 0" class="empty-state">
-                No knowledge bases found.
-              </div>
+              
+              <app-empty-state
+                *ngIf="!storesLoading && vectorStores.length === 0"
+                icon="database"
+                title="No Knowledge Bases"
+                description="Create a knowledge base to start indexing documents for RAG queries."
+                [actionText]="canManage ? 'Create Knowledge Base' : ''"
+                (action)="toggleCreateForm()">
+              </app-empty-state>
             </ui5-card>
           </div>
 
           <div class="right-panel">
-            <ui5-card *ngIf="selectedStore">
+            <ui5-card *ngIf="selectedStore" role="region" [attr.aria-label]="'Knowledge base: ' + selectedStore.table_name">
               <ui5-card-header
                 slot="header"
                 [titleText]="'Knowledge Base: ' + selectedStore.table_name"
@@ -87,52 +157,90 @@ function readErrorMessage(error: unknown, fallback: string): string {
               </ui5-card-header>
 
               <div class="store-actions" *ngIf="canManage">
-                <ui5-button design="Transparent" icon="upload" (click)="toggleDocumentForm()">
+                <ui5-button 
+                  design="Transparent" 
+                  icon="upload" 
+                  (click)="toggleDocumentForm()"
+                  aria-label="Add documents to knowledge base">
                   {{ showDocumentForm ? 'Close Document Form' : 'Add Documents' }}
                 </ui5-button>
               </div>
 
               <div *ngIf="showDocumentForm && canManage" class="form-grid bordered-section">
-                <label class="field-label">
-                  Documents
+                <div class="field-group">
+                  <label for="documents-input" class="field-label">
+                    Documents <span class="required">*</span>
+                  </label>
                   <ui5-textarea
+                    id="documents-input"
                     ngDefaultControl
                     [(ngModel)]="documentDraft"
+                    name="documents"
                     [rows]="6"
                     growing
-                    placeholder="Enter one document per line.">
+                    placeholder="Enter one document per line."
+                    accessible-name="Documents to index">
                   </ui5-textarea>
-                </label>
+                  <span class="field-hint">Enter each document on a separate line</span>
+                </div>
                 <div class="form-actions">
-                  <ui5-button design="Emphasized" (click)="addDocumentsToStore()" [disabled]="mutating">Index Documents</ui5-button>
+                  <ui5-button 
+                    design="Emphasized" 
+                    (click)="addDocumentsToStore()" 
+                    [disabled]="mutating || !documentDraft.trim()">
+                    {{ mutating ? 'Indexing...' : 'Index Documents' }}
+                  </ui5-button>
                 </div>
               </div>
 
               <div class="query-area">
-                <ui5-textarea ngDefaultControl [(ngModel)]="queryText" placeholder="Enter your question..." [rows]="3"></ui5-textarea>
-                <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="queryLoading">
+                <div class="field-group">
+                  <label for="query-input" class="field-label">Ask a Question</label>
+                  <ui5-textarea 
+                    id="query-input"
+                    ngDefaultControl 
+                    [(ngModel)]="queryText" 
+                    name="query"
+                    placeholder="Enter your question..." 
+                    [rows]="3"
+                    accessible-name="RAG query input">
+                  </ui5-textarea>
+                </div>
+                <ui5-button 
+                  design="Emphasized" 
+                  icon="search"
+                  (click)="runQuery()" 
+                  [disabled]="queryLoading || !queryText.trim()"
+                  aria-label="Search knowledge base">
                   {{ queryLoading ? 'Searching...' : 'Search' }}
                 </ui5-button>
               </div>
 
-              <div *ngIf="ragResult" class="result-area">
-                <h4>Answer</h4>
-                <p>{{ ragResult.answer }}</p>
-                <h4>Context Documents</h4>
-                <ui5-list *ngIf="ragResult.context_docs.length > 0; else emptyContext">
-                  <ui5-li *ngFor="let doc of ragResult.context_docs">{{ formatContextDoc(doc) }}</ui5-li>
-                </ui5-list>
-                <ng-template #emptyContext>
-                  <div class="empty-state">No context documents were returned for this query.</div>
-                </ng-template>
+              <div *ngIf="ragResult" class="result-area" role="region" aria-label="Query results">
+                <div class="answer-section">
+                  <h4>Answer</h4>
+                  <p class="answer-text">{{ ragResult.answer }}</p>
+                </div>
+                <div class="context-section">
+                  <h4>Context Documents</h4>
+                  <ui5-list *ngIf="ragResult.context_docs.length > 0; else emptyContext" aria-label="Context documents">
+                    <ui5-li *ngFor="let doc of ragResult.context_docs; trackBy: trackByIndex">
+                      {{ formatContextDoc(doc) }}
+                    </ui5-li>
+                  </ui5-list>
+                  <ng-template #emptyContext>
+                    <p class="no-context">No context documents were returned for this query.</p>
+                  </ng-template>
+                </div>
               </div>
             </ui5-card>
 
             <ui5-card *ngIf="!selectedStore" class="full-width-card">
-              <ui5-card-header slot="header" title-text="Select a Knowledge Base"></ui5-card-header>
-              <div class="empty-state">
-                Choose a knowledge base from the left to search or add documents.
-              </div>
+              <app-empty-state
+                icon="hint"
+                title="Select a Knowledge Base"
+                description="Choose a knowledge base from the left panel to search or add documents.">
+              </app-empty-state>
             </ui5-card>
           </div>
         </div>
@@ -145,6 +253,20 @@ function readErrorMessage(error: unknown, fallback: string): string {
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .loading-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      gap: 1rem;
+    }
+
+    .loading-text {
+      color: var(--sapContent_LabelColor);
     }
 
     .columns {
@@ -169,19 +291,47 @@ function readErrorMessage(error: unknown, fallback: string): string {
       }
     }
 
+    .card-loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .create-form-card {
+      max-width: 500px;
+    }
+
     .form-grid {
       padding: 1rem;
       display: grid;
       gap: 1rem;
     }
 
-    .field-label {
-      display: grid;
+    .field-group {
+      display: flex;
+      flex-direction: column;
       gap: 0.5rem;
+    }
+
+    .field-label {
+      color: var(--sapContent_LabelColor);
+      font-weight: 500;
+    }
+
+    .required {
+      color: var(--sapNegativeColor, #b00);
+    }
+
+    .field-hint {
+      font-size: var(--sapFontSmallSize);
       color: var(--sapContent_LabelColor);
     }
 
-    .form-actions,
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
     .store-actions {
       display: flex;
       gap: 0.5rem;
@@ -192,7 +342,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
     .query-area {
       padding: 1rem;
       display: grid;
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
     .bordered-section {
@@ -204,16 +354,44 @@ function readErrorMessage(error: unknown, fallback: string): string {
       padding: 1rem;
       border-top: 1px solid var(--sapList_BorderColor);
       display: grid;
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
-    .empty-state {
+    .answer-section h4,
+    .context-section h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: var(--sapFontSize);
+      font-weight: 600;
+      color: var(--sapTextColor);
+    }
+
+    .answer-text {
+      margin: 0;
+      line-height: 1.6;
+      background: var(--sapList_Background);
       padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--sapList_BorderColor);
+    }
+
+    .no-context {
+      margin: 0;
       color: var(--sapContent_LabelColor);
+      font-style: italic;
     }
 
     .full-width-card {
       width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .rag-container {
+        padding: 0.75rem;
+      }
+
+      .hide-mobile {
+        display: none;
+      }
     }
   `]
 })
@@ -392,6 +570,14 @@ export class RagStudioComponent implements OnInit {
           this.queryLoading = false;
         }
       });
+  }
+
+  trackByTableName(index: number, store: VectorStore): string {
+    return store.table_name;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 
   formatContextDoc(doc: unknown): string {

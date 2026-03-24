@@ -10,7 +10,7 @@
 import { Injectable, OnDestroy, Inject, Optional, InjectionToken } from '@angular/core';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AgUiClient } from '../../../../ag-ui-angular/src/lib/services/ag-ui-client.service';
+import { AgUiClient } from '@ui5/ag-ui-angular';
 import type {
   AgUiEvent,
   ToolCallArgsDoneEvent,
@@ -18,7 +18,7 @@ import type {
   ToolCallResultEvent,
   ToolCallStartEvent,
   UiComponentEvent,
-} from '../../../../ag-ui-angular/src/lib/types/ag-ui-events';
+} from '@ui5/ag-ui-angular';
 import { ConfirmationResult } from './governance.service';
 
 // =============================================================================

@@ -10,9 +10,8 @@
 import { Injectable, OnDestroy, Inject, Optional, InjectionToken } from '@angular/core';
 import { Subject, BehaviorSubject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
-import { AgUiClient } from '../../../../ag-ui-angular/src/lib/services/ag-ui-client.service';
-import { AgUiToolRegistry } from '../../../../ag-ui-angular/src/lib/services/tool-registry.service';
-import { ToolCallArgsDoneEvent, ToolCallStartEvent } from '../../../../ag-ui-angular/src/lib/types/ag-ui-events';
+import { AgUiClient, AgUiToolRegistry } from '@ui5/ag-ui-angular';
+import { ToolCallArgsDoneEvent, ToolCallStartEvent } from '@ui5/ag-ui-angular';
 import { AuditService } from './audit.service';
 
 // =============================================================================

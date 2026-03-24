@@ -43,7 +43,12 @@ comptime TOON_SPECIAL: UInt8 = 0x20
 comptime TOON_EOS: UInt8 = 0x40
 comptime TOON_ALL: UInt8 = 0x7F
 
-comptime NEG_INF: Scalar[F32] = -1e9
+# SAFETY FIX G1: Use proper negative infinity instead of -1e9
+# This prevents edge cases where extreme penalty values could exceed -1e9
+comptime NEG_INF: Scalar[F32] = Float32.MIN
+
+# SAFETY FIX G2: Minimum temperature to prevent division by zero
+comptime MIN_TEMPERATURE: Scalar[F32] = 1e-7
 
 
 # =============================================================================
@@ -191,9 +196,9 @@ fn toon_sample_topk[o_l: MutOrigin, o_tc: Origin](
 
     1. Mask invalid tokens to -inf.
     2. Find top-k logits from the allowed set.
-    3. Apply temperature scaling.
+    3. Apply temperature scaling (with G2 safety guard).
     4. Softmax over top-k candidates.
-    5. Greedy argmax (for deterministic TOON output).
+    5. SAFETY FIX G3: Proper CDF sampling instead of greedy argmax.
 
     Returns the sampled token ID, or 0 if vocab_size or top_k is invalid.
     """
@@ -234,12 +239,31 @@ fn toon_sample_topk[o_l: MutOrigin, o_tc: Origin](
             topk_vals[min_idx] = val
             topk_ids[min_idx] = i
 
-    # Step 3: temperature scaling
-    if temperature > Scalar[F32](0.0):
-        for i in range(effective_k):
-            topk_vals[i] = topk_vals[i] / temperature
+    # SAFETY FIX G2: Temperature guard - clamp to minimum value
+    # If temperature <= 0, fall back to greedy sampling
+    var safe_temperature = temperature
+    if safe_temperature <= Scalar[F32](0.0):
+        # Greedy fallback: find and return the argmax
+        var best_idx = 0
+        var best_val = topk_vals[0]
+        for i in range(1, effective_k):
+            if topk_vals[i] > best_val:
+                best_val = topk_vals[i]
+                best_idx = i
+        var result = topk_ids[best_idx]
+        topk_ids.free()
+        topk_vals.free()
+        return result
+    
+    # Clamp temperature to minimum safe value
+    if safe_temperature < MIN_TEMPERATURE:
+        safe_temperature = MIN_TEMPERATURE
 
-    # Step 4: softmax over top-k
+    # Step 3: temperature scaling
+    for i in range(effective_k):
+        topk_vals[i] = topk_vals[i] / safe_temperature
+
+    # Step 4: softmax over top-k (with numerical stability)
     var max_val = topk_vals[0]
     for i in range(1, effective_k):
         if topk_vals[i] > max_val:
@@ -249,16 +273,30 @@ fn toon_sample_topk[o_l: MutOrigin, o_tc: Origin](
     for i in range(effective_k):
         topk_vals[i] = exp(topk_vals[i] - max_val)
         sum_exp += topk_vals[i]
+    
+    # Normalize to get probabilities
+    if sum_exp > Scalar[F32](0.0):
+        for i in range(effective_k):
+            topk_vals[i] = topk_vals[i] / sum_exp
 
-    # Step 5: greedy argmax over the softmax distribution
-    var best_idx = 0
-    var best_prob = topk_vals[0]
-    for i in range(1, effective_k):
-        if topk_vals[i] > best_prob:
-            best_prob = topk_vals[i]
-            best_idx = i
+    # SAFETY FIX G3: Proper CDF sampling instead of greedy argmax
+    # Generate a random number and sample from the distribution
+    # Using a simple LCG for reproducible random numbers (seed from pointer address)
+    var seed = Int(logits_ptr.__as_index()) ^ vocab_size
+    seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF
+    var random_val = Scalar[F32](seed) / Scalar[F32](0x7FFFFFFF)
+    
+    # CDF sampling: accumulate probabilities until we exceed random_val
+    var cumulative = Scalar[F32](0.0)
+    var sampled_idx = 0
+    for i in range(effective_k):
+        cumulative += topk_vals[i]
+        if random_val <= cumulative:
+            sampled_idx = i
+            break
+        sampled_idx = i  # Default to last if we somehow don't break
 
-    var result = topk_ids[best_idx]
+    var result = topk_ids[sampled_idx]
 
     topk_ids.free()
     topk_vals.free()

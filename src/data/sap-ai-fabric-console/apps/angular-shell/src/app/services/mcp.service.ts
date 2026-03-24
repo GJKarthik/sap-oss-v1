@@ -7,7 +7,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, catchError, forkJoin, interval, map, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, catchError, forkJoin, interval, map, of, switchMap, timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -172,6 +172,7 @@ export interface OperationsDashboard {
 export class McpService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
+  private readonly requestTimeoutMs = 15000;
 
   private requestId = 0;
   private correlationCounter = 0;
@@ -297,6 +298,10 @@ export class McpService {
     };
   }
 
+  private withRequestTimeout<T>(request$: Observable<T>): Observable<T> {
+    return request$.pipe(timeout({ first: this.requestTimeoutMs }));
+  }
+
   private mcpRequest<T>(endpoint: string, method: string, params: Record<string, unknown> = {}): Observable<T> {
     const request: MCPRequest = {
       jsonrpc: '2.0',
@@ -305,7 +310,9 @@ export class McpService {
       params
     };
 
-    return this.http.post<MCPResponse<T>>(endpoint, request, { headers: this.getHeaders() }).pipe(
+    return this.withRequestTimeout(
+      this.http.post<MCPResponse<T>>(endpoint, request, { headers: this.getHeaders() })
+    ).pipe(
       map(response => {
         if (response.error) {
           throw new Error(`MCP Error ${response.error.code}: ${response.error.message}`);
@@ -332,7 +339,9 @@ export class McpService {
   // ===========================================================================
 
   fetchDeployments(): Observable<Deployment[]> {
-    return this.http.get<DeploymentListResponse>(`${environment.apiBaseUrl}/deployments`).pipe(
+    return this.withRequestTimeout(
+      this.http.get<DeploymentListResponse>(`${environment.apiBaseUrl}/deployments`)
+    ).pipe(
       map(result => {
         const deployments = (result.resources || []).map(deployment => this.normalizeDeployment(deployment));
         this.deploymentsSubject.next(deployments);
@@ -342,23 +351,29 @@ export class McpService {
   }
 
   createDeployment(scenarioId: string, configuration: Record<string, unknown> = {}): Observable<Deployment> {
-    return this.http.post<DeploymentResponse>(`${environment.apiBaseUrl}/deployments`, {
-      scenario_id: scenarioId,
-      configuration,
-    }).pipe(
+    return this.withRequestTimeout(
+      this.http.post<DeploymentResponse>(`${environment.apiBaseUrl}/deployments`, {
+        scenario_id: scenarioId,
+        configuration,
+      })
+    ).pipe(
       map(deployment => this.normalizeDeployment(deployment))
     );
   }
 
   updateDeploymentStatus(deploymentId: string, targetStatus: string): Observable<{ id: string; target_status: string }> {
-    return this.http.patch<{ id: string; target_status: string }>(
-      `${environment.apiBaseUrl}/deployments/${deploymentId}/status`,
-      { target_status: targetStatus }
+    return this.withRequestTimeout(
+      this.http.patch<{ id: string; target_status: string }>(
+        `${environment.apiBaseUrl}/deployments/${deploymentId}/status`,
+        { target_status: targetStatus }
+      )
     );
   }
 
   deleteDeployment(deploymentId: string): Observable<void> {
-    return this.http.delete<void>(`${environment.apiBaseUrl}/deployments/${deploymentId}`);
+    return this.withRequestTimeout(
+      this.http.delete<void>(`${environment.apiBaseUrl}/deployments/${deploymentId}`)
+    );
   }
 
   // ===========================================================================
@@ -395,7 +410,9 @@ export class McpService {
   // ===========================================================================
 
   fetchVectorStores(): Observable<VectorStore[]> {
-    return this.http.get<VectorStore[]>(`${environment.apiBaseUrl}/rag/stores`).pipe(
+    return this.withRequestTimeout(
+      this.http.get<VectorStore[]>(`${environment.apiBaseUrl}/rag/stores`)
+    ).pipe(
       map(result => {
         const stores = result || [];
         this.vectorStoresSubject.next(stores);
@@ -405,18 +422,22 @@ export class McpService {
   }
 
   createVectorStore(tableName: string, embeddingModel = 'default'): Observable<VectorStore> {
-    return this.http.post<VectorStore>(`${environment.apiBaseUrl}/rag/stores`, {
-      table_name: tableName,
-      embedding_model: embeddingModel,
-    });
+    return this.withRequestTimeout(
+      this.http.post<VectorStore>(`${environment.apiBaseUrl}/rag/stores`, {
+        table_name: tableName,
+        embedding_model: embeddingModel,
+      })
+    );
   }
 
   addDocuments(tableName: string, documents: string[], metadatas?: Record<string, unknown>[]): Observable<{ documents_added: number; status: string }> {
-    return this.http.post<{ documents_added: number; status: string }>(`${environment.apiBaseUrl}/rag/documents`, {
-      table_name: tableName,
-      documents,
-      metadatas,
-    });
+    return this.withRequestTimeout(
+      this.http.post<{ documents_added: number; status: string }>(`${environment.apiBaseUrl}/rag/documents`, {
+        table_name: tableName,
+        documents,
+        metadatas,
+      })
+    );
   }
 
   // ===========================================================================
@@ -424,19 +445,23 @@ export class McpService {
   // ===========================================================================
 
   ragQuery(query: string, tableName: string, k = 4): Observable<RAGResult> {
-    return this.http.post<RAGResult>(`${environment.apiBaseUrl}/rag/query`, {
-      query,
-      table_name: tableName,
-      k,
-    });
+    return this.withRequestTimeout(
+      this.http.post<RAGResult>(`${environment.apiBaseUrl}/rag/query`, {
+        query,
+        table_name: tableName,
+        k,
+      })
+    );
   }
 
   similaritySearch(tableName: string, query: string, k = 4): Observable<{ results: unknown[]; status: string }> {
-    return this.http.post<{ results: unknown[]; status: string }>(`${environment.apiBaseUrl}/rag/similarity-search`, {
-      table_name: tableName,
-      query,
-      k,
-    });
+    return this.withRequestTimeout(
+      this.http.post<{ results: unknown[]; status: string }>(`${environment.apiBaseUrl}/rag/similarity-search`, {
+        table_name: tableName,
+        query,
+        k,
+      })
+    );
   }
 
   // ===========================================================================
@@ -462,10 +487,12 @@ export class McpService {
   // ===========================================================================
 
   kuzuQuery(cypher: string, params?: Record<string, unknown>): Observable<{ rows: unknown[]; rowCount: number }> {
-    return this.http.post<{ rows: unknown[]; row_count: number }>(`${environment.apiBaseUrl}/lineage/query`, {
-      cypher,
-      params,
-    }).pipe(
+    return this.withRequestTimeout(
+      this.http.post<{ rows: unknown[]; row_count: number }>(`${environment.apiBaseUrl}/lineage/query`, {
+        cypher,
+        params,
+      })
+    ).pipe(
       map(result => ({
         rows: result.rows,
         rowCount: result.row_count,
@@ -481,14 +508,16 @@ export class McpService {
     status?: string;
     error?: string;
   }> {
-    return this.http.get<{
-      node_count: number;
-      edge_count: number;
-      node_types: Array<{ type: string; count: number }>;
-      edge_types: Array<{ type: string; count: number }>;
-      status?: string;
-      error?: string;
-    }>(`${environment.apiBaseUrl}/lineage/graph/summary`);
+    return this.withRequestTimeout(
+      this.http.get<{
+        node_count: number;
+        edge_count: number;
+        node_types: Array<{ type: string; count: number }>;
+        edge_types: Array<{ type: string; count: number }>;
+        status?: string;
+        error?: string;
+      }>(`${environment.apiBaseUrl}/lineage/graph/summary`)
+    );
   }
 
   kuzuIndex(entities: {
@@ -496,13 +525,15 @@ export class McpService {
     deployments?: unknown[];
     schemas?: unknown[];
   }): Observable<{ stores_indexed: number; deployments_indexed: number; schemas_indexed: number }> {
-    return this.http.post<{ stores_indexed: number; deployments_indexed: number; schemas_indexed: number }>(
-      `${environment.apiBaseUrl}/lineage/index`,
-      {
-        vector_stores: entities.vector_stores || [],
-        deployments: entities.deployments || [],
-        schemas: entities.schemas || [],
-      }
+    return this.withRequestTimeout(
+      this.http.post<{ stores_indexed: number; deployments_indexed: number; schemas_indexed: number }>(
+        `${environment.apiBaseUrl}/lineage/index`,
+        {
+          vector_stores: entities.vector_stores || [],
+          deployments: entities.deployments || [],
+          schemas: entities.schemas || [],
+        }
+      )
     );
   }
 
@@ -512,7 +543,9 @@ export class McpService {
 
   getDashboardStats(): Observable<DashboardStats> {
     return forkJoin({
-      dashboard: this.http.get<DashboardStatsResponse>(`${environment.apiBaseUrl}/metrics/dashboard`),
+      dashboard: this.withRequestTimeout(
+        this.http.get<DashboardStatsResponse>(`${environment.apiBaseUrl}/metrics/dashboard`)
+      ),
       streams: this.fetchStreams(),
     }).pipe(
       map(({ dashboard, streams }) => {
@@ -535,7 +568,9 @@ export class McpService {
   }
 
   getOperationsDashboard(): Observable<OperationsDashboard> {
-    return this.http.get<OperationsDashboard>(`${environment.apiBaseUrl}/metrics/operations`).pipe(
+    return this.withRequestTimeout(
+      this.http.get<OperationsDashboard>(`${environment.apiBaseUrl}/metrics/operations`)
+    ).pipe(
       catchError(() => of({
         window_seconds: 300,
         api: {

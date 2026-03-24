@@ -3,6 +3,7 @@
  *
  * Uses UI5 Web Components following ui5-webcomponents-ngx standards
  * Connects to real MCP backends (langchain-hana, ai-core-streaming)
+ * Enhanced with accessibility features and responsive design
  */
 
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
@@ -12,40 +13,55 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '../../services/mcp.service';
+import { DateFormatPipe } from '../../shared';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, Ui5WebcomponentsModule, DateFormatPipe],
   template: `
     <!-- Page Header -->
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">Dashboard</ui5-title>
-        <ui5-button slot="endContent" icon="refresh" (click)="refresh()">
-          Refresh
+        <ui5-button 
+          slot="endContent" 
+          icon="refresh" 
+          (click)="refresh()"
+          [disabled]="loading"
+          aria-label="Refresh dashboard data">
+          {{ loading ? 'Loading...' : 'Refresh' }}
         </ui5-button>
       </ui5-bar>
 
       <!-- Main Content -->
-      <div class="dashboard-content">
+      <div class="dashboard-content" role="region" aria-label="Dashboard overview">
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" *ngIf="loading && !error" role="status" aria-live="polite">
+          <ui5-busy-indicator active size="L"></ui5-busy-indicator>
+          <span class="loading-text">Loading dashboard data...</span>
+        </div>
+        
         <ui5-message-strip
           *ngIf="error"
           design="Negative"
-          [hideCloseButton]="true">
+          [hideCloseButton]="false"
+          (close)="error = ''"
+          role="alert">
           {{ error }}
         </ui5-message-strip>
         
         <!-- Health Status Banner -->
         <ui5-message-strip 
-          *ngIf="health.overall !== 'healthy'"
+          *ngIf="health.overall !== 'healthy' && health.overall !== 'unknown'"
           [design]="health.overall === 'error' ? 'Negative' : 'Critical'"
-          [hideCloseButton]="true">
+          [hideCloseButton]="true"
+          role="alert">
           {{ getHealthMessage() }}
         </ui5-message-strip>
 
         <!-- Stats Cards Row -->
-        <div class="stats-grid">
+        <div class="stats-grid" [class.loading]="loading">
           
           <!-- Services Health Card -->
           <ui5-card class="stat-card">
@@ -220,6 +236,22 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
       padding: 1rem;
       max-width: 1400px;
       margin: 0 auto;
+      position: relative;
+      min-height: 400px;
+    }
+    
+    .loading-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      gap: 1rem;
+    }
+    
+    .loading-text {
+      color: var(--sapContent_LabelColor);
+      font-size: var(--sapFontSize);
     }
     
     .stats-grid {
@@ -227,10 +259,24 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1rem;
       margin-bottom: 1rem;
+      transition: opacity 0.2s ease;
+    }
+    
+    .stats-grid.loading {
+      opacity: 0.6;
+      pointer-events: none;
     }
     
     .stat-card {
       min-height: 180px;
+      max-width: 400px;
+    }
+    
+    @media (min-width: 1200px) {
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 380px));
+        justify-content: start;
+      }
     }
     
     .card-content {
@@ -272,6 +318,10 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
       padding: 1rem;
     }
     
+    .actions-card {
+      max-width: 800px;
+    }
+    
     .activity-card {
       margin-top: 1rem;
     }
@@ -279,10 +329,30 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
     .empty-state {
       padding: 1rem;
       color: var(--sapContent_LabelColor);
+      text-align: center;
     }
     
     ui5-message-strip {
       margin-bottom: 1rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .dashboard-content {
+        padding: 0.75rem;
+      }
+      
+      .stat-value {
+        font-size: 2rem;
+      }
+      
+      .quick-actions {
+        flex-direction: column;
+      }
+      
+      .quick-actions ui5-button {
+        width: 100%;
+      }
     }
   `]
 })

@@ -1,0 +1,22 @@
+{
+  "name": "ag-ui-angular",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ag-ui-angular/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/ag-ui-angular/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/ag-ui-angular"],
+      "options": {
+        "jestConfig": "libs/ag-ui-angular/jest.config.ts"
+      }
+    }
+  }
+}
