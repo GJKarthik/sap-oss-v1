@@ -588,35 +588,76 @@ class MCPServer:
         }
 
     def _handle_ai_chat(self, args: dict) -> dict:
-        config = get_config()
+        """
+        AI Chat with PII-aware routing.
+        
+        Routes to vLLM (on-premise) if PII is detected in the message,
+        otherwise routes to AI Core (cloud). This implements the Mangle
+        rules from domain/agents.mg:
+        - route_to_backend(Query, vllm) :- contains_pii(Query).
+        - route_to_backend(Query, aicore) :- default.
+        """
         messages = parse_json_arg(args.get("messages", "[]"), [])
         if not isinstance(messages, list) or len(messages) == 0:
             return {"content": "messages must be a non-empty JSON array", "error": True}
         
+        # Extract context for data classification
+        context = {
+            "table_name": args.get("table_name", ""),
+            "data_class": args.get("data_class", ""),
+        }
+        
         try:
-            deployments = aicore_request(config, "GET", "/v2/lm/deployments")
-            resources = deployments.get("resources", [])
-            if not resources:
-                return {"content": "No AI deployment available", "error": True}
+            # Use the LLM router for PII-aware routing
+            from llm.router import get_router
+            router = get_router()
             
-            deployment = resources[0]
-            is_anthropic = "anthropic" in str(deployment.get("details", {})).lower()
+            result = router.chat(messages, context=context)
             
-            if is_anthropic:
-                result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/invoke", {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 1024,
-                    "messages": messages,
-                })
-                content = result.get("content", [{}])[0].get("text", "")
-            else:
-                result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/chat/completions", {
-                    "messages": messages,
-                    "max_tokens": 1024,
-                })
-                content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            # Log the routing decision for audit
+            self.facts["tool_invocation"].append({
+                "tool": "ai_chat",
+                "backend": result.get("routing", {}).get("backend", "unknown"),
+                "contains_pii": result.get("routing", {}).get("contains_pii", False),
+                "routing_reason": result.get("routing", {}).get("routing_reason", ""),
+                "timestamp": __import__("time").time(),
+            })
             
-            return {"content": content, "model": deployment["id"]}
+            return {
+                "content": result.get("content", ""),
+                "backend": result.get("backend", "unknown"),
+                "routing": result.get("routing", {}),
+                "model": result.get("model") or result.get("deployment"),
+            }
+        except ImportError:
+            # Fallback to direct AI Core if router not available
+            config = get_config()
+            try:
+                deployments = aicore_request(config, "GET", "/v2/lm/deployments")
+                resources = deployments.get("resources", [])
+                if not resources:
+                    return {"content": "No AI deployment available", "error": True}
+                
+                deployment = resources[0]
+                is_anthropic = "anthropic" in str(deployment.get("details", {})).lower()
+                
+                if is_anthropic:
+                    result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/invoke", {
+                        "anthropic_version": "bedrock-2023-05-31",
+                        "max_tokens": 1024,
+                        "messages": messages,
+                    })
+                    content = result.get("content", [{}])[0].get("text", "")
+                else:
+                    result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/chat/completions", {
+                        "messages": messages,
+                        "max_tokens": 1024,
+                    })
+                    content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                
+                return {"content": content, "model": deployment["id"], "backend": "aicore"}
+            except Exception as e:
+                return {"content": str(e), "error": True}
         except Exception as e:
             return {"content": str(e), "error": True}
 
