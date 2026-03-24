@@ -334,6 +334,7 @@ export class ShellComponent implements OnInit {
     { id: 'streaming', text: 'Streaming', icon: 'play', route: '/streaming', description: 'Manage streaming sessions' },
     { id: 'deployments', text: 'Deployments', icon: 'machine', route: '/deployments', description: 'Manage AI model deployments' },
     { id: 'rag', text: 'RAG Studio', icon: 'documents', route: '/rag', description: 'Retrieval-Augmented Generation workspace' },
+    { id: 'data-quality', text: 'Data Quality', icon: 'validate', route: '/data-quality', description: 'AI-powered data validation and cleaning' },
     { id: 'governance', text: 'Governance', icon: 'shield', route: '/governance', description: 'Configure governance rules and policies' },
     { id: 'data', text: 'Data Explorer', icon: 'database', route: '/data', description: 'Explore vector stores and data' },
     { id: 'playground', text: 'Playground', icon: 'lab', route: '/playground', description: 'Test AI prompts and interactions' },

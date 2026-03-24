@@ -271,6 +271,70 @@ services:
       - sap-ai-fabric-network
     restart: unless-stopped
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # Data Cleaning Copilot (MCP Server)
+  # AI-powered data quality validation and cleaning
+  # Provides: data_quality_check, schema_analysis, data_profiling,
+  #           anomaly_detection, generate_cleaning_query
+  # ─────────────────────────────────────────────────────────────────────────
+  data-cleaning-copilot:
+    build:
+      context: ../src/generativeUI/data-cleaning-copilot-main
+      dockerfile: Dockerfile
+    container_name: sap-ai-data-cleaning-copilot
+    ports:
+      - "${DATA_CLEANING_MCP_PORT:-9110}:9110"
+    environment:
+      - MCP_SERVER_PORT=9110
+      - MCP_SERVER_HOST=0.0.0.0
+      # HANA Cloud connection (for schema analysis)
+      - HANA_HOST=${HANA_HOST}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER=${HANA_USER}
+      - HANA_PASSWORD=${HANA_PASSWORD}
+      - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
+      - HANA_URL=${HANA_URL}
+      # vLLM endpoint for on-premise LLM (PII data)
+      - VLLM_URL=http://vllm:8080
+      - PRIVATE_LLM_URL=http://vllm:8080
+      # Mangle router for governance rules
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      # AI Core credentials (for cloud LLM fallback)
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      # Cross-agent MCP endpoints
+      - LANGCHAIN_MCP_URL=http://embedded-hana:8050/mcp
+      - CONTEXT_MCP_URL=http://odata-vocab:9150/mcp
+      - CONSOLE_API_URL=http://api-server:8000/api/v1
+      # Observability
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - kuzu-data:/app/.kuzu-data
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "data-cleaning-copilot"
+      sap.ai.data_security: "confidential"
+      sap.ai.mcp.protocol: "http"
+      sap.ai.mcp.port: "9110"
+    depends_on:
+      vllm:
+        condition: service_healthy
+      embedded-hana:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9110/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
 volumes:
   model-cache:
     driver: local
@@ -278,6 +342,12 @@ volumes:
       type: none
       o: bind
       device: ${MODEL_CACHE_PATH:-./volumes/model-cache}
+  kuzu-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${KUZU_DATA_PATH:-./volumes/kuzu-data}
 
 networks:
   sap-ai-fabric-network:
