@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from ..config import settings
 from ..models import VectorStore as VectorStoreDC
-from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
 from ..store import StoreBackend, get_store
 
 router = APIRouter()
@@ -182,10 +182,18 @@ async def list_vector_stores(
 async def create_vector_store(
     body: VectorStoreCreate,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Register a new vector store and provision the HANA Cloud table."""
     if store.has_record("vector_stores", body.table_name):
+        log_admin_action(
+            actor=current_user,
+            resource="vector_stores",
+            action="create",
+            result="failure",
+            target=body.table_name,
+            reason="already_exists",
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Vector store '{body.table_name}' already exists",
@@ -198,6 +206,14 @@ async def create_vector_store(
 
     vs = VectorStoreDC(table_name=body.table_name, embedding_model=body.embedding_model)
     created = store.set_record("vector_stores", body.table_name, asdict(vs))
+    log_admin_action(
+        actor=current_user,
+        resource="vector_stores",
+        action="create",
+        result="success",
+        target=body.table_name,
+        embedding_model=body.embedding_model,
+    )
     return VectorStoreOut(**created)
 
 
@@ -205,11 +221,19 @@ async def create_vector_store(
 async def add_documents(
     body: DocumentAddRequest,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Add documents to a vector store (persists to HANA and updates registry count)."""
     vs = store.get_record("vector_stores", body.table_name)
     if vs is None:
+        log_admin_action(
+            actor=current_user,
+            resource="vector_stores",
+            action="add_documents",
+            result="failure",
+            target=body.table_name,
+            reason="not_found",
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Vector store '{body.table_name}' not found",
@@ -229,6 +253,14 @@ async def add_documents(
             **record,
             "documents_added": record.get("documents_added", 0) + count,
         },
+    )
+    log_admin_action(
+        actor=current_user,
+        resource="vector_stores",
+        action="add_documents",
+        result="success",
+        target=body.table_name,
+        documents_added=count,
     )
     return DocumentAddResponse(documents_added=count)
 

@@ -11,7 +11,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
 
 router = APIRouter()
 logger = structlog.get_logger()
@@ -107,7 +107,7 @@ async def graph_query(
 @router.post("/index", response_model=GraphIndexResponse)
 async def index_entities(
     body: GraphIndexRequest,
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Upsert entities (vector stores, deployments, schemas) into the KùzuDB lineage graph."""
     stores_indexed = 0
@@ -154,8 +154,24 @@ async def index_entities(
         schemas_indexed = len(body.schemas)
     except Exception as exc:
         logger.error("KùzuDB index failed", error=str(exc))
+        log_admin_action(
+            actor=current_user,
+            resource="lineage",
+            action="index",
+            result="failure",
+            reason=str(exc),
+        )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Graph index error: {exc}")
 
+    log_admin_action(
+        actor=current_user,
+        resource="lineage",
+        action="index",
+        result="success",
+        stores_indexed=stores_indexed,
+        deployments_indexed=deployments_indexed,
+        schemas_indexed=schemas_indexed,
+    )
     return GraphIndexResponse(
         stores_indexed=stores_indexed,
         deployments_indexed=deployments_indexed,

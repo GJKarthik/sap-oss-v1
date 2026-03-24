@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from ..models import Deployment as DeploymentDC
-from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
 from ..store import StoreBackend, get_store
 
 router = APIRouter()
@@ -85,7 +85,7 @@ async def list_deployments(
 async def create_deployment(
     body: DeploymentCreateRequest,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Create a new deployment record tracked against SAP AI Core scenario."""
     dep = DeploymentDC(
@@ -96,6 +96,14 @@ async def create_deployment(
     )
     created = store.set_record("deployments", dep.id, asdict(dep))
     logger.info("Deployment created", deployment_id=dep.id, scenario_id=body.scenario_id)
+    log_admin_action(
+        actor=current_user,
+        resource="deployments",
+        action="create",
+        result="success",
+        target=dep.id,
+        scenario_id=body.scenario_id,
+    )
     return _dict_to_out(created)
 
 
@@ -116,12 +124,21 @@ async def get_deployment(
 async def delete_deployment(
     deployment_id: str,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Delete a deployment record."""
     if not store.delete_record("deployments", deployment_id):
+        log_admin_action(
+            actor=current_user,
+            resource="deployments",
+            action="delete",
+            result="failure",
+            target=deployment_id,
+            reason="not_found",
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Deployment '{deployment_id}' not found")
     logger.info("Deployment deleted", deployment_id=deployment_id)
+    log_admin_action(actor=current_user, resource="deployments", action="delete", result="success", target=deployment_id)
 
 
 @router.patch("/{deployment_id}/status")
@@ -129,7 +146,7 @@ async def update_deployment_status(
     deployment_id: str,
     body: DeploymentStatusUpdateRequest,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Update deployment target status (e.g. RUNNING, STOPPED)."""
     row = store.mutate_record(
@@ -138,5 +155,22 @@ async def update_deployment_status(
         lambda record: {**record, "target_status": body.target_status},
     )
     if row is None:
+        log_admin_action(
+            actor=current_user,
+            resource="deployments",
+            action="update_status",
+            result="failure",
+            target=deployment_id,
+            reason="not_found",
+            target_status=body.target_status,
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Deployment '{deployment_id}' not found")
+    log_admin_action(
+        actor=current_user,
+        resource="deployments",
+        action="update_status",
+        result="success",
+        target=deployment_id,
+        target_status=body.target_status,
+    )
     return {"id": row["id"], "target_status": row["target_status"]}

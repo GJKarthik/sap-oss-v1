@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from ..models import AIModel as AIModelDC
-from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
 from ..store import StoreBackend, get_store
 
 router = APIRouter()
@@ -90,10 +90,18 @@ async def get_model(
 async def register_model(
     body: AIModelCreateRequest,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Register a new AI model in the catalogue."""
     if store.has_record("models", body.id):
+        log_admin_action(
+            actor=current_user,
+            resource="models",
+            action="create",
+            result="failure",
+            target=body.id,
+            reason="already_exists",
+        )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Model '{body.id}' already exists")
     model = AIModelDC(
         id=body.id,
@@ -105,6 +113,7 @@ async def register_model(
         capabilities=body.capabilities,
     )
     created = store.set_record("models", body.id, asdict(model))
+    log_admin_action(actor=current_user, resource="models", action="create", result="success", target=body.id)
     return _dict_to_out(created)
 
 
@@ -112,8 +121,17 @@ async def register_model(
 async def delete_model(
     model_id: str,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Remove a model from the catalogue."""
     if not store.delete_record("models", model_id):
+        log_admin_action(
+            actor=current_user,
+            resource="models",
+            action="delete",
+            result="failure",
+            target=model_id,
+            reason="not_found",
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Model '{model_id}' not found")
+    log_admin_action(actor=current_user, resource="models", action="delete", result="success", target=model_id)

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from ..models import DataSource as DataSourceDC
-from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
 from ..store import StoreBackend, get_store
 
 router = APIRouter()
@@ -76,11 +76,19 @@ async def list_datasources(
 async def create_datasource(
     body: DataSourceCreateRequest,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Register a new data source."""
     ds = DataSourceDC(name=body.name, source_type=body.source_type, config=body.config)
     created = store.set_record("datasources", ds.id, asdict(ds))
+    log_admin_action(
+        actor=current_user,
+        resource="datasources",
+        action="create",
+        result="success",
+        target=ds.id,
+        source_type=body.source_type,
+    )
     return _dict_to_out(created)
 
 
@@ -101,22 +109,39 @@ async def get_datasource(
 async def delete_datasource(
     datasource_id: str,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Remove a data source."""
     if not store.delete_record("datasources", datasource_id):
+        log_admin_action(
+            actor=current_user,
+            resource="datasources",
+            action="delete",
+            result="failure",
+            target=datasource_id,
+            reason="not_found",
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Data source '{datasource_id}' not found")
+    log_admin_action(actor=current_user, resource="datasources", action="delete", result="success", target=datasource_id)
 
 
 @router.post("/{datasource_id}/test")
 async def test_connection(
     datasource_id: str,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Test connectivity to a data source and update its persisted status."""
     row = store.get_record("datasources", datasource_id)
     if row is None:
+        log_admin_action(
+            actor=current_user,
+            resource="datasources",
+            action="test_connection",
+            result="failure",
+            target=datasource_id,
+            reason="not_found",
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Data source '{datasource_id}' not found")
 
     connected = False
@@ -152,4 +177,12 @@ async def test_connection(
     response: dict = {"id": updated["id"], "connection_status": updated["connection_status"]}
     if error_msg:
         response["error"] = error_msg
+    log_admin_action(
+        actor=current_user,
+        resource="datasources",
+        action="test_connection",
+        result="success" if connected else "failure",
+        target=datasource_id,
+        reason=error_msg,
+    )
     return response

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from ..models import GovernanceRule as GovernanceRuleDC
-from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
 from ..store import StoreBackend, get_store
 
 router = APIRouter()
@@ -76,7 +76,7 @@ async def list_rules(
 async def create_rule(
     body: GovernanceRuleCreateRequest,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Create a new governance rule."""
     rule = GovernanceRuleDC(
@@ -86,6 +86,14 @@ async def create_rule(
         description=body.description,
     )
     created = store.set_record("governance_rules", rule.id, asdict(rule))
+    log_admin_action(
+        actor=current_user,
+        resource="governance_rules",
+        action="create",
+        result="success",
+        target=rule.id,
+        rule_type=body.rule_type,
+    )
     return _dict_to_out(created)
 
 
@@ -106,7 +114,7 @@ async def get_rule(
 async def toggle_rule(
     rule_id: str,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Toggle a governance rule active/inactive."""
     row = store.mutate_record(
@@ -119,7 +127,16 @@ async def toggle_rule(
         },
     )
     if row is None:
+        log_admin_action(
+            actor=current_user,
+            resource="governance_rules",
+            action="toggle",
+            result="failure",
+            target=rule_id,
+            reason="not_found",
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")
+    log_admin_action(actor=current_user, resource="governance_rules", action="toggle", result="success", target=rule_id)
     return {"id": row["id"], "active": row["active"]}
 
 
@@ -127,8 +144,17 @@ async def toggle_rule(
 async def delete_rule(
     rule_id: str,
     store: StoreBackend = Depends(get_store),
-    _: UserInfo = Depends(require_admin),
+    current_user: UserInfo = Depends(require_admin),
 ):
     """Delete a governance rule."""
     if not store.delete_record("governance_rules", rule_id):
+        log_admin_action(
+            actor=current_user,
+            resource="governance_rules",
+            action="delete",
+            result="failure",
+            target=rule_id,
+            reason="not_found",
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")
+    log_admin_action(actor=current_user, resource="governance_rules", action="delete", result="success", target=rule_id)
