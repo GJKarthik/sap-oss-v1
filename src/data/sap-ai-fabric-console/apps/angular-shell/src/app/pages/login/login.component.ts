@@ -15,8 +15,8 @@ import { AuthService } from '../../services/auth.service';
       <ui5-card class="login-card">
         <ui5-card-header slot="header" title-text="SAP AI Fabric Console" subtitle-text="Sign in to continue"></ui5-card-header>
         <div class="login-form">
-          <ui5-input [(ngModel)]="username" placeholder="Username" type="Text"></ui5-input>
-          <ui5-input [(ngModel)]="password" placeholder="Password" type="Password"></ui5-input>
+          <ui5-input ngDefaultControl [(ngModel)]="username" placeholder="Username" type="Text"></ui5-input>
+          <ui5-input ngDefaultControl [(ngModel)]="password" placeholder="Password" type="Password"></ui5-input>
           <ui5-button design="Emphasized" (click)="login()" [disabled]="loading">
             {{ loading ? 'Signing in...' : 'Sign In' }}
           </ui5-button>

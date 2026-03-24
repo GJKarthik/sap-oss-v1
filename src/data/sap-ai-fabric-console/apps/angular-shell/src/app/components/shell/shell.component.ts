@@ -26,18 +26,11 @@ interface NavItem {
     <ui5-shellbar
       primary-title="SAP AI Fabric Console"
       secondary-title="Enterprise AI Platform"
-      show-notifications
-      show-product-switch
       (logo-click)="navigateTo('/dashboard')">
       
       <!-- Logo -->
       <img slot="logo" src="assets/sap-logo.svg" alt="SAP Logo" />
-      
-      <!-- Search -->
-      <ui5-input slot="searchField" placeholder="Search..." show-clear-icon>
-        <ui5-icon slot="icon" name="search"></ui5-icon>
-      </ui5-input>
-      
+
       <!-- Profile Menu -->
       <ui5-avatar slot="profile" [attr.initials]="getUserInitials()" color-scheme="Accent6"></ui5-avatar>
     </ui5-shellbar>

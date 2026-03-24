@@ -50,6 +50,27 @@ export interface Deployment {
   creationTime?: string;
 }
 
+interface DeploymentResponse {
+  id: string;
+  status: string;
+  details?: Record<string, unknown>;
+  target_status?: string;
+  scenario_id?: string;
+  creation_time?: string;
+}
+
+interface DeploymentListResponse {
+  resources: DeploymentResponse[];
+  count: number;
+}
+
+interface DashboardStatsResponse {
+  total_deployments: number;
+  running_deployments: number;
+  total_vector_stores: number;
+  total_documents: number;
+}
+
 export interface StreamSession {
   stream_id: string;
   deployment_id: string;
@@ -265,6 +286,17 @@ export class McpService {
     return `console-${Date.now()}-${++this.correlationCounter}`;
   }
 
+  private normalizeDeployment(deployment: DeploymentResponse): Deployment {
+    return {
+      id: deployment.id,
+      status: deployment.status,
+      details: deployment.details,
+      targetStatus: deployment.target_status,
+      scenarioId: deployment.scenario_id,
+      creationTime: deployment.creation_time,
+    };
+  }
+
   private mcpRequest<T>(endpoint: string, method: string, params: Record<string, unknown> = {}): Observable<T> {
     const request: MCPRequest = {
       jsonrpc: '2.0',
@@ -300,18 +332,33 @@ export class McpService {
   // ===========================================================================
 
   fetchDeployments(): Observable<Deployment[]> {
-    return this.callTool<{ resources?: Deployment[]; error?: string }>(
-      this.streamingUrl,
-      'list_deployments',
-      {}
-    ).pipe(
+    return this.http.get<DeploymentListResponse>(`${environment.apiBaseUrl}/deployments`).pipe(
       map(result => {
-        const deployments = result.resources || [];
+        const deployments = (result.resources || []).map(deployment => this.normalizeDeployment(deployment));
         this.deploymentsSubject.next(deployments);
         return deployments;
-      }),
-      catchError(() => of([]))
+      })
     );
+  }
+
+  createDeployment(scenarioId: string, configuration: Record<string, unknown> = {}): Observable<Deployment> {
+    return this.http.post<DeploymentResponse>(`${environment.apiBaseUrl}/deployments`, {
+      scenario_id: scenarioId,
+      configuration,
+    }).pipe(
+      map(deployment => this.normalizeDeployment(deployment))
+    );
+  }
+
+  updateDeploymentStatus(deploymentId: string, targetStatus: string): Observable<{ id: string; target_status: string }> {
+    return this.http.patch<{ id: string; target_status: string }>(
+      `${environment.apiBaseUrl}/deployments/${deploymentId}/status`,
+      { target_status: targetStatus }
+    );
+  }
+
+  deleteDeployment(deploymentId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/deployments/${deploymentId}`);
   }
 
   // ===========================================================================
@@ -328,8 +375,7 @@ export class McpService {
         const streams = result.active_streams || [];
         this.streamsSubject.next(streams);
         return streams;
-      }),
-      catchError(() => of([]))
+      })
     );
   }
 
@@ -349,32 +395,27 @@ export class McpService {
   // ===========================================================================
 
   fetchVectorStores(): Observable<VectorStore[]> {
-    return this.callTool<{ predicate: string; results: VectorStore[] }>(
-      this.langchainUrl,
-      'mangle_query',
-      { predicate: 'vector_stores', args: '[]' }
-    ).pipe(
+    return this.http.get<VectorStore[]>(`${environment.apiBaseUrl}/rag/stores`).pipe(
       map(result => {
-        const stores = result.results || [];
+        const stores = result || [];
         this.vectorStoresSubject.next(stores);
         return stores;
-      }),
-      catchError(() => of([]))
+      })
     );
   }
 
   createVectorStore(tableName: string, embeddingModel = 'default'): Observable<VectorStore> {
-    return this.callTool(this.langchainUrl, 'langchain_vector_store', {
+    return this.http.post<VectorStore>(`${environment.apiBaseUrl}/rag/stores`, {
       table_name: tableName,
-      embedding_model: embeddingModel
+      embedding_model: embeddingModel,
     });
   }
 
   addDocuments(tableName: string, documents: string[], metadatas?: Record<string, unknown>[]): Observable<{ documents_added: number; status: string }> {
-    return this.callTool(this.langchainUrl, 'langchain_add_documents', {
+    return this.http.post<{ documents_added: number; status: string }>(`${environment.apiBaseUrl}/rag/documents`, {
       table_name: tableName,
-      documents: JSON.stringify(documents),
-      metadatas: metadatas ? JSON.stringify(metadatas) : undefined
+      documents,
+      metadatas,
     });
   }
 
@@ -383,18 +424,18 @@ export class McpService {
   // ===========================================================================
 
   ragQuery(query: string, tableName: string, k = 4): Observable<RAGResult> {
-    return this.callTool(this.langchainUrl, 'langchain_rag_chain', {
+    return this.http.post<RAGResult>(`${environment.apiBaseUrl}/rag/query`, {
       query,
       table_name: tableName,
-      k
+      k,
     });
   }
 
   similaritySearch(tableName: string, query: string, k = 4): Observable<{ results: unknown[]; status: string }> {
-    return this.callTool(this.langchainUrl, 'langchain_similarity_search', {
+    return this.http.post<{ results: unknown[]; status: string }>(`${environment.apiBaseUrl}/rag/similarity-search`, {
       table_name: tableName,
       query,
-      k
+      k,
     });
   }
 
@@ -421,10 +462,33 @@ export class McpService {
   // ===========================================================================
 
   kuzuQuery(cypher: string, params?: Record<string, unknown>): Observable<{ rows: unknown[]; rowCount: number }> {
-    return this.callTool(this.langchainUrl, 'kuzu_query', {
+    return this.http.post<{ rows: unknown[]; row_count: number }>(`${environment.apiBaseUrl}/lineage/query`, {
       cypher,
-      params: params ? JSON.stringify(params) : undefined
-    });
+      params,
+    }).pipe(
+      map(result => ({
+        rows: result.rows,
+        rowCount: result.row_count,
+      }))
+    );
+  }
+
+  graphSummary(): Observable<{
+    node_count: number;
+    edge_count: number;
+    node_types: Array<{ type: string; count: number }>;
+    edge_types: Array<{ type: string; count: number }>;
+    status?: string;
+    error?: string;
+  }> {
+    return this.http.get<{
+      node_count: number;
+      edge_count: number;
+      node_types: Array<{ type: string; count: number }>;
+      edge_types: Array<{ type: string; count: number }>;
+      status?: string;
+      error?: string;
+    }>(`${environment.apiBaseUrl}/lineage/graph/summary`);
   }
 
   kuzuIndex(entities: {
@@ -432,11 +496,14 @@ export class McpService {
     deployments?: unknown[];
     schemas?: unknown[];
   }): Observable<{ stores_indexed: number; deployments_indexed: number; schemas_indexed: number }> {
-    return this.callTool(this.langchainUrl, 'kuzu_index', {
-      vector_stores: JSON.stringify(entities.vector_stores || []),
-      deployments: JSON.stringify(entities.deployments || []),
-      schemas: JSON.stringify(entities.schemas || [])
-    });
+    return this.http.post<{ stores_indexed: number; deployments_indexed: number; schemas_indexed: number }>(
+      `${environment.apiBaseUrl}/lineage/index`,
+      {
+        vector_stores: entities.vector_stores || [],
+        deployments: entities.deployments || [],
+        schemas: entities.schemas || [],
+      }
+    );
   }
 
   // ===========================================================================
@@ -445,23 +512,22 @@ export class McpService {
 
   getDashboardStats(): Observable<DashboardStats> {
     return forkJoin({
-      deployments: this.fetchDeployments(),
+      dashboard: this.http.get<DashboardStatsResponse>(`${environment.apiBaseUrl}/metrics/dashboard`),
       streams: this.fetchStreams(),
-      stores: this.fetchVectorStores(),
     }).pipe(
-      map(({ deployments, streams, stores }) => {
+      map(({ dashboard, streams }) => {
         const health = this.healthSubject.getValue();
 
         return {
           servicesHealthy: (health.langchain?.status === 'healthy' ? 1 : 0) +
-                          (health.streaming?.status === 'healthy' ? 1 : 0),
+            (health.streaming?.status === 'healthy' ? 1 : 0),
           totalServices: 2,
-          activeDeployments: deployments.filter(d => d.status === 'RUNNING' || d.status === 'active').length,
-          totalDeployments: deployments.length,
+          activeDeployments: dashboard.running_deployments,
+          totalDeployments: dashboard.total_deployments,
           activeStreams: streams.filter(s => s.status === 'active').length,
           totalStreams: streams.length,
-          vectorStores: stores.length,
-          documentsIndexed: stores.reduce((sum, s) => sum + (s.documents_added || 0), 0),
+          vectorStores: dashboard.total_vector_stores,
+          documentsIndexed: dashboard.total_documents,
           overallHealth: health.overall,
         } satisfies DashboardStats;
       })

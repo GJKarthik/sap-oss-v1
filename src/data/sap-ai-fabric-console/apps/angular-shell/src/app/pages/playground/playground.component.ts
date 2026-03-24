@@ -35,6 +35,7 @@ import { McpService } from '../../services/mcp.service';
         <!-- Input Area -->
         <div class="input-area">
           <ui5-textarea 
+            ngDefaultControl
             [(ngModel)]="inputText"
             placeholder="Type your message..."
             [rows]="3"

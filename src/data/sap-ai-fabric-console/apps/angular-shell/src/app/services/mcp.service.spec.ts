@@ -102,21 +102,15 @@ describe('McpService', () => {
     ];
 
     const resultPromise = firstValueFrom(service.fetchDeployments());
-    const request = httpMock.expectOne(environment.streamingMcpUrl);
+    const request = httpMock.expectOne(`${environment.apiBaseUrl}/deployments`);
 
-    expect(request.request.method).toBe('POST');
-    expect(request.request.body.method).toBe('tools/call');
-    expect(request.request.body.params).toEqual({
-      name: 'list_deployments',
-      arguments: {},
-    });
+    expect(request.request.method).toBe('GET');
 
     request.flush({
-      jsonrpc: '2.0',
-      id: request.request.body.id,
-      result: {
-        content: [{ type: 'text', text: JSON.stringify({ resources: deployments }) }],
-      },
+      resources: [
+        { id: 'deployment-1', status: 'RUNNING', scenario_id: 'scenario-a' },
+      ],
+      count: 1,
     });
 
     await expect(resultPromise).resolves.toEqual(deployments);
@@ -127,6 +121,17 @@ describe('McpService', () => {
     }).unsubscribe();
 
     expect(latestDeployments).toEqual(deployments);
+  });
+
+  it('surfaces deployment request failures instead of converting them into empty lists', async () => {
+    const resultPromise = firstValueFrom(service.fetchDeployments());
+    const request = httpMock.expectOne(`${environment.apiBaseUrl}/deployments`);
+
+    request.flush({ detail: 'backend unavailable' }, { status: 503, statusText: 'Service Unavailable' });
+
+    await expect(resultPromise).rejects.toMatchObject({
+      error: { detail: 'backend unavailable' },
+    });
   });
 
   function flushHealthChecks(langchain: ServiceHealth, streaming: ServiceHealth): void {

@@ -7,8 +7,7 @@
 
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
@@ -17,7 +16,7 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, Ui5WebcomponentsModule],
   template: `
     <!-- Page Header -->
     <ui5-page background-design="Solid">
@@ -30,6 +29,12 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
 
       <!-- Main Content -->
       <div class="dashboard-content">
+        <ui5-message-strip
+          *ngIf="error"
+          design="Negative"
+          [hideCloseButton]="true">
+          {{ error }}
+        </ui5-message-strip>
         
         <!-- Health Status Banner -->
         <ui5-message-strip 
@@ -165,45 +170,47 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
             (click)="toggleActions()">
           </ui5-card-header>
           <div class="quick-actions" *ngIf="showActions">
-            <ui5-button design="Emphasized" icon="add" routerLink="/playground">
+            <ui5-button design="Emphasized" icon="add" (click)="goTo('/playground')">
               New Chat
             </ui5-button>
-            <ui5-button design="Default" icon="documents" routerLink="/rag">
+            <ui5-button design="Default" icon="documents" (click)="goTo('/rag')">
               RAG Studio
             </ui5-button>
-            <ui5-button design="Default" icon="database" routerLink="/data">
+            <ui5-button design="Default" icon="database" (click)="goTo('/data')">
               Data Explorer
             </ui5-button>
-            <ui5-button design="Default" icon="org-chart" routerLink="/lineage">
+            <ui5-button design="Default" icon="org-chart" (click)="goTo('/lineage')">
               Lineage View
             </ui5-button>
           </div>
         </ui5-card>
 
-        <!-- Recent Activity Table -->
-        <ui5-card class="activity-card">
+        <ui5-card class="activity-card" *ngIf="operations">
           <ui5-card-header 
             slot="header" 
-            title-text="Recent Activity"
-            subtitle-text="Last 24 hours">
+            title-text="Operational Alerts"
+            subtitle-text="Real-time platform state">
           </ui5-card-header>
-          <ui5-table>
-            <ui5-table-header-cell><span>Event</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Service</span></ui5-table-header-cell>
+          <ui5-table *ngIf="operations.alerts.length > 0">
+            <ui5-table-header-cell><span>Alert</span></ui5-table-header-cell>
             <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Time</span></ui5-table-header-cell>
-            
-            <ui5-table-row *ngFor="let activity of recentActivity">
-              <ui5-table-cell>{{ activity.event }}</ui5-table-cell>
-              <ui5-table-cell>{{ activity.service }}</ui5-table-cell>
+            <ui5-table-header-cell><span>Observed</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>Threshold</span></ui5-table-header-cell>
+
+            <ui5-table-row *ngFor="let alert of operations.alerts">
+              <ui5-table-cell>{{ alert.name }}</ui5-table-cell>
               <ui5-table-cell>
-                <ui5-tag [design]="activity.status === 'success' ? 'Positive' : 'Negative'">
-                  {{ activity.status }}
+                <ui5-tag [design]="alert.active ? 'Critical' : 'Positive'">
+                  {{ alert.active ? 'Active' : 'Normal' }}
                 </ui5-tag>
               </ui5-table-cell>
-              <ui5-table-cell>{{ activity.time }}</ui5-table-cell>
+              <ui5-table-cell>{{ formatObserved(alert.observed) }}</ui5-table-cell>
+              <ui5-table-cell>{{ alert.threshold }}</ui5-table-cell>
             </ui5-table-row>
           </ui5-table>
+          <div *ngIf="operations.alerts.length === 0" class="empty-state">
+            No operational alerts are active.
+          </div>
         </ui5-card>
       </div>
     </ui5-page>
@@ -268,6 +275,11 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
     .activity-card {
       margin-top: 1rem;
     }
+
+    .empty-state {
+      padding: 1rem;
+      color: var(--sapContent_LabelColor);
+    }
     
     ui5-message-strip {
       margin-bottom: 1rem;
@@ -277,9 +289,11 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
 export class DashboardComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
   
   loading = true;
   showActions = true;
+  error = '';
   
   stats: DashboardStats = {
     servicesHealthy: 0,
@@ -303,12 +317,6 @@ export class DashboardComponent implements OnInit {
     overall: 'unknown'
   };
   operations: OperationsDashboard | null = null;
-  
-  recentActivity = [
-    { event: 'RAG Query', service: 'langchain-hana', status: 'success', time: '2 min ago' },
-    { event: 'Stream Started', service: 'ai-core-streaming', status: 'success', time: '15 min ago' },
-    { event: 'Document Indexed', service: 'langchain-hana', status: 'success', time: '1 hour ago' },
-  ];
 
   ngOnInit(): void {
     this.mcpService.health$
@@ -322,6 +330,7 @@ export class DashboardComponent implements OnInit {
 
   refresh(): void {
     this.loading = true;
+    this.error = '';
     forkJoin({
       stats: this.mcpService.getDashboardStats(),
       operations: this.mcpService.getOperationsDashboard()
@@ -333,11 +342,15 @@ export class DashboardComponent implements OnInit {
           this.operations = operations;
           this.loading = false;
         },
-        error: (err) => {
-          console.error('Failed to load dashboard stats:', err);
+        error: () => {
+          this.error = 'Failed to load dashboard data.';
           this.loading = false;
         }
       });
+  }
+
+  goTo(route: string): void {
+    void this.router.navigate([route]);
   }
 
   getHealthMessage(): string {
@@ -364,6 +377,18 @@ export class DashboardComponent implements OnInit {
 
   getActiveAlertCount(): number {
     return this.operations?.alerts.filter(alert => alert.active).length || 0;
+  }
+
+  formatObserved(observed: unknown): string {
+    if (observed === null || observed === undefined) {
+      return 'n/a';
+    }
+
+    if (typeof observed === 'string' || typeof observed === 'number' || typeof observed === 'boolean') {
+      return String(observed);
+    }
+
+    return JSON.stringify(observed);
   }
 
   toggleActions(): void {

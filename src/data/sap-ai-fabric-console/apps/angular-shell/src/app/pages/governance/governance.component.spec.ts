@@ -76,4 +76,21 @@ describe('GovernanceComponent', () => {
     expect(text).toContain('Disable');
     expect(text).not.toContain('Viewer mode: governance changes are disabled.');
   });
+
+  it('opens the creation form for admin sessions', async () => {
+    await setup('admin');
+    fixture.detectChanges();
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/governance`).flush({
+      rules: [],
+      total: 0,
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleCreateForm();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Rule Name');
+    expect(fixture.nativeElement.textContent).toContain('Rule Type');
+  });
 });

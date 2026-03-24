@@ -3,23 +3,38 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
 import { Deployment, McpService } from '../../services/mcp.service';
 import { DeploymentsComponent } from './deployments.component';
 
 describe('DeploymentsComponent', () => {
   let fixture: ComponentFixture<DeploymentsComponent>;
   let component: DeploymentsComponent;
-  let mcpService: { fetchDeployments: jest.Mock };
+  let mcpService: {
+    fetchDeployments: jest.Mock;
+    createDeployment: jest.Mock;
+    updateDeploymentStatus: jest.Mock;
+    deleteDeployment: jest.Mock;
+  };
 
   beforeEach(async () => {
     mcpService = {
       fetchDeployments: jest.fn(),
+      createDeployment: jest.fn(),
+      updateDeploymentStatus: jest.fn(),
+      deleteDeployment: jest.fn(),
     };
 
     await TestBed.configureTestingModule({
       imports: [DeploymentsComponent],
       providers: [
         { provide: McpService, useValue: mcpService },
+        {
+          provide: AuthService,
+          useValue: {
+            getUser: () => ({ username: 'admin', role: 'admin' }),
+          },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -58,9 +73,9 @@ describe('DeploymentsComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(component.error).toBe('Failed to load deployment data.');
+    expect(component.error).toBe('backend unavailable');
     expect(component.loading).toBe(false);
-    expect(fixture.nativeElement.textContent).toContain('Failed to load deployment data.');
+    expect(fixture.nativeElement.textContent).toContain('backend unavailable');
   });
 
   it('maps status values to UI5 tag designs', () => {
@@ -73,5 +88,19 @@ describe('DeploymentsComponent', () => {
     expect(component.getStatusDesign('failed')).toBe('Negative');
     expect(component.getStatusDesign('inactive')).toBe('Critical');
     expect(component.getStatusDesign('pending')).toBe('Neutral');
+  });
+
+  it('opens the creation form for admin sessions', () => {
+    mcpService.fetchDeployments.mockReturnValue(of([]));
+
+    fixture = TestBed.createComponent(DeploymentsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.toggleCreateForm();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Scenario ID');
+    expect(fixture.nativeElement.textContent).toContain('Configuration JSON');
   });
 });
