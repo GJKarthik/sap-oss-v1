@@ -17,6 +17,19 @@ data-cleaning-copilot/
 │   ├── copilot.py               # Interactive web interface for data exploration
 │   ├── agent_workflow.py        # Automated check generation workflow
 │   └── download_relbench_data.py # Utility to download RelBench datasets
+├── mcp_server/                   # MCP Server (Model Context Protocol)
+│   └── server.py                # JSON-RPC server with data validation tools
+├── llm/                          # LLM Integration
+│   └── router.py                # PII-aware routing (vLLM/AI Core)
+├── hana/                         # HANA Cloud Integration
+│   └── client.py                # Persistence layer for validations & audit
+├── odata/                        # OData Vocabulary
+│   └── vocabulary.py            # Semantic type detection & validation rules
+├── graph/                        # Graph-RAG
+│   └── kuzu_store.py            # KùzuDB for schema lineage
+├── mangle/                       # Mangle Governance Rules
+│   ├── domain/agents.mg         # Agent autonomy & PII routing rules
+│   └── a2a/routing.mg           # Cross-agent communication
 ├── definition/                   # Core framework
 │   ├── base/                    
 │   │   ├── database.py          # Database APIs
@@ -176,6 +189,145 @@ Results are saved to the configured result directory with evaluation metrics and
 3. Define tables using Pandera schemas
 4. Register in `bin/agent_workflow.py` DATABASE_CONFIGS
 
+
+## MCP Server
+
+The Data Cleaning Copilot exposes an MCP (Model Context Protocol) server for integration with SAP AI Fabric and other clients.
+
+### Quick Start
+
+```bash
+# Start the MCP server
+uv run python -m mcp_server.server --port=9110
+
+# Or with authentication
+MCP_AUTH_TOKEN=your-secret-token uv run python -m mcp_server.server
+```
+
+### Available Tools
+
+| Tool | Description | Autonomy |
+|------|-------------|----------|
+| `data_quality_check` | Run quality checks (completeness, accuracy, consistency) | Auto |
+| `schema_analysis` | Analyze schema for issues and recommendations | Auto |
+| `data_profiling` | Profile data distributions and patterns | Auto |
+| `anomaly_detection` | Detect anomalies using statistical/ML methods | Auto |
+| `generate_cleaning_query` | Generate SQL to fix data issues | Requires Approval |
+| `ai_chat` | Chat with AI (PII-aware routing) | Auto |
+| `kuzu_index` | Index schema into KùzuDB graph | Auto |
+| `kuzu_query` | Query the schema graph | Auto |
+| `mangle_query` | Query Mangle governance rules | Auto |
+
+### Docker Deployment
+
+```bash
+cd deploy
+docker-compose -f docker-compose.tier2.yml up -d data-cleaning-copilot
+```
+
+## PII-Aware LLM Routing
+
+The copilot automatically routes LLM requests based on data sensitivity:
+
+```
+┌─────────────────────────────────────────────┐
+│               User Query                     │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────┐
+│        LLM Router (llm/router.py)           │
+│  ┌─────────────────────────────────────┐    │
+│  │ 1. Check PII keywords               │    │
+│  │    (customer, ssn, email, salary)   │    │
+│  │ 2. Check PII patterns               │    │
+│  │    (SSN, credit card, email regex)  │    │
+│  │ 3. Check data classification        │    │
+│  │    (confidential, restricted)       │    │
+│  └─────────────────────────────────────┘    │
+└─────────────────┬───────────────────────────┘
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+┌───────────────┐   ┌───────────────┐
+│ vLLM (On-Prem)│   │ AI Core (Cloud)│
+│ PII Data      │   │ Public Data    │
+└───────────────┘   └───────────────┘
+```
+
+### Configuration
+
+```bash
+# Environment variables
+VLLM_URL=http://localhost:8080        # On-premise vLLM endpoint
+AICORE_BASE_URL=https://...           # SAP AI Core endpoint
+ENFORCE_PII_ROUTING=true              # Enable/disable PII routing
+DEFAULT_LLM_BACKEND=aicore            # Default backend
+```
+
+## HANA Cloud Persistence
+
+Validation results, approval requests, and audit logs are persisted to SAP HANA Cloud.
+
+### Schema
+
+```sql
+DCC_STORE.VALIDATION_RESULTS   -- Validation check results
+DCC_STORE.CHECK_DEFINITIONS    -- Reusable check definitions
+DCC_STORE.APPROVAL_REQUESTS    -- Query approval workflow
+DCC_STORE.AUDIT_LOGS           -- Audit trail with routing info
+```
+
+### Configuration
+
+```bash
+HANA_HOST=your-instance.hanacloud.ondemand.com
+HANA_PORT=443
+HANA_USER=your-user
+HANA_PASSWORD=your-password
+HANA_SCHEMA=DCC_STORE
+```
+
+## OData Vocabulary Integration
+
+Automatic semantic type detection based on column names and OData vocabularies:
+
+```python
+from odata.vocabulary import annotate_table, get_pii_columns_for_table
+
+# Annotate a table
+annotation = annotate_table("Users", [
+    {"name": "Id", "type": "INTEGER"},
+    {"name": "Email", "type": "VARCHAR"},
+    {"name": "FirstName", "type": "VARCHAR"},
+])
+
+# Email and FirstName are detected as PII
+pii_columns = get_pii_columns_for_table("Users", columns)
+# ['Email', 'FirstName']
+```
+
+### Supported Semantic Types
+
+| Type | PII | Validation Rules |
+|------|-----|------------------|
+| `email` | ✓ | format_email, max_length_254 |
+| `phone` | ✓ | format_phone, min_length_7 |
+| `person_name` | ✓ | not_empty, max_length_100 |
+| `address` | ✓ | not_empty, max_length_256 |
+| `amount` | - | numeric, non_negative |
+| `currency` | - | format_currency_code, length_3 |
+| `uuid` | - | format_uuid, length_36 |
+
+## Running Tests
+
+```bash
+# Run all new module tests (111 tests)
+uv run pytest tests/test_hana_client.py tests/test_odata_vocabulary.py tests/test_llm_router.py -v
+
+# Run with coverage
+uv run pytest tests/ --cov=. --cov-report=term-missing
+```
 
 ## Support, Feedback, Contributing
 
