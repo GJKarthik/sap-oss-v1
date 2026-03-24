@@ -714,7 +714,11 @@ def execute_sandboxed_function(
     use_subprocess: bool = True,
 ) -> Tuple[Any, Optional[Exception]]:
     """
-    Execute dynamically generated code in a sandboxed environment.
+    Execute dynamically generated code in a sandboxed subprocess environment.
+
+    SECURITY NOTE: All LLM-generated code MUST be executed via subprocess isolation.
+    The use_subprocess parameter is retained for API compatibility but in-process
+    execution is permanently disabled to prevent arbitrary code execution attacks.
 
     Parameters
     ----------
@@ -725,17 +729,28 @@ def execute_sandboxed_function(
     args : tuple
         Arguments to pass to the function
     namespace : Optional[Dict]
-        Namespace for execution (default: standard imports)
+        Namespace for execution (ignored - subprocess uses fixed safe namespace)
     timeout : float
         Timeout in seconds (default: 30)
+    memory_limit_mb : int
+        Maximum memory allowed in MB (default: 512)
     use_subprocess : bool
-        Whether to use subprocess isolation (default: True)
+        DEPRECATED - Always True. In-process execution is permanently disabled.
+        This parameter is retained only for API compatibility.
 
     Returns
     -------
     Tuple[Any, Optional[Exception]]
         Result and any exception that occurred
     """
+    # SECURITY: Always enforce subprocess isolation regardless of parameter
+    # In-process exec() of LLM-generated code is a critical security vulnerability
+    if not use_subprocess:
+        logger.warning(
+            "use_subprocess=False was requested but is permanently disabled for security. "
+            "All generated code executes in subprocess isolation."
+        )
+
     try:
         _validate_generated_code(func_code, func_name)
     except Exception as exc:
@@ -748,18 +763,6 @@ def execute_sandboxed_function(
             detail=str(exc),
         )
         return None, exc if isinstance(exc, Exception) else ValueError(str(exc))
-
-    if not use_subprocess:
-        error = SandboxSecurityError("In-process execution is disabled for sandboxed generated code")
-        _record_sandbox_audit(
-            func_name=func_name,
-            func_code=func_code,
-            outcome="blocked",
-            timeout=timeout,
-            memory_limit_mb=memory_limit_mb,
-            detail=str(error),
-        )
-        return None, error
 
     _ = namespace  # Retained for backwards-compatible call sites; sandbox uses a fixed safe namespace.
 

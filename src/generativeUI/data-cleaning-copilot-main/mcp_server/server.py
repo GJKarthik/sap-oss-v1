@@ -9,8 +9,10 @@ Provides tools for data cleaning, quality checks, and AI-assisted data validatio
 
 import json
 import os
+import hmac
+import secrets
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Any
+from typing import Any, Optional
 import urllib.request
 import urllib.error
 
@@ -859,6 +861,63 @@ CORS_ALLOWED_ORIGINS = [
     if o.strip()
 ]
 
+# =============================================================================
+# Authentication Configuration
+# =============================================================================
+
+# MCP_AUTH_TOKEN: If set, all requests must include this token in the Authorization header.
+# If not set, authentication is disabled (development mode only).
+# In production, always set MCP_AUTH_TOKEN to a secure random value.
+MCP_AUTH_TOKEN: Optional[str] = os.environ.get("MCP_AUTH_TOKEN")
+
+# MCP_AUTH_REQUIRED: If "true", authentication is mandatory even if MCP_AUTH_TOKEN is not set.
+# This prevents accidental deployment without authentication.
+MCP_AUTH_REQUIRED: bool = os.environ.get("MCP_AUTH_REQUIRED", "false").lower() == "true"
+
+# Allowed hosts that bypass authentication (for internal service-to-service calls)
+MCP_AUTH_BYPASS_HOSTS = set(
+    h.strip() for h in os.environ.get("MCP_AUTH_BYPASS_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip()
+)
+
+
+def _verify_auth(handler: BaseHTTPRequestHandler) -> tuple[bool, Optional[str]]:
+    """
+    Verify authentication for an incoming request.
+    
+    Returns:
+        Tuple of (is_authenticated, error_message)
+        - (True, None) if authenticated
+        - (False, "error message") if not authenticated
+    """
+    # Check if authentication is configured
+    if not MCP_AUTH_TOKEN:
+        if MCP_AUTH_REQUIRED:
+            return False, "Authentication required but MCP_AUTH_TOKEN not configured"
+        # Development mode: no auth required
+        return True, None
+    
+    # Check if request is from a bypass host (internal service calls)
+    client_host = handler.client_address[0] if handler.client_address else ""
+    if client_host in MCP_AUTH_BYPASS_HOSTS:
+        return True, None
+    
+    # Extract and validate Bearer token
+    auth_header = handler.headers.get("Authorization", "")
+    if not auth_header:
+        return False, "Missing Authorization header"
+    
+    if not auth_header.startswith("Bearer "):
+        return False, "Invalid Authorization header format (expected: Bearer <token>)"
+    
+    provided_token = auth_header[7:]  # Strip "Bearer " prefix
+    
+    # Constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(provided_token, MCP_AUTH_TOKEN):
+        return False, "Invalid authentication token"
+    
+    return True, None
+
 
 def _cors_origin(handler: BaseHTTPRequestHandler) -> str | None:
     origin = (handler.headers.get("Origin") or "").strip()
@@ -888,14 +947,30 @@ class MCPHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/health":
+            # Health endpoint does not require authentication
             from datetime import datetime, timezone
-            response = {"status": "healthy", "service": "data-cleaning-copilot-mcp", "timestamp": datetime.now(timezone.utc).isoformat()}
+            response = {
+                "status": "healthy",
+                "service": "data-cleaning-copilot-mcp",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "auth_enabled": MCP_AUTH_TOKEN is not None,
+            }
             self._write_json(200, response)
         else:
             self._write_json(404, {"error": "Not found"})
 
     def do_POST(self):
         if self.path == "/mcp":
+            # Verify authentication for MCP endpoint
+            is_auth, auth_error = _verify_auth(self)
+            if not is_auth:
+                self._write_json(401, {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32000, "message": f"Unauthorized: {auth_error}"}
+                })
+                return
+            
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length <= 0:
                 self._write_json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request: empty body"}})
@@ -932,6 +1007,13 @@ def main():
         if arg.startswith("--port="):
             port = int(arg.split("=")[1])
 
+    # Security status
+    auth_status = "ENABLED" if MCP_AUTH_TOKEN else "DISABLED (dev mode)"
+    if MCP_AUTH_REQUIRED and not MCP_AUTH_TOKEN:
+        print("ERROR: MCP_AUTH_REQUIRED=true but MCP_AUTH_TOKEN is not set.")
+        print("Set MCP_AUTH_TOKEN environment variable or disable MCP_AUTH_REQUIRED.")
+        sys.exit(1)
+
     server = HTTPServer(("", port), MCPHandler)
     print(f"""
 ╔══════════════════════════════════════════════════════════╗
@@ -940,11 +1022,18 @@ def main():
 ╚══════════════════════════════════════════════════════════╝
 
 Server: http://localhost:{port}
+Authentication: {auth_status}
 
 Tools: data_quality_check, schema_analysis, data_profiling,
-       anomaly_detection, generate_cleaning_query, ai_chat, mangle_query
+       anomaly_detection, generate_cleaning_query, ai_chat, mangle_query,
+       kuzu_index, kuzu_query
 
 Resources: data://schemas, data://quality_rules, mangle://facts
+
+Security Notes:
+  - Set MCP_AUTH_TOKEN for production deployments
+  - Set MCP_AUTH_REQUIRED=true to enforce authentication
+  - Bypass hosts: {', '.join(MCP_AUTH_BYPASS_HOSTS) or 'none'}
 """)
     server.serve_forever()
 
