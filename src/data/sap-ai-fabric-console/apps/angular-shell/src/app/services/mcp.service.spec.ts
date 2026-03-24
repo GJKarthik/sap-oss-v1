@@ -8,6 +8,10 @@ import { Deployment, McpService, ServiceHealth } from './mcp.service';
 describe('McpService', () => {
   let service: McpService;
   let httpMock: HttpTestingController;
+  const langchainProxyUrl = `${environment.apiBaseUrl}/mcp/langchain`;
+  const streamingProxyUrl = `${environment.apiBaseUrl}/mcp/streaming`;
+  const langchainHealthUrl = `${environment.apiBaseUrl}/mcp/langchain/health`;
+  const streamingHealthUrl = `${environment.apiBaseUrl}/mcp/streaming/health`;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -58,9 +62,11 @@ describe('McpService', () => {
     ];
 
     const resultPromise = firstValueFrom(service.fetchDeployments());
-    const request = httpMock.expectOne(environment.streamingMcpUrl);
+    const request = httpMock.expectOne(streamingProxyUrl);
 
     expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('X-Correlation-ID')).toMatch(/^console-/);
+    expect(request.request.headers.has('Authorization')).toBe(false);
     expect(request.request.body.method).toBe('tools/call');
     expect(request.request.body.params).toEqual({
       name: 'list_deployments',
@@ -90,10 +96,10 @@ describe('McpService', () => {
     expect(requests).toHaveLength(2);
 
     const langchainRequest = requests.find(request =>
-      request.request.url === environment.langchainMcpUrl.replace('/mcp', '/health')
+      request.request.url === langchainHealthUrl
     );
     const streamingRequest = requests.find(request =>
-      request.request.url === environment.streamingMcpUrl.replace('/mcp', '/health')
+      request.request.url === streamingHealthUrl
     );
 
     expect(langchainRequest).toBeDefined();

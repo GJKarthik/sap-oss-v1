@@ -2,7 +2,7 @@
  * Dashboard Component - Angular/UI5 Version
  *
  * Uses UI5 Web Components following ui5-webcomponents-ngx standards
- * Connects to real MCP backends (langchain-hana, ai-core-streaming)
+ * Loads dashboard and service health metrics from the backend API
  */
 
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
@@ -11,7 +11,20 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.service';
+import { forkJoin } from 'rxjs';
+
+import {
+  DashboardStats,
+  MetricsService,
+  ServiceMetrics,
+  ServiceMetricsMap,
+  ServiceStatus,
+} from '../../services/api/metrics.service';
+
+interface DashboardServiceHealth {
+  service: string;
+  status: ServiceStatus;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -32,7 +45,7 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
         
         <!-- Health Status Banner -->
         <ui5-message-strip 
-          *ngIf="health.overall !== 'healthy'"
+          *ngIf="health.overall === 'degraded' || health.overall === 'error'"
           [design]="health.overall === 'error' ? 'Negative' : 'Critical'"
           [hideCloseButton]="true">
           {{ getHealthMessage() }}
@@ -46,8 +59,8 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
             <ui5-card-header 
               slot="header" 
               title-text="Services"
-              subtitle-text="Backend MCP Services"
-              [additionalText]="stats.servicesHealthy + '/' + stats.totalServices">
+              subtitle-text="Backend Service Health"
+              [additionalText]="stats.services_healthy + '/' + stats.total_services">
               <ui5-icon slot="avatar" name="overview-chart"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
@@ -74,32 +87,32 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
               slot="header" 
               title-text="Model Deployments"
               subtitle-text="AI Core Deployments"
-              [additionalText]="stats.activeDeployments + '/' + stats.totalDeployments">
+              [additionalText]="stats.active_deployments + '/' + stats.total_deployments">
               <ui5-icon slot="avatar" name="machine"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
-              <div class="stat-value">{{ stats.activeDeployments }}</div>
+              <div class="stat-value">{{ stats.active_deployments }}</div>
               <div class="stat-label">Active Models</div>
               <ui5-progress-indicator 
                 [value]="getDeploymentPercentage()"
-                [valueState]="stats.activeDeployments > 0 ? 'Positive' : 'None'">
+                [valueState]="stats.active_deployments > 0 ? 'Positive' : 'None'">
               </ui5-progress-indicator>
             </div>
           </ui5-card>
 
-          <!-- Streams Card -->
+          <!-- Governance Card -->
           <ui5-card class="stat-card">
             <ui5-card-header 
               slot="header" 
-              title-text="Active Streams"
-              subtitle-text="Streaming Sessions"
-              [additionalText]="stats.activeStreams + ''">
-              <ui5-icon slot="avatar" name="play"></ui5-icon>
+              title-text="Governance"
+              subtitle-text="Active policy enforcement"
+              [additionalText]="stats.governance_rules_active + ''">
+              <ui5-icon slot="avatar" name="shield"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
-              <div class="stat-value">{{ stats.activeStreams }}</div>
-              <div class="stat-label">Live Connections</div>
-              <ui5-tag design="Neutral">{{ stats.totalStreams }} total</ui5-tag>
+              <div class="stat-value">{{ stats.governance_rules_active }}</div>
+              <div class="stat-label">Rules Active</div>
+              <ui5-tag design="Neutral">Policy checks enabled</ui5-tag>
             </div>
           </ui5-card>
 
@@ -109,13 +122,29 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
               slot="header" 
               title-text="Vector Stores"
               subtitle-text="HANA Cloud Vector"
-              [additionalText]="stats.vectorStores + ''">
+              [additionalText]="stats.vector_stores + ''">
               <ui5-icon slot="avatar" name="database"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
-              <div class="stat-value">{{ stats.documentsIndexed | number }}</div>
+              <div class="stat-value">{{ stats.documents_indexed | number }}</div>
               <div class="stat-label">Documents Indexed</div>
-              <ui5-tag design="Neutral">{{ stats.vectorStores }} stores</ui5-tag>
+              <ui5-tag design="Neutral">{{ stats.vector_stores }} stores</ui5-tag>
+            </div>
+          </ui5-card>
+
+          <!-- Users Card -->
+          <ui5-card class="stat-card">
+            <ui5-card-header 
+              slot="header" 
+              title-text="Users"
+              subtitle-text="Registered platform access"
+              [additionalText]="stats.registered_users + ''">
+              <ui5-icon slot="avatar" name="employee"></ui5-icon>
+            </ui5-card-header>
+            <div class="card-content">
+              <div class="stat-value">{{ stats.registered_users }}</div>
+              <div class="stat-label">Registered Users</div>
+              <ui5-tag design="Neutral">Workspace access</ui5-tag>
             </div>
           </ui5-card>
         </div>
@@ -239,28 +268,27 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
   `]
 })
 export class DashboardComponent implements OnInit {
-  private readonly mcpService = inject(McpService);
+  private readonly metricsService = inject(MetricsService);
   private readonly destroyRef = inject(DestroyRef);
   
   loading = true;
   showActions = true;
   
   stats: DashboardStats = {
-    servicesHealthy: 0,
-    totalServices: 2,
-    activeDeployments: 0,
-    totalDeployments: 0,
-    activeStreams: 0,
-    totalStreams: 0,
-    vectorStores: 0,
-    documentsIndexed: 0,
-    overallHealth: 'unknown'
+    services_healthy: 0,
+    total_services: 0,
+    active_deployments: 0,
+    total_deployments: 0,
+    vector_stores: 0,
+    documents_indexed: 0,
+    governance_rules_active: 0,
+    registered_users: 0,
   };
   
   health: {
-    langchain: ServiceHealth | null;
-    streaming: ServiceHealth | null;
-    overall: 'healthy' | 'degraded' | 'error' | 'unknown';
+    langchain: DashboardServiceHealth | null;
+    streaming: DashboardServiceHealth | null;
+    overall: ServiceStatus;
   } = {
     langchain: null,
     streaming: null,
@@ -274,22 +302,20 @@ export class DashboardComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.mcpService.health$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(health => {
-        this.health = health;
-      });
-    
     this.refresh();
   }
 
   refresh(): void {
     this.loading = true;
-    this.mcpService.getDashboardStats()
+    forkJoin({
+      stats: this.metricsService.getDashboardStats(),
+      serviceMetrics: this.metricsService.getServiceMetrics(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (stats) => {
+        next: ({ stats, serviceMetrics }) => {
           this.stats = stats;
+          this.health = this.mapHealth(serviceMetrics);
           this.loading = false;
         },
         error: (err) => {
@@ -301,7 +327,7 @@ export class DashboardComponent implements OnInit {
 
   getHealthMessage(): string {
     if (this.health.overall === 'error') {
-      return 'All backend services are unavailable. Please check the MCP servers.';
+      return 'All backend services are unavailable. Please check the metrics API.';
     }
     if (this.health.overall === 'degraded') {
       const issues = [];
@@ -317,8 +343,96 @@ export class DashboardComponent implements OnInit {
   }
 
   getDeploymentPercentage(): number {
-    if (this.stats.totalDeployments === 0) return 0;
-    return Math.round((this.stats.activeDeployments / this.stats.totalDeployments) * 100);
+    if (this.stats.total_deployments === 0) return 0;
+    return Math.round((this.stats.active_deployments / this.stats.total_deployments) * 100);
+  }
+
+  private mapHealth(serviceMetrics: ServiceMetricsMap): {
+    langchain: DashboardServiceHealth | null;
+    streaming: DashboardServiceHealth | null;
+    overall: ServiceStatus;
+  } {
+    const langchain = this.toServiceHealth(
+      this.findServiceMetrics(serviceMetrics, ['langchain-hana-mcp', 'langchain-hana']),
+      'langchain-hana-mcp'
+    );
+    const streaming = this.toServiceHealth(
+      this.findServiceMetrics(serviceMetrics, ['ai-core-streaming-mcp', 'ai-core-streaming']),
+      'ai-core-streaming-mcp'
+    );
+
+    return {
+      langchain,
+      streaming,
+      overall: this.getOverallHealth([langchain, streaming]),
+    };
+  }
+
+  private findServiceMetrics(
+    serviceMetrics: ServiceMetricsMap,
+    serviceNames: string[]
+  ): ServiceMetrics | null {
+    for (const serviceName of serviceNames) {
+      if (serviceMetrics[serviceName]) {
+        return serviceMetrics[serviceName];
+      }
+    }
+
+    return null;
+  }
+
+  private toServiceHealth(
+    serviceMetrics: ServiceMetrics | null,
+    fallbackServiceName: string
+  ): DashboardServiceHealth | null {
+    if (!serviceMetrics) {
+      return null;
+    }
+
+    return {
+      service: serviceMetrics.service || fallbackServiceName,
+      status: this.getServiceStatus(serviceMetrics),
+    };
+  }
+
+  private getServiceStatus(serviceMetrics: ServiceMetrics): ServiceStatus {
+    if (serviceMetrics.status) {
+      return serviceMetrics.status;
+    }
+
+    if (serviceMetrics.error_rate >= 1) {
+      return 'error';
+    }
+
+    if (serviceMetrics.error_rate > 0) {
+      return 'degraded';
+    }
+
+    return 'healthy';
+  }
+
+  private getOverallHealth(services: Array<DashboardServiceHealth | null>): ServiceStatus {
+    const statuses = services
+      .map(service => service?.status)
+      .filter((status): status is ServiceStatus => Boolean(status));
+
+    if (statuses.length === 0) {
+      return 'unknown';
+    }
+
+    if (statuses.every(status => status === 'healthy')) {
+      return 'healthy';
+    }
+
+    if (statuses.every(status => status === 'error')) {
+      return 'error';
+    }
+
+    if (statuses.every(status => status === 'unknown')) {
+      return 'unknown';
+    }
+
+    return 'degraded';
   }
 
   toggleActions(): void {

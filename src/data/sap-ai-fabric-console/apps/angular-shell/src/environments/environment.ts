@@ -1,7 +1,7 @@
 /**
  * Environment Configuration
  *
- * MCP endpoints pointing to existing services in src/data
+ * Frontend environment configuration
  */
 
 export const environment = {
@@ -9,13 +9,6 @@ export const environment = {
 
   // API base URL (FastAPI backend)
   apiBaseUrl: 'http://localhost:8000/api/v1',
-
-  // MCP Endpoints (Backend services from src/data)
-  langchainMcpUrl: 'http://localhost:9140/mcp',
-  streamingMcpUrl: 'http://localhost:9190/mcp',
-
-  // Optional: MCP Authentication Token
-  mcpAuthToken: '',
 
   // HANA Cloud Connection
   hanaHost: '',

@@ -2,7 +2,13 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Deployment, McpService } from '../../services/mcp.service';
+import { Observable, switchMap } from 'rxjs';
+import {
+  Deployment,
+  DeploymentCreateRequest,
+  DeploymentListResponse,
+  DeploymentsService,
+} from '../../services/api/deployments.service';
 
 @Component({
   selector: 'app-deployments',
@@ -27,7 +33,7 @@ import { Deployment, McpService } from '../../services/mcp.service';
             slot="header"
             title-text="AI Core Deployments"
             subtitle-text="Current model deployment inventory"
-            [additionalText]="deployments.length + ''">
+            [additionalText]="deploymentCount + ''">
           </ui5-card-header>
 
           <ui5-table *ngIf="deployments.length > 0">
@@ -42,14 +48,14 @@ import { Deployment, McpService } from '../../services/mcp.service';
               <ui5-table-cell>
                 <ui5-tag [design]="getStatusDesign(deployment.status)">{{ deployment.status }}</ui5-tag>
               </ui5-table-cell>
-              <ui5-table-cell>{{ deployment.targetStatus || 'n/a' }}</ui5-table-cell>
-              <ui5-table-cell>{{ deployment.scenarioId || 'n/a' }}</ui5-table-cell>
-              <ui5-table-cell>{{ deployment.creationTime || 'n/a' }}</ui5-table-cell>
+              <ui5-table-cell>{{ deployment.target_status || 'n/a' }}</ui5-table-cell>
+              <ui5-table-cell>{{ deployment.scenario_id || 'n/a' }}</ui5-table-cell>
+              <ui5-table-cell>{{ deployment.creation_time || 'n/a' }}</ui5-table-cell>
             </ui5-table-row>
           </ui5-table>
 
           <div *ngIf="!loading && deployments.length === 0" class="empty-state">
-            No deployments were returned by the MCP backend.
+            No deployments were returned by the backend API.
           </div>
         </ui5-card>
       </div>
@@ -71,10 +77,11 @@ import { Deployment, McpService } from '../../services/mcp.service';
   `]
 })
 export class DeploymentsComponent implements OnInit {
-  private readonly mcpService = inject(McpService);
+  private readonly deploymentsService = inject(DeploymentsService);
   private readonly destroyRef = inject(DestroyRef);
 
   deployments: Deployment[] = [];
+  deploymentCount = 0;
   loading = false;
   error = '';
 
@@ -86,11 +93,11 @@ export class DeploymentsComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.mcpService.fetchDeployments()
+    this.deploymentsService.listDeployments()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: deployments => {
-          this.deployments = deployments;
+        next: response => {
+          this.applyDeploymentList(response);
           this.loading = false;
         },
         error: () => {
@@ -98,6 +105,53 @@ export class DeploymentsComponent implements OnInit {
           this.loading = false;
         }
       });
+  }
+
+  createDeployment(body: DeploymentCreateRequest): void {
+    this.runDeploymentMutation(
+      this.deploymentsService.createDeployment(body).pipe(
+        switchMap(createdDeployment => this.deploymentsService.getDeployment(createdDeployment.id))
+      ),
+      deployment => {
+        const nextDeployments = [deployment, ...this.deployments.filter(item => item.id !== deployment.id)];
+        this.deployments = nextDeployments;
+        this.deploymentCount = nextDeployments.length;
+      },
+      'Failed to create deployment.'
+    );
+  }
+
+  deleteDeployment(deploymentId: string): void {
+    this.loading = true;
+    this.error = '';
+
+    this.deploymentsService.deleteDeployment(deploymentId)
+      .pipe(
+        switchMap(() => this.deploymentsService.listDeployments()),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: response => {
+          this.applyDeploymentList(response);
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'Failed to delete deployment.';
+          this.loading = false;
+        }
+      });
+  }
+
+  updateDeploymentStatus(deploymentId: string, targetStatus: string): void {
+    this.runDeploymentMutation(
+      this.deploymentsService.updateDeploymentStatus(deploymentId, targetStatus).pipe(
+        switchMap(({ id }) => this.deploymentsService.getDeployment(id))
+      ),
+      deployment => {
+        this.deployments = this.deployments.map(item => item.id === deployment.id ? deployment : item);
+      },
+      'Failed to update deployment status.'
+    );
   }
 
   getStatusDesign(status: string): 'Positive' | 'Critical' | 'Negative' | 'Neutral' {
@@ -112,5 +166,32 @@ export class DeploymentsComponent implements OnInit {
       return 'Critical';
     }
     return 'Neutral';
+  }
+
+  private applyDeploymentList(response: DeploymentListResponse): void {
+    this.deployments = response.resources;
+    this.deploymentCount = response.count;
+  }
+
+  private runDeploymentMutation(
+    request$: Observable<Deployment>,
+    onSuccess: (deployment: Deployment) => void,
+    errorMessage: string
+  ): void {
+    this.loading = true;
+    this.error = '';
+
+    request$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: deployment => {
+          onSuccess(deployment);
+          this.loading = false;
+        },
+        error: () => {
+          this.error = errorMessage;
+          this.loading = false;
+        }
+      });
   }
 }
