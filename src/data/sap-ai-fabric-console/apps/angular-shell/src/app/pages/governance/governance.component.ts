@@ -4,6 +4,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 
 interface GovernanceRule {
   id: string;
@@ -21,11 +22,14 @@ interface GovernanceRule {
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">Governance Rules</ui5-title>
-        <ui5-button slot="endContent" design="Emphasized" icon="add">Add Rule</ui5-button>
+        <ui5-button *ngIf="canManage" slot="endContent" design="Emphasized" icon="add">Add Rule</ui5-button>
       </ui5-bar>
       <div class="governance-content">
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="true">
           {{ error }}
+        </ui5-message-strip>
+        <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true">
+          Viewer mode: governance changes are disabled.
         </ui5-message-strip>
 
         <ui5-card>
@@ -40,9 +44,10 @@ interface GovernanceRule {
               <ui5-table-cell>{{ rule.rule_type }}</ui5-table-cell>
               <ui5-table-cell><ui5-tag [design]="rule.active ? 'Positive' : 'Negative'">{{ rule.active ? 'Active' : 'Inactive' }}</ui5-tag></ui5-table-cell>
               <ui5-table-cell>
-                <ui5-button design="Transparent" icon="action-settings" (click)="toggleRule(rule)">
+                <ui5-button *ngIf="canManage" design="Transparent" icon="action-settings" (click)="toggleRule(rule)">
                   {{ rule.active ? 'Disable' : 'Enable' }}
                 </ui5-button>
+                <span *ngIf="!canManage" class="read-only-label">Read only</span>
               </ui5-table-cell>
             </ui5-table-row>
           </ui5-table>
@@ -58,15 +63,18 @@ interface GovernanceRule {
     .governance-content { padding: 1rem; }
     ui5-message-strip { margin-bottom: 1rem; }
     .empty-state { padding: 1rem; color: var(--sapContent_LabelColor); }
+    .read-only-label { color: var(--sapContent_LabelColor); font-size: var(--sapFontSmallSize); }
   `]
 })
 export class GovernanceComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
 
   rules: GovernanceRule[] = [];
   loading = false;
   error = '';
+  readonly canManage = this.authService.getUser()?.role === 'admin';
 
   ngOnInit(): void {
     this.loadRules();
@@ -84,6 +92,9 @@ export class GovernanceComponent implements OnInit {
   }
 
   toggleRule(rule: GovernanceRule): void {
+    if (!this.canManage) {
+      return;
+    }
     this.http.patch<{ id: string; active: boolean }>(`${environment.apiBaseUrl}/governance/${rule.id}/toggle`, {})
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "SAP AI Fabric Console - Angular Shell with UI5 Web Components",
   "scripts": {
-    "start": "nx serve angular-shell",
-    "build": "nx build angular-shell",
-    "watch": "nx build angular-shell --watch --configuration development",
-    "test": "nx test angular-shell",
-    "lint": "nx lint angular-shell"
+    "start": "yarn --cwd ../.. nx serve angular-shell",
+    "build": "yarn --cwd ../.. nx build angular-shell",
+    "watch": "yarn --cwd ../.. nx build angular-shell --watch --configuration development",
+    "test": "yarn --cwd ../.. nx test angular-shell",
+    "lint": "yarn --cwd ../.. nx lint angular-shell"
   },
   "private": true,
   "dependencies": {

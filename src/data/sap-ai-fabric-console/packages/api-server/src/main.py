@@ -1,25 +1,34 @@
 """
 SAP AI Fabric Console - API Server
-FastAPI Backend for real data integrations
+FastAPI Backend with SAP AI Core + HANA Cloud.
+Configurable shared state store with SQLite for local development and SAP HANA Cloud for production persistence.
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from prometheus_fastapi_instrumentator import Instrumentator
+
 import structlog
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
-from .routes import auth, models, rag, deployments, datasources, lineage, governance, metrics
 from .config import settings
+from .database import close_database, init_database
+from .routes import auth, models, rag, deployments, datasources, lineage, governance, metrics, mcp_proxy
+from .seed import seed_store
+from .store import get_store
 
-# Configure structured logging
+# ---------------------------------------------------------------------------
+# Structured logging
+# ---------------------------------------------------------------------------
+
 structlog.configure(
     processors=[
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer(),
     ],
     wrapper_class=structlog.stdlib.BoundLogger,
     context_class=dict,
@@ -28,38 +37,51 @@ structlog.configure(
 )
 
 logger = structlog.get_logger()
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Cross-Origin-Resource-Policy": "same-origin",
+}
 
+
+# ---------------------------------------------------------------------------
+# Lifespan
+# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifecycle management."""
-    logger.info("Starting SAP AI Fabric Console API Server")
-    
-    # Initialize connections on startup
-    # await init_database()
-    # await init_redis()
-    # await init_k8s_client()
-    
+    """Application lifecycle: initialise the persistent store and seed baseline data."""
+    logger.info("Starting SAP AI Fabric Console API Server", environment=settings.environment)
+    await init_database()
+    seed_store()
+    store = get_store()
+    logger.info(
+        "Persistent store initialised and seeded",
+        store_backend=store.backend_name,
+        connection_target=store.connection_target,
+    )
     yield
-    
-    # Cleanup on shutdown
+    await close_database()
     logger.info("Shutting down SAP AI Fabric Console API Server")
-    # await close_database()
-    # await close_redis()
 
 
-# Create FastAPI app
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
+
 app = FastAPI(
     title="SAP AI Fabric Console API",
-    description="Backend API for SAP AI Fabric Console - Real integrations with KServe, HANA, Kubernetes",
+    description="Backend API for SAP AI Fabric Console — SAP AI Core + HANA Cloud, configurable shared persistence backend",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    docs_url="/api/docs" if settings.expose_api_docs else None,
+    redoc_url="/api/redoc" if settings.expose_api_docs else None,
+    openapi_url="/api/openapi.json" if settings.expose_api_docs else None,
 )
 
-# CORS middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -68,10 +90,79 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Correlation-ID", "Accept"],
 )
 
-# Prometheus metrics instrumentation
+# Prometheus metrics
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
-# Include routers
+
+def _apply_security_headers(response, request_path: str) -> None:
+    for header, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+
+    if request_path.startswith("/api/v1/auth/"):
+        response.headers.setdefault("Cache-Control", "no-store")
+
+
+def _rate_limit_policy(path: str) -> tuple[str, int, str] | None:
+    if path in {"/api/v1/auth/login", "/api/v1/auth/refresh"}:
+        return ("auth", settings.auth_rate_limit_per_minute, "Too many authentication attempts")
+    if path.startswith("/api/v1/mcp/"):
+        return ("mcp", settings.mcp_rate_limit_per_minute, "Too many MCP proxy requests")
+    return None
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    _apply_security_headers(response, request.url.path)
+    return response
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    policy = _rate_limit_policy(request.url.path)
+    if policy is not None:
+        scope, limit, message = policy
+        bucket_ip = request.client.host if request.client else "unknown"
+        bucket_key = f"{scope}:{bucket_ip}"
+        result = get_store().consume_rate_limit(
+            bucket_key=bucket_key,
+            limit=limit,
+            window_seconds=settings.rate_limit_window_seconds,
+        )
+        if not result["allowed"]:
+            response = JSONResponse(
+                status_code=429,
+                content={"detail": message},
+            )
+            response.headers["Retry-After"] = str(result["retry_after"])
+            response.headers["X-RateLimit-Limit"] = str(result["limit"])
+            response.headers["X-RateLimit-Remaining"] = str(result["remaining"])
+            _apply_security_headers(response, request.url.path)
+            return response
+
+        response = await call_next(request)
+        response.headers["X-RateLimit-Limit"] = str(result["limit"])
+        response.headers["X-RateLimit-Remaining"] = str(result["remaining"])
+        return response
+
+    return await call_next(request)
+
+
+def _store_health_snapshot() -> dict:
+    store = get_store()
+    snapshot = {
+        "store": "ok",
+        "store_backend": store.backend_name,
+        "connection_target": store.connection_target,
+        "users": store.count("users"),
+        "models": store.count("models"),
+        "governance_rules": store.count("governance_rules"),
+    }
+    if store.database_path is not None:
+        snapshot["database_path"] = str(store.database_path)
+    return snapshot
+
+# Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(models.router, prefix="/api/v1/models", tags=["Models"])
 app.include_router(rag.router, prefix="/api/v1/rag", tags=["RAG"])
@@ -80,45 +171,64 @@ app.include_router(datasources.router, prefix="/api/v1/datasources", tags=["Data
 app.include_router(lineage.router, prefix="/api/v1/lineage", tags=["Lineage"])
 app.include_router(governance.router, prefix="/api/v1/governance", tags=["Governance"])
 app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["Metrics"])
+app.include_router(mcp_proxy.router, prefix="/api/v1/mcp", tags=["MCP Proxy"])
 
+
+# ---------------------------------------------------------------------------
+# Root / health
+# ---------------------------------------------------------------------------
 
 @app.get("/")
 async def root():
-    """Root endpoint."""
     return {
         "service": "SAP AI Fabric Console API",
         "version": "1.0.0",
         "status": "healthy",
-        "docs": "/api/docs"
+        "docs": app.docs_url,
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for Kubernetes probes."""
-    return {
-        "status": "healthy",
-        "checks": {
-            "api": "ok",
-            # "database": await check_database(),
-            # "redis": await check_redis(),
-            # "kubernetes": await check_k8s(),
-        }
+    """Liveness probe — always healthy as long as the process is running."""
+    checks: dict = {
+        "api": "ok",
+        **_store_health_snapshot(),
     }
+    return {"status": "healthy", "checks": checks}
 
 
 @app.get("/ready")
 async def readiness_check():
-    """Readiness check for Kubernetes."""
-    return {"status": "ready"}
+    """Readiness probe — verifies the persistent store is usable."""
+    try:
+        checks = {
+            "api": "ok",
+            **_store_health_snapshot(),
+            "docs_exposed": bool(app.docs_url),
+        }
+        return {"status": "ready", "checks": checks}
+    except Exception as exc:
+        logger.error("Readiness check failed", error=str(exc))
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "checks": {
+                    "api": "ok",
+                    "store": "error",
+                    "error": str(exc),
+                },
+            },
+        )
 
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug,
+        log_level=settings.log_level.lower(),
     )

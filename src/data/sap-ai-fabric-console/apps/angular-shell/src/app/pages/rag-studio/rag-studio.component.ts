@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../services/auth.service';
 import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
 
 @Component({
@@ -16,7 +17,7 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">RAG Studio</ui5-title>
-        <ui5-button slot="endContent" design="Emphasized" icon="add" (click)="showCreateDialog = true">
+        <ui5-button *ngIf="canManage" slot="endContent" design="Emphasized" icon="add" (click)="showCreateDialog = true">
           New Knowledge Base
         </ui5-button>
       </ui5-bar>
@@ -24,6 +25,9 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
       <div class="rag-container">
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="true">
           {{ error }}
+        </ui5-message-strip>
+        <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true">
+          Viewer mode: knowledge base management is disabled.
         </ui5-message-strip>
 
         <div class="left-panel">
@@ -77,6 +81,7 @@ import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
 export class RagStudioComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
 
   vectorStores: VectorStore[] = [];
   selectedStore: VectorStore | null = null;
@@ -86,6 +91,7 @@ export class RagStudioComponent implements OnInit {
   queryLoading = false;
   showCreateDialog = false;
   error = '';
+  readonly canManage = this.authService.getUser()?.role === 'admin';
 
   ngOnInit(): void {
     this.storesLoading = true;

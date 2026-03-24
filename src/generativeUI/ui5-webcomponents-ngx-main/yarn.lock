@@ -670,6 +670,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@angular/elements@npm:20":
+  version: 20.3.18
+  resolution: "@angular/elements@npm:20.3.18"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/core": 20.3.18
+    rxjs: ^6.5.3 || ^7.4.0
+  checksum: 10/6c55cb4b495ef369c1c03a637a80f406d7fcd6831fa49b2289da05ace17d6025c88bef1f77183486ecd197d9e5d14eea48ff47fdea47138c506034debfc8bde1
+  languageName: node
+  linkType: hard
+
 "@angular/forms@npm:20.3.9":
   version: 20.3.9
   resolution: "@angular/forms@npm:20.3.9"
@@ -7887,6 +7899,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/dompurify@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "@types/dompurify@npm:3.2.0"
+  dependencies:
+    dompurify: "npm:*"
+  checksum: 10/0194dd9024e76e856f3373e8b080c7a5ac9910543ac1ee85db45277efbbea820b2f27fe22c8a6f02bb51833e0a8540d732be0d11d156efd16cb0b97f88e41ebf
+  languageName: node
+  linkType: hard
+
 "@types/easy-table@npm:^1.2.0":
   version: 1.2.3
   resolution: "@types/easy-table@npm:1.2.3"
@@ -8500,7 +8521,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/trusted-types@npm:^2.0.2":
+"@types/trusted-types@npm:^2.0.2, @types/trusted-types@npm:^2.0.7":
   version: 2.0.7
   resolution: "@types/trusted-types@npm:2.0.7"
   checksum: 10/8e4202766a65877efcf5d5a41b7dd458480b36195e580a3b1085ad21e948bc417d55d6f8af1fd2a7ad008015d4117d5fdfe432731157da3c68678487174e4ba3
@@ -13876,6 +13897,18 @@ __metadata:
   dependencies:
     domelementtype: "npm:^2.3.0"
   checksum: 10/809b805a50a9c6884a29f38aec0a4e1b4537f40e1c861950ed47d10b049febe6b79ab72adaeeebb3cc8fc1cd33f34e97048a72a9265103426d93efafa78d3e96
+  languageName: node
+  linkType: hard
+
+"dompurify@npm:*":
+  version: 3.3.3
+  resolution: "dompurify@npm:3.3.3"
+  dependencies:
+    "@types/trusted-types": "npm:^2.0.7"
+  dependenciesMeta:
+    "@types/trusted-types":
+      optional: true
+  checksum: 10/4cc9c539ed7136d46c6577613b8e20871c2b6165db01dfbd2a3c11c75f9e339c496ac6519a1c3190115def8cadae3720bef0417fc43fa28802c7407bab174da9
   languageName: node
   linkType: hard
 
@@ -28083,6 +28116,7 @@ __metadata:
     "@angular/compiler": "npm:20.3.9"
     "@angular/compiler-cli": "npm:20.3.9"
     "@angular/core": "npm:20.3.9"
+    "@angular/elements": "npm:20"
     "@angular/forms": "npm:20.3.9"
     "@angular/language-service": "npm:20.3.9"
     "@angular/platform-browser": "npm:20.3.9"
@@ -28107,6 +28141,7 @@ __metadata:
     "@storybook/addon-docs": "npm:9.1.0"
     "@storybook/angular": "npm:9.1.0"
     "@storybook/mdx2-csf": "npm:^1.1.0"
+    "@types/dompurify": "npm:^3.2.0"
     "@types/fs-extra": "npm:^11.0.1"
     "@types/jest": "npm:30.0.0"
     "@types/lodash": "npm:4.14.191"

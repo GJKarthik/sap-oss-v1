@@ -7,16 +7,17 @@
     "packages/*"
   ],
   "scripts": {
-    "nx": "nx",
-    "start": "nx serve angular-shell",
-    "build": "nx run-many -t build",
-    "lint": "nx run-many -t lint",
-    "test": "nx run-many -t test",
-    "format": "nx format:write",
-    "format:check": "nx format:check",
-    "graph": "nx graph",
+    "nx": "./scripts/nx-safe.sh",
+    "start": "yarn nx serve angular-shell",
+    "build": "yarn nx run-many -t build",
+    "lint": "yarn nx run-many -t lint",
+    "test": "yarn nx run-many -t test",
+    "e2e:smoke": "packages/api-server/.venv/bin/python scripts/e2e_real_ui.py",
+    "format": "yarn nx format:write",
+    "format:check": "yarn nx format:check",
+    "graph": "yarn nx graph",
     "prepare": "husky install",
-    "clean": "nx reset"
+    "clean": "yarn nx reset"
   },
   "devDependencies": {
     "@angular-devkit/architect": "0.2003.9",

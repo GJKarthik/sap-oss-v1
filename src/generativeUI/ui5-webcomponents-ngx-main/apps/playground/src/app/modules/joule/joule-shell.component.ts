@@ -14,6 +14,7 @@ import { A2UiSchema } from '@ui5/genui-renderer';
 
 @Component({
   selector: 'playground-joule-shell',
+  standalone: false,
   templateUrl: './joule-shell.component.html',
   styleUrls: ['./joule-shell.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

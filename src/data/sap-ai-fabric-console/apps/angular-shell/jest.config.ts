@@ -3,7 +3,6 @@ module.exports = {
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   globals: {},
-  watchman: false,
   coverageDirectory: '../../coverage/apps/angular-shell',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
@@ -15,6 +14,9 @@ module.exports = {
     ],
   },
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+  moduleNameMapper: {
+    '^@ui5/webcomponents-ngx$': '<rootDir>/src/test/mocks/ui5-webcomponents-ngx.mock.ts',
+  },
   snapshotSerializers: [
     'jest-preset-angular/build/serializers/no-ng-attributes',
     'jest-preset-angular/build/serializers/ng-snapshot',

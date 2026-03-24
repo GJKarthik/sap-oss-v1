@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 32" role="img" aria-labelledby="sapLogoTitle">
+  <title id="sapLogoTitle">SAP</title>
+  <polygon fill="#0a6ed1" points="0,0 64,0 52,32 0,32" />
+  <text x="11" y="22" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">SAP</text>
+</svg>

@@ -9,8 +9,6 @@ export default {
         'workspace',
         'angular-shell',
         'shell',
-        'mcp-client',
-        'ui-components',
         'api-server',
         'deps',
         'ci'

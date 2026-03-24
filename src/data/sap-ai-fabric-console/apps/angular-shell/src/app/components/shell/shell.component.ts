@@ -7,6 +7,7 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { McpService } from '../../services/mcp.service';
 
@@ -71,7 +72,7 @@ interface NavItem {
         </ui5-icon>
         <span>{{ getStatusText() }}</span>
       </div>
-      <span class="version">v1.0.0 | UI5 Web Components</span>
+      <span class="version">{{ getSessionLabel() }} | v1.0.0 | UI5 Web Components</span>
     </footer>
   `,
   styles: [`
@@ -179,9 +180,23 @@ export class ShellComponent implements OnInit {
     return username.slice(0, 2).toUpperCase();
   }
 
+  getSessionLabel(): string {
+    if (!this.currentUser) {
+      return 'Guest session';
+    }
+
+    return `${this.currentUser.username} (${this.currentUser.role})`;
+  }
+
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout()
+      .pipe(
+        finalize(() => {
+          void this.router.navigate(['/login']);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   getStatusText(): string {

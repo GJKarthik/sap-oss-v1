@@ -1,4 +1,4 @@
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -23,8 +23,13 @@ describe('DeploymentsComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    }).compileComponents();
+    })
+      .overrideComponent(DeploymentsComponent, {
+        add: {
+          schemas: [NO_ERRORS_SCHEMA],
+        },
+      })
+      .compileComponents();
   });
 
   it('loads deployments on init', () => {

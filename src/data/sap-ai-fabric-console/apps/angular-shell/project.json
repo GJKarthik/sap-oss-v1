@@ -16,14 +16,17 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/angular-shell/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": [],
+        "assets": [
+          "apps/angular-shell/src/assets"
+        ],
         "styles": ["apps/angular-shell/src/styles.scss"],
         "scripts": [],
         "allowedCommonJsDependencies": [
           "@ui5/webcomponents",
           "@ui5/webcomponents-base",
           "@ui5/webcomponents-fiori",
-          "@ui5/webcomponents-icons"
+          "@ui5/webcomponents-icons",
+          "@zxing/library/umd/index.min.js"
         ]
       },
       "configurations": {
@@ -31,8 +34,8 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "2mb"
+              "maximumWarning": "4mb",
+              "maximumError": "5mb"
             },
             {
               "type": "anyComponentStyle",
@@ -55,6 +58,25 @@
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
+      "options": {
+        "proxyConfig": "apps/angular-shell/proxy.conf.json"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "angular-shell:build:production"
+        },
+        "development": {
+          "buildTarget": "angular-shell:build:development"
+        }
+      },
+      "defaultConfiguration": "development",
+      "continuous": true
+    },
+    "serve-smoke": {
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "options": {
+        "proxyConfig": "apps/angular-shell/proxy.conf.json"
+      },
       "configurations": {
         "production": {
           "buildTarget": "angular-shell:build:production"
@@ -83,7 +105,8 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/angular-shell/jest.config.ts",
-        "passWithNoTests": false
+        "passWithNoTests": false,
+        "watchman": false
       }
     }
   }

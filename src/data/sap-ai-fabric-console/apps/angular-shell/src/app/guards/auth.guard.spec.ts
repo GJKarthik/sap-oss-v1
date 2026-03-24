@@ -1,40 +1,45 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
-import { AuthGuard } from './auth.guard';
+import { firstValueFrom, Observable, of } from 'rxjs';
+import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 
 describe('AuthGuard', () => {
-  let guard: AuthGuard;
   let router: Router;
-  let authService: { isAuthenticated: jest.Mock<boolean, []> };
+  let authService: { ensureAuthenticated: jest.Mock };
 
   beforeEach(() => {
     authService = {
-      isAuthenticated: jest.fn<boolean, []>(),
+      ensureAuthenticated: jest.fn(),
     };
 
     TestBed.configureTestingModule({
       providers: [
-        AuthGuard,
         provideRouter([]),
         { provide: AuthService, useValue: authService },
       ],
     });
 
-    guard = TestBed.inject(AuthGuard);
     router = TestBed.inject(Router);
   });
 
-  it('allows navigation when the user is authenticated', () => {
-    authService.isAuthenticated.mockReturnValue(true);
+  it('allows navigation when the user is authenticated', async () => {
+    authService.ensureAuthenticated.mockReturnValue(of(true));
 
-    expect(guard.canActivate()).toBe(true);
+    const result = TestBed.runInInjectionContext(
+      () => authGuard({} as never, {} as never)
+    ) as Observable<boolean | UrlTree>;
+    await expect(firstValueFrom(result)).resolves.toBe(true);
   });
 
-  it('redirects unauthenticated users to the login route', () => {
-    authService.isAuthenticated.mockReturnValue(false);
+  it('redirects unauthenticated users to the login route', async () => {
+    authService.ensureAuthenticated.mockReturnValue(of(false));
 
-    const result = guard.canActivate() as UrlTree;
+    const result = await firstValueFrom(
+      TestBed.runInInjectionContext(
+        () => authGuard({} as never, {} as never)
+      ) as Observable<boolean | UrlTree>
+    ) as UrlTree;
 
     expect(router.serializeUrl(result)).toBe('/login');
   });

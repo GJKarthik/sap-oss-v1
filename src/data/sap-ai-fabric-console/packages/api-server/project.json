@@ -4,5 +4,13 @@
   "projectType": "application",
   "sourceRoot": "packages/api-server/src",
   "tags": ["type:service", "runtime:python", "scope:backend"],
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m pytest tests",
+        "cwd": "packages/api-server"
+      }
+    }
+  }
 }

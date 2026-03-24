@@ -90,10 +90,10 @@ describe('McpService', () => {
     expect(requests).toHaveLength(2);
 
     const langchainRequest = requests.find(request =>
-      request.request.url === environment.langchainMcpUrl.replace('/mcp', '/health')
+      request.request.url === `${environment.langchainMcpUrl}/health`
     );
     const streamingRequest = requests.find(request =>
-      request.request.url === environment.streamingMcpUrl.replace('/mcp', '/health')
+      request.request.url === `${environment.streamingMcpUrl}/health`
     );
 
     expect(langchainRequest).toBeDefined();

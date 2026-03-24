@@ -71,7 +71,8 @@ export interface JouleChatConfig {
 
 @Component({
   selector: 'joule-chat',
-  template: \`
+  standalone: false,
+  template: `
     <section class="joule-chat-shell" [class.joule-chat--loading]="isLoading" aria-label="Joule AI Assistant">
       <!-- Screen reader announcements (visually hidden) -->
       <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -181,8 +182,8 @@ export interface JouleChatConfig {
         <ui5-label>{{ connectionStateLabel }}</ui5-label>
       </div>
     </section>
-  \`,
-  styles: [\`
+  `,
+  styles: [`
     /* === Screen Reader Only === */
     .sr-only {
       position: absolute !important;
@@ -355,7 +356,7 @@ export interface JouleChatConfig {
         border: 1px solid CanvasText;
       }
     }
-  \`],
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
@@ -464,8 +465,8 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       this.announceStatus('Connected to assistant');
     } catch (e) {
       this.connectionState = 'error';
-      this.errorMessage = \`Connection failed: \${(e as Error).message}\`;
-      this.announceStatus(\`Connection failed: \${(e as Error).message}\`);
+      this.errorMessage = `Connection failed: \${(e as Error).message}`;
+      this.announceStatus(`Connection failed: \${(e as Error).message}`);
       this.cdr.markForCheck();
     }
   }
@@ -486,8 +487,8 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       this.messageSent.emit(text);
     } catch (e) {
       this.isLoading = false;
-      this.errorMessage = \`Send failed: \${(e as Error).message}\`;
-      this.announceStatus(\`Error: \${(e as Error).message}\`);
+      this.errorMessage = `Send failed: \${(e as Error).message}`;
+      this.announceStatus(`Error: \${(e as Error).message}`);
       this.cdr.markForCheck();
     }
   }
@@ -538,7 +539,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
             this.isLoading = false;
             this.errorMessage = event.message ?? 'Agent error';
             this.removeStreamingMessage();
-            this.announceStatus(\`Error: \${event.message ?? 'Agent error'}\`);
+            this.announceStatus(`Error: \${event.message ?? 'Agent error'}`);
             break;
         }
         this.cdr.markForCheck();
@@ -579,14 +580,14 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   // ---------------------------------------------------------------------------
 
   private addMessage(role: ChatMessage['role'], content: string): string {
-    const id = \`msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}\`;
+    const id = `msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}`;
     this.messages = [...this.messages, { id, role, content, timestamp: new Date() }];
     this.scrollToBottom();
     return id;
   }
 
   private startAssistantMessage(): void {
-    const id = \`msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}\`;
+    const id = `msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}`;
     this.currentAssistantMsgId = id;
     this.messages = [...this.messages, {
       id, role: 'assistant', content: '', timestamp: new Date(), isStreaming: true,

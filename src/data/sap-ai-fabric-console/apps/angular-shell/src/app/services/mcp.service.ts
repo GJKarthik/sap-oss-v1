@@ -1,9 +1,8 @@
 /**
  * MCP Service - Angular Service for Backend Communication
- * 
- * Connects to the existing MCP servers in src/data:
- * - LangChain HANA MCP (port 9140)
- * - AI Core Streaming MCP (port 9190)
+ *
+ * Routes MCP traffic through the FastAPI proxy so browser requests stay behind
+ * the same auth, CORS, and correlation-id policy as the rest of the console.
  */
 
 import { Injectable, inject } from '@angular/core';
@@ -100,9 +99,10 @@ export class McpService {
 
   private requestId = 0;
   private correlationCounter = 0;
-  private langchainUrl = environment.langchainMcpUrl;
-  private streamingUrl = environment.streamingMcpUrl;
-  private authToken = environment.mcpAuthToken;
+  private readonly langchainUrl = environment.langchainMcpUrl;
+  private readonly streamingUrl = environment.streamingMcpUrl;
+  private readonly langchainHealthUrl = `${environment.langchainMcpUrl}/health`;
+  private readonly streamingHealthUrl = `${environment.streamingMcpUrl}/health`;
 
   // Reactive state
   private healthSubject = new BehaviorSubject<{
@@ -141,7 +141,7 @@ export class McpService {
 
   checkAllHealth(): Observable<void> {
     const langchainHealth$ = this.http.get<ServiceHealth>(
-      this.langchainUrl.replace('/mcp', '/health')
+      this.langchainHealthUrl
     ).pipe(
       catchError(err => of<ServiceHealth>({
         status: 'error',
@@ -151,7 +151,7 @@ export class McpService {
     );
 
     const streamingHealth$ = this.http.get<ServiceHealth>(
-      this.streamingUrl.replace('/mcp', '/health')
+      this.streamingHealthUrl
     ).pipe(
       catchError(err => of<ServiceHealth>({
         status: 'error',
@@ -184,14 +184,10 @@ export class McpService {
   // ===========================================================================
 
   private getHeaders(): HttpHeaders {
-    let headers = new HttpHeaders({
+    return new HttpHeaders({
       'Content-Type': 'application/json',
       'X-Correlation-ID': this.generateCorrelationId(),
     });
-    if (this.authToken) {
-      headers = headers.set('Authorization', `Bearer ${this.authToken}`);
-    }
-    return headers;
   }
 
   private generateCorrelationId(): string {
@@ -243,10 +239,7 @@ export class McpService {
         this.deploymentsSubject.next(deployments);
         return deployments;
       }),
-      catchError(err => {
-        console.error('Failed to fetch deployments:', err);
-        return of([]);
-      })
+      catchError(() => of([]))
     );
   }
 
@@ -265,10 +258,7 @@ export class McpService {
         this.streamsSubject.next(streams);
         return streams;
       }),
-      catchError(err => {
-        console.error('Failed to fetch streams:', err);
-        return of([]);
-      })
+      catchError(() => of([]))
     );
   }
 
@@ -298,10 +288,7 @@ export class McpService {
         this.vectorStoresSubject.next(stores);
         return stores;
       }),
-      catchError(err => {
-        console.error('Failed to fetch vector stores:', err);
-        return of([]);
-      })
+      catchError(() => of([]))
     );
   }
 

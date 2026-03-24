@@ -28,9 +28,6 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { McpService } from './services/mcp.service';
 import { AuthService } from './services/auth.service';
 
-// Guards
-import { AuthGuard } from './guards/auth.guard';
-
 @NgModule({
   declarations: [
     AppComponent,
@@ -53,7 +50,6 @@ import { AuthGuard } from './guards/auth.guard';
     },
     McpService,
     AuthService,
-    AuthGuard,
   ],
   bootstrap: [AppComponent]
 })

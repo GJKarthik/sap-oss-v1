@@ -119,5 +119,10 @@
   "defaultProject": "documentation",
   "nxCloudAccessToken": "${NX_CLOUD_ACCESS_TOKEN}",
   "useInferencePlugins": false,
-  "defaultBase": "main"
+  "defaultBase": "main",
+  "nxConsoleMetadata": {
+    "extension": {
+      "installNxConsole": false
+    }
+  }
 }

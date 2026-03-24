@@ -1,25 +1,33 @@
 """
 Governance rules management routes for SAP AI Fabric Console.
+State persisted via the configured shared store backend.
 """
 
+from dataclasses import asdict
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+
+from ..models import GovernanceRule as GovernanceRuleDC
+from ..routes.auth import UserInfo, get_current_user, require_admin
+from ..store import StoreBackend, get_store
 
 router = APIRouter()
 
 
 # ---------------------------------------------------------------------------
-# Models
+# Pydantic schemas
 # ---------------------------------------------------------------------------
 
-class GovernanceRule(BaseModel):
+class GovernanceRuleOut(BaseModel):
     id: str
     name: str
-    rule_type: str  # "content-filter", "access-control", "compliance"
-    active: bool = True
-    description: Optional[str] = None
+    rule_type: str
+    active: bool
+    description: Optional[str]
+    updated_at: Optional[str]
 
 
 class GovernanceRuleCreateRequest(BaseModel):
@@ -30,20 +38,24 @@ class GovernanceRuleCreateRequest(BaseModel):
 
 
 class GovernanceRuleListResponse(BaseModel):
-    rules: List[GovernanceRule]
+    rules: List[GovernanceRuleOut]
     total: int
 
 
-# ---------------------------------------------------------------------------
-# In-memory store
-# ---------------------------------------------------------------------------
-
-_rules: List[GovernanceRule] = [
-    GovernanceRule(id="rule-001", name="PII Detection", rule_type="content-filter", active=True, description="Detect and redact PII in prompts and responses"),
-    GovernanceRule(id="rule-002", name="Rate Limiting", rule_type="access-control", active=True, description="Enforce per-user rate limits"),
-    GovernanceRule(id="rule-003", name="Audit Logging", rule_type="compliance", active=True, description="Log all AI interactions for compliance"),
-]
-_counter = 3
+def _dict_to_out(d: dict) -> GovernanceRuleOut:
+    updated_at = d.get("updated_at")
+    if isinstance(updated_at, datetime):
+        updated_at = updated_at.isoformat()
+    elif updated_at is not None:
+        updated_at = str(updated_at)
+    return GovernanceRuleOut(
+        id=d["id"],
+        name=d["name"],
+        rule_type=d["rule_type"],
+        active=d.get("active", True),
+        description=d.get("description"),
+        updated_at=updated_at,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -51,51 +63,72 @@ _counter = 3
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_model=GovernanceRuleListResponse)
-async def list_rules():
+async def list_rules(
+    store: StoreBackend = Depends(get_store),
+    _: UserInfo = Depends(get_current_user),
+):
     """List all governance rules."""
-    return GovernanceRuleListResponse(rules=_rules, total=len(_rules))
+    rows = sorted(store.list_records("governance_rules"), key=lambda r: r["name"])
+    return GovernanceRuleListResponse(rules=[_dict_to_out(r) for r in rows], total=len(rows))
 
 
-@router.post("/", response_model=GovernanceRule, status_code=status.HTTP_201_CREATED)
-async def create_rule(body: GovernanceRuleCreateRequest):
+@router.post("/", response_model=GovernanceRuleOut, status_code=status.HTTP_201_CREATED)
+async def create_rule(
+    body: GovernanceRuleCreateRequest,
+    store: StoreBackend = Depends(get_store),
+    _: UserInfo = Depends(require_admin),
+):
     """Create a new governance rule."""
-    global _counter
-    _counter += 1
-    rule = GovernanceRule(
-        id=f"rule-{_counter:03d}",
+    rule = GovernanceRuleDC(
         name=body.name,
         rule_type=body.rule_type,
         active=body.active,
         description=body.description,
     )
-    _rules.append(rule)
-    return rule
+    created = store.set_record("governance_rules", rule.id, asdict(rule))
+    return _dict_to_out(created)
 
 
-@router.get("/{rule_id}", response_model=GovernanceRule)
-async def get_rule(rule_id: str):
+@router.get("/{rule_id}", response_model=GovernanceRuleOut)
+async def get_rule(
+    rule_id: str,
+    store: StoreBackend = Depends(get_store),
+    _: UserInfo = Depends(get_current_user),
+):
     """Get a specific governance rule."""
-    for rule in _rules:
-        if rule.id == rule_id:
-            return rule
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")
+    row = store.get_record("governance_rules", rule_id)
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")
+    return _dict_to_out(row)
 
 
 @router.patch("/{rule_id}/toggle")
-async def toggle_rule(rule_id: str):
+async def toggle_rule(
+    rule_id: str,
+    store: StoreBackend = Depends(get_store),
+    _: UserInfo = Depends(require_admin),
+):
     """Toggle a governance rule active/inactive."""
-    for rule in _rules:
-        if rule.id == rule_id:
-            rule.active = not rule.active
-            return {"id": rule.id, "active": rule.active}
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")
+    row = store.mutate_record(
+        "governance_rules",
+        rule_id,
+        lambda record: {
+            **record,
+            "active": not record.get("active", True),
+            "updated_at": datetime.now(timezone.utc),
+        },
+    )
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")
+    return {"id": row["id"], "active": row["active"]}
 
 
 @router.delete("/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_rule(rule_id: str):
+async def delete_rule(
+    rule_id: str,
+    store: StoreBackend = Depends(get_store),
+    _: UserInfo = Depends(require_admin),
+):
     """Delete a governance rule."""
-    global _rules
-    before = len(_rules)
-    _rules = [r for r in _rules if r.id != rule_id]
-    if len(_rules) == before:
+    if not store.delete_record("governance_rules", rule_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Rule '{rule_id}' not found")

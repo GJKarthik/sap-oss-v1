@@ -13,7 +13,7 @@
  * bootstrapJouleChatElement({ endpoint: '/ag-ui/run' });
  */
 
-import { Injector, ApplicationRef } from '@angular/core';
+import { Injector, ApplicationRef, Provider, EnvironmentProviders } from '@angular/core';
 import { createApplication } from '@angular/platform-browser';
 import { createCustomElement } from '@angular/elements';
 import { JouleChatComponent } from './joule-chat.component';
@@ -27,7 +27,7 @@ export interface JouleChatElementOptions {
   /** Angular element tag name — default: 'joule-chat' */
   tagName?: string;
   /** Additional Angular providers */
-  providers?: unknown[];
+  providers?: (Provider | EnvironmentProviders)[];
 }
 
 let bootstrapped = false;

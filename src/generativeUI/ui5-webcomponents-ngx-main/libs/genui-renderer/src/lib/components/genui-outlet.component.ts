@@ -42,6 +42,7 @@ export interface GenUiEvent {
 
 @Component({
   selector: 'genui-outlet',
+  standalone: false,
   template: `<ng-content></ng-content>`,
   styles: [`
     :host {
