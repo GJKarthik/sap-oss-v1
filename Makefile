@@ -13,8 +13,15 @@
 #   make sbom-sign               # write SHA-256 integrity manifest
 #   make sbom-verify             # verify SHA-256 integrity manifest
 #   make sbom-lineage-pdf        # also compile to PDF (requires pdflatex + packages)
+#   make sbom-lineage-docx       # export combined report to Word (.docx, requires pandoc)
 #   make sbom-per-service        # generate one .tex per service in docs/
 #   make sbom-pdf-all-services   # compile all per-service .tex to PDF
+#   make sbom-docx-all-services  # export all per-service .tex to Word
+#   make sbom-lineage-export     # PDF + DOCX for combined report
+#   make sbom-export-all-services # PDF + DOCX for all per-service reports
+#   make technical-reports-pdf   # compile docs/technical-reports/*.tex to PDF
+#   make technical-reports-docx  # export technical reports to Word
+#   make technical-reports-export # PDF + DOCX for technical reports
 #   make sbom-check              # verify generated .tex files are up-to-date (CI)
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -22,8 +29,12 @@ SBOM_DIR     := scripts/sbom-lineage
 BOMS_DIR     := $(SBOM_DIR)/boms
 POLICY_FILE  := $(SBOM_DIR)/policy.yaml
 SNAPSHOT_DIR := $(SBOM_DIR)/boms-snapshot
+TECH_REPORTS_DIR := docs/technical-reports
+TECH_REPORTS_TEX := $(wildcard $(TECH_REPORTS_DIR)/*.tex)
 
-.PHONY: sbom-lineage sbom-lineage-pdf sbom-per-service sbom-pdf-all-services \
+.PHONY: sbom-lineage sbom-lineage-pdf sbom-lineage-docx sbom-lineage-export \
+        sbom-per-service sbom-pdf-all-services sbom-docx-all-services sbom-export-all-services \
+        technical-reports-pdf technical-reports-docx technical-reports-export \
         sbom-full-python sbom-check sbom-audit sbom-audit-policy sbom-risk-report \
         sbom-vuln sbom-spdx sbom-diff-check sbom-sign sbom-verify sbom-snapshot \
         sbom-scan-licenses sbom-scan-licenses-strict \
@@ -55,6 +66,15 @@ sbom-lineage-pdf: sbom-lineage
 	  pdflatex -interaction=nonstopmode sbom-lineage.tex
 	@echo "PDF written to docs/sbom-lineage.pdf"
 
+# ── Word: combined SBOM report (requires pandoc) ─────────────────────────────
+sbom-lineage-docx: sbom-lineage
+	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
+	cd docs && pandoc sbom-lineage.tex -o sbom-lineage.docx --from=latex
+	@echo "DOCX written to docs/sbom-lineage.docx"
+
+sbom-lineage-export: sbom-lineage-pdf sbom-lineage-docx
+	@echo "Combined report: docs/sbom-lineage.pdf and docs/sbom-lineage.docx"
+
 # ── Per-service .tex files: one per manifest entry ───────────────────────────
 # Reads service paths from the manifest and generates docs/sbom-<service>.tex
 sbom-per-service: sbom-lineage
@@ -69,6 +89,43 @@ sbom-pdf-all-services: sbom-per-service
 	  echo "  OK: $${f%.tex}.pdf"; \
 	done
 	@echo "All PDFs compiled."
+
+# ── Word: all per-service docs ───────────────────────────────────────────────
+sbom-docx-all-services: sbom-per-service
+	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
+	@cd docs && for f in sbom-*.tex; do \
+	  echo "Converting $$f ..."; \
+	  pandoc "$$f" -o "$${f%.tex}.docx" --from=latex && \
+	  echo "  OK: $${f%.tex}.docx"; \
+	done
+	@echo "All per-service DOCX files written under docs/."
+
+sbom-export-all-services: sbom-pdf-all-services sbom-docx-all-services
+	@echo "Per-service PDF and DOCX export complete."
+
+# ── Technical reports (docs/technical-reports/*.tex) ──────────────────────────
+technical-reports-pdf:
+	@test -n "$(TECH_REPORTS_TEX)" || (echo "ERROR: no .tex files in $(TECH_REPORTS_DIR)"; exit 1)
+	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
+	@for f in $(TECH_REPORTS_TEX); do \
+	  echo "Compiling $$f ..."; \
+	  d=$$(dirname "$$f"); b=$$(basename "$$f"); \
+	  ( cd "$$d" && pdflatex -interaction=nonstopmode "$$b" > /dev/null && \
+	    pdflatex -interaction=nonstopmode "$$b" > /dev/null ) && \
+	  echo "  OK: $${f%.tex}.pdf" || exit 1; \
+	done
+
+technical-reports-docx:
+	@test -n "$(TECH_REPORTS_TEX)" || (echo "ERROR: no .tex files in $(TECH_REPORTS_DIR)"; exit 1)
+	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
+	@for f in $(TECH_REPORTS_TEX); do \
+	  echo "Converting $$f ..."; \
+	  pandoc "$$f" -o "$${f%.tex}.docx" --from=latex && \
+	  echo "  OK: $${f%.tex}.docx"; \
+	done
+
+technical-reports-export: technical-reports-pdf technical-reports-docx
+	@echo "Technical reports: PDF and DOCX in $(TECH_REPORTS_DIR)/"
 
 # ── Full Python SBOMs (transitive deps via cyclonedx-bom in venvs) ──────────
 sbom-full-python:

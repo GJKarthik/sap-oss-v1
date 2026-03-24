@@ -13,6 +13,18 @@
       "category": "other"
     },
     {
+      "name": "sbom-lineage-docx",
+      "command": "make sbom-lineage-docx",
+      "mode": "command",
+      "category": "other"
+    },
+    {
+      "name": "sbom-lineage-export",
+      "command": "make sbom-lineage-export",
+      "mode": "command",
+      "category": "other"
+    },
+    {
       "name": "sbom-per-service",
       "command": "make sbom-per-service",
       "mode": "command",
@@ -21,6 +33,36 @@
     {
       "name": "sbom-pdf-all-services",
       "command": "make sbom-pdf-all-services",
+      "mode": "command",
+      "category": "other"
+    },
+    {
+      "name": "sbom-docx-all-services",
+      "command": "make sbom-docx-all-services",
+      "mode": "command",
+      "category": "other"
+    },
+    {
+      "name": "sbom-export-all-services",
+      "command": "make sbom-export-all-services",
+      "mode": "command",
+      "category": "other"
+    },
+    {
+      "name": "technical-reports-pdf",
+      "command": "make technical-reports-pdf",
+      "mode": "command",
+      "category": "other"
+    },
+    {
+      "name": "technical-reports-docx",
+      "command": "make technical-reports-docx",
+      "mode": "command",
+      "category": "other"
+    },
+    {
+      "name": "technical-reports-export",
+      "command": "make technical-reports-export",
       "mode": "command",
       "category": "other"
     },
