@@ -5,8 +5,14 @@
 import uuid
 from typing import Optional, Dict, Any, List
 from loguru import logger
-import gradio as gr
 import json
+
+try:
+    import gradio as gr
+    _GRADIO_AVAILABLE = True
+except ImportError:
+    gr = None  # type: ignore[assignment]
+    _GRADIO_AVAILABLE = False
 from definition.base.database import (
     Database,
     MultipleDatabaseCalls,
@@ -130,6 +136,11 @@ class InteractiveSession:
         port : int
             Port to run the interface on
         """
+        if not _GRADIO_AVAILABLE:
+            raise ImportError(
+                "The Gradio-based GUI has been removed. Use the Angular frontend "
+                "(bin/api.py) to interact with the copilot."
+            )
         logger.info(f"Launching Gradio interface on port {port}")
 
         # Custom CSS for scrollable areas
