@@ -1,10 +1,6 @@
-type RuntimeConfig = {
-  apiBaseUrl?: string;
-  langchainMcpUrl?: string;
-  streamingMcpUrl?: string;
-};
+import { getRuntimeConfig } from './runtime-config';
 
-const runtimeConfig = (window as Window & { __SAP_CONFIG__?: RuntimeConfig }).__SAP_CONFIG__;
+const runtimeConfig = getRuntimeConfig();
 const apiBaseUrl = runtimeConfig?.apiBaseUrl || '/api/v1';
 
 export const environment = {

@@ -4,11 +4,23 @@ from src.routes import mcp_proxy
 from src.store import get_store
 
 
+def _production_settings_kwargs(**overrides):
+    values = {
+        "environment": "production",
+        "jwt_secret_key": "not-the-default-secret",
+        "store_backend": "hana",
+        "hana_host": "hana.example.test",
+        "hana_user": "DBADMIN",
+        "hana_password": "super-secret-password",
+        "langchain_mcp_url": "https://langchain.example.test/mcp",
+        "streaming_mcp_url": "https://streaming.example.test/mcp",
+    }
+    values.update(overrides)
+    return values
+
+
 def test_production_disables_api_docs_by_default() -> None:
-    production_settings = Settings(
-        environment="production",
-        jwt_secret_key="not-the-default-secret",
-    )
+    production_settings = Settings(**_production_settings_kwargs())
 
     assert production_settings.expose_api_docs is False
 
@@ -37,14 +49,11 @@ def test_readiness_reports_store_status(client) -> None:
 
 def test_readiness_returns_503_when_store_is_unavailable(monkeypatch, client) -> None:
     store = get_store()
-    original_count = store.count
-
-    def broken_count(name: str) -> int:
-        if name == "users":
-            raise RuntimeError("database offline")
-        return original_count(name)
-
-    monkeypatch.setattr(store, "count", broken_count)
+    monkeypatch.setattr(
+        store,
+        "health_snapshot",
+        lambda: (_ for _ in ()).throw(RuntimeError("database offline")),
+    )
 
     response = client.get("/ready")
 
@@ -96,6 +105,24 @@ def test_mcp_proxy_requests_are_rate_limited(monkeypatch, client, admin_headers)
     assert first_response.headers["x-ratelimit-limit"] == "1"
     assert second_response.status_code == 429
     assert second_response.json()["detail"] == "Too many MCP proxy requests"
+
+
+def test_readiness_returns_503_when_required_mcp_dependency_is_unavailable(monkeypatch, client) -> None:
+    async def fake_probe(service_name: str, target_url: str, timeout_seconds: float = 5.0) -> dict:
+        if service_name == "langchain-hana-mcp":
+            return {"status": "error", "service": service_name, "target": target_url, "error": "offline"}
+        return {"status": "ok", "service": service_name, "target": target_url}
+
+    monkeypatch.setattr("src.main.settings.require_mcp_dependencies", True)
+    monkeypatch.setattr(mcp_proxy, "probe_health", fake_probe)
+
+    response = client.get("/ready")
+
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "not_ready"
+    assert body["failed_dependencies"] == ["langchain_mcp"]
+    assert body["checks"]["langchain_mcp"]["status"] == "error"
 
 
 def test_root_omits_docs_link_when_docs_are_disabled(monkeypatch, client) -> None:

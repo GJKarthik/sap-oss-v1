@@ -7,10 +7,11 @@ Configurable shared state store with SQLite for local development and SAP HANA C
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
+from starlette.requests import ClientDisconnect
 
 from .config import settings
 from .database import close_database, init_database
@@ -81,6 +82,12 @@ app = FastAPI(
     openapi_url="/api/openapi.json" if settings.expose_api_docs else None,
 )
 
+
+@app.exception_handler(ClientDisconnect)
+async def client_disconnect_handler(request: Request, _: ClientDisconnect) -> Response:
+    logger.info("Client disconnected", path=request.url.path)
+    return Response(status_code=204)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -150,17 +157,30 @@ async def rate_limit_middleware(request: Request, call_next):
 
 def _store_health_snapshot() -> dict:
     store = get_store()
-    snapshot = {
-        "store": "ok",
+    return {
         "store_backend": store.backend_name,
         "connection_target": store.connection_target,
-        "users": store.count("users"),
-        "models": store.count("models"),
-        "governance_rules": store.count("governance_rules"),
     }
-    if store.database_path is not None:
-        snapshot["database_path"] = str(store.database_path)
-    return snapshot
+
+
+async def _readiness_checks() -> dict:
+    checks: dict = {
+        "api": "ok",
+        **get_store().health_snapshot(),
+        "docs_exposed": bool(app.docs_url),
+    }
+    if settings.require_mcp_dependencies:
+        checks["langchain_mcp"] = await mcp_proxy.probe_health(
+            service_name="langchain-hana-mcp",
+            target_url=settings.langchain_mcp_url,
+            timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
+        )
+        checks["streaming_mcp"] = await mcp_proxy.probe_health(
+            service_name="ai-core-streaming-mcp",
+            target_url=settings.streaming_mcp_url,
+            timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
+        )
+    return checks
 
 # Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
@@ -202,11 +222,22 @@ async def health_check():
 async def readiness_check():
     """Readiness probe — verifies the persistent store is usable."""
     try:
-        checks = {
-            "api": "ok",
-            **_store_health_snapshot(),
-            "docs_exposed": bool(app.docs_url),
-        }
+        checks = await _readiness_checks()
+        dependency_failures = [
+            name
+            for name in ("langchain_mcp", "streaming_mcp")
+            if isinstance(checks.get(name), dict) and checks[name].get("status") not in {"ok", "healthy", "ready"}
+        ]
+        if dependency_failures:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "not_ready",
+                    "checks": checks,
+                    "error": "Required MCP dependencies are unavailable",
+                    "failed_dependencies": dependency_failures,
+                },
+            )
         return {"status": "ready", "checks": checks}
     except Exception as exc:
         logger.error("Readiness check failed", error=str(exc))

@@ -22,8 +22,14 @@ def seed_store() -> None:
     """Idempotently seed default records into the configured persistent store."""
     store = get_store()
     _seed_admin_user(store)
-    _seed_ai_models(store)
-    _seed_governance_rules(store)
+    if settings.seed_reference_data:
+        _seed_ai_models(store)
+        _seed_governance_rules(store)
+    else:
+        logger.info(
+            "Skipping reference data seeding outside development/test",
+            environment=settings.environment,
+        )
     logger.info("Persistent store seeding completed")
 
 

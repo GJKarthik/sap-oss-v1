@@ -67,7 +67,7 @@ def _dict_to_out(d: dict) -> DeploymentOut:
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("/", response_model=DeploymentListResponse)
+@router.get("", response_model=DeploymentListResponse)
 async def list_deployments(
     store: StoreBackend = Depends(get_store),
     _: UserInfo = Depends(get_current_user),
@@ -81,7 +81,7 @@ async def list_deployments(
     return DeploymentListResponse(resources=[_dict_to_out(r) for r in rows], count=len(rows))
 
 
-@router.post("/", response_model=DeploymentOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DeploymentOut, status_code=status.HTTP_201_CREATED)
 async def create_deployment(
     body: DeploymentCreateRequest,
     store: StoreBackend = Depends(get_store),

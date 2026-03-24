@@ -90,6 +90,49 @@ export HANA_STORE_TABLE_PREFIX="SAP_AIFABRIC"
 
 If `STORE_BACKEND=hana`, the API keeps users, deployments, governance rules, datasources, vector-store registry state, token revocations, and rate-limit buckets in HANA instead of the local SQLite file.
 
+## Production Deployment
+
+Phase 1 production behavior is now enforced by configuration:
+
+- `ENVIRONMENT=production`
+- `STORE_BACKEND=hana`
+- `JWT_SECRET_KEY` must not use the default value
+- `SEED_REFERENCE_DATA=false`
+- `REQUIRE_MCP_DEPENDENCIES=true`
+- `LANGCHAIN_MCP_URL` and `STREAMING_MCP_URL` must be set to non-local URLs
+
+The Angular container serves static assets through Nginx and injects `runtime-config.js` at startup, so API and MCP endpoints can be changed with environment variables instead of rebuilding the frontend image.
+
+### Docker Compose
+
+```bash
+cp .env.example .env
+# fill in HANA, JWT, bootstrap admin, and MCP values
+docker compose up --build
+```
+
+Services:
+
+- Frontend: `http://localhost:8080`
+- Backend API: `http://localhost:8000`
+
+Key deployment files:
+
+- [docker-compose.yml](/Users/user/Documents/sap-oss/src/data/sap-ai-fabric-console/docker-compose.yml)
+- [packages/api-server/Dockerfile](/Users/user/Documents/sap-oss/src/data/sap-ai-fabric-console/packages/api-server/Dockerfile)
+- [apps/angular-shell/Dockerfile](/Users/user/Documents/sap-oss/src/data/sap-ai-fabric-console/apps/angular-shell/Dockerfile)
+
+### Runtime Config
+
+The frontend reads `window.__SAP_CONFIG__` from `runtime-config.js`.
+
+Supported container environment variables:
+
+- `SAP_API_BASE_URL`
+- `SAP_LANGCHAIN_MCP_URL`
+- `SAP_STREAMING_MCP_URL`
+- `SAP_API_UPSTREAM` for the Nginx reverse proxy target
+
 ## Development
 
 | Command | Description |

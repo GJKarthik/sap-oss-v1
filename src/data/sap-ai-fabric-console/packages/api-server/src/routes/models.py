@@ -63,7 +63,7 @@ def _dict_to_out(d: dict) -> AIModelOut:
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("/", response_model=ModelListResponse)
+@router.get("", response_model=ModelListResponse)
 async def list_models(
     store: StoreBackend = Depends(get_store),
     _: UserInfo = Depends(get_current_user),
@@ -86,7 +86,7 @@ async def get_model(
     return _dict_to_out(row)
 
 
-@router.post("/", response_model=AIModelOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AIModelOut, status_code=status.HTTP_201_CREATED)
 async def register_model(
     body: AIModelCreateRequest,
     store: StoreBackend = Depends(get_store),

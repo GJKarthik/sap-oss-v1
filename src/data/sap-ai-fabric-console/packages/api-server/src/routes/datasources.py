@@ -62,7 +62,7 @@ def _dict_to_out(d: dict) -> DataSourceOut:
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("/", response_model=DataSourceListResponse)
+@router.get("", response_model=DataSourceListResponse)
 async def list_datasources(
     store: StoreBackend = Depends(get_store),
     _: UserInfo = Depends(get_current_user),
@@ -72,7 +72,7 @@ async def list_datasources(
     return DataSourceListResponse(datasources=[_dict_to_out(r) for r in rows], total=len(rows))
 
 
-@router.post("/", response_model=DataSourceOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DataSourceOut, status_code=status.HTTP_201_CREATED)
 async def create_datasource(
     body: DataSourceCreateRequest,
     store: StoreBackend = Depends(get_store),

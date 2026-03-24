@@ -78,6 +78,7 @@ class CDPSession:
         self.request_failures: list[str] = []
         self.http_error_responses: list[str] = []
         self._request_urls: dict[str, str] = {}
+        self._pending_requests: dict[str, tuple[str, str]] = {}
 
     async def connect(self) -> None:
         self.websocket = await websockets.connect(self.websocket_url, max_size=10_000_000)
@@ -122,15 +123,29 @@ class CDPSession:
                 if entry.get("level") == "error" and entry.get("text"):
                     self.console_errors.append(str(entry["text"]))
             elif method == "Network.requestWillBeSent":
-                self._request_urls[params.get("requestId", "")] = params.get("request", {}).get("url", "")
+                request_id = params.get("requestId", "")
+                request_type = params.get("type", "")
+                url = params.get("request", {}).get("url", "")
+                self._request_urls[request_id] = url
+                if request_type in {"Document", "Fetch", "XHR"} and not url.endswith("/favicon.ico"):
+                    self._pending_requests[request_id] = (request_type, url)
+            elif method == "Network.loadingFinished":
+                request_id = params.get("requestId", "")
+                self._pending_requests.pop(request_id, None)
+                self._request_urls.pop(request_id, None)
             elif method == "Network.loadingFailed":
+                request_id = params.get("requestId", "")
+                self._pending_requests.pop(request_id, None)
                 request_type = params.get("type")
                 if request_type not in {"Document", "Fetch", "XHR"}:
                     continue
-                url = self._request_urls.get(params.get("requestId", ""), "")
+                url = self._request_urls.pop(request_id, "")
                 if url.endswith("/favicon.ico"):
                     continue
-                message_text = f"{request_type} {url} {params.get('errorText', 'unknown error')}"
+                error_text = params.get("errorText", "unknown error")
+                if _should_ignore_request_failure(request_type, url, error_text):
+                    continue
+                message_text = f"{request_type} {url} {error_text}"
                 self.request_failures.append(message_text.strip())
             elif method == "Network.responseReceived":
                 request_type = params.get("type")
@@ -186,6 +201,30 @@ class CDPSession:
             await asyncio.sleep(0.2)
         raise TimeoutError(f"Timed out waiting for condition: {condition}")
 
+    async def wait_for_network_idle(
+        self,
+        timeout_seconds: float = 15.0,
+        idle_seconds: float = 0.5,
+        url_substrings: tuple[str, ...] = (),
+    ) -> None:
+        deadline = time.monotonic() + timeout_seconds
+        idle_started_at: float | None = None
+
+        while time.monotonic() < deadline:
+            tracked_requests = [
+                url
+                for _, url in self._pending_requests.values()
+                if not url_substrings or any(fragment in url for fragment in url_substrings)
+            ]
+            if not tracked_requests:
+                if idle_started_at is None:
+                    idle_started_at = time.monotonic()
+                elif time.monotonic() - idle_started_at >= idle_seconds:
+                    return
+            else:
+                idle_started_at = None
+            await asyncio.sleep(0.2)
+
     async def navigate(self, url: str) -> None:
         await self.send("Page.navigate", {"url": url})
         await self.wait_for("document.readyState === 'complete'", timeout_seconds=30.0)
@@ -221,6 +260,15 @@ def start_process(name: str, command: list[str], cwd: Path, env: dict[str, str],
 def fetch_json(url: str) -> Any:
     with urlopen(url, timeout=3) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _should_ignore_request_failure(request_type: str, url: str, error_text: str) -> bool:
+    return (
+        request_type in {"Fetch", "XHR"}
+        and error_text == "net::ERR_ABORTED"
+        and "/api/v1/mcp/" in url
+        and url.endswith("/health")
+    )
 
 
 def choose_port(host: str, env_name: str, default_port: int) -> int:
@@ -338,27 +386,9 @@ async def login_via_component(session: CDPSession) -> None:
         raise RuntimeError("Angular login component did not navigate to dashboard")
 
 
-async def logout_via_browser_api(session: CDPSession) -> bool:
+async def navigate_to_login(session: CDPSession) -> bool:
     logout_script = """
-(async () => {
-  const accessToken = localStorage.getItem('auth_token');
-  const refreshToken = localStorage.getItem('refresh_token');
-
-  try {
-    if (accessToken || refreshToken) {
-      await fetch('/api/v1/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
-      });
-    }
-  } catch (error) {
-    console.warn('Browser logout request failed during smoke test', error);
-  }
-
+(() => {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
@@ -504,18 +534,7 @@ async def run_browser_flow(
             )
             await session.screenshot(artifact_dir / f"{index:02d}-{route.strip('/').replace('/', '-')}.png")
 
-        fallback_logout_script = """
-(() => {
-  const logoutItem = Array.from(document.querySelectorAll('ui5-side-navigation-item'))
-    .find(node => node.getAttribute('text') === 'Logout' || node.textContent?.includes('Logout'));
-  if (!logoutItem) {
-    return false;
-  }
-  logoutItem.click();
-  return true;
-})()
-"""
-        if not await logout_via_browser_api(session) and not await session.evaluate(fallback_logout_script):
+        if not await navigate_to_login(session):
             raise RuntimeError("Failed to trigger the logout action")
 
         await session.wait_for("location.pathname === '/login'", timeout_seconds=UI_WAIT_SECONDS)

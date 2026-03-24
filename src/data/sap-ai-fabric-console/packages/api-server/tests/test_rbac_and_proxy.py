@@ -1,4 +1,5 @@
 import pytest
+from starlette.requests import ClientDisconnect
 
 from src.config import settings
 from src.routes import mcp_proxy
@@ -86,3 +87,16 @@ async def test_mcp_proxy_returns_jsonrpc_error_when_upstream_unreachable() -> No
     assert result["id"] == 11
     assert result["error"]["code"] == -32001
     assert "Cannot reach MCP service at http://127.0.0.1:9999/mcp" in result["error"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_proxy_read_json_body_returns_none_on_client_disconnect() -> None:
+    class DisconnectingRequest:
+        url = type("Url", (), {"path": "/api/v1/mcp/langchain"})()
+
+        async def json(self) -> dict:
+            raise ClientDisconnect()
+
+    body = await mcp_proxy._read_json_body(DisconnectingRequest())  # type: ignore[arg-type]
+
+    assert body is None

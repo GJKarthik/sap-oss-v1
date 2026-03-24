@@ -106,6 +106,10 @@ class BaseStore(ABC):
     def consume_rate_limit(self, bucket_key: str, limit: int, window_seconds: int) -> RateLimitResult:
         """Consume a rate-limit token for the given bucket."""
 
+    @abstractmethod
+    def health_snapshot(self) -> Dict[str, Any]:
+        """Return a backend-specific connectivity snapshot for health probes."""
+
     @property
     @abstractmethod
     def revoked_jtis(self) -> set[str]:
@@ -440,6 +444,18 @@ class AppStore(BaseStore):
             "DELETE FROM rate_limit_buckets WHERE reset_at <= ?",
             (reference,),
         )
+
+    def health_snapshot(self) -> Dict[str, Any]:
+        with self._lock:
+            with self._connection() as connection:
+                row = connection.execute("SELECT 1").fetchone()
+            return {
+                "store": "ok",
+                "store_backend": self.backend_name,
+                "connection_target": self.connection_target,
+                "database_path": str(self._database_path),
+                "probe": int(row[0]) if row is not None else None,
+            }
 
     @property
     def revoked_jtis(self) -> set[str]:
@@ -963,6 +979,24 @@ class HanaAppStore(BaseStore):
             """,
             (reference,),
         )
+
+    def health_snapshot(self) -> Dict[str, Any]:
+        with self._lock:
+            with self._connection() as connection:
+                cursor = connection.cursor()
+                try:
+                    cursor.execute("SELECT CURRENT_SCHEMA FROM DUMMY")
+                    row = cursor.fetchone()
+                finally:
+                    close = getattr(cursor, "close", None)
+                    if callable(close):
+                        close()
+            return {
+                "store": "ok",
+                "store_backend": self.backend_name,
+                "connection_target": self.connection_target,
+                "current_schema": row[0] if row is not None else None,
+            }
 
     @property
     def revoked_jtis(self) -> set[str]:

@@ -1,24 +1,17 @@
-const apiBaseUrl = '/api/v1';
+import { getRuntimeConfig } from './runtime-config';
+
+const runtimeConfig = getRuntimeConfig();
+const apiBaseUrl = runtimeConfig.apiBaseUrl || '/api/v1';
 
 export const environment = {
   production: false,
-
-  // API base URL (FastAPI backend)
   apiBaseUrl,
-
-  // MCP proxy endpoints
-  langchainMcpUrl: `${apiBaseUrl}/mcp/langchain`,
-  streamingMcpUrl: `${apiBaseUrl}/mcp/streaming`,
-
-  // HANA Cloud Connection
+  langchainMcpUrl: runtimeConfig.langchainMcpUrl || `${apiBaseUrl}/mcp/langchain`,
+  streamingMcpUrl: runtimeConfig.streamingMcpUrl || `${apiBaseUrl}/mcp/streaming`,
   hanaHost: '',
   hanaPort: 443,
-
-  // AI Core Configuration
   aiCoreBaseUrl: '',
   aiCoreResourceGroup: 'default',
-
-  // Feature Flags
   enableRag: true,
   enableStreaming: true,
   enableKuzuGraph: true,

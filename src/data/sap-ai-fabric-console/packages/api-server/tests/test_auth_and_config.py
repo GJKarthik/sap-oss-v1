@@ -11,9 +11,33 @@ from src import seed
 from src.config import settings
 
 
+def _production_settings_kwargs(**overrides):
+    values = {
+        "environment": "production",
+        "jwt_secret_key": "not-the-default-secret",
+        "store_backend": "hana",
+        "hana_host": "hana.example.test",
+        "hana_user": "DBADMIN",
+        "hana_password": "super-secret-password",
+        "langchain_mcp_url": "https://langchain.example.test/mcp",
+        "streaming_mcp_url": "https://streaming.example.test/mcp",
+    }
+    values.update(overrides)
+    return values
+
+
 def test_production_requires_non_default_jwt_secret() -> None:
     with pytest.raises(ValidationError):
-        Settings(environment="production", jwt_secret_key=DEFAULT_JWT_SECRET)
+        Settings(**_production_settings_kwargs(jwt_secret_key=DEFAULT_JWT_SECRET))
+
+
+def test_production_requires_hana_store_backend() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            **_production_settings_kwargs(
+                store_backend="sqlite",
+            )
+        )
 
 
 def test_hana_store_backend_requires_hana_credentials() -> None:
@@ -26,6 +50,33 @@ def test_hana_store_backend_requires_hana_credentials() -> None:
             hana_user="",
             hana_password="",
         )
+
+
+def test_production_rejects_localhost_mcp_dependencies() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            **_production_settings_kwargs(
+                langchain_mcp_url="http://localhost:9140/mcp",
+            )
+        )
+
+
+def test_production_requires_bootstrap_admin_password_pairing() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            **_production_settings_kwargs(
+                bootstrap_admin_username="bootstrap-admin",
+                bootstrap_admin_password="",
+            )
+        )
+
+
+def test_production_defaults_disable_reference_data_seeding_and_require_mcp_dependencies() -> None:
+    production_settings = Settings(**_production_settings_kwargs())
+
+    assert production_settings.seed_reference_data is False
+    assert production_settings.require_mcp_dependencies is True
+    assert production_settings.expose_api_docs is False
 
 
 def test_hana_store_prefix_is_normalized() -> None:

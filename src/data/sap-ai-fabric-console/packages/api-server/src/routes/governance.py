@@ -62,7 +62,7 @@ def _dict_to_out(d: dict) -> GovernanceRuleOut:
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("/", response_model=GovernanceRuleListResponse)
+@router.get("", response_model=GovernanceRuleListResponse)
 async def list_rules(
     store: StoreBackend = Depends(get_store),
     _: UserInfo = Depends(get_current_user),
@@ -72,7 +72,7 @@ async def list_rules(
     return GovernanceRuleListResponse(rules=[_dict_to_out(r) for r in rows], total=len(rows))
 
 
-@router.post("/", response_model=GovernanceRuleOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=GovernanceRuleOut, status_code=status.HTTP_201_CREATED)
 async def create_rule(
     body: GovernanceRuleCreateRequest,
     store: StoreBackend = Depends(get_store),
