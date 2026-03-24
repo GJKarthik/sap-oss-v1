@@ -7,10 +7,10 @@
  * this file works unchanged in containers and cloud deployments.
  *
  * Override example:
- *   AGENT_URL=http://agent-svc:8080 npx nx serve playground
+ *   AGENT_URL=http://agent-svc:9160 npx nx serve playground
  */
 
-const AGENT_URL = process.env['AGENT_URL'] || 'http://localhost:8080';
+const AGENT_URL = process.env['AGENT_URL'] || 'http://localhost:9160';
 
 module.exports = {
   '/ag-ui': {

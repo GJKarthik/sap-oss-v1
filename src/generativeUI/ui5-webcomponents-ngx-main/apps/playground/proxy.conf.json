@@ -1,6 +1,6 @@
 {
   "/ag-ui": {
-    "target": "http://localhost:8080",
+    "target": "http://localhost:9160",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "info"
