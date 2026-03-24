@@ -35,6 +35,7 @@ import {
   ElementRef,
   Inject,
   Optional,
+  CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -71,9 +72,11 @@ export interface JouleChatConfig {
 
 @Component({
   selector: 'joule-chat',
-  standalone: false,
+  standalone: true,
+  imports: [],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <section class="joule-chat-shell" [class.joule-chat--loading]="isLoading" aria-label="Joule AI Assistant">
+    <section class="joule-chat-shell" role="region" [class.joule-chat--loading]="isLoading" [attr.aria-busy]="isLoading ? 'true' : null" aria-label="Joule AI Assistant">
       <!-- Screen reader announcements (visually hidden) -->
       <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {{ announcement }}
@@ -82,13 +85,14 @@ export interface JouleChatConfig {
       <!-- Header -->
       <header class="joule-chat-header">
         <ui5-title level="H5" aria-hidden="true">{{ title }}</ui5-title>
-        <span
-          *ngIf="showRouteBadge && lastRoute"
-          class="joule-route-badge joule-route-badge--{{ lastRoute }}"
-          role="status"
-          [attr.aria-label]="'Using ' + lastRoute + ' backend'">
-          {{ lastRoute }}
-        </span>
+        @if (showRouteBadge && lastRoute) {
+          <span
+            class="joule-route-badge joule-route-badge--{{ lastRoute }}"
+            role="status"
+            [attr.aria-label]="'Using ' + lastRoute + ' backend'">
+            {{ lastRoute }}
+          </span>
+        }
         <ui5-button
           design="Transparent"
           icon="decline"
@@ -102,54 +106,62 @@ export interface JouleChatConfig {
         class="joule-chat-messages"
         #messagesContainer
         role="log"
-        aria-label="Chat conversation"
+        aria-label="Chat messages"
         aria-live="polite"
-        aria-relevant="additions">
-        <article
-          *ngFor="let msg of messages"
-          class="joule-chat-message joule-chat-message--{{ msg.role }}"
-          [attr.aria-label]="msg.role === 'user' ? 'You said' : 'Joule response'">
-          <ui5-avatar
-            *ngIf="msg.role === 'assistant'"
-            class="joule-chat-avatar"
-            icon="ai"
-            color-scheme="Accent5"
-            size="XS"
-            aria-hidden="true">
-          </ui5-avatar>
-          <div class="joule-chat-bubble">
-            <span class="joule-chat-content">{{ msg.content }}</span>
-            <span *ngIf="msg.isStreaming" class="joule-chat-cursor" aria-hidden="true">▋</span>
-            <span *ngIf="msg.isStreaming" class="sr-only">Response in progress</span>
-          </div>
-        </article>
+        aria-relevant="additions"
+        tabindex="0">
+        @for (msg of messages; track msg.id) {
+          <article
+            class="joule-chat-message joule-chat-message--{{ msg.role }}"
+            [attr.aria-label]="getMessageAriaLabel(msg)">
+            @if (msg.role === 'assistant') {
+              <ui5-avatar
+                class="joule-chat-avatar"
+                icon="ai"
+                color-scheme="Accent5"
+                size="XS"
+                aria-hidden="true">
+              </ui5-avatar>
+            }
+            <div class="joule-chat-bubble">
+              <span class="joule-chat-content">{{ msg.content }}</span>
+              @if (msg.isStreaming) {
+                <span class="joule-chat-cursor" aria-hidden="true">▋</span>
+                <span class="sr-only">Response in progress</span>
+              }
+            </div>
+          </article>
+        }
 
         <!-- Loading skeleton -->
-        <div
-          *ngIf="isLoading && !currentAssistantMsgId"
-          class="joule-chat-message joule-chat-message--assistant"
-          role="status"
-          aria-label="Loading response">
-          <ui5-busy-indicator active size="Small" aria-label="Processing"></ui5-busy-indicator>
-        </div>
+        @if (isLoading && !currentAssistantMsgId) {
+          <div
+            class="joule-chat-message joule-chat-message--assistant"
+            role="status"
+            aria-label="Loading response">
+            <ui5-busy-indicator active size="Small" aria-label="Processing"></ui5-busy-indicator>
+          </div>
+        }
 
         <!-- GenUI outlet for rendered schemas -->
-        <div
-          *ngIf="currentSchema"
-          class="joule-chat-genui-outlet"
-          #genUiOutlet
-          role="region"
-          aria-label="Generated UI content">
-        </div>
+        @if (currentSchema) {
+          <div
+            class="joule-chat-genui-outlet"
+            #genUiOutlet
+            role="region"
+            aria-label="Generated UI content">
+          </div>
+        }
       </div>
 
       <!-- Error strip -->
-      <ui5-message-strip
-        *ngIf="errorMessage"
-        design="Negative"
-        (close)="errorMessage = null">
-        {{ errorMessage }}
-      </ui5-message-strip>
+      @if (errorMessage) {
+        <ui5-message-strip
+          design="Negative"
+          (close)="errorMessage = null">
+          {{ errorMessage }}
+        </ui5-message-strip>
+      }
 
       <!-- Input area -->
       <div class="joule-chat-input-area" role="form" aria-label="Send a message">

@@ -52,6 +52,10 @@ const routes: Routes = [
         path: 'lineage',
         loadComponent: () => import('./pages/lineage/lineage.component').then(m => m.LineageComponent),
       },
+      {
+        path: 'data-quality',
+        loadComponent: () => import('./pages/data-quality/data-quality.component').then(m => m.DataQualityComponent),
+      },
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

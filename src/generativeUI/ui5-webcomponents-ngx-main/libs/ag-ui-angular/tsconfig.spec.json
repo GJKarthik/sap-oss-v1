@@ -1,25 +1,13 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "module": "CommonJS",
-    "target": "ES2022",
-    "moduleResolution": "node",
-    "useDefineForClassFields": false,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
+    "types": ["jest", "node"],
     "strict": false,
     "noImplicitAny": false,
-    "lib": ["ES2022", "DOM"],
-    "types": ["jest", "node"],
-    "baseUrl": ".",
-    "paths": {
-      "@angular/core": ["../../node_modules/@angular/core"],
-      "@angular/common": ["../../node_modules/@angular/common"],
-      "rxjs": ["../../node_modules/rxjs"],
-      "rxjs/operators": ["../../node_modules/rxjs/operators"]
-    }
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

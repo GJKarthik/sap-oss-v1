@@ -13,8 +13,9 @@
 mcp_service(data_cleaning_copilot, "http://localhost:9110/mcp", "Data quality validation").
 mcp_service(ui5_ngx_agent, "http://localhost:9160/mcp", "Angular UI5 code generation").
 mcp_service(mcp_gateway, "http://localhost:9100/mcp", "Central MCP gateway").
-mcp_service(analytics_mcp, "http://localhost:9120/mcp", "Analytics and reporting").
+mcp_service(langchain_hana, "http://localhost:9120/mcp", "LangChain HANA RAG with vector store").
 mcp_service(context_mcp, "http://localhost:9150/mcp", "OData vocabulary context").
+mcp_service(sap_ai_fabric_console, "http://localhost:8000/api/v1", "Enterprise governance console").
 
 // Service health status (dynamically updated)
 service_status(data_cleaning_copilot, healthy).
@@ -63,6 +64,23 @@ cross_agent_call(data_cleaning_copilot, ui5_ngx_agent, generate_dashboard).
 // UI5 agent can request data profiling for schema hints
 cross_agent_call(ui5_ngx_agent, data_cleaning_copilot, schema_analysis).
 cross_agent_call(ui5_ngx_agent, data_cleaning_copilot, data_profiling).
+
+// Data cleaning copilot integration with langchain-hana
+cross_agent_call(data_cleaning_copilot, langchain_hana, rag_context_lookup).
+cross_agent_call(data_cleaning_copilot, langchain_hana, similar_violation_search).
+cross_agent_call(data_cleaning_copilot, langchain_hana, store_validation_embedding).
+cross_agent_call(langchain_hana, data_cleaning_copilot, detect_anomalies).
+
+// Data cleaning copilot integration with odata-vocabularies
+cross_agent_call(data_cleaning_copilot, context_mcp, get_schema_annotations).
+cross_agent_call(data_cleaning_copilot, context_mcp, get_field_semantics).
+cross_agent_call(data_cleaning_copilot, context_mcp, get_entity_relationships).
+
+// Data cleaning copilot integration with sap-ai-fabric-console
+cross_agent_call(data_cleaning_copilot, sap_ai_fabric_console, submit_for_approval).
+cross_agent_call(data_cleaning_copilot, sap_ai_fabric_console, log_audit_event).
+cross_agent_call(sap_ai_fabric_console, data_cleaning_copilot, run_quality_check).
+cross_agent_call(sap_ai_fabric_console, data_cleaning_copilot, profile_table).
 
 // Permission check for cross-agent calls
 allow_cross_agent(Source, Target, Operation) :-

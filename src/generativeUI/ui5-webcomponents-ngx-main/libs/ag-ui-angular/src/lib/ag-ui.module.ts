@@ -32,8 +32,7 @@ import { JouleChatComponent } from './joule-chat/joule-chat.component';
  * ```
  */
 @NgModule({
-  imports: [CommonModule],
-  declarations: [JouleChatComponent],
+  imports: [CommonModule, JouleChatComponent],
   exports: [JouleChatComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [],

@@ -5,6 +5,7 @@
  */
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { JouleChatComponent, ChatMessage } from './joule-chat.component';
 import { AgUiClient } from '../services/ag-ui-client.service';
 import { AgUiToolRegistry } from '../services/tool-registry.service';
@@ -27,12 +28,16 @@ describe('JouleChatComponent Accessibility', () => {
     };
 
     await TestBed.configureTestingModule({
-      declarations: [JouleChatComponent],
+      imports: [JouleChatComponent],
       providers: [
         { provide: AgUiClient, useValue: mockAgUiClient },
         { provide: AgUiToolRegistry, useValue: {} },
       ],
-    }).compileComponents();
+    })
+    .overrideComponent(JouleChatComponent, {
+      set: { changeDetection: ChangeDetectionStrategy.Default },
+    })
+    .compileComponents();
 
     fixture = TestBed.createComponent(JouleChatComponent);
     component = fixture.componentInstance;
