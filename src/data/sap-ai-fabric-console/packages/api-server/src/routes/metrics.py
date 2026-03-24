@@ -236,12 +236,12 @@ async def operations_dashboard(
 ):
     """Operational dashboard snapshot built from existing Prometheus and store health data."""
     auth_snapshot = auth_metrics_snapshot(settings.alert_window_seconds)
-    mcp_snapshot = mcp_metrics_snapshot(settings.alert_window_seconds)
     store_health = store.health_snapshot()
     service_health_snapshot = await asyncio.gather(
         probe_health("langchain-hana-mcp", settings.langchain_mcp_url, settings.mcp_healthcheck_timeout_seconds),
         probe_health("ai-core-streaming-mcp", settings.streaming_mcp_url, settings.mcp_healthcheck_timeout_seconds),
     )
+    mcp_snapshot = mcp_metrics_snapshot(settings.alert_window_seconds)
     alerts = _build_alerts(auth_snapshot, mcp_snapshot, store_health, list(service_health_snapshot))
 
     return {

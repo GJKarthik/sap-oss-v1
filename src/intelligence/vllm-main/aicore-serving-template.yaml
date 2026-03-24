@@ -26,14 +26,14 @@ spec:
     metadata:
       annotations: |
         autoscaling.knative.dev/metric: concurrency
-        autoscaling.knative.dev/target: 1
-        autoscaling.knative.dev/targetBurstCapacity: 0
+        autoscaling.knative.dev/target: "4"
+        autoscaling.knative.dev/targetBurstCapacity: "100"
       labels: |
         ai.sap.com/resourcePlan: "{{inputs.parameters.resourcePlan}}"
     spec: |
       predictor:
-        minReplicas: 1
-        maxReplicas: 1
+        minReplicas: 2
+        maxReplicas: 8
         containers:
         - name: kserve-container
           image: "{{inputs.parameters.dockerImage}}"

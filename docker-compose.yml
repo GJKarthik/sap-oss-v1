@@ -3,8 +3,6 @@
 # Tiered topology per sap-ai-experience-map.yaml
 # ════════════════════════════════════════════════════════════════════════════
 
-version: '3.8'
-
 services:
 
   # ── Tier 1 ─ SAP Analytics Cloud : Gen UI Experiences ────────────────────
@@ -13,6 +11,7 @@ services:
     build:
       context: ./src/generativeUI/world-monitor-main
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
@@ -20,7 +19,11 @@ services:
       - VLLM_URL=http://vllm:8080
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - MANGLE_ROUTER_URL=http://agent-router:8010
-      - REDIS_URL=redis://redis:6379
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     labels:
       sap.ai.tier: "sap_analytics_cloud"
       sap.ai.service: "world-monitor"
@@ -37,8 +40,14 @@ services:
     build:
       context: ./src/generativeUI/data-cleaning-copilot-main
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8002:8002"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=8002
       - MANGLE_ROUTER_URL=http://agent-router:8010
@@ -67,8 +76,14 @@ services:
     build:
       context: ./src/data/cap-llm-plugin-main
       dockerfile: docker/Dockerfile
+    restart: unless-stopped
     ports:
       - "4004:4004"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=4004
       - VLLM_URL=http://vllm:8080
@@ -87,11 +102,13 @@ services:
     build:
       context: ./src/intelligence/vllm-main
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
       - MODEL_PATH=/app/models
+      - METRICS_BIND=127.0.0.1
     volumes:
       - model-cache:/app/models
     labels:
@@ -114,12 +131,18 @@ services:
 
   elasticsearch:
     image: elasticsearch:8.12.0
+    restart: unless-stopped
     ports:
       - "9200:9200"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
     labels:
       sap.ai.tier: "ai_core"
       sap.ai.service: "search"
@@ -137,8 +160,14 @@ services:
     build:
       context: ./src/data/mangle-query-service
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8010:8010"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=8010
       - ELASTICSEARCH_URL=http://elasticsearch:9200
@@ -161,8 +190,14 @@ services:
     build:
       context: ./src/data/odata-vocabularies-main
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8003:8003"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
     environment:
       - PORT=8003
     labels:
@@ -182,13 +217,20 @@ services:
     build:
       context: ./src/intelligence/ai-core-pal
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8020:8020"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=8020
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
       - MANGLE_ROUTER_URL=http://agent-router:8010
+      - METRICS_BIND=127.0.0.1
     labels:
       sap.ai.tier: "ai_core"
       sap.ai.service: "mcp-pal-deep-learning"
@@ -200,8 +242,14 @@ services:
     build:
       context: ./src/data/ai-core-streaming
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8030:8030"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=8030
       - VLLM_URL=http://vllm:8080
@@ -219,8 +267,14 @@ services:
     build:
       context: ./src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8040:8040"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=8040
       - HANA_URL=${HANA_URL}
@@ -237,8 +291,14 @@ services:
     build:
       context: ./src/data/langchain-integration-for-sap-hana-cloud-main
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8050:8050"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     environment:
       - PORT=8050
       - HANA_URL=${HANA_URL}
@@ -257,6 +317,7 @@ services:
     build:
       context: ./src/training/nvidia-modelopt
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8001:8001"
     environment:
@@ -285,16 +346,9 @@ services:
 
   # ── Infrastructure ─────────────────────────────────────────────────────
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks: [platform-network]
-
   api-gateway:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
@@ -311,9 +365,6 @@ volumes:
     driver: local
   es-data:
     driver: local
-  redis-data:
-    driver: local
-
 networks:
   platform-network:
     driver: bridge

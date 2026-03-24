@@ -38,6 +38,7 @@ sap-ai-fabric-console/
 - `yarn test --skip-nx-cache` runs the Angular and backend unit/integration suites.
 - `yarn build --skip-nx-cache` produces the production Angular build.
 - `yarn e2e:smoke` starts the backend and frontend locally on isolated free ports, drives a real Chrome session headlessly, verifies login plus the main routes, and fails on runtime exceptions, failed XHR/fetch/document requests, or browser `console.error` output. The default browser login mode uses the Angular login component directly for stable UI5 automation; set `E2E_LOGIN_MODE=ui` for raw keystroke coverage or `E2E_LOGIN_MODE=api` to inject a session after a real backend login.
+- `GET /api/v1/metrics/operations` returns the Phase 2 operations snapshot built from the existing Prometheus endpoint, auth counters, MCP proxy counters, store health, and alert thresholds.
 
 ## Prerequisites
 
@@ -154,9 +155,46 @@ Supported container environment variables:
 
 ## API Documentation
 
-Interactive docs are enabled by default in `development` and `test` and disabled by default in production. You can override that with `EXPOSE_API_DOCS=true|false`.
+Interactive docs are enabled by default in `development` and `test` and disabled outside those environments. Production rejects both `DEBUG=true` and `EXPOSE_API_DOCS=true`.
 
 When the backend is running, interactive API docs are available at:
 - **Swagger UI**: http://localhost:8000/api/docs
 - **ReDoc**: http://localhost:8000/api/redoc
 - **Prometheus Metrics**: http://localhost:8000/metrics
+
+## Store Operations
+
+The existing HANA/SQLite store can now be managed explicitly before deploys and during rollback:
+
+```bash
+yarn ops:migrate
+yarn ops:backup --output ./backups/pre-release.json
+yarn ops:restore --input ./backups/pre-release.json --clear-first
+```
+
+These commands use [store_admin.py](/Users/user/Documents/sap-oss/src/data/sap-ai-fabric-console/packages/api-server/scripts/store_admin.py) and the configured store backend. The API container runs `migrate` automatically on startup through [entrypoint.sh](/Users/user/Documents/sap-oss/src/data/sap-ai-fabric-console/packages/api-server/docker/entrypoint.sh).
+
+### Backup And Rollback
+
+Recommended release flow:
+
+1. Run `yarn ops:backup --output ./backups/<release>.json`
+2. Deploy the new image and let container startup run `migrate`
+3. Run `yarn e2e:smoke` or the CI smoke gate
+4. If rollback is required, redeploy the previous image and run `yarn ops:restore --input ./backups/<release>.json --clear-first`
+
+The restore path is application-level and covers persisted users, models, deployments, datasources, vector stores, and governance rules.
+
+## CI Gates
+
+The repository now includes [ci.yml](/Users/user/Documents/sap-oss/src/data/sap-ai-fabric-console/.github/workflows/ci.yml) with three gates:
+
+- backend pytest
+- Angular test and production build
+- real browser smoke using the existing smoke harness
+
+The smoke script now supports Linux Chrome paths as well as the existing macOS paths, so the same `yarn e2e:smoke` flow runs in CI.
+
+## Audit Logging
+
+Admin mutation routes now emit explicit structured audit logs for model, deployment, datasource, governance, vector-store, and lineage changes. These logs stay inside the existing `structlog` pipeline and are also counted in the operations snapshot.

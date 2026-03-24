@@ -79,6 +79,14 @@ def test_production_defaults_disable_reference_data_seeding_and_require_mcp_depe
     assert production_settings.expose_api_docs is False
 
 
+def test_production_rejects_debug_and_docs_surfaces() -> None:
+    with pytest.raises(ValidationError):
+        Settings(**_production_settings_kwargs(debug=True))
+
+    with pytest.raises(ValidationError):
+        Settings(**_production_settings_kwargs(expose_api_docs=True))
+
+
 def test_hana_store_prefix_is_normalized() -> None:
     hana_settings = Settings(
         environment="test",

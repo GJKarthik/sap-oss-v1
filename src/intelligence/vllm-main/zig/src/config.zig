@@ -10,9 +10,8 @@ pub const Config = struct {
     host: []const u8 = "0.0.0.0",
     port: u16 = 8080,
 
-    // Backend settings
-    backend_url: []const u8 = "http://localhost:3000",
-    backend_timeout_ms: u32 = 120000,
+    // Metrics binding (127.0.0.1 in production; 0.0.0.0 only for local dev)
+    metrics_bind: []const u8 = "127.0.0.1",
 
     // API settings
     api_key: ?[]const u8 = null,
@@ -85,9 +84,8 @@ pub const Config = struct {
         cfg.host = envStr("HOST", cfg.host);
         cfg.port = envInt(u16, "PORT", cfg.port);
 
-        // --- Backend ---
-        cfg.backend_url = envStr("BACKEND_URL", cfg.backend_url);
-        cfg.backend_timeout_ms = envInt(u32, "BACKEND_TIMEOUT_MS", cfg.backend_timeout_ms);
+        // --- Metrics bind address ---
+        cfg.metrics_bind = envStr("METRICS_BIND", cfg.metrics_bind);
 
         // --- API / Model ---
         cfg.api_key = std.posix.getenv("API_KEY") orelse cfg.api_key;
@@ -193,7 +191,7 @@ test "default config" {
     const cfg = Config{};
     try std.testing.expectEqual(@as(u16, 8080), cfg.port);
     try std.testing.expectEqualStrings("0.0.0.0", cfg.host);
-    try std.testing.expectEqualStrings("http://localhost:3000", cfg.backend_url);
+    try std.testing.expectEqualStrings("127.0.0.1", cfg.metrics_bind);
     try std.testing.expectEqual(true, cfg.streaming_enabled);
     try std.testing.expectEqual(true, cfg.toon_enabled);
     try std.testing.expectEqual(true, cfg.use_local_llama);

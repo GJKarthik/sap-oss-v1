@@ -1,6 +1,6 @@
 from src.config import Settings
 from src.main import app
-from src.routes import mcp_proxy
+from src.routes import auth, mcp_proxy
 from src.store import get_store
 
 
@@ -114,7 +114,7 @@ def test_readiness_returns_503_when_required_mcp_dependency_is_unavailable(monke
         return {"status": "ok", "service": service_name, "target": target_url}
 
     monkeypatch.setattr("src.main.settings.require_mcp_dependencies", True)
-    monkeypatch.setattr(mcp_proxy, "probe_health", fake_probe)
+    monkeypatch.setattr("src.main.mcp_proxy.probe_health", fake_probe)
 
     response = client.get("/ready")
 
@@ -123,6 +123,32 @@ def test_readiness_returns_503_when_required_mcp_dependency_is_unavailable(monke
     assert body["status"] == "not_ready"
     assert body["failed_dependencies"] == ["langchain_mcp"]
     assert body["checks"]["langchain_mcp"]["status"] == "error"
+
+
+def test_operations_dashboard_reports_auth_and_alert_state(monkeypatch, client, admin_headers) -> None:
+    monkeypatch.setattr("src.routes.metrics.settings.auth_failure_alert_threshold", 1)
+    monkeypatch.setattr("src.routes.metrics.settings.mcp_failure_alert_threshold", 1)
+    monkeypatch.setattr("src.routes.metrics.settings.require_mcp_dependencies", True)
+
+    async def fake_probe(service_name: str, target_url: str, timeout_seconds: float = 5.0) -> dict:
+        if service_name == "langchain-hana-mcp":
+            return {"status": "error", "service": service_name, "target": target_url, "error": "offline"}
+        return {"status": "healthy", "service": service_name, "target": target_url}
+
+    monkeypatch.setattr("src.routes.metrics.probe_health", fake_probe)
+    auth._record_auth_event("login", "failure")
+
+    client.get("/health")
+    response = client.get("/api/v1/metrics/operations", headers=admin_headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["api"]["requests_total"] >= 1
+    assert body["auth"]["recent_failures"] >= 1
+    assert body["store"]["store"] == "ok"
+    alert_states = {alert["name"]: alert["active"] for alert in body["alerts"]}
+    assert alert_states["auth_failure_spike"] is True
+    assert alert_states["readiness_degradation"] is True
 
 
 def test_root_omits_docs_link_when_docs_are_disabled(monkeypatch, client) -> None:

@@ -56,10 +56,11 @@ aicore_plan_spec("infer.l", 0, 4, 25).
 # =============================================================================
 
 # SAP AI Core object store settings
-# Bucket ID injected at runtime via AICORE_OBJECT_STORE_BUCKET env var.
-# The gateway asserts this as a Mangle fact on startup (see main.zig).
-# Fallback for local development only:
-aicore_storage("bucket", "local-dev-bucket").
+# Bucket ID is injected at runtime by the gateway on startup:
+#   engine.assertFact("aicore_storage", "bucket", env("AICORE_OBJECT_STORE_BUCKET"))
+# This static fact is the LOCAL-DEV FALLBACK ONLY — never used in AI Core deployments
+# because main.zig asserts the real bucket before any rule is evaluated.
+aicore_storage("bucket", "local-dev-bucket") :- \+ aicore_storage_runtime("bucket", _).
 aicore_storage("prefix", "ai://default/").
 aicore_storage("models_path", "llm-models/").
 aicore_storage("embeddings_path", "embeddings/").

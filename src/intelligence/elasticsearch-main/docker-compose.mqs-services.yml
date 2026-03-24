@@ -133,24 +133,6 @@ services:
     profiles:
       - full
 
-  # ============================================
-  # Redis (optional - for caching)
-  # ============================================
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
-    networks:
-      - ai-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-    profiles:
-      - full
-
 networks:
   ai-network:
     driver: bridge

@@ -7,8 +7,9 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, catchError, forkJoin, interval, map, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, catchError, forkJoin, interval, map, of, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 // =============================================================================
 // Types
@@ -87,6 +88,59 @@ export interface DashboardStats {
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown';
 }
 
+export interface OperationsDashboard {
+  window_seconds: number;
+  api: {
+    requests_total: number;
+    error_requests_total: number;
+    error_rate: number;
+    avg_latency_ms: number;
+    handlers: Array<{
+      handler: string;
+      method: string;
+      requests: number;
+      errors: number;
+      avg_latency_ms: number;
+    }>;
+  };
+  auth: {
+    successes_total: number;
+    failures_total: number;
+    recent_failures: number;
+  };
+  mcp: {
+    recent_failures: Record<string, number>;
+    services: Record<string, {
+      request_successes_total: number;
+      request_failures_total: number;
+      healthy: boolean;
+    }>;
+    service_health: Array<{
+      status: string;
+      service: string;
+      target: string;
+      error?: string;
+    }>;
+  };
+  store: {
+    store: string;
+    store_backend: string;
+    connection_target: string;
+    [key: string]: unknown;
+  };
+  audit: {
+    total_actions: number;
+    failed_actions: number;
+  };
+  alerts: Array<{
+    name: string;
+    active: boolean;
+    observed: unknown;
+    threshold: number;
+    window_seconds: number;
+  }>;
+}
+
 // =============================================================================
 // MCP Service
 // =============================================================================
@@ -96,6 +150,7 @@ export interface DashboardStats {
 })
 export class McpService {
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
 
   private requestId = 0;
   private correlationCounter = 0;
@@ -103,6 +158,7 @@ export class McpService {
   private readonly streamingUrl = environment.streamingMcpUrl;
   private readonly langchainHealthUrl = `${environment.langchainMcpUrl}/health`;
   private readonly streamingHealthUrl = `${environment.streamingMcpUrl}/health`;
+  private healthPollingSubscription: Subscription | null = null;
 
   // Reactive state
   private healthSubject = new BehaviorSubject<{
@@ -122,8 +178,14 @@ export class McpService {
   public vectorStores$ = this.vectorStoresSubject.asObservable();
 
   constructor() {
-    // Start health polling
-    this.startHealthPolling();
+    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+      if (isAuthenticated) {
+        this.startHealthPolling();
+        return;
+      }
+
+      this.stopHealthPolling();
+    });
   }
 
   // ===========================================================================
@@ -131,12 +193,21 @@ export class McpService {
   // ===========================================================================
 
   private startHealthPolling(): void {
-    interval(30000).pipe(
+    if (this.healthPollingSubscription) {
+      return;
+    }
+
+    this.healthPollingSubscription = interval(30000).pipe(
       switchMap(() => this.checkAllHealth())
     ).subscribe();
-    
-    // Initial check
+
     this.checkAllHealth().subscribe();
+  }
+
+  private stopHealthPolling(): void {
+    this.healthPollingSubscription?.unsubscribe();
+    this.healthPollingSubscription = null;
+    this.healthSubject.next({ langchain: null, streaming: null, overall: 'unknown' });
   }
 
   checkAllHealth(): Observable<void> {
@@ -394,6 +465,41 @@ export class McpService {
           overallHealth: health.overall,
         } satisfies DashboardStats;
       })
+    );
+  }
+
+  getOperationsDashboard(): Observable<OperationsDashboard> {
+    return this.http.get<OperationsDashboard>(`${environment.apiBaseUrl}/metrics/operations`).pipe(
+      catchError(() => of({
+        window_seconds: 300,
+        api: {
+          requests_total: 0,
+          error_requests_total: 0,
+          error_rate: 0,
+          avg_latency_ms: 0,
+          handlers: []
+        },
+        auth: {
+          successes_total: 0,
+          failures_total: 0,
+          recent_failures: 0
+        },
+        mcp: {
+          recent_failures: {},
+          services: {},
+          service_health: []
+        },
+        store: {
+          store: 'unknown',
+          store_backend: 'unknown',
+          connection_target: ''
+        },
+        audit: {
+          total_actions: 0,
+          failed_actions: 0
+        },
+        alerts: []
+      }))
     );
   }
 }

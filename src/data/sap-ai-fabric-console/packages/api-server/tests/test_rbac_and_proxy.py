@@ -42,6 +42,35 @@ def test_admin_can_update_deployment_status_via_request_body(client, admin_heade
     assert update_response.json() == {"id": deployment_id, "target_status": "STOPPED"}
 
 
+def test_admin_model_mutation_emits_audit_log(monkeypatch, client, admin_headers) -> None:
+    calls: list[dict] = []
+
+    def fake_log_admin_action(**kwargs) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("src.routes.models.log_admin_action", fake_log_admin_action)
+
+    response = client.post(
+        "/api/v1/models/",
+        headers=admin_headers,
+        json={
+            "id": "audited-model",
+            "name": "Audited Model",
+            "provider": "sap-ai-core",
+            "version": "1.0",
+            "context_window": 4096,
+            "capabilities": ["chat"],
+        },
+    )
+
+    assert response.status_code == 201
+    assert calls
+    assert calls[0]["resource"] == "models"
+    assert calls[0]["action"] == "create"
+    assert calls[0]["result"] == "success"
+    assert calls[0]["target"] == "audited-model"
+
+
 def test_mcp_proxy_forwards_authenticated_requests(monkeypatch, client, admin_headers) -> None:
     forwarded: dict[str, object] = {}
 

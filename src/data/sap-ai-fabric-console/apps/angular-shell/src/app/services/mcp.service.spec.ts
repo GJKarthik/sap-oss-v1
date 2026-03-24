@@ -1,19 +1,32 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Deployment, McpService, ServiceHealth } from './mcp.service';
+import { AuthService } from './auth.service';
 
 describe('McpService', () => {
   let service: McpService;
   let httpMock: HttpTestingController;
+  let authState$: BehaviorSubject<boolean>;
 
   beforeEach(() => {
     jest.useFakeTimers();
+    authState$ = new BehaviorSubject<boolean>(true);
 
     TestBed.configureTestingModule({
-      providers: [McpService, provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        McpService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AuthService,
+          useValue: {
+            isAuthenticated$: authState$.asObservable(),
+          },
+        },
+      ],
     });
 
     service = TestBed.inject(McpService);
@@ -50,6 +63,37 @@ describe('McpService', () => {
       streaming: { status: 'error', service: 'ai-core-streaming-mcp', error: 'Connection failed' },
       overall: 'degraded',
     });
+  });
+
+  it('does not start health polling until the user is authenticated', () => {
+    httpMock.verify();
+    TestBed.resetTestingModule();
+
+    authState$ = new BehaviorSubject<boolean>(false);
+    TestBed.configureTestingModule({
+      providers: [
+        McpService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AuthService,
+          useValue: {
+            isAuthenticated$: authState$.asObservable(),
+          },
+        },
+      ],
+    });
+
+    service = TestBed.inject(McpService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    expect(httpMock.match(request => request.method === 'GET' && request.url.endsWith('/health'))).toHaveLength(0);
+
+    authState$.next(true);
+    flushHealthChecks(
+      { status: 'healthy', service: 'langchain-hana-mcp' },
+      { status: 'healthy', service: 'ai-core-streaming-mcp' }
+    );
   });
 
   it('calls the deployments MCP tool and exposes the returned resources', async () => {

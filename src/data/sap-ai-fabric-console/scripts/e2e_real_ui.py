@@ -42,8 +42,13 @@ ROUTES_TO_CHECK = [
     ("/rag", "RAG Studio"),
 ]
 CHROME_CANDIDATES = [
+    Path(os.environ["CHROME_BIN"]) if os.environ.get("CHROME_BIN") else None,
     Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
     Path("/Applications/Chromium.app/Contents/MacOS/Chromium"),
+    Path("/usr/bin/google-chrome"),
+    Path("/usr/bin/google-chrome-stable"),
+    Path("/usr/bin/chromium"),
+    Path("/usr/bin/chromium-browser"),
 ]
 SUPPORTED_LOGIN_MODES = {"api", "component", "ui"}
 
@@ -236,9 +241,9 @@ class CDPSession:
 
 def find_chrome_binary() -> Path:
     for candidate in CHROME_CANDIDATES:
-        if candidate.exists():
+        if candidate is not None and candidate.exists():
             return candidate
-    raise FileNotFoundError("Google Chrome or Chromium was not found in /Applications")
+    raise FileNotFoundError("Google Chrome or Chromium was not found in the supported system locations")
 
 
 def start_process(name: str, command: list[str], cwd: Path, env: dict[str, str], log_path: Path) -> ManagedProcess:

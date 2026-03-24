@@ -11,7 +11,8 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.service';
+import { forkJoin } from 'rxjs';
+import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '../../services/mcp.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -116,6 +117,41 @@ import { McpService, DashboardStats, ServiceHealth } from '../../services/mcp.se
               <div class="stat-value">{{ stats.documentsIndexed | number }}</div>
               <div class="stat-label">Documents Indexed</div>
               <ui5-tag design="Neutral">{{ stats.vectorStores }} stores</ui5-tag>
+            </div>
+          </ui5-card>
+
+          <!-- Operations Card -->
+          <ui5-card class="stat-card" *ngIf="operations">
+            <ui5-card-header
+              slot="header"
+              title-text="Operations"
+              subtitle-text="API, auth, and store health"
+              [additionalText]="getActiveAlertCount() + ' alerts'">
+              <ui5-icon slot="avatar" name="activity-items"></ui5-icon>
+            </ui5-card-header>
+            <div class="card-content">
+              <div class="service-item">
+                <span>API Avg Latency</span>
+                <ui5-tag design="Information">{{ operations.api.avg_latency_ms }} ms</ui5-tag>
+              </div>
+              <div class="service-item">
+                <span>API Error Rate</span>
+                <ui5-tag [design]="operations.api.error_rate > 0 ? 'Critical' : 'Positive'">
+                  {{ operations.api.error_rate }}%
+                </ui5-tag>
+              </div>
+              <div class="service-item">
+                <span>Auth Failures ({{ operations.window_seconds }}s)</span>
+                <ui5-tag [design]="operations.auth.recent_failures > 0 ? 'Critical' : 'Positive'">
+                  {{ operations.auth.recent_failures }}
+                </ui5-tag>
+              </div>
+              <div class="service-item">
+                <span>Store Backend</span>
+                <ui5-tag [design]="operations.store.store === 'ok' ? 'Positive' : 'Negative'">
+                  {{ operations.store.store_backend }}
+                </ui5-tag>
+              </div>
             </div>
           </ui5-card>
         </div>
@@ -266,6 +302,7 @@ export class DashboardComponent implements OnInit {
     streaming: null,
     overall: 'unknown'
   };
+  operations: OperationsDashboard | null = null;
   
   recentActivity = [
     { event: 'RAG Query', service: 'langchain-hana', status: 'success', time: '2 min ago' },
@@ -285,11 +322,15 @@ export class DashboardComponent implements OnInit {
 
   refresh(): void {
     this.loading = true;
-    this.mcpService.getDashboardStats()
+    forkJoin({
+      stats: this.mcpService.getDashboardStats(),
+      operations: this.mcpService.getOperationsDashboard()
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (stats) => {
+        next: ({ stats, operations }) => {
           this.stats = stats;
+          this.operations = operations;
           this.loading = false;
         },
         error: (err) => {
@@ -319,6 +360,10 @@ export class DashboardComponent implements OnInit {
   getDeploymentPercentage(): number {
     if (this.stats.totalDeployments === 0) return 0;
     return Math.round((this.stats.activeDeployments / this.stats.totalDeployments) * 100);
+  }
+
+  getActiveAlertCount(): number {
+    return this.operations?.alerts.filter(alert => alert.active).length || 0;
   }
 
   toggleActions(): void {

@@ -74,7 +74,7 @@ const radix_prefix_cache_mod = @import("llm/radix_prefix_cache.zig");
 pub const ServerConfig = struct {
     host: []const u8 = "0.0.0.0",
     port: u16 = 8080,
-    backend_url: []const u8 = "http://localhost:3000",
+    metrics_bind: []const u8 = "127.0.0.1",
     api_key: ?[]const u8 = null,
     max_connections: u32 = 1024,
     streaming_enabled: bool = true,
@@ -95,7 +95,7 @@ pub const ServerConfig = struct {
         return .{
             .host = cfg.host,
             .port = cfg.port,
-            .backend_url = cfg.backend_url,
+            .metrics_bind = cfg.metrics_bind,
             .api_key = cfg.api_key,
             .max_connections = cfg.max_connections,
             .streaming_enabled = cfg.streaming_enabled,
