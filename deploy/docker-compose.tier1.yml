@@ -1,0 +1,199 @@
+# ============================================================================
+# SAP AI Fabric - TIER 1: MCP Servers
+# ============================================================================
+# Deploy after Tier 0 - Core MCP (Model Context Protocol) servers
+# Usage: docker-compose -f docker-compose.tier1.yml up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # OData Vocabularies MCP Server
+  # Provides semantic context for SAP OData services
+  # No external dependencies - can start immediately
+  # ─────────────────────────────────────────────────────────────────────────
+  odata-vocabularies-mcp:
+    build:
+      context: ../src/data/odata-vocabularies-main
+      dockerfile: Dockerfile
+    container_name: sap-ai-odata-mcp
+    ports:
+      - "${ODATA_MCP_PORT:-9150}:9150"
+    environment:
+      - PORT=9150
+      - HOST=${ODATA_MCP_HOST:-0.0.0.0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ../src/data/odata-vocabularies-main/vocabularies:/app/vocabularies:ro
+    labels:
+      sap.ai.tier: "tier1-mcp-servers"
+      sap.ai.service: "odata-vocabularies-mcp"
+      sap.ai.data_security: "public"
+      sap.ai.mcp.protocol: "stdio"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9150/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Elasticsearch MCP Server
+  # Provides vector search and semantic retrieval
+  # Depends on: Elasticsearch (Tier 0), AI Core (for embeddings)
+  # ─────────────────────────────────────────────────────────────────────────
+  elasticsearch-mcp:
+    build:
+      context: ../src/intelligence/elasticsearch-main
+      dockerfile: mcp_server/Dockerfile
+    container_name: sap-ai-es-mcp
+    ports:
+      - "${ES_MCP_PORT:-9120}:9120"
+    environment:
+      - PORT=9120
+      - HOST=${ES_MCP_HOST:-0.0.0.0}
+      - ES_HOST=${ES_HOST:-elasticsearch}
+      - ES_PORT=${ES_PORT:-9200}
+      - ES_USERNAME=${ES_USERNAME:-}
+      - ES_PASSWORD=${ES_PASSWORD:-}
+      - ES_SCHEME=${ES_SCHEME:-http}
+      - ES_INDEX_PREFIX=${ES_MCP_INDEX_PREFIX:-sap-ai-}
+      # AI Core for embeddings
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier1-mcp-servers"
+      sap.ai.service: "elasticsearch-mcp"
+      sap.ai.data_security: "index-based"
+      sap.ai.mcp.protocol: "stdio"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9120/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # LangChain HANA MCP Server
+  # Provides vector store operations with SAP HANA Cloud
+  # Depends on: HANA Cloud (external), AI Core (for embeddings)
+  # ─────────────────────────────────────────────────────────────────────────
+  langchain-hana-mcp:
+    build:
+      context: ../src/data/langchain-integration-for-sap-hana-cloud-main
+      dockerfile: Dockerfile
+    container_name: sap-ai-langchain-hana-mcp
+    ports:
+      - "${LANGCHAIN_HANA_MCP_PORT:-9160}:9160"
+    environment:
+      - PORT=9160
+      - HOST=${LANGCHAIN_HANA_MCP_HOST:-0.0.0.0}
+      # HANA Cloud connection
+      - HANA_HOST=${HANA_HOST}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER=${HANA_USER}
+      - HANA_PASSWORD=${HANA_PASSWORD}
+      - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
+      - HANA_ENCRYPT=${HANA_ENCRYPT:-true}
+      # Vector store settings
+      - EMBEDDING_MODEL=${LANGCHAIN_HANA_EMBEDDING_MODEL:-text-embedding-ada-002}
+      - VECTOR_TABLE=${LANGCHAIN_HANA_VECTOR_TABLE:-EMBEDDINGS}
+      # AI Core for embeddings
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier1-mcp-servers"
+      sap.ai.service: "langchain-hana-mcp"
+      sap.ai.data_security: "confidential"
+      sap.ai.mcp.protocol: "stdio"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9160/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # OData Schema Service (Legacy - also used by other services)
+  # ─────────────────────────────────────────────────────────────────────────
+  odata-schema:
+    build:
+      context: ../src/data/odata-vocabularies-main
+      dockerfile: Dockerfile
+    container_name: sap-ai-odata-schema
+    ports:
+      - "${ODATA_SCHEMA_PORT:-8003}:8003"
+    environment:
+      - PORT=8003
+    volumes:
+      - ../src/data/odata-vocabularies-main/vocabularies:/app/vocabularies:ro
+    labels:
+      sap.ai.tier: "tier1-mcp-servers"
+      sap.ai.service: "odata-schema"
+      sap.ai.data_security: "public"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Agent Router (Mangle Query Service)
+  # Routes requests to appropriate MCP servers
+  # ─────────────────────────────────────────────────────────────────────────
+  agent-router:
+    build:
+      context: ../src/data/mangle-query-service
+      dockerfile: Dockerfile
+    container_name: sap-ai-agent-router
+    ports:
+      - "${AGENT_ROUTER_PORT:-8010}:8010"
+    environment:
+      - PORT=8010
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ODATA_SERVICE_URL=http://odata-schema:8003
+      - HANA_URL=${HANA_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier1-mcp-servers"
+      sap.ai.service: "agent-router"
+      sap.ai.data_security: "governance-hub"
+    depends_on:
+      - odata-schema
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+networks:
+  sap-ai-fabric-network:
+    external: true
+    name: ${NETWORK_NAME:-sap-ai-fabric-network}

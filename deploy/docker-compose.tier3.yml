@@ -1,0 +1,184 @@
+# ============================================================================
+# SAP AI Fabric - TIER 3: Training & Model Optimization
+# ============================================================================
+# Deploy after Tier 2 (optional) - Model training and optimization services
+# Usage: docker-compose -f docker-compose.tier3.yml up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # ModelOpt API Server
+  # NVIDIA ModelOpt-based model optimization and quantization
+  # GPU recommended for faster optimization
+  # ─────────────────────────────────────────────────────────────────────────
+  modelopt-api:
+    build:
+      context: ../src/training/nvidia-modelopt
+      dockerfile: Dockerfile
+    container_name: sap-ai-modelopt-api
+    ports:
+      - "${MODELOPT_API_PORT:-8001}:8001"
+    environment:
+      - PORT=8001
+      - HOST=${MODELOPT_API_HOST:-0.0.0.0}
+      - OUTPUT_DIR=${MODELOPT_OUTPUT_DIR:-/app/outputs}
+      - CACHE_DIR=${MODELOPT_CACHE_DIR:-/app/cache}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+      # Model paths
+      - MODEL_CACHE_PATH=/app/models
+      # AI Core credentials (for model download)
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+    volumes:
+      - model-cache:/app/models
+      - modelopt-outputs:/app/outputs
+      - modelopt-cache:/app/cache
+    labels:
+      sap.ai.tier: "tier3-training"
+      sap.ai.service: "modelopt-api"
+      sap.ai.data_security: "confidential"
+      sap.ai.gpu: "recommended"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ModelOpt UI
+  # Web interface for model optimization workflows
+  # ─────────────────────────────────────────────────────────────────────────
+  modelopt-ui:
+    build:
+      context: ../src/training/nvidia-modelopt/ui
+      dockerfile: Dockerfile
+    container_name: sap-ai-modelopt-ui
+    ports:
+      - "${MODELOPT_UI_PORT:-8082}:8080"
+    environment:
+      - PORT=8080
+      - HOST=${MODELOPT_UI_HOST:-0.0.0.0}
+      - MODELOPT_API_URL=${MODELOPT_API_URL:-http://modelopt-api:8001}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier3-training"
+      sap.ai.service: "modelopt-ui"
+      sap.ai.data_security: "internal"
+    depends_on:
+      modelopt-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Training Pipeline Orchestrator
+  # Manages training jobs and data pipelines
+  # ─────────────────────────────────────────────────────────────────────────
+  training-pipeline:
+    build:
+      context: ../src/training
+      dockerfile: pipeline/Dockerfile
+    container_name: sap-ai-training-pipeline
+    ports:
+      - "8091:8091"
+    environment:
+      - PORT=8091
+      - HOST=0.0.0.0
+      - MODELOPT_API_URL=http://modelopt-api:8001
+      - HANA_URL=${HANA_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # AI Core credentials
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+    volumes:
+      - model-cache:/app/models
+      - training-data:/app/data
+    labels:
+      sap.ai.tier: "tier3-training"
+      sap.ai.service: "training-pipeline"
+      sap.ai.data_security: "confidential"
+    depends_on:
+      modelopt-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # KuzuDB Graph Database (for lineage tracking)
+  # Tracks model lineage and training metadata
+  # ─────────────────────────────────────────────────────────────────────────
+  kuzu:
+    image: kuzudb/kuzu:latest
+    container_name: sap-ai-kuzu
+    ports:
+      - "7687:7687"
+    volumes:
+      - kuzu-data:/data
+    environment:
+      - KUZU_DATA_DIR=/data
+    labels:
+      sap.ai.tier: "tier3-training"
+      sap.ai.service: "kuzu-graph"
+      sap.ai.data_security: "internal"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7687"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+volumes:
+  model-cache:
+    external: true
+    name: sap-ai-model-cache
+  modelopt-outputs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MODELOPT_OUTPUT_PATH:-./volumes/modelopt-outputs}
+  modelopt-cache:
+    driver: local
+  training-data:
+    driver: local
+  kuzu-data:
+    driver: local
+
+networks:
+  sap-ai-fabric-network:
+    external: true
+    name: ${NETWORK_NAME:-sap-ai-fabric-network}

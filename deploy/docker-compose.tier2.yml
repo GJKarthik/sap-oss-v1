@@ -1,0 +1,285 @@
+# ============================================================================
+# SAP AI Fabric - TIER 2: Intelligence Layer
+# ============================================================================
+# Deploy after Tier 1 - LLM inference and AI processing services
+# Usage: docker-compose -f docker-compose.tier2.yml up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # vLLM Inference Server
+  # High-performance LLM inference with GPU acceleration
+  # Depends on: GPU (hardware), AI Core (optional for model download)
+  # ─────────────────────────────────────────────────────────────────────────
+  vllm:
+    build:
+      context: ../src/intelligence/vllm-main
+      dockerfile: Dockerfile.qwen3-q8
+    container_name: sap-ai-vllm
+    ports:
+      - "${VLLM_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - HOST=${VLLM_HOST:-0.0.0.0}
+      - MODEL_PATH=${VLLM_MODEL_PATH:-/app/models}
+      - MODEL_NAME=${VLLM_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct-GGUF}
+      - TENSOR_PARALLEL_SIZE=${VLLM_TENSOR_PARALLEL_SIZE:-1}
+      - GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.9}
+      - MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-32768}
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - model-cache:/app/models
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "vllm-inference"
+      sap.ai.data_security: "on-premise-only"
+      sap.ai.gpu: "required"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 120s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # AI-Core-PAL (Mesh Gateway)
+  # HANA PAL integration with MCP protocol support
+  # Depends on: HANA Cloud, vLLM, Agent Router
+  # ─────────────────────────────────────────────────────────────────────────
+  ai-core-pal:
+    build:
+      context: ../src/intelligence/ai-core-pal
+      dockerfile: Dockerfile
+    container_name: sap-ai-core-pal
+    ports:
+      - "${AICORE_PAL_PORT:-9881}:8080"
+    environment:
+      - PORT=8080
+      - HOST=${AICORE_PAL_HOST:-0.0.0.0}
+      - MCP_PORT=${MCP_PORT:-9881}
+      # HANA Cloud connection
+      - HANA_HOST=${HANA_HOST}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER=${HANA_USER}
+      - HANA_PASSWORD=${HANA_PASSWORD}
+      - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
+      - HANA_URL=${HANA_URL}
+      # Private LLM endpoint
+      - PRIVATE_LLM_URL=${PRIVATE_LLM_URL:-http://vllm:8080}
+      - VLLM_URL=http://vllm:8080
+      # Mangle router
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      # AI Core credentials
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "ai-core-pal"
+      sap.ai.data_security: "confidential"
+      sap.ai.mcp.protocol: "http"
+    depends_on:
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Generative AI Toolkit for HANA Cloud
+  # RAG and prompt management with HANA vector store
+  # Depends on: HANA Cloud, AI Core, vLLM
+  # ─────────────────────────────────────────────────────────────────────────
+  genai-toolkit:
+    build:
+      context: ../src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
+      dockerfile: Dockerfile
+    container_name: sap-ai-genai-toolkit
+    ports:
+      - "${GENAI_TOOLKIT_PORT:-8084}:8084"
+    environment:
+      - PORT=8084
+      - HOST=${GENAI_TOOLKIT_HOST:-0.0.0.0}
+      # HANA Cloud connection
+      - HANA_HOST=${HANA_HOST}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER=${HANA_USER}
+      - HANA_PASSWORD=${HANA_PASSWORD}
+      - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
+      - HANA_URL=${HANA_URL}
+      # vLLM endpoint
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      # Gen AI Hub (optional)
+      - GENAI_HUB_API_KEY=${GENAI_HUB_API_KEY:-}
+      - GENAI_HUB_BASE_URL=${GENAI_HUB_BASE_URL:-}
+      # AI Core credentials
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "genai-toolkit"
+      sap.ai.data_security: "confidential"
+    depends_on:
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # AI Shared Fabric (Streaming Service)
+  # Real-time AI streaming and event processing
+  # ─────────────────────────────────────────────────────────────────────────
+  ai-shared-fabric:
+    build:
+      context: ../src/data/ai-core-streaming
+      dockerfile: Dockerfile
+    container_name: sap-ai-shared-fabric
+    ports:
+      - "${AI_SHARED_FABRIC_PORT:-8030}:8030"
+    environment:
+      - PORT=8030
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - HANA_URL=${HANA_URL}
+      - XSUAA_URL=${XSUAA_URL:-}
+      # AI Core credentials
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "ai-shared-fabric"
+      sap.ai.data_security: "public/internal"
+    depends_on:
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8030/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MCP-PAL Deep Learning Service
+  # PAL-based ML operations with MCP interface
+  # ─────────────────────────────────────────────────────────────────────────
+  mcp-pal:
+    build:
+      context: ../src/intelligence/ai-core-pal
+      dockerfile: Dockerfile
+    container_name: sap-ai-mcp-pal
+    ports:
+      - "${MCP_PAL_PORT:-8020}:8020"
+    environment:
+      - PORT=8020
+      - HANA_URL=${HANA_URL}
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "mcp-pal-deep-learning"
+      sap.ai.data_security: "confidential"
+    depends_on:
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8020/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Embedded HANA Service (LangChain Integration)
+  # LangChain-based HANA operations
+  # ─────────────────────────────────────────────────────────────────────────
+  embedded-hana:
+    build:
+      context: ../src/data/langchain-integration-for-sap-hana-cloud-main
+      dockerfile: Dockerfile
+    container_name: sap-ai-embedded-hana
+    ports:
+      - "${EMBEDDED_HANA_PORT:-8050}:8050"
+    environment:
+      - PORT=8050
+      - HANA_URL=${HANA_URL}
+      - VLLM_URL=http://vllm:8080
+      - MANGLE_ROUTER_URL=http://agent-router:8010
+      # AI Core credentials
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "embedded-hana"
+      sap.ai.data_security: "confidential"
+    depends_on:
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+volumes:
+  model-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MODEL_CACHE_PATH:-./volumes/model-cache}
+
+networks:
+  sap-ai-fabric-network:
+    external: true
+    name: ${NETWORK_NAME:-sap-ai-fabric-network}

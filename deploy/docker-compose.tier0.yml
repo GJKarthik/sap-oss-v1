@@ -1,0 +1,116 @@
+# ============================================================================
+# SAP AI Fabric - TIER 0: Infrastructure Services
+# ============================================================================
+# Deploy first - these are the foundational services all other tiers depend on
+# Usage: docker-compose -f docker-compose.tier0.yml up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Elasticsearch - Search and Vector Store
+  # ─────────────────────────────────────────────────────────────────────────
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: sap-ai-elasticsearch
+    ports:
+      - "${ES_PORT:-9200}:9200"
+      - "9300:9300"
+    environment:
+      - node.name=${ES_NODE_NAME:-es-node-1}
+      - cluster.name=${ES_CLUSTER_NAME:-sap-ai-fabric}
+      - discovery.type=${ES_DISCOVERY_TYPE:-single-node}
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms512m -Xmx512m}
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    labels:
+      sap.ai.tier: "tier0-infrastructure"
+      sap.ai.service: "elasticsearch"
+      sap.ai.data_security: "index-based"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Redis - Caching and Message Queue
+  # ─────────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: sap-ai-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    labels:
+      sap.ai.tier: "tier0-infrastructure"
+      sap.ai.service: "redis"
+      sap.ai.data_security: "cache"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # API Gateway (Nginx)
+  # ─────────────────────────────────────────────────────────────────────────
+  api-gateway:
+    image: nginx:alpine
+    container_name: sap-ai-gateway
+    ports:
+      - "8000:80"
+      - "8443:443"
+    volumes:
+      - ../nginx.conf:/etc/nginx/nginx.conf:ro
+    labels:
+      sap.ai.tier: "tier0-infrastructure"
+      sap.ai.service: "api-gateway"
+      sap.ai.data_security: "gateway"
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
+volumes:
+  es-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${ES_DATA_PATH:-./volumes/es-data}
+  redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${REDIS_DATA_PATH:-./volumes/redis-data}
+
+networks:
+  sap-ai-fabric-network:
+    name: ${NETWORK_NAME:-sap-ai-fabric-network}
+    driver: ${NETWORK_DRIVER:-bridge}
