@@ -1,0 +1,17 @@
+.git
+.gitignore
+.husky
+.idea
+.vscode
+node_modules
+dist
+coverage
+.nx
+.turbo
+.angular
+.pytest_cache
+packages/api-server/.venv
+packages/api-server/.data
+**/__pycache__
+**/*.py[cod]
+**/.DS_Store

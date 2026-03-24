@@ -1,0 +1,25 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: packages/api-server/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/angular-shell/Dockerfile
+    depends_on:
+      - api
+    environment:
+      SAP_API_BASE_URL: ${SAP_API_BASE_URL:-/api/v1}
+      SAP_API_UPSTREAM: ${SAP_API_UPSTREAM:-http://api:8000}
+      SAP_LANGCHAIN_MCP_URL: ${SAP_LANGCHAIN_MCP_URL:-}
+      SAP_STREAMING_MCP_URL: ${SAP_STREAMING_MCP_URL:-}
+    ports:
+      - "8080:80"
+    restart: unless-stopped

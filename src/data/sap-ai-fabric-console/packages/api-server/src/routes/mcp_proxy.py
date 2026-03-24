@@ -12,9 +12,12 @@ This centralises all traffic through the FastAPI backend so that:
   4. Future rate-limiting, audit logging and retries apply uniformly.
 """
 
+from collections import defaultdict, deque
+import time
 from typing import Any, Dict, Optional
 
 import httpx
+from prometheus_client import Counter, Gauge
 import structlog
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
@@ -27,6 +30,17 @@ router = APIRouter()
 logger = structlog.get_logger()
 
 _TIMEOUT = httpx.Timeout(30.0, connect=5.0)
+MCP_PROXY_EVENTS_TOTAL = Counter(
+    "sap_aifabric_mcp_proxy_events_total",
+    "MCP proxy request and health probe events by service and result.",
+    ["service", "result"],
+)
+MCP_UPSTREAM_HEALTH = Gauge(
+    "sap_aifabric_mcp_upstream_health",
+    "Current upstream MCP health status, 1 when healthy and 0 when unhealthy.",
+    ["service"],
+)
+_MCP_FAILURE_TIMESTAMPS: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=1024))
 
 
 # ---------------------------------------------------------------------------
@@ -66,6 +80,59 @@ def _describe_exception(exc: Exception) -> str:
     return str(exc) or exc.__class__.__name__
 
 
+def _service_name(target_url: str) -> str:
+    if target_url == settings.langchain_mcp_url:
+        return "langchain-hana-mcp"
+    if target_url == settings.streaming_mcp_url:
+        return "ai-core-streaming-mcp"
+    return target_url
+
+
+def _record_mcp_event(service_name: str, result: str, *, healthy: bool | None = None) -> None:
+    MCP_PROXY_EVENTS_TOTAL.labels(service_name, result).inc()
+    if healthy is not None:
+        MCP_UPSTREAM_HEALTH.labels(service_name).set(1 if healthy else 0)
+    if result not in {"request_success", "health_success"}:
+        _MCP_FAILURE_TIMESTAMPS[service_name].append(time.time())
+
+
+def recent_mcp_failures(window_seconds: int) -> dict[str, int]:
+    cutoff = time.time() - max(window_seconds, 1)
+    snapshot: dict[str, int] = {}
+    for service_name, timestamps in _MCP_FAILURE_TIMESTAMPS.items():
+        while timestamps and timestamps[0] < cutoff:
+            timestamps.popleft()
+        snapshot[service_name] = len(timestamps)
+    return snapshot
+
+
+def mcp_metrics_snapshot(window_seconds: int) -> dict:
+    services = ("langchain-hana-mcp", "ai-core-streaming-mcp")
+    recent_failures = recent_mcp_failures(window_seconds)
+    return {
+        "recent_failures": recent_failures,
+        "services": {
+            service_name: {
+                "request_successes_total": float(
+                    MCP_PROXY_EVENTS_TOTAL.labels(service_name, "request_success")._value.get()
+                ),
+                "request_failures_total": sum(
+                    float(MCP_PROXY_EVENTS_TOTAL.labels(service_name, result)._value.get())
+                    for result in (
+                        "connect_error",
+                        "http_error",
+                        "request_error",
+                        "unexpected_error",
+                        "health_error",
+                    )
+                ),
+                "healthy": bool(MCP_UPSTREAM_HEALTH.labels(service_name)._value.get()),
+            }
+            for service_name in services
+        },
+    }
+
+
 def _health_url(target_url: str) -> str:
     if target_url.endswith("/mcp"):
         return target_url[: -len("/mcp")] + "/health"
@@ -82,6 +149,7 @@ async def _read_json_body(request: Request) -> dict | None:
 
 async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
     """Forward a JSON-RPC body to the target MCP server and return its response."""
+    service_name = _service_name(target_url)
     headers = {
         "Content-Type": "application/json",
         "X-Correlation-ID": correlation_id,
@@ -90,10 +158,12 @@ async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(target_url, json=body, headers=headers)
             resp.raise_for_status()
+            _record_mcp_event(service_name, "request_success")
             return resp.json()
     except httpx.ConnectError as exc:
         error = _describe_exception(exc)
         logger.error("MCP proxy connect error", target=target_url, error=error)
+        _record_mcp_event(service_name, "connect_error")
         return _jsonrpc_error(
             body,
             -32001,
@@ -101,6 +171,7 @@ async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
         )
     except httpx.HTTPStatusError as exc:
         logger.error("MCP proxy HTTP error", target=target_url, status=exc.response.status_code)
+        _record_mcp_event(service_name, "http_error")
         return _jsonrpc_error(
             body,
             -32002,
@@ -109,6 +180,7 @@ async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
     except httpx.RequestError as exc:
         error = _describe_exception(exc)
         logger.error("MCP proxy request error", target=target_url, error=error)
+        _record_mcp_event(service_name, "request_error")
         return _jsonrpc_error(
             body,
             -32001,
@@ -117,6 +189,7 @@ async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
     except Exception as exc:
         error = _describe_exception(exc)
         logger.error("MCP proxy unexpected error", target=target_url, error=error)
+        _record_mcp_event(service_name, "unexpected_error")
         return _jsonrpc_error(
             body,
             -32000,
@@ -131,6 +204,7 @@ async def probe_health(service_name: str, target_url: str, timeout_seconds: floa
             resp = await client.get(health_url)
             resp.raise_for_status()
             payload = resp.json()
+            _record_mcp_event(service_name, "health_success", healthy=True)
             if isinstance(payload, dict):
                 return {
                     "status": payload.get("status", "ok"),
@@ -147,6 +221,7 @@ async def probe_health(service_name: str, target_url: str, timeout_seconds: floa
     except Exception as exc:
         error = _describe_exception(exc)
         logger.warning("MCP health probe failed", service=service_name, target=health_url, error=error)
+        _record_mcp_event(service_name, "health_error", healthy=False)
         return {
             "status": "error",
             "service": service_name,

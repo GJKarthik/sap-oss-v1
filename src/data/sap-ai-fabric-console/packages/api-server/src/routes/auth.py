@@ -4,6 +4,8 @@ JWT-based login with bcrypt user validation, token refresh, and server-side logo
 via persistent JTI revocation storage.
 """
 
+from collections import deque
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
@@ -13,6 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
+from prometheus_client import Counter
+import structlog
 
 from ..config import settings
 from ..redis_client import is_token_revoked, revoke_token
@@ -20,6 +24,20 @@ from ..store import StoreBackend, get_store
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+logger = structlog.get_logger()
+audit_logger = structlog.get_logger("audit")
+
+AUTH_EVENTS_TOTAL = Counter(
+    "sap_aifabric_auth_events_total",
+    "Authentication lifecycle events by operation and result.",
+    ["operation", "result"],
+)
+ADMIN_ACTIONS_TOTAL = Counter(
+    "sap_aifabric_admin_actions_total",
+    "Admin mutation actions recorded by resource, action, and result.",
+    ["resource", "action", "result"],
+)
+_AUTH_FAILURE_TIMESTAMPS: deque[float] = deque(maxlen=2048)
 
 
 def _verify_password(plain: str, hashed: str) -> bool:
@@ -57,6 +75,72 @@ class UserInfo(BaseModel):
 
 def _make_jti() -> str:
     return str(uuid.uuid4())
+
+
+def _counter_value(counter: Counter, *label_values: str) -> float:
+    return float(counter.labels(*label_values)._value.get())
+
+
+def _record_auth_event(operation: str, result: str) -> None:
+    AUTH_EVENTS_TOTAL.labels(operation, result).inc()
+    if result != "success":
+        _AUTH_FAILURE_TIMESTAMPS.append(time.time())
+
+
+def recent_auth_failures(window_seconds: int) -> int:
+    cutoff = time.time() - max(window_seconds, 1)
+    while _AUTH_FAILURE_TIMESTAMPS and _AUTH_FAILURE_TIMESTAMPS[0] < cutoff:
+        _AUTH_FAILURE_TIMESTAMPS.popleft()
+    return len(_AUTH_FAILURE_TIMESTAMPS)
+
+
+def auth_metrics_snapshot(window_seconds: int) -> dict:
+    operations = ("login", "refresh", "logout")
+    successes_total = sum(_counter_value(AUTH_EVENTS_TOTAL, operation, "success") for operation in operations)
+    failures_total = sum(_counter_value(AUTH_EVENTS_TOTAL, operation, "failure") for operation in operations)
+    return {
+        "successes_total": successes_total,
+        "failures_total": failures_total,
+        "recent_failures": recent_auth_failures(window_seconds),
+    }
+
+
+def admin_action_metrics_snapshot() -> dict:
+    total = 0.0
+    failures = 0.0
+    for resource in ("models", "deployments", "datasources", "governance_rules", "vector_stores", "lineage"):
+        for action in ("create", "delete", "update_status", "toggle", "test_connection", "index", "add_documents"):
+            total += _counter_value(ADMIN_ACTIONS_TOTAL, resource, action, "success")
+            total += _counter_value(ADMIN_ACTIONS_TOTAL, resource, action, "failure")
+            failures += _counter_value(ADMIN_ACTIONS_TOTAL, resource, action, "failure")
+    return {
+        "total_actions": total,
+        "failed_actions": failures,
+    }
+
+
+def log_admin_action(
+    *,
+    actor: UserInfo,
+    resource: str,
+    action: str,
+    result: str,
+    target: Optional[str] = None,
+    reason: Optional[str] = None,
+    **fields: object,
+) -> None:
+    ADMIN_ACTIONS_TOTAL.labels(resource, action, result).inc()
+    audit_logger.info(
+        "admin_action",
+        actor_username=actor.username,
+        actor_role=actor.role,
+        resource=resource,
+        action=action,
+        result=result,
+        target=target,
+        reason=reason,
+        **fields,
+    )
 
 
 def _build_token_data(user: dict, fallback_username: Optional[str] = None) -> dict:
@@ -187,17 +271,23 @@ async def login(
     )
 
     if not form_data.username or not form_data.password:
+        _record_auth_event("login", "failure")
         raise invalid_exc
 
     user = store.get_record("users", form_data.username)
     if user is None or not user.get("is_active", True):
+        _record_auth_event("login", "failure")
+        logger.warning("Authentication failed", username=form_data.username, reason="user_missing_or_inactive")
         raise invalid_exc
     if not _verify_password(form_data.password, user["hashed_password"]):
+        _record_auth_event("login", "failure")
+        logger.warning("Authentication failed", username=form_data.username, reason="invalid_password")
         raise invalid_exc
 
     token_data = _build_token_data(user, form_data.username)
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
+    _record_auth_event("login", "success")
 
     return TokenResponse(
         access_token=access_token,
@@ -218,11 +308,13 @@ async def refresh_token(
             body.refresh_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
         )
         if payload.get("type") != "refresh":
+            _record_auth_event("refresh", "failure")
             raise invalid_exc
 
         username: Optional[str] = payload.get("sub")
         jti: Optional[str] = payload.get("jti")
         if jti and await is_token_revoked(jti):
+            _record_auth_event("refresh", "failure")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked")
 
         user = _get_active_user(store, username, invalid_exc)
@@ -238,12 +330,14 @@ async def refresh_token(
             await revoke_token(jti, ttl)
 
         token_data = _build_token_data(user, username)
+        _record_auth_event("refresh", "success")
         return TokenResponse(
             access_token=create_access_token(token_data),
             refresh_token=create_refresh_token(token_data),
             expires_in=settings.jwt_access_token_expire_minutes * 60,
         )
     except JWTError:
+        _record_auth_event("refresh", "failure")
         raise invalid_exc
 
 
@@ -255,6 +349,7 @@ async def logout(
     """Revoke the current access token and optional refresh token server-side."""
     await _revoke_encoded_token(token, "access")
     await _revoke_encoded_token(body.refresh_token if body else None, "refresh")
+    _record_auth_event("logout", "success")
     return {"status": "logged_out"}
 
 

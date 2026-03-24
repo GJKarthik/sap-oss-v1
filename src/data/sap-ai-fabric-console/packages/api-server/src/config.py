@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = 60
     require_mcp_dependencies: bool | None = None
     mcp_healthcheck_timeout_seconds: float = 5.0
+    alert_window_seconds: int = 300
+    auth_failure_alert_threshold: int = 5
+    mcp_failure_alert_threshold: int = 3
+    readiness_failure_alert_threshold: int = 1
 
     # SAP AI Core
     aicore_client_id: str = ""
@@ -109,10 +113,14 @@ class Settings(BaseSettings):
         if self.require_mcp_dependencies is None:
             object.__setattr__(self, "require_mcp_dependencies", not is_local_environment)
         if not is_local_environment:
+            if self.debug:
+                raise ValueError("DEBUG must remain disabled outside development and test environments")
             if self.jwt_secret_key == DEFAULT_JWT_SECRET:
                 raise ValueError("JWT_SECRET_KEY must be changed outside development and test environments")
             if backend != "hana":
                 raise ValueError("STORE_BACKEND must be set to 'hana' outside development and test environments")
+            if self.expose_api_docs:
+                raise ValueError("EXPOSE_API_DOCS cannot be enabled outside development and test environments")
             username = self.bootstrap_admin_username.strip()
             password = self.bootstrap_admin_password
             if bool(username) != bool(password):
