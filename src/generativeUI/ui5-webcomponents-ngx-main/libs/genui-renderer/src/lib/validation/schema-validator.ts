@@ -9,7 +9,7 @@
 
 import { Injectable } from '@angular/core';
 import { ComponentRegistry } from '../registry/component-registry';
-import { A2UiSchema, A2UI_SCHEMA_VERSION } from '../renderer/dynamic-renderer.service';
+import { A2UiSchema, A2UI_SCHEMA_VERSION } from '../renderer/types';
 
 /** Known/supported schema versions. Schemas with other versions produce a warning. */
 const KNOWN_SCHEMA_VERSIONS: Set<string> = new Set([A2UI_SCHEMA_VERSION]);
