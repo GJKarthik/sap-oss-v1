@@ -1,0 +1,64 @@
+{
+  "name": "training-console",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "nx": "nx",
+    "start": "nx serve angular-shell",
+    "build": "nx run-many -t build",
+    "lint": "nx run-many -t lint",
+    "test": "nx run-many -t test",
+    "format": "nx format:write",
+    "format:check": "nx format:check",
+    "graph": "nx graph",
+    "clean": "nx reset"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "0.2003.9",
+    "@angular-devkit/core": "20.3.9",
+    "@angular-devkit/schematics": "20.3.9",
+    "@angular-eslint/eslint-plugin": "20.5.1",
+    "@angular-eslint/eslint-plugin-template": "20.5.1",
+    "@angular-eslint/template-parser": "20.5.1",
+    "@angular/common": "20.3.9",
+    "@angular/compiler": "20.3.9",
+    "@angular/compiler-cli": "20.3.9",
+    "@angular/core": "20.3.9",
+    "@angular/platform-browser": "20.3.9",
+    "@angular/platform-browser-dynamic": "20.3.9",
+    "@nx/angular": "22.0.2",
+    "@nx/eslint": "22.0.2",
+    "@nx/eslint-plugin": "22.0.2",
+    "@nx/jest": "22.0.2",
+    "@nx/js": "22.0.2",
+    "@nx/workspace": "22.0.2",
+    "@schematics/angular": "20.3.9",
+    "@types/jest": "30.0.0",
+    "@types/node": "18.16.9",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "10.1.1",
+    "jest": "30.0.5",
+    "jest-environment-jsdom": "30.0.5",
+    "jest-preset-angular": "15.0.0",
+    "jsdom": "26.1.0",
+    "jsonc-eslint-parser": "2.1.0",
+    "nx": "22.0.2",
+    "prettier": "3.2.4",
+    "rxjs": "7.8.1",
+    "ts-jest": "29.4.0",
+    "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "nx": "22.0.2"
+  },
+  "packageManager": "yarn@4.11.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

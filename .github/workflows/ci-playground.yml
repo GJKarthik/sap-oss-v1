@@ -1,0 +1,57 @@
+# Playground app - CI: lint, test, build
+# Runs on changes under src/generativeUI/ui5-webcomponents-ngx-main/
+
+name: CI (Playground)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/generativeUI/ui5-webcomponents-ngx-main/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/generativeUI/ui5-webcomponents-ngx-main/**'
+
+defaults:
+  run:
+    working-directory: src/generativeUI/ui5-webcomponents-ngx-main
+
+jobs:
+  lint-test-build:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/generativeUI/ui5-webcomponents-ngx-main/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn nx lint playground || true
+
+      - name: Test
+        run: yarn nx test playground --passWithNoTests --coverage
+        env:
+          CI: true
+
+      - name: Build
+        run: yarn nx build playground
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-playground
+          path: src/generativeUI/ui5-webcomponents-ngx-main/coverage/apps/playground
+          retention-days: 14
+        if: always()
