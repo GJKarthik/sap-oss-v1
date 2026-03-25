@@ -23,7 +23,7 @@ import { Subject, BehaviorSubject } from 'rxjs';
 import DOMPurify from 'dompurify';
 import { ComponentRegistry, ComponentMetadata } from '../registry/component-registry';
 import { SchemaValidator, ValidationResult } from '../validation/schema-validator';
-export {
+import {
   A2UI_SCHEMA_VERSION,
   A2UiSchema,
   EventHandler,
@@ -31,7 +31,7 @@ export {
   RenderedComponent,
   RenderContext,
 } from './types';
-import {
+export {
   A2UI_SCHEMA_VERSION,
   A2UiSchema,
   EventHandler,

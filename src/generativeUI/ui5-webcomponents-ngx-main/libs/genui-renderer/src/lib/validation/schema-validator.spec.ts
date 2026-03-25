@@ -13,7 +13,7 @@
 
 import { SchemaValidator } from './schema-validator';
 import { ComponentRegistry } from '../registry/component-registry';
-import { A2UiSchema, A2UI_SCHEMA_VERSION } from '../renderer/dynamic-renderer.service';
+import { A2UiSchema, A2UI_SCHEMA_VERSION } from '../renderer/types';
 
 function makeValidator(): SchemaValidator {
   const registry = new ComponentRegistry();

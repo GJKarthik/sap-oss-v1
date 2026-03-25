@@ -348,12 +348,17 @@ class TestGraphContextEnrichment(unittest.TestCase):
 
 class TestToolRegistration(unittest.TestCase):
 
-    def test_all_9_tools_registered(self):
+    def test_all_14_tools_registered(self):
+        """Test all 14 MCP tools are registered (9 core + 5 training)."""
         server = MCPServer()
         expected = {
+            # Core tools
             "data_quality_check", "schema_analysis", "data_profiling",
             "anomaly_detection", "generate_cleaning_query", "ai_chat",
             "mangle_query", "kuzu_index", "kuzu_query",
+            # Training integration tools
+            "list_training_products", "validate_training_product",
+            "get_training_schema", "generate_training_data", "modelopt_infer",
         }
         self.assertEqual(expected, set(server.tools.keys()))
 

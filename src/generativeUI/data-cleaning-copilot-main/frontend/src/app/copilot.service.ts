@@ -438,6 +438,34 @@ export class CopilotService {
         return this.http.get<{ status: string; service: string; auth_enabled: boolean }>(`${this.mcpBase}/health`);
     }
 
+    /**
+     * Call an MCP tool and return raw result (Promise-based for async/await usage).
+     * Returns the raw MCP response with content array.
+     */
+    async callMcpTool(toolName: string, args: Record<string, unknown>): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const response = await fetch(`${this.mcpBase}/mcp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: { name: toolName, arguments: args },
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`MCP call failed: HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error.message);
+        }
+
+        return data.result as { content: Array<{ type: string; text: string }> };
+    }
+
     // ==========================================================================
     // Private MCP helpers
     // ==========================================================================

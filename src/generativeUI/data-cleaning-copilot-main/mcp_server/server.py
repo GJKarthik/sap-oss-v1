@@ -368,6 +368,112 @@ class MCPServer:
             },
         }
 
+        # Training Integration Tools
+        self.tools["list_training_products"] = {
+            "name": "list_training_products",
+            "description": (
+                "List all available training data products from the ODPS 4.1 registry. "
+                "Returns products for Treasury, ESG, and Performance domains."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "type": "string",
+                        "description": "Filter by domain (treasury, esg, performance) - optional",
+                    },
+                },
+            },
+        }
+
+        self.tools["validate_training_product"] = {
+            "name": "validate_training_product",
+            "description": (
+                "Run quality gates on a training data product. "
+                "Checks field_completeness, hierarchy_consistency, prompt_coverage, "
+                "and schema_mapping_accuracy."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "Product ID (e.g., treasury-capital-markets-v1)",
+                    },
+                },
+                "required": ["product_id"],
+            },
+        }
+
+        self.tools["get_training_schema"] = {
+            "name": "get_training_schema",
+            "description": (
+                "Get the schema (tables and fields) for a training data product."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "Product ID to get schema for",
+                    },
+                },
+                "required": ["product_id"],
+            },
+        }
+
+        self.tools["generate_training_data"] = {
+            "name": "generate_training_data",
+            "description": (
+                "Generate Text-to-SQL training data from a HANA schema. "
+                "Creates prompt-query pairs for fine-tuning."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "table_name": {
+                        "type": "string",
+                        "description": "Table to generate training data for",
+                    },
+                    "domain": {
+                        "type": "string",
+                        "description": "Domain (treasury, esg, performance)",
+                    },
+                    "num_samples": {
+                        "type": "integer",
+                        "description": "Number of training samples to generate (default: 10)",
+                    },
+                },
+                "required": ["table_name"],
+            },
+        }
+
+        self.tools["modelopt_infer"] = {
+            "name": "modelopt_infer",
+            "description": (
+                "Run inference using a fine-tuned model from ModelOpt service. "
+                "Automatically routes to domain-specific specialist models."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "messages": {
+                        "type": "string",
+                        "description": "JSON array of chat messages [{role, content}]",
+                    },
+                    "domain": {
+                        "type": "string",
+                        "description": "Domain for specialist routing (treasury, esg, performance)",
+                    },
+                    "model": {
+                        "type": "string",
+                        "description": "Override model selection (optional)",
+                    },
+                },
+                "required": ["messages"],
+            },
+        }
+
     def _register_resources(self):
         self.resources["data://schemas"] = {
             "uri": "data://schemas",
@@ -822,6 +928,220 @@ class MCPServer:
                 return {"predicate": predicate, "results": results, "source": delegation["source"]}
         return {"predicate": predicate, "results": [], "message": "Unknown predicate"}
 
+    # =========================================================================
+    # Training Integration Handlers
+    # =========================================================================
+
+    def _handle_list_training_products(self, args: dict) -> dict:
+        """List available training data products."""
+        try:
+            from training import list_products, get_registry
+            
+            domain_filter = str(args.get("domain", "") or "").strip().lower()
+            products = list_products()
+            
+            if domain_filter:
+                products = [
+                    p for p in products 
+                    if domain_filter in p.get("domain", "").lower()
+                ]
+            
+            self.facts["tool_invocation"].append({
+                "tool": "list_training_products",
+                "count": len(products),
+                "timestamp": __import__("time").time(),
+            })
+            
+            return {
+                "products": products,
+                "count": len(products),
+                "llm_routing": get_registry().get_llm_routing(),
+                "security_class": get_registry().get_security_class(),
+            }
+        except ImportError:
+            return {"error": "Training module not available", "products": []}
+
+    def _handle_validate_training_product(self, args: dict) -> dict:
+        """Validate a training product against quality gates."""
+        product_id = str(args.get("product_id", "") or "").strip()
+        if not product_id:
+            return {"error": "product_id is required"}
+        
+        try:
+            from training import validate_product
+            
+            results = validate_product(product_id)
+            
+            passed = all(r.get("passed", False) for r in results)
+            overall_score = sum(r.get("score", 0) for r in results) / len(results) if results else 0
+            
+            self.facts["tool_invocation"].append({
+                "tool": "validate_training_product",
+                "product_id": product_id,
+                "passed": passed,
+                "timestamp": __import__("time").time(),
+            })
+            
+            return {
+                "product_id": product_id,
+                "gates": results,
+                "overall_passed": passed,
+                "overall_score": round(overall_score, 2),
+            }
+        except ImportError:
+            return {"error": "Training module not available"}
+
+    def _handle_get_training_schema(self, args: dict) -> dict:
+        """Get schema for a training product."""
+        product_id = str(args.get("product_id", "") or "").strip()
+        if not product_id:
+            return {"error": "product_id is required"}
+        
+        try:
+            from training import read_resource
+            
+            schema = read_resource(f"training://products/{product_id}/schema")
+            return schema
+        except ImportError:
+            return {"error": "Training module not available"}
+
+    def _handle_generate_training_data(self, args: dict) -> dict:
+        """Generate Text-to-SQL training data from schema."""
+        table_name = str(args.get("table_name", "") or "").strip()
+        if not table_name:
+            return {"error": "table_name is required"}
+        
+        domain = str(args.get("domain", "") or "general").strip().lower()
+        num_samples = clamp_int(args.get("num_samples", 10), 10, 1, 100)
+        
+        # Generate training examples using templates
+        templates = {
+            "treasury": [
+                ("Show all accounts with balance greater than {amount}", 
+                 "SELECT * FROM {table} WHERE balance > {amount}"),
+                ("List account IDs for cost center {cost_center}",
+                 "SELECT account_id FROM {table} WHERE cost_center = '{cost_center}'"),
+                ("Get total amount by location",
+                 "SELECT location_code, SUM(amount) FROM {table} GROUP BY location_code"),
+            ],
+            "esg": [
+                ("Find clients with carbon footprint above {threshold}",
+                 "SELECT * FROM {table} WHERE carbon_footprint > {threshold}"),
+                ("Calculate average sustainability score",
+                 "SELECT AVG(sustainability_score) FROM {table}"),
+                ("List clients by sustainability tier",
+                 "SELECT tier, COUNT(*) FROM {table} GROUP BY tier"),
+            ],
+            "performance": [
+                ("Show budget vs actual for period {period}",
+                 "SELECT account, budget_amount, actual_amount FROM {table} WHERE period = '{period}'"),
+                ("Get variance analysis by account",
+                 "SELECT account, (actual_amount - budget_amount) as variance FROM {table}"),
+                ("List accounts with negative variance",
+                 "SELECT * FROM {table} WHERE actual_amount < budget_amount"),
+            ],
+            "general": [
+                ("Select all records from {table}",
+                 "SELECT * FROM {table}"),
+                ("Count total records in {table}",
+                 "SELECT COUNT(*) FROM {table}"),
+                ("Get distinct values from column",
+                 "SELECT DISTINCT column_name FROM {table}"),
+            ],
+        }
+        
+        domain_templates = templates.get(domain, templates["general"])
+        samples = []
+        
+        for i in range(min(num_samples, len(domain_templates) * 3)):
+            template = domain_templates[i % len(domain_templates)]
+            prompt_template, query_template = template
+            
+            # Fill in placeholders
+            prompt = prompt_template.format(
+                table=table_name,
+                amount=1000 + i * 100,
+                cost_center=f"CC{100 + i}",
+                threshold=50 + i * 5,
+                period=f"202{3 + i % 3}-Q{1 + i % 4}",
+            )
+            query = query_template.format(
+                table=table_name,
+                amount=1000 + i * 100,
+                cost_center=f"CC{100 + i}",
+                threshold=50 + i * 5,
+                period=f"202{3 + i % 3}-Q{1 + i % 4}",
+            )
+            
+            samples.append({
+                "prompt": prompt,
+                "query": query,
+                "domain": domain,
+                "table": table_name,
+            })
+        
+        self.facts["tool_invocation"].append({
+            "tool": "generate_training_data",
+            "table": table_name,
+            "domain": domain,
+            "samples": len(samples),
+            "timestamp": __import__("time").time(),
+        })
+        
+        return {
+            "table": table_name,
+            "domain": domain,
+            "samples": samples,
+            "count": len(samples),
+            "format": "text-to-sql",
+        }
+
+    def _handle_modelopt_infer(self, args: dict) -> dict:
+        """Run inference using ModelOpt fine-tuned models."""
+        messages = parse_json_arg(args.get("messages", "[]"), [])
+        if not isinstance(messages, list) or len(messages) == 0:
+            return {"error": "messages must be a non-empty JSON array"}
+        
+        domain = str(args.get("domain", "") or "").strip().lower()
+        model_override = str(args.get("model", "") or "").strip()
+        
+        try:
+            from training import infer, get_routing_recommendation
+            
+            # Get routing recommendation if domain specified
+            if domain:
+                routing = get_routing_recommendation(
+                    message=messages[-1].get("content", "") if messages else "",
+                    data_class=domain,
+                )
+            else:
+                routing = {"backend": "modelopt", "model": "qwen-3.5-finetuned"}
+            
+            # Run inference
+            result = infer(
+                messages=messages,
+                model=model_override or routing.get("model"),
+                data_class=domain or None,
+            )
+            
+            self.facts["tool_invocation"].append({
+                "tool": "modelopt_infer",
+                "model": result.get("model", "unknown"),
+                "backend": result.get("backend", "unknown"),
+                "timestamp": __import__("time").time(),
+            })
+            
+            return {
+                "content": result.get("content", ""),
+                "model": result.get("model", ""),
+                "backend": result.get("backend", ""),
+                "tokens_used": result.get("tokens_used", 0),
+                "latency_ms": result.get("latency_ms", 0),
+                "routing": routing,
+            }
+        except ImportError:
+            return {"error": "Training module not available"}
+
     def handle_request(self, request: MCPRequest) -> MCPResponse:
         method = request.method
         params = request.params
@@ -865,6 +1185,12 @@ class MCPServer:
                     "mangle_query": self._handle_mangle_query,
                     "kuzu_index": self._handle_kuzu_index,
                     "kuzu_query": self._handle_kuzu_query,
+                    # Training Integration
+                    "list_training_products": self._handle_list_training_products,
+                    "validate_training_product": self._handle_validate_training_product,
+                    "get_training_schema": self._handle_get_training_schema,
+                    "generate_training_data": self._handle_generate_training_data,
+                    "modelopt_infer": self._handle_modelopt_infer,
                 }
 
                 handler = handlers.get(tool_name)
