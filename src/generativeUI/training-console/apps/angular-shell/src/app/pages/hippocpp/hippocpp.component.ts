@@ -1,7 +1,10 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface GraphStats {
   available: boolean;
@@ -14,11 +17,23 @@ interface QueryResult {
   count: number;
 }
 
+interface QueryPreset {
+  label: string;
+  cypher: string;
+}
+
+interface ArchLayer {
+  icon: string;
+  name: string;
+  desc: string;
+}
+
 @Component({
   selector: 'app-hippocpp',
   standalone: true,
   imports: [CommonModule, FormsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
       <div class="page-header">
@@ -46,14 +61,14 @@ interface QueryResult {
       <div class="stats-grid" style="margin-bottom: 1.5rem;">
         <div class="stat-card">
           <div class="stat-value">
-            <span class="status-badge {{ stats?.available ? 'status-success' : 'status-error' }}">
-              {{ stats?.available ? 'Available' : 'Unavailable' }}
+            <span class="status-badge {{ stats()?.available ? 'status-success' : 'status-error' }}">
+              {{ stats()?.available ? 'Available' : 'Unavailable' }}
             </span>
           </div>
           <div class="stat-label">Graph Store</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ stats?.pair_count ?? '—' }}</div>
+          <div class="stat-value">{{ stats()?.pair_count ?? '—' }}</div>
           <div class="stat-label">Training Pairs Indexed</div>
         </div>
         <div class="stat-card">
@@ -68,7 +83,9 @@ interface QueryResult {
         <div class="query-card">
           <div class="query-presets">
             <span class="preset-label">Presets:</span>
-            <button class="preset-btn" (click)="setQuery(p.cypher)" *ngFor="let p of presets">{{ p.label }}</button>
+            @for (p of presets; track p.label) {
+              <button class="preset-btn" (click)="setQuery(p.cypher)">{{ p.label }}</button>
+            }
           </div>
           <textarea
             class="query-editor"
@@ -78,52 +95,65 @@ interface QueryResult {
             placeholder="MATCH (n) RETURN n LIMIT 10"
           ></textarea>
           <div class="query-actions">
-            <button class="btn-primary" (click)="runQuery()" [disabled]="!cypher.trim() || querying">
-              {{ querying ? 'Running…' : '▶ Execute' }}
+            <button class="btn-primary" (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
+              {{ querying() ? 'Running…' : '▶ Execute' }}
             </button>
             <button class="btn-secondary" (click)="clearResults()">Clear</button>
           </div>
         </div>
 
         <!-- Results -->
-        <div class="results-section" *ngIf="result">
-          <div class="result-header">
-            <span class="status-badge {{ result.status === 'ok' ? 'status-success' : 'status-error' }}">
-              {{ result.status }}
-            </span>
-            <span class="text-small text-muted">{{ result.count }} row(s)</span>
+        @if (result(); as res) {
+          <div class="results-section">
+            <div class="result-header">
+              <span class="status-badge {{ res.status === 'ok' ? 'status-success' : 'status-error' }}">
+                {{ res.status }}
+              </span>
+              <span class="text-small text-muted">{{ res.count }} row(s)</span>
+            </div>
+            @if (res.rows.length) {
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      @for (col of resultColumns(); track col) {
+                        <th>{{ col }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of res.rows; track $index) {
+                      <tr>
+                        @for (col of resultColumns(); track col) {
+                          <td class="text-small mono">{{ formatCell(row[col]) }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="text-muted text-small">No rows returned.</p>
+            }
           </div>
-          <div class="table-wrapper" *ngIf="result.rows.length">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th *ngFor="let col of resultColumns">{{ col }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let row of result.rows">
-                  <td *ngFor="let col of resultColumns" class="text-small mono">
-                    {{ formatCell(row[col]) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="text-muted text-small" *ngIf="!result.rows.length">No rows returned.</p>
-        </div>
+        }
 
-        <div class="error-banner" *ngIf="queryError">⚠ {{ queryError }}</div>
+        @if (queryError()) {
+          <div class="error-banner">⚠ {{ queryError() }}</div>
+        }
       </section>
 
       <!-- Architecture -->
       <section class="section">
         <h2 class="section-title">Architecture</h2>
         <div class="arch-grid">
-          <div class="arch-card" *ngFor="let layer of archLayers">
-            <div class="arch-icon">{{ layer.icon }}</div>
-            <div class="arch-name">{{ layer.name }}</div>
-            <div class="arch-desc text-small text-muted">{{ layer.desc }}</div>
-          </div>
+          @for (layer of archLayers; track layer.name) {
+            <div class="arch-card">
+              <div class="arch-icon">{{ layer.icon }}</div>
+              <div class="arch-name">{{ layer.name }}</div>
+              <div class="arch-desc text-small text-muted">{{ layer.desc }}</div>
+            </div>
+          }
         </div>
       </section>
     </div>
@@ -314,20 +344,25 @@ interface QueryResult {
     .arch-desc { font-size: 0.75rem; }
   `],
 })
-export class HippocppComponent implements OnInit {
-  stats: GraphStats | null = null;
-  cypher = 'MATCH (n) RETURN n LIMIT 10';
-  result: QueryResult | null = null;
-  querying = false;
-  queryError = '';
+export class HippocppComponent implements OnInit, OnDestroy {
+  private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
+  private readonly destroy$ = new Subject<void>();
 
-  presets = [
+  readonly stats = signal<GraphStats | null>(null);
+  readonly result = signal<QueryResult | null>(null);
+  readonly querying = signal(false);
+  readonly queryError = signal('');
+
+  cypher = 'MATCH (n) RETURN n LIMIT 10';
+
+  readonly presets: QueryPreset[] = [
     { label: 'All nodes', cypher: 'MATCH (n) RETURN n LIMIT 10' },
     { label: 'Training pairs', cypher: 'MATCH (p:TrainingPair) RETURN p LIMIT 20' },
     { label: 'Count pairs', cypher: 'MATCH (p:TrainingPair) RETURN count(p) AS total' },
   ];
 
-  archLayers = [
+  readonly archLayers: ArchLayer[] = [
     { icon: '⚡', name: 'Parser', desc: 'Cypher query parser (Zig)' },
     { icon: '📐', name: 'Planner', desc: 'Query plan generation' },
     { icon: '🔧', name: 'Optimizer', desc: 'Cost-based optimiser' },
@@ -338,17 +373,34 @@ export class HippocppComponent implements OnInit {
     { icon: '📜', name: 'Mangle', desc: 'Datalog invariants' },
   ];
 
-  constructor(private api: ApiService) {}
+  readonly resultColumns = () => {
+    const res = this.result();
+    if (!res?.rows?.length) return [];
+    return Object.keys(res.rows[0]);
+  };
 
   ngOnInit(): void {
     this.loadStats();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadStats(): void {
-    this.api.get<GraphStats>('/graph/stats').subscribe({
-      next: (s) => (this.stats = s),
-      error: () => {},
-    });
+    this.api.get<GraphStats>('/graph/stats')
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err: HttpErrorResponse) => {
+          this.toast.warning('Graph stats unavailable', 'Graph');
+          console.warn('Graph stats failed:', err);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (s: GraphStats | null) => this.stats.set(s),
+      });
   }
 
   setQuery(q: string): void {
@@ -357,29 +409,33 @@ export class HippocppComponent implements OnInit {
 
   runQuery(): void {
     if (!this.cypher.trim()) return;
-    this.querying = true;
-    this.queryError = '';
-    this.result = null;
-    this.api.post<QueryResult>('/graph/query', { cypher: this.cypher }).subscribe({
-      next: (r) => {
-        this.result = r;
-        this.querying = false;
-      },
-      error: (e) => {
-        this.queryError = e?.error?.detail ?? 'Query failed';
-        this.querying = false;
-      },
-    });
+    this.querying.set(true);
+    this.queryError.set('');
+    this.result.set(null);
+
+    this.api.post<QueryResult>('/graph/query', { cypher: this.cypher })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (r: QueryResult) => {
+          this.result.set(r);
+          this.querying.set(false);
+          if (r.status === 'ok') {
+            this.toast.success(`Query returned ${r.count} row(s)`, 'Query Complete');
+          }
+        },
+        error: (e: HttpErrorResponse) => {
+          const detail = (e.error as { detail?: string })?.detail ?? 'Query failed';
+          this.queryError.set(detail);
+          this.toast.error(detail, 'Query Error');
+          console.error('Query failed:', e);
+          this.querying.set(false);
+        },
+      });
   }
 
   clearResults(): void {
-    this.result = null;
-    this.queryError = '';
-  }
-
-  get resultColumns(): string[] {
-    if (!this.result?.rows?.length) return [];
-    return Object.keys(this.result.rows[0]);
+    this.result.set(null);
+    this.queryError.set('');
   }
 
   formatCell(val: unknown): string {

@@ -1,67 +1,64 @@
 <!-- Landing Page -->
-<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 44px);padding:2rem;background:var(--sapBackgroundColor,#f5f5f5);">
+<div class="home-page">
 
-  <div style="max-width:800px;width:100%;text-align:center;display:flex;flex-direction:column;gap:2rem;">
+  <div class="home-hero">
+    <ui5-title level="H1" class="home-hero__title">UI5 Web Components NGX</ui5-title>
+    <p class="home-hero__subtitle">
+      An Angular wrapper library for SAP UI5 Web Components with Generative AI capabilities
+    </p>
+  </div>
 
-    <div>
-      <ui5-title level="H1" style="font-size:2rem;margin-bottom:0.5rem;">UI5 Web Components NGX</ui5-title>
-      <ui5-text style="font-size:1.1rem;color:var(--sapContent_LabelColor,#6a6d70);">
-        An Angular wrapper library for SAP UI5 Web Components with Generative AI capabilities
-      </ui5-text>
-    </div>
+  <div class="home-cards">
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;">
-
-      <ui5-card style="cursor:pointer;" (click)="navigateForms()">
-        <ui5-card-header
-          slot="header"
-          title-text="Forms Demo"
-          subtitle-text="UI5 form components with Angular reactive forms"
-          interactive>
-        </ui5-card-header>
-        <div style="padding:1rem;color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
+    <ui5-card class="home-card" (click)="navigateForms()">
+      <ui5-card-header
+        slot="header"
+        title-text="Forms Demo"
+        subtitle-text="UI5 form components with Angular reactive forms"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
           Explore radio buttons, selects, checkboxes, inputs, date pickers, and data tables — all bound via Angular FormControl.
-        </div>
-        <div slot="action" style="padding:0.75rem 1rem;">
-          <ui5-button design="Emphasized" routerLink="/forms">Open Demo</ui5-button>
-        </div>
-      </ui5-card>
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateForms()">Open Demo</ui5-button>
+      </div>
+    </ui5-card>
 
-      <ui5-card style="cursor:pointer;" (click)="navigateJoule()">
-        <ui5-card-header
-          slot="header"
-          title-text="Joule AI"
-          subtitle-text="Generative UI driven by AI agents"
-          interactive>
-        </ui5-card-header>
-        <div style="padding:1rem;color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
+    <ui5-card class="home-card" (click)="navigateJoule()">
+      <ui5-card-header
+        slot="header"
+        title-text="Joule AI"
+        subtitle-text="Generative UI driven by AI agents"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
           Chat with Joule to generate SAP Fiori UI on the fly using the AG-UI streaming protocol and dynamic renderer.
-        </div>
-        <div slot="action" style="padding:0.75rem 1rem;">
-          <ui5-button design="Emphasized" routerLink="/joule">Launch Joule</ui5-button>
-        </div>
-      </ui5-card>
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateJoule()">Launch Joule</ui5-button>
+      </div>
+    </ui5-card>
 
-      <ui5-card style="cursor:pointer;" (click)="navigateCollab()">
-        <ui5-card-header
-          slot="header"
-          title-text="Collaboration"
-          subtitle-text="Real-time multi-user workspace"
-          interactive>
-        </ui5-card-header>
-        <div style="padding:1rem;color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
+    <ui5-card class="home-card" (click)="navigateCollab()">
+      <ui5-card-header
+        slot="header"
+        title-text="Collaboration"
+        subtitle-text="Real-time multi-user workspace"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
           Explore real-time collaboration with CRDT-aware state sync, presence tracking, and cursor sharing.
-        </div>
-        <div slot="action" style="padding:0.75rem 1rem;">
-          <ui5-button design="Emphasized" routerLink="/collab">Explore</ui5-button>
-        </div>
-      </ui5-card>
-
-    </div>
-
-    <ui5-message-strip design="Information" hide-close-button>
-      Start the backend services to use Joule AI and Collaboration features. See the README for setup instructions.
-    </ui5-message-strip>
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateCollab()">Explore</ui5-button>
+      </div>
+    </ui5-card>
 
   </div>
+
+  <ui5-message-strip class="home-info" design="Information" hide-close-button>
+    Start the backend services to use Joule AI and Collaboration features. See the README for setup instructions.
+  </ui5-message-strip>
+
 </div>

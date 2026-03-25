@@ -1,9 +1,8 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
 
 interface NavItem {
   label: string;
@@ -14,7 +13,8 @@ interface NavItem {
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="shell-layout">
@@ -32,7 +32,7 @@ interface NavItem {
       <div class="shell-body">
         <nav class="side-nav">
           <ul class="nav-list">
-            @for (item of navItems; track item.route) {
+            @for (item of navItems; track trackByRoute) {
               <li>
                 <a
                   [routerLink]="item.route"
@@ -254,5 +254,9 @@ export class ShellComponent {
   logout(): void {
     this.auth.clearToken();
     this.router.navigate(['/login']);
+  }
+
+  trackByRoute(index: number, item: NavItem): string {
+    return item.route;
   }
 }

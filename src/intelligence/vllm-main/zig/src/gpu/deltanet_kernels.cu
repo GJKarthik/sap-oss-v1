@@ -585,3 +585,64 @@ extern "C" __global__ void gated_attn_output(
     float sig_g = 1.0f / (1.0f + expf(-g));
     out[i] = attn_out[i] * sig_g;
 }
+
+// ============================================================================
+// 10. Q8_0 GEMV: y[M] = W_q8[M×K] @ x[K]
+// ============================================================================
+// Grid: (ceil(M/8), 1), Block: (256, 1) — 8 warps per block, 1 warp per row.
+// Shared memory: K * sizeof(float) for x[] cache.
+// Q8_0 block: 34 bytes = 2 (f16 scale) + 32 (int8 quants).
+//   val[i] = quant[i] * scale
+extern "C" __global__ void q8_0_gemv(
+    float* __restrict__ y,
+    const uint8_t* __restrict__ W,
+    const float* __restrict__ x,
+    int M,
+    int K)
+{
+    extern __shared__ float x_smem[];
+
+    // Cooperative 128-bit load of x[] into shared memory
+    const int K4 = K >> 2;
+    float4* x_smem4 = reinterpret_cast<float4*>(x_smem);
+    const float4* x4 = reinterpret_cast<const float4*>(x);
+    for (int i = threadIdx.x; i < K4; i += blockDim.x)
+        x_smem4[i] = __ldg(&x4[i]);
+    for (int i = (K4 << 2) + threadIdx.x; i < K; i += blockDim.x)
+        x_smem[i] = __ldg(&x[i]);
+    __syncthreads();
+
+    int lane    = threadIdx.x & 31;
+    int warp_id = threadIdx.x >> 5;
+    int row     = blockIdx.x * 8 + warp_id;
+    if (row >= M) return;
+
+    int n_blocks   = K >> 5;          // number of Q8_0 blocks per row (K/32)
+    int row_stride = n_blocks * 34;   // 34 bytes per Q8_0 block
+    const uint8_t* W_row = W + (long long)row * row_stride;
+
+    float acc = 0.0f;
+
+    for (int b = lane; b < n_blocks; b += 32) {
+        const uint8_t* block = W_row + b * 34;
+
+        // Load f16 scale (2 bytes)
+        float scale = __half2float(__ldg(reinterpret_cast<const __half*>(block)));
+        const int8_t* quants = reinterpret_cast<const int8_t*>(block + 2);
+
+        int x_base = b << 5;
+
+        // Each Q8_0 block has 32 int8 quants — process all 32
+        #pragma unroll
+        for (int j = 0; j < 32; j++) {
+            acc += ((float)__ldg(&quants[j]) * scale) * x_smem[x_base + j];
+        }
+    }
+
+    // Warp shuffle butterfly reduction
+    for (int offset = 16; offset > 0; offset >>= 1)
+        acc += __shfl_xor_sync(0xFFFFFFFF, acc, offset);
+
+    if (lane == 0)
+        y[row] = acc;
+}

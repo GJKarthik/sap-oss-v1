@@ -5,39 +5,39 @@
   <ui5-shellbar
     primary-title="UI5 Web Components NGX"
     secondary-title="Playground"
-    (logoClick)="navigateTo('/')"
-    (menuItemClick)="onMenuItemClick($event)">
+    (logoClick)="navigateTo('/')">
 
+    <!-- Nav items (ui5-shellbar-item uses default slot in v2) -->
     <ui5-shellbar-item
-      slot="items"
       icon="home"
       text="Home"
-      (click)="navigateTo('/')">
+      count=""
+      (item-click)="navigateTo('/')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
-      slot="items"
       icon="form"
       text="Forms Demo"
-      (click)="navigateTo('/forms')">
+      count=""
+      (item-click)="navigateTo('/forms')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
-      slot="items"
       icon="ai"
       text="Joule AI"
-      (click)="navigateTo('/joule')">
+      count=""
+      (item-click)="navigateTo('/joule')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
-      slot="items"
       icon="collaborate"
       text="Collaboration"
-      (click)="navigateTo('/collab')">
+      count=""
+      (item-click)="navigateTo('/collab')">
     </ui5-shellbar-item>
 
-    <!-- Theme switcher -->
-    <ui5-select slot="items" style="min-width:180px" (change)="onThemeChange($event)">
+    <!-- Theme switcher in profile slot -->
+    <ui5-select slot="profile" style="min-width:160px" (change)="onThemeChange($event)">
       <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">Horizon</ui5-option>
       <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">Horizon Dark</ui5-option>
       <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">Quartz Light</ui5-option>
@@ -45,6 +45,47 @@
     </ui5-select>
 
   </ui5-shellbar>
+
+  <!-- Top nav bar with active route highlight -->
+  <nav class="app-nav" role="navigation" aria-label="Main navigation">
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/')"
+      (click)="navigateTo('/')">
+      Home
+    </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/forms')"
+      (click)="navigateTo('/forms')">
+      Forms Demo
+    </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/joule')"
+      (click)="navigateTo('/joule')">
+      Joule AI
+    </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/collab')"
+      (click)="navigateTo('/collab')">
+      Collaboration
+    </button>
+
+    <div class="app-nav__spacer"></div>
+
+    <!-- Theme switcher in nav bar -->
+    <div class="app-nav__theme">
+      <label class="app-nav__theme-label">Theme</label>
+      <ui5-select style="min-width:160px" (change)="onThemeChange($event)">
+        <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">Horizon</ui5-option>
+        <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">Horizon Dark</ui5-option>
+        <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">Quartz Light</ui5-option>
+        <ui5-option value="sap_fiori_3_dark" [attr.selected]="currentTheme === 'sap_fiori_3_dark' ? true : null">Quartz Dark</ui5-option>
+      </ui5-select>
+    </div>
+  </nav>
 
   <!-- Main Content -->
   <main class="app-content">

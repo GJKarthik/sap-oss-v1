@@ -1,7 +1,7 @@
 export default {
   displayName: 'angular-shell',
   preset: '../../jest.preset.js',
-  setupFilesAfterFramework: ['<rootDir>/src/test-setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   coverageDirectory: '../../coverage/apps/angular-shell',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [

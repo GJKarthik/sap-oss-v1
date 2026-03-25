@@ -156,6 +156,10 @@ pub const CudaForwardConfig = struct {
     rope_dim: u32 = 0,              // partial RoPE dimension (e.g. 64, 0 = full head_dim)
     full_attn_interval: u32 = 0,    // every Nth layer is full attention (e.g. 4)
 
+    // QJL KV cache compression (0 = disabled)
+    use_qjl: bool = false,         // enable QJL key compression
+    qjl_m: u32 = 256,              // sketch dimension (number of random projections)
+
     pub fn isMoE(self: CudaForwardConfig) bool {
         return self.n_experts > 0;
     }
@@ -645,6 +649,7 @@ pub const CudaForwardPass = struct {
     // CPU embedding fallback: when token_embedding is not on GPU (e.g. to save VRAM
     // for a separate lm_head), do Q4_0 dequant on CPU + cuMemcpyHtoD per token.
     cpu_embedding_q4_data: ?[]const u8 = null,
+    cpu_embedding_dtype: GGMLType = .q4_0,
     cpu_embedding_scratch: ?[]f32 = null,
 
     // Phase profiling (set profile_phases=true, then read after forwardBatchMoE)
@@ -679,7 +684,14 @@ pub const CudaForwardPass = struct {
                 head_dim,
                 if (config.isHybrid()) config.qDim() * 2 else 0,
             ),
-            .kv_cache = try GpuKVCache.init(
+            .kv_cache = if (config.use_qjl) try GpuKVCache.initQJL(
+                allocator,
+                config.n_layers,
+                config.max_seq_len,
+                config.n_kv_heads,
+                config.attnHeadDim(),
+                config.qjl_m,
+            ) else try GpuKVCache.init(
                 allocator,
                 config.n_layers,
                 config.max_seq_len,
@@ -716,7 +728,10 @@ pub const CudaForwardPass = struct {
             log.info("  Hybrid: DeltaNet+Attention (every {}th layer is full attn)", .{config.full_attn_interval});
         }
         log.info("  Weights VRAM: {} MB", .{gpu_weights.totalVramMB()});
-        log.info("  KV Cache VRAM: {} MB", .{self.kv_cache.totalVramMB()});
+        log.info("  KV Cache VRAM: {} MB{s}", .{
+            self.kv_cache.totalVramMB(),
+            if (config.use_qjl) " (QJL compressed keys)" else "",
+        });
 
         return self;
     }
@@ -1656,7 +1671,7 @@ pub const CudaForwardPass = struct {
                 try b.embeddingGpu(d_hidden_k + off, gw.token_embedding.dptr, tokens[t], dim);
             } else if (self.cpu_embedding_q4_data) |emb_data| {
                 const scratch = self.cpu_embedding_scratch orelse return error.EmbeddingScratchNotAllocated;
-                cpuDequantQ4Row(emb_data, tokens[t], dim, scratch);
+                cpuDequantEmbeddingRow(emb_data, self.cpu_embedding_dtype, tokens[t], dim, scratch);
                 if (cuda.cuMemcpyHtoD(d_hidden_k + off, @ptrCast(scratch.ptr), dim * @sizeOf(f32)) != .success)
                     return error.UploadFailed;
             } else return error.NoEmbeddingData;
@@ -1735,12 +1750,13 @@ pub const CudaForwardPass = struct {
 
             const scale = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
 
-            if (has_batch_rope) {
+            if (has_batch_rope and !self.kv_cache.use_qjl) {
                 // Batched RoPE: 2 launches instead of 2K
                 try b.ropeQBatchGpu(d_q_k, d_positions, head_dim, cfg.rope_freq_base, n_heads, K);
                 try b.ropeKBatchGpu(d_k_k, d_positions, head_dim, cfg.rope_freq_base, n_kv_heads, K);
 
                 // Batched KV cache scatter: 2 launches instead of 2K deviceCopy
+                // (QJL mode falls back to per-token path since keys need quantization)
                 try b.kvCacheScatterGpu(self.kv_cache.keyLayerPtr(l), d_k_k, d_positions, @intCast(kv_dim), @intCast(cfg.max_seq_len), K);
                 try b.kvCacheScatterGpu(self.kv_cache.valueLayerPtr(l), d_v_k, d_positions, @intCast(kv_dim), @intCast(cfg.max_seq_len), K);
 
@@ -1750,10 +1766,9 @@ pub const CudaForwardPass = struct {
                     const cur_seq: u32 = @intCast(pos + 1);
                     const q_off = t * q_dim * @sizeOf(f32);
 
-                    try b.decodeAttentionGpu(
+                    try self.runDecodeAttention(
                         d_attn_k + q_off, d_q_k + q_off,
-                        self.kv_cache.keyLayerPtr(l), self.kv_cache.valueLayerPtr(l),
-                        n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
+                        l, n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
                     );
                 }
             } else {
@@ -1767,13 +1782,12 @@ pub const CudaForwardPass = struct {
                     try b.ropeKGpu(d_k_k + kv_off, @intCast(pos), head_dim, cfg.rope_freq_base, n_kv_heads);
 
                     const kv_bytes = kv_dim * @sizeOf(f32);
-                    try b.deviceCopy(self.kv_cache.keyPtr(l, pos), d_k_k + kv_off, kv_bytes);
-                    try b.deviceCopy(self.kv_cache.valuePtr(l, pos), d_v_k + kv_off, kv_bytes);
+                    try self.storeKeyToCache(l, pos, d_k_k + kv_off, kv_bytes);
+                    try self.storeValueToCache(l, pos, d_v_k + kv_off, kv_bytes);
 
-                    try b.decodeAttentionGpu(
+                    try self.runDecodeAttention(
                         d_attn_k + q_off, d_q_k + q_off,
-                        self.kv_cache.keyLayerPtr(l), self.kv_cache.valueLayerPtr(l),
-                        n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
+                        l, n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
                     );
                 }
             }
@@ -1868,7 +1882,7 @@ pub const CudaForwardPass = struct {
             try b.embeddingGpu(act.hidden.dptr, gw.token_embedding.dptr, token, dim);
         } else if (self.cpu_embedding_q4_data) |emb_data| {
             const scratch = self.cpu_embedding_scratch orelse return error.EmbeddingScratchNotAllocated;
-            cpuDequantQ4Row(emb_data, token, dim, scratch);
+            cpuDequantEmbeddingRow(emb_data, self.cpu_embedding_dtype, token, dim, scratch);
             if (cuda.cuMemcpyHtoD(act.hidden.dptr, @ptrCast(scratch.ptr), dim * @sizeOf(f32)) != .success)
                 return error.UploadFailed;
         } else return error.NoEmbeddingData;
@@ -1903,8 +1917,8 @@ pub const CudaForwardPass = struct {
             try b.ropeQGpu(act.q.dptr, @intCast(pos), head_dim, cfg.rope_freq_base, n_heads);
             try b.ropeKGpu(act.k.dptr, @intCast(pos), head_dim, cfg.rope_freq_base, n_kv_heads);
             const kv_bytes = kv_dim * @sizeOf(f32);
-            try b.deviceCopy(self.kv_cache.keyPtr(l, pos), act.k.dptr, kv_bytes);
-            try b.deviceCopy(self.kv_cache.valuePtr(l, pos), act.v.dptr, kv_bytes);
+            try self.storeKeyToCache(l, pos, act.k.dptr, kv_bytes);
+            try self.storeValueToCache(l, pos, act.v.dptr, kv_bytes);
             try b.syncStream();
             t_other += std.time.nanoTimestamp() - t0;
 
@@ -1912,10 +1926,9 @@ pub const CudaForwardPass = struct {
             t0 = std.time.nanoTimestamp();
             {
                 const scale = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
-                try b.decodeAttentionGpu(
+                try self.runDecodeAttention(
                     act.attn_out.dptr, act.q.dptr,
-                    self.kv_cache.keyLayerPtr(l), self.kv_cache.valueLayerPtr(l),
-                    n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
+                    l, n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
                 );
             }
             try b.syncStream();
@@ -2011,6 +2024,66 @@ pub const CudaForwardPass = struct {
         std.debug.print("\n", .{});
     }
 
+    // ========================================================================
+    // KV Cache + Attention helpers (dispatch to QJL or dense path)
+    // ========================================================================
+
+    /// Store key to KV cache: QJL path quantizes to sign bits + norms
+    /// AND stores dense keys (for dense attention fallback).
+    /// Dense-only path just does a device-to-device copy.
+    fn storeKeyToCache(self: *CudaForwardPass, layer: usize, pos: usize, d_key: cuda.CUdeviceptr, kv_dim_bytes: usize) !void {
+        // Always store dense keys (needed for attention)
+        try self.backend.deviceCopy(self.kv_cache.keyPtr(layer, pos), d_key, kv_dim_bytes);
+        // Additionally compute QJL signs+norms when QJL is enabled
+        if (self.kv_cache.use_qjl) {
+            const cfg = self.config;
+            try self.backend.qjlQuantizeKey(
+                self.kv_cache.keySignsPtr(layer, pos),
+                self.kv_cache.keyNormsPtr(layer, pos),
+                d_key,
+                self.kv_cache.qjl_projection,
+                cfg.attnHeadDim(),
+                cfg.qjl_m,
+                cfg.n_kv_heads,
+            );
+        }
+    }
+
+    /// Store value to KV cache (always dense — QJL only compresses keys).
+    fn storeValueToCache(self: *CudaForwardPass, layer: usize, pos: usize, d_value: cuda.CUdeviceptr, kv_dim_bytes: usize) !void {
+        try self.backend.deviceCopy(self.kv_cache.valuePtr(layer, pos), d_value, kv_dim_bytes);
+    }
+
+    /// Run decode attention: uses dense Q@K^T attention.
+    /// QJL approximate attention is available but needs further validation.
+    fn runDecodeAttention(
+        self: *CudaForwardPass,
+        d_out: cuda.CUdeviceptr,
+        d_q: cuda.CUdeviceptr,
+        layer: usize,
+        n_heads: u32,
+        n_kv_heads: u32,
+        head_dim: u32,
+        kv_dim: u32,
+        cur_seq: u32,
+        scale: f32,
+    ) !void {
+        // Use dense attention (proven correct) — QJL attention kernel needs
+        // further tuning of the score approximation formula.
+        try self.backend.decodeAttentionGpu(
+            d_out,
+            d_q,
+            self.kv_cache.keyLayerPtr(layer),
+            self.kv_cache.valueLayerPtr(layer),
+            n_heads,
+            n_kv_heads,
+            head_dim,
+            kv_dim,
+            cur_seq,
+            scale,
+        );
+    }
+
     /// DeltaNet layer forward pass (attention substitute for hybrid models).
     /// Writes result as residual into act.hidden.
     /// dn_idx = 0-based index among DeltaNet layers (for state indexing).
@@ -2036,6 +2109,8 @@ pub const CudaForwardPass = struct {
         // 1. Fused QKV projection: qkv = W_qkv @ norm → [channels]
         if (layer.attn_qkv.dtype == .q4_0) {
             try b.q4GemvGpu(ds.d_qkv, layer.attn_qkv.dptr, act.norm.dptr, channels, dim);
+        } else if (layer.attn_qkv.dtype == .q8_0) {
+            try b.q8GemvGpu(ds.d_qkv, layer.attn_qkv.dptr, act.norm.dptr, channels, dim);
         } else {
             try b.sgemvGpu(ds.d_qkv, layer.attn_qkv.dptr, act.norm.dptr, channels, dim);
         }
@@ -2059,6 +2134,8 @@ pub const CudaForwardPass = struct {
         // 4. Gate projection: gate = W_gate @ norm → [v_dim]
         if (layer.attn_gate.dtype == .q4_0) {
             try b.q4GemvGpu(ds.d_gate, layer.attn_gate.dptr, act.norm.dptr, v_dim, dim);
+        } else if (layer.attn_gate.dtype == .q8_0) {
+            try b.q8GemvGpu(ds.d_gate, layer.attn_gate.dptr, act.norm.dptr, v_dim, dim);
         } else {
             try b.sgemvGpu(ds.d_gate, layer.attn_gate.dptr, act.norm.dptr, v_dim, dim);
         }
@@ -2067,11 +2144,15 @@ pub const CudaForwardPass = struct {
         // 5. Alpha/beta projections → [num_v_heads] each
         if (layer.ssm_alpha.dtype == .q4_0) {
             try b.q4GemvGpu(ds.d_alpha, layer.ssm_alpha.dptr, act.norm.dptr, num_v_heads, dim);
+        } else if (layer.ssm_alpha.dtype == .q8_0) {
+            try b.q8GemvGpu(ds.d_alpha, layer.ssm_alpha.dptr, act.norm.dptr, num_v_heads, dim);
         } else {
             try b.sgemvGpu(ds.d_alpha, layer.ssm_alpha.dptr, act.norm.dptr, num_v_heads, dim);
         }
         if (layer.ssm_beta.dtype == .q4_0) {
             try b.q4GemvGpu(ds.d_beta, layer.ssm_beta.dptr, act.norm.dptr, num_v_heads, dim);
+        } else if (layer.ssm_beta.dtype == .q8_0) {
+            try b.q8GemvGpu(ds.d_beta, layer.ssm_beta.dptr, act.norm.dptr, num_v_heads, dim);
         } else {
             try b.sgemvGpu(ds.d_beta, layer.ssm_beta.dptr, act.norm.dptr, num_v_heads, dim);
         }
@@ -2093,6 +2174,8 @@ pub const CudaForwardPass = struct {
         // 9. Output projection + residual: hidden += W_out @ gated_y
         if (layer.ssm_out.dtype == .q4_0) {
             try b.q4GemvGpu(act.norm.dptr, layer.ssm_out.dptr, ds.d_y, dim, v_dim);
+        } else if (layer.ssm_out.dtype == .q8_0) {
+            try b.q8GemvGpu(act.norm.dptr, layer.ssm_out.dptr, ds.d_y, dim, v_dim);
         } else {
             try b.sgemvGpu(act.norm.dptr, layer.ssm_out.dptr, ds.d_y, dim, v_dim);
         }
@@ -2159,17 +2242,16 @@ pub const CudaForwardPass = struct {
 
         // 6. Store K,V into KV cache
         const kv_bytes = kv_dim * @sizeOf(f32);
-        try b.deviceCopy(self.kv_cache.keyPtr(l, pos), act.k.dptr, kv_bytes);
-        try b.deviceCopy(self.kv_cache.valuePtr(l, pos), act.v.dptr, kv_bytes);
+        try self.storeKeyToCache(l, pos, act.k.dptr, kv_bytes);
+        try self.storeValueToCache(l, pos, act.v.dptr, kv_bytes);
 
         // 7. Decode attention
         {
             const scale = 1.0 / @sqrt(@as(f32, @floatFromInt(attn_hd)));
-            try b.decodeAttentionGpu(
+            try self.runDecodeAttention(
                 act.attn_out.dptr,
                 act.q.dptr,
-                self.kv_cache.keyLayerPtr(l),
-                self.kv_cache.valueLayerPtr(l),
+                l,
                 n_heads,
                 n_kv_heads,
                 attn_hd,
@@ -2205,6 +2287,7 @@ pub const CudaForwardPass = struct {
         const act = &self.activations;
         const gw = self.gpu_weights;
         const use_q4 = (cfg.weight_dtype == .q4_0);
+        const use_q8 = (cfg.weight_dtype == .q8_0);
         const use_q2k = (cfg.weight_dtype == .q2_k);
         const cur_seq: u32 = @intCast(pos + 1);
 
@@ -2218,7 +2301,7 @@ pub const CudaForwardPass = struct {
             // Sync needed before HtoD copy so embedding kernel completes (N/A here
             // since we are taking the CPU path, but keep for safety with async HtoD).
             const scratch = self.cpu_embedding_scratch orelse return error.EmbeddingScratchNotAllocated;
-            cpuDequantQ4Row(emb_data, token, dim, scratch);
+            cpuDequantEmbeddingRow(emb_data, self.cpu_embedding_dtype, token, dim, scratch);
             if (cuda.cuMemcpyHtoD(act.hidden.dptr, @ptrCast(scratch.ptr), dim * @sizeOf(f32)) != .success)
                 return error.UploadFailed;
         } else return error.NoEmbeddingData;
@@ -2254,6 +2337,10 @@ pub const CudaForwardPass = struct {
                     try b.q4GemvGpu(act.q.dptr, layer.wq.dptr, act.norm.dptr, n_heads * head_dim, dim);
                     try b.q4GemvGpu(act.k.dptr, layer.wk.dptr, act.norm.dptr, @intCast(kv_dim), dim);
                     try b.q4GemvGpu(act.v.dptr, layer.wv.dptr, act.norm.dptr, @intCast(kv_dim), dim);
+                } else if (use_q8) {
+                    try b.q8GemvGpu(act.q.dptr, layer.wq.dptr, act.norm.dptr, n_heads * head_dim, dim);
+                    try b.q8GemvGpu(act.k.dptr, layer.wk.dptr, act.norm.dptr, @intCast(kv_dim), dim);
+                    try b.q8GemvGpu(act.v.dptr, layer.wv.dptr, act.norm.dptr, @intCast(kv_dim), dim);
                 } else {
                     try b.sgemvGpu(act.q.dptr, layer.wq.dptr, act.norm.dptr, n_heads * head_dim, dim);
                     try b.sgemvGpu(act.k.dptr, layer.wk.dptr, act.norm.dptr, @intCast(kv_dim), dim);
@@ -2271,16 +2358,15 @@ pub const CudaForwardPass = struct {
                 try b.ropeKGpu(act.k.dptr, @intCast(pos), head_dim, cfg.rope_freq_base, n_kv_heads);
 
                 const kv_bytes = kv_dim * @sizeOf(f32);
-                try b.deviceCopy(self.kv_cache.keyPtr(l, pos), act.k.dptr, kv_bytes);
-                try b.deviceCopy(self.kv_cache.valuePtr(l, pos), act.v.dptr, kv_bytes);
+                try self.storeKeyToCache(l, pos, act.k.dptr, kv_bytes);
+                try self.storeValueToCache(l, pos, act.v.dptr, kv_bytes);
 
                 {
                     const scale = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
-                    try b.decodeAttentionGpu(
+                    try self.runDecodeAttention(
                         act.attn_out.dptr,
                         act.q.dptr,
-                        self.kv_cache.keyLayerPtr(l),
-                        self.kv_cache.valueLayerPtr(l),
+                        l,
                         n_heads,
                         n_kv_heads,
                         head_dim,
@@ -2294,6 +2380,8 @@ pub const CudaForwardPass = struct {
                     try b.q2kGemvGpu(act.norm.dptr, layer.wo.dptr, act.attn_out.dptr, dim, n_heads * head_dim);
                 } else if (use_q4) {
                     try b.q4GemvGpu(act.norm.dptr, layer.wo.dptr, act.attn_out.dptr, dim, n_heads * head_dim);
+                } else if (use_q8) {
+                    try b.q8GemvGpu(act.norm.dptr, layer.wo.dptr, act.attn_out.dptr, dim, n_heads * head_dim);
                 } else {
                     try b.sgemvGpu(act.norm.dptr, layer.wo.dptr, act.attn_out.dptr, dim, n_heads * head_dim);
                 }
@@ -2315,6 +2403,9 @@ pub const CudaForwardPass = struct {
                 } else if (layer.w_gate.dtype == .q4_0) {
                     try b.q4GemvGpu(act.gate.dptr, layer.w_gate.dptr, act.norm.dptr, ff, dim);
                     try b.q4GemvGpu(act.up.dptr, layer.w_up.dptr, act.norm.dptr, ff, dim);
+                } else if (layer.w_gate.dtype == .q8_0) {
+                    try b.q8GemvGpu(act.gate.dptr, layer.w_gate.dptr, act.norm.dptr, ff, dim);
+                    try b.q8GemvGpu(act.up.dptr, layer.w_up.dptr, act.norm.dptr, ff, dim);
                 } else {
                     try b.sgemvGpu(act.gate.dptr, layer.w_gate.dptr, act.norm.dptr, ff, dim);
                     try b.sgemvGpu(act.up.dptr, layer.w_up.dptr, act.norm.dptr, ff, dim);
@@ -2328,6 +2419,8 @@ pub const CudaForwardPass = struct {
                     try b.q2kGemvGpu(act.ffn_out.dptr, layer.w_down.dptr, act.gate.dptr, dim, ff);
                 } else if (layer.w_down.dtype == .q4_0) {
                     try b.q4GemvGpu(act.ffn_out.dptr, layer.w_down.dptr, act.gate.dptr, dim, ff);
+                } else if (layer.w_down.dtype == .q8_0) {
+                    try b.q8GemvGpu(act.ffn_out.dptr, layer.w_down.dptr, act.gate.dptr, dim, ff);
                 } else {
                     try b.sgemvGpu(act.ffn_out.dptr, layer.w_down.dptr, act.gate.dptr, dim, ff);
                 }
@@ -2344,8 +2437,10 @@ pub const CudaForwardPass = struct {
             try b.sgemvGpu(act.logits.dptr, gw.lm_head.dptr, act.norm.dptr, vocab, dim);
         } else if (use_q2k or gw.lm_head.dtype == .q2_k) {
             try b.q2kGemvGpu(act.logits.dptr, gw.lm_head.dptr, act.norm.dptr, vocab, dim);
-        } else if (use_q4) {
+        } else if (use_q4 or gw.lm_head.dtype == .q4_0) {
             try b.q4GemvGpu(act.logits.dptr, gw.lm_head.dptr, act.norm.dptr, vocab, dim);
+        } else if (use_q8 or gw.lm_head.dtype == .q8_0) {
+            try b.q8GemvGpu(act.logits.dptr, gw.lm_head.dptr, act.norm.dptr, vocab, dim);
         } else {
             try b.sgemvGpu(act.logits.dptr, gw.lm_head.dptr, act.norm.dptr, vocab, dim);
         }
@@ -2692,15 +2787,14 @@ pub const CudaForwardPass = struct {
 
                 // Store K,V into cache
                 const kv_store_bytes = kv_dim * @sizeOf(f32);
-                try b.deviceCopy(self.kv_cache.keyPtr(l, pos), db.d_k + k_off, kv_store_bytes);
-                try b.deviceCopy(self.kv_cache.valuePtr(l, pos), db.d_v + k_off, kv_store_bytes);
+                try self.storeKeyToCache(l, pos, db.d_k + k_off, kv_store_bytes);
+                try self.storeValueToCache(l, pos, db.d_v + k_off, kv_store_bytes);
 
                 // Decode attention
                 const scale = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
-                try b.decodeAttentionGpu(
+                try self.runDecodeAttention(
                     db.d_attn + q_off, db.d_q + q_off,
-                    self.kv_cache.keyLayerPtr(l), self.kv_cache.valueLayerPtr(l),
-                    n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
+                    l, n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
                 );
             }
 
@@ -3046,7 +3140,7 @@ pub const CudaForwardPass = struct {
             if (gw.token_embedding.dptr != 0) {
                 try b.embeddingGpu(db.d_hidden + off, gw.token_embedding.dptr, tokens[t], dim);
             } else if (self.cpu_embedding_q4_data) |q4_data| {
-                cpuDequantQ4Row(q4_data, tokens[t], dim, self.cpu_embedding_scratch.?);
+                cpuDequantEmbeddingRow(q4_data, self.cpu_embedding_dtype, tokens[t], dim, self.cpu_embedding_scratch.?);
                 if (cuda.cuMemcpyHtoD(db.d_hidden + off, @ptrCast(self.cpu_embedding_scratch.?.ptr), dim * @sizeOf(f32)) != .success)
                     return error.EmbUploadFailed;
             }
@@ -3107,14 +3201,13 @@ pub const CudaForwardPass = struct {
                     try b.ropeKGpu(db.d_k + k_off, @intCast(pos), head_dim, cfg.rope_freq_base, n_kv_heads);
 
                     const kv_store_bytes = kv_dim * @sizeOf(f32);
-                    try b.deviceCopy(self.kv_cache.keyPtr(l, pos), db.d_k + k_off, kv_store_bytes);
-                    try b.deviceCopy(self.kv_cache.valuePtr(l, pos), db.d_v + k_off, kv_store_bytes);
+                    try self.storeKeyToCache(l, pos, db.d_k + k_off, kv_store_bytes);
+                    try self.storeValueToCache(l, pos, db.d_v + k_off, kv_store_bytes);
 
                     const scale = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
-                    try b.decodeAttentionGpu(
+                    try self.runDecodeAttention(
                         db.d_attn + q_off, db.d_q + q_off,
-                        self.kv_cache.keyLayerPtr(l), self.kv_cache.valueLayerPtr(l),
-                        n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
+                        l, n_heads, n_kv_heads, head_dim, @intCast(kv_dim), cur_seq, scale,
                     );
                 }
 
@@ -3270,6 +3363,30 @@ fn cpuDequantQ4Row(q4_data: []const u8, token: u32, dim: u32, out: []f32) void {
             out[bi * block_size + j] = @as(f32, @floatFromInt(lo)) * delta;
             out[bi * block_size + j + 16] = @as(f32, @floatFromInt(hi)) * delta;
         }
+    }
+}
+
+fn cpuDequantQ8Row(q8_data: []const u8, token: u32, dim: u32, out: []f32) void {
+    const block_size: usize = 32;
+    const bytes_per_block: usize = 34;
+    const n_blocks = @as(usize, dim) / block_size;
+    const row_offset = @as(usize, token) * n_blocks * bytes_per_block;
+    for (0..n_blocks) |bi| {
+        const block = q8_data[row_offset + bi * bytes_per_block ..][0..bytes_per_block];
+        const d: f32 = @floatCast(@as(f16, @bitCast(std.mem.readInt(u16, block[0..2], .little))));
+        for (0..32) |j| {
+            const q: i8 = @bitCast(block[2 + j]);
+            out[bi * block_size + j] = @as(f32, @floatFromInt(q)) * d;
+        }
+    }
+}
+
+/// CPU embedding dequant: dispatches to Q4_0 or Q8_0 based on stored dtype.
+fn cpuDequantEmbeddingRow(data: []const u8, dtype: GGMLType, token: u32, dim: u32, out: []f32) void {
+    switch (dtype) {
+        .q4_0 => cpuDequantQ4Row(data, token, dim, out),
+        .q8_0 => cpuDequantQ8Row(data, token, dim, out),
+        else => cpuDequantQ4Row(data, token, dim, out), // fallback
     }
 }
 

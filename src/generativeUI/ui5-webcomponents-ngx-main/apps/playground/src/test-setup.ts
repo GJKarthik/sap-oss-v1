@@ -1,3 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import 'jest-preset-angular/setup-jest';
+import 'zone.js';
+import 'zone.js/testing';
+import '@angular/compiler';

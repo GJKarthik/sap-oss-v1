@@ -13,8 +13,68 @@
   overflow: hidden;
 }
 
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--sapShellColor, #354a5e);
+  border-bottom: 1px solid var(--sapShell_BorderColor, #213750);
+  padding: 0 1rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar { display: none; }
+  scrollbar-width: none;
+}
+
+.app-nav__item {
+  background: none;
+  border: none;
+  color: var(--sapShell_TextColor, #d1e8ff);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0 0.75rem;
+  height: 100%;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+  &:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+
+  &--active {
+    color: #fff;
+    border-bottom-color: var(--sapBrandColor, #0070f2);
+    font-weight: 600;
+  }
+}
+
+.app-nav__spacer {
+  flex: 1;
+}
+
+.app-nav__theme {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-nav__theme-label {
+  color: var(--sapShell_TextColor, #d1e8ff);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 .app-content {
   flex: 1;
   overflow: auto;
   background: var(--sapBackgroundColor, #f5f5f5);
+
+  @media (max-width: 768px) {
+    overflow-x: hidden;
+  }
 }

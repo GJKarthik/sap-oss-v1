@@ -6,6 +6,8 @@
 
 export const environment = {
   production: false,
+  agUiEndpoint: '/ag-ui/run',
+  collabWsUrl: '/collab',
 };
 
 /*

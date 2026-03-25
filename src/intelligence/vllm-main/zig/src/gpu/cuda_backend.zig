@@ -159,6 +159,12 @@ pub const CudaBackend = struct {
     dn_q4_gemv_func: ?cuda.CUfunction = null,
     dn_q4_1_gemv_func: ?cuda.CUfunction = null,
     dn_decode_attention_func: ?cuda.CUfunction = null,
+    dn_q8_0_gemv_func: ?cuda.CUfunction = null,
+
+    // QJL kernels (KV cache compression, nvcc-compiled PTX)
+    qjl_module: ?cuda.CUmodule = null,
+    qjl_quantize_key_func: ?cuda.CUfunction = null,
+    qjl_decode_attention_func: ?cuda.CUfunction = null,
 
     // CUDA Graph capture state
     captured_graph: ?cuda.CUgraph = null,
@@ -275,6 +281,9 @@ pub const CudaBackend = struct {
 
                     // Load DeltaNet kernels (Qwen3.5 hybrid architecture)
                     backend.loadDeltaNetKernels();
+
+                    // Load QJL kernels (KV cache compression)
+                    backend.loadQJLKernels();
                 }
             }
 
@@ -681,6 +690,7 @@ pub const CudaBackend = struct {
             .{ "q4_gemv", &self.dn_q4_gemv_func },
             .{ "q4_1_gemv", &self.dn_q4_1_gemv_func },
             .{ "decode_attention", &self.dn_decode_attention_func },
+            .{ "q8_0_gemv", &self.dn_q8_0_gemv_func },
         };
 
         var loaded: u32 = 0;
@@ -691,7 +701,126 @@ pub const CudaBackend = struct {
                 loaded += 1;
             }
         }
-        log.info("  DeltaNet kernels: {}/12 loaded", .{loaded});
+        log.info("  DeltaNet kernels: {}/13 loaded", .{loaded});
+    }
+
+    fn loadQJLKernels(self: *CudaBackend) void {
+        const ptx_data = @embedFile("qjl_kernels.ptx") ++ [_]u8{0};
+        var module: cuda.CUmodule = undefined;
+        if (cuda.cuModuleLoadData(&module, ptx_data.ptr) != .success) {
+            log.warn("Failed to load QJL PTX module (KV cache compression unavailable)", .{});
+            return;
+        }
+        self.qjl_module = module;
+
+        const kernel_map = .{
+            .{ "qjl_quantize_key", &self.qjl_quantize_key_func },
+            .{ "qjl_decode_attention", &self.qjl_decode_attention_func },
+        };
+
+        var loaded: u32 = 0;
+        inline for (kernel_map) |entry| {
+            var func: cuda.CUfunction = undefined;
+            if (cuda.cuModuleGetFunction(&func, module, entry[0]) == .success) {
+                entry[1].* = func;
+                loaded += 1;
+            }
+        }
+        log.info("  QJL kernels: {}/2 loaded", .{loaded});
+    }
+
+    // ========================================================================
+    // QJL Kernel Dispatch (KV cache compression)
+    // ========================================================================
+
+    /// Quantize a key vector to QJL sign bits + L2 norm.
+    /// Replaces dense key cache write for QJL-enabled KV caches.
+    pub fn qjlQuantizeKey(
+        self: *CudaBackend,
+        d_sign_bits: cuda.CUdeviceptr, // output: [n_kv_heads * m_words] uint32s
+        d_norms: cuda.CUdeviceptr, // output: [n_kv_heads] floats
+        d_key: cuda.CUdeviceptr, // input: [n_kv_heads * head_dim] F32 key
+        d_projection: cuda.CUdeviceptr, // input: [m * head_dim_words] packed bits
+        head_dim: u32,
+        m: u32, // sketch dimension
+        n_kv_heads: u32,
+    ) !void {
+        const func = self.qjl_quantize_key_func orelse return error.KernelNotLoaded;
+        var sb_v = d_sign_bits;
+        var nm_v = d_norms;
+        var k_v = d_key;
+        var p_v = d_projection;
+        var hd_v = head_dim;
+        var m_v = m;
+        var nkv_v = n_kv_heads;
+        var params = [_]?*anyopaque{
+            @ptrCast(&sb_v), @ptrCast(&nm_v), @ptrCast(&k_v), @ptrCast(&p_v),
+            @ptrCast(&hd_v), @ptrCast(&m_v), @ptrCast(&nkv_v),
+        };
+        const shared_bytes: u32 = 256 * @sizeOf(f32); // smem for norm reduction
+        const stream_ptr: ?*anyopaque = self.stream;
+        const rc = cuda.cuLaunchKernel(func, n_kv_heads, 1, 1, 256, 1, 1,
+            shared_bytes, stream_ptr, &params, null);
+        if (rc != .success) {
+            log.err("qjlQuantizeKey launch failed: rc={} grid=({},1,1) block=(256,1,1) smem={} hd={} m={} nkv={}", .{
+                @intFromEnum(rc), n_kv_heads, shared_bytes, head_dim, m, n_kv_heads,
+            });
+            return error.KernelLaunchFailed;
+        }
+    }
+
+    /// QJL decode attention: approximate Q@K^T via XNOR+popcount, exact V sum.
+    /// Replaces standard decodeAttentionGpu when QJL is enabled.
+    pub fn qjlDecodeAttention(
+        self: *CudaBackend,
+        d_out: cuda.CUdeviceptr, // [n_heads * head_dim]
+        d_q: cuda.CUdeviceptr, // [n_heads * head_dim]
+        d_key_signs: cuda.CUdeviceptr, // [max_seq * n_kv_heads * m_words] for this layer
+        d_key_norms: cuda.CUdeviceptr, // [max_seq * n_kv_heads] for this layer
+        d_v_cache: cuda.CUdeviceptr, // [max_seq * kv_dim] dense values
+        d_projection: cuda.CUdeviceptr, // [m * head_dim_words] packed bits
+        n_heads: u32,
+        n_kv_heads: u32,
+        head_dim: u32,
+        kv_dim: u32,
+        cur_seq: u32,
+        scale: f32,
+        m: u32,
+        max_seq: u32,
+    ) !void {
+        const func = self.qjl_decode_attention_func orelse return error.KernelNotLoaded;
+        var out_v = d_out;
+        var q_v = d_q;
+        var ks_v = d_key_signs;
+        var kn_v = d_key_norms;
+        var vc_v = d_v_cache;
+        var p_v = d_projection;
+        var nh_v = n_heads;
+        var nkv_v = n_kv_heads;
+        var hd_v = head_dim;
+        var kvd_v = kv_dim;
+        var seq_v = cur_seq;
+        var sc_v = scale;
+        var m_v = m;
+        var ms_v = max_seq;
+        var params = [_]?*anyopaque{
+            @ptrCast(&out_v), @ptrCast(&q_v), @ptrCast(&ks_v), @ptrCast(&kn_v),
+            @ptrCast(&vc_v), @ptrCast(&p_v), @ptrCast(&nh_v), @ptrCast(&nkv_v),
+            @ptrCast(&hd_v), @ptrCast(&kvd_v), @ptrCast(&seq_v), @ptrCast(&sc_v),
+            @ptrCast(&m_v), @ptrCast(&ms_v),
+        };
+        // Shared memory: q_signs[m_words * 4 bytes] + scores[cur_seq * 4] + scratch[256 * 4]
+        const m_words = m / 32;
+        const shared_bytes = (m_words + cur_seq + 256) * @sizeOf(f32);
+        const stream_ptr: ?*anyopaque = self.stream;
+        const rc2 = cuda.cuLaunchKernel(func, n_heads, 1, 1, 256, 1, 1,
+            shared_bytes, stream_ptr, &params, null);
+        if (rc2 != .success) {
+            log.err("qjlDecodeAttention launch failed: rc={} grid=({},1,1) smem={} nh={} nkv={} hd={} seq={} m={}", .{
+                @intFromEnum(rc2), n_heads, shared_bytes, n_heads, n_kv_heads, head_dim, cur_seq, m,
+            });
+            return error.KernelLaunchFailed;
+        }
     }
 
     // ========================================================================
@@ -1661,6 +1790,35 @@ pub const CudaBackend = struct {
         if (!self.hasKernel("q4_0_gemv")) return error.KernelNotLoaded;
         const shared_bytes = (K + K / 32) * 4; // padded shared memory
         const func = self.getKernel("q4_0_gemv").?;
+        if (shared_bytes > 49152) {
+            _ = cuda.cuFuncSetAttribute(func, cuda.CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES, @intCast(shared_bytes));
+        }
+        if (!self.launchKernel(func, grid_x, 1, 256, 1, shared_bytes, &params))
+            return error.KernelLaunchFailed;
+    }
+
+    /// Q8_0 GEMV: y[M] = W_q8[M×K] @ x[K]
+    /// Q8_0 block = 34 bytes: f16 scale + 32 int8 quants. Dequant: w = quant * scale.
+    pub fn q8GemvGpu(
+        self: *CudaBackend,
+        d_y: cuda.CUdeviceptr,
+        d_W: cuda.CUdeviceptr,
+        d_x: cuda.CUdeviceptr,
+        M: u32,
+        K: u32,
+    ) !void {
+        const func = self.dn_q8_0_gemv_func orelse return error.KernelNotLoaded;
+        var m_v = M;
+        var k_v = K;
+        var y_v = d_y;
+        var w_v = d_W;
+        var x_v = d_x;
+        var params = [_]?*anyopaque{
+            @ptrCast(&y_v), @ptrCast(&w_v), @ptrCast(&x_v),
+            @ptrCast(&m_v), @ptrCast(&k_v),
+        };
+        const grid_x = (M + 7) / 8;
+        const shared_bytes = K * 4; // x[] cached in shared memory
         if (shared_bytes > 49152) {
             _ = cuda.cuFuncSetAttribute(func, cuda.CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES, @intCast(shared_bytes));
         }

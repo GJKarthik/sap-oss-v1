@@ -6,6 +6,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 @Component({
   selector: 'app-forms-page',
   templateUrl: './forms-page.component.html',
+  styleUrls: ['./forms-page.component.scss'],
   standalone: false,
 })
 export class FormsPageComponent {

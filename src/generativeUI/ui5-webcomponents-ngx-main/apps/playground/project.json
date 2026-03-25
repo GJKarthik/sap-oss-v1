@@ -82,6 +82,14 @@
         "buildTarget": "playground:build"
       }
     },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/playground"],
+      "options": {
+        "jestConfig": "apps/playground/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }

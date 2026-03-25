@@ -4,6 +4,7 @@ import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AgUiModule } from '@ui5/ag-ui-angular';
+import { environment } from '../../../environments/environment';
 import { GenUiRendererModule } from '@ui5/genui-renderer';
 import { GenUiStreamingModule } from '@ui5/genui-streaming';
 import { GenUiGovernanceModule } from '@ui5/genui-governance';
@@ -14,7 +15,7 @@ import { JouleShellComponent } from './joule-shell.component';
   declarations: [JouleShellComponent],
   imports: [
     CommonModule,
-    AgUiModule.forRoot({ endpoint: '/ag-ui/run', transport: 'sse', autoConnect: false }),
+    AgUiModule.forRoot({ endpoint: environment.agUiEndpoint, transport: 'sse', autoConnect: false }),
     GenUiRendererModule.forRoot({ allowedComponents: 'fiori-standard', sanitize: true }),
     GenUiStreamingModule.forRoot(),
     GenUiGovernanceModule.forRoot(),

@@ -79,11 +79,13 @@
       <ui5-card-header slot="header" title-text="Profile Form" subtitle-text="Reactive form with validation"></ui5-card-header>
       <div style="padding: 1rem;">
 
-        <div *ngIf="submitted && submittedData" style="margin-bottom: 1rem;">
+        @if (submitted && submittedData) {
+        <div style="margin-bottom: 1rem;">
           <ui5-message-strip design="Positive" (close)="resetForm()">
             Submitted — Name: <b>{{ submittedData.name }}</b>, Email: <b>{{ submittedData.email }}</b>
           </ui5-message-strip>
         </div>
+        }
 
         <form [formGroup]="profileForm" (ngSubmit)="handleSubmit()" style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
 
@@ -95,10 +97,11 @@
               placeholder="Enter your name"
               [attr.value-state]="profileForm.controls.name.invalid && profileForm.controls.name.touched ? 'Negative' : 'None'">
             </ui5-input>
-            <ui5-text *ngIf="profileForm.controls.name.invalid && profileForm.controls.name.touched"
-              style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
+            @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
+            <ui5-text style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
               Name is required.
             </ui5-text>
+            }
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 0.25rem;">
@@ -109,11 +112,12 @@
               placeholder="Enter your email"
               [attr.value-state]="profileForm.controls.email.invalid && profileForm.controls.email.touched ? 'Negative' : 'None'">
             </ui5-input>
-            <ui5-text *ngIf="profileForm.controls.email.invalid && profileForm.controls.email.touched"
-              style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
-              <span *ngIf="profileForm.controls.email.errors?.['required']">Email is required.</span>
-              <span *ngIf="profileForm.controls.email.errors?.['email']">Enter a valid email address.</span>
+            @if (profileForm.controls.email.invalid && profileForm.controls.email.touched) {
+            <ui5-text style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
+              @if (profileForm.controls.email.errors?.['required']) { Email is required. }
+              @if (profileForm.controls.email.errors?.['email']) { Enter a valid email address. }
             </ui5-text>
+            }
           </div>
 
           <div style="display: flex; gap: 0.75rem;">

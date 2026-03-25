@@ -1,7 +1,10 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface ModelInfo {
   name: string;
@@ -11,15 +14,17 @@ interface ModelInfo {
   t4_compatible: boolean;
 }
 
+interface JobConfig {
+  model_name: string;
+  quant_format: string;
+  export_format: string;
+}
+
 interface JobResponse {
   id: string;
   name: string;
   status: string;
-  config: {
-    model_name: string;
-    quant_format: string;
-    export_format: string;
-  };
+  config: JobConfig;
   created_at: string;
   progress: number;
   error?: string;
@@ -39,6 +44,7 @@ interface CreateJobForm {
   standalone: true,
   imports: [CommonModule, FormsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
       <div class="page-header">
@@ -50,22 +56,27 @@ interface CreateJobForm {
       <section class="section">
         <h2 class="section-title">Model Catalog</h2>
         <div class="model-grid">
-          <div
-            class="model-card"
-            *ngFor="let m of models"
-            [class.model-card--selected]="form.model_name === m.name"
-            (click)="selectModel(m)"
-          >
-            <div class="model-name">{{ m.name }}</div>
-            <div class="model-meta">
-              <span class="badge">{{ m.parameters }}</span>
-              <span class="badge">{{ m.size_gb }} GB</span>
-              <span class="badge badge--quant">{{ m.recommended_quant }}</span>
+          @for (m of models(); track m.name) {
+            <div
+              class="model-card"
+              [class.model-card--selected]="form.model_name === m.name"
+              (click)="selectModel(m)"
+            >
+              <div class="model-name">{{ m.name }}</div>
+              <div class="model-meta">
+                <span class="badge">{{ m.parameters }}</span>
+                <span class="badge">{{ m.size_gb }} GB</span>
+                <span class="badge badge--quant">{{ m.recommended_quant }}</span>
+              </div>
+              @if (!m.t4_compatible) {
+                <div class="text-small" style="color:#c62828">⚠ T4 incompatible</div>
+              }
             </div>
-            <div *ngIf="!m.t4_compatible" class="text-small" style="color:#c62828">⚠ T4 incompatible</div>
-          </div>
+          }
         </div>
-        <p class="text-muted text-small" *ngIf="!models.length && !loading">No models found — is the backend running?</p>
+        @if (!models().length && !loading()) {
+          <p class="text-muted text-small">No models found — is the backend running?</p>
+        }
       </section>
 
       <!-- Create Job Form -->
@@ -99,54 +110,61 @@ interface CreateJobForm {
             </div>
           </div>
           <div class="form-actions">
-            <button type="submit" class="btn-primary" [disabled]="!form.model_name || submitting">
-              {{ submitting ? 'Submitting…' : '▶ Run Job' }}
+            <button type="submit" class="btn-primary" [disabled]="!form.model_name || submitting()">
+              {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
             </button>
-            <span class="text-small text-muted" *ngIf="submitMsg">{{ submitMsg }}</span>
           </div>
         </form>
       </section>
 
       <!-- Jobs Table -->
       <section class="section">
-        <h2 class="section-title">Jobs <span class="text-muted text-small">({{ jobs.length }})</span></h2>
-        <div class="table-wrapper" *ngIf="jobs.length">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Model</th>
-                <th>Quant</th>
-                <th>Status</th>
-                <th>Progress</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let j of jobs">
-                <td class="mono text-small">{{ j.id.slice(0,8) }}</td>
-                <td>{{ j.name }}</td>
-                <td class="text-small">{{ j.config.model_name }}</td>
-                <td><code>{{ j.config.quant_format }}</code></td>
-                <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
-                <td>
-                  <div class="progress-bar">
-                    <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
-                  </div>
-                  <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
-                </td>
-                <td class="text-small text-muted">{{ j.created_at | date:'short' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="text-muted text-small" *ngIf="!jobs.length && !loading">No jobs yet.</p>
+        <h2 class="section-title">Jobs <span class="text-muted text-small">({{ jobs().length }})</span></h2>
+        @if (jobs().length) {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Model</th>
+                  <th>Quant</th>
+                  <th>Status</th>
+                  <th>Progress</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (j of jobs(); track j.id) {
+                  <tr>
+                    <td class="mono text-small">{{ j.id.slice(0,8) }}</td>
+                    <td>{{ j.name }}</td>
+                    <td class="text-small">{{ j.config.model_name }}</td>
+                    <td><code>{{ j.config.quant_format }}</code></td>
+                    <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
+                    <td>
+                      <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
+                      </div>
+                      <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
+                    </td>
+                    <td class="text-small text-muted">{{ j.created_at | date:'short' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (!jobs().length && !loading()) {
+          <p class="text-muted text-small">No jobs yet.</p>
+        }
       </section>
 
-      <div class="loading-container" *ngIf="loading">
-        <span class="loading-text">Loading…</span>
-      </div>
+      @if (loading()) {
+        <div class="loading-container">
+          <span class="loading-text">Loading…</span>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -303,14 +321,26 @@ interface CreateJobForm {
       border-radius: 2px;
       transition: width 0.3s;
     }
+
+    .loading-container {
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .loading-text {
+      color: var(--sapContent_LabelColor, #6a6d70);
+    }
   `],
 })
-export class ModelOptimizerComponent implements OnInit {
-  models: ModelInfo[] = [];
-  jobs: JobResponse[] = [];
-  loading = false;
-  submitting = false;
-  submitMsg = '';
+export class ModelOptimizerComponent implements OnInit, OnDestroy {
+  private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
+  private readonly destroy$ = new Subject<void>();
+
+  readonly models = signal<ModelInfo[]>([]);
+  readonly jobs = signal<JobResponse[]>([]);
+  readonly loading = signal(false);
+  readonly submitting = signal(false);
 
   form: CreateJobForm = {
     model_name: '',
@@ -321,23 +351,47 @@ export class ModelOptimizerComponent implements OnInit {
     enable_pruning: false,
   };
 
-  constructor(private api: ApiService) {}
-
   ngOnInit(): void {
     this.loadData();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadData(): void {
-    this.loading = true;
-    this.api.get<ModelInfo[]>('/models/catalog').subscribe({
-      next: (m) => (this.models = m),
-      error: () => {},
-    });
-    this.api.get<JobResponse[]>('/jobs').subscribe({
-      next: (j) => (this.jobs = j),
-      error: () => {},
-      complete: () => (this.loading = false),
-    });
+    this.loading.set(true);
+
+    forkJoin({
+      models: this.api.get<ModelInfo[]>('/models/catalog').pipe(
+        catchError((err: HttpErrorResponse) => {
+          this.toast.error('Failed to load model catalog', 'Models');
+          console.error('Model catalog failed:', err);
+          return of([]);
+        })
+      ),
+      jobs: this.api.get<JobResponse[]>('/jobs').pipe(
+        catchError((err: HttpErrorResponse) => {
+          this.toast.warning('Failed to load jobs', 'Jobs');
+          console.warn('Jobs load failed:', err);
+          return of([]);
+        })
+      ),
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (results: { models: ModelInfo[]; jobs: JobResponse[] }) => {
+          this.models.set(results.models);
+          this.jobs.set(results.jobs);
+          this.loading.set(false);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.toast.error('Failed to load data', 'Error');
+          console.error('Load failed:', err);
+          this.loading.set(false);
+        },
+      });
   }
 
   selectModel(m: ModelInfo): void {
@@ -347,8 +401,8 @@ export class ModelOptimizerComponent implements OnInit {
 
   createJob(): void {
     if (!this.form.model_name) return;
-    this.submitting = true;
-    this.submitMsg = '';
+    this.submitting.set(true);
+
     const payload = {
       config: {
         model_name: this.form.model_name,
@@ -360,17 +414,22 @@ export class ModelOptimizerComponent implements OnInit {
         pruning_sparsity: 0.2,
       },
     };
-    this.api.post<JobResponse>('/jobs', payload).subscribe({
-      next: (j) => {
-        this.jobs = [j, ...this.jobs];
-        this.submitMsg = `Job ${j.id.slice(0, 8)} submitted ✓`;
-        this.submitting = false;
-      },
-      error: (e) => {
-        this.submitMsg = `Error: ${e?.error?.detail ?? 'unknown'}`;
-        this.submitting = false;
-      },
-    });
+
+    this.api.post<JobResponse>('/jobs', payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (j: JobResponse) => {
+          this.jobs.update((currentJobs: JobResponse[]) => [j, ...currentJobs]);
+          this.toast.success(`Job ${j.id.slice(0, 8)} submitted successfully`, 'Job Created');
+          this.submitting.set(false);
+        },
+        error: (e: HttpErrorResponse) => {
+          const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
+          this.toast.error(`Failed to create job: ${detail}`, 'Job Error');
+          console.error('Job creation failed:', e);
+          this.submitting.set(false);
+        },
+      });
   }
 
   jobBadge(status: string): string {

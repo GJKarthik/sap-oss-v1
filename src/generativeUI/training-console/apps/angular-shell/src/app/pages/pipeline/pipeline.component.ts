@@ -1,5 +1,7 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+type PipelineStatus = 'idle' | 'running' | 'done' | 'error';
 
 interface PipelineStage {
   num: number;
@@ -7,7 +9,12 @@ interface PipelineStage {
   tool: string;
   input: string;
   output: string;
-  status: 'idle' | 'running' | 'done' | 'error';
+  status: PipelineStatus;
+}
+
+interface CommandCard {
+  title: string;
+  command: string;
 }
 
 @Component({
@@ -15,6 +22,7 @@ interface PipelineStage {
   standalone: true,
   imports: [CommonModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
       <div class="page-header">
@@ -44,16 +52,18 @@ interface PipelineStage {
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let s of stages">
-                <td class="stage-num">{{ s.num }}</td>
-                <td class="stage-name">{{ s.name }}</td>
-                <td><code>{{ s.tool }}</code></td>
-                <td class="text-muted text-small">{{ s.input }}</td>
-                <td class="text-muted text-small">{{ s.output }}</td>
-                <td>
-                  <span class="status-badge {{ statusClass(s.status) }}">{{ s.status }}</span>
-                </td>
-              </tr>
+              @for (s of stages(); track s.num) {
+                <tr>
+                  <td class="stage-num">{{ s.num }}</td>
+                  <td class="stage-name">{{ s.name }}</td>
+                  <td><code>{{ s.tool }}</code></td>
+                  <td class="text-muted text-small">{{ s.input }}</td>
+                  <td class="text-muted text-small">{{ s.output }}</td>
+                  <td>
+                    <span class="status-badge {{ statusClass(s.status) }}">{{ s.status }}</span>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
@@ -61,22 +71,12 @@ interface PipelineStage {
 
       <div class="pipeline-commands">
         <h2 class="section-title">Run Commands</h2>
-        <div class="cmd-card">
-          <h3 class="cmd-title">Full pipeline (all 7 stages)</h3>
-          <pre>cd pipeline &amp;&amp; make all</pre>
-        </div>
-        <div class="cmd-card">
-          <h3 class="cmd-title">Step 1 — Preconvert Excel → CSV</h3>
-          <pre>cd pipeline &amp;&amp; make preconvert</pre>
-        </div>
-        <div class="cmd-card">
-          <h3 class="cmd-title">Step 2 — Build Zig binary</h3>
-          <pre>cd pipeline/zig &amp;&amp; zig build</pre>
-        </div>
-        <div class="cmd-card">
-          <h3 class="cmd-title">Run Zig pipeline tests</h3>
-          <pre>cd pipeline/zig &amp;&amp; zig build test</pre>
-        </div>
+        @for (cmd of commands; track cmd.title) {
+          <div class="cmd-card">
+            <h3 class="cmd-title">{{ cmd.title }}</h3>
+            <pre>{{ cmd.command }}</pre>
+          </div>
+        }
       </div>
     </div>
   `,
@@ -182,11 +182,15 @@ interface PipelineStage {
     pre {
       margin: 0;
       font-size: 0.8rem;
+      background: var(--sapList_Background, #f5f5f5);
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      overflow-x: auto;
     }
   `],
 })
 export class PipelineComponent {
-  stages: PipelineStage[] = [
+  readonly stages = signal<PipelineStage[]>([
     { num: 1, name: 'Preconvert', tool: 'Python (openpyxl)', input: 'data/*.xlsx', output: 'staging/*.csv', status: 'idle' },
     { num: 2, name: 'Build', tool: 'zig build', input: 'Source code', output: 'Pipeline binary', status: 'idle' },
     { num: 3, name: 'Extract Schema', tool: 'Zig', input: 'staging/*.csv', output: 'Schema registry', status: 'idle' },
@@ -194,14 +198,22 @@ export class PipelineComponent {
     { num: 5, name: 'Expand', tool: 'Zig', input: 'Templates + Schema', output: 'Text-SQL pairs', status: 'idle' },
     { num: 6, name: 'Validate', tool: 'Mangle', input: 'Pairs + Rules', output: 'Validated pairs', status: 'idle' },
     { num: 7, name: 'Format', tool: 'Zig', input: 'Validated pairs', output: 'Spider/BIRD JSONL', status: 'idle' },
+  ]);
+
+  readonly commands: CommandCard[] = [
+    { title: 'Full pipeline (all 7 stages)', command: 'cd pipeline && make all' },
+    { title: 'Step 1 — Preconvert Excel → CSV', command: 'cd pipeline && make preconvert' },
+    { title: 'Step 2 — Build Zig binary', command: 'cd pipeline/zig && zig build' },
+    { title: 'Run Zig pipeline tests', command: 'cd pipeline/zig && zig build test' },
   ];
 
-  statusClass(status: PipelineStage['status']): string {
-    return {
+  statusClass(status: PipelineStatus): string {
+    const classMap: Record<PipelineStatus, string> = {
       idle: 'status-pending',
       running: 'status-running',
       done: 'status-success',
       error: 'status-error',
-    }[status];
+    };
+    return classMap[status];
   }
 }

@@ -5,6 +5,7 @@ import { Router } from "@angular/router";
 
 @Component({
     templateUrl: './main.component.html',
+    styleUrls: ['./main.component.scss'],
     standalone: false
 })
 export class MainComponent {

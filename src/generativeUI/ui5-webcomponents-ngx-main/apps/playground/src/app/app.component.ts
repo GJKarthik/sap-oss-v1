@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 
 @Component({
     selector: 'ui-angular-root',
@@ -20,6 +20,11 @@ export class AppComponent implements OnInit {
       this.currentTheme = saved;
       this.applyTheme(saved);
     }
+  }
+
+  isActive(path: string): boolean {
+    const url = this.router.url.split('?')[0];
+    return path === '/' ? url === '/' : url.startsWith(path);
   }
 
   navigateTo(path: string): void {

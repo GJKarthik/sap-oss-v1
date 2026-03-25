@@ -1,7 +1,10 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -28,6 +31,7 @@ interface CompletionResponse {
   standalone: true,
   imports: [CommonModule, FormsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="chat-layout">
       <!-- Sidebar -->
@@ -51,36 +55,45 @@ interface CompletionResponse {
           <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
         </div>
         <button class="btn-danger" (click)="clearChat()">Clear Chat</button>
-        <div class="usage-info" *ngIf="lastUsage">
-          <span class="text-small text-muted">Last: {{ lastUsage.total_tokens }} tokens</span>
-        </div>
+        @if (lastUsage()) {
+          <div class="usage-info">
+            <span class="text-small text-muted">Last: {{ lastUsage()?.total_tokens }} tokens</span>
+          </div>
+        }
       </div>
 
       <!-- Chat area -->
       <div class="chat-main">
         <div class="messages-area" #messagesArea>
-          <div class="empty-state" *ngIf="!messages.length">
-            <span class="empty-icon">💬</span>
-            <p>Send a message to start the conversation.</p>
-            <div class="suggestion-chips">
-              <button class="chip" *ngFor="let s of suggestions" (click)="usePrompt(s)">{{ s }}</button>
+          @if (!messages().length) {
+            <div class="empty-state">
+              <span class="empty-icon">💬</span>
+              <p>Send a message to start the conversation.</p>
+              <div class="suggestion-chips">
+                @for (s of suggestions; track s) {
+                  <button class="chip" (click)="usePrompt(s)">{{ s }}</button>
+                }
+              </div>
             </div>
-          </div>
+          }
 
-          <div
-            class="message"
-            *ngFor="let m of messages"
-            [class.message--user]="m.role === 'user'"
-            [class.message--assistant]="m.role === 'assistant'"
-          >
-            <div class="message-role">{{ m.role === 'user' ? 'You' : 'Assistant' }}</div>
-            <div class="message-content">{{ m.content }}</div>
-            <div class="message-ts text-small text-muted">{{ m.ts | date:'HH:mm:ss' }}</div>
-          </div>
+          @for (m of messages(); track m.ts.getTime()) {
+            <div
+              class="message"
+              [class.message--user]="m.role === 'user'"
+              [class.message--assistant]="m.role === 'assistant'"
+            >
+              <div class="message-role">{{ m.role === 'user' ? 'You' : 'Assistant' }}</div>
+              <div class="message-content">{{ m.content }}</div>
+              <div class="message-ts text-small text-muted">{{ m.ts | date:'HH:mm:ss' }}</div>
+            </div>
+          }
 
-          <div class="typing-indicator" *ngIf="sending">
-            <span></span><span></span><span></span>
-          </div>
+          @if (sending()) {
+            <div class="typing-indicator">
+              <span></span><span></span><span></span>
+            </div>
+          }
         </div>
 
         <form class="chat-input-row" (ngSubmit)="send()">
@@ -92,11 +105,10 @@ interface CompletionResponse {
             placeholder="Ask about SAP HANA SQL, schemas, or training data…"
             (keydown.enter)="onEnter($event)"
           ></textarea>
-          <button type="submit" class="send-btn" [disabled]="!userInput.trim() || sending">
-            {{ sending ? '…' : '▶' }}
+          <button type="submit" class="send-btn" [disabled]="!userInput.trim() || sending()">
+            {{ sending() ? '…' : '▶' }}
           </button>
         </form>
-        <p class="error-text" *ngIf="error">⚠ {{ error }}</p>
       </div>
     </div>
   `,
@@ -292,38 +304,39 @@ interface CompletionResponse {
       &:hover:not(:disabled) { background: var(--sapButton_Hover_Background, #0a6ed1); }
     }
 
-    .error-text {
-      padding: 0.25rem 1.25rem;
-      font-size: 0.75rem;
-      color: var(--sapNegativeColor, #b00);
-    }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
   `],
 })
-export class ChatComponent {
+export class ChatComponent implements OnDestroy {
   @ViewChild('messagesArea') messagesArea!: ElementRef<HTMLDivElement>;
 
-  messages: ChatMessage[] = [];
+  private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
+  private readonly destroy$ = new Subject<void>();
+
+  readonly messages = signal<ChatMessage[]>([]);
+  readonly sending = signal(false);
+  readonly lastUsage = signal<{ total_tokens: number } | null>(null);
+
   userInput = '';
   model = 'Qwen/Qwen3.5-0.6B';
   systemPrompt = 'You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.';
   maxTokens = 1024;
   temperature = 0.7;
-  sending = false;
-  error = '';
-  lastUsage: { total_tokens: number } | null = null;
 
-  suggestions = [
+  readonly suggestions = [
     'Write a SQL query to get total revenue by region',
     'Explain the NFRP schema hierarchy',
     'What are the Text-to-SQL training pair formats?',
   ];
 
-  constructor(private api: ApiService) {}
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   usePrompt(s: string): void {
     this.userInput = s;
@@ -338,12 +351,11 @@ export class ChatComponent {
 
   send(): void {
     const content = this.userInput.trim();
-    if (!content || this.sending) return;
+    if (!content || this.sending()) return;
 
-    this.messages.push({ role: 'user', content, ts: new Date() });
+    this.messages.update((msgs: ChatMessage[]) => [...msgs, { role: 'user', content, ts: new Date() }]);
     this.userInput = '';
-    this.sending = true;
-    this.error = '';
+    this.sending.set(true);
     this.scrollToBottom();
 
     const payload: CompletionRequest = {
@@ -353,29 +365,33 @@ export class ChatComponent {
       temperature: this.temperature,
       messages: [
         { role: 'system', content: this.systemPrompt },
-        ...this.messages.map((m) => ({ role: m.role, content: m.content })),
+        ...this.messages().map((m: ChatMessage) => ({ role: m.role, content: m.content })),
       ],
     };
 
-    this.api.post<CompletionResponse>('/v1/chat/completions', payload).subscribe({
-      next: (resp) => {
-        const reply = resp.choices?.[0]?.message?.content ?? '(empty response)';
-        this.messages.push({ role: 'assistant', content: reply, ts: new Date() });
-        if (resp.usage) this.lastUsage = resp.usage;
-        this.sending = false;
-        this.scrollToBottom();
-      },
-      error: (e) => {
-        this.error = e?.error?.detail ?? 'Request failed — is the ModelOpt backend running?';
-        this.sending = false;
-      },
-    });
+    this.api.post<CompletionResponse>('/v1/chat/completions', payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp: CompletionResponse) => {
+          const reply = resp.choices?.[0]?.message?.content ?? '(empty response)';
+          this.messages.update((msgs: ChatMessage[]) => [...msgs, { role: 'assistant', content: reply, ts: new Date() }]);
+          if (resp.usage) this.lastUsage.set(resp.usage);
+          this.sending.set(false);
+          this.scrollToBottom();
+        },
+        error: (e: HttpErrorResponse) => {
+          const detail = (e.error as { detail?: string })?.detail ?? 'Request failed — is the ModelOpt backend running?';
+          this.toast.error(detail, 'Chat Error');
+          console.error('Chat request failed:', e);
+          this.sending.set(false);
+        },
+      });
   }
 
   clearChat(): void {
-    this.messages = [];
-    this.error = '';
-    this.lastUsage = null;
+    this.messages.set([]);
+    this.lastUsage.set(null);
+    this.toast.info('Chat cleared');
   }
 
   private scrollToBottom(): void {

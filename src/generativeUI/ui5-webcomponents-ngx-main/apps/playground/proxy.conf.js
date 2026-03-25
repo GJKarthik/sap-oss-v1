@@ -11,12 +11,20 @@
  */
 
 const AGENT_URL = process.env['AGENT_URL'] || 'http://localhost:9160';
+const COLLAB_URL = process.env['COLLAB_URL'] || 'http://localhost:9161';
 
 module.exports = {
   '/ag-ui': {
     target: AGENT_URL,
     secure: false,
     changeOrigin: true,
+    logLevel: 'info',
+  },
+  '/collab': {
+    target: COLLAB_URL,
+    secure: false,
+    changeOrigin: true,
+    ws: true,
     logLevel: 'info',
   },
 };

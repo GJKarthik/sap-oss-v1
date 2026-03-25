@@ -92,6 +92,9 @@ pub const ToonInferenceConfig = struct {
     decode_trace_every: u32 = 16,
     enable_native_mtp: bool = false,
 
+    // QJL KV cache compression (env: USE_QJL=1)
+    use_qjl: bool = false,
+
     // GPU/Optimization
     n_gpu_layers: i32 = -1, // All layers on GPU
 
@@ -447,6 +450,7 @@ pub const ToonInferenceEngine = struct {
         resolved_config.decode_trace = envBool("PRIVATELLM_TOON_DECODE_TRACE", resolved_config.decode_trace);
         resolved_config.decode_trace_every = @max(@as(u32, 1), envU32("PRIVATELLM_TOON_DECODE_TRACE_EVERY", resolved_config.decode_trace_every));
         resolved_config.enable_native_mtp = envBool("PLLM_ENABLE_NATIVE_MTP", resolved_config.enable_native_mtp);
+        resolved_config.use_qjl = envBool("USE_QJL", resolved_config.use_qjl);
 
         var engine = ToonInferenceEngine{
             .allocator = allocator,
@@ -1248,6 +1252,7 @@ pub const ToonInferenceEngine = struct {
 
         var uploaded: u32 = 0;
         var total_bytes: usize = 0;
+        var detected_weight_dtype: GGMLType = .q4_0;
         var output_weight_dtype: GGMLType = .f32;
         var output_weight_data: []const u8 = &.{};
         var output_weight_rows: usize = 0;
@@ -1256,8 +1261,9 @@ pub const ToonInferenceEngine = struct {
         var output_weight_n_dims: u32 = 0;
         var output_weight_dims: [4]u64 = .{ 0, 0, 0, 0 };
         var cpu_embedding_q4_data: ?[]const u8 = null;
-        var native_mtp_views = std.ArrayList(native_mtp_mod.NativeMtpTensorView).init(allocator);
-        defer native_mtp_views.deinit();
+        var cpu_embedding_dtype: GGMLType = .q4_0;
+        var native_mtp_views: std.ArrayListUnmanaged(native_mtp_mod.NativeMtpTensorView) = .empty;
+        defer native_mtp_views.deinit(allocator);
         var saw_native_mtp = false;
 
         for (tensor_infos) |ti| {
@@ -1273,7 +1279,7 @@ pub const ToonInferenceEngine = struct {
             if (self.config.enable_native_mtp) {
                 if (looksLikeNativeMtpTensorName(ti.name)) saw_native_mtp = true;
                 if (!std.mem.eql(u8, ti.name, "output.weight")) {
-                    try native_mtp_views.append(.{
+                    try native_mtp_views.append(allocator, .{
                         .name = ti.name,
                         .dtype = ggml_dtype,
                         .host_data = data_slice,
@@ -1290,6 +1296,7 @@ pub const ToonInferenceEngine = struct {
                 // decision is deferred until after we know if output.weight exists.
                 if (ggml_dtype == .q4_0) {
                     cpu_embedding_q4_data = data_slice;
+                    cpu_embedding_dtype = .q4_0;
                 } else if (ggml_dtype == .f32) {
                     gpu_weights.token_embedding = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
                     total_bytes += size;
@@ -1309,13 +1316,17 @@ pub const ToonInferenceEngine = struct {
                     // Quantized embedding (Q6_K, Q8_0, etc.): dequant to F32 for GPU lookup.
                     // embeddingGpu kernel expects float32 data.
                     const emb_n_elem = rows * cols;
+                    // Q8_0/Q5_K embeddings are large (~2.3 GB for 8B models).
+                    // Bulk dequant requires equal CPU RAM which may OOM on low-RAM VMs.
+                    // Use CPU per-row fallback for these formats instead.
                     const fp32_buf = if (ggml_dtype == .q6_k)
                         try dequantQ6KToF32(allocator, data_slice, emb_n_elem)
                     else if (ggml_dtype == .q4_0)
                         try dequantQ4ToF32(allocator, data_slice, emb_n_elem)
                     else blk: {
-                        // Unsupported quant — fall back to CPU embedding
+                        // Q8_0, Q5_K, and other quants — fall back to CPU per-row embedding
                         cpu_embedding_q4_data = data_slice;
+                        cpu_embedding_dtype = ggml_dtype;
                         break :blk @as(?[]f32, null);
                     };
                     if (fp32_buf) |buf| {
@@ -1356,34 +1367,37 @@ pub const ToonInferenceEngine = struct {
                 } else if (std.mem.eql(u8, suffix, "ffn_norm.weight") or std.mem.eql(u8, suffix, "post_attention_norm.weight")) {
                     lw.ffn_norm = try GpuTensor.upload(.f32, data_slice, 1, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_q.weight")) {
-                    lw.wq = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    if (layer == 0) detected_weight_dtype = ggml_dtype;
+                    lw.wq = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_k.weight")) {
-                    lw.wk = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.wk = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_v.weight")) {
-                    lw.wv = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.wv = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_q_norm.weight")) {
                     lw.attn_q_norm = try GpuTensor.upload(.f32, data_slice, 1, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_k_norm.weight")) {
                     lw.attn_k_norm = try GpuTensor.upload(.f32, data_slice, 1, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_output.weight")) {
-                    lw.wo = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.wo = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ffn_gate.weight")) {
-                    lw.w_gate = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.w_gate = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ffn_up.weight")) {
-                    lw.w_up = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.w_up = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ffn_down.weight")) {
-                    lw.w_down = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.w_down = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                     // Gated DeltaNet tensors (Qwen3.5 hybrid layers)
+                    // Gated DeltaNet tensors (Qwen3.5 hybrid layers)
+                    // uploadWeightF32Strict handles FP16/BF16/Q5_K dequant to F32.
                 } else if (std.mem.eql(u8, suffix, "attn_qkv.weight")) {
-                    lw.attn_qkv = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.attn_qkv = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "attn_gate.weight")) {
-                    lw.attn_gate = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.attn_gate = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ssm_a")) {
                     lw.ssm_a = try GpuTensor.upload(.f32, data_slice, 1, cols);
                 } else if (std.mem.eql(u8, suffix, "ssm_alpha.weight")) {
-                    lw.ssm_alpha = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.ssm_alpha = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ssm_beta.weight")) {
-                    lw.ssm_beta = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.ssm_beta = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ssm_conv1d.weight")) {
                     lw.ssm_conv1d = try GpuTensor.upload(.f32, data_slice, rows, cols);
                 } else if (std.mem.eql(u8, suffix, "ssm_dt.bias")) {
@@ -1391,7 +1405,7 @@ pub const ToonInferenceEngine = struct {
                 } else if (std.mem.eql(u8, suffix, "ssm_norm.weight")) {
                     lw.ssm_norm = try GpuTensor.upload(.f32, data_slice, 1, cols);
                 } else if (std.mem.eql(u8, suffix, "ssm_out.weight")) {
-                    lw.ssm_out = try GpuTensor.upload(ggml_dtype, data_slice, rows, cols);
+                    lw.ssm_out = try uploadWeightF32Strict(allocator, ggml_dtype, data_slice, rows, cols);
                 } else if (IS_MOE and gpu_weights.moe_layers != null) {
                     const mw = &gpu_weights.moe_layers.?[layer];
                     if (std.mem.eql(u8, suffix, "ffn_gate_inp.weight")) {
@@ -1464,7 +1478,7 @@ pub const ToonInferenceEngine = struct {
                     std.mem.sliceAsBytes(self.native_mtp_output_f32.?)
                 else
                     output_weight_data;
-                try native_mtp_views.append(.{
+                try native_mtp_views.append(allocator, .{
                     .name = "output.weight",
                     .dtype = native_output_dtype,
                     .host_data = native_output_data,
@@ -1522,7 +1536,7 @@ pub const ToonInferenceEngine = struct {
             .max_seq_len = MAX_SEQ,
             .rope_freq_base = model_rope_base,
             .eps = model_eps,
-            .weight_dtype = .q4_0,
+            .weight_dtype = detected_weight_dtype,
             .head_dim = HEAD_DIM,
             .n_experts = N_EXPERTS,
             .n_experts_topk = N_EXPERTS_TOPK,
@@ -1537,12 +1551,15 @@ pub const ToonInferenceEngine = struct {
             .attn_head_dim = ATTN_HEAD_DIM,
             .rope_dim = ROPE_DIM,
             .full_attn_interval = model_full_attn_interval,
+            // QJL KV cache compression
+            .use_qjl = self.config.use_qjl,
         }, backend, gpu_weights);
         // Wire CPU embedding fallback if token_embd is not on GPU
         if (cpu_embedding_q4_data) |emb_data| {
             fwd.cpu_embedding_q4_data = emb_data;
+            fwd.cpu_embedding_dtype = cpu_embedding_dtype;
             fwd.cpu_embedding_scratch = try allocator.alloc(f32, DIM);
-            std.log.info("CPU embedding fallback: Q4_0 mmap ({} KB), scratch {} floats", .{
+            std.log.info("CPU embedding fallback: {s} mmap ({} KB), scratch {} floats", .{@tagName(cpu_embedding_dtype),
                 emb_data.len / 1024, DIM,
             });
         }
@@ -1661,6 +1678,96 @@ pub const ToonInferenceEngine = struct {
             }
         }
         return out;
+    }
+
+    /// Dequant Q5_K data to F32. Block: 256 elements, 176 bytes.
+    /// Layout: f16 d, f16 dmin, 12 bytes scales, 32 bytes high bits, 128 bytes low nibbles.
+    fn dequantQ5KToF32(allocator_: Allocator, q5k_data: []const u8, n_elements: usize) ![]f32 {
+        const out = try allocator_.alloc(f32, n_elements);
+        errdefer allocator_.free(out);
+        const block_size: usize = 256;
+        const bytes_per_block: usize = 176;
+        const n_blocks = n_elements / block_size;
+        for (0..n_blocks) |bi| {
+            const blk = q5k_data[bi * bytes_per_block ..][0..bytes_per_block];
+            const d_val: f32 = @floatCast(@as(f16, @bitCast(std.mem.readInt(u16, blk[0..2], .little))));
+            const dmin: f32 = @floatCast(@as(f16, @bitCast(std.mem.readInt(u16, blk[2..4], .little))));
+            const scales_raw = blk[4..16];
+            const qh = blk[16..48]; // 32 bytes of high bits
+            const qs = blk[48..176]; // 128 bytes of low nibbles
+            var sc: [8]u8 = undefined;
+            var mn: [8]u8 = undefined;
+            for (0..4) |i| { sc[i] = scales_raw[i] & 63; mn[i] = scales_raw[i + 4] & 63; }
+            for (0..2) |i| {
+                sc[4 + i] = (scales_raw[8 + i] & 0xF) | ((scales_raw[i] >> 6) << 4);
+                mn[4 + i] = (scales_raw[8 + i] >> 4) | ((scales_raw[i + 4] >> 6) << 4);
+                sc[6 + i] = (scales_raw[10 + i] & 0xF) | ((scales_raw[i + 2] >> 6) << 4);
+                mn[6 + i] = (scales_raw[10 + i] >> 4) | ((scales_raw[i + 6] >> 6) << 4);
+            }
+            for (0..8) |sb| {
+                const d1 = d_val * @as(f32, @floatFromInt(sc[sb]));
+                const m1 = dmin * @as(f32, @floatFromInt(mn[sb]));
+                for (0..32) |j| {
+                    const nibble: u8 = if (j % 2 == 0) qs[sb * 16 + j / 2] & 0xF else qs[sb * 16 + j / 2] >> 4;
+                    const idx = sb * 32 + j;
+                    const high_bit: u8 = (qh[idx / 8] >> @intCast(idx % 8)) & 1;
+                    out[bi * block_size + idx] = d1 * @as(f32, @floatFromInt(nibble | (@as(u8, high_bit) << 4))) - m1;
+                }
+            }
+        }
+        return out;
+    }
+
+    /// Dequant Q8_0 data to F32. Block: 32 elements, 34 bytes: f16 scale + 32 int8 quants.
+    fn dequantQ8_0ToF32(allocator_: Allocator, q8_data: []const u8, n_elements: usize) ![]f32 {
+        const out = try allocator_.alloc(f32, n_elements);
+        errdefer allocator_.free(out);
+        const block_size: usize = 32;
+        const bytes_per_block: usize = 34;
+        const n_blocks = n_elements / block_size;
+        for (0..n_blocks) |bi| {
+            const blk = q8_data[bi * bytes_per_block ..][0..bytes_per_block];
+            const d: f32 = @floatCast(@as(f16, @bitCast(std.mem.readInt(u16, blk[0..2], .little))));
+            for (0..32) |j| {
+                const q: i8 = @bitCast(blk[2 + j]);
+                out[bi * block_size + j] = @as(f32, @floatFromInt(q)) * d;
+            }
+        }
+        return out;
+    }
+
+    /// Upload a weight tensor, dequanting FP16/BF16/Q5_K/Q8_0 to F32 if needed.
+    /// Q4_0, Q4_1, Q2_K, F32 are uploaded as-is (have native GEMV kernels).
+    fn uploadWeightF32Strict(allocator_: Allocator, ggml_dtype: GGMLType, data_slice: []const u8, rows: usize, cols: usize) !GpuTensor {
+        return switch (ggml_dtype) {
+            .f16 => blk: {
+                const n = rows * cols;
+                const fp32_buf = try allocator_.alloc(f32, n);
+                defer allocator_.free(fp32_buf);
+                const f16_words = @as([*]const u16, @ptrCast(@alignCast(data_slice.ptr)))[0..n];
+                for (f16_words, 0..) |h, i| {
+                    fp32_buf[i] = @floatCast(@as(f16, @bitCast(h)));
+                }
+                break :blk try GpuTensor.upload(.f32, std.mem.sliceAsBytes(fp32_buf), rows, cols);
+            },
+            .q5_k => blk: {
+                const fp32_buf = try dequantQ5KToF32(allocator_, data_slice, rows * cols);
+                defer allocator_.free(fp32_buf);
+                break :blk try GpuTensor.upload(.f32, std.mem.sliceAsBytes(fp32_buf), rows, cols);
+            },
+            .q8_0, .q4_0, .q4_1, .q2_k, .f32 => try GpuTensor.upload(ggml_dtype, data_slice, rows, cols),
+            else => blk: {
+                // BF16 and other exotic types: try generic F16 path
+                const n = rows * cols;
+                const fp32_buf = try allocator_.alloc(f32, n);
+                defer allocator_.free(fp32_buf);
+                const f16_words = @as([*]const u16, @ptrCast(@alignCast(data_slice.ptr)))[0..n];
+                for (f16_words, 0..) |h, i| {
+                    fp32_buf[i] = @floatCast(@as(f16, @bitCast(h)));
+                }
+                break :blk try GpuTensor.upload(.f32, std.mem.sliceAsBytes(fp32_buf), rows, cols);
+            },
+        };
     }
 
     fn dequantQ4ToF32(allocator_: Allocator, q4_data: []const u8, n_elements: usize) ![]f32 {

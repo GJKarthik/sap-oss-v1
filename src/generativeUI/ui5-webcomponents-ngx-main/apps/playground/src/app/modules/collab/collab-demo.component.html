@@ -36,9 +36,11 @@
             Leave Room
           </ui5-button>
         </div>
-        <ui5-message-strip *ngIf="connectionState !== 'connected'" design="Information">
+        @if (connectionState !== 'connected') {
+        <ui5-message-strip design="Information">
           No live collaboration server is needed for this demo — connection attempts are gracefully handled.
         </ui5-message-strip>
+        }
       </div>
     </ui5-card>
 
@@ -46,13 +48,14 @@
     <ui5-card>
       <ui5-card-header slot="header" title-text="Participants" [subtitle-text]="participants.length + ' online'"></ui5-card-header>
       <div style="padding:1rem;">
-        <div *ngIf="participants.length === 0" style="color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
+        @if (participants.length === 0) {
+        <div style="color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
           No participants yet. Join a room to see live presence.
         </div>
+        }
         <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
-          <div
-            *ngFor="let p of participants"
-            style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--sapGroup_TitleBorderColor,#d9d9d9);background:var(--sapBackgroundColor,#fff);">
+          @for (p of participants; track p.userId) {
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--sapGroup_TitleBorderColor,#d9d9d9);background:var(--sapBackgroundColor,#fff);">
             <span
               [style.background]="p.color"
               style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;color:white;font-weight:700;font-size:0.8rem;">
@@ -62,10 +65,11 @@
               <div style="font-weight:600;font-size:0.875rem;">{{ p.displayName }}</div>
               <div style="font-size:0.75rem;color:var(--sapContent_LabelColor,#6a6d70);">
                 {{ p.status }}
-                <span *ngIf="p.location"> · {{ p.location }}</span>
+                @if (p.location) { · {{ p.location }} }
               </div>
             </div>
           </div>
+          }
         </div>
       </div>
     </ui5-card>
@@ -88,36 +92,33 @@
           <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;pointer-events:none;">
             Move mouse here to broadcast cursor
           </span>
+          @for (c of cursors; track c.userId) {
           <span
-            *ngFor="let c of cursors"
             [style.left.px]="c.x"
             [style.top.px]="c.y"
             style="position:absolute;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;"
-            [style.background]="'#0070f2'"
+            [style.background]="getCursorColor(c.userId)"
             [title]="c.userId">
           </span>
+          }
         </div>
       </div>
     </ui5-card>
 
     <!-- Event log card -->
     <ui5-card>
-      <ui5-card-header slot="header" title-text="Event Log">
-        <ui5-button slot="action" design="Transparent" (click)="clearLog()">Clear</ui5-button>
-      </ui5-card-header>
+      <ui5-card-header slot="header" title-text="Event Log" subtitle-text="Connection events"></ui5-card-header>
       <div style="padding:1rem;">
-        <div
-          style="
-            font-family:monospace;
-            font-size:0.75rem;
-            max-height:200px;
-            overflow-y:auto;
-            background:var(--sapBackgroundColor,#f5f5f5);
-            border:1px solid var(--sapGroup_TitleBorderColor,#d9d9d9);
-            border-radius:0.25rem;
-            padding:0.5rem;">
-          <div *ngFor="let entry of log" style="margin-bottom:0.2rem;">{{ entry }}</div>
-          <div *ngIf="log.length === 0" style="color:var(--sapContent_LabelColor,#6a6d70);">No events yet.</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;">
+          <ui5-button design="Transparent" (click)="clearLog()">Clear</ui5-button>
+        </div>
+        <div class="event-log">
+          @for (entry of log; track $index) {
+          <div class="event-log__entry">{{ entry }}</div>
+          }
+          @if (log.length === 0) {
+          <div class="event-log__empty">No events yet.</div>
+          }
         </div>
       </div>
     </ui5-card>

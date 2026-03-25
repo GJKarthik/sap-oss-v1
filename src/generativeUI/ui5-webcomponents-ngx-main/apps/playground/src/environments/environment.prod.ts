@@ -2,4 +2,6 @@
 // SPDX-FileCopyrightText: 2023 SAP SE
 export const environment = {
   production: true,
+  agUiEndpoint: '/ag-ui/run',
+  collabWsUrl: '/collab',
 };

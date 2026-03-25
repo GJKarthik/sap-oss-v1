@@ -5,16 +5,20 @@
   <section class="joule-chat-panel">
 
     <!-- Collab presence strip -->
-    <div class="presence-strip" *ngIf="participants.length > 0">
-      <span class="presence-label">Live:</span>
-      <span
-        *ngFor="let p of participants"
-        class="presence-avatar"
-        [title]="p.displayName"
-        [style.background]="p.color">
-        {{ p.displayName.charAt(0).toUpperCase() }}
-      </span>
-    </div>
+    @if (participants.length > 0) {
+      <div class="presence-strip" role="status" aria-label="Active collaborators">
+        <span class="presence-label">Live:</span>
+        @for (p of participants; track p.userId) {
+          <span
+            class="presence-avatar"
+            [title]="p.displayName"
+            [style.background]="p.color"
+            [attr.aria-label]="p.displayName">
+            {{ p.displayName.charAt(0).toUpperCase() }}
+          </span>
+        }
+      </div>
+    }
 
     <joule-chat
       [endpoint]="agUiEndpoint"
@@ -29,42 +33,62 @@
   <!-- Right: live-rendered GenUI output -->
   <section class="joule-output-panel">
 
+    <!-- Connection error banner -->
+    @if (connectionError) {
+      <div class="error-banner" role="alert">
+        <ui5-message-strip
+          design="Negative"
+          (close)="dismissError()">
+          {{ connectionError }}
+        </ui5-message-strip>
+      </div>
+    }
+
     <div class="output-header">
-      <span class="state-label state-{{ state }}">{{ state }}</span>
-      <button
-        *ngIf="pendingActions.length > 0"
-        class="governance-btn"
-        [class.has-pending]="pendingActions.length > 0"
-        (click)="toggleGovernancePanel()">
-        <span class="badge">{{ pendingActions.length }}</span>
-        Review Actions
-      </button>
-      <button
-        *ngIf="state !== 'idle'"
-        class="clear-btn"
-        (click)="clearSession()">
-        Clear
-      </button>
+      <span class="state-badge state-badge--{{ state }}" role="status" [attr.aria-label]="'Streaming state: ' + state">
+        {{ state }}
+      </span>
+
+      @if (pendingActions.length > 0) {
+        <ui5-button
+          design="Attention"
+          icon="warning"
+          (click)="toggleGovernancePanel()">
+          Review Actions ({{ pendingActions.length }})
+        </ui5-button>
+      }
+
+      @if (state !== 'idle') {
+        <ui5-button design="Transparent" icon="refresh" (click)="clearSession()">
+          Clear
+        </ui5-button>
+      }
     </div>
 
     <!-- Governance Review Panel -->
-    <div class="governance-panel-wrapper" *ngIf="showGovernancePanel && pendingActions.length > 0">
-      <div class="governance-panel-header">
-        <span>Pending Actions ({{ pendingActions.length }})</span>
-        <button class="clear-btn" (click)="toggleGovernancePanel()">✕</button>
+    @if (showGovernancePanel && pendingActions.length > 0) {
+      <div class="governance-panel-wrapper" role="region" aria-label="Governance review panel">
+        <div class="governance-panel-header">
+          <span>Pending Actions ({{ pendingActions.length }})</span>
+          <ui5-button design="Transparent" icon="decline" accessible-name="Close panel" (click)="toggleGovernancePanel()"></ui5-button>
+        </div>
+        <genui-governance-review-panel></genui-governance-review-panel>
       </div>
-      <genui-governance-review-panel></genui-governance-review-panel>
-    </div>
+    }
 
-    <ng-container *ngIf="schema; else empty">
+    @if (schema) {
       <genui-outlet [schema]="schema"></genui-outlet>
-    </ng-container>
-
-    <ng-template #empty>
-      <div class="empty-state">
-        <p>Agent-generated UI will appear here.</p>
+    } @else {
+      <div class="empty-state" role="status" aria-label="Waiting for agent output">
+        <div class="empty-state__icon" aria-hidden="true">🤖</div>
+        <p class="empty-state__text">Agent-generated UI will appear here.</p>
+        @if (state === 'streaming') {
+          <p class="empty-state__hint">Receiving response…</p>
+        } @else {
+          <p class="empty-state__hint">Ask Joule a question to get started.</p>
+        }
       </div>
-    </ng-template>
+    }
 
   </section>
 

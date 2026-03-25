@@ -13,6 +13,7 @@ import {
 @Component({
   selector: 'app-collab-demo',
   templateUrl: './collab-demo.component.html',
+  styleUrls: ['./collab-demo.component.scss'],
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -81,9 +82,11 @@ export class CollabDemoComponent implements OnInit, OnDestroy {
     this.log = [`[${ts}] ${msg}`, ...this.log].slice(0, 50);
   }
 
-  private randomColor(): string {
+  getCursorColor(userId: string): string {
     const colors = ['#0070f2', '#2b7c2b', '#e9730c', '#bb0000', '#6d2ac1', '#0b6e4f'];
-    return colors[Math.floor(Math.random() * colors.length)];
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) { hash = userId.charCodeAt(i) + ((hash << 5) - hash); }
+    return colors[Math.abs(hash) % colors.length];
   }
 
   ngOnDestroy(): void {
