@@ -721,6 +721,12 @@ fn readRow(dtype: GGMLType, host_data: []const u8, row_index: usize, cols: usize
     };
 }
 
+fn readLeIntAt(comptime T: type, bytes: []const u8, offset: usize) T {
+    var raw: [@sizeOf(T)]u8 = undefined;
+    @memcpy(raw[0..], bytes[offset .. offset + raw.len]);
+    return std.mem.readInt(T, &raw, .little);
+}
+
 fn readRowF32(host_data: []const u8, row_index: usize, cols: usize, dst: []f32) !void {
     const row_bytes = cols * @sizeOf(f32);
     const start = row_index * row_bytes;
@@ -728,7 +734,7 @@ fn readRowF32(host_data: []const u8, row_index: usize, cols: usize, dst: []f32) 
     var col: usize = 0;
     while (col < cols) : (col += 1) {
         const offset = start + col * @sizeOf(f32);
-        const bits = std.mem.readInt(u32, host_data[offset .. offset + 4], .little);
+        const bits = readLeIntAt(u32, host_data, offset);
         dst[col] = @bitCast(bits);
     }
 }
@@ -740,7 +746,7 @@ fn readRowF16(host_data: []const u8, row_index: usize, cols: usize, dst: []f32) 
     var col: usize = 0;
     while (col < cols) : (col += 1) {
         const offset = start + col * @sizeOf(f16);
-        const bits = std.mem.readInt(u16, host_data[offset .. offset + 2], .little);
+        const bits = readLeIntAt(u16, host_data, offset);
         dst[col] = @floatCast(@as(f16, @bitCast(bits)));
     }
 }
@@ -755,7 +761,7 @@ fn readRowQ4_0(host_data: []const u8, row_index: usize, cols: usize, dst: []f32)
     var block: usize = 0;
     while (block < blocks_per_row) : (block += 1) {
         const block_offset = start + block * GGMLType.q4_0.bytesPerBlock();
-        const scale_bits = std.mem.readInt(u16, host_data[block_offset .. block_offset + 2], .little);
+        const scale_bits = readLeIntAt(u16, host_data, block_offset);
         const scale: f32 = @floatCast(@as(f16, @bitCast(scale_bits)));
         const block_col = block * 32;
         var packed_idx: usize = 0;
@@ -781,7 +787,7 @@ fn readRowQ8_0(host_data: []const u8, row_index: usize, cols: usize, dst: []f32)
     var block: usize = 0;
     while (block < blocks_per_row) : (block += 1) {
         const block_offset = start + block * GGMLType.q8_0.bytesPerBlock();
-        const scale_bits = std.mem.readInt(u16, host_data[block_offset .. block_offset + 2], .little);
+        const scale_bits = readLeIntAt(u16, host_data, block_offset);
         const scale: f32 = @floatCast(@as(f16, @bitCast(scale_bits)));
         const block_col = block * 32;
         var elem: usize = 0;
@@ -799,13 +805,13 @@ fn readScalar(dtype: GGMLType, host_data: []const u8, idx: usize) !f32 {
         .f32 => blk: {
             const off = idx * @sizeOf(f32);
             if (off + 4 > host_data.len) break :blk error.InvalidNativeMtpShape;
-            const bits = std.mem.readInt(u32, host_data[off .. off + 4], .little);
+            const bits = readLeIntAt(u32, host_data, off);
             break :blk @bitCast(bits);
         },
         .f16 => blk: {
             const off = idx * @sizeOf(f16);
             if (off + 2 > host_data.len) break :blk error.InvalidNativeMtpShape;
-            const bits = std.mem.readInt(u16, host_data[off .. off + 2], .little);
+            const bits = readLeIntAt(u16, host_data, off);
             break :blk @floatCast(@as(f16, @bitCast(bits)));
         },
         else => error.UnsupportedNativeMtpDType,
@@ -861,7 +867,7 @@ fn scoreRowF32(host_data: []const u8, row_index: usize, cols: usize, hidden: []c
     var col: usize = 0;
     while (col < cols) : (col += 1) {
         const offset = start + col * @sizeOf(f32);
-        const bits = std.mem.readInt(u32, host_data[offset .. offset + 4], .little);
+        const bits = readLeIntAt(u32, host_data, offset);
         const value: f32 = @bitCast(bits);
         acc += value * hidden[col];
     }
@@ -877,7 +883,7 @@ fn scoreRowF16(host_data: []const u8, row_index: usize, cols: usize, hidden: []c
     var col: usize = 0;
     while (col < cols) : (col += 1) {
         const offset = start + col * @sizeOf(f16);
-        const bits = std.mem.readInt(u16, host_data[offset .. offset + 2], .little);
+        const bits = readLeIntAt(u16, host_data, offset);
         const value: f32 = @floatCast(@as(f16, @bitCast(bits)));
         acc += value * hidden[col];
     }
@@ -894,7 +900,7 @@ fn scoreRowQ4_0(host_data: []const u8, row_index: usize, cols: usize, hidden: []
     var block: usize = 0;
     while (block < blocks_per_row) : (block += 1) {
         const block_offset = start + block * GGMLType.q4_0.bytesPerBlock();
-        const scale_bits = std.mem.readInt(u16, host_data[block_offset .. block_offset + 2], .little);
+        const scale_bits = readLeIntAt(u16, host_data, block_offset);
         const scale: f32 = @floatCast(@as(f16, @bitCast(scale_bits)));
         const block_col = block * 32;
 
@@ -923,7 +929,7 @@ fn scoreRowQ8_0(host_data: []const u8, row_index: usize, cols: usize, hidden: []
     var block: usize = 0;
     while (block < blocks_per_row) : (block += 1) {
         const block_offset = start + block * GGMLType.q8_0.bytesPerBlock();
-        const scale_bits = std.mem.readInt(u16, host_data[block_offset .. block_offset + 2], .little);
+        const scale_bits = readLeIntAt(u16, host_data, block_offset);
         const scale: f32 = @floatCast(@as(f16, @bitCast(scale_bits)));
         const block_col = block * 32;
 

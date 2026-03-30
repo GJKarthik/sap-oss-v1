@@ -1,4 +1,4 @@
-import { computed, inject } from '@angular/core';
+import { computed, inject, effect } from '@angular/core';
 import {
   signalStore,
   withState,
@@ -12,6 +12,7 @@ import { pipe, tap, catchError, of, timer, exhaustMap, retry } from 'rxjs';
 import { webSocket } from 'rxjs/webSocket';
 import { ApiService } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
+import { NotificationService } from '../services/notification.service';
 
 // ============================================================================
 // Types
@@ -481,7 +482,29 @@ export const AppStore = signalStore(
     };
   }),
   withHooks({
-    onInit(store) {
+    onInit(store, notification = inject(NotificationService)) {
+      // Opportunistically request permission
+      notification.requestPermission();
+
+      let previousCompletedJobs = new Set<string>();
+
+      effect(() => {
+        const jobsData = store.jobs().data;
+        if (jobsData) {
+          const completedJobs = jobsData.filter(j => j.status === 'completed');
+          
+          for (const job of completedJobs) {
+            if (!previousCompletedJobs.has(job.id)) {
+              // Trigger notification!
+              notification.notify('Training Job Completed', {
+                body: `Job "${job.name || job.id}" has successfully finished.`
+              });
+              previousCompletedJobs.add(job.id);
+            }
+          }
+        }
+      });
+
       store.connectWs();
     }
   })
