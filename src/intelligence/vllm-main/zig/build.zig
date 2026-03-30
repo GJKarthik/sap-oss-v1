@@ -113,6 +113,14 @@ pub fn build(b: *std.Build) void {
     cuda_build_opts.addOption(bool, "has_deltanet_kernels_ptx", pathExists("src/gpu/deltanet_kernels.ptx"));
     const cuda_opts_mod = cuda_build_opts.createModule();
 
+    const fast_test_build_opts = b.addOptions();
+    fast_test_build_opts.addOption(bool, "enable_slow_tests", false);
+    const fast_test_opts_mod = fast_test_build_opts.createModule();
+
+    const slow_test_build_opts = b.addOptions();
+    slow_test_build_opts.addOption(bool, "enable_slow_tests", true);
+    const slow_test_opts_mod = slow_test_build_opts.createModule();
+
     const cuda_forward_mod = b.createModule(.{
         .root_source_file = b.path("src/gpu/cuda_forward.zig"),
         .target = target,
@@ -163,6 +171,7 @@ pub fn build(b: *std.Build) void {
     // "file exists in two modules" errors. These named modules are only used
     // by standalone executables (e2e-bench, cuda-bench, llama-toon).
     main_mod.addImport("cuda_build_options", cuda_opts_mod);
+    main_mod.addImport("test_build_options", fast_test_opts_mod);
 
     const exe = b.addExecutable(.{
         .name = "openai-gateway",
@@ -236,6 +245,7 @@ pub fn build(b: *std.Build) void {
     test_mod.addImport("metal_bindings", metal_bindings_mod);
     test_mod.addImport("metal_shaders", metal_shaders_mod);
     test_mod.addImport("cuda_build_options", cuda_opts_mod);
+    test_mod.addImport("test_build_options", fast_test_opts_mod);
 
     const tests = b.addTest(.{
         .root_module = test_mod,
@@ -286,7 +296,64 @@ pub fn build(b: *std.Build) void {
         tests.linkSystemLibrary("wgpu_native");
         tests.root_module.addCMacro("WEBGPU_ENABLED", "1");
     }
-    b.step("test", "Run tests").dependOn(&b.addRunArtifact(tests).step);
+    b.step("test", "Run fast unit and integration tests").dependOn(&b.addRunArtifact(tests).step);
+
+    const slow_test_mod = b.createModule(.{
+        .root_source_file = source_file,
+        .target = target,
+        .optimize = optimize,
+    });
+    slow_test_mod.addImport("connector_types", connector_types_mod);
+    slow_test_mod.addImport("rag_service", rag_service_mod);
+    slow_test_mod.addImport("http", http_mod);
+    slow_test_mod.addImport("auth", auth_mod);
+    slow_test_mod.addImport("resilience", resilience_mod);
+    slow_test_mod.addImport("broker", broker_mod);
+    slow_test_mod.addImport("llama", llama_mod);
+    slow_test_mod.addImport("metal_bindings", metal_bindings_mod);
+    slow_test_mod.addImport("metal_shaders", metal_shaders_mod);
+    slow_test_mod.addImport("cuda_build_options", cuda_opts_mod);
+    slow_test_mod.addImport("test_build_options", slow_test_opts_mod);
+
+    const slow_tests = b.addTest(.{
+        .root_module = slow_test_mod,
+    });
+    slow_tests.linkLibC();
+    slow_tests.addCSourceFile(.{
+        .file = b.path("deps/trt_wrapper/trt_wrapper.c"),
+        .flags = &.{},
+    });
+    slow_tests.addIncludePath(b.path("deps/cuda"));
+    if (target.result.os.tag == .macos) {
+        slow_tests.linkFramework("Metal");
+        slow_tests.linkFramework("Foundation");
+        slow_tests.linkFramework("CoreGraphics");
+        slow_tests.linkFramework("Accelerate");
+    }
+    if (target.result.os.tag == .linux) {
+        slow_tests.linkSystemLibrary("pthread");
+    }
+    if (enable_gpu) {
+        const slow_cuda_path = resolveCudaPath(b, cuda_path_opt);
+        slow_tests.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/lib64", .{slow_cuda_path}) });
+        slow_tests.addIncludePath(.{ .cwd_relative = b.fmt("{s}/include", .{slow_cuda_path}) });
+        slow_tests.linkSystemLibrary("cudart");
+        slow_tests.linkSystemLibrary("cublas");
+        slow_tests.linkSystemLibrary("cublasLt");
+
+        const slow_cuda_lib_path = cuda_lib_opt orelse "deps/llama-zig-cuda/zig-out/lib";
+        slow_tests.addLibraryPath(.{ .cwd_relative = slow_cuda_lib_path });
+        slow_tests.linkSystemLibrary("cuda_kernels");
+        slow_tests.linkLibC();
+        slow_tests.step.dependOn(&cuda_kernels_build.?.step);
+    }
+    if (enable_webgpu) {
+        const slow_wgpu_lib_path = wgpu_lib_opt orelse "/usr/local/lib";
+        slow_tests.addLibraryPath(.{ .cwd_relative = slow_wgpu_lib_path });
+        slow_tests.linkSystemLibrary("wgpu_native");
+        slow_tests.root_module.addCMacro("WEBGPU_ENABLED", "1");
+    }
+    b.step("test-slow", "Run slow inference and benchmark tests").dependOn(&b.addRunArtifact(slow_tests).step);
 
     // ========================================================================
     // DART Module Tests

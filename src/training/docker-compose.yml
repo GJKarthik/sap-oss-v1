@@ -1,39 +1,31 @@
 # =============================================================================
-# training-main — Docker Compose
+# training-main — Enterprise Orchestrator (V2)
 # =============================================================================
-#
-# Usage:
-#   docker compose up -d              # Start all services
-#   docker compose up modelopt-api    # API only
-#   docker compose logs -f            # Follow logs
-#   docker compose down               # Stop all
-#
-# GPU support (requires nvidia-container-toolkit):
-#   docker compose --profile gpu up -d
-# =============================================================================
+# Consolidated Deployment: GenerativeUI + HippoCPP + Pipeline
+# Usage: docker compose up -d
+
+version: '3.8'
 
 services:
   # --------------------------------------------------------------------------
-  # ModelOpt API — FastAPI quantization & inference service
+  # Training Console V2 — The Master Orchestrator (FastAPI + PyTorch)
   # --------------------------------------------------------------------------
-  modelopt-api:
+  training-api:
     build:
-      context: ./nvidia-modelopt
+      context: ../generativeUI/training-console/packages/api-server
       dockerfile: Dockerfile
-    container_name: modelopt-api
+    container_name: training-api
     ports:
       - "${PORT:-8001}:8001"
     environment:
-      - PORT=8001
       - HOST=0.0.0.0
-      - WORKERS=${WORKERS:-1}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - MODELOPT_API_KEY=${MODELOPT_API_KEY:-}
-      - MODELOPT_REQUIRE_AUTH=${MODELOPT_REQUIRE_AUTH:-false}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:8080}
-      - HF_TOKEN=${HF_TOKEN:-}
+      - PORT=8001
+      - ALLOWED_ORIGINS=http://localhost:4200,http://localhost:8080
     volumes:
-      - model-outputs:/app/outputs
+      # Mount the upstream directories so FastAPI can Subprocess them natively
+      - ./pipeline:/app/src/training/pipeline
+      - ./hippocpp:/app/src/training/hippocpp
+      - ~/.cache/huggingface:/root/.cache/huggingface
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
@@ -43,39 +35,18 @@ services:
     restart: unless-stopped
 
   # --------------------------------------------------------------------------
-  # ModelOpt UI — Angular frontend served by nginx
+  # Training Console UI — Angular 18 Enterprise Dashboard
   # --------------------------------------------------------------------------
-  modelopt-ui:
+  training-ui:
     build:
-      context: ./nvidia-modelopt/ui
-      dockerfile: Dockerfile
-      args:
-        API_URL: http://modelopt-api:8001
-    container_name: modelopt-ui
+      context: ../generativeUI/training-console
+      dockerfile: apps/angular-shell/Dockerfile
+    container_name: training-ui
     ports:
       - "${UI_PORT:-8080}:80"
+    environment:
+      - SAP_API_BASE_URL=http://training-api:8001
     depends_on:
-      modelopt-api:
+      training-api:
         condition: service_healthy
     restart: unless-stopped
-
-  # --------------------------------------------------------------------------
-  # ModelOpt API with GPU (opt-in via --profile gpu)
-  # --------------------------------------------------------------------------
-  modelopt-api-gpu:
-    extends:
-      service: modelopt-api
-    container_name: modelopt-api-gpu
-    profiles: ["gpu"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
-volumes:
-  model-outputs:
-    driver: local
-

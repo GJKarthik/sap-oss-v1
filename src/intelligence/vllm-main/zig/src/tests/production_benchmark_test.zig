@@ -5,7 +5,7 @@
 ///!
 ///! Usage:
 ///!   - Set GGUF_PATH env var to a real model file
-///!   - Run: zig build test --test-filter "PRODUCTION"
+///!   - Run: zig build test-slow
 ///!
 ///! Expected production tok/s on Apple Silicon (Metal):
 ///!   - LLaMA-1B (dim=2048): ~200-400 tok/s

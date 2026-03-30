@@ -11,7 +11,7 @@
 ///!   - Per-token logits during prefill (Fix 5: forwardBatch)
 ///!   - O(N²) detokenization for stop detection (Fix 6: token ID check)
 ///!
-///! Run with: zig build test 2>&1 | grep -A2 "BENCHMARK"
+///! Run with: zig build test-slow 2>&1 | grep -A2 "BENCHMARK"
 
 const std = @import("std");
 const builtin = @import("builtin");

@@ -711,7 +711,10 @@ test "GpuContext init and deinit" {
 }
 
 test "GpuBuffer alloc and free" {
-    var buffer = try GpuBuffer(f32).alloc(std.testing.allocator, 1024, .cpu);
+    const ctx = (try GpuContext.init(std.testing.allocator)) orelse return error.SkipZigTest;
+    defer ctx.deinit();
+
+    var buffer = try GpuBuffer(f32).alloc(std.testing.allocator, ctx, 1024);
     defer buffer.free();
     
     try std.testing.expectEqual(@as(usize, 1024), buffer.len);
@@ -719,7 +722,10 @@ test "GpuBuffer alloc and free" {
 }
 
 test "GpuBuffer copyFromHost and copyToHost" {
-    var buffer = try GpuBuffer(f32).alloc(std.testing.allocator, 4, .cpu);
+    const ctx = (try GpuContext.init(std.testing.allocator)) orelse return error.SkipZigTest;
+    defer ctx.deinit();
+
+    var buffer = try GpuBuffer(f32).alloc(std.testing.allocator, ctx, 4);
     defer buffer.free();
     
     const src = [_]f32{ 1.0, 2.0, 3.0, 4.0 };

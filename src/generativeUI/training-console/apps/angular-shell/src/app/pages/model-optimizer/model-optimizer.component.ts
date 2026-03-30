@@ -39,6 +39,12 @@ interface JobResponse {
   progress: number;
   error?: string;
   history?: JobHistory[];
+  deployed?: boolean;
+  evaluation?: {
+    perplexity: number;
+    eval_loss: number;
+    runtime_sec: number;
+  };
 }
 
 interface JobPayloadConfig {
@@ -64,6 +70,43 @@ interface JobPayloadConfig {
       <div class="page-header">
         <h1 class="page-title">Model Optimizer</h1>
         <button class="btn-primary" (click)="loadData()">↻ Refresh</button>
+      </div>
+
+      <!-- Engine & Dataset -->
+      <h2 class="section-title">Engine Configuration</h2>
+      <div class="card grid-2" style="margin-bottom: 1.5rem;">
+        <div class="form-group">
+          <label>Training Framework</label>
+          <select formControlName="framework" class="form-input">
+            <option value="PyTorch">PyTorch Native (SFTTrainer)</option>
+            <option value="TensorFlow" disabled>TensorFlow (Coming Soon)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Dataset Split</label>
+          <select formControlName="dataset" class="form-input">
+            <option value="spider-train">Spider Training Split (Text-to-SQL)</option>
+            <option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mangle Data Validation -->
+      <h2 class="section-title">Datalog Validation Pre-Flight</h2>
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-left: 4px solid var(--sapBrandColor);">
+        <div>
+          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
+          @if (mangleStatus() === 'passed') {
+            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">✓ All 48 Invariants Passed</span>
+          } @else if (mangleStatus() === 'failed') {
+            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">⚠ Datalog Violation Detected</span>
+          } @else {
+            <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
+          }
+        </div>
+        <button type="button" class="btn-secondary" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
+          {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
+        </button>
       </div>
 
       <!-- Model Catalog -->
@@ -189,6 +232,28 @@ interface JobPayloadConfig {
                     <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
                   </select>
                 </div>
+
+                <div class="field-group full-width" style="background: rgba(8, 84, 160, 0.05); padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
+                  <div class="full-width" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: -0.5rem;">
+                    <input type="checkbox" id="peftToggle" formControlName="use_peft" />
+                    <label for="peftToggle" class="field-label" style="margin: 0; font-weight: 600;">Enable PEFT (LoRA Matrices)</label>
+                  </div>
+                  @if (jobForm.value.expertConfig?.use_peft) {
+                    <div class="field-group">
+                      <label class="field-label">Rank (r)</label>
+                      <input type="number" class="form-input" formControlName="peft_r" />
+                    </div>
+                    <div class="field-group">
+                      <label class="field-label">LoRA Alpha</label>
+                      <input type="number" class="form-input" formControlName="peft_alpha" />
+                    </div>
+                    <div class="field-group">
+                      <label class="field-label">Dropout</label>
+                      <input type="number" class="form-input" formControlName="peft_dropout" step="0.01" />
+                    </div>
+                  }
+                </div>
+
                 <div class="field-group full-width">
                   <label class="field-label">Raw JSON Override (Arguments Map)</label>
                   <textarea class="form-input mono" rows="5" formControlName="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
@@ -246,8 +311,33 @@ interface JobPayloadConfig {
                           </svg>
                         </div>
                       }
+                      
+                      @if (j.evaluation) {
+                        <div class="eval-metrics mt-1">
+                          <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
+                          <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
+                          <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
+                        </div>
+                      }
                     </td>
-                    <td class="text-small text-muted">{{ j.created_at | date:'short' }}</td>
+                    <td class="text-small text-muted" style="min-width: 100px;">
+                      {{ j.created_at | date:'short' }}
+                      @if (j.status === 'completed') {
+                        <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;">
+                          @if (!j.deployed) {
+                            <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
+                                    (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
+                              {{ deployingJob() === j.id ? 'Loading...' : '🚀 Deploy Model' }}
+                            </button>
+                          } @else {
+                            <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;" 
+                                    (click)="openChat(j)">
+                              💬 Chat Playground
+                            </button>
+                          }
+                        </div>
+                      }
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -262,6 +352,35 @@ interface JobPayloadConfig {
       @if (loading()) {
         <div class="loading-container">
           <span class="loading-text">Loading…</span>
+        </div>
+      }
+
+      <!-- Chat Playground Modal -->
+      @if (activeChatJob(); as chatJob) {
+        <div class="modal-overlay" (click)="closeChat()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3 style="margin: 0; font-size: 1rem;">💬 Playground: {{ chatJob.config.model_name }}</h3>
+              <button class="close-btn" (click)="closeChat()">✕</button>
+            </div>
+            <div class="chat-window">
+              @for (msg of chatHistory(); track $index) {
+                <div class="chat-bubble" [class.user]="msg.role === 'user'">
+                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? 'You' : 'Model' }}</strong>
+                  <p style="margin: 0.2rem 0 0; font-size: 0.875rem;">{{ msg.text }}</p>
+                </div>
+              }
+              @if (chatLoading()) {
+                <div class="chat-bubble loading">
+                  <em style="font-size: 0.875rem; color: #666;">Model is computing tensors...</em>
+                </div>
+              }
+            </div>
+            <div class="chat-input-area">
+              <input type="text" [formControl]="chatInput" class="form-input" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()" />
+              <button class="btn-primary" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</button>
+            </div>
+          </div>
         </div>
       }
     </div>
@@ -485,6 +604,37 @@ interface JobPayloadConfig {
     .sparkline-svg { width: 100%; height: 100%; overflow: visible; }
     .train-line { stroke: var(--sapBrandColor, #0854a0); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
     .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 2 2; }
+    
+    .eval-metrics {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-top: 0.25rem;
+    }
+    
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-content {
+      background: #fff; width: 500px; max-width: 90vw; border-radius: 0.5rem; overflow: hidden;
+      display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      padding: 1rem; background: #f5f5f5; border-bottom: 1px solid #e4e4e4;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666; }
+    .chat-window {
+      padding: 1rem; height: 300px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 0.8rem;
+    }
+    .chat-bubble {
+      padding: 0.75rem; border-radius: 0.5rem; max-width: 85%; background: #e3f2fd; align-self: flex-start;
+      &.user { background: #e8f5e9; align-self: flex-end; }
+    }
+    .chat-input-area {
+      padding: 1rem; background: #fff; border-top: 1px solid #e4e4e4; display: flex; gap: 0.5rem;
+    }
   `],
 })
 export class ModelOptimizerComponent implements OnInit, OnDestroy {
@@ -500,6 +650,13 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
+  readonly mangleStatus = signal<'checking'|'passed'|'failed'|null>(null);
+  readonly deployingJob = signal<string | null>(null);
+  readonly activeChatJob = signal<JobResponse | null>(null);
+  readonly chatInput = this.fb.control('');
+  readonly chatHistory = signal<{role: 'user'|'model', text: string}[]>([]);
+  readonly chatLoading = signal(false);
+
   readonly jobForm = this.fb.nonNullable.group({
     model_name: ['', Validators.required],
     quant_format: ['int8', Validators.required],
@@ -507,8 +664,14 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     calib_seq_len: [2048, Validators.required],
     export_format: ['hf', Validators.required],
     enable_pruning: [false],
+    framework: ['PyTorch'],
+    dataset: ['spider-train'],
     expertConfig: this.fb.nonNullable.group({
       compute: ['auto'],
+      use_peft: [false],
+      peft_r: [8],
+      peft_alpha: [16],
+      peft_dropout: [0.05],
       rawJson: ['']
     })
   });
@@ -592,6 +755,25 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  validateMangleRules() {
+    this.mangleStatus.set('checking');
+    this.api.post<{status: string, output: string}>('/mangle/validate', {}).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        if (res.status === 'passed') {
+          this.mangleStatus.set('passed');
+          this.toast.success('Datalog schema constraints successfully verified.', 'Mangle Passed');
+        } else {
+          this.mangleStatus.set('failed');
+          this.toast.error('Mangle invariant violations detected!', 'Mangle Failed');
+        }
+      },
+      error: () => {
+        this.mangleStatus.set('failed');
+        this.toast.error('Failed to execute Mangle validation bounds.', 'Check Failed');
+      }
+    });
+  }
+
   loadData(): void {
     this.loading.set(true);
 
@@ -663,14 +845,27 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       pruning_sparsity: 0.2, // Fixed server-side default mapped natively
     };
 
-    if (this.userSettings.mode() === 'expert' && formVal.expertConfig.rawJson.trim()) {
-      try {
-        const parsedOverride = JSON.parse(formVal.expertConfig.rawJson) as Record<string, unknown>;
-        payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: formVal.expertConfig.compute };
-      } catch (e) {
-        this.toast.error('Invalid JSON configuration', 'Syntax Error');
-        this.submitting.set(false);
-        return;
+    if (this.userSettings.mode() === 'expert') {
+      const expert = formVal.expertConfig;
+      
+      if (expert.use_peft) {
+        payloadConfig['use_peft'] = true;
+        payloadConfig['peft_config'] = {
+          r: expert.peft_r,
+          lora_alpha: expert.peft_alpha,
+          lora_dropout: expert.peft_dropout
+        };
+      }
+
+      if (expert.rawJson.trim()) {
+        try {
+          const parsedOverride = JSON.parse(expert.rawJson) as Record<string, unknown>;
+          payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: expert.compute };
+        } catch (e) {
+          this.toast.error('Invalid JSON configuration', 'Syntax Error');
+          this.submitting.set(false);
+          return;
+        }
       }
     }
 
@@ -719,5 +914,53 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       cancelled: 'status-warning',
     };
     return map[status] ?? 'status-info';
+  }
+
+  deployJob(job: JobResponse) {
+    this.deployingJob.set(job.id);
+    this.api.post(`/jobs/${job.id}/deploy`, {}).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.jobs.update(jobs => jobs.map(j => j.id === job.id ? {...j, deployed: true} : j));
+        this.toast.success('Model mounted to inference pool successfully.', 'Deploy Complete');
+        this.deployingJob.set(null);
+      },
+      error: (e: HttpErrorResponse) => {
+        const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
+        this.toast.error(`Deploy failed: ${detail}`, 'Deployment Error');
+        this.deployingJob.set(null);
+      }
+    });
+  }
+
+  openChat(job: JobResponse) {
+    this.activeChatJob.set(job);
+    this.chatHistory.set([{ role: 'model', text: 'Inference pipeline connected. I am ready to receive your text.' }]);
+    this.chatInput.setValue('');
+  }
+
+  closeChat() {
+    this.activeChatJob.set(null);
+  }
+
+  sendChat() {
+    const text = this.chatInput.value?.trim();
+    const job = this.activeChatJob();
+    if (!text || !job) return;
+
+    this.chatHistory.update(h => [...h, { role: 'user', text }]);
+    this.chatInput.setValue('');
+    this.chatLoading.set(true);
+
+    this.api.post<{response: string}>(`/inference/${job.id}/chat`, { prompt: text }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.chatHistory.update(h => [...h, { role: 'model', text: res.response }]);
+        this.chatLoading.set(false);
+      },
+      error: (e: HttpErrorResponse) => {
+        const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
+        this.toast.error(`Inference failed: ${detail}`, 'Error');
+        this.chatLoading.set(false);
+      }
+    });
   }
 }

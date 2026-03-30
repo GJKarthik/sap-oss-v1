@@ -12,6 +12,7 @@
 const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
+const test_build_options = @import("test_build_options");
 
 const toon = @import("toon.zig");
 const async_pipeline = @import("../gpu/async_pipeline.zig");
@@ -410,6 +411,7 @@ pub const ToonInferenceEngine = struct {
     allocator: Allocator,
     config: ToonInferenceConfig,
     toon_sampler: ToonSampler,
+    inference_mutex: std.Thread.Mutex = .{},
 
     // llama model components (CPU fallback)
     model: ?*Model = null,
@@ -443,6 +445,16 @@ pub const ToonInferenceEngine = struct {
     total_output_tokens: u64 = 0,
     total_json_equivalent_tokens: u64 = 0, // Measured JSON-equivalent for savings calculation
     total_requests: u64 = 0,
+
+    pub const ChatInferenceResult = struct {
+        text: []const u8,
+        prompt_tokens: u32,
+    };
+
+    pub const EmbeddingResult = struct {
+        embedding: []f32,
+        prompt_tokens: u32,
+    };
 
     pub fn init(allocator: Allocator, config: ToonInferenceConfig) !ToonInferenceEngine {
         var resolved_config = config;
@@ -555,8 +567,11 @@ pub const ToonInferenceEngine = struct {
         };
         defer self.allocator.free(tokens);
 
+        self.inference_mutex.lock();
+        defer self.inference_mutex.unlock();
+
         // Generate response from token IDs
-        const raw_output = try self.generateFromTokens(tokens);
+        const raw_output = try self.generateFromTokens(tokens, self.config.max_output_tokens);
         defer self.allocator.free(raw_output);
 
         // Parse and validate TOON output
@@ -572,6 +587,67 @@ pub const ToonInferenceEngine = struct {
         self.total_requests += 1;
 
         return toon_output;
+    }
+
+    pub fn inferChat(
+        self: *ToonInferenceEngine,
+        prompt: []const u8,
+        max_output_tokens: u32,
+    ) !ChatInferenceResult {
+        const tokens: []u32 = if (self.gguf_tokenizer) |gt|
+            try gt.buildChatTokens("You are a helpful assistant.", prompt)
+        else blk: {
+            const plain = try std.fmt.allocPrint(self.allocator, "User: {s}\n\nAssistant:", .{prompt});
+            defer self.allocator.free(plain);
+            break :blk try self.tokenizer.?.encode(plain);
+        };
+        defer self.allocator.free(tokens);
+
+        self.inference_mutex.lock();
+        defer self.inference_mutex.unlock();
+
+        const raw_output = try self.generateFromTokens(tokens, @max(@as(u32, 1), max_output_tokens));
+        defer self.allocator.free(raw_output);
+
+        const trimmed = mem.trim(u8, raw_output, " \n\t\r");
+        return .{
+            .text = try self.allocator.dupe(u8, trimmed),
+            .prompt_tokens = @intCast(tokens.len),
+        };
+    }
+
+    pub fn supportsLocalEmbeddings(self: *const ToonInferenceEngine) bool {
+        return self.model != null;
+    }
+
+    pub fn defaultMaxOutputTokens(self: *const ToonInferenceEngine) u32 {
+        return self.config.max_output_tokens;
+    }
+
+    pub fn embedText(self: *ToonInferenceEngine, text: []const u8) !EmbeddingResult {
+        const model = self.model orelse return error.EmbeddingUnsupported;
+        const kv_cache = &self.kv_cache.?;
+        const tokenizer = self.tokenizer orelse return error.TokenizerUnavailable;
+
+        const tokens: []u32 = if (self.gguf_tokenizer) |gt|
+            try gt.encode(text)
+        else
+            try tokenizer.encode(text);
+        defer self.allocator.free(tokens);
+
+        self.inference_mutex.lock();
+        defer self.inference_mutex.unlock();
+
+        kv_cache.clear();
+        _ = model.forwardBatch(tokens, kv_cache);
+
+        const embedding = try self.allocator.dupe(f32, model.norm_buf);
+        normalizeEmbedding(embedding);
+
+        return .{
+            .embedding = embedding,
+            .prompt_tokens = @intCast(tokens.len),
+        };
     }
 
     /// Estimate how many tokens the equivalent JSON output would require.
@@ -721,7 +797,7 @@ pub const ToonInferenceEngine = struct {
     /// Generate tokens from pre-built token IDs.
     /// Tokens are built by GgufTokenizer.buildChatTokens() with the correct
     /// chat template for the model family (detected from GGUF metadata).
-    fn generateFromTokens(self: *ToonInferenceEngine, tokens: []const u32) ![]const u8 {
+    fn generateFromTokens(self: *ToonInferenceEngine, tokens: []const u32, max_output_tokens: u32) ![]const u8 {
         const request_start_ns: i128 = std.time.nanoTimestamp();
         const request_timeout_ms: u64 = @as(u64, @max(@as(u32, 1), self.config.request_timeout_ms));
 
@@ -778,7 +854,7 @@ pub const ToonInferenceEngine = struct {
         try context_buf.appendSlice(self.allocator, tokens[ctx_start..]);
 
         var pos = tokens.len;
-        const max_tokens = self.config.max_output_tokens;
+        const max_tokens = @max(@as(u32, 1), max_output_tokens);
         const decode_start_ns: i128 = std.time.nanoTimestamp();
         var decode_step_sum_ns: u128 = 0;
         var first_token_step_ns: ?u64 = null;
@@ -941,6 +1017,15 @@ pub const ToonInferenceEngine = struct {
             gt.decode(output_tokens.items)
         else
             self.tokenizer.?.decode(output_tokens.items);
+    }
+
+    fn normalizeEmbedding(embedding: []f32) void {
+        var sum_sq: f32 = 0.0;
+        for (embedding) |value| sum_sq += value * value;
+        if (sum_sq <= 0.0) return;
+
+        const inv_norm = 1.0 / @sqrt(sum_sq);
+        for (embedding) |*value| value.* *= inv_norm;
     }
 
     fn tryNativeMtpDraft(
@@ -2016,6 +2101,8 @@ test "simple tokenizer" {
 }
 
 test "ToonInferenceEngine loads model" {
+    if (!test_build_options.enable_slow_tests) return error.SkipZigTest;
+
     const allocator = std.testing.allocator;
     // Use a tiny config to keep memory reasonable in tests
     var engine = try ToonInferenceEngine.init(allocator, .{
@@ -2034,6 +2121,8 @@ test "ToonInferenceEngine loads model" {
 }
 
 test "ToonInferenceEngine runs inference" {
+    if (!test_build_options.enable_slow_tests) return error.SkipZigTest;
+
     const allocator = std.testing.allocator;
     var engine = try ToonInferenceEngine.init(allocator, .{
         .model_name = "llama-tiny-test",

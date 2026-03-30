@@ -126,7 +126,12 @@ pub const GpuTensor = struct {
         var dptr: cuda.CUdeviceptr = undefined;
         const alloc_res = cuda.cuMemAlloc(&dptr, size);
         if (alloc_res != .success) {
-            log.err("cuMemAlloc failed: size={} error={}", .{ size, @intFromEnum(alloc_res) });
+            switch (alloc_res) {
+                .error_no_device, .error_not_initialized, .error_deinitialized => {
+                    log.warn("cuMemAlloc unavailable: size={} error={}", .{ size, @intFromEnum(alloc_res) });
+                },
+                else => log.err("cuMemAlloc failed: size={} error={}", .{ size, @intFromEnum(alloc_res) }),
+            }
             return error.CudaAllocFailed;
         }
 
@@ -979,7 +984,12 @@ test "GGMLType sizes" {
 }
 
 test "GpuTensor alloc stub" {
-    // On non-CUDA systems, alloc will fail gracefully
+    if (cuda.isCudaAvailable()) {
+        const device_count = try cuda.getDeviceCount();
+        if (device_count > 0) return error.SkipZigTest;
+    }
+
+    // On non-CUDA systems, alloc will fail gracefully.
     _ = GpuTensor.alloc(.f32, 1, 4096) catch |err| {
         try std.testing.expect(err == error.CudaAllocFailed);
         return;

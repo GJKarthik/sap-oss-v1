@@ -29,6 +29,8 @@ const TensorSpec = struct {
     cols: usize,
 };
 
+const first_candidate_token_id: usize = 1;
+
 const QwenNextNSpec = struct {
     prefix: []const u8,
     token_embedding: TensorSpec,
@@ -582,7 +584,7 @@ pub const NativeMtpDrafter = struct {
         @memset(out_ids, 0);
         @memset(out_scores, -std.math.inf(f32));
 
-        var token: usize = 0;
+        var token: usize = first_candidate_token_id;
         while (token < self.vocab_size) : (token += 1) {
             const row_index = projection.row_start + token;
             const score = try scoreRow(projection.dtype, projection.host_data, row_index, projection.cols, hidden);
@@ -618,14 +620,17 @@ fn fillTopKFromLogits(logits: []const f32, out_ids: []u32, out_scores: []f32) vo
     if (out_ids.len != out_scores.len) return;
     @memset(out_ids, 0);
     @memset(out_scores, -std.math.inf(f32));
-    for (logits, 0..) |score, idx| insertTopK(out_ids, out_scores, @intCast(idx), score);
+    if (logits.len <= first_candidate_token_id) return;
+    for (logits[first_candidate_token_id..], first_candidate_token_id..) |score, idx| {
+        insertTopK(out_ids, out_scores, @intCast(idx), score);
+    }
 }
 
 fn fillTopKFromWeight(weight: TensorSpec, hidden: []const f32, out_ids: []u32, out_scores: []f32) void {
     if (out_ids.len != out_scores.len) return;
     @memset(out_ids, 0);
     @memset(out_scores, -std.math.inf(f32));
-    var token: usize = 0;
+    var token: usize = first_candidate_token_id;
     while (token < weight.rows) : (token += 1) {
         const score = scoreRow(weight.dtype, weight.host_data, token, weight.cols, hidden) catch continue;
         insertTopK(out_ids, out_scores, @intCast(token), score);
@@ -944,29 +949,29 @@ fn scoreRowQ8_0(host_data: []const u8, row_index: usize, cols: usize, hidden: []
     return acc;
 }
 
-fn appendF32Row(bytes: *std.ArrayList(u8), row: []const f32) !void {
+fn appendF32Row(allocator: Allocator, bytes: *std.ArrayList(u8), row: []const f32) !void {
     for (row) |value| {
         const bits: u32 = @bitCast(value);
         var raw: [4]u8 = undefined;
         std.mem.writeInt(u32, &raw, bits, .little);
-        try bytes.appendSlice(&raw);
+        try bytes.appendSlice(allocator, &raw);
     }
 }
 
 test "NativeMtpDrafter fills candidates from stacked row-major tensors" {
     const allocator = std.testing.allocator;
 
-    var bytes = std.ArrayList(u8).init(allocator);
-    defer bytes.deinit();
+    var bytes: std.ArrayList(u8) = .{};
+    defer bytes.deinit(allocator);
 
-    try appendF32Row(&bytes, &[_]f32{ 1, 0, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 2, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 0, 1 });
-    try appendF32Row(&bytes, &[_]f32{ 1, 1, 1 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 0, 1 });
-    try appendF32Row(&bytes, &[_]f32{ 2, 0, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 1, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 1, 1, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 1, 0, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 2, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 0, 1 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 1, 1, 1 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 0, 1 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 2, 0, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 1, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 1, 1, 0 });
 
     const tensor = NativeMtpTensorView{
         .name = "mtp.stack.weight",
@@ -991,13 +996,15 @@ test "NativeMtpDrafter fills candidates from stacked row-major tensors" {
     var scores0 = [_]f32{ 0, 0 };
     var scores1 = [_]f32{ 0, 0 };
     var scores2 = [_]f32{ 0, 0 };
+    var out_ids = [_][]u32{ ids0[0..], ids1[0..], ids2[0..] };
+    var out_scores = [_][]f32{ scores0[0..], scores1[0..], scores2[0..] };
 
     const ok = try drafter.fillCandidates(
         &hidden,
         &target_logits,
         0,
-        &[_][]u32{ ids0[0..], ids1[0..], ids2[0..] },
-        &[_][]f32{ scores0[0..], scores1[0..], scores2[0..] },
+        out_ids[0..],
+        out_scores[0..],
     );
 
     try std.testing.expect(ok);
@@ -1009,17 +1016,17 @@ test "NativeMtpDrafter fills candidates from stacked row-major tensors" {
 test "NativeMtpDrafter continuation uses provided sampled token" {
     const allocator = std.testing.allocator;
 
-    var bytes = std.ArrayList(u8).init(allocator);
-    defer bytes.deinit();
+    var bytes: std.ArrayList(u8) = .{};
+    defer bytes.deinit(allocator);
 
-    try appendF32Row(&bytes, &[_]f32{ 1, 0, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 2, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 0, 1 });
-    try appendF32Row(&bytes, &[_]f32{ 1, 1, 1 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 0, 1 });
-    try appendF32Row(&bytes, &[_]f32{ 2, 0, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 0, 1, 0 });
-    try appendF32Row(&bytes, &[_]f32{ 1, 1, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 1, 0, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 2, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 0, 1 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 1, 1, 1 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 0, 1 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 2, 0, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 0, 1, 0 });
+    try appendF32Row(allocator, &bytes, &[_]f32{ 1, 1, 0 });
 
     const tensor = NativeMtpTensorView{
         .name = "mtp.stack.weight",
@@ -1037,13 +1044,15 @@ test "NativeMtpDrafter continuation uses provided sampled token" {
     var ids2 = [_]u32{0};
     var scores1 = [_]f32{0};
     var scores2 = [_]f32{0};
+    var out_ids = [_][]u32{ ids1[0..], ids2[0..] };
+    var out_scores = [_][]f32{ scores1[0..], scores2[0..] };
 
     const ok = try drafter.fillContinuation(
         &hidden,
         2,
         0,
-        &[_][]u32{ ids1[0..], ids2[0..] },
-        &[_][]f32{ scores1[0..], scores2[0..] },
+        out_ids[0..],
+        out_scores[0..],
     );
 
     try std.testing.expect(ok);
@@ -1053,28 +1062,28 @@ test "NativeMtpDrafter continuation uses provided sampled token" {
 
 test "NativeMtpDrafter supports qwen nextn layout" {
     const allocator = std.testing.allocator;
-    var token_embd = std.ArrayList(u8).init(allocator);
-    defer token_embd.deinit();
-    try appendF32Row(&token_embd, &[_]f32{ 0, 0 });
-    try appendF32Row(&token_embd, &[_]f32{ 1, 0 });
-    try appendF32Row(&token_embd, &[_]f32{ 0, 1 });
+    var token_embd: std.ArrayList(u8) = .{};
+    defer token_embd.deinit(allocator);
+    try appendF32Row(allocator, &token_embd, &[_]f32{ 0, 0 });
+    try appendF32Row(allocator, &token_embd, &[_]f32{ 1, 0 });
+    try appendF32Row(allocator, &token_embd, &[_]f32{ 0, 1 });
 
-    var fc = std.ArrayList(u8).init(allocator);
-    defer fc.deinit();
-    try appendF32Row(&fc, &[_]f32{ 1, 0, 0, 0 });
-    try appendF32Row(&fc, &[_]f32{ 0, 1, 0, 0 });
+    var fc: std.ArrayList(u8) = .{};
+    defer fc.deinit(allocator);
+    try appendF32Row(allocator, &fc, &[_]f32{ 1, 0, 0, 0 });
+    try appendF32Row(allocator, &fc, &[_]f32{ 0, 1, 0, 0 });
 
-    var zero2 = std.ArrayList(u8).init(allocator);
-    defer zero2.deinit();
-    try appendF32Row(&zero2, &[_]f32{ 0, 0 });
-    try appendF32Row(&zero2, &[_]f32{ 0, 0 });
+    var zero2: std.ArrayList(u8) = .{};
+    defer zero2.deinit(allocator);
+    try appendF32Row(allocator, &zero2, &[_]f32{ 0, 0 });
+    try appendF32Row(allocator, &zero2, &[_]f32{ 0, 0 });
 
-    var qproj = std.ArrayList(u8).init(allocator);
-    defer qproj.deinit();
-    try appendF32Row(&qproj, &[_]f32{ 0, 0 });
-    try appendF32Row(&qproj, &[_]f32{ 0, 0 });
-    try appendF32Row(&qproj, &[_]f32{ 0, 0 });
-    try appendF32Row(&qproj, &[_]f32{ 0, 0 });
+    var qproj: std.ArrayList(u8) = .{};
+    defer qproj.deinit(allocator);
+    try appendF32Row(allocator, &qproj, &[_]f32{ 0, 0 });
+    try appendF32Row(allocator, &qproj, &[_]f32{ 0, 0 });
+    try appendF32Row(allocator, &qproj, &[_]f32{ 0, 0 });
+    try appendF32Row(allocator, &qproj, &[_]f32{ 0, 0 });
 
     const scalar_zero = NativeMtpTensorView{ .name = "unused", .dtype = .f32, .host_data = &[_]u8{ 0, 0, 0, 0 }, .rows = 1, .cols = 1 };
 
@@ -1111,13 +1120,15 @@ test "NativeMtpDrafter supports qwen nextn layout" {
     var scores0 = [_]f32{ 0, 0 };
     var scores1 = [_]f32{ 0, 0 };
     var scores2 = [_]f32{ 0, 0 };
+    var out_ids = [_][]u32{ ids0[0..], ids1[0..], ids2[0..] };
+    var out_scores = [_][]f32{ scores0[0..], scores1[0..], scores2[0..] };
 
     const ok = try drafter.fillCandidates(
         &hidden,
         &target_logits,
         0,
-        &[_][]u32{ ids0[0..], ids1[0..], ids2[0..] },
-        &[_][]f32{ scores0[0..], scores1[0..], scores2[0..] },
+        out_ids[0..],
+        out_scores[0..],
     );
 
     try std.testing.expect(ok);

@@ -352,6 +352,11 @@ pub const ErrorResponse = struct {
 // Helper Functions
 // ============================================================================
 
+threadlocal var chat_response_choice_slots: [4][1]ChatCompletionChoice = undefined;
+threadlocal var chat_response_choice_slot_index: usize = 0;
+threadlocal var stream_chunk_choice_slots: [8][1]StreamChoice = undefined;
+threadlocal var stream_chunk_choice_slot_index: usize = 0;
+
 pub fn createChatResponse(
     _: Allocator,
     id: []const u8,
@@ -359,7 +364,9 @@ pub fn createChatResponse(
     content: []const u8,
     usage: Usage,
 ) ChatCompletionResponse {
-    const choice = ChatCompletionChoice{
+    const slot = chat_response_choice_slot_index % chat_response_choice_slots.len;
+    chat_response_choice_slot_index +%= 1;
+    chat_response_choice_slots[slot][0] = .{
         .index = 0,
         .message = Message{
             .role = "assistant",
@@ -373,7 +380,7 @@ pub fn createChatResponse(
         .object = "chat.completion",
         .created = std.time.timestamp(),
         .model = model,
-        .choices = &[_]ChatCompletionChoice{choice},
+        .choices = chat_response_choice_slots[slot][0..],
         .usage = usage,
     };
 }
@@ -391,19 +398,23 @@ pub fn createStreamChunk(
     role: ?[]const u8,
     finish_reason: ?[]const u8,
 ) ChatCompletionChunk {
+    const slot = stream_chunk_choice_slot_index % stream_chunk_choice_slots.len;
+    stream_chunk_choice_slot_index +%= 1;
+    stream_chunk_choice_slots[slot][0] = .{
+        .index = 0,
+        .delta = Delta{
+            .role = role,
+            .content = content,
+        },
+        .finish_reason = finish_reason,
+    };
+
     return ChatCompletionChunk{
         .id = id,
         .object = "chat.completion.chunk",
         .created = std.time.timestamp(),
         .model = model,
-        .choices = &[_]StreamChoice{StreamChoice{
-            .index = 0,
-            .delta = Delta{
-                .role = role,
-                .content = content,
-            },
-            .finish_reason = finish_reason,
-        }},
+        .choices = stream_chunk_choice_slots[slot][0..],
     };
 }
 
@@ -495,4 +506,71 @@ test "estimateTokens" {
     try std.testing.expectEqual(@as(u32, 0), estimateTokens(""));
     try std.testing.expectEqual(@as(u32, 1), estimateTokens("Hi"));
     try std.testing.expect(estimateTokens("The quick brown fox jumps over the lazy dog") > 5);
+}
+
+fn clobberStack() void {
+    var scratch: [4096]u8 = undefined;
+    @memset(scratch[0..], 0xA5);
+    std.mem.doNotOptimizeAway(&scratch);
+}
+
+test "createChatResponse remains serializable after return" {
+    const response = createChatResponse(
+        std.testing.allocator,
+        "chatcmpl-test",
+        "phi3-lora",
+        "hello",
+        .{
+            .prompt_tokens = 3,
+            .completion_tokens = 2,
+            .total_tokens = 5,
+        },
+    );
+
+    clobberStack();
+
+    var out: std.io.Writer.Allocating = .init(std.testing.allocator);
+    defer out.deinit();
+    try std.json.Stringify.value(response, .{}, &out.writer);
+    const payload = try out.toOwnedSlice();
+    defer std.testing.allocator.free(payload);
+
+    const parsed = try json.parseFromSlice(json.Value, std.testing.allocator, payload, .{});
+    defer parsed.deinit();
+
+    const root = parsed.value.object;
+    try std.testing.expectEqualStrings("chatcmpl-test", root.get("id").?.string);
+    try std.testing.expectEqualStrings("phi3-lora", root.get("model").?.string);
+    try std.testing.expectEqualStrings(
+        "hello",
+        root.get("choices").?.array.items[0].object.get("message").?.object.get("content").?.string,
+    );
+}
+
+test "createStreamChunk remains serializable after return" {
+    const chunk = createStreamChunk(
+        "chatcmpl-chunk",
+        "phi3-lora",
+        "partial",
+        "assistant",
+        null,
+    );
+
+    clobberStack();
+
+    var out: std.io.Writer.Allocating = .init(std.testing.allocator);
+    defer out.deinit();
+    try std.json.Stringify.value(chunk, .{}, &out.writer);
+    const payload = try out.toOwnedSlice();
+    defer std.testing.allocator.free(payload);
+
+    const parsed = try json.parseFromSlice(json.Value, std.testing.allocator, payload, .{});
+    defer parsed.deinit();
+
+    const root = parsed.value.object;
+    try std.testing.expectEqualStrings("chat.completion.chunk", root.get("object").?.string);
+    try std.testing.expectEqualStrings(
+        "partial",
+        root.get("choices").?.array.items[0].object.get("delta").?.object.get("content").?.string,
+    );
 }

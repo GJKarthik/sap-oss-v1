@@ -8,6 +8,7 @@ const mem = std.mem;
 const net = std.net;
 const Allocator = mem.Allocator;
 const posix = std.posix;
+const test_build_options = @import("test_build_options");
 
 const config_mod = @import("config.zig");
 const openai = @import("transport/openai.zig");
@@ -506,10 +507,10 @@ fn handleRequest(state: *AppState, req: *http.Request, res: *http.Response) void
 
     // Route based on path
     if (mem.startsWith(u8, path, "/v1/toon/chat/completions")) {
-        handleChatCompletions(state, body, res, true);
+        handleChatCompletions(state, body, res, true, true);
     } else if (mem.startsWith(u8, path, "/v1/chat/completions")) {
         // Use local TOON/CUDA engine when available, proxy only as fallback
-        handleChatCompletions(state, body, res, state.toon_engine != null);
+        handleChatCompletions(state, body, res, state.toon_engine != null, false);
     } else if (mem.startsWith(u8, path, "/v1/completions")) {
         handleCompletions(state, body, res);
     } else if (mem.startsWith(u8, path, "/v1/embeddings")) {
@@ -616,7 +617,13 @@ fn tokenizeRequestForTrt(
     return i32_tokens;
 }
 
-fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response, is_toon: bool) void {
+fn handleChatCompletions(
+    state: *AppState,
+    body: []const u8,
+    res: *http.Response,
+    use_local_engine: bool,
+    wants_toon_response: bool,
+) void {
     const stream_requested = parseJsonBoolField(state.allocator, body, "stream") and state.cfg.streaming_enabled;
     if (!state.circuit_breaker.allowRequest()) {
         res.status = 503;
@@ -624,7 +631,7 @@ fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response
         return;
     }
 
-    if (is_toon and state.toon_engine != null) {
+    if (use_local_engine and state.toon_engine != null) {
         // --- 1. Sample live GPU queue depth and assert into Mangle ---
         //
         // Bug 1 fix: engine is persistent in AppState — read queue depth O(1)
@@ -842,7 +849,19 @@ fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response
             // [GGUF PATH] (Internal Zig runtime)
             std.log.info("Mangle Engine assigned /gguf -> Handing off to internal Zig llama.cpp module", .{});
 
-            const result = handleDirectToonInference(state, &state.toon_engine.?, body) catch |err| {
+            if (stream_requested) {
+                state.circuit_breaker.recordFailure();
+                res.status = 501;
+                res.body = "{\"error\":\"Local GGUF streaming is not implemented\"}";
+                return;
+            }
+
+            const result = if (wants_toon_response)
+                handleDirectToonInference(state, &state.toon_engine.?, body)
+            else
+                handleDirectChatInference(state, &state.toon_engine.?, body);
+
+            const response_body = result catch |err| {
                 state.circuit_breaker.recordFailure();
                 if (err == error.InferenceTimeout) {
                     std.log.err("Direct inference timeout: {}", .{err});
@@ -856,7 +875,7 @@ fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response
                 return;
             };
             state.circuit_breaker.recordSuccess();
-            res.body = result;
+            res.body = response_body;
             res.body_allocated = true;
             return;
         }
@@ -920,6 +939,26 @@ fn handleEmbeddings(state: *AppState, body: []const u8, res: *http.Response) voi
         defer state.mutex.unlock();
         break :blk state.router.route(body, .embeddings);
     };
+
+    if (target.service.id == .local_models and state.toon_engine != null and state.toon_engine.?.supportsLocalEmbeddings()) {
+        const response_body = handleDirectEmbeddings(state, &state.toon_engine.?, body) catch |err| {
+            std.log.err("direct embeddings failed: {}", .{err});
+            res.status = switch (err) {
+                error.InvalidEmbeddingRequest => 400,
+                else => 500,
+            };
+            res.body = switch (err) {
+                error.InvalidEmbeddingRequest => "{\"error\":\"Invalid embedding request\"}",
+                else => "{\"error\":\"Embedding inference failed\"}",
+            };
+            return;
+        };
+        res.status = 200;
+        res.body = response_body;
+        res.body_allocated = true;
+        return;
+    }
+
     const response = state.router.proxyPost(target, body) catch |err| {
         std.log.err("proxy embeddings failed: {}", .{err});
         res.status = 502;
@@ -948,6 +987,13 @@ fn handleHealth(state: *AppState, res: *http.Response) void {
 }
 
 fn handleReady(state: *AppState, res: *http.Response) void {
+    if (state.toon_engine) |*engine| {
+        if (engine.isModelLoaded()) {
+            res.body = "{\"status\":\"ready\"}";
+            return;
+        }
+    }
+
     const target = service_router.RouteResult{
         .service = state.router.services.get(.local_models),
         .proxy_path = "/health",
@@ -1250,6 +1296,76 @@ fn handleDirectToonInference(
     return try engine.inferToon(prompt);
 }
 
+fn handleDirectChatInference(
+    state: *AppState,
+    engine: *llama_toon.ToonInferenceEngine,
+    body: []const u8,
+) ![]u8 {
+    const prompt = try extractPromptFromBody(state.allocator, body);
+    defer state.allocator.free(prompt);
+
+    const max_output_tokens = parseJsonU32Field(
+        state.allocator,
+        body,
+        "max_tokens",
+        engine.defaultMaxOutputTokens(),
+    );
+    const result = try engine.inferChat(prompt, max_output_tokens);
+    defer state.allocator.free(result.text);
+
+    const model_name = service_router.Router.extractModel(body) orelse "local-gguf";
+    const completion_tokens = openai.estimateTokens(result.text);
+    const request_id = nextRequestId(state);
+
+    return buildOpenAiChatResponseWithPrefix(
+        state.allocator,
+        "chatcmpl-local",
+        model_name,
+        result.text,
+        result.prompt_tokens,
+        completion_tokens,
+        request_id,
+    );
+}
+
+const ParsedEmbeddingInputs = struct {
+    allocator: Allocator,
+    items: [][]const u8,
+
+    fn deinit(self: *ParsedEmbeddingInputs) void {
+        for (self.items) |item| self.allocator.free(item);
+        self.allocator.free(self.items);
+    }
+};
+
+fn handleDirectEmbeddings(
+    state: *AppState,
+    engine: *llama_toon.ToonInferenceEngine,
+    body: []const u8,
+) ![]u8 {
+    var parsed_inputs = try parseEmbeddingInputs(state.allocator, body);
+    defer parsed_inputs.deinit();
+
+    const embeddings = try state.allocator.alloc([]f32, parsed_inputs.items.len);
+    defer {
+        for (embeddings) |embedding| {
+            if (embedding.len > 0) state.allocator.free(embedding);
+        }
+        state.allocator.free(embeddings);
+    }
+    for (embeddings) |*embedding| embedding.* = &.{};
+
+    var total_prompt_tokens: u32 = 0;
+    for (parsed_inputs.items, 0..) |input, index| {
+        const result = try engine.embedText(input);
+        embeddings[index] = result.embedding;
+        total_prompt_tokens +|= result.prompt_tokens;
+    }
+
+    const model_name = service_router.Router.extractModel(body) orelse "local-gguf";
+    return buildOpenAiEmbeddingsResponse(state.allocator, model_name, embeddings, total_prompt_tokens);
+}
+
 fn computeEngramRoutingSignal(state: *AppState, body: []const u8) EngramRoutingSignal {
     const engine = state.engram_engine orelse return .{};
     const prompt = extractPromptFromBody(state.allocator, body) catch return .{};
@@ -1400,6 +1516,45 @@ fn parseJsonU32Field(allocator: Allocator, body: []const u8, field_name: []const
     };
 }
 
+fn parseEmbeddingInputs(allocator: Allocator, body: []const u8) !ParsedEmbeddingInputs {
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{
+        .ignore_unknown_fields = true,
+    }) catch return error.InvalidEmbeddingRequest;
+    defer parsed.deinit();
+
+    const input_val = switch (parsed.value) {
+        .object => |obj| obj.get("input"),
+        else => null,
+    } orelse return error.InvalidEmbeddingRequest;
+
+    var items = std.ArrayListUnmanaged([]const u8){};
+    errdefer {
+        for (items.items) |item| allocator.free(item);
+        items.deinit(allocator);
+    }
+
+    switch (input_val) {
+        .string => |value| try items.append(allocator, try allocator.dupe(u8, value)),
+        .array => |arr| {
+            if (arr.items.len == 0) return error.InvalidEmbeddingRequest;
+            for (arr.items) |entry| {
+                switch (entry) {
+                    .string => |value| try items.append(allocator, try allocator.dupe(u8, value)),
+                    else => return error.InvalidEmbeddingRequest,
+                }
+            }
+        },
+        else => return error.InvalidEmbeddingRequest,
+    }
+
+    if (items.items.len == 0) return error.InvalidEmbeddingRequest;
+
+    return .{
+        .allocator = allocator,
+        .items = try items.toOwnedSlice(allocator),
+    };
+}
+
 fn buildOpenAiChatResponse(
     allocator: Allocator,
     model: []const u8,
@@ -1408,7 +1563,27 @@ fn buildOpenAiChatResponse(
     completion_tokens: u32,
     request_id: i32,
 ) ![]u8 {
-    const id = try std.fmt.allocPrint(allocator, "chatcmpl-trt-{d}", .{request_id});
+    return buildOpenAiChatResponseWithPrefix(
+        allocator,
+        "chatcmpl-trt",
+        model,
+        content,
+        prompt_tokens,
+        completion_tokens,
+        request_id,
+    );
+}
+
+fn buildOpenAiChatResponseWithPrefix(
+    allocator: Allocator,
+    id_prefix: []const u8,
+    model: []const u8,
+    content: []const u8,
+    prompt_tokens: u32,
+    completion_tokens: u32,
+    request_id: i32,
+) ![]u8 {
+    const id = try std.fmt.allocPrint(allocator, "{s}-{d}", .{ id_prefix, request_id });
     defer allocator.free(id);
 
     const choices = [_]openai.ChatCompletionChoice{.{
@@ -1435,6 +1610,48 @@ fn buildOpenAiChatResponse(
     errdefer out.deinit();
     try std.json.Stringify.value(response, .{}, &out.writer);
     return out.toOwnedSlice();
+}
+
+fn buildOpenAiEmbeddingsResponse(
+    allocator: Allocator,
+    model: []const u8,
+    embeddings: []const []const f32,
+    prompt_tokens: u32,
+) ![]u8 {
+    const data = try allocator.alloc(openai.EmbeddingData, embeddings.len);
+    defer allocator.free(data);
+
+    for (embeddings, 0..) |embedding, index| {
+        data[index] = .{
+            .object = "embedding",
+            .embedding = embedding,
+            .index = @intCast(index),
+        };
+    }
+
+    const response = openai.EmbeddingResponse{
+        .object = "list",
+        .data = data,
+        .model = model,
+        .usage = .{
+            .prompt_tokens = prompt_tokens,
+            .total_tokens = prompt_tokens,
+        },
+    };
+
+    var out: std.io.Writer.Allocating = .init(allocator);
+    errdefer out.deinit();
+    try std.json.Stringify.value(response, .{}, &out.writer);
+    return out.toOwnedSlice();
+}
+
+fn nextRequestId(state: *AppState) i32 {
+    state.mutex.lock();
+    defer state.mutex.unlock();
+
+    const request_id: i32 = @intCast(state.next_request_id & 0x7FFF_FFFF);
+    state.next_request_id +%= 1;
+    return request_id;
 }
 
 fn metricsRequestAllowed(stream_opt: ?net.Stream, bind_host: []const u8) bool {
@@ -1508,13 +1725,143 @@ test {
     _ = @import("integration_test.zig");
     _ = @import("tests/mojo_abi_test.zig");
     _ = @import("tests/perf_regression_test.zig");
-    _ = @import("tests/metal_benchmark_test.zig");
-    _ = @import("tests/production_benchmark_test.zig");
+    if (test_build_options.enable_slow_tests) {
+        _ = @import("tests/metal_benchmark_test.zig");
+        _ = @import("tests/production_benchmark_test.zig");
+    }
 }
 
 // ============================================================================
 // Tests
 // ============================================================================
+
+const TestState = struct {
+    state: AppState,
+    circuit_breaker: *cb.CircuitBreaker,
+};
+
+const BoundTestListener = struct {
+    listener: net.Server,
+    port: u16,
+};
+
+const MockUpstreamServer = struct {
+    listener: net.Server,
+    response: []const u8,
+
+    fn run(self: *MockUpstreamServer) void {
+        const conn = self.listener.accept() catch return;
+        defer conn.stream.close();
+
+        var buf: [4096]u8 = undefined;
+        _ = conn.stream.read(&buf) catch return;
+        conn.stream.writeAll(self.response) catch return;
+    }
+};
+
+fn bindTestListener() !BoundTestListener {
+    var port: u16 = 39200;
+    while (port < 39350) : (port += 1) {
+        const address = try net.Address.parseIp4("127.0.0.1", port);
+        const listener = address.listen(.{}) catch |err| switch (err) {
+            error.AddressInUse => continue,
+            else => return err,
+        };
+        return .{
+            .listener = listener,
+            .port = port,
+        };
+    }
+
+    return error.NoAvailableTestPort;
+}
+
+fn reserveTestPort() !u16 {
+    var bound = try bindTestListener();
+    defer bound.listener.deinit();
+    return bound.port;
+}
+
+fn readAllFromStream(allocator: Allocator, stream: net.Stream) ![]u8 {
+    var out = std.ArrayListUnmanaged(u8){};
+    errdefer out.deinit(allocator);
+
+    var buf: [2048]u8 = undefined;
+    while (true) {
+        const n = stream.read(&buf) catch |err| switch (err) {
+            error.ConnectionResetByPeer => break,
+            else => return err,
+        };
+        if (n == 0) break;
+        try out.appendSlice(allocator, buf[0..n]);
+    }
+
+    return out.toOwnedSlice(allocator);
+}
+
+fn sendRawHttpRequest(allocator: Allocator, port: u16, request: []const u8) ![]u8 {
+    const address = try net.Address.parseIp4("127.0.0.1", port);
+    var stream = try net.tcpConnectToAddress(address);
+    defer stream.close();
+
+    try stream.writeAll(request);
+    return readAllFromStream(allocator, stream);
+}
+
+fn initTestState(allocator: Allocator, cfg: ServerConfig, local_models_port: u16) !TestState {
+    const circuit_breaker = try cb.CircuitBreaker.init(allocator, "test-gateway", .{
+        .failure_threshold = 2,
+        .success_threshold = 1,
+        .reset_timeout_ms = 1,
+    });
+
+    return .{
+        .state = .{
+            .allocator = allocator,
+            .cfg = cfg,
+            .http_server = undefined,
+            .circuit_breaker = circuit_breaker,
+            .gpu_context = null,
+            .mangle_engine = try mangle.Engine.init(allocator, null),
+            .router = service_router.Router.init(allocator, .{
+                .local_models_url = "127.0.0.1",
+                .local_models_port = local_models_port,
+            }),
+            .scheduler = undefined,
+            .toon_engine = null,
+            .model_artifact = null,
+            .engram_engine = null,
+            .engram_tokenizer = null,
+            .engram_cache_path = null,
+            .rate_limiter = rate_limiter_mod.RateLimiter.init(cfg.rate_limit_burst, cfg.rate_limit_rps),
+            .tls_config = .{},
+            .next_request_id = 1,
+            .trt_engine = null,
+            .trt_engine_path_z = null,
+            .trt_max_inflight = cfg.trt_max_inflight,
+        },
+        .circuit_breaker = circuit_breaker,
+    };
+}
+
+fn deinitTestState(test_state: *TestState) void {
+    test_state.state.mangle_engine.deinit();
+    test_state.circuit_breaker.deinit();
+}
+
+fn startTestGateway(allocator: Allocator, state: *AppState) !*http.Server {
+    const server = try http.Server.init(allocator, .{
+        .host = state.cfg.host,
+        .port = state.cfg.port,
+        .max_worker_threads = 1,
+        .max_pending_connections = 8,
+        .request_handler = requestHandler,
+        .user_data = @ptrCast(state),
+    });
+    state.http_server = server;
+    try server.start();
+    return server;
+}
 
 test "server config defaults" {
     const cfg = ServerConfig{};
@@ -1568,6 +1915,169 @@ test "buildOpenAiChatResponse returns OpenAI chat payload" {
     try std.testing.expectEqual(@as(i64, 12), usage.get("prompt_tokens").?.integer);
     try std.testing.expectEqual(@as(i64, 5), usage.get("completion_tokens").?.integer);
     try std.testing.expectEqual(@as(i64, 17), usage.get("total_tokens").?.integer);
+}
+
+test "parseEmbeddingInputs handles single string input" {
+    var parsed = try parseEmbeddingInputs(
+        std.testing.allocator,
+        \\{"model":"local-embed","input":"hello world"}
+    );
+    defer parsed.deinit();
+
+    try std.testing.expectEqual(@as(usize, 1), parsed.items.len);
+    try std.testing.expectEqualStrings("hello world", parsed.items[0]);
+}
+
+test "parseEmbeddingInputs handles string array input" {
+    var parsed = try parseEmbeddingInputs(
+        std.testing.allocator,
+        \\{"model":"local-embed","input":["alpha","beta"]}
+    );
+    defer parsed.deinit();
+
+    try std.testing.expectEqual(@as(usize, 2), parsed.items.len);
+    try std.testing.expectEqualStrings("alpha", parsed.items[0]);
+    try std.testing.expectEqualStrings("beta", parsed.items[1]);
+}
+
+test "parseEmbeddingInputs rejects invalid input shape" {
+    try std.testing.expectError(
+        error.InvalidEmbeddingRequest,
+        parseEmbeddingInputs(
+            std.testing.allocator,
+            \\{"model":"local-embed","input":[{"text":"nope"}]}
+        ),
+    );
+}
+
+test "buildOpenAiEmbeddingsResponse returns OpenAI embedding payload" {
+    const embedding_storage = [_][]const f32{
+        &[_]f32{ 0.1, 0.2, 0.3 },
+        &[_]f32{ 0.4, 0.5, 0.6 },
+    };
+    const body = try buildOpenAiEmbeddingsResponse(
+        std.testing.allocator,
+        "local-embed",
+        &embedding_storage,
+        7,
+    );
+    defer std.testing.allocator.free(body);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, std.testing.allocator, body, .{});
+    defer parsed.deinit();
+
+    const root = parsed.value.object;
+    try std.testing.expectEqualStrings("list", root.get("object").?.string);
+    try std.testing.expectEqualStrings("local-embed", root.get("model").?.string);
+
+    const data = root.get("data").?.array.items;
+    try std.testing.expectEqual(@as(usize, 2), data.len);
+    try std.testing.expectEqualStrings("embedding", data[0].object.get("object").?.string);
+    try std.testing.expectEqual(@as(i64, 0), data[0].object.get("index").?.integer);
+    try std.testing.expectEqual(@as(i64, 1), data[1].object.get("index").?.integer);
+
+    const usage = root.get("usage").?.object;
+    try std.testing.expectEqual(@as(i64, 7), usage.get("prompt_tokens").?.integer);
+    try std.testing.expectEqual(@as(i64, 7), usage.get("total_tokens").?.integer);
+}
+
+test "metrics endpoint allows requests on configured bind host" {
+    const port = try reserveTestPort();
+    var test_state = try initTestState(std.testing.allocator, .{
+        .host = "127.0.0.1",
+        .port = port,
+        .metrics_bind = "127.0.0.1",
+    }, 11434);
+    defer deinitTestState(&test_state);
+
+    const server = try startTestGateway(std.testing.allocator, &test_state.state);
+    defer server.deinit();
+
+    const response = try sendRawHttpRequest(
+        std.testing.allocator,
+        port,
+        "GET /metrics HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    defer std.testing.allocator.free(response);
+
+    try std.testing.expect(std.mem.indexOf(u8, response, "HTTP/1.1 200 OK") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "Content-Type: text/plain; version=0.0.4; charset=utf-8") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "privatellm_requests_total") != null);
+}
+
+test "metrics endpoint denies requests on non-matching bind host" {
+    const port = try reserveTestPort();
+    var test_state = try initTestState(std.testing.allocator, .{
+        .host = "127.0.0.1",
+        .port = port,
+        .metrics_bind = "192.168.1.10",
+    }, 11434);
+    defer deinitTestState(&test_state);
+
+    const server = try startTestGateway(std.testing.allocator, &test_state.state);
+    defer server.deinit();
+
+    const response = try sendRawHttpRequest(
+        std.testing.allocator,
+        port,
+        "GET /metrics HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    defer std.testing.allocator.free(response);
+
+    try std.testing.expect(std.mem.indexOf(u8, response, "HTTP/1.1 404 Not Found") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "{\"error\":\"Not found\"}") != null);
+}
+
+test "streaming chat proxy forwards raw upstream response" {
+    const upstream_response =
+        "HTTP/1.1 200 OK\r\n" ++
+        "Content-Type: text/event-stream\r\n" ++
+        "Transfer-Encoding: chunked\r\n" ++
+        "Connection: close\r\n\r\n" ++
+        "d\r\ndata: first\n\n\r\n" ++
+        "e\r\ndata: second\n\n\r\n" ++
+        "0\r\n\r\n";
+
+    const upstream_bound = try bindTestListener();
+    var upstream = MockUpstreamServer{
+        .listener = upstream_bound.listener,
+        .response = upstream_response,
+    };
+    const upstream_thread = try std.Thread.spawn(.{}, MockUpstreamServer.run, .{&upstream});
+    defer {
+        upstream.listener.deinit();
+        upstream_thread.join();
+    }
+
+    const port = try reserveTestPort();
+    var test_state = try initTestState(std.testing.allocator, .{
+        .host = "127.0.0.1",
+        .port = port,
+        .streaming_enabled = true,
+    }, upstream_bound.port);
+    defer deinitTestState(&test_state);
+
+    const server = try startTestGateway(std.testing.allocator, &test_state.state);
+    defer server.deinit();
+
+    const body =
+        \\{"model":"phi3-lora","stream":true,"messages":[{"role":"user","content":"hello"}]}
+    ;
+    const request = try std.fmt.allocPrint(
+        std.testing.allocator,
+        "POST /v1/chat/completions HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {d}\r\nConnection: close\r\n\r\n{s}",
+        .{ body.len, body },
+    );
+    defer std.testing.allocator.free(request);
+
+    const response = try sendRawHttpRequest(std.testing.allocator, port, request);
+    defer std.testing.allocator.free(response);
+
+    try std.testing.expectEqual(@as(usize, 1), std.mem.count(u8, response, "HTTP/1.1"));
+    try std.testing.expect(std.mem.indexOf(u8, response, "Content-Type: text/event-stream") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "Transfer-Encoding: chunked") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "data: first") != null);
+    try std.testing.expect(std.mem.indexOf(u8, response, "data: second") != null);
 }
 
 test "extractPromptFromBody - single user message" {
