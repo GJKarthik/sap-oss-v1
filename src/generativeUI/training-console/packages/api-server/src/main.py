@@ -4,16 +4,26 @@ Thin FastAPI proxy/wrapper around the nvidia-modelopt service on port 8001.
 Adds CORS for the Angular dev server on port 4200.
 """
 
-from contextlib import asynccontextmanager
+import json
 import os
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
 UPSTREAM = os.getenv("MODELOPT_URL", "http://localhost:8001")
+MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))  # 10 MB default
+PROXY_RATE_LIMIT = os.getenv("PROXY_RATE_LIMIT", "60/minute")
 
 _allowed_origins_raw = os.getenv(
     "ALLOWED_ORIGINS",
@@ -23,6 +33,16 @@ ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",")
 
 _client: httpx.AsyncClient | None = None
 
+# ---------------------------------------------------------------------------
+# Rate limiter
+# ---------------------------------------------------------------------------
+
+limiter = Limiter(key_func=get_remote_address)
+
+
+# ---------------------------------------------------------------------------
+# App lifecycle
+# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
@@ -39,6 +59,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -47,6 +70,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
 @app.get("/health")
 async def health() -> dict[str, str]:
@@ -58,6 +85,13 @@ async def _proxy(request: Request, path: str) -> JSONResponse:
         raise HTTPException(status_code=503, detail="Proxy client not initialised")
 
     body = await request.body()
+
+    if len(body) > MAX_BODY_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Request body exceeds limit of {MAX_BODY_BYTES // (1024 * 1024)} MB",
+        )
+
     headers = {
         k: v
         for k, v in request.headers.items()
@@ -78,7 +112,6 @@ async def _proxy(request: Request, path: str) -> JSONResponse:
             detail=f"Cannot connect to upstream at {UPSTREAM}. Is nvidia-modelopt running?",
         )
 
-    import json
     try:
         data: Any = upstream_resp.json()
     except json.JSONDecodeError:
@@ -88,6 +121,7 @@ async def _proxy(request: Request, path: str) -> JSONResponse:
 
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@limiter.limit(PROXY_RATE_LIMIT)
 async def proxy_all(request: Request, path: str) -> JSONResponse:
     return await _proxy(request, path)
 
@@ -96,4 +130,5 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", "8000"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    host = os.getenv("HOST", "0.0.0.0")
+    uvicorn.run(app, host=host, port=port)

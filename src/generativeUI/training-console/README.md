@@ -104,6 +104,17 @@ Auth is **optional**. Controlled by `window.__TRAINING_CONFIG__.requireAuth`:
 
 API key can be set at any time via the sidebar input in the shell layout.
 
+## Environment Variables
+
+### Backend Proxy (`packages/api-server`)
+The FastAPI proxy uses the following environment variables. They can be set in a `.env` file in the `packages/api-server` directory.
+
+- `MODELOPT_URL` — The URL of the upstream NVIDIA ModelOpt service (default: `http://localhost:8001`).
+- `ALLOWED_ORIGINS` — Comma-separated list of origins allowed by CORS (default: `http://localhost:4200,http://localhost:4201`).
+- `PORT` — The port the proxy should bind to (default: `8000`).
+- `MAX_BODY_BYTES` — The maximum allowed request body size in bytes (default: 10MB).
+- `PROXY_RATE_LIMIT` — The slowapi rate limit for proxy requests (default: `60/minute`).
+
 ## Pages
 
 | Route | Description |

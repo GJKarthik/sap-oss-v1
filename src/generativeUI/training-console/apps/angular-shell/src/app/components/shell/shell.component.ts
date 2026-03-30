@@ -1,9 +1,8 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { UserSettingsService, UserMode } from '../../services/user-settings.service';
+import { UserSettingsService } from '../../services/user-settings.service';
 
 interface NavItem {
   label: string;
@@ -14,7 +13,7 @@ interface NavItem {
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
@@ -38,7 +37,7 @@ interface NavItem {
       <div class="shell-body">
         <nav class="side-nav">
           <ul class="nav-list">
-            @for (item of navItems; track trackByRoute) {
+            @for (item of navItems; track item.route) {
               <li>
                 <a
                   [routerLink]="item.route"
@@ -149,7 +148,7 @@ interface NavItem {
         font-size: 0.8125rem;
         outline: none;
         cursor: pointer;
-        
+
         option {
           background: var(--sapShellColor, #354a5e);
           color: #fff;
@@ -252,7 +251,11 @@ interface NavItem {
   ],
 })
 export class ShellComponent {
-  navItems: NavItem[] = [
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly userSettings = inject(UserSettingsService);
+
+  readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: '📊', route: '/dashboard' },
     { label: 'Pipeline', icon: '🔄', route: '/pipeline' },
     { label: 'Model Optimizer', icon: '🤖', route: '/model-optimizer' },
@@ -261,16 +264,8 @@ export class ShellComponent {
     { label: 'Chat', icon: '💬', route: '/chat' },
   ];
 
-  version = '1.0.0';
-  apiKeyDraft = '';
-
-  constructor(
-    private auth: AuthService,
-    private router: Router,
-    public userSettings: UserSettingsService
-  ) {
-    this.apiKeyDraft = auth.token() ?? '';
-  }
+  readonly version = '1.0.0';
+  apiKeyDraft = this.auth.token() ?? '';
 
   saveApiKey(): void {
     if (this.apiKeyDraft.trim()) {
@@ -283,9 +278,5 @@ export class ShellComponent {
   logout(): void {
     this.auth.clearToken();
     this.router.navigate(['/login']);
-  }
-
-  trackByRoute(index: number, item: NavItem): string {
-    return item.route;
   }
 }

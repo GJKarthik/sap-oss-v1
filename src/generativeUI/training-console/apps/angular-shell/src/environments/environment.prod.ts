@@ -1,20 +1,18 @@
-/**
- * Production environment configuration
- */
 export const environment = {
   production: true,
   apiBaseUrl: '/api',
-  requireAuth: true,
+  requireAuth: window.__TRAINING_CONFIG__?.requireAuth ?? false,
   enableDebugLogs: false,
   toastDuration: {
-    success: 4000,
-    error: 10000,
+    success: 3000,
+    error: 8000,
     warning: 6000,
-    info: 4000,
+    info: 3000,
   },
   features: {
     enableChat: true,
     enableGraphExplorer: true,
     enableModelOptimizer: true,
   },
+  version: '1.0.0'
 };

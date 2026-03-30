@@ -40,6 +40,18 @@ interface CreateJobForm {
   enable_pruning: boolean;
 }
 
+interface JobPayloadConfig {
+  model_name: string;
+  quant_format: string;
+  calib_samples: number;
+  calib_seq_len: number;
+  export_format: string;
+  enable_pruning: boolean;
+  pruning_sparsity: number;
+  compute_strategy?: string;
+  [key: string]: unknown;
+}
+
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
@@ -70,7 +82,7 @@ interface CreateJobForm {
                 <span class="badge badge--quant">{{ m.recommended_quant }}</span>
               </div>
               @if (!m.t4_compatible) {
-                <div class="text-small" style="color:#c62828">⚠ T4 incompatible</div>
+                <div class="text-small t4-warn">⚠ T4 incompatible</div>
               }
             </div>
           }
@@ -156,7 +168,7 @@ interface CreateJobForm {
                   <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
                 </select>
               </div>
-              <div class="field-group" style="grid-column: 1 / -1;">
+              <div class="field-group full-width">
                 <label class="field-label">Raw JSON Override (Arguments Map)</label>
                 <textarea class="form-input mono" rows="5" [(ngModel)]="expertConfig.rawJson" name="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
               </div>
@@ -381,6 +393,14 @@ interface CreateJobForm {
       color: #00695c;
     }
 
+    .t4-warn {
+      color: #c62828;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
     .cost-estimate {
       background: #e8f4fd;
       color: #0d47a1;
@@ -471,7 +491,10 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   }
 
   selectModel(m: ModelInfo): void {
-    if (this.userSettings.mode() === 'novice') return; // Read-only in novice
+    if (this.userSettings.mode() === 'novice') {
+      this.toast.info('Switch to Intermediate mode to select a model manually.');
+      return;
+    }
     this.form.model_name = m.name;
     this.form.quant_format = m.recommended_quant;
   }
@@ -492,7 +515,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     if (!this.form.model_name) return;
     this.submitting.set(true);
 
-    let payloadConfig: any = {
+    let payloadConfig: JobPayloadConfig = {
       model_name: this.form.model_name,
       quant_format: this.form.quant_format,
       calib_samples: this.form.calib_samples,
@@ -504,7 +527,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
     if (this.userSettings.mode() === 'expert' && this.expertConfig.rawJson.trim()) {
       try {
-        const parsedOverride = JSON.parse(this.expertConfig.rawJson);
+        const parsedOverride = JSON.parse(this.expertConfig.rawJson) as Record<string, unknown>;
         payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: this.expertConfig.compute };
       } catch (e) {
         this.toast.error('Invalid JSON configuration', 'Syntax Error');

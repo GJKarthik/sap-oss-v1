@@ -1,6 +1,3 @@
-/**
- * Development environment configuration
- */
 export const environment = {
   production: false,
   apiBaseUrl: '/api',
@@ -17,4 +14,5 @@ export const environment = {
     enableGraphExplorer: true,
     enableModelOptimizer: true,
   },
+  version: '1.0.0-dev'
 };

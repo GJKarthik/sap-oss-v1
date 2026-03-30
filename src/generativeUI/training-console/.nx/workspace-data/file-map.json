@@ -1,0 +1,483 @@
+{
+  "version": "6.0",
+  "nxVersion": "22.0.2",
+  "pathMappings": {},
+  "nxJsonPlugins": [],
+  "fileMap": {
+    "nonProjectFiles": [
+      {
+        "file": ".editorconfig",
+        "hash": "8502544201852717863"
+      },
+      {
+        "file": ".eslintrc.json",
+        "hash": "10867346625774132210"
+      },
+      {
+        "file": ".gitignore",
+        "hash": "14659240138024435403"
+      },
+      {
+        "file": ".pnp.cjs",
+        "hash": "12833896309642757699"
+      },
+      {
+        "file": ".pnp.loader.mjs",
+        "hash": "12028641907064510121"
+      },
+      {
+        "file": ".prettierrc",
+        "hash": "18274451078322917860"
+      },
+      {
+        "file": "README.md",
+        "hash": "8596355034373510284"
+      },
+      {
+        "file": "apps/angular-shell-e2e/playwright.config.ts",
+        "hash": "5006175513163768566"
+      },
+      {
+        "file": "apps/angular-shell-e2e/src/app.spec.ts",
+        "hash": "6914582354909623971"
+      },
+      {
+        "file": "apps/angular-shell-e2e/src/visual.spec.ts",
+        "hash": "10252231865949503207"
+      },
+      {
+        "file": "docker-compose.yml",
+        "hash": "7525210826447348182"
+      },
+      {
+        "file": "jest.config.ts",
+        "hash": "3494843969422251966"
+      },
+      {
+        "file": "jest.preset.js",
+        "hash": "9430166341120122740"
+      },
+      {
+        "file": "nx.json",
+        "hash": "13456423331249390322"
+      },
+      {
+        "file": "package.json",
+        "hash": "14914739293804612204"
+      },
+      {
+        "file": "tsconfig.base.json",
+        "hash": "66860988016675509"
+      },
+      {
+        "file": "yarn.lock",
+        "hash": "16190718826731870414"
+      }
+    ],
+    "projectFileMap": {
+      "angular-shell": [
+        {
+          "file": "apps/angular-shell/Dockerfile",
+          "hash": "10070172568636232589"
+        },
+        {
+          "file": "apps/angular-shell/docker/nginx.conf",
+          "hash": "10430150573002379780"
+        },
+        {
+          "file": "apps/angular-shell/jest.config.ts",
+          "hash": "8432742650439208989"
+        },
+        {
+          "file": "apps/angular-shell/package.json",
+          "hash": "2346732626626538990",
+          "deps": [
+            "npm:@angular-devkit/build-angular@20.3.9",
+            "npm:@angular/cli@20.3.22",
+            "npm:@angular/compiler-cli",
+            "npm:typescript",
+            "npm:@angular/animations@20.3.9",
+            "npm:@angular/common",
+            "npm:@angular/compiler",
+            "npm:@angular/core",
+            "npm:@angular/forms@20.3.9",
+            "npm:@angular/platform-browser",
+            "npm:@angular/platform-browser-dynamic",
+            "npm:@angular/router@20.3.9",
+            "npm:@ui5/webcomponents@2.18.1",
+            "npm:@ui5/webcomponents-ai@2.18.1",
+            "npm:@ui5/webcomponents-base@2.18.1",
+            "npm:@ui5/webcomponents-fiori@2.18.1",
+            "npm:@ui5/webcomponents-icons@2.18.1",
+            "npm:@ui5/webcomponents-icons-business-suite@2.18.1",
+            "npm:@ui5/webcomponents-icons-tnt@2.18.1",
+            "npm:@ui5/webcomponents-ngx@0.5.11-rc.5",
+            "npm:@ui5/webcomponents-theming@2.18.1",
+            "npm:rxjs",
+            "npm:tslib@2.4.1",
+            "npm:zone.js@0.15.0"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/project.json",
+          "hash": "7662334632031642213"
+        },
+        {
+          "file": "apps/angular-shell/proxy.conf.json",
+          "hash": "5748150430490712717"
+        },
+        {
+          "file": "apps/angular-shell/src/app/app.component.ts",
+          "hash": "15806808087153413661",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/router@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/app.config.ts",
+          "hash": "15977442351683724587",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/router@20.3.9",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/app.routes.ts",
+          "hash": "14220019293542754263",
+          "deps": [
+            "npm:@angular/router@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/components/shell/shell.component.ts",
+          "hash": "2006054965253428214",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/router@20.3.9",
+            "npm:@angular/forms@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/components/toast/toast.component.ts",
+          "hash": "13835670252019938916",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/guards/auth.guard.spec.ts",
+          "hash": "8083686317056843947",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/router@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/guards/auth.guard.ts",
+          "hash": "15003143738843772220",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/router@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/interceptors/auth.interceptor.ts",
+          "hash": "17037714313154252564",
+          "deps": [
+            "npm:@angular/common",
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/interceptors/error.interceptor.ts",
+          "hash": "13130981922119768751",
+          "deps": [
+            "npm:@angular/common",
+            "npm:@angular/core",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/chat/chat.component.spec.ts",
+          "hash": "16034683913491824474",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/chat/chat.component.ts",
+          "hash": "18408769607812213624",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common",
+            "npm:@angular/forms@20.3.9",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/dashboard/dashboard.component.spec.ts",
+          "hash": "3806101668186105011",
+          "deps": [
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/dashboard/dashboard.component.ts",
+          "hash": "15369081249116542545",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/data-explorer/data-explorer.component.ts",
+          "hash": "5719273449014508651",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common",
+            "npm:@angular/forms@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/hippocpp/hippocpp.component.ts",
+          "hash": "16972403403256018844",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common",
+            "npm:@angular/forms@20.3.9",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/login/login.component.ts",
+          "hash": "1100607453996783348",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common",
+            "npm:@angular/forms@20.3.9",
+            "npm:@angular/router@20.3.9"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/model-optimizer/model-optimizer.component.spec.ts",
+          "hash": "18134158132139298121",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/model-optimizer/model-optimizer.component.ts",
+          "hash": "5160299291073107210",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common",
+            "npm:@angular/forms@20.3.9",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts",
+          "hash": "724730986865453177",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/api.service.spec.ts",
+          "hash": "7078006651750509124",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/api.service.ts",
+          "hash": "4219405134700030675",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/auth.service.spec.ts",
+          "hash": "16583839010676768795",
+          "deps": [
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/auth.service.ts",
+          "hash": "9039963648268868970",
+          "deps": [
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/cache.service.spec.ts",
+          "hash": "6375888358542591866",
+          "deps": [
+            "npm:@angular/core",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/cache.service.ts",
+          "hash": "4346754098062867159",
+          "deps": [
+            "npm:@angular/core",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/toast.service.spec.ts",
+          "hash": "9566770621494946023",
+          "deps": [
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/toast.service.ts",
+          "hash": "8505003762381609023",
+          "deps": [
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/services/user-settings.service.ts",
+          "hash": "4752152472751921613",
+          "deps": [
+            "npm:@angular/core"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/shared/components/skeleton/skeleton.component.ts",
+          "hash": "15400732797602946924",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/shared/components/stat-card/stat-card.component.ts",
+          "hash": "2942047723539026183",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/shared/index.ts",
+          "hash": "5613693549868873564"
+        },
+        {
+          "file": "apps/angular-shell/src/app/store/app.store.spec.ts",
+          "hash": "449021859336514257",
+          "deps": [
+            "npm:@angular/core",
+            "npm:@angular/common"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/app/store/app.store.ts",
+          "hash": "16324224248873397217",
+          "deps": [
+            "npm:@angular/core",
+            "npm:rxjs"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/environments/environment.prod.ts",
+          "hash": "17152778564322133924"
+        },
+        {
+          "file": "apps/angular-shell/src/environments/environment.ts",
+          "hash": "9080300024645000260"
+        },
+        {
+          "file": "apps/angular-shell/src/index.html",
+          "hash": "10074799523267720620"
+        },
+        {
+          "file": "apps/angular-shell/src/main.ts",
+          "hash": "2633615247295277217",
+          "deps": [
+            "npm:@angular/platform-browser"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/src/runtime-config.js",
+          "hash": "365873439958644756"
+        },
+        {
+          "file": "apps/angular-shell/src/styles.scss",
+          "hash": "9237005581504886717"
+        },
+        {
+          "file": "apps/angular-shell/src/test-setup.ts",
+          "hash": "17711435995618823417",
+          "deps": [
+            "npm:jest-preset-angular"
+          ]
+        },
+        {
+          "file": "apps/angular-shell/tsconfig.app.json",
+          "hash": "17543202824379023760"
+        },
+        {
+          "file": "apps/angular-shell/tsconfig.json",
+          "hash": "6891453168316939523"
+        },
+        {
+          "file": "apps/angular-shell/tsconfig.spec.json",
+          "hash": "9890126725829548007"
+        }
+      ],
+      "api-server": [
+        {
+          "file": "packages/api-server/.env.example",
+          "hash": "1487276304127559537"
+        },
+        {
+          "file": "packages/api-server/Dockerfile",
+          "hash": "13330761456142647557"
+        },
+        {
+          "file": "packages/api-server/project.json",
+          "hash": "16726170349887873507"
+        },
+        {
+          "file": "packages/api-server/requirements.txt",
+          "hash": "7704069635446954235"
+        },
+        {
+          "file": "packages/api-server/src/__init__.py",
+          "hash": "3244421341483603138"
+        },
+        {
+          "file": "packages/api-server/src/main.py",
+          "hash": "7414541727749838400"
+        },
+        {
+          "file": "packages/api-server/tests/__init__.py",
+          "hash": "3244421341483603138"
+        },
+        {
+          "file": "packages/api-server/tests/conftest.py",
+          "hash": "9184679788209711674"
+        },
+        {
+          "file": "packages/api-server/tests/test_main.py",
+          "hash": "8216899243623657584"
+        }
+      ]
+    }
+  },
+  "externalNodesHash": "4631950705507301962"
+}

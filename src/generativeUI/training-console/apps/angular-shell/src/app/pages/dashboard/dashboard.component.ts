@@ -1,31 +1,13 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
-import { ApiService } from '../../services/api.service';
+import {
+  Component,
+  OnInit,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  inject,
+} from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
-import { HttpErrorResponse } from '@angular/common/http';
-
-interface GpuStatus {
-  gpu_name: string;
-  total_memory_gb: number;
-  used_memory_gb: number;
-  free_memory_gb: number;
-  utilization_percent: number;
-  temperature_c: number;
-  driver_version: string;
-  cuda_version: string;
-}
-
-interface GraphStats {
-  available: boolean;
-  pair_count: number;
-}
-
-interface HealthStatus {
-  status: string;
-  service: string;
-  version: string;
-}
 
 interface PlatformComponent {
   icon: string;
@@ -38,47 +20,47 @@ interface PlatformComponent {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
       <div class="page-header">
         <h1 class="page-title">Dashboard</h1>
-        <button class="refresh-btn" (click)="loadAll()" [disabled]="loading()">
-          {{ loading() ? 'Refreshing…' : '↻ Refresh' }}
+        <button class="refresh-btn" (click)="refresh()" [disabled]="store.isDashboardLoading()">
+          {{ store.isDashboardLoading() ? 'Refreshing…' : '↻ Refresh' }}
         </button>
       </div>
 
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value">
-            <span [class]="'status-badge ' + healthBadge()">{{ health()?.status ?? '—' }}</span>
+            <span [class]="'status-badge ' + store.healthBadge()">{{ store.health().data?.status ?? '—' }}</span>
           </div>
           <div class="stat-label">Service Health</div>
-          <div class="stat-sub">{{ health()?.version ?? '' }}</div>
+          <div class="stat-sub">{{ store.health().data?.version ?? '' }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ gpu()?.utilization_percent ?? '—' }}%</div>
+          <div class="stat-value">{{ store.gpuUtilization() }}%</div>
           <div class="stat-label">GPU Utilisation</div>
-          <div class="stat-sub">{{ gpu()?.gpu_name ?? 'No GPU' }}</div>
+          <div class="stat-sub">{{ store.gpu().data?.gpu_name ?? 'No GPU' }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ gpuMemUsed() }}</div>
+          <div class="stat-value">{{ store.gpuMemoryUsed() }}</div>
           <div class="stat-label">GPU Memory Used</div>
-          <div class="stat-sub">of {{ gpuMemTotal() }} GB total</div>
+          <div class="stat-sub">of {{ store.gpuMemoryTotal() }} GB total</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ graphStats()?.pair_count ?? '—' }}</div>
+          <div class="stat-value">{{ store.trainingPairCount() }}</div>
           <div class="stat-label">Training Pairs (Graph)</div>
-          <div class="stat-sub">{{ graphStats()?.available ? 'Graph store active' : 'Graph store unavailable' }}</div>
+          <div class="stat-sub">{{ store.isGraphAvailable() ? 'Graph store active' : 'Graph store unavailable' }}</div>
         </div>
       </div>
 
       <div class="dashboard-grid">
         <div class="info-card">
           <h2 class="card-title">GPU Details</h2>
-          @if (gpu(); as gpuData) {
+          @if (store.gpu().data; as gpuData) {
             <table class="info-table">
               <tbody>
                 <tr><td>Name</td><td>{{ gpuData.gpu_name }}</td></tr>
@@ -88,10 +70,10 @@ interface PlatformComponent {
                 <tr><td>Free Memory</td><td>{{ gpuData.free_memory_gb.toFixed(1) }} GB</td></tr>
               </tbody>
             </table>
-          } @else if (!loading()) {
+          } @else if (!store.isDashboardLoading()) {
             <p class="text-muted">GPU data unavailable</p>
           }
-          @if (loading()) {
+          @if (store.isDashboardLoading()) {
             <div class="loading-container">
               <span class="loading-text">Loading…</span>
             </div>
@@ -209,15 +191,9 @@ interface PlatformComponent {
     }
   `],
 })
-export class DashboardComponent implements OnInit, OnDestroy {
-  private readonly api = inject(ApiService);
+export class DashboardComponent implements OnInit {
+  readonly store = inject(AppStore);
   private readonly toast = inject(ToastService);
-  private readonly destroy$ = new Subject<void>();
-
-  readonly health = signal<HealthStatus | null>(null);
-  readonly gpu = signal<GpuStatus | null>(null);
-  readonly graphStats = signal<GraphStats | null>(null);
-  readonly loading = signal(false);
 
   readonly components: PlatformComponent[] = [
     { icon: '🔄', name: 'Pipeline', desc: '7-stage Text-to-SQL data generation', status: 'Active', badge: 'status-success' },
@@ -226,69 +202,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { icon: '📂', name: 'Data Assets', desc: 'Banking Excel/CSV training data', status: 'Ready', badge: 'status-info' },
   ];
 
-  readonly healthBadge = computed(() => this.health()?.status === 'healthy' ? 'status-success' : 'status-error');
-
-  readonly gpuMemUsed = computed(() => {
-    const g = this.gpu();
-    return g ? g.used_memory_gb.toFixed(1) : '—';
-  });
-
-  readonly gpuMemTotal = computed(() => {
-    const g = this.gpu();
-    return g ? g.total_memory_gb.toFixed(1) : '—';
-  });
-
   ngOnInit(): void {
-    this.loadAll();
+    this.store.loadDashboardData();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  loadAll(): void {
-    this.loading.set(true);
-
-    forkJoin({
-      health: this.api.get<HealthStatus>('/health').pipe(
-        catchError((err: HttpErrorResponse) => {
-          this.toast.error('Could not reach backend at /api/health', 'Connection Failed');
-          console.error('Health check failed:', err);
-          return of(null);
-        })
-      ),
-      gpu: this.api.get<GpuStatus>('/gpu/status').pipe(
-        catchError((err: HttpErrorResponse) => {
-          this.toast.warning('GPU status unavailable', 'GPU');
-          console.warn('GPU status failed:', err);
-          return of(null);
-        })
-      ),
-      graphStats: this.api.get<GraphStats>('/graph/stats').pipe(
-        catchError((err: HttpErrorResponse) => {
-          console.warn('Graph stats failed:', err);
-          return of(null);
-        })
-      ),
-    })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (results: { health: HealthStatus | null, gpu: GpuStatus | null, graphStats: GraphStats | null }) => {
-          this.health.set(results.health);
-          this.gpu.set(results.gpu);
-          this.graphStats.set(results.graphStats);
-          this.loading.set(false);
-
-          if (results.health?.status === 'healthy') {
-            this.toast.success('Dashboard data loaded successfully');
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.toast.error('Failed to load dashboard data', 'Error');
-          console.error('Dashboard load failed:', err);
-          this.loading.set(false);
-        },
-      });
+  refresh(): void {
+    this.store.forceRefresh('health');
+    this.store.forceRefresh('gpu');
+    this.store.forceRefresh('graphStats');
+    this.toast.info('Refreshing dashboard data…');
   }
 }
