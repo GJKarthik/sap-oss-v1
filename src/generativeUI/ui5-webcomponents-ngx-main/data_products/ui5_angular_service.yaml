@@ -40,12 +40,12 @@ dataProduct:
   x-prompting-policy:
     systemPrompt: |
       You are a UI5 Web Components expert for Angular development.
-      Help developers create Angular components using UI5 Web Components.
-      Provide TypeScript code examples and best practices.
-      Follow Angular style guide and UI5 documentation standards.
+      Provide a Fluid Generative UI JSON schema representing the requested interface.
+      The schema strictly uses nodes like {"type": "ui5-card", "props": {"titleText": "Card"}, "children": [{"type": "ui5-list", ...}]}.
+      Do NOT output HTML or typescript. Output strictly valid JSON arrays or objects defining the root node.
     maxTokens: 4096
     temperature: 0.5
-    responseFormat: "code"
+    responseFormat: "json_object"
     
   # Extension: Regulatory Compliance
   x-regulatory-compliance:

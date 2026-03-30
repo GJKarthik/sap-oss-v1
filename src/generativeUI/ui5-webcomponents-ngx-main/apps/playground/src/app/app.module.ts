@@ -67,6 +67,10 @@ const Russian = {
                 loadChildren: () => import('./modules/collab/collab.module').then(m => m.CollabModule)
             },
             {
+                path: 'generative',
+                loadChildren: () => import('./modules/generative/generative.module').then(m => m.GenerativeModule)
+            },
+            {
                 path: '**',
                 loadChildren: () => import('./modules/not-found/not-found.module').then(m => m.NotFoundModule)
             }

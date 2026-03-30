@@ -39,6 +39,7 @@ export class AppComponent implements OnInit {
         'Forms Demo': '/forms',
         'Joule AI': '/joule',
         'Collaboration': '/collab',
+        'Generative UI': '/generative',
       };
       const path = map[detail.item.text];
       if (path) this.router.navigate([path]);

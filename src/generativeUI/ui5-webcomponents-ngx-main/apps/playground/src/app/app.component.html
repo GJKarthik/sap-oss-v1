@@ -72,6 +72,12 @@
       (click)="navigateTo('/collab')">
       Collaboration
     </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/generative')"
+      (click)="navigateTo('/generative')">
+      Generative UI
+    </button>
 
     <div class="app-nav__spacer"></div>
 
