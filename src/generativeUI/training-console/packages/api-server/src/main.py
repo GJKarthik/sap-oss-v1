@@ -445,6 +445,54 @@ async def validate_mangle_rules():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- DATA EXPLORER PREVIEW ---
+
+@app.get("/data/preview")
+async def get_data_preview(limit: int = 50, offset: int = 0, difficulty: str = ""):
+    """Expose the generated Spider/BIRD JSONL pairs for human-in-the-loop auditing."""
+    try:
+        import os
+        jsonl_paths = [
+            os.path.join(os.path.dirname(__file__), "../../../../../training/pipeline/output/train.jsonl"),
+            "/app/src/training/pipeline/output/train.jsonl",
+        ]
+        
+        real_pairs: list = []
+        for path in jsonl_paths:
+            if os.path.exists(path):
+                with open(path) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                real_pairs.append(json.loads(line))
+                            except:
+                                pass
+                break
+        
+        if real_pairs:
+            if difficulty:
+                real_pairs = [p for p in real_pairs if p.get("difficulty") == difficulty]
+            return {"total": len(real_pairs), "pairs": real_pairs[offset:offset+limit], "source": "pipeline"}
+        
+        # Fallback: Rich synthetic banking NFRP data
+        SYNTHETIC_PAIRS = [
+            {"id": "spider_001", "difficulty": "easy", "db_id": "NFRP_Accounts", "question": "What is the total balance across all active accounts?", "query": "SELECT SUM(balance) FROM ACCOUNT WHERE status = 'ACTIVE'"},
+            {"id": "spider_002", "difficulty": "medium", "db_id": "NFRP_Accounts", "question": "List all customers with more than 3 accounts sorted by account count descending", "query": "SELECT customer_id, COUNT(*) AS account_count FROM ACCOUNT GROUP BY customer_id HAVING COUNT(*) > 3 ORDER BY account_count DESC"},
+            {"id": "spider_003", "difficulty": "hard", "db_id": "NFRP_Finance", "question": "Calculate the net position for each product segment in Q1 2025 filtered by cost centre", "query": "SELECT p.segment, SUM(f.revenue - f.cost) AS net_position FROM FACT_FINANCE f JOIN DIM_PRODUCT p ON f.product_id = p.id WHERE f.fiscal_quarter = 'Q1-2025' AND f.cost_centre IS NOT NULL GROUP BY p.segment ORDER BY net_position DESC"},
+            {"id": "spider_004", "difficulty": "easy", "db_id": "NFRP_Locations", "question": "List all branches in Germany", "query": "SELECT name, city FROM BRANCH WHERE country = 'DE' ORDER BY city"},
+            {"id": "spider_005", "difficulty": "medium", "db_id": "ESG", "question": "What are the top 5 suppliers by ESG risk score?", "query": "SELECT supplier_name, esg_risk_score FROM SUPPLIER_ESG ORDER BY esg_risk_score DESC LIMIT 5"},
+            {"id": "spider_006", "difficulty": "hard", "db_id": "NFRP_Finance", "question": "Return the YoY revenue growth percentage for each cost centre in the banking segment", "query": "SELECT cc, ROUND(((curr.revenue - prev.revenue) / NULLIF(prev.revenue, 0)) * 100, 2) AS yoy_pct FROM (SELECT cost_centre AS cc, SUM(revenue) AS revenue FROM FACT_FINANCE WHERE fiscal_year = 2025 GROUP BY cost_centre) curr LEFT JOIN (SELECT cost_centre AS cc, SUM(revenue) AS revenue FROM FACT_FINANCE WHERE fiscal_year = 2024 GROUP BY cost_centre) prev USING(cc)"},
+            {"id": "spider_007", "difficulty": "easy", "db_id": "NFRP_Segments", "question": "How many customers are in the retail segment?", "query": "SELECT COUNT(*) FROM CUSTOMER WHERE segment = 'RETAIL'"},
+            {"id": "spider_008", "difficulty": "medium", "db_id": "NFRP_Accounts", "question": "Find all overdraft accounts with balance less than -10000", "query": "SELECT id, customer_id, balance FROM ACCOUNT WHERE balance < -10000 ORDER BY balance ASC"},
+        ]
+        
+        filtered = [p for p in SYNTHETIC_PAIRS if not difficulty or p.get("difficulty") == difficulty]
+        return {"total": len(filtered), "pairs": filtered[offset:offset+limit], "source": "synthetic"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # --- MODELS ORCHESTRATION PIPELINE ---
 
 class JobCreatePayload(BaseModel):
