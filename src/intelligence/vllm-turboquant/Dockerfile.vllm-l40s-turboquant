@@ -1,0 +1,57 @@
+ARG BASE_IMAGE=vllm/vllm-openai:v0.18.0
+FROM ${BASE_IMAGE}
+ENV LANG=C.UTF-8
+
+# Adaptation for SAP AI Core
+RUN mkdir -p /nonexistent/.cache/vllm && \
+    mkdir -p /nonexistent/.cache/huggingface && \
+    mkdir -p /nonexistent/.cache/pip && \
+    mkdir -p /nonexistent/.local/bin && \
+    mkdir -p /hf-home/ && \
+    mkdir -p /tmp/vllm && \
+    mkdir -p /tmp/flashinfer && \
+    mkdir -p /tmp/pip-cache && \
+    chown -R nobody:nogroup /nonexistent /hf-home/ /tmp/vllm /tmp/flashinfer /tmp/pip-cache && \
+    chmod -R 777 /nonexistent/ /hf-home/ /tmp/vllm /tmp/flashinfer /tmp/pip-cache
+
+# CRITICAL: Make FP8 & MoE config directories writable
+RUN chmod -R 777 /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/quantization/utils/configs 2>/dev/null || \
+    (mkdir -p /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/quantization/utils/configs && \
+     chmod -R 777 /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/quantization/utils/configs)
+
+RUN chmod -R 777 /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/configs 2>/dev/null || \
+    (mkdir -p /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/configs && \
+     chmod -R 777 /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/configs)
+
+# Environment variables
+ENV HF_HOME=/hf-home
+ENV HOME=/nonexistent
+ENV VLLM_CACHE_DIR=/tmp/vllm
+ENV FLASHINFER_CACHE_DIR=/tmp/flashinfer
+ENV PATH="/nonexistent/.local/bin:${PATH}"
+ENV PIP_CACHE_DIR=/tmp/pip-cache
+ENV TRANSFORMERS_NO_ADVISORY_WARNINGS=1
+
+# MODEL will be passed from serving template
+ENV MODEL="cyankiwi/Qwen3.5-35B-A3B-AWQ-4bit"
+
+EXPOSE 8000
+
+# Install git
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+# ============== TURBOQUANT KV-CACHE (Google ICLR 2026) ==============
+RUN git clone https://github.com/0xSero/turboquant.git /app/turboquant && \
+    cd /app/turboquant && \
+    pip install -e . && \
+    echo "✅ TurboQuant (3b-key/4b-val) installed for L40S"
+
+# Verify TurboQuant is installed
+RUN python3 -c "import turboquant; print('TurboQuant installed successfully')"
+
+# Copy our TurboQuant starter script
+COPY start-turboquant.py /app/start-turboquant.py
+RUN chmod +x /app/start-turboquant.py
+
+# Default entrypoint (overridden by ServingTemplate)
+ENTRYPOINT ["/app/start-turboquant.py"]
