@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface GpuStatus {
   gpu_name: string;
@@ -225,17 +226,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { icon: '📂', name: 'Data Assets', desc: 'Banking Excel/CSV training data', status: 'Ready', badge: 'status-info' },
   ];
 
-  readonly healthBadge = () => this.health()?.status === 'healthy' ? 'status-success' : 'status-error';
+  readonly healthBadge = computed(() => this.health()?.status === 'healthy' ? 'status-success' : 'status-error');
 
-  readonly gpuMemUsed = () => {
+  readonly gpuMemUsed = computed(() => {
     const g = this.gpu();
     return g ? g.used_memory_gb.toFixed(1) : '—';
-  };
+  });
 
-  readonly gpuMemTotal = () => {
+  readonly gpuMemTotal = computed(() => {
     const g = this.gpu();
     return g ? g.total_memory_gb.toFixed(1) : '—';
-  };
+  });
 
   ngOnInit(): void {
     this.loadAll();
@@ -251,21 +252,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     forkJoin({
       health: this.api.get<HealthStatus>('/health').pipe(
-        catchError((err) => {
+        catchError((err: HttpErrorResponse) => {
           this.toast.error('Could not reach backend at /api/health', 'Connection Failed');
           console.error('Health check failed:', err);
           return of(null);
         })
       ),
       gpu: this.api.get<GpuStatus>('/gpu/status').pipe(
-        catchError((err) => {
+        catchError((err: HttpErrorResponse) => {
           this.toast.warning('GPU status unavailable', 'GPU');
           console.warn('GPU status failed:', err);
           return of(null);
         })
       ),
       graphStats: this.api.get<GraphStats>('/graph/stats').pipe(
-        catchError((err) => {
+        catchError((err: HttpErrorResponse) => {
           console.warn('Graph stats failed:', err);
           return of(null);
         })
@@ -273,7 +274,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (results) => {
+        next: (results: { health: HealthStatus | null, gpu: GpuStatus | null, graphStats: GraphStats | null }) => {
           this.health.set(results.health);
           this.gpu.set(results.gpu);
           this.graphStats.set(results.graphStats);
@@ -283,7 +284,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.toast.success('Dashboard data loaded successfully');
           }
         },
-        error: (err) => {
+        error: (err: HttpErrorResponse) => {
           this.toast.error('Failed to load dashboard data', 'Error');
           console.error('Dashboard load failed:', err);
           this.loading.set(false);

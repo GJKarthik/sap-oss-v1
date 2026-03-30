@@ -1493,14 +1493,25 @@ pub const ToonInferenceEngine = struct {
             if (cpu_embedding_q4_data != null) {
                 std.log.info("Using CPU embedding fallback (Q4_0 mmap) + separate lm_head ({})", .{output_weight_dtype});
             }
-        } else if (cpu_embedding_q4_data) |emb_q4| {
-            // No separate output.weight: upload token_embd to GPU and tie lm_head
-            const fp32_buf = try dequantQ4ToF32(allocator, emb_q4, VOCAB * DIM);
-            defer allocator.free(fp32_buf);
-            gpu_weights.token_embedding = try GpuTensor.upload(.f32, std.mem.sliceAsBytes(fp32_buf), VOCAB, DIM);
-            gpu_weights.lm_head = gpu_weights.token_embedding;
-            total_bytes += emb_q4.len;
-            cpu_embedding_q4_data = null; // uploaded to GPU, no CPU fallback needed
+        } else if (cpu_embedding_q4_data) |emb_data| {
+            // No separate output.weight: upload token_embd raw and tie lm_head.
+            // For Q4_0: dequant to F32 (small enough for CPU RAM).
+            // For Q8_0 and others: upload raw quantized data — lm_head uses Q8 GEMV.
+            if (cpu_embedding_dtype == .q4_0) {
+                const fp32_buf = try dequantQ4ToF32(allocator, emb_data, VOCAB * DIM);
+                defer allocator.free(fp32_buf);
+                gpu_weights.token_embedding = try GpuTensor.upload(.f32, std.mem.sliceAsBytes(fp32_buf), VOCAB, DIM);
+                gpu_weights.lm_head = gpu_weights.token_embedding;
+                cpu_embedding_q4_data = null;
+            } else {
+                // Upload raw quantized embedding and use as both embedding (CPU fallback) and lm_head
+                gpu_weights.lm_head = try GpuTensor.upload(cpu_embedding_dtype, emb_data, VOCAB, DIM);
+                std.log.info("Tied lm_head uses raw {s} embedding ({} MB VRAM)", .{
+                    @tagName(cpu_embedding_dtype), emb_data.len / (1024 * 1024),
+                });
+                // Keep cpu_embedding_q4_data for per-row CPU embedding lookup
+            }
+            total_bytes += emb_data.len;
         } else if (gpu_weights.token_embedding.dptr != 0) {
             // Non-Q4_0 embedding already on GPU, tie lm_head
             gpu_weights.lm_head = gpu_weights.token_embedding;
@@ -1526,6 +1537,7 @@ pub const ToonInferenceEngine = struct {
         }
 
         // Step 6: Create CudaForwardPass
+        std.debug.print("[DEBUG] Detected weight dtype: {s}\n", .{@tagName(detected_weight_dtype)});
         const fwd = try CudaForwardPass.init(allocator, .{
             .dim = DIM,
             .n_layers = N_LAYERS,
@@ -1536,7 +1548,7 @@ pub const ToonInferenceEngine = struct {
             .max_seq_len = MAX_SEQ,
             .rope_freq_base = model_rope_base,
             .eps = model_eps,
-            .weight_dtype = detected_weight_dtype,
+            .weight_dtype = detected_weight_dtype, // auto-detected from blk.0.attn_q.weight
             .head_dim = HEAD_DIM,
             .n_experts = N_EXPERTS,
             .n_experts_topk = N_EXPERTS_TOPK,

@@ -97,6 +97,7 @@ pub const CudaBackend = struct {
 
     // PTX module and dynamic kernel registry
     ptx_module: ?cuda.CUmodule = null,
+    core_module: ?cuda.CUmodule = null, // nvcc-compiled core kernels (sgemv, rms_norm, etc.)
     cuda_context: ?cuda.CUcontext = null,
     kernel_registry: KernelRegistry,
 
@@ -237,6 +238,10 @@ pub const CudaBackend = struct {
                     backend.cuda_context = ctx;
                     backend.loadPtxKernels();
 
+                    // Load nvcc-compiled core kernels (sgemv, rms_norm, etc.)
+                    // These override Zig PTX kernels for cross-GPU compatibility.
+                    backend.loadCoreKernels();
+
                     // Create a non-blocking stream for kernel dispatch and graph capture
                     var stream: cuda.CUstream = undefined;
                     if (cuda.cuStreamCreate(&stream, 1) == .success) { // 1 = CU_STREAM_NON_BLOCKING
@@ -358,7 +363,7 @@ pub const CudaBackend = struct {
     /// RMSNorm/RoPE/attention, but get converted to FP16 for cuBLAS HGEMM.
     const fp16_conversion_ptx =
         \\.version 6.5
-        \\.target sm_75
+        \\.target sm_70
         \\.address_size 64
         \\
         \\.visible .entry fp32_to_fp16(
@@ -494,7 +499,7 @@ pub const CudaBackend = struct {
     /// zero_buffer: out[i] = 0.0f  (FP32)
     const moe_ptx =
         \\.version 6.5
-        \\.target sm_75
+        \\.target sm_70
         \\.address_size 64
         \\
         \\.visible .entry weighted_vector_add(
@@ -666,6 +671,33 @@ pub const CudaBackend = struct {
         if (self.rope_q_batch_func != null) {
             log.info("  MoE opt kernels: rope_q/k_batch + kv_cache_scatter LOADED", .{});
         }
+    }
+
+    /// Load nvcc-compiled core kernels and override the Zig PTX versions in the registry.
+    /// This ensures cross-GPU compatibility (sm_70 V100, sm_75 T4, sm_89 L40S, etc.)
+    fn loadCoreKernels(self: *CudaBackend) void {
+        const ptx_data = @embedFile("core_kernels.ptx") ++ [_]u8{0};
+        var module: cuda.CUmodule = undefined;
+        if (cuda.cuModuleLoadData(&module, ptx_data.ptr) != .success) {
+            log.warn("Failed to load core_kernels PTX (using Zig PTX fallback)", .{});
+            return;
+        }
+        self.core_module = module;
+
+        // Override kernel registry entries with nvcc-compiled versions
+        const kernel_names = [_][:0]const u8{
+            "sgemv", "rms_norm", "rms_norm_batch", "rope_q", "rope_k",
+            "embedding_lookup", "swiglu", "vector_add", "softmax", "dequantize_q4_0",
+        };
+        var loaded: u32 = 0;
+        inline for (kernel_names) |name| {
+            var func: cuda.CUfunction = undefined;
+            if (cuda.cuModuleGetFunction(&func, module, name.ptr) == .success) {
+                self.kernel_registry.put(name, func) catch {};
+                loaded += 1;
+            }
+        }
+        log.info("  Core kernels (nvcc): {}/10 loaded (overrides Zig PTX)", .{loaded});
     }
 
     fn loadDeltaNetKernels(self: *CudaBackend) void {

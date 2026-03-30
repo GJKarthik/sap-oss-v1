@@ -78,9 +78,10 @@ async def _proxy(request: Request, path: str) -> JSONResponse:
             detail=f"Cannot connect to upstream at {UPSTREAM}. Is nvidia-modelopt running?",
         )
 
+    import json
     try:
         data: Any = upstream_resp.json()
-    except Exception:
+    except json.JSONDecodeError:
         data = upstream_resp.text
 
     return JSONResponse(content=data, status_code=upstream_resp.status_code)

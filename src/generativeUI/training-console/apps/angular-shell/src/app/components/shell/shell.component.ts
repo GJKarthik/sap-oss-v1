@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { UserSettingsService, UserMode } from '../../services/user-settings.service';
 
 interface NavItem {
   label: string;
@@ -25,6 +26,11 @@ interface NavItem {
           <span class="brand-version">v{{ version }}</span>
         </div>
         <div class="header-actions">
+          <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)">
+            <option value="novice">Novice Mode</option>
+            <option value="intermediate">Intermediate Mode</option>
+            <option value="expert">Expert Mode</option>
+          </select>
           <button class="header-btn" (click)="logout()" title="Sign out">Sign out</button>
         </div>
       </header>
@@ -125,6 +131,28 @@ interface NavItem {
 
         &:hover {
           background: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .mode-select {
+        background: transparent;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8125rem;
+        outline: none;
+        cursor: pointer;
+        
+        option {
+          background: var(--sapShellColor, #354a5e);
+          color: #fff;
         }
       }
 
@@ -238,7 +266,8 @@ export class ShellComponent {
 
   constructor(
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    public userSettings: UserSettingsService
   ) {
     this.apiKeyDraft = auth.token() ?? '';
   }

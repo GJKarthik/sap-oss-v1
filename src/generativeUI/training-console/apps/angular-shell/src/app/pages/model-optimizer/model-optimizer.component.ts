@@ -5,6 +5,7 @@ import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { UserSettingsService } from '../../services/user-settings.service';
 
 interface ModelInfo {
   name: string;
@@ -83,33 +84,86 @@ interface CreateJobForm {
       <section class="section">
         <h2 class="section-title">Create Optimization Job</h2>
         <form class="job-form" (ngSubmit)="createJob()">
-          <div class="form-row">
-            <div class="field-group">
-              <label class="field-label">Model</label>
-              <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="HuggingFace model name" />
+          
+          <!-- Novice Mode -->
+          @if (userSettings.mode() === 'novice') {
+            <div class="form-row">
+              <div class="field-group">
+                <label class="field-label">Template</label>
+                <select class="form-input" (change)="applyTemplate($any($event.target).value)">
+                  <option value="">Select a template…</option>
+                  <option value="sql">Fine-tune Text-to-SQL (Recommended)</option>
+                  <option value="finance">Finance Schema Optimization</option>
+                  <option value="hr">HR Data Optimizer</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Model Name</label>
+                <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="Auto-populated by template" readonly />
+              </div>
             </div>
-            <div class="field-group">
-              <label class="field-label">Quant Format</label>
-              <select class="form-input" [(ngModel)]="form.quant_format" name="quant_format">
-                <option value="int8">INT8 SmoothQuant</option>
-                <option value="int4_awq">INT4 AWQ</option>
-                <option value="w4a16">W4A16</option>
-              </select>
+            
+            @if (form.model_name) {
+              <div class="cost-estimate">
+                <span class="icon">💰</span> Estimated cost: ~$2.50 | Time: ~45 mins | Auto-scaling Compute
+              </div>
+            }
+          }
+          
+          <!-- Intermediate Mode -->
+          @if (userSettings.mode() === 'intermediate') {
+            <div class="form-row">
+              <div class="field-group">
+                <label class="field-label">Model</label>
+                <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="HuggingFace model name" />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Quant Format</label>
+                <select class="form-input" [(ngModel)]="form.quant_format" name="quant_format">
+                  <option value="int8">INT8 SmoothQuant (Fast)</option>
+                  <option value="int4_awq">INT4 AWQ (Best compression)</option>
+                  <option value="w4a16">W4A16 (Balanced)</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Export Format</label>
+                <select class="form-input" [(ngModel)]="form.export_format" name="export_format">
+                  <option value="hf">HuggingFace</option>
+                  <option value="tensorrt_llm">TensorRT-LLM</option>
+                  <option value="vllm">vLLM</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Calib Samples <span class="badge badge--best">Best Practice: 512</span></label>
+                <input type="range" class="form-input" [(ngModel)]="form.calib_samples" name="calib_samples" min="32" max="2048" step="32" />
+                <div class="text-small text-muted">{{ form.calib_samples }} samples</div>
+              </div>
             </div>
-            <div class="field-group">
-              <label class="field-label">Export Format</label>
-              <select class="form-input" [(ngModel)]="form.export_format" name="export_format">
-                <option value="hf">HuggingFace</option>
-                <option value="tensorrt_llm">TensorRT-LLM</option>
-                <option value="vllm">vLLM</option>
-              </select>
+          }
+
+          <!-- Expert Mode -->
+          @if (userSettings.mode() === 'expert') {
+            <div class="form-row">
+              <div class="field-group">
+                <label class="field-label">Model Override</label>
+                <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="Custom URI / HF Repo" />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Compute Strategy</label>
+                <select class="form-input" [(ngModel)]="expertConfig.compute" name="compute">
+                  <option value="auto">Auto (Default)</option>
+                  <option value="deepspeed_1">DeepSpeed Stage 1</option>
+                  <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
+                </select>
+              </div>
+              <div class="field-group" style="grid-column: 1 / -1;">
+                <label class="field-label">Raw JSON Override (Arguments Map)</label>
+                <textarea class="form-input mono" rows="5" [(ngModel)]="expertConfig.rawJson" name="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
+              </div>
             </div>
-            <div class="field-group">
-              <label class="field-label">Calib Samples</label>
-              <input type="number" class="form-input" [(ngModel)]="form.calib_samples" name="calib_samples" min="32" max="2048" />
-            </div>
-          </div>
-          <div class="form-actions">
+          }
+
+          <div class="form-actions" style="margin-top: 1rem;">
             <button type="submit" class="btn-primary" [disabled]="!form.model_name || submitting()">
               {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
             </button>
@@ -322,6 +376,22 @@ interface CreateJobForm {
       transition: width 0.3s;
     }
 
+    .badge--best {
+      background: #e0f2f1;
+      color: #00695c;
+    }
+
+    .cost-estimate {
+      background: #e8f4fd;
+      color: #0d47a1;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.8125rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     .loading-container {
       padding: 2rem;
       text-align: center;
@@ -333,6 +403,7 @@ interface CreateJobForm {
   `],
 })
 export class ModelOptimizerComponent implements OnInit, OnDestroy {
+  public readonly userSettings = inject(UserSettingsService);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
@@ -349,6 +420,11 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     calib_seq_len: 2048,
     export_format: 'hf',
     enable_pruning: false,
+  };
+
+  expertConfig = {
+    compute: 'auto',
+    rawJson: '',
   };
 
   ngOnInit(): void {
@@ -395,25 +471,49 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   }
 
   selectModel(m: ModelInfo): void {
+    if (this.userSettings.mode() === 'novice') return; // Read-only in novice
     this.form.model_name = m.name;
     this.form.quant_format = m.recommended_quant;
+  }
+
+  applyTemplate(templateId: string): void {
+    if (templateId === 'sql' || templateId === 'finance') {
+      this.form.model_name = 'Qwen/Qwen3.5-0.6B';
+      this.form.quant_format = 'int4_awq';
+    } else if (templateId === 'hr') {
+      this.form.model_name = 'meta-llama/Llama-3-8B-Instruct';
+      this.form.quant_format = 'int8';
+    } else {
+      this.form.model_name = '';
+    }
   }
 
   createJob(): void {
     if (!this.form.model_name) return;
     this.submitting.set(true);
 
-    const payload = {
-      config: {
-        model_name: this.form.model_name,
-        quant_format: this.form.quant_format,
-        calib_samples: this.form.calib_samples,
-        calib_seq_len: this.form.calib_seq_len,
-        export_format: this.form.export_format,
-        enable_pruning: this.form.enable_pruning,
-        pruning_sparsity: 0.2,
-      },
+    let payloadConfig: any = {
+      model_name: this.form.model_name,
+      quant_format: this.form.quant_format,
+      calib_samples: this.form.calib_samples,
+      calib_seq_len: this.form.calib_seq_len,
+      export_format: this.form.export_format,
+      enable_pruning: this.form.enable_pruning,
+      pruning_sparsity: 0.2,
     };
+
+    if (this.userSettings.mode() === 'expert' && this.expertConfig.rawJson.trim()) {
+      try {
+        const parsedOverride = JSON.parse(this.expertConfig.rawJson);
+        payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: this.expertConfig.compute };
+      } catch (e) {
+        this.toast.error('Invalid JSON configuration', 'Syntax Error');
+        this.submitting.set(false);
+        return;
+      }
+    }
+
+    const payload = { config: payloadConfig };
 
     this.api.post<JobResponse>('/jobs', payload)
       .pipe(takeUntil(this.destroy$))
