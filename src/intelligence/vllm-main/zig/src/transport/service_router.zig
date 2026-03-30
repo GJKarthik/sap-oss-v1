@@ -428,6 +428,35 @@ fn stripScheme(url: []const u8) []const u8 {
     return url;
 }
 
+fn bindTestListener() !struct { listener: net.Server, port: u16 } {
+    var port: u16 = 39080;
+    while (port < 39180) : (port += 1) {
+        const address = try net.Address.parseIp4("127.0.0.1", port);
+        const listener = address.listen(.{
+            .reuse_address = true,
+        }) catch |err| switch (err) {
+            error.AddressInUse => continue,
+            else => return err,
+        };
+        return .{ .listener = listener, .port = port };
+    }
+    return error.NoAvailableTestPort;
+}
+
+const MockHttpServer = struct {
+    listener: net.Server,
+    response: []const u8,
+
+    fn run(self: *MockHttpServer) void {
+        const conn = self.listener.accept() catch return;
+        defer conn.stream.close();
+
+        var buf: [2048]u8 = undefined;
+        _ = conn.stream.read(&buf) catch return;
+        conn.stream.writeAll(self.response) catch return;
+    }
+};
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -492,4 +521,38 @@ test "strip scheme" {
     try std.testing.expectEqualStrings("localhost", stripScheme("http://localhost"));
     try std.testing.expectEqualStrings("example.com", stripScheme("https://example.com"));
     try std.testing.expectEqualStrings("raw-host", stripScheme("raw-host"));
+}
+
+test "proxyPost preserves upstream status and body" {
+    const raw_response =
+        "HTTP/1.1 503 Service Unavailable\r\n" ++
+        "Content-Type: application/json\r\n" ++
+        "Content-Length: 27\r\n\r\n" ++
+        "{\"error\":\"upstream-unready\"}";
+
+    const bound = try bindTestListener();
+    var server = MockHttpServer{
+        .listener = bound.listener,
+        .response = raw_response,
+    };
+    const thread = try std.Thread.spawn(.{}, MockHttpServer.run, .{&server});
+    defer {
+        server.listener.deinit();
+        thread.join();
+    }
+
+    var router = Router.init(std.testing.allocator, .{
+        .local_models_url = "127.0.0.1",
+        .local_models_port = bound.port,
+    });
+    const target = RouteResult{
+        .service = router.services.get(.local_models),
+        .proxy_path = "/v1/chat/completions",
+    };
+
+    var response = try router.proxyPost(target, "{\"model\":\"test\"}");
+    defer response.deinit();
+
+    try std.testing.expectEqual(@as(u16, 503), response.status);
+    try std.testing.expectEqualStrings("{\"error\":\"upstream-unready\"}", response.body);
 }

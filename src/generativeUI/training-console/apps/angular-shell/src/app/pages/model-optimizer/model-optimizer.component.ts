@@ -1,11 +1,14 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { AppStore } from '../../store/app.store';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 interface ModelInfo {
   name: string;
@@ -21,6 +24,12 @@ interface JobConfig {
   export_format: string;
 }
 
+interface JobHistory {
+  epoch: number;
+  train_loss: number;
+  val_loss: number;
+}
+
 interface JobResponse {
   id: string;
   name: string;
@@ -29,6 +38,7 @@ interface JobResponse {
   created_at: string;
   progress: number;
   error?: string;
+  history?: JobHistory[];
 }
 
 interface JobPayloadConfig {
@@ -113,6 +123,25 @@ interface JobPayloadConfig {
             }
           }
           
+          <!-- VRAM Integration (All Modes) -->
+          @if (estimatedVram() > 0 && gpuTotalNum() > 0) {
+            <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
+              <div class="vram-header">
+                <span class="vram-title">⚡ A-Priori VRAM Profiler</span>
+                <span class="vram-values">{{ estimatedVram().toFixed(1) }} GB required / {{ gpuTotalNum() }} GB available</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" 
+                     [style.width.%]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)" 
+                     [class.danger-fill]="isVramExceeded()">
+                </div>
+              </div>
+              @if (isVramExceeded()) {
+                <div class="text-small error-text mt-1">⚠ Critical: Configuration exceeds physical VRAM bounds. Job will OOM crash.</div>
+              }
+            </div>
+          }
+          
           <!-- Intermediate Mode -->
           @if (userSettings.mode() === 'intermediate') {
             <div class="form-row">
@@ -169,7 +198,7 @@ interface JobPayloadConfig {
           }
 
           <div class="form-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting()">
+            <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
               {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
             </button>
           </div>
@@ -202,10 +231,21 @@ interface JobPayloadConfig {
                     <td><code>{{ j.config.quant_format }}</code></td>
                     <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
                     <td>
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                        <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
+                        <span class="text-small text-muted">{{ calculateETA(j) }}</span>
+                      </div>
                       <div class="progress-bar">
                         <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
                       </div>
-                      <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
+                      @if (j.history && j.history.length > 0) {
+                        <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
+                          <svg viewBox="0 0 100 20" class="sparkline-svg" preserveAspectRatio="none">
+                            <polyline fill="none" class="train-line" [attr.points]="generateSparklinePath(j.history, 'train_loss')" />
+                            <polyline fill="none" class="val-line" [attr.points]="generateSparklinePath(j.history, 'val_loss')" />
+                          </svg>
+                        </div>
+                      }
                     </td>
                     <td class="text-small text-muted">{{ j.created_at | date:'short' }}</td>
                   </tr>
@@ -413,10 +453,43 @@ interface JobPayloadConfig {
     .loading-text {
       color: var(--sapContent_LabelColor, #6a6d70);
     }
+    
+    .vram-profiler {
+      background: var(--sapList_Background, #f5f5f5);
+      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+      grid-column: 1 / -1;
+    }
+    
+    .vram-danger {
+      border-color: var(--sapNegativeColor, #b00);
+      background: #ffebee;
+      color: #c62828;
+    }
+    
+    .vram-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+    
+    .danger-fill {
+      background: var(--sapNegativeColor, #b00) !important;
+    }
+    
+    .sparkline-container { width: 100%; height: 20px; background: rgba(0,0,0,0.02); border-radius: 2px; }
+    .sparkline-svg { width: 100%; height: 100%; overflow: visible; }
+    .train-line { stroke: var(--sapBrandColor, #0854a0); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 2 2; }
   `],
 })
 export class ModelOptimizerComponent implements OnInit, OnDestroy {
   public readonly userSettings = inject(UserSettingsService);
+  public readonly store = inject(AppStore);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
@@ -439,6 +512,76 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       rawJson: ['']
     })
   });
+
+  readonly formValue = toSignal(this.jobForm.valueChanges, { initialValue: this.jobForm.getRawValue() });
+
+  readonly estimatedVram = computed(() => {
+    const vals = this.formValue();
+    const modelName = vals.model_name;
+    const quant = vals.quant_format;
+    
+    if (!modelName) return 0;
+    
+    const m = this.models().find(x => x.name === modelName);
+    if (!m) return 0; // Fallback if custom URI
+    
+    let multiplier = 1.0;
+    if (quant === 'int8') multiplier = 0.5;
+    else if (quant === 'int4_awq') multiplier = 0.3;
+    else if (quant === 'w4a16') multiplier = 0.35;
+    
+    const base = m.size_gb;
+    return (base * multiplier) + 1.5; // +1.5GB overhead context
+  });
+
+  readonly gpuTotalNum = computed(() => {
+    const t = this.store.gpuMemoryTotal();
+    if (t === '—') return 0;
+    return parseFloat(t);
+  });
+
+  readonly isVramExceeded = computed(() => {
+    const required = this.estimatedVram();
+    const total = this.gpuTotalNum();
+    if (required === 0 || total === 0) return false;
+    return required > total * 0.95;
+  });
+
+  mathMin(a: number, b: number) { return Math.min(a, b); }
+
+  generateSparklinePath(history: any[], key: 'train_loss' | 'val_loss'): string {
+    if (!history || history.length < 2) return '';
+    const maxVal = Math.max(...history.map(h => Math.max(h.train_loss, h.val_loss)));
+    const minVal = 0;
+    const w = 100;
+    const h = 20;
+    
+    return history.map((pt, i) => {
+      const x = (i / (history.length - 1)) * w;
+      const y = h - ((pt[key] - minVal) / (maxVal - minVal) * h);
+      return `${x},${y}`;
+    }).join(' ');
+  }
+
+  calculateETA(j: JobResponse): string {
+    if (j.status === 'completed' || j.progress >= 1.0) return 'Done';
+    if (j.status === 'failed' || j.status === 'cancelled') return '';
+    if (j.progress < 0.05) return 'Calculating...';
+
+    const created = new Date(j.created_at).getTime();
+    const now = Date.now();
+    const elapsedMs = now - created;
+    if (elapsedMs < 0) return 'Calculating...';
+
+    const totalExpectedMs = elapsedMs / j.progress;
+    const remainingMs = totalExpectedMs - elapsedMs;
+
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    
+    return `ETA: ${mins}m ${secs}s`;
+  }
 
   ngOnInit(): void {
     this.loadData();

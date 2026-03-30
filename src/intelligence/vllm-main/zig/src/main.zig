@@ -1411,17 +1411,26 @@ fn buildOpenAiChatResponse(
     const id = try std.fmt.allocPrint(allocator, "chatcmpl-trt-{d}", .{request_id});
     defer allocator.free(id);
 
-    const response = openai.createChatResponse(
-        allocator,
-        id,
-        model,
-        content,
-        .{
+    const choices = [_]openai.ChatCompletionChoice{.{
+        .index = 0,
+        .message = .{
+            .role = "assistant",
+            .content = content,
+        },
+        .finish_reason = "stop",
+    }};
+    const response = openai.ChatCompletionResponse{
+        .id = id,
+        .object = "chat.completion",
+        .created = std.time.timestamp(),
+        .model = model,
+        .choices = &choices,
+        .usage = .{
             .prompt_tokens = prompt_tokens,
             .completion_tokens = completion_tokens,
             .total_tokens = prompt_tokens + completion_tokens,
         },
-    );
+    };
     var out: std.io.Writer.Allocating = .init(allocator);
     errdefer out.deinit();
     try std.json.Stringify.value(response, .{}, &out.writer);
@@ -1527,6 +1536,38 @@ test "addressMatchesBind matches loopback and wildcard" {
     try std.testing.expect(addressMatchesBind(loopback, "localhost"));
     try std.testing.expect(addressMatchesBind(loopback, "0.0.0.0"));
     try std.testing.expect(!addressMatchesBind(loopback, "192.168.1.10"));
+}
+
+test "buildOpenAiChatResponse returns OpenAI chat payload" {
+    const body = try buildOpenAiChatResponse(
+        std.testing.allocator,
+        "trt-qwen",
+        "hello from trt",
+        12,
+        5,
+        42,
+    );
+    defer std.testing.allocator.free(body);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, std.testing.allocator, body, .{});
+    defer parsed.deinit();
+
+    const root = parsed.value.object;
+    try std.testing.expectEqualStrings("chatcmpl-trt-42", root.get("id").?.string);
+    try std.testing.expectEqualStrings("chat.completion", root.get("object").?.string);
+    try std.testing.expectEqualStrings("trt-qwen", root.get("model").?.string);
+
+    const choices = root.get("choices").?.array.items;
+    try std.testing.expectEqual(@as(usize, 1), choices.len);
+
+    const message = choices[0].object.get("message").?.object;
+    try std.testing.expectEqualStrings("assistant", message.get("role").?.string);
+    try std.testing.expectEqualStrings("hello from trt", message.get("content").?.string);
+
+    const usage = root.get("usage").?.object;
+    try std.testing.expectEqual(@as(i64, 12), usage.get("prompt_tokens").?.integer);
+    try std.testing.expectEqual(@as(i64, 5), usage.get("completion_tokens").?.integer);
+    try std.testing.expectEqual(@as(i64, 17), usage.get("total_tokens").?.integer);
 }
 
 test "extractPromptFromBody - single user message" {

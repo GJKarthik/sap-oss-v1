@@ -48,6 +48,12 @@ export interface ModelInfo {
   t4_compatible: boolean;
 }
 
+export interface JobHistory {
+  epoch: number;
+  train_loss: number;
+  val_loss: number;
+}
+
 export interface JobResponse {
   id: string;
   name: string;
@@ -60,6 +66,7 @@ export interface JobResponse {
   created_at: string;
   progress: number;
   error?: string;
+  history?: JobHistory[];
 }
 
 export type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';

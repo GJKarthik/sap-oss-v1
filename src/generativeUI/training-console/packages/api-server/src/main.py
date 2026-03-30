@@ -128,8 +128,23 @@ async def websocket_endpoint(websocket: WebSocket):
     ACTIVE_WEBSOCKETS.inc()
     try:
         progress = 0.0
+        history = []
+        epoch_count = 0
+        train_loss = 2.5
+        val_loss = 2.6
+        
         while True:
             progress = min(1.0, progress + 0.05)
+            epoch_count += 1
+            train_loss = max(0.2, train_loss * 0.9)
+            val_loss = max(0.25, val_loss * 0.92 + 0.05 * (-1 if epoch_count % 2 == 0 else 1))
+            
+            history.append({
+                "epoch": epoch_count,
+                "train_loss": round(train_loss, 4),
+                "val_loss": round(val_loss, 4)
+            })
+
             gpu_data = {
                 "type": "gpu",
                 "data": {
@@ -152,7 +167,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         "status": "running" if progress < 1.0 else "completed",
                         "progress": progress,
                         "created_at": datetime.now().isoformat(),
-                        "config": {"model_name": "Qwen", "quant_format": "int4", "export_format": "hf"}
+                        "config": {"model_name": "Qwen", "quant_format": "int4", "export_format": "hf"},
+                        "history": history
                     }
                 ]
             }
@@ -161,6 +177,10 @@ async def websocket_endpoint(websocket: WebSocket):
             
             if progress >= 1.0:
                 progress = 0.0  # Reset for infinite loop demo
+                history = []
+                epoch_count = 0
+                train_loss = 2.5
+                val_loss = 2.6
                 
             await asyncio.sleep(2)
     except WebSocketDisconnect:
