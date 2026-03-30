@@ -5,9 +5,11 @@ import {
   withMethods,
   withComputed,
   patchState,
+  withHooks,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, switchMap, tap, catchError, of, shareReplay, timer, exhaustMap } from 'rxjs';
+import { pipe, tap, catchError, of, timer, exhaustMap, retry } from 'rxjs';
+import { webSocket } from 'rxjs/webSocket';
 import { ApiService } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
 
@@ -72,7 +74,12 @@ export interface CachedData<T> {
 // App State
 // ============================================================================
 
+export type WsState = 'offline' | 'connecting' | 'connected' | 'reconnecting' | 'error';
+
 interface AppState {
+  // WebSockets
+  wsState: WsState;
+
   // Health & GPU
   health: CachedData<HealthStatus>;
   gpu: CachedData<GpuStatus>;
@@ -94,6 +101,7 @@ const initialCachedData = <T>(): CachedData<T> => ({
 });
 
 const initialState: AppState = {
+  wsState: 'offline',
   health: initialCachedData(),
   gpu: initialCachedData(),
   graphStats: initialCachedData(),
@@ -426,6 +434,55 @@ export const AppStore = signalStore(
           case 'jobs': this.loadJobs(); break;
         }
       },
+
+      // ======================================================================
+      // WebSockets
+      // ======================================================================
+      connectWs(): void {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const wsUrl = `${protocol}//${host}/api/ws`;
+
+        patchState(store, { wsState: 'connecting' });
+
+        const subject = webSocket({
+          url: wsUrl,
+          openObserver: {
+            next: () => patchState(store, { wsState: 'connected' })
+          },
+          closeObserver: {
+            next: () => patchState(store, { wsState: 'offline' })
+          }
+        });
+
+        subject.pipe(
+          retry({
+            delay: (error, retryCount) => {
+              patchState(store, { wsState: 'reconnecting' });
+              console.warn(`WebSocket disconnected. Reconnect attempt ${retryCount}...`);
+              // Exponential backoff capped at 10 seconds
+              return timer(Math.min(1000 * Math.pow(2, retryCount), 10000));
+            }
+          })
+        ).subscribe({
+          next: (msg: any) => {
+            if (msg.type === 'gpu') {
+              updateCache('gpu', { data: msg.data, state: 'loaded', lastFetched: Date.now() });
+            } else if (msg.type === 'jobs') {
+              updateCache('jobs', { data: msg.data, state: 'loaded', lastFetched: Date.now() });
+            }
+          },
+          error: (err) => {
+            console.error('WS Fatal Error:', err);
+            patchState(store, { wsState: 'error' });
+          },
+        });
+      },
     };
+  }),
+  withHooks({
+    onInit(store) {
+      store.connectWs();
+    }
   })
 );

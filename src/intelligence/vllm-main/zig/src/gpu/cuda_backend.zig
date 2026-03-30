@@ -6,6 +6,7 @@
 
 const std = @import("std");
 const builtin = @import("builtin");
+const cuda_build_options = @import("cuda_build_options");
 
 // Pure Zig CUDA kernels (compiled to PTX via -target nvptx64-nvidia-cuda)
 const kernels = @import("cuda_kernels.zig");
@@ -676,6 +677,10 @@ pub const CudaBackend = struct {
     /// Load nvcc-compiled core kernels and override the Zig PTX versions in the registry.
     /// This ensures cross-GPU compatibility (sm_70 V100, sm_75 T4, sm_89 L40S, etc.)
     fn loadCoreKernels(self: *CudaBackend) void {
+        if (!cuda_build_options.has_core_kernels_ptx) {
+            log.warn("core_kernels.ptx missing at build time; using Zig PTX fallback", .{});
+            return;
+        }
         const ptx_data = @embedFile("core_kernels.ptx") ++ [_]u8{0};
         var module: cuda.CUmodule = undefined;
         if (cuda.cuModuleLoadData(&module, ptx_data.ptr) != .success) {
@@ -686,8 +691,8 @@ pub const CudaBackend = struct {
 
         // Override kernel registry entries with nvcc-compiled versions
         const kernel_names = [_][:0]const u8{
-            "sgemv", "rms_norm", "rms_norm_batch", "rope_q", "rope_k",
-            "embedding_lookup", "swiglu", "vector_add", "softmax", "dequantize_q4_0",
+            "sgemv",            "rms_norm", "rms_norm_batch", "rope_q",  "rope_k",
+            "embedding_lookup", "swiglu",   "vector_add",     "softmax", "dequantize_q4_0",
         };
         var loaded: u32 = 0;
         inline for (kernel_names) |name| {
@@ -701,6 +706,10 @@ pub const CudaBackend = struct {
     }
 
     fn loadDeltaNetKernels(self: *CudaBackend) void {
+        if (!cuda_build_options.has_deltanet_kernels_ptx) {
+            log.warn("deltanet_kernels.ptx missing at build time", .{});
+            return;
+        }
         const ptx_data = @embedFile("deltanet_kernels.ptx") ++ [_]u8{0};
         var module: cuda.CUmodule = undefined;
         if (cuda.cuModuleLoadData(&module, ptx_data.ptr) != .success) {
@@ -737,6 +746,10 @@ pub const CudaBackend = struct {
     }
 
     fn loadQJLKernels(self: *CudaBackend) void {
+        if (!cuda_build_options.has_qjl_kernels_ptx) {
+            log.warn("qjl_kernels.ptx missing at build time; KV cache compression disabled", .{});
+            return;
+        }
         const ptx_data = @embedFile("qjl_kernels.ptx") ++ [_]u8{0};
         var module: cuda.CUmodule = undefined;
         if (cuda.cuModuleLoadData(&module, ptx_data.ptr) != .success) {
@@ -786,13 +799,12 @@ pub const CudaBackend = struct {
         var m_v = m;
         var nkv_v = n_kv_heads;
         var params = [_]?*anyopaque{
-            @ptrCast(&sb_v), @ptrCast(&nm_v), @ptrCast(&k_v), @ptrCast(&p_v),
-            @ptrCast(&hd_v), @ptrCast(&m_v), @ptrCast(&nkv_v),
+            @ptrCast(&sb_v), @ptrCast(&nm_v), @ptrCast(&k_v),   @ptrCast(&p_v),
+            @ptrCast(&hd_v), @ptrCast(&m_v),  @ptrCast(&nkv_v),
         };
         const shared_bytes: u32 = 256 * @sizeOf(f32); // smem for norm reduction
         const stream_ptr: ?*anyopaque = self.stream;
-        const rc = cuda.cuLaunchKernel(func, n_kv_heads, 1, 1, 256, 1, 1,
-            shared_bytes, stream_ptr, &params, null);
+        const rc = cuda.cuLaunchKernel(func, n_kv_heads, 1, 1, 256, 1, 1, shared_bytes, stream_ptr, &params, null);
         if (rc != .success) {
             log.err("qjlQuantizeKey launch failed: rc={} grid=({},1,1) block=(256,1,1) smem={} hd={} m={} nkv={}", .{
                 @intFromEnum(rc), n_kv_heads, shared_bytes, head_dim, m, n_kv_heads,
@@ -836,17 +848,16 @@ pub const CudaBackend = struct {
         var m_v = m;
         var ms_v = max_seq;
         var params = [_]?*anyopaque{
-            @ptrCast(&out_v), @ptrCast(&q_v), @ptrCast(&ks_v), @ptrCast(&kn_v),
-            @ptrCast(&vc_v), @ptrCast(&p_v), @ptrCast(&nh_v), @ptrCast(&nkv_v),
-            @ptrCast(&hd_v), @ptrCast(&kvd_v), @ptrCast(&seq_v), @ptrCast(&sc_v),
-            @ptrCast(&m_v), @ptrCast(&ms_v),
+            @ptrCast(&out_v), @ptrCast(&q_v),   @ptrCast(&ks_v),  @ptrCast(&kn_v),
+            @ptrCast(&vc_v),  @ptrCast(&p_v),   @ptrCast(&nh_v),  @ptrCast(&nkv_v),
+            @ptrCast(&hd_v),  @ptrCast(&kvd_v), @ptrCast(&seq_v), @ptrCast(&sc_v),
+            @ptrCast(&m_v),   @ptrCast(&ms_v),
         };
         // Shared memory: q_signs[m_words * 4 bytes] + scores[cur_seq * 4] + scratch[256 * 4]
         const m_words = m / 32;
         const shared_bytes = (m_words + cur_seq + 256) * @sizeOf(f32);
         const stream_ptr: ?*anyopaque = self.stream;
-        const rc2 = cuda.cuLaunchKernel(func, n_heads, 1, 1, 256, 1, 1,
-            shared_bytes, stream_ptr, &params, null);
+        const rc2 = cuda.cuLaunchKernel(func, n_heads, 1, 1, 256, 1, 1, shared_bytes, stream_ptr, &params, null);
         if (rc2 != .success) {
             log.err("qjlDecodeAttention launch failed: rc={} grid=({},1,1) smem={} nh={} nkv={} hd={} seq={} m={}", .{
                 @intFromEnum(rc2), n_heads, shared_bytes, n_heads, n_kv_heads, head_dim, cur_seq, m,
@@ -878,7 +889,7 @@ pub const CudaBackend = struct {
         var ks = kernel_size;
         var params = [_]?*anyopaque{
             @ptrCast(&p_out), @ptrCast(&p_state), @ptrCast(&p_in),
-            @ptrCast(&p_w), @ptrCast(&ch), @ptrCast(&ks),
+            @ptrCast(&p_w),   @ptrCast(&ch),      @ptrCast(&ks),
         };
         const blocks = (channels + 255) / 256;
         const stream_ptr: ?*anyopaque = self.stream;
@@ -903,7 +914,8 @@ pub const CudaBackend = struct {
         var sc = scale;
         var params = [_]?*anyopaque{
             @ptrCast(&p_out), @ptrCast(&p_x),
-            @ptrCast(&hd), @ptrCast(&nh), @ptrCast(&sc),
+            @ptrCast(&hd),    @ptrCast(&nh),
+            @ptrCast(&sc),
         };
         const threads = @min(head_dim, @as(u32, 256));
         const smem: u32 = threads * @as(u32, 4); // sizeof(float) = 4
@@ -933,7 +945,8 @@ pub const CudaBackend = struct {
         var nh = num_heads;
         var params = [_]?*anyopaque{
             @ptrCast(&p_ao), @ptrCast(&p_bo), @ptrCast(&p_ap),
-            @ptrCast(&p_bp), @ptrCast(&p_al), @ptrCast(&p_dt), @ptrCast(&nh),
+            @ptrCast(&p_bp), @ptrCast(&p_al), @ptrCast(&p_dt),
+            @ptrCast(&nh),
         };
         const blocks = (num_heads + 31) / 32;
         const stream_ptr: ?*anyopaque = self.stream;
@@ -968,7 +981,7 @@ pub const CudaBackend = struct {
         var params = [_]?*anyopaque{
             @ptrCast(&p_y), @ptrCast(&p_s), @ptrCast(&p_q),
             @ptrCast(&p_k), @ptrCast(&p_v), @ptrCast(&p_a),
-            @ptrCast(&p_b), @ptrCast(&d), @ptrCast(&nkv),
+            @ptrCast(&p_b), @ptrCast(&d),   @ptrCast(&nkv),
         };
         const threads = @min(D, @as(u32, 128));
         const smem_dn: u32 = 2 * D * @as(u32, 4);
@@ -1000,7 +1013,8 @@ pub const CudaBackend = struct {
         var ns = norm_stride;
         var params = [_]?*anyopaque{
             @ptrCast(&p_out), @ptrCast(&p_y), @ptrCast(&p_g),
-            @ptrCast(&p_nw), @ptrCast(&hd), @ptrCast(&nh), @ptrCast(&ep), @ptrCast(&ns),
+            @ptrCast(&p_nw),  @ptrCast(&hd),  @ptrCast(&nh),
+            @ptrCast(&ep),    @ptrCast(&ns),
         };
         const threads = @min(head_dim, @as(u32, 256));
         const smem: u32 = threads * @as(u32, 4); // sizeof(float) = 4
@@ -1027,8 +1041,8 @@ pub const CudaBackend = struct {
         var fb = freq_base;
         var nh = n_heads;
         var params = [_]?*anyopaque{
-            @ptrCast(&p_q), @ptrCast(&p), @ptrCast(&hd),
-            @ptrCast(&rd), @ptrCast(&fb), @ptrCast(&nh),
+            @ptrCast(&p_q), @ptrCast(&p),  @ptrCast(&hd),
+            @ptrCast(&rd),  @ptrCast(&fb), @ptrCast(&nh),
         };
         const threads = @min(rope_dim / 2, @as(u32, 128));
         const smem_rope: u32 = rope_dim * @as(u32, 4);
@@ -1055,8 +1069,8 @@ pub const CudaBackend = struct {
         var fb = freq_base;
         var nh = n_kv_heads;
         var params = [_]?*anyopaque{
-            @ptrCast(&p_k), @ptrCast(&p), @ptrCast(&hd),
-            @ptrCast(&rd), @ptrCast(&fb), @ptrCast(&nh),
+            @ptrCast(&p_k), @ptrCast(&p),  @ptrCast(&hd),
+            @ptrCast(&rd),  @ptrCast(&fb), @ptrCast(&nh),
         };
         const threads = @min(rope_dim / 2, @as(u32, 128));
         const smem_rope_k: u32 = rope_dim * @as(u32, 4);
@@ -1245,8 +1259,12 @@ pub const CudaBackend = struct {
             null;
         if (cuda.cuLaunchKernel(
             func,
-            grid_x, grid_y, 1,
-            block_x, block_y, 1,
+            grid_x,
+            grid_y,
+            1,
+            block_x,
+            block_y,
+            1,
             shared_mem,
             stream_ptr,
             params,
@@ -1313,23 +1331,25 @@ pub const CudaBackend = struct {
                 if (use_gemv) {
                     // sgemv: y, A, x, M, K, alpha, beta
                     var params = [_]?*anyopaque{
-                        @ptrCast(&d_c), @ptrCast(&d_a), @ptrCast(&d_b),
-                        @ptrCast(&m_u32), @ptrCast(&k_u32),
-                        @ptrCast(&alpha_v), @ptrCast(&beta_v),
+                        @ptrCast(&d_c),    @ptrCast(&d_a),   @ptrCast(&d_b),
+                        @ptrCast(&m_u32),  @ptrCast(&k_u32), @ptrCast(&alpha_v),
+                        @ptrCast(&beta_v),
                     };
                     const grid_x = (m_u32 + 255) / 256;
                     if (self.launchKernel(func, grid_x, 1, 256, 1, 0, &params)) {
                         _ = cuda.cuMemcpyDtoH(@ptrCast(c_out.ptr), d_c, c_bytes);
                         return .{
-                            .success = true, .execution_time_ns = std.time.nanoTimestamp() - start,
-                            .elements_processed = m * n, .gpu_utilized = true,
+                            .success = true,
+                            .execution_time_ns = std.time.nanoTimestamp() - start,
+                            .elements_processed = m * n,
+                            .gpu_utilized = true,
                         };
                     }
                 } else {
                     // sgemm: C, A, B, M, N, K, alpha, beta
                     var params = [_]?*anyopaque{
-                        @ptrCast(&d_c), @ptrCast(&d_a), @ptrCast(&d_b),
-                        @ptrCast(&m_u32), @ptrCast(&n_u32), @ptrCast(&k_u32),
+                        @ptrCast(&d_c),     @ptrCast(&d_a),    @ptrCast(&d_b),
+                        @ptrCast(&m_u32),   @ptrCast(&n_u32),  @ptrCast(&k_u32),
                         @ptrCast(&alpha_v), @ptrCast(&beta_v),
                     };
                     const grid_x = (n_u32 + 15) / 16;
@@ -1337,8 +1357,10 @@ pub const CudaBackend = struct {
                     if (self.launchKernel(func, grid_x, grid_y, 16, 16, 0, &params)) {
                         _ = cuda.cuMemcpyDtoH(@ptrCast(c_out.ptr), d_c, c_bytes);
                         return .{
-                            .success = true, .execution_time_ns = std.time.nanoTimestamp() - start,
-                            .elements_processed = m * n, .gpu_utilized = true,
+                            .success = true,
+                            .execution_time_ns = std.time.nanoTimestamp() - start,
+                            .elements_processed = m * n,
+                            .gpu_utilized = true,
                         };
                     }
                 }
@@ -1421,9 +1443,9 @@ pub const CudaBackend = struct {
             var alpha_v = alpha;
             var beta_v = beta;
             var params = [_]?*anyopaque{
-                @ptrCast(&d_y), @ptrCast(&d_a), @ptrCast(&d_x),
-                @ptrCast(&m_u32), @ptrCast(&k_u32),
-                @ptrCast(&alpha_v), @ptrCast(&beta_v),
+                @ptrCast(&d_y),    @ptrCast(&d_a),   @ptrCast(&d_x),
+                @ptrCast(&m_u32),  @ptrCast(&k_u32), @ptrCast(&alpha_v),
+                @ptrCast(&beta_v),
             };
 
             const grid_x = (m_u32 + 255) / 256;
@@ -1512,7 +1534,7 @@ pub const CudaBackend = struct {
             var scale_v = scale;
 
             var params = [_]?*anyopaque{
-                @ptrCast(&d_out), @ptrCast(&d_q), @ptrCast(&d_k), @ptrCast(&d_v),
+                @ptrCast(&d_out),   @ptrCast(&d_q),    @ptrCast(&d_k),    @ptrCast(&d_v),
                 @ptrCast(&seq_u32), @ptrCast(&hd_u32), @ptrCast(&nh_u32), @ptrCast(&nkv_u32),
                 @ptrCast(&scale_v),
             };
@@ -1861,7 +1883,6 @@ pub const CudaBackend = struct {
     /// Batched Q4_0 GEMV: Y[bi*M..] = W_q4[M×K] @ X[bi*K..] for bi in 0..batch
     /// Processes `batch` vectors against the same weight matrix in ONE kernel launch.
     /// 2D grid: blockIdx.x = row groups, blockIdx.y = batch index.
-
     /// Q4_1 GEMV: y[M] = W_q4_1[M×K] @ x[K]
     /// Q4_1 block = 20 bytes: f16 delta + f16 min + 16 data bytes (32 nibbles)
     /// Dequant: w = nibble * delta + min
@@ -1938,7 +1959,7 @@ pub const CudaBackend = struct {
         var eps_v = eps;
         var batch_v = batch;
         var params = [_]?*anyopaque{
-            @ptrCast(&out_v), @ptrCast(&x_v), @ptrCast(&w_v),
+            @ptrCast(&out_v), @ptrCast(&x_v),   @ptrCast(&w_v),
             @ptrCast(&dim_v), @ptrCast(&eps_v), @ptrCast(&batch_v),
         };
         if (!self.launchKernel(func, 1, batch, 256, 1, 256 * 4, &params))
@@ -1986,7 +2007,7 @@ pub const CudaBackend = struct {
         var batch_v = batch;
         var params = [_]?*anyopaque{
             @ptrCast(&ids_v), @ptrCast(&wts_v), @ptrCast(&log_v),
-            @ptrCast(&ne_v), @ptrCast(&tk_v), @ptrCast(&batch_v),
+            @ptrCast(&ne_v),  @ptrCast(&tk_v),  @ptrCast(&batch_v),
         };
         // K blocks, 1 thread each (single-thread softmax per token)
         if (!self.launchKernel(func, batch, 1, 1, 1, 0, &params))
@@ -2019,8 +2040,8 @@ pub const CudaBackend = struct {
         var ne_v = n_experts;
         var params = [_]?*anyopaque{
             @ptrCast(&cnt_v), @ptrCast(&off_v), @ptrCast(&gi_v),
-            @ptrCast(&st_v), @ptrCast(&ski_v), @ptrCast(&ids_v),
-            @ptrCast(&k_v), @ptrCast(&tk_v), @ptrCast(&ne_v),
+            @ptrCast(&st_v),  @ptrCast(&ski_v), @ptrCast(&ids_v),
+            @ptrCast(&k_v),   @ptrCast(&tk_v),  @ptrCast(&ne_v),
         };
         // Single block, 256 threads
         if (!self.launchKernel(func, 1, 1, 256, 1, 0, &params))
@@ -2053,10 +2074,11 @@ pub const CudaBackend = struct {
         var k_v = K;
         var batch_v = batch;
         var params = [_]?*anyopaque{
-            @ptrCast(&yg_v), @ptrCast(&yu_v),
-            @ptrCast(&wg_v), @ptrCast(&wu_v),
-            @ptrCast(&x_v), @ptrCast(&idx_v),
-            @ptrCast(&m_v), @ptrCast(&k_v), @ptrCast(&batch_v),
+            @ptrCast(&yg_v),    @ptrCast(&yu_v),
+            @ptrCast(&wg_v),    @ptrCast(&wu_v),
+            @ptrCast(&x_v),     @ptrCast(&idx_v),
+            @ptrCast(&m_v),     @ptrCast(&k_v),
+            @ptrCast(&batch_v),
         };
         const grid_x = (M + 7) / 8;
         const smem: u32 = (K + (K >> 5)) * @as(u32, 4); // sizeof(float) = 4
@@ -2086,8 +2108,9 @@ pub const CudaBackend = struct {
         var k_v = K;
         var batch_v = batch;
         var params = [_]?*anyopaque{
-            @ptrCast(&y_v), @ptrCast(&w_v), @ptrCast(&x_v),
-            @ptrCast(&idx_v), @ptrCast(&m_v), @ptrCast(&k_v), @ptrCast(&batch_v),
+            @ptrCast(&y_v),     @ptrCast(&w_v), @ptrCast(&x_v),
+            @ptrCast(&idx_v),   @ptrCast(&m_v), @ptrCast(&k_v),
+            @ptrCast(&batch_v),
         };
         const grid_x = (M + 7) / 8;
         // Shared memory: K floats + padding for bank conflicts
@@ -2114,8 +2137,8 @@ pub const CudaBackend = struct {
         var nh_v = n_heads;
         var batch_v = batch;
         var params = [_]?*anyopaque{
-            @ptrCast(&q_v), @ptrCast(&pos_v), @ptrCast(&hd_v),
-            @ptrCast(&fb_v), @ptrCast(&nh_v), @ptrCast(&batch_v),
+            @ptrCast(&q_v),  @ptrCast(&pos_v), @ptrCast(&hd_v),
+            @ptrCast(&fb_v), @ptrCast(&nh_v),  @ptrCast(&batch_v),
         };
         const total_pairs = n_heads * (head_dim / 2);
         const grid_x = (total_pairs + 255) / 256;
@@ -2141,7 +2164,7 @@ pub const CudaBackend = struct {
         var nkv_v = n_kv_heads;
         var batch_v = batch;
         var params = [_]?*anyopaque{
-            @ptrCast(&k_v), @ptrCast(&pos_v), @ptrCast(&hd_v),
+            @ptrCast(&k_v),  @ptrCast(&pos_v), @ptrCast(&hd_v),
             @ptrCast(&fb_v), @ptrCast(&nkv_v), @ptrCast(&batch_v),
         };
         const total_pairs = n_kv_heads * (head_dim / 2);
@@ -2169,7 +2192,7 @@ pub const CudaBackend = struct {
         var batch_v = batch;
         var params = [_]?*anyopaque{
             @ptrCast(&cache_v), @ptrCast(&data_v), @ptrCast(&pos_v),
-            @ptrCast(&kvd_v), @ptrCast(&msl_v), @ptrCast(&batch_v),
+            @ptrCast(&kvd_v),   @ptrCast(&msl_v),  @ptrCast(&batch_v),
         };
         const grid_x = (kv_dim + 255) / 256;
         if (!self.launchKernel(func, grid_x, batch, 256, 1, 0, &params))
@@ -2224,9 +2247,9 @@ pub const CudaBackend = struct {
         var topk_v = topk;
         var cnt_v = cnt;
         var params = [_]?*anyopaque{
-            @ptrCast(&out_v), @ptrCast(&src_v), @ptrCast(&wts_v),
-            @ptrCast(&tok_v), @ptrCast(&ki_v),
-            @ptrCast(&dim_v), @ptrCast(&topk_v), @ptrCast(&cnt_v),
+            @ptrCast(&out_v),  @ptrCast(&src_v), @ptrCast(&wts_v),
+            @ptrCast(&tok_v),  @ptrCast(&ki_v),  @ptrCast(&dim_v),
+            @ptrCast(&topk_v), @ptrCast(&cnt_v),
         };
         const grid_x = (dim + 255) / 256;
         if (!self.launchKernel(func, grid_x, cnt, 256, 1, 0, &params))
@@ -2278,9 +2301,9 @@ pub const CudaBackend = struct {
         var a_v = d_A;
         var x_v = d_x;
         var params = [_]?*anyopaque{
-            @ptrCast(&y_v), @ptrCast(&a_v), @ptrCast(&x_v),
-            @ptrCast(&m_v), @ptrCast(&k_v),
-            @ptrCast(&alpha), @ptrCast(&beta),
+            @ptrCast(&y_v),  @ptrCast(&a_v), @ptrCast(&x_v),
+            @ptrCast(&m_v),  @ptrCast(&k_v), @ptrCast(&alpha),
+            @ptrCast(&beta),
         };
         const grid_x = (M + 255) / 256;
         if (!self.launchKernel(self.getKernel("sgemv").?, grid_x, 1, 256, 1, 0, &params))
@@ -2303,7 +2326,7 @@ pub const CudaBackend = struct {
         var dim_v = dim;
         var eps_v = eps;
         var params = [_]?*anyopaque{
-            @ptrCast(&out_v), @ptrCast(&x_v), @ptrCast(&w_v),
+            @ptrCast(&out_v), @ptrCast(&x_v),   @ptrCast(&w_v),
             @ptrCast(&dim_v), @ptrCast(&eps_v),
         };
         // One block per vector (single-vector norm for decode)
@@ -2365,7 +2388,7 @@ pub const CudaBackend = struct {
         var fb_v = freq_base;
         var nh_v = n_heads;
         var params = [_]?*anyopaque{
-            @ptrCast(&q_v), @ptrCast(&pos_v), @ptrCast(&hd_v),
+            @ptrCast(&q_v),  @ptrCast(&pos_v), @ptrCast(&hd_v),
             @ptrCast(&fb_v), @ptrCast(&nh_v),
         };
         const total_pairs = n_heads * (head_dim / 2);
@@ -2390,7 +2413,7 @@ pub const CudaBackend = struct {
         var fb_v = freq_base;
         var nkv_v = n_kv_heads;
         var params = [_]?*anyopaque{
-            @ptrCast(&k_v), @ptrCast(&pos_v), @ptrCast(&hd_v),
+            @ptrCast(&k_v),  @ptrCast(&pos_v), @ptrCast(&hd_v),
             @ptrCast(&fb_v), @ptrCast(&nkv_v),
         };
         const total_pairs = n_kv_heads * (head_dim / 2);
@@ -2475,9 +2498,9 @@ pub const CudaBackend = struct {
         var sc_v = scale;
         var params = [_]?*anyopaque{
             @ptrCast(&out_v), @ptrCast(&q_v),
-            @ptrCast(&kc_v), @ptrCast(&vc_v),
-            @ptrCast(&nh_v), @ptrCast(&nkv_v),
-            @ptrCast(&hd_v), @ptrCast(&kvd_v),
+            @ptrCast(&kc_v),  @ptrCast(&vc_v),
+            @ptrCast(&nh_v),  @ptrCast(&nkv_v),
+            @ptrCast(&hd_v),  @ptrCast(&kvd_v),
             @ptrCast(&seq_v), @ptrCast(&sc_v),
         };
         // Shared memory layout depends on which kernel we use:
@@ -2556,7 +2579,7 @@ pub const CudaBackend = struct {
         var k_v = K;
         var dequant_params = [_]?*anyopaque{
             @ptrCast(&scratch_v), @ptrCast(&w_v),
-            @ptrCast(&m_v), @ptrCast(&k_v),
+            @ptrCast(&m_v),       @ptrCast(&k_v),
         };
         const grid_x = (n_blocks_total + 255) / 256;
         if (!self.launchKernel(self.getKernel("dequantize_q4_0").?, grid_x, 1, 256, 1, 0, &dequant_params))
@@ -2575,10 +2598,13 @@ pub const CudaBackend = struct {
             @intCast(B), // n
             @intCast(K), // k
             &alpha,
-            @ptrFromInt(self.dequant_scratch), @intCast(M), // W_fp32[M×K] as col-major
-            @ptrFromInt(d_X), @intCast(K), // X[B×K] as col-major
+            @ptrFromInt(self.dequant_scratch),
+            @intCast(M), // W_fp32[M×K] as col-major
+            @ptrFromInt(d_X),
+            @intCast(K), // X[B×K] as col-major
             &beta,
-            @ptrFromInt(d_Y), @intCast(M), // Y[B×M] as col-major
+            @ptrFromInt(d_Y),
+            @intCast(M), // Y[B×M] as col-major
         );
         if (status != .SUCCESS) return error.CublasSgemmFailed;
     }
@@ -2622,10 +2648,13 @@ pub const CudaBackend = struct {
             @intCast(B),
             @intCast(K),
             @ptrCast(&alpha_bits),
-            @ptrFromInt(d_W), @intCast(K), // lda = K (stored [K×M] col-major)
-            @ptrFromInt(d_X), @intCast(K), // ldb = K (stored [K×B] col-major)
+            @ptrFromInt(d_W),
+            @intCast(K), // lda = K (stored [K×M] col-major)
+            @ptrFromInt(d_X),
+            @intCast(K), // ldb = K (stored [K×B] col-major)
             @ptrCast(&beta_bits),
-            @ptrFromInt(d_Y), @intCast(M), // ldc = M (output [M×B] col-major)
+            @ptrFromInt(d_Y),
+            @intCast(M), // ldc = M (output [M×B] col-major)
         );
         if (status != .SUCCESS) return error.CublasHgemmFailed;
     }
@@ -2724,7 +2753,7 @@ pub const CudaBackend = struct {
         var k_v = K;
         var dequant_params = [_]?*anyopaque{
             @ptrCast(&scratch_v), @ptrCast(&w_v),
-            @ptrCast(&m_v), @ptrCast(&k_v),
+            @ptrCast(&m_v),       @ptrCast(&k_v),
         };
         const grid_x = (n_blocks_total + 255) / 256;
         if (!self.launchKernel(self.getKernel("dequantize_q4_0").?, grid_x, 1, 256, 1, 0, &dequant_params))

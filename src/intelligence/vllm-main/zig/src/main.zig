@@ -11,7 +11,6 @@ const posix = std.posix;
 
 const config_mod = @import("config.zig");
 const openai = @import("transport/openai.zig");
-const llm_backend = @import("llm/backend.zig");
 const model_artifact_mod = @import("llm/model_artifact.zig");
 const mangle = @import("mangle/mangle.zig");
 const service_router = @import("transport/service_router.zig");
@@ -121,7 +120,6 @@ pub const AppState = struct {
     http_server: *http.Server,
     circuit_breaker: *cb.CircuitBreaker,
     gpu_context: ?*gpu_context.GpuContext,
-    backend: llm_backend.Client,
     mangle_engine: mangle.Engine,
     router: service_router.Router,
     scheduler: batch_scheduler.BatchScheduler,
@@ -309,7 +307,6 @@ pub const AppState = struct {
             .http_server = undefined, // Set below
             .circuit_breaker = try cb.CircuitBreaker.init(allocator, "llm-backend", .{}),
             .gpu_context = state.gpu_context,
-            .backend = try llm_backend.Client.init(allocator, server_config.backend_url),
             .mangle_engine = mangle_engine,
             .router = service_router.Router.init(allocator, svc_cfg),
             .scheduler = batch_scheduler.BatchScheduler.init(allocator, .{}, kv_cache),
@@ -320,8 +317,8 @@ pub const AppState = struct {
             .engram_cache_path = engram_cache_path,
             // Bug 10 fix: rate limits read from config/env, not hardcoded
             .rate_limiter = rate_limiter_mod.RateLimiter.init(
-                server_config.rate_limit_rps,
                 server_config.rate_limit_burst,
+                server_config.rate_limit_rps,
             ),
             .tls_config = tls_config,
             // Bug 5 fix: start at 1 (not nanoTimestamp) — deterministic, no wrap surprise
@@ -358,7 +355,6 @@ pub const AppState = struct {
     pub fn deinit(self: *AppState) void {
         self.http_server.deinit();
         self.circuit_breaker.deinit();
-        self.backend.deinit();
         self.mangle_engine.deinit();
         self.scheduler.deinit();
         if (self.toon_engine) |*engine| {
@@ -395,8 +391,12 @@ pub const AppState = struct {
     }
 
     pub fn run(self: *AppState) !void {
+        const local_models_service = self.router.services.get(.local_models);
         std.log.info("OpenAI Gateway starting on {s}:{d}", .{ self.cfg.host, self.cfg.port });
-        std.log.info("Default backend URL: {s}", .{self.cfg.backend_url});
+        std.log.info("Local models backend: {s}:{d}", .{
+            local_models_service.base_url,
+            local_models_service.port,
+        });
 
         if (self.cfg.toon_enabled) {
             std.log.info("TOON format enabled — 40-60% token savings on LLM calls", .{});
@@ -430,8 +430,14 @@ pub const AppState = struct {
             });
         }
 
-        std.log.info("Rate limiter: 1000 req/s burst 1000", .{});
-        std.log.info("Prometheus metrics available at /metrics", .{});
+        std.log.info("Rate limiter: {d} req/s burst {d}", .{
+            self.cfg.rate_limit_rps,
+            self.cfg.rate_limit_burst,
+        });
+        std.log.info("Prometheus metrics available when requested via {s}:{d}/metrics", .{
+            self.cfg.metrics_bind,
+            self.cfg.port,
+        });
 
         try self.http_server.start();
 
@@ -462,6 +468,13 @@ fn handleRequest(state: *AppState, req: *http.Request, res: *http.Response) void
 
     // Track active connections
     m.connectionOpened();
+
+    if (mem.eql(u8, path, "/metrics") and !metricsRequestAllowed(res.raw_stream, state.cfg.metrics_bind)) {
+        res.status = 404;
+        res.body = "{\"error\":\"Not found\"}";
+        m.connectionClosed();
+        return;
+    }
 
     // Rate limiting (skip for health/metrics endpoints)
     if (!mem.eql(u8, path, "/health") and !mem.eql(u8, path, "/healthz") and
@@ -604,6 +617,7 @@ fn tokenizeRequestForTrt(
 }
 
 fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response, is_toon: bool) void {
+    const stream_requested = parseJsonBoolField(state.allocator, body, "stream") and state.cfg.streaming_enabled;
     if (!state.circuit_breaker.allowRequest()) {
         res.status = 503;
         res.body = "{\"error\":\"Service Unavailable (Circuit Open)\"}";
@@ -772,11 +786,54 @@ fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response
                 return;
             }
 
-            const result_body = std.fmt.allocPrint(
+            const generated_count: usize = @intCast(num_generated);
+            const generated_tokens_u32 = state.allocator.alloc(u32, generated_count) catch {
+                state.circuit_breaker.recordFailure();
+                res.status = 500;
+                res.body = "{\"error\":\"Inference decode allocation failed\"}";
+                return;
+            };
+            defer state.allocator.free(generated_tokens_u32);
+            for (generated_tokens_u32, 0..) |*slot, i| {
+                slot.* = if (output_tokens[i] < 0) 0 else @intCast(output_tokens[i]);
+            }
+
+            const generated_text = blk: {
+                if (state.engram_tokenizer) |tok| {
+                    break :blk tok.decode(generated_tokens_u32) catch |err| {
+                        std.log.warn("TRT decode failed ({}) — returning empty content", .{err});
+                        break :blk state.allocator.dupe(u8, "") catch {
+                            state.circuit_breaker.recordFailure();
+                            res.status = 500;
+                            res.body = "{\"error\":\"Inference decode failed\"}";
+                            return;
+                        };
+                    };
+                }
+                std.log.warn("TRT tokenizer unavailable — returning empty content", .{});
+                break :blk state.allocator.dupe(u8, "") catch {
+                    state.circuit_breaker.recordFailure();
+                    res.status = 500;
+                    res.body = "{\"error\":\"Inference decode failed\"}";
+                    return;
+                };
+            };
+            defer state.allocator.free(generated_text);
+
+            const model_name = service_router.Router.extractModel(body) orelse "tensorrt-awq";
+            const result_body = buildOpenAiChatResponse(
                 state.allocator,
-                "{{\"generated_tokens\": {d}, \"engine\": \"TensorRT/AWQ via Mojo\", \"request_id\": {d}}}",
-                .{ num_generated, req_id },
-            ) catch return;
+                model_name,
+                generated_text,
+                @intCast(prompt_tokens_owned.len),
+                @intCast(generated_count),
+                req_id,
+            ) catch {
+                state.circuit_breaker.recordFailure();
+                res.status = 500;
+                res.body = "{\"error\":\"Failed to build OpenAI response\"}";
+                return;
+            };
             state.circuit_breaker.recordSuccess();
             res.body = result_body;
             res.body_allocated = true;
@@ -806,6 +863,21 @@ fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response
     }
 
     // Proxy mode
+    if (stream_requested) {
+        if (res.raw_stream) |stream| {
+            streamChatProxy(state, body, stream) catch |err| {
+                state.circuit_breaker.recordFailure();
+                std.log.err("Streaming proxy failed: {}", .{err});
+                res.status = 502;
+                res.body = "{\"error\":\"Bad Gateway\"}";
+                return;
+            };
+            state.circuit_breaker.recordSuccess();
+            res.status = 0;
+            return;
+        }
+    }
+
     const result = handleChatProxy(state, body) catch |err| {
         state.circuit_breaker.recordFailure();
         std.log.err("Proxy failed: {}", .{err});
@@ -813,31 +885,14 @@ fn handleChatCompletions(state: *AppState, body: []const u8, res: *http.Response
         res.body = "{\"error\":\"Bad Gateway\"}";
         return;
     };
-    state.circuit_breaker.recordSuccess();
+    if (result.status >= 500) {
+        state.circuit_breaker.recordFailure();
+    } else {
+        state.circuit_breaker.recordSuccess();
+    }
+    res.status = result.status;
     res.body = result.body;
     res.body_allocated = true;
-
-    if (result.streaming) {
-        // SSE streaming: write chunks directly to TCP stream
-        if (res.raw_stream) |stream| {
-            var sw = http.StreamWriter{ .stream = stream };
-            sw.sendHeaders(null) catch {
-                res.status = 500;
-                res.body = "{\"error\":\"Streaming init failed\"}";
-                return;
-            };
-            // Write the complete response as a single SSE event
-            // (real streaming would iterate over generated tokens)
-            sw.writeEvent(result.body) catch {
-                return; // Connection likely closed
-            };
-            sw.finish() catch {};
-            // Mark response as already sent
-            res.status = 0; // Signal to server: don't serialize
-            return;
-        }
-        res.setHeader("Content-Type", "text/event-stream");
-    }
 }
 
 fn handleCompletions(state: *AppState, body: []const u8, res: *http.Response) void {
@@ -853,7 +908,8 @@ fn handleCompletions(state: *AppState, body: []const u8, res: *http.Response) vo
         res.status = 502;
         return;
     };
-    res.body = response;
+    res.status = response.status;
+    res.body = response.body;
     res.body_allocated = true;
 }
 
@@ -869,7 +925,8 @@ fn handleEmbeddings(state: *AppState, body: []const u8, res: *http.Response) voi
         res.status = 502;
         return;
     };
-    res.body = response;
+    res.status = response.status;
+    res.body = response.body;
     res.body_allocated = true;
 }
 
@@ -891,12 +948,21 @@ fn handleHealth(state: *AppState, res: *http.Response) void {
 }
 
 fn handleReady(state: *AppState, res: *http.Response) void {
-    const status = state.backend.health() catch {
+    const target = service_router.RouteResult{
+        .service = state.router.services.get(.local_models),
+        .proxy_path = "/health",
+    };
+    var response = state.router.proxyGet(target) catch {
         res.status = 503;
         res.body = "{\"status\":\"not_ready\"}";
         return;
     };
-    state.allocator.free(status);
+    defer response.deinit();
+    if (!response.isSuccess()) {
+        res.status = 503;
+        res.body = "{\"status\":\"not_ready\"}";
+        return;
+    }
     res.body = "{\"status\":\"ready\"}";
 }
 
@@ -1114,9 +1180,16 @@ fn handleModerations(state: *AppState, body: []const u8, res: *http.Response) vo
 // Business Logic (adapted from original code)
 // ========================================================================
 
-const ChatResult = struct {
-    body: []const u8,
-    streaming: bool,
+const PreparedChatProxy = struct {
+    enhanced: []const u8,
+    target: service_router.RouteResult,
+    owned_enhanced: bool,
+
+    fn deinit(self: PreparedChatProxy, allocator: Allocator) void {
+        if (self.owned_enhanced) {
+            allocator.free(self.enhanced);
+        }
+    }
 };
 
 const EngramRoutingSignal = struct {
@@ -1126,7 +1199,21 @@ const EngramRoutingSignal = struct {
     early_exit_hint: bool = false,
 };
 
-fn handleChatProxy(state: *AppState, body: []const u8) !ChatResult {
+fn handleChatProxy(state: *AppState, body: []const u8) !service_router.ProxyResponse {
+    const prepared = try prepareChatProxy(state, body);
+    defer prepared.deinit(state.allocator);
+
+    return state.router.proxyPost(prepared.target, prepared.enhanced);
+}
+
+fn streamChatProxy(state: *AppState, body: []const u8, downstream: net.Stream) !void {
+    const prepared = try prepareChatProxy(state, body);
+    defer prepared.deinit(state.allocator);
+
+    try state.router.proxyPostStream(prepared.target, prepared.enhanced, downstream);
+}
+
+fn prepareChatProxy(state: *AppState, body: []const u8) !PreparedChatProxy {
     // Bug 3 fix: Mangle enhancePrompt + route are pure in-memory — short lock.
     // proxyPost does HTTP I/O — must NOT be under the global mutex.
     const enhanced = blk: {
@@ -1134,7 +1221,6 @@ fn handleChatProxy(state: *AppState, body: []const u8) !ChatResult {
         defer state.mutex.unlock();
         break :blk try state.mangle_engine.enhancePrompt(body);
     };
-    defer if (enhanced.ptr != body.ptr) state.allocator.free(enhanced);
 
     const target = blk: {
         state.mutex.lock();
@@ -1142,13 +1228,10 @@ fn handleChatProxy(state: *AppState, body: []const u8) !ChatResult {
         break :blk state.router.route(enhanced, .chat);
     };
 
-    // Network I/O without the global lock — concurrent requests can proceed
-    const response = try state.router.proxyPost(target, enhanced);
-    const is_streaming = parseJsonBoolField(state.allocator, body, "stream");
-
-    return ChatResult{
-        .body = response,
-        .streaming = is_streaming,
+    return PreparedChatProxy{
+        .enhanced = enhanced,
+        .target = target,
+        .owned_enhanced = enhanced.ptr != body.ptr,
     };
 }
 
@@ -1317,6 +1400,63 @@ fn parseJsonU32Field(allocator: Allocator, body: []const u8, field_name: []const
     };
 }
 
+fn buildOpenAiChatResponse(
+    allocator: Allocator,
+    model: []const u8,
+    content: []const u8,
+    prompt_tokens: u32,
+    completion_tokens: u32,
+    request_id: i32,
+) ![]u8 {
+    const id = try std.fmt.allocPrint(allocator, "chatcmpl-trt-{d}", .{request_id});
+    defer allocator.free(id);
+
+    const response = openai.createChatResponse(
+        allocator,
+        id,
+        model,
+        content,
+        .{
+            .prompt_tokens = prompt_tokens,
+            .completion_tokens = completion_tokens,
+            .total_tokens = prompt_tokens + completion_tokens,
+        },
+    );
+    var out: std.io.Writer.Allocating = .init(allocator);
+    errdefer out.deinit();
+    try std.json.Stringify.value(response, .{}, &out.writer);
+    return out.toOwnedSlice();
+}
+
+fn metricsRequestAllowed(stream_opt: ?net.Stream, bind_host: []const u8) bool {
+    const stream = stream_opt orelse return false;
+
+    var local_address: net.Address = undefined;
+    var addr_len: posix.socklen_t = @sizeOf(net.Address);
+    posix.getsockname(stream.handle, &local_address.any, &addr_len) catch return false;
+
+    return addressMatchesBind(local_address, bind_host);
+}
+
+fn addressMatchesBind(local_address: net.Address, bind_host: []const u8) bool {
+    if (mem.eql(u8, bind_host, "0.0.0.0")) return true;
+    if (mem.eql(u8, bind_host, "localhost")) {
+        return addressMatchesBind(local_address, "127.0.0.1") or addressMatchesBind(local_address, "::1");
+    }
+
+    return switch (local_address.any.family) {
+        posix.AF.INET => blk: {
+            const expected = net.Address.parseIp4(bind_host, local_address.getPort()) catch break :blk false;
+            break :blk net.Address.eql(expected, local_address);
+        },
+        posix.AF.INET6 => blk: {
+            const expected = net.Address.parseIp6(bind_host, local_address.getPort()) catch break :blk false;
+            break :blk net.Address.eql(expected, local_address);
+        },
+        else => false,
+    };
+}
+
 // ============================================================================
 // Main Entry Point
 // ============================================================================
@@ -1370,7 +1510,7 @@ test {
 test "server config defaults" {
     const cfg = ServerConfig{};
     try std.testing.expectEqual(@as(u16, 8080), cfg.port);
-    try std.testing.expectEqualStrings("http://localhost:3000", cfg.backend_url);
+    try std.testing.expectEqualStrings("127.0.0.1", cfg.metrics_bind);
 }
 
 test "server config host default" {
@@ -1379,6 +1519,14 @@ test "server config host default" {
     try std.testing.expectEqual(@as(u32, 1024), cfg.max_connections);
     try std.testing.expect(cfg.streaming_enabled);
     try std.testing.expectEqual(@as(?[]const u8, null), cfg.api_key);
+}
+
+test "addressMatchesBind matches loopback and wildcard" {
+    const loopback = try net.Address.parseIp4("127.0.0.1", 8080);
+    try std.testing.expect(addressMatchesBind(loopback, "127.0.0.1"));
+    try std.testing.expect(addressMatchesBind(loopback, "localhost"));
+    try std.testing.expect(addressMatchesBind(loopback, "0.0.0.0"));
+    try std.testing.expect(!addressMatchesBind(loopback, "192.168.1.10"));
 }
 
 test "extractPromptFromBody - single user message" {

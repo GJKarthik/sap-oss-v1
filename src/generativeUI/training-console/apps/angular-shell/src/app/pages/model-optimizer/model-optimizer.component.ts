@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
@@ -31,15 +31,6 @@ interface JobResponse {
   error?: string;
 }
 
-interface CreateJobForm {
-  model_name: string;
-  quant_format: string;
-  calib_samples: number;
-  calib_seq_len: number;
-  export_format: string;
-  enable_pruning: boolean;
-}
-
 interface JobPayloadConfig {
   model_name: string;
   quant_format: string;
@@ -55,7 +46,7 @@ interface JobPayloadConfig {
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -72,7 +63,7 @@ interface JobPayloadConfig {
           @for (m of models(); track m.name) {
             <div
               class="model-card"
-              [class.model-card--selected]="form.model_name === m.name"
+              [class.model-card--selected]="jobForm.value.model_name === m.name"
               (click)="selectModel(m)"
             >
               <div class="model-name">{{ m.name }}</div>
@@ -95,7 +86,7 @@ interface JobPayloadConfig {
       <!-- Create Job Form -->
       <section class="section">
         <h2 class="section-title">Create Optimization Job</h2>
-        <form class="job-form" (ngSubmit)="createJob()">
+        <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()">
           
           <!-- Novice Mode -->
           @if (userSettings.mode() === 'novice') {
@@ -111,11 +102,11 @@ interface JobPayloadConfig {
               </div>
               <div class="field-group">
                 <label class="field-label">Model Name</label>
-                <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="Auto-populated by template" readonly />
+                <input class="form-input" formControlName="model_name" placeholder="Auto-populated by template" readonly />
               </div>
             </div>
             
-            @if (form.model_name) {
+            @if (jobForm.value.model_name) {
               <div class="cost-estimate">
                 <span class="icon">💰</span> Estimated cost: ~$2.50 | Time: ~45 mins | Auto-scaling Compute
               </div>
@@ -127,11 +118,11 @@ interface JobPayloadConfig {
             <div class="form-row">
               <div class="field-group">
                 <label class="field-label">Model</label>
-                <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="HuggingFace model name" />
+                <input class="form-input" formControlName="model_name" placeholder="HuggingFace model name" />
               </div>
               <div class="field-group">
                 <label class="field-label">Quant Format</label>
-                <select class="form-input" [(ngModel)]="form.quant_format" name="quant_format">
+                <select class="form-input" formControlName="quant_format">
                   <option value="int8">INT8 SmoothQuant (Fast)</option>
                   <option value="int4_awq">INT4 AWQ (Best compression)</option>
                   <option value="w4a16">W4A16 (Balanced)</option>
@@ -139,7 +130,7 @@ interface JobPayloadConfig {
               </div>
               <div class="field-group">
                 <label class="field-label">Export Format</label>
-                <select class="form-input" [(ngModel)]="form.export_format" name="export_format">
+                <select class="form-input" formControlName="export_format">
                   <option value="hf">HuggingFace</option>
                   <option value="tensorrt_llm">TensorRT-LLM</option>
                   <option value="vllm">vLLM</option>
@@ -147,8 +138,8 @@ interface JobPayloadConfig {
               </div>
               <div class="field-group">
                 <label class="field-label">Calib Samples <span class="badge badge--best">Best Practice: 512</span></label>
-                <input type="range" class="form-input" [(ngModel)]="form.calib_samples" name="calib_samples" min="32" max="2048" step="32" />
-                <div class="text-small text-muted">{{ form.calib_samples }} samples</div>
+                <input type="range" class="form-input" formControlName="calib_samples" min="32" max="2048" step="32" />
+                <div class="text-small text-muted">{{ jobForm.value.calib_samples }} samples</div>
               </div>
             </div>
           }
@@ -158,25 +149,27 @@ interface JobPayloadConfig {
             <div class="form-row">
               <div class="field-group">
                 <label class="field-label">Model Override</label>
-                <input class="form-input" [(ngModel)]="form.model_name" name="model_name" placeholder="Custom URI / HF Repo" />
+                <input class="form-input" formControlName="model_name" placeholder="Custom URI / HF Repo" />
               </div>
-              <div class="field-group">
-                <label class="field-label">Compute Strategy</label>
-                <select class="form-input" [(ngModel)]="expertConfig.compute" name="compute">
-                  <option value="auto">Auto (Default)</option>
-                  <option value="deepspeed_1">DeepSpeed Stage 1</option>
-                  <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
-                </select>
-              </div>
-              <div class="field-group full-width">
-                <label class="field-label">Raw JSON Override (Arguments Map)</label>
-                <textarea class="form-input mono" rows="5" [(ngModel)]="expertConfig.rawJson" name="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
-              </div>
+              <ng-container formGroupName="expertConfig">
+                <div class="field-group">
+                  <label class="field-label">Compute Strategy</label>
+                  <select class="form-input" formControlName="compute">
+                    <option value="auto">Auto (Default)</option>
+                    <option value="deepspeed_1">DeepSpeed Stage 1</option>
+                    <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
+                  </select>
+                </div>
+                <div class="field-group full-width">
+                  <label class="field-label">Raw JSON Override (Arguments Map)</label>
+                  <textarea class="form-input mono" rows="5" formControlName="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
+                </div>
+              </ng-container>
             </div>
           }
 
           <div class="form-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-primary" [disabled]="!form.model_name || submitting()">
+            <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting()">
               {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
             </button>
           </div>
@@ -426,6 +419,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   public readonly userSettings = inject(UserSettingsService);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
 
   readonly models = signal<ModelInfo[]>([]);
@@ -433,19 +427,18 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
-  form: CreateJobForm = {
-    model_name: '',
-    quant_format: 'int8',
-    calib_samples: 512,
-    calib_seq_len: 2048,
-    export_format: 'hf',
-    enable_pruning: false,
-  };
-
-  expertConfig = {
-    compute: 'auto',
-    rawJson: '',
-  };
+  readonly jobForm = this.fb.nonNullable.group({
+    model_name: ['', Validators.required],
+    quant_format: ['int8', Validators.required],
+    calib_samples: [512, [Validators.required, Validators.min(32)]],
+    calib_seq_len: [2048, Validators.required],
+    export_format: ['hf', Validators.required],
+    enable_pruning: [false],
+    expertConfig: this.fb.nonNullable.group({
+      compute: ['auto'],
+      rawJson: ['']
+    })
+  });
 
   ngOnInit(): void {
     this.loadData();
@@ -495,40 +488,42 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       this.toast.info('Switch to Intermediate mode to select a model manually.');
       return;
     }
-    this.form.model_name = m.name;
-    this.form.quant_format = m.recommended_quant;
+    this.jobForm.patchValue({
+      model_name: m.name,
+      quant_format: m.recommended_quant
+    });
   }
 
   applyTemplate(templateId: string): void {
     if (templateId === 'sql' || templateId === 'finance') {
-      this.form.model_name = 'Qwen/Qwen3.5-0.6B';
-      this.form.quant_format = 'int4_awq';
+      this.jobForm.patchValue({ model_name: 'Qwen/Qwen3.5-0.6B', quant_format: 'int4_awq' });
     } else if (templateId === 'hr') {
-      this.form.model_name = 'meta-llama/Llama-3-8B-Instruct';
-      this.form.quant_format = 'int8';
+      this.jobForm.patchValue({ model_name: 'meta-llama/Llama-3-8B-Instruct', quant_format: 'int8' });
     } else {
-      this.form.model_name = '';
+      this.jobForm.patchValue({ model_name: '' });
     }
   }
 
   createJob(): void {
-    if (!this.form.model_name) return;
+    if (this.jobForm.invalid) return;
     this.submitting.set(true);
 
+    const formVal = this.jobForm.getRawValue();
+
     let payloadConfig: JobPayloadConfig = {
-      model_name: this.form.model_name,
-      quant_format: this.form.quant_format,
-      calib_samples: this.form.calib_samples,
-      calib_seq_len: this.form.calib_seq_len,
-      export_format: this.form.export_format,
-      enable_pruning: this.form.enable_pruning,
-      pruning_sparsity: 0.2,
+      model_name: formVal.model_name,
+      quant_format: formVal.quant_format,
+      calib_samples: formVal.calib_samples,
+      calib_seq_len: formVal.calib_seq_len,
+      export_format: formVal.export_format,
+      enable_pruning: formVal.enable_pruning,
+      pruning_sparsity: 0.2, // Fixed server-side default mapped natively
     };
 
-    if (this.userSettings.mode() === 'expert' && this.expertConfig.rawJson.trim()) {
+    if (this.userSettings.mode() === 'expert' && formVal.expertConfig.rawJson.trim()) {
       try {
-        const parsedOverride = JSON.parse(this.expertConfig.rawJson) as Record<string, unknown>;
-        payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: this.expertConfig.compute };
+        const parsedOverride = JSON.parse(formVal.expertConfig.rawJson) as Record<string, unknown>;
+        payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: formVal.expertConfig.compute };
       } catch (e) {
         this.toast.error('Invalid JSON configuration', 'Syntax Error');
         this.submitting.set(false);
@@ -538,15 +533,32 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
     const payload = { config: payloadConfig };
 
+    const fakeId = 'job-optimistic-' + Date.now();
+    const optimisticJob: JobResponse = {
+      id: fakeId,
+      name: `Optimizing ${formVal.model_name}`,
+      status: 'pending',
+      progress: 0,
+      created_at: new Date().toISOString(),
+      config: payloadConfig as JobConfig,
+    };
+    
+    // Optimistic UI update
+    this.jobs.update((jobs) => [optimisticJob, ...jobs]);
+
     this.api.post<JobResponse>('/jobs', payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (j: JobResponse) => {
-          this.jobs.update((currentJobs: JobResponse[]) => [j, ...currentJobs]);
+          // Replace optimistic mock with actual job
+          this.jobs.update((jobs) => jobs.map(existing => existing.id === fakeId ? j : existing));
           this.toast.success(`Job ${j.id.slice(0, 8)} submitted successfully`, 'Job Created');
           this.submitting.set(false);
+          this.jobForm.patchValue({ model_name: '' }); // Reset main field post-success
         },
         error: (e: HttpErrorResponse) => {
+          // Rollback on failure
+          this.jobs.update((jobs) => jobs.filter(existing => existing.id !== fakeId));
           const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
           this.toast.error(`Failed to create job: ${detail}`, 'Job Error');
           console.error('Job creation failed:', e);

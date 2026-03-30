@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { AppStore } from '../../store/app.store';
 
 interface NavItem {
   label: string;
@@ -23,6 +24,14 @@ interface NavItem {
           <span class="brand-icon">⚙</span>
           <span class="brand-name">Training Console</span>
           <span class="brand-version">v{{ version }}</span>
+          
+          @if (store.wsState() === 'connected') {
+             <span class="ws-badge connected">Live</span>
+          } @else if (store.wsState() === 'reconnecting' || store.wsState() === 'connecting') {
+             <span class="ws-badge warning">Reconnecting...</span>
+          } @else {
+             <span class="ws-badge error">Offline</span>
+          }
         </div>
         <div class="header-actions">
           <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)">
@@ -117,6 +126,19 @@ interface NavItem {
         font-weight: 400;
         margin-top: 0.1rem;
       }
+
+      .ws-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 0.25rem;
+        margin-left: 0.5rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      .ws-badge.connected { background: #2e7d32; color: #fff; }
+      .ws-badge.warning { background: #f57c00; color: #fff; }
+      .ws-badge.error { background: #c62828; color: #fff; }
 
       .header-btn {
         background: transparent;
@@ -254,6 +276,7 @@ export class ShellComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly userSettings = inject(UserSettingsService);
+  readonly store = inject(AppStore);
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: '📊', route: '/dashboard' },

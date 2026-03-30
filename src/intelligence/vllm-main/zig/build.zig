@@ -108,6 +108,9 @@ pub fn build(b: *std.Build) void {
     // ========================================================================
     const cuda_build_opts = b.addOptions();
     cuda_build_opts.addOption(bool, "enable_cuda", enable_gpu);
+    cuda_build_opts.addOption(bool, "has_core_kernels_ptx", pathExists("src/gpu/core_kernels.ptx"));
+    cuda_build_opts.addOption(bool, "has_qjl_kernels_ptx", pathExists("src/gpu/qjl_kernels.ptx"));
+    cuda_build_opts.addOption(bool, "has_deltanet_kernels_ptx", pathExists("src/gpu/deltanet_kernels.ptx"));
     const cuda_opts_mod = cuda_build_opts.createModule();
 
     const cuda_forward_mod = b.createModule(.{
@@ -499,4 +502,9 @@ fn resolveCudaPath(b: *std.Build, cuda_path_opt: ?[]const u8) []const u8 {
         return path;
     }
     return "/usr/local/cuda";
+}
+
+fn pathExists(rel_path: []const u8) bool {
+    std.fs.cwd().access(rel_path, .{}) catch return false;
+    return true;
 }

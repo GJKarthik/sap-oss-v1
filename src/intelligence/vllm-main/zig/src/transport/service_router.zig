@@ -15,6 +15,7 @@ const json = std.json;
 const net = std.net;
 const posix = std.posix;
 const Allocator = mem.Allocator;
+const http_client = @import("http_client.zig");
 
 // ============================================================================
 // Service Descriptor
@@ -64,6 +65,8 @@ pub const RouteResult = struct {
     service: ServiceEntry,
     proxy_path: []const u8,
 };
+
+pub const ProxyResponse = http_client.Response;
 
 // ============================================================================
 // Model → Service mapping (compiled from service_routing.mg)
@@ -250,44 +253,57 @@ pub const Router = struct {
     // Proxy HTTP request to resolved backend
     // ------------------------------------------------------------------
 
-    /// Proxy a POST request to the resolved backend and return the response body.
-    pub fn proxyPost(self: *Router, target: RouteResult, body: []const u8) ![]const u8 {
+    /// Proxy a POST request to the resolved backend and return the parsed response.
+    pub fn proxyPost(self: *Router, target: RouteResult, body: []const u8) !ProxyResponse {
         const host = stripScheme(target.service.base_url);
         const port = target.service.port;
 
-        // Build HTTP/1.1 request
-        var req = std.ArrayListUnmanaged(u8){};
-        var w = req.writer(self.allocator);
+        const request = try http_client.buildJsonRequest(
+            self.allocator,
+            "POST",
+            host,
+            target.proxy_path,
+            body,
+            null,
+        );
+        defer self.allocator.free(request);
 
-        try w.print("POST {s} HTTP/1.1\r\n", .{target.proxy_path});
-        try w.print("Host: {s}\r\n", .{host});
-        try w.writeAll("Content-Type: application/json\r\n");
-        try w.writeAll("Accept: application/json\r\n");
-        try w.print("Content-Length: {d}\r\n", .{body.len});
-        try w.writeAll("Connection: close\r\n");
-        try w.writeAll("\r\n");
-        try w.writeAll(body);
-        defer req.deinit(self.allocator);
-
-        return self.sendTcp(host, port, req.items);
+        return http_client.executeRequest(self.allocator, host, port, request);
     }
 
     /// Proxy a GET request to the resolved backend.
-    pub fn proxyGet(self: *Router, target: RouteResult) ![]const u8 {
+    pub fn proxyGet(self: *Router, target: RouteResult) !ProxyResponse {
         const host = stripScheme(target.service.base_url);
         const port = target.service.port;
 
-        var req = std.ArrayListUnmanaged(u8){};
-        var w = req.writer(self.allocator);
+        const request = try http_client.buildJsonRequest(
+            self.allocator,
+            "GET",
+            host,
+            target.proxy_path,
+            null,
+            null,
+        );
+        defer self.allocator.free(request);
 
-        try w.print("GET {s} HTTP/1.1\r\n", .{target.proxy_path});
-        try w.print("Host: {s}\r\n", .{host});
-        try w.writeAll("Accept: application/json\r\n");
-        try w.writeAll("Connection: close\r\n");
-        try w.writeAll("\r\n");
-        defer req.deinit(self.allocator);
+        return http_client.executeRequest(self.allocator, host, port, request);
+    }
 
-        return self.sendTcp(host, port, req.items);
+    /// Proxy a POST request and stream the raw upstream HTTP response to the downstream client.
+    pub fn proxyPostStream(self: *Router, target: RouteResult, body: []const u8, downstream: net.Stream) !void {
+        const host = stripScheme(target.service.base_url);
+        const port = target.service.port;
+        const request = try http_client.buildJsonRequest(
+            self.allocator,
+            "POST",
+            host,
+            target.proxy_path,
+            body,
+            null,
+        );
+        defer self.allocator.free(request);
+
+        try http_client.streamRequest(host, port, request, downstream);
     }
 
     /// Aggregate /v1/models from every healthy backend.
@@ -333,45 +349,6 @@ pub const Router = struct {
         var entry = self.services.get(sid);
         entry.healthy = true;
         self.services.set(sid, entry);
-    }
-
-    // ------------------------------------------------------------------
-    // TCP helpers
-    // ------------------------------------------------------------------
-
-    fn sendTcp(self: *Router, host: []const u8, port: u16, request: []const u8) ![]const u8 {
-        const address = net.Address.parseIp4(host, port) catch blk: {
-            if (mem.eql(u8, host, "localhost")) {
-                break :blk try net.Address.parseIp4("127.0.0.1", port);
-            }
-            return error.UnableToResolve;
-        };
-
-        const sock = try posix.socket(posix.AF.INET, posix.SOCK.STREAM, 0);
-        defer posix.close(sock);
-
-        try posix.connect(sock, &address.any, address.getOsSockLen());
-        _ = try posix.write(sock, request);
-
-        var response = std.ArrayListUnmanaged(u8){};
-        var buf: [8192]u8 = undefined;
-
-        while (true) {
-            const n = posix.read(sock, &buf) catch break;
-            if (n == 0) break;
-            try response.appendSlice(self.allocator, buf[0..n]);
-        }
-
-        // Extract body after HTTP headers
-        const sep = mem.indexOf(u8, response.items, "\r\n\r\n") orelse 0;
-        if (sep > 0) {
-            const body_slice = response.items[sep + 4 ..];
-            const owned = try self.allocator.dupe(u8, body_slice);
-            response.deinit(self.allocator);
-            return owned;
-        }
-
-        return response.toOwnedSlice(self.allocator);
     }
 };
 
