@@ -63,7 +63,7 @@ import { AuthService } from '../../services/auth.service';
                 (click)="togglePasswordVisibility()"
                 [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
                 [attr.aria-pressed]="showPassword"
-                type="button"
+                type="Button"
                 class="password-toggle">
               </ui5-button>
             </div>
@@ -75,7 +75,7 @@ import { AuthService } from '../../services/auth.service';
             (click)="login()" 
             [disabled]="loading"
             aria-describedby="login-status"
-            type="submit">
+            type="Submit">
             <ui5-busy-indicator *ngIf="loading" size="S" active style="margin-right: 0.5rem;"></ui5-busy-indicator>
             {{ loading ? 'Signing in...' : 'Sign In' }}
           </ui5-button>

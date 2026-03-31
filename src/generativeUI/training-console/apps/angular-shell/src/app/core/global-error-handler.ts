@@ -1,5 +1,6 @@
 import { ErrorHandler, Injectable, Injector, NgZone } from '@angular/core';
 import { ToastService } from '../services/toast.service';
+import { LogService } from '../services/log.service';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
@@ -22,6 +23,7 @@ export class GlobalErrorHandler implements ErrorHandler {
       toast.error(message, 'Application Error');
     });
 
-    console.error('GlobalErrorHandler caught critical error:', error);
+    const log = this.injector.get(LogService);
+    log.error('Unhandled application error', 'GlobalErrorHandler', error);
   }
 }

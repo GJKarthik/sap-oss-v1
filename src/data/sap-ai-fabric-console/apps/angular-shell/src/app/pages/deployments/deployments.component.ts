@@ -112,10 +112,10 @@ function readErrorMessage(error: unknown, fallback: string): string {
               </ui5-textarea>
             </div>
             <div class="form-actions">
-              <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating" type="button">
+              <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating" type="Button">
                 Cancel
               </ui5-button>
-              <ui5-button design="Emphasized" (click)="createDeployment()" [disabled]="mutating || !draftScenarioId.trim()" type="submit">
+              <ui5-button design="Emphasized" (click)="createDeployment()" [disabled]="mutating || !draftScenarioId.trim()" type="Submit">
                 <ui5-busy-indicator *ngIf="mutating" active size="S" style="margin-right: 0.5rem;"></ui5-busy-indicator>
                 {{ mutating ? 'Creating...' : 'Create' }}
               </ui5-button>
@@ -153,7 +153,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
               <ui5-table-cell>{{ deployment.targetStatus || 'n/a' }}</ui5-table-cell>
               <ui5-table-cell>{{ deployment.scenarioId || 'n/a' }}</ui5-table-cell>
               <ui5-table-cell>{{ summarizeDetails(deployment.details) }}</ui5-table-cell>
-              <ui5-table-cell>{{ deployment.creationTime | appDateFormat:'datetime' }}</ui5-table-cell>
+              <ui5-table-cell>{{ deployment.creationTime | dateFormat:'datetime' }}</ui5-table-cell>
               <ui5-table-cell>
                 <div class="row-actions" *ngIf="canManage; else readOnlyActions">
                   <ui5-button
@@ -486,7 +486,7 @@ export class DeploymentsComponent implements OnInit {
       ...this.deleteDialogData,
       itemName: deployment.id
     };
-    this.deleteDialog.open();
+    this.deleteDialog.show();
   }
 
   executeDelete(): void {

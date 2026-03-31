@@ -43,8 +43,25 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'data-cleaning',
+        loadComponent: () =>
+          import('./pages/data-cleaning/data-cleaning.component').then(
+            (m) => m.DataCleaningComponent
+          ),
+      },
+      {
         path: 'chat',
         loadComponent: () => import('./pages/chat/chat.component').then((m) => m.ChatComponent),
+      },
+      {
+        path: 'compare',
+        loadComponent: () =>
+          import('./pages/compare/compare.component').then((m) => m.CompareComponent),
+      },
+      {
+        path: 'registry',
+        loadComponent: () =>
+          import('./pages/registry/registry.component').then((m) => m.RegistryComponent),
       },
     ],
   },

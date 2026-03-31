@@ -191,6 +191,7 @@ pub fn build(b: *std.Build) void {
         exe.linkFramework("Foundation");
         exe.linkFramework("CoreGraphics");
         exe.linkFramework("Accelerate"); // SIMD-optimized BLAS (cblas_sgemm, vDSP)
+        exe.linkSystemLibrary("objc");
     }
     if (enable_gpu) {
         // Per-service local CUDA toolkit + replicated kernel library.
@@ -262,6 +263,7 @@ pub fn build(b: *std.Build) void {
         tests.linkFramework("Foundation");
         tests.linkFramework("CoreGraphics");
         tests.linkFramework("Accelerate");
+        tests.linkSystemLibrary("objc");
     }
     if (target.result.os.tag == .linux) {
         tests.linkSystemLibrary("pthread");
@@ -329,6 +331,7 @@ pub fn build(b: *std.Build) void {
         slow_tests.linkFramework("Foundation");
         slow_tests.linkFramework("CoreGraphics");
         slow_tests.linkFramework("Accelerate");
+        slow_tests.linkSystemLibrary("objc");
     }
     if (target.result.os.tag == .linux) {
         slow_tests.linkSystemLibrary("pthread");
@@ -441,7 +444,11 @@ pub fn build(b: *std.Build) void {
     });
     model_test_exe.linkLibC();
     if (target.result.os.tag == .macos) {
+        model_test_exe.linkFramework("Metal");
+        model_test_exe.linkFramework("Foundation");
+        model_test_exe.linkFramework("CoreGraphics");
         model_test_exe.linkFramework("Accelerate");
+        model_test_exe.linkSystemLibrary("objc");
     }
     b.installArtifact(model_test_exe);
 

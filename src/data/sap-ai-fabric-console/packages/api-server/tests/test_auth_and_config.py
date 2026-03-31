@@ -23,6 +23,7 @@ def _production_settings_kwargs(**overrides):
         "expose_api_docs": False,
         "langchain_mcp_url": "https://langchain.example.test/mcp",
         "streaming_mcp_url": "https://streaming.example.test/mcp",
+        "data_cleaning_mcp_url": "https://cleaning.example.test/mcp",
     }
     values.update(overrides)
     return values

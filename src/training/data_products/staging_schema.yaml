@@ -99,7 +99,7 @@ dataProduct:
 
   # --- Quality: Data Validation Rules ---
   x-data-cleaning:
-    copilotRef: "../sap-oss/data-cleaning-copilot-main"
+    copilotRef: "../sap-oss/training-console"
     validationRules:
       - rule: "field_mapping_completeness"
         description: "All source fields must map to a BTP field"

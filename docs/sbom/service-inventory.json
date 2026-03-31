@@ -623,14 +623,14 @@
       "linesOfCode": 2200
     },
     {
-      "name": "data-cleaning-copilot-main",
+      "name": "training-console",
       "version": "1.0.0",
       "description": "AI-powered data cleaning assistant with interactive frontend",
       "purpose": "Helps users clean and transform data using LLM suggestions",
       "language": "Python",
       "runtime": "Python 3.10+",
       "license": "Apache-2.0",
-      "repository": "data-cleaning-copilot-main/",
+      "repository": "training-console/",
       "directories": {
         "definition/": "Core definitions and logic",
         "middleware/security.py": "Security middleware",

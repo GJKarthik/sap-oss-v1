@@ -22,7 +22,23 @@ const MAX_SEARCH_QUERY_LENGTH = 200;
 // Finding 1: Mangle query service endpoint
 // =============================================================================
 
-const BLOCKED_HOST_PREFIXES = ['169.254.', '100.100.', 'fd00:', '::1'];
+const BLOCKED_HOST_PREFIXES = [
+  '169.254.', '100.100.', 'fd00:', '::1', 
+  '10.', '192.168.', '127.0.0.'
+];
+
+// Block 172.16.x.x through 172.31.x.x
+function isBlockedHost(host: string): boolean {
+  if (BLOCKED_HOST_PREFIXES.some(prefix => host.startsWith(prefix))) return true;
+  if (host === 'localhost') return true;
+  
+  const match172 = host.match(/^172\.(\d+)\./);
+  if (match172) {
+    const octet = parseInt(match172[1], 10);
+    if (octet >= 16 && octet <= 31) return true;
+  }
+  return false;
+}
 
 function validateRemoteUrl(raw: string, varName: string): string {
   if (!raw) return raw;
@@ -34,10 +50,8 @@ function validateRemoteUrl(raw: string, varName: string): string {
     throw new Error(`${varName} must use http or https (got '${parsed.protocol}'). Value: ${raw}`);
   }
   const host = parsed.hostname;
-  for (const prefix of BLOCKED_HOST_PREFIXES) {
-    if (host.startsWith(prefix)) {
-      throw new Error(`${varName} targets a blocked host prefix '${prefix}' (cloud metadata / link-local). Value: ${raw}`);
-    }
+  if (isBlockedHost(host)) {
+    throw new Error(`${varName} targets a blocked host '${host}' containing private/metadata IPs. Value: ${raw}`);
   }
   return raw.replace(/\/$/, '');
 }

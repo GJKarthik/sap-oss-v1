@@ -10,8 +10,7 @@
       "kind": "main",
       "tag": "sac-ai-widget",
       "url": "widget.js",
-      "integrity": "",
-      "ignoreIntegrity": true
+      "integrity": ""
     }
   ],
   "properties": {

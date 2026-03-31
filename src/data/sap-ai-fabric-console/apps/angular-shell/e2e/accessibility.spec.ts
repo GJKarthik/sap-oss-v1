@@ -25,6 +25,7 @@ const axeConfig = {
 async function checkAccessibility(page: Page, pageName: string) {
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .options(axeConfig)
     .analyze();
 
   // Log violations for debugging
@@ -86,7 +87,6 @@ test.describe('Accessibility Tests', () => {
       
       // Tab to password field
       await page.keyboard.press('Tab');
-      const passwordInput = page.locator('#password-input');
       // Password field or toggle should be focused
     });
 
@@ -294,13 +294,8 @@ test.describe('Accessibility Tests', () => {
     test('should have proper heading hierarchy', async ({ page }) => {
       await page.goto('/login');
       
-      // Check heading structure
-      const h1 = page.locator('h1');
-      const h2 = page.locator('h2');
-      const h3 = page.locator('h3');
-      
-      // There should be a logical heading structure
-      // (UI5 components might render different elements)
+      // There should be at least one heading for assistive tech navigation.
+      await expect(page.locator('h1, h2, h3')).toHaveCount(1);
     });
 
     test('should have alt text for images', async ({ page }) => {

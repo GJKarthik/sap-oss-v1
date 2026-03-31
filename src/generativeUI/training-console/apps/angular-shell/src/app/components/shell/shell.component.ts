@@ -375,10 +375,13 @@ export class ShellComponent {
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: '📊', route: '/dashboard' },
     { label: 'Pipeline', icon: '🔄', route: '/pipeline' },
-    { label: 'Model Optimizer', icon: '🤖', route: '/model-optimizer' },
-    { label: 'HippoCPP', icon: '🕸', route: '/hippocpp' },
     { label: 'Data Explorer', icon: '📂', route: '/data-explorer' },
+    { label: 'Data Cleaning', icon: '🧹', route: '/data-cleaning' },
+    { label: 'Model Optimizer', icon: '🤖', route: '/model-optimizer' },
+    { label: 'Registry', icon: '🏷️', route: '/registry' },
+    { label: 'HippoCPP', icon: '🕸', route: '/hippocpp' },
     { label: 'Chat', icon: '💬', route: '/chat' },
+    { label: 'A/B Compare', icon: '⚖️', route: '/compare' },
   ];
 
   readonly version = '1.0.0';

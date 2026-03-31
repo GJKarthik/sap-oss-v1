@@ -24,6 +24,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
 import type { SacHeadingLevel, SacTextAlign } from '../types/sac-widget-schema';
+import { estimateTextHeight } from '../services/sac-text-layout.service';
 
 // =============================================================================
 // Heading Component
@@ -36,12 +37,12 @@ import type { SacHeadingLevel, SacTextAlign } from '../types/sac-widget-schema';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ng-container [ngSwitch]="level">
-      <h1 *ngSwitchCase="1" [class]="headingClass" [style.text-align]="align">{{ content }}</h1>
-      <h2 *ngSwitchCase="2" [class]="headingClass" [style.text-align]="align">{{ content }}</h2>
-      <h3 *ngSwitchCase="3" [class]="headingClass" [style.text-align]="align">{{ content }}</h3>
-      <h4 *ngSwitchCase="4" [class]="headingClass" [style.text-align]="align">{{ content }}</h4>
-      <h5 *ngSwitchCase="5" [class]="headingClass" [style.text-align]="align">{{ content }}</h5>
-      <h6 *ngSwitchCase="6" [class]="headingClass" [style.text-align]="align">{{ content }}</h6>
+      <h1 *ngSwitchCase="1" [class]="headingClass" [style.text-align]="align" [style.min-height.px]="estimatedMinHeightPx">{{ content }}</h1>
+      <h2 *ngSwitchCase="2" [class]="headingClass" [style.text-align]="align" [style.min-height.px]="estimatedMinHeightPx">{{ content }}</h2>
+      <h3 *ngSwitchCase="3" [class]="headingClass" [style.text-align]="align" [style.min-height.px]="estimatedMinHeightPx">{{ content }}</h3>
+      <h4 *ngSwitchCase="4" [class]="headingClass" [style.text-align]="align" [style.min-height.px]="estimatedMinHeightPx">{{ content }}</h4>
+      <h5 *ngSwitchCase="5" [class]="headingClass" [style.text-align]="align" [style.min-height.px]="estimatedMinHeightPx">{{ content }}</h5>
+      <h6 *ngSwitchCase="6" [class]="headingClass" [style.text-align]="align" [style.min-height.px]="estimatedMinHeightPx">{{ content }}</h6>
     </ng-container>
   `,
   styles: [`
@@ -64,8 +65,29 @@ export class SacHeadingComponent {
   @Input() level: SacHeadingLevel = 2;
   @Input() align: SacTextAlign = 'left';
 
+  private readonly headingStyleMap: Record<SacHeadingLevel, { font: string; lineHeight: number }> = {
+    1: { font: "700 32px 'SAP 72', Arial, sans-serif", lineHeight: 40 },
+    2: { font: "600 24px 'SAP 72', Arial, sans-serif", lineHeight: 32 },
+    3: { font: "600 20px 'SAP 72', Arial, sans-serif", lineHeight: 28 },
+    4: { font: "600 16px 'SAP 72', Arial, sans-serif", lineHeight: 24 },
+    5: { font: "600 16px 'SAP 72', Arial, sans-serif", lineHeight: 24 },
+    6: { font: "600 14px 'SAP 72', Arial, sans-serif", lineHeight: 21 },
+  };
+
   get headingClass(): string {
     return `sac-heading sac-heading--${this.level}`;
+  }
+
+  get estimatedMinHeightPx(): number {
+    const style = this.headingStyleMap[this.level];
+    return estimateTextHeight(this.content, {
+      font: style.font,
+      lineHeight: style.lineHeight,
+      maxWidth: 960,
+      minLines: 1,
+      maxLines: 6,
+      whiteSpace: 'normal',
+    });
   }
 }
 
@@ -81,6 +103,7 @@ export class SacHeadingComponent {
   template: `
     <div class="sac-text-block"
          [style.text-align]="align"
+         [style.min-height.px]="estimatedMinHeightPx"
          [class.sac-text-block--markdown]="markdown">
       <ng-container *ngIf="!markdown">{{ content }}</ng-container>
       <ng-container *ngIf="markdown">
@@ -126,6 +149,17 @@ export class SacTextBlockComponent {
   @Input() markdown = false;
 
   constructor(private sanitizer: DomSanitizer) {}
+
+  get estimatedMinHeightPx(): number {
+    return estimateTextHeight(this.content, {
+      font: "400 14px 'SAP 72', Arial, sans-serif",
+      lineHeight: 22,
+      maxWidth: 960,
+      minLines: 1,
+      maxLines: 12,
+      whiteSpace: this.markdown ? 'pre-wrap' : 'normal',
+    });
+  }
 
   get sanitizedContent(): string {
     // Escape raw HTML first to prevent injection, then apply markdown transforms

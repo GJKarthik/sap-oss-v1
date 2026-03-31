@@ -10,7 +10,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 export type DateFormatStyle = 'short' | 'medium' | 'long' | 'full' | 'relative' | 'datetime' | 'date' | 'time';
 
 @Pipe({
-  name: 'appDateFormat',
+  name: 'dateFormat',
   standalone: true
 })
 export class DateFormatPipe implements PipeTransform {

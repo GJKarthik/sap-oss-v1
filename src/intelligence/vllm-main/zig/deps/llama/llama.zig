@@ -13,6 +13,8 @@ const std = @import("std");
 const math = std.math;
 const Allocator = std.mem.Allocator;
 const accelerate = @import("accelerate.zig");
+const metal_bindings = @import("metal_bindings");
+const metal_shaders = @import("metal_shaders");
 
 // ============================================================================
 // GPU Backend Integration
@@ -116,6 +118,8 @@ pub const ModelConfig = struct {
     hidden_dim: u32 = 4096,
     intermediate_dim: u32 = 11008,
     max_seq_len: u32 = 4096,
+    shortconv_l_cache: u32 = 0,
+    layer_n_kv_heads: ?[]u32 = null,
 
     pub fn fromName(name: []const u8) ModelConfig {
         var config = ModelConfig{};
@@ -139,6 +143,23 @@ pub const ModelConfig = struct {
         return config;
     }
 };
+
+fn layerKVHeadsFromConfig(config: ModelConfig, layer: usize) u32 {
+    if (config.layer_n_kv_heads) |layer_n_kv_heads| {
+        if (layer < layer_n_kv_heads.len) return layer_n_kv_heads[layer];
+    }
+    return config.n_kv_heads;
+}
+
+fn maxKVHeadsFromConfig(config: ModelConfig) u32 {
+    var max_heads = config.n_kv_heads;
+    if (config.layer_n_kv_heads) |layer_n_kv_heads| {
+        for (layer_n_kv_heads) |heads| {
+            if (heads > max_heads) max_heads = heads;
+        }
+    }
+    return max_heads;
+}
 
 pub const SamplerConfig = struct {
     temperature: f32 = 0.8,
@@ -178,6 +199,23 @@ pub fn rmsNorm(dst: []f32, src: []const f32, weight: []const f32, eps: f32) void
     for (0..n) |i| dst[i] = weight[i] * src[i] * rms;
 }
 
+fn rmsNormRowsInPlace(data: []f32, weight: []const f32, row_len: usize, n_rows: usize, eps: f32) void {
+    if (weight.len == 0 or row_len == 0 or n_rows == 0) return;
+    for (0..n_rows) |row_idx| {
+        const row = data[row_idx * row_len ..][0..row_len];
+        var ss: f32 = 0.0;
+        for (row) |v| ss += v * v;
+        const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(row_len)) + eps);
+        for (0..row_len) |i| row[i] = weight[i] * row[i] * rms;
+    }
+}
+
+fn sanitizeNonFiniteInPlace(data: []f32) void {
+    for (data) |*v| {
+        if (!std.math.isFinite(v.*)) v.* = 0.0;
+    }
+}
+
 /// Matrix multiply: C[M×N] = alpha * A[M×K] @ B[K×N] + beta * C[M×N]
 pub fn matmul(C: []f32, A: []const f32, B: []const f32, M: usize, N: usize, K: usize, alpha: f32, beta: f32) void {
     for (0..M) |i| {
@@ -193,16 +231,25 @@ pub fn matmul(C: []f32, A: []const f32, B: []const f32, M: usize, N: usize, K: u
 pub fn vecMatMul(out: []f32, x: []const f32, W: []const f32, K: usize, N: usize) void {
     for (0..N) |j| {
         var sum: f32 = 0.0;
-        for (0..K) |k| sum += x[k] * W[k * N + j];
+        const col = W[j * K ..][0..K];
+        for (0..K) |k| sum += x[k] * col[k];
         out[j] = sum;
     }
 }
 
 /// Like vecMatMul but W is []f16 — converts each weight on-the-fly to f32.
 pub fn vecMatMulF16W(out: []f32, x: []const f32, W: []const f16, K: usize, N: usize) void {
+    if (out.len < N or x.len < K) return;
+
+    // GGUF / ggml stores matrices with the input dimension contiguous (`ne0 = K`)
+    // and the output dimension as the outer axis (`ne1 = N`). That means each
+    // output column is laid out as a contiguous K-length slice.
     for (0..N) |j| {
         var sum: f32 = 0.0;
-        for (0..K) |k| sum += x[k] * @as(f32, W[k * N + j]);
+        const col = W[j * K ..][0..K];
+        for (0..K) |k| {
+            sum += x[k] * @as(f32, col[k]);
+        }
         out[j] = sum;
     }
 }
@@ -244,18 +291,35 @@ pub fn rope(q: []f32, k: []f32, pos: usize, head_dim: usize, base_freq: f32, n_h
 /// Numerically stable softmax (in-place)
 pub fn softmaxInPlace(data: []f32) void {
     if (data.len == 0) return;
-    var mx: f32 = data[0];
-    for (data[1..]) |v| if (v > mx) {
-        mx = v;
-    };
+
+    var mx: f32 = -std.math.inf(f32);
+    var has_finite = false;
+    for (data) |v| {
+        if (!std.math.isFinite(v)) continue;
+        has_finite = true;
+        if (v > mx) mx = v;
+    }
+    if (!has_finite) {
+        const uniform = 1.0 / @as(f32, @floatFromInt(data.len));
+        for (data) |*v| v.* = uniform;
+        return;
+    }
+
     var sum: f32 = 0.0;
     for (data) |*v| {
+        if (!std.math.isFinite(v.*)) {
+            v.* = 0.0;
+            continue;
+        }
         v.* = @exp(v.* - mx);
         sum += v.*;
     }
-    if (sum > 0.0) for (data) |*v| {
-        v.* /= sum;
-    };
+    if (sum > 0.0) {
+        for (data) |*v| v.* /= sum;
+    } else {
+        const uniform = 1.0 / @as(f32, @floatFromInt(data.len));
+        for (data) |*v| v.* = uniform;
+    }
 }
 
 /// SwiGLU: dst[i] = silu(gate[i]) * up[i]
@@ -275,14 +339,17 @@ pub fn vecAdd(dst: []f32, a: []const f32, b: []const f32) void {
 /// Greedy sampling: return index of maximum value
 pub fn sampleGreedy(logits: []const f32) u32 {
     var max_idx: u32 = 0;
-    var max_val: f32 = logits[0];
-    for (logits[1..], 1..) |v, i| {
+    var max_val: f32 = -std.math.inf(f32);
+    var found_finite = false;
+    for (logits, 0..) |v, i| {
+        if (!std.math.isFinite(v)) continue;
+        found_finite = true;
         if (v > max_val) {
             max_val = v;
             max_idx = @intCast(i);
         }
     }
-    return max_idx;
+    return if (found_finite) max_idx else 0;
 }
 
 // ============================================================================
@@ -290,16 +357,45 @@ pub fn sampleGreedy(logits: []const f32) u32 {
 // ============================================================================
 
 /// Weights for a single transformer layer (LLaMA / Mistral / etc.)
+const QuantizedWeightMatrix = struct {
+    dtype: ?GGUFDataType = null,
+    data: []u8 = &.{},
+    n_elements: usize = 0,
+
+    fn deinit(self: *QuantizedWeightMatrix, allocator: Allocator) void {
+        if (self.data.len > 0) allocator.free(self.data);
+        self.* = .{};
+    }
+};
+
 pub const TransformerLayer = struct {
+    is_recurrent: bool = false,
+    n_kv_heads: u32 = 0,
+    has_attn_q_norm: bool = false,
+    has_attn_k_norm: bool = false,
     attn_norm: []f32, // [dim]        — pre-attention RMSNorm
-    wq: []f16, // [dim × qkv_dim]     — Q projection (f16 halves RAM vs f32)
-    wk: []f16, // [dim × kv_dim]      — K projection
-    wv: []f16, // [dim × kv_dim]      — V projection
-    wo: []f16, // [qkv_dim × dim]     — output projection
+    attn_q_norm: []f32 = &.{}, // [head_dim]  — optional per-head RMSNorm
+    attn_k_norm: []f32 = &.{}, // [head_dim]  — optional per-head RMSNorm
+    wq: []f16 = &.{}, // [dim × qkv_dim]     — Q projection (f16 halves RAM vs f32)
+    wq_quant: QuantizedWeightMatrix = .{},
+    wk: []f16 = &.{}, // [dim × kv_dim]      — K projection
+    wk_quant: QuantizedWeightMatrix = .{},
+    wv: []f16 = &.{}, // [dim × kv_dim]      — V projection
+    wv_quant: QuantizedWeightMatrix = .{},
+    wo: []f16 = &.{}, // [qkv_dim × dim]     — output projection
+    wo_quant: QuantizedWeightMatrix = .{},
+    shortconv_conv: []f32 = &.{}, // [l_cache × dim] recurrent depthwise conv kernel
+    shortconv_in_proj: []f16 = &.{}, // [dim × 3*dim]
+    shortconv_in_proj_quant: QuantizedWeightMatrix = .{},
+    shortconv_out_proj: []f16 = &.{}, // [dim × dim]
+    shortconv_out_proj_quant: QuantizedWeightMatrix = .{},
     ffn_norm: []f32, // [dim]         — pre-FFN RMSNorm (kept f32: tiny + used in rmsNorm)
     w_gate: []f16, // [dim × ff_dim]  — gate projection (SwiGLU)
+    w_gate_quant: QuantizedWeightMatrix = .{},
     w_up: []f16, // [dim × ff_dim]    — up projection
+    w_up_quant: QuantizedWeightMatrix = .{},
     w_down: []f16, // [ff_dim × dim]  — down projection
+    w_down_quant: QuantizedWeightMatrix = .{},
 };
 
 /// All weights for a complete transformer model
@@ -308,32 +404,43 @@ pub const TransformerWeights = struct {
     layers: []TransformerLayer,
     final_norm: []f32, // [dim]                — kept f32: tiny + used directly in rmsNorm
     lm_head: []f16, // [dim × vocab_size]      — f16
+    lm_head_quant: QuantizedWeightMatrix = .{},
 
     /// Allocate weight buffers without initialization (for GGUF loading).
     pub fn allocateRaw(allocator: Allocator, cfg: ModelConfig) !TransformerWeights {
         const dim: usize = cfg.n_embd;
         const n_layers: usize = cfg.n_layers;
         const n_heads: usize = cfg.n_heads;
-        const n_kv_heads: usize = cfg.n_kv_heads;
         const head_dim = dim / n_heads;
         const qkv_dim = n_heads * head_dim;
-        const kv_dim = n_kv_heads * head_dim;
         const ff: usize = cfg.n_ff;
         const vocab: usize = cfg.vocab_size;
 
-        var weights: TransformerWeights = undefined;
-        weights.token_embedding = try allocator.alloc(f16, vocab * dim);
-        weights.final_norm = try allocator.alloc(f32, dim); // norm weight stays f32
-        weights.lm_head = try allocator.alloc(f16, dim * vocab);
-        weights.layers = try allocator.alloc(TransformerLayer, n_layers);
+        var weights = TransformerWeights{
+            .token_embedding = try allocator.alloc(f16, vocab * dim),
+            .layers = try allocator.alloc(TransformerLayer, n_layers),
+            .final_norm = try allocator.alloc(f32, dim), // norm weight stays f32
+            .lm_head = try allocator.alloc(f16, dim * vocab),
+            .lm_head_quant = .{},
+        };
 
         for (0..n_layers) |l| {
+            const layer_n_kv_heads: usize = layerKVHeadsFromConfig(cfg, l);
+            const layer_kv_dim = layer_n_kv_heads * head_dim;
+            const is_recurrent = layer_n_kv_heads == 0 and cfg.shortconv_l_cache > 0;
             weights.layers[l] = .{
+                .is_recurrent = is_recurrent,
+                .n_kv_heads = @intCast(layer_n_kv_heads),
                 .attn_norm = try allocator.alloc(f32, dim),
-                .wq = try allocator.alloc(f16, dim * qkv_dim),
-                .wk = try allocator.alloc(f16, dim * kv_dim),
-                .wv = try allocator.alloc(f16, dim * kv_dim),
-                .wo = try allocator.alloc(f16, qkv_dim * dim),
+                .attn_q_norm = if (is_recurrent) &.{} else try allocator.alloc(f32, head_dim),
+                .attn_k_norm = if (is_recurrent) &.{} else try allocator.alloc(f32, head_dim),
+                .wq = if (is_recurrent) &.{} else try allocator.alloc(f16, dim * qkv_dim),
+                .wk = if (is_recurrent) &.{} else try allocator.alloc(f16, dim * layer_kv_dim),
+                .wv = if (is_recurrent) &.{} else try allocator.alloc(f16, dim * layer_kv_dim),
+                .wo = if (is_recurrent) &.{} else try allocator.alloc(f16, qkv_dim * dim),
+                .shortconv_conv = if (is_recurrent) try allocator.alloc(f32, cfg.shortconv_l_cache * dim) else &.{},
+                .shortconv_in_proj = if (is_recurrent) try allocator.alloc(f16, dim * (3 * dim)) else &.{},
+                .shortconv_out_proj = if (is_recurrent) try allocator.alloc(f16, dim * dim) else &.{},
                 .ffn_norm = try allocator.alloc(f32, dim), // norm stays f32
                 .w_gate = try allocator.alloc(f16, dim * ff),
                 .w_up = try allocator.alloc(f16, dim * ff),
@@ -352,21 +459,36 @@ pub const TransformerWeights = struct {
     }
 
     pub fn deinit(self: *TransformerWeights, allocator: Allocator) void {
-        for (self.layers) |layer| {
+        for (self.layers) |*layer| {
             allocator.free(layer.attn_norm);
-            allocator.free(layer.wq);
-            allocator.free(layer.wk);
-            allocator.free(layer.wv);
-            allocator.free(layer.wo);
+            if (layer.attn_q_norm.len > 0) allocator.free(layer.attn_q_norm);
+            if (layer.attn_k_norm.len > 0) allocator.free(layer.attn_k_norm);
+            if (layer.wq.len > 0) allocator.free(layer.wq);
+            layer.wq_quant.deinit(allocator);
+            if (layer.wk.len > 0) allocator.free(layer.wk);
+            layer.wk_quant.deinit(allocator);
+            if (layer.wv.len > 0) allocator.free(layer.wv);
+            layer.wv_quant.deinit(allocator);
+            if (layer.wo.len > 0) allocator.free(layer.wo);
+            layer.wo_quant.deinit(allocator);
+            if (layer.shortconv_conv.len > 0) allocator.free(layer.shortconv_conv);
+            if (layer.shortconv_in_proj.len > 0) allocator.free(layer.shortconv_in_proj);
+            layer.shortconv_in_proj_quant.deinit(allocator);
+            if (layer.shortconv_out_proj.len > 0) allocator.free(layer.shortconv_out_proj);
+            layer.shortconv_out_proj_quant.deinit(allocator);
             allocator.free(layer.ffn_norm);
+            layer.w_gate_quant.deinit(allocator);
             allocator.free(layer.w_gate);
+            layer.w_up_quant.deinit(allocator);
             allocator.free(layer.w_up);
+            layer.w_down_quant.deinit(allocator);
             allocator.free(layer.w_down);
         }
         allocator.free(self.layers);
         allocator.free(self.token_embedding);
         allocator.free(self.final_norm);
         allocator.free(self.lm_head);
+        self.lm_head_quant.deinit(allocator);
     }
 };
 
@@ -379,15 +501,47 @@ fn initWeightsSmallRandom(weights: TransformerWeights, dim: usize, n_layers: usi
 
     for (0..n_layers) |l| {
         @memset(weights.layers[l].attn_norm, 1.0); // f32 norm, ok
+        if (weights.layers[l].attn_q_norm.len > 0) @memset(weights.layers[l].attn_q_norm, 1.0);
+        if (weights.layers[l].attn_k_norm.len > 0) @memset(weights.layers[l].attn_k_norm, 1.0);
         @memset(weights.layers[l].ffn_norm, 1.0);  // f32 norm, ok
         const ws = 0.02 / @as(f32, @floatFromInt(dim));
-        fillDeterministicF16(weights.layers[l].wq, ws);
-        fillDeterministicF16(weights.layers[l].wk, ws);
-        fillDeterministicF16(weights.layers[l].wv, ws);
-        fillDeterministicF16(weights.layers[l].wo, ws);
+        if (weights.layers[l].wq.len > 0) fillDeterministicF16(weights.layers[l].wq, ws);
+        if (weights.layers[l].wk.len > 0) fillDeterministicF16(weights.layers[l].wk, ws);
+        if (weights.layers[l].wv.len > 0) fillDeterministicF16(weights.layers[l].wv, ws);
+        if (weights.layers[l].wo.len > 0) fillDeterministicF16(weights.layers[l].wo, ws);
+        if (weights.layers[l].shortconv_conv.len > 0) fillDeterministic(weights.layers[l].shortconv_conv, ws);
+        if (weights.layers[l].shortconv_in_proj.len > 0) fillDeterministicF16(weights.layers[l].shortconv_in_proj, ws);
+        if (weights.layers[l].shortconv_out_proj.len > 0) fillDeterministicF16(weights.layers[l].shortconv_out_proj, ws);
         fillDeterministicF16(weights.layers[l].w_gate, ws);
         fillDeterministicF16(weights.layers[l].w_up, ws);
         fillDeterministicF16(weights.layers[l].w_down, ws);
+    }
+}
+
+fn initWeightsSafeDefaults(weights: TransformerWeights) void {
+    // GGUF variants for hybrid architectures may legitimately omit whole tensor
+    // families on some layers. Start from numerically safe defaults so any
+    // missing tensors behave like a no-op residual path instead of undefined
+    // heap data driving the logits into NaN/Inf.
+    @memset(weights.token_embedding, 0);
+    @memset(weights.final_norm, 1.0);
+    @memset(weights.lm_head, 0);
+
+    for (weights.layers) |layer| {
+        @memset(layer.attn_norm, 1.0);
+        if (layer.attn_q_norm.len > 0) @memset(layer.attn_q_norm, 1.0);
+        if (layer.attn_k_norm.len > 0) @memset(layer.attn_k_norm, 1.0);
+        if (layer.wq.len > 0) @memset(layer.wq, 0);
+        if (layer.wk.len > 0) @memset(layer.wk, 0);
+        if (layer.wv.len > 0) @memset(layer.wv, 0);
+        if (layer.wo.len > 0) @memset(layer.wo, 0);
+        if (layer.shortconv_conv.len > 0) @memset(layer.shortconv_conv, 0.0);
+        if (layer.shortconv_in_proj.len > 0) @memset(layer.shortconv_in_proj, 0);
+        if (layer.shortconv_out_proj.len > 0) @memset(layer.shortconv_out_proj, 0);
+        @memset(layer.ffn_norm, 1.0);
+        @memset(layer.w_gate, 0);
+        @memset(layer.w_up, 0);
+        @memset(layer.w_down, 0);
     }
 }
 
@@ -700,7 +854,20 @@ fn dequantQ3_K(dst: []f32, src: [*]const u8, n_elements: usize) void {
 
 /// Dequantize Q4_K blocks → f32.
 /// Q4_K super-block: 144 bytes per 256 elements
-/// Structure: 2 bytes d (f16) + 2 bytes dmin (f16) + 12 bytes scales + 4 bytes mins + 128 bytes qs
+/// Structure: 2 bytes d (f16) + 2 bytes dmin (f16) + 12 bytes packed scales/mins + 128 bytes qs
+fn getScaleMinK4(j: usize, q: [*]const u8) struct { scale: u8, min: u8 } {
+    if (j < 4) {
+        return .{
+            .scale = q[j] & 63,
+            .min = q[j + 4] & 63,
+        };
+    }
+    return .{
+        .scale = (q[j + 4] & 0x0F) | ((q[j - 4] >> 6) << 4),
+        .min = (q[j + 4] >> 4) | ((q[j] >> 6) << 4),
+    };
+}
+
 fn dequantQ4_K(dst: []f32, src: [*]const u8, n_elements: usize) void {
     const block_size: usize = 256;
     const bytes_per_block: usize = 144;
@@ -709,39 +876,39 @@ fn dequantQ4_K(dst: []f32, src: [*]const u8, n_elements: usize) void {
 
     for (0..n_blocks) |b| {
         const block_ptr = src + b * bytes_per_block;
-        // Read d and dmin (f16)
         const d_bits = @as(u16, block_ptr[0]) | (@as(u16, block_ptr[1]) << 8);
         const dmin_bits = @as(u16, block_ptr[2]) | (@as(u16, block_ptr[3]) << 8);
         const d = f16ToF32(d_bits);
         const dmin = f16ToF32(dmin_bits);
 
-        // Scales at offset 4 (12 bytes = 24 x 4-bit scales)
         const scales = block_ptr + 4;
-        // Mins at offset 16 (4 bytes)
-        const mins = block_ptr + 16;
-        // Quantized data at offset 20 (128 bytes for 256 4-bit values)
-        const qs = block_ptr + 20;
-
+        var qs = block_ptr + 16;
         const remaining = @min(block_size, n_elements - dst_idx);
-        for (0..remaining) |i| {
-            const group = i / 32; // Which 32-element group (0-7)
+        var written: usize = 0;
+        var is: usize = 0;
+        while (written < remaining and is < 8) : (is += 2) {
+            const sm1 = getScaleMinK4(is, scales);
+            const sm2 = getScaleMinK4(is + 1, scales);
+            const d1 = d * @as(f32, @floatFromInt(sm1.scale));
+            const m1 = dmin * @as(f32, @floatFromInt(sm1.min));
+            const d2 = d * @as(f32, @floatFromInt(sm2.scale));
+            const m2 = dmin * @as(f32, @floatFromInt(sm2.min));
 
-            // Get scale and min for this group
-            var sc: f32 = undefined;
-            var mn: f32 = undefined;
-            if (group < 4) {
-                sc = @as(f32, @floatFromInt(scales[group] & 0x3F)) * d;
-                mn = @as(f32, @floatFromInt(mins[0] >> @truncate(group * 2) & 0x3)) * dmin;
-            } else {
-                sc = @as(f32, @floatFromInt(scales[group] >> 4 & 0x3F)) * d;
-                mn = @as(f32, @floatFromInt(mins[0] >> @truncate((group - 4) * 2) & 0x3)) * dmin;
+            const low_count = @min(@as(usize, 32), remaining - written);
+            for (0..low_count) |l| {
+                dst[dst_idx] = d1 * @as(f32, @floatFromInt(qs[l] & 0x0F)) - m1;
+                dst_idx += 1;
+                written += 1;
             }
 
-            // Get 4-bit quantized value
-            const byte_idx = i / 2;
-            const nibble: u4 = if (i % 2 == 0) @truncate(qs[byte_idx] & 0x0F) else @truncate(qs[byte_idx] >> 4);
-            dst[dst_idx] = sc * @as(f32, @floatFromInt(nibble)) - mn;
-            dst_idx += 1;
+            const high_count = @min(@as(usize, 32), remaining - written);
+            for (0..high_count) |l| {
+                dst[dst_idx] = d2 * @as(f32, @floatFromInt(qs[l] >> 4)) - m2;
+                dst_idx += 1;
+                written += 1;
+            }
+
+            qs += 32;
         }
     }
 }
@@ -768,20 +935,29 @@ fn dequantQ6_K(dst: []f32, src: [*]const u8, n_elements: usize) void {
         const scales = block_ptr + 192;
 
         const remaining = @min(block_size, n_elements - dst_idx);
-        for (0..remaining) |i| {
-            const group = i / 16;
-            const sc: i8 = @bitCast(scales[group]);
+        var written: usize = 0;
+        for (0..8) |group| {
+            const ql_chunk = group / 4;
+            const ql_plane = group % 4;
+            const ql_byte_base = ql_chunk * 64 + if ((ql_plane & 1) == 0) @as(usize, 0) else 32;
+            const qh_byte_base = (group / 4) * 32;
+            const qh_shift: u3 = @intCast((group % 4) * 2);
 
-            // Combine low 4 bits and high 2 bits
-            const ql_byte = ql[i / 2];
-            const qh_byte = qh[i / 4];
-            const ql_val: u8 = if (i % 2 == 0) ql_byte & 0x0F else ql_byte >> 4;
-            const qh_shift: u3 = @truncate((i % 4) * 2);
-            const qh_val: u8 = (qh_byte >> qh_shift) & 0x03;
-            const q: i8 = @as(i8, @intCast(ql_val | (qh_val << 4))) - 32;
+            for (0..32) |j| {
+                if (written >= remaining) break;
+                const scale_group = group * 2 + (j / 16);
+                const sc: i8 = @bitCast(scales[scale_group]);
 
-            dst[dst_idx] = d * @as(f32, @floatFromInt(sc)) * @as(f32, @floatFromInt(q));
-            dst_idx += 1;
+                const ql_byte = ql[ql_byte_base + j];
+                const ql_val: u8 = if (ql_plane < 2) ql_byte & 0x0F else ql_byte >> 4;
+                const qh_byte = qh[qh_byte_base + j];
+                const qh_val: u8 = (qh_byte >> qh_shift) & 0x03;
+                const q: i8 = @as(i8, @intCast(ql_val | (qh_val << 4))) - 32;
+
+                dst[dst_idx] = d * @as(f32, @floatFromInt(sc)) * @as(f32, @floatFromInt(q));
+                dst_idx += 1;
+                written += 1;
+            }
         }
     }
 }
@@ -937,16 +1113,77 @@ fn dequantQ4_KToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
         const d = f16ToF32(d_bits);
         const dmin = f16ToF32(dmin_bits);
         const scales = block_ptr + 4;
-        const qs = block_ptr + 20;
+        var qs = block_ptr + 16;
         const remaining = @min(block_size, n_elements - dst_idx);
-        for (0..remaining) |i| {
-            const group = i / 32;
-            const sc: f32 = @as(f32, @floatFromInt(scales[group] & 0x3F)) * d;
-            const mn: f32 = @as(f32, @floatFromInt(scales[group] >> 6)) * dmin;
-            const byte_idx = i / 2;
-            const nibble: u4 = if (i % 2 == 0) @truncate(qs[byte_idx] & 0x0F) else @truncate(qs[byte_idx] >> 4);
-            dst[dst_idx] = @floatCast(sc * @as(f32, @floatFromInt(nibble)) - mn);
-            dst_idx += 1;
+        var written: usize = 0;
+        var is: usize = 0;
+        while (written < remaining and is < 8) : (is += 2) {
+            const sm1 = getScaleMinK4(is, scales);
+            const sm2 = getScaleMinK4(is + 1, scales);
+            const d1 = d * @as(f32, @floatFromInt(sm1.scale));
+            const m1 = dmin * @as(f32, @floatFromInt(sm1.min));
+            const d2 = d * @as(f32, @floatFromInt(sm2.scale));
+            const m2 = dmin * @as(f32, @floatFromInt(sm2.min));
+
+            const low_count = @min(@as(usize, 32), remaining - written);
+            for (0..low_count) |l| {
+                dst[dst_idx] = @floatCast(d1 * @as(f32, @floatFromInt(qs[l] & 0x0F)) - m1);
+                dst_idx += 1;
+                written += 1;
+            }
+
+            const high_count = @min(@as(usize, 32), remaining - written);
+            for (0..high_count) |l| {
+                dst[dst_idx] = @floatCast(d2 * @as(f32, @floatFromInt(qs[l] >> 4)) - m2);
+                dst_idx += 1;
+                written += 1;
+            }
+
+            qs += 32;
+        }
+    }
+}
+
+/// Dequantize Q6_K blocks → f16.
+fn dequantQ6_KToF16(dst: []f16, src: [*]const u8, n_elements: usize) void {
+    const block_size: usize = 256;
+    const bytes_per_block: usize = 210;
+    const n_blocks = (n_elements + block_size - 1) / block_size;
+    var dst_idx: usize = 0;
+
+    for (0..n_blocks) |b| {
+        const block_ptr = src + b * bytes_per_block;
+        const d_bits = @as(u16, block_ptr[208]) | (@as(u16, block_ptr[209]) << 8);
+        const d = f16ToF32(d_bits);
+
+        const ql = block_ptr;
+        const qh = block_ptr + 128;
+        const scales = block_ptr + 192;
+
+        const remaining = @min(block_size, n_elements - dst_idx);
+        var written: usize = 0;
+        for (0..8) |group| {
+            const ql_chunk = group / 4;
+            const ql_plane = group % 4;
+            const ql_byte_base = ql_chunk * 64 + if ((ql_plane & 1) == 0) @as(usize, 0) else 32;
+            const qh_byte_base = (group / 4) * 32;
+            const qh_shift: u3 = @intCast((group % 4) * 2);
+
+            for (0..32) |j| {
+                if (written >= remaining) break;
+                const scale_group = group * 2 + (j / 16);
+                const sc: i8 = @bitCast(scales[scale_group]);
+
+                const ql_byte = ql[ql_byte_base + j];
+                const ql_val: u8 = if (ql_plane < 2) ql_byte & 0x0F else ql_byte >> 4;
+                const qh_byte = qh[qh_byte_base + j];
+                const qh_val: u8 = (qh_byte >> qh_shift) & 0x03;
+                const q: i8 = @as(i8, @intCast(ql_val | (qh_val << 4))) - 32;
+
+                dst[dst_idx] = @floatCast(d * @as(f32, @floatFromInt(sc)) * @as(f32, @floatFromInt(q)));
+                dst_idx += 1;
+                written += 1;
+            }
         }
     }
 }
@@ -959,8 +1196,9 @@ fn dequantTensorF16(dst: []f16, src: [*]const u8, n_elements: usize, dtype: GGUF
         .bf16 => dequantBF16ToF16(dst, src, n_elements),
         .q8_0 => dequantQ8_0ToF16(dst, src, n_elements),
         .q4_0 => dequantQ4_0ToF16(dst, src, n_elements),
+        .q6_k => dequantQ6_KToF16(dst, src, n_elements),
         // K-quants: fall back via Q4_K path (good enough approximation)
-        .q2_k, .q3_k, .q4_k, .q5_k, .q6_k, .q8_k,
+        .q2_k, .q3_k, .q4_k, .q5_k, .q8_k,
         .iq2_xxs, .iq2_xs, .iq2_s, .iq3_xxs, .iq3_s, .iq4_nl, .iq4_xs, .iq1_s,
         .q4_1, .q5_0, .q5_1, .q8_1 => dequantQ4_KToF16(dst, src, n_elements),
         else => return error.UnsupportedQuantType,
@@ -986,6 +1224,91 @@ fn dequantTensor(dst: []f32, src: [*]const u8, n_elements: usize, dtype: GGUFDat
         // Legacy formats
         .q4_1, .q5_0, .q5_1, .q8_1 => dequantQ4_0(dst, src, n_elements),
         else => return error.UnsupportedQuantType,
+    }
+}
+
+fn q4KBytesForMatrix(n_elements: usize) usize {
+    return ((n_elements + 255) / 256) * 144;
+}
+
+fn storeQuantizedQ4KMatrix(
+    allocator: Allocator,
+    dst_f16: *[]f16,
+    dst_quant: *QuantizedWeightMatrix,
+    src: []const u8,
+    n_elements: usize,
+    data_size: usize,
+) !void {
+    if (dst_f16.*.len > 0) {
+        allocator.free(dst_f16.*);
+        dst_f16.* = &.{};
+    }
+    dst_quant.deinit(allocator);
+    dst_quant.* = .{
+        .dtype = .q4_k,
+        .data = try allocator.dupe(u8, src[0..data_size]),
+        .n_elements = n_elements,
+    };
+}
+
+fn dotQ4KRow(x: []const f32, src: [*]const u8, n_elements: usize) f32 {
+    const block_size: usize = 256;
+    const bytes_per_block: usize = 144;
+    const n_blocks = (n_elements + block_size - 1) / block_size;
+    var sum: f32 = 0.0;
+    var x_idx: usize = 0;
+
+    for (0..n_blocks) |b| {
+        const block_ptr = src + b * bytes_per_block;
+        const d_bits = @as(u16, block_ptr[0]) | (@as(u16, block_ptr[1]) << 8);
+        const dmin_bits = @as(u16, block_ptr[2]) | (@as(u16, block_ptr[3]) << 8);
+        const d = f16ToF32(d_bits);
+        const dmin = f16ToF32(dmin_bits);
+
+        const scales = block_ptr + 4;
+        var qs = block_ptr + 16;
+        const remaining = @min(block_size, n_elements - x_idx);
+        var written: usize = 0;
+        var is: usize = 0;
+        while (written < remaining and is < 8) : (is += 2) {
+            const sm1 = getScaleMinK4(is, scales);
+            const sm2 = getScaleMinK4(is + 1, scales);
+            const d1 = d * @as(f32, @floatFromInt(sm1.scale));
+            const m1 = dmin * @as(f32, @floatFromInt(sm1.min));
+            const d2 = d * @as(f32, @floatFromInt(sm2.scale));
+            const m2 = dmin * @as(f32, @floatFromInt(sm2.min));
+
+            const low_count = @min(@as(usize, 32), remaining - written);
+            for (0..low_count) |l| {
+                const q = @as(f32, @floatFromInt(qs[l] & 0x0F));
+                sum += x[x_idx + written + l] * (d1 * q - m1);
+            }
+            written += low_count;
+
+            const high_count = @min(@as(usize, 32), remaining - written);
+            for (0..high_count) |l| {
+                const q = @as(f32, @floatFromInt(qs[l] >> 4));
+                sum += x[x_idx + written + l] * (d2 * q - m2);
+            }
+            written += high_count;
+            qs += 32;
+        }
+        x_idx += remaining;
+    }
+
+    return sum;
+}
+
+fn vecMatMulQ4_K(out: []f32, x: []const f32, weights: []const u8, k: usize, n: usize) void {
+    if (out.len < n or x.len < k) return;
+    const row_bytes = q4KBytesForMatrix(k);
+    if (weights.len < row_bytes * n) {
+        @memset(out[0..n], 0.0);
+        return;
+    }
+    for (0..n) |row| {
+        const row_offset = row * row_bytes;
+        out[row] = dotQ4KRow(x[0..k], weights.ptr + row_offset, k);
     }
 }
 
@@ -1042,7 +1365,7 @@ fn ggufSkipValue(data: []const u8, pos: usize, vtype: u32) !usize {
 
 /// Read GGUF metadata key-value pairs and extract ModelConfig fields.
 /// Returns (ModelConfig, position after all KV pairs).
-fn ggufReadMetadata(data: []const u8, start_pos: usize, n_kv: u64) !struct { config: ModelConfig, new_pos: usize } {
+fn ggufReadMetadata(allocator: Allocator, data: []const u8, start_pos: usize, n_kv: u64) !struct { config: ModelConfig, new_pos: usize } {
     var config = ModelConfig{};
     var pos = start_pos;
 
@@ -1083,6 +1406,8 @@ fn ggufReadMetadata(data: []const u8, start_pos: usize, n_kv: u64) !struct { con
                 config.context_length = @min(val, 8192);
                 config.n_ctx = config.context_length;
                 config.max_seq_len = config.context_length;
+            } else if (endsWith(key, ".shortconv.l_cache")) {
+                config.shortconv_l_cache = val;
             } else if (endsWith(key, ".vocab_size")) {
                 config.vocab_size = val;
             }
@@ -1133,6 +1458,35 @@ fn ggufReadMetadata(data: []const u8, start_pos: usize, n_kv: u64) !struct { con
                 config.vocab_size = @intCast(@min(val, std.math.maxInt(u32)));
             }
             pos += 8;
+        } else if (vtype == 9) { // arrays
+            if (pos + 12 > data.len) break;
+            const elem_type = std.mem.readInt(u32, data[pos..][0..4], .little);
+            const n_elems = std.mem.readInt(u64, data[pos + 4 ..][0..8], .little);
+            pos += 12;
+
+            if ((endsWith(key, ".attention.head_count_kv") or endsWith(key, ".num_key_value_heads") or endsWith(key, ".head_count_kv")) and
+                (elem_type == 4 or elem_type == 5))
+            {
+                const layer_n_kv_heads = try allocator.alloc(u32, @intCast(n_elems));
+                for (0..layer_n_kv_heads.len) |i| {
+                    if (elem_type == 4) {
+                        if (pos + 4 > data.len) return error.Truncated;
+                        layer_n_kv_heads[i] = std.mem.readInt(u32, data[pos..][0..4], .little);
+                    } else {
+                        if (pos + 4 > data.len) return error.Truncated;
+                        const val = std.mem.readInt(i32, data[pos..][0..4], .little);
+                        layer_n_kv_heads[i] = if (val < 0) 0 else @intCast(val);
+                    }
+                    if (layer_n_kv_heads[i] > config.n_kv_heads) config.n_kv_heads = layer_n_kv_heads[i];
+                    pos += 4;
+                }
+                config.layer_n_kv_heads = layer_n_kv_heads;
+            } else {
+                var elem_idx: u64 = 0;
+                while (elem_idx < n_elems) : (elem_idx += 1) {
+                    pos = try ggufSkipValue(data, pos, elem_type);
+                }
+            }
         } else {
             // Skip unknown value types
             pos = ggufSkipValue(data, pos, vtype) catch break;
@@ -1180,10 +1534,20 @@ fn ggufParseTensorInfo(data: []const u8, pos: *usize) !GGUFTensorInfo {
         .q5_1 => 24,
         .q8_0 => 34,
         .q8_1 => 36,
+        .q2_k => 84,
+        .q3_k => 110,
+        .q4_k => 144,
+        .q5_k => 176,
+        .q6_k => 210,
+        .q8_k => 292,
         else => 2,
     };
+    const block_elems: u64 = switch (dtype) {
+        .q2_k, .q3_k, .q4_k, .q5_k, .q6_k, .q8_k => 256,
+        else => 32,
+    };
     const data_size = if (@intFromEnum(dtype) >= 2)
-        ((n_elements + 31) / 32) * bytes_per_block
+        ((n_elements + block_elems - 1) / block_elems) * bytes_per_block
     else
         n_elements * bytes_per_block;
 
@@ -1206,10 +1570,15 @@ fn endsWith(str: []const u8, suffix: []const u8) bool {
 /// Layer tensor types for GGUF name matching.
 const LayerTensorKind = enum {
     attn_norm,
+    attn_q_norm,
+    attn_k_norm,
     wq,
     wk,
     wv,
     wo,
+    shortconv_conv,
+    shortconv_in_proj,
+    shortconv_out_proj,
     ffn_norm,
     w_gate,
     w_up,
@@ -1244,6 +1613,10 @@ fn parseLayerTensor(name: []const u8) ?LayerTensorInfo {
 
     const kind: LayerTensorKind = if (std.mem.eql(u8, suffix, "attn_norm.weight"))
         .attn_norm
+    else if (std.mem.eql(u8, suffix, "attn_q_norm.weight"))
+        .attn_q_norm
+    else if (std.mem.eql(u8, suffix, "attn_k_norm.weight"))
+        .attn_k_norm
     else if (std.mem.eql(u8, suffix, "attn_q.weight"))
         .wq
     else if (std.mem.eql(u8, suffix, "attn_k.weight"))
@@ -1252,6 +1625,12 @@ fn parseLayerTensor(name: []const u8) ?LayerTensorInfo {
         .wv
     else if (std.mem.eql(u8, suffix, "attn_output.weight"))
         .wo
+    else if (std.mem.eql(u8, suffix, "shortconv.conv.weight"))
+        .shortconv_conv
+    else if (std.mem.eql(u8, suffix, "shortconv.in_proj.weight"))
+        .shortconv_in_proj
+    else if (std.mem.eql(u8, suffix, "shortconv.out_proj.weight"))
+        .shortconv_out_proj
     else if (std.mem.eql(u8, suffix, "ffn_norm.weight"))
         .ffn_norm
     else if (std.mem.eql(u8, suffix, "ffn_gate.weight"))
@@ -2947,10 +3326,11 @@ fn createModelWithWeights(allocator: Allocator, config: ModelConfig, weights: Tr
     const model = try allocator.create(Model);
     const dim: usize = config.n_embd;
     const n_heads: usize = config.n_heads;
-    const n_kv_heads: usize = config.n_kv_heads;
+    const n_kv_heads: usize = maxKVHeadsFromConfig(config);
     const head_dim = dim / n_heads;
     const ff: usize = config.n_ff;
     const vocab: usize = config.vocab_size;
+    const shortconv_steps: usize = if (config.shortconv_l_cache > 0) config.shortconv_l_cache else 0;
 
     model.* = .{
         .allocator = allocator,
@@ -2967,8 +3347,12 @@ fn createModelWithWeights(allocator: Allocator, config: ModelConfig, weights: Tr
         .gate_buf = try allocator.alloc(f32, ff),
         .up_buf = try allocator.alloc(f32, ff),
         .ffn_out_buf = try allocator.alloc(f32, dim),
+        .shortconv_proj_buf = if (shortconv_steps > 0) try allocator.alloc(f32, 3 * dim) else &.{},
+        .shortconv_window_buf = if (shortconv_steps > 0) try allocator.alloc(f32, shortconv_steps * dim) else &.{},
+        .shortconv_out_buf = if (shortconv_steps > 0) try allocator.alloc(f32, dim) else &.{},
         .logits_buf = try allocator.alloc(f32, vocab),
     };
+    model.initMetalRuntime();
     return model;
 }
 
@@ -2981,28 +3365,43 @@ pub const KVCache = struct {
     n_layers: u32 = 32,
     n_ctx: u32 = 4096,
     seq_len: u32 = 0,
-    kv_dim: u32 = 0, // n_kv_heads * head_dim
+    kv_dim: u32 = 0, // max n_kv_heads * head_dim
+    layer_kv_dims: ?[]u32 = null,
+    recurrent_steps: u32 = 0,
     // Per-layer caches — each is [n_ctx * kv_dim] contiguous
     key_cache: ?[][]f32 = null,
     value_cache: ?[][]f32 = null,
+    recurrent_cache: ?[][]f32 = null,
 
     pub fn init(allocator: Allocator, config: ModelConfig) !KVCache {
         const n_layers: usize = config.n_layers;
         const n_heads: usize = config.n_heads;
-        const n_kv_heads: usize = config.n_kv_heads;
+        const n_kv_heads: usize = maxKVHeadsFromConfig(config);
         const dim: usize = config.n_embd;
         const head_dim = dim / n_heads;
         const kv_dim: u32 = @intCast(n_kv_heads * head_dim);
         const ctx: usize = config.context_length;
+        const recurrent_steps: usize = if (config.shortconv_l_cache > 0) config.shortconv_l_cache - 1 else 0;
 
         var kc = try allocator.alloc([]f32, n_layers);
         var vc = try allocator.alloc([]f32, n_layers);
+        var layer_kv_dims = try allocator.alloc(u32, n_layers);
+        var rc: ?[][]f32 = null;
+        if (recurrent_steps > 0) {
+            rc = try allocator.alloc([]f32, n_layers);
+        }
 
         for (0..n_layers) |l| {
+            const layer_kv_heads = layerKVHeadsFromConfig(config, l);
+            layer_kv_dims[l] = @intCast(layer_kv_heads * head_dim);
             kc[l] = try allocator.alloc(f32, ctx * kv_dim);
             @memset(kc[l], 0.0);
             vc[l] = try allocator.alloc(f32, ctx * kv_dim);
             @memset(vc[l], 0.0);
+            if (rc) |recurrent_cache| {
+                recurrent_cache[l] = try allocator.alloc(f32, recurrent_steps * dim);
+                @memset(recurrent_cache[l], 0.0);
+            }
         }
 
         return .{
@@ -3011,8 +3410,11 @@ pub const KVCache = struct {
             .n_ctx = @intCast(ctx),
             .seq_len = 0,
             .kv_dim = kv_dim,
+            .layer_kv_dims = layer_kv_dims,
+            .recurrent_steps = @intCast(recurrent_steps),
             .key_cache = kc,
             .value_cache = vc,
+            .recurrent_cache = rc,
         };
     }
 
@@ -3034,18 +3436,37 @@ pub const KVCache = struct {
             for (vc) |layer| alloc.free(layer);
             alloc.free(vc);
         }
+        if (self.layer_kv_dims) |layer_kv_dims| alloc.free(layer_kv_dims);
+        if (self.recurrent_cache) |recurrent_cache| {
+            for (recurrent_cache) |layer| alloc.free(layer);
+            alloc.free(recurrent_cache);
+        }
         self.key_cache = null;
         self.value_cache = null;
+        self.layer_kv_dims = null;
+        self.recurrent_cache = null;
     }
 
     pub fn clear(self: *KVCache) void {
         self.seq_len = 0;
         if (self.key_cache) |kc| for (kc) |layer| @memset(layer, 0.0);
         if (self.value_cache) |vc| for (vc) |layer| @memset(layer, 0.0);
+        if (self.recurrent_cache) |recurrent_cache| for (recurrent_cache) |layer| @memset(layer, 0.0);
     }
 
     pub fn getSeqLen(self: *const KVCache) u32 {
         return self.seq_len;
+    }
+
+    pub fn layerKVStride(self: *const KVCache) usize {
+        return self.kv_dim;
+    }
+
+    pub fn layerKVDim(self: *const KVCache, layer: usize) usize {
+        if (self.layer_kv_dims) |layer_kv_dims| {
+            return layer_kv_dims[layer];
+        }
+        return self.kv_dim;
     }
 
     /// Store a key vector at position `pos` for layer `layer`
@@ -3085,11 +3506,35 @@ pub const KVCache = struct {
 // Model — full transformer with forward pass
 // ============================================================================
 
+const MetalWeightBufferMap = std.AutoHashMap(usize, metal_bindings.MTLBuffer);
+const MetalVecMatPlan = struct {
+    out: []f32,
+    weights_f16: []const f16,
+    weights_quant: *const QuantizedWeightMatrix,
+    k: usize,
+    n: usize,
+};
+
 pub const Model = struct {
     allocator: Allocator,
     config: ModelConfig,
     loaded: bool = false,
     weights: ?TransformerWeights = null,
+    owned_layer_n_kv_heads: ?[]u32 = null,
+    metal_lib: ?*metal_shaders.MetalShaderLibrary = null,
+    metal_weight_buffers: ?MetalWeightBufferMap = null,
+    metal_hidden_buf: ?metal_bindings.MTLBuffer = null,
+    metal_norm_buf: ?metal_bindings.MTLBuffer = null,
+    metal_q_buf: ?metal_bindings.MTLBuffer = null,
+    metal_k_buf: ?metal_bindings.MTLBuffer = null,
+    metal_v_buf: ?metal_bindings.MTLBuffer = null,
+    metal_attn_out_buf: ?metal_bindings.MTLBuffer = null,
+    metal_gate_buf: ?metal_bindings.MTLBuffer = null,
+    metal_up_buf: ?metal_bindings.MTLBuffer = null,
+    metal_ffn_out_buf: ?metal_bindings.MTLBuffer = null,
+    metal_shortconv_proj_buf: ?metal_bindings.MTLBuffer = null,
+    metal_shortconv_out_buf: ?metal_bindings.MTLBuffer = null,
+    metal_logits_buf: ?metal_bindings.MTLBuffer = null,
 
     // Scratch buffers for forward pass (allocated once, reused)
     hidden_buf: []f32 = &.{}, // [dim]
@@ -3102,16 +3547,20 @@ pub const Model = struct {
     gate_buf: []f32 = &.{}, // [ff_dim]
     up_buf: []f32 = &.{}, // [ff_dim]
     ffn_out_buf: []f32 = &.{}, // [dim]
+    shortconv_proj_buf: []f32 = &.{}, // [3 * dim]
+    shortconv_window_buf: []f32 = &.{}, // [l_cache * dim]
+    shortconv_out_buf: []f32 = &.{}, // [dim]
     logits_buf: []f32 = &.{}, // [vocab_size]
 
     pub fn load(allocator: Allocator, config: ModelConfig) !*Model {
         const model = try allocator.create(Model);
         const dim: usize = config.n_embd;
         const n_heads: usize = config.n_heads;
-        const n_kv_heads: usize = config.n_kv_heads;
+        const n_kv_heads: usize = maxKVHeadsFromConfig(config);
         const head_dim = dim / n_heads;
         const ff: usize = config.n_ff;
         const vocab: usize = config.vocab_size;
+        const shortconv_steps: usize = if (config.shortconv_l_cache > 0) config.shortconv_l_cache else 0;
 
         model.* = .{
             .allocator = allocator,
@@ -3128,8 +3577,12 @@ pub const Model = struct {
             .gate_buf = try allocator.alloc(f32, ff),
             .up_buf = try allocator.alloc(f32, ff),
             .ffn_out_buf = try allocator.alloc(f32, dim),
+            .shortconv_proj_buf = if (shortconv_steps > 0) try allocator.alloc(f32, 3 * dim) else &.{},
+            .shortconv_window_buf = if (shortconv_steps > 0) try allocator.alloc(f32, shortconv_steps * dim) else &.{},
+            .shortconv_out_buf = if (shortconv_steps > 0) try allocator.alloc(f32, dim) else &.{},
             .logits_buf = try allocator.alloc(f32, vocab),
         };
+        model.initMetalRuntime();
         return model;
     }
 
@@ -3152,9 +3605,11 @@ pub const Model = struct {
         const n_kv = std.mem.readInt(u64, data[16..24], .little);
 
         // Read metadata → ModelConfig
-        const meta_result = try ggufReadMetadata(data, 24, n_kv);
+        const meta_result = try ggufReadMetadata(allocator, data, 24, n_kv);
         var config = meta_result.config;
         var pos = meta_result.new_pos;
+        var owned_layer_n_kv_heads = config.layer_n_kv_heads;
+        errdefer if (owned_layer_n_kv_heads) |layer_n_kv_heads| allocator.free(layer_n_kv_heads);
 
         // Parse tensor info entries
         const n_t: usize = @intCast(n_tensors);
@@ -3187,6 +3642,7 @@ pub const Model = struct {
         if (config.n_ctx == 0) config.n_ctx = config.context_length;
         if (config.max_seq_len == 0) config.max_seq_len = config.context_length;
         // Default n_kv_heads if not set (Qwen 3.5 and others with GQA)
+        if (config.n_kv_heads == 0) config.n_kv_heads = maxKVHeadsFromConfig(config);
         if (config.n_kv_heads == 0) config.n_kv_heads = config.n_heads;
         // Default vocab from token_embd tensor if still 0
         if (config.vocab_size == 0 or config.n_embd == 0 or config.n_layers == 0 or config.n_heads == 0) {
@@ -3220,6 +3676,7 @@ pub const Model = struct {
         // Allocate weights without initialization
         var weights = try TransformerWeights.allocateRaw(allocator, config);
         errdefer weights.deinit(allocator);
+        initWeightsSafeDefaults(weights);
 
         // Fill weights from GGUF tensor data.
         // Norm weights (attn_norm, ffn_norm, final_norm) stay f32.
@@ -3228,15 +3685,20 @@ pub const Model = struct {
         for (tensor_infos) |ti| {
             const src_start = tensor_data_start + @as(usize, @intCast(ti.data_offset));
             if (src_start + @as(usize, @intCast(ti.data_size)) > data.len) continue;
+            const src_bytes = data[src_start .. src_start + @as(usize, @intCast(ti.data_size))];
             const src_ptr: [*]const u8 = data.ptr + src_start;
             const n_elem: usize = @intCast(ti.n_elements);
 
             if (std.mem.eql(u8, ti.name, "token_embd.weight")) {
                 try dequantTensorF16(weights.token_embedding, src_ptr, n_elem, ti.dtype);
-            } else if (std.mem.eql(u8, ti.name, "output_norm.weight")) {
+            } else if (std.mem.eql(u8, ti.name, "output_norm.weight") or std.mem.eql(u8, ti.name, "token_embd_norm.weight")) {
                 try dequantTensor(weights.final_norm, src_ptr, n_elem, ti.dtype); // f32 norm
             } else if (std.mem.eql(u8, ti.name, "output.weight")) {
-                try dequantTensorF16(weights.lm_head, src_ptr, n_elem, ti.dtype);
+                if (ti.dtype == .q4_k) {
+                    try storeQuantizedQ4KMatrix(allocator, &weights.lm_head, &weights.lm_head_quant, src_bytes, n_elem, @intCast(ti.data_size));
+                } else {
+                    try dequantTensorF16(weights.lm_head, src_ptr, n_elem, ti.dtype);
+                }
                 found_output = true;
             } else if (parseLayerTensor(ti.name)) |layer_info| {
                 if (layer_info.layer < weights.layers.len) {
@@ -3244,15 +3706,53 @@ pub const Model = struct {
                     switch (layer_info.kind) {
                         // f32 norm weights
                         .attn_norm => try dequantTensor(layer.attn_norm, src_ptr, n_elem, ti.dtype),
+                        .attn_q_norm => {
+                            try dequantTensor(layer.attn_q_norm, src_ptr, n_elem, ti.dtype);
+                            layer.has_attn_q_norm = true;
+                        },
+                        .attn_k_norm => {
+                            try dequantTensor(layer.attn_k_norm, src_ptr, n_elem, ti.dtype);
+                            layer.has_attn_k_norm = true;
+                        },
+                        .shortconv_conv => try dequantTensor(layer.shortconv_conv, src_ptr, n_elem, ti.dtype),
                         .ffn_norm  => try dequantTensor(layer.ffn_norm,  src_ptr, n_elem, ti.dtype),
                         // f16 weight matrices
-                        .wq     => try dequantTensorF16(layer.wq,     src_ptr, n_elem, ti.dtype),
-                        .wk     => try dequantTensorF16(layer.wk,     src_ptr, n_elem, ti.dtype),
-                        .wv     => try dequantTensorF16(layer.wv,     src_ptr, n_elem, ti.dtype),
-                        .wo     => try dequantTensorF16(layer.wo,     src_ptr, n_elem, ti.dtype),
-                        .w_gate => try dequantTensorF16(layer.w_gate, src_ptr, n_elem, ti.dtype),
-                        .w_up   => try dequantTensorF16(layer.w_up,   src_ptr, n_elem, ti.dtype),
-                        .w_down => try dequantTensorF16(layer.w_down, src_ptr, n_elem, ti.dtype),
+                        .wq => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.wq, &layer.wq_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.wq, src_ptr, n_elem, ti.dtype),
+                        .wk => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.wk, &layer.wk_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.wk, src_ptr, n_elem, ti.dtype),
+                        .wv => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.wv, &layer.wv_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.wv, src_ptr, n_elem, ti.dtype),
+                        .wo => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.wo, &layer.wo_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.wo, src_ptr, n_elem, ti.dtype),
+                        .shortconv_in_proj => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.shortconv_in_proj, &layer.shortconv_in_proj_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.shortconv_in_proj, src_ptr, n_elem, ti.dtype),
+                        .shortconv_out_proj => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.shortconv_out_proj, &layer.shortconv_out_proj_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.shortconv_out_proj, src_ptr, n_elem, ti.dtype),
+                        .w_gate => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.w_gate, &layer.w_gate_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.w_gate, src_ptr, n_elem, ti.dtype),
+                        .w_up => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.w_up, &layer.w_up_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.w_up, src_ptr, n_elem, ti.dtype),
+                        .w_down => if (ti.dtype == .q4_k)
+                            try storeQuantizedQ4KMatrix(allocator, &layer.w_down, &layer.w_down_quant, src_bytes, n_elem, @intCast(ti.data_size))
+                        else
+                            try dequantTensorF16(layer.w_down, src_ptr, n_elem, ti.dtype),
                     }
                 }
             }
@@ -3267,16 +3767,18 @@ pub const Model = struct {
         const model = try allocator.create(Model);
         const dim: usize = config.n_embd;
         const n_heads: usize = config.n_heads;
-        const n_kv_heads: usize = config.n_kv_heads;
+        const n_kv_heads: usize = maxKVHeadsFromConfig(config);
         const head_dim = dim / n_heads;
         const ff: usize = config.n_ff;
         const vocab: usize = config.vocab_size;
+        const shortconv_steps: usize = if (config.shortconv_l_cache > 0) config.shortconv_l_cache else 0;
 
         model.* = .{
             .allocator = allocator,
             .config = config,
             .loaded = true,
             .weights = weights,
+            .owned_layer_n_kv_heads = owned_layer_n_kv_heads,
             .hidden_buf = try allocator.alloc(f32, dim),
             .norm_buf = try allocator.alloc(f32, dim),
             .q_buf = try allocator.alloc(f32, n_heads * head_dim),
@@ -3287,25 +3789,541 @@ pub const Model = struct {
             .gate_buf = try allocator.alloc(f32, ff),
             .up_buf = try allocator.alloc(f32, ff),
             .ffn_out_buf = try allocator.alloc(f32, dim),
+            .shortconv_proj_buf = if (shortconv_steps > 0) try allocator.alloc(f32, 3 * dim) else &.{},
+            .shortconv_window_buf = if (shortconv_steps > 0) try allocator.alloc(f32, shortconv_steps * dim) else &.{},
+            .shortconv_out_buf = if (shortconv_steps > 0) try allocator.alloc(f32, dim) else &.{},
             .logits_buf = try allocator.alloc(f32, vocab),
         };
+        model.initMetalRuntime();
+        owned_layer_n_kv_heads = null;
         return model;
     }
 
+    fn initMetalRuntime(self: *Model) void {
+        if (builtin.os.tag != .macos or builtin.is_test) return;
+        if (self.metal_lib != null) return;
+
+        if (std.posix.getenv("PLLM_DISABLE_METAL")) |raw| {
+            if (raw.len != 1 or raw[0] != '0') return;
+        }
+
+        const lib = metal_shaders.MetalShaderLibrary.init(self.allocator) catch |err| {
+            std.log.warn("Metal shader library init failed ({s}); using CPU matmuls", .{@errorName(err)});
+            return;
+        };
+        errdefer lib.deinit();
+
+        if (lib.device == null) {
+            std.log.warn("Metal shader library has no device; using CPU matmuls", .{});
+            return;
+        }
+
+        metal_shaders.loadBundledLibrary(lib) catch |err| {
+            std.log.warn("Metal shader load failed ({s}); using CPU matmuls", .{@errorName(err)});
+            return;
+        };
+        if (!lib.isReady()) {
+            std.log.warn("Metal shader library is not ready after load; using CPU matmuls", .{});
+            return;
+        }
+
+        self.metal_lib = lib;
+        self.metal_weight_buffers = MetalWeightBufferMap.init(self.allocator);
+        metal_device = lib.device;
+        metal_queue = lib.command_queue;
+        metal_matmul_pipeline = lib.pipelines.get(.vecmat_f16_colmajor);
+        gpu_backend = .metal;
+        self.migrateScratchToMetal();
+        std.log.info("Enabled in-process Metal matmul offload for GGUF runtime", .{});
+    }
+
+    fn deinitMetalRuntime(self: *Model) void {
+        inline for (&.{
+            &self.metal_hidden_buf,
+            &self.metal_norm_buf,
+            &self.metal_q_buf,
+            &self.metal_k_buf,
+            &self.metal_v_buf,
+            &self.metal_attn_out_buf,
+            &self.metal_gate_buf,
+            &self.metal_up_buf,
+            &self.metal_ffn_out_buf,
+            &self.metal_shortconv_proj_buf,
+            &self.metal_shortconv_out_buf,
+            &self.metal_logits_buf,
+        }) |maybe_buf| {
+            if (maybe_buf.*) |buf| {
+                metal_bindings.release(buf);
+                maybe_buf.* = null;
+            }
+        }
+
+        if (self.metal_weight_buffers) |*buffers| {
+            var iter = buffers.valueIterator();
+            while (iter.next()) |buffer| metal_bindings.release(buffer.*);
+            buffers.deinit();
+            self.metal_weight_buffers = null;
+        }
+
+        if (self.metal_lib) |lib| {
+            lib.deinit();
+            self.metal_lib = null;
+        }
+
+        metal_device = null;
+        metal_queue = null;
+        metal_matmul_pipeline = null;
+        if (gpu_backend == .metal) gpu_backend = .cpu;
+    }
+
+    fn migrateSliceToMetalBuffer(self: *Model, slice: *[]f32, handle: *?metal_bindings.MTLBuffer) void {
+        if (slice.*.len == 0 or handle.* != null) return;
+        const lib = self.metal_lib orelse return;
+        const device = lib.device orelse return;
+        const old_slice = slice.*;
+        const size = old_slice.len * @sizeOf(f32);
+        const buf = metal_bindings.createSharedBuffer(device, @intCast(size)) orelse return;
+        const contents = metal_bindings.getBufferContents(buf) orelse {
+            metal_bindings.release(buf);
+            return;
+        };
+        const ptr: [*]f32 = @ptrCast(@alignCast(contents));
+        @memset(ptr[0..old_slice.len], 0.0);
+        self.allocator.free(old_slice);
+        slice.* = ptr[0..old_slice.len];
+        handle.* = buf;
+    }
+
+    fn migrateScratchToMetal(self: *Model) void {
+        self.migrateSliceToMetalBuffer(&self.hidden_buf, &self.metal_hidden_buf);
+        self.migrateSliceToMetalBuffer(&self.norm_buf, &self.metal_norm_buf);
+        self.migrateSliceToMetalBuffer(&self.q_buf, &self.metal_q_buf);
+        self.migrateSliceToMetalBuffer(&self.k_buf, &self.metal_k_buf);
+        self.migrateSliceToMetalBuffer(&self.v_buf, &self.metal_v_buf);
+        self.migrateSliceToMetalBuffer(&self.attn_out_buf, &self.metal_attn_out_buf);
+        self.migrateSliceToMetalBuffer(&self.gate_buf, &self.metal_gate_buf);
+        self.migrateSliceToMetalBuffer(&self.up_buf, &self.metal_up_buf);
+        self.migrateSliceToMetalBuffer(&self.ffn_out_buf, &self.metal_ffn_out_buf);
+        self.migrateSliceToMetalBuffer(&self.shortconv_proj_buf, &self.metal_shortconv_proj_buf);
+        self.migrateSliceToMetalBuffer(&self.shortconv_out_buf, &self.metal_shortconv_out_buf);
+        self.migrateSliceToMetalBuffer(&self.logits_buf, &self.metal_logits_buf);
+    }
+
+    fn getOrCreateMetalBuffer(self: *Model, bytes: []const u8, key: usize) ?metal_bindings.MTLBuffer {
+        if (bytes.len == 0) return null;
+        const lib = self.metal_lib orelse return null;
+        var buffers = &(self.metal_weight_buffers orelse return null);
+
+        if (buffers.get(key)) |buffer| return buffer;
+
+        const device = lib.device orelse return null;
+        const buffer = metal_bindings.createBufferWithBytes(device, bytes, metal_bindings.MTLResourceStorageModeShared) orelse return null;
+        buffers.put(key, buffer) catch {
+            metal_bindings.release(buffer);
+            return null;
+        };
+        return buffer;
+    }
+
+    fn getOrCreateMetalWeightBuffer(self: *Model, weights: []const f16) ?metal_bindings.MTLBuffer {
+        return self.getOrCreateMetalBuffer(std.mem.sliceAsBytes(weights), @intFromPtr(weights.ptr));
+    }
+
+    fn getOrCreateMetalF32Buffer(self: *Model, weights: []const f32) ?metal_bindings.MTLBuffer {
+        return self.getOrCreateMetalBuffer(std.mem.sliceAsBytes(weights), @intFromPtr(weights.ptr));
+    }
+
+    fn getOrCreateMetalQuantBuffer(self: *Model, weights: *const QuantizedWeightMatrix) ?metal_bindings.MTLBuffer {
+        return self.getOrCreateMetalBuffer(weights.data, @intFromPtr(weights.data.ptr));
+    }
+
+    fn getMetalVecMatOp(
+        self: *Model,
+        out: []f32,
+        weights_f16: []const f16,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        n: usize,
+    ) ?metal_shaders.VecMatOp {
+        if (weights_quant.dtype) |dtype| {
+            switch (dtype) {
+                .q4_k => {
+                    const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant) orelse return null;
+                    return .{
+                        .kernel = .q4_k,
+                        .weight_buf = weight_buf,
+                        .out = out,
+                        .out_buf = self.metalBufferForSlice(out),
+                        .k = k,
+                        .n = n,
+                    };
+                },
+                else => return null,
+            }
+        }
+
+        const weight_slice = weights_f16[0 .. k * n];
+        const weight_buf = self.getOrCreateMetalWeightBuffer(weight_slice) orelse return null;
+        return .{
+            .kernel = .f16_colmajor,
+            .weight_buf = weight_buf,
+            .out = out,
+            .out_buf = self.metalBufferForSlice(out),
+            .k = k,
+            .n = n,
+        };
+    }
+
+    fn metalBufferForSlice(self: *Model, slice: []const f32) ?metal_bindings.MTLBuffer {
+        if (slice.len == 0) return null;
+        if (self.hidden_buf.len > 0 and slice.ptr == self.hidden_buf.ptr) return self.metal_hidden_buf;
+        if (self.norm_buf.len > 0 and slice.ptr == self.norm_buf.ptr) return self.metal_norm_buf;
+        if (self.q_buf.len > 0 and slice.ptr == self.q_buf.ptr) return self.metal_q_buf;
+        if (self.k_buf.len > 0 and slice.ptr == self.k_buf.ptr) return self.metal_k_buf;
+        if (self.v_buf.len > 0 and slice.ptr == self.v_buf.ptr) return self.metal_v_buf;
+        if (self.attn_out_buf.len > 0 and slice.ptr == self.attn_out_buf.ptr) return self.metal_attn_out_buf;
+        if (self.gate_buf.len > 0 and slice.ptr == self.gate_buf.ptr) return self.metal_gate_buf;
+        if (self.up_buf.len > 0 and slice.ptr == self.up_buf.ptr) return self.metal_up_buf;
+        if (self.ffn_out_buf.len > 0 and slice.ptr == self.ffn_out_buf.ptr) return self.metal_ffn_out_buf;
+        if (self.shortconv_proj_buf.len > 0 and slice.ptr == self.shortconv_proj_buf.ptr) return self.metal_shortconv_proj_buf;
+        if (self.shortconv_out_buf.len > 0 and slice.ptr == self.shortconv_out_buf.ptr) return self.metal_shortconv_out_buf;
+        if (self.logits_buf.len > 0 and slice.ptr == self.logits_buf.ptr) return self.metal_logits_buf;
+        return null;
+    }
+
+    fn tryBatchedVecMat(self: *Model, x: []const f32, plans: []const MetalVecMatPlan) bool {
+        const lib = self.metal_lib orelse return false;
+        if (plans.len == 0 or plans.len > 8) return false;
+        if (std.posix.getenv("PLLM_DISABLE_BATCHED_VECMAT")) |raw| {
+            if (raw.len != 1 or raw[0] != '0') return false;
+        }
+
+        var ops: [8]metal_shaders.VecMatOp = undefined;
+        for (plans, 0..) |plan, i| {
+            if (plan.out.len < plan.n or x.len < plan.k) return false;
+            ops[i] = self.getMetalVecMatOp(plan.out, plan.weights_f16, plan.weights_quant, plan.k, plan.n) orelse return false;
+        }
+        return metal_shaders.dispatchVecMatMulBatch(lib, x, self.metalBufferForSlice(x), ops[0..plans.len]);
+    }
+
+    fn tryFusedQ4KPair(
+        self: *Model,
+        x: []const f32,
+        out1: []f32,
+        weights1: *const QuantizedWeightMatrix,
+        n1: usize,
+        out2: []f32,
+        weights2: *const QuantizedWeightMatrix,
+        n2: usize,
+        k: usize,
+    ) bool {
+        const lib = self.metal_lib orelse return false;
+        const raw = std.posix.getenv("PLLM_ENABLE_FUSED_Q4K") orelse return false;
+        if (raw.len != 1 or raw[0] != '1') return false;
+        if (weights1.dtype != .q4_k or weights2.dtype != .q4_k) return false;
+        const weight1 = self.getOrCreateMetalQuantBuffer(weights1) orelse return false;
+        const weight2 = self.getOrCreateMetalQuantBuffer(weights2) orelse return false;
+        return metal_shaders.dispatchVecMatMulQ4KPair(lib, x, self.metalBufferForSlice(x), .{
+            .weight1 = weight1,
+            .out1 = out1,
+            .out1_buf = self.metalBufferForSlice(out1),
+            .n1 = n1,
+            .weight2 = weight2,
+            .out2 = out2,
+            .out2_buf = self.metalBufferForSlice(out2),
+            .n2 = n2,
+            .k = k,
+        });
+    }
+
+    fn computeInvRms(self: *Model, src: []const f32, use_accel: bool) f32 {
+        _ = self;
+        if (src.len == 0) return 0.0;
+        const ss = if (use_accel) accelerate.sumOfSquares(src) else blk: {
+            var sum: f32 = 0.0;
+            for (src) |v| sum += v * v;
+            break :blk sum;
+        };
+        return 1.0 / @sqrt(ss / @as(f32, @floatFromInt(src.len)) + 1e-5);
+    }
+
+    fn envFlagEnabled(name: []const u8) bool {
+        const raw = std.posix.getenv(name) orelse return false;
+        return raw.len == 1 and raw[0] == '1';
+    }
+
+    const DiffStat = struct {
+        max_diff: f32,
+        idx: usize,
+    };
+
+    fn maxAbsDiff(a: []const f32, b: []const f32) DiffStat {
+        const n = @min(a.len, b.len);
+        var max_diff: f32 = 0.0;
+        var max_idx: usize = 0;
+        for (0..n) |i| {
+            const diff = @abs(a[i] - b[i]);
+            if (diff > max_diff) {
+                max_diff = diff;
+                max_idx = i;
+            }
+        }
+        return .{ .max_diff = max_diff, .idx = max_idx };
+    }
+
+    fn debugCompareFfnFusion(
+        self: *Model,
+        layer: *const TransformerLayer,
+        use_accel: bool,
+        layer_idx: usize,
+        pos: usize,
+        ff: usize,
+        dim: usize,
+    ) void {
+        if (!envFlagEnabled("PLLM_DEBUG_FFN_FUSION")) return;
+        if (layer_idx != 0 or pos != 0) return;
+
+        var tmp_norm = self.allocator.alloc(f32, dim) catch return;
+        defer self.allocator.free(tmp_norm);
+        const tmp_gate = self.allocator.alloc(f32, ff) catch return;
+        defer self.allocator.free(tmp_gate);
+        const tmp_up = self.allocator.alloc(f32, ff) catch return;
+        defer self.allocator.free(tmp_up);
+
+        if (use_accel) {
+            const ss = accelerate.sumOfSquares(self.hidden_buf[0..dim]);
+            const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(dim)) + 1e-5);
+            for (0..dim) |i| tmp_norm[i] = layer.ffn_norm[i] * self.hidden_buf[i] * rms;
+        } else {
+            rmsNorm(tmp_norm, self.hidden_buf[0..dim], layer.ffn_norm, 1e-5);
+        }
+        self.vecMatMulRuntime(tmp_gate, tmp_norm, layer.w_gate, &layer.w_gate_quant, dim, ff);
+        self.vecMatMulRuntime(tmp_up, tmp_norm, layer.w_up, &layer.w_up_quant, dim, ff);
+
+        const gate_direct = maxAbsDiff(self.gate_buf[0..ff], tmp_gate);
+        const up_direct = maxAbsDiff(self.up_buf[0..ff], tmp_up);
+        const gate_swapped = maxAbsDiff(self.gate_buf[0..ff], tmp_up);
+        const up_swapped = maxAbsDiff(self.up_buf[0..ff], tmp_gate);
+        std.log.warn(
+            "FFN fused debug layer={} pos={} gate_direct={d:.6}@{} up_direct={d:.6}@{} gate_swapped={d:.6}@{} up_swapped={d:.6}@{} gate0={d:.6}/{d:.6} gate1={d:.6}/{d:.6} up0={d:.6}/{d:.6} up1={d:.6}/{d:.6} gate_max={d:.6}/{d:.6} up_max={d:.6}/{d:.6}",
+            .{
+                layer_idx,
+                pos,
+                gate_direct.max_diff,
+                gate_direct.idx,
+                up_direct.max_diff,
+                up_direct.idx,
+                gate_swapped.max_diff,
+                gate_swapped.idx,
+                up_swapped.max_diff,
+                up_swapped.idx,
+                self.gate_buf[0],
+                tmp_gate[0],
+                self.gate_buf[1],
+                tmp_gate[1],
+                self.up_buf[0],
+                tmp_up[0],
+                self.up_buf[1],
+                tmp_up[1],
+                self.gate_buf[gate_direct.idx],
+                tmp_gate[gate_direct.idx],
+                self.up_buf[up_direct.idx],
+                tmp_up[up_direct.idx],
+            },
+        );
+    }
+
+    fn tryFusedQ4KPairRmsNorm(
+        self: *Model,
+        x: []const f32,
+        norm_weight: []const f32,
+        out1: []f32,
+        weights1: *const QuantizedWeightMatrix,
+        n1: usize,
+        out2: []f32,
+        weights2: *const QuantizedWeightMatrix,
+        n2: usize,
+        k: usize,
+        use_accel: bool,
+    ) bool {
+        const lib = self.metal_lib orelse return false;
+        if (!envFlagEnabled("PLLM_ENABLE_FUSED_FFN_RMSNORM")) return false;
+        if (weights1.dtype != .q4_k or weights2.dtype != .q4_k) return false;
+        const weight1 = self.getOrCreateMetalQuantBuffer(weights1) orelse return false;
+        const weight2 = self.getOrCreateMetalQuantBuffer(weights2) orelse return false;
+        const norm_weight_buf = self.getOrCreateMetalF32Buffer(norm_weight) orelse return false;
+        return metal_shaders.dispatchVecMatMulQ4KPairRmsNorm(lib, x, self.metalBufferForSlice(x), .{
+            .norm_weight = norm_weight_buf,
+            .inv_rms = self.computeInvRms(x[0..k], use_accel),
+            .weight1 = weight1,
+            .out1 = out1,
+            .out1_buf = self.metalBufferForSlice(out1),
+            .n1 = n1,
+            .weight2 = weight2,
+            .out2 = out2,
+            .out2_buf = self.metalBufferForSlice(out2),
+            .n2 = n2,
+            .k = k,
+        });
+    }
+
+    fn tryFusedQ4KTriple(
+        self: *Model,
+        x: []const f32,
+        out1: []f32,
+        weights1: *const QuantizedWeightMatrix,
+        n1: usize,
+        out2: []f32,
+        weights2: *const QuantizedWeightMatrix,
+        n2: usize,
+        out3: []f32,
+        weights3: *const QuantizedWeightMatrix,
+        n3: usize,
+        k: usize,
+    ) bool {
+        const lib = self.metal_lib orelse return false;
+        const raw = std.posix.getenv("PLLM_ENABLE_FUSED_Q4K") orelse return false;
+        if (raw.len != 1 or raw[0] != '1') return false;
+        if (weights1.dtype != .q4_k or weights2.dtype != .q4_k or weights3.dtype != .q4_k) return false;
+        const weight1 = self.getOrCreateMetalQuantBuffer(weights1) orelse return false;
+        const weight2 = self.getOrCreateMetalQuantBuffer(weights2) orelse return false;
+        const weight3 = self.getOrCreateMetalQuantBuffer(weights3) orelse return false;
+        return metal_shaders.dispatchVecMatMulQ4KTriple(lib, x, self.metalBufferForSlice(x), .{
+            .weight1 = weight1,
+            .out1 = out1,
+            .out1_buf = self.metalBufferForSlice(out1),
+            .n1 = n1,
+            .weight2 = weight2,
+            .out2 = out2,
+            .out2_buf = self.metalBufferForSlice(out2),
+            .n2 = n2,
+            .weight3 = weight3,
+            .out3 = out3,
+            .out3_buf = self.metalBufferForSlice(out3),
+            .n3 = n3,
+            .k = k,
+        });
+    }
+
+    fn tryFusedQ4KTripleRmsNorm(
+        self: *Model,
+        x: []const f32,
+        norm_weight: []const f32,
+        out1: []f32,
+        weights1: *const QuantizedWeightMatrix,
+        n1: usize,
+        out2: []f32,
+        weights2: *const QuantizedWeightMatrix,
+        n2: usize,
+        out3: []f32,
+        weights3: *const QuantizedWeightMatrix,
+        n3: usize,
+        k: usize,
+        use_accel: bool,
+    ) bool {
+        const lib = self.metal_lib orelse return false;
+        if (envFlagEnabled("PLLM_DISABLE_FUSED_QKV_RMSNORM")) return false;
+        if (weights1.dtype != .q4_k or weights2.dtype != .q4_k or weights3.dtype != .q4_k) return false;
+        const weight1 = self.getOrCreateMetalQuantBuffer(weights1) orelse return false;
+        const weight2 = self.getOrCreateMetalQuantBuffer(weights2) orelse return false;
+        const weight3 = self.getOrCreateMetalQuantBuffer(weights3) orelse return false;
+        const norm_weight_buf = self.getOrCreateMetalF32Buffer(norm_weight) orelse return false;
+        return metal_shaders.dispatchVecMatMulQ4KTripleRmsNorm(lib, x, self.metalBufferForSlice(x), .{
+            .norm_weight = norm_weight_buf,
+            .inv_rms = self.computeInvRms(x[0..k], use_accel),
+            .weight1 = weight1,
+            .out1 = out1,
+            .out1_buf = self.metalBufferForSlice(out1),
+            .n1 = n1,
+            .weight2 = weight2,
+            .out2 = out2,
+            .out2_buf = self.metalBufferForSlice(out2),
+            .n2 = n2,
+            .weight3 = weight3,
+            .out3 = out3,
+            .out3_buf = self.metalBufferForSlice(out3),
+            .n3 = n3,
+            .k = k,
+        });
+    }
+
+    fn vecMatMulF16WRuntime(self: *Model, out: []f32, x: []const f32, weights: []const f16, k: usize, n: usize) void {
+        if (out.len < n or x.len < k) return;
+
+        if (self.metal_lib) |lib| {
+            const weight_slice = weights[0 .. k * n];
+            const weight_buf = self.getOrCreateMetalWeightBuffer(weight_slice);
+            const result = metal_shaders.dispatchVecMatMulF16ColMajor(lib, x[0..k], weight_slice, weight_buf, out[0..n], self.metalBufferForSlice(x[0..k]), self.metalBufferForSlice(out[0..n]), k, n);
+            if (result.success) return;
+        }
+
+        vecMatMulF16W(out, x, weights, k, n);
+    }
+
+    fn vecMatMulRuntime(
+        self: *Model,
+        out: []f32,
+        x: []const f32,
+        weights_f16: []const f16,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        n: usize,
+    ) void {
+        if (out.len < n or x.len < k) return;
+
+        if (weights_quant.dtype) |dtype| {
+            switch (dtype) {
+                .q4_k => {
+                    if (self.metal_lib) |lib| {
+                        const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant);
+                        const result = metal_shaders.dispatchVecMatMulQ4K(lib, x[0..k], weights_quant.data, weight_buf, out[0..n], self.metalBufferForSlice(x[0..k]), self.metalBufferForSlice(out[0..n]), k, n);
+                        if (result.success) return;
+                    }
+                    vecMatMulQ4_K(out, x, weights_quant.data, k, n);
+                    return;
+                },
+                else => {},
+            }
+        }
+
+        self.vecMatMulF16WRuntime(out, x, weights_f16, k, n);
+    }
+
     pub fn deinit(self: *Model) void {
+        const hidden_on_metal = self.metal_hidden_buf != null;
+        const norm_on_metal = self.metal_norm_buf != null;
+        const q_on_metal = self.metal_q_buf != null;
+        const k_on_metal = self.metal_k_buf != null;
+        const v_on_metal = self.metal_v_buf != null;
+        const attn_out_on_metal = self.metal_attn_out_buf != null;
+        const gate_on_metal = self.metal_gate_buf != null;
+        const up_on_metal = self.metal_up_buf != null;
+        const ffn_out_on_metal = self.metal_ffn_out_buf != null;
+        const shortconv_proj_on_metal = self.metal_shortconv_proj_buf != null;
+        const shortconv_out_on_metal = self.metal_shortconv_out_buf != null;
+        const logits_on_metal = self.metal_logits_buf != null;
+        self.deinitMetalRuntime();
         if (self.weights) |*w| w.deinit(self.allocator);
-        if (self.hidden_buf.len > 0) self.allocator.free(self.hidden_buf);
-        if (self.norm_buf.len > 0) self.allocator.free(self.norm_buf);
-        if (self.q_buf.len > 0) self.allocator.free(self.q_buf);
-        if (self.k_buf.len > 0) self.allocator.free(self.k_buf);
-        if (self.v_buf.len > 0) self.allocator.free(self.v_buf);
-        if (self.attn_out_buf.len > 0) self.allocator.free(self.attn_out_buf);
+        if (self.owned_layer_n_kv_heads) |layer_n_kv_heads| self.allocator.free(layer_n_kv_heads);
+        if (!hidden_on_metal and self.hidden_buf.len > 0) self.allocator.free(self.hidden_buf);
+        if (!norm_on_metal and self.norm_buf.len > 0) self.allocator.free(self.norm_buf);
+        if (!q_on_metal and self.q_buf.len > 0) self.allocator.free(self.q_buf);
+        if (!k_on_metal and self.k_buf.len > 0) self.allocator.free(self.k_buf);
+        if (!v_on_metal and self.v_buf.len > 0) self.allocator.free(self.v_buf);
+        if (!attn_out_on_metal and self.attn_out_buf.len > 0) self.allocator.free(self.attn_out_buf);
         if (self.attn_score_buf.len > 0) self.allocator.free(self.attn_score_buf);
-        if (self.gate_buf.len > 0) self.allocator.free(self.gate_buf);
-        if (self.up_buf.len > 0) self.allocator.free(self.up_buf);
-        if (self.ffn_out_buf.len > 0) self.allocator.free(self.ffn_out_buf);
-        if (self.logits_buf.len > 0) self.allocator.free(self.logits_buf);
+        if (!gate_on_metal and self.gate_buf.len > 0) self.allocator.free(self.gate_buf);
+        if (!up_on_metal and self.up_buf.len > 0) self.allocator.free(self.up_buf);
+        if (!ffn_out_on_metal and self.ffn_out_buf.len > 0) self.allocator.free(self.ffn_out_buf);
+        if (!shortconv_proj_on_metal and self.shortconv_proj_buf.len > 0) self.allocator.free(self.shortconv_proj_buf);
+        if (self.shortconv_window_buf.len > 0) self.allocator.free(self.shortconv_window_buf);
+        if (!shortconv_out_on_metal and self.shortconv_out_buf.len > 0) self.allocator.free(self.shortconv_out_buf);
+        if (!logits_on_metal and self.logits_buf.len > 0) self.allocator.free(self.logits_buf);
         self.allocator.destroy(self);
+    }
+
+    pub fn isUsingMetal(self: *const Model) bool {
+        return self.metal_lib != null;
     }
 
     pub fn getArchitecture(self: *const Model) Architecture {
@@ -3327,6 +4345,334 @@ pub const Model = struct {
         return self.config.n_kv_heads;
     }
 
+    fn applyLayerNormRuntime(self: *Model, dst: []f32, src: []const f32, weight: []const f32, use_accel: bool) void {
+        if (self.shouldUseMetalElementwise()) |lib| {
+            const weight_buf = self.getOrCreateMetalF32Buffer(weight);
+            const result = metal_shaders.dispatchRmsNorm(
+                lib,
+                src,
+                weight,
+                dst,
+                self.metalBufferForSlice(src),
+                weight_buf,
+                self.metalBufferForSlice(dst),
+                1,
+                dst.len,
+            );
+            if (result.success) return;
+        }
+
+        if (use_accel) {
+            const ss = accelerate.sumOfSquares(src);
+            const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(src.len)) + 1e-5);
+            for (0..src.len) |i| dst[i] = weight[i] * src[i] * rms;
+        } else {
+            rmsNorm(dst, src, weight, 1e-5);
+        }
+    }
+
+    fn rmsNormRowsInPlaceRuntime(self: *Model, data: []f32, weight: []const f32, row_len: usize, n_rows: usize) void {
+        if (weight.len == 0 or row_len == 0 or n_rows == 0) return;
+        if (self.shouldUseMetalElementwise()) |lib| {
+            const weight_buf = self.getOrCreateMetalF32Buffer(weight);
+            const data_buf = self.metalBufferForSlice(data);
+            const result = metal_shaders.dispatchRmsNorm(
+                lib,
+                data,
+                weight,
+                data,
+                data_buf,
+                weight_buf,
+                data_buf,
+                n_rows,
+                row_len,
+            );
+            if (result.success) return;
+        }
+        rmsNormRowsInPlace(data, weight, row_len, n_rows, 1e-5);
+    }
+
+    fn vecAddRuntime(self: *Model, dst: []f32, a: []const f32, b: []const f32, use_accel: bool) void {
+        if (self.shouldUseMetalElementwise()) |lib| {
+            const result = metal_shaders.dispatchVectorAdd(
+                lib,
+                a,
+                b,
+                dst,
+                self.metalBufferForSlice(a),
+                self.metalBufferForSlice(b),
+                self.metalBufferForSlice(dst),
+            );
+            if (result.success) return;
+        }
+
+        if (use_accel) {
+            accelerate.vecAdd(dst, a, b);
+        } else {
+            vecAdd(dst, a, b);
+        }
+    }
+
+    fn shouldUseMetalElementwise(self: *Model) ?*metal_shaders.MetalShaderLibrary {
+        const lib = self.metal_lib orelse return null;
+        const raw = std.posix.getenv("PLLM_ENABLE_METAL_ELEMENTWISE") orelse return null;
+        if (raw.len == 1 and raw[0] == '1') return lib;
+        return null;
+    }
+
+    fn runAttentionLayer(
+        self: *Model,
+        layer: *const TransformerLayer,
+        layer_idx: usize,
+        pos: usize,
+        kv_cache: *KVCache,
+        use_accel: bool,
+        qkv_ready: bool,
+    ) void {
+        const dim: usize = self.config.n_embd;
+        const n_heads: usize = self.config.n_heads;
+        const head_dim = dim / n_heads;
+        const layer_n_kv_heads: usize = layer.n_kv_heads;
+        const layer_kv_dim = kv_cache.layerKVDim(layer_idx);
+        const kv_stride = kv_cache.layerKVStride();
+        const heads_per_group = n_heads / layer_n_kv_heads;
+        const cur_seq = pos + 1;
+        const inv_sqrt_hd = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
+
+        if (!qkv_ready) {
+            const qkv_fused = self.tryFusedQ4KTriple(
+                self.norm_buf[0..dim],
+                self.q_buf[0..dim],
+                &layer.wq_quant,
+                dim,
+                self.k_buf[0..layer_kv_dim],
+                &layer.wk_quant,
+                layer_kv_dim,
+                self.v_buf[0..layer_kv_dim],
+                &layer.wv_quant,
+                layer_kv_dim,
+                dim,
+            );
+            const qkv_batched = if (!qkv_fused) self.tryBatchedVecMat(self.norm_buf[0..dim], &.{
+                .{ .out = self.q_buf[0..dim], .weights_f16 = layer.wq, .weights_quant = &layer.wq_quant, .k = dim, .n = dim },
+                .{ .out = self.k_buf[0..layer_kv_dim], .weights_f16 = layer.wk, .weights_quant = &layer.wk_quant, .k = dim, .n = layer_kv_dim },
+                .{ .out = self.v_buf[0..layer_kv_dim], .weights_f16 = layer.wv, .weights_quant = &layer.wv_quant, .k = dim, .n = layer_kv_dim },
+            }) else false;
+            if (!qkv_fused and !qkv_batched) {
+                self.vecMatMulRuntime(self.q_buf[0..dim], self.norm_buf[0..dim], layer.wq, &layer.wq_quant, dim, dim);
+                self.vecMatMulRuntime(self.k_buf[0..layer_kv_dim], self.norm_buf[0..dim], layer.wk, &layer.wk_quant, dim, layer_kv_dim);
+                self.vecMatMulRuntime(self.v_buf[0..layer_kv_dim], self.norm_buf[0..dim], layer.wv, &layer.wv_quant, dim, layer_kv_dim);
+            }
+        }
+        sanitizeNonFiniteInPlace(self.q_buf[0..dim]);
+        sanitizeNonFiniteInPlace(self.k_buf[0..layer_kv_dim]);
+        sanitizeNonFiniteInPlace(self.v_buf[0..layer_kv_dim]);
+
+        if (layer.has_attn_q_norm) {
+            self.rmsNormRowsInPlaceRuntime(self.q_buf[0..dim], layer.attn_q_norm, head_dim, n_heads);
+        }
+        if (layer.has_attn_k_norm) {
+            self.rmsNormRowsInPlaceRuntime(self.k_buf[0..layer_kv_dim], layer.attn_k_norm, head_dim, layer_n_kv_heads);
+        }
+        sanitizeNonFiniteInPlace(self.q_buf[0..dim]);
+        sanitizeNonFiniteInPlace(self.k_buf[0..layer_kv_dim]);
+
+        rope(self.q_buf[0..dim], self.k_buf[0..layer_kv_dim], pos, head_dim, self.config.rope_freq_base, n_heads, layer_n_kv_heads);
+        sanitizeNonFiniteInPlace(self.q_buf[0..dim]);
+        sanitizeNonFiniteInPlace(self.k_buf[0..layer_kv_dim]);
+
+        kv_cache.storeKey(layer_idx, pos, self.k_buf[0..layer_kv_dim]);
+        kv_cache.storeValue(layer_idx, pos, self.v_buf[0..layer_kv_dim]);
+
+        @memset(self.attn_out_buf[0..dim], 0.0);
+        for (0..n_heads) |h| {
+            const kv_h = h / heads_per_group;
+            const q_head = self.q_buf[h * head_dim ..][0..head_dim];
+            const scores = self.attn_score_buf[0..cur_seq];
+            const k_cache = kv_cache.key_cache.?[layer_idx];
+            for (0..cur_seq) |t| {
+                const k_vec = k_cache[t * kv_stride + kv_h * head_dim ..][0..head_dim];
+                const dot = if (use_accel) accelerate.dot(q_head, k_vec) else blk: {
+                    var sum: f32 = 0.0;
+                    for (0..head_dim) |dd| sum += q_head[dd] * k_vec[dd];
+                    break :blk sum;
+                };
+                scores[t] = dot * inv_sqrt_hd;
+            }
+            softmaxInPlace(scores);
+
+            const out_head = self.attn_out_buf[h * head_dim ..][0..head_dim];
+            const v_cache = kv_cache.value_cache.?[layer_idx];
+            for (0..cur_seq) |t| {
+                const v_vec = v_cache[t * kv_stride + kv_h * head_dim ..][0..head_dim];
+                const weight = scores[t];
+                for (0..head_dim) |d| out_head[d] += weight * v_vec[d];
+            }
+        }
+
+        self.vecMatMulRuntime(self.norm_buf[0..dim], self.attn_out_buf[0..dim], layer.wo, &layer.wo_quant, dim, dim);
+        sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+    }
+
+    fn runShortConvLayer(self: *Model, layer: *const TransformerLayer, layer_idx: usize, kv_cache: *KVCache) void {
+        const dim: usize = self.config.n_embd;
+        const recurrent_steps: usize = kv_cache.recurrent_steps;
+        const window_steps = recurrent_steps + 1;
+
+        self.vecMatMulRuntime(
+            self.shortconv_proj_buf[0 .. 3 * dim],
+            self.norm_buf[0..dim],
+            layer.shortconv_in_proj,
+            &layer.shortconv_in_proj_quant,
+            dim,
+            3 * dim,
+        );
+        sanitizeNonFiniteInPlace(self.shortconv_proj_buf[0 .. 3 * dim]);
+
+        const b = self.shortconv_proj_buf[0..dim];
+        const c = self.shortconv_proj_buf[dim .. 2 * dim];
+        const x = self.shortconv_proj_buf[2 * dim .. 3 * dim];
+        const state = kv_cache.recurrent_cache.?[layer_idx];
+        const window = self.shortconv_window_buf[0 .. window_steps * dim];
+        for (0..dim) |channel| {
+            const state_base = channel * recurrent_steps;
+            const window_base = channel * window_steps;
+
+            if (recurrent_steps > 0) {
+                @memcpy(
+                    window[window_base .. window_base + recurrent_steps],
+                    state[state_base .. state_base + recurrent_steps],
+                );
+            }
+            window[window_base + recurrent_steps] = b[channel] * x[channel];
+
+            var sum: f32 = 0.0;
+            for (0..window_steps) |step| {
+                sum += window[window_base + step] * layer.shortconv_conv[step + channel * window_steps];
+            }
+            self.shortconv_out_buf[channel] = c[channel] * sum;
+
+            if (recurrent_steps > 0) {
+                if (recurrent_steps > 1) {
+                    for (0..recurrent_steps - 1) |step| {
+                        state[state_base + step] = state[state_base + step + 1];
+                    }
+                }
+                state[state_base + recurrent_steps - 1] = window[window_base + recurrent_steps];
+            }
+        }
+
+        self.vecMatMulRuntime(
+            self.norm_buf[0..dim],
+            self.shortconv_out_buf[0..dim],
+            layer.shortconv_out_proj,
+            &layer.shortconv_out_proj_quant,
+            dim,
+            dim,
+        );
+        sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+    }
+
+    fn forwardInner(self: *Model, token: u32, pos: usize, kv_cache: *KVCache, compute_logits: bool) []f32 {
+        const weights = self.weights orelse return self.logits_buf;
+        const dim: usize = self.config.n_embd;
+        const n_layers: usize = self.config.n_layers;
+        const head_dim: usize = dim / self.config.n_heads;
+        const ff: usize = self.config.n_ff;
+        const vocab: usize = self.config.vocab_size;
+        const use_accel = comptime accelerate.isAvailable();
+
+        const tok: usize = @min(token, @as(u32, @intCast(vocab - 1)));
+        const emb_off = tok * dim;
+        for (0..dim) |i| self.hidden_buf[i] = @as(f32, weights.token_embedding[emb_off + i]);
+        sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
+
+        for (0..n_layers) |l| {
+            const layer = &weights.layers[l];
+
+            if (layer.is_recurrent) {
+                self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], layer.attn_norm, use_accel);
+                self.runShortConvLayer(layer, l, kv_cache);
+            } else {
+                const layer_kv_dim = layer.n_kv_heads * head_dim;
+                const fused_qkv_rmsnorm = self.tryFusedQ4KTripleRmsNorm(
+                    self.hidden_buf[0..dim],
+                    layer.attn_norm,
+                    self.q_buf[0..dim],
+                    &layer.wq_quant,
+                    dim,
+                    self.k_buf[0..layer_kv_dim],
+                    &layer.wk_quant,
+                    layer_kv_dim,
+                    self.v_buf[0..layer_kv_dim],
+                    &layer.wv_quant,
+                    layer_kv_dim,
+                    dim,
+                    use_accel,
+                );
+                if (!fused_qkv_rmsnorm) {
+                    self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], layer.attn_norm, use_accel);
+                }
+                self.runAttentionLayer(layer, l, pos, kv_cache, use_accel, fused_qkv_rmsnorm);
+            }
+
+            self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.norm_buf[0..dim], use_accel);
+            sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
+
+            const ffn_fused_rmsnorm = self.tryFusedQ4KPairRmsNorm(
+                self.hidden_buf[0..dim],
+                layer.ffn_norm,
+                self.gate_buf[0..ff],
+                &layer.w_gate_quant,
+                ff,
+                self.up_buf[0..ff],
+                &layer.w_up_quant,
+                ff,
+                dim,
+                use_accel,
+            );
+            if (!ffn_fused_rmsnorm) {
+                self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], layer.ffn_norm, use_accel);
+            }
+            const ffn_fused = if (ffn_fused_rmsnorm) true else self.tryFusedQ4KPair(
+                self.norm_buf[0..dim],
+                self.gate_buf[0..ff],
+                &layer.w_gate_quant,
+                ff,
+                self.up_buf[0..ff],
+                &layer.w_up_quant,
+                ff,
+                dim,
+            );
+            const ffn_batched = if (!ffn_fused) self.tryBatchedVecMat(self.norm_buf[0..dim], &.{
+                .{ .out = self.gate_buf[0..ff], .weights_f16 = layer.w_gate, .weights_quant = &layer.w_gate_quant, .k = dim, .n = ff },
+                .{ .out = self.up_buf[0..ff], .weights_f16 = layer.w_up, .weights_quant = &layer.w_up_quant, .k = dim, .n = ff },
+            }) else false;
+            if (!ffn_fused and !ffn_batched) {
+                self.vecMatMulRuntime(self.gate_buf[0..ff], self.norm_buf[0..dim], layer.w_gate, &layer.w_gate_quant, dim, ff);
+                self.vecMatMulRuntime(self.up_buf[0..ff], self.norm_buf[0..dim], layer.w_up, &layer.w_up_quant, dim, ff);
+            }
+            self.debugCompareFfnFusion(layer, use_accel, l, pos, ff, dim);
+            sanitizeNonFiniteInPlace(self.gate_buf[0..ff]);
+            sanitizeNonFiniteInPlace(self.up_buf[0..ff]);
+            swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
+            self.vecMatMulRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
+            sanitizeNonFiniteInPlace(self.ffn_out_buf[0..dim]);
+
+            self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim], use_accel);
+            sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
+        }
+
+        if (compute_logits) {
+            self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], weights.final_norm, use_accel);
+            self.vecMatMulRuntime(self.logits_buf[0..vocab], self.norm_buf[0..dim], weights.lm_head, &weights.lm_head_quant, dim, vocab);
+            sanitizeNonFiniteInPlace(self.logits_buf[0..vocab]);
+        }
+
+        if (pos + 1 > kv_cache.seq_len) kv_cache.seq_len = @intCast(pos + 1);
+        return self.logits_buf[0..vocab];
+    }
+
     /// Transformer forward pass for single-token decode.
     /// Returns mutable logits slice [vocab_size] — valid until next forward() call.
     ///
@@ -3334,142 +4680,7 @@ pub const Model = struct {
     /// which is ~5-15× faster than the scalar Zig loops.  Attention dot-products
     /// also use vDSP_dotpr.  On other platforms the pure-Zig fallback is used.
     pub fn forward(self: *Model, token: u32, pos: usize, kv_cache: *KVCache) []f32 {
-        const weights = self.weights orelse return self.logits_buf;
-        const dim: usize = self.config.n_embd;
-        const n_heads: usize = self.config.n_heads;
-        const n_kv_heads: usize = self.config.n_kv_heads;
-        const head_dim = dim / n_heads;
-        const kv_dim = n_kv_heads * head_dim;
-        const n_layers: usize = self.config.n_layers;
-        const ff: usize = self.config.n_ff;
-        const vocab: usize = self.config.vocab_size;
-        const heads_per_group = n_heads / n_kv_heads;
-        const cur_seq = pos + 1; // sequence length after storing this position
-        const use_accel = comptime accelerate.isAvailable();
-        const inv_sqrt_hd = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
-
-        // 1. Token embedding lookup → hidden_buf (convert f16 → f32)
-        const tok: usize = @min(token, @as(u32, @intCast(vocab - 1)));
-        const emb_off = tok * dim;
-        for (0..dim) |i| self.hidden_buf[i] = @as(f32, weights.token_embedding[emb_off + i]);
-
-        // 2. Transformer layers
-        for (0..n_layers) |l| {
-            const layer = weights.layers[l];
-
-            // 2a. Pre-attention RMSNorm (Accelerate vDSP for sum-of-squares)
-            if (use_accel) {
-                const ss = accelerate.sumOfSquares(self.hidden_buf[0..dim]);
-                const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(dim)) + 1e-5);
-                for (0..dim) |i| self.norm_buf[i] = layer.attn_norm[i] * self.hidden_buf[i] * rms;
-            } else {
-                rmsNorm(self.norm_buf, self.hidden_buf, layer.attn_norm, 1e-5);
-            }
-
-            // 2b. Q / K / V linear projections (Accelerate cblas_sgemv)
-            if (use_accel) {
-                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
-            } else {
-                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
-            }
-
-            // 2c. Rotary Position Embeddings
-            rope(self.q_buf, self.k_buf, pos, head_dim, self.config.rope_freq_base, n_heads, n_kv_heads);
-
-            // 2d. Store K, V in cache at current position
-            kv_cache.storeKey(l, pos, self.k_buf[0..kv_dim]);
-            kv_cache.storeValue(l, pos, self.v_buf[0..kv_dim]);
-
-            // 2e. Grouped Query Attention with KV cache
-            @memset(self.attn_out_buf[0 .. n_heads * head_dim], 0.0);
-            for (0..n_heads) |h| {
-                const kv_h = h / heads_per_group;
-                const q_head = self.q_buf[h * head_dim ..][0..head_dim];
-                const scores = self.attn_score_buf[0..cur_seq];
-
-                // Dot product Q · K for each cached position
-                const k_cache = kv_cache.key_cache.?[l];
-                for (0..cur_seq) |t| {
-                    const k_vec = k_cache[t * kv_dim + kv_h * head_dim ..][0..head_dim];
-                    const d = if (use_accel) accelerate.dot(q_head, k_vec) else blk: {
-                        var s: f32 = 0.0;
-                        for (0..head_dim) |dd| s += q_head[dd] * k_vec[dd];
-                        break :blk s;
-                    };
-                    scores[t] = d * inv_sqrt_hd;
-                }
-
-                // Softmax over scores
-                softmaxInPlace(scores);
-
-                // Weighted sum of cached V vectors
-                const out_head = self.attn_out_buf[h * head_dim ..][0..head_dim];
-                const v_cache = kv_cache.value_cache.?[l];
-                for (0..cur_seq) |t| {
-                    const v_vec = v_cache[t * kv_dim + kv_h * head_dim ..][0..head_dim];
-                    const s = scores[t];
-                    for (0..head_dim) |d| out_head[d] += s * v_vec[d];
-                }
-            }
-
-            // 2f. Output projection + residual
-            if (use_accel) {
-                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
-                accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
-            } else {
-                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
-                vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
-            }
-
-            // 2g. Pre-FFN RMSNorm
-            if (use_accel) {
-                const ss = accelerate.sumOfSquares(self.hidden_buf[0..dim]);
-                const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(dim)) + 1e-5);
-                for (0..dim) |i| self.norm_buf[i] = layer.ffn_norm[i] * self.hidden_buf[i] * rms;
-            } else {
-                rmsNorm(self.norm_buf, self.hidden_buf, layer.ffn_norm, 1e-5);
-            }
-
-            // 2h. FFN: SwiGLU(gate, up) → down → residual
-            if (use_accel) {
-                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
-                swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
-                accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
-            } else {
-                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
-                swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
-                vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
-            }
-        }
-
-        // 3. Final RMSNorm
-        if (use_accel) {
-            const ss = accelerate.sumOfSquares(self.hidden_buf[0..dim]);
-            const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(dim)) + 1e-5);
-            for (0..dim) |i| self.norm_buf[i] = weights.final_norm[i] * self.hidden_buf[i] * rms;
-        } else {
-            rmsNorm(self.norm_buf, self.hidden_buf, weights.final_norm, 1e-5);
-        }
-
-        // 4. LM head → logits (largest matmul: dim → vocab_size)
-        if (use_accel) {
-            vecMatMulF16W(self.logits_buf[0..vocab], self.norm_buf, weights.lm_head, dim, vocab);
-        } else {
-            vecMatMulF16W(self.logits_buf[0..vocab], self.norm_buf, weights.lm_head, dim, vocab);
-        }
-
-        // 5. Update KV cache sequence length
-        if (pos + 1 > kv_cache.seq_len) kv_cache.seq_len = @intCast(pos + 1);
-
-        return self.logits_buf[0..vocab];
+        return self.forwardInner(token, pos, kv_cache, true);
     }
 
     /// Batched prefill: process all prompt tokens to populate KV cache.
@@ -3479,125 +4690,16 @@ pub const Model = struct {
     ///   - Amortizes function call overhead
     pub fn forwardBatch(self: *Model, tokens: []const u32, kv_cache: *KVCache) []f32 {
         if (tokens.len == 0) return self.logits_buf;
-        // Process all tokens except the last without computing logits
         for (tokens[0 .. tokens.len - 1], 0..) |tok, pos| {
-            _ = self.forwardNoLogits(tok, pos, kv_cache);
+            self.forwardNoLogits(tok, pos, kv_cache);
         }
-        // Process last token with full logits
         return self.forward(tokens[tokens.len - 1], tokens.len - 1, kv_cache);
     }
 
     /// Forward pass that populates KV cache but skips the expensive LM head logits projection.
     /// Used during prefill for all tokens except the last.
     pub fn forwardNoLogits(self: *Model, token: u32, pos: usize, kv_cache: *KVCache) void {
-        const weights = self.weights orelse return;
-        const dim: usize = self.config.n_embd;
-        const n_heads: usize = self.config.n_heads;
-        const n_kv_heads: usize = self.config.n_kv_heads;
-        const head_dim = dim / n_heads;
-        const kv_dim = n_kv_heads * head_dim;
-        const n_layers: usize = self.config.n_layers;
-        const ff: usize = self.config.n_ff;
-        const vocab: usize = self.config.vocab_size;
-        const heads_per_group = n_heads / n_kv_heads;
-        const cur_seq = pos + 1;
-        const use_accel = comptime accelerate.isAvailable();
-        const inv_sqrt_hd = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
-
-        // 1. Token embedding lookup (convert f16 → f32)
-        const tok: usize = @min(token, @as(u32, @intCast(vocab - 1)));
-        for (0..dim) |i| self.hidden_buf[i] = @as(f32, weights.token_embedding[tok * dim + i]);
-
-        // 2. Transformer layers (same as forward() but no logits at the end)
-        for (0..n_layers) |l| {
-            const layer = weights.layers[l];
-
-            // Pre-attention RMSNorm
-            if (use_accel) {
-                const ss = accelerate.sumOfSquares(self.hidden_buf[0..dim]);
-                const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(dim)) + 1e-5);
-                for (0..dim) |i| self.norm_buf[i] = layer.attn_norm[i] * self.hidden_buf[i] * rms;
-            } else {
-                rmsNorm(self.norm_buf, self.hidden_buf, layer.attn_norm, 1e-5);
-            }
-
-            // Q / K / V projections
-            if (use_accel) {
-                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
-            } else {
-                vecMatMulF16W(self.q_buf[0 .. n_heads * head_dim], self.norm_buf, layer.wq, dim, n_heads * head_dim);
-                vecMatMulF16W(self.k_buf[0..kv_dim], self.norm_buf, layer.wk, dim, kv_dim);
-                vecMatMulF16W(self.v_buf[0..kv_dim], self.norm_buf, layer.wv, dim, kv_dim);
-            }
-
-            rope(self.q_buf, self.k_buf, pos, head_dim, self.config.rope_freq_base, n_heads, n_kv_heads);
-            kv_cache.storeKey(l, pos, self.k_buf[0..kv_dim]);
-            kv_cache.storeValue(l, pos, self.v_buf[0..kv_dim]);
-
-            // Attention
-            @memset(self.attn_out_buf[0 .. n_heads * head_dim], 0.0);
-            for (0..n_heads) |h| {
-                const kv_h = h / heads_per_group;
-                const q_head = self.q_buf[h * head_dim ..][0..head_dim];
-                const scores = self.attn_score_buf[0..cur_seq];
-                const k_cache = kv_cache.key_cache.?[l];
-                for (0..cur_seq) |t| {
-                    const k_vec = k_cache[t * kv_dim + kv_h * head_dim ..][0..head_dim];
-                    const d = if (use_accel) accelerate.dot(q_head, k_vec) else blk: {
-                        var s: f32 = 0.0;
-                        for (0..head_dim) |dd| s += q_head[dd] * k_vec[dd];
-                        break :blk s;
-                    };
-                    scores[t] = d * inv_sqrt_hd;
-                }
-                softmaxInPlace(scores);
-                const out_head = self.attn_out_buf[h * head_dim ..][0..head_dim];
-                const v_cache = kv_cache.value_cache.?[l];
-                for (0..cur_seq) |t| {
-                    const v_vec = v_cache[t * kv_dim + kv_h * head_dim ..][0..head_dim];
-                    const s = scores[t];
-                    for (0..head_dim) |d| out_head[d] += s * v_vec[d];
-                }
-            }
-
-            // Output projection + residual
-            if (use_accel) {
-                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
-                accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
-            } else {
-                vecMatMulF16W(self.norm_buf, self.attn_out_buf[0 .. n_heads * head_dim], layer.wo, n_heads * head_dim, dim);
-                vecAdd(self.hidden_buf, self.hidden_buf, self.norm_buf);
-            }
-
-            // Pre-FFN RMSNorm
-            if (use_accel) {
-                const ss = accelerate.sumOfSquares(self.hidden_buf[0..dim]);
-                const rms = 1.0 / @sqrt(ss / @as(f32, @floatFromInt(dim)) + 1e-5);
-                for (0..dim) |i| self.norm_buf[i] = layer.ffn_norm[i] * self.hidden_buf[i] * rms;
-            } else {
-                rmsNorm(self.norm_buf, self.hidden_buf, layer.ffn_norm, 1e-5);
-            }
-
-            // FFN
-            if (use_accel) {
-                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
-                swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
-                accelerate.vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
-            } else {
-                vecMatMulF16W(self.gate_buf[0..ff], self.norm_buf, layer.w_gate, dim, ff);
-                vecMatMulF16W(self.up_buf[0..ff], self.norm_buf, layer.w_up, dim, ff);
-                swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-                vecMatMulF16W(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, ff, dim);
-                vecAdd(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim]);
-            }
-        }
-
-        // Skip final norm + logits — only update KV cache position
-        if (pos + 1 > kv_cache.seq_len) kv_cache.seq_len = @intCast(pos + 1);
+        _ = self.forwardInner(token, pos, kv_cache, false);
     }
 };
 
@@ -3748,22 +4850,18 @@ pub const InferenceEngine = struct {
         errdefer self.allocator.free(buf);
         var count: usize = 0;
 
-        // Prefill: run each prompt token through the model
-        var pos: usize = 0;
-        for (prompt_tokens) |tok| {
-            _ = self.model.forward(tok, pos, &self.kv_cache);
-            pos += 1;
-        }
-
-        // Decode: sample and feed back
-        var last_token: u32 = if (prompt_tokens.len > 0) prompt_tokens[prompt_tokens.len - 1] else 0;
+        // Prefill once and sample the first decode token directly from the
+        // logits of the final prompt position. Re-feeding the last prompt token
+        // here would duplicate it in the KV cache and corrupt generation.
+        if (prompt_tokens.len == 0) return error.EmptyPrompt;
+        var logits = self.model.forwardBatch(prompt_tokens, &self.kv_cache);
+        var pos: usize = prompt_tokens.len;
         for (0..max_tokens) |_| {
-            const logits = self.model.forward(last_token, pos, &self.kv_cache);
             const next = self.sampler.sample(logits);
             buf[count] = next;
             count += 1;
             if (next == eos_token) break;
-            last_token = next;
+            logits = self.model.forward(next, pos, &self.kv_cache);
             pos += 1;
         }
 
@@ -4593,6 +5691,48 @@ test "ONNX weight bridge roundtrip with HF naming" {
         try std.testing.expect(!math.isNan(v));
         try std.testing.expect(!math.isInf(v));
     }
+}
+
+fn writeF16Le(dst: []u8, value: f16) void {
+    const bits: u16 = @bitCast(value);
+    dst[0] = @truncate(bits & 0xFF);
+    dst[1] = @truncate(bits >> 8);
+}
+
+fn fillQ4KConstantRow(dst: []u8, q: u8) void {
+    @memset(dst, 0);
+    writeF16Le(dst[0..2], @as(f16, 1.0));
+    writeF16Le(dst[2..4], @as(f16, 0.0));
+
+    // Packed scale/min layout for 8 logical 32-value groups:
+    // scales = 1/2, mins = 0.
+    dst[4] = q;
+    dst[5] = q;
+    dst[6] = q;
+    dst[7] = q;
+    dst[12] = q;
+    dst[13] = q;
+    dst[14] = q;
+    dst[15] = q;
+    @memset(dst[16..144], (q << 4) | q);
+}
+
+test "vecMatMulQ4_K decodes GGUF Q4_K rows without F16 expansion" {
+    const k: usize = 256;
+    const n: usize = 2;
+    var x: [k]f32 = undefined;
+    for (&x, 0..) |*v, i| v.* = @floatFromInt(i + 1);
+
+    var weights: [q4KBytesForMatrix(k) * n]u8 = undefined;
+    fillQ4KConstantRow(weights[0..q4KBytesForMatrix(k)], 1);
+    fillQ4KConstantRow(weights[q4KBytesForMatrix(k) ..][0..q4KBytesForMatrix(k)], 2);
+
+    var out: [n]f32 = undefined;
+    vecMatMulQ4_K(&out, &x, &weights, k, n);
+
+    const sum_1_to_256 = @as(f32, 32896.0);
+    try std.testing.expectApproxEqAbs(sum_1_to_256, out[0], 0.001);
+    try std.testing.expectApproxEqAbs(sum_1_to_256 * 2.0, out[1], 0.001);
 }
 
 // Performance & correctness regression tests are in src/tests/perf_regression_test.zig

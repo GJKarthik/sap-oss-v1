@@ -17,7 +17,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import settings
 from .database import close_database, init_database
-from .routes import auth, models, rag, deployments, datasources, lineage, governance, metrics, mcp_proxy
+from .routes import auth, models, rag, deployments, datasources, lineage, governance, metrics, mcp_proxy, genui
 from .seed import seed_store
 from .store import get_store
 
@@ -175,7 +175,8 @@ class RateLimitMiddleware:
             response.headers["X-RateLimit-Limit"] = str(result["limit"])
             response.headers["X-RateLimit-Remaining"] = str(result["remaining"])
             _apply_security_headers(response, request_path)
-            return response
+            await response(scope, receive, send)
+            return
 
         async def send_with_rate_limit_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
@@ -228,6 +229,7 @@ app.include_router(lineage.router, prefix="/api/v1/lineage", tags=["Lineage"])
 app.include_router(governance.router, prefix="/api/v1/governance", tags=["Governance"])
 app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["Metrics"])
 app.include_router(mcp_proxy.router, prefix="/api/v1/mcp", tags=["MCP Proxy"])
+app.include_router(genui.router, prefix="/api/v1/genui", tags=["Generative UI Sessions"])
 
 
 # ---------------------------------------------------------------------------

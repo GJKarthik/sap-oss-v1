@@ -2305,6 +2305,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@chenglou/pretext@npm:^0.0.3":
+  version: 0.0.3
+  resolution: "@chenglou/pretext@npm:0.0.3"
+  checksum: 10/12ad66a4d03ca3665dfc8bc021c3039e9a9f3be75d3d6ecacf2ab6057138df686a6ccbcac7f1822990043759f364bb91841b5c839af84b3ff6f64c23f48d704a
+  languageName: node
+  linkType: hard
+
 "@commitlint/cli@npm:19.8.0":
   version: 19.8.0
   resolution: "@commitlint/cli@npm:19.8.0"
@@ -28123,6 +28130,7 @@ __metadata:
     "@angular/platform-browser-dynamic": "npm:20.3.9"
     "@angular/router": "npm:20.3.9"
     "@babel/core": "npm:^7.21.8"
+    "@chenglou/pretext": "npm:^0.0.3"
     "@commitlint/cli": "npm:19.8.0"
     "@commitlint/config-angular": "npm:19.8.0"
     "@commitlint/config-conventional": "npm:19.8.0"

@@ -59,3 +59,19 @@ yarn-error.log*
 # Snyk Security Extension - AI Rules (auto-generated)
 .cursor/rules/snyk_rules.mdc
 src/training/data/massive_semantic/training_data.json
+
+# Nx daemon & workspace cache
+.nx/workspace-data/
+.nx/cache/
+
+# Gradle build caches and lock files
+**/.gradle/
+**/build/
+
+# Zig build cache and compiled outputs
+**/.zig-cache/
+**/zig-out/
+
+# Yarn PnP runtime files
+.pnp.cjs
+.pnp.loader.mjs

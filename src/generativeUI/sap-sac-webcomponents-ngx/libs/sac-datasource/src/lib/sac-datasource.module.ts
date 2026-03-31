@@ -6,15 +6,15 @@
  */
 
 import { NgModule, ModuleWithProviders } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 import { SacDataSourceService } from './services/sac-datasource.service';
 import { SacFilterService } from './services/sac-filter.service';
 import { SacVariableService } from './services/sac-variable.service';
 
 @NgModule({
-  imports: [HttpClientModule],
   providers: [
+    provideHttpClient(withInterceptorsFromDi()),
     SacDataSourceService,
     SacFilterService,
     SacVariableService,
@@ -25,6 +25,7 @@ export class SacDataSourceModule {
     return {
       ngModule: SacDataSourceModule,
       providers: [
+        provideHttpClient(withInterceptorsFromDi()),
         SacDataSourceService,
         SacFilterService,
         SacVariableService,

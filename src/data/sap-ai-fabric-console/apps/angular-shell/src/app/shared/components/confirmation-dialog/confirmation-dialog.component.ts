@@ -5,7 +5,7 @@
  * Uses UI5 Dialog with proper accessibility attributes.
  */
 
-import { Component, EventEmitter, Input, Output, ViewChild, ElementRef } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, NO_ERRORS_SCHEMA, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 
@@ -23,6 +23,7 @@ export interface ConfirmationDialogData {
   selector: 'app-confirmation-dialog',
   standalone: true,
   imports: [CommonModule, Ui5WebcomponentsModule],
+  schemas: [NO_ERRORS_SCHEMA],
   template: `
     <ui5-dialog
       #dialog
@@ -30,7 +31,7 @@ export interface ConfirmationDialogData {
       [state]="getDialogState()"
       [attr.aria-labelledby]="'dialog-title-' + dialogId"
       [attr.aria-describedby]="'dialog-message-' + dialogId"
-      (after-close)="onDialogClose($event)">
+      (after-close)="onDialogClose()">
       
       <div class="dialog-content">
         <div class="dialog-icon" *ngIf="data.icon">
@@ -113,11 +114,12 @@ export interface ConfirmationDialogData {
     }
   `]
 })
-export class ConfirmationDialogComponent {
+export class ConfirmationDialogComponent implements OnChanges {
   @Input() data: ConfirmationDialogData = {
     title: 'Confirm Action',
     message: 'Are you sure you want to proceed?'
   };
+  @Input() open = false;
   
   @Output() confirmed = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
@@ -128,7 +130,22 @@ export class ConfirmationDialogComponent {
   dialogId = Math.random().toString(36).substring(2, 9);
   private wasConfirmed = false;
 
-  open(): void {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!('open' in changes) || changes['open'].firstChange) {
+      return;
+    }
+    if (this.open) {
+      this.openDialog();
+    } else {
+      this.close();
+    }
+  }
+
+  show(): void {
+    this.openDialog();
+  }
+
+  private openDialog(): void {
     this.wasConfirmed = false;
     const dialog = this.dialogRef?.nativeElement;
     if (dialog && typeof dialog.show === 'function') {
@@ -160,7 +177,7 @@ export class ConfirmationDialogComponent {
     this.close();
   }
 
-  onDialogClose(event: Event): void {
+  onDialogClose(): void {
     // Emit the appropriate event after the dialog closes
     if (this.wasConfirmed) {
       this.confirmed.emit();
@@ -169,13 +186,13 @@ export class ConfirmationDialogComponent {
     }
   }
 
-  getDialogState(): string {
+  getDialogState(): 'Negative' | 'Positive' | 'Critical' {
     if (this.data.confirmDesign === 'Negative') {
-      return 'Error';
+      return 'Negative';
     }
     if (this.data.confirmDesign === 'Positive') {
-      return 'Success';
+      return 'Positive';
     }
-    return 'Warning';
+    return 'Critical';
   }
 }

@@ -148,7 +148,7 @@ The product declares compliance with three regulatory frameworks: `MGF-Agentic-A
 
 ## 15. Upstream Data Product Dependencies
 
-`data_products/registry.yaml` declares two upstream dependency categories. The first is the `training-main` monorepo path, which provides the three financial and ESG data products described above. Their enrichment pipeline runs `training-main/scripts/xlsx_to_odps.py` and the `data-cleaning-copilot-main` quality tool, with enriched outputs stored under `training-main/data_products/enriched/`.
+`data_products/registry.yaml` declares two upstream dependency categories. The first is the `training-main` monorepo path, which provides the three financial and ESG data products described above. Their enrichment pipeline runs `training-main/scripts/xlsx_to_odps.py` and the `training-console` quality tool, with enriched outputs stored under `training-main/data_products/enriched/`.
 
 The second is the `odata-vocabularies` service, declared as a registry dependency with MCP endpoint `http://localhost:9150/mcp` and OpenAI endpoint `http://localhost:9150/v1`. The registry configuration specifies two models: `odata-vocab-annotator` for annotation suggestion and `odata-vocab-search` for term search. Integration points include PAL output column annotation, KPI template generation, and vocabulary term lookup.
 

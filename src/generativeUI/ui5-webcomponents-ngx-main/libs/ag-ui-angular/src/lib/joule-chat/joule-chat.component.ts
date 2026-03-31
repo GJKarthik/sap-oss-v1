@@ -41,6 +41,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AgUiClient, AgUiClientConfig, AG_UI_CONFIG } from '../services/ag-ui-client.service';
 import { AgUiToolRegistry } from '../services/tool-registry.service';
+import { measureTextHeight, warmTextLayout } from '../services/text-layout.service';
 
 // =============================================================================
 // Types
@@ -52,6 +53,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
+  estimatedHeightPx?: number;
 }
 
 export interface JouleChatConfig {
@@ -64,6 +66,19 @@ export interface JouleChatConfig {
   placeholder?: string;
   title?: string;
   showRouteBadge?: boolean;
+}
+
+interface PersistedChatState {
+  messages: Array<{
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: string;
+    isStreaming?: boolean;
+    estimatedHeightPx?: number;
+  }>;
+  lastRoute: string | null;
+  currentSchema: unknown;
 }
 
 // =============================================================================
@@ -95,6 +110,12 @@ export interface JouleChatConfig {
         }
         <ui5-button
           design="Transparent"
+          icon="reset"
+          accessible-name="Reset chat history"
+          (click)="onReset()">
+        </ui5-button>
+        <ui5-button
+          design="Transparent"
           icon="decline"
           accessible-name="Close chat"
           (click)="onClose()">
@@ -124,7 +145,7 @@ export interface JouleChatConfig {
               </ui5-avatar>
             }
             <div class="joule-chat-bubble">
-              <span class="joule-chat-content">{{ msg.content }}</span>
+              <span class="joule-chat-content" [style.min-height.px]="msg.estimatedHeightPx">{{ msg.content }}</span>
               @if (msg.isStreaming) {
                 <span class="joule-chat-cursor" aria-hidden="true">▋</span>
                 <span class="sr-only">Response in progress</span>
@@ -171,7 +192,7 @@ export interface JouleChatConfig {
           [placeholder]="placeholder"
           [disabled]="isLoading"
           accessible-name="Message input"
-          (input)="onInputChange(\$event)"
+          (input)="onInputChange($event)"
           (submit)="onSubmit()">
         </ui5-ai-prompt-input>
         <ui5-button
@@ -386,6 +407,9 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   @Input() placeholder = 'Ask me anything...';
   @Input() showRouteBadge = false;
   @Input() autoConnect = true;
+  @Input() persistHistory = true;
+  @Input() persistKey = 'joule-chat:default';
+  @Input() maxPersistedMessages = 150;
 
   // ---------------------------------------------------------------------------
   // Outputs
@@ -442,6 +466,8 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   // ---------------------------------------------------------------------------
 
   ngOnInit(): void {
+    warmTextLayout();
+    this.restorePersistedState();
     this.subscribeToEvents();
     if (this.autoConnect) {
       this.connect();
@@ -477,8 +503,8 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       this.announceStatus('Connected to assistant');
     } catch (e) {
       this.connectionState = 'error';
-      this.errorMessage = `Connection failed: \${(e as Error).message}`;
-      this.announceStatus(`Connection failed: \${(e as Error).message}`);
+      this.errorMessage = `Connection failed: ${(e as Error).message}`;
+      this.announceStatus(`Connection failed: ${(e as Error).message}`);
       this.cdr.markForCheck();
     }
   }
@@ -499,8 +525,8 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       this.messageSent.emit(text);
     } catch (e) {
       this.isLoading = false;
-      this.errorMessage = `Send failed: \${(e as Error).message}`;
-      this.announceStatus(`Error: \${(e as Error).message}`);
+      this.errorMessage = `Send failed: ${(e as Error).message}`;
+      this.announceStatus(`Error: ${(e as Error).message}`);
       this.cdr.markForCheck();
     }
   }
@@ -513,9 +539,16 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
     this.closed.emit();
   }
 
+  onReset(): void {
+    this.clearMessages();
+    this.announceStatus('Chat history reset');
+  }
+
   clearMessages(): void {
     this.messages = [];
     this.currentSchema = null;
+    this.lastRoute = null;
+    this.clearPersistedState();
     this.cdr.markForCheck();
   }
 
@@ -561,7 +594,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
             this.isLoading = false;
             this.errorMessage = event.message ?? 'Agent error';
             this.removeStreamingMessage();
-            this.announceStatus(`Error: \${event.message ?? 'Agent error'}`);
+            this.announceStatus(`Error: ${event.message ?? 'Agent error'}`);
             break;
         }
         this.cdr.markForCheck();
@@ -584,6 +617,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
         if (event.type === 'custom' && event.name === 'ui_schema_snapshot') {
           const schema = event.payload ?? event.value;
           this.currentSchema = schema;
+          this.persistState();
           this.schemaReceived.emit(schema);
           this.announceStatus('Generated UI content available');
           this.cdr.markForCheck();
@@ -591,6 +625,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
         // Route badge
         if (event.type === 'custom' && event.name === 'route_decision') {
           this.lastRoute = event.payload?.backend ?? null;
+          this.persistState();
           this.routeDecided.emit(this.lastRoute ?? '');
           this.cdr.markForCheck();
         }
@@ -602,18 +637,33 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   // ---------------------------------------------------------------------------
 
   private addMessage(role: ChatMessage['role'], content: string): string {
-    const id = `msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}`;
-    this.messages = [...this.messages, { id, role, content, timestamp: new Date() }];
+    const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    this.messages = [...this.messages, {
+      id,
+      role,
+      content,
+      timestamp: new Date(),
+      estimatedHeightPx: this.estimateMessageHeight(content),
+    }];
+    this.enforceMessageLimit();
+    this.persistState();
     this.scrollToBottom();
     return id;
   }
 
   private startAssistantMessage(): void {
-    const id = `msg-\${Date.now()}-\${Math.random().toString(36).slice(2, 7)}`;
+    const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     this.currentAssistantMsgId = id;
     this.messages = [...this.messages, {
-      id, role: 'assistant', content: '', timestamp: new Date(), isStreaming: true,
+      id,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true,
+      estimatedHeightPx: this.estimateMessageHeight(''),
     }];
+    this.enforceMessageLimit();
+    this.persistState();
     this.scrollToBottom();
   }
 
@@ -623,9 +673,14 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
     }
     this.messages = this.messages.map(m =>
       m.id === this.currentAssistantMsgId
-        ? { ...m, content: m.content + delta }
+        ? {
+            ...m,
+            content: m.content + delta,
+            estimatedHeightPx: this.estimateMessageHeight(m.content + delta),
+          }
         : m
     );
+    this.persistState();
     this.scrollToBottom();
   }
 
@@ -635,6 +690,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
         m.id === this.currentAssistantMsgId ? { ...m, isStreaming: false } : m
       );
       this.currentAssistantMsgId = null;
+      this.persistState();
     }
   }
 
@@ -642,6 +698,7 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
     if (this.currentAssistantMsgId) {
       this.messages = this.messages.filter(m => m.id !== this.currentAssistantMsgId);
       this.currentAssistantMsgId = null;
+      this.persistState();
     }
   }
 
@@ -661,5 +718,92 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
       this.announcement = message;
       this.cdr.markForCheck();
     }, 50);
+  }
+
+  private estimateMessageHeight(content: string): number {
+    return measureTextHeight(content, {
+      font: "400 14px '72', Arial, sans-serif",
+      lineHeight: 21,
+      maxWidth: 520,
+      minLines: 1,
+      maxLines: 14,
+      whiteSpace: 'pre-wrap',
+    });
+  }
+
+  private enforceMessageLimit(): void {
+    const limit = Math.max(1, this.maxPersistedMessages);
+    if (this.messages.length > limit) {
+      this.messages = this.messages.slice(this.messages.length - limit);
+    }
+  }
+
+  private restorePersistedState(): void {
+    if (!this.persistHistory) {
+      return;
+    }
+
+    try {
+      const serialized = globalThis.localStorage?.getItem(this.persistKey);
+      if (!serialized) {
+        return;
+      }
+
+      const parsed = JSON.parse(serialized) as PersistedChatState;
+      const restoredMessages = (parsed.messages ?? [])
+        .slice(-Math.max(1, this.maxPersistedMessages))
+        .map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          timestamp: new Date(message.timestamp),
+          isStreaming: false,
+          estimatedHeightPx: this.estimateMessageHeight(message.content),
+        }));
+
+      this.messages = restoredMessages;
+      this.lastRoute = parsed.lastRoute ?? null;
+      this.currentSchema = parsed.currentSchema ?? null;
+    } catch {
+      // Ignore malformed persisted payloads and start fresh.
+    }
+  }
+
+  private persistState(): void {
+    if (!this.persistHistory) {
+      return;
+    }
+
+    try {
+      const payload: PersistedChatState = {
+        messages: this.messages
+          .slice(-Math.max(1, this.maxPersistedMessages))
+          .map((message) => ({
+            id: message.id,
+            role: message.role,
+            content: message.content,
+            timestamp: message.timestamp.toISOString(),
+            isStreaming: false,
+            estimatedHeightPx: message.estimatedHeightPx,
+          })),
+        lastRoute: this.lastRoute,
+        currentSchema: this.currentSchema,
+      };
+      globalThis.localStorage?.setItem(this.persistKey, JSON.stringify(payload));
+    } catch {
+      // Ignore storage quota/privacy mode failures.
+    }
+  }
+
+  private clearPersistedState(): void {
+    if (!this.persistHistory) {
+      return;
+    }
+
+    try {
+      globalThis.localStorage?.removeItem(this.persistKey);
+    } catch {
+      // Ignore storage access failures.
+    }
   }
 }

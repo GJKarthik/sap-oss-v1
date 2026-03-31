@@ -25,7 +25,7 @@ BOMS_DIR="$REPO_ROOT/scripts/sbom-lineage/boms"
 
 # Python services — keep in sync with docs/sbom-lineage-manifest.yaml
 PYTHON_SERVICES=(
-  "data-cleaning-copilot-main"
+  "training-console"
   "langchain-integration-for-sap-hana-cloud-main"
   "generative-ai-toolkit-for-sap-hana-cloud-main"
   "vllm-main"

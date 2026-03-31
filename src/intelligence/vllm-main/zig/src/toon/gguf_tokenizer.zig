@@ -79,6 +79,12 @@ pub const ChatTemplateStyle = enum {
     }
 };
 
+const PretokenizerStyle = enum {
+    generic,
+    gpt2,
+    llama3,
+};
+
 /// Generic GGUF BPE tokenizer loaded from a model file.
 pub const GgufTokenizer = struct {
     allocator: Allocator,
@@ -92,10 +98,15 @@ pub const GgufTokenizer = struct {
     merges: []MergePair,
     /// Merge lookup: (left, right) -> result token id
     merge_map: MergeMap,
+    /// Merge rank lookup: lower rank merges are applied first.
+    merge_rank_map: MergeMap,
 
     bos_id: u32 = 1,
     eos_id: u32 = 2,
     unk_id: u32 = 0,
+    add_bos_token: bool = false,
+    ignore_merges: bool = false,
+    pretokenizer_style: PretokenizerStyle = .generic,
 
     // -- Additional special token IDs detected from vocab --
     im_start_id: ?u32 = null,
@@ -207,6 +218,7 @@ pub const GgufTokenizer = struct {
         self.token_to_id.deinit();
         self.allocator.free(self.merges);
         self.merge_map.deinit();
+        self.merge_rank_map.deinit();
         self.allocator.destroy(self);
     }
 
@@ -225,6 +237,7 @@ pub const GgufTokenizer = struct {
             .token_to_id = std.StringHashMap(u32).init(allocator),
             .merges = &.{},
             .merge_map = MergeMap.init(allocator),
+            .merge_rank_map = MergeMap.init(allocator),
         };
         return tok;
     }
@@ -287,6 +300,38 @@ pub const GgufTokenizer = struct {
         self.merges = try merge_arr.toOwnedSlice(self.allocator);
         for (self.merges) |merge| {
             try self.merge_map.put(mergeKey(merge.left, merge.right), merge.result);
+            try self.merge_rank_map.put(mergeKey(merge.left, merge.right), @intFromFloat(merge.score));
+        }
+    }
+
+    fn applyTokenizerPre(self: *GgufTokenizer, tokenizer_pre: []const u8) void {
+        if (std.mem.eql(u8, tokenizer_pre, "llama3") or
+            std.mem.eql(u8, tokenizer_pre, "llama-v3") or
+            std.mem.eql(u8, tokenizer_pre, "llama-bpe") or
+            std.mem.eql(u8, tokenizer_pre, "falcon3") or
+            std.mem.eql(u8, tokenizer_pre, "falcon-h1") or
+            std.mem.eql(u8, tokenizer_pre, "pixtral") or
+            std.mem.eql(u8, tokenizer_pre, "midm-2.0") or
+            std.mem.eql(u8, tokenizer_pre, "lfm2") or
+            std.mem.eql(u8, tokenizer_pre, "jina-v5-nano"))
+        {
+            self.pretokenizer_style = .llama3;
+            self.ignore_merges = true;
+            return;
+        }
+
+        if (std.mem.eql(u8, tokenizer_pre, "gpt-2") or
+            std.mem.eql(u8, tokenizer_pre, "phi-2") or
+            std.mem.eql(u8, tokenizer_pre, "jina-es") or
+            std.mem.eql(u8, tokenizer_pre, "jina-de") or
+            std.mem.eql(u8, tokenizer_pre, "gigachat") or
+            std.mem.eql(u8, tokenizer_pre, "jina-v2-es") or
+            std.mem.eql(u8, tokenizer_pre, "jina-v2-de") or
+            std.mem.eql(u8, tokenizer_pre, "a.x-4.0") or
+            std.mem.eql(u8, tokenizer_pre, "mellum") or
+            std.mem.eql(u8, tokenizer_pre, "modern-bert"))
+        {
+            self.pretokenizer_style = .gpt2;
         }
     }
 
@@ -381,7 +426,7 @@ pub const GgufTokenizer = struct {
 
         // Log first few token IDs for debugging tokenization
         if (tokens.items.len >= 6) {
-            log.info("buildChatTokens: style={s} n={} first6=[{},{},{},{},{},{}]", .{
+            log.debug("buildChatTokens: style={s} n={} first6=[{},{},{},{},{},{}]", .{
                 self.chat_style.name(), tokens.items.len,
                 tokens.items[0],        tokens.items[1],
                 tokens.items[2],        tokens.items[3],
@@ -393,23 +438,22 @@ pub const GgufTokenizer = struct {
     }
 
     // -- ChatML: im_start + "role\n" + content + "\n" + im_end --
-    // NOTE: ChatML models (Qwen, Yi, etc.) do NOT prepend BOS.
-    // The sequence starts directly with im_start.
     fn buildChatML(self: *const GgufTokenizer, tokens: *std.ArrayListUnmanaged(u32), system: []const u8, user: []const u8) !void {
         const im_s = self.im_start_id orelse self.bos_id;
         const im_e = self.im_end_id orelse self.eos_id;
-        // System turn (no BOS for ChatML)
+        if (self.add_bos_token) {
+            try tokens.append(self.allocator, self.bos_id);
+        }
+        // System turn
         try tokens.append(self.allocator, im_s);
         try self.appendEncoded(tokens, "system\n");
-        try self.appendEncoded(tokens, system);
-        try self.appendEncoded(tokens, "\n");
+        try self.appendEncodedConcat(tokens, system, "\n");
         try tokens.append(self.allocator, im_e);
         try self.appendEncoded(tokens, "\n");
         // User turn
         try tokens.append(self.allocator, im_s);
         try self.appendEncoded(tokens, "user\n");
-        try self.appendEncoded(tokens, user);
-        try self.appendEncoded(tokens, "\n");
+        try self.appendEncodedConcat(tokens, user, "\n");
         try tokens.append(self.allocator, im_e);
         try self.appendEncoded(tokens, "\n");
         // Assistant turn (model generates from here)
@@ -430,15 +474,13 @@ pub const GgufTokenizer = struct {
         try tokens.append(self.allocator, sh_s);
         try self.appendEncoded(tokens, "system");
         try tokens.append(self.allocator, sh_e);
-        try self.appendEncoded(tokens, "\n\n");
-        try self.appendEncoded(tokens, system);
+        try self.appendEncodedConcat(tokens, "\n\n", system);
         try tokens.append(self.allocator, eot);
         // User
         try tokens.append(self.allocator, sh_s);
         try self.appendEncoded(tokens, "user");
         try tokens.append(self.allocator, sh_e);
-        try self.appendEncoded(tokens, "\n\n");
-        try self.appendEncoded(tokens, user);
+        try self.appendEncodedConcat(tokens, "\n\n", user);
         try tokens.append(self.allocator, eot);
         // Assistant
         try tokens.append(self.allocator, sh_s);
@@ -488,12 +530,121 @@ pub const GgufTokenizer = struct {
         try out.appendSlice(self.allocator, encoded);
     }
 
+    fn appendEncodedConcat(
+        self: *const GgufTokenizer,
+        out: *std.ArrayListUnmanaged(u32),
+        left: []const u8,
+        right: []const u8,
+    ) !void {
+        const joined = try std.mem.concat(self.allocator, u8, &.{ left, right });
+        defer self.allocator.free(joined);
+        try self.appendEncoded(out, joined);
+    }
+
+    const Codepoint = struct {
+        cp: u32,
+        start: usize,
+        end: usize,
+    };
+
     /// Encode text to token IDs via BPE but WITHOUT prepending BOS.
     /// Handles GPT-2/tiktoken byte-to-unicode mapping automatically:
     /// if the vocab stores bytes as shifted unicode (Qwen, GPT-2, etc.),
     /// each input byte is mapped through the byte-to-unicode table before
     /// vocab lookup.
     pub fn encodeRaw(self: *const GgufTokenizer, text: []const u8) ![]u32 {
+        return switch (self.pretokenizer_style) {
+            .llama3 => try self.encodePretokenized(text, .llama3),
+            .gpt2 => try self.encodePretokenized(text, .gpt2),
+            .generic => try self.encodeRawLegacy(text),
+        };
+    }
+
+    fn encodePretokenized(self: *const GgufTokenizer, text: []const u8, style: PretokenizerStyle) ![]u32 {
+        const use_byte_map = (self.token_to_id.get("\n") == null);
+        const words = switch (style) {
+            .llama3 => try self.splitWordsLlama3(text),
+            .gpt2 => try self.splitWordsGpt2(text),
+            .generic => unreachable,
+        };
+        defer self.allocator.free(words);
+
+        var out = std.ArrayListUnmanaged(u32).empty;
+        errdefer out.deinit(self.allocator);
+
+        for (words) |word| {
+            if (word.len == 0) continue;
+
+            if (use_byte_map) {
+                const mapped = try self.mapBytesToTokenizerEncoding(word);
+                defer self.allocator.free(mapped);
+                try self.encodeWordBpe(&out, mapped);
+            } else {
+                try self.encodeWordBpe(&out, word);
+            }
+        }
+
+        return try out.toOwnedSlice(self.allocator);
+    }
+
+    fn encodeWordBpe(self: *const GgufTokenizer, out: *std.ArrayListUnmanaged(u32), word: []const u8) !void {
+        if (word.len == 0) return;
+
+        if (self.ignore_merges) {
+            if (self.token_to_id.get(word)) |whole_id| {
+                try out.append(self.allocator, whole_id);
+                return;
+            }
+        }
+
+        var symbols = std.ArrayListUnmanaged(u32).empty;
+        defer symbols.deinit(self.allocator);
+
+        var i: usize = 0;
+        while (i < word.len) {
+            const cp = decodeUtf8Scalar(word[i..]);
+            if (cp.len == 0 or i + cp.len > word.len) {
+                try symbols.append(self.allocator, self.unk_id);
+                i += 1;
+                continue;
+            }
+
+            const piece = word[i .. i + cp.len];
+            if (self.token_to_id.get(piece)) |id| {
+                try symbols.append(self.allocator, id);
+            } else {
+                try symbols.append(self.allocator, self.unk_id);
+            }
+            i += cp.len;
+        }
+
+        while (symbols.items.len >= 2) {
+            var best_idx: ?usize = null;
+            var best_rank: u32 = std.math.maxInt(u32);
+            var best_result: u32 = 0;
+
+            var pair_idx: usize = 1;
+            while (pair_idx < symbols.items.len) : (pair_idx += 1) {
+                const left = symbols.items[pair_idx - 1];
+                const right = symbols.items[pair_idx];
+                const key = mergeKey(left, right);
+                const rank = self.merge_rank_map.get(key) orelse continue;
+                if (rank < best_rank) {
+                    best_rank = rank;
+                    best_idx = pair_idx - 1;
+                    best_result = self.merge_map.get(key).?;
+                }
+            }
+
+            const idx = best_idx orelse break;
+            symbols.items[idx] = best_result;
+            _ = symbols.orderedRemove(idx + 1);
+        }
+
+        try out.appendSlice(self.allocator, symbols.items);
+    }
+
+    fn encodeRawLegacy(self: *const GgufTokenizer, text: []const u8) ![]u32 {
         // Convert raw bytes to the vocab's representation.
         // For tiktoken-style tokenizers (Qwen, GPT-4, etc.), bytes like
         // newline (0x0A) and space (0x20) are stored as shifted unicode
@@ -565,6 +716,296 @@ pub const GgufTokenizer = struct {
         }
 
         return try symbols.toOwnedSlice(self.allocator);
+    }
+
+    fn mapBytesToTokenizerEncoding(self: *const GgufTokenizer, text: []const u8) ![]u8 {
+        var mapped = std.ArrayListUnmanaged(u8){};
+        errdefer mapped.deinit(self.allocator);
+
+        for (text) |byte| {
+            const cp = byteToUnicode(byte);
+            if (cp < 0x80) {
+                try mapped.append(self.allocator, @intCast(cp));
+            } else if (cp < 0x800) {
+                try mapped.append(self.allocator, @intCast(0xC0 | (cp >> 6)));
+                try mapped.append(self.allocator, @intCast(0x80 | (cp & 0x3F)));
+            } else {
+                try mapped.append(self.allocator, @intCast(0xE0 | (cp >> 12)));
+                try mapped.append(self.allocator, @intCast(0x80 | ((cp >> 6) & 0x3F)));
+                try mapped.append(self.allocator, @intCast(0x80 | (cp & 0x3F)));
+            }
+        }
+
+        return try mapped.toOwnedSlice(self.allocator);
+    }
+
+    fn splitWordsGpt2(self: *const GgufTokenizer, text: []const u8) ![][]const u8 {
+        const cps = try self.decodeCodepoints(text);
+        defer self.allocator.free(cps);
+
+        var words = std.ArrayListUnmanaged([]const u8).empty;
+        errdefer words.deinit(self.allocator);
+
+        var pos: usize = 0;
+        while (pos < cps.len) {
+            const cp = cps[pos].cp;
+
+            if (cp == '\'' and pos + 1 < cps.len) {
+                const next = asciiLower(cps[pos + 1].cp);
+                if (next == 's' or next == 't' or next == 'm' or next == 'd') {
+                    try self.appendCpRange(&words, text, cps, pos, pos + 2);
+                    pos += 2;
+                    continue;
+                }
+                if (pos + 2 < cps.len) {
+                    const next_next = asciiLower(cps[pos + 2].cp);
+                    if ((next == 'r' and next_next == 'e') or
+                        (next == 'v' and next_next == 'e') or
+                        (next == 'l' and next_next == 'l'))
+                    {
+                        try self.appendCpRange(&words, text, cps, pos, pos + 3);
+                        pos += 3;
+                        continue;
+                    }
+                }
+            }
+
+            if (cpIsLetter(cp) or (cp == ' ' and pos + 1 < cps.len and cpIsLetter(cps[pos + 1].cp))) {
+                var end = pos + @intFromBool(cp == ' ');
+                while (end < cps.len and cpIsLetter(cps[end].cp)) : (end += 1) {}
+                try self.appendCpRange(&words, text, cps, pos, end);
+                pos = end;
+                continue;
+            }
+
+            if (cpIsNumber(cp) or (cp == ' ' and pos + 1 < cps.len and cpIsNumber(cps[pos + 1].cp))) {
+                var end = pos + @intFromBool(cp == ' ');
+                while (end < cps.len and cpIsNumber(cps[end].cp)) : (end += 1) {}
+                try self.appendCpRange(&words, text, cps, pos, end);
+                pos = end;
+                continue;
+            }
+
+            if (cpIsOther(cp) or (cp == ' ' and pos + 1 < cps.len and cpIsOther(cps[pos + 1].cp))) {
+                var end = pos + @intFromBool(cp == ' ');
+                while (end < cps.len and cpIsOther(cps[end].cp)) : (end += 1) {}
+                try self.appendCpRange(&words, text, cps, pos, end);
+                pos = end;
+                continue;
+            }
+
+            var ws_len: usize = 0;
+            while (pos + ws_len < cps.len and cpIsWhitespace(cps[pos + ws_len].cp)) : (ws_len += 1) {}
+
+            if (ws_len > 1 and pos + ws_len < cps.len) {
+                try self.appendCpRange(&words, text, cps, pos, pos + ws_len - 1);
+                pos += ws_len - 1;
+                continue;
+            }
+
+            if (ws_len > 0) {
+                try self.appendCpRange(&words, text, cps, pos, pos + ws_len);
+                pos += ws_len;
+                continue;
+            }
+
+            try self.appendCpRange(&words, text, cps, pos, pos + 1);
+            pos += 1;
+        }
+
+        return try words.toOwnedSlice(self.allocator);
+    }
+
+    fn splitWordsLlama3(self: *const GgufTokenizer, text: []const u8) ![][]const u8 {
+        const cps = try self.decodeCodepoints(text);
+        defer self.allocator.free(cps);
+
+        var words = std.ArrayListUnmanaged([]const u8).empty;
+        errdefer words.deinit(self.allocator);
+
+        var pos: usize = 0;
+        while (pos < cps.len) {
+            const cp = cps[pos].cp;
+
+            if (cp == '\'' and pos + 1 < cps.len) {
+                const next = asciiLower(cps[pos + 1].cp);
+                if (next == 's' or next == 't' or next == 'm' or next == 'd') {
+                    try self.appendCpRange(&words, text, cps, pos, pos + 2);
+                    pos += 2;
+                    continue;
+                }
+                if (pos + 2 < cps.len) {
+                    const next_next = asciiLower(cps[pos + 2].cp);
+                    if ((next == 'r' and next_next == 'e') or
+                        (next == 'v' and next_next == 'e') or
+                        (next == 'l' and next_next == 'l'))
+                    {
+                        try self.appendCpRange(&words, text, cps, pos, pos + 3);
+                        pos += 3;
+                        continue;
+                    }
+                }
+            }
+
+            if (!cpIsCrLf(cp) and !cpIsNumber(cp)) {
+                const next_is_letter = pos + 1 < cps.len and cpIsLetter(cps[pos + 1].cp);
+                if (cpIsLetter(cp) or next_is_letter) {
+                    var end = pos + 1;
+                    while (end < cps.len and cpIsLetter(cps[end].cp)) : (end += 1) {}
+                    try self.appendCpRange(&words, text, cps, pos, end);
+                    pos = end;
+                    continue;
+                }
+            }
+
+            if (cpIsNumber(cp)) {
+                var start = pos;
+                var end = pos;
+                while (end < cps.len and cpIsNumber(cps[end].cp)) : (end += 1) {
+                    if (end + 1 - start >= 3) {
+                        try self.appendCpRange(&words, text, cps, start, end + 1);
+                        start = end + 1;
+                    }
+                }
+                if (start < end) {
+                    try self.appendCpRange(&words, text, cps, start, end);
+                }
+                pos = end;
+                continue;
+            }
+
+            if ((cp == ' ' and pos + 1 < cps.len and cpIsOther(cps[pos + 1].cp)) or cpIsOther(cp)) {
+                var end = pos + @intFromBool(cp == ' ');
+                while (end < cps.len and cpIsOther(cps[end].cp)) : (end += 1) {}
+                while (end < cps.len and cpIsCrLf(cps[end].cp)) : (end += 1) {}
+                try self.appendCpRange(&words, text, cps, pos, end);
+                pos = end;
+                continue;
+            }
+
+            var ws_len: usize = 0;
+            var last_newline_end: ?usize = null;
+            while (pos + ws_len < cps.len and cpIsWhitespace(cps[pos + ws_len].cp)) : (ws_len += 1) {
+                if (cpIsCrLf(cps[pos + ws_len].cp)) {
+                    last_newline_end = pos + ws_len + 1;
+                }
+            }
+
+            if (last_newline_end) |end| {
+                try self.appendCpRange(&words, text, cps, pos, end);
+                pos = end;
+                continue;
+            }
+
+            if (ws_len > 1 and pos + ws_len < cps.len) {
+                try self.appendCpRange(&words, text, cps, pos, pos + ws_len - 1);
+                pos += ws_len - 1;
+                continue;
+            }
+
+            if (ws_len > 0) {
+                try self.appendCpRange(&words, text, cps, pos, pos + ws_len);
+                pos += ws_len;
+                continue;
+            }
+
+            try self.appendCpRange(&words, text, cps, pos, pos + 1);
+            pos += 1;
+        }
+
+        return try words.toOwnedSlice(self.allocator);
+    }
+
+    fn decodeCodepoints(self: *const GgufTokenizer, text: []const u8) ![]Codepoint {
+        var cps = std.ArrayListUnmanaged(Codepoint).empty;
+        errdefer cps.deinit(self.allocator);
+
+        var i: usize = 0;
+        while (i < text.len) {
+            const cp = decodeUtf8Scalar(text[i..]);
+            const len = if (cp.len == 0 or i + cp.len > text.len) 1 else cp.len;
+            try cps.append(self.allocator, .{
+                .cp = cp.cp,
+                .start = i,
+                .end = i + len,
+            });
+            i += len;
+        }
+
+        return try cps.toOwnedSlice(self.allocator);
+    }
+
+    fn appendCpRange(
+        self: *const GgufTokenizer,
+        out: *std.ArrayListUnmanaged([]const u8),
+        text: []const u8,
+        cps: []const Codepoint,
+        start_cp: usize,
+        end_cp: usize,
+    ) !void {
+        if (end_cp <= start_cp or start_cp >= cps.len) return;
+        const end_idx = @min(end_cp, cps.len) - 1;
+        try out.append(self.allocator, text[cps[start_cp].start..cps[end_idx].end]);
+    }
+
+    fn decodeUtf8Scalar(s: []const u8) struct { cp: u32, len: usize } {
+        if (s.len == 0) return .{ .cp = 0, .len = 0 };
+        const b0 = s[0];
+        if (b0 < 0x80) return .{ .cp = b0, .len = 1 };
+        if (b0 >= 0xC0 and b0 < 0xE0 and s.len >= 2) {
+            return .{
+                .cp = (@as(u32, b0 & 0x1F) << 6) | @as(u32, s[1] & 0x3F),
+                .len = 2,
+            };
+        }
+        if (b0 >= 0xE0 and b0 < 0xF0 and s.len >= 3) {
+            return .{
+                .cp = (@as(u32, b0 & 0x0F) << 12) | (@as(u32, s[1] & 0x3F) << 6) | @as(u32, s[2] & 0x3F),
+                .len = 3,
+            };
+        }
+        if (b0 >= 0xF0 and b0 < 0xF8 and s.len >= 4) {
+            return .{
+                .cp = (@as(u32, b0 & 0x07) << 18) |
+                    (@as(u32, s[1] & 0x3F) << 12) |
+                    (@as(u32, s[2] & 0x3F) << 6) |
+                    @as(u32, s[3] & 0x3F),
+                .len = 4,
+            };
+        }
+        return .{ .cp = b0, .len = 1 };
+    }
+
+    fn asciiLower(cp: u32) u32 {
+        if (cp >= 'A' and cp <= 'Z') return cp + 32;
+        return cp;
+    }
+
+    fn cpIsWhitespace(cp: u32) bool {
+        return cp == ' ' or cp == '\t' or cp == '\n' or cp == '\r' or cp == 0x0B or cp == 0x0C;
+    }
+
+    fn cpIsCrLf(cp: u32) bool {
+        return cp == '\n' or cp == '\r';
+    }
+
+    fn cpIsNumber(cp: u32) bool {
+        return cp >= '0' and cp <= '9';
+    }
+
+    fn cpIsLetter(cp: u32) bool {
+        if ((cp >= 'a' and cp <= 'z') or (cp >= 'A' and cp <= 'Z')) return true;
+        if (cp < 0x80) return false;
+        return !cpIsWhitespace(cp) and !cpIsNumber(cp) and !cpIsOtherAscii(cp);
+    }
+
+    fn cpIsOtherAscii(cp: u32) bool {
+        if (cp >= 0x80) return false;
+        return !cpIsWhitespace(cp) and !cpIsNumber(cp) and !((cp >= 'a' and cp <= 'z') or (cp >= 'A' and cp <= 'Z'));
+    }
+
+    fn cpIsOther(cp: u32) bool {
+        return !cpIsWhitespace(cp) and !cpIsLetter(cp) and !cpIsNumber(cp);
     }
 
     /// GPT-2 byte-to-unicode mapping.
@@ -771,13 +1212,45 @@ pub const GgufTokenizer = struct {
                     const copy_len = @min(val_r.str.len, self.model_arch.len);
                     @memcpy(self.model_arch[0..copy_len], val_r.str[0..copy_len]);
                     self.model_arch_len = @intCast(copy_len);
+                } else if (std.mem.endsWith(u8, key, "tokenizer.ggml.pre")) {
+                    self.applyTokenizerPre(val_r.str);
+                } else if (std.mem.endsWith(u8, key, "tokenizer.ggml.model")) {
+                    if (self.pretokenizer_style == .generic and std.mem.eql(u8, val_r.str, "gpt2")) {
+                        self.pretokenizer_style = .gpt2;
+                    }
                 }
                 // tokenizer.chat_template is available but we detect style
                 // from vocab tokens instead (more reliable, works for all quants).
                 // We log it for debugging.
                 if (std.mem.endsWith(u8, key, "tokenizer.chat_template")) {
                     const preview_len = @min(val_r.str.len, @as(usize, 60));
-                    log.info("GGUF chat_template: {s}...", .{val_r.str[0..preview_len]});
+                    log.debug("GGUF chat_template: {s}...", .{val_r.str[0..preview_len]});
+                }
+                continue;
+            }
+
+            if (vtype == VTYPE_UINT32 or vtype == VTYPE_INT32) {
+                if (pos + 4 > data.len) return error.Truncated;
+                const raw = std.mem.readInt(u32, data[pos..][0..4], .little);
+                pos += 4;
+
+                if (std.mem.endsWith(u8, key, "tokenizer.ggml.bos_token_id")) {
+                    self.bos_id = raw;
+                } else if (std.mem.endsWith(u8, key, "tokenizer.ggml.eos_token_id")) {
+                    self.eos_id = raw;
+                } else if (std.mem.endsWith(u8, key, "tokenizer.ggml.unknown_token_id")) {
+                    self.unk_id = raw;
+                }
+                continue;
+            }
+
+            if (vtype == VTYPE_BOOL) {
+                if (pos + 1 > data.len) return error.Truncated;
+                const raw = data[pos] != 0;
+                pos += 1;
+
+                if (std.mem.endsWith(u8, key, "tokenizer.ggml.add_bos_token")) {
+                    self.add_bos_token = raw;
                 }
                 continue;
             }
@@ -844,12 +1317,11 @@ pub const GgufTokenizer = struct {
             const merged_str = try std.mem.concat(self.allocator, u8, &.{ left_str, right_str });
             defer self.allocator.free(merged_str);
             const result_id = self.token_to_id.get(merged_str) orelse continue;
-            const score = if (merge_idx < self.scores.len) self.scores[merge_idx] else @as(f32, @floatFromInt(merge_idx));
             try merge_arr.append(self.allocator, .{
                 .left = left_id,
                 .right = right_id,
                 .result = result_id,
-                .score = score,
+                .score = @floatFromInt(merge_idx),
             });
         }
 
@@ -858,6 +1330,7 @@ pub const GgufTokenizer = struct {
         // Build merge_map for O(1) lookup
         for (self.merges) |m| {
             try self.merge_map.put(mergeKey(m.left, m.right), m.result);
+            try self.merge_rank_map.put(mergeKey(m.left, m.right), @intFromFloat(m.score));
         }
     }
 
@@ -927,6 +1400,7 @@ test "GgufTokenizer decode Ġ prefix" {
         .token_to_id = std.StringHashMap(u32).init(allocator),
         .merges = &.{},
         .merge_map = GgufTokenizer.MergeMap.init(allocator),
+        .merge_rank_map = GgufTokenizer.MergeMap.init(allocator),
         .bos_id = 1,
         .eos_id = 2,
         .unk_id = 0,
@@ -937,6 +1411,7 @@ test "GgufTokenizer decode Ġ prefix" {
         allocator.free(tok.scores);
         tok.token_to_id.deinit();
         tok.merge_map.deinit();
+        tok.merge_rank_map.deinit();
     }
 
     const decoded = try tok.decode(&.{ 1, 3, 4, 2 });
@@ -962,6 +1437,7 @@ test "GgufTokenizer decode byte tokens" {
         .token_to_id = std.StringHashMap(u32).init(allocator),
         .merges = &.{},
         .merge_map = GgufTokenizer.MergeMap.init(allocator),
+        .merge_rank_map = GgufTokenizer.MergeMap.init(allocator),
         .bos_id = 1,
         .eos_id = 2,
         .unk_id = 0,
@@ -972,6 +1448,7 @@ test "GgufTokenizer decode byte tokens" {
         allocator.free(tok.scores);
         tok.token_to_id.deinit();
         tok.merge_map.deinit();
+        tok.merge_rank_map.deinit();
     }
 
     const decoded = try tok.decode(&.{ 3, 4 });

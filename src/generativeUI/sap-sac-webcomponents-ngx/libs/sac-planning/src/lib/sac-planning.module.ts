@@ -7,7 +7,7 @@
 
 import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 import { SacPlanningModelService } from './services/sac-planning-model.service';
 import { SacDataActionService } from './services/sac-data-action.service';
@@ -17,7 +17,6 @@ import { SacPlanningPanelComponent } from './components/sac-planning-panel.compo
 @NgModule({
   imports: [
     CommonModule,
-    HttpClientModule,
   ],
   declarations: [
     SacPlanningPanelComponent,
@@ -26,6 +25,7 @@ import { SacPlanningPanelComponent } from './components/sac-planning-panel.compo
     SacPlanningPanelComponent,
   ],
   providers: [
+    provideHttpClient(withInterceptorsFromDi()),
     SacPlanningModelService,
     SacDataActionService,
     SacAllocationService,
@@ -36,6 +36,7 @@ export class SacPlanningModule {
     return {
       ngModule: SacPlanningModule,
       providers: [
+        provideHttpClient(withInterceptorsFromDi()),
         SacPlanningModelService,
         SacDataActionService,
         SacAllocationService,

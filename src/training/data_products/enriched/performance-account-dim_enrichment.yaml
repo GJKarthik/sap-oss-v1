@@ -7,7 +7,7 @@ pipeline: xlsx_to_odps.py
 copilotIntegration:
   profilerAvailable: false
   columnMappingAvailable: true
-  copilotPath: /Users/user/Documents/sap-oss/data-cleaning-copilot-main
+  copilotPath: /Users/user/Documents/sap-oss/training-console
 profile:
   rowCount: 9
   columnCount: 2

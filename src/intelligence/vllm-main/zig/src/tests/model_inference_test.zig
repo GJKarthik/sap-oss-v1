@@ -17,8 +17,9 @@ pub fn testModelInference() !void {
     const allocator = std.heap.page_allocator;
     
     // Use environment variable or default to vendor model
-    const model_path = std.process.getEnvVarOwned(allocator, "GGUF_MODEL_PATH") catch DEFAULT_MODEL_PATH;
-    defer if (@TypeOf(model_path) != @TypeOf(DEFAULT_MODEL_PATH)) allocator.free(model_path);
+    const owned_model_path = std.process.getEnvVarOwned(allocator, "GGUF_MODEL_PATH") catch null;
+    defer if (owned_model_path) |path| allocator.free(path);
+    const model_path = owned_model_path orelse DEFAULT_MODEL_PATH;
     
     std.log.info("╔══════════════════════════════════════════════════════════════════╗", .{});
     std.log.info("║  MODEL INFERENCE TEST - Custom Zig Engine Only                  ║", .{});
@@ -37,7 +38,7 @@ pub fn testModelInference() !void {
     file.close();
     
     std.log.info("Model size: {d:.1} MB", .{@as(f64, @floatFromInt(stat.size)) / (1024 * 1024)});
-    
+
     // Load model using our GGUF loader
     const start_load = std.time.nanoTimestamp();
     const model = Model.loadFromGGUF(allocator, model_path) catch |err| {
@@ -51,6 +52,7 @@ pub fn testModelInference() !void {
     std.log.info("║  MODEL LOADED SUCCESSFULLY                                       ║", .{});
     std.log.info("╠══════════════════════════════════════════════════════════════════╣", .{});
     std.log.info("║  Load time:    {d:.1} ms                                        ", .{load_time_ms});
+    std.log.info("║  Runtime:      {s}                                               ", .{if (model.isUsingMetal()) "metal-hybrid" else "cpu"});
     std.log.info("║  Architecture: {s}                                              ", .{@tagName(model.getArchitecture())});
     std.log.info("║  Vocab size:   {d}                                              ", .{model.getVocabSize()});
     std.log.info("║  Hidden dim:   {d}                                              ", .{model.getHiddenDim()});

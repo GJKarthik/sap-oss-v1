@@ -132,6 +132,21 @@ describe('JouleChatComponent Accessibility', () => {
       expect(label).toContain('...');
       expect(label.length).toBeLessThan(250);
     });
+
+    it('should store estimated height metadata for user messages', async () => {
+      component.inputValue = 'Hello from user';
+      await component.onSubmit();
+
+      expect(component.messages[0].estimatedHeightPx).toBeGreaterThan(0);
+    });
+
+    it('should update estimated height metadata while assistant streams', () => {
+      (component as any).startAssistantMessage();
+      (component as any).appendToAssistantMessage('Streaming output from assistant');
+
+      const assistant = component.messages.find((m) => m.role === 'assistant');
+      expect(assistant?.estimatedHeightPx).toBeGreaterThan(0);
+    });
   });
 
   describe('Keyboard navigation', () => {
@@ -146,6 +161,53 @@ describe('JouleChatComponent Accessibility', () => {
       const srOnly = fixture.nativeElement.querySelector('.sr-only[role="status"]');
       expect(srOnly).toBeTruthy();
       expect(srOnly.getAttribute('aria-live')).toBe('polite');
+    });
+  });
+
+  describe('Session memory persistence', () => {
+    it('should persist chat state after sending a user message', async () => {
+      const setItemSpy = jest.spyOn(window.localStorage.__proto__, 'setItem');
+      component.inputValue = 'Persist this message';
+
+      await component.onSubmit();
+
+      expect(setItemSpy).toHaveBeenCalled();
+      expect(setItemSpy.mock.calls.some((call) => call[0] === 'joule-chat:default')).toBe(true);
+      setItemSpy.mockRestore();
+    });
+
+    it('should restore persisted chat state on init', () => {
+      window.localStorage.setItem(
+        'joule-chat:default',
+        JSON.stringify({
+          messages: [
+            {
+              id: 'restored-1',
+              role: 'assistant',
+              content: 'Restored message',
+              timestamp: new Date('2026-03-31T00:00:00.000Z').toISOString(),
+              isStreaming: false,
+              estimatedHeightPx: 20,
+            },
+          ],
+          lastRoute: 'rag',
+          currentSchema: { type: 'card' },
+        }),
+      );
+
+      component.ngOnInit();
+
+      expect(component.messages.some((msg) => msg.id === 'restored-1')).toBe(true);
+      expect(component.lastRoute).toBe('rag');
+      expect(component.currentSchema).toEqual({ type: 'card' });
+    });
+
+    it('should clear persisted chat state when reset is triggered', () => {
+      const removeItemSpy = jest.spyOn(window.localStorage.__proto__, 'removeItem');
+      component.clearMessages();
+
+      expect(removeItemSpy).toHaveBeenCalledWith('joule-chat:default');
+      removeItemSpy.mockRestore();
     });
   });
 });

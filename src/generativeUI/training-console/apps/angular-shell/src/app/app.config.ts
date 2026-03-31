@@ -5,6 +5,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { cacheInterceptor } from './interceptors/cache.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
+import { timeoutInterceptor } from './interceptors/timeout.interceptor';
 import { GlobalErrorHandler } from './core/global-error-handler';
 
 /**
@@ -22,7 +23,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authInterceptor, cacheInterceptor, errorInterceptor])
+      withInterceptors([authInterceptor, timeoutInterceptor, cacheInterceptor, errorInterceptor])
     ),
   ],
 };

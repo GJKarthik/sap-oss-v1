@@ -1141,7 +1141,7 @@
         ]
       },
       {
-        "path": "data-cleaning-copilot-main",
+        "path": "training-console",
         "name": "Data Cleaning Copilot",
         "description": "This is a tool that takes in database schema and meta data describing that schema (e.g. description of the data in the tables, how the elements in the tables are connected, how the data is used) and helps users to formulate queries that can find errors or inconsistencies in the data.",
         "license": null,
@@ -1611,7 +1611,7 @@
         ]
       },
       {
-        "path": "data-cleaning-copilot-main",
+        "path": "training-console",
         "name": "Data Cleaning Copilot",
         "description": "This is a tool that takes in database schema and meta data describing that schema (e.g. description of the data in the tables, how the elements in the tables are connected, how the data is used) and helps users to formulate queries that can find errors or inconsistencies in the data.",
         "license": null,

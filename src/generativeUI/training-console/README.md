@@ -1,6 +1,7 @@
 # Training Console
 
 Full-platform UI for the SAP AI Training stack — covering all four `training-main` components: **Pipeline**, **Model Optimizer**, **HippoCPP**, and **Data Explorer**.
+Includes integrated **Data Cleaning** workflows for preparing model training data inside the same app.
 
 Built with **Angular 20** + **SAP UI5 Web Components**, mirroring the architecture of `sap-ai-fabric-console`.
 
@@ -124,6 +125,7 @@ The FastAPI proxy uses the following environment variables. They can be set in a
 | `/model-optimizer` | Model catalog browser + quantisation job management |
 | `/hippocpp` | HippoCPP graph engine stats + Cypher query sandbox |
 | `/data-explorer` | Banking Excel/CSV training data asset browser |
+| `/data-cleaning` | Native data cleaning copilot + workflow execution |
 | `/chat` | OpenAI-compatible LLM chat (proxied to ModelOpt backend) |
 
 ## Backend API Endpoints (proxied via `/api`)

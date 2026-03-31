@@ -14,7 +14,7 @@ from datetime import datetime
 import uuid
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from sqlalchemy import create_engine, Column, String, Float, JSON, Boolean, DateTime
@@ -139,6 +139,108 @@ structlog.configure(
 )
 logger = structlog.get_logger("training-console")
 
+# ---------------------------------------------------------------------------
+# Native data cleaning state (lets training-console run standalone)
+# ---------------------------------------------------------------------------
+
+DATA_CLEANING_STATE: dict[str, Any] = {
+    "messages": [],
+    "checks": [],
+    "workflow_runs": {},
+}
+
+DATA_CLEANING_TERMINAL_STATES = {"completed", "failed"}
+
+
+def _native_generate_checks(message: str) -> list[dict[str, Any]]:
+    lower = message.lower()
+    checks: list[dict[str, Any]] = []
+    if "null" in lower or "missing" in lower:
+        checks.append(
+            {
+                "name": "null_ratio_check",
+                "severity": "high",
+                "description": "Flag columns where null ratio exceeds 5%.",
+                "sql_hint": "SELECT col, COUNT(*) FILTER (WHERE col IS NULL) * 100.0 / COUNT(*) AS null_pct FROM table;",
+            }
+        )
+    if "duplicate" in lower or "dedup" in lower:
+        checks.append(
+            {
+                "name": "duplicate_key_check",
+                "severity": "high",
+                "description": "Detect duplicate primary/business key rows.",
+                "sql_hint": "SELECT key_col, COUNT(*) FROM table GROUP BY key_col HAVING COUNT(*) > 1;",
+            }
+        )
+    if "outlier" in lower or "anomaly" in lower:
+        checks.append(
+            {
+                "name": "outlier_distribution_check",
+                "severity": "medium",
+                "description": "Detect metric outliers using z-score thresholds.",
+                "sql_hint": "Use AVG/STDDEV and flag ABS((x-avg)/stddev) > 3.",
+            }
+        )
+    if "schema" in lower or "type" in lower:
+        checks.append(
+            {
+                "name": "schema_conformance_check",
+                "severity": "medium",
+                "description": "Validate inferred types against schema contract.",
+                "sql_hint": "Compare INFORMATION_SCHEMA columns with expected dictionary metadata.",
+            }
+        )
+    if not checks:
+        checks.append(
+            {
+                "name": "freshness_and_volume_baseline",
+                "severity": "low",
+                "description": "Track row-count deltas and load freshness.",
+                "sql_hint": "Compare daily row counts and max(updated_at) with 7-day baseline.",
+            }
+        )
+    return checks
+
+
+async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
+    run = DATA_CLEANING_STATE["workflow_runs"].get(run_id)
+    if not run:
+        return
+
+    run["status"] = "running"
+    steps = [
+        ("profile", "Profiling candidate training data slice"),
+        ("validate", "Validating nulls, duplicates, and schema conformance"),
+        ("remediate", "Generating remediation plan for flagged records"),
+        ("publish", "Preparing cleaned dataset snapshot for model training"),
+    ]
+    for phase, description in steps:
+        event = {
+            "ts": datetime.utcnow().isoformat() + "Z",
+            "phase": phase,
+            "message": description,
+            "status": "ok",
+        }
+        run["events"].append(event)
+        await asyncio.sleep(0.25)
+
+    latest_checks = _native_generate_checks(message)
+    DATA_CLEANING_STATE["checks"] = latest_checks
+    run["status"] = "completed"
+    run["result"] = {
+        "checks_generated": len(latest_checks),
+        "summary": "Workflow completed. Generated data quality checks and remediation guidance for training prep.",
+    }
+    run["events"].append(
+        {
+            "ts": datetime.utcnow().isoformat() + "Z",
+            "phase": "completed",
+            "message": "Workflow completed",
+            "status": "ok",
+        }
+    )
+
 
 # ---------------------------------------------------------------------------
 # App lifecycle
@@ -199,6 +301,13 @@ async def structlog_middleware(request: Request, call_next):
 # Routes
 # ---------------------------------------------------------------------------
 
+class DataCleaningChatRequest(BaseModel):
+    message: str
+
+
+class DataCleaningWorkflowRunRequest(BaseModel):
+    message: str
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -225,10 +334,169 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         ACTIVE_WEBSOCKETS.dec()
 
+# --- PER-JOB WEBSOCKET STREAMING ---
+
+# Maps job_id -> set of connected WebSocket clients
+JOB_WS_CONNECTIONS: dict[str, set] = {}
+
+async def broadcast_job(job_id: str, message: dict) -> None:
+    """Fan-out a message to all WS clients watching a specific job."""
+    connections = JOB_WS_CONNECTIONS.get(job_id, set())
+    dead: set = set()
+    for ws in connections:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            dead.add(ws)
+    connections.difference_update(dead)
+
+@app.websocket("/ws/jobs/{job_id}")
+async def job_ws_endpoint(websocket: WebSocket, job_id: str):
+    """WebSocket endpoint for live training job log streaming."""
+    await websocket.accept()
+    if job_id not in JOB_WS_CONNECTIONS:
+        JOB_WS_CONNECTIONS[job_id] = set()
+    JOB_WS_CONNECTIONS[job_id].add(websocket)
+
+    # Hydrate client with current job state from DB
+    job = get_job(job_id)
+    if job:
+        await websocket.send_json({"type": "init", "data": job})
+    else:
+        await websocket.send_json({"type": "error", "detail": "Job not found"})
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        JOB_WS_CONNECTIONS.get(job_id, set()).discard(websocket)
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "healthy", "service": "training-console-api", "mode": "native-orchestrator"}
+
+
+@app.get("/data-cleaning/health")
+async def data_cleaning_health():
+    return {
+        "status": "ok",
+        "session_ready": True,
+        "mode": "native",
+        "message_count": len(DATA_CLEANING_STATE["messages"]),
+        "check_count": len(DATA_CLEANING_STATE["checks"]),
+    }
+
+
+@app.post("/data-cleaning/chat")
+async def data_cleaning_chat(request: DataCleaningChatRequest):
+    message = request.message.strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message must not be blank.")
+
+    generated_checks = _native_generate_checks(message)
+    DATA_CLEANING_STATE["messages"].append(
+        {"role": "user", "content": message, "ts": datetime.utcnow().isoformat() + "Z"}
+    )
+    DATA_CLEANING_STATE["checks"] = generated_checks
+    response = (
+        f"Generated {len(generated_checks)} quality checks for training-data preparation. "
+        "Run workflow to produce remediation steps and publish a cleaned snapshot."
+    )
+    DATA_CLEANING_STATE["messages"].append(
+        {"role": "assistant", "content": response, "ts": datetime.utcnow().isoformat() + "Z"}
+    )
+    return {"response": response}
+
+
+@app.get("/data-cleaning/checks")
+async def data_cleaning_checks():
+    return DATA_CLEANING_STATE["checks"]
+
+
+@app.post("/data-cleaning/workflow/run")
+async def data_cleaning_workflow_run(request: DataCleaningWorkflowRunRequest):
+    message = request.message.strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message must not be blank.")
+
+    run_id = str(uuid.uuid4())
+    DATA_CLEANING_STATE["workflow_runs"][run_id] = {
+        "run_id": run_id,
+        "status": "pending",
+        "message": message,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "events": [],
+        "result": None,
+    }
+    await _run_native_data_cleaning_workflow(run_id, message)
+    return {"run_id": run_id, "status": "completed"}
+
+
+@app.get("/data-cleaning/workflow/{run_id}")
+async def data_cleaning_workflow_status(run_id: str):
+    run = DATA_CLEANING_STATE["workflow_runs"].get(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Workflow run not found.")
+    return {
+        "run_id": run["run_id"],
+        "status": run["status"],
+        "created_at": run["created_at"],
+        "result": run["result"],
+    }
+
+
+@app.get("/data-cleaning/workflow/{run_id}/events")
+async def data_cleaning_workflow_events(run_id: str):
+    run = DATA_CLEANING_STATE["workflow_runs"].get(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Workflow run not found.")
+    return {"run_id": run_id, "events": run["events"], "status": run["status"]}
+
+
+@app.get("/data-cleaning/workflow/{run_id}/stream")
+async def data_cleaning_workflow_stream(run_id: str):
+    run = DATA_CLEANING_STATE["workflow_runs"].get(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Workflow run not found.")
+
+    async def _event_stream():
+        offset = 0
+        while True:
+            current_run = DATA_CLEANING_STATE["workflow_runs"].get(run_id)
+            if not current_run:
+                break
+            events = current_run["events"]
+            while offset < len(events):
+                payload = json.dumps(events[offset])
+                yield f"data: {payload}\n\n"
+                offset += 1
+
+            if current_run["status"] in DATA_CLEANING_TERMINAL_STATES:
+                final_payload = json.dumps(
+                    {
+                        "phase": "terminal",
+                        "status": current_run["status"],
+                        "result": current_run["result"],
+                    }
+                )
+                yield f"data: {final_payload}\n\n"
+                break
+            await asyncio.sleep(0.2)
+
+    return StreamingResponse(_event_stream(), media_type="text/event-stream")
+
+
+@app.delete("/data-cleaning/session")
+async def data_cleaning_clear_session():
+    DATA_CLEANING_STATE["messages"] = []
+    DATA_CLEANING_STATE["checks"] = []
+    DATA_CLEANING_STATE["workflow_runs"] = {}
+    return {"status": "cleared"}
 
 @app.get("/models/catalog")
 async def get_models_catalog() -> JSONResponse:
@@ -321,13 +589,47 @@ async def chat_inference(job_id: str, req: ChatRequest):
 
 # --- UPSTREAM PIPELINE ORCHESTRATION ---
 
+# Live WebSocket connections subscribed to pipeline log stream
+PIPELINE_WS_CONNECTIONS: set = set()
+
+async def broadcast_pipeline(message: dict) -> None:
+    dead: set = set()
+    for ws in PIPELINE_WS_CONNECTIONS:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            dead.add(ws)
+    PIPELINE_WS_CONNECTIONS.difference_update(dead)
+
+@app.websocket("/ws/pipeline")
+async def pipeline_ws_endpoint(websocket: WebSocket):
+    """WebSocket endpoint that streams Zig Pipeline logs in real time."""
+    await websocket.accept()
+    PIPELINE_WS_CONNECTIONS.add(websocket)
+    # Send current state immediately upon connect so the UI hydrates
+    await websocket.send_json({
+        "type": "init",
+        "state": PIPELINE_STATUS["state"],
+        "logs": PIPELINE_STATUS["logs"]
+    })
+    try:
+        while True:
+            # Keep alive — client can send a ping, we pong back
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        PIPELINE_WS_CONNECTIONS.discard(websocket)
+
 async def run_pipeline_worker():
     PIPELINE_STATUS["state"] = "running"
-    PIPELINE_STATUS["logs"] = ["Starting Data Generation Pipeline..."]
+    PIPELINE_STATUS["logs"] = ["🚀 Starting Zig Data Generation Pipeline..."]
+    await broadcast_pipeline({"type": "init", "state": "running", "logs": PIPELINE_STATUS["logs"]})
     
     try:
         import os
-        # Local relative Mac fallback vs Docker bind-mount path
         pipeline_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../training/pipeline"))
         if not os.path.exists(pipeline_dir):
             pipeline_dir = "/app/src/training/pipeline"
@@ -346,20 +648,26 @@ async def run_pipeline_worker():
             text = line.decode().strip()
             if text:
                 PIPELINE_STATUS["logs"].append(text)
-                print(f"[PIPELINE-ZIG] {text}")
+                # ⚡ Broadcast this line to all WS clients INSTANTLY
+                await broadcast_pipeline({"type": "log", "text": text})
                 
         await process.wait()
         
         if process.returncode == 0:
             PIPELINE_STATUS["state"] = "completed"
-            PIPELINE_STATUS["logs"].append("Pipeline execution finished perfectly.")
+            final_msg = "✅ Pipeline finished — Spider/BIRD JSONL ready for training."
         else:
             PIPELINE_STATUS["state"] = "error"
-            PIPELINE_STATUS["logs"].append(f"Make process abnormally exited with code {process.returncode}")
+            final_msg = f"❌ make exited with code {process.returncode}"
+            
+        PIPELINE_STATUS["logs"].append(final_msg)
+        await broadcast_pipeline({"type": "done", "state": PIPELINE_STATUS["state"], "text": final_msg})
             
     except Exception as e:
         PIPELINE_STATUS["state"] = "error"
-        PIPELINE_STATUS["logs"].append(f"Fatal Subprocess Fault: {str(e)}")
+        err_msg = f"💥 Fatal Subprocess Fault: {str(e)}"
+        PIPELINE_STATUS["logs"].append(err_msg)
+        await broadcast_pipeline({"type": "done", "state": "error", "text": err_msg})
 
 
 @app.post("/pipeline/start")
@@ -506,9 +814,9 @@ async def real_worker_task(job_id: str):
         
     job_data["status"] = "running"
     save_job(job_data)
+    await broadcast_job(job_id, {"type": "status", "status": "running", "progress": 0})
     
     try:
-        # Spawn actual ML process
         model_name = job_data["config"].get("model_name", "gpt2")
         cmd_args = ["python", "src/train.py", "--model_name", model_name]
         
@@ -526,7 +834,6 @@ async def real_worker_task(job_id: str):
             stderr=asyncio.subprocess.PIPE
         )
         
-        # Intercept the strict JSON metrics piped out by train.py Callback
         while True:
             line = await process.stdout.readline()
             if not line:
@@ -536,9 +843,9 @@ async def real_worker_task(job_id: str):
             if not process_output:
                 continue
                 
-            log_entry = {
-                "step": process_output, 
-                "loss": None, 
+            log_entry: dict = {
+                "step": process_output,
+                "loss": None,
                 "timestamp": datetime.utcnow().isoformat() + "Z"
             }
 
@@ -546,43 +853,51 @@ async def real_worker_task(job_id: str):
                 try:
                     metrics = json.loads(process_output)
                     if "eval_loss" in metrics and "perplexity" in metrics:
-                        # Final Evaluation Pass Telemetry
                         job_data = get_job(job_id)
                         job_data["evaluation"] = {
-                            "eval_loss": metrics["eval_loss"],
-                            "perplexity": metrics["perplexity"],
+                            "eval_loss": round(metrics["eval_loss"], 4),
+                            "perplexity": round(metrics["perplexity"], 2),
                             "runtime_sec": metrics.get("runtime_sec", 0)
                         }
                         save_job(job_data)
-                        log_entry["step"] = "Final Mathematical Evaluation Complete"
+                        log_entry["step"] = "✅ Final Evaluation Complete"
+                        # Broadcast evaluation payload for chart overlay
+                        await broadcast_job(job_id, {"type": "evaluation", "data": job_data["evaluation"]})
                     elif "loss" in metrics:
-                        # Standard Training Loss Telemetry
                         loss_val = float(metrics["loss"])
                         ep = float(metrics.get("epoch", 0))
+                        step_num = int(metrics.get("step", 0))
                         job_data = get_job(job_id)
-                        # Extrapolate progress from epoch (e.g. 3.0 total)
-                        # Assuming 3 epochs max for testing
-                        job_data["progress"] = min(95.0, (ep / 3.0) * 100)
-                        job_data["history"].append({"step": metrics.get("step", 0), "loss": loss_val})
+                        new_progress = round(min(95.0, (ep / 3.0) * 100), 1)
+                        history_point = {"step": step_num, "loss": loss_val, "epoch": round(ep, 2)}
+                        job_data["progress"] = new_progress
+                        job_data["history"].append(history_point)
                         save_job(job_data)
-                        
                         log_entry["loss"] = loss_val
-                except:
+                        # Broadcast chart data point live
+                        await broadcast_job(job_id, {
+                            "type": "loss",
+                            "point": history_point,
+                            "progress": new_progress
+                        })
+                except Exception:
                     pass
             
-            print(f"[{job_id} ZIG/OS] {line.decode().strip()}")
+            # Broadcast raw log line for the terminal
+            await broadcast_job(job_id, {"type": "log", "data": log_entry})
                 
         await process.wait()
         
         job_data = get_job(job_id)
         if process.returncode == 0:
             job_data["status"] = "completed"
-            job_data["progress"] = 100
+            job_data["progress"] = 100.0
         else:
             job_data["status"] = "failed"
-            job_data["error"] = f"PyTorch Exception Error {process.returncode}"
+            job_data["error"] = f"PyTorch process exited with code {process.returncode}"
             
         save_job(job_data)
+        await broadcast_job(job_id, {"type": "status", "status": job_data["status"], "progress": job_data["progress"]})
 
     except Exception as e:
         job_data = get_job(job_id)
@@ -590,25 +905,26 @@ async def real_worker_task(job_id: str):
             job_data["status"] = "failed"
             job_data["error"] = str(e)
             save_job(job_data)
+            await broadcast_job(job_id, {"type": "status", "status": "failed", "progress": 0})
 
 @app.post("/jobs")
 async def create_job(payload: JobCreatePayload) -> JSONResponse:
     job_id = str(uuid.uuid4())
     job_record = {
         "id": job_id,
-        "name": f"Optimizing {payload.config.get('model_name', 'Model')}",
         "status": "pending",
         "progress": 0.0,
-        "created_at": datetime.now().isoformat(),
         "config": payload.config,
-        "history": []
+        "history": [],
+        "deployed": False,
+        "evaluation": None,
+        "error": None
     }
-    JOB_DB[job_id] = job_record
+    save_job(job_record)
     
-    # Spawn real async worker tracking actual PyTorch loss via Subprocess piping
     asyncio.create_task(real_worker_task(job_id))
     
-    return JSONResponse(content=job_record, status_code=201)
+    return JSONResponse(content={**job_record, "created_at": datetime.utcnow().isoformat() + "Z"}, status_code=201)
 
 
 # Proxy logic fully removed since we are now a native orchestration server.

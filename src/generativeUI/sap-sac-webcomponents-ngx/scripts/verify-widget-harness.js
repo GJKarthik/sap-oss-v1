@@ -101,7 +101,7 @@ async function main() {
           await page.waitForFunction(predicate, arg);
         } catch (error) {
           const details = error instanceof Error ? error.message : String(error);
-          throw new Error(`${description}: ${details}`);
+          throw new Error(`${description}: ${details}`, { cause: error });
         }
       }
 

@@ -2,8 +2,8 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "data-cleaning-copilot-main",
-  "documentNamespace": "https://spdx.org/spdxdocs/data-cleaning-copilot-main-57fa1e30-308f-4aee-ad3b-457732f38df6",
+  "name": "training-console",
+  "documentNamespace": "https://spdx.org/spdxdocs/training-console-57fa1e30-308f-4aee-ad3b-457732f38df6",
   "creationInfo": {
     "created": "2026-02-28T10:30:18Z",
     "creators": [

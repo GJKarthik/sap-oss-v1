@@ -5,7 +5,7 @@
  * Supports customizable shortcuts, context-aware bindings, and help documentation.
  */
 
-import { Injectable, NgZone, OnDestroy } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Subject } from 'rxjs';
 
@@ -40,11 +40,10 @@ export class KeyboardShortcutsService implements OnDestroy {
 
   readonly shortcuts$ = this.shortcutsSubject.asObservable();
   readonly helpDialogOpen$ = this.helpDialogSubject.asObservable();
+  private readonly router = inject(Router);
+  private readonly ngZone = inject(NgZone);
 
-  constructor(
-    private readonly router: Router,
-    private readonly ngZone: NgZone
-  ) {
+  constructor() {
     this.setupDefaultShortcuts();
     this.setupKeyboardListener();
   }

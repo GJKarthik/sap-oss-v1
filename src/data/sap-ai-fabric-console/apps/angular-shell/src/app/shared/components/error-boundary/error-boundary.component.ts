@@ -196,7 +196,7 @@ export class ErrorBoundaryComponent {
  * 
  * Captures unhandled errors and provides centralized error handling.
  */
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
@@ -206,11 +206,8 @@ import { BehaviorSubject } from 'rxjs';
 export class GlobalErrorHandler implements ErrorHandler {
   private readonly errorSubject = new BehaviorSubject<ErrorInfo | null>(null);
   readonly error$ = this.errorSubject.asObservable();
-
-  constructor(
-    private readonly ngZone: NgZone,
-    private readonly router: Router
-  ) {}
+  private readonly ngZone = inject(NgZone);
+  private readonly router = inject(Router);
 
   handleError(error: Error): void {
     // Log to console in development

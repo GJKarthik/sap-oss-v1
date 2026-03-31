@@ -384,6 +384,12 @@ pub const ToonSampler = struct {
 
     /// Sample next token from logits using top-k + top-p
     pub fn sample(self: *ToonSampler, logits: []f32) u32 {
+        // Suppress non-generative special token IDs used throughout the local
+        // runtime. Let EOS be handled by the caller after sampling, but never
+        // start a completion with PAD/UNK/BOS.
+        if (logits.len > 0) logits[0] = -std.math.inf(f32);
+        if (logits.len > 1) logits[1] = -std.math.inf(f32);
+
         // Apply temperature
         if (self.temperature > 0) {
             for (logits) |*l| {
@@ -482,6 +488,7 @@ pub const ToonInferenceEngine = struct {
                 // CPU fallback: load model weights into CPU memory
                 std.log.info("Loading GGUF model to CPU...", .{});
                 engine.model = try Model.loadFromGGUF(allocator, gguf_path);
+                std.log.info("GGUF runtime backend: {s}", .{if (engine.model.?.isUsingMetal()) "metal-hybrid" else "cpu"});
                 const actual_cfg = engine.model.?.config;
                 engine.model_config = actual_cfg;
                 engine.kv_cache = try KVCache.init(allocator, actual_cfg);
@@ -620,13 +627,17 @@ pub const ToonInferenceEngine = struct {
         return self.model != null;
     }
 
+    pub fn supportsLocalChat(self: *const ToonInferenceEngine) bool {
+        return self.model != null;
+    }
+
     pub fn defaultMaxOutputTokens(self: *const ToonInferenceEngine) u32 {
         return self.config.max_output_tokens;
     }
 
     pub fn embedText(self: *ToonInferenceEngine, text: []const u8) !EmbeddingResult {
         const model = self.model orelse return error.EmbeddingUnsupported;
-        const kv_cache = &self.kv_cache.?;
+        const weights = model.weights orelse return error.ModelNotLoaded;
         const tokenizer = self.tokenizer orelse return error.TokenizerUnavailable;
 
         const tokens: []u32 = if (self.gguf_tokenizer) |gt|
@@ -635,13 +646,37 @@ pub const ToonInferenceEngine = struct {
             try tokenizer.encode(text);
         defer self.allocator.free(tokens);
 
-        self.inference_mutex.lock();
-        defer self.inference_mutex.unlock();
+        const dim: usize = model.config.n_embd;
+        const vocab: u32 = model.config.vocab_size;
+        const embedding = try self.allocator.alloc(f32, dim);
+        @memset(embedding, 0.0);
 
-        kv_cache.clear();
-        _ = model.forwardBatch(tokens, kv_cache);
+        var counted_tokens: usize = 0;
+        for (tokens) |token| {
+            const is_special = if (self.gguf_tokenizer) |gt|
+                token == gt.bos_id or gt.isEos(token)
+            else
+                token == tokenizer.bos_token or token == tokenizer.pad_token or tokenizer.isEos(token);
+            if (is_special) continue;
 
-        const embedding = try self.allocator.dupe(f32, model.norm_buf);
+            const clamped_token: usize = @intCast(@min(token, vocab - 1));
+            const row_offset = clamped_token * dim;
+            for (0..dim) |i| embedding[i] += @as(f32, weights.token_embedding[row_offset + i]);
+            counted_tokens += 1;
+        }
+
+        if (counted_tokens == 0 and tokens.len > 0) {
+            const clamped_token: usize = @intCast(@min(tokens[0], vocab - 1));
+            const row_offset = clamped_token * dim;
+            for (0..dim) |i| embedding[i] = @as(f32, weights.token_embedding[row_offset + i]);
+            counted_tokens = 1;
+        }
+
+        if (counted_tokens > 1) {
+            const inv_count = 1.0 / @as(f32, @floatFromInt(counted_tokens));
+            for (embedding) |*value| value.* *= inv_count;
+        }
+
         normalizeEmbedding(embedding);
 
         return .{
@@ -794,6 +829,34 @@ pub const ToonInferenceEngine = struct {
         return best_idx;
     }
 
+    fn logTopLogits(logits_slice: []const f32, count: usize) void {
+        var ids: [5]u32 = .{0} ** 5;
+        var vals: [5]f32 = .{-std.math.inf(f32)} ** 5;
+        var finite_count: usize = 0;
+
+        for (logits_slice, 0..) |v, i| {
+            if (!std.math.isFinite(v)) continue;
+            finite_count += 1;
+            for (0..@min(count, ids.len)) |slot| {
+                if (v > vals[slot]) {
+                    var shift = @min(count, ids.len) - 1;
+                    while (shift > slot) : (shift -= 1) {
+                        ids[shift] = ids[shift - 1];
+                        vals[shift] = vals[shift - 1];
+                    }
+                    ids[slot] = @intCast(i);
+                    vals[slot] = v;
+                    break;
+                }
+            }
+        }
+
+        std.log.debug(
+            "generate: logits finite={} top_ids=[{},{},{},{},{}] top_vals=[{d:.4},{d:.4},{d:.4},{d:.4},{d:.4}]",
+            .{ finite_count, ids[0], ids[1], ids[2], ids[3], ids[4], vals[0], vals[1], vals[2], vals[3], vals[4] },
+        );
+    }
+
     /// Generate tokens from pre-built token IDs.
     /// Tokens are built by GgufTokenizer.buildChatTokens() with the correct
     /// chat template for the model family (detected from GGUF metadata).
@@ -808,7 +871,11 @@ pub const ToonInferenceEngine = struct {
         }
 
         const prefill_start_ns: i128 = std.time.nanoTimestamp();
-        std.log.info("generate: prefill {} tokens ({s})", .{ tokens.len, if (use_gpu) "GPU" else "CPU" });
+        const prefill_backend =
+            if (use_gpu) "GPU"
+            else if (self.model != null and self.model.?.isUsingMetal()) "MetalHybrid"
+            else "CPU";
+        std.log.info("generate: prefill {} tokens ({s})", .{ tokens.len, prefill_backend });
 
         // Prefill: feed all prompt tokens
         var logits: []f32 = undefined;
@@ -826,8 +893,7 @@ pub const ToonInferenceEngine = struct {
         } else {
             var kv_cache = &self.kv_cache.?;
             kv_cache.clear();
-            _ = self.model.?.forwardBatch(tokens, kv_cache);
-            logits = self.model.?.forward(tokens[tokens.len - 1], tokens.len - 1, kv_cache);
+            logits = self.model.?.forwardBatch(tokens, kv_cache);
             self.native_mtp_hidden_valid = false;
         }
 
@@ -835,7 +901,7 @@ pub const ToonInferenceEngine = struct {
         const prefill_elapsed_ms: u64 = @intCast(@max(prefill_elapsed_ns, 0) / std.time.ns_per_ms);
         std.log.info("generate: prefill done in {} ms, starting decode (max_tokens={} timeout_ms={})", .{
             prefill_elapsed_ms,
-            self.config.max_output_tokens,
+            max_output_tokens,
             request_timeout_ms,
         });
 
@@ -876,12 +942,24 @@ pub const ToonInferenceEngine = struct {
             }
 
             const step_start_ns: i128 = std.time.nanoTimestamp();
+            if (output_tokens.items.len == 0) {
+                logTopLogits(logits, 5);
+            }
             // Sample from current logits
             const next_token = self.toon_sampler.sample(logits);
 
             // Check for EOS
             const is_eos = if (self.gguf_tokenizer) |gt| gt.isEos(next_token) else self.tokenizer.?.isEos(next_token);
-            if (is_eos) break;
+            if (is_eos) {
+                if (self.gguf_tokenizer) |gt| {
+                    std.log.info("generate: first sampled stop token={} eos_id={} im_end_id={any} eot_id={any}", .{
+                        next_token, gt.eos_id, gt.im_end_id, gt.eot_id,
+                    });
+                } else {
+                    std.log.info("generate: first sampled stop token={}", .{next_token});
+                }
+                break;
+            }
 
             try output_tokens.append(self.allocator, next_token);
             try context_buf.append(self.allocator, next_token);
@@ -979,7 +1057,7 @@ pub const ToonInferenceEngine = struct {
             const step_elapsed_ns: u64 = @intCast(@max(step_elapsed_ns_i, 0));
             decode_step_sum_ns += step_elapsed_ns;
             if (first_token_step_ns == null) first_token_step_ns = step_elapsed_ns;
-            if (output_tokens.items.len == 1) std.log.info("generate: first decode token={} pos={}", .{ next_token, pos - 1 });
+            if (output_tokens.items.len == 1) std.log.debug("generate: first decode token={} pos={}", .{ next_token, pos - 1 });
 
             // Check for TOON stop sequences
             const n_out = output_tokens.items.len;
@@ -1021,7 +1099,10 @@ pub const ToonInferenceEngine = struct {
 
     fn normalizeEmbedding(embedding: []f32) void {
         var sum_sq: f32 = 0.0;
-        for (embedding) |value| sum_sq += value * value;
+        for (embedding) |*value| {
+            if (!std.math.isFinite(value.*)) value.* = 0.0;
+            sum_sq += value.* * value.*;
+        }
         if (sum_sq <= 0.0) return;
 
         const inv_norm = 1.0 / @sqrt(sum_sq);

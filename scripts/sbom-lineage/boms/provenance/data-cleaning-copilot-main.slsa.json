@@ -2,11 +2,11 @@
   "_type": "https://in-toto.io/Statement/v1",
   "subject": [
     {
-      "name": "data-cleaning-copilot-main.cyclonedx.json",
+      "name": "training-console.cyclonedx.json",
       "digest": {
         "sha256": "819591f2378aad535399666f344610f10599c408650f900ac328479cb31fc55f"
       },
-      "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/boms/data-cleaning-copilot-main.cyclonedx.json"
+      "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/boms/training-console.cyclonedx.json"
     }
   ],
   "predicateType": "https://slsa.dev/provenance/v1",
@@ -16,7 +16,7 @@
       "externalParameters": {
         "source": "https://github.com/sap-oss/sap-oss",
         "ref": "refs/heads/main",
-        "bom_file": "scripts/sbom-lineage/boms/data-cleaning-copilot-main.cyclonedx.json"
+        "bom_file": "scripts/sbom-lineage/boms/training-console.cyclonedx.json"
       },
       "internalParameters": {
         "pipeline": "SAP OSS SBOM Pipeline",

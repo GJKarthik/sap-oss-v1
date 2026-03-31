@@ -216,7 +216,7 @@ interface PendingToolConfirmation {
           [disabled]="streaming"
           [attr.aria-disabled]="streaming"
           aria-describedby="sac-chat-hint"
-          (input)="handleInput(\$event)"
+          (input)="handleInput($event)"
           (keyup.enter)="send()"
         />
         <span id="sac-chat-hint" class="sr-only">Press Enter to send</span>

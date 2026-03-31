@@ -7,7 +7,7 @@
 
 import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 import { SacConfigService } from './services/sac-config.service';
 import { SacApiService } from './services/sac-api.service';
@@ -19,9 +19,9 @@ import { SacConfig } from './types/config.types';
 @NgModule({
   imports: [
     CommonModule,
-    HttpClientModule,
   ],
   providers: [
+    provideHttpClient(withInterceptorsFromDi()),
     SacConfigService,
     SacApiService,
     SacAuthService,
@@ -56,6 +56,7 @@ export class SacCoreModule {
         { provide: SAC_CONFIG, useValue: config },
         { provide: SAC_API_URL, useValue: config.apiUrl },
         { provide: SAC_AUTH_TOKEN, useValue: config.authToken },
+        provideHttpClient(withInterceptorsFromDi()),
         SacConfigService,
         SacApiService,
         SacAuthService,

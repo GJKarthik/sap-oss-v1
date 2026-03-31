@@ -13,12 +13,11 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '../../services/mcp.service';
-import { DateFormatPipe } from '../../shared';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, DateFormatPipe],
+  imports: [CommonModule, Ui5WebcomponentsModule],
   template: `
     <!-- Page Header -->
     <ui5-page background-design="Solid">

@@ -25,6 +25,8 @@ StoreCollection = Literal[
     "datasources",
     "vector_stores",
     "governance_rules",
+    "data_cleaning_approvals",
+    "genui_sessions",
 ]
 
 RateLimitResult = Dict[str, int | bool]

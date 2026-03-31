@@ -46,7 +46,7 @@ updates:
 
   # Data Cleaning Copilot (Python)
   - package-ecosystem: "pip"
-    directory: "/data-cleaning-copilot-main"
+    directory: "/training-console"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

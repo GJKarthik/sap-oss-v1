@@ -92,9 +92,9 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": ">=17.0.0",
-    "@angular/core": ">=17.0.0",
-    "@angular/forms": ">=17.0.0",
+    "@angular/common": ">=17.0.0 <21.0.0",
+    "@angular/core": ">=17.0.0 <21.0.0",
+    "@angular/forms": ">=17.0.0 <21.0.0",
     "rxjs": ">=7.0.0",
     "tslib": ">=2.3.0",
     "zone.js": ">=0.14.0"
@@ -129,5 +129,8 @@
     "type": "git",
     "url": "https://github.com/turrellcraigjohn-alt/ai-nucleus-ado.git",
     "directory": "aiNucleusSdk/ainuc-sap-sdk/sap-sac-webcomponents-ngx"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.3"
   }
 }

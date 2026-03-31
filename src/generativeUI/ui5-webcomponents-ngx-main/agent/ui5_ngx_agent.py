@@ -8,8 +8,10 @@ Routes to vLLM only when user data is detected.
 import asyncio
 import json
 import os
+import ipaddress
 import urllib.parse
 import urllib.request
+import urllib.error
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
@@ -17,12 +19,36 @@ from datetime import datetime, timezone
 # SSRF guard: validate env-var URLs before any network call
 # =============================================================================
 
-_BLOCKED_HOSTS = (
+_BLOCKED_HOST_PREFIXES = (
     "169.254.",   # AWS/GCP/Azure IMDS link-local
     "100.100.",   # Alibaba Cloud metadata
     "fd00:",      # IPv6 ULA
     "::1",
 )
+
+def _is_blocked_host(host: str) -> bool:
+    host = (host or "").strip().lower()
+    if not host:
+        return True
+    if host == "localhost":
+        return True
+    if any(host.startswith(b) for b in _BLOCKED_HOST_PREFIXES):
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        # Non-IP hostname: allow and defer DNS resolution to runtime.
+        return False
+    if ip.is_loopback or ip.is_link_local or ip.is_private or ip.is_multicast or ip.is_reserved or ip.is_unspecified:
+        return True
+    if ip in ipaddress.ip_network("100.64.0.0/10"):
+        return True
+    if isinstance(ip, ipaddress.IPv4Address):
+        octets = host.split(".")
+        if len(octets) > 1 and octets[0] == "172" and octets[1].isdigit():
+            if 16 <= int(octets[1]) <= 31:
+                return True
+    return False
 
 
 def _validate_remote_url(url: str, var_name: str) -> str:
@@ -36,11 +62,10 @@ def _validate_remote_url(url: str, var_name: str) -> str:
             f"{var_name} must use http or https (got '{parsed.scheme}'). Value: {url!r}"
         )
     host = parsed.hostname or ""
-    for blocked in _BLOCKED_HOSTS:
-        if host.startswith(blocked):
-            raise ValueError(
-                f"{var_name} targets a blocked host prefix '{blocked}'. Value: {url!r}"
-            )
+    if _is_blocked_host(host):
+        raise ValueError(
+            f"{var_name} targets a blocked host '{host}'. Value: {url!r}"
+        )
     return url
 
 
@@ -82,6 +107,22 @@ _hana_audit_token_exp: float = 0.0
 _hana_audit_table_ready: bool = False
 
 
+def _invalidate_hana_token() -> None:
+    global _hana_audit_token, _hana_audit_token_exp
+    _hana_audit_token = ""
+    _hana_audit_token_exp = 0.0
+
+
+def _hana_token_skew_seconds(expires_in: Any) -> int:
+    try:
+        ttl = int(expires_in)
+    except (TypeError, ValueError):
+        ttl = 3600
+    if ttl <= 0:
+        return 60
+    return max(60, min(300, int(ttl * 0.2)))
+
+
 def _hana_available() -> bool:
     return bool(_HANA_BASE_URL and _HANA_CLIENT_ID and _HANA_CLIENT_SEC and _HANA_AUTH_URL)
 
@@ -102,24 +143,32 @@ def _hana_get_token() -> str:
     with urllib.request.urlopen(req, timeout=10) as resp:
         body = json.loads(resp.read().decode())
     _hana_audit_token = body["access_token"]
-    _hana_audit_token_exp = time.time() + body.get("expires_in", 3600) - 60
+    ttl = body.get("expires_in", 3600)
+    _hana_audit_token_exp = time.time() + int(ttl) - _hana_token_skew_seconds(ttl)
     return _hana_audit_token
 
 
 def _hana_sql(statement: str, params: list = None) -> None:
-    token = _hana_get_token()
     payload: dict = {"statement": statement}
     if params:
         payload["parameters"] = params
-    req = urllib.request.Request(
-        f"{_HANA_BASE_URL}/v1/statement",
-        data=json.dumps(payload).encode(),
-        headers={"Authorization": f"Bearer {token}",
-                 "Content-Type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=10):
-        pass
+    for attempt in range(2):
+        token = _hana_get_token()
+        req = urllib.request.Request(
+            f"{_HANA_BASE_URL}/v1/statement",
+            data=json.dumps(payload).encode(),
+            headers={"Authorization": f"Bearer {token}",
+                     "Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10):
+                return
+        except urllib.error.HTTPError as exc:
+            if exc.code == 401 and attempt == 0:
+                _invalidate_hana_token()
+                continue
+            raise
 
 
 def _hana_ensure_audit_table() -> None:

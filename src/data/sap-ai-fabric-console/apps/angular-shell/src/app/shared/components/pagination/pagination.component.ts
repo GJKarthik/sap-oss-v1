@@ -5,7 +5,7 @@
  * Supports page navigation, page size selection, and accessibility.
  */
 
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
@@ -204,7 +204,7 @@ export class PaginationComponent implements OnChanges {
   startItem = 0;
   endItem = 0;
 
-  ngOnChanges(changes: SimpleChanges): void {
+  ngOnChanges(): void {
     this.calculatePagination();
   }
 
@@ -237,7 +237,7 @@ export class PaginationComponent implements OnChanges {
     } else {
       const half = Math.floor(this.maxVisiblePages / 2);
       let start = Math.max(1, this.page - half);
-      let end = Math.min(this.totalPages, start + this.maxVisiblePages - 1);
+      const end = Math.min(this.totalPages, start + this.maxVisiblePages - 1);
       
       if (end - start + 1 < this.maxVisiblePages) {
         start = Math.max(1, end - this.maxVisiblePages + 1);

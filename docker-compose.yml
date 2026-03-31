@@ -38,7 +38,7 @@ services:
 
   data-copilot:
     build:
-      context: ./src/generativeUI/data-cleaning-copilot-main
+      context: ./src/generativeUI/training-console
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:

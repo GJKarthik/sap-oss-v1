@@ -139,6 +139,102 @@ pub const AppState = struct {
     trt_engine: ?mojo_bindings.EngineHandle,
     trt_engine_path_z: ?[:0]const u8, // owned null-terminated copy for lifetime
     trt_max_inflight: i32,
+    managed_local_models_child: ?std.process.Child,
+
+    fn stripScheme(host: []const u8) []const u8 {
+        if (mem.startsWith(u8, host, "http://")) return host["http://".len..];
+        if (mem.startsWith(u8, host, "https://")) return host["https://".len..];
+        return host;
+    }
+
+    fn isLoopbackHost(host: []const u8) bool {
+        const stripped = stripScheme(host);
+        return mem.eql(u8, stripped, "127.0.0.1") or
+            mem.eql(u8, stripped, "localhost") or
+            mem.eql(u8, stripped, "::1");
+    }
+
+    fn canReachLocalModelsHost(allocator: Allocator, host: []const u8, port: u16) bool {
+        var stream = net.tcpConnectToHost(allocator, stripScheme(host), port) catch return false;
+        defer stream.close();
+        return true;
+    }
+
+    fn buildManagedLocalModelsAlias(allocator: Allocator, artifact: model_artifact_mod.ResolvedModelArtifact) ![]u8 {
+        if (artifact.kind == .gguf_file) {
+            if (artifact.gguf_path) |gguf_path| {
+                if (std.fs.path.dirname(gguf_path)) |parent| {
+                    return try allocator.dupe(u8, std.fs.path.basename(parent));
+                }
+            }
+        }
+        return try allocator.dupe(u8, std.fs.path.stem(artifact.primaryPath()));
+    }
+
+    fn maybeLaunchManagedLocalModels(
+        allocator: Allocator,
+        artifact: model_artifact_mod.ResolvedModelArtifact,
+        host: []const u8,
+        port: u16,
+    ) !?std.process.Child {
+        if (artifact.kind != .gguf_file) return null;
+        if (!isLoopbackHost(host)) return null;
+        if (canReachLocalModelsHost(allocator, host, port)) return null;
+
+        const gguf_path = artifact.gguf_path orelse return null;
+        const launch_host = if (mem.eql(u8, stripScheme(host), "localhost"))
+            "127.0.0.1"
+        else
+            stripScheme(host);
+        const host_arg = try allocator.dupe(u8, launch_host);
+        defer allocator.free(host_arg);
+        const port_arg = try std.fmt.allocPrint(allocator, "{d}", .{port});
+        defer allocator.free(port_arg);
+        const ctx_arg = try allocator.dupe(u8, "4096");
+        defer allocator.free(ctx_arg);
+        const alias = try buildManagedLocalModelsAlias(allocator, artifact);
+        defer allocator.free(alias);
+
+        var child = std.process.Child.init(&.{
+            "llama-server",
+            "-m",
+            gguf_path,
+            "--host",
+            host_arg,
+            "--port",
+            port_arg,
+            "-c",
+            ctx_arg,
+            "--parallel",
+            "1",
+            "--metrics",
+            "-fa",
+            "on",
+            "-ngl",
+            "999",
+            "-a",
+            alias,
+        }, allocator);
+        child.stdin_behavior = .Ignore;
+        child.stdout_behavior = .Inherit;
+        child.stderr_behavior = .Inherit;
+
+        try child.spawn();
+
+        var attempts: usize = 0;
+        while (attempts < 120) : (attempts += 1) {
+            if (canReachLocalModelsHost(allocator, host, port)) {
+                std.log.info("Managed local models backend launched on {s}:{d}", .{ stripScheme(host), port });
+                return child;
+            }
+            std.Thread.sleep(250 * std.time.ns_per_ms);
+        }
+
+        const kill_result = child.kill() catch null;
+        _ = kill_result;
+        _ = child.wait() catch {};
+        return error.LocalModelsBackendStartTimeout;
+    }
 
     pub fn init(allocator: Allocator, server_config: ServerConfig) !*AppState {
         const state = try allocator.create(AppState);
@@ -299,6 +395,26 @@ pub const AppState = struct {
             }
         }
 
+        var managed_local_models_child: ?std.process.Child = null;
+        if (model_artifact) |artifact| {
+            const needs_managed_local_models = if (toon_engine) |*engine|
+                !engine.supportsLocalChat()
+            else
+                artifact.kind == .gguf_file;
+
+            if (needs_managed_local_models) {
+                managed_local_models_child = maybeLaunchManagedLocalModels(
+                    allocator,
+                    artifact,
+                    svc_cfg.local_models_url,
+                    svc_cfg.local_models_port,
+                ) catch |err| blk: {
+                    std.log.warn("Managed local models backend launch failed ({s})", .{@errorName(err)});
+                    break :blk null;
+                };
+            }
+        }
+
         var mangle_engine = try mangle.Engine.init(allocator, server_config.mangle_rules_path);
         mangle_engine.setTensorRtAvailable(trt_engine != null);
 
@@ -327,6 +443,7 @@ pub const AppState = struct {
             .trt_engine = trt_engine,
             .trt_engine_path_z = trt_engine_path_z,
             .trt_max_inflight = server_config.trt_max_inflight,
+            .managed_local_models_child = managed_local_models_child,
         };
 
         // Expose model metadata to Mangle as runtime facts for routing rules.
@@ -388,6 +505,11 @@ pub const AppState = struct {
         if (self.trt_engine_path_z) |path_z| {
             self.allocator.free(path_z);
         }
+        if (self.managed_local_models_child) |*child| {
+            const kill_result = child.kill() catch null;
+            _ = kill_result;
+            _ = child.wait() catch {};
+        }
         self.allocator.destroy(self);
     }
 
@@ -403,6 +525,9 @@ pub const AppState = struct {
             std.log.info("TOON format enabled — 40-60% token savings on LLM calls", .{});
             if (self.toon_engine != null) {
                 std.log.info("  Direct llama.cpp inference enabled", .{});
+                if (!self.toon_engine.?.supportsLocalChat()) {
+                    std.log.info("  Direct chat disabled for this model; proxying chat to local-models backend", .{});
+                }
             }
             if (self.model_artifact) |artifact| {
                 std.log.info(
@@ -422,6 +547,9 @@ pub const AppState = struct {
             if (self.engram_tokenizer != null) {
                 std.log.info("  Engram uses GGUF tokenizer-backed prompt signals", .{});
             }
+        }
+        if (self.managed_local_models_child != null) {
+            std.log.info("Managed local-models subprocess is active", .{});
         }
 
         if (self.tls_config.enabled) {
@@ -507,10 +635,12 @@ fn handleRequest(state: *AppState, req: *http.Request, res: *http.Response) void
 
     // Route based on path
     if (mem.startsWith(u8, path, "/v1/toon/chat/completions")) {
-        handleChatCompletions(state, body, res, true, true);
+        const can_use_direct_chat = state.toon_engine != null and state.toon_engine.?.supportsLocalChat();
+        handleChatCompletions(state, body, res, can_use_direct_chat, true);
     } else if (mem.startsWith(u8, path, "/v1/chat/completions")) {
         // Use local TOON/CUDA engine when available, proxy only as fallback
-        handleChatCompletions(state, body, res, state.toon_engine != null, false);
+        const can_use_direct_chat = state.toon_engine != null and state.toon_engine.?.supportsLocalChat();
+        handleChatCompletions(state, body, res, can_use_direct_chat, false);
     } else if (mem.startsWith(u8, path, "/v1/completions")) {
         handleCompletions(state, body, res);
     } else if (mem.startsWith(u8, path, "/v1/embeddings")) {
@@ -988,7 +1118,7 @@ fn handleHealth(state: *AppState, res: *http.Response) void {
 
 fn handleReady(state: *AppState, res: *http.Response) void {
     if (state.toon_engine) |*engine| {
-        if (engine.isModelLoaded()) {
+        if (engine.supportsLocalChat() and engine.isModelLoaded()) {
             res.body = "{\"status\":\"ready\"}";
             return;
         }
@@ -1066,7 +1196,7 @@ fn handleGpuInfo(state: *AppState, res: *http.Response) void {
     const artifact_kind = if (state.model_artifact) |artifact| artifact.kind.name() else "none";
     const artifact_model_type = if (state.model_artifact) |artifact| artifact.model_type orelse "unknown" else "unknown";
     const artifact_direct_ready = if (state.toon_engine != null)
-        "true"
+        if (state.toon_engine.?.supportsLocalChat()) "true" else "false"
     else if (state.model_artifact) |artifact|
         if (artifact.directToonReady()) "true" else "false"
     else
@@ -1839,6 +1969,7 @@ fn initTestState(allocator: Allocator, cfg: ServerConfig, local_models_port: u16
             .trt_engine = null,
             .trt_engine_path_z = null,
             .trt_max_inflight = cfg.trt_max_inflight,
+            .managed_local_models_child = null,
         },
         .circuit_breaker = circuit_breaker,
     };

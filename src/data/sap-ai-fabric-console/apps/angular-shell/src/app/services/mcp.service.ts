@@ -109,6 +109,31 @@ export interface DashboardStats {
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown';
 }
 
+export interface GenUiSessionMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
+
+export interface GenUiSession {
+  id: string;
+  title: string;
+  owner_username: string;
+  is_bookmarked: boolean;
+  messages: GenUiSessionMessage[];
+  ui_state: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  last_message_at?: string | null;
+  is_archived?: boolean;
+  archived_at?: string | null;
+}
+
+export interface GenUiSessionListResponse {
+  sessions: GenUiSession[];
+  total: number;
+}
+
 export interface OperationsDashboard {
   window_seconds: number;
   api: {
@@ -601,6 +626,80 @@ export class McpService {
         },
         alerts: []
       }))
+    );
+  }
+
+  // ===========================================================================
+  // Generative UI Session Persistence
+  // ===========================================================================
+
+  listGenUiSessions(options?: {
+    bookmarkedOnly?: boolean;
+    includeArchived?: boolean;
+    archivedOnly?: boolean;
+    query?: string;
+    limit?: number;
+  }): Observable<GenUiSessionListResponse> {
+    const bookmarkedOnly = options?.bookmarkedOnly ?? false;
+    const includeArchived = options?.includeArchived ?? false;
+    const archivedOnly = options?.archivedOnly ?? false;
+    const query = options?.query ?? '';
+    const limit = options?.limit ?? 50;
+    return this.withRequestTimeout(
+      this.http.get<GenUiSessionListResponse>(`${environment.apiBaseUrl}/genui/sessions`, {
+        params: {
+          bookmarked_only: String(bookmarkedOnly),
+          include_archived: String(includeArchived),
+          archived_only: String(archivedOnly),
+          query,
+          limit: String(limit),
+        },
+      })
+    );
+  }
+
+  getGenUiSession(sessionId: string): Observable<GenUiSession> {
+    return this.withRequestTimeout(
+      this.http.get<GenUiSession>(`${environment.apiBaseUrl}/genui/sessions/${sessionId}`)
+    );
+  }
+
+  saveGenUiSession(payload: {
+    session_id?: string;
+    title?: string;
+    messages: GenUiSessionMessage[];
+    ui_state?: Record<string, unknown>;
+  }): Observable<GenUiSession> {
+    return this.withRequestTimeout(
+      this.http.post<GenUiSession>(`${environment.apiBaseUrl}/genui/sessions/save`, payload)
+    );
+  }
+
+  setGenUiSessionBookmark(sessionId: string, isBookmarked: boolean): Observable<GenUiSession> {
+    return this.withRequestTimeout(
+      this.http.patch<GenUiSession>(`${environment.apiBaseUrl}/genui/sessions/${sessionId}/bookmark`, {
+        is_bookmarked: isBookmarked,
+      })
+    );
+  }
+
+  setGenUiSessionArchived(sessionId: string, isArchived: boolean): Observable<GenUiSession> {
+    return this.withRequestTimeout(
+      this.http.patch<GenUiSession>(`${environment.apiBaseUrl}/genui/sessions/${sessionId}/archive`, {
+        is_archived: isArchived,
+      })
+    );
+  }
+
+  archiveGenUiSession(sessionId: string): Observable<void> {
+    return this.withRequestTimeout(
+      this.http.delete<void>(`${environment.apiBaseUrl}/genui/sessions/${sessionId}`)
+    );
+  }
+
+  cloneGenUiSession(sessionId: string): Observable<GenUiSession> {
+    return this.withRequestTimeout(
+      this.http.post<GenUiSession>(`${environment.apiBaseUrl}/genui/sessions/${sessionId}/clone`, {})
     );
   }
 }

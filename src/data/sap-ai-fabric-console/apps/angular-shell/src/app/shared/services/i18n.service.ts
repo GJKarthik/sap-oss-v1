@@ -5,9 +5,9 @@
  * locale detection, and fallback handling.
  */
 
-import { Injectable, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Injectable, OnDestroy, Pipe, PipeTransform, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
-import { catchError, map, shareReplay } from 'rxjs/operators';
+import { catchError, shareReplay } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 
 export type SupportedLocale = 'en' | 'de' | 'fr' | 'es' | 'ja' | 'zh';
@@ -41,8 +41,9 @@ export class I18nService implements OnDestroy {
   private currentTranslations: TranslationDictionary = {};
 
   readonly locale$ = this.localeSubject.asObservable();
+  private readonly http = inject(HttpClient);
 
-  constructor(private readonly http: HttpClient) {
+  constructor() {
     this.initialize();
   }
 
@@ -213,7 +214,6 @@ export class I18nService implements OnDestroy {
  * Use in templates: {{ 'key.path' | translate }}
  * With params: {{ 'key.path' | translate:{ name: 'value' } }}
  */
-import { Pipe, PipeTransform, ChangeDetectorRef, OnDestroy as PipeOnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 @Pipe({
@@ -221,16 +221,15 @@ import { Subscription } from 'rxjs';
   standalone: true,
   pure: false // Impure to react to locale changes
 })
-export class TranslatePipe implements PipeTransform, PipeOnDestroy {
+export class TranslatePipe implements PipeTransform, OnDestroy {
   private value = '';
   private lastKey = '';
   private lastParams: Record<string, string | number> | undefined;
   private subscription: Subscription | null = null;
+  private readonly i18n = inject(I18nService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  constructor(
-    private readonly i18n: I18nService,
-    private readonly cdr: ChangeDetectorRef
-  ) {
+  constructor() {
     // Subscribe to locale changes
     this.subscription = this.i18n.locale$.subscribe(() => {
       this.updateValue();

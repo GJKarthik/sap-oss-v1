@@ -14,8 +14,10 @@ module.exports = {
     ],
   },
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+  testPathIgnorePatterns: ['<rootDir>/e2e/'],
   moduleNameMapper: {
     '^@ui5/webcomponents-ngx$': '<rootDir>/src/test/mocks/ui5-webcomponents-ngx.mock.ts',
+    '^@chenglou/pretext$': '<rootDir>/src/test/mocks/pretext.mock.ts',
   },
   snapshotSerializers: [
     'jest-preset-angular/build/serializers/no-ng-attributes',

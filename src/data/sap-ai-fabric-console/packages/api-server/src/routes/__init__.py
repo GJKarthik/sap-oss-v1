@@ -10,6 +10,7 @@ from . import datasources
 from . import lineage
 from . import governance
 from . import metrics
+from . import genui
 
 __all__ = [
     "auth",
@@ -20,4 +21,5 @@ __all__ = [
     "lineage",
     "governance",
     "metrics",
+    "genui",
 ]

@@ -49,15 +49,6 @@ jobs:
           args: --file=world-monitor-main/package.json --dir=world-monitor-main
         if: github.event_name == 'push' || github.event_name == 'schedule'
 
-      - name: Run Snyk (Python - data-cleaning-copilot)
-        uses: snyk/actions/python-3.12@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --file=data-cleaning-copilot-main/pyproject.toml --dir=data-cleaning-copilot-main
-        if: github.event_name == 'push' || github.event_name == 'schedule'
-
   snyk-code-scan:
     name: Snyk Code
     runs-on: ubuntu-latest

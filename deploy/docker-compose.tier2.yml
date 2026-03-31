@@ -279,7 +279,7 @@ services:
   # ─────────────────────────────────────────────────────────────────────────
   data-cleaning-copilot:
     build:
-      context: ../src/generativeUI/data-cleaning-copilot-main
+      context: ../src/generativeUI/training-console
       dockerfile: Dockerfile
     container_name: sap-ai-data-cleaning-copilot
     ports:

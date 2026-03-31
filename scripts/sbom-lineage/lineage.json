@@ -198,7 +198,7 @@
         ]
       },
       {
-        "path": "data-cleaning-copilot-main",
+        "path": "training-console",
         "name": "Data Cleaning Copilot",
         "upstream": "",
         "plans_path": "",

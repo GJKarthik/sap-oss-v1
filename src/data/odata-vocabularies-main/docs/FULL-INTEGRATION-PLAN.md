@@ -207,7 +207,7 @@ export interface AnnotationSuggestion {
 
 ---
 
-### 1.3 data-cleaning-copilot-main (Priority: MEDIUM)
+### 1.3 training-console (Priority: MEDIUM)
 
 **Current Status**: ❌ No integration  
 **Target**: GDPR classification during data cleaning

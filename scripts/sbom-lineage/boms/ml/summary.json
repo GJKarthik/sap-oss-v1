@@ -27,7 +27,7 @@
       ]
     },
     {
-      "service": "data-cleaning-copilot-main",
+      "service": "training-console",
       "frameworks": [
         "langchain",
         "langchain_core",

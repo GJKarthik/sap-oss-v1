@@ -59,10 +59,12 @@ interface JobPayloadConfig {
   [key: string]: unknown;
 }
 
+import { JobDetailComponent } from '../../components/job-detail/job-detail.component';
+
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -289,56 +291,68 @@ interface JobPayloadConfig {
               </thead>
               <tbody>
                 @for (j of jobs(); track j.id) {
-                  <tr>
-                    <td class="mono text-small">{{ j.id.slice(0,8) }}</td>
-                    <td>{{ j.name }}</td>
-                    <td class="text-small">{{ j.config.model_name }}</td>
-                    <td><code>{{ j.config.quant_format }}</code></td>
-                    <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
-                    <td>
-                      <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
-                        <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
-                        <span class="text-small text-muted">{{ calculateETA(j) }}</span>
-                      </div>
-                      <div class="progress-bar">
-                        <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
-                      </div>
-                      @if (j.history && j.history.length > 0) {
-                        <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
-                          <svg viewBox="0 0 100 20" class="sparkline-svg" preserveAspectRatio="none">
-                            <polyline fill="none" class="train-line" [attr.points]="generateSparklinePath(j.history, 'train_loss')" />
-                            <polyline fill="none" class="val-line" [attr.points]="generateSparklinePath(j.history, 'val_loss')" />
-                          </svg>
+                  <ng-container>
+                    <tr class="job-row" (click)="toggleExpand(j.id)" [class.expanded]="expandedJobId() === j.id">
+                      <td class="mono text-small" style="cursor: pointer;">
+                        <span style="display: inline-block; width: 12px; margin-right: 4px;">{{ expandedJobId() === j.id ? '▼' : '▶' }}</span>
+                        {{ j.id.slice(0,8) }}
+                      </td>
+                      <td>{{ j.name }}</td>
+                      <td class="text-small">{{ j.config.model_name }}</td>
+                      <td><code>{{ j.config.quant_format }}</code></td>
+                      <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
+                      <td>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                          <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
+                          <span class="text-small text-muted">{{ calculateETA(j) }}</span>
                         </div>
-                      }
-                      
-                      @if (j.evaluation) {
-                        <div class="eval-metrics mt-1">
-                          <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
-                          <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
-                          <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
+                        <div class="progress-bar">
+                          <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
                         </div>
-                      }
-                    </td>
-                    <td class="text-small text-muted" style="min-width: 100px;">
-                      {{ j.created_at | date:'short' }}
-                      @if (j.status === 'completed') {
-                        <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;">
-                          @if (!j.deployed) {
-                            <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
-                                    (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                              {{ deployingJob() === j.id ? 'Loading...' : '🚀 Deploy Model' }}
-                            </button>
-                          } @else {
-                            <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;" 
-                                    (click)="openChat(j)">
-                              💬 Chat Playground
-                            </button>
-                          }
-                        </div>
-                      }
-                    </td>
-                  </tr>
+                        @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
+                          <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
+                            <svg viewBox="0 0 100 20" class="sparkline-svg" preserveAspectRatio="none">
+                              <polyline fill="none" class="train-line" [attr.points]="generateSparklinePath(j.history, 'train_loss')" />
+                              <polyline fill="none" class="val-line" [attr.points]="generateSparklinePath(j.history, 'val_loss')" />
+                            </svg>
+                          </div>
+                        }
+                        
+                        @if (j.evaluation) {
+                          <div class="eval-metrics mt-1">
+                            <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
+                            <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
+                            <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
+                          </div>
+                        }
+                      </td>
+                      <td class="text-small text-muted" style="min-width: 100px;">
+                        {{ j.created_at | date:'short' }}
+                        @if (j.status === 'completed') {
+                          <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;" (click)="$event.stopPropagation()">
+                            @if (!j.deployed) {
+                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
+                                      (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
+                                {{ deployingJob() === j.id ? 'Loading...' : '🚀 Deploy Model' }}
+                              </button>
+                            } @else {
+                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;" 
+                                      (click)="openChat(j)">
+                                💬 Chat Playground
+                              </button>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                    @if (expandedJobId() === j.id) {
+                      <tr>
+                        <td colspan="7" style="padding: 0;">
+                          <app-job-detail [job]="j"></app-job-detail>
+                        </td>
+                      </tr>
+                    }
+                  </ng-container>
                 }
               </tbody>
             </table>
@@ -645,6 +659,9 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
 
+  readonly expandedJobId = signal<string | null>(null);
+  private refreshInterval: any;
+
   readonly models = signal<ModelInfo[]>([]);
   readonly jobs = signal<JobResponse[]>([]);
   readonly loading = signal(false);
@@ -747,10 +764,26 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.refreshInterval = setInterval(() => {
+      // Don't poll REST if a row is actively WS streaming
+      if (!this.expandedJobId() && !this.loading()) {
+        const isBackground = true;
+        this.api.get<JobResponse[]>('/jobs').pipe(takeUntil(this.destroy$)).subscribe({
+          next: (res) => this.jobs.set(res)
+        });
+      }
+    }, 4000);
     this.loadData();
   }
 
+  toggleExpand(jobId: string) {
+    this.expandedJobId.update(v => v === jobId ? null : jobId);
+  }
+
   ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }

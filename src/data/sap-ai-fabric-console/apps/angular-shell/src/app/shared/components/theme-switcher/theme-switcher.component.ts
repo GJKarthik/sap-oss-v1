@@ -20,19 +20,19 @@ import { ThemeService, ThemeMode } from '../../services/theme.service';
         accessible-name="Select theme mode"
         (selection-change)="onThemeChange($event)">
         <ui5-segmented-button-item 
-          [pressed]="currentTheme === 'light'"
+          [selected]="currentTheme === 'light'"
           icon="lightbulb"
           accessible-name="Light theme"
           data-theme="light">
         </ui5-segmented-button-item>
         <ui5-segmented-button-item 
-          [pressed]="currentTheme === 'system'"
+          [selected]="currentTheme === 'system'"
           icon="settings"
           accessible-name="System theme"
           data-theme="system">
         </ui5-segmented-button-item>
         <ui5-segmented-button-item 
-          [pressed]="currentTheme === 'dark'"
+          [selected]="currentTheme === 'dark'"
           icon="show"
           accessible-name="Dark theme"
           data-theme="dark">

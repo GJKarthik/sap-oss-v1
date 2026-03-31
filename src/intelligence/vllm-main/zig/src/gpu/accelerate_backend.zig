@@ -177,6 +177,61 @@ pub fn gemv(out: []f32, x: []const f32, W: []const f32, K: usize, N: usize) void
     );
 }
 
+/// Row-major strided GEMV: y[M] = A[M x N] * x[N], where each row starts `lda` floats apart.
+pub fn gemvStridedNoTrans(out: []f32, A: []const f32, M: usize, N: usize, lda: usize, x: []const f32) void {
+    if (comptime builtin.os.tag != .macos) {
+        for (0..M) |row| {
+            var sum: f32 = 0.0;
+            const base = row * lda;
+            for (0..N) |col| sum += A[base + col] * x[col];
+            out[row] = sum;
+        }
+        return;
+    }
+
+    c.cblas_sgemv(
+        c.CblasRowMajor,
+        c.CblasNoTrans,
+        @intCast(M),
+        @intCast(N),
+        1.0,
+        A.ptr,
+        @intCast(lda),
+        x.ptr,
+        1,
+        0.0,
+        out.ptr,
+        1,
+    );
+}
+
+/// Row-major strided GEMV: y[N] = A[M x N]^T * x[M], where each row starts `lda` floats apart.
+pub fn gemvStridedTrans(out: []f32, A: []const f32, M: usize, N: usize, lda: usize, x: []const f32) void {
+    if (comptime builtin.os.tag != .macos) {
+        for (0..N) |col| {
+            var sum: f32 = 0.0;
+            for (0..M) |row| sum += A[row * lda + col] * x[row];
+            out[col] = sum;
+        }
+        return;
+    }
+
+    c.cblas_sgemv(
+        c.CblasRowMajor,
+        c.CblasTrans,
+        @intCast(M),
+        @intCast(N),
+        1.0,
+        A.ptr,
+        @intCast(lda),
+        x.ptr,
+        1,
+        0.0,
+        out.ptr,
+        1,
+    );
+}
+
 /// Matrix multiply: C[M×N] = A[M×K] @ B[K×N]
 /// Uses cblas_sgemm which is the gold standard for matmul
 pub fn matmul(C: []f32, A: []const f32, B: []const f32, M: usize, N: usize, K: usize) void {

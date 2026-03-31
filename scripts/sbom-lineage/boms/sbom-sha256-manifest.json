@@ -6,7 +6,7 @@
     "ai-core-streaming.cyclonedx.json": "e74ede8dbe4d3a9916ada3385507393f55e5cce268b4624dd8674384be581b50",
     "ai-sdk-js-main.cyclonedx.json": "3e6ceda7c10676bf152d310a48272420708771ae562fc8ef31af498f4fdb4d32",
     "cap-llm-plugin-main.cyclonedx.json": "d50f222f55bb5c128322f18fae5fc1ee807ce72dedbbe252cf359c6cb79dc676",
-    "data-cleaning-copilot-main.cyclonedx.json": "e51ce25fa64d2b57bc9da86c2311dadee838ffaf46d5f5ac849f3857e5c50885",
+    "training-console.cyclonedx.json": "e51ce25fa64d2b57bc9da86c2311dadee838ffaf46d5f5ac849f3857e5c50885",
     "elasticsearch-main.cyclonedx.json": "bd54b4718394f290366fbe4d9804efe43207ceb8a43d10f05dda51d320cb56e4",
     "generative-ai-toolkit-for-sap-hana-cloud-main.cyclonedx.json": "861bf787604750a9f1003de0a8c255bb01c65fd3fb50a7a105d0667811983ff0",
     "langchain-integration-for-sap-hana-cloud-main.cyclonedx.json": "6af26ac2a406f6739c5f17f08adefd0c93d931fc2ac43a23e079da7aa50d2613",

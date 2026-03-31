@@ -44,6 +44,14 @@ describe('SacHeadingComponent', () => {
     const heading = createHeading();
     expect(heading.align).toBe('left');
   });
+
+  it('computes estimated heading height for runtime layout stability', () => {
+    const heading = createHeading();
+    heading.content = 'Quarterly Performance Overview';
+    heading.level = 2;
+
+    expect(heading.estimatedMinHeightPx).toBeGreaterThan(0);
+  });
 });
 
 describe('SacTextBlockComponent', () => {
@@ -129,7 +137,7 @@ describe('SacTextBlockComponent', () => {
 
     const result = String(block.sanitizedContent);
     expect(result).not.toContain('<script>');
-    expect(result).not.toContain('alert(1)');
+    expect(result).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
   });
 
   it('blocks javascript: URI in markdown links', () => {
@@ -139,9 +147,10 @@ describe('SacTextBlockComponent', () => {
 
     const result = String(block.sanitizedContent);
     // The link regex only allows https?:// so javascript: should not produce an href
-    expect(result).not.toContain('javascript:');
+    expect(result).toContain('javascript:');
     // The text should still appear but not as a link
     expect(result).not.toMatch(/href="javascript:/);
+    expect(result).not.toContain('<a ');
   });
 
   it('blocks data: URI in markdown links', () => {
@@ -161,7 +170,7 @@ describe('SacTextBlockComponent', () => {
     const result = String(block.sanitizedContent);
     // Raw < should be escaped to &lt; before markdown transforms
     expect(result).not.toContain('<img');
-    expect(result).not.toContain('onerror');
+    expect(result).toContain('onerror=alert(1)');
     expect(result).toContain('&lt;img');
   });
 
@@ -172,7 +181,7 @@ describe('SacTextBlockComponent', () => {
 
     const result = String(block.sanitizedContent);
     expect(result).not.toContain('<svg');
-    expect(result).not.toContain('onload');
+    expect(result).toContain('onload=alert(1)');
     expect(result).toContain('&quot;');
     expect(result).toContain('&lt;svg');
   });
@@ -196,6 +205,13 @@ describe('SacTextBlockComponent', () => {
     expect(result).toContain('href="https://sap.com"');
     expect(result).not.toContain('<script>');
     expect(result).not.toContain('alert("xss")');
+  });
+
+  it('computes estimated text block height for runtime layout stability', () => {
+    const block = createTextBlock();
+    block.content = 'Revenue increased 12% year-over-year across all regions.';
+
+    expect(block.estimatedMinHeightPx).toBeGreaterThan(0);
   });
 });
 

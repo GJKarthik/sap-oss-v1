@@ -5,7 +5,7 @@
  * Supports customizable icons, titles, descriptions, and optional action buttons.
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, NO_ERRORS_SCHEMA, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 
@@ -13,6 +13,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
   selector: 'app-empty-state',
   standalone: true,
   imports: [CommonModule, Ui5WebcomponentsModule],
+  schemas: [NO_ERRORS_SCHEMA],
   template: `
     <div class="empty-state" role="status" [attr.aria-label]="title">
       <div class="empty-state-icon" *ngIf="icon">

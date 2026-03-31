@@ -45,7 +45,7 @@ interface CheckResult {
 interface Violation {
   row_index: number;
   column: string;
-  value: any;
+  value: unknown;
   expected: string;
   message: string;
 }
@@ -61,7 +61,7 @@ interface ProfileResult {
   max?: number | string;
   mean?: number;
   std?: number;
-  sample_values: any[];
+  sample_values: unknown[];
 }
 
 interface AnomalyResult {
@@ -87,6 +87,20 @@ interface PendingApproval {
   created_at: string;
   requested_by: string;
   status: 'pending' | 'approved' | 'rejected';
+}
+
+interface McpHealthResponse {
+  status?: string;
+}
+
+interface McpToolResultEnvelope {
+  result?: {
+    content?: Array<{ text: string }>;
+  };
+}
+
+interface PendingApprovalsResponse {
+  approvals?: PendingApproval[];
 }
 
 @Component({
@@ -172,7 +186,7 @@ interface PendingApproval {
             <!-- Validation Results -->
             <ui5-card *ngIf="checkResults.length > 0" class="results-card">
               <ui5-card-header slot="header" title-text="Validation Results" 
-                              [subtitle-text]="'Checks: ' + checkResults.length + ' | Violations: ' + totalViolations">
+                              [subtitleText]="'Checks: ' + checkResults.length + ' | Violations: ' + totalViolations">
                 <ui5-icon slot="avatar" name="checklist"></ui5-icon>
               </ui5-card-header>
               <div class="results-summary">
@@ -248,7 +262,7 @@ interface PendingApproval {
 
             <ui5-card *ngIf="profileResults.length > 0" class="profile-results">
               <ui5-card-header slot="header" title-text="Profile Results" 
-                              [subtitle-text]="profilingTable + ' (' + profileResults.length + ' columns)'">
+                              [subtitleText]="profilingTable + ' (' + profileResults.length + ' columns)'">
               </ui5-card-header>
               <ui5-table aria-label="Data profile results">
                 <ui5-table-header-cell><span>Column</span></ui5-table-header-cell>
@@ -308,8 +322,8 @@ interface PendingApproval {
 
             <ui5-card *ngIf="anomalyResult" class="anomaly-results">
               <ui5-card-header slot="header" 
-                              [title-text]="'Anomalies in ' + anomalyResult.column"
-                              [subtitle-text]="anomalyResult.anomalies_count + ' anomalies found'">
+                              [titleText]="'Anomalies in ' + anomalyResult.column"
+                              [subtitleText]="anomalyResult.anomalies_count + ' anomalies found'">
                 <ui5-icon slot="avatar" [name]="anomalyResult.anomalies_count > 0 ? 'warning' : 'sys-enter'"></ui5-icon>
               </ui5-card-header>
               <div class="anomaly-stats">
@@ -418,7 +432,7 @@ interface PendingApproval {
       <!-- Query Review Dialog -->
       <ui5-dialog #queryDialog header-text="Review Generated Query">
         <div class="dialog-content" *ngIf="selectedApproval">
-          <ui5-message-strip design="Warning">
+          <ui5-message-strip design="Critical">
             This query will modify data. Review carefully before approval.
           </ui5-message-strip>
           <div class="query-info">
@@ -679,7 +693,7 @@ export class DataQualityComponent implements OnInit {
   }
 
   checkMcpHealth(): void {
-    this.http.get<any>(`${environment.apiBaseUrl}/mcp/data-cleaning/health`)
+    this.http.get<McpHealthResponse>(`${environment.apiBaseUrl}/mcp/data-cleaning/health`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: response => {
@@ -737,7 +751,7 @@ export class DataQualityComponent implements OnInit {
       }
     };
 
-    this.http.post<any>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: response => {
@@ -840,7 +854,7 @@ export class DataQualityComponent implements OnInit {
   }
 
   loadPendingApprovals(): void {
-    this.http.get<any>(`${environment.apiBaseUrl}/governance/data-cleaning/pending`)
+    this.http.get<PendingApprovalsResponse>(`${environment.apiBaseUrl}/governance/data-cleaning/pending`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: response => {
@@ -854,7 +868,7 @@ export class DataQualityComponent implements OnInit {
 
   approveQuery(approval: PendingApproval): void {
     this.mutating = true;
-    this.http.post<any>(`${environment.apiBaseUrl}/governance/data-cleaning/${approval.id}/approve`, {})
+    this.http.post<unknown>(`${environment.apiBaseUrl}/governance/data-cleaning/${approval.id}/approve`, {})
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -871,7 +885,7 @@ export class DataQualityComponent implements OnInit {
 
   rejectQuery(approval: PendingApproval): void {
     this.mutating = true;
-    this.http.post<any>(`${environment.apiBaseUrl}/governance/data-cleaning/${approval.id}/reject`, {})
+    this.http.post<unknown>(`${environment.apiBaseUrl}/governance/data-cleaning/${approval.id}/reject`, {})
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -903,7 +917,7 @@ export class DataQualityComponent implements OnInit {
     this.selectedApproval = null;
   }
 
-  getStatusDesign(status: string): string {
+  getStatusDesign(status: CheckResult['status']): 'Positive' | 'Negative' | 'Information' | 'Critical' {
     switch (status) {
       case 'passed': return 'Positive';
       case 'failed': return 'Negative';

@@ -25,7 +25,7 @@ services:
     version: "0.5.2"   # odata-vocabularies workspace package version
 
   # ── Python ──────────────────────────────────────────────────────────────────
-  - path: data-cleaning-copilot-main
+  - path: training-console
     name: Data Cleaning Copilot
     package_manager: python
 
