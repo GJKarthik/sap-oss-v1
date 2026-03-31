@@ -1524,10 +1524,21 @@ fn ggufParseTensorInfo(data: []const u8, pos: *usize) !GGUFTensorInfo {
     const data_offset = std.mem.readInt(u64, data[pos.*..][0..8], .little);
     pos.* += 8;
 
-    // Compute byte size
-    const bytes_per_block: u64 = switch (dtype) {
-        .f32 => 4,
-        .f16 => 2,
+    const data_size = ggufTensorDataSize(dtype, n_elements);
+
+    return GGUFTensorInfo{
+        .name = name_result.str,
+        .dtype = dtype,
+        .n_dims = n_dims,
+        .dims = dims,
+        .data_offset = data_offset,
+        .data_size = data_size,
+        .n_elements = n_elements,
+    };
+}
+
+fn ggufQuantBlockBytes(dtype: GGUFDataType) ?u64 {
+    return switch (dtype) {
         .q4_0 => 18,
         .q4_1 => 20,
         .q5_0 => 22,
@@ -1540,26 +1551,33 @@ fn ggufParseTensorInfo(data: []const u8, pos: *usize) !GGUFTensorInfo {
         .q5_k => 176,
         .q6_k => 210,
         .q8_k => 292,
+        else => null,
+    };
+}
+
+fn ggufQuantBlockElems(dtype: GGUFDataType) ?u64 {
+    return switch (dtype) {
+        .q2_k, .q3_k, .q4_k, .q5_k, .q6_k, .q8_k => 256,
+        .q4_0, .q4_1, .q5_0, .q5_1, .q8_0, .q8_1 => 32,
+        else => null,
+    };
+}
+
+fn ggufTensorDataSize(dtype: GGUFDataType, n_elements: u64) u64 {
+    if (ggufQuantBlockBytes(dtype)) |bytes_per_block| {
+        const block_elems = ggufQuantBlockElems(dtype).?;
+        return ((n_elements + block_elems - 1) / block_elems) * bytes_per_block;
+    }
+
+    const bytes_per_block: u64 = switch (dtype) {
+        .f32 => 4,
+        .f16 => 2,
         else => 2,
     };
-    const block_elems: u64 = switch (dtype) {
-        .q2_k, .q3_k, .q4_k, .q5_k, .q6_k, .q8_k => 256,
-        else => 32,
-    };
-    const data_size = if (@intFromEnum(dtype) >= 2)
-        ((n_elements + block_elems - 1) / block_elems) * bytes_per_block
+    return if (@intFromEnum(dtype) >= 2)
+        ((n_elements + 31) / 32) * bytes_per_block
     else
         n_elements * bytes_per_block;
-
-    return GGUFTensorInfo{
-        .name = name_result.str,
-        .dtype = dtype,
-        .n_dims = n_dims,
-        .dims = dims,
-        .data_offset = data_offset,
-        .data_size = data_size,
-        .n_elements = n_elements,
-    };
 }
 
 /// Check if string ends with suffix.
@@ -5733,6 +5751,65 @@ test "vecMatMulQ4_K decodes GGUF Q4_K rows without F16 expansion" {
     const sum_1_to_256 = @as(f32, 32896.0);
     try std.testing.expectApproxEqAbs(sum_1_to_256, out[0], 0.001);
     try std.testing.expectApproxEqAbs(sum_1_to_256 * 2.0, out[1], 0.001);
+}
+
+test "ggufTensorDataSize uses full K-quant block geometry" {
+    try std.testing.expectEqual(@as(u64, 576), ggufTensorDataSize(.q4_k, 1024));
+    try std.testing.expectEqual(@as(u64, 840), ggufTensorDataSize(.q6_k, 1024));
+    try std.testing.expectEqual(@as(u64, 584), ggufTensorDataSize(.q8_k, 257));
+    try std.testing.expectEqual(@as(u64, 144), ggufTensorDataSize(.q4_k, 1));
+}
+
+test "ggufParseTensorInfo preserves K-quant payload size" {
+    const allocator = std.testing.allocator;
+    var buf = std.ArrayList(u8).empty;
+    defer buf.deinit(allocator);
+
+    const writeU32 = struct {
+        fn f(b: *std.ArrayList(u8), alloc: std.mem.Allocator, val: u32) !void {
+            try b.appendSlice(alloc, &@as([4]u8, @bitCast(std.mem.nativeToLittle(u32, val))));
+        }
+    }.f;
+    const writeU64 = struct {
+        fn f(b: *std.ArrayList(u8), alloc: std.mem.Allocator, val: u64) !void {
+            try b.appendSlice(alloc, &@as([8]u8, @bitCast(std.mem.nativeToLittle(u64, val))));
+        }
+    }.f;
+    const writeStr = struct {
+        fn f(b: *std.ArrayList(u8), alloc: std.mem.Allocator, s: []const u8) !void {
+            try writeU64(b, alloc, s.len);
+            try b.appendSlice(alloc, s);
+        }
+    }.f;
+
+    try writeStr(&buf, allocator, "blk.0.ffn_gate.weight");
+    try writeU32(&buf, allocator, 2);
+    try writeU64(&buf, allocator, 256);
+    try writeU64(&buf, allocator, 4);
+    try writeU32(&buf, allocator, @intFromEnum(GGUFDataType.q4_k));
+    try writeU64(&buf, allocator, 1234);
+
+    var pos: usize = 0;
+    const tensor = try ggufParseTensorInfo(buf.items, &pos);
+    try std.testing.expectEqual(@as(usize, buf.items.len), pos);
+    try std.testing.expectEqual(GGUFDataType.q4_k, tensor.dtype);
+    try std.testing.expectEqual(@as(u64, 1024), tensor.n_elements);
+    try std.testing.expectEqual(@as(u64, 576), tensor.data_size);
+
+    buf.clearRetainingCapacity();
+    try writeStr(&buf, allocator, "blk.0.ffn_up.weight");
+    try writeU32(&buf, allocator, 2);
+    try writeU64(&buf, allocator, 256);
+    try writeU64(&buf, allocator, 4);
+    try writeU32(&buf, allocator, @intFromEnum(GGUFDataType.q6_k));
+    try writeU64(&buf, allocator, 5678);
+
+    pos = 0;
+    const tensor_q6 = try ggufParseTensorInfo(buf.items, &pos);
+    try std.testing.expectEqual(@as(usize, buf.items.len), pos);
+    try std.testing.expectEqual(GGUFDataType.q6_k, tensor_q6.dtype);
+    try std.testing.expectEqual(@as(u64, 1024), tensor_q6.n_elements);
+    try std.testing.expectEqual(@as(u64, 840), tensor_q6.data_size);
 }
 
 // Performance & correctness regression tests are in src/tests/perf_regression_test.zig
