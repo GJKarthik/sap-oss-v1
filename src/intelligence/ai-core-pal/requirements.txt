@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
+#
+# SAP OSS ai-core-pal Python Dependencies
+# For SAP BTP Kyma deployment with HANA PAL integration
+
+# ============================================================================
+# SAP HANA Connectivity
+# ============================================================================
+hdbcli>=2.19.0                  # SAP HANA Python client
+hana-ml>=2.19.0                 # HANA ML/PAL library
+
+# ============================================================================
+# MCP Protocol
+# ============================================================================
+mcp>=1.0.0                      # Model Context Protocol
+fastmcp>=0.1.0                  # FastMCP server framework
+
+# ============================================================================
+# Web Server
+# ============================================================================
+uvicorn>=0.25.0                 # ASGI server
+aiohttp>=3.9.0                  # Async HTTP client
+requests>=2.31.0                # HTTP client
+
+# ============================================================================
+# Data Processing
+# ============================================================================
+pandas>=2.0.0                   # DataFrame operations
+numpy>=1.24.0                   # Numerical computing
+
+# ============================================================================
+# Configuration
+# ============================================================================
+python-dotenv>=1.0.0            # Environment file loading
+
+# ============================================================================
+# Graph Database (optional - fallback for KùzuDB)
+# ============================================================================
+# kuzu>=0.4.0                   # KùzuDB Python bindings (optional fallback)
