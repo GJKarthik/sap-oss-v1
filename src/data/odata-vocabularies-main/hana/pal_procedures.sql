@@ -1,0 +1,207 @@
+-- ============================================================================
+-- PAL temp-table DDL and procedure-call patterns extracted from the HANA
+-- service and Python client implementations.
+-- ============================================================================
+
+-- --------------------------------------------------------------------------
+-- 1. hana-pal-service.ts: raw PAL_ARIMA execution using local temporary tables
+-- --------------------------------------------------------------------------
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ARIMA_INPUT_TEMPLATE (
+    "IDX" INTEGER PRIMARY KEY,
+    "VALUE" DOUBLE
+);
+
+INSERT INTO #PAL_ARIMA_INPUT_TEMPLATE VALUES (0, 100.00);
+INSERT INTO #PAL_ARIMA_INPUT_TEMPLATE VALUES (1, 101.25);
+INSERT INTO #PAL_ARIMA_INPUT_TEMPLATE VALUES (2, 102.10);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ARIMA_PARAMS_TEMPLATE (
+    "PARAM_NAME" NVARCHAR(256),
+    "INT_VALUE" INTEGER,
+    "DOUBLE_VALUE" DOUBLE,
+    "STRING_VALUE" NVARCHAR(1000)
+);
+
+INSERT INTO #PAL_ARIMA_PARAMS_TEMPLATE VALUES ('FORECAST_NUM', 30, NULL, NULL);
+INSERT INTO #PAL_ARIMA_PARAMS_TEMPLATE VALUES ('P', 1, NULL, NULL);
+INSERT INTO #PAL_ARIMA_PARAMS_TEMPLATE VALUES ('D', 1, NULL, NULL);
+INSERT INTO #PAL_ARIMA_PARAMS_TEMPLATE VALUES ('Q', 1, NULL, NULL);
+INSERT INTO #PAL_ARIMA_PARAMS_TEMPLATE VALUES ('METHOD', 1, NULL, NULL);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ARIMA_OUTPUT_TEMPLATE (
+    "IDX" INTEGER,
+    "FORECAST" DOUBLE,
+    "SE" DOUBLE,
+    "LO80" DOUBLE,
+    "HI80" DOUBLE,
+    "LO95" DOUBLE,
+    "HI95" DOUBLE
+);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ARIMA_STATS_TEMPLATE (
+    "NAME" NVARCHAR(256),
+    "VALUE" NVARCHAR(1000)
+);
+
+CALL _SYS_AFL.PAL_ARIMA(
+    #PAL_ARIMA_INPUT_TEMPLATE,
+    #PAL_ARIMA_PARAMS_TEMPLATE,
+    #PAL_ARIMA_OUTPUT_TEMPLATE,
+    #PAL_ARIMA_STATS_TEMPLATE
+);
+
+SELECT "IDX", "FORECAST", "LO95", "HI95"
+FROM #PAL_ARIMA_OUTPUT_TEMPLATE
+ORDER BY "IDX";
+
+DROP TABLE #PAL_ARIMA_PARAMS_TEMPLATE;
+DROP TABLE #PAL_ARIMA_INPUT_TEMPLATE;
+DROP TABLE #PAL_ARIMA_OUTPUT_TEMPLATE;
+DROP TABLE #PAL_ARIMA_STATS_TEMPLATE;
+
+-- --------------------------------------------------------------------------
+-- 2. hana_client.py: in-memory time-series staging before hana-ml forecasting
+-- --------------------------------------------------------------------------
+-- The Python client creates a physical column table in the PAL user schema,
+-- inserts values, and then hands that table to hana-ml for forecasting.
+
+CREATE COLUMN TABLE "PAL_USER"."PAL_TS_TEMPLATE" (
+    "ID" INTEGER PRIMARY KEY,
+    "VALUE" DOUBLE
+);
+
+INSERT INTO "PAL_USER"."PAL_TS_TEMPLATE" VALUES (0, 100.00);
+INSERT INTO "PAL_USER"."PAL_TS_TEMPLATE" VALUES (1, 101.25);
+INSERT INTO "PAL_USER"."PAL_TS_TEMPLATE" VALUES (2, 102.10);
+
+DROP TABLE "PAL_USER"."PAL_TS_TEMPLATE";
+
+-- --------------------------------------------------------------------------
+-- 3. hana_client.py: source-table-driven PAL forecast staging
+-- --------------------------------------------------------------------------
+-- The application labels this flow as ARIMA, but the Python client stages the
+-- data and then invokes hana-ml SingleExponentialSmoothing against the result.
+
+CREATE COLUMN TABLE "PAL_USER"."PAL_TS_TBL_TEMPLATE" (
+    "ID" INTEGER PRIMARY KEY,
+    "VALUE" DOUBLE
+);
+
+INSERT INTO "PAL_USER"."PAL_TS_TBL_TEMPLATE" ("ID", "VALUE")
+SELECT ROW_NUMBER() OVER (ORDER BY "PERIOD_DATE") AS "ID",
+       CAST(SUM("AMOUNT_USD") AS DOUBLE) AS "VALUE"
+FROM "BTP"."FACT"
+GROUP BY "PERIOD_DATE"
+ORDER BY "PERIOD_DATE"
+LIMIT 1000;
+
+SELECT COUNT(*) AS "ROW_COUNT"
+FROM "PAL_USER"."PAL_TS_TBL_TEMPLATE";
+
+DROP TABLE "PAL_USER"."PAL_TS_TBL_TEMPLATE";
+
+-- --------------------------------------------------------------------------
+-- 4. setup_pal_user.py / hana_client.py: IQR anomaly detection via PAL
+-- --------------------------------------------------------------------------
+-- The temp-table structure below follows the PAL setup helper in the source
+-- tree, while the IQR framing mirrors the hana_client.py anomaly workflow.
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ANOM_INPUT_TEMPLATE (
+    "ID" INTEGER,
+    "VALUE" DOUBLE
+);
+
+INSERT INTO #PAL_ANOM_INPUT_TEMPLATE VALUES (0, 100.00);
+INSERT INTO #PAL_ANOM_INPUT_TEMPLATE VALUES (1, 105.00);
+INSERT INTO #PAL_ANOM_INPUT_TEMPLATE VALUES (2, 98.00);
+INSERT INTO #PAL_ANOM_INPUT_TEMPLATE VALUES (3, 102.00);
+INSERT INTO #PAL_ANOM_INPUT_TEMPLATE VALUES (4, 500.00);
+INSERT INTO #PAL_ANOM_INPUT_TEMPLATE VALUES (5, 103.00);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ANOM_PARAMS_TEMPLATE (
+    "PARAM_NAME" NVARCHAR(256),
+    "INT_VALUE" INTEGER,
+    "DOUBLE_VALUE" DOUBLE,
+    "STRING_VALUE" NVARCHAR(1000)
+);
+
+INSERT INTO #PAL_ANOM_PARAMS_TEMPLATE VALUES ('OUTLIER_METHOD', 1, NULL, NULL);
+INSERT INTO #PAL_ANOM_PARAMS_TEMPLATE VALUES ('THRESHOLD', NULL, 1.5, NULL);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ANOM_RESULT_TEMPLATE (
+    "ID" INTEGER,
+    "IS_OUTLIER" INTEGER
+);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ANOM_STATS_TEMPLATE (
+    "NAME" NVARCHAR(256),
+    "VALUE" NVARCHAR(1000)
+);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_ANOM_PLACEHOLDER_TEMPLATE (
+    "DUMMY" INTEGER
+);
+
+CALL _SYS_AFL.PAL_ANOMALY_DETECTION(
+    #PAL_ANOM_INPUT_TEMPLATE,
+    #PAL_ANOM_PARAMS_TEMPLATE,
+    #PAL_ANOM_RESULT_TEMPLATE,
+    #PAL_ANOM_STATS_TEMPLATE,
+    #PAL_ANOM_PLACEHOLDER_TEMPLATE
+);
+
+SELECT "ID", "IS_OUTLIER"
+FROM #PAL_ANOM_RESULT_TEMPLATE
+ORDER BY "ID";
+
+DROP TABLE #PAL_ANOM_PLACEHOLDER_TEMPLATE;
+DROP TABLE #PAL_ANOM_STATS_TEMPLATE;
+DROP TABLE #PAL_ANOM_RESULT_TEMPLATE;
+DROP TABLE #PAL_ANOM_PARAMS_TEMPLATE;
+DROP TABLE #PAL_ANOM_INPUT_TEMPLATE;
+
+-- --------------------------------------------------------------------------
+-- 5. hana-pal-service.ts / finance.mg: Spearman correlation analysis via PAL
+-- --------------------------------------------------------------------------
+-- The service comments identify correlation analysis as PAL_CORRELATIONSPEARMAN;
+-- the parameter-table shape follows the repo's other PAL SQL examples.
+
+CREATE LOCAL TEMPORARY TABLE #PAL_CORR_INPUT_TEMPLATE (
+    "ID" INTEGER,
+    "SERIES_A" DOUBLE,
+    "SERIES_B" DOUBLE
+);
+
+INSERT INTO #PAL_CORR_INPUT_TEMPLATE VALUES (1, 0.0120, 0.0180);
+INSERT INTO #PAL_CORR_INPUT_TEMPLATE VALUES (2, 0.0100, 0.0150);
+INSERT INTO #PAL_CORR_INPUT_TEMPLATE VALUES (3, 0.0180, 0.0200);
+INSERT INTO #PAL_CORR_INPUT_TEMPLATE VALUES (4, 0.0160, 0.0170);
+INSERT INTO #PAL_CORR_INPUT_TEMPLATE VALUES (5, 0.0110, 0.0130);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_CORR_PARAMS_TEMPLATE (
+    "PARAM_NAME" NVARCHAR(256),
+    "INT_VALUE" INTEGER,
+    "DOUBLE_VALUE" DOUBLE,
+    "STRING_VALUE" NVARCHAR(1000)
+);
+
+CREATE LOCAL TEMPORARY TABLE #PAL_CORR_OUTPUT_TEMPLATE (
+    "VARIABLE_1" NVARCHAR(256),
+    "VARIABLE_2" NVARCHAR(256),
+    "CORRELATION" DOUBLE
+);
+
+CALL _SYS_AFL.PAL_CORRELATIONSPEARMAN(
+    #PAL_CORR_INPUT_TEMPLATE,
+    #PAL_CORR_PARAMS_TEMPLATE,
+    #PAL_CORR_OUTPUT_TEMPLATE
+);
+
+SELECT "VARIABLE_1", "VARIABLE_2", "CORRELATION"
+FROM #PAL_CORR_OUTPUT_TEMPLATE
+ORDER BY "VARIABLE_1", "VARIABLE_2";
+
+DROP TABLE #PAL_CORR_OUTPUT_TEMPLATE;
+DROP TABLE #PAL_CORR_PARAMS_TEMPLATE;
+DROP TABLE #PAL_CORR_INPUT_TEMPLATE;

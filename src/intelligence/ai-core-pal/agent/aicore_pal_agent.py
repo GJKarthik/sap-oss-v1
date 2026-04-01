@@ -24,6 +24,32 @@ try:
 except ImportError:
     _kuzu_store_factory = None
 
+# BTP integration modules — ensure agent/ directory is on sys.path
+_agent_dir = _os.path.dirname(_os.path.abspath(__file__))
+if _agent_dir not in _sys.path:
+    _sys.path.insert(0, _agent_dir)
+
+_btp_server_client = None
+try:
+    import btp_server_client as _btp_server_client_mod  # type: ignore[import]
+    _btp_server_client = _btp_server_client_mod
+except ImportError:
+    pass
+
+_hana_client = None
+try:
+    import hana_client as _hana_client_mod  # type: ignore[import]
+    _hana_client = _hana_client_mod
+except ImportError:
+    pass
+
+_btp_kuzu_seeder = None
+try:
+    import btp_kuzu_seeder as _btp_kuzu_seeder_mod  # type: ignore[import]
+    _btp_kuzu_seeder = _btp_kuzu_seeder_mod
+except ImportError:
+    pass
+
 
 def _parse_json_arg(value: Any, default: Any) -> Any:
     if value is None:
@@ -147,11 +173,24 @@ class MangleEngine:
         self.facts["agent_can_use"] = {
             "pal_classification", "pal_regression", "pal_clustering",
             "pal_forecast", "pal_anomaly", "mangle_query",
-            "kuzu_index", "kuzu_query"
+            "kuzu_index", "kuzu_query",
+            # BTP schema integration tools
+            "btp_registry_query", "btp_registry_query_domain", "btp_search",
+            "search_schema_registry", "list_domains", "hana_tables",
+            "kuzu_seed_btp",
+            # Direct PAL calls via hdbcli (synthetic data)
+            "pal_arima", "pal_anomaly_detection",
+            # PAL calls from BTP tables with aggregation and multi-dimension support
+            "pal_arima_from_table", "pal_anomaly_from_table",
+            # Analytics metadata discovery
+            "get_forecastable_columns", "get_dimension_columns", "get_date_columns",
+            # Hierarchical reconciliation (future)
+            "reconcile_hierarchical_forecasts",
         }
         
         self.facts["agent_requires_approval"] = {
-            "pal_train_model", "pal_delete_model", "hana_write"
+            "pal_train_model", "pal_delete_model", "hana_write",
+            "btp_apply_schema",  # DDL bootstrap requires human review
         }
         
         self.facts["prompting_policy"] = {
@@ -340,6 +379,564 @@ class AICorePALAgent:
         rows = store.run_query(cypher, params)
         return {"rows": rows, "rowCount": len(rows)}
 
+    async def handle_btp_registry_query(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Query BTP.SCHEMA_REGISTRY via the server REST API (primary) or HANA direct."""
+        domain = args.get("domain")
+        source_table = args.get("source_table")
+        wide_table = args.get("wide_table")
+        limit = int(args.get("limit", 200))
+        offset = int(args.get("offset", 0))
+
+        # Try server API first
+        if _btp_server_client is not None:
+            result = _btp_server_client.registry_query(
+                domain=domain,
+                source_table=source_table,
+                wide_table=wide_table,
+                limit=limit,
+                offset=offset,
+            )
+            if "error" not in result:
+                return result
+
+        # Fall back to direct HANA
+        if _hana_client is not None and _hana_client.is_available():
+            rows = _hana_client.query_schema_registry(
+                domain=domain,
+                source_table=source_table,
+                wide_table=wide_table,
+                limit=limit,
+                offset=offset,
+            )
+            return {"fields": rows, "total": len(rows), "source": "hana_direct"}
+
+        return {"error": "BTP server and HANA direct both unavailable", "fields": [], "total": 0}
+
+    async def handle_btp_search(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Fan-out BTP search to ES + HANA via the server REST API."""
+        query = str(args.get("query", "")).strip()
+        if not query:
+            return {"error": "query is required"}
+        domain = args.get("domain")
+        wide_table = args.get("wide_table")
+        limit = int(args.get("limit", 50))
+
+        if _btp_server_client is not None:
+            result = _btp_server_client.search(
+                query=query, domain=domain, wide_table=wide_table, limit=limit
+            )
+            if "error" not in result:
+                return result
+
+        # Fall back to HANA direct text search
+        if _hana_client is not None and _hana_client.is_available():
+            rows = _hana_client.search_schema_registry(
+                query, domain=domain, wide_table=wide_table, limit=limit
+            )
+            return {"hana": rows, "es": [], "query": query, "source": "hana_direct"}
+
+        return {"error": "BTP server and HANA direct both unavailable", "hana": [], "es": [], "query": query}
+
+    async def handle_kuzu_seed_btp(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Seed BTP schema data into KùzuDB for graph-RAG context."""
+        if _btp_kuzu_seeder is None:
+            return {"error": "btp_kuzu_seeder module not available"}
+        verbose = bool(args.get("verbose", False))
+        return _btp_kuzu_seeder.seed_btp_into_kuzu(verbose=verbose)
+
+    async def handle_pal_arima(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Call real PAL ARIMA on HANA Cloud via hdbcli."""
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available (set HANA_HOST, HANA_USER, HANA_PASSWORD)"}
+        input_data = args.get("input_data", [])
+        if isinstance(input_data, str):
+            import json as _json
+            try:
+                input_data = _json.loads(input_data)
+            except Exception:
+                input_data = []
+        horizon = int(args.get("horizon", 12))
+        return _hana_client.call_pal_arima(input_data, horizon=horizon)
+
+    async def handle_pal_anomaly_detection(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Call real PAL AnomalyDetection on HANA Cloud via hdbcli."""
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available (set HANA_HOST, HANA_USER, HANA_PASSWORD)"}
+        input_data = args.get("input_data", [])
+        if isinstance(input_data, str):
+            import json as _json
+            try:
+                input_data = _json.loads(input_data)
+            except Exception:
+                input_data = []
+        return _hana_client.call_pal_anomaly_detection(input_data)
+
+    # =========================================================================
+    # NEW: Table-based PAL tools with dynamic table discovery
+    # =========================================================================
+
+    async def handle_pal_arima_from_table(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run PAL time series forecasting directly on a BTP table.
+        
+        Required args:
+            table_name: Full table name e.g. "BTP.FACT"
+            value_column: Numeric column to forecast e.g. "AMOUNT_USD"
+        Optional args:
+            order_by_column: Date column for ordering e.g. "PERIOD_DATE"
+            where_clause: SQL filter e.g. "DOMAIN = 'GLA'"
+            horizon: Forecast periods (default 12)
+            limit: Max rows (default 1000)
+        """
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available (set HANA_HOST, HANA_USER, HANA_PASSWORD)"}
+        
+        table_name = args.get("table_name")
+        value_column = args.get("value_column")
+        
+        if not table_name or not value_column:
+            return {"error": "table_name and value_column are required"}
+        
+        return _hana_client.call_pal_arima_from_table(
+            table_name=table_name,
+            value_column=value_column,
+            order_by_column=args.get("order_by_column"),
+            where_clause=args.get("where_clause"),
+            horizon=int(args.get("horizon", 12)),
+            limit=int(args.get("limit", 1000)),
+        )
+
+    async def handle_pal_anomaly_from_table(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run PAL anomaly detection directly on a BTP table.
+        
+        Required args:
+            table_name: Full table name e.g. "BTP.ESG_METRIC"
+            value_column: Numeric column to analyze e.g. "FINANCED_EMISSION"
+        Optional args:
+            id_column: ID column to preserve row identity e.g. "ESG_ID"
+            where_clause: SQL filter
+            limit: Max rows (default 1000)
+        """
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available (set HANA_HOST, HANA_USER, HANA_PASSWORD)"}
+        
+        table_name = args.get("table_name")
+        value_column = args.get("value_column")
+        
+        if not table_name or not value_column:
+            return {"error": "table_name and value_column are required"}
+        
+        return _hana_client.call_pal_anomaly_from_table(
+            table_name=table_name,
+            value_column=value_column,
+            id_column=args.get("id_column"),
+            where_clause=args.get("where_clause"),
+            limit=int(args.get("limit", 1000)),
+        )
+
+    async def handle_hana_tables(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Discover HANA tables with numeric columns suitable for PAL analytics.
+        Returns table names with column metadata for time series and anomaly detection.
+        """
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available (set HANA_HOST, HANA_USER, HANA_PASSWORD)"}
+        
+        schema = args.get("schema", "BTP")
+        include_columns = args.get("include_columns", True)
+        
+        try:
+            from hdbcli import dbapi
+            conn = dbapi.connect(
+                address=_os.environ.get('HANA_HOST'),
+                port=int(_os.environ.get('HANA_PORT', 443)),
+                user=_os.environ.get('HANA_USER'),
+                password=_os.environ.get('HANA_PASSWORD'),
+                encrypt=True,
+                sslValidateCertificate=False
+            )
+            cursor = conn.cursor()
+            
+            # Get tables in schema
+            cursor.execute("""
+                SELECT TABLE_NAME FROM TABLES 
+                WHERE SCHEMA_NAME = ?
+                AND TABLE_TYPE = 'COLUMN'
+                ORDER BY TABLE_NAME
+            """, (schema,))
+            tables = []
+            
+            for (table_name,) in cursor.fetchall():
+                table_info = {
+                    "schema": schema,
+                    "table": table_name,
+                    "full_name": f"{schema}.{table_name}"
+                }
+                
+                if include_columns:
+                    # Get numeric columns for PAL
+                    cursor.execute("""
+                        SELECT COLUMN_NAME, DATA_TYPE_NAME
+                        FROM TABLE_COLUMNS
+                        WHERE SCHEMA_NAME = ?
+                        AND TABLE_NAME = ?
+                        AND DATA_TYPE_NAME IN ('INTEGER', 'BIGINT', 'DECIMAL', 'DOUBLE', 'REAL', 'FLOAT', 'SMALLINT', 'TINYINT')
+                        ORDER BY POSITION
+                    """, (schema, table_name))
+                    numeric_cols = [{"name": r[0], "type": r[1]} for r in cursor.fetchall()]
+                    
+                    # Get date/time columns for ordering
+                    cursor.execute("""
+                        SELECT COLUMN_NAME, DATA_TYPE_NAME
+                        FROM TABLE_COLUMNS
+                        WHERE SCHEMA_NAME = ?
+                        AND TABLE_NAME = ?
+                        AND DATA_TYPE_NAME IN ('DATE', 'TIMESTAMP', 'SECONDDATE')
+                        ORDER BY POSITION
+                    """, (schema, table_name))
+                    date_cols = [{"name": r[0], "type": r[1]} for r in cursor.fetchall()]
+                    
+                    # Get row count — schema/table names are DB metadata identifiers; validate strictly
+                    import re as _re
+                    if not _re.match(r'^[A-Za-z0-9_]+$', schema) or not _re.match(r'^[A-Za-z0-9_]+$', table_name):
+                        raise ValueError(f"Invalid identifier: {schema!r}.{table_name!r}")
+                    cursor.execute(f'SELECT COUNT(*) FROM "{schema}"."{table_name}"')
+                    row_count = cursor.fetchone()[0]
+                    
+                    table_info["numeric_columns"] = numeric_cols
+                    table_info["date_columns"] = date_cols
+                    table_info["row_count"] = row_count
+                    table_info["pal_suitable"] = len(numeric_cols) > 0 and row_count >= 4
+                
+                tables.append(table_info)
+            
+            conn.close()
+            
+            # Filter to only PAL-suitable tables if columns were included
+            pal_tables = [t for t in tables if t.get("pal_suitable", True)] if include_columns else tables
+            
+            return {
+                "schema": schema,
+                "total_tables": len(tables),
+                "pal_suitable_tables": len(pal_tables),
+                "tables": pal_tables,
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def handle_list_domains(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """List available domains from SCHEMA_REGISTRY."""
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available"}
+        
+        try:
+            domains = _hana_client.list_domains()
+            return {"domains": domains, "count": len(domains)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    # =========================================================================
+    # ANALYTICS METADATA DISCOVERY (from SCHEMA_REGISTRY enhancements)
+    # =========================================================================
+
+    async def handle_get_forecastable_columns(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get columns marked as forecastable from SCHEMA_REGISTRY.
+        Requires schema_registry_analytics.sql to have been run first.
+        
+        Args:
+            wide_table: Optional table filter
+            domain: Optional domain filter
+        """
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available"}
+        
+        try:
+            columns = _hana_client.get_forecastable_columns(
+                wide_table=args.get("wide_table"),
+                domain=args.get("domain")
+            )
+            return {
+                "columns": columns,
+                "count": len(columns),
+                "description": "Columns suitable for PAL time series forecasting"
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def handle_get_dimension_columns(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get columns marked as dimensions from SCHEMA_REGISTRY.
+        
+        Args:
+            wide_table: Optional table filter
+            domain: Optional domain filter
+        """
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available"}
+        
+        try:
+            columns = _hana_client.get_dimension_columns(
+                wide_table=args.get("wide_table"),
+                domain=args.get("domain")
+            )
+            return {
+                "columns": columns,
+                "count": len(columns),
+                "description": "Columns suitable for GROUP BY / multi-dimension iteration"
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def handle_get_date_columns(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get columns marked as date/time from SCHEMA_REGISTRY.
+        
+        Args:
+            wide_table: Optional table filter
+            domain: Optional domain filter
+        """
+        if _hana_client is None or not _hana_client.is_available():
+            return {"error": "HANA not available"}
+        
+        try:
+            columns = _hana_client.get_date_columns(
+                wide_table=args.get("wide_table"),
+                domain=args.get("domain")
+            )
+            return {
+                "columns": columns,
+                "count": len(columns),
+                "description": "Date/time columns for time series ordering"
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def handle_reconcile_hierarchical_forecasts(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Hierarchical forecast reconciliation (placeholder for future implementation).
+        
+        Ensures consistency between forecasts at different aggregation levels
+        (e.g., Total Company → Region → Client).
+        
+        Args:
+            parent_forecast: Forecast for aggregate level
+            child_forecasts: List of forecasts for disaggregated level
+            method: Reconciliation method (top_down, bottom_up, middle_out, optimal)
+        """
+        if _hana_client is None:
+            return {"error": "HANA not available"}
+        
+        return _hana_client.reconcile_hierarchical_forecasts(
+            parent_forecast=args.get("parent_forecast", {}),
+            child_forecasts=args.get("child_forecasts", []),
+            method=args.get("method", "top_down")
+        )
+
+    # =========================================================================
+    # ORCHESTRATION: Natural Language → Discovery → PAL Execution
+    # =========================================================================
+
+    async def analyze_pal_request(self, prompt: str) -> Dict[str, Any]:
+        """
+        Multi-step orchestration:
+        1. Parse natural language to identify intent (forecast, anomaly)
+        2. Query SCHEMA_REGISTRY to discover relevant tables/columns
+        3. Execute PAL on discovered table
+        4. Return combined result with provenance
+        """
+        timestamp = datetime.now(timezone.utc).isoformat()
+        steps = []
+        
+        # Step 1: Parse intent from prompt
+        intent = self._parse_pal_intent(prompt)
+        steps.append({
+            "step": 1,
+            "action": "parse_intent",
+            "result": intent
+        })
+        
+        if not intent.get("action"):
+            return {
+                "status": "error",
+                "error": "Could not determine PAL action from prompt",
+                "steps": steps,
+                "timestamp": timestamp
+            }
+        
+        # Step 2: Discover table and column from registry
+        discovery = await self._discover_table_for_intent(intent)
+        steps.append({
+            "step": 2,
+            "action": "discover_table",
+            "result": discovery
+        })
+        
+        if not discovery.get("table_name") or not discovery.get("value_column"):
+            return {
+                "status": "error",
+                "error": "Could not find suitable table/column for the request",
+                "intent": intent,
+                "steps": steps,
+                "timestamp": timestamp
+            }
+        
+        # Step 3: Execute PAL based on intent
+        if intent["action"] == "forecast":
+            pal_result = await self.handle_pal_arima_from_table({
+                "table_name": discovery["table_name"],
+                "value_column": discovery["value_column"],
+                "order_by_column": discovery.get("order_by_column"),
+                "where_clause": intent.get("filter"),
+                "horizon": intent.get("horizon", 12),
+            })
+        elif intent["action"] == "anomaly":
+            pal_result = await self.handle_pal_anomaly_from_table({
+                "table_name": discovery["table_name"],
+                "value_column": discovery["value_column"],
+                "id_column": discovery.get("id_column"),
+                "where_clause": intent.get("filter"),
+            })
+        else:
+            return {
+                "status": "error",
+                "error": f"Unknown PAL action: {intent['action']}",
+                "steps": steps,
+                "timestamp": timestamp
+            }
+        
+        steps.append({
+            "step": 3,
+            "action": f"execute_{intent['action']}",
+            "result": "success" if pal_result.get("status") == "success" else "error"
+        })
+        
+        self._log_audit("analyze_pal_request", intent["action"], "hana_direct", prompt)
+        
+        return {
+            "status": pal_result.get("status", "success"),
+            "intent": intent,
+            "discovery": discovery,
+            "pal_result": pal_result,
+            "steps": steps,
+            "timestamp": timestamp
+        }
+
+    def _parse_pal_intent(self, prompt: str) -> Dict[str, Any]:
+        """
+        Parse natural language prompt to extract:
+        - action: forecast, anomaly, classify, cluster
+        - domain_hint: ESG, Treasury, Finance, etc.
+        - column_hint: emission, amount, revenue, etc.
+        - filter: optional SQL-like filter
+        - horizon: for forecasting
+        """
+        prompt_lower = prompt.lower()
+        
+        # Determine action
+        action = None
+        if any(w in prompt_lower for w in ["forecast", "predict", "time series", "arima", "future"]):
+            action = "forecast"
+        elif any(w in prompt_lower for w in ["anomaly", "outlier", "unusual", "detect", "abnormal"]):
+            action = "anomaly"
+        elif any(w in prompt_lower for w in ["classify", "classification", "categorize"]):
+            action = "classify"
+        elif any(w in prompt_lower for w in ["cluster", "segment", "group"]):
+            action = "cluster"
+        
+        # Extract domain hint
+        domain_hint = None
+        domain_keywords = {
+            "ESG": ["esg", "emission", "carbon", "sustainability", "green", "environmental"],
+            "GLA": ["gla", "ledger", "accounting", "financial", "balance"],
+            "TREASURY": ["treasury", "position", "liquidity", "cash", "fx"],
+            "TRADE": ["trade", "transaction", "payment"],
+        }
+        for domain, keywords in domain_keywords.items():
+            if any(k in prompt_lower for k in keywords):
+                domain_hint = domain
+                break
+        
+        # Extract column hint
+        column_hint = None
+        column_keywords = {
+            "AMOUNT_USD": ["amount", "value", "usd", "dollars", "money"],
+            "FINANCED_EMISSION": ["emission", "carbon", "co2", "financed"],
+            "REVENUE": ["revenue", "sales", "income"],
+            "MARKET_VALUE": ["market", "value", "price"],
+        }
+        for column, keywords in column_keywords.items():
+            if any(k in prompt_lower for k in keywords):
+                column_hint = column
+                break
+        
+        # Extract horizon for forecasting
+        horizon = 12  # default
+        import re
+        horizon_match = re.search(r'(\d+)\s*(month|period|point|step)', prompt_lower)
+        if horizon_match:
+            horizon = int(horizon_match.group(1))
+        
+        return {
+            "action": action,
+            "domain_hint": domain_hint,
+            "column_hint": column_hint,
+            "horizon": horizon,
+            "original_prompt": prompt
+        }
+
+    async def _discover_table_for_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Query SCHEMA_REGISTRY and HANA metadata to find the best table/column
+        for the given intent.
+        """
+        domain_hint = intent.get("domain_hint")
+        column_hint = intent.get("column_hint")
+        
+        # Table mapping based on domain
+        domain_table_map = {
+            "ESG": {"table": "BTP.ESG_METRIC", "value_col": "FINANCED_EMISSION", "id_col": "ESG_ID", "date_col": "PERIOD_DATE"},
+            "GLA": {"table": "BTP.FACT", "value_col": "AMOUNT_USD", "id_col": None, "date_col": "PERIOD_DATE"},
+            "TREASURY": {"table": "BTP.TREASURY_POSITION", "value_col": "AMOUNT_USD", "id_col": "POSITION_ID", "date_col": "REPORTING_DATE"},
+            "TRADE": {"table": "BTP.FACT", "value_col": "AMOUNT_USD", "id_col": None, "date_col": "PERIOD_DATE"},
+        }
+        
+        # First try domain-based mapping
+        if domain_hint and domain_hint in domain_table_map:
+            mapping = domain_table_map[domain_hint]
+            return {
+                "table_name": mapping["table"],
+                "value_column": column_hint or mapping["value_col"],
+                "id_column": mapping["id_col"],
+                "order_by_column": mapping["date_col"],
+                "discovery_method": "domain_mapping",
+                "domain": domain_hint,
+            }
+        
+        # Fall back to SCHEMA_REGISTRY search
+        if column_hint:
+            registry_result = await self.handle_btp_search({"query": column_hint, "limit": 5})
+            if registry_result.get("hana"):
+                first_match = registry_result["hana"][0]
+                return {
+                    "table_name": f"BTP.{first_match.get('source_table', first_match.get('wide_table', 'FACT'))}",
+                    "value_column": first_match.get("field_name", column_hint),
+                    "id_column": None,
+                    "order_by_column": None,
+                    "discovery_method": "registry_search",
+                    "registry_match": first_match,
+                }
+        
+        # Default fallback to BTP.FACT
+        return {
+            "table_name": "BTP.FACT",
+            "value_column": column_hint or "AMOUNT_USD",
+            "id_column": None,
+            "order_by_column": "PERIOD_DATE",
+            "discovery_method": "default_fallback",
+        }
+
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         context = context or {}
         tool = context.get("tool", "pal_classification")
@@ -350,6 +947,42 @@ class AICorePALAgent:
             return await self.handle_kuzu_index(context.get("args", {}))
         if tool == "kuzu_query":
             return await self.handle_kuzu_query(context.get("args", {}))
+
+        # Dispatch BTP schema tools directly (no vLLM needed)
+        if tool == "btp_registry_query":
+            return await self.handle_btp_registry_query(context.get("args", {}))
+        if tool == "btp_search":
+            return await self.handle_btp_search(context.get("args", {}))
+        if tool == "kuzu_seed_btp":
+            return await self.handle_kuzu_seed_btp(context.get("args", {}))
+
+        # Dispatch real PAL calls directly (hdbcli, no LLM)
+        if tool == "pal_arima":
+            return await self.handle_pal_arima(context.get("args", {}))
+        if tool == "pal_anomaly_detection":
+            return await self.handle_pal_anomaly_detection(context.get("args", {}))
+        
+        # Dispatch table-based PAL tools with aggregation support
+        if tool == "pal_arima_from_table":
+            return await self.handle_pal_arima_from_table(context.get("args", {}))
+        if tool == "pal_anomaly_from_table":
+            return await self.handle_pal_anomaly_from_table(context.get("args", {}))
+        if tool == "hana_tables":
+            return await self.handle_hana_tables(context.get("args", {}))
+        if tool == "list_domains":
+            return await self.handle_list_domains(context.get("args", {}))
+        
+        # Dispatch analytics metadata discovery tools
+        if tool == "get_forecastable_columns":
+            return await self.handle_get_forecastable_columns(context.get("args", {}))
+        if tool == "get_dimension_columns":
+            return await self.handle_get_dimension_columns(context.get("args", {}))
+        if tool == "get_date_columns":
+            return await self.handle_get_date_columns(context.get("args", {}))
+        
+        # Hierarchical reconciliation (placeholder)
+        if tool == "reconcile_hierarchical_forecasts":
+            return await self.handle_reconcile_hierarchical_forecasts(context.get("args", {}))
 
         # Always vLLM for HANA data
         backend = "vllm"

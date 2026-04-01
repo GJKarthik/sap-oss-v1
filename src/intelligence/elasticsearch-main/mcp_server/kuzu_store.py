@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2024 SAP SE
 """
-KùzuDB / HippoCPP Graph-RAG store for mangle-query-service MCP server.
+KùzuDB Graph-RAG store for mangle-query-service MCP server.
 
-Uses `hippocpp` as the graph backend (Kuzu-compatible API, Zig-native engine).
-Falls back to `kuzu` pip package when HIPPOCPP_ALLOW_KUZU_FALLBACK=1.
-Gracefully degrades when neither is installed.
+Uses `kuzu` pip package as the graph backend.
+Gracefully degrades when kuzu is not installed.
 
 Schema:
   Nodes  : ResolutionPath, DataSource, QueryCategory, ModelBackend
@@ -33,24 +32,12 @@ class KuzuStore:
 
     def _init(self) -> None:
         try:
-            import sys
-            _hippo_python = os.path.join(
-                os.path.dirname(__file__), "..", "hippocpp", "python"
-            )
-            if os.path.isdir(_hippo_python) and _hippo_python not in sys.path:
-                sys.path.insert(0, os.path.abspath(_hippo_python))
-            import hippocpp  # type: ignore[import]
-            self._db = hippocpp.Database(self._db_path)
-            self._conn = hippocpp.Connection(self._db)
+            import kuzu  # type: ignore[import]
+            self._db = kuzu.Database(self._db_path)
+            self._conn = kuzu.Connection(self._db)
             self._available = True
         except Exception:
-            try:
-                import kuzu  # type: ignore[import]
-                self._db = kuzu.Database(self._db_path)
-                self._conn = kuzu.Connection(self._db)
-                self._available = True
-            except Exception:
-                self._available = False
+            self._available = False
 
     def available(self) -> bool:
         return self._available

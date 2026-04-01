@@ -14,7 +14,7 @@ Relationship types:
   HAS_PATTERN     TrainingPair  → SqlPattern
   BELONGS_TO_SCHEMA SchemaTable → SchemaTable  (self-link for schema grouping)
 
-Backend preference: hippocpp (vendored Zig/Python bindings) → kuzu pip package → unavailable.
+Backend: kuzu pip package. Gracefully degrades when not installed.
 """
 
 from __future__ import annotations
@@ -28,20 +28,16 @@ logger = logging.getLogger(__name__)
 _STORE_PATH = os.getenv("TRAINING_KUZU_PATH", "training_graph.db")
 
 # ---------------------------------------------------------------------------
-# Backend import — hippocpp preferred, kuzu pip fallback
+# Backend import
 # ---------------------------------------------------------------------------
 
 _kuzu_mod = None
 
 try:
-    import hippocpp as _kuzu_mod  # type: ignore
-    logger.debug("KuzuStore: using hippocpp backend")
+    import kuzu as _kuzu_mod  # type: ignore
+    logger.debug("KuzuStore: using kuzu backend")
 except ImportError:
-    try:
-        import kuzu as _kuzu_mod  # type: ignore
-        logger.debug("KuzuStore: using kuzu pip backend")
-    except ImportError:
-        logger.warning("KuzuStore: neither hippocpp nor kuzu is installed — store unavailable")
+    logger.warning("KuzuStore: kuzu is not installed — store unavailable")
 
 
 # ---------------------------------------------------------------------------
