@@ -37,16 +37,19 @@ interface LogLine {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Pipeline</h1>
+        <ui5-title level="H1">Pipeline</ui5-title>
         <span class="text-muted text-small">7-stage Text-to-SQL data generation — Live WebSocket Stream</span>
       </div>
 
       <!-- Control card -->
-      <div class="control-card">
-        <div class="control-info">
-          <p>Converts banking Excel schemas into Spider/BIRD-format training pairs via a native Zig binary.</p>
-          <!-- Visual Flow Diagram / Stepper -->
-          <div class="pipeline-stepper">
+      <ui5-card class="control-card">
+        <ui5-card-header slot="header" title-text="Pipeline Control"
+          subtitle-text="Converts banking Excel schemas into Spider/BIRD-format training pairs via a native Zig binary.">
+        </ui5-card-header>
+        <div class="control-card-body">
+          <div class="control-info">
+            <!-- Visual Flow Diagram / Stepper -->
+            <div class="pipeline-stepper">
             @for (s of stages(); track s.num) {
               <div class="stepper-step" [class.step-done]="s.status === 'done'" [class.step-active]="s.status === 'running'" [class.step-error]="s.status === 'error'">
                 <div class="step-node">
@@ -64,26 +67,30 @@ interface LogLine {
           </div>
         </div>
         <div class="control-actions">
-          <div class="ws-badge" [class.ws-connected]="wsConnected()" [class.ws-disconnected]="!wsConnected()">
-            {{ wsConnected() ? '🟢 Live' : '🔴 Offline' }}
-          </div>
+          <ui5-tag [attr.design]="wsConnected() ? 'Positive' : 'Negative'">
+            {{ wsConnected() ? '● Live' : '● Offline' }}
+          </ui5-tag>
           <div class="btn-group">
-            <button class="btn-primary" (click)="startPipeline()"
-              [disabled]="pipelineState() === 'running' || starting()">
+            <ui5-button design="Emphasized" (click)="startPipeline()"
+              [attr.disabled]="(pipelineState() === 'running' || starting()) || null"
+              icon="play">
               @if (starting()) {
-                <span class="btn-spinner"></span> Starting…
+                Starting…
               } @else if (pipelineState() === 'running') {
-                <span class="btn-spinner"></span> Processing…
+                Processing…
               } @else {
-                <span class="btn-icon">▶</span> Execute Pipeline
+                Execute Pipeline
               }
-            </button>
-            <button class="btn-secondary" (click)="stopPipeline()" [disabled]="pipelineState() !== 'running'" title="Stop pipeline">
-              <span class="btn-icon">⏹</span> Stop
-            </button>
+            </ui5-button>
+            <ui5-button design="Negative" (click)="stopPipeline()"
+              [attr.disabled]="(pipelineState() !== 'running') || null"
+              icon="stop">
+              Stop
+            </ui5-button>
           </div>
         </div>
-      </div>
+        </div>
+      </ui5-card>
 
       <!-- Live Terminal — macOS style -->
       <div class="pipeline-terminal" *ngIf="logLines().length > 0 || pipelineState() !== 'idle'">
@@ -128,47 +135,49 @@ interface LogLine {
 
       <!-- Stage Progress -->
       <div class="stages-section">
-        <h2 class="section-title">Pipeline Stages</h2>
-        <div class="stages-table-wrapper">
-          <table class="stages-table">
-            <thead>
-              <tr>
-                <th style="width:2.5rem">#</th><th>Stage</th><th>Tool</th><th>Input</th><th>Output</th><th style="width:5.5rem">Duration</th><th style="width:5.5rem">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (s of stages(); track s.num) {
-                <tr [class.stage-running]="s.status === 'running'" [class.stage-done]="s.status === 'done'" [class.stage-error]="s.status === 'error'">
-                  <td class="stage-num">{{ s.num }}</td>
-                  <td class="stage-name">{{ s.name }}</td>
-                  <td><code>{{ s.tool }}</code></td>
-                  <td class="text-muted text-small">{{ s.input }}</td>
-                  <td class="text-muted text-small">{{ s.output }}</td>
-                  <td class="stage-duration">{{ s.duration ?? '—' }}</td>
-                  <td>
-                    <span class="status-badge" [class]="statusClass(s.status)">
-                      @if (s.status === 'done') { ✓ Done }
-                      @else if (s.status === 'error') { ✕ Error }
-                      @else if (s.status === 'running') { ◉ Running }
-                      @else { ○ Idle }
-                    </span>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ui5-title level="H2" class="section-title">Pipeline Stages</ui5-title>
+        <ui5-table>
+          <ui5-table-header-row slot="headerRow">
+            <ui5-table-header-cell width="60px">#</ui5-table-header-cell>
+            <ui5-table-header-cell>Stage</ui5-table-header-cell>
+            <ui5-table-header-cell>Tool</ui5-table-header-cell>
+            <ui5-table-header-cell>Input</ui5-table-header-cell>
+            <ui5-table-header-cell>Output</ui5-table-header-cell>
+            <ui5-table-header-cell width="90px">Duration</ui5-table-header-cell>
+            <ui5-table-header-cell width="100px">Status</ui5-table-header-cell>
+          </ui5-table-header-row>
+          @for (s of stages(); track s.num) {
+            <ui5-table-row>
+              <ui5-table-cell><strong>{{ s.num }}</strong></ui5-table-cell>
+              <ui5-table-cell>{{ s.name }}</ui5-table-cell>
+              <ui5-table-cell><code>{{ s.tool }}</code></ui5-table-cell>
+              <ui5-table-cell class="text-muted text-small">{{ s.input }}</ui5-table-cell>
+              <ui5-table-cell class="text-muted text-small">{{ s.output }}</ui5-table-cell>
+              <ui5-table-cell class="stage-duration">{{ s.duration ?? '—' }}</ui5-table-cell>
+              <ui5-table-cell>
+                <ui5-tag [attr.design]="stageTagDesign(s.status)">
+                  @if (s.status === 'done') { ✓ Done }
+                  @else if (s.status === 'error') { ✕ Error }
+                  @else if (s.status === 'running') { ◉ Running }
+                  @else { ○ Idle }
+                </ui5-tag>
+              </ui5-table-cell>
+            </ui5-table-row>
+          }
+        </ui5-table>
       </div>
 
       <!-- Quick commands -->
       <div class="pipeline-commands">
-        <h2 class="section-title">Run Commands</h2>
+        <ui5-title level="H2" class="section-title">Run Commands</ui5-title>
         <div class="cmd-grid">
           @for (cmd of commands; track cmd.title) {
-            <div class="cmd-card">
-              <h3 class="cmd-title">{{ cmd.title }}</h3>
-              <pre>{{ cmd.command }}</pre>
-            </div>
+            <ui5-card class="cmd-card">
+              <ui5-card-header slot="header" [attr.title-text]="cmd.title"></ui5-card-header>
+              <div style="padding: 0.75rem;">
+                <pre>{{ cmd.command }}</pre>
+              </div>
+            </ui5-card>
           }
         </div>
       </div>
@@ -176,7 +185,7 @@ interface LogLine {
       <!-- ═══════ Agent Team Orchestration — OmX $team Mode ═══════ -->
       <div class="team-divider"></div>
       <div class="team-section">
-        <h2 class="section-title" style="font-size:1.125rem;">Agent Team Orchestration — OmX <code>$team</code> Mode</h2>
+        <ui5-title level="H2" class="section-title" style="font-size:1.125rem;">Agent Team Orchestration — OmX <code>$team</code> Mode</ui5-title>
 
         <!-- Team Status Header -->
         <ui5-card class="team-header-card">
@@ -269,21 +278,13 @@ interface LogLine {
   `,
   styles: [`
     /* ── Control card ── */
-    .control-card {
+    .control-card { margin-bottom: 1.5rem; font-size: 0.875rem; }
+    .control-card-body {
       display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;
-      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.5rem;
-      font-size: 0.875rem; color: var(--sapTextColor, #32363a);
+      padding: 1rem 1.25rem;
     }
-    .control-info { flex: 1; p { margin: 0 0 1rem; } }
+    .control-info { flex: 1; }
     .control-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
-
-    .ws-badge {
-      padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;
-      &.ws-connected { background: #e8f5e9; color: #2e7d32; }
-      &.ws-disconnected { background: #ffebee; color: #c62828; }
-    }
-
     .btn-group { display: flex; gap: 0.5rem; }
 
     /* ── Visual Stepper ── */
@@ -409,88 +410,15 @@ interface LogLine {
       p { margin: 0; }
     }
 
-    /* ── Buttons ── */
-    .btn-primary {
-      background: var(--sapButton_Emphasized_Background, #0854a0); color: #fff;
-      border: none; border-radius: 0.25rem; cursor: pointer;
-      font-weight: 600; font-size: 0.875rem; padding: 0.6rem 1.2rem; min-width: 170px;
-      transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-      &:hover:not(:disabled) { background: var(--sapButton_Emphasized_Hover_Background, #063d75); }
-      &:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(30%); }
-    }
-    .btn-secondary {
-      background: var(--sapBaseColor, #fff); color: var(--sapTextColor, #32363a);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.25rem; cursor: pointer;
-      font-weight: 600; font-size: 0.875rem; padding: 0.6rem 1rem;
-      transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.3rem;
-      &:hover:not(:disabled) { background: var(--sapBackgroundColor, #f5f5f5); }
-      &:disabled { opacity: 0.35; cursor: not-allowed; }
-    }
-    .btn-icon { font-size: 0.75rem; }
-    .btn-spinner {
-      display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
     /* ── Stage Table ── */
     .stages-section { margin-bottom: 1.5rem; }
-    .stages-table-wrapper { overflow-x: auto; }
-    .stages-table {
-      width: 100%; border-collapse: collapse; font-size: 0.8125rem;
-      background: var(--sapTile_Background, #fff); border-radius: 0.5rem;
-      overflow: hidden; border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      th {
-        padding: 0.625rem 0.75rem; background: var(--sapList_HeaderBackground, #f5f5f5);
-        text-align: left; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70);
-        border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-        text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.04em;
-      }
-      td {
-        padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-        vertical-align: middle; transition: all 0.3s ease;
-      }
-      tr:last-child td { border-bottom: none; }
-      tr:hover td { background: var(--sapList_Hover_Background, #f5f5f5); }
-    }
-    .stage-running td {
-      background: rgba(8, 84, 160, 0.04);
-      border-left: 3px solid var(--sapBrandColor, #0854a0);
-      animation: row-pulse 2s ease-in-out infinite;
-    }
-    .stage-done td { border-left: 3px solid #2e7d32; }
-    .stage-error td { border-left: 3px solid #c62828; }
-    @keyframes row-pulse {
-      0%, 100% { background: rgba(8,84,160,0.04); }
-      50% { background: rgba(8,84,160,0.08); }
-    }
-    .stage-num { color: var(--sapBrandColor, #0854a0); font-weight: 700; width: 2rem; text-align: center; }
-    .stage-name { font-weight: 500; }
     .stage-duration { font-family: 'SF Mono', 'SFMono-Regular', Menlo, monospace; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
-    .section-title { font-size: 1rem; font-weight: 600; color: var(--sapTextColor, #32363a); margin: 0 0 0.75rem; }
-
-    .status-badge {
-      font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 0.2rem;
-      display: inline-flex; align-items: center; gap: 0.2rem; transition: all 0.3s ease;
-    }
-    .status-pending { background: var(--sapBackgroundColor, #f5f5f5); color: var(--sapContent_LabelColor, #6a6d70); }
-    .status-running { background: rgba(8,84,160,0.1); color: var(--sapBrandColor, #0854a0); animation: badge-pulse 1.5s ease-in-out infinite; }
-    .status-success { background: #e8f5e9; color: #2e7d32; }
-    .status-error { background: #ffebee; color: #c62828; }
-    @keyframes badge-pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
+    .section-title { margin: 0 0 0.75rem; }
 
     /* ── Commands ── */
     .pipeline-commands { margin-bottom: 1.5rem; }
     .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-    .cmd-card {
-      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 1rem; transition: box-shadow 0.2s ease;
-      &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    }
-    .cmd-title { font-size: 0.8125rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--sapTextColor, #32363a); }
+    .cmd-card { min-width: 0; }
     pre { margin: 0; font-size: 0.8rem; background: var(--sapList_Background, #f5f5f5); padding: 0.5rem; border-radius: 0.25rem; overflow-x: auto; }
 
     /* ══ OmX Team Section ══ */
@@ -875,6 +803,14 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       done: 'status-success', error: 'status-error',
     };
     return classMap[status];
+  }
+
+  stageTagDesign(status: StageStatus): string {
+    const designMap: Record<StageStatus, string> = {
+      idle: 'Set1', running: 'Information',
+      done: 'Positive', error: 'Negative',
+    };
+    return designMap[status];
   }
 
   private scrollToBottom() {
