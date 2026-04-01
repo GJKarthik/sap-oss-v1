@@ -45,8 +45,8 @@ describe('DashboardComponent', () => {
       ],
     }).compileComponents();
 
-    MOCK_STORE.loadDashboardData.calls.reset();
-    MOCK_STORE.forceRefresh.calls.reset();
+    MOCK_STORE.loadDashboardData.mockClear();
+    MOCK_STORE.forceRefresh.mockClear();
   });
 
   it('should create', () => {

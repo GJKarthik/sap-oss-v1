@@ -40,6 +40,27 @@ function getConfig(): AICoreConfig {
   };
 }
 
+function hasAICoreConfig(config: AICoreConfig): boolean {
+  return Boolean(
+    config.clientId &&
+      config.clientSecret &&
+      config.authUrl &&
+      config.baseUrl,
+  );
+}
+
+let loggedMissingConfig = false;
+function ensureAICoreConfig(config: AICoreConfig): boolean {
+  const valid = hasAICoreConfig(config);
+  if (!valid && !loggedMissingConfig) {
+    console.warn(
+      'WARNING: AI Core credentials are incomplete. OpenAI proxy routes will degrade gracefully until AICORE_* values are configured.',
+    );
+    loggedMissingConfig = true;
+  }
+  return valid;
+}
+
 // =============================================================================
 // Token Cache
 // =============================================================================
@@ -257,7 +278,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     res.writeHead(204, {
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Internal-Token',
+      'Access-Control-Allow-Headers':
+        'Content-Type, Authorization, X-Internal-Token, X-Correlation-Id, x-correlation-id',
     });
     res.end();
     return;
@@ -280,6 +302,15 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // Models
     if (path === '/v1/models' && method === 'GET') {
+      if (!ensureAICoreConfig(config)) {
+        return sendJson(res, 200, {
+          object: 'list',
+          data: [],
+          degraded: true,
+          message:
+            'AI Core configuration missing; set AICORE_CLIENT_ID, AICORE_CLIENT_SECRET, AICORE_AUTH_URL, and AICORE_BASE_URL.',
+        });
+      }
       const deployments = await getDeployments(config);
       return sendJson(res, 200, {
         object: 'list',
@@ -294,6 +325,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 
     if (/^\/v1\/models\/[\w-]+$/.test(path) && method === 'GET') {
+      if (!ensureAICoreConfig(config)) {
+        return sendError(res, 503, 'AI Core configuration missing');
+      }
       const modelId = path.split('/').pop()!;
       const deployments = await getDeployments(config);
       const deployment = findDeployment(deployments, modelId);
@@ -309,6 +343,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // Chat Completions
     if (path === '/v1/chat/completions' && method === 'POST') {
+      if (!ensureAICoreConfig(config)) {
+        return sendError(res, 503, 'AI Core configuration missing');
+      }
       const body = await parseBody(req);
       const deployments = await getDeployments(config);
       let deployment = findDeployment(deployments, body['model'] as string);
@@ -364,6 +401,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // Embeddings
     if (path === '/v1/embeddings' && method === 'POST') {
+      if (!ensureAICoreConfig(config)) {
+        return sendError(res, 503, 'AI Core configuration missing');
+      }
       const body = await parseBody(req);
       const deployments = await getDeployments(config);
       let deployment = findDeployment(deployments, body['model'] as string);
@@ -550,6 +590,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     if (path === '/v1/hana/vectors' && method === 'POST') {
       if (!checkInternalToken(req, res)) return;
+      if (!ensureAICoreConfig(config)) {
+        return sendError(res, 503, 'AI Core configuration missing');
+      }
       const body = await parseBody(req);
       const tableName = body['table_name'] as string;
       if (!tableName) return sendError(res, 400, 'table_name is required');
@@ -578,6 +621,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     if (path === '/v1/hana/search' && method === 'POST') {
       if (!checkInternalToken(req, res)) return;
+      if (!ensureAICoreConfig(config)) {
+        return sendError(res, 503, 'AI Core configuration missing');
+      }
       const body = await parseBody(req);
       const tableName = body['vector_table'] as string;
       if (!tableName) return sendError(res, 400, 'vector_table is required');

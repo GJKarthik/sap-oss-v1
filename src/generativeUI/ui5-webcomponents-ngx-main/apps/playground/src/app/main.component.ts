@@ -14,4 +14,8 @@ export class MainComponent {
   navigateForms(): void { this.router.navigate(['/forms']); }
   navigateJoule(): void { this.router.navigate(['/joule']); }
   navigateCollab(): void { this.router.navigate(['/collab']); }
+  navigateGenerative(): void { this.router.navigate(['/generative']); }
+  navigateComponents(): void { this.router.navigate(['/components']); }
+  navigateMcp(): void { this.router.navigate(['/mcp']); }
+  navigateReadiness(): void { this.router.navigate(['/readiness']); }
 }

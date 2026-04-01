@@ -20,6 +20,9 @@ pub const KernelName = enum {
     embedding_lookup,
     vecmat_f16_colmajor,
     vecmat_q4_k,
+    vecmat_q4_k_rows2,
+    vecmat_q4_k_pair,
+    vecmat_q4_k_add,
     vecmat_q4_k_dual,
     vecmat_q4_k_dual_rmsnorm,
     vecmat_q4_k_triple,
@@ -35,6 +38,10 @@ pub const KernelName = enum {
     relu,
     gelu,
     attention_single_head,
+    attention_decode_scores_single_head,
+    attention_decode_values_single_head,
+    attention_decode_fused_single_head,
+    attention_decode_fused_heads,
     
     pub fn toString(self: KernelName) []const u8 {
         return switch (self) {
@@ -45,6 +52,9 @@ pub const KernelName = enum {
             .embedding_lookup => "embedding_lookup",
             .vecmat_f16_colmajor => "vecmat_f16_colmajor",
             .vecmat_q4_k => "vecmat_q4_k",
+            .vecmat_q4_k_rows2 => "vecmat_q4_k_rows2",
+            .vecmat_q4_k_pair => "vecmat_q4_k_pair",
+            .vecmat_q4_k_add => "vecmat_q4_k_add",
             .vecmat_q4_k_dual => "vecmat_q4_k_dual",
             .vecmat_q4_k_dual_rmsnorm => "vecmat_q4_k_dual_rmsnorm",
             .vecmat_q4_k_triple => "vecmat_q4_k_triple",
@@ -60,6 +70,10 @@ pub const KernelName = enum {
             .relu => "relu",
             .gelu => "gelu",
             .attention_single_head => "attention_single_head",
+            .attention_decode_scores_single_head => "attention_decode_scores_single_head",
+            .attention_decode_values_single_head => "attention_decode_values_single_head",
+            .attention_decode_fused_single_head => "attention_decode_fused_single_head",
+            .attention_decode_fused_heads => "attention_decode_fused_heads",
         };
     }
 };
@@ -132,17 +146,25 @@ pub fn loadBundledLibrary(self: *MetalShaderLibrary) !void {
         const bundled_file = std.fs.openFileAbsolute(bundled_path, .{}) catch null;
         if (bundled_file) |file| {
             file.close();
-            try self.loadLibrary(bundled_path);
+            self.loadLibrary(bundled_path) catch |err| {
+                log.warn("Bundled compute.metallib failed to load ({}) ; recompiling from source", .{err});
+                break;
+            };
             if (self.pipelines.get(.vecmat_f16_colmajor) != null and
                 self.pipelines.get(.vecmat_q4_k) != null and
+                self.pipelines.get(.vecmat_q4_k_rows2) != null and
+                self.pipelines.get(.vecmat_q4_k_pair) != null and
+                self.pipelines.get(.vecmat_q4_k_add) != null and
                 self.pipelines.get(.vecmat_q4_k_dual) != null and
                 self.pipelines.get(.vecmat_q4_k_dual_rmsnorm) != null and
                 self.pipelines.get(.vecmat_q4_k_triple) != null and
-                self.pipelines.get(.vecmat_q4_k_triple_rmsnorm) != null)
+                self.pipelines.get(.vecmat_q4_k_triple_rmsnorm) != null and
+                self.pipelines.get(.attention_decode_fused_single_head) != null and
+                self.pipelines.get(.attention_decode_fused_heads) != null)
             {
                 return;
             }
-            log.warn("Bundled compute.metallib is missing GGUF fused vecmat kernels; recompiling from source", .{});
+            log.warn("Bundled compute.metallib is missing fused GGUF or decode-attention kernels; recompiling from source", .{});
             break;
         }
     }
@@ -292,10 +314,11 @@ pub const MetalShaderLibrary = struct {
         
         // Derive output paths
         const dir = std.fs.path.dirname(source_path) orelse ".";
-        const air_path = try std.fmt.allocPrint(self.allocator, "{s}/compute.air", .{dir});
+        const stem = std.fs.path.stem(source_path);
+        const air_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}.air", .{ dir, stem });
         defer self.allocator.free(air_path);
         
-        const lib_path = try std.fmt.allocPrint(self.allocator, "{s}/compute.metallib", .{dir});
+        const lib_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}.metallib", .{ dir, stem });
         
         // Step 1: Compile .metal to .air
         var compile_child = std.process.Child.init(&[_][]const u8{
@@ -381,6 +404,9 @@ pub const MetalShaderLibrary = struct {
             // Pre-create matmul pipeline
             try self.createPipeline(.vecmat_f16_colmajor);
             try self.createPipeline(.vecmat_q4_k);
+            try self.createPipeline(.vecmat_q4_k_rows2);
+            try self.createPipeline(.vecmat_q4_k_pair);
+            try self.createPipeline(.vecmat_q4_k_add);
             try self.createPipeline(.vecmat_q4_k_dual);
             try self.createPipeline(.vecmat_q4_k_dual_rmsnorm);
             try self.createPipeline(.vecmat_q4_k_triple);
@@ -390,8 +416,13 @@ pub const MetalShaderLibrary = struct {
             try self.createPipeline(.matmul_tiled);
             try self.createPipeline(.matmul_naive);
             try self.createPipeline(.softmax_row);
+            try self.createPipeline(.softmax_parallel);
             try self.createPipeline(.layer_norm);
             try self.createPipeline(.embedding_lookup);
+            try self.createPipeline(.attention_decode_scores_single_head);
+            try self.createPipeline(.attention_decode_values_single_head);
+            try self.createPipeline(.attention_decode_fused_single_head);
+            try self.createPipeline(.attention_decode_fused_heads);
         }
 
         self.compiled = true;
@@ -475,6 +506,8 @@ pub const DispatchResult = struct {
 pub const VecMatKernel = enum {
     f16_colmajor,
     q4_k,
+    q4_k_rows2,
+    q4_k_pair,
 };
 
 pub const VecMatOp = struct {
@@ -546,6 +579,63 @@ pub const VecMatQ4KTripleRmsNormOp = struct {
     k: usize,
 };
 
+pub const AttentionDecodeSingleHeadOp = struct {
+    q: []const f32,
+    q_buf: ?*anyopaque = null,
+    q_offset_bytes: usize = 0,
+    k_cache: []const f32,
+    k_cache_buf: ?*anyopaque = null,
+    v_cache: []const f32,
+    v_cache_buf: ?*anyopaque = null,
+    out: []f32,
+    out_buf: ?*anyopaque = null,
+    out_offset_bytes: usize = 0,
+    seq_len: usize,
+    head_dim: usize,
+    kv_stride: usize,
+    head_offset: usize,
+    scale: f32,
+};
+
+pub const AttentionDecodeMode = enum {
+    auto,
+    split,
+    fused_single,
+    fused_heads,
+};
+
+pub const AttentionDecodeHeadsOp = struct {
+    q_buf: *anyopaque,
+    out_buf: *anyopaque,
+    k_cache_buf: *anyopaque,
+    v_cache_buf: *anyopaque,
+    seq_len: usize,
+    head_dim: usize,
+    n_heads: usize,
+    heads_per_group: usize,
+    kv_stride: usize,
+    scale: f32,
+    mode: AttentionDecodeMode = .auto,
+};
+
+pub const AttentionDecodeHeadsQ4KAddOp = struct {
+    q_buf: *anyopaque,
+    attn_out_buf: *anyopaque,
+    k_cache_buf: *anyopaque,
+    v_cache_buf: *anyopaque,
+    weight_buf: *anyopaque,
+    residual_buf: *anyopaque,
+    out_buf: *anyopaque,
+    seq_len: usize,
+    head_dim: usize,
+    n_heads: usize,
+    heads_per_group: usize,
+    kv_stride: usize,
+    scale: f32,
+    k: usize,
+    n: usize,
+};
+
 fn acquireUploadBuffer(pool: *BufferPool, bytes: []const u8) ?*anyopaque {
     const buf = pool.acquire(bytes.len) orelse return null;
     if (metal_bindings.getBufferContents(buf)) |contents| {
@@ -587,6 +677,30 @@ fn dispatchVecMatGeometry(kernel: VecMatKernel, n: usize) struct { grid: metal_b
                 .depth = 1,
             },
         },
+        .q4_k_rows2 => .{
+            .grid = .{
+                .width = (n + 1) / 2,
+                .height = 1,
+                .depth = 1,
+            },
+            .threadgroup = .{
+                .width = 32,
+                .height = 1,
+                .depth = 1,
+            },
+        },
+        .q4_k_pair => .{
+            .grid = .{
+                .width = n,
+                .height = 1,
+                .depth = 1,
+            },
+            .threadgroup = .{
+                .width = 16,
+                .height = 1,
+                .depth = 1,
+            },
+        },
     };
 }
 
@@ -594,7 +708,26 @@ fn vecMatPipeline(lib: *MetalShaderLibrary, kernel: VecMatKernel) ?*anyopaque {
     return switch (kernel) {
         .f16_colmajor => lib.pipelines.get(.vecmat_f16_colmajor),
         .q4_k => lib.pipelines.get(.vecmat_q4_k),
+        .q4_k_rows2 => lib.pipelines.get(.vecmat_q4_k_rows2),
+        .q4_k_pair => lib.pipelines.get(.vecmat_q4_k_pair),
     };
+}
+
+fn useQ4KRows2Kernel(k: usize, n: usize) bool {
+    const raw = std.posix.getenv("PLLM_ENABLE_Q4K_ROWS2_KERNEL") orelse return false;
+    if (raw.len != 1 or raw[0] != '1') return false;
+    return k % 256 == 0 and n >= 16384;
+}
+
+fn useQ4KPairKernel(k: usize, n: usize) bool {
+    if (std.posix.getenv("PLLM_DISABLE_Q4K_PAIR_KERNEL")) |raw| {
+        if (raw.len == 1 and raw[0] == '1') return false;
+    }
+    if (std.posix.getenv("PLLM_ENABLE_Q4K_PAIR_KERNEL")) |raw| {
+        if (raw.len == 1 and raw[0] == '1') return k % 64 == 0 and k >= 64;
+    }
+    if (n < 16384) return false;
+    return k % 64 == 0 and k >= 64;
 }
 
 pub fn dispatchVectorAdd(
@@ -921,6 +1054,12 @@ pub fn dispatchVecMatMulQ4K(
 ) DispatchResult {
     const start = std.time.nanoTimestamp();
     if (n == 0 or out.len == 0) return DispatchResult.ok(0, 0, false);
+    const kernel: VecMatKernel = if (useQ4KRows2Kernel(k, n))
+        .q4_k_rows2
+    else if (useQ4KPairKernel(k, n))
+        .q4_k_pair
+    else
+        .q4_k;
 
     if (lib.isReady()) gpu_dispatch: {
         _ = w;
@@ -943,7 +1082,7 @@ pub fn dispatchVecMatMulQ4K(
         };
         defer if (out_mtl == null) pool.release(buf_out, out_size);
 
-        const pipeline = vecMatPipeline(lib, .q4_k) orelse break :gpu_dispatch;
+        const pipeline = vecMatPipeline(lib, kernel) orelse break :gpu_dispatch;
 
         const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse break :gpu_dispatch;
         defer metal_bindings.release(cmd_buffer);
@@ -959,6 +1098,96 @@ pub fn dispatchVecMatMulQ4K(
         var n_val: u32 = @intCast(n);
         metal_bindings.setBytes(encoder, @ptrCast(&k_val), @sizeOf(u32), 3);
         metal_bindings.setBytes(encoder, @ptrCast(&n_val), @sizeOf(u32), 4);
+
+        const geometry = dispatchVecMatGeometry(kernel, n);
+        metal_bindings.dispatchThreadgroups(encoder, geometry.grid, geometry.threadgroup);
+        metal_bindings.endEncoding(encoder);
+        metal_bindings.commitCommandBuffer(cmd_buffer);
+        metal_bindings.waitUntilCompleted(cmd_buffer);
+
+        if (out_mtl == null) {
+            if (metal_bindings.getBufferContents(buf_out)) |contents| {
+                const result_ptr: [*]f32 = @ptrCast(@alignCast(contents));
+                @memcpy(out, result_ptr[0..out.len]);
+            } else {
+                break :gpu_dispatch;
+            }
+        } else if (metal_bindings.getBufferContents(buf_out)) |_| {
+            // Results are already visible through the shared output buffer.
+        } else {
+            break :gpu_dispatch;
+        }
+
+        const elapsed = std.time.nanoTimestamp() - start;
+        return DispatchResult.ok(elapsed, n, true);
+    }
+
+    return DispatchResult.err("Metal vecmat_q4_k unavailable");
+}
+
+pub fn dispatchVecMatMulQ4KAdd(
+    lib: *MetalShaderLibrary,
+    x: []const f32,
+    w: []const u8,
+    w_mtl: ?*anyopaque,
+    residual: []const f32,
+    x_mtl: ?*anyopaque,
+    residual_mtl: ?*anyopaque,
+    out: []f32,
+    out_mtl: ?*anyopaque,
+    k: usize,
+    n: usize,
+) DispatchResult {
+    const start = std.time.nanoTimestamp();
+    if (n == 0 or out.len == 0 or residual.len < n) return DispatchResult.ok(0, 0, false);
+
+    if (lib.isReady()) gpu_dispatch: {
+        _ = w;
+        const weight_buf = w_mtl orelse break :gpu_dispatch;
+        const queue = lib.command_queue orelse break :gpu_dispatch;
+        var pool = &(lib.buffer_pool orelse break :gpu_dispatch);
+
+        const x_bytes = std.mem.sliceAsBytes(x);
+        const residual_bytes = std.mem.sliceAsBytes(residual[0..n]);
+        const out_size = out.len * @sizeOf(f32);
+
+        const buf_x = x_mtl: {
+            if (x_mtl) |buffer| break :x_mtl buffer;
+            const uploaded = acquireUploadBuffer(pool, x_bytes) orelse break :gpu_dispatch;
+            break :x_mtl uploaded;
+        };
+        defer if (x_mtl == null) pool.release(buf_x, x_bytes.len);
+
+        const buf_residual = residual_buf: {
+            if (residual_mtl) |buffer| break :residual_buf buffer;
+            const uploaded = acquireUploadBuffer(pool, residual_bytes) orelse break :gpu_dispatch;
+            break :residual_buf uploaded;
+        };
+        defer if (residual_mtl == null) pool.release(buf_residual, residual_bytes.len);
+
+        const buf_out = out_mtl orelse blk: {
+            const acquired = pool.acquire(out_size) orelse break :gpu_dispatch;
+            break :blk acquired;
+        };
+        defer if (out_mtl == null) pool.release(buf_out, out_size);
+
+        const pipeline = lib.pipelines.get(.vecmat_q4_k_add) orelse break :gpu_dispatch;
+
+        const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse break :gpu_dispatch;
+        defer metal_bindings.release(cmd_buffer);
+        const encoder = metal_bindings.createComputeCommandEncoder(cmd_buffer) orelse break :gpu_dispatch;
+        defer metal_bindings.release(encoder);
+
+        metal_bindings.setComputePipelineState(encoder, pipeline);
+        metal_bindings.setBuffer(encoder, buf_x, 0, 0);
+        metal_bindings.setBuffer(encoder, weight_buf, 0, 1);
+        metal_bindings.setBuffer(encoder, buf_residual, 0, 2);
+        metal_bindings.setBuffer(encoder, buf_out, 0, 3);
+
+        var k_val: u32 = @intCast(k);
+        var n_val: u32 = @intCast(n);
+        metal_bindings.setBytes(encoder, @ptrCast(&k_val), @sizeOf(u32), 4);
+        metal_bindings.setBytes(encoder, @ptrCast(&n_val), @sizeOf(u32), 5);
 
         const geometry = dispatchVecMatGeometry(.q4_k, n);
         metal_bindings.dispatchThreadgroups(encoder, geometry.grid, geometry.threadgroup);
@@ -983,7 +1212,7 @@ pub fn dispatchVecMatMulQ4K(
         return DispatchResult.ok(elapsed, n, true);
     }
 
-    return DispatchResult.err("Metal vecmat_q4_k unavailable");
+    return DispatchResult.err("Metal vecmat_q4_k_add unavailable");
 }
 
 pub fn dispatchVecMatMulBatch(
@@ -1563,6 +1792,338 @@ pub fn dispatchSoftmax(
     
     const elapsed = std.time.nanoTimestamp() - start;
     return DispatchResult.ok(elapsed, batch_size * seq_len, false);
+}
+
+pub fn dispatchAttentionDecodeSingleHead(
+    lib: *MetalShaderLibrary,
+    op: AttentionDecodeSingleHeadOp,
+) bool {
+    if (!lib.isReady()) return false;
+    if (op.seq_len == 0 or op.head_dim == 0 or op.out.len < op.head_dim) return false;
+
+    const queue = lib.command_queue orelse return false;
+    var pool = &(lib.buffer_pool orelse return false);
+
+    const score_pipeline = lib.getPipeline(.attention_decode_scores_single_head) catch null orelse return false;
+    const softmax_pipeline = lib.getPipeline(.softmax_parallel) catch null orelse return false;
+    const value_pipeline = lib.getPipeline(.attention_decode_values_single_head) catch null orelse return false;
+
+    const q_bytes = std.mem.sliceAsBytes(op.q);
+    const q_buf = op.q_buf orelse acquireUploadBuffer(pool, q_bytes) orelse return false;
+    defer if (op.q_buf == null) pool.release(q_buf, q_bytes.len);
+
+    const k_bytes = std.mem.sliceAsBytes(op.k_cache);
+    const k_buf = op.k_cache_buf orelse acquireUploadBuffer(pool, k_bytes) orelse return false;
+    defer if (op.k_cache_buf == null) pool.release(k_buf, k_bytes.len);
+
+    const v_bytes = std.mem.sliceAsBytes(op.v_cache);
+    const v_buf = op.v_cache_buf orelse acquireUploadBuffer(pool, v_bytes) orelse return false;
+    defer if (op.v_cache_buf == null) pool.release(v_buf, v_bytes.len);
+
+    const out_size = op.out.len * @sizeOf(f32);
+    const out_buf = op.out_buf orelse pool.acquire(out_size) orelse return false;
+    defer if (op.out_buf == null) pool.release(out_buf, out_size);
+
+    const scores_size = op.seq_len * @sizeOf(f32);
+    const scores_buf = pool.acquire(scores_size) orelse return false;
+    defer pool.release(scores_buf, scores_size);
+
+    const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse return false;
+    defer metal_bindings.release(cmd_buffer);
+    const encoder = metal_bindings.createComputeCommandEncoder(cmd_buffer) orelse return false;
+    defer metal_bindings.release(encoder);
+
+    var seq_len_val: u32 = @intCast(op.seq_len);
+    var head_dim_val: u32 = @intCast(op.head_dim);
+    var kv_stride_val: u32 = @intCast(op.kv_stride);
+    var head_offset_val: u32 = @intCast(op.head_offset);
+    var scale_val = op.scale;
+
+    metal_bindings.setComputePipelineState(encoder, score_pipeline);
+    metal_bindings.setBuffer(encoder, q_buf, @intCast(op.q_offset_bytes), 0);
+    metal_bindings.setBuffer(encoder, k_buf, 0, 1);
+    metal_bindings.setBuffer(encoder, scores_buf, 0, 2);
+    metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 3);
+    metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 4);
+    metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 5);
+    metal_bindings.setBytes(encoder, @ptrCast(&head_offset_val), @sizeOf(u32), 6);
+    metal_bindings.setBytes(encoder, @ptrCast(&scale_val), @sizeOf(f32), 7);
+
+    const score_tg: usize = 64;
+    metal_bindings.dispatchThreadgroups(encoder, .{
+        .width = (op.seq_len + score_tg - 1) / score_tg,
+        .height = 1,
+        .depth = 1,
+    }, .{
+        .width = score_tg,
+        .height = 1,
+        .depth = 1,
+    });
+
+    metal_bindings.setComputePipelineState(encoder, softmax_pipeline);
+    metal_bindings.setBuffer(encoder, scores_buf, 0, 0);
+    metal_bindings.setBuffer(encoder, scores_buf, 0, 1);
+    metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 2);
+    metal_bindings.dispatchThreadgroups(encoder, .{
+        .width = 1,
+        .height = 1,
+        .depth = 1,
+    }, .{
+        .width = 256,
+        .height = 1,
+        .depth = 1,
+    });
+
+    metal_bindings.setComputePipelineState(encoder, value_pipeline);
+    metal_bindings.setBuffer(encoder, scores_buf, 0, 0);
+    metal_bindings.setBuffer(encoder, v_buf, 0, 1);
+    metal_bindings.setBuffer(encoder, out_buf, @intCast(op.out_offset_bytes), 2);
+    metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 3);
+    metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 4);
+    metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 5);
+    metal_bindings.setBytes(encoder, @ptrCast(&head_offset_val), @sizeOf(u32), 6);
+
+    const value_tg: usize = 64;
+    metal_bindings.dispatchThreadgroups(encoder, .{
+        .width = (op.head_dim + value_tg - 1) / value_tg,
+        .height = 1,
+        .depth = 1,
+    }, .{
+        .width = value_tg,
+        .height = 1,
+        .depth = 1,
+    });
+
+    metal_bindings.endEncoding(encoder);
+    metal_bindings.commitCommandBuffer(cmd_buffer);
+    metal_bindings.waitUntilCompleted(cmd_buffer);
+
+    if (op.out_buf == null) {
+        if (metal_bindings.getBufferContents(out_buf)) |contents| {
+            const result_ptr: [*]f32 = @ptrCast(@alignCast(contents));
+            @memcpy(op.out[0..op.head_dim], result_ptr[0..op.head_dim]);
+        } else return false;
+    } else if (metal_bindings.getBufferContents(out_buf) == null) return false;
+
+    return true;
+}
+
+pub fn dispatchAttentionDecodeHeads(lib: *MetalShaderLibrary, op: AttentionDecodeHeadsOp) bool {
+    if (!lib.isReady()) return false;
+    if (op.seq_len == 0 or op.head_dim == 0 or op.n_heads == 0 or op.heads_per_group == 0) return false;
+
+    const queue = lib.command_queue orelse return false;
+    var pool = &(lib.buffer_pool orelse return false);
+
+    const fused_heads_pipeline = lib.getPipeline(.attention_decode_fused_heads) catch null;
+    const fused_pipeline = lib.getPipeline(.attention_decode_fused_single_head) catch null;
+    const score_pipeline = lib.getPipeline(.attention_decode_scores_single_head) catch null orelse return false;
+    const softmax_pipeline = lib.getPipeline(.softmax_parallel) catch null orelse return false;
+    const value_pipeline = lib.getPipeline(.attention_decode_values_single_head) catch null orelse return false;
+
+    const max_fused_decode_seq_len: usize = 512;
+    const fused_supported = op.seq_len <= max_fused_decode_seq_len;
+    const allow_fused_heads = op.mode == .auto or op.mode == .fused_heads;
+    const allow_fused_single = op.mode == .auto or op.mode == .fused_single;
+    const use_fused_heads = allow_fused_heads and fused_heads_pipeline != null and fused_supported;
+    const use_fused = !use_fused_heads and allow_fused_single and fused_pipeline != null and fused_supported;
+    if (op.mode == .fused_heads and !use_fused_heads) return false;
+    if (op.mode == .fused_single and !use_fused) return false;
+
+    const scores_size = op.seq_len * @sizeOf(f32);
+    const scores_buf = if (!use_fused_heads and !use_fused) pool.acquire(scores_size) orelse return false else null;
+    defer if (scores_buf) |buf| pool.release(buf, scores_size);
+
+    const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse return false;
+    defer metal_bindings.release(cmd_buffer);
+    const encoder = metal_bindings.createComputeCommandEncoder(cmd_buffer) orelse return false;
+    defer metal_bindings.release(encoder);
+
+    var seq_len_val: u32 = @intCast(op.seq_len);
+    var head_dim_val: u32 = @intCast(op.head_dim);
+    var kv_stride_val: u32 = @intCast(op.kv_stride);
+    var n_heads_val: u32 = @intCast(op.n_heads);
+    var heads_per_group_val: u32 = @intCast(op.heads_per_group);
+    var scale_val = op.scale;
+
+    const score_tg: usize = 64;
+    const value_tg: usize = 64;
+    const fused_tg: usize = 64;
+    if (use_fused_heads) {
+        metal_bindings.setComputePipelineState(encoder, fused_heads_pipeline.?);
+        metal_bindings.setBuffer(encoder, op.q_buf, 0, 0);
+        metal_bindings.setBuffer(encoder, op.k_cache_buf, 0, 1);
+        metal_bindings.setBuffer(encoder, op.v_cache_buf, 0, 2);
+        metal_bindings.setBuffer(encoder, op.out_buf, 0, 3);
+        metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 4);
+        metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 5);
+        metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 6);
+        metal_bindings.setBytes(encoder, @ptrCast(&n_heads_val), @sizeOf(u32), 7);
+        metal_bindings.setBytes(encoder, @ptrCast(&heads_per_group_val), @sizeOf(u32), 8);
+        metal_bindings.setBytes(encoder, @ptrCast(&scale_val), @sizeOf(f32), 9);
+        metal_bindings.dispatchThreadgroups(encoder, .{
+            .width = op.n_heads,
+            .height = 1,
+            .depth = 1,
+        }, .{
+            .width = fused_tg,
+            .height = 1,
+            .depth = 1,
+        });
+        metal_bindings.endEncoding(encoder);
+        metal_bindings.commitCommandBuffer(cmd_buffer);
+        metal_bindings.waitUntilCompleted(cmd_buffer);
+        return metal_bindings.getBufferContents(op.out_buf) != null;
+    }
+
+    for (0..op.n_heads) |h| {
+        var head_offset_val: u32 = @intCast((h / op.heads_per_group) * op.head_dim);
+        const q_offset_bytes = h * op.head_dim * @sizeOf(f32);
+        const out_offset_bytes = q_offset_bytes;
+
+        if (use_fused) {
+            metal_bindings.setComputePipelineState(encoder, fused_pipeline.?);
+            metal_bindings.setBuffer(encoder, op.q_buf, @intCast(q_offset_bytes), 0);
+            metal_bindings.setBuffer(encoder, op.k_cache_buf, 0, 1);
+            metal_bindings.setBuffer(encoder, op.v_cache_buf, 0, 2);
+            metal_bindings.setBuffer(encoder, op.out_buf, @intCast(out_offset_bytes), 3);
+            metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 4);
+            metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 5);
+            metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 6);
+            metal_bindings.setBytes(encoder, @ptrCast(&head_offset_val), @sizeOf(u32), 7);
+            metal_bindings.setBytes(encoder, @ptrCast(&scale_val), @sizeOf(f32), 8);
+            metal_bindings.dispatchThreadgroups(encoder, .{
+                .width = 1,
+                .height = 1,
+                .depth = 1,
+            }, .{
+                .width = fused_tg,
+                .height = 1,
+                .depth = 1,
+            });
+        } else {
+            metal_bindings.setComputePipelineState(encoder, score_pipeline);
+            metal_bindings.setBuffer(encoder, op.q_buf, @intCast(q_offset_bytes), 0);
+            metal_bindings.setBuffer(encoder, op.k_cache_buf, 0, 1);
+            metal_bindings.setBuffer(encoder, scores_buf.?, 0, 2);
+            metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 3);
+            metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 4);
+            metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 5);
+            metal_bindings.setBytes(encoder, @ptrCast(&head_offset_val), @sizeOf(u32), 6);
+            metal_bindings.setBytes(encoder, @ptrCast(&scale_val), @sizeOf(f32), 7);
+            metal_bindings.dispatchThreadgroups(encoder, .{
+                .width = (op.seq_len + score_tg - 1) / score_tg,
+                .height = 1,
+                .depth = 1,
+            }, .{
+                .width = score_tg,
+                .height = 1,
+                .depth = 1,
+            });
+
+            metal_bindings.setComputePipelineState(encoder, softmax_pipeline);
+            metal_bindings.setBuffer(encoder, scores_buf.?, 0, 0);
+            metal_bindings.setBuffer(encoder, scores_buf.?, 0, 1);
+            metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 2);
+            metal_bindings.dispatchThreadgroups(encoder, .{
+                .width = 1,
+                .height = 1,
+                .depth = 1,
+            }, .{
+                .width = 256,
+                .height = 1,
+                .depth = 1,
+            });
+
+            metal_bindings.setComputePipelineState(encoder, value_pipeline);
+            metal_bindings.setBuffer(encoder, scores_buf.?, 0, 0);
+            metal_bindings.setBuffer(encoder, op.v_cache_buf, 0, 1);
+            metal_bindings.setBuffer(encoder, op.out_buf, @intCast(out_offset_bytes), 2);
+            metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 3);
+            metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 4);
+            metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 5);
+            metal_bindings.setBytes(encoder, @ptrCast(&head_offset_val), @sizeOf(u32), 6);
+            metal_bindings.dispatchThreadgroups(encoder, .{
+                .width = (op.head_dim + value_tg - 1) / value_tg,
+                .height = 1,
+                .depth = 1,
+            }, .{
+                .width = value_tg,
+                .height = 1,
+                .depth = 1,
+            });
+        }
+    }
+
+    metal_bindings.endEncoding(encoder);
+    metal_bindings.commitCommandBuffer(cmd_buffer);
+    metal_bindings.waitUntilCompleted(cmd_buffer);
+
+    return metal_bindings.getBufferContents(op.out_buf) != null;
+}
+
+pub fn dispatchAttentionDecodeHeadsQ4KAdd(lib: *MetalShaderLibrary, op: AttentionDecodeHeadsQ4KAddOp) bool {
+    if (!lib.isReady()) return false;
+    if (op.seq_len == 0 or op.head_dim == 0 or op.n_heads == 0 or op.heads_per_group == 0) return false;
+    if (op.k == 0 or op.n == 0) return false;
+
+    const queue = lib.command_queue orelse return false;
+    const fused_heads_pipeline = lib.getPipeline(.attention_decode_fused_heads) catch null orelse return false;
+    const q4k_add_pipeline = lib.pipelines.get(.vecmat_q4_k_add) orelse return false;
+    if (op.seq_len > 512) return false;
+
+    const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse return false;
+    defer metal_bindings.release(cmd_buffer);
+    const encoder = metal_bindings.createComputeCommandEncoder(cmd_buffer) orelse return false;
+    defer metal_bindings.release(encoder);
+
+    var seq_len_val: u32 = @intCast(op.seq_len);
+    var head_dim_val: u32 = @intCast(op.head_dim);
+    var kv_stride_val: u32 = @intCast(op.kv_stride);
+    var n_heads_val: u32 = @intCast(op.n_heads);
+    var heads_per_group_val: u32 = @intCast(op.heads_per_group);
+    var scale_val = op.scale;
+    const fused_tg: usize = 64;
+
+    metal_bindings.setComputePipelineState(encoder, fused_heads_pipeline);
+    metal_bindings.setBuffer(encoder, op.q_buf, 0, 0);
+    metal_bindings.setBuffer(encoder, op.k_cache_buf, 0, 1);
+    metal_bindings.setBuffer(encoder, op.v_cache_buf, 0, 2);
+    metal_bindings.setBuffer(encoder, op.attn_out_buf, 0, 3);
+    metal_bindings.setBytes(encoder, @ptrCast(&seq_len_val), @sizeOf(u32), 4);
+    metal_bindings.setBytes(encoder, @ptrCast(&head_dim_val), @sizeOf(u32), 5);
+    metal_bindings.setBytes(encoder, @ptrCast(&kv_stride_val), @sizeOf(u32), 6);
+    metal_bindings.setBytes(encoder, @ptrCast(&n_heads_val), @sizeOf(u32), 7);
+    metal_bindings.setBytes(encoder, @ptrCast(&heads_per_group_val), @sizeOf(u32), 8);
+    metal_bindings.setBytes(encoder, @ptrCast(&scale_val), @sizeOf(f32), 9);
+    metal_bindings.dispatchThreadgroups(encoder, .{
+        .width = op.n_heads,
+        .height = 1,
+        .depth = 1,
+    }, .{
+        .width = fused_tg,
+        .height = 1,
+        .depth = 1,
+    });
+
+    metal_bindings.setComputePipelineState(encoder, q4k_add_pipeline);
+    metal_bindings.setBuffer(encoder, op.attn_out_buf, 0, 0);
+    metal_bindings.setBuffer(encoder, op.weight_buf, 0, 1);
+    metal_bindings.setBuffer(encoder, op.residual_buf, 0, 2);
+    metal_bindings.setBuffer(encoder, op.out_buf, 0, 3);
+
+    var k_val: u32 = @intCast(op.k);
+    var n_val: u32 = @intCast(op.n);
+    metal_bindings.setBytes(encoder, @ptrCast(&k_val), @sizeOf(u32), 4);
+    metal_bindings.setBytes(encoder, @ptrCast(&n_val), @sizeOf(u32), 5);
+
+    const geometry = dispatchVecMatGeometry(.q4_k, op.n);
+    metal_bindings.dispatchThreadgroups(encoder, geometry.grid, geometry.threadgroup);
+    metal_bindings.endEncoding(encoder);
+    metal_bindings.commitCommandBuffer(cmd_buffer);
+    metal_bindings.waitUntilCompleted(cmd_buffer);
+
+    return metal_bindings.getBufferContents(op.out_buf) != null;
 }
 
 /// Dispatch layer normalization kernel  

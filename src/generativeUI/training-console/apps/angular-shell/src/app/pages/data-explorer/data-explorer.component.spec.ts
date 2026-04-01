@@ -150,7 +150,7 @@ describe('DataExplorerComponent', () => {
     ['xlsx', '📊'],
     ['csv', '📋'],
     ['template', '📝'],
-  ] as const)('iconFor(%s) returns %s', fakeAsync((type, icon) => {
+  ] as const)('iconFor(%s) returns %s', fakeAsync((type: 'xlsx' | 'csv' | 'template', icon: string) => {
     httpMock.expectOne(`${API}/data/preview`).flush({ total: 0, pairs: [], source: 'synthetic' });
     tick();
     expect(component.iconFor(type)).toBe(icon);

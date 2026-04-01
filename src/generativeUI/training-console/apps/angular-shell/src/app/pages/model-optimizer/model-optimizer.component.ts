@@ -5,7 +5,6 @@ import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { HttpErrorResponse } from '@angular/common/http';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -715,7 +714,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   });
 
   readonly gpuTotalNum = computed(() => {
-    const t = this.store.gpuMemoryTotal();
+    const t = this.store.gpuMemoryTotal() as string;
     if (t === '—') return 0;
     return parseFloat(t);
   });

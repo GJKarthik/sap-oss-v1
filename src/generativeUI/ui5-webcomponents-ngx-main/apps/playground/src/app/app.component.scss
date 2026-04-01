@@ -78,3 +78,26 @@
     overflow-x: hidden;
   }
 }
+
+.demo-tour-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--sapInformationBackground);
+  border-bottom: 1px solid var(--sapInformationBorderColor);
+}
+
+.demo-tour-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.demo-tour-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

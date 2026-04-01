@@ -41,7 +41,7 @@ describe('PipelineComponent', () => {
     wsMock = makeWsMock();
 
     jest.spyOn(global, 'WebSocket').mockImplementation(() => wsMock as unknown as WebSocket);
-    jest.spyOn(global, 'setTimeout').mockImplementation((fn) => { fn(); return 0 as unknown as ReturnType<typeof setTimeout>; });
+    jest.spyOn(global, 'setTimeout').mockImplementation((fn: TimerHandler) => { (fn as () => void)(); return 0 as unknown as ReturnType<typeof setTimeout>; });
 
     await TestBed.configureTestingModule({
       imports: [PipelineComponent],

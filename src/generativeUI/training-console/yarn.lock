@@ -12848,9 +12848,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-preset-angular@npm:15.0.0":
-  version: 15.0.0
-  resolution: "jest-preset-angular@npm:15.0.0"
+"jest-preset-angular@npm:16.1.2":
+  version: 16.1.2
+  resolution: "jest-preset-angular@npm:16.1.2"
   dependencies:
     "@jest/environment-jsdom-abstract": "npm:^30.0.0"
     bs-logger: "npm:^0.2.6"
@@ -12860,17 +12860,17 @@ __metadata:
     pretty-format: "npm:^30.0.0"
     ts-jest: "npm:^29.4.0"
   peerDependencies:
-    "@angular/compiler-cli": ">=18.0.0 <21.0.0"
-    "@angular/core": ">=18.0.0 <21.0.0"
-    "@angular/platform-browser-dynamic": ">=18.0.0 <21.0.0"
+    "@angular/compiler-cli": ">=19.0.0 <22.0.0"
+    "@angular/core": ">=19.0.0 <22.0.0"
+    "@angular/platform-browser": ">=19.0.0 <22.0.0"
+    "@angular/platform-browser-dynamic": ">=19.0.0 <22.0.0"
     jest: ^30.0.0
-    jest-environment-jsdom: ^30.0.0
     jsdom: ">=26.0.0"
     typescript: ">=5.5"
   dependenciesMeta:
     esbuild:
       optional: true
-  checksum: 10c0/c459f40ce6f26e756cd51c0a45b24db3f5f6610c80078f8913520cefa4389f3c3de1b46e9a01c777761d90af9ff9267711fd01135b90edd62f930f451d6a4812
+  checksum: 10c0/233acd3e507a9d7e882fd9c82c2759548785bb3c7fc767acd40ef68bb21c2a7d5208888a657981bfdd2cc232c1cfeededf5e6d661e13bd05d40ed78a71a803bf
   languageName: node
   linkType: hard
 
@@ -17963,7 +17963,7 @@ __metadata:
     eslint-config-prettier: "npm:10.1.1"
     jest: "npm:30.0.5"
     jest-environment-jsdom: "npm:30.0.5"
-    jest-preset-angular: "npm:15.0.0"
+    jest-preset-angular: "npm:16.1.2"
     jsdom: "npm:26.1.0"
     jsonc-eslint-parser: "npm:2.1.0"
     nx: "npm:22.0.2"

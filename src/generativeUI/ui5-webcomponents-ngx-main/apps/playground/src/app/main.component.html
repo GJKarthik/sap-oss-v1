@@ -40,6 +40,21 @@
       </div>
     </ui5-card>
 
+    <ui5-card class="home-card" (click)="navigateGenerative()">
+      <ui5-card-header
+        slot="header"
+        title-text="Generative UI"
+        subtitle-text="Live schema rendering flow"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
+          Trigger real backend schema generation and render generated UI controls with strict live dependency checks.
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateGenerative()">Open Generative UI</ui5-button>
+      </div>
+    </ui5-card>
+
     <ui5-card class="home-card" (click)="navigateCollab()">
       <ui5-card-header
         slot="header"
@@ -52,6 +67,51 @@
           Explore real-time collaboration with CRDT-aware state sync, presence tracking, and cursor sharing.
         </p>
         <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateCollab()">Explore</ui5-button>
+      </div>
+    </ui5-card>
+
+    <ui5-card class="home-card" (click)="navigateComponents()">
+      <ui5-card-header
+        slot="header"
+        title-text="Component Playground"
+        subtitle-text="Live model catalog from OpenAI server"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
+          Pull real model metadata from the OpenAI-compatible backend and inspect the live component data feed.
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateComponents()">Open Components</ui5-button>
+      </div>
+    </ui5-card>
+
+    <ui5-card class="home-card" (click)="navigateMcp()">
+      <ui5-card-header
+        slot="header"
+        title-text="MCP Integration"
+        subtitle-text="Live MCP tools discovery and invocation"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
+          Discover tools from the running MCP server and execute a real JSON-RPC tool call end-to-end.
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateMcp()">Open MCP</ui5-button>
+      </div>
+    </ui5-card>
+
+    <ui5-card class="home-card" (click)="navigateReadiness()">
+      <ui5-card-header
+        slot="header"
+        title-text="Demo Readiness"
+        subtitle-text="Route-by-route go/no-go gate"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
+          Run a UI-native readiness check for all live services and routes before starting the demo.
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateReadiness()">Open Readiness</ui5-button>
       </div>
     </ui5-card>
 

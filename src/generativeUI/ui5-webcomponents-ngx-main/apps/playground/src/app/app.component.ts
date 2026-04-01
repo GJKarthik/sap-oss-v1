@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { Subject, filter, takeUntil } from 'rxjs';
+import { DemoTourService } from './core/demo-tour.service';
 
 @Component({
     selector: 'ui-angular-root',
@@ -9,10 +11,18 @@ import { Router, NavigationEnd } from '@angular/router';
     styleUrls: ['./app.component.scss'],
     standalone: false
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   currentTheme = 'sap_horizon';
+  shellbarA11y = {
+    logo: { name: 'UI5 Web Components NGX Playground' },
+  };
+  demoTourActive = false;
+  demoTourStepLabel = '';
+  demoTourProgress = '';
 
-  constructor(private router: Router) {}
+  private readonly destroy$ = new Subject<void>();
+
+  constructor(private router: Router, private demoTour: DemoTourService) {}
 
   ngOnInit(): void {
     const saved = localStorage.getItem('ui5-theme');
@@ -20,6 +30,18 @@ export class AppComponent implements OnInit {
       this.currentTheme = saved;
       this.applyTheme(saved);
     }
+
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((event) => {
+        this.demoTour.syncWithUrl(event.urlAfterRedirects);
+        this.updateDemoTourBanner();
+      });
+
+    this.updateDemoTourBanner();
   }
 
   isActive(path: string): boolean {
@@ -40,6 +62,9 @@ export class AppComponent implements OnInit {
         'Joule AI': '/joule',
         'Collaboration': '/collab',
         'Generative UI': '/generative',
+        'Components': '/components',
+        'MCP': '/mcp',
+        'Readiness': '/readiness',
       };
       const path = map[detail.item.text];
       if (path) this.router.navigate([path]);
@@ -55,7 +80,39 @@ export class AppComponent implements OnInit {
     }
   }
 
+  nextDemoStep(): void {
+    const next = this.demoTour.next();
+    if (next) {
+      this.router.navigate([next.route]);
+      return;
+    }
+    this.router.navigate(['/readiness']);
+  }
+
+  endDemoTour(): void {
+    this.demoTour.stop();
+    this.updateDemoTourBanner();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   private applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-sap-theme', theme);
+  }
+
+  private updateDemoTourBanner(): void {
+    this.demoTourActive = this.demoTour.active;
+    const step = this.demoTour.currentStep;
+    if (!step) {
+      this.demoTourStepLabel = '';
+      this.demoTourProgress = '';
+      return;
+    }
+
+    this.demoTourStepLabel = step.label;
+    this.demoTourProgress = `${this.demoTour.currentIndex + 1}/${this.demoTour.steps.length}`;
   }
 }

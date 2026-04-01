@@ -5,6 +5,7 @@
   <ui5-shellbar
     primary-title="UI5 Web Components NGX"
     secondary-title="Playground"
+    [accessibilityAttributes]="shellbarA11y"
     (logoClick)="navigateTo('/')">
 
     <!-- Nav items (ui5-shellbar-item uses default slot in v2) -->
@@ -34,6 +35,27 @@
       text="Collaboration"
       count=""
       (item-click)="navigateTo('/collab')">
+    </ui5-shellbar-item>
+
+    <ui5-shellbar-item
+      icon="palette"
+      text="Components"
+      count=""
+      (item-click)="navigateTo('/components')">
+    </ui5-shellbar-item>
+
+    <ui5-shellbar-item
+      icon="chain-link"
+      text="MCP"
+      count=""
+      (item-click)="navigateTo('/mcp')">
+    </ui5-shellbar-item>
+
+    <ui5-shellbar-item
+      icon="checklist"
+      text="Readiness"
+      count=""
+      (item-click)="navigateTo('/readiness')">
     </ui5-shellbar-item>
 
     <!-- Theme switcher in profile slot -->
@@ -78,6 +100,24 @@
       (click)="navigateTo('/generative')">
       Generative UI
     </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/components')"
+      (click)="navigateTo('/components')">
+      Components
+    </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/mcp')"
+      (click)="navigateTo('/mcp')">
+      MCP
+    </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/readiness')"
+      (click)="navigateTo('/readiness')">
+      Readiness
+    </button>
 
     <div class="app-nav__spacer"></div>
 
@@ -92,6 +132,19 @@
       </ui5-select>
     </div>
   </nav>
+
+  <section class="demo-tour-banner" *ngIf="demoTourActive" aria-label="Demo tour controls">
+    <div class="demo-tour-banner__left">
+      <ui5-tag design="Information">Demo Tour {{ demoTourProgress }}</ui5-tag>
+      <span>Current step: {{ demoTourStepLabel }}</span>
+    </div>
+    <div class="demo-tour-banner__actions">
+      <ui5-button data-testid="demo-tour-next" design="Emphasized" (click)="nextDemoStep()">Next Step</ui5-button>
+      <ui5-button data-testid="demo-tour-end" design="Transparent" (click)="endDemoTour()">End Tour</ui5-button>
+    </div>
+  </section>
+
+  <playground-live-health-panel></playground-live-health-panel>
 
   <!-- Main Content -->
   <main class="app-content">

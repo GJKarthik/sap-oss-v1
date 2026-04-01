@@ -8,9 +8,72 @@ const llama = @import("llama");
 const Model = llama.Model;
 const KVCache = llama.KVCache;
 const Sampler = llama.Sampler;
+const ForwardProfileStats = llama.ForwardProfileStats;
 
 /// Default model path (LFM2.5-1.2B is small and fast)
 const DEFAULT_MODEL_PATH = "/Users/user/Documents/sap-ai-suite/vendor/layerModels/LFM2.5-1.2B-Instruct-GGUF/LFM2.5-1.2B-Instruct-Q4_K_M.gguf";
+
+fn nsToMs(ns: u64) f64 {
+    return @as(f64, @floatFromInt(ns)) / 1_000_000.0;
+}
+
+fn argmaxToken(logits: []const f32) u32 {
+    if (logits.len == 0) return 0;
+    var best_idx: usize = 0;
+    var best_val = logits[0];
+    for (logits[1..], 1..) |value, idx| {
+        if (value > best_val) {
+            best_val = value;
+            best_idx = idx;
+        }
+    }
+    return @intCast(best_idx);
+}
+
+fn printForwardProfile(label: []const u8, profile: ForwardProfileStats) void {
+    const accounted = profile.embedding_ns + profile.attn_prep_ns + profile.attn_decode_ns +
+        profile.attn_wo_chain_ns + profile.attn_proj_ns + profile.attn_residual_ns +
+        profile.shortconv_ns + profile.ffn_prep_ns + profile.ffn_down_ns +
+        profile.ffn_residual_ns + profile.logits_ns;
+    const other_ns: u64 = if (profile.total_forward_ns > accounted) profile.total_forward_ns - accounted else 0;
+
+    std.log.info("  [profile:{s}] calls={d} layers={d} attn_layers={d} recurrent_layers={d}", .{
+        label,
+        profile.forward_calls,
+        profile.layers_processed,
+        profile.attention_layers,
+        profile.recurrent_layers,
+    });
+    std.log.info("    embed={d:.1}ms attn_prep={d:.1}ms attn_decode={d:.1}ms attn_chain={d:.1}ms attn_proj={d:.1}ms", .{
+        nsToMs(profile.embedding_ns),
+        nsToMs(profile.attn_prep_ns),
+        nsToMs(profile.attn_decode_ns),
+        nsToMs(profile.attn_wo_chain_ns),
+        nsToMs(profile.attn_proj_ns),
+    });
+    std.log.info("    attn_residual={d:.1}ms shortconv={d:.1}ms ffn_prep={d:.1}ms ffn_down={d:.1}ms ffn_residual={d:.1}ms", .{
+        nsToMs(profile.attn_residual_ns),
+        nsToMs(profile.shortconv_ns),
+        nsToMs(profile.ffn_prep_ns),
+        nsToMs(profile.ffn_down_ns),
+        nsToMs(profile.ffn_residual_ns),
+    });
+    std.log.info("    shortconv_norm={d:.1}ms shortconv_in={d:.1}ms shortconv_conv={d:.1}ms shortconv_out={d:.1}ms", .{
+        nsToMs(profile.shortconv_norm_ns),
+        nsToMs(profile.shortconv_in_proj_ns),
+        nsToMs(profile.shortconv_conv_ns),
+        nsToMs(profile.shortconv_out_proj_ns),
+    });
+    std.log.info("    logits_norm={d:.1}ms logits_head={d:.1}ms", .{
+        nsToMs(profile.logits_norm_ns),
+        nsToMs(profile.logits_head_ns),
+    });
+    std.log.info("    logits={d:.1}ms other={d:.1}ms total={d:.1}ms", .{
+        nsToMs(profile.logits_ns),
+        nsToMs(other_ns),
+        nsToMs(profile.total_forward_ns),
+    });
+}
 
 /// Test loading a GGUF model and running inference
 pub fn testModelInference() !void {
@@ -60,6 +123,9 @@ pub fn testModelInference() !void {
     std.log.info("║  Heads:        {d}                                              ", .{model.getNumHeads()});
     std.log.info("║  KV Heads:     {d}                                              ", .{model.getNumKVHeads()});
     std.log.info("╚══════════════════════════════════════════════════════════════════╝", .{});
+    if (model.isForwardProfilingEnabled()) {
+        std.log.info("Forward profiling enabled via PLLM_PROFILE_FORWARD=1", .{});
+    }
     
     // Initialize KV cache
     var cache = try KVCache.init(allocator, model.config);
@@ -76,6 +142,7 @@ pub fn testModelInference() !void {
     // Test 1: Single token forward pass
     std.log.info("\n═══ TEST 1: Single Token Forward Pass ═══", .{});
     {
+        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
         const start = std.time.nanoTimestamp();
         const logits = model.forward(1, 0, &cache);
         const elapsed_us = @as(f64, @floatFromInt(std.time.nanoTimestamp() - start)) / 1000;
@@ -103,6 +170,9 @@ pub fn testModelInference() !void {
         for (top5, 0..) |t, i| {
             std.log.info("    {d}. Token {d}: {d:.3}", .{i + 1, t.id, t.val});
         }
+        if (model.isForwardProfilingEnabled()) {
+            printForwardProfile("single-forward", model.getForwardProfile());
+        }
     }
     
     // Test 2: Multi-token generation (use fixed-size array instead of ArrayList)
@@ -115,18 +185,23 @@ pub fn testModelInference() !void {
         
         var generated: [64]u32 = undefined;
         var gen_count: usize = 0;
+        var prefill_profile: ForwardProfileStats = .{};
+        var decode_profile: ForwardProfileStats = .{};
         
         // Prefill
+        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
         const prefill_start = std.time.nanoTimestamp();
         for (prompt[0..prompt.len-1], 0..) |tok, pos| {
-            _ = model.forward(tok, pos, &cache);
+            model.forwardNoLogits(tok, pos, &cache);
         }
         const prefill_time_ms = @as(f64, @floatFromInt(std.time.nanoTimestamp() - prefill_start)) / 1_000_000;
+        if (model.isForwardProfilingEnabled()) prefill_profile = model.getForwardProfile();
         
         // Decode
         var last_token = prompt[prompt.len - 1];
         var pos: usize = prompt.len - 1;
         
+        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
         const decode_start = std.time.nanoTimestamp();
         for (0..max_new_tokens) |_| {
             const logits = model.forward(last_token, pos, &cache);
@@ -140,6 +215,7 @@ pub fn testModelInference() !void {
             pos += 1;
         }
         const decode_time_ms = @as(f64, @floatFromInt(std.time.nanoTimestamp() - decode_start)) / 1_000_000;
+        if (model.isForwardProfilingEnabled()) decode_profile = model.getForwardProfile();
         
         const tps = if (decode_time_ms > 0) @as(f64, @floatFromInt(gen_count)) / (decode_time_ms / 1000) else 0;
         
@@ -148,6 +224,10 @@ pub fn testModelInference() !void {
         std.log.info("  Prefill time:     {d:.1} ms", .{prefill_time_ms});
         std.log.info("  Decode time:      {d:.1} ms", .{decode_time_ms});
         std.log.info("  Throughput:       {d:.1} tok/s", .{tps});
+        if (model.isForwardProfilingEnabled()) {
+            printForwardProfile("generation-prefill", prefill_profile);
+            printForwardProfile("generation-decode", decode_profile);
+        }
     }
     
     // Test 3: Benchmark decode speed
@@ -161,14 +241,15 @@ pub fn testModelInference() !void {
         var token: u32 = 1;
         for (0..warmup_tokens) |pos| {
             const logits = model.forward(token, pos, &cache);
-            token = sampler.sample(logits);
+            token = argmaxToken(logits);
         }
         
         // Benchmark
+        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
         const start = std.time.nanoTimestamp();
         for (warmup_tokens..warmup_tokens + bench_tokens) |pos| {
             const logits = model.forward(token, pos, &cache);
-            token = sampler.sample(logits);
+            token = argmaxToken(logits);
         }
         const elapsed_ns = std.time.nanoTimestamp() - start;
         const elapsed_ms = @as(f64, @floatFromInt(elapsed_ns)) / 1_000_000;
@@ -178,6 +259,9 @@ pub fn testModelInference() !void {
         std.log.info("  ╔═══════════════════════════════════════════╗", .{});
         std.log.info("  ║  THROUGHPUT: {d:.1} tokens/second           ", .{tps});
         std.log.info("  ╚═══════════════════════════════════════════╝", .{});
+        if (model.isForwardProfilingEnabled()) {
+            printForwardProfile("decode-benchmark", model.getForwardProfile());
+        }
     }
     
     std.log.info("\n═══ ALL TESTS COMPLETED ═══", .{});

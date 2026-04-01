@@ -163,6 +163,9 @@ AGENT_URL=http://my-agent:9160 yarn start:playground
 | `/forms` | UI5 form components with Angular reactive forms |
 | `/joule` | Joule AI — generative UI driven by AG-UI streaming |
 | `/collab` | Real-time multi-user collaboration demo |
+| `/generative` | Strict live schema generation and renderer flow |
+| `/components` | Live component/model catalog from OpenAI-compatible backend |
+| `/mcp` | Live MCP tools discovery and invocation |
 | `/**` | 404 Not Found page |
 
 ### 5. Building for Production
@@ -178,7 +181,62 @@ yarn build:prod
 yarn nx test ui5-angular
 ```
 
-### 7. Architecture Overview
+### 7. Harness-Based Demo Operation
+
+Use the UI5 harness for deterministic pre-demo checks and machine-readable output:
+
+```bash
+# Flexible local mode (allows degraded behavior)
+yarn harness:run --mode dev-flex --profile local-live
+
+# Strict demo mode (real backend requirements enforced)
+yarn harness:demo
+
+# Strict CI mode with live e2e included
+yarn harness:ci
+```
+
+Reports are written to `artifacts/harness/demo-report.json` and `artifacts/harness/demo-report.md`.
+
+### 7. Live Demo Preflight and E2E
+
+For server-hosted deployments, operators can run readiness checks directly in the UI from the global **Service Health** panel (Shell header area) using the **Check Now** action.
+
+Run readiness checks before a live demo:
+
+```bash
+yarn live:preflight
+```
+
+Optional env vars for non-default hosts:
+
+```bash
+AG_UI_URL=http://localhost:9160/health \
+OPENAI_URL=http://localhost:8400/health \
+MCP_URL=http://localhost:9160/health \
+MCP_RPC_URL=http://localhost:9160/mcp \
+yarn live:preflight
+```
+
+Run live-only E2E (no AG-UI stubs/intercepts):
+
+```bash
+yarn e2e:live
+```
+
+Run repeatable demo reliability checks (preflight + live pages + guided tour):
+
+```bash
+yarn demo:verify
+```
+
+Customize repetitions:
+
+```bash
+DEMO_VERIFY_ATTEMPTS=3 yarn demo:verify
+```
+
+### 8. Architecture Overview
 
 ```
 apps/

@@ -15,13 +15,16 @@ import {Ui5WebcomponentsConfigModule} from '@ui5/webcomponents-ngx/config';
 import {Ui5I18nModule} from "@ui5/webcomponents-ngx/i18n";
 import {RouterModule} from "@angular/router";
 import {MainComponent} from "./main.component";
-import { HttpClient, provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
+import {
+  HttpClient,
+  HTTP_INTERCEPTORS,
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
+import { RequestTraceInterceptor } from './core/request-trace.interceptor';
+import { LiveHealthPanelComponent } from './shared/live-health-panel/live-health-panel.component';
 
-const Russian = {
-  SOMETHING: 'значение {0}'
-}
-
-@NgModule({ declarations: [AppComponent, MainComponent],
+@NgModule({ declarations: [AppComponent, MainComponent, LiveHealthPanelComponent],
     bootstrap: [AppComponent], imports: [Ui5WebcomponentsModule,
         BrowserModule,
         FormsModule,
@@ -30,7 +33,7 @@ const Russian = {
         Ui5WebcomponentsIconsModule.forRoot(['sap-icons', 'tnt-icons', "business-suite-icons"]),
         Ui5WebcomponentsConfigModule.forRoot({}),
         Ui5I18nModule.forRoot({
-            language: 'ru',
+            language: 'en',
             fetchDefaultLanguage: true,
             bundle: {
                 name: 'i18n_root',
@@ -39,7 +42,6 @@ const Russian = {
                         const http = inject(HttpClient);
                         return {
                             en: http.get('assets/i18n/messages_en', { responseType: 'text' }),
-                            ru: Russian
                         };
                     }
                 }
@@ -71,6 +73,18 @@ const Russian = {
                 loadChildren: () => import('./modules/generative/generative.module').then(m => m.GenerativeModule)
             },
             {
+                path: 'components',
+                loadChildren: () => import('./modules/component-playground/component-playground.module').then(m => m.ComponentPlaygroundModule)
+            },
+            {
+                path: 'mcp',
+                loadChildren: () => import('./modules/mcp/mcp.module').then(m => m.McpModule)
+            },
+            {
+                path: 'readiness',
+                loadChildren: () => import('./modules/readiness/readiness.module').then(m => m.ReadinessModule)
+            },
+            {
                 path: '**',
                 loadChildren: () => import('./modules/not-found/not-found.module').then(m => m.NotFoundModule)
             }
@@ -78,6 +92,9 @@ const Russian = {
         Ui5WebcomponentsModule,
         Ui5WebcomponentsThemingModule.forRoot(),
         FundamentalStylesComponentsModule,
-        Ui5FundamentalThemingModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
+        Ui5FundamentalThemingModule], providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        { provide: HTTP_INTERCEPTORS, useClass: RequestTraceInterceptor, multi: true },
+    ] })
 export class AppModule {
 }

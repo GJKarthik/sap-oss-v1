@@ -88,7 +88,7 @@ describe('AppStore', () => {
       store.addJob(job);
       store.updateJobProgress('abc-123', 0.5, 'running');
 
-      const updated = store.jobs().data?.find((j) => j.id === 'abc-123');
+      const updated = store.jobs().data?.find((j: { id: string }) => j.id === 'abc-123');
       expect(updated?.progress).toBe(0.5);
       expect(updated?.status).toBe('running');
     });

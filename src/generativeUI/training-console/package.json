@@ -45,7 +45,7 @@
     "eslint-config-prettier": "10.1.1",
     "jest": "30.0.5",
     "jest-environment-jsdom": "30.0.5",
-    "jest-preset-angular": "15.0.0",
+    "jest-preset-angular": "16.1.2",
     "jsdom": "26.1.0",
     "jsonc-eslint-parser": "2.1.0",
     "nx": "22.0.2",

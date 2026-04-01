@@ -805,7 +805,10 @@ app.use((req, res, next) => {
   const corsOrigin = getCorsOrigin(req);
   if (corsOrigin) res.header('Access-Control-Allow-Origin', corsOrigin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Correlation-Id, x-correlation-id',
+  );
   next();
 });
 
