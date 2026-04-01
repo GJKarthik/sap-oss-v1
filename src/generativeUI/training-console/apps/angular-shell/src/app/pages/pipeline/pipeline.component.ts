@@ -4,6 +4,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 
@@ -29,7 +31,7 @@ interface LogLine {
 @Component({
   selector: 'app-pipeline',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -169,6 +171,99 @@ interface LogLine {
             </div>
           }
         </div>
+      </div>
+
+      <!-- ═══════ Agent Team Orchestration — OmX $team Mode ═══════ -->
+      <div class="team-divider"></div>
+      <div class="team-section">
+        <h2 class="section-title" style="font-size:1.125rem;">Agent Team Orchestration — OmX <code>$team</code> Mode</h2>
+
+        <!-- Team Status Header -->
+        <ui5-card class="team-header-card">
+          <ui5-card-header slot="header" title-text="training-pipeline-team" subtitle-text="6 workers (3 Codex · 3 Claude)">
+          </ui5-card-header>
+          <div class="team-header-body">
+            <div class="team-meta">
+              <ui5-tag design="Positive" class="team-status-tag">● Active</ui5-tag>
+              <span class="team-elapsed">⏱ 4m 32s</span>
+            </div>
+            <div class="team-pipeline-stepper">
+              @for (step of teamStages; track step.name) {
+                <div class="team-step" [class.team-step-done]="step.status === 'done'" [class.team-step-active]="step.status === 'active'">
+                  <div class="team-step-node">
+                    @if (step.status === 'done') { <span>✓</span> }
+                    @else if (step.status === 'active') { <span class="step-icon-pulse">●</span> }
+                    @else { <span>○</span> }
+                  </div>
+                  <span class="team-step-label">{{ step.name }}</span>
+                </div>
+                @if (!step.last) {
+                  <div class="team-step-connector" [class.connector-done]="step.status === 'done'" [class.connector-active]="step.status === 'active'"></div>
+                }
+              }
+            </div>
+          </div>
+        </ui5-card>
+
+        <!-- Worker Grid -->
+        <div class="worker-grid">
+          @for (w of workers; track w.name) {
+            <div class="worker-card" [class.worker-active]="w.statusDot === 'active'" [class.worker-idle]="w.statusDot === 'idle'">
+              <div class="worker-header">
+                <div class="worker-name-row">
+                  <span class="worker-status-dot" [class.dot-active]="w.statusDot === 'active'" [class.dot-idle]="w.statusDot === 'idle'"></span>
+                  <span class="worker-name">{{ w.name }}</span>
+                </div>
+                <div class="worker-badges">
+                  <ui5-tag [attr.design]="w.roleBadgeDesign">{{ w.role }}</ui5-tag>
+                  <ui5-tag [attr.design]="w.providerBadgeDesign">{{ w.provider }}</ui5-tag>
+                </div>
+              </div>
+              <div class="worker-body">
+                <div class="worker-task">
+                  <span class="worker-task-text">{{ w.task }}</span>
+                  <ui5-tag [attr.design]="w.taskStatusDesign" class="worker-task-tag">{{ w.taskStatus }}</ui5-tag>
+                </div>
+                <div class="worker-terminal">
+                  @for (line of w.logs; track $index) {
+                    <div class="wt-line">{{ line }}</div>
+                  }
+                </div>
+                <div class="worker-footer">
+                  <span class="heartbeat"><span class="heartbeat-icon">♥</span> {{ w.heartbeat }} · Turn {{ w.turn }}</span>
+                  @if (w.progress !== undefined) {
+                    <ui5-progress-indicator [attr.value]="w.progress" style="width:100%;margin-top:0.35rem;"></ui5-progress-indicator>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Shared Task Queue -->
+        <ui5-card class="team-queue-card">
+          <ui5-card-header slot="header" title-text="Shared Task Queue" subtitle-text="8 tasks · 2 completed · 4 in progress · 2 pending"></ui5-card-header>
+          <ui5-list>
+            @for (t of taskQueue; track t.id) {
+              <ui5-list-item-standard [attr.description]="'Owner: ' + t.owner">
+                {{ t.subject }}
+                <ui5-tag slot="deleteButton" [attr.design]="t.tagDesign">{{ t.status }}</ui5-tag>
+              </ui5-list-item-standard>
+            }
+          </ui5-list>
+        </ui5-card>
+
+        <!-- Communication Feed -->
+        <ui5-card class="team-feed-card">
+          <ui5-card-header slot="header" title-text="Communication Feed" subtitle-text="Inter-agent messages"></ui5-card-header>
+          <ui5-timeline>
+            @for (m of messages; track $index) {
+              <ui5-timeline-item [attr.name]="m.from" [attr.subtitle-text]="'→ ' + m.to" [attr.icon]="m.icon">
+                <div>{{ m.text }}</div>
+              </ui5-timeline-item>
+            }
+          </ui5-timeline>
+        </ui5-card>
       </div>
     </div>
   `,
@@ -397,6 +492,102 @@ interface LogLine {
     }
     .cmd-title { font-size: 0.8125rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--sapTextColor, #32363a); }
     pre { margin: 0; font-size: 0.8rem; background: var(--sapList_Background, #f5f5f5); padding: 0.5rem; border-radius: 0.25rem; overflow-x: auto; }
+
+    /* ══ OmX Team Section ══ */
+    .team-divider {
+      border-top: 2px solid var(--sapTile_BorderColor, #e4e4e4); margin: 2rem 0 1.5rem;
+    }
+    .team-section { margin-bottom: 2rem; }
+    .team-header-card { margin-bottom: 1.25rem; }
+    .team-header-body { padding: 0.75rem 1rem; }
+    .team-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .team-status-tag { animation: team-pulse 2s ease-in-out infinite; }
+    @keyframes team-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+    .team-elapsed {
+      font-family: 'SF Mono', Menlo, monospace; font-size: 0.8rem;
+      color: var(--sapContent_LabelColor, #6a6d70);
+    }
+
+    /* Team pipeline stepper */
+    .team-pipeline-stepper { display: flex; align-items: center; gap: 0; }
+    .team-step { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; min-width: 48px; }
+    .team-step-node {
+      width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      background: var(--sapBackgroundColor, #f5f5f5); border: 2px solid var(--sapTile_BorderColor, #e4e4e4);
+      font-size: 0.7rem; font-weight: 700; color: var(--sapContent_LabelColor, #6a6d70); transition: all 0.3s;
+    }
+    .team-step-label { font-size: 0.6rem; color: var(--sapContent_LabelColor, #6a6d70); font-weight: 500; }
+    .team-step-connector {
+      flex: 1; height: 2px; min-width: 12px; background: var(--sapTile_BorderColor, #e4e4e4);
+      margin: 0 2px; margin-bottom: 1.1rem;
+    }
+    .team-step-done .team-step-node { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+    .team-step-done .team-step-label { color: #2e7d32; }
+    .team-step-active .team-step-node {
+      background: var(--sapBrandColor, #0854a0); border-color: var(--sapBrandColor, #0854a0); color: #fff;
+      animation: pulse-node 1.5s ease-in-out infinite;
+    }
+    .team-step-active .team-step-label { color: var(--sapBrandColor, #0854a0); font-weight: 600; }
+    .team-step-connector.connector-done { background: #2e7d32; }
+    .team-step-connector.connector-active { background: var(--sapBrandColor, #0854a0); }
+
+    /* Worker grid */
+    .worker-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem;
+    }
+    @media (max-width: 1100px) { .worker-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) { .worker-grid { grid-template-columns: 1fr; } }
+
+    .worker-card {
+      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+      border-radius: 0.5rem; overflow: hidden; transition: box-shadow 0.3s, border-color 0.3s;
+    }
+    .worker-card.worker-active {
+      border-color: #2e7d32;
+      box-shadow: 0 0 0 1px rgba(46,125,50,0.15), 0 0 8px rgba(46,125,50,0.1);
+      animation: worker-glow 2.5s ease-in-out infinite;
+    }
+    @keyframes worker-glow {
+      0%,100% { box-shadow: 0 0 0 1px rgba(46,125,50,0.15), 0 0 8px rgba(46,125,50,0.1); }
+      50% { box-shadow: 0 0 0 2px rgba(46,125,50,0.25), 0 0 14px rgba(46,125,50,0.15); }
+    }
+    .worker-header {
+      padding: 0.65rem 0.75rem; background: var(--sapList_HeaderBackground, #f5f5f5);
+      border-bottom: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.35rem;
+    }
+    .worker-name-row { display: flex; align-items: center; gap: 0.4rem; }
+    .worker-name { font-family: 'SF Mono', Menlo, monospace; font-size: 0.8rem; font-weight: 600; }
+    .worker-badges { display: flex; gap: 0.3rem; }
+    .worker-status-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-active { background: #2e7d32; animation: dot-pulse 2s ease-in-out infinite; }
+    .dot-idle { background: #f0ad4e; }
+    @keyframes dot-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(46,125,50,0.4); }
+      50% { box-shadow: 0 0 0 4px rgba(46,125,50,0); }
+    }
+    .worker-body { padding: 0.65rem 0.75rem; }
+    .worker-task { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .worker-task-text { font-size: 0.8rem; font-weight: 500; }
+    .worker-task-tag { font-size: 0.65rem; }
+
+    /* Mini terminal */
+    .worker-terminal {
+      background: #1e1e1e; border-radius: 0.3rem; padding: 0.4rem 0.5rem;
+      font-family: 'SF Mono', Menlo, monospace; font-size: 0.65rem; line-height: 1.5;
+      color: #b5b5b5; overflow: hidden; max-height: 5.5rem; margin-bottom: 0.5rem;
+    }
+    .wt-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .worker-footer { font-size: 0.7rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .heartbeat { display: inline-flex; align-items: center; gap: 0.2rem; }
+    .heartbeat-icon { color: #e53935; animation: hb-pulse 2s ease-in-out infinite; display: inline-block; }
+    @keyframes hb-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+    /* Task queue & feed */
+    .team-queue-card { margin-bottom: 1.25rem; }
+    .team-feed-card { margin-bottom: 1rem; }
   `],
 })
 export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
@@ -430,6 +621,82 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     { title: 'Step 1 — Preconvert Excel → CSV', command: 'cd pipeline && make preconvert' },
     { title: 'Step 2 — Build Zig binary', command: 'cd pipeline/zig && zig build' },
     { title: 'Run Zig pipeline tests', command: 'cd pipeline/zig && zig build test' },
+  ];
+
+  /* ── OmX Team Mock Data ── */
+  readonly teamStages = [
+    { name: 'plan', status: 'done', last: false },
+    { name: 'prd', status: 'done', last: false },
+    { name: 'exec', status: 'active', last: false },
+    { name: 'verify', status: 'pending', last: false },
+    { name: 'fix', status: 'pending', last: true },
+  ];
+
+  readonly workers = [
+    {
+      name: 'worker-1', role: 'executor', provider: 'Codex', statusDot: 'active' as const,
+      roleBadgeDesign: 'Information', providerBadgeDesign: 'Set2',
+      task: 'Implementing tokenizer stage', taskStatus: 'completed ✓', taskStatusDesign: 'Positive',
+      logs: ['[tokenizer] Processing schema: banking_v3.xlsx', '[tokenizer] Extracted 847 columns across 12 tables', '[tokenizer] Generated 1,247 token pairs', '✓ Stage complete in 18.4s'],
+      heartbeat: '1s ago', turn: 23, progress: undefined as number | undefined,
+    },
+    {
+      name: 'worker-2', role: 'executor', provider: 'Codex', statusDot: 'active' as const,
+      roleBadgeDesign: 'Information', providerBadgeDesign: 'Set2',
+      task: 'Building dedup logic', taskStatus: 'in_progress', taskStatusDesign: 'Information',
+      logs: ['[dedup] Loaded 1,247 training pairs', '[dedup] Running MinHash LSH (threshold=0.85)', '[dedup] Found 43 near-duplicate clusters', '[dedup] Processing cluster 29/43...'],
+      heartbeat: '2s ago', turn: 18, progress: 67,
+    },
+    {
+      name: 'worker-3', role: 'executor', provider: 'Codex', statusDot: 'active' as const,
+      roleBadgeDesign: 'Information', providerBadgeDesign: 'Set2',
+      task: 'Graph construction module', taskStatus: 'in_progress', taskStatusDesign: 'Information',
+      logs: ['[graph] Building schema graph from DDL', '[graph] 12 tables, 847 columns, 23 foreign keys', '[graph] Computing join paths (max depth=3)', '[graph] Indexing 156 candidate paths...'],
+      heartbeat: '1s ago', turn: 12, progress: 34,
+    },
+    {
+      name: 'worker-4', role: 'executor', provider: 'Claude', statusDot: 'active' as const,
+      roleBadgeDesign: 'Information', providerBadgeDesign: 'Warning',
+      task: 'Writing unit tests for pipeline', taskStatus: 'in_progress', taskStatusDesign: 'Information',
+      logs: ['[test] Generating test cases for tokenizer', '[test] 14 test cases covering edge cases', '[test] Running pytest -x tests/test_tokenizer.py', '[test] 12/14 passed, 2 pending fixtures'],
+      heartbeat: '3s ago', turn: 9, progress: undefined as number | undefined,
+    },
+    {
+      name: 'worker-5', role: 'verifier', provider: 'Claude', statusDot: 'active' as const,
+      roleBadgeDesign: 'Positive', providerBadgeDesign: 'Warning',
+      task: 'Reviewing tokenizer output quality', taskStatus: 'completed ✓', taskStatusDesign: 'Positive',
+      logs: ['[verify] Sampling 100 random token pairs', '[verify] SQL validity check: 98/100 passed', '[verify] Schema coverage: 11/12 tables (91.7%)', '✓ Review passed. LGTM.'],
+      heartbeat: '5s ago', turn: 7, progress: undefined as number | undefined,
+    },
+    {
+      name: 'worker-6', role: 'architect', provider: 'Claude', statusDot: 'idle' as const,
+      roleBadgeDesign: 'Critical', providerBadgeDesign: 'Warning',
+      task: 'Analyzing pipeline bottlenecks', taskStatus: 'idle', taskStatusDesign: 'None',
+      logs: ['[arch] Memory profile: 342MB peak (graph stage)', '[arch] Bottleneck: graph join-path enumeration', '[arch] Recommendation: add BFS depth limit', '⏳ Waiting for next assignment...'],
+      heartbeat: '8s ago', turn: 4, progress: undefined as number | undefined,
+    },
+  ];
+
+  readonly taskQueue = [
+    { id: 'T-001', subject: 'Implementing tokenizer stage', owner: 'worker-1', status: 'completed', tagDesign: 'Positive' },
+    { id: 'T-002', subject: 'Building dedup logic', owner: 'worker-2', status: 'in_progress', tagDesign: 'Information' },
+    { id: 'T-003', subject: 'Graph construction module', owner: 'worker-3', status: 'in_progress', tagDesign: 'Information' },
+    { id: 'T-004', subject: 'Writing unit tests for pipeline', owner: 'worker-4', status: 'in_progress', tagDesign: 'Information' },
+    { id: 'T-005', subject: 'Reviewing tokenizer output quality', owner: 'worker-5', status: 'completed', tagDesign: 'Positive' },
+    { id: 'T-006', subject: 'Analyzing pipeline bottlenecks', owner: 'worker-6', status: 'in_progress', tagDesign: 'Information' },
+    { id: 'T-007', subject: 'Implement output format conversion', owner: 'unassigned', status: 'pending', tagDesign: 'None' },
+    { id: 'T-008', subject: 'Integration test suite', owner: 'unassigned', status: 'pending', tagDesign: 'None' },
+  ];
+
+  readonly messages = [
+    { from: 'leader', to: 'broadcast', text: 'Phase 2 exec underway. 6 workers active.', icon: 'megaphone' },
+    { from: 'worker-5', to: 'worker-1', text: 'Tokenizer review passed. LGTM. ✓', icon: 'message-popup' },
+    { from: 'worker-1', to: 'leader', text: 'Tokenizer stage complete. 1,247 tokens/sec throughput.', icon: 'message-popup' },
+    { from: 'leader', to: 'worker-6', text: 'Analyze memory profile for graph construction stage.', icon: 'message-popup' },
+    { from: 'worker-4', to: 'leader', text: 'Test framework initialized. 14 test cases generated.', icon: 'message-popup' },
+    { from: 'leader', to: 'broadcast', text: 'Team plan approved. Moving to exec phase.', icon: 'megaphone' },
+    { from: 'worker-6', to: 'leader', text: 'Architecture analysis complete. See .omx/plans/bottleneck-report.md', icon: 'message-popup' },
+    { from: 'leader', to: 'broadcast', text: 'Team initialized. 6 workers (3 Codex, 3 Claude). Starting plan phase.', icon: 'megaphone' },
   ];
 
   ngOnInit() {
