@@ -5,7 +5,6 @@ import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { HttpErrorResponse } from '@angular/common/http';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -79,14 +78,14 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       <div class="card grid-2" style="margin-bottom: 1.5rem;">
         <div class="form-group">
           <label>Training Framework</label>
-          <select formControlName="framework" class="form-input">
+          <select [formControl]="frameworkControl" class="form-input">
             <option value="PyTorch">PyTorch Native (SFTTrainer)</option>
             <option value="TensorFlow" disabled>TensorFlow (Coming Soon)</option>
           </select>
         </div>
         <div class="form-group">
           <label>Dataset Split</label>
-          <select formControlName="dataset" class="form-input">
+          <select [formControl]="datasetControl" class="form-input">
             <option value="spider-train">Spider Training Split (Text-to-SQL)</option>
             <option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</option>
           </select>
@@ -119,17 +118,33 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div
               class="model-card"
               [class.model-card--selected]="jobForm.value.model_name === m.name"
+              [class.model-card--recommended]="m.recommended_quant === 'int4_awq'"
               (click)="selectModel(m)"
             >
-              <div class="model-name">{{ m.name }}</div>
-              <div class="model-meta">
-                <span class="badge">{{ m.parameters }}</span>
-                <span class="badge">{{ m.size_gb }} GB</span>
-                <span class="badge badge--quant">{{ m.recommended_quant }}</span>
-              </div>
-              @if (!m.t4_compatible) {
-                <div class="text-small t4-warn">⚠ T4 incompatible</div>
+              @if (m.recommended_quant === 'int4_awq') {
+                <div class="recommended-ribbon">★ Recommended</div>
               }
+              <div class="model-card-body">
+                <div class="model-name-row">
+                  <div class="model-name">{{ m.name.split('/').pop() }}</div>
+                  <span class="size-indicator size-{{ getModelSize(m) }}">{{ getModelSize(m) }}</span>
+                </div>
+                <div class="model-org text-small text-muted">{{ m.name.includes('/') ? m.name.split('/')[0] : 'community' }}</div>
+                <div class="model-meta">
+                  <span class="badge badge--param">{{ m.parameters }}</span>
+                  <span class="badge">{{ m.size_gb }} GB</span>
+                  <span class="badge badge--quant">{{ m.recommended_quant }}</span>
+                </div>
+                <div class="model-arch-tags">
+                  <span class="arch-pill">Transformer</span>
+                  <span class="arch-pill">Causal LM</span>
+                  @if (m.t4_compatible) {
+                    <span class="arch-pill arch-pill--compat">T4 ✓</span>
+                  } @else {
+                    <span class="arch-pill arch-pill--warn">T4 ✗</span>
+                  }
+                </div>
+              </div>
             </div>
           }
         </div>
@@ -173,16 +188,37 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
               <div class="vram-header">
                 <span class="vram-title">⚡ A-Priori VRAM Profiler</span>
-                <span class="vram-values">{{ estimatedVram().toFixed(1) }} GB required / {{ gpuTotalNum() }} GB available</span>
+                <span class="vram-values">
+                  <span class="vram-used">{{ estimatedVram().toFixed(1) }} GB</span>
+                  <span class="vram-sep">/</span>
+                  <span>{{ gpuTotalNum() }} GB</span>
+                  <span class="vram-pct">({{ ((estimatedVram() / gpuTotalNum()) * 100).toFixed(0) }}%)</span>
+                </span>
               </div>
-              <div class="progress-bar">
-                <div class="progress-fill" 
-                     [style.width.%]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)" 
-                     [class.danger-fill]="isVramExceeded()">
+              <div class="vram-bar">
+                <div class="vram-fill vram-fill--animated"
+                     [style.width.%]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)"
+                     [class.vram-fill--green]="(estimatedVram() / gpuTotalNum()) < 0.5"
+                     [class.vram-fill--yellow]="(estimatedVram() / gpuTotalNum()) >= 0.5 && (estimatedVram() / gpuTotalNum()) < 0.8"
+                     [class.vram-fill--red]="(estimatedVram() / gpuTotalNum()) >= 0.8">
+                </div>
+                <div class="vram-segments">
+                  <div class="vram-segment" [style.width.%]="vramModelPct()">
+                    <span class="vram-segment-label">Weights</span>
+                  </div>
+                  <div class="vram-segment" [style.width.%]="vramKvPct()">
+                    <span class="vram-segment-label">KV Cache</span>
+                  </div>
+                  <div class="vram-segment" [style.width.%]="vramOverheadPct()">
+                    <span class="vram-segment-label">Overhead</span>
+                  </div>
                 </div>
               </div>
               @if (isVramExceeded()) {
-                <div class="text-small error-text mt-1">⚠ Critical: Configuration exceeds physical VRAM bounds. Job will OOM crash.</div>
+                <div class="vram-warning">
+                  <span class="vram-warning-icon">⚠</span>
+                  Critical: Configuration exceeds physical VRAM bounds. Job will OOM crash.
+                </div>
               }
             </div>
           }
@@ -274,7 +310,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       <!-- Jobs Table -->
       <section class="section">
-        <h2 class="section-title">Jobs <span class="text-muted text-small">({{ jobs().length }})</span></h2>
+        <h2 class="section-title">Jobs <span class="jobs-count">{{ jobs().length }}</span></h2>
         @if (jobs().length) {
           <div class="table-wrapper">
             <table class="data-table">
@@ -286,7 +322,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                   <th>Quant</th>
                   <th>Status</th>
                   <th>Progress</th>
-                  <th>Created</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -294,30 +330,45 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                   <ng-container>
                     <tr class="job-row" (click)="toggleExpand(j.id)" [class.expanded]="expandedJobId() === j.id">
                       <td class="mono text-small" style="cursor: pointer;">
-                        <span style="display: inline-block; width: 12px; margin-right: 4px;">{{ expandedJobId() === j.id ? '▼' : '▶' }}</span>
+                        <span class="expand-icon" [class.expand-icon--open]="expandedJobId() === j.id">▶</span>
                         {{ j.id.slice(0,8) }}
                       </td>
-                      <td>{{ j.name }}</td>
+                      <td class="job-name-cell">{{ j.name }}</td>
                       <td class="text-small">{{ j.config.model_name }}</td>
-                      <td><code>{{ j.config.quant_format }}</code></td>
-                      <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
+                      <td><code class="quant-code">{{ j.config.quant_format }}</code></td>
                       <td>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                        <span class="status-badge-v2 status-{{ j.status }}">
+                          <span class="status-dot"></span>
+                          {{ j.status }}
+                        </span>
+                      </td>
+                      <td style="min-width: 160px;">
+                        <div class="progress-info">
                           <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
                           <span class="text-small text-muted">{{ calculateETA(j) }}</span>
                         </div>
-                        <div class="progress-bar">
-                          <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
+                        <div class="job-progress-bar">
+                          <div class="job-progress-fill"
+                               [style.width.%]="j.progress * 100"
+                               [class.job-progress--running]="j.status === 'running'"
+                               [class.job-progress--complete]="j.status === 'completed'">
+                          </div>
                         </div>
                         @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
                           <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
-                            <svg viewBox="0 0 100 20" class="sparkline-svg" preserveAspectRatio="none">
-                              <polyline fill="none" class="train-line" [attr.points]="generateSparklinePath(j.history, 'train_loss')" />
-                              <polyline fill="none" class="val-line" [attr.points]="generateSparklinePath(j.history, 'val_loss')" />
+                            <svg viewBox="0 0 100 24" class="sparkline-svg" preserveAspectRatio="none">
+                              <defs>
+                                <linearGradient [attr.id]="'sparkGrad-' + j.id" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stop-color="rgba(8,84,160,0.2)" />
+                                  <stop offset="100%" stop-color="rgba(8,84,160,0)" />
+                                </linearGradient>
+                              </defs>
+                              <path [attr.d]="generateSparklineArea(j.history, 'train_loss')" [attr.fill]="'url(#sparkGrad-' + j.id + ')'" />
+                              <path [attr.d]="generateSparklineCurve(j.history, 'train_loss')" fill="none" class="train-line" />
+                              <path [attr.d]="generateSparklineCurve(j.history, 'val_loss')" fill="none" class="val-line" />
                             </svg>
                           </div>
                         }
-                        
                         @if (j.evaluation) {
                           <div class="eval-metrics mt-1">
                             <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
@@ -326,29 +377,34 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                           </div>
                         }
                       </td>
-                      <td class="text-small text-muted" style="min-width: 100px;">
-                        {{ j.created_at | date:'short' }}
+                      <td class="actions-cell" (click)="$event.stopPropagation()">
+                        <span class="text-small text-muted">{{ j.created_at | date:'short' }}</span>
                         @if (j.status === 'completed') {
-                          <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;" (click)="$event.stopPropagation()">
+                          <div class="action-buttons">
                             @if (!j.deployed) {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
-                                      (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                                {{ deployingJob() === j.id ? 'Loading...' : '🚀 Deploy Model' }}
+                              <button class="btn-deploy" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
+                                {{ deployingJob() === j.id ? '⏳ Deploying...' : '🚀 Deploy' }}
                               </button>
                             } @else {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;" 
-                                      (click)="openChat(j)">
-                                💬 Chat Playground
+                              <button class="btn-chat" (click)="openChat(j)">
+                                💬 Chat
                               </button>
                             }
+                          </div>
+                        }
+                        @if (j.status === 'running') {
+                          <div class="action-buttons">
+                            <span class="running-indicator">● Running</span>
                           </div>
                         }
                       </td>
                     </tr>
                     @if (expandedJobId() === j.id) {
-                      <tr>
-                        <td colspan="7" style="padding: 0;">
-                          <app-job-detail [job]="j"></app-job-detail>
+                      <tr class="detail-row">
+                        <td colspan="7" class="detail-cell">
+                          <div class="detail-expand-wrapper">
+                            <app-job-detail [job]="j"></app-job-detail>
+                          </div>
                         </td>
                       </tr>
                     }
@@ -411,47 +467,122 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
     .model-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.875rem;
       margin-bottom: 0.5rem;
     }
 
     .model-card {
       background: var(--sapTile_Background, #fff);
       border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 0.875rem;
+      border-radius: 0.625rem;
       cursor: pointer;
-      transition: border-color 0.12s, box-shadow 0.12s;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
 
-      &:hover { border-color: var(--sapBrandColor, #0854a0); }
+      &:hover {
+        border-color: var(--sapBrandColor, #0854a0);
+        box-shadow: 0 4px 16px rgba(8, 84, 160, 0.12), 0 0 0 1px rgba(8, 84, 160, 0.08);
+        transform: translateY(-2px);
+      }
 
       &.model-card--selected {
         border-color: var(--sapBrandColor, #0854a0);
-        box-shadow: 0 0 0 2px rgba(8, 84, 160, 0.2);
+        box-shadow: 0 0 0 2px rgba(8, 84, 160, 0.25), 0 4px 12px rgba(8, 84, 160, 0.1);
+      }
+
+      &.model-card--recommended {
+        border-color: rgba(8, 84, 160, 0.3);
       }
     }
 
+    .model-card-body { padding: 0.875rem; }
+
+    .recommended-ribbon {
+      background: linear-gradient(135deg, var(--sapBrandColor, #0854a0), #1976d2);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.75rem;
+      text-align: center;
+    }
+
+    .model-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.15rem;
+    }
+
     .model-name {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--sapTextColor, #32363a);
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    .model-org {
+      font-size: 0.7rem;
       margin-bottom: 0.5rem;
-      word-break: break-all;
+    }
+
+    .size-indicator {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.25rem;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+
+      &.size-S { background: #e8f5e9; color: #2e7d32; }
+      &.size-M { background: #e3f2fd; color: #1565c0; }
+      &.size-L { background: #fff3e0; color: #e65100; }
+      &.size-XL { background: #fce4ec; color: #c62828; }
     }
 
     .model-meta {
       display: flex;
       flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .model-arch-tags {
+      display: flex;
+      flex-wrap: wrap;
       gap: 0.25rem;
     }
 
-    .badge {
+    .arch-pill {
+      font-size: 0.6rem;
       padding: 0.1rem 0.4rem;
+      border-radius: 1rem;
+      background: var(--sapList_Background, #f5f5f5);
+      color: var(--sapContent_LabelColor, #6a6d70);
+      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+
+      &.arch-pill--compat { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+      &.arch-pill--warn { background: #fff3e0; color: #e65100; border-color: #ffe0b2; }
+    }
+
+    .badge {
+      padding: 0.15rem 0.45rem;
       background: var(--sapList_Background, #f5f5f5);
       border-radius: 0.25rem;
       font-size: 0.7rem;
       color: var(--sapContent_LabelColor, #6a6d70);
+
+      &.badge--param {
+        background: var(--sapList_Background, #f5f5f5);
+        font-weight: 600;
+        color: var(--sapTextColor, #32363a);
+      }
 
       &.badge--quant {
         background: #e3f2fd;
@@ -588,41 +719,272 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     }
     
     .vram-profiler {
-      background: var(--sapList_Background, #f5f5f5);
+      background: var(--sapBaseColor, #fff);
       border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      border-radius: 0.625rem;
       margin-top: 1rem;
       grid-column: 1 / -1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    
+
     .vram-danger {
       border-color: var(--sapNegativeColor, #b00);
-      background: #ffebee;
-      color: #c62828;
+      background: #fff5f5;
     }
-    
+
     .vram-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
       font-size: 0.8125rem;
+    }
+
+    .vram-title { font-weight: 600; color: var(--sapTextColor, #32363a); }
+    .vram-values { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .vram-used { font-weight: 600; color: var(--sapTextColor, #32363a); }
+    .vram-sep { margin: 0 0.2rem; }
+    .vram-pct { margin-left: 0.3rem; font-weight: 600; }
+
+    .vram-bar {
+      height: 28px;
+      background: var(--sapList_Background, #f5f5f5);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+
+    .vram-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      position: absolute;
+      top: 0;
+      left: 0;
+
+      &.vram-fill--animated { animation: vramSlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+      &.vram-fill--green { background: linear-gradient(90deg, #43a047, #66bb6a); }
+      &.vram-fill--yellow { background: linear-gradient(90deg, #f9a825, #fdd835); }
+      &.vram-fill--red { background: linear-gradient(90deg, #e53935, #ff5252); }
+    }
+
+    @keyframes vramSlideIn { from { width: 0 !important; } }
+
+    .vram-segments {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      display: flex;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .vram-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid rgba(255,255,255,0.3);
+
+      &:last-child { border-right: none; }
+    }
+
+    .vram-segment-label {
+      font-size: 0.6rem;
       font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      white-space: nowrap;
+      overflow: hidden;
     }
-    
-    .danger-fill {
-      background: var(--sapNegativeColor, #b00) !important;
+
+    .vram-warning {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: #c62828;
+      font-weight: 500;
+      padding: 0.4rem 0;
     }
+
+    .vram-warning-icon { font-size: 0.875rem; }
     
-    .sparkline-container { width: 100%; height: 20px; background: rgba(0,0,0,0.02); border-radius: 2px; }
+    .jobs-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--sapList_Background, #f5f5f5);
+      color: var(--sapContent_LabelColor, #6a6d70);
+      font-size: 0.7rem;
+      font-weight: 600;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 1rem;
+      padding: 0 0.35rem;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .expand-icon {
+      display: inline-block;
+      width: 12px;
+      margin-right: 4px;
+      transition: transform 0.2s ease;
+      font-size: 0.6rem;
+
+      &.expand-icon--open { transform: rotate(90deg); }
+    }
+
+    .job-name-cell { font-weight: 500; }
+
+    .quant-code {
+      background: var(--sapList_Background, #f5f5f5);
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.2rem;
+      font-size: 0.75rem;
+    }
+
+    .status-badge-v2 {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: capitalize;
+
+      &.status-pending { background: #fff8e1; color: #f57f17; }
+      &.status-running { background: #e3f2fd; color: #1565c0; }
+      &.status-completed { background: #e8f5e9; color: #2e7d32; }
+      &.status-failed { background: #ffebee; color: #c62828; }
+      &.status-cancelled { background: #fafafa; color: #9e9e9e; }
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .status-running .status-dot { animation: statusPulse 1.5s ease-in-out infinite; }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.2rem;
+    }
+
+    .job-progress-bar {
+      height: 5px;
+      background: var(--sapList_Background, #f5f5f5);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .job-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--sapBrandColor, #0854a0);
+
+      &.job-progress--running {
+        background: linear-gradient(90deg, var(--sapBrandColor, #0854a0), #1976d2);
+        animation: progressShimmer 2s ease-in-out infinite;
+      }
+
+      &.job-progress--complete {
+        background: linear-gradient(90deg, #43a047, #66bb6a);
+      }
+    }
+
+    @keyframes progressShimmer {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .detail-cell { padding: 0 !important; }
+
+    .detail-expand-wrapper {
+      animation: expandIn 0.25s ease-out;
+      overflow: hidden;
+    }
+
+    @keyframes expandIn {
+      from { max-height: 0; opacity: 0; }
+      to { max-height: 600px; opacity: 1; }
+    }
+
+    .job-row {
+      cursor: pointer;
+      transition: background-color 0.15s;
+
+      &.expanded td { background: var(--sapList_Background, #f5f5f5); }
+    }
+
+    .actions-cell { min-width: 110px; }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
+    }
+
+    .btn-deploy {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--sapBrandColor, #0854a0);
+      color: #fff;
+      border: none;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+
+      &:hover:not(:disabled) { background: #0a6ed1; transform: translateY(-1px); }
+      &:disabled { opacity: 0.5; cursor: default; }
+    }
+
+    .btn-chat {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #00695c;
+      color: #fff;
+      border: none;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+
+      &:hover { background: #00897b; transform: translateY(-1px); }
+    }
+
+    .running-indicator {
+      font-size: 0.7rem;
+      color: #1565c0;
+      font-weight: 600;
+      animation: statusPulse 1.5s ease-in-out infinite;
+    }
+
+    .sparkline-container { width: 100%; height: 24px; background: rgba(0,0,0,0.015); border-radius: 4px; }
     .sparkline-svg { width: 100%; height: 100%; overflow: visible; }
     .train-line { stroke: var(--sapBrandColor, #0854a0); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 2 2; }
-    
+    .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 3 2; stroke-linecap: round; }
+
     .eval-metrics {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       padding-top: 0.25rem;
     }
     
@@ -693,6 +1055,9 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     })
   });
 
+  readonly frameworkControl = this.jobForm.controls.framework;
+  readonly datasetControl = this.jobForm.controls.dataset;
+
   readonly formValue = toSignal(this.jobForm.valueChanges, { initialValue: this.jobForm.getRawValue() });
 
   readonly estimatedVram = computed(() => {
@@ -727,20 +1092,82 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     return required > total * 0.95;
   });
 
+  readonly vramModelPct = computed(() => {
+    const total = this.estimatedVram();
+    if (total <= 0) return 0;
+    const overhead = 1.5;
+    const modelWeight = total - overhead;
+    return Math.max(0, (modelWeight * 0.7 / total) * 100);
+  });
+
+  readonly vramKvPct = computed(() => {
+    const total = this.estimatedVram();
+    if (total <= 0) return 0;
+    const overhead = 1.5;
+    const modelWeight = total - overhead;
+    return Math.max(0, (modelWeight * 0.3 / total) * 100);
+  });
+
+  readonly vramOverheadPct = computed(() => {
+    const total = this.estimatedVram();
+    if (total <= 0) return 0;
+    return Math.max(0, (1.5 / total) * 100);
+  });
+
   mathMin(a: number, b: number) { return Math.min(a, b); }
+
+  getModelSize(m: ModelInfo): string {
+    const gb = m.size_gb;
+    if (gb <= 2) return 'S';
+    if (gb <= 8) return 'M';
+    if (gb <= 20) return 'L';
+    return 'XL';
+  }
 
   generateSparklinePath(history: any[], key: 'train_loss' | 'val_loss'): string {
     if (!history || history.length < 2) return '';
-    const maxVal = Math.max(...history.map(h => Math.max(h.train_loss, h.val_loss)));
+    const maxVal = Math.max(...history.map((h: any) => Math.max(h.train_loss, h.val_loss)));
     const minVal = 0;
     const w = 100;
-    const h = 20;
-    
-    return history.map((pt, i) => {
+    const h = 24;
+
+    return history.map((pt: any, i: number) => {
       const x = (i / (history.length - 1)) * w;
       const y = h - ((pt[key] - minVal) / (maxVal - minVal) * h);
       return `${x},${y}`;
     }).join(' ');
+  }
+
+  generateSparklineCurve(history: any[], key: 'train_loss' | 'val_loss'): string {
+    if (!history || history.length < 2) return '';
+    const maxVal = Math.max(...history.map((h: any) => Math.max(h.train_loss, h.val_loss)));
+    const minVal = 0;
+    const w = 100;
+    const h = 24;
+    const pad = 2;
+
+    const points = history.map((pt: any, i: number) => ({
+      x: (i / (history.length - 1)) * w,
+      y: pad + (h - 2 * pad) - ((pt[key] - minVal) / (maxVal - minVal) * (h - 2 * pad))
+    }));
+
+    let d = `M ${points[0].x},${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpx = (prev.x + curr.x) / 2;
+      d += ` Q ${cpx},${prev.y} ${curr.x},${curr.y}`;
+    }
+    return d;
+  }
+
+  generateSparklineArea(history: any[], key: 'train_loss' | 'val_loss'): string {
+    const curve = this.generateSparklineCurve(history, key);
+    if (!curve) return '';
+    const w = 100;
+    const h = 24;
+    const firstX = 0;
+    return `${curve} L ${w},${h} L ${firstX},${h} Z`;
   }
 
   calculateETA(j: JobResponse): string {

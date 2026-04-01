@@ -195,7 +195,8 @@ export const AppStore = signalStore(
       key: K,
       update: Partial<AppState[K]>
     ) => {
-      patchState(store, { [key]: { ...store[key](), ...update } } as Partial<AppState>);
+      const current = store[key]() as unknown as Record<string, unknown>;
+      patchState(store, { [key]: { ...current, ...update } } as Partial<AppState>);
     };
     
     return {
