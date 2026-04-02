@@ -129,6 +129,7 @@ const CACHE_CONFIG = {
   models: { staleTime: 300_000, maxAge: 600_000 },    // 5min stale, 10min max
   jobs: { staleTime: 5_000, maxAge: 15_000 },         // 5s stale, 15s max
 } as const;
+type CacheKey = keyof typeof CACHE_CONFIG;
 
 function isCacheValid<T>(cached: CachedData<T>, key: keyof typeof CACHE_CONFIG): boolean {
   if (!cached.lastFetched) return false;
@@ -191,7 +192,7 @@ export const AppStore = signalStore(
   withMethods((store, api = inject(ApiService), toast = inject(ToastService)) => {
     
     // Helper to update cached data
-    const updateCache = <K extends keyof AppState>(
+    const updateCache = <K extends CacheKey>(
       key: K,
       update: Partial<AppState[K]>
     ) => {
@@ -429,11 +430,11 @@ export const AppStore = signalStore(
       // ======================================================================
       // Cache Invalidation
       // ======================================================================
-      invalidateCache(key: keyof AppState): void {
+      invalidateCache(key: CacheKey): void {
         updateCache(key, { lastFetched: null, state: 'idle' } as any);
       },
       
-      forceRefresh(key: keyof AppState): void {
+      forceRefresh(key: CacheKey): void {
         updateCache(key, { lastFetched: null } as any);
         switch (key) {
           case 'health': this.loadHealth(); break;
