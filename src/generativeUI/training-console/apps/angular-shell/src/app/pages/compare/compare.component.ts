@@ -5,6 +5,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 
@@ -17,7 +19,7 @@ interface DeployedModel {
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -34,40 +36,40 @@ interface DeployedModel {
             <span class="label-dot dot-a"></span>
             Model A
           </div>
-          <select [(ngModel)]="modelA" class="sel-input">
-            <option value="">— Choose a model —</option>
+          <ui5-select (change)="onModelASelect($event)" style="width: 100%;">
+            <ui5-option value="" [selected]="!modelA">— Choose a model —</ui5-option>
             @for (m of deployedModels(); track m.id) {
-              <option [value]="m.id">{{ m.label }}</option>
+              <ui5-option [attr.value]="m.id" [selected]="m.id === modelA">{{ m.label }}</ui5-option>
             }
-          </select>
+          </ui5-select>
           @if (modelA) {
             <div class="model-meta">
-              <span class="badge-model">{{ modelNameFor(modelA) }}</span>
-              <span class="badge-id">{{ modelA.slice(0, 8) }}</span>
+              <ui5-tag design="Set2">{{ modelNameFor(modelA) }}</ui5-tag>
+              <ui5-tag design="Set2">{{ modelA.slice(0, 8) }}</ui5-tag>
             </div>
           }
         </div>
 
-        <button class="swap-btn" (click)="swapModels()" [class.spinning]="swapAnim()"
-                [disabled]="!modelA && !modelB" title="Swap models">
-          <span class="swap-icon">⇄</span>
-        </button>
+        <ui5-button icon="sort" design="Transparent" (click)="swapModels()"
+                [disabled]="!modelA && !modelB" title="Swap models"
+                style="align-self: center; margin-top: 1rem;">
+        </ui5-button>
 
         <div class="model-selector-card">
           <div class="selector-label">
             <span class="label-dot dot-b"></span>
             Model B
           </div>
-          <select [(ngModel)]="modelB" class="sel-input">
-            <option value="">— Choose a model —</option>
+          <ui5-select (change)="onModelBSelect($event)" style="width: 100%;">
+            <ui5-option value="" [selected]="!modelB">— Choose a model —</ui5-option>
             @for (m of deployedModels(); track m.id) {
-              <option [value]="m.id">{{ m.label }}</option>
+              <ui5-option [attr.value]="m.id" [selected]="m.id === modelB">{{ m.label }}</ui5-option>
             }
-          </select>
+          </ui5-select>
           @if (modelB) {
             <div class="model-meta">
-              <span class="badge-model">{{ modelNameFor(modelB) }}</span>
-              <span class="badge-id">{{ modelB.slice(0, 8) }}</span>
+              <ui5-tag design="Set2">{{ modelNameFor(modelB) }}</ui5-tag>
+              <ui5-tag design="Set2">{{ modelB.slice(0, 8) }}</ui5-tag>
             </div>
           }
         </div>
@@ -89,20 +91,16 @@ interface DeployedModel {
                  placeholder="Enter a natural language question (e.g. 'What is the total balance for active accounts?')"
                  (keyup.enter)="runComparison()" />
         </div>
-        <button class="btn-run" (click)="runComparison()"
+        <ui5-button design="Emphasized" icon="play" (click)="runComparison()"
                 [disabled]="!modelA || !modelB || !prompt.trim() || loading()">
-          @if (loading()) {
-            <span class="spinner"></span> Running…
-          } @else {
-            ▶ Compare
-          }
-        </button>
+          {{ loading() ? 'Running…' : 'Compare' }}
+        </ui5-button>
       </div>
 
       <!-- Summary verdict -->
       @if (resultA() !== null && resultB() !== null) {
-        <div class="verdict-card" [class.fade-in]="true">
-          <div class="verdict-header">Comparison Summary</div>
+        <ui5-card class="fade-in">
+          <ui5-card-header slot="header" title-text="Comparison Summary"></ui5-card-header>
           <div class="verdict-body">
             <div class="verdict-metric">
               <span class="verdict-label">Response Length</span>
@@ -152,50 +150,39 @@ interface DeployedModel {
               }
             </div>
           </div>
-        </div>
+        </ui5-card>
       }
 
       <!-- Side-by-side results -->
       @if (resultA() !== null || resultB() !== null) {
         <div class="results-grid">
-          <div class="result-card" [class.winner]="isWinner('A')" [class.fade-in]="true">
-            <div class="result-header header-a">
-              <div class="result-header-left">
-                <span class="label-dot dot-a"></span>
-                <span>Model A · {{ modelNameFor(modelA) }}</span>
+          <ui5-card [class.winner]="isWinner('A')" class="fade-in">
+            <ui5-card-header slot="header" [titleText]="'Model A · ' + modelNameFor(modelA)"
+              [subtitleText]="isWinner('A') ? '🏆 Winner' : ''"></ui5-card-header>
+            <div style="padding: 0.5rem 0.875rem;">
+              <div class="result-stats">
+                <span>{{ resultA()?.length ?? 0 }} chars</span>
+                <span>{{ lineCount(resultA() ?? '') }} lines</span>
               </div>
-              @if (isWinner('A')) { <span class="winner-badge">🏆 Winner</span> }
+              <pre class="result-sql">{{ resultA() ?? 'Error or no response' }}</pre>
             </div>
-            <div class="result-stats">
-              <span>{{ resultA()?.length ?? 0 }} chars</span>
-              <span>{{ lineCount(resultA() ?? '') }} lines</span>
-            </div>
-            <pre class="result-sql">{{ resultA() ?? 'Error or no response' }}</pre>
-          </div>
-          <div class="result-card" [class.winner]="isWinner('B')" [class.fade-in]="true">
-            <div class="result-header header-b">
-              <div class="result-header-left">
-                <span class="label-dot dot-b"></span>
-                <span>Model B · {{ modelNameFor(modelB) }}</span>
+          </ui5-card>
+          <ui5-card [class.winner]="isWinner('B')" class="fade-in">
+            <ui5-card-header slot="header" [titleText]="'Model B · ' + modelNameFor(modelB)"
+              [subtitleText]="isWinner('B') ? '🏆 Winner' : ''"></ui5-card-header>
+            <div style="padding: 0.5rem 0.875rem;">
+              <div class="result-stats">
+                <span>{{ resultB()?.length ?? 0 }} chars</span>
+                <span>{{ lineCount(resultB() ?? '') }} lines</span>
               </div>
-              @if (isWinner('B')) { <span class="winner-badge">🏆 Winner</span> }
+              <pre class="result-sql">{{ resultB() ?? 'Error or no response' }}</pre>
             </div>
-            <div class="result-stats">
-              <span>{{ resultB()?.length ?? 0 }} chars</span>
-              <span>{{ lineCount(resultB() ?? '') }} lines</span>
-            </div>
-            <pre class="result-sql">{{ resultB() ?? 'Error or no response' }}</pre>
-          </div>
+          </ui5-card>
         </div>
 
         <!-- Diff view -->
         @if (resultA() && resultB() && resultA() !== resultB()) {
-          <div class="diff-section">
-            <div class="diff-header" (click)="showDiff.set(!showDiff())">
-              <span>{{ showDiff() ? '▾' : '▸' }} Output Diff</span>
-              <span class="diff-toggle">{{ showDiff() ? 'Hide' : 'Show' }}</span>
-            </div>
-            @if (showDiff()) {
+          <ui5-panel header-text="Output Diff" [collapsed]="!showDiff()" (toggle)="showDiff.set(!showDiff())">
               <div class="diff-body">
                 @for (line of diffLines(); track $index) {
                   <div class="diff-line" [class.diff-add]="line.type === 'add'"
@@ -206,8 +193,7 @@ interface DeployedModel {
                   </div>
                 }
               </div>
-            }
-          </div>
+          </ui5-panel>
         }
 
         <!-- History -->
@@ -218,28 +204,27 @@ interface DeployedModel {
               <span class="history-count">{{ history().length }}</span>
             </h2>
             @for (h of history(); track $index) {
-              <div class="history-card">
-                <div class="history-q">
-                  <span class="history-num">#{{ history().length - $index }}</span>
-                  {{ h.query }}
-                </div>
-                <div class="history-grid">
-                  <div class="history-col">
-                    <div class="history-col-label">
-                      <span class="label-dot dot-a"></span> Model A
-                      @if (h.a.length <= h.b.length) { <span class="mini-winner">✓</span> }
+              <ui5-card>
+                <ui5-card-header slot="header" [titleText]="'#' + (history().length - $index) + ' ' + h.query"></ui5-card-header>
+                <div style="padding: 0.875rem;">
+                  <div class="history-grid">
+                    <div class="history-col">
+                      <div class="history-col-label">
+                        <span class="label-dot dot-a"></span> Model A
+                        @if (h.a.length <= h.b.length) { <ui5-tag design="Positive">✓</ui5-tag> }
+                      </div>
+                      <pre>{{ h.a }}</pre>
                     </div>
-                    <pre>{{ h.a }}</pre>
-                  </div>
-                  <div class="history-col">
-                    <div class="history-col-label">
-                      <span class="label-dot dot-b"></span> Model B
-                      @if (h.b.length <= h.a.length) { <span class="mini-winner">✓</span> }
+                    <div class="history-col">
+                      <div class="history-col-label">
+                        <span class="label-dot dot-b"></span> Model B
+                        @if (h.b.length <= h.a.length) { <ui5-tag design="Positive">✓</ui5-tag> }
+                      </div>
+                      <pre>{{ h.b }}</pre>
                     </div>
-                    <pre>{{ h.b }}</pre>
                   </div>
                 </div>
-              </div>
+              </ui5-card>
             }
           </div>
         }
@@ -459,6 +444,14 @@ export class CompareComponent implements OnInit {
         this.deployedModels.set(deployed);
       }
     });
+  }
+
+  onModelASelect(event: any): void {
+    this.modelA = event.detail?.selectedOption?.getAttribute('value') ?? '';
+  }
+
+  onModelBSelect(event: any): void {
+    this.modelB = event.detail?.selectedOption?.getAttribute('value') ?? '';
   }
 
   modelNameFor(id: string): string {
