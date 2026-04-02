@@ -60,5 +60,8 @@
   "packageManager": "yarn@4.11.0",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@ngrx/signals": "20"
   }
 }

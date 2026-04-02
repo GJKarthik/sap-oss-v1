@@ -1,6 +1,6 @@
 {
-  "runId": "9335716d-51bd-4e46-ac80-88046e8ca97e",
-  "timestamp": "2026-04-01T04:36:21.630Z",
+  "runId": "e1071074-c68c-4d63-8bbe-15de00d3a17d",
+  "timestamp": "2026-04-02T00:21:46.779Z",
   "mode": "demo-safe",
   "profile": "local-live",
   "services": [
@@ -9,7 +9,7 @@
       "url": "http://localhost:9160/health",
       "ok": true,
       "status": 200,
-      "latencyMs": 501,
+      "latencyMs": 526,
       "lastError": null
     },
     {
@@ -17,7 +17,7 @@
       "url": "http://localhost:8400/health",
       "ok": true,
       "status": 200,
-      "latencyMs": 220,
+      "latencyMs": 284,
       "lastError": null
     },
     {
@@ -25,7 +25,7 @@
       "url": "http://localhost:9160/health",
       "ok": true,
       "status": 200,
-      "latencyMs": 267,
+      "latencyMs": 328,
       "lastError": null
     },
     {
@@ -33,7 +33,7 @@
       "url": "http://localhost:9160/mcp",
       "ok": true,
       "status": 200,
-      "latencyMs": 338,
+      "latencyMs": 429,
       "lastError": null
     }
   ],
@@ -42,42 +42,42 @@
       "route": "/",
       "ok": true,
       "status": 200,
-      "latencyMs": 375,
+      "latencyMs": 143,
       "lastError": null
     },
     {
       "route": "/generative",
       "ok": true,
       "status": 200,
-      "latencyMs": 384,
+      "latencyMs": 148,
       "lastError": null
     },
     {
       "route": "/components",
       "ok": true,
       "status": 200,
-      "latencyMs": 388,
+      "latencyMs": 146,
       "lastError": null
     },
     {
       "route": "/mcp",
       "ok": true,
       "status": 200,
-      "latencyMs": 400,
+      "latencyMs": 151,
       "lastError": null
     },
     {
       "route": "/readiness",
       "ok": true,
       "status": 200,
-      "latencyMs": 402,
+      "latencyMs": 154,
       "lastError": null
     },
     {
       "route": "/joule",
       "ok": true,
       "status": 200,
-      "latencyMs": 407,
+      "latencyMs": 153,
       "lastError": null
     }
   ],
@@ -128,7 +128,7 @@
             "url": "http://localhost:9160/health",
             "ok": true,
             "status": 200,
-            "latencyMs": 501,
+            "latencyMs": 526,
             "lastError": null
           },
           {
@@ -136,7 +136,7 @@
             "url": "http://localhost:8400/health",
             "ok": true,
             "status": 200,
-            "latencyMs": 220,
+            "latencyMs": 284,
             "lastError": null
           },
           {
@@ -144,7 +144,7 @@
             "url": "http://localhost:9160/health",
             "ok": true,
             "status": 200,
-            "latencyMs": 267,
+            "latencyMs": 328,
             "lastError": null
           },
           {
@@ -152,7 +152,7 @@
             "url": "http://localhost:9160/mcp",
             "ok": true,
             "status": 200,
-            "latencyMs": 338,
+            "latencyMs": 429,
             "lastError": null
           }
         ]
@@ -170,42 +170,42 @@
             "route": "/",
             "ok": true,
             "status": 200,
-            "latencyMs": 375,
+            "latencyMs": 143,
             "lastError": null
           },
           {
             "route": "/generative",
             "ok": true,
             "status": 200,
-            "latencyMs": 384,
+            "latencyMs": 148,
             "lastError": null
           },
           {
             "route": "/components",
             "ok": true,
             "status": 200,
-            "latencyMs": 388,
+            "latencyMs": 146,
             "lastError": null
           },
           {
             "route": "/mcp",
             "ok": true,
             "status": 200,
-            "latencyMs": 400,
+            "latencyMs": 151,
             "lastError": null
           },
           {
             "route": "/readiness",
             "ok": true,
             "status": 200,
-            "latencyMs": 402,
+            "latencyMs": 154,
             "lastError": null
           },
           {
             "route": "/joule",
             "ok": true,
             "status": 200,
-            "latencyMs": 407,
+            "latencyMs": 153,
             "lastError": null
           }
         ]
