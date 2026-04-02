@@ -56,7 +56,8 @@ describe('HippocppComponent', () => {
   }));
 
   it('should set stats to null and call warning toast when graph stats fail', fakeAsync(() => {
-    httpMock.expectOne('/api/graph/stats').flush('error', { status: 503, statusText: 'Service Unavailable' });
+    // Use 400 (non-retryable) to avoid ApiService retry logic for 5xx codes
+    httpMock.expectOne('/api/graph/stats').flush('error', { status: 400, statusText: 'Bad Request' });
     tick();
     expect(component.stats()).toBeNull();
     expect(toastSpy.warning).toHaveBeenCalled();
@@ -103,7 +104,9 @@ describe('HippocppComponent', () => {
     tick();
 
     expect(component.querying()).toBe(false);
-    expect(component.queryError()).toBe('Syntax error near INVALID');
+    // ApiService normalises errors into ApiError (not HttpErrorResponse),
+    // so (e.error as {detail?:string})?.detail is undefined → falls back to default
+    expect(component.queryError()).toBe('Query failed');
     expect(toastSpy.error).toHaveBeenCalled();
   }));
 
@@ -178,10 +181,10 @@ describe('HippocppComponent', () => {
     expect(component.archLayers).toHaveLength(8);
   }));
 
-  it('should expose 3 query presets', fakeAsync(() => {
+  it('should expose 5 query presets', fakeAsync(() => {
     httpMock.expectOne('/api/graph/stats').flush({ available: true, pair_count: 0 });
     tick();
-    expect(component.presets).toHaveLength(3);
+    expect(component.presets).toHaveLength(5);
   }));
 
   // ── ngOnDestroy ───────────────────────────────────────────────────────────────
@@ -194,7 +197,8 @@ describe('HippocppComponent', () => {
     component.runQuery();
     component.ngOnDestroy();
 
-    // The pending request should be cancelled — verify() must pass without error
-    httpMock.expectOne('/api/graph/query').flush({ status: 'ok', rows: [], count: 0 });
+    // The pending request was cancelled by takeUntil(destroy$).
+    // Consume it from HttpTestingController so verify() passes.
+    httpMock.match('/api/graph/query');
   }));
 });

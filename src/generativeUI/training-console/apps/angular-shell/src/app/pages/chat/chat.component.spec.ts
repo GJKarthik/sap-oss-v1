@@ -11,6 +11,11 @@ const MOCK_TOAST = {
   info: jest.fn(),
 };
 
+// JSDOM doesn't support scrollTo
+beforeAll(() => {
+  Element.prototype.scrollTo = jest.fn();
+});
+
 describe('ChatComponent', () => {
   let component: ChatComponent;
   let fixture: ComponentFixture<ChatComponent>;

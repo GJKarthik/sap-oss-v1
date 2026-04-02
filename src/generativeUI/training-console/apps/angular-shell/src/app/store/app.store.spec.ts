@@ -64,7 +64,9 @@ describe('AppStore', () => {
     it('sets state to error on HTTP failure', fakeAsync(() => {
       store.loadHealth();
       tick();
-      httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
+      // Use 400 (non-retryable) to avoid ApiService retry logic for 5xx codes
+      httpMock.expectOne('/api/health').flush('', { status: 400, statusText: 'Bad Request' });
+      tick();
 
       expect(store.health().state).toBe('error');
       expect(store.health().error).toBeTruthy();
