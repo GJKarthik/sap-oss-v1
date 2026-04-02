@@ -119,8 +119,8 @@ interface LogLine {
         <div class="terminal-footer">
           <span class="text-small text-muted">{{ logLines().length }} lines</span>
           <div class="terminal-footer-actions">
-            <button class="btn-term" (click)="copyLogs()" title="Copy output">📋 Copy</button>
-            <button class="btn-term btn-term-danger" (click)="clearLogs()" title="Clear output">🗑 Clear</button>
+            <ui5-button design="Transparent" icon="copy" (click)="copyLogs()" title="Copy output">Copy</ui5-button>
+            <ui5-button design="Transparent" icon="delete" (click)="clearLogs()" title="Clear output">Clear</ui5-button>
           </div>
         </div>
       </div>

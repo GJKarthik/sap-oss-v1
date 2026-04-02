@@ -1,11 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { ToastService, Toast, ToastType } from '../../services/toast.service';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -19,8 +21,8 @@ import { ToastService, Toast, ToastType } from '../../services/toast.service';
               <div class="toast-title" *ngIf="toast.title">{{ toast.title }}</div>
               <div class="toast-message">{{ toast.message }}</div>
             </div>
-            <button class="toast-close" (click)="toastService.dismiss(toast.id)"
-              aria-label="Dismiss notification">✕</button>
+            <ui5-button design="Transparent" icon="decline" (click)="toastService.dismiss(toast.id)"
+              aria-label="Dismiss notification"></ui5-button>
           </div>
           @if (toast.duration > 0) {
             <div class="toast-progress" [style.animation-duration.ms]="toast.duration"></div>

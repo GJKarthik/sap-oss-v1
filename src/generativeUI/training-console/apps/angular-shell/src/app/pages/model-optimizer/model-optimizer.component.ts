@@ -170,12 +170,12 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="form-row">
               <div class="field-group">
                 <label class="field-label">Template</label>
-                <select class="form-input" (change)="applyTemplate($any($event.target).value)">
-                  <option value="">Select a template…</option>
-                  <option value="sql">Fine-tune Text-to-SQL (Recommended)</option>
-                  <option value="finance">Finance Schema Optimization</option>
-                  <option value="hr">HR Data Optimizer</option>
-                </select>
+                <ui5-select style="width: 100%;" (change)="applyTemplate($any($event.detail).selectedOption.value)">
+                  <ui5-option value="">Select a template…</ui5-option>
+                  <ui5-option value="sql">Fine-tune Text-to-SQL (Recommended)</ui5-option>
+                  <ui5-option value="finance">Finance Schema Optimization</ui5-option>
+                  <ui5-option value="hr">HR Data Optimizer</ui5-option>
+                </ui5-select>
               </div>
               <div class="field-group">
                 <label class="field-label">Model Name</label>
@@ -239,19 +239,19 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               </div>
               <div class="field-group">
                 <label class="field-label">Quant Format</label>
-                <select class="form-input" formControlName="quant_format">
-                  <option value="int8">INT8 SmoothQuant (Fast)</option>
-                  <option value="int4_awq">INT4 AWQ (Best compression)</option>
-                  <option value="w4a16">W4A16 (Balanced)</option>
-                </select>
+                <ui5-select style="width: 100%;" formControlName="quant_format">
+                  <ui5-option value="int8">INT8 SmoothQuant (Fast)</ui5-option>
+                  <ui5-option value="int4_awq">INT4 AWQ (Best compression)</ui5-option>
+                  <ui5-option value="w4a16">W4A16 (Balanced)</ui5-option>
+                </ui5-select>
               </div>
               <div class="field-group">
                 <label class="field-label">Export Format</label>
-                <select class="form-input" formControlName="export_format">
-                  <option value="hf">HuggingFace</option>
-                  <option value="tensorrt_llm">TensorRT-LLM</option>
-                  <option value="vllm">vLLM</option>
-                </select>
+                <ui5-select style="width: 100%;" formControlName="export_format">
+                  <ui5-option value="hf">HuggingFace</ui5-option>
+                  <ui5-option value="tensorrt_llm">TensorRT-LLM</ui5-option>
+                  <ui5-option value="vllm">vLLM</ui5-option>
+                </ui5-select>
               </div>
               <div class="field-group">
                 <label class="field-label">Calib Samples <span class="badge badge--best">Best Practice: 512</span></label>
@@ -271,11 +271,11 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               <ng-container formGroupName="expertConfig">
                 <div class="field-group">
                   <label class="field-label">Compute Strategy</label>
-                  <select class="form-input" formControlName="compute">
-                    <option value="auto">Auto (Default)</option>
-                    <option value="deepspeed_1">DeepSpeed Stage 1</option>
-                    <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
-                  </select>
+                  <ui5-select style="width: 100%;" formControlName="compute">
+                    <ui5-option value="auto">Auto (Default)</ui5-option>
+                    <ui5-option value="deepspeed_1">DeepSpeed Stage 1</ui5-option>
+                    <ui5-option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</ui5-option>
+                  </ui5-select>
                 </div>
 
                 <div class="field-group full-width" style="background: rgba(8, 84, 160, 0.05); padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
