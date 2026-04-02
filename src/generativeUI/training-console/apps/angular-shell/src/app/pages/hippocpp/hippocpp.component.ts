@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
@@ -39,328 +41,233 @@ interface HistoryItem {
 @Component({
   selector: 'app-hippocpp',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
-      <!-- Header with connection status -->
-      <div class="page-header">
-        <div class="header-left">
-          <h1 class="page-title">HippoCPP Graph Engine</h1>
-          <div class="connection-status" [class.connected]="stats()?.available" [class.disconnected]="!stats()?.available">
-            <span class="status-dot"></span>
-            <span class="status-text">{{ stats()?.available ? 'Connected' : 'Disconnected' }}</span>
-            <span class="db-info">KuzuDB v0.8 · Zig 0.15.1</span>
-          </div>
+    <ui5-page background-design="Solid">
+      <ui5-bar slot="header" design="Header">
+        <ui5-title slot="startContent" level="H3">HippoCPP Graph Engine</ui5-title>
+        <div slot="startContent" style="margin-left: 1rem;">
+          <ui5-tag [design]="stats()?.available ? 'Positive' : 'Negative'">
+            {{ stats()?.available ? 'Connected' : 'Disconnected' }}
+          </ui5-tag>
+          <span class="db-info">KuzuDB v0.8 · Zig 0.15.1</span>
         </div>
-        <button class="btn-refresh" (click)="loadStats()">↻ Refresh</button>
-      </div>
+        <ui5-button slot="endContent" icon="refresh" design="Transparent" (click)="loadStats()">
+          Refresh
+        </ui5-button>
+      </ui5-bar>
 
-      <!-- About -->
-      <div class="about-card">
-        <p>
-          <strong>HippoCPP</strong> is a multi-language port of the
-          <a href="https://kuzudb.com/" target="_blank" rel="noopener">Kuzu</a> embedded graph database,
-          implemented in <strong>Zig</strong> (1,251 source files) with GPU acceleration via
-          <strong>Mojo</strong> and declarative invariants in <strong>Mangle</strong>.
-        </p>
-        <div class="tech-pills">
-          <span class="pill pill--zig">Zig 0.15.1</span>
-          <span class="pill pill--mojo">Mojo GPU</span>
-          <span class="pill pill--mangle">Mangle Datalog</span>
-          <span class="pill pill--python">Python bindings</span>
-        </div>
-      </div>
+      <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
 
-      <!-- Graph Stats Cards -->
-      <div class="stats-grid">
-        <div class="stat-card stat-animate" style="--delay: 0">
-          <div class="stat-icon">🔵</div>
-          <div class="stat-value">{{ animatedNodes() }}</div>
-          <div class="stat-label">Nodes</div>
-        </div>
-        <div class="stat-card stat-animate" style="--delay: 1">
-          <div class="stat-icon">🔗</div>
-          <div class="stat-value">{{ animatedEdges() }}</div>
-          <div class="stat-label">Edges</div>
-        </div>
-        <div class="stat-card stat-animate" style="--delay: 2">
-          <div class="stat-icon">📊</div>
-          <div class="stat-value">{{ stats()?.pair_count ?? '—' }}</div>
-          <div class="stat-label">Training Pairs</div>
-        </div>
-        <div class="stat-card stat-animate" style="--delay: 3">
-          <div class="stat-icon">🏷️</div>
-          <div class="stat-value">{{ animatedLabels() }}</div>
-          <div class="stat-label">Labels</div>
-        </div>
-      </div>
-
-      <!-- Cypher Query Sandbox -->
-      <section class="section">
-        <h2 class="section-title">Cypher Query Sandbox</h2>
-
-        <!-- Preset Cards -->
-        <div class="preset-grid">
-          @for (p of presets; track p.label) {
-            <div class="preset-card" [class.active]="cypher === p.cypher" (click)="setQuery(p.cypher)">
-              <div class="preset-title">{{ p.label }}</div>
-              <div class="preset-desc">{{ p.description }}</div>
-              <code class="preset-code">{{ p.cypher }}</code>
+        <!-- About -->
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="About HippoCPP"
+            subtitle-text="Multi-language Kuzu graph database port"></ui5-card-header>
+          <div style="padding: 1rem;">
+            <p style="margin: 0 0 0.75rem; font-size: 0.875rem;">
+              <strong>HippoCPP</strong> is a multi-language port of the
+              <a href="https://kuzudb.com/" target="_blank" rel="noopener">Kuzu</a> embedded graph database,
+              implemented in <strong>Zig</strong> (1,251 source files) with GPU acceleration via
+              <strong>Mojo</strong> and declarative invariants in <strong>Mangle</strong>.
+            </p>
+            <div class="tech-pills">
+              <ui5-tag design="Set2">Zig 0.15.1</ui5-tag>
+              <ui5-tag design="Set2">Mojo GPU</ui5-tag>
+              <ui5-tag design="Set2">Mangle Datalog</ui5-tag>
+              <ui5-tag design="Set2">Python bindings</ui5-tag>
             </div>
-          }
+          </div>
+        </ui5-card>
+
+        <!-- Graph Stats Cards -->
+        <div class="stats-grid">
+          <ui5-card>
+            <ui5-card-header slot="header" title-text="Nodes"></ui5-card-header>
+            <div style="padding: 1rem; text-align: center;">
+              <ui5-title level="H1">{{ animatedNodes() }}</ui5-title>
+            </div>
+          </ui5-card>
+          <ui5-card>
+            <ui5-card-header slot="header" title-text="Edges"></ui5-card-header>
+            <div style="padding: 1rem; text-align: center;">
+              <ui5-title level="H1">{{ animatedEdges() }}</ui5-title>
+            </div>
+          </ui5-card>
+          <ui5-card>
+            <ui5-card-header slot="header" title-text="Training Pairs"></ui5-card-header>
+            <div style="padding: 1rem; text-align: center;">
+              <ui5-title level="H1">{{ stats()?.pair_count ?? '—' }}</ui5-title>
+            </div>
+          </ui5-card>
+          <ui5-card>
+            <ui5-card-header slot="header" title-text="Labels"></ui5-card-header>
+            <div style="padding: 1rem; text-align: center;">
+              <ui5-title level="H1">{{ animatedLabels() }}</ui5-title>
+            </div>
+          </ui5-card>
         </div>
 
-        <!-- Code Editor -->
-        <div class="editor-wrapper">
-          <div class="editor-gutter" aria-hidden="true">
-            @for (line of editorLines(); track $index) {
-              <span class="line-number">{{ $index + 1 }}</span>
-            }
-          </div>
-          <div class="editor-container">
-            <div class="editor-highlight" aria-hidden="true" [innerHTML]="highlightedCypher()"></div>
-            <textarea
-              class="query-editor"
-              [(ngModel)]="cypher"
-              name="cypher"
-              rows="5"
-              placeholder="MATCH (n) RETURN n LIMIT 10"
-              spellcheck="false"
-            ></textarea>
-          </div>
-        </div>
-        <div class="query-actions">
-          <button class="btn-run" (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
-            @if (querying()) {
-              <span class="spinner"></span> Running…
-            } @else {
-              ▶ Run Query
-            }
-          </button>
-          <button class="btn-secondary" (click)="clearResults()">Clear</button>
-        </div>
-
-        <!-- Loading skeleton -->
-        @if (querying()) {
-          <div class="skeleton-table">
-            <div class="skeleton-header">
-              <div class="skeleton-cell"></div>
-              <div class="skeleton-cell"></div>
-              <div class="skeleton-cell"></div>
-            </div>
-            @for (i of [1,2,3,4]; track i) {
-              <div class="skeleton-row">
-                <div class="skeleton-cell"></div>
-                <div class="skeleton-cell"></div>
-                <div class="skeleton-cell"></div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Results -->
-        @if (result(); as res) {
-          <div class="results-section">
-            <div class="result-header">
-              <span class="result-badge" [class.success]="res.status === 'ok'" [class.error]="res.status !== 'ok'">
-                {{ res.status === 'ok' ? '✓ Success' : '✗ Error' }}
-              </span>
-              <span class="row-count">{{ res.count }} row(s) returned</span>
-            </div>
-            @if (res.rows.length) {
-              <div class="table-wrapper">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      @for (col of resultColumns(); track col) {
-                        <th (click)="toggleSort(col)" class="sortable-th">
-                          <span>{{ col }}</span>
-                          @if (sortColumn() === col) {
-                            <span class="sort-indicator">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
-                          }
-                        </th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of sortedRows(); track $index) {
-                      <tr>
-                        @for (col of resultColumns(); track col) {
-                          <td [class]="getCellClass(row[col])">{{ formatCell(row[col]) }}</td>
-                        }
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            } @else {
-              <p class="empty-results">No rows returned.</p>
-            }
-          </div>
-        }
-
-        <!-- Error State -->
-        @if (queryError()) {
-          <div class="error-alert">
-            <div class="error-alert-header">
-              <span class="error-icon">⚠</span>
-              <span class="error-title">Query Error</span>
-            </div>
-            <code class="error-detail">{{ queryError() }}</code>
-            <button class="btn-retry" (click)="runQuery()">↻ Try Again</button>
-          </div>
-        }
-      </section>
-
-      <!-- Query History -->
-      @if (queryHistory().length) {
-        <section class="section">
-          <div class="history-header" (click)="historyOpen.set(!historyOpen())">
-            <h2 class="section-title" style="margin:0">
-              {{ historyOpen() ? '▾' : '▸' }} Query History
-              <span class="history-count">{{ queryHistory().length }}</span>
-            </h2>
-          </div>
-          @if (historyOpen()) {
-            <div class="history-list">
-              @for (h of queryHistory(); track h.timestamp) {
-                <div class="history-item" (click)="setQuery(h.cypher)">
-                  <div class="history-meta">
-                    <span class="history-status" [class.success]="h.status === 'ok'" [class.error]="h.status !== 'ok'">●</span>
-                    <span class="history-time">{{ formatTime(h.timestamp) }}</span>
-                    <span class="history-rows">{{ h.rowCount }} rows</span>
+        <!-- Cypher Query Sandbox -->
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="Cypher Query Sandbox"
+            subtitle-text="Run queries against the graph"></ui5-card-header>
+          <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Preset Cards -->
+            <div class="preset-grid">
+              @for (p of presets; track p.label) {
+                <ui5-card class="preset-card" [class.active]="cypher === p.cypher"
+                  interactive (click)="setQuery(p.cypher)">
+                  <ui5-card-header slot="header" [titleText]="p.label"
+                    [subtitleText]="p.description"></ui5-card-header>
+                  <div style="padding: 0.5rem 1rem;">
+                    <code class="preset-code">{{ p.cypher }}</code>
                   </div>
-                  <code class="history-cypher">{{ h.cypher }}</code>
-                </div>
+                </ui5-card>
               }
             </div>
-          }
-        </section>
-      }
-
-      <!-- Architecture -->
-      <section class="section">
-        <h2 class="section-title">Architecture</h2>
-        <div class="arch-grid">
-          @for (layer of archLayers; track layer.name) {
-            <div class="arch-card">
-              <div class="arch-icon">{{ layer.icon }}</div>
-              <div class="arch-name">{{ layer.name }}</div>
-              <div class="arch-desc">{{ layer.desc }}</div>
+            <!-- Code Editor (custom dark textarea) -->
+            <div class="editor-wrapper">
+              <div class="editor-gutter" aria-hidden="true">
+                @for (line of editorLines(); track $index) {
+                  <span class="line-number">{{ $index + 1 }}</span>
+                }
+              </div>
+              <div class="editor-container">
+                <div class="editor-highlight" aria-hidden="true" [innerHTML]="highlightedCypher()"></div>
+                <textarea
+                  class="query-editor"
+                  [(ngModel)]="cypher"
+                  name="cypher"
+                  rows="5"
+                  placeholder="MATCH (n) RETURN n LIMIT 10"
+                  spellcheck="false"
+                ></textarea>
+              </div>
             </div>
-          }
-        </div>
-      </section>
-    </div>
+            <div class="query-actions">
+              <ui5-button design="Emphasized" icon="play"
+                (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
+                {{ querying() ? 'Running…' : 'Run Query' }}
+              </ui5-button>
+              <ui5-button design="Transparent" (click)="clearResults()">Clear</ui5-button>
+            </div>
+            <!-- Loading -->
+            @if (querying()) {
+              <ui5-busy-indicator active size="L" style="width: 100%; min-height: 100px;"></ui5-busy-indicator>
+            }
+            <!-- Results -->
+            @if (result(); as res) {
+              <div class="results-section">
+                <div class="result-header">
+                  <ui5-tag [design]="res.status === 'ok' ? 'Positive' : 'Negative'">
+                    {{ res.status === 'ok' ? 'Success' : 'Error' }}
+                  </ui5-tag>
+                  <span class="row-count">{{ res.count }} row(s) returned</span>
+                </div>
+                @if (res.rows.length) {
+                  <div class="table-wrapper">
+                    <ui5-table>
+                      <ui5-table-header-row slot="headerRow">
+                        @for (col of resultColumns(); track col) {
+                          <ui5-table-header-cell>
+                            <span class="sortable-th" (click)="toggleSort(col)">
+                              {{ col }}
+                              @if (sortColumn() === col) {
+                                <span class="sort-indicator">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+                              }
+                            </span>
+                          </ui5-table-header-cell>
+                        }
+                      </ui5-table-header-row>
+                      @for (row of sortedRows(); track $index) {
+                        <ui5-table-row>
+                          @for (col of resultColumns(); track col) {
+                            <ui5-table-cell><span [class]="getCellClass(row[col])">{{ formatCell(row[col]) }}</span></ui5-table-cell>
+                          }
+                        </ui5-table-row>
+                      }
+                    </ui5-table>
+                  </div>
+                } @else {
+                  <p class="empty-results">No rows returned.</p>
+                }
+              </div>
+            }
+            <!-- Error State -->
+            @if (queryError()) {
+              <ui5-message-strip design="Negative" hide-close-button>
+                {{ queryError() }}
+              </ui5-message-strip>
+              <ui5-button design="Negative" icon="refresh" (click)="runQuery()">Try Again</ui5-button>
+            }
+          </div>
+        </ui5-card>
+
+        <!-- Query History -->
+        @if (queryHistory().length) {
+          <ui5-card>
+            <ui5-card-header slot="header" title-text="Query History"
+              [subtitleText]="queryHistory().length + ' queries'"
+              interactive (click)="historyOpen.set(!historyOpen())">
+            </ui5-card-header>
+            @if (historyOpen()) {
+              <ui5-list>
+                @for (h of queryHistory(); track h.timestamp) {
+                  <ui5-list-item-standard
+                    [description]="h.cypher"
+                    (click)="setQuery(h.cypher)">
+                    <ui5-icon slot="icon" [name]="h.status === 'ok' ? 'status-positive' : 'status-negative'"></ui5-icon>
+                    {{ formatTime(h.timestamp) }} · {{ h.rowCount }} rows
+                  </ui5-list-item-standard>
+                }
+              </ui5-list>
+            }
+          </ui5-card>
+        }
+
+        <!-- Architecture -->
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="Architecture"
+            subtitle-text="System layers"></ui5-card-header>
+          <div style="padding: 1rem;">
+            <div class="arch-grid">
+              @for (layer of archLayers; track layer.name) {
+                <ui5-card>
+                  <div style="padding: 1rem; text-align: center;">
+                    <div class="arch-icon">{{ layer.icon }}</div>
+                    <ui5-title level="H6">{{ layer.name }}</ui5-title>
+                    <div class="arch-desc">{{ layer.desc }}</div>
+                  </div>
+                </ui5-card>
+              }
+            </div>
+          </div>
+        </ui5-card>
+
+      </div>
+    </ui5-page>
   `,
   styles: [`
-    /* ── Connection Status ── */
-    .header-left { display: flex; flex-direction: column; gap: 0.25rem; }
+    /* ── Header ── */
+    .db-info { color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.7rem; margin-left: 0.5rem; }
 
-    .connection-status {
-      display: flex; align-items: center; gap: 0.5rem;
-      font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70);
-    }
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
-    }
-    .connected .status-dot {
-      background: #2e7d32;
-      box-shadow: 0 0 0 0 rgba(46,125,50,0.4);
-      animation: pulse-green 2s infinite;
-    }
-    .disconnected .status-dot {
-      background: #c62828;
-      box-shadow: 0 0 0 0 rgba(198,40,40,0.4);
-      animation: pulse-red 2s infinite;
-    }
-    .connected .status-text { color: #2e7d32; font-weight: 600; }
-    .disconnected .status-text { color: #c62828; font-weight: 600; }
-    .db-info { color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.7rem; }
 
-    @keyframes pulse-green {
-      0% { box-shadow: 0 0 0 0 rgba(46,125,50,0.5); }
-      70% { box-shadow: 0 0 0 6px rgba(46,125,50,0); }
-      100% { box-shadow: 0 0 0 0 rgba(46,125,50,0); }
-    }
-    @keyframes pulse-red {
-      0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
-      70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
-      100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
-    }
-
-    /* ── About Card ── */
-    .about-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.5rem;
-      font-size: 0.875rem; color: var(--sapTextColor, #32363a);
-      p { margin: 0 0 0.75rem; }
-      a { color: var(--sapBrandColor, #0854a0); }
-    }
+    /* ── Tech Pills ── */
     .tech-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .pill {
-      padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 500;
-      &.pill--zig    { background: #fff3e0; color: #e65100; }
-      &.pill--mojo   { background: #fce4ec; color: #880e4f; }
-      &.pill--mangle { background: #e8f5e9; color: #1b5e20; }
-      &.pill--python { background: #e3f2fd; color: #0d47a1; }
+
+    /* ── Stats Grid ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    @media (min-width: 1440px) {
+      :host .stats-grid { grid-template-columns: repeat(4, 1fr) !important; }
     }
 
-    .btn-refresh {
-      padding: 0.375rem 0.875rem; background: var(--sapBrandColor, #0854a0);
-      color: #fff; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem;
-      &:hover { background: var(--sapButton_Hover_Background, #0a6ed1); }
-    }
-
-    /* ── Stats Cards ── */
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 0.75rem; margin-bottom: 1.5rem;
-    }
-    .stat-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 1.25rem; text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    }
-    .stat-animate {
-      animation: fadeSlideUp 0.5s ease-out both;
-      animation-delay: calc(var(--delay, 0) * 0.1s);
-    }
-    @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .stat-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
-    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--sapTextColor, #32363a); }
-    .stat-label { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); margin-top: 0.25rem; }
-
-    /* ── Section ── */
-    .section { margin-bottom: 2rem; }
-    .section-title {
-      font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;
-      color: var(--sapTextColor, #32363a);
-    }
-
-    /* ── Preset Cards ── */
+    /* ── Preset Grid ── */
     .preset-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem; margin-bottom: 1rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;
     }
-    .preset-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 0.875rem; cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
-      &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-      &.active { border-color: var(--sapBrandColor, #0854a0); border-width: 2px; }
-    }
-    .preset-title { font-weight: 600; font-size: 0.8125rem; color: var(--sapTextColor, #32363a); margin-bottom: 0.25rem; }
-    .preset-desc { font-size: 0.7rem; color: var(--sapContent_LabelColor, #6a6d70); margin-bottom: 0.5rem; }
+    .preset-card.active { outline: 2px solid var(--sapBrandColor, #0854a0); }
     .preset-code {
       display: block; font-size: 0.7rem; font-family: 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
       color: var(--sapBrandColor, #0854a0); background: var(--sapBackgroundColor, #f5f5f5);
@@ -368,11 +275,10 @@ interface HistoryItem {
       text-overflow: ellipsis; white-space: nowrap;
     }
 
-    /* ── Code Editor ── */
+    /* ── Code Editor (custom dark theme) ── */
     .editor-wrapper {
       display: flex; border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.75rem;
-      background: #1e1e1e;
+      border-radius: 0.5rem; overflow: hidden; background: #1e1e1e;
     }
     .editor-gutter {
       display: flex; flex-direction: column; padding: 0.75rem 0;
@@ -381,8 +287,7 @@ interface HistoryItem {
     }
     .line-number {
       font-family: 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
-      font-size: 0.75rem; line-height: 1.5rem; padding: 0 0.5rem;
-      color: #858585;
+      font-size: 0.75rem; line-height: 1.5rem; padding: 0 0.5rem; color: #858585;
     }
     .editor-container { position: relative; flex: 1; }
     .editor-highlight, .query-editor {
@@ -391,163 +296,34 @@ interface HistoryItem {
       white-space: pre-wrap; word-wrap: break-word;
     }
     .editor-highlight {
-      position: absolute; inset: 0; pointer-events: none;
-      color: #d4d4d4; z-index: 1;
+      position: absolute; inset: 0; pointer-events: none; color: #d4d4d4; z-index: 1;
     }
     .query-editor {
       width: 100%; height: 100%; min-height: 7.5rem; box-sizing: border-box;
       background: transparent; color: transparent; caret-color: #d4d4d4;
-      border: none; outline: none; resize: vertical;
-      position: relative; z-index: 2;
+      border: none; outline: none; resize: vertical; position: relative; z-index: 2;
     }
 
     /* ── Query Actions ── */
-    .query-actions { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
-    .btn-run {
-      display: inline-flex; align-items: center; gap: 0.375rem;
-      padding: 0.5rem 1.25rem; background: var(--sapBrandColor, #0854a0);
-      color: #fff; border: none; border-radius: 0.375rem; cursor: pointer;
-      font-size: 0.875rem; font-weight: 600;
-      transition: background 0.15s;
-      &:disabled { opacity: 0.5; cursor: default; }
-      &:hover:not(:disabled) { background: var(--sapButton_Hover_Background, #0a6ed1); }
-    }
-    .btn-secondary {
-      padding: 0.5rem 1rem; background: transparent;
-      color: var(--sapTextColor, #32363a);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem;
-      &:hover { background: var(--sapBackgroundColor, #f5f5f5); }
-    }
+    .query-actions { display: flex; gap: 0.5rem; align-items: center; }
 
-    /* ── Spinner ── */
-    .spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
-      border-radius: 50%; animation: spin 0.6s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Skeleton Loading ── */
-    .skeleton-table {
-      margin-top: 1rem; border-radius: 0.5rem; overflow: hidden;
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-    }
-    .skeleton-header, .skeleton-row {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;
-      padding: 0.75rem;
-    }
-    .skeleton-header { background: var(--sapBackgroundColor, #f5f5f5); }
-    .skeleton-row { border-top: 1px solid var(--sapTile_BorderColor, #e4e4e4); }
-    .skeleton-cell {
-      height: 1rem; border-radius: 0.25rem;
-      background: linear-gradient(90deg, var(--sapTile_BorderColor, #e4e4e4) 25%, var(--sapBackgroundColor, #f5f5f5) 50%, var(--sapTile_BorderColor, #e4e4e4) 75%);
-      background-size: 200% 100%; animation: shimmer 1.5s infinite;
-    }
-    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-
-    /* ── Results Table ── */
-    .results-section { margin-top: 1rem; }
+    /* ── Results ── */
+    .results-section { margin-top: 0.5rem; }
     .result-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
-    .result-badge {
-      padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;
-      &.success { background: #e8f5e9; color: #2e7d32; }
-      &.error { background: #ffebee; color: #c62828; }
-    }
     .row-count { font-size: 0.8125rem; color: var(--sapContent_LabelColor, #6a6d70); }
-    .table-wrapper {
-      overflow-x: auto; border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-    }
-    .data-table {
-      width: 100%; border-collapse: collapse; font-size: 0.8125rem;
-      background: var(--sapTile_Background, #fff);
-      th {
-        padding: 0.625rem 0.75rem; background: var(--sapBackgroundColor, #f5f5f5);
-        text-align: left; font-weight: 600; font-size: 0.7rem;
-        text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--sapContent_LabelColor, #6a6d70);
-        border-bottom: 2px solid var(--sapTile_BorderColor, #e4e4e4);
-        position: sticky; top: 0; z-index: 1;
-      }
-      td {
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-        font-family: 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
-        font-size: 0.75rem;
-      }
-      tr:last-child td { border-bottom: none; }
-      tbody tr:nth-child(even) { background: var(--sapBackgroundColor, #f5f5f5); }
-      tbody tr:hover { background: #e3f2fd; }
-    }
+    .table-wrapper { overflow-x: auto; }
     .sortable-th { cursor: pointer; user-select: none; &:hover { color: var(--sapBrandColor, #0854a0); } }
     .sort-indicator { margin-left: 0.25rem; font-size: 0.6rem; }
-    .cell-number { text-align: right; }
-    .cell-string { text-align: left; }
+    .cell-number { font-family: monospace; }
+    .cell-string { font-family: monospace; }
     .empty-results { color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.8125rem; text-align: center; padding: 2rem; }
 
-    /* ── Error Alert ── */
-    .error-alert {
-      margin-top: 1rem; padding: 1rem 1.25rem; background: #ffebee;
-      border: 1px solid #ef9a9a; border-radius: 0.5rem;
-      border-left: 4px solid #c62828;
-    }
-    .error-alert-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .error-icon { font-size: 1.125rem; }
-    .error-title { font-weight: 600; color: #c62828; font-size: 0.875rem; }
-    .error-detail {
-      display: block; padding: 0.5rem 0.75rem; background: #fff;
-      border: 1px solid #ef9a9a; border-radius: 0.25rem;
-      font-family: 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
-      font-size: 0.75rem; color: #c62828; margin-bottom: 0.75rem;
-      white-space: pre-wrap; word-break: break-word;
-    }
-    .btn-retry {
-      padding: 0.375rem 0.875rem; background: #c62828; color: #fff;
-      border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.8125rem;
-      &:hover { background: #b71c1c; }
-    }
-
-    /* ── Query History ── */
-    .history-header { cursor: pointer; margin-bottom: 0.5rem; }
-    .history-count {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1.25rem; height: 1.25rem; border-radius: 50%;
-      background: var(--sapBrandColor, #0854a0); color: #fff;
-      font-size: 0.65rem; font-weight: 600; margin-left: 0.5rem;
-    }
-    .history-list { display: flex; flex-direction: column; gap: 0.375rem; }
-    .history-item {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.375rem; padding: 0.625rem 0.75rem; cursor: pointer;
-      transition: border-color 0.15s;
-      &:hover { border-color: var(--sapBrandColor, #0854a0); }
-    }
-    .history-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
-    .history-status { font-size: 0.6rem; &.success { color: #2e7d32; } &.error { color: #c62828; } }
-    .history-time { font-size: 0.7rem; color: var(--sapContent_LabelColor, #6a6d70); }
-    .history-rows { font-size: 0.7rem; color: var(--sapContent_LabelColor, #6a6d70); }
-    .history-cypher {
-      display: block; font-size: 0.7rem; font-family: 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
-      color: var(--sapTextColor, #32363a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-
-    /* ── Architecture ── */
+    /* ── Architecture Grid ── */
     .arch-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 0.75rem;
-    }
-    .arch-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 1rem; text-align: center;
-      transition: transform 0.15s, box-shadow 0.15s;
-      &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;
     }
     .arch-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
-    .arch-name { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--sapTextColor, #32363a); }
-    .arch-desc { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .arch-desc { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); margin-top: 0.25rem; }
   `],
 })
 export class HippocppComponent implements OnInit, OnDestroy {
