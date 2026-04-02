@@ -38,7 +38,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # ── Service metadata ──────────────────────────────────────────────────────────
 # (path relative to repo root) → {license, copyright, year, extensions}
 SERVICE_METADATA: dict[str, dict] = {
-    "training-console": {
+    "src/generativeUI/training-webcomponents-ngx": {
         "license":   "Apache-2.0",
         "copyright": "SAP SE",
         "year":      "2024",

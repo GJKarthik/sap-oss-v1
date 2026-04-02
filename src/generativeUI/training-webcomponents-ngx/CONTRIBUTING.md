@@ -1,4 +1,4 @@
-# Contributing to training-console
+# Contributing to training-webcomponents-ngx
 
 Thank you for contributing! This document explains how to get the project running locally and what is expected for every contribution.
 

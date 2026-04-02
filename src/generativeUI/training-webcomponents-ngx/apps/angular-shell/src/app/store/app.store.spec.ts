@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { AppStore, GpuStatus, HealthStatus } from './app.store';
 
-const MOCK_HEALTH: HealthStatus = { status: 'healthy', service: 'training-console-api', version: '1.0.0' };
+const MOCK_HEALTH: HealthStatus = { status: 'healthy', service: 'training-webcomponents-ngx-api', version: '1.0.0' };
 const MOCK_GPU: GpuStatus = {
   gpu_name: 'NVIDIA T4',
   total_memory_gb: 16,

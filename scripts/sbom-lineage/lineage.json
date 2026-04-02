@@ -198,7 +198,7 @@
         ]
       },
       {
-        "path": "training-console",
+        "path": "src/generativeUI/training-webcomponents-ngx",
         "name": "Data Cleaning Copilot",
         "upstream": "",
         "plans_path": "",

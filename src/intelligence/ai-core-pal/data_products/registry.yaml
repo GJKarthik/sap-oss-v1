@@ -58,7 +58,7 @@ dependencies:
         palFunctions: ["pal_forecast", "pal_regression", "pal_anomaly"]
     enrichment:
       pipeline: "../../training-main/scripts/xlsx_to_odps.py"
-      copilot: "../../sap-oss/training-console"
+      copilot: "../../../generativeUI/training-webcomponents-ngx"
       reports: "../../training-main/data_products/enriched/"
 
   vocabularyService:

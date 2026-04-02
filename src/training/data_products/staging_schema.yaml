@@ -99,7 +99,7 @@ dataProduct:
 
   # --- Quality: Data Validation Rules ---
   x-data-cleaning:
-    copilotRef: "../sap-oss/training-console"
+    copilotRef: "../../generativeUI/training-webcomponents-ngx"
     validationRules:
       - rule: "field_mapping_completeness"
         description: "All source fields must map to a BTP field"

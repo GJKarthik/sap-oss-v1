@@ -46,7 +46,7 @@ services:
       - training-network
 
   modelopt:
-    image: training-console-modelopt:latest
+    image: training-webcomponents-ngx-modelopt:latest
     ports:
       - '8001:8001'
     environment:

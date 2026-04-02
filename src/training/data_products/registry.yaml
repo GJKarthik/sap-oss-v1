@@ -55,7 +55,7 @@ dependencies:
 
   dataCleaningCopilot:
     name: "Data Cleaning Copilot"
-    catalogRef: "../sap-oss/training-console/data_products/registry.yaml"
+    catalogRef: "../../generativeUI/training-webcomponents-ngx"
     description: "Data profiling, validation, and enrichment pipeline"
     integrationPoints:
       - enrichment: "Profile all data products for completeness and quality"

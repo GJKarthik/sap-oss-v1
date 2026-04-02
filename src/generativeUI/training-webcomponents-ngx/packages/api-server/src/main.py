@@ -137,10 +137,10 @@ structlog.configure(
     wrapper_class=structlog.stdlib.BoundLogger,
     cache_logger_on_first_use=True,
 )
-logger = structlog.get_logger("training-console")
+logger = structlog.get_logger("training-webcomponents-ngx")
 
 # ---------------------------------------------------------------------------
-# Native data cleaning state (lets training-console run standalone)
+# Native data cleaning state (lets training-webcomponents-ngx run standalone)
 # ---------------------------------------------------------------------------
 
 DATA_CLEANING_STATE: dict[str, Any] = {
@@ -378,7 +378,7 @@ async def job_ws_endpoint(websocket: WebSocket, job_id: str):
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "healthy", "service": "training-console-api", "mode": "native-orchestrator"}
+    return {"status": "healthy", "service": "training-webcomponents-ngx-api", "mode": "native-orchestrator"}
 
 
 @app.get("/gpu/status")

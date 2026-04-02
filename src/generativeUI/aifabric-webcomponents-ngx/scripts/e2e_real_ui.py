@@ -570,10 +570,10 @@ def main() -> int:
         return 1
 
     chrome_binary = find_chrome_binary()
-    temp_root = Path(tempfile.mkdtemp(prefix="sap-ai-fabric-console-e2e-"))
+    temp_root = Path(tempfile.mkdtemp(prefix="aifabric-webcomponents-ngx-e2e-"))
     artifact_dir = temp_root / "artifacts"
     artifact_dir.mkdir(parents=True, exist_ok=True)
-    db_path = temp_root / "sap-ai-fabric-console-e2e.sqlite3"
+    db_path = temp_root / "aifabric-webcomponents-ngx-e2e.sqlite3"
     chrome_profile = temp_root / "chrome-profile"
     proxy_config_path = temp_root / "proxy.conf.json"
     processes: list[ManagedProcess] = []

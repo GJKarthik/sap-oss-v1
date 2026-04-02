@@ -12,7 +12,7 @@ services:
   # --------------------------------------------------------------------------
   training-api:
     build:
-      context: ../generativeUI/training-console/packages/api-server
+      context: ../generativeUI/training-webcomponents-ngx/packages/api-server
       dockerfile: Dockerfile
     container_name: training-api
     ports:
@@ -39,7 +39,7 @@ services:
   # --------------------------------------------------------------------------
   training-ui:
     build:
-      context: ../generativeUI/training-console
+      context: ../generativeUI/training-webcomponents-ngx
       dockerfile: apps/angular-shell/Dockerfile
     container_name: training-ui
     ports:

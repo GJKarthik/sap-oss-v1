@@ -27,7 +27,7 @@
       ]
     },
     {
-      "service": "training-console",
+      "service": "training-webcomponents-ngx",
       "frameworks": [
         "langchain",
         "langchain_core",

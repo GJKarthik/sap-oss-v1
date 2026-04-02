@@ -22,7 +22,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 
 # Add data-cleaning-copilot to path for profiler and column mapping utilities
-COPILOT_PATH = Path(__file__).resolve().parent.parent.parent / "sap-oss" / "training-console"
+COPILOT_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "generativeUI" / "training-webcomponents-ngx"
+)
 sys.path.insert(0, str(COPILOT_PATH))
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"

@@ -198,7 +198,7 @@ def main() -> None:
     p.add_argument("--max-commits", type=int, default=50)
     p.add_argument("--service", help="Service path (as in manifest) to generate a single-service report for")
     args = p.parse_args()
-    # Map BOM file stem (e.g. training-console) to display name from lineage
+    # Map BOM file stem (e.g. training-webcomponents-ngx) to display name from lineage
     lineage_data = {}
     if args.lineage.exists():
         with open(args.lineage, encoding="utf-8") as f:

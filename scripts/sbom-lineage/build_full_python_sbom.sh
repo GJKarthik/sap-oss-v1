@@ -25,7 +25,7 @@ BOMS_DIR="$REPO_ROOT/scripts/sbom-lineage/boms"
 
 # Python services — keep in sync with docs/sbom-lineage-manifest.yaml
 PYTHON_SERVICES=(
-  "training-console"
+  "src/generativeUI/training-webcomponents-ngx/packages/api-server"
   "langchain-integration-for-sap-hana-cloud-main"
   "generative-ai-toolkit-for-sap-hana-cloud-main"
   "vllm-main"
@@ -101,7 +101,13 @@ for svc in "${PYTHON_SERVICES[@]}"; do
     fi
   fi
 
-  OUT_FILE="$BOMS_DIR/$svc.cyclonedx.json"
+  case "$svc" in
+    src/generativeUI/training-webcomponents-ngx/packages/api-server)
+      OUT_STEM="training-webcomponents-ngx" ;;
+    *)
+      OUT_STEM="$svc" ;;
+  esac
+  OUT_FILE="$BOMS_DIR/${OUT_STEM}.cyclonedx.json"
   echo "Running cyclonedx-py -> $OUT_FILE"
   if _run_cyclonedx "$OUT_FILE"; then
     echo "[OK] Wrote $OUT_FILE"

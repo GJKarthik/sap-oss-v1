@@ -12,7 +12,7 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 DEFAULT_JWT_SECRET = "change-me-in-production"
-DEFAULT_STORE_DATABASE_PATH = Path(__file__).resolve().parents[1] / ".data" / "sap-ai-fabric-console.sqlite3"
+DEFAULT_STORE_DATABASE_PATH = Path(__file__).resolve().parents[1] / ".data" / "aifabric-webcomponents-ngx.sqlite3"
 LOCAL_ENVIRONMENTS = {"development", "dev", "local", "test"}
 
 

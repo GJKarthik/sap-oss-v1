@@ -1,5 +1,5 @@
 {
-  "service": "training-console",
+  "service": "training-webcomponents-ngx",
   "total_files": 63,
   "files_with_spdx": 63,
   "spdx_coverage_pct": 100,

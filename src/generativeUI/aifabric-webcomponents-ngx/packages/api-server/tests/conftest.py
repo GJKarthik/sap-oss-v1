@@ -15,7 +15,7 @@ os.environ.setdefault("JWT_SECRET_KEY", "unit-test-secret")
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault(
     "STORE_DATABASE_PATH",
-    str(Path(tempfile.gettempdir()) / "sap-ai-fabric-console-test.sqlite3"),
+    str(Path(tempfile.gettempdir()) / "aifabric-webcomponents-ngx-test.sqlite3"),
 )
 
 from src.main import app

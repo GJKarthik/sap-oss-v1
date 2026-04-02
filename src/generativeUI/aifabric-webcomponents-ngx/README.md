@@ -5,7 +5,7 @@ Enterprise-grade console for managing AI workloads on SAP AI Core, featuring rea
 ## Architecture
 
 ```
-sap-ai-fabric-console/
+aifabric-webcomponents-ngx/
 ├── apps/
 │   └── angular-shell/          # Angular 20 + SAP UI5 Web Components frontend
 │       └── src/

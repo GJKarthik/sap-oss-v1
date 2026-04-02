@@ -3,14 +3,14 @@
 Full-platform UI for the SAP AI Training stack — covering all four `training-main` components: **Pipeline**, **Model Optimizer**, **HippoCPP**, and **Data Explorer**.
 Includes integrated **Data Cleaning** workflows for preparing model training data inside the same app.
 
-Built with **Angular 20** + **SAP UI5 Web Components**, mirroring the architecture of `sap-ai-fabric-console`.
+Built with **Angular 20** + **SAP UI5 Web Components**, mirroring the architecture of `aifabric-webcomponents-ngx`.
 
 ---
 
 ## Architecture
 
 ```
-training-console/
+training-webcomponents-ngx/
 ├── apps/
 │   └── angular-shell/        # Angular 20 standalone SPA
 │       ├── src/
@@ -89,7 +89,7 @@ yarn nx build angular-shell --configuration production
 ## Docker Compose
 
 ```bash
-# Requires training-console-modelopt:latest image
+# Requires training-webcomponents-ngx-modelopt:latest image
 docker compose up
 # Frontend → http://localhost:8080
 # API proxy → http://localhost:8000

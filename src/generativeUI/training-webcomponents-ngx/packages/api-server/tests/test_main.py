@@ -23,7 +23,7 @@ async def test_health_returns_200(client: AsyncClient):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["service"] == "training-console-api"
+    assert data["service"] == "training-webcomponents-ngx-api"
 
 
 @pytest.mark.anyio

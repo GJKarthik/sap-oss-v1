@@ -1,6 +1,6 @@
-# Technical Assessment — training-console
+# Technical Assessment — training-webcomponents-ngx
 
-> Assessed against: `training-console`, `sap-sac-webcomponents-ngx`, `ui5-webcomponents-ngx-main`
+> Assessed against: `training-webcomponents-ngx`, `sac-webcomponents-ngx`, `ui5-webcomponents-ngx-main`
 
 ---
 

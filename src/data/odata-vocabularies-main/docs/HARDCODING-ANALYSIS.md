@@ -46,7 +46,7 @@ async def _classify_single_field(self, column: str) -> Dict:
 
 ### 2. Mangle Rules (mcp.mg) - ⚠️ CONFIGURATION DATA
 
-**Location:** `training-console/mangle/a2a/mcp.mg`
+**Location:** `training-webcomponents-ngx/mangle/a2a/mcp.mg`
 
 ```mangle
 # These ARE the field patterns, but they're:

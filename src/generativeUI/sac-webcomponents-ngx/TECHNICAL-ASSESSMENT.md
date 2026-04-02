@@ -3,7 +3,7 @@
 **Package:** `@sap-oss/sac-webcomponents-ngx` v1.0.0  
 **Author:** Nucleus Platform Team  
 **License:** MIT  
-**Repository:** `aiNucleusSdk/ainuc-sap-sdk/sap-sac-webcomponents-ngx`  
+**Repository:** `aiNucleusSdk/ainuc-sap-sdk/sac-webcomponents-ngx`  
 **Runtime requirement:** Node.js ≥ 18, Angular ≥ 17
 
 ---

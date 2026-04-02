@@ -173,7 +173,7 @@ Source libraries, Angular cache directories, and local build residue are exclude
 ## Repository Layout
 
 ```text
-sap-sac-webcomponents-ngx/
+sac-webcomponents-ngx/
 ├── libs/
 │   ├── sac-sdk/
 │   ├── sac-core/
