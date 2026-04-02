@@ -39,65 +39,56 @@ _allowed_origins_raw = os.getenv(
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]
 
 # --- DATABASE PERSISTENCE SETUP ---
-
-DATABASE_URL = "sqlite:///./enterprise_mlops.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-class JobRecord(Base):
-    __tablename__ = 'jobs'
-    id = Column(String, primary_key=True, index=True)
-    status = Column(String, default="pending")
-    progress = Column(Float, default=0.0)
-    config = Column(JSON, default={})
-    error = Column(String, nullable=True)
-    history = Column(JSON, default=list)
-    evaluation = Column(JSON, nullable=True)
-    deployed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from .database import engine, SessionLocal, get_db, init_database, close_database
+from .store import JobRecord, get_store
 
 def save_job(job_data: dict):
     db = SessionLocal()
-    job = db.query(JobRecord).filter(JobRecord.id == job_data["id"]).first()
-    if not job:
-        job = JobRecord(id=job_data["id"], created_at=datetime.utcnow())
-        db.add(job)
-    
-    job.status = job_data.get("status", job.status)
-    job.progress = job_data.get("progress", job.progress)
-    job.config = job_data.get("config", job.config)
-    job.error = job_data.get("error", job.error)
-    job.history = job_data.get("history", job.history)
-    job.evaluation = job_data.get("evaluation", job.evaluation)
-    job.deployed = job_data.get("deployed", job.deployed)
-    
-    db.commit()
-    db.close()
+    try:
+        job = db.query(JobRecord).filter(JobRecord.id == job_data["id"]).first()
+        if not job:
+            job = JobRecord(id=job_data["id"], created_at=datetime.utcnow())
+            db.add(job)
+        
+        job.status = job_data.get("status", job.status)
+        job.progress = job_data.get("progress", job.progress)
+        job.config = job_data.get("config", job.config)
+        job.error = job_data.get("error", job.error)
+        job.history = job_data.get("history", job.history)
+        job.evaluation = job_data.get("evaluation", job.evaluation)
+        job.deployed = job_data.get("deployed", job.deployed)
+        
+        db.commit()
+    finally:
+        db.close()
 
 def get_job(job_id: str):
     db = SessionLocal()
-    job = db.query(JobRecord).filter(JobRecord.id == job_id).first()
-    db.close()
-    if not job: return None
-    return {
-        "id": job.id, "status": job.status, "progress": job.progress, 
-        "config": job.config, "error": job.error, "history": job.history,
-        "evaluation": job.evaluation, "deployed": job.deployed,
-        "created_at": job.created_at.isoformat() + "Z"
-    }
+    try:
+        job = db.query(JobRecord).filter(JobRecord.id == job_id).first()
+        if not job: return None
+        return {
+            "id": job.id, "status": job.status, "progress": job.progress, 
+            "config": job.config, "error": job.error, "history": job.history,
+            "evaluation": job.evaluation, "deployed": job.deployed,
+            "created_at": job.created_at.isoformat() + "Z"
+        }
+    finally:
+        db.close()
 
 def get_all_jobs():
     db = SessionLocal()
+    try:
+        jobs = db.query(JobRecord).all()
+        return [{
+            "id": job.id, "status": job.status, "progress": job.progress, 
+            "config": job.config, "error": job.error, "history": job.history,
+            "evaluation": job.evaluation, "deployed": job.deployed,
+            "created_at": job.created_at.isoformat() + "Z"
+        } for job in jobs]
+    finally:
+        db.close()
+
     jobs = db.query(JobRecord).order_by(JobRecord.created_at.desc()).all()
     db.close()
     return [{
