@@ -1,6 +1,8 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
@@ -29,7 +31,7 @@ interface CompletionResponse {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -37,73 +39,66 @@ interface CompletionResponse {
       <!-- Sidebar -->
       <div class="chat-sidebar">
         <div class="sidebar-header">
-          <span class="sidebar-icon">⚙</span>
-          <h2 class="sidebar-title">Settings</h2>
+          <ui5-icon name="action-settings" class="sidebar-icon"></ui5-icon>
+          <ui5-title level="H5">Settings</ui5-title>
         </div>
 
         <!-- Model Section -->
-        <div class="sidebar-section" [class.collapsed]="collapsedSections['model']">
-          <button class="section-toggle" (click)="toggleSection('model')">
-            <span class="toggle-arrow">›</span> Model
-          </button>
+        <ui5-panel header-text="Model" [collapsed]="collapsedSections['model']">
           <div class="section-body">
-            <select class="setting-select" [(ngModel)]="model">
-              <option value="Qwen/Qwen3.5-0.6B">Qwen 3.5 0.6B — Fast &amp; lightweight</option>
-              <option value="Qwen/Qwen2.5-1.5B">Qwen 2.5 1.5B — Balanced</option>
-              <option value="meta-llama/Llama-3.1-8B">Llama 3.1 8B — High quality</option>
-            </select>
+            <ui5-select [(ngModel)]="model" name="model" style="width: 100%;">
+              <ui5-option value="Qwen/Qwen3.5-0.6B">Qwen 3.5 0.6B — Fast &amp; lightweight</ui5-option>
+              <ui5-option value="Qwen/Qwen2.5-1.5B">Qwen 2.5 1.5B — Balanced</ui5-option>
+              <ui5-option value="meta-llama/Llama-3.1-8B">Llama 3.1 8B — High quality</ui5-option>
+            </ui5-select>
             <span class="field-hint">Active: {{ model.split('/')[1] }}</span>
           </div>
-        </div>
+        </ui5-panel>
 
         <!-- Parameters Section -->
-        <div class="sidebar-section" [class.collapsed]="collapsedSections['params']">
-          <button class="section-toggle" (click)="toggleSection('params')">
-            <span class="toggle-arrow">›</span> Parameters
-          </button>
+        <ui5-panel header-text="Parameters" [collapsed]="collapsedSections['params']">
           <div class="section-body">
             <div class="field-group">
               <label class="field-label">Temperature: <strong>{{ temperature.toFixed(2) }}</strong></label>
-              <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
+              <ui5-slider [value]="temperature" min="0" max="2" step="0.1"
+                (input)="onTemperatureChange($event)" show-tooltip></ui5-slider>
               <div class="range-labels"><span>Precise</span><span>Creative</span></div>
             </div>
             <div class="field-group">
               <label class="field-label">Max Tokens: <strong>{{ maxTokens }}</strong></label>
-              <input type="range" [(ngModel)]="maxTokens" min="64" max="4096" step="64" class="range-input" />
+              <ui5-slider [value]="maxTokens" min="64" max="4096" step="64"
+                (input)="onMaxTokensChange($event)" show-tooltip></ui5-slider>
               <div class="range-labels"><span>64</span><span>4096</span></div>
             </div>
           </div>
-        </div>
+        </ui5-panel>
 
         <!-- System Prompt Section -->
-        <div class="sidebar-section" [class.collapsed]="collapsedSections['prompt']">
-          <button class="section-toggle" (click)="toggleSection('prompt')">
-            <span class="toggle-arrow">›</span> System Prompt
-          </button>
+        <ui5-panel header-text="System Prompt" [collapsed]="collapsedSections['prompt']">
           <div class="section-body">
-            <textarea class="setting-textarea" [(ngModel)]="systemPrompt" rows="5"
-              placeholder="You are a helpful SQL assistant…"></textarea>
+            <ui5-textarea [(ngModel)]="systemPrompt" name="systemPrompt" rows="5"
+              placeholder="You are a helpful SQL assistant…" growing style="width: 100%;"></ui5-textarea>
           </div>
-        </div>
+        </ui5-panel>
 
         <!-- Token Usage -->
         @if (lastUsage()) {
           <div class="token-usage">
-            <div class="token-header">Token Usage</div>
-            <div class="token-bar-track">
-              <div class="token-bar-prompt" [style.width.%]="promptPct()"></div>
-              <div class="token-bar-completion" [style.width.%]="completionPct()" [style.left.%]="promptPct()"></div>
+            <ui5-title level="H6">Token Usage</ui5-title>
+            <div class="token-progress-group">
+              <label class="field-label">Prompt: {{ lastUsage()?.prompt_tokens }}</label>
+              <ui5-progress-indicator [value]="promptPct()" value-state="Information"></ui5-progress-indicator>
             </div>
-            <div class="token-details">
-              <span class="token-label"><span class="dot dot-prompt"></span>Prompt: {{ lastUsage()?.prompt_tokens }}</span>
-              <span class="token-label"><span class="dot dot-completion"></span>Completion: {{ lastUsage()?.completion_tokens }}</span>
+            <div class="token-progress-group">
+              <label class="field-label">Completion: {{ lastUsage()?.completion_tokens }}</label>
+              <ui5-progress-indicator [value]="completionPct()" value-state="None"></ui5-progress-indicator>
             </div>
             <div class="token-total">{{ lastUsage()?.total_tokens }} / {{ maxContextWindow }} tokens · ~{{ '$' + costEstimate() }}</div>
           </div>
         }
 
         <div class="sidebar-spacer"></div>
-        <button class="btn-danger" (click)="clearChat()">✕ Clear Chat</button>
+        <ui5-button design="Negative" icon="delete" (click)="clearChat()">Clear Chat</ui5-button>
       </div>
 
       <!-- Chat area -->
@@ -112,14 +107,13 @@ interface CompletionResponse {
           @if (!messages().length) {
             <div class="empty-state">
               <div class="welcome-icon">🤖</div>
-              <h3 class="welcome-title">SAP HANA SQL Assistant</h3>
+              <ui5-title level="H3">SAP HANA SQL Assistant</ui5-title>
               <p class="welcome-sub">Ask me about schemas, write SQL queries, or explore training data.</p>
               <div class="suggestion-chips">
                 @for (s of suggestions; track s) {
-                  <button class="chip" (click)="usePrompt(s)">
-                    <span class="chip-icon">{{ s === suggestions[0] ? '📊' : s === suggestions[1] ? '🔍' : '📝' }}</span>
+                  <ui5-button design="Transparent" (click)="usePrompt(s)">
                     {{ s }}
-                  </button>
+                  </ui5-button>
                 }
               </div>
             </div>
@@ -152,7 +146,8 @@ interface CompletionResponse {
 
         <!-- Scroll to bottom FAB -->
         @if (showScrollBtn()) {
-          <button class="scroll-fab" (click)="scrollToBottom()" title="Scroll to bottom">↓</button>
+          <ui5-button class="scroll-fab" icon="slim-arrow-down" design="Transparent"
+            (click)="scrollToBottom()" title="Scroll to bottom"></ui5-button>
         }
 
         <form class="chat-input-row" (ngSubmit)="send()">
@@ -172,9 +167,9 @@ interface CompletionResponse {
               <span class="key-hint">⌘ Enter to send</span>
             </div>
           </div>
-          <button type="submit" class="send-btn" [disabled]="!userInput.trim() || sending()">
-            <span class="send-icon">{{ sending() ? '⏳' : '→' }}</span>
-          </button>
+          <ui5-button icon="paper-plane" design="Emphasized" type="submit"
+            [disabled]="!userInput.trim() || sending()" (click)="send()">
+          </ui5-button>
         </form>
       </div>
     </div>
@@ -212,73 +207,9 @@ interface CompletionResponse {
 
     .sidebar-icon { font-size: 1.125rem; }
 
-    .sidebar-title {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      margin: 0;
-      color: var(--sapTextColor, #32363a);
-    }
-
-    /* Collapsible sections */
-    .sidebar-section {
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      margin-bottom: 0.5rem;
-      overflow: hidden;
-    }
-
-    .section-toggle {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.625rem 0.75rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--sapTextColor, #32363a);
-      text-align: left;
-    }
-
-    .section-toggle:hover { background: var(--sapBackgroundColor, #f5f5f5); }
-
-    .toggle-arrow {
-      display: inline-block;
-      transition: transform 0.2s ease;
-      font-size: 0.875rem;
-    }
-
-    .sidebar-section:not(.collapsed) .toggle-arrow { transform: rotate(90deg); }
-
     .section-body {
-      padding: 0 0.75rem 0.75rem;
-      max-height: 300px;
-      opacity: 1;
-      transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+      padding: 0.5rem 0.75rem 0.75rem;
     }
-
-    .collapsed .section-body {
-      max-height: 0;
-      opacity: 0;
-      padding: 0 0.75rem;
-      overflow: hidden;
-    }
-
-    .setting-select, .setting-textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.375rem 0.5rem;
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.375rem;
-      font-size: 0.8125rem;
-      background: var(--sapBaseColor, #fff);
-      color: var(--sapTextColor, #32363a);
-      font-family: inherit;
-    }
-
-    .setting-textarea { resize: vertical; min-height: 80px; }
 
     .field-hint {
       display: block;
@@ -298,11 +229,6 @@ interface CompletionResponse {
 
     .field-label strong { color: var(--sapTextColor, #32363a); }
 
-    .range-input {
-      width: 100%;
-      accent-color: var(--sapBrandColor, #0854a0);
-    }
-
     .range-labels {
       display: flex;
       justify-content: space-between;
@@ -318,64 +244,7 @@ interface CompletionResponse {
       margin-top: 0.25rem;
     }
 
-    .token-header {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--sapTextColor, #32363a);
-      margin-bottom: 0.5rem;
-    }
-
-    .token-bar-track {
-      position: relative;
-      height: 8px;
-      border-radius: 4px;
-      background: var(--sapBackgroundColor, #f5f5f5);
-      overflow: hidden;
-      margin-bottom: 0.5rem;
-    }
-
-    .token-bar-prompt {
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 100%;
-      background: var(--sapBrandColor, #0854a0);
-      border-radius: 4px 0 0 4px;
-      transition: width 0.3s ease;
-    }
-
-    .token-bar-completion {
-      position: absolute;
-      top: 0;
-      height: 100%;
-      background: var(--sapShellColor, #354a5e);
-      border-radius: 0 4px 4px 0;
-      transition: width 0.3s ease, left 0.3s ease;
-    }
-
-    .token-details {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .token-label {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.6875rem;
-      color: var(--sapContent_LabelColor, #6a6d70);
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .dot-prompt { background: var(--sapBrandColor, #0854a0); }
-    .dot-completion { background: var(--sapShellColor, #354a5e); }
+    .token-progress-group { margin-bottom: 0.5rem; }
 
     .token-total {
       font-size: 0.6875rem;
@@ -383,19 +252,6 @@ interface CompletionResponse {
     }
 
     .sidebar-spacer { flex: 1; }
-
-    .btn-danger {
-      padding: 0.5rem 0.75rem;
-      background: transparent;
-      color: var(--sapNegativeColor, #b00);
-      border: 1px solid var(--sapNegativeColor, #b00);
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-size: 0.8125rem;
-      transition: background 0.15s ease;
-    }
-
-    .btn-danger:hover { background: #ffebee; }
 
     /* ─── Chat Main ─── */
     .chat-main {
@@ -430,12 +286,7 @@ interface CompletionResponse {
 
     .welcome-icon { font-size: 3.5rem; margin-bottom: 0.25rem; }
 
-    .welcome-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--sapTextColor, #32363a);
-      margin: 0;
-    }
+
 
     .welcome-sub {
       font-size: 0.875rem;
@@ -452,26 +303,7 @@ interface CompletionResponse {
       max-width: 500px;
     }
 
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.5rem 1rem;
-      background: var(--sapBaseColor, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 2rem;
-      cursor: pointer;
-      font-size: 0.8125rem;
-      color: var(--sapTextColor, #32363a);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
 
-    .chip:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    .chip-icon { font-size: 0.875rem; }
 
     /* ─── Message Bubbles ─── */
     .message-row {
@@ -576,26 +408,8 @@ interface CompletionResponse {
       position: absolute;
       bottom: 80px;
       right: 1.5rem;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--sapBaseColor, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--sapTextColor, #32363a);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
       z-index: 5;
       animation: fadeIn 0.15s ease-out;
-    }
-
-    .scroll-fab:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.16);
     }
 
     /* ─── Input Area ─── */
@@ -648,26 +462,7 @@ interface CompletionResponse {
       pointer-events: none;
     }
 
-    .send-btn {
-      width: 40px;
-      height: 40px;
-      background: var(--sapBrandColor, #0854a0);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1.125rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.15s ease, transform 0.1s ease;
-    }
 
-    .send-btn:disabled { opacity: 0.4; cursor: default; }
-    .send-btn:hover:not(:disabled) { background: var(--sapShellColor, #354a5e); transform: scale(1.05); }
-
-    .send-icon { line-height: 1; }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
@@ -726,6 +521,16 @@ export class ChatComponent implements OnDestroy {
 
   toggleSection(key: string): void {
     this.collapsedSections[key] = !this.collapsedSections[key];
+  }
+
+  onTemperatureChange(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    this.temperature = Number(el.getAttribute('value') ?? (event as CustomEvent).detail?.value ?? this.temperature);
+  }
+
+  onMaxTokensChange(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    this.maxTokens = Number(el.getAttribute('value') ?? (event as CustomEvent).detail?.value ?? this.maxTokens);
   }
 
   usePrompt(s: string): void {

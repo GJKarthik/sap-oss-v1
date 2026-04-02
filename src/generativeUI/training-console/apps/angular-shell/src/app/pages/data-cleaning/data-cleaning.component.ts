@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
@@ -38,7 +40,7 @@ interface DataCleaningWorkflowEventsResponse {
 @Component({
   selector: 'app-data-cleaning',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -49,45 +51,43 @@ interface DataCleaningWorkflowEventsResponse {
           <p class="text-muted">Prepare and validate training data quality directly in model workflows.</p>
         </div>
         <div class="header-actions">
-          <button class="btn-secondary" (click)="refreshAll()" [disabled]="loadingHealth() || loadingChecks()">
-            <span class="btn-icon">↻</span> Refresh
-          </button>
-          <button class="btn-secondary btn-danger-outline" (click)="clearSession()" [disabled]="sending() || workflowRunning()">
-            <span class="btn-icon">✕</span> Clear Session
-          </button>
+          <ui5-button design="Transparent" icon="refresh" (click)="refreshAll()" [disabled]="loadingHealth() || loadingChecks()">
+            Refresh
+          </ui5-button>
+          <ui5-button design="Negative" icon="decline" (click)="clearSession()" [disabled]="sending() || workflowRunning()">
+            Clear Session
+          </ui5-button>
         </div>
       </div>
 
       <!-- Summary Stats -->
       <div class="stats-row">
-        <div class="stat-card">
-          <span class="stat-icon">🛡</span>
-          <div class="stat-body">
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="Checks Generated"></ui5-card-header>
+          <div class="stat-body-inner">
             <span class="stat-value">{{ checks().length }}</span>
-            <span class="stat-label">Checks Generated</span>
           </div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon">📊</span>
-          <div class="stat-body">
+        </ui5-card>
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="Pass Rate"></ui5-card-header>
+          <div class="stat-body-inner">
             <span class="stat-value">{{ passRate() }}%</span>
-            <span class="stat-label">Pass Rate</span>
           </div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon">⚠</span>
-          <div class="stat-body">
+        </ui5-card>
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="Issues Found"></ui5-card-header>
+          <div class="stat-body-inner">
             <span class="stat-value">{{ issueCount() }}</span>
-            <span class="stat-label">Issues Found</span>
           </div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon stat-icon-status" [class.stat-icon-ok]="healthStatus() === 'ok'" [class.stat-icon-err]="healthStatus() !== 'ok'">●</span>
-          <div class="stat-body">
-            <span class="stat-value stat-value-sm">{{ healthStatus() === 'ok' ? 'Online' : healthStatus() }}</span>
-            <span class="stat-label">Backend Status</span>
+        </ui5-card>
+        <ui5-card>
+          <ui5-card-header slot="header" title-text="Backend Status"></ui5-card-header>
+          <div class="stat-body-inner">
+            <ui5-tag [design]="healthStatus() === 'ok' ? 'Positive' : 'Negative'">
+              {{ healthStatus() === 'ok' ? 'Online' : healthStatus() }}
+            </ui5-tag>
           </div>
-        </div>
+        </ui5-card>
       </div>
 
       <div class="grid">
@@ -96,17 +96,10 @@ interface DataCleaningWorkflowEventsResponse {
           <div class="panel-header">
             <h2 class="panel-title">🤖 Copilot Chat</h2>
             @if (activeWorkflowId()) {
-              <span class="wf-status-pill"
-                [class.wf-running]="workflowStatus() === 'pending' || workflowStatus() === 'running'"
-                [class.wf-complete]="workflowStatus() === 'completed'"
-                [class.wf-failed]="workflowStatus() === 'failed'">
-                @if (workflowStatus() === 'pending' || workflowStatus() === 'running') {
-                  <span class="pulse-dot"></span>
-                }
-                @if (workflowStatus() === 'completed') { <span>✓</span> }
-                @if (workflowStatus() === 'failed') { <span>✕</span> }
+              <ui5-tag
+                [design]="workflowStatus() === 'completed' ? 'Positive' : workflowStatus() === 'failed' ? 'Negative' : 'Information'">
                 {{ workflowStatus() }}
-              </span>
+              </ui5-tag>
             }
           </div>
 
@@ -118,7 +111,7 @@ interface DataCleaningWorkflowEventsResponse {
                 <p class="empty-sub">Describe a data quality issue to generate cleaning checks</p>
                 <div class="suggestion-chips">
                   @for (s of suggestions; track s) {
-                    <button class="chip" (click)="usePrompt(s)">{{ s }}</button>
+                    <ui5-button design="Transparent" (click)="usePrompt(s)">{{ s }}</ui5-button>
                   }
                 </div>
               </div>
@@ -148,31 +141,30 @@ interface DataCleaningWorkflowEventsResponse {
             }
           </div>
 
-          <form class="chat-input-row" (ngSubmit)="sendMessage()">
+          <div class="chat-input-row">
             <div class="input-wrapper">
-              <textarea
-                class="chat-input"
-                name="prompt"
-                [(ngModel)]="prompt"
+              <ui5-textarea
+                [value]="prompt"
+                (input)="onPromptInput($event)"
                 rows="2"
                 placeholder="e.g. Profile CUSTOMER table and suggest null-value remediations"
+                growing
+                growing-max-rows="4"
+                style="width: 100%;"
                 (keydown.meta.enter)="sendMessage()"
-              ></textarea>
+              ></ui5-textarea>
               <span class="input-hint">⌘ Enter to send</span>
             </div>
-            <button class="send-btn" type="submit" [disabled]="sending() || !prompt.trim()">
-              <span class="send-icon">{{ sending() ? '⏳' : '→' }}</span>
-            </button>
-          </form>
+            <ui5-button icon="paper-plane" design="Emphasized"
+              [disabled]="sending() || !prompt.trim()"
+              (click)="sendMessage()">
+            </ui5-button>
+          </div>
 
           <div class="workflow-cta">
-            <button class="btn-primary" (click)="runWorkflow()" [disabled]="workflowRunning() || !lastPrompt">
-              @if (workflowRunning()) {
-                <span class="btn-spinner"></span> Running…
-              } @else {
-                <span class="btn-icon">▶</span> Run Cleaning Workflow
-              }
-            </button>
+            <ui5-button design="Emphasized" icon="play" (click)="runWorkflow()" [disabled]="workflowRunning() || !lastPrompt">
+              {{ workflowRunning() ? 'Running…' : 'Run Cleaning Workflow' }}
+            </ui5-button>
             <span class="cta-hint">Uses your last prompt to create cleaning actions</span>
           </div>
         </section>
@@ -182,11 +174,11 @@ interface DataCleaningWorkflowEventsResponse {
           <!-- Generated Checks -->
           <div class="panel-header">
             <h2 class="panel-title">🛡 Generated Checks</h2>
-            <span class="badge-count">{{ checks().length }}</span>
+            <ui5-tag design="Set2">{{ checks().length }}</ui5-tag>
           </div>
 
           @if (loadingChecks()) {
-            <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+            <ui5-busy-indicator active size="M" style="width: 100%; min-height: 60px;"></ui5-busy-indicator>
           } @else if (!checks().length) {
             <div class="empty-state empty-state-sm">
               <div class="empty-icon-sm">📋</div>
@@ -195,27 +187,30 @@ interface DataCleaningWorkflowEventsResponse {
           } @else {
             <div class="checks-list">
               @for (check of checks(); track $index) {
-                <div class="check-card" [class.severity-critical]="getSeverity(check) === 'critical'" [class.severity-warning]="getSeverity(check) === 'warning'" [class.severity-info]="getSeverity(check) === 'info'">
-                  <div class="check-card-header">
-                    <h3 class="check-name">{{ getCheckName(check) }}</h3>
-                    <span class="severity-badge" [class.sev-critical]="getSeverity(check) === 'critical'" [class.sev-warning]="getSeverity(check) === 'warning'" [class.sev-info]="getSeverity(check) === 'info'">
-                      {{ getSeverity(check) }}
-                    </span>
-                  </div>
-                  @if (getCheckDesc(check)) {
-                    <p class="check-desc">{{ getCheckDesc(check) }}</p>
-                  }
-                  @if (getColumns(check).length) {
-                    <div class="column-pills">
-                      @for (col of getColumns(check); track col) {
-                        <span class="col-pill">{{ col }}</span>
-                      }
+                <ui5-card>
+                  <ui5-card-header slot="header"
+                    [titleText]="getCheckName(check)"
+                    [subtitleText]="getCheckDesc(check)">
+                  </ui5-card-header>
+                  <div style="padding: 0.5rem 1rem;">
+                    <div style="margin-bottom: 0.35rem;">
+                      <ui5-tag
+                        [design]="getSeverity(check) === 'critical' ? 'Negative' : getSeverity(check) === 'warning' ? 'Critical' : 'Information'">
+                        {{ getSeverity(check) }}
+                      </ui5-tag>
                     </div>
-                  }
-                  @if (getCheckSql(check)) {
-                    <pre class="check-sql">{{ getCheckSql(check) }}</pre>
-                  }
-                </div>
+                    @if (getColumns(check).length) {
+                      <div class="column-pills">
+                        @for (col of getColumns(check); track col) {
+                          <ui5-tag design="Set2">{{ col }}</ui5-tag>
+                        }
+                      </div>
+                    }
+                    @if (getCheckSql(check)) {
+                      <pre class="check-sql">{{ getCheckSql(check) }}</pre>
+                    }
+                  </div>
+                </ui5-card>
               }
             </div>
           }
@@ -223,7 +218,7 @@ interface DataCleaningWorkflowEventsResponse {
           <!-- Workflow Timeline -->
           <div class="panel-header timeline-header">
             <h2 class="panel-title">📡 Workflow Events</h2>
-            <span class="badge-count">{{ workflowEvents().length }}</span>
+            <ui5-tag design="Set2">{{ workflowEvents().length }}</ui5-tag>
           </div>
 
           @if (!workflowEvents().length) {
@@ -232,29 +227,16 @@ interface DataCleaningWorkflowEventsResponse {
               <p class="empty-hint">No workflow events yet.<br>Run a workflow after generating checks.</p>
             </div>
           } @else {
-            <div class="timeline">
+            <ui5-timeline>
               @for (event of workflowEvents(); track $index) {
-                <div class="tl-item">
-                  <div class="tl-rail">
-                    <div class="tl-dot"
-                      [class.tl-success]="getEventStatus(event) === 'success' || getEventStatus(event) === 'completed'"
-                      [class.tl-fail]="getEventStatus(event) === 'failed' || getEventStatus(event) === 'error'"
-                      [class.tl-running]="getEventStatus(event) === 'running'"
-                      [class.tl-pending]="getEventStatus(event) === 'pending'"></div>
-                    @if ($index < workflowEvents().length - 1) {
-                      <div class="tl-line"></div>
-                    }
-                  </div>
-                  <div class="tl-body">
-                    <div class="tl-head">
-                      <span class="tl-type">{{ getEventType(event) }}</span>
-                      <span class="tl-time">{{ getEventTime(event) }}</span>
-                    </div>
-                    <p class="tl-desc">{{ getEventDesc(event) }}</p>
-                  </div>
-                </div>
+                <ui5-timeline-item
+                  [titleText]="getEventType(event)"
+                  [subtitleText]="getEventTime(event)"
+                  [icon]="getTimelineIcon(getEventStatus(event))">
+                  {{ getEventDesc(event) }}
+                </ui5-timeline-item>
               }
-            </div>
+            </ui5-timeline>
           }
         </section>
       </div>
@@ -266,20 +248,10 @@ interface DataCleaningWorkflowEventsResponse {
     .stats-row {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem;
     }
-    .stat-card {
-      display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem;
-      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; transition: box-shadow 0.2s ease;
+    .stat-body-inner {
+      padding: 1rem; text-align: center;
     }
-    .stat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .stat-icon { font-size: 1.5rem; }
-    .stat-icon-status { font-size: 1.25rem; }
-    .stat-icon-ok { color: #2e7d32; }
-    .stat-icon-err { color: #c62828; }
-    .stat-body { display: flex; flex-direction: column; }
     .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--sapTextColor, #32363a); line-height: 1.2; }
-    .stat-value-sm { font-size: 1rem; }
-    .stat-label { font-size: 0.6875rem; color: var(--sapContent_LabelColor, #6a6d70); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
 
     .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; }
     .panel {
@@ -289,60 +261,9 @@ interface DataCleaningWorkflowEventsResponse {
     }
     .panel-header { display: flex; align-items: center; justify-content: space-between; }
     .panel-title { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--sapTextColor, #32363a); }
-    .badge-count {
-      font-size: 0.6875rem; font-weight: 700; min-width: 22px; text-align: center;
-      padding: 0.1rem 0.45rem; border-radius: 999px;
-      background: var(--sapBackgroundColor, #f5f5f5); color: var(--sapContent_LabelColor, #6a6d70);
-    }
     .timeline-header { margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--sapTile_BorderColor, #e4e4e4); }
 
-    /* ─── Buttons ─── */
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      background: var(--sapBaseColor, #fff); color: var(--sapTextColor, #32363a);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.25rem;
-      padding: 0.4rem 0.75rem; cursor: pointer; font-size: 0.8125rem; font-weight: 500;
-      transition: all 0.15s ease;
-    }
-    .btn-secondary:hover:not(:disabled) { background: var(--sapBackgroundColor, #f5f5f5); }
-    .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-danger-outline { color: #c62828; border-color: #e0bfbf; }
-    .btn-danger-outline:hover:not(:disabled) { background: #fff5f5; }
-    .btn-primary {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-      background: var(--sapBrandColor, #0854a0); color: #fff; border: none; border-radius: 0.25rem;
-      padding: 0.5rem 1rem; cursor: pointer; font-size: 0.8125rem; font-weight: 600;
-      transition: background 0.15s ease; min-width: 180px;
-    }
-    .btn-primary:hover:not(:disabled) { background: #063d75; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-icon { font-size: 0.75rem; }
-    .btn-spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
-      border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ─── Workflow Status Pill ─── */
-    .wf-status-pill {
-      display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; font-weight: 600;
-      padding: 0.15rem 0.55rem; border-radius: 999px; text-transform: capitalize;
-      background: var(--sapBackgroundColor, #f5f5f5); color: var(--sapContent_LabelColor, #6a6d70);
-    }
-    .wf-running { background: rgba(8,84,160,0.1); color: var(--sapBrandColor, #0854a0); }
-    .wf-complete { background: #e8f5e9; color: #2e7d32; }
-    .wf-failed { background: #ffebee; color: #c62828; }
-    .pulse-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--sapBrandColor, #0854a0); animation: pulse-dot 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.7); }
-    }
-
-    /* ─── Chat ─── */
+    /* ─── Chat (custom bubble styling kept) ─── */
     .chat-panel { min-height: 520px; }
     .chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem 0; scroll-behavior: smooth; }
 
@@ -391,27 +312,10 @@ interface DataCleaningWorkflowEventsResponse {
     /* ─── Input ─── */
     .chat-input-row { display: flex; gap: 0.5rem; align-items: flex-end; }
     .input-wrapper { flex: 1; position: relative; }
-    .chat-input {
-      width: 100%; box-sizing: border-box; padding: 0.55rem 0.7rem; padding-bottom: 1.25rem;
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.65rem;
-      font-size: 0.84rem; background: var(--sapBackgroundColor, #f5f5f5);
-      color: var(--sapTextColor, #32363a); resize: none; font-family: inherit;
-      transition: border-color 0.15s ease;
-    }
-    .chat-input:focus { outline: none; border-color: var(--sapBrandColor, #0854a0); }
     .input-hint {
       position: absolute; bottom: 0.3rem; right: 0.7rem;
       font-size: 0.6rem; color: var(--sapContent_LabelColor, #6a6d70); pointer-events: none;
     }
-    .send-btn {
-      width: 36px; height: 36px; background: var(--sapBrandColor, #0854a0); color: #fff;
-      border: none; border-radius: 50%; cursor: pointer; font-size: 1rem;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      transition: background 0.15s ease, transform 0.1s ease;
-    }
-    .send-btn:disabled { opacity: 0.4; cursor: default; }
-    .send-btn:hover:not(:disabled) { background: var(--sapShellColor, #354a5e); transform: scale(1.05); }
-    .send-icon { line-height: 1; }
 
     .workflow-cta { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem; }
     .cta-hint { font-size: 0.72rem; color: var(--sapContent_LabelColor, #6a6d70); }
@@ -429,77 +333,15 @@ interface DataCleaningWorkflowEventsResponse {
     .empty-hint { font-size: 0.78rem; color: var(--sapContent_LabelColor, #6a6d70); margin: 0; line-height: 1.45; }
 
     .suggestion-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; max-width: 420px; }
-    .chip {
-      display: inline-flex; align-items: center; padding: 0.4rem 0.85rem;
-      background: var(--sapBaseColor, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 2rem; cursor: pointer; font-size: 0.75rem; color: var(--sapTextColor, #32363a);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .chip:hover { transform: translateY(-2px); box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
 
     /* ─── Check Cards ─── */
     .checks-list { overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; max-height: 320px; }
-    .check-card {
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.45rem;
-      padding: 0.7rem 0.85rem; background: var(--sapBaseColor, #fff);
-      border-left: 3px solid var(--sapTile_BorderColor, #e4e4e4);
-      transition: box-shadow 0.15s ease;
-    }
-    .check-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-    .severity-critical { border-left-color: #c62828; }
-    .severity-warning { border-left-color: #f57f17; }
-    .severity-info { border-left-color: var(--sapBrandColor, #0854a0); }
-    .check-card-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
-    .check-name { margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--sapTextColor, #32363a); }
-    .severity-badge {
-      font-size: 0.6rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 0.2rem;
-      text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
-    }
-    .sev-critical { background: #ffebee; color: #c62828; }
-    .sev-warning { background: #fff8e1; color: #f57f17; }
-    .sev-info { background: rgba(8,84,160,0.08); color: var(--sapBrandColor, #0854a0); }
-    .check-desc { margin: 0 0 0.35rem; font-size: 0.78rem; color: var(--sapContent_LabelColor, #6a6d70); line-height: 1.4; }
     .column-pills { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.35rem; }
-    .col-pill {
-      font-size: 0.65rem; font-weight: 500; padding: 0.1rem 0.4rem; border-radius: 0.2rem;
-      background: var(--sapBackgroundColor, #f5f5f5); color: var(--sapTextColor, #32363a);
-      font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-    }
     .check-sql {
       margin: 0; padding: 0.45rem 0.6rem; border-radius: 0.3rem;
       background: #1e1e2e; color: #cdd6f4; font-size: 0.72rem; line-height: 1.45;
       white-space: pre-wrap; word-break: break-all; overflow-x: auto;
       font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    /* ─── Timeline ─── */
-    .timeline { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
-    .tl-item { display: flex; gap: 0.6rem; }
-    .tl-rail { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 14px; }
-    .tl-dot {
-      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-      background: var(--sapContent_LabelColor, #6a6d70); border: 2px solid var(--sapTile_Background, #fff);
-    }
-    .tl-success { background: #2e7d32; }
-    .tl-fail { background: #c62828; }
-    .tl-running { background: var(--sapBrandColor, #0854a0); animation: pulse-dot 1.5s ease-in-out infinite; }
-    .tl-pending { background: #bdbdbd; }
-    .tl-line { width: 2px; flex: 1; background: var(--sapTile_BorderColor, #e4e4e4); min-height: 16px; }
-    .tl-body { flex: 1; padding-bottom: 0.65rem; }
-    .tl-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-    .tl-type { font-size: 0.78rem; font-weight: 600; color: var(--sapTextColor, #32363a); }
-    .tl-time { font-size: 0.65rem; color: var(--sapContent_LabelColor, #6a6d70); }
-    .tl-desc { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--sapContent_LabelColor, #6a6d70); line-height: 1.35; }
-
-    /* ─── Loading ─── */
-    .loading-bar { width: 100%; height: 3px; background: var(--sapBackgroundColor, #f5f5f5); border-radius: 2px; overflow: hidden; }
-    .loading-bar-inner {
-      width: 40%; height: 100%; background: var(--sapBrandColor, #0854a0); border-radius: 2px;
-      animation: loading-slide 1.2s ease-in-out infinite;
-    }
-    @keyframes loading-slide {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(350%); }
     }
 
     @keyframes fadeSlide {
@@ -711,9 +553,21 @@ export class DataCleaningComponent implements OnInit, OnDestroy {
   }
 
   /* ─── Template helpers ─── */
+  onPromptInput(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.prompt = target?.value ?? '';
+  }
+
   usePrompt(s: string): void {
     this.prompt = s;
     this.sendMessage();
+  }
+
+  getTimelineIcon(status: string): string {
+    if (status === 'success' || status === 'completed') return 'status-positive';
+    if (status === 'failed' || status === 'error') return 'status-negative';
+    if (status === 'running') return 'synchronize';
+    return 'pending';
   }
 
   formatTime(ts: number): string {
