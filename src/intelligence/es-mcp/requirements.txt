@@ -1,0 +1,5 @@
+# ES MCP Server — minimal Python dependencies
+# All ES and AI Core communication uses stdlib urllib; no elasticsearch-py needed.
+# PyJWT is optional: only required when XSUAA_VERIFY_TOKEN=true and
+# XSUAA_PUBLIC_KEY is set for RS256 JWT validation.
+PyJWT[crypto]>=2.8.0

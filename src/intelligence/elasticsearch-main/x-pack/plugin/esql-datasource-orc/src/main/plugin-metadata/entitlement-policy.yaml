@@ -1,5 +1,0 @@
-ALL-UNNAMED:
-  - load_native_libraries
-  - write_system_properties:
-      properties:
-        - jdk.lang.Process.launchMechanism

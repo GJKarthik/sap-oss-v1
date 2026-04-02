@@ -1,5 +1,0 @@
-config:
-  skip-target-branches: "main"
-steps:
-  - label: validate-transport-version-backport
-    command: .buildkite/scripts/validate-transport-version-backport.sh

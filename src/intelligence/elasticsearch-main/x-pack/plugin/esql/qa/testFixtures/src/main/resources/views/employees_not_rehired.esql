@@ -1,2 +1,0 @@
-FROM employees
-| WHERE is_rehired == false

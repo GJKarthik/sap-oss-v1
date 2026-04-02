@@ -1,5 +1,0 @@
-config:
-  skip-target-branches: "test-branch"
-steps:
-  - label: skip-me
-    command: echo 1

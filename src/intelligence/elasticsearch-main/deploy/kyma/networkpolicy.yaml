@@ -1,0 +1,77 @@
+# NetworkPolicy for elasticsearch-0
+#
+# Restricts ingress/egress for the elasticsearch pod.
+# The PeerAuthentication (peerauthentication.yaml) handles Istio mTLS — this
+# NetworkPolicy handles L3/L4 traffic rules.
+#
+# Apply:
+#   kubectl apply -f networkpolicy.yaml
+#   kubectl apply -f peerauthentication.yaml
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: elasticsearch-network-policy
+  namespace: sap-ai-services
+  labels:
+    app: elasticsearch
+    app.kubernetes.io/part-of: btp-ai-suite
+spec:
+  podSelector:
+    matchLabels:
+      app: elasticsearch
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from any pod in sap-ai-services (es-mcp, ai-core-pal, etc.)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sap-ai-services
+      ports:
+        - port: 9200
+          protocol: TCP
+        - port: 9300
+          protocol: TCP
+    # Allow from Istio-injected namespaces (mTLS traffic via Envoy)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              istio-injection: enabled
+  egress:
+    # DNS resolution
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector: {}
+
+---
+# PeerAuthentication: allow plain HTTP (PERMISSIVE) on ES ports
+# so that non-Istio pods (e.g. es-mcp with inject=false) can connect.
+# Istio-injected pods still use mTLS automatically.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: elasticsearch-permissive
+  namespace: sap-ai-services
+  labels:
+    app: elasticsearch
+    app.kubernetes.io/part-of: btp-ai-suite
+  annotations:
+    # Allow plain HTTP from non-Istio pods (e.g. es-mcp, sidecar.istio.io/inject=false)
+    # while still accepting mTLS from Istio-injected pods.
+    # Without this, the global STRICT mTLS policy blocks plain HTTP to elasticsearch-0.
+spec:
+  selector:
+    matchLabels:
+      app: elasticsearch
+  portLevelMtls:
+    9200:
+      mode: PERMISSIVE
+    9300:
+      mode: PERMISSIVE

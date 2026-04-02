@@ -1,0 +1,23 @@
+# Elasticsearch cluster configuration for sap-ai-services on Kyma
+# This file is mounted as a ConfigMap (elasticsearch-config) in the StatefulSet.
+# The live ConfigMap is the source of truth — this file documents/recreates it.
+
+cluster.name: sap-elasticsearch
+node.name: ${HOSTNAME}
+network.host: 0.0.0.0
+discovery.type: single-node
+
+# Security — disabled for internal cluster (no external exposure)
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.ml.enabled: false
+
+# Storage paths
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# Memory — Kyma node has 2GB heap (-Xms1g -Xmx1g set via ES_JAVA_OPTS)
+bootstrap.memory_lock: false
+
+# Safety — require explicit name on destructive operations (delete index, etc.)
+action.destructive_requires_name: true

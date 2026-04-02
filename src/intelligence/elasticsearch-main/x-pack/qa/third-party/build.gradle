@@ -1,8 +1,0 @@
-apply plugin: 'elasticsearch.java'
-
-dependencies {
-  api project(':test:framework')
-  api project(':test:yaml-rest-runner')
-  api project(':test:test-clusters')
-  api project(xpackModule('core'))
-}

@@ -1,4 +1,0 @@
-FROM employees
-| keep emp_no, height
-| SORT height
-| LIMIT 20

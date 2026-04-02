@@ -1,1 +1,0 @@
-- [`SET`](/reference/query-languages/esql/commands/set.md)

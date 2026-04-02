@@ -1,3 +1,0 @@
-from all_types
-| fork (stats x = count(*), y = max(long) by hd = date_trunc(1 day, date))
-(stats x = count(*), y = min(long) by hd = date_trunc(2 day, date))

@@ -1,5 +1,0 @@
-okhttp3:
-  - outbound_network
-  - manage_threads
-okio:
-  - manage_threads

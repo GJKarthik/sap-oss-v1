@@ -1,5 +1,0 @@
-config:
-  skip-target-branches: "main"
-steps:
-  - label: validate-index-version-backport
-    command: .buildkite/scripts/validate-index-version-backport.sh
