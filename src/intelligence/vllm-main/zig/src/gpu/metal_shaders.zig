@@ -549,14 +549,17 @@ pub const VecMatQ4KTripleOp = struct {
     weight1: *anyopaque,
     out1: []f32,
     out1_buf: ?*anyopaque = null,
+    out1_offset_bytes: usize = 0,
     n1: usize,
     weight2: *anyopaque,
     out2: []f32,
     out2_buf: ?*anyopaque = null,
+    out2_offset_bytes: usize = 0,
     n2: usize,
     weight3: *anyopaque,
     out3: []f32,
     out3_buf: ?*anyopaque = null,
+    out3_offset_bytes: usize = 0,
     n3: usize,
     k: usize,
 };
@@ -567,14 +570,17 @@ pub const VecMatQ4KTripleRmsNormOp = struct {
     weight1: *anyopaque,
     out1: []f32,
     out1_buf: ?*anyopaque = null,
+    out1_offset_bytes: usize = 0,
     n1: usize,
     weight2: *anyopaque,
     out2: []f32,
     out2_buf: ?*anyopaque = null,
+    out2_offset_bytes: usize = 0,
     n2: usize,
     weight3: *anyopaque,
     out3: []f32,
     out3_buf: ?*anyopaque = null,
+    out3_offset_bytes: usize = 0,
     n3: usize,
     k: usize,
 };
@@ -1472,11 +1478,11 @@ pub fn dispatchVecMatMulQ4KTriple(lib: *MetalShaderLibrary, x: []const f32, x_mt
     metal_bindings.setComputePipelineState(encoder, pipeline);
     metal_bindings.setBuffer(encoder, x_buf, 0, 0);
     metal_bindings.setBuffer(encoder, op.weight1, 0, 1);
-    metal_bindings.setBuffer(encoder, out1_buf, 0, 2);
+    metal_bindings.setBuffer(encoder, out1_buf, op.out1_offset_bytes, 2);
     metal_bindings.setBuffer(encoder, op.weight2, 0, 5);
-    metal_bindings.setBuffer(encoder, out2_buf, 0, 6);
+    metal_bindings.setBuffer(encoder, out2_buf, op.out2_offset_bytes, 6);
     metal_bindings.setBuffer(encoder, op.weight3, 0, 8);
-    metal_bindings.setBuffer(encoder, out3_buf, 0, 9);
+    metal_bindings.setBuffer(encoder, out3_buf, op.out3_offset_bytes, 9);
 
     var k_val: u32 = @intCast(op.k);
     var n1_val: u32 = @intCast(op.n1);
@@ -1546,11 +1552,11 @@ pub fn dispatchVecMatMulQ4KTripleRmsNorm(lib: *MetalShaderLibrary, x: []const f3
     metal_bindings.setBuffer(encoder, x_buf, 0, 0);
     metal_bindings.setBuffer(encoder, op.norm_weight, 0, 1);
     metal_bindings.setBuffer(encoder, op.weight1, 0, 2);
-    metal_bindings.setBuffer(encoder, out1_buf, 0, 3);
+    metal_bindings.setBuffer(encoder, out1_buf, op.out1_offset_bytes, 3);
     metal_bindings.setBuffer(encoder, op.weight2, 0, 6);
-    metal_bindings.setBuffer(encoder, out2_buf, 0, 7);
+    metal_bindings.setBuffer(encoder, out2_buf, op.out2_offset_bytes, 7);
     metal_bindings.setBuffer(encoder, op.weight3, 0, 9);
-    metal_bindings.setBuffer(encoder, out3_buf, 0, 10);
+    metal_bindings.setBuffer(encoder, out3_buf, op.out3_offset_bytes, 10);
 
     var k_val: u32 = @intCast(op.k);
     var n1_val: u32 = @intCast(op.n1);

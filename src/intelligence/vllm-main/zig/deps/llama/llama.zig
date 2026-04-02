@@ -4751,15 +4751,26 @@ pub const Model = struct {
     fn tryMetalWOProjectionAdd(self: *Model, layer: *const TransformerLayer, x: []const f32, residual: []f32, k: usize, n: usize) bool {
         if (!envFlagEnabled("PLLM_ENABLE_WO_RESIDUAL_FUSION")) return false;
         if (envFlagEnabled("PLLM_ENABLE_WO_F16_CACHE")) return false;
-        const lib = self.metal_lib orelse return false;
-        if (layer.wo_quant.dtype != .q4_k) return false;
+        return self.tryMetalQ4KProjectionAdd(&layer.wo_quant, x, residual, k, n);
+    }
 
-        const weight_buf = self.getOrCreateMetalQuantBuffer(&layer.wo_quant) orelse return false;
+    fn tryMetalQ4KProjectionAdd(
+        self: *Model,
+        weights_quant: *const QuantizedWeightMatrix,
+        x: []const f32,
+        residual: []f32,
+        k: usize,
+        n: usize,
+    ) bool {
+        const lib = self.metal_lib orelse return false;
+        if (weights_quant.dtype != .q4_k) return false;
+
+        const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant) orelse return false;
         const residual_buf = self.metalBufferForSlice(residual[0..n]) orelse return false;
         const result = metal_shaders.dispatchVecMatMulQ4KAdd(
             lib,
             x[0..k],
-            layer.wo_quant.data,
+            weights_quant.data,
             weight_buf,
             residual[0..n],
             self.metalBufferForSlice(x[0..k]),
@@ -4770,6 +4781,61 @@ pub const Model = struct {
             n,
         );
         return result.success;
+    }
+
+    fn q4KRowSliceView(
+        self: *Model,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        row_start: usize,
+        rows: usize,
+    ) ?QuantizedWeightMatrix {
+        _ = self;
+        if (weights_quant.dtype != .q4_k) return null;
+        if (rows == 0) return null;
+        const row_bytes = q4KBytesForMatrix(k);
+        const byte_start = row_start * row_bytes;
+        const byte_len = rows * row_bytes;
+        if (byte_start + byte_len > weights_quant.data.len) return null;
+        return .{
+            .dtype = .q4_k,
+            .data = weights_quant.data[byte_start .. byte_start + byte_len],
+            .n_elements = rows * k,
+        };
+    }
+
+    fn tryShortConvTripleProjection(self: *Model, layer: *const TransformerLayer, dim: usize) bool {
+        if (!envFlagEnabled("PLLM_ENABLE_SHORTCONV_TRIPLE")) return false;
+        const proj_quant = &layer.shortconv_in_proj_quant;
+        const b_quant = self.q4KRowSliceView(proj_quant, dim, 0, dim) orelse return false;
+        const c_quant = self.q4KRowSliceView(proj_quant, dim, dim, dim) orelse return false;
+        const x_quant = self.q4KRowSliceView(proj_quant, dim, 2 * dim, dim) orelse return false;
+        const b = self.shortconv_proj_buf[0..dim];
+        const c = self.shortconv_proj_buf[dim .. 2 * dim];
+        const x = self.shortconv_proj_buf[2 * dim .. 3 * dim];
+        const lib = self.metal_lib orelse return false;
+        const proj_buf = self.metal_shortconv_proj_buf orelse return false;
+        const weight1 = self.getOrCreateMetalQuantBuffer(&b_quant) orelse return false;
+        const weight2 = self.getOrCreateMetalQuantBuffer(&c_quant) orelse return false;
+        const weight3 = self.getOrCreateMetalQuantBuffer(&x_quant) orelse return false;
+        return metal_shaders.dispatchVecMatMulQ4KTriple(lib, self.norm_buf[0..dim], self.metalBufferForSlice(self.norm_buf[0..dim]), .{
+            .weight1 = weight1,
+            .out1 = b,
+            .out1_buf = proj_buf,
+            .out1_offset_bytes = 0,
+            .n1 = dim,
+            .weight2 = weight2,
+            .out2 = c,
+            .out2_buf = proj_buf,
+            .out2_offset_bytes = dim * @sizeOf(f32),
+            .n2 = dim,
+            .weight3 = weight3,
+            .out3 = x,
+            .out3_buf = proj_buf,
+            .out3_offset_bytes = 2 * dim * @sizeOf(f32),
+            .n3 = dim,
+            .k = dim,
+        });
     }
 
     fn runAttentionLayer(
@@ -4907,20 +4973,23 @@ pub const Model = struct {
         return false;
     }
 
-    fn runShortConvLayer(self: *Model, layer: *const TransformerLayer, layer_idx: usize, kv_cache: *KVCache) void {
+    fn runShortConvLayer(self: *Model, layer: *const TransformerLayer, layer_idx: usize, kv_cache: *KVCache) bool {
         const dim: usize = self.config.n_embd;
         const recurrent_steps: usize = kv_cache.recurrent_steps;
         const window_steps = recurrent_steps + 1;
 
         const in_proj_start = self.profileStart();
-        self.vecMatMulRuntime(
-            self.shortconv_proj_buf[0 .. 3 * dim],
-            self.norm_buf[0..dim],
-            layer.shortconv_in_proj,
-            &layer.shortconv_in_proj_quant,
-            dim,
-            3 * dim,
-        );
+        const fused_triple = self.tryShortConvTripleProjection(layer, dim);
+        if (!fused_triple) {
+            self.vecMatMulRuntime(
+                self.shortconv_proj_buf[0 .. 3 * dim],
+                self.norm_buf[0..dim],
+                layer.shortconv_in_proj,
+                &layer.shortconv_in_proj_quant,
+                dim,
+                3 * dim,
+            );
+        }
         sanitizeNonFiniteInPlace(self.shortconv_proj_buf[0 .. 3 * dim]);
         self.profileAdd(&self.profile_stats.shortconv_in_proj_ns, in_proj_start);
 
@@ -4960,16 +5029,29 @@ pub const Model = struct {
         self.profileAdd(&self.profile_stats.shortconv_conv_ns, conv_start);
 
         const out_proj_start = self.profileStart();
-        self.vecMatMulRuntime(
-            self.norm_buf[0..dim],
-            self.shortconv_out_buf[0..dim],
-            layer.shortconv_out_proj,
-            &layer.shortconv_out_proj_quant,
-            dim,
-            dim,
-        );
-        sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+        const fused_residual = if (envFlagEnabled("PLLM_ENABLE_SHORTCONV_RESIDUAL_FUSION"))
+            self.tryMetalQ4KProjectionAdd(
+                &layer.shortconv_out_proj_quant,
+                self.shortconv_out_buf[0..dim],
+                self.hidden_buf[0..dim],
+                dim,
+                dim,
+            )
+        else
+            false;
+        if (!fused_residual) {
+            self.vecMatMulRuntime(
+                self.norm_buf[0..dim],
+                self.shortconv_out_buf[0..dim],
+                layer.shortconv_out_proj,
+                &layer.shortconv_out_proj_quant,
+                dim,
+                dim,
+            );
+            sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+        }
         self.profileAdd(&self.profile_stats.shortconv_out_proj_ns, out_proj_start);
+        return fused_residual;
     }
 
     fn forwardInner(self: *Model, token: u32, pos: usize, kv_cache: *KVCache, compute_logits: bool) []f32 {
@@ -5007,7 +5089,7 @@ pub const Model = struct {
                 const shortconv_norm_start = self.profileStart();
                 self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], layer.attn_norm, use_accel);
                 self.profileAdd(&self.profile_stats.shortconv_norm_ns, shortconv_norm_start);
-                self.runShortConvLayer(layer, l, kv_cache);
+                attn_residual_fused = self.runShortConvLayer(layer, l, kv_cache);
                 self.profileAdd(&self.profile_stats.shortconv_ns, shortconv_start);
             } else {
                 const layer_kv_dim = layer.n_kv_heads * head_dim;
@@ -5082,13 +5164,27 @@ pub const Model = struct {
             self.profileAdd(&self.profile_stats.ffn_prep_ns, ffn_prep_start);
 
             const ffn_down_start = self.profileStart();
-            self.vecMatMulRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
-            sanitizeNonFiniteInPlace(self.ffn_out_buf[0..dim]);
+            const ffn_residual_fused = if (envFlagEnabled("PLLM_ENABLE_FFN_DOWN_RESIDUAL_FUSION"))
+                self.tryMetalQ4KProjectionAdd(
+                    &layer.w_down_quant,
+                    self.gate_buf[0..ff],
+                    self.hidden_buf[0..dim],
+                    ff,
+                    dim,
+                )
+            else
+                false;
+            if (!ffn_residual_fused) {
+                self.vecMatMulRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
+                sanitizeNonFiniteInPlace(self.ffn_out_buf[0..dim]);
+            }
             self.profileAdd(&self.profile_stats.ffn_down_ns, ffn_down_start);
 
-            const ffn_residual_start = self.profileStart();
-            self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim], use_accel);
-            self.profileAdd(&self.profile_stats.ffn_residual_ns, ffn_residual_start);
+            if (!ffn_residual_fused) {
+                const ffn_residual_start = self.profileStart();
+                self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim], use_accel);
+                self.profileAdd(&self.profile_stats.ffn_residual_ns, ffn_residual_start);
+            }
             sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
         }
 
