@@ -11,6 +11,11 @@ coverage
 .nx
 .cache
 
+.yarn/cache
+mcp-server
+libs/openai-server
+kuzu
+
 artifacts
 tmp
 temp
