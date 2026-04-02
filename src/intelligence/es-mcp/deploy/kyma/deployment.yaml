@@ -70,6 +70,14 @@ spec:
         - namespaceSelector:
             matchLabels:
               istio-injection: enabled
+    # Allow Kyma ingress gateway (istio-system) to reach MCP port
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 9120
+          protocol: TCP
   egress:
     # In-cluster: ES on 9200 + anything else in namespace
     - to:
@@ -88,6 +96,16 @@ spec:
           protocol: TCP
       to:
         - namespaceSelector: {}
+    # Istio control plane — required for sidecar certificate issuance (xDS/SDS)
+    - ports:
+        - port: 15012
+          protocol: TCP
+        - port: 15010
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
 
 ---
 apiVersion: apps/v1
@@ -109,9 +127,10 @@ spec:
         app: es-mcp
         component: mcp-server
       annotations:
-        # Disable Istio sidecar injection — pod communicates via the Istio
-        # ingress gateway (APIRule) so per-pod mTLS sidecar is not required.
-        sidecar.istio.io/inject: "false"
+        # Istio sidecar injection enabled — required for Kyma APIRule v2.
+        # NetworkPolicy allows egress to istiod:15012 for certificate issuance,
+        # and ingress from istio-system for the Kyma ingress gateway.
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
         - name: es-mcp

@@ -35,9 +35,7 @@ metadata:
 spec:
   gateway: kyma-system/kyma-gateway
   hosts:
-    # Replace with your actual Kyma cluster wildcard domain.
-    # Example: es-mcp.c-9323c0b.kyma.ondemand.com
-    - es-mcp.c-xxxxxxx.kyma.ondemand.com
+    - es-mcp.c-054c570.kyma.ondemand.com
   service:
     name: es-mcp-service
     port: 9120
