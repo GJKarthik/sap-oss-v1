@@ -1,0 +1,449 @@
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, HostListener, signal, computed, ElementRef, ViewChild } from '@angular/core';
+import { RouterOutlet, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
+import { UserSettingsService } from '../../services/user-settings.service';
+import { AppStore } from '../../store/app.store';
+import { DiagnosticsService } from '../../services/diagnostics.service';
+import { ToastService } from '../../services/toast.service';
+import '@ui5/webcomponents-fiori/dist/ShellBar.js';
+import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
+import '@ui5/webcomponents/dist/Tag.js';
+
+interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+}
+
+@Component({
+  selector: 'app-shell',
+  standalone: true,
+  imports: [RouterOutlet, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: `
+    <div class="shell-layout">
+      @if (showSearch()) {
+        <div class="search-overlay" (click)="closeSearch()">
+          <div class="search-modal" (click)="$event.stopPropagation()">
+            <div class="search-header-container">
+              <ui5-icon class="search-icon" name="search"></ui5-icon>
+              <input #searchInput type="text" class="search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Search pages... (e.g. Pipeline, Chat)" (keydown.enter)="selectFirstResult()" (keydown.escape)="closeSearch()" />
+              <button class="search-close-btn" (click)="closeSearch()">ESC</button>
+            </div>
+            <div class="search-results-list">
+              @for (res of searchResults(); track res.route) {
+                <div class="search-item" (click)="navigateFromSearch(res.route)">
+                  <span class="nav-icon" aria-hidden="true">{{ res.icon }}</span>
+                  <span class="nav-label">{{ res.label }}</span>
+                  <span class="search-shortcut">Enter</span>
+                </div>
+              }
+              @if (searchResults().length === 0) {
+                <div class="search-empty">No results found matching "{{searchQuery()}}"</div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      
+      <ui5-shellbar
+        primary-title="Training Console"
+        secondary-title="SAP Generative AI"
+        show-notifications
+        notifications-count="3"
+        show-product-switch
+        (logo-click)="navigateTo('/dashboard')"
+        (notifications-click)="openNotifications()"
+        (product-switch-click)="openProducts()"
+      >
+        @for (item of navItems; track item.route) {
+          <ui5-shellbar-item
+            [attr.icon]="item.icon"
+            [attr.text]="item.label"
+            count=""
+            (item-click)="navigateTo(item.route)"
+          ></ui5-shellbar-item>
+        }
+      </ui5-shellbar>
+
+      <nav class="app-nav" role="navigation" aria-label="Training navigation">
+        @for (item of navItems; track item.route) {
+          <button
+            class="app-nav__item"
+            [class.app-nav__item--active]="isActive(item.route)"
+            (click)="navigateTo(item.route)">
+            {{ item.label }}
+          </button>
+        }
+
+        <div class="app-nav__spacer"></div>
+
+        <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
+        <button class="header-btn" (click)="showDiagnostics.set(!showDiagnostics())" title="Diagnostics">
+          Diagnostics
+        </button>
+        <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)">
+          <option value="novice">Novice</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="expert">Expert</option>
+        </select>
+        <button class="header-btn" (click)="logout()" title="Sign out">Sign out</button>
+      </nav>
+
+      @if (showDiagnostics()) {
+        <aside class="diagnostics-drawer" aria-label="Technical diagnostics">
+          <div class="diagnostics-header">
+            <strong>Technical diagnostics</strong>
+            <button class="header-btn" (click)="showDiagnostics.set(false)">Close</button>
+          </div>
+          <div class="diagnostics-list">
+            @for (entry of diagnostics.entries(); track entry.route) {
+              <div class="diagnostics-row">
+                <div class="route">{{ entry.route }}</div>
+                <div class="meta">{{ entry.method }} · {{ entry.status }}</div>
+                <div class="meta">Latency: {{ entry.latencyMs }}ms</div>
+                <div class="meta">Correlation: {{ entry.correlationId }}</div>
+                @if (entry.lastError !== '-') {
+                  <div class="error">Error: {{ entry.lastError }}</div>
+                }
+              </div>
+            }
+            @if (!diagnostics.entries().length) {
+              <div class="search-empty">No request diagnostics yet.</div>
+            }
+          </div>
+        </aside>
+      }
+
+      <main class="shell-content" id="main-content">
+        <router-outlet />
+      </main>
+    </div>
+  `,
+  styles: [
+    `
+      .shell-layout {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+        background: var(--sapBackgroundColor, #f5f6f7);
+      }
+
+      .search-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 10vh;
+      }
+      .search-modal {
+        width: 100%;
+        max-width: 600px;
+        background: var(--sapBaseColor, #fff);
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .search-header-container {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+      }
+      .search-icon { font-size: 1.2rem; margin-right: 0.75rem; }
+      .search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 1.125rem;
+        background: transparent;
+        color: var(--sapTextColor, #32363a);
+      }
+      .search-close-btn {
+        background: var(--sapGroup_TitleBorderColor, #d9d9d9); 
+        border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem;
+        font-size: 0.75rem; color: var(--sapTextColor, #32363a); cursor: pointer; font-weight: 600;
+      }
+      .search-results-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 0.5rem 0;
+      }
+      .search-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      .search-item:hover, .search-item.active {
+        background: var(--sapList_Hover_Background, #f5f5f5);
+      }
+      .search-item .nav-icon { margin-right: 0.75rem; }
+      .search-shortcut {
+        margin-left: auto;
+        color: var(--sapGroup_TitleBorderColor, #d9d9d9);
+        font-size: 1.1rem;
+        opacity: 0;
+      }
+      .search-item:hover .search-shortcut { opacity: 1; }
+      .search-empty {
+        padding: 1.5rem;
+        text-align: center;
+        color: var(--sapField_BorderColor, #89919a);
+      }
+
+      .header-btn {
+        background: #fff;
+        border: 1px solid var(--sapField_BorderColor, #89919a);
+        color: var(--sapTextColor, #32363a);
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-size: 0.8125rem;
+        transition: background 0.15s;
+
+        &:hover {
+          background: var(--sapList_Hover_Background, #f5f5f5);
+        }
+      }
+
+      .app-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #fff;
+        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+      }
+
+      .app-nav__item {
+        border: none;
+        background: transparent;
+        color: var(--sapTextColor, #32363a);
+        padding: 0.375rem 0.625rem;
+        border-radius: 0.375rem;
+        font-size: 0.8125rem;
+        cursor: pointer;
+      }
+
+      .app-nav__item:hover {
+        background: var(--sapList_Hover_Background, #f5f5f5);
+      }
+
+      .app-nav__item--active {
+        background: var(--sapList_SelectionBackgroundColor, #e8f2ff);
+        color: var(--sapBrandColor, #0854a0);
+        font-weight: 600;
+      }
+
+      .app-nav__spacer {
+        flex: 1;
+      }
+
+      .mode-select {
+        background: #fff;
+        color: var(--sapTextColor, #32363a);
+        border: 1px solid var(--sapField_BorderColor, #89919a);
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8125rem;
+        outline: none;
+        cursor: pointer;
+
+        option {
+          background: #fff;
+          color: var(--sapTextColor, #32363a);
+        }
+      }
+
+      .shell-content {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .diagnostics-drawer {
+        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+        background: #fff;
+        padding: 0.75rem 1rem;
+      }
+
+      .diagnostics-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      .diagnostics-list {
+        max-height: 180px;
+        overflow-y: auto;
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .diagnostics-row {
+        border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.625rem;
+        background: var(--sapTile_Background, #fff);
+      }
+
+      .route {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--sapTextColor, #32363a);
+      }
+
+      .meta {
+        font-size: 0.75rem;
+        color: var(--sapContent_LabelColor, #6a6d70);
+      }
+
+      .error {
+        margin-top: 0.2rem;
+        font-size: 0.75rem;
+        color: var(--sapNegativeColor, #b00);
+      }
+    `,
+  ],
+})
+export class ShellComponent {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
+  readonly diagnostics = inject(DiagnosticsService);
+  readonly userSettings = inject(UserSettingsService);
+  readonly store = inject(AppStore);
+
+  readonly navItems: NavItem[] = [
+    { label: 'Dashboard', icon: 'home', route: '/dashboard' },
+    { label: 'Pipeline', icon: 'process', route: '/pipeline' },
+    { label: 'Data Explorer', icon: 'folder', route: '/data-explorer' },
+    { label: 'Data Cleaning', icon: 'edit', route: '/data-cleaning' },
+    { label: 'Model Optimizer', icon: 'machine', route: '/model-optimizer' },
+    { label: 'Registry', icon: 'tags', route: '/registry' },
+    { label: 'HippoCPP', icon: 'chain-link', route: '/hippocpp' },
+    { label: 'Chat', icon: 'discussion-2', route: '/chat' },
+    { label: 'A/B Compare', icon: 'compare', route: '/compare' },
+  ];
+
+  readonly version = '1.0.0';
+  apiKeyDraft = this.auth.token() ?? '';
+
+  // --- Search State & Logic ---
+  showSearch = signal(false);
+  showDiagnostics = signal(false);
+  searchQuery = signal('');
+  
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+
+  searchResults = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.navItems;
+    return this.navItems.filter(i => 
+      i.label.toLowerCase().includes(q) || 
+      i.route.toLowerCase().includes(q)
+    );
+  });
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      event.preventDefault();
+      this.toggleSearch();
+    } else if (event.key === 'Escape' && this.showSearch()) {
+      this.closeSearch();
+    }
+  }
+
+  toggleSearch() {
+    this.showSearch.set(!this.showSearch());
+    if (this.showSearch()) {
+      setTimeout(() => this.searchInput?.nativeElement?.focus(), 50);
+    } else {
+      this.searchQuery.set('');
+    }
+  }
+
+  closeSearch() {
+    this.showSearch.set(false);
+    this.searchQuery.set('');
+  }
+
+  navigateFromSearch(route: string) {
+    this.router.navigate([route]);
+    this.closeSearch();
+  }
+
+  selectFirstResult() {
+    const results = this.searchResults();
+    if (results.length > 0) {
+      this.navigateFromSearch(results[0].route);
+    }
+  }
+  // -------------------------
+
+  isActive(route: string): boolean {
+    const url = this.router.url.split('?')[0];
+    return url.startsWith(route);
+  }
+
+  navigateTo(route: string): void {
+    this.router.navigate([route]);
+  }
+
+  wsLabel(): string {
+    switch (this.store.wsState()) {
+      case 'connected':
+        return 'Live';
+      case 'reconnecting':
+      case 'connecting':
+        return 'Reconnecting';
+      default:
+        return 'Offline';
+    }
+  }
+
+  wsTagDesign(): 'Positive' | 'Critical' | 'Negative' {
+    switch (this.store.wsState()) {
+      case 'connected':
+        return 'Positive';
+      case 'reconnecting':
+      case 'connecting':
+        return 'Critical';
+      default:
+        return 'Negative';
+    }
+  }
+
+  saveApiKey(): void {
+    if (this.apiKeyDraft.trim()) {
+      this.auth.setToken(this.apiKeyDraft.trim());
+    } else {
+      this.auth.clearToken();
+    }
+  }
+
+  logout(): void {
+    this.auth.clearToken();
+    this.router.navigate(['/login']);
+  }
+
+  openNotifications(): void {
+    this.toast.info('No new notifications at the moment.');
+  }
+
+  openProducts(): void {
+    this.toast.info('Product switch is available in demo mode.');
+  }
+}

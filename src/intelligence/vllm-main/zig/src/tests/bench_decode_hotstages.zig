@@ -207,6 +207,43 @@ fn runQ4KPair(
     })) return error.StageDispatchFailed;
 }
 
+fn runQ4KBatch2(
+    lib: *metal_shaders.MetalShaderLibrary,
+    x: []const f32,
+    x_buf: metal_bindings.MTLBuffer,
+    weight1: metal_bindings.MTLBuffer,
+    out1: []f32,
+    out1_buf: metal_bindings.MTLBuffer,
+    n1: usize,
+    weight2: metal_bindings.MTLBuffer,
+    out2: []f32,
+    out2_buf: metal_bindings.MTLBuffer,
+    n2: usize,
+    k: usize,
+) !void {
+    zeroFloatBuffer(out1_buf, n1);
+    zeroFloatBuffer(out2_buf, n2);
+    const ops = [_]metal_shaders.VecMatOp{
+        .{
+            .kernel = .q4_k,
+            .weight_buf = weight1,
+            .out = out1,
+            .out_buf = out1_buf,
+            .k = k,
+            .n = n1,
+        },
+        .{
+            .kernel = .q4_k,
+            .weight_buf = weight2,
+            .out = out2,
+            .out_buf = out2_buf,
+            .k = k,
+            .n = n2,
+        },
+    };
+    if (!metal_shaders.dispatchVecMatMulBatch(lib, x, x_buf, &ops)) return error.StageDispatchFailed;
+}
+
 fn runQ4KTriple(
     lib: *metal_shaders.MetalShaderLibrary,
     x: []const f32,
@@ -325,6 +362,29 @@ fn benchmarkQ4KPairStage(
     try runQ4KPair(lib, x, x_buf, weight1, out1, out1_buf, n1, weight2, out2, out2_buf, n2, k);
     const start = std.time.nanoTimestamp();
     for (0..iterations) |_| try runQ4KPair(lib, x, x_buf, weight1, out1, out1_buf, n1, weight2, out2, out2_buf, n2, k);
+    const elapsed = std.time.nanoTimestamp() - start;
+    return .{ .label = label, .iterations = iterations, .elapsed_ns = @intCast(@max(elapsed, 0)) };
+}
+
+fn benchmarkQ4KBatch2Stage(
+    label: []const u8,
+    lib: *metal_shaders.MetalShaderLibrary,
+    x: []const f32,
+    x_buf: metal_bindings.MTLBuffer,
+    weight1: metal_bindings.MTLBuffer,
+    out1: []f32,
+    out1_buf: metal_bindings.MTLBuffer,
+    n1: usize,
+    weight2: metal_bindings.MTLBuffer,
+    out2: []f32,
+    out2_buf: metal_bindings.MTLBuffer,
+    n2: usize,
+    k: usize,
+    iterations: usize,
+) !BenchResult {
+    try runQ4KBatch2(lib, x, x_buf, weight1, out1, out1_buf, n1, weight2, out2, out2_buf, n2, k);
+    const start = std.time.nanoTimestamp();
+    for (0..iterations) |_| try runQ4KBatch2(lib, x, x_buf, weight1, out1, out1_buf, n1, weight2, out2, out2_buf, n2, k);
     const elapsed = std.time.nanoTimestamp() - start;
     return .{ .label = label, .iterations = iterations, .elapsed_ns = @intCast(@max(elapsed, 0)) };
 }
@@ -535,6 +595,22 @@ pub fn main() !void {
         dim,
         pair_iterations,
     );
+    const gate_up_batch = try benchmarkQ4KBatch2Stage(
+        "ffn-gateup-batch",
+        lib,
+        x_dim,
+        x_dim_buf,
+        gate_buf,
+        gate_out,
+        gate_out_buf,
+        ff,
+        up_buf,
+        up_out,
+        up_out_buf,
+        ff,
+        dim,
+        pair_iterations,
+    );
     const ffn_down = try benchmarkQ4KStage(
         "ffn-down-q4k",
         lib,
@@ -547,6 +623,34 @@ pub fn main() !void {
         ff,
         dim,
         pair_iterations,
+    );
+    const ffn_down_pair = try benchmarkQ4KForcedKernelStage(
+        "ffn-down-pair",
+        lib,
+        x_ff,
+        x_ff_buf,
+        ffn_down_weights,
+        ffn_down_buf,
+        ffn_down_out,
+        ffn_down_out_buf,
+        ff,
+        dim,
+        pair_iterations,
+        .q4_k_pair,
+    );
+    const ffn_down_rows2 = try benchmarkQ4KForcedKernelStage(
+        "ffn-down-rows2",
+        lib,
+        x_ff,
+        x_ff_buf,
+        ffn_down_weights,
+        ffn_down_buf,
+        ffn_down_out,
+        ffn_down_out_buf,
+        ff,
+        dim,
+        pair_iterations,
+        .q4_k_rows2,
     );
     const ffn_down_add_stage = try benchmarkQ4KAddStage(
         "ffn-down+add",
@@ -592,7 +696,7 @@ pub fn main() !void {
     std.debug.print("Decode Hot-Stage Microbenchmark\n", .{});
     std.debug.print("dim={} ff={} vocab={} base_iterations={}\n", .{ dim, ff, vocab, base_iterations });
     std.debug.print("weights use synthetic zeroed Q4_K matrices for stable shape timing.\n\n", .{});
-    inline for (.{ shortconv_in, shortconv_in_triple, shortconv_out, shortconv_out_add_stage, gate_up_pair, ffn_down, ffn_down_add_stage, lm_head, lm_head_pair }) |result| {
+    inline for (.{ shortconv_in, shortconv_in_triple, shortconv_out, shortconv_out_add_stage, gate_up_pair, gate_up_batch, ffn_down, ffn_down_pair, ffn_down_rows2, ffn_down_add_stage, lm_head, lm_head_pair }) |result| {
         std.debug.print("  {s:<18} {d:>8.3} ms/call  {d:>9.1} calls/s  (iters={})\n", .{
             result.label,
             result.avgMs(),

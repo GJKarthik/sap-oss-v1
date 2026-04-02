@@ -690,7 +690,10 @@ fn dispatchVecMatGeometry(kernel: VecMatKernel, n: usize) struct { grid: metal_b
                 .depth = 1,
             },
             .threadgroup = .{
-                .width = 32,
+                .width = if (std.posix.getenv("PLLM_DISABLE_Q4K_ROWS2_TG64")) |raw|
+                    if (raw.len == 1 and raw[0] == '1') 32 else 64
+                else
+                    64,
                 .height = 1,
                 .depth = 1,
             },
@@ -702,7 +705,10 @@ fn dispatchVecMatGeometry(kernel: VecMatKernel, n: usize) struct { grid: metal_b
                 .depth = 1,
             },
             .threadgroup = .{
-                .width = 16,
+                .width = if (std.posix.getenv("PLLM_ENABLE_Q4K_PAIR_TG32")) |raw|
+                    if (raw.len == 1 and raw[0] == '1') 32 else 16
+                else
+                    16,
                 .height = 1,
                 .depth = 1,
             },

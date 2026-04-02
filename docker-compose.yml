@@ -38,7 +38,7 @@ services:
 
   data-copilot:
     build:
-      context: ./src/generativeUI/training-console
+      context: ./src/generativeUI/training-webcomponents-ngx
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:

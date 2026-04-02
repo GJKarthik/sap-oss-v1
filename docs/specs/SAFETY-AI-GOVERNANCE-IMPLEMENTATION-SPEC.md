@@ -36,7 +36,7 @@ The platform comprises three architectural tiers, mapped to SAP-OSS directories:
 │                         TIER 1: nApps                           │
 │              End-user Applications & Dashboards                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  src/data/sap-ai-fabric-console/    (Governance Dashboard)      │
+│  src/generativeUI/aifabric-webcomponents-ngx/ (Governance Dashboard) │
 │  src/generativeUI/                  (Generative UI Components)  │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -662,7 +662,7 @@ struct DerivedFact:
 | `mathematical_proofs.mg` | Proof registry | `vllm-main/mangle/domain/` |
 
 #### Task M2: Safety Gate UI Integration
-**File**: `src/data/sap-ai-fabric-console/apps/angular-shell/src/app/pages/governance/`
+**File**: `src/generativeUI/aifabric-webcomponents-ngx/apps/angular-shell/src/app/pages/governance/`
 **Description**: Add safety gate visualization to governance dashboard
 
 #### Task M3: Inference Audit Trail
@@ -812,7 +812,7 @@ services:
       
   governance-dashboard:
     build:
-      context: ./src/data/sap-ai-fabric-console
+      context: ./src/generativeUI/aifabric-webcomponents-ngx
     environment:
       - MANGLE_ENDPOINT=http://mangle-engine:8081
       - LLM_ENDPOINT=http://llm-inference:8080
@@ -886,7 +886,7 @@ groups:
 | Zig Inference Engine | `src/intelligence/vllm-main/zig/` |
 | Mangle Rules (vllm) | `src/intelligence/vllm-main/mangle/` |
 | Mangle Rules (langchain) | `src/data/langchain-integration-*/mangle/` |
-| Governance UI | `src/data/sap-ai-fabric-console/` |
+| Governance UI | `src/generativeUI/aifabric-webcomponents-ngx/` |
 | Deploy Config | `deploy/` |
 | Documentation | `docs/specs/` |
 

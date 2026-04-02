@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/generativeUI/aifabric-webcomponents-ngx
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up backend virtualenv
+        run: |
+          python -m venv packages/api-server/.venv
+          packages/api-server/.venv/bin/pip install --upgrade pip
+          packages/api-server/.venv/bin/pip install -r packages/api-server/requirements.txt
+
+      - name: Run backend tests
+        env:
+          JWT_SECRET_KEY: ci-unit-secret
+          ENVIRONMENT: test
+          STORE_DATABASE_PATH: /tmp/aifabric-webcomponents-ngx-ci.sqlite3
+        run: packages/api-server/.venv/bin/python -m pytest packages/api-server/tests
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/generativeUI/aifabric-webcomponents-ngx
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: src/generativeUI/aifabric-webcomponents-ngx/yarn.lock
+
+      - name: Install frontend dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+
+      - id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Run Angular tests
+        run: yarn nx test angular-shell --runInBand --skip-nx-cache
+
+      - name: Run Angular production build
+        run: yarn nx build angular-shell --skip-nx-cache
+
+      - name: Run accessibility smoke test (Playwright + axe)
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4302
+        run: |
+          yarn nx serve angular-shell --host 127.0.0.1 --port 4302 > /tmp/angular-shell-ci.log 2>&1 &
+          DEVSERVER_PID=$!
+          trap 'kill $DEVSERVER_PID' EXIT
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:4302/ > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          yarn e2e:a11y:smoke
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs:
+      - backend-tests
+      - frontend-tests
+    defaults:
+      run:
+        working-directory: src/generativeUI/aifabric-webcomponents-ngx
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: src/generativeUI/aifabric-webcomponents-ngx/yarn.lock
+
+      - id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install workspace dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+          python -m venv packages/api-server/.venv
+          packages/api-server/.venv/bin/pip install --upgrade pip
+          packages/api-server/.venv/bin/pip install -r packages/api-server/requirements.txt
+
+      - name: Run real browser smoke
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          JWT_SECRET_KEY: ci-smoke-secret
+          ENVIRONMENT: development
+          STORE_BACKEND: sqlite
+          STORE_DATABASE_PATH: /tmp/aifabric-webcomponents-ngx-smoke.sqlite3
+          REQUIRE_MCP_DEPENDENCIES: "false"
+          E2E_LOGIN_MODE: component
+        run: yarn e2e:smoke

@@ -4,6 +4,9 @@
 
 const std = @import("std");
 const llama = @import("llama");
+const c = @cImport({
+    @cInclude("stdlib.h");
+});
 
 const Model = llama.Model;
 const KVCache = llama.KVCache;
@@ -12,6 +15,35 @@ const ForwardProfileStats = llama.ForwardProfileStats;
 
 /// Default model path (LFM2.5-1.2B is small and fast)
 const DEFAULT_MODEL_PATH = "/Users/user/Documents/sap-ai-suite/vendor/layerModels/LFM2.5-1.2B-Instruct-GGUF/LFM2.5-1.2B-Instruct-Q4_K_M.gguf";
+
+const TestMode = enum {
+    full,
+    decode_only,
+    decode_compare,
+};
+
+const DecodeBenchResult = struct {
+    label: []const u8,
+    bench_tokens: usize,
+    elapsed_ns: u64,
+    final_token: u32,
+    profile: ForwardProfileStats = .{},
+
+    fn elapsedMs(self: DecodeBenchResult) f64 {
+        return nsToMs(self.elapsed_ns);
+    }
+
+    fn throughput(self: DecodeBenchResult) f64 {
+        const elapsed_ms = self.elapsedMs();
+        return if (elapsed_ms > 0) @as(f64, @floatFromInt(self.bench_tokens)) / (elapsed_ms / 1000) else 0;
+    }
+};
+
+const DecodeCompareVariant = struct {
+    label: []const u8,
+    enable_ffn_down_rows2: bool,
+    disable_rows2_tg64: bool,
+};
 
 fn nsToMs(ns: u64) f64 {
     return @as(f64, @floatFromInt(ns)) / 1_000_000.0;
@@ -28,6 +60,126 @@ fn argmaxToken(logits: []const f32) u32 {
         }
     }
     return @intCast(best_idx);
+}
+
+fn loadTestMode(allocator: std.mem.Allocator) TestMode {
+    const raw = std.process.getEnvVarOwned(allocator, "PLLM_MODEL_TEST_MODE") catch return .full;
+    defer allocator.free(raw);
+    if (std.mem.eql(u8, raw, "decode-only")) return .decode_only;
+    if (std.mem.eql(u8, raw, "decode-compare")) return .decode_compare;
+    return .full;
+}
+
+fn dupEnvValue(allocator: std.mem.Allocator, name: []const u8) !?[]u8 {
+    const raw = std.posix.getenv(name) orelse return null;
+    return try allocator.dupe(u8, raw);
+}
+
+fn setProcessEnv(allocator: std.mem.Allocator, name: []const u8, value: ?[]const u8) !void {
+    const name_z = try allocator.dupeZ(u8, name);
+    defer allocator.free(name_z);
+
+    if (value) |raw| {
+        const value_z = try allocator.dupeZ(u8, raw);
+        defer allocator.free(value_z);
+        if (c.setenv(name_z.ptr, value_z.ptr, 1) != 0) return error.SetEnvFailed;
+    } else {
+        if (c.unsetenv(name_z.ptr) != 0) return error.UnsetEnvFailed;
+    }
+}
+
+fn applyDecodeCompareVariant(allocator: std.mem.Allocator, variant: DecodeCompareVariant) !void {
+    try setProcessEnv(allocator, "PLLM_ENABLE_FFN_DOWN_ROWS2_KERNEL", if (variant.enable_ffn_down_rows2) "1" else null);
+    try setProcessEnv(allocator, "PLLM_DISABLE_Q4K_ROWS2_TG64", if (variant.disable_rows2_tg64) "1" else null);
+}
+
+fn runDecodeBenchmark(
+    model: *Model,
+    cache: *KVCache,
+    label: []const u8,
+    warmup_tokens: usize,
+    bench_tokens: usize,
+) DecodeBenchResult {
+    cache.clear();
+
+    var token: u32 = 1;
+    for (0..warmup_tokens) |pos| {
+        const logits = model.forward(token, pos, cache);
+        token = argmaxToken(logits);
+    }
+
+    if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
+    const start = std.time.nanoTimestamp();
+    for (warmup_tokens..warmup_tokens + bench_tokens) |pos| {
+        const logits = model.forward(token, pos, cache);
+        token = argmaxToken(logits);
+    }
+    const elapsed_ns: u64 = @intCast(std.time.nanoTimestamp() - start);
+
+    return .{
+        .label = label,
+        .bench_tokens = bench_tokens,
+        .elapsed_ns = elapsed_ns,
+        .final_token = token,
+        .profile = if (model.isForwardProfilingEnabled()) model.getForwardProfile() else .{},
+    };
+}
+
+fn runDecodeCompareMode(
+    allocator: std.mem.Allocator,
+    model: *Model,
+    cache: *KVCache,
+) !void {
+    if (!model.isUsingMetal()) {
+        std.log.warn("Decode compare mode is intended for Metal runs; current runtime is {s}", .{
+            if (model.isUsingMetal()) "metal-hybrid" else "cpu",
+        });
+    }
+
+    const warmup_tokens = 10;
+    const bench_tokens = 50;
+    const variants = [_]DecodeCompareVariant{
+        .{ .label = "default-start", .enable_ffn_down_rows2 = false, .disable_rows2_tg64 = false },
+        .{ .label = "rows2-tg64", .enable_ffn_down_rows2 = true, .disable_rows2_tg64 = false },
+        .{ .label = "rows2-tg32", .enable_ffn_down_rows2 = true, .disable_rows2_tg64 = true },
+        .{ .label = "default-end", .enable_ffn_down_rows2 = false, .disable_rows2_tg64 = false },
+    };
+    var results: [variants.len]DecodeBenchResult = undefined;
+
+    const original_rows2 = try dupEnvValue(allocator, "PLLM_ENABLE_FFN_DOWN_ROWS2_KERNEL");
+    defer if (original_rows2) |raw| allocator.free(raw);
+    const original_rows2_tg64 = try dupEnvValue(allocator, "PLLM_DISABLE_Q4K_ROWS2_TG64");
+    defer if (original_rows2_tg64) |raw| allocator.free(raw);
+    defer {
+        setProcessEnv(allocator, "PLLM_ENABLE_FFN_DOWN_ROWS2_KERNEL", original_rows2) catch {};
+        setProcessEnv(allocator, "PLLM_DISABLE_Q4K_ROWS2_TG64", original_rows2_tg64) catch {};
+    }
+
+    std.log.info("\n═══ TEST 3: Decode Speed Compare (same process) ═══", .{});
+    for (variants, 0..) |variant, idx| {
+        try applyDecodeCompareVariant(allocator, variant);
+        results[idx] = runDecodeBenchmark(model, cache, variant.label, warmup_tokens, bench_tokens);
+        std.log.info("  {s}: {d} tokens in {d:.1} ms -> {d:.1} tok/s (last={d})", .{
+            variant.label,
+            results[idx].bench_tokens,
+            results[idx].elapsedMs(),
+            results[idx].throughput(),
+            results[idx].final_token,
+        });
+        if (model.isForwardProfilingEnabled()) {
+            printForwardProfile(variant.label, results[idx].profile);
+        }
+    }
+
+    const default_avg_tps = (results[0].throughput() + results[3].throughput()) / 2.0;
+    std.log.info("  Baseline avg: {d:.1} tok/s", .{default_avg_tps});
+    for (results[1..3]) |result| {
+        const delta = result.throughput() - default_avg_tps;
+        std.log.info("  Delta vs baseline avg [{s}]: {d:.1} tok/s", .{
+            result.label,
+            delta,
+        });
+    }
 }
 
 fn printForwardProfile(label: []const u8, profile: ForwardProfileStats) void {
@@ -78,6 +230,7 @@ fn printForwardProfile(label: []const u8, profile: ForwardProfileStats) void {
 /// Test loading a GGUF model and running inference
 pub fn testModelInference() !void {
     const allocator = std.heap.page_allocator;
+    const test_mode = loadTestMode(allocator);
     
     // Use environment variable or default to vendor model
     const owned_model_path = std.process.getEnvVarOwned(allocator, "GGUF_MODEL_PATH") catch null;
@@ -104,7 +257,7 @@ pub fn testModelInference() !void {
 
     // Load model using our GGUF loader
     const start_load = std.time.nanoTimestamp();
-    const model = Model.loadFromGGUF(allocator, model_path) catch |err| {
+    var model = Model.loadFromGGUF(allocator, model_path) catch |err| {
         std.log.err("Failed to load GGUF model: {}", .{err});
         return;
     };
@@ -139,133 +292,125 @@ pub fn testModelInference() !void {
     });
     defer sampler.deinit();
     
-    // Test 1: Single token forward pass
-    std.log.info("\n═══ TEST 1: Single Token Forward Pass ═══", .{});
-    {
-        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
-        const start = std.time.nanoTimestamp();
-        const logits = model.forward(1, 0, &cache);
-        const elapsed_us = @as(f64, @floatFromInt(std.time.nanoTimestamp() - start)) / 1000;
-        
-        std.log.info("  Token ID: 1 → {d} logits in {d:.1} µs", .{logits.len, elapsed_us});
-        
-        // Find top 5 predictions
-        var top5: [5]struct { id: u32, val: f32 } = undefined;
-        for (&top5) |*t| t.* = .{ .id = 0, .val = -std.math.inf(f32) };
-        
-        for (logits, 0..) |v, i| {
-            if (v > top5[4].val) {
-                top5[4] = .{ .id = @intCast(i), .val = v };
-                // Bubble up
-                var j: usize = 4;
-                while (j > 0 and top5[j].val > top5[j-1].val) : (j -= 1) {
-                    const tmp = top5[j-1];
-                    top5[j-1] = top5[j];
-                    top5[j] = tmp;
+    if (test_mode == .full) {
+        // Test 1: Single token forward pass
+        std.log.info("\n═══ TEST 1: Single Token Forward Pass ═══", .{});
+        {
+            if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
+            const start = std.time.nanoTimestamp();
+            const logits = model.forward(1, 0, &cache);
+            const elapsed_us = @as(f64, @floatFromInt(std.time.nanoTimestamp() - start)) / 1000;
+
+            std.log.info("  Token ID: 1 → {d} logits in {d:.1} µs", .{logits.len, elapsed_us});
+
+            // Find top 5 predictions
+            var top5: [5]struct { id: u32, val: f32 } = undefined;
+            for (&top5) |*t| t.* = .{ .id = 0, .val = -std.math.inf(f32) };
+
+            for (logits, 0..) |v, i| {
+                if (v > top5[4].val) {
+                    top5[4] = .{ .id = @intCast(i), .val = v };
+                    // Bubble up
+                    var j: usize = 4;
+                    while (j > 0 and top5[j].val > top5[j-1].val) : (j -= 1) {
+                        const tmp = top5[j-1];
+                        top5[j-1] = top5[j];
+                        top5[j] = tmp;
+                    }
                 }
             }
-        }
-        
-        std.log.info("  Top-5 predictions:", .{});
-        for (top5, 0..) |t, i| {
-            std.log.info("    {d}. Token {d}: {d:.3}", .{i + 1, t.id, t.val});
-        }
-        if (model.isForwardProfilingEnabled()) {
-            printForwardProfile("single-forward", model.getForwardProfile());
-        }
-    }
-    
-    // Test 2: Multi-token generation (use fixed-size array instead of ArrayList)
-    std.log.info("\n═══ TEST 2: Multi-Token Generation ═══", .{});
-    cache.clear();
-    {
-        // Simple prompt: just a few tokens
-        const prompt = [_]u32{ 1, 2, 3, 4, 5 };  // BOS + 4 tokens
-        const max_new_tokens: usize = 20;
-        
-        var generated: [64]u32 = undefined;
-        var gen_count: usize = 0;
-        var prefill_profile: ForwardProfileStats = .{};
-        var decode_profile: ForwardProfileStats = .{};
-        
-        // Prefill
-        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
-        const prefill_start = std.time.nanoTimestamp();
-        for (prompt[0..prompt.len-1], 0..) |tok, pos| {
-            model.forwardNoLogits(tok, pos, &cache);
-        }
-        const prefill_time_ms = @as(f64, @floatFromInt(std.time.nanoTimestamp() - prefill_start)) / 1_000_000;
-        if (model.isForwardProfilingEnabled()) prefill_profile = model.getForwardProfile();
-        
-        // Decode
-        var last_token = prompt[prompt.len - 1];
-        var pos: usize = prompt.len - 1;
-        
-        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
-        const decode_start = std.time.nanoTimestamp();
-        for (0..max_new_tokens) |_| {
-            const logits = model.forward(last_token, pos, &cache);
-            const next = sampler.sample(logits);
-            if (gen_count < generated.len) {
-                generated[gen_count] = next;
-                gen_count += 1;
+
+            std.log.info("  Top-5 predictions:", .{});
+            for (top5, 0..) |t, i| {
+                std.log.info("    {d}. Token {d}: {d:.3}", .{i + 1, t.id, t.val});
             }
-            if (next == 2) break;  // EOS
-            last_token = next;
-            pos += 1;
+            if (model.isForwardProfilingEnabled()) {
+                printForwardProfile("single-forward", model.getForwardProfile());
+            }
         }
-        const decode_time_ms = @as(f64, @floatFromInt(std.time.nanoTimestamp() - decode_start)) / 1_000_000;
-        if (model.isForwardProfilingEnabled()) decode_profile = model.getForwardProfile();
         
-        const tps = if (decode_time_ms > 0) @as(f64, @floatFromInt(gen_count)) / (decode_time_ms / 1000) else 0;
-        
-        std.log.info("  Prompt tokens:    {d}", .{prompt.len});
-        std.log.info("  Generated tokens: {d}", .{gen_count});
-        std.log.info("  Prefill time:     {d:.1} ms", .{prefill_time_ms});
-        std.log.info("  Decode time:      {d:.1} ms", .{decode_time_ms});
-        std.log.info("  Throughput:       {d:.1} tok/s", .{tps});
-        if (model.isForwardProfilingEnabled()) {
-            printForwardProfile("generation-prefill", prefill_profile);
-            printForwardProfile("generation-decode", decode_profile);
+        // Test 2: Multi-token generation (use fixed-size array instead of ArrayList)
+        std.log.info("\n═══ TEST 2: Multi-Token Generation ═══", .{});
+        cache.clear();
+        {
+            // Simple prompt: just a few tokens
+            const prompt = [_]u32{ 1, 2, 3, 4, 5 }; // BOS + 4 tokens
+            const max_new_tokens: usize = 20;
+
+            var generated: [64]u32 = undefined;
+            var gen_count: usize = 0;
+            var prefill_profile: ForwardProfileStats = .{};
+            var decode_profile: ForwardProfileStats = .{};
+
+            // Prefill
+            if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
+            const prefill_start = std.time.nanoTimestamp();
+            for (prompt[0 .. prompt.len - 1], 0..) |tok, pos| {
+                model.forwardNoLogits(tok, pos, &cache);
+            }
+            const prefill_time_ms = @as(f64, @floatFromInt(std.time.nanoTimestamp() - prefill_start)) / 1_000_000;
+            if (model.isForwardProfilingEnabled()) prefill_profile = model.getForwardProfile();
+
+            // Decode
+            var last_token = prompt[prompt.len - 1];
+            var pos: usize = prompt.len - 1;
+
+            if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
+            const decode_start = std.time.nanoTimestamp();
+            for (0..max_new_tokens) |_| {
+                const logits = model.forward(last_token, pos, &cache);
+                const next = sampler.sample(logits);
+                if (gen_count < generated.len) {
+                    generated[gen_count] = next;
+                    gen_count += 1;
+                }
+                if (next == 2) break; // EOS
+                last_token = next;
+                pos += 1;
+            }
+            const decode_time_ms = @as(f64, @floatFromInt(std.time.nanoTimestamp() - decode_start)) / 1_000_000;
+            if (model.isForwardProfilingEnabled()) decode_profile = model.getForwardProfile();
+
+            const tps = if (decode_time_ms > 0) @as(f64, @floatFromInt(gen_count)) / (decode_time_ms / 1000) else 0;
+
+            std.log.info("  Prompt tokens:    {d}", .{prompt.len});
+            std.log.info("  Generated tokens: {d}", .{gen_count});
+            std.log.info("  Prefill time:     {d:.1} ms", .{prefill_time_ms});
+            std.log.info("  Decode time:      {d:.1} ms", .{decode_time_ms});
+            std.log.info("  Throughput:       {d:.1} tok/s", .{tps});
+            if (model.isForwardProfilingEnabled()) {
+                printForwardProfile("generation-prefill", prefill_profile);
+                printForwardProfile("generation-decode", decode_profile);
+            }
         }
     }
-    
-    // Test 3: Benchmark decode speed
-    std.log.info("\n═══ TEST 3: Decode Speed Benchmark ═══", .{});
-    cache.clear();
-    {
-        const warmup_tokens = 10;
-        const bench_tokens = 50;
-        
-        // Warmup
-        var token: u32 = 1;
-        for (0..warmup_tokens) |pos| {
-            const logits = model.forward(token, pos, &cache);
-            token = argmaxToken(logits);
-        }
-        
-        // Benchmark
-        if (model.isForwardProfilingEnabled()) model.resetForwardProfile();
-        const start = std.time.nanoTimestamp();
-        for (warmup_tokens..warmup_tokens + bench_tokens) |pos| {
-            const logits = model.forward(token, pos, &cache);
-            token = argmaxToken(logits);
-        }
-        const elapsed_ns = std.time.nanoTimestamp() - start;
-        const elapsed_ms = @as(f64, @floatFromInt(elapsed_ns)) / 1_000_000;
-        const tps = @as(f64, @floatFromInt(bench_tokens)) / (elapsed_ms / 1000);
-        
-        std.log.info("  Benchmark: {d} tokens in {d:.1} ms", .{bench_tokens, elapsed_ms});
+
+    if (test_mode == .decode_compare) {
+        try runDecodeCompareMode(allocator, model, &cache);
+    } else {
+        // Test 3: Benchmark decode speed
+        std.log.info("\n═══ TEST 3: Decode Speed Benchmark{?s} ═══", .{
+            if (test_mode == .decode_only) " (decode-only mode)" else null,
+        });
+        const result = runDecodeBenchmark(model, &cache, "decode-benchmark", 10, 50);
+
+        std.log.info("  Benchmark: {d} tokens in {d:.1} ms", .{ result.bench_tokens, result.elapsedMs() });
         std.log.info("  ╔═══════════════════════════════════════════╗", .{});
-        std.log.info("  ║  THROUGHPUT: {d:.1} tokens/second           ", .{tps});
+        std.log.info("  ║  THROUGHPUT: {d:.1} tokens/second           ", .{result.throughput()});
         std.log.info("  ╚═══════════════════════════════════════════╝", .{});
         if (model.isForwardProfilingEnabled()) {
-            printForwardProfile("decode-benchmark", model.getForwardProfile());
+            printForwardProfile(result.label, result.profile);
         }
     }
-    
+
     std.log.info("\n═══ ALL TESTS COMPLETED ═══", .{});
-    std.log.info("Custom Zig inference engine working with GGUF model!", .{});
+    if (test_mode == .decode_only) {
+        std.log.info("Custom Zig inference engine decode benchmark completed!", .{});
+    } else if (test_mode == .decode_compare) {
+        std.log.info("Custom Zig inference engine decode comparison completed!", .{});
+    } else {
+        std.log.info("Custom Zig inference engine working with GGUF model!", .{});
+    }
 }
 
 pub fn main() !void {

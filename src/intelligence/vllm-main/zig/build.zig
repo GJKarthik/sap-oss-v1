@@ -456,6 +456,14 @@ pub fn build(b: *std.Build) void {
     // Don't depend on install step - run independently to avoid openai-gateway link errors
     b.step("test-model", "Run inference with GGUF model from vendor/layerModels using custom Zig engine").dependOn(&run_model_test.step);
 
+    const run_model_decode = b.addRunArtifact(model_test_exe);
+    run_model_decode.setEnvironmentVariable("PLLM_MODEL_TEST_MODE", "decode-only");
+    b.step("test-model-decode", "Run decode-only benchmark with GGUF model from vendor/layerModels using custom Zig engine").dependOn(&run_model_decode.step);
+
+    const run_model_decode_compare = b.addRunArtifact(model_test_exe);
+    run_model_decode_compare.setEnvironmentVariable("PLLM_MODEL_TEST_MODE", "decode-compare");
+    b.step("test-model-decode-compare", "Run same-process decode comparison benchmark with GGUF model from vendor/layerModels using custom Zig engine").dependOn(&run_model_decode_compare.step);
+
     // ========================================================================
     // Decode Attention Microbenchmark
     // ========================================================================

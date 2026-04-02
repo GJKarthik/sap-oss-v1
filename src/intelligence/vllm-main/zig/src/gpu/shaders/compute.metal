@@ -353,6 +353,166 @@ inline float vecmat_q4_k_pair_row_sum(
     return local_sum;
 }
 
+inline float2 vecmat_q4_k_dual_row_sum(
+    device const float* x,
+    device const uchar* row1_ptr,
+    device const uchar* row2_ptr,
+    uint K,
+    uint tid,
+    uint tg_size
+) {
+    constexpr uint BLOCK_BYTES = 144;
+    constexpr uint CHUNK_SIZE = 32;
+    const uint chunks_per_row = (K + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+    float2 local_sum = float2(0.0f);
+    for (uint chunk = tid; chunk < chunks_per_row; chunk += tg_size) {
+        const uint block = chunk / 8;
+        const uint sub = chunk % 8;
+        const uint pair = sub / 2;
+        const uint base_k = chunk * CHUNK_SIZE;
+        const uint chunk_count = min(CHUNK_SIZE, K - base_k);
+        device const uchar* block1_ptr = row1_ptr + block * BLOCK_BYTES;
+        device const uchar* block2_ptr = row2_ptr + block * BLOCK_BYTES;
+        device const uchar* scales1 = block1_ptr + 4;
+        device const uchar* scales2 = block2_ptr + 4;
+        device const uchar* qs1 = block1_ptr + 16 + pair * CHUNK_SIZE;
+        device const uchar* qs2 = block2_ptr + 16 + pair * CHUNK_SIZE;
+
+        const ushort d1_bits = ushort(block1_ptr[0]) | (ushort(block1_ptr[1]) << 8);
+        const ushort dmin1_bits = ushort(block1_ptr[2]) | (ushort(block1_ptr[3]) << 8);
+        const float d1 = float(as_type<half>(d1_bits));
+        const float dmin1 = float(as_type<half>(dmin1_bits));
+        const ushort d2_bits = ushort(block2_ptr[0]) | (ushort(block2_ptr[1]) << 8);
+        const ushort dmin2_bits = ushort(block2_ptr[2]) | (ushort(block2_ptr[3]) << 8);
+        const float d2 = float(as_type<half>(d2_bits));
+        const float dmin2 = float(as_type<half>(dmin2_bits));
+
+        const uint scale_idx = ((sub & 1u) == 0u) ? (pair * 2u) : (pair * 2u + 1u);
+        const uint2 sm1 = get_scale_min_k4(scale_idx, scales1);
+        const uint2 sm2 = get_scale_min_k4(scale_idx, scales2);
+        const float d1_chunk = d1 * float(sm1.x);
+        const float m1_chunk = dmin1 * float(sm1.y);
+        const float d2_chunk = d2 * float(sm2.x);
+        const float m2_chunk = dmin2 * float(sm2.y);
+
+        if (chunk_count == CHUNK_SIZE) {
+            const float4 d1_vec = float4(d1_chunk);
+            const float4 m1_vec = float4(m1_chunk);
+            const float4 d2_vec = float4(d2_chunk);
+            const float4 m2_vec = float4(m2_chunk);
+            for (uint l = 0; l < CHUNK_SIZE; l += 4) {
+                const float4 xv = *(device const float4*)(x + base_k + l);
+                const uchar4 packed1 = *(device const uchar4*)(qs1 + l);
+                const uchar4 packed2 = *(device const uchar4*)(qs2 + l);
+                const float4 q1 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed1) : unpack_high_nibbles(packed1);
+                const float4 q2 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed2) : unpack_high_nibbles(packed2);
+                local_sum.x += dot(xv, d1_vec * q1 - m1_vec);
+                local_sum.y += dot(xv, d2_vec * q2 - m2_vec);
+            }
+        } else {
+            for (uint l = 0; l < chunk_count; ++l) {
+                const float xv = x[base_k + l];
+                const float q1 = ((sub & 1u) == 0u) ? float(qs1[l] & 0x0F) : float(qs1[l] >> 4);
+                const float q2 = ((sub & 1u) == 0u) ? float(qs2[l] & 0x0F) : float(qs2[l] >> 4);
+                local_sum.x += xv * (d1_chunk * q1 - m1_chunk);
+                local_sum.y += xv * (d2_chunk * q2 - m2_chunk);
+            }
+        }
+    }
+
+    return local_sum;
+}
+
+inline float3 vecmat_q4_k_triple_row_sum(
+    device const float* x,
+    device const uchar* row1_ptr,
+    device const uchar* row2_ptr,
+    device const uchar* row3_ptr,
+    uint K,
+    uint tid,
+    uint tg_size
+) {
+    constexpr uint BLOCK_BYTES = 144;
+    constexpr uint CHUNK_SIZE = 32;
+    const uint chunks_per_row = (K + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+    float3 local_sum = float3(0.0f);
+    for (uint chunk = tid; chunk < chunks_per_row; chunk += tg_size) {
+        const uint block = chunk / 8;
+        const uint sub = chunk % 8;
+        const uint pair = sub / 2;
+        const uint base_k = chunk * CHUNK_SIZE;
+        const uint chunk_count = min(CHUNK_SIZE, K - base_k);
+        device const uchar* block1_ptr = row1_ptr + block * BLOCK_BYTES;
+        device const uchar* block2_ptr = row2_ptr + block * BLOCK_BYTES;
+        device const uchar* block3_ptr = row3_ptr + block * BLOCK_BYTES;
+        device const uchar* scales1 = block1_ptr + 4;
+        device const uchar* scales2 = block2_ptr + 4;
+        device const uchar* scales3 = block3_ptr + 4;
+        device const uchar* qs1 = block1_ptr + 16 + pair * CHUNK_SIZE;
+        device const uchar* qs2 = block2_ptr + 16 + pair * CHUNK_SIZE;
+        device const uchar* qs3 = block3_ptr + 16 + pair * CHUNK_SIZE;
+
+        const ushort d1_bits = ushort(block1_ptr[0]) | (ushort(block1_ptr[1]) << 8);
+        const ushort dmin1_bits = ushort(block1_ptr[2]) | (ushort(block1_ptr[3]) << 8);
+        const float d1 = float(as_type<half>(d1_bits));
+        const float dmin1 = float(as_type<half>(dmin1_bits));
+        const ushort d2_bits = ushort(block2_ptr[0]) | (ushort(block2_ptr[1]) << 8);
+        const ushort dmin2_bits = ushort(block2_ptr[2]) | (ushort(block2_ptr[3]) << 8);
+        const float d2 = float(as_type<half>(d2_bits));
+        const float dmin2 = float(as_type<half>(dmin2_bits));
+        const ushort d3_bits = ushort(block3_ptr[0]) | (ushort(block3_ptr[1]) << 8);
+        const ushort dmin3_bits = ushort(block3_ptr[2]) | (ushort(block3_ptr[3]) << 8);
+        const float d3 = float(as_type<half>(d3_bits));
+        const float dmin3 = float(as_type<half>(dmin3_bits));
+
+        const uint scale_idx = ((sub & 1u) == 0u) ? (pair * 2u) : (pair * 2u + 1u);
+        const uint2 sm1 = get_scale_min_k4(scale_idx, scales1);
+        const uint2 sm2 = get_scale_min_k4(scale_idx, scales2);
+        const uint2 sm3 = get_scale_min_k4(scale_idx, scales3);
+        const float d1_chunk = d1 * float(sm1.x);
+        const float m1_chunk = dmin1 * float(sm1.y);
+        const float d2_chunk = d2 * float(sm2.x);
+        const float m2_chunk = dmin2 * float(sm2.y);
+        const float d3_chunk = d3 * float(sm3.x);
+        const float m3_chunk = dmin3 * float(sm3.y);
+
+        if (chunk_count == CHUNK_SIZE) {
+            const float4 d1_vec = float4(d1_chunk);
+            const float4 m1_vec = float4(m1_chunk);
+            const float4 d2_vec = float4(d2_chunk);
+            const float4 m2_vec = float4(m2_chunk);
+            const float4 d3_vec = float4(d3_chunk);
+            const float4 m3_vec = float4(m3_chunk);
+            for (uint l = 0; l < CHUNK_SIZE; l += 4) {
+                const float4 xv = *(device const float4*)(x + base_k + l);
+                const uchar4 packed1 = *(device const uchar4*)(qs1 + l);
+                const uchar4 packed2 = *(device const uchar4*)(qs2 + l);
+                const uchar4 packed3 = *(device const uchar4*)(qs3 + l);
+                const float4 q1 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed1) : unpack_high_nibbles(packed1);
+                const float4 q2 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed2) : unpack_high_nibbles(packed2);
+                const float4 q3 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed3) : unpack_high_nibbles(packed3);
+                local_sum.x += dot(xv, d1_vec * q1 - m1_vec);
+                local_sum.y += dot(xv, d2_vec * q2 - m2_vec);
+                local_sum.z += dot(xv, d3_vec * q3 - m3_vec);
+            }
+        } else {
+            for (uint l = 0; l < chunk_count; ++l) {
+                const float xv = x[base_k + l];
+                const float q1 = ((sub & 1u) == 0u) ? float(qs1[l] & 0x0F) : float(qs1[l] >> 4);
+                const float q2 = ((sub & 1u) == 0u) ? float(qs2[l] & 0x0F) : float(qs2[l] >> 4);
+                const float q3 = ((sub & 1u) == 0u) ? float(qs3[l] & 0x0F) : float(qs3[l] >> 4);
+                local_sum.x += xv * (d1_chunk * q1 - m1_chunk);
+                local_sum.y += xv * (d2_chunk * q2 - m2_chunk);
+                local_sum.z += xv * (d3_chunk * q3 - m3_chunk);
+            }
+        }
+    }
+
+    return local_sum;
+}
+
 inline float reduce_threadgroup_sum(
     float local_sum,
     threadgroup float* partial_sums,
@@ -376,6 +536,34 @@ inline float reduce_threadgroup_sum(
         const uint num_simdgroups = (tg_size + simd_size - 1) / simd_size;
         total = (lane < num_simdgroups) ? partial_sums[lane] : 0.0f;
         total = simd_sum(total);
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    return total;
+}
+
+inline float2 reduce_threadgroup_sum2(
+    float2 local_sum,
+    threadgroup float2* partial_sums,
+    uint lane,
+    uint sg_idx,
+    uint tg_size,
+    uint simd_size
+) {
+    if (tg_size == simd_size) {
+        return float2(simd_sum(local_sum.x), simd_sum(local_sum.y));
+    }
+
+    const float2 sg_sum = float2(simd_sum(local_sum.x), simd_sum(local_sum.y));
+    if (lane == 0) {
+        partial_sums[sg_idx] = sg_sum;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    float2 total = float2(0.0f);
+    if (sg_idx == 0) {
+        const uint num_simdgroups = (tg_size + simd_size - 1) / simd_size;
+        total = (lane < num_simdgroups) ? partial_sums[lane] : float2(0.0f);
+        total = float2(simd_sum(total.x), simd_sum(total.y));
     }
     threadgroup_barrier(mem_flags::mem_threadgroup);
     return total;
@@ -451,31 +639,42 @@ kernel void vecmat_q4_k_rows2(
     if (out_idx0 >= N) return;
 
     const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    threadgroup float partial_sums[32];
+    threadgroup float2 partial_sums[32];
 
     device const uchar* row0_ptr = W + out_idx0 * blocks_per_row * BLOCK_BYTES;
-    const float local_sum0 = vecmat_q4_k_row_sum(x, row0_ptr, K, tid, tg_size);
-    const float total0 = reduce_threadgroup_sum(local_sum0, partial_sums, lane, sg_idx, tg_size, simd_size);
-
     const uint out_idx1 = out_idx0 + 1u;
-    float total1 = 0.0f;
+
     if (out_idx1 < N) {
         device const uchar* row1_ptr = W + out_idx1 * blocks_per_row * BLOCK_BYTES;
-        const float local_sum1 = vecmat_q4_k_row_sum(x, row1_ptr, K, tid, tg_size);
-        total1 = reduce_threadgroup_sum(local_sum1, partial_sums, lane, sg_idx, tg_size, simd_size);
+        const float2 local = vecmat_q4_k_dual_row_sum(x, row0_ptr, row1_ptr, K, tid, tg_size);
+        const float2 totals = reduce_threadgroup_sum2(local, partial_sums, lane, sg_idx, tg_size, simd_size);
+
+        if (tg_size == simd_size) {
+            if (tid == 0) {
+                out[out_idx0] = totals.x;
+                out[out_idx1] = totals.y;
+            }
+            return;
+        }
+
+        if (sg_idx == 0 && lane == 0) {
+            out[out_idx0] = totals.x;
+            out[out_idx1] = totals.y;
+        }
+        return;
     }
 
+    threadgroup float partial_sums_single[32];
+    const float local_sum0 = vecmat_q4_k_row_sum(x, row0_ptr, K, tid, tg_size);
+    const float total0 = reduce_threadgroup_sum(local_sum0, partial_sums_single, lane, sg_idx, tg_size, simd_size);
+
     if (tg_size == simd_size) {
-        if (tid == 0) {
-            out[out_idx0] = total0;
-            if (out_idx1 < N) out[out_idx1] = total1;
-        }
+        if (tid == 0) out[out_idx0] = total0;
         return;
     }
 
     if (sg_idx == 0 && lane == 0) {
         out[out_idx0] = total0;
-        if (out_idx1 < N) out[out_idx1] = total1;
     }
 }
 
@@ -587,14 +786,30 @@ kernel void vecmat_q4_k_dual(
     constexpr uint BLOCK_BYTES = 144;
     const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    if (out_idx < N1) {
+    const bool has1 = out_idx < N1;
+    const bool has2 = out_idx < N2;
+
+    if (has1 && has2) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum(x, row1_ptr, row2_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total2 = simd_sum(local.y);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out2[out_idx] = total2;
+        }
+        return;
+    }
+
+    if (has1) {
         device const uchar* row_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
         if (tid == 0) out1[out_idx] = total;
     }
-    if (out_idx < N2) {
+    if (has2) {
         device const uchar* row_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
         if (tid == 0) out2[out_idx] = total;
     }
 }
@@ -653,6 +868,174 @@ inline float vecmat_q4_k_row_sum_rmsnorm(
     return local_sum;
 }
 
+inline float2 vecmat_q4_k_dual_row_sum_rmsnorm(
+    device const float* x,
+    device const float* norm_weight,
+    float inv_rms,
+    device const uchar* row1_ptr,
+    device const uchar* row2_ptr,
+    uint K,
+    uint tid,
+    uint tg_size
+) {
+    constexpr uint BLOCK_BYTES = 144;
+    constexpr uint CHUNK_SIZE = 32;
+    const uint chunks_per_row = (K + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+    float2 local_sum = float2(0.0f);
+    for (uint chunk = tid; chunk < chunks_per_row; chunk += tg_size) {
+        const uint block = chunk / 8;
+        const uint sub = chunk % 8;
+        const uint pair = sub / 2;
+        const uint base_k = chunk * CHUNK_SIZE;
+        const uint chunk_count = min(CHUNK_SIZE, K - base_k);
+        device const uchar* block1_ptr = row1_ptr + block * BLOCK_BYTES;
+        device const uchar* block2_ptr = row2_ptr + block * BLOCK_BYTES;
+        device const uchar* scales1 = block1_ptr + 4;
+        device const uchar* scales2 = block2_ptr + 4;
+        device const uchar* qs1 = block1_ptr + 16 + pair * CHUNK_SIZE;
+        device const uchar* qs2 = block2_ptr + 16 + pair * CHUNK_SIZE;
+
+        const ushort d1_bits = ushort(block1_ptr[0]) | (ushort(block1_ptr[1]) << 8);
+        const ushort dmin1_bits = ushort(block1_ptr[2]) | (ushort(block1_ptr[3]) << 8);
+        const float d1 = float(as_type<half>(d1_bits));
+        const float dmin1 = float(as_type<half>(dmin1_bits));
+        const ushort d2_bits = ushort(block2_ptr[0]) | (ushort(block2_ptr[1]) << 8);
+        const ushort dmin2_bits = ushort(block2_ptr[2]) | (ushort(block2_ptr[3]) << 8);
+        const float d2 = float(as_type<half>(d2_bits));
+        const float dmin2 = float(as_type<half>(dmin2_bits));
+
+        const uint scale_idx = ((sub & 1u) == 0u) ? (pair * 2u) : (pair * 2u + 1u);
+        const uint2 sm1 = get_scale_min_k4(scale_idx, scales1);
+        const uint2 sm2 = get_scale_min_k4(scale_idx, scales2);
+        const float d1_chunk = d1 * float(sm1.x);
+        const float m1_chunk = dmin1 * float(sm1.y);
+        const float d2_chunk = d2 * float(sm2.x);
+        const float m2_chunk = dmin2 * float(sm2.y);
+
+        if (chunk_count == CHUNK_SIZE) {
+            const float4 d1_vec = float4(d1_chunk);
+            const float4 m1_vec = float4(m1_chunk);
+            const float4 d2_vec = float4(d2_chunk);
+            const float4 m2_vec = float4(m2_chunk);
+            for (uint l = 0; l < CHUNK_SIZE; l += 4) {
+                const float4 xv = *(device const float4*)(x + base_k + l);
+                const float4 wv = *(device const float4*)(norm_weight + base_k + l);
+                const float4 xnorm = xv * wv * inv_rms;
+                const uchar4 packed1 = *(device const uchar4*)(qs1 + l);
+                const uchar4 packed2 = *(device const uchar4*)(qs2 + l);
+                const float4 q1 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed1) : unpack_high_nibbles(packed1);
+                const float4 q2 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed2) : unpack_high_nibbles(packed2);
+                local_sum.x += dot(xnorm, d1_vec * q1 - m1_vec);
+                local_sum.y += dot(xnorm, d2_vec * q2 - m2_vec);
+            }
+        } else {
+            for (uint l = 0; l < chunk_count; ++l) {
+                const float xnorm = x[base_k + l] * norm_weight[base_k + l] * inv_rms;
+                const float q1 = ((sub & 1u) == 0u) ? float(qs1[l] & 0x0F) : float(qs1[l] >> 4);
+                const float q2 = ((sub & 1u) == 0u) ? float(qs2[l] & 0x0F) : float(qs2[l] >> 4);
+                local_sum.x += xnorm * (d1_chunk * q1 - m1_chunk);
+                local_sum.y += xnorm * (d2_chunk * q2 - m2_chunk);
+            }
+        }
+    }
+
+    return local_sum;
+}
+
+inline float3 vecmat_q4_k_triple_row_sum_rmsnorm(
+    device const float* x,
+    device const float* norm_weight,
+    float inv_rms,
+    device const uchar* row1_ptr,
+    device const uchar* row2_ptr,
+    device const uchar* row3_ptr,
+    uint K,
+    uint tid,
+    uint tg_size
+) {
+    constexpr uint BLOCK_BYTES = 144;
+    constexpr uint CHUNK_SIZE = 32;
+    const uint chunks_per_row = (K + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+    float3 local_sum = float3(0.0f);
+    for (uint chunk = tid; chunk < chunks_per_row; chunk += tg_size) {
+        const uint block = chunk / 8;
+        const uint sub = chunk % 8;
+        const uint pair = sub / 2;
+        const uint base_k = chunk * CHUNK_SIZE;
+        const uint chunk_count = min(CHUNK_SIZE, K - base_k);
+        device const uchar* block1_ptr = row1_ptr + block * BLOCK_BYTES;
+        device const uchar* block2_ptr = row2_ptr + block * BLOCK_BYTES;
+        device const uchar* block3_ptr = row3_ptr + block * BLOCK_BYTES;
+        device const uchar* scales1 = block1_ptr + 4;
+        device const uchar* scales2 = block2_ptr + 4;
+        device const uchar* scales3 = block3_ptr + 4;
+        device const uchar* qs1 = block1_ptr + 16 + pair * CHUNK_SIZE;
+        device const uchar* qs2 = block2_ptr + 16 + pair * CHUNK_SIZE;
+        device const uchar* qs3 = block3_ptr + 16 + pair * CHUNK_SIZE;
+
+        const ushort d1_bits = ushort(block1_ptr[0]) | (ushort(block1_ptr[1]) << 8);
+        const ushort dmin1_bits = ushort(block1_ptr[2]) | (ushort(block1_ptr[3]) << 8);
+        const float d1 = float(as_type<half>(d1_bits));
+        const float dmin1 = float(as_type<half>(dmin1_bits));
+        const ushort d2_bits = ushort(block2_ptr[0]) | (ushort(block2_ptr[1]) << 8);
+        const ushort dmin2_bits = ushort(block2_ptr[2]) | (ushort(block2_ptr[3]) << 8);
+        const float d2 = float(as_type<half>(d2_bits));
+        const float dmin2 = float(as_type<half>(dmin2_bits));
+        const ushort d3_bits = ushort(block3_ptr[0]) | (ushort(block3_ptr[1]) << 8);
+        const ushort dmin3_bits = ushort(block3_ptr[2]) | (ushort(block3_ptr[3]) << 8);
+        const float d3 = float(as_type<half>(d3_bits));
+        const float dmin3 = float(as_type<half>(dmin3_bits));
+
+        const uint scale_idx = ((sub & 1u) == 0u) ? (pair * 2u) : (pair * 2u + 1u);
+        const uint2 sm1 = get_scale_min_k4(scale_idx, scales1);
+        const uint2 sm2 = get_scale_min_k4(scale_idx, scales2);
+        const uint2 sm3 = get_scale_min_k4(scale_idx, scales3);
+        const float d1_chunk = d1 * float(sm1.x);
+        const float m1_chunk = dmin1 * float(sm1.y);
+        const float d2_chunk = d2 * float(sm2.x);
+        const float m2_chunk = dmin2 * float(sm2.y);
+        const float d3_chunk = d3 * float(sm3.x);
+        const float m3_chunk = dmin3 * float(sm3.y);
+
+        if (chunk_count == CHUNK_SIZE) {
+            const float4 d1_vec = float4(d1_chunk);
+            const float4 m1_vec = float4(m1_chunk);
+            const float4 d2_vec = float4(d2_chunk);
+            const float4 m2_vec = float4(m2_chunk);
+            const float4 d3_vec = float4(d3_chunk);
+            const float4 m3_vec = float4(m3_chunk);
+            for (uint l = 0; l < CHUNK_SIZE; l += 4) {
+                const float4 xv = *(device const float4*)(x + base_k + l);
+                const float4 wv = *(device const float4*)(norm_weight + base_k + l);
+                const float4 xnorm = xv * wv * inv_rms;
+                const uchar4 packed1 = *(device const uchar4*)(qs1 + l);
+                const uchar4 packed2 = *(device const uchar4*)(qs2 + l);
+                const uchar4 packed3 = *(device const uchar4*)(qs3 + l);
+                const float4 q1 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed1) : unpack_high_nibbles(packed1);
+                const float4 q2 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed2) : unpack_high_nibbles(packed2);
+                const float4 q3 = ((sub & 1u) == 0u) ? unpack_low_nibbles(packed3) : unpack_high_nibbles(packed3);
+                local_sum.x += dot(xnorm, d1_vec * q1 - m1_vec);
+                local_sum.y += dot(xnorm, d2_vec * q2 - m2_vec);
+                local_sum.z += dot(xnorm, d3_vec * q3 - m3_vec);
+            }
+        } else {
+            for (uint l = 0; l < chunk_count; ++l) {
+                const float xnorm = x[base_k + l] * norm_weight[base_k + l] * inv_rms;
+                const float q1 = ((sub & 1u) == 0u) ? float(qs1[l] & 0x0F) : float(qs1[l] >> 4);
+                const float q2 = ((sub & 1u) == 0u) ? float(qs2[l] & 0x0F) : float(qs2[l] >> 4);
+                const float q3 = ((sub & 1u) == 0u) ? float(qs3[l] & 0x0F) : float(qs3[l] >> 4);
+                local_sum.x += xnorm * (d1_chunk * q1 - m1_chunk);
+                local_sum.y += xnorm * (d2_chunk * q2 - m2_chunk);
+                local_sum.z += xnorm * (d3_chunk * q3 - m3_chunk);
+            }
+        }
+    }
+
+    return local_sum;
+}
+
 kernel void vecmat_q4_k_dual_rmsnorm(
     device const float* x [[buffer(0)]],
     device const float* norm_weight [[buffer(1)]],
@@ -672,14 +1055,30 @@ kernel void vecmat_q4_k_dual_rmsnorm(
     constexpr uint BLOCK_BYTES = 144;
     const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    if (out_idx < N1) {
+    const bool has1 = out_idx < N1;
+    const bool has2 = out_idx < N2;
+
+    if (has1 && has2) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum_rmsnorm(x, norm_weight, inv_rms, row1_ptr, row2_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total2 = simd_sum(local.y);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out2[out_idx] = total2;
+        }
+        return;
+    }
+
+    if (has1) {
         device const uchar* row_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
         if (tid == 0) out1[out_idx] = total;
     }
-    if (out_idx < N2) {
+    if (has2) {
         device const uchar* row_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
         if (tid == 0) out2[out_idx] = total;
     }
 }
@@ -704,19 +1103,76 @@ kernel void vecmat_q4_k_triple(
     constexpr uint BLOCK_BYTES = 144;
     const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    if (out_idx < N1) {
+    const bool has1 = out_idx < N1;
+    const bool has2 = out_idx < N2;
+    const bool has3 = out_idx < N3;
+
+    if (has1 && has2 && has3) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row3_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float3 local = vecmat_q4_k_triple_row_sum(x, row1_ptr, row2_ptr, row3_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total2 = simd_sum(local.y);
+        const float total3 = simd_sum(local.z);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out2[out_idx] = total2;
+            out3[out_idx] = total3;
+        }
+        return;
+    }
+
+    if (has1 && has2) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum(x, row1_ptr, row2_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total2 = simd_sum(local.y);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out2[out_idx] = total2;
+        }
+        return;
+    }
+    if (has1 && has3) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row3_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum(x, row1_ptr, row3_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total3 = simd_sum(local.y);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out3[out_idx] = total3;
+        }
+        return;
+    }
+    if (has2 && has3) {
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row3_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum(x, row2_ptr, row3_ptr, K, tid, tg_size);
+        const float total2 = simd_sum(local.x);
+        const float total3 = simd_sum(local.y);
+        if (tid == 0) {
+            out2[out_idx] = total2;
+            out3[out_idx] = total3;
+        }
+        return;
+    }
+
+    if (has1) {
         device const uchar* row_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
         if (tid == 0) out1[out_idx] = total;
     }
-    if (out_idx < N2) {
+    if (has2) {
         device const uchar* row_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
         if (tid == 0) out2[out_idx] = total;
     }
-    if (out_idx < N3) {
+    if (has3) {
         device const uchar* row_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size));
         if (tid == 0) out3[out_idx] = total;
     }
 }
@@ -743,19 +1199,76 @@ kernel void vecmat_q4_k_triple_rmsnorm(
     constexpr uint BLOCK_BYTES = 144;
     const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    if (out_idx < N1) {
+    const bool has1 = out_idx < N1;
+    const bool has2 = out_idx < N2;
+    const bool has3 = out_idx < N3;
+
+    if (has1 && has2 && has3) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row3_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float3 local = vecmat_q4_k_triple_row_sum_rmsnorm(x, norm_weight, inv_rms, row1_ptr, row2_ptr, row3_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total2 = simd_sum(local.y);
+        const float total3 = simd_sum(local.z);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out2[out_idx] = total2;
+            out3[out_idx] = total3;
+        }
+        return;
+    }
+
+    if (has1 && has2) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum_rmsnorm(x, norm_weight, inv_rms, row1_ptr, row2_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total2 = simd_sum(local.y);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out2[out_idx] = total2;
+        }
+        return;
+    }
+    if (has1 && has3) {
+        device const uchar* row1_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row3_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum_rmsnorm(x, norm_weight, inv_rms, row1_ptr, row3_ptr, K, tid, tg_size);
+        const float total1 = simd_sum(local.x);
+        const float total3 = simd_sum(local.y);
+        if (tid == 0) {
+            out1[out_idx] = total1;
+            out3[out_idx] = total3;
+        }
+        return;
+    }
+    if (has2 && has3) {
+        device const uchar* row2_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
+        device const uchar* row3_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
+        const float2 local = vecmat_q4_k_dual_row_sum_rmsnorm(x, norm_weight, inv_rms, row2_ptr, row3_ptr, K, tid, tg_size);
+        const float total2 = simd_sum(local.x);
+        const float total3 = simd_sum(local.y);
+        if (tid == 0) {
+            out2[out_idx] = total2;
+            out3[out_idx] = total3;
+        }
+        return;
+    }
+
+    if (has1) {
         device const uchar* row_ptr = W1 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
         if (tid == 0) out1[out_idx] = total;
     }
-    if (out_idx < N2) {
+    if (has2) {
         device const uchar* row_ptr = W2 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
         if (tid == 0) out2[out_idx] = total;
     }
-    if (out_idx < N3) {
+    if (has3) {
         device const uchar* row_ptr = W3 + out_idx * blocks_per_row * BLOCK_BYTES;
-        float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
+        const float total = simd_sum(vecmat_q4_k_row_sum_rmsnorm(x, norm_weight, inv_rms, row_ptr, K, tid, tg_size));
         if (tid == 0) out3[out_idx] = total;
     }
 }

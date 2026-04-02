@@ -21,6 +21,11 @@ fn envFlagEnabled(name: []const u8) bool {
     return raw.len == 1 and raw[0] == '1';
 }
 
+fn envFlagDisabled(name: []const u8) bool {
+    const raw = std.posix.getenv(name) orelse return false;
+    return raw.len != 1 or raw[0] != '0';
+}
+
 // ============================================================================
 // GPU Backend Integration
 // ============================================================================
@@ -4157,6 +4162,28 @@ pub const Model = struct {
             if (raw.len != 1 or raw[0] != '0') return false;
         }
 
+        if (plans.len == 2 and !envFlagDisabled("PLLM_DISABLE_BATCHED_Q4K_DUAL")) {
+            const plan1 = plans[0];
+            const plan2 = plans[1];
+            if (plan1.out.len >= plan1.n and plan2.out.len >= plan2.n and x.len >= plan1.k and plan1.k == plan2.k) {
+                if (plan1.weights_quant.dtype == .q4_k and plan2.weights_quant.dtype == .q4_k) {
+                    const weight1 = self.getOrCreateMetalQuantBuffer(plan1.weights_quant) orelse return false;
+                    const weight2 = self.getOrCreateMetalQuantBuffer(plan2.weights_quant) orelse return false;
+                    return metal_shaders.dispatchVecMatMulQ4KPair(lib, x, self.metalBufferForSlice(x), .{
+                        .weight1 = weight1,
+                        .out1 = plan1.out,
+                        .out1_buf = self.metalBufferForSlice(plan1.out),
+                        .n1 = plan1.n,
+                        .weight2 = weight2,
+                        .out2 = plan2.out,
+                        .out2_buf = self.metalBufferForSlice(plan2.out),
+                        .n2 = plan2.n,
+                        .k = plan1.k,
+                    });
+                }
+            }
+        }
+
         var ops: [8]metal_shaders.VecMatOp = undefined;
         for (plans, 0..) |plan, i| {
             if (plan.out.len < plan.n or x.len < plan.k) return false;
@@ -4501,6 +4528,60 @@ pub const Model = struct {
                 );
                 if (result.success) return;
             }
+        }
+
+        self.vecMatMulRuntime(out, x, weights_f16, weights_quant, k, n);
+    }
+
+    fn useFfnDownPairKernel(dim: usize) bool {
+        if (std.posix.getenv("PLLM_ENABLE_FFN_DOWN_PAIR_KERNEL")) |raw| {
+            if (raw.len == 1 and raw[0] == '1') return dim >= 64;
+        }
+        return false;
+    }
+
+    fn useFfnDownRows2Kernel(dim: usize) bool {
+        if (std.posix.getenv("PLLM_ENABLE_FFN_DOWN_ROWS2_KERNEL")) |raw| {
+            return raw.len == 1 and raw[0] == '1' and dim >= 64;
+        }
+        return false;
+    }
+
+    fn ffnDownForcedKernel(dim: usize) ?metal_shaders.VecMatKernel {
+        if (useFfnDownPairKernel(dim)) return .q4_k_pair;
+        if (useFfnDownRows2Kernel(dim)) return .q4_k_rows2;
+        return null;
+    }
+
+    fn vecMatMulFfnDownRuntime(
+        self: *Model,
+        out: []f32,
+        x: []const f32,
+        weights_f16: []const f16,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        n: usize,
+    ) void {
+        if (out.len < n or x.len < k) return;
+
+        if (weights_quant.dtype == .q4_k) {
+            const forced_kernel = ffnDownForcedKernel(n) orelse null;
+            if (forced_kernel) |kernel| if (self.metal_lib) |lib| {
+                const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant);
+                const result = metal_shaders.dispatchVecMatMulQ4KForcedKernel(
+                    lib,
+                    x[0..k],
+                    weights_quant.data,
+                    weight_buf,
+                    out[0..n],
+                    self.metalBufferForSlice(x[0..k]),
+                    self.metalBufferForSlice(out[0..n]),
+                    k,
+                    n,
+                    kernel,
+                );
+                if (result.success) return;
+            };
         }
 
         self.vecMatMulRuntime(out, x, weights_f16, weights_quant, k, n);
@@ -5175,7 +5256,7 @@ pub const Model = struct {
             else
                 false;
             if (!ffn_residual_fused) {
-                self.vecMatMulRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
+                self.vecMatMulFfnDownRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
                 sanitizeNonFiniteInPlace(self.ffn_out_buf[0..dim]);
             }
             self.profileAdd(&self.profile_stats.ffn_down_ns, ffn_down_start);

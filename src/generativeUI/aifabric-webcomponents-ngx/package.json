@@ -1,0 +1,91 @@
+{
+  "name": "aifabric-webcomponents-ngx",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "nx": "./scripts/nx-safe.sh",
+    "start": "yarn nx serve angular-shell",
+    "demo:preflight": "node scripts/demo-preflight.mjs",
+    "demo:verify": "yarn demo:preflight && yarn e2e:smoke",
+    "build": "yarn nx run-many -t build",
+    "lint": "yarn nx run-many -t lint",
+    "test": "yarn nx run-many -t test",
+    "e2e:a11y:smoke": "playwright test --config apps/angular-shell/playwright.config.ts apps/angular-shell/e2e/a11y-smoke.spec.ts",
+    "e2e:smoke": "packages/api-server/.venv/bin/python scripts/e2e_real_ui.py",
+    "ops:migrate": "packages/api-server/.venv/bin/python packages/api-server/scripts/store_admin.py migrate",
+    "ops:backup": "packages/api-server/.venv/bin/python packages/api-server/scripts/store_admin.py backup",
+    "ops:restore": "packages/api-server/.venv/bin/python packages/api-server/scripts/store_admin.py restore",
+    "format": "yarn nx format:write",
+    "format:check": "yarn nx format:check",
+    "graph": "yarn nx graph",
+    "prepare": "husky install",
+    "clean": "yarn nx reset"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "0.2003.9",
+    "@angular-devkit/core": "20.3.9",
+    "@angular-devkit/schematics": "20.3.9",
+    "@angular-eslint/eslint-plugin": "20.5.1",
+    "@angular-eslint/eslint-plugin-template": "20.5.1",
+    "@angular-eslint/template-parser": "20.5.1",
+    "@angular/common": "20.3.9",
+    "@angular/compiler": "20.3.9",
+    "@angular/compiler-cli": "20.3.9",
+    "@angular/core": "20.3.9",
+    "@angular/platform-browser": "20.3.9",
+    "@angular/platform-browser-dynamic": "20.3.9",
+    "@axe-core/playwright": "^4.10.2",
+    "@commitlint/cli": "19.8.0",
+    "@commitlint/config-conventional": "19.8.0",
+    "@nx/angular": "22.0.2",
+    "@nx/eslint": "22.0.2",
+    "@nx/eslint-plugin": "22.0.2",
+    "@nx/jest": "22.0.2",
+    "@nx/js": "22.0.2",
+    "@nx/workspace": "22.0.2",
+    "@playwright/test": "^1.55.0",
+    "@schematics/angular": "20.3.9",
+    "@types/jest": "30.0.0",
+    "@types/node": "18.16.9",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "@typescript-eslint/types": "7.18.0",
+    "@typescript-eslint/utils": "^7.16.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "10.1.1",
+    "husky": "8.0.2",
+    "jest": "30.0.5",
+    "jest-environment-jsdom": "30.0.5",
+    "jest-preset-angular": "15.0.0",
+    "jsdom": "26.1.0",
+    "jsonc-eslint-parser": "2.1.0",
+    "lint-staged": "^15.2.10",
+    "nx": "22.0.2",
+    "playwright-core": "^1.55.0",
+    "prettier": "3.2.4",
+    "prettier-plugin-organize-imports": "^3.2.4",
+    "rxjs": "7.8.1",
+    "ts-jest": "29.4.0",
+    "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "nx": "22.0.2",
+    "rollup": "4.44.1"
+  },
+  "lint-staged": {
+    "*": [
+      "yarn nx format:write --uncommitted"
+    ],
+    "*.{js,jsx,ts,tsx,html,md,json,yml,css,scss}": [
+      "yarn eslint --fix"
+    ]
+  },
+  "packageManager": "yarn@4.11.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

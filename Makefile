@@ -307,7 +307,7 @@ sbom-parity: sbom-full-audit sbom-sarif sbom-risk-report
 #   make sac-widget-clean     # remove all dist/ artifacts
 # ════════════════════════════════════════════════════════════════════════════
 
-SAC_DIR := src/generativeUI/sap-sac-webcomponents-ngx
+SAC_DIR := src/generativeUI/sac-webcomponents-ngx
 
 .PHONY: sac-widget sac-widget-dev sac-widget-libs sac-widget-clean sac-widget-install
 
