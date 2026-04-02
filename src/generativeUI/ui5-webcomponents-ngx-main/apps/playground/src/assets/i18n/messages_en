@@ -1,1 +1,4 @@
 SOMETHING=something value is this {0}
+SHELLBAR_IMAGE_BTN=Logo
+ICON_OVERFLOW=More
+ICON_ERROR=Error

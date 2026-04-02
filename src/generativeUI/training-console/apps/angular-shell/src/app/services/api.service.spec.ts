@@ -132,17 +132,21 @@ describe('ApiService', () => {
       expect(err!.detail).toBe('Not allowed');
     });
 
-    it('should use fallback detail for empty error body', () => {
+    it('should use fallback detail for empty error body', fakeAsync(() => {
       let err: ApiError | undefined;
 
       service.get('/empty-error').subscribe({ error: (e) => (err = e) });
 
-      const req = httpMock.expectOne('/api/empty-error');
-      req.flush(null, { status: 500, statusText: 'Internal Server Error' });
+      // 500 is retryable — exhaust all attempts
+      httpMock.expectOne('/api/empty-error').flush(null, { status: 500, statusText: 'Internal Server Error' });
+      tick(500);
+      httpMock.expectOne('/api/empty-error').flush(null, { status: 500, statusText: 'Internal Server Error' });
+      tick(1000);
+      httpMock.expectOne('/api/empty-error').flush(null, { status: 500, statusText: 'Internal Server Error' });
 
       expect(err).toBeInstanceOf(ApiError);
       expect(err!.detail).toBe('An unexpected error occurred.');
-    });
+    }));
   });
 
   describe('retry behaviour', () => {

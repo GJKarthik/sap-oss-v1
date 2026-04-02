@@ -1,0 +1,31 @@
+<section class="mcp-page">
+  <ui5-title level="H3">Live MCP Integration</ui5-title>
+
+  <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
+    {{ blockingReason }}
+  </ui5-message-strip>
+
+  <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button>
+    {{ lastError }}
+  </ui5-message-strip>
+
+  <div class="mcp-page__controls">
+    <ui5-select [disabled]="loading || routeBlocked" (change)="selectedTool = $any($event).detail.selectedOption.value">
+      <ui5-option *ngFor="let tool of tools" [value]="tool" [attr.selected]="tool === selectedTool ? true : null">
+        {{ tool }}
+      </ui5-option>
+    </ui5-select>
+
+    <ui5-button design="Emphasized" [disabled]="invoking || loading || routeBlocked || !selectedTool" (click)="invokeSelectedTool()">
+      Invoke Tool
+    </ui5-button>
+
+    <ui5-button design="Transparent" [disabled]="loading || routeBlocked" (click)="loadTools()">
+      Refresh Tools
+    </ui5-button>
+  </div>
+
+  <ui5-busy-indicator *ngIf="loading || invoking" active size="M"></ui5-busy-indicator>
+
+  <pre *ngIf="lastCallResult" class="mcp-page__result">{{ lastCallResult }}</pre>
+</section>

@@ -5,12 +5,15 @@ import {Ui5ThemingProvider, Ui5ThemingService} from "@ui5/theming-ngx";
 import {BehaviorSubject, map, Observable, of, switchMap} from "rxjs";
 import supportedThemes from './supported-themes';
 import {setTheme} from '@ui5/webcomponents-base/dist/config/Theme.js';
+import { normalizeSupportedThemes } from './theme-name.util';
 
 @Injectable()
 export abstract class WebcomponentsThemingProvider implements Ui5ThemingProvider, OnDestroy {
   abstract name: string;
 
-  protected availableThemes$ = new BehaviorSubject<string[]>(supportedThemes);
+  protected availableThemes$ = new BehaviorSubject<string[]>(
+    normalizeSupportedThemes(supportedThemes),
+  );
 
   protected _globalThemingService: Ui5ThemingService | null = inject(Ui5ThemingService, {optional: true});
 

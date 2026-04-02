@@ -1,0 +1,185 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
+#
+# SAP OSS ai-core-pal - Complete Kyma Deployment
+# 
+# Deploy with: kubectl apply -f ai-core-pal-deployment.yaml
+# 
+# Contains:
+#   - Namespace (sap-ai-services)
+#   - Secret (hana-credentials)
+#   - StatefulSet (ai-core-pal)
+#   - Service (ai-core-pal)
+#   - APIRule (ai-core-pal - external access)
+#
+---
+# ============================================================================
+# Namespace
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sap-ai-services
+  labels:
+    app.kubernetes.io/name: sap-ai-services
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/managed-by: kubectl
+---
+# ============================================================================
+# HANA Cloud Credentials Secret
+# ============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hana-credentials
+  namespace: sap-ai-services
+  labels:
+    app: ai-core-pal
+type: Opaque
+stringData:
+  HANA_HOST: "fea6d8c0-6075-4a0d-8429-28412013ab85.hana.prod-ap11.hanacloud.ondemand.com"
+  HANA_PORT: "443"
+  HANA_USER: "AINUCLEUS"
+  HANA_PASSWORD: "hU0*Waf5C&"
+  HANA_SCHEMA: "AINUCLEUS"
+  HANA_ENCRYPT: "true"
+  HANA_SSL_VALIDATE_CERTIFICATE: "false"
+---
+# ============================================================================
+# StatefulSet - MCP Server with persistent storage for KùzuDB
+# ============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ai-core-pal
+  namespace: sap-ai-services
+  labels:
+    app: ai-core-pal
+    app.kubernetes.io/name: ai-core-pal
+    app.kubernetes.io/component: mcp-server
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  serviceName: ai-core-pal
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-core-pal
+  template:
+    metadata:
+      labels:
+        app: ai-core-pal
+        app.kubernetes.io/name: ai-core-pal
+        app.kubernetes.io/component: mcp-server
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+        prometheus.io/path: "/health"
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: mcp-server
+        image: docker.io/plturrell/ai-core-pal:latest
+        imagePullPolicy: Always
+        ports:
+        - name: mcp
+          containerPort: 8084
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: hana-credentials
+        env:
+        - name: MCP_HOST
+          value: "0.0.0.0"
+        - name: MCP_PORT
+          value: "8084"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: KUZU_DB_PATH
+          value: "/data/kuzu"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8084
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8084
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: kuzu-data
+          mountPath: /data/kuzu
+  volumeClaimTemplates:
+  - metadata:
+      name: kuzu-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+---
+# ============================================================================
+# Service - Internal cluster access
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-core-pal
+  namespace: sap-ai-services
+  labels:
+    app: ai-core-pal
+    app.kubernetes.io/name: ai-core-pal
+    app.kubernetes.io/component: mcp-server
+spec:
+  type: ClusterIP
+  ports:
+  - name: mcp
+    port: 8084
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: ai-core-pal
+---
+# ============================================================================
+# APIRule v2 - External access via Kyma Gateway
+# ============================================================================
+apiVersion: gateway.kyma-project.io/v2
+kind: APIRule
+metadata:
+  name: ai-core-pal
+  namespace: sap-ai-services
+  labels:
+    app: ai-core-pal
+spec:
+  gateway: kyma-system/kyma-gateway
+  hosts:
+  - ai-core-pal.c-054c570.kyma.ondemand.com
+  service:
+    name: ai-core-pal
+    port: 8084
+  rules:
+  # Health endpoint - no auth required
+  - path: /health
+    methods: ["GET"]
+    noAuth: true
+  # MCP endpoint - no auth for MCP protocol
+  - path: /mcp
+    methods: ["POST"]
+    noAuth: true
+  # Default - no auth
+  - path: /*
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    noAuth: true

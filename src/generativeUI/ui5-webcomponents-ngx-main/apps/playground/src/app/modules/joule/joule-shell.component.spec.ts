@@ -53,18 +53,32 @@ function makeCdr(): ChangeDetectorRef {
   return { markForCheck: jest.fn() } as unknown as ChangeDetectorRef;
 }
 
+function makeHealthService() {
+  return {
+    checkRouteReadiness: jest.fn().mockReturnValue(
+      new BehaviorSubject({
+        route: 'joule',
+        blocking: false,
+        checks: [{ name: 'AG-UI', status: 200, ok: true, url: '/ag-ui/health' }],
+      }).asObservable(),
+    ),
+  };
+}
+
 function createComponent() {
   const streaming = makeStreamingService();
   const governance = makeGovernanceService();
   const collab = makeCollabService();
   const cdr = makeCdr();
+  const health = makeHealthService();
   const component = new JouleShellComponent(
     streaming as never,
     governance as never,
     collab as never,
+    health as never,
     cdr,
   );
-  return { component, streaming, governance, collab, cdr };
+  return { component, streaming, governance, collab, cdr, health };
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +99,25 @@ describe('JouleShellComponent — initial state', () => {
     const { component } = createComponent();
     expect(typeof component.agUiEndpoint).toBe('string');
     expect(component.agUiEndpoint.length).toBeGreaterThan(0);
+  });
+});
+
+describe('JouleShellComponent — readiness', () => {
+  it('blocks route when AG-UI dependency is unhealthy', () => {
+    const { component, health } = createComponent();
+    (health.checkRouteReadiness as jest.Mock).mockReturnValue(
+      new BehaviorSubject({
+        route: 'joule',
+        blocking: true,
+        checks: [{ name: 'AG-UI', status: 503, ok: false, url: '/ag-ui/health' }],
+      }).asObservable(),
+    );
+
+    component.ngOnInit();
+
+    expect(component.routeBlocked).toBe(true);
+    expect(component.connectionError).toContain('AG-UI endpoint');
+    expect(component.connectionError).toContain('503');
   });
 });
 

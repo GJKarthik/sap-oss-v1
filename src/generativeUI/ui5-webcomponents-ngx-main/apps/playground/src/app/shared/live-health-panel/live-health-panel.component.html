@@ -1,0 +1,35 @@
+<section class="live-health-panel" aria-label="Service Health">
+  <div class="live-health-panel__header">
+    <div class="live-health-panel__title">
+      <ui5-title level="H6">Service Health</ui5-title>
+      <span class="live-health-panel__subtitle">Server-managed services, UI-managed readiness checks</span>
+    </div>
+    <div class="live-health-panel__actions">
+      <ui5-button design="Transparent" [disabled]="loading" (click)="refreshHealth()">
+        {{ loading ? 'Checking...' : 'Check Now' }}
+      </ui5-button>
+      <ui5-tag [design]="blocking ? 'Negative' : 'Positive'">
+        {{ blocking ? 'Blocked' : 'Ready' }}
+      </ui5-tag>
+    </div>
+  </div>
+
+  <ui5-message-strip [design]="blocking ? 'Negative' : 'Positive'" hide-close-button>
+    {{ summaryText }}
+  </ui5-message-strip>
+
+  <div class="live-health-panel__meta" *ngIf="lastCheckedAt">
+    Last checked: {{ lastCheckedAt }}
+  </div>
+
+  <ui5-list separators="Inner">
+    <ui5-li-custom *ngFor="let check of checks">
+      <div class="live-health-panel__row">
+        <span class="live-health-panel__service">{{ check.name }}</span>
+        <span class="live-health-panel__status" [class.live-health-panel__status--bad]="!check.ok">
+          {{ getCheckStatusText(check) }}
+        </span>
+      </div>
+    </ui5-li-custom>
+  </ui5-list>
+</section>

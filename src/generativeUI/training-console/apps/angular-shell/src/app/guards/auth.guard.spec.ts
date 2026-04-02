@@ -4,16 +4,13 @@ import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 
 describe('authGuard', () => {
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: { isAuthenticated: boolean };
+  let mockRouter: { createUrlTree: jest.Mock };
 
   beforeEach(() => {
-    mockAuthService = jasmine.createSpyObj('AuthService', [], {
-      isAuthenticated: true,
-    });
-    
-    mockRouter = jasmine.createSpyObj('Router', ['createUrlTree']);
-    mockRouter.createUrlTree.and.returnValue({} as UrlTree);
+    mockAuthService = { isAuthenticated: true };
+
+    mockRouter = { createUrlTree: jest.fn().mockReturnValue({} as UrlTree) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,7 +49,7 @@ describe('authGuard', () => {
 
   it('should return UrlTree when redirecting', () => {
     const mockUrlTree = { toString: () => '/login' } as UrlTree;
-    mockRouter.createUrlTree.and.returnValue(mockUrlTree);
+    mockRouter.createUrlTree.mockReturnValue(mockUrlTree);
     Object.defineProperty(mockAuthService, 'isAuthenticated', { get: () => false });
     
     const result = runGuard();

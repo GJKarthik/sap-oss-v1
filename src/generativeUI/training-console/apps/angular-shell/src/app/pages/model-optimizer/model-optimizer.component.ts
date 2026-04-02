@@ -1080,7 +1080,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   });
 
   readonly gpuTotalNum = computed(() => {
-    const t = this.store.gpuMemoryTotal();
+    const t = this.store.gpuMemoryTotal() as string;
     if (t === '—') return 0;
     return parseFloat(t);
   });

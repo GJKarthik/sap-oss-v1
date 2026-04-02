@@ -457,6 +457,114 @@ pub fn build(b: *std.Build) void {
     b.step("test-model", "Run inference with GGUF model from vendor/layerModels using custom Zig engine").dependOn(&run_model_test.step);
 
     // ========================================================================
+    // Decode Attention Microbenchmark
+    // ========================================================================
+    const decode_attn_bench_mod = b.createModule(.{
+        .root_source_file = b.path("src/tests/bench_decode_attention.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    decode_attn_bench_mod.addImport("metal_shaders", metal_shaders_mod);
+    decode_attn_bench_mod.addImport("metal_bindings", metal_bindings_mod);
+
+    const decode_attn_bench_exe = b.addExecutable(.{
+        .name = "bench-decode-attention",
+        .root_module = decode_attn_bench_mod,
+    });
+    decode_attn_bench_exe.linkLibC();
+    if (target.result.os.tag == .macos) {
+        decode_attn_bench_exe.linkFramework("Metal");
+        decode_attn_bench_exe.linkFramework("Foundation");
+        decode_attn_bench_exe.linkFramework("CoreGraphics");
+        decode_attn_bench_exe.linkSystemLibrary("objc");
+    }
+    b.installArtifact(decode_attn_bench_exe);
+
+    const run_decode_attn_bench = b.addRunArtifact(decode_attn_bench_exe);
+    b.step("bench-decode-attn", "Run isolated Metal decode-attention microbenchmark").dependOn(&run_decode_attn_bench.step);
+
+    // ========================================================================
+    // Decode Layer Microbenchmark (attention + wo projection)
+    // ========================================================================
+    const decode_layer_bench_mod = b.createModule(.{
+        .root_source_file = b.path("src/tests/bench_decode_layer.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    decode_layer_bench_mod.addImport("metal_shaders", metal_shaders_mod);
+    decode_layer_bench_mod.addImport("metal_bindings", metal_bindings_mod);
+
+    const decode_layer_bench_exe = b.addExecutable(.{
+        .name = "bench-decode-layer",
+        .root_module = decode_layer_bench_mod,
+    });
+    decode_layer_bench_exe.linkLibC();
+    if (target.result.os.tag == .macos) {
+        decode_layer_bench_exe.linkFramework("Metal");
+        decode_layer_bench_exe.linkFramework("Foundation");
+        decode_layer_bench_exe.linkFramework("CoreGraphics");
+        decode_layer_bench_exe.linkSystemLibrary("objc");
+    }
+    b.installArtifact(decode_layer_bench_exe);
+
+    const run_decode_layer_bench = b.addRunArtifact(decode_layer_bench_exe);
+    b.step("bench-decode-layer", "Run decode layer microbenchmark including wo projection").dependOn(&run_decode_layer_bench.step);
+
+    // ========================================================================
+    // Decode Hot-Stage Microbenchmark
+    // ========================================================================
+    const decode_hotstages_bench_mod = b.createModule(.{
+        .root_source_file = b.path("src/tests/bench_decode_hotstages.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    decode_hotstages_bench_mod.addImport("metal_shaders", metal_shaders_mod);
+    decode_hotstages_bench_mod.addImport("metal_bindings", metal_bindings_mod);
+
+    const decode_hotstages_bench_exe = b.addExecutable(.{
+        .name = "bench-decode-hotstages",
+        .root_module = decode_hotstages_bench_mod,
+    });
+    decode_hotstages_bench_exe.linkLibC();
+    if (target.result.os.tag == .macos) {
+        decode_hotstages_bench_exe.linkFramework("Metal");
+        decode_hotstages_bench_exe.linkFramework("Foundation");
+        decode_hotstages_bench_exe.linkFramework("CoreGraphics");
+        decode_hotstages_bench_exe.linkSystemLibrary("objc");
+    }
+    b.installArtifact(decode_hotstages_bench_exe);
+
+    const run_decode_hotstages_bench = b.addRunArtifact(decode_hotstages_bench_exe);
+    b.step("bench-decode-hotstages", "Run isolated Metal benchmarks for the dominant decode-stage matmul shapes").dependOn(&run_decode_hotstages_bench.step);
+
+    // ========================================================================
+    // WO Projection Microbenchmark
+    // ========================================================================
+    const wo_projection_bench_mod = b.createModule(.{
+        .root_source_file = b.path("src/tests/bench_wo_projection.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    wo_projection_bench_mod.addImport("metal_shaders", metal_shaders_mod);
+    wo_projection_bench_mod.addImport("metal_bindings", metal_bindings_mod);
+
+    const wo_projection_bench_exe = b.addExecutable(.{
+        .name = "bench-wo-projection",
+        .root_module = wo_projection_bench_mod,
+    });
+    wo_projection_bench_exe.linkLibC();
+    if (target.result.os.tag == .macos) {
+        wo_projection_bench_exe.linkFramework("Metal");
+        wo_projection_bench_exe.linkFramework("Foundation");
+        wo_projection_bench_exe.linkFramework("CoreGraphics");
+        wo_projection_bench_exe.linkSystemLibrary("objc");
+    }
+    b.installArtifact(wo_projection_bench_exe);
+
+    const run_wo_projection_bench = b.addRunArtifact(wo_projection_bench_exe);
+    b.step("bench-wo-proj", "Run isolated Metal wo projection microbenchmark").dependOn(&run_wo_projection_bench.step);
+
+    // ========================================================================
     // CUDA Forward Pass Tests
     // ========================================================================
     const cuda_weights_test_mod = b.createModule(.{

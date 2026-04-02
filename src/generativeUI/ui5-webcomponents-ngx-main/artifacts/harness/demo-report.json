@@ -1,0 +1,217 @@
+{
+  "runId": "9335716d-51bd-4e46-ac80-88046e8ca97e",
+  "timestamp": "2026-04-01T04:36:21.630Z",
+  "mode": "demo-safe",
+  "profile": "local-live",
+  "services": [
+    {
+      "name": "AG-UI",
+      "url": "http://localhost:9160/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 501,
+      "lastError": null
+    },
+    {
+      "name": "OpenAI",
+      "url": "http://localhost:8400/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 220,
+      "lastError": null
+    },
+    {
+      "name": "MCP",
+      "url": "http://localhost:9160/health",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 267,
+      "lastError": null
+    },
+    {
+      "name": "MCP tools/list",
+      "url": "http://localhost:9160/mcp",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 338,
+      "lastError": null
+    }
+  ],
+  "routes": [
+    {
+      "route": "/",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 375,
+      "lastError": null
+    },
+    {
+      "route": "/generative",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 384,
+      "lastError": null
+    },
+    {
+      "route": "/components",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 388,
+      "lastError": null
+    },
+    {
+      "route": "/mcp",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 400,
+      "lastError": null
+    },
+    {
+      "route": "/readiness",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 402,
+      "lastError": null
+    },
+    {
+      "route": "/joule",
+      "ok": true,
+      "status": 200,
+      "latencyMs": 407,
+      "lastError": null
+    }
+  ],
+  "checks": [
+    {
+      "name": "env-check",
+      "required": true,
+      "status": "pass",
+      "code": null,
+      "message": "Environment requirements satisfied",
+      "evidence": {
+        "missing": []
+      }
+    },
+    {
+      "name": "ports-check",
+      "required": false,
+      "status": "pass",
+      "code": null,
+      "message": "Required ports are active",
+      "evidence": {
+        "listening": [
+          {
+            "port": 4200,
+            "listening": true
+          },
+          {
+            "port": 8400,
+            "listening": true
+          },
+          {
+            "port": 9160,
+            "listening": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "services-check",
+      "required": true,
+      "status": "pass",
+      "code": null,
+      "message": "All core services are reachable",
+      "evidence": {
+        "services": [
+          {
+            "name": "AG-UI",
+            "url": "http://localhost:9160/health",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 501,
+            "lastError": null
+          },
+          {
+            "name": "OpenAI",
+            "url": "http://localhost:8400/health",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 220,
+            "lastError": null
+          },
+          {
+            "name": "MCP",
+            "url": "http://localhost:9160/health",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 267,
+            "lastError": null
+          },
+          {
+            "name": "MCP tools/list",
+            "url": "http://localhost:9160/mcp",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 338,
+            "lastError": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "routes-check",
+      "required": true,
+      "status": "pass",
+      "code": null,
+      "message": "All required routes are reachable",
+      "evidence": {
+        "routes": [
+          {
+            "route": "/",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 375,
+            "lastError": null
+          },
+          {
+            "route": "/generative",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 384,
+            "lastError": null
+          },
+          {
+            "route": "/components",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 388,
+            "lastError": null
+          },
+          {
+            "route": "/mcp",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 400,
+            "lastError": null
+          },
+          {
+            "route": "/readiness",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 402,
+            "lastError": null
+          },
+          {
+            "route": "/joule",
+            "ok": true,
+            "status": 200,
+            "latencyMs": 407,
+            "lastError": null
+          }
+        ]
+      }
+    }
+  ],
+  "verdict": "READY",
+  "exitCode": 0
+}

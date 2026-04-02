@@ -9,6 +9,7 @@ import { ToastService } from '../../services/toast.service';
 
 describe('HippocppComponent', () => {
   let component: HippocppComponent;
+  let fixture: ReturnType<typeof TestBed.createComponent<HippocppComponent>>;
   let httpMock: HttpTestingController;
   let toastSpy: jest.Mocked<Pick<ToastService, 'success' | 'error' | 'warning'>>;
 
@@ -26,9 +27,10 @@ describe('HippocppComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(HippocppComponent);
+    fixture = TestBed.createComponent(HippocppComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
   });
 
   afterEach(() => {

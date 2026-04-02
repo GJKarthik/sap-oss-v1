@@ -1,0 +1,28 @@
+<section class="component-playground">
+  <ui5-title level="H3">Live Component Playground</ui5-title>
+
+  <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
+    {{ blockingReason }}
+  </ui5-message-strip>
+
+  <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button>
+    {{ lastError }}
+  </ui5-message-strip>
+
+  <div class="component-playground__actions">
+    <ui5-button design="Emphasized" [disabled]="loading || routeBlocked" (click)="loadModels()">
+      Refresh Live Catalog
+    </ui5-button>
+    <span class="component-playground__hint">Source: {{ models.length }} models from /v1/models</span>
+  </div>
+
+  <ui5-busy-indicator *ngIf="loading" active size="M"></ui5-busy-indicator>
+
+  <ui5-list *ngIf="!loading && models.length > 0" separators="Inner">
+    <ui5-li *ngFor="let model of models">{{ model }}</ui5-li>
+  </ui5-list>
+
+  <ui5-message-strip *ngIf="!loading && !routeBlocked && models.length === 0 && !lastError" design="Information" hide-close-button>
+    Live endpoint responded but no models were returned.
+  </ui5-message-strip>
+</section>

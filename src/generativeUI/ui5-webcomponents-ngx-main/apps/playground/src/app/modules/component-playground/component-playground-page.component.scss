@@ -1,0 +1,17 @@
+.component-playground {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.component-playground__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.component-playground__hint {
+  color: var(--sapContent_LabelColor);
+  font-size: 0.875rem;
+}

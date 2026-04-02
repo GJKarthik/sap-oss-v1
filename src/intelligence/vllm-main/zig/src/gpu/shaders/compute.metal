@@ -279,6 +279,108 @@ inline float vecmat_q4_k_row_sum(
     return local_sum;
 }
 
+inline float vecmat_q4_k_pair_row_sum(
+    device const float* x,
+    device const uchar* row_ptr,
+    uint K,
+    uint tid,
+    uint tg_size
+) {
+    constexpr uint BLOCK_BYTES = 144;
+    constexpr uint HALF_CHUNK = 32;
+    constexpr uint PAIR_CHUNK = 64;
+    const uint pairs_per_row = (K + PAIR_CHUNK - 1) / PAIR_CHUNK;
+
+    float local_sum = 0.0f;
+    for (uint pair_idx = tid; pair_idx < pairs_per_row; pair_idx += tg_size) {
+        const uint block = pair_idx / 4;
+        const uint pair = pair_idx % 4;
+        device const uchar* block_ptr = row_ptr + block * BLOCK_BYTES;
+        const ushort d_bits = ushort(block_ptr[0]) | (ushort(block_ptr[1]) << 8);
+        const ushort dmin_bits = ushort(block_ptr[2]) | (ushort(block_ptr[3]) << 8);
+        const float d = float(as_type<half>(d_bits));
+        const float dmin = float(as_type<half>(dmin_bits));
+        device const uchar* scales = block_ptr + 4;
+        device const uchar* qs = block_ptr + 16 + pair * HALF_CHUNK;
+        const uint base_k = pair_idx * PAIR_CHUNK;
+
+        const uint2 sm_low = get_scale_min_k4(pair * 2, scales);
+        const float d_low = d * float(sm_low.x);
+        const float m_low = dmin * float(sm_low.y);
+        const uint low_count = min(HALF_CHUNK, K - base_k);
+
+        if (low_count == HALF_CHUNK) {
+            const float4 d_vec = float4(d_low);
+            const float4 m_vec = float4(m_low);
+            for (uint l = 0; l < HALF_CHUNK; l += 4) {
+                const uchar4 packed = *(device const uchar4*)(qs + l);
+                const float4 q = unpack_low_nibbles(packed);
+                const float4 xv = *(device const float4*)(x + base_k + l);
+                local_sum += dot(xv, d_vec * q - m_vec);
+            }
+        } else {
+            for (uint l = 0; l < low_count; ++l) {
+                const float q = float(qs[l] & 0x0F);
+                local_sum += x[base_k + l] * (d_low * q - m_low);
+            }
+        }
+
+        const uint high_base = base_k + HALF_CHUNK;
+        if (high_base >= K) continue;
+
+        const uint2 sm_high = get_scale_min_k4(pair * 2 + 1, scales);
+        const float d_high = d * float(sm_high.x);
+        const float m_high = dmin * float(sm_high.y);
+        const uint high_count = min(HALF_CHUNK, K - high_base);
+
+        if (high_count == HALF_CHUNK) {
+            const float4 d_vec = float4(d_high);
+            const float4 m_vec = float4(m_high);
+            for (uint l = 0; l < HALF_CHUNK; l += 4) {
+                const uchar4 packed = *(device const uchar4*)(qs + l);
+                const float4 q = unpack_high_nibbles(packed);
+                const float4 xv = *(device const float4*)(x + high_base + l);
+                local_sum += dot(xv, d_vec * q - m_vec);
+            }
+        } else {
+            for (uint l = 0; l < high_count; ++l) {
+                const float q = float(qs[l] >> 4);
+                local_sum += x[high_base + l] * (d_high * q - m_high);
+            }
+        }
+    }
+
+    return local_sum;
+}
+
+inline float reduce_threadgroup_sum(
+    float local_sum,
+    threadgroup float* partial_sums,
+    uint lane,
+    uint sg_idx,
+    uint tg_size,
+    uint simd_size
+) {
+    if (tg_size == simd_size) {
+        return simd_sum(local_sum);
+    }
+
+    const float sg_sum = simd_sum(local_sum);
+    if (lane == 0) {
+        partial_sums[sg_idx] = sg_sum;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    float total = 0.0f;
+    if (sg_idx == 0) {
+        const uint num_simdgroups = (tg_size + simd_size - 1) / simd_size;
+        total = (lane < num_simdgroups) ? partial_sums[lane] : 0.0f;
+        total = simd_sum(total);
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    return total;
+}
+
 /// Vector-matrix multiply for row-major GGUF Q4_K blocks.
 /// x: [K]
 /// W: [N x K] stored as consecutive GGUF Q4_K rows
@@ -326,6 +428,144 @@ kernel void vecmat_q4_k(
         total = simd_sum(total);
         if (lane == 0) {
             out[out_idx] = total;
+        }
+    }
+}
+
+kernel void vecmat_q4_k_rows2(
+    device const float* x [[buffer(0)]],
+    device const uchar* W [[buffer(1)]],
+    device float* out [[buffer(2)]],
+    constant uint& K [[buffer(3)]],
+    constant uint& N [[buffer(4)]],
+    uint tid [[thread_position_in_threadgroup]],
+    uint tg_size [[threads_per_threadgroup]],
+    uint lane [[thread_index_in_simdgroup]],
+    uint sg_idx [[simdgroup_index_in_threadgroup]],
+    uint simd_size [[threads_per_simdgroup]],
+    uint pair_idx [[threadgroup_position_in_grid]]
+) {
+    constexpr uint BLOCK_SIZE = 256;
+    constexpr uint BLOCK_BYTES = 144;
+    const uint out_idx0 = pair_idx * 2u;
+    if (out_idx0 >= N) return;
+
+    const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    threadgroup float partial_sums[32];
+
+    device const uchar* row0_ptr = W + out_idx0 * blocks_per_row * BLOCK_BYTES;
+    const float local_sum0 = vecmat_q4_k_row_sum(x, row0_ptr, K, tid, tg_size);
+    const float total0 = reduce_threadgroup_sum(local_sum0, partial_sums, lane, sg_idx, tg_size, simd_size);
+
+    const uint out_idx1 = out_idx0 + 1u;
+    float total1 = 0.0f;
+    if (out_idx1 < N) {
+        device const uchar* row1_ptr = W + out_idx1 * blocks_per_row * BLOCK_BYTES;
+        const float local_sum1 = vecmat_q4_k_row_sum(x, row1_ptr, K, tid, tg_size);
+        total1 = reduce_threadgroup_sum(local_sum1, partial_sums, lane, sg_idx, tg_size, simd_size);
+    }
+
+    if (tg_size == simd_size) {
+        if (tid == 0) {
+            out[out_idx0] = total0;
+            if (out_idx1 < N) out[out_idx1] = total1;
+        }
+        return;
+    }
+
+    if (sg_idx == 0 && lane == 0) {
+        out[out_idx0] = total0;
+        if (out_idx1 < N) out[out_idx1] = total1;
+    }
+}
+
+kernel void vecmat_q4_k_pair(
+    device const float* x [[buffer(0)]],
+    device const uchar* W [[buffer(1)]],
+    device float* out [[buffer(2)]],
+    constant uint& K [[buffer(3)]],
+    constant uint& N [[buffer(4)]],
+    uint tid [[thread_position_in_threadgroup]],
+    uint tg_size [[threads_per_threadgroup]],
+    uint lane [[thread_index_in_simdgroup]],
+    uint sg_idx [[simdgroup_index_in_threadgroup]],
+    uint simd_size [[threads_per_simdgroup]],
+    uint out_idx [[threadgroup_position_in_grid]]
+) {
+    if (out_idx >= N) return;
+
+    constexpr uint BLOCK_SIZE = 256;
+    constexpr uint BLOCK_BYTES = 144;
+    const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    device const uchar* row_ptr = W + out_idx * blocks_per_row * BLOCK_BYTES;
+    threadgroup float partial_sums[32];
+
+    const float local_sum = vecmat_q4_k_pair_row_sum(x, row_ptr, K, tid, tg_size);
+
+    if (tg_size == simd_size) {
+        const float total = simd_sum(local_sum);
+        if (tid == 0) out[out_idx] = total;
+        return;
+    }
+
+    const float sg_sum = simd_sum(local_sum);
+    if (lane == 0) {
+        partial_sums[sg_idx] = sg_sum;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (sg_idx == 0) {
+        const uint num_simdgroups = (tg_size + simd_size - 1) / simd_size;
+        float total = (lane < num_simdgroups) ? partial_sums[lane] : 0.0f;
+        total = simd_sum(total);
+        if (lane == 0) out[out_idx] = total;
+    }
+}
+
+kernel void vecmat_q4_k_add(
+    device const float* x [[buffer(0)]],
+    device const uchar* W [[buffer(1)]],
+    device const float* residual [[buffer(2)]],
+    device float* out [[buffer(3)]],
+    constant uint& K [[buffer(4)]],
+    constant uint& N [[buffer(5)]],
+    uint tid [[thread_position_in_threadgroup]],
+    uint tg_size [[threads_per_threadgroup]],
+    uint lane [[thread_index_in_simdgroup]],
+    uint sg_idx [[simdgroup_index_in_threadgroup]],
+    uint simd_size [[threads_per_simdgroup]],
+    uint out_idx [[threadgroup_position_in_grid]]
+) {
+    if (out_idx >= N) return;
+
+    constexpr uint BLOCK_SIZE = 256;
+    constexpr uint BLOCK_BYTES = 144;
+    const uint blocks_per_row = (K + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    device const uchar* row_ptr = W + out_idx * blocks_per_row * BLOCK_BYTES;
+    threadgroup float partial_sums[32];
+
+    const float local_sum = vecmat_q4_k_row_sum(x, row_ptr, K, tid, tg_size);
+
+    if (tg_size == simd_size) {
+        const float total = simd_sum(local_sum);
+        if (tid == 0) {
+            out[out_idx] = residual[out_idx] + total;
+        }
+        return;
+    }
+
+    const float sg_sum = simd_sum(local_sum);
+    if (lane == 0) {
+        partial_sums[sg_idx] = sg_sum;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (sg_idx == 0) {
+        const uint num_simdgroups = (tg_size + simd_size - 1) / simd_size;
+        float total = (lane < num_simdgroups) ? partial_sums[lane] : 0.0f;
+        total = simd_sum(total);
+        if (lane == 0) {
+            out[out_idx] = residual[out_idx] + total;
         }
     }
 }
@@ -1057,5 +1297,210 @@ kernel void attention_single_head(
             weighted_sum += attn_weights[query_idx * seq_len + k] * V[k * head_dim + d];
         }
         output[query_idx * head_dim + d] = weighted_sum;
+    }
+}
+
+/// Decode-time attention score computation for a single query head against a
+/// strided KV cache laid out as [seq_len x kv_stride].
+kernel void attention_decode_scores_single_head(
+    device const float* q [[buffer(0)]],
+    device const float* k_cache [[buffer(1)]],
+    device float* scores [[buffer(2)]],
+    constant uint& seq_len [[buffer(3)]],
+    constant uint& head_dim [[buffer(4)]],
+    constant uint& kv_stride [[buffer(5)]],
+    constant uint& head_offset [[buffer(6)]],
+    constant float& scale [[buffer(7)]],
+    uint seq_idx [[thread_position_in_grid]]
+) {
+    if (seq_idx >= seq_len) return;
+
+    const uint base = seq_idx * kv_stride + head_offset;
+    float score = 0.0f;
+    for (uint d = 0; d < head_dim; d++) {
+        score += q[d] * k_cache[base + d];
+    }
+    scores[seq_idx] = score * scale;
+}
+
+/// Decode-time weighted value reduction for a single query head against a
+/// strided KV cache laid out as [seq_len x kv_stride].
+kernel void attention_decode_values_single_head(
+    device const float* scores [[buffer(0)]],
+    device const float* v_cache [[buffer(1)]],
+    device float* output [[buffer(2)]],
+    constant uint& seq_len [[buffer(3)]],
+    constant uint& head_dim [[buffer(4)]],
+    constant uint& kv_stride [[buffer(5)]],
+    constant uint& head_offset [[buffer(6)]],
+    uint dim_idx [[thread_position_in_grid]]
+) {
+    if (dim_idx >= head_dim) return;
+
+    float weighted_sum = 0.0f;
+    for (uint seq_idx = 0; seq_idx < seq_len; seq_idx++) {
+        const uint base = seq_idx * kv_stride + head_offset;
+        weighted_sum += scores[seq_idx] * v_cache[base + dim_idx];
+    }
+    output[dim_idx] = weighted_sum;
+}
+
+/// Fused decode attention for a single query head. This keeps the short decode
+/// window in threadgroup memory so score, softmax, and value reduction happen in
+/// one launch instead of three.
+kernel void attention_decode_fused_single_head(
+    device const float* q [[buffer(0)]],
+    device const float* k_cache [[buffer(1)]],
+    device const float* v_cache [[buffer(2)]],
+    device float* output [[buffer(3)]],
+    constant uint& seq_len [[buffer(4)]],
+    constant uint& head_dim [[buffer(5)]],
+    constant uint& kv_stride [[buffer(6)]],
+    constant uint& head_offset [[buffer(7)]],
+    constant float& scale [[buffer(8)]],
+    uint lane [[thread_position_in_threadgroup]]
+) {
+    constexpr uint MAX_FUSED_SEQ_LEN = 512;
+    constexpr uint TG_SIZE = 64;
+
+    if (seq_len == 0 || head_dim == 0 || seq_len > MAX_FUSED_SEQ_LEN) return;
+
+    threadgroup float scores[MAX_FUSED_SEQ_LEN];
+    threadgroup float reduce_buf[TG_SIZE];
+
+    float local_max = -INFINITY;
+    for (uint seq_idx = lane; seq_idx < seq_len; seq_idx += TG_SIZE) {
+        const uint base = seq_idx * kv_stride + head_offset;
+        float score = 0.0f;
+        for (uint d = 0; d < head_dim; d++) {
+            score += q[d] * k_cache[base + d];
+        }
+        score *= scale;
+        scores[seq_idx] = score;
+        local_max = max(local_max, score);
+    }
+
+    reduce_buf[lane] = local_max;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    for (uint stride = TG_SIZE / 2; stride > 0; stride >>= 1) {
+        if (lane < stride) {
+            reduce_buf[lane] = max(reduce_buf[lane], reduce_buf[lane + stride]);
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+
+    const float max_score = reduce_buf[0];
+
+    float local_sum = 0.0f;
+    for (uint seq_idx = lane; seq_idx < seq_len; seq_idx += TG_SIZE) {
+        const float weight = exp(scores[seq_idx] - max_score);
+        scores[seq_idx] = weight;
+        local_sum += weight;
+    }
+
+    reduce_buf[lane] = local_sum;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    for (uint stride = TG_SIZE / 2; stride > 0; stride >>= 1) {
+        if (lane < stride) {
+            reduce_buf[lane] += reduce_buf[lane + stride];
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+
+    const float inv_sum = 1.0f / reduce_buf[0];
+
+    for (uint dim_idx = lane; dim_idx < head_dim; dim_idx += TG_SIZE) {
+        float weighted_sum = 0.0f;
+        for (uint seq_idx = 0; seq_idx < seq_len; seq_idx++) {
+            const uint base = seq_idx * kv_stride + head_offset;
+            weighted_sum += (scores[seq_idx] * inv_sum) * v_cache[base + dim_idx];
+        }
+        output[dim_idx] = weighted_sum;
+    }
+}
+
+/// Fused decode attention for all heads in one dispatch. Each threadgroup handles
+/// one attention head, which removes the CPU-side per-head launch loop.
+kernel void attention_decode_fused_heads(
+    device const float* q_all [[buffer(0)]],
+    device const float* k_cache [[buffer(1)]],
+    device const float* v_cache [[buffer(2)]],
+    device float* output_all [[buffer(3)]],
+    constant uint& seq_len [[buffer(4)]],
+    constant uint& head_dim [[buffer(5)]],
+    constant uint& kv_stride [[buffer(6)]],
+    constant uint& n_heads [[buffer(7)]],
+    constant uint& heads_per_group [[buffer(8)]],
+    constant float& scale [[buffer(9)]],
+    uint lane [[thread_position_in_threadgroup]],
+    uint head_idx [[threadgroup_position_in_grid]]
+) {
+    constexpr uint MAX_FUSED_SEQ_LEN = 512;
+    constexpr uint TG_SIZE = 64;
+
+    if (head_idx >= n_heads || seq_len == 0 || head_dim == 0 || seq_len > MAX_FUSED_SEQ_LEN) return;
+
+    const uint kv_head_idx = head_idx / max(heads_per_group, 1u);
+    const uint q_offset = head_idx * head_dim;
+    const uint head_offset = kv_head_idx * head_dim;
+
+    device const float* q = q_all + q_offset;
+    device float* output = output_all + q_offset;
+
+    threadgroup float scores[MAX_FUSED_SEQ_LEN];
+    threadgroup float reduce_buf[TG_SIZE];
+
+    float local_max = -INFINITY;
+    for (uint seq_idx = lane; seq_idx < seq_len; seq_idx += TG_SIZE) {
+        const uint base = seq_idx * kv_stride + head_offset;
+        float score = 0.0f;
+        for (uint d = 0; d < head_dim; d++) {
+            score += q[d] * k_cache[base + d];
+        }
+        score *= scale;
+        scores[seq_idx] = score;
+        local_max = max(local_max, score);
+    }
+
+    reduce_buf[lane] = local_max;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    for (uint stride = TG_SIZE / 2; stride > 0; stride >>= 1) {
+        if (lane < stride) {
+            reduce_buf[lane] = max(reduce_buf[lane], reduce_buf[lane + stride]);
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+
+    const float max_score = reduce_buf[0];
+
+    float local_sum = 0.0f;
+    for (uint seq_idx = lane; seq_idx < seq_len; seq_idx += TG_SIZE) {
+        const float weight = exp(scores[seq_idx] - max_score);
+        scores[seq_idx] = weight;
+        local_sum += weight;
+    }
+
+    reduce_buf[lane] = local_sum;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    for (uint stride = TG_SIZE / 2; stride > 0; stride >>= 1) {
+        if (lane < stride) {
+            reduce_buf[lane] += reduce_buf[lane + stride];
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+
+    const float inv_sum = 1.0f / reduce_buf[0];
+
+    for (uint dim_idx = lane; dim_idx < head_dim; dim_idx += TG_SIZE) {
+        float weighted_sum = 0.0f;
+        for (uint seq_idx = 0; seq_idx < seq_len; seq_idx++) {
+            const uint base = seq_idx * kv_stride + head_offset;
+            weighted_sum += (scores[seq_idx] * inv_sum) * v_cache[base + dim_idx];
+        }
+        output[dim_idx] = weighted_sum;
     }
 }

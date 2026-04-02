@@ -14,6 +14,7 @@ import { A2UiSchema } from '@ui5/genui-renderer';
 import { GovernanceService, PendingAction } from '@ui5/genui-governance';
 import { CollaborationService, Participant } from '@ui5/genui-collab';
 import { environment } from '../../../environments/environment';
+import { LiveDemoHealthService } from '../../core/live-demo-health.service';
 
 @Component({
   selector: 'playground-joule-shell',
@@ -31,6 +32,7 @@ export class JouleShellComponent implements OnInit, OnDestroy {
   participants: Participant[] = [];
   showGovernancePanel = false;
   connectionError: string | null = null;
+  routeBlocked = false;
 
   readonly agUiEndpoint = environment.agUiEndpoint;
 
@@ -38,16 +40,30 @@ export class JouleShellComponent implements OnInit, OnDestroy {
     private streamingUi: StreamingUiService,
     private governance: GovernanceService,
     private collab: CollaborationService,
+    private liveHealthService: LiveDemoHealthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.liveHealthService
+      .checkRouteReadiness('joule')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((readiness) => {
+        this.routeBlocked = readiness.blocking;
+        const failed = readiness.checks.find((check) => !check.ok);
+        if (failed) {
+          this.connectionError = `AG-UI endpoint unavailable (${failed.status}) [x-correlation-id: unavailable]`;
+        }
+        this.cdr.markForCheck();
+      });
+
     this.streamingUi.state$
       .pipe(takeUntil(this.destroy$))
       .subscribe((s) => {
         this.state = s;
-        if (s === 'error') {
-          this.connectionError = 'Connection to Joule failed. Check that the AG-UI backend is running and try again.';
+        if (s === 'error' && !this.routeBlocked) {
+          this.connectionError =
+            'Connection to Joule failed. AG-UI endpoint unavailable [x-correlation-id: unavailable].';
         } else if (s === 'streaming' || s === 'connecting') {
           this.connectionError = null;
         }

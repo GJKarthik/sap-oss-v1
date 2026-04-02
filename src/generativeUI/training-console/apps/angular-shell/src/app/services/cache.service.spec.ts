@@ -15,7 +15,7 @@ describe('CacheService', () => {
   // -------------------------------------------------------------------------
   describe('Fresh cache (within staleTime)', () => {
     it('returns cached value without calling fetchFn again', (done) => {
-      const fetchFn = jest.fn().and.returnValue(of({ value: 42 }));
+      const fetchFn = jest.fn().mockReturnValue(of({ value: 42 }));
 
       service.get('/test', fetchFn).subscribe(() => {
         // Second call – should be a cache hit
@@ -33,8 +33,9 @@ describe('CacheService', () => {
   // -------------------------------------------------------------------------
   describe('Expired cache (beyond maxAge)', () => {
     it('calls fetchFn again when cache is expired', (done) => {
-      const fetchFn = jasmine.createSpy()
-        .and.returnValues(of({ v: 1 }), of({ v: 2 }));
+      const fetchFn = jest.fn()
+        .mockReturnValueOnce(of({ v: 1 }))
+        .mockReturnValueOnce(of({ v: 2 }));
 
       service.get('/expired', fetchFn, { staleTime: 0, maxAge: 0 }).subscribe(() => {
         setTimeout(() => {
@@ -52,7 +53,7 @@ describe('CacheService', () => {
   // -------------------------------------------------------------------------
   describe('invalidate()', () => {
     it('removes the entry so the next get re-fetches', (done) => {
-      const fetchFn = jasmine.createSpy().and.returnValue(of({ ok: true }));
+      const fetchFn = jest.fn().mockReturnValue(of({ ok: true }));
 
       service.get('/inv', fetchFn).subscribe(() => {
         service.invalidate('/inv');
@@ -66,7 +67,7 @@ describe('CacheService', () => {
 
   describe('clear()', () => {
     it('resets all stats and cache entries', (done) => {
-      const fetchFn = jasmine.createSpy().and.returnValue(of({}));
+      const fetchFn = jest.fn().mockReturnValue(of({}));
 
       service.get('/c1', fetchFn).subscribe(() => {
         service.clear();
@@ -95,7 +96,7 @@ describe('CacheService', () => {
   // -------------------------------------------------------------------------
   describe('error handling', () => {
     it('propagates errors and does not cache the failed response', (done) => {
-      const fetchFn = jasmine.createSpy().and.returnValue(throwError(() => new Error('fail')));
+      const fetchFn = jest.fn().mockReturnValue(throwError(() => new Error('fail')));
 
       service.get('/err', fetchFn).subscribe({
         error: () => {

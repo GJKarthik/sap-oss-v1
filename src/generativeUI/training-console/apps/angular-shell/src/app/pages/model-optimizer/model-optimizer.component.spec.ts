@@ -63,32 +63,32 @@ describe('ModelOptimizerComponent', () => {
   });
 
   it('shows toast when a model is clicked in novice mode', () => {
-    component.selectModel({ name: 'Model A', recommended_quant: 'int4', t4_compatible: true, provider: 'Test', description: 'Test', parameters: '1B' });
+    component.selectModel({ name: 'Model A', recommended_quant: 'int4', t4_compatible: true, size_gb: 4, parameters: '1B' });
     
     expect(mockToast.info).toHaveBeenCalledWith('Switch to Intermediate mode to select a model manually.');
-    expect(component.form.model_name).not.toBe('Model A');
+    expect(component.jobForm.value.model_name).not.toBe('Model A');
   });
 
   it('allows model selection in intermediate mode', () => {
     mockMode.set('intermediate');
     fixture.detectChanges();
 
-    component.selectModel({ name: 'Model B', recommended_quant: 'fp8', t4_compatible: true, provider: 'Test', description: 'Test', parameters: '1B' });
+    component.selectModel({ name: 'Model B', recommended_quant: 'fp8', t4_compatible: true, size_gb: 8, parameters: '1B' });
     
     expect(mockToast.info).not.toHaveBeenCalled();
-    expect(component.form.model_name).toBe('Model B');
-    expect(component.form.quant_format).toBe('fp8');
+    expect(component.jobForm.value.model_name).toBe('Model B');
+    expect(component.jobForm.value.quant_format).toBe('fp8');
   });
 
   it('createJob() posts the correct typed payload', () => {
-    component.form = {
+    component.jobForm.patchValue({
       model_name: 'test-model',
       quant_format: 'int8',
       calib_samples: 256,
       calib_seq_len: 2048,
       export_format: 'vllm',
       enable_pruning: false,
-    };
+    });
 
     component.createJob();
 

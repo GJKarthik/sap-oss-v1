@@ -25,7 +25,7 @@
       transport="sse"
       title="Joule"
       placeholder="Ask me to build a UI, fetch data, or start a workflow…"
-      [autoConnect]="true"
+      [autoConnect]="!routeBlocked"
       securityClass="internal">
     </joule-chat>
   </section>

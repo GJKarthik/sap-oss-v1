@@ -16,6 +16,11 @@ const accelerate = @import("accelerate.zig");
 const metal_bindings = @import("metal_bindings");
 const metal_shaders = @import("metal_shaders");
 
+fn envFlagEnabled(name: []const u8) bool {
+    const raw = std.posix.getenv(name) orelse return false;
+    return raw.len == 1 and raw[0] == '1';
+}
+
 // ============================================================================
 // GPU Backend Integration
 // ============================================================================
@@ -3370,6 +3375,7 @@ fn createModelWithWeights(allocator: Allocator, config: ModelConfig, weights: Tr
         .shortconv_out_buf = if (shortconv_steps > 0) try allocator.alloc(f32, dim) else &.{},
         .logits_buf = try allocator.alloc(f32, vocab),
     };
+    model.profiling_enabled = envFlagEnabled("PLLM_PROFILE_FORWARD");
     model.initMetalRuntime();
     return model;
 }
@@ -3390,6 +3396,8 @@ pub const KVCache = struct {
     key_cache: ?[][]f32 = null,
     value_cache: ?[][]f32 = null,
     recurrent_cache: ?[][]f32 = null,
+    key_metal_buffers: ?[]?metal_bindings.MTLBuffer = null,
+    value_metal_buffers: ?[]?metal_bindings.MTLBuffer = null,
 
     pub fn init(allocator: Allocator, config: ModelConfig) !KVCache {
         const n_layers: usize = config.n_layers;
@@ -3433,6 +3441,8 @@ pub const KVCache = struct {
             .key_cache = kc,
             .value_cache = vc,
             .recurrent_cache = rc,
+            .key_metal_buffers = null,
+            .value_metal_buffers = null,
         };
     }
 
@@ -3447,11 +3457,27 @@ pub const KVCache = struct {
     pub fn deinit(self: *KVCache, allocator_arg: ?Allocator) void {
         const alloc = allocator_arg orelse self.allocator orelse return;
         if (self.key_cache) |kc| {
-            for (kc) |layer| alloc.free(layer);
+            for (kc, 0..) |layer, idx| {
+                if (self.key_metal_buffers) |buffers| {
+                    if (buffers[idx]) |buffer| {
+                        metal_bindings.release(buffer);
+                        continue;
+                    }
+                }
+                alloc.free(layer);
+            }
             alloc.free(kc);
         }
         if (self.value_cache) |vc| {
-            for (vc) |layer| alloc.free(layer);
+            for (vc, 0..) |layer, idx| {
+                if (self.value_metal_buffers) |buffers| {
+                    if (buffers[idx]) |buffer| {
+                        metal_bindings.release(buffer);
+                        continue;
+                    }
+                }
+                alloc.free(layer);
+            }
             alloc.free(vc);
         }
         if (self.layer_kv_dims) |layer_kv_dims| alloc.free(layer_kv_dims);
@@ -3459,10 +3485,14 @@ pub const KVCache = struct {
             for (recurrent_cache) |layer| alloc.free(layer);
             alloc.free(recurrent_cache);
         }
+        if (self.key_metal_buffers) |buffers| alloc.free(buffers);
+        if (self.value_metal_buffers) |buffers| alloc.free(buffers);
         self.key_cache = null;
         self.value_cache = null;
         self.layer_kv_dims = null;
         self.recurrent_cache = null;
+        self.key_metal_buffers = null;
+        self.value_metal_buffers = null;
     }
 
     pub fn clear(self: *KVCache) void {
@@ -3518,6 +3548,62 @@ pub const KVCache = struct {
         }
         return null;
     }
+
+    fn ensureMetalBufferArray(
+        self: *KVCache,
+        target: *?[]?metal_bindings.MTLBuffer,
+        alloc: Allocator,
+    ) ![]?metal_bindings.MTLBuffer {
+        if (target.*) |buffers| return buffers;
+        const buffers = try alloc.alloc(?metal_bindings.MTLBuffer, @intCast(self.n_layers));
+        @memset(buffers, null);
+        target.* = buffers;
+        return buffers;
+    }
+
+    fn migrateCacheLayerToMetal(
+        self: *KVCache,
+        device: metal_bindings.MTLDevice,
+        caches: [][]f32,
+        target: *?[]?metal_bindings.MTLBuffer,
+        layer: usize,
+    ) bool {
+        const alloc = self.allocator orelse return false;
+        const buffers = self.ensureMetalBufferArray(target, alloc) catch return false;
+        if (buffers[layer] != null) return true;
+
+        const old_slice = caches[layer];
+        const size = old_slice.len * @sizeOf(f32);
+        const buffer = metal_bindings.createSharedBuffer(device, @intCast(size)) orelse return false;
+        const contents = metal_bindings.getBufferContents(buffer) orelse {
+            metal_bindings.release(buffer);
+            return false;
+        };
+        const ptr: [*]f32 = @ptrCast(@alignCast(contents));
+        @memcpy(ptr[0..old_slice.len], old_slice);
+        alloc.free(old_slice);
+        caches[layer] = ptr[0..old_slice.len];
+        buffers[layer] = buffer;
+        return true;
+    }
+
+    pub fn ensureMetalLayerBuffers(self: *KVCache, device: metal_bindings.MTLDevice, layer: usize) bool {
+        const key_cache = self.key_cache orelse return false;
+        const value_cache = self.value_cache orelse return false;
+        if (!self.migrateCacheLayerToMetal(device, key_cache, &self.key_metal_buffers, layer)) return false;
+        if (!self.migrateCacheLayerToMetal(device, value_cache, &self.value_metal_buffers, layer)) return false;
+        return true;
+    }
+
+    pub fn getKeyMetalBuffer(self: *const KVCache, layer: usize) ?metal_bindings.MTLBuffer {
+        const buffers = self.key_metal_buffers orelse return null;
+        return buffers[layer];
+    }
+
+    pub fn getValueMetalBuffer(self: *const KVCache, layer: usize) ?metal_bindings.MTLBuffer {
+        const buffers = self.value_metal_buffers orelse return null;
+        return buffers[layer];
+    }
 };
 
 // ============================================================================
@@ -3525,12 +3611,38 @@ pub const KVCache = struct {
 // ============================================================================
 
 const MetalWeightBufferMap = std.AutoHashMap(usize, metal_bindings.MTLBuffer);
+const MetalDequantF16Map = std.AutoHashMap(usize, []f16);
 const MetalVecMatPlan = struct {
     out: []f32,
     weights_f16: []const f16,
     weights_quant: *const QuantizedWeightMatrix,
     k: usize,
     n: usize,
+};
+
+pub const ForwardProfileStats = struct {
+    forward_calls: u64 = 0,
+    layers_processed: u64 = 0,
+    attention_layers: u64 = 0,
+    recurrent_layers: u64 = 0,
+    embedding_ns: u64 = 0,
+    attn_prep_ns: u64 = 0,
+    attn_decode_ns: u64 = 0,
+    attn_wo_chain_ns: u64 = 0,
+    attn_proj_ns: u64 = 0,
+    attn_residual_ns: u64 = 0,
+    shortconv_norm_ns: u64 = 0,
+    shortconv_ns: u64 = 0,
+    shortconv_in_proj_ns: u64 = 0,
+    shortconv_conv_ns: u64 = 0,
+    shortconv_out_proj_ns: u64 = 0,
+    ffn_prep_ns: u64 = 0,
+    ffn_down_ns: u64 = 0,
+    ffn_residual_ns: u64 = 0,
+    logits_ns: u64 = 0,
+    logits_norm_ns: u64 = 0,
+    logits_head_ns: u64 = 0,
+    total_forward_ns: u64 = 0,
 };
 
 pub const Model = struct {
@@ -3541,6 +3653,7 @@ pub const Model = struct {
     owned_layer_n_kv_heads: ?[]u32 = null,
     metal_lib: ?*metal_shaders.MetalShaderLibrary = null,
     metal_weight_buffers: ?MetalWeightBufferMap = null,
+    metal_dequant_f16_cache: ?MetalDequantF16Map = null,
     metal_hidden_buf: ?metal_bindings.MTLBuffer = null,
     metal_norm_buf: ?metal_bindings.MTLBuffer = null,
     metal_q_buf: ?metal_bindings.MTLBuffer = null,
@@ -3553,6 +3666,8 @@ pub const Model = struct {
     metal_shortconv_proj_buf: ?metal_bindings.MTLBuffer = null,
     metal_shortconv_out_buf: ?metal_bindings.MTLBuffer = null,
     metal_logits_buf: ?metal_bindings.MTLBuffer = null,
+    profiling_enabled: bool = false,
+    profile_stats: ForwardProfileStats = .{},
 
     // Scratch buffers for forward pass (allocated once, reused)
     hidden_buf: []f32 = &.{}, // [dim]
@@ -3600,6 +3715,7 @@ pub const Model = struct {
             .shortconv_out_buf = if (shortconv_steps > 0) try allocator.alloc(f32, dim) else &.{},
             .logits_buf = try allocator.alloc(f32, vocab),
         };
+        model.profiling_enabled = envFlagEnabled("PLLM_PROFILE_FORWARD");
         model.initMetalRuntime();
         return model;
     }
@@ -3812,6 +3928,7 @@ pub const Model = struct {
             .shortconv_out_buf = if (shortconv_steps > 0) try allocator.alloc(f32, dim) else &.{},
             .logits_buf = try allocator.alloc(f32, vocab),
         };
+        model.profiling_enabled = envFlagEnabled("PLLM_PROFILE_FORWARD");
         model.initMetalRuntime();
         owned_layer_n_kv_heads = null;
         return model;
@@ -3847,6 +3964,7 @@ pub const Model = struct {
 
         self.metal_lib = lib;
         self.metal_weight_buffers = MetalWeightBufferMap.init(self.allocator);
+        self.metal_dequant_f16_cache = MetalDequantF16Map.init(self.allocator);
         metal_device = lib.device;
         metal_queue = lib.command_queue;
         metal_matmul_pipeline = lib.pipelines.get(.vecmat_f16_colmajor);
@@ -3881,6 +3999,13 @@ pub const Model = struct {
             while (iter.next()) |buffer| metal_bindings.release(buffer.*);
             buffers.deinit();
             self.metal_weight_buffers = null;
+        }
+
+        if (self.metal_dequant_f16_cache) |*cache| {
+            var iter = cache.valueIterator();
+            while (iter.next()) |weights| self.allocator.free(weights.*);
+            cache.deinit();
+            self.metal_dequant_f16_cache = null;
         }
 
         if (self.metal_lib) |lib| {
@@ -3953,6 +4078,22 @@ pub const Model = struct {
 
     fn getOrCreateMetalQuantBuffer(self: *Model, weights: *const QuantizedWeightMatrix) ?metal_bindings.MTLBuffer {
         return self.getOrCreateMetalBuffer(weights.data, @intFromPtr(weights.data.ptr));
+    }
+
+    fn getOrCreateMetalDequantF16Weights(self: *Model, weights: *const QuantizedWeightMatrix, expected_elements: usize) ?[]const f16 {
+        if (weights.dtype != .q4_k or weights.data.len == 0 or expected_elements == 0) return null;
+        if (weights.n_elements != expected_elements) return null;
+
+        var cache = &(self.metal_dequant_f16_cache orelse return null);
+        const key = @intFromPtr(weights.data.ptr);
+        if (cache.get(key)) |decoded| return decoded;
+
+        const decoded = self.allocator.alloc(f16, expected_elements) catch return null;
+        errdefer self.allocator.free(decoded);
+        dequantQ4_KToF16(decoded, weights.data.ptr, expected_elements);
+
+        cache.put(key, decoded) catch return null;
+        return decoded;
     }
 
     fn getMetalVecMatOp(
@@ -4063,11 +4204,6 @@ pub const Model = struct {
             break :blk sum;
         };
         return 1.0 / @sqrt(ss / @as(f32, @floatFromInt(src.len)) + 1e-5);
-    }
-
-    fn envFlagEnabled(name: []const u8) bool {
-        const raw = std.posix.getenv(name) orelse return false;
-        return raw.len == 1 and raw[0] == '1';
     }
 
     const DiffStat = struct {
@@ -4278,6 +4414,29 @@ pub const Model = struct {
         vecMatMulF16W(out, x, weights, k, n);
     }
 
+    fn tryMetalWOProjectionF16(self: *Model, layer: *const TransformerLayer, out: []f32, x: []const f32, k: usize, n: usize) bool {
+        if (!envFlagEnabled("PLLM_ENABLE_WO_F16_CACHE")) return false;
+        const lib = self.metal_lib orelse return false;
+        if (layer.wo_quant.dtype != .q4_k) return false;
+
+        const expected_elements = k * n;
+        const decoded = self.getOrCreateMetalDequantF16Weights(&layer.wo_quant, expected_elements) orelse return false;
+        const weight_slice = decoded[0..expected_elements];
+        const weight_buf = self.getOrCreateMetalWeightBuffer(weight_slice) orelse return false;
+        const result = metal_shaders.dispatchVecMatMulF16ColMajor(
+            lib,
+            x[0..k],
+            weight_slice,
+            weight_buf,
+            out[0..n],
+            self.metalBufferForSlice(x[0..k]),
+            self.metalBufferForSlice(out[0..n]),
+            k,
+            n,
+        );
+        return result.success;
+    }
+
     fn vecMatMulRuntime(
         self: *Model,
         out: []f32,
@@ -4305,6 +4464,46 @@ pub const Model = struct {
         }
 
         self.vecMatMulF16WRuntime(out, x, weights_f16, k, n);
+    }
+
+    fn useLmHeadPairKernel(vocab: usize) bool {
+        if (std.posix.getenv("PLLM_ENABLE_LM_HEAD_PAIR_KERNEL")) |raw| {
+            if (raw.len == 1 and raw[0] == '1') return vocab >= 64;
+        }
+        return false;
+    }
+
+    fn vecMatMulLmHeadRuntime(
+        self: *Model,
+        out: []f32,
+        x: []const f32,
+        weights_f16: []const f16,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        n: usize,
+    ) void {
+        if (out.len < n or x.len < k) return;
+
+        if (weights_quant.dtype == .q4_k and useLmHeadPairKernel(n)) {
+            if (self.metal_lib) |lib| {
+                const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant);
+                const result = metal_shaders.dispatchVecMatMulQ4KForcedKernel(
+                    lib,
+                    x[0..k],
+                    weights_quant.data,
+                    weight_buf,
+                    out[0..n],
+                    self.metalBufferForSlice(x[0..k]),
+                    self.metalBufferForSlice(out[0..n]),
+                    k,
+                    n,
+                    .q4_k_pair,
+                );
+                if (result.success) return;
+            }
+        }
+
+        self.vecMatMulRuntime(out, x, weights_f16, weights_quant, k, n);
     }
 
     pub fn deinit(self: *Model) void {
@@ -4361,6 +4560,27 @@ pub const Model = struct {
     }
     pub fn getNumKVHeads(self: *const Model) u32 {
         return self.config.n_kv_heads;
+    }
+
+    pub fn isForwardProfilingEnabled(self: *const Model) bool {
+        return self.profiling_enabled;
+    }
+
+    pub fn resetForwardProfile(self: *Model) void {
+        self.profile_stats = .{};
+    }
+
+    pub fn getForwardProfile(self: *const Model) ForwardProfileStats {
+        return self.profile_stats;
+    }
+
+    fn profileStart(self: *const Model) i128 {
+        return if (self.profiling_enabled) std.time.nanoTimestamp() else 0;
+    }
+
+    fn profileAdd(self: *Model, target: *u64, start: i128) void {
+        if (!self.profiling_enabled) return;
+        target.* +%= @intCast(@max(std.time.nanoTimestamp() - start, 0));
     }
 
     fn applyLayerNormRuntime(self: *Model, dst: []f32, src: []const f32, weight: []const f32, use_accel: bool) void {
@@ -4438,6 +4658,186 @@ pub const Model = struct {
         return null;
     }
 
+    fn shouldUseMetalAttention(self: *Model) ?*metal_shaders.MetalShaderLibrary {
+        const lib = self.metal_lib orelse return null;
+        if (envFlagEnabled("PLLM_ENABLE_METAL_ATTENTION")) return lib;
+        if (envFlagEnabled("PLLM_ENABLE_METAL_ATTN_WO_CHAIN")) return lib;
+        return null;
+    }
+
+    fn tryMetalAttentionDecode(
+        self: *Model,
+        layer_idx: usize,
+        cur_seq: usize,
+        kv_stride: usize,
+        n_heads: usize,
+        head_dim: usize,
+        heads_per_group: usize,
+        inv_sqrt_hd: f32,
+        kv_cache: *KVCache,
+    ) bool {
+        const lib = self.shouldUseMetalAttention() orelse return false;
+        if (cur_seq == 0 or head_dim == 0) return false;
+        const device = lib.device orelse return false;
+        if (!kv_cache.ensureMetalLayerBuffers(device, layer_idx)) return false;
+
+        const k_cache_buf = kv_cache.getKeyMetalBuffer(layer_idx) orelse return false;
+        const v_cache_buf = kv_cache.getValueMetalBuffer(layer_idx) orelse return false;
+
+        const q_buf = self.metalBufferForSlice(self.q_buf[0 .. n_heads * head_dim]);
+        const attn_out_buf = self.metalBufferForSlice(self.attn_out_buf[0 .. n_heads * head_dim]);
+        if (q_buf == null or attn_out_buf == null) return false;
+
+        return metal_shaders.dispatchAttentionDecodeHeads(lib, .{
+            .q_buf = q_buf.?,
+            .out_buf = attn_out_buf.?,
+            .k_cache_buf = k_cache_buf,
+            .v_cache_buf = v_cache_buf,
+            .seq_len = cur_seq,
+            .head_dim = head_dim,
+            .n_heads = n_heads,
+            .heads_per_group = heads_per_group,
+            .kv_stride = kv_stride,
+            .scale = inv_sqrt_hd,
+        });
+    }
+
+    fn tryMetalAttentionDecodeWOProjectionAdd(
+        self: *Model,
+        layer: *const TransformerLayer,
+        layer_idx: usize,
+        cur_seq: usize,
+        kv_stride: usize,
+        n_heads: usize,
+        head_dim: usize,
+        heads_per_group: usize,
+        inv_sqrt_hd: f32,
+        kv_cache: *KVCache,
+    ) bool {
+        if (envFlagEnabled("PLLM_DISABLE_METAL_ATTN_WO_CHAIN")) return false;
+        if (layer.wo_quant.dtype != .q4_k) return false;
+
+        const lib = self.metal_lib orelse return false;
+        if (cur_seq == 0 or head_dim == 0) return false;
+        const device = lib.device orelse return false;
+        if (!kv_cache.ensureMetalLayerBuffers(device, layer_idx)) return false;
+
+        const k_cache_buf = kv_cache.getKeyMetalBuffer(layer_idx) orelse return false;
+        const v_cache_buf = kv_cache.getValueMetalBuffer(layer_idx) orelse return false;
+        const q_buf = self.metalBufferForSlice(self.q_buf[0 .. n_heads * head_dim]) orelse return false;
+        const attn_out_buf = self.metalBufferForSlice(self.attn_out_buf[0 .. n_heads * head_dim]) orelse return false;
+        const hidden_buf = self.metalBufferForSlice(self.hidden_buf[0 .. n_heads * head_dim]) orelse return false;
+        const weight_buf = self.getOrCreateMetalQuantBuffer(&layer.wo_quant) orelse return false;
+
+        return metal_shaders.dispatchAttentionDecodeHeadsQ4KAdd(lib, .{
+            .q_buf = q_buf,
+            .attn_out_buf = attn_out_buf,
+            .k_cache_buf = k_cache_buf,
+            .v_cache_buf = v_cache_buf,
+            .weight_buf = weight_buf,
+            .residual_buf = hidden_buf,
+            .out_buf = hidden_buf,
+            .seq_len = cur_seq,
+            .head_dim = head_dim,
+            .n_heads = n_heads,
+            .heads_per_group = heads_per_group,
+            .kv_stride = kv_stride,
+            .scale = inv_sqrt_hd,
+            .k = n_heads * head_dim,
+            .n = n_heads * head_dim,
+        });
+    }
+
+    fn tryMetalWOProjectionAdd(self: *Model, layer: *const TransformerLayer, x: []const f32, residual: []f32, k: usize, n: usize) bool {
+        if (!envFlagEnabled("PLLM_ENABLE_WO_RESIDUAL_FUSION")) return false;
+        if (envFlagEnabled("PLLM_ENABLE_WO_F16_CACHE")) return false;
+        return self.tryMetalQ4KProjectionAdd(&layer.wo_quant, x, residual, k, n);
+    }
+
+    fn tryMetalQ4KProjectionAdd(
+        self: *Model,
+        weights_quant: *const QuantizedWeightMatrix,
+        x: []const f32,
+        residual: []f32,
+        k: usize,
+        n: usize,
+    ) bool {
+        const lib = self.metal_lib orelse return false;
+        if (weights_quant.dtype != .q4_k) return false;
+
+        const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant) orelse return false;
+        const residual_buf = self.metalBufferForSlice(residual[0..n]) orelse return false;
+        const result = metal_shaders.dispatchVecMatMulQ4KAdd(
+            lib,
+            x[0..k],
+            weights_quant.data,
+            weight_buf,
+            residual[0..n],
+            self.metalBufferForSlice(x[0..k]),
+            residual_buf,
+            residual[0..n],
+            residual_buf,
+            k,
+            n,
+        );
+        return result.success;
+    }
+
+    fn q4KRowSliceView(
+        self: *Model,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        row_start: usize,
+        rows: usize,
+    ) ?QuantizedWeightMatrix {
+        _ = self;
+        if (weights_quant.dtype != .q4_k) return null;
+        if (rows == 0) return null;
+        const row_bytes = q4KBytesForMatrix(k);
+        const byte_start = row_start * row_bytes;
+        const byte_len = rows * row_bytes;
+        if (byte_start + byte_len > weights_quant.data.len) return null;
+        return .{
+            .dtype = .q4_k,
+            .data = weights_quant.data[byte_start .. byte_start + byte_len],
+            .n_elements = rows * k,
+        };
+    }
+
+    fn tryShortConvTripleProjection(self: *Model, layer: *const TransformerLayer, dim: usize) bool {
+        if (!envFlagEnabled("PLLM_ENABLE_SHORTCONV_TRIPLE")) return false;
+        const proj_quant = &layer.shortconv_in_proj_quant;
+        const b_quant = self.q4KRowSliceView(proj_quant, dim, 0, dim) orelse return false;
+        const c_quant = self.q4KRowSliceView(proj_quant, dim, dim, dim) orelse return false;
+        const x_quant = self.q4KRowSliceView(proj_quant, dim, 2 * dim, dim) orelse return false;
+        const b = self.shortconv_proj_buf[0..dim];
+        const c = self.shortconv_proj_buf[dim .. 2 * dim];
+        const x = self.shortconv_proj_buf[2 * dim .. 3 * dim];
+        const lib = self.metal_lib orelse return false;
+        const proj_buf = self.metal_shortconv_proj_buf orelse return false;
+        const weight1 = self.getOrCreateMetalQuantBuffer(&b_quant) orelse return false;
+        const weight2 = self.getOrCreateMetalQuantBuffer(&c_quant) orelse return false;
+        const weight3 = self.getOrCreateMetalQuantBuffer(&x_quant) orelse return false;
+        return metal_shaders.dispatchVecMatMulQ4KTriple(lib, self.norm_buf[0..dim], self.metalBufferForSlice(self.norm_buf[0..dim]), .{
+            .weight1 = weight1,
+            .out1 = b,
+            .out1_buf = proj_buf,
+            .out1_offset_bytes = 0,
+            .n1 = dim,
+            .weight2 = weight2,
+            .out2 = c,
+            .out2_buf = proj_buf,
+            .out2_offset_bytes = dim * @sizeOf(f32),
+            .n2 = dim,
+            .weight3 = weight3,
+            .out3 = x,
+            .out3_buf = proj_buf,
+            .out3_offset_bytes = 2 * dim * @sizeOf(f32),
+            .n3 = dim,
+            .k = dim,
+        });
+    }
+
     fn runAttentionLayer(
         self: *Model,
         layer: *const TransformerLayer,
@@ -4446,7 +4846,7 @@ pub const Model = struct {
         kv_cache: *KVCache,
         use_accel: bool,
         qkv_ready: bool,
-    ) void {
+    ) bool {
         const dim: usize = self.config.n_embd;
         const n_heads: usize = self.config.n_heads;
         const head_dim = dim / n_heads;
@@ -4456,6 +4856,7 @@ pub const Model = struct {
         const heads_per_group = n_heads / layer_n_kv_heads;
         const cur_seq = pos + 1;
         const inv_sqrt_hd = 1.0 / @sqrt(@as(f32, @floatFromInt(head_dim)));
+        const prep_start = self.profileStart();
 
         if (!qkv_ready) {
             const qkv_fused = self.tryFusedQ4KTriple(
@@ -4501,57 +4902,103 @@ pub const Model = struct {
 
         kv_cache.storeKey(layer_idx, pos, self.k_buf[0..layer_kv_dim]);
         kv_cache.storeValue(layer_idx, pos, self.v_buf[0..layer_kv_dim]);
+        self.profileAdd(&self.profile_stats.attn_prep_ns, prep_start);
 
         @memset(self.attn_out_buf[0..dim], 0.0);
-        for (0..n_heads) |h| {
-            const kv_h = h / heads_per_group;
-            const q_head = self.q_buf[h * head_dim ..][0..head_dim];
-            const scores = self.attn_score_buf[0..cur_seq];
-            const k_cache = kv_cache.key_cache.?[layer_idx];
-            for (0..cur_seq) |t| {
-                const k_vec = k_cache[t * kv_stride + kv_h * head_dim ..][0..head_dim];
-                const dot = if (use_accel) accelerate.dot(q_head, k_vec) else blk: {
-                    var sum: f32 = 0.0;
-                    for (0..head_dim) |dd| sum += q_head[dd] * k_vec[dd];
-                    break :blk sum;
-                };
-                scores[t] = dot * inv_sqrt_hd;
-            }
-            softmaxInPlace(scores);
+        const chain_start = self.profileStart();
+        if (self.tryMetalAttentionDecodeWOProjectionAdd(
+            layer,
+            layer_idx,
+            cur_seq,
+            kv_stride,
+            n_heads,
+            head_dim,
+            heads_per_group,
+            inv_sqrt_hd,
+            kv_cache,
+        )) {
+            self.profileAdd(&self.profile_stats.attn_wo_chain_ns, chain_start);
+            return true;
+        }
+        const attn_start = self.profileStart();
+        const metal_attention = self.tryMetalAttentionDecode(
+            layer_idx,
+            cur_seq,
+            kv_stride,
+            n_heads,
+            head_dim,
+            heads_per_group,
+            inv_sqrt_hd,
+            kv_cache,
+        );
+        if (!metal_attention) {
+            for (0..n_heads) |h| {
+                const kv_h = h / heads_per_group;
+                const q_head = self.q_buf[h * head_dim ..][0..head_dim];
+                const scores = self.attn_score_buf[0..cur_seq];
+                const k_cache = kv_cache.key_cache.?[layer_idx];
+                for (0..cur_seq) |t| {
+                    const k_vec = k_cache[t * kv_stride + kv_h * head_dim ..][0..head_dim];
+                    const dot = if (use_accel) accelerate.dot(q_head, k_vec) else blk: {
+                        var sum: f32 = 0.0;
+                        for (0..head_dim) |dd| sum += q_head[dd] * k_vec[dd];
+                        break :blk sum;
+                    };
+                    scores[t] = dot * inv_sqrt_hd;
+                }
+                softmaxInPlace(scores);
 
-            const out_head = self.attn_out_buf[h * head_dim ..][0..head_dim];
-            const v_cache = kv_cache.value_cache.?[layer_idx];
-            for (0..cur_seq) |t| {
-                const v_vec = v_cache[t * kv_stride + kv_h * head_dim ..][0..head_dim];
-                const weight = scores[t];
-                for (0..head_dim) |d| out_head[d] += weight * v_vec[d];
+                const out_head = self.attn_out_buf[h * head_dim ..][0..head_dim];
+                const v_cache = kv_cache.value_cache.?[layer_idx];
+                for (0..cur_seq) |t| {
+                    const v_vec = v_cache[t * kv_stride + kv_h * head_dim ..][0..head_dim];
+                    const weight = scores[t];
+                    for (0..head_dim) |d| out_head[d] += weight * v_vec[d];
+                }
             }
         }
+        self.profileAdd(&self.profile_stats.attn_decode_ns, attn_start);
 
-        self.vecMatMulRuntime(self.norm_buf[0..dim], self.attn_out_buf[0..dim], layer.wo, &layer.wo_quant, dim, dim);
+        const proj_start = self.profileStart();
+        if (self.tryMetalWOProjectionAdd(layer, self.attn_out_buf[0..dim], self.hidden_buf[0..dim], dim, dim)) {
+            self.profileAdd(&self.profile_stats.attn_proj_ns, proj_start);
+            return true;
+        }
+
+        if (!self.tryMetalWOProjectionF16(layer, self.norm_buf[0..dim], self.attn_out_buf[0..dim], dim, dim)) {
+            self.vecMatMulRuntime(self.norm_buf[0..dim], self.attn_out_buf[0..dim], layer.wo, &layer.wo_quant, dim, dim);
+        }
         sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+        self.profileAdd(&self.profile_stats.attn_proj_ns, proj_start);
+        return false;
     }
 
-    fn runShortConvLayer(self: *Model, layer: *const TransformerLayer, layer_idx: usize, kv_cache: *KVCache) void {
+    fn runShortConvLayer(self: *Model, layer: *const TransformerLayer, layer_idx: usize, kv_cache: *KVCache) bool {
         const dim: usize = self.config.n_embd;
         const recurrent_steps: usize = kv_cache.recurrent_steps;
         const window_steps = recurrent_steps + 1;
 
-        self.vecMatMulRuntime(
-            self.shortconv_proj_buf[0 .. 3 * dim],
-            self.norm_buf[0..dim],
-            layer.shortconv_in_proj,
-            &layer.shortconv_in_proj_quant,
-            dim,
-            3 * dim,
-        );
+        const in_proj_start = self.profileStart();
+        const fused_triple = self.tryShortConvTripleProjection(layer, dim);
+        if (!fused_triple) {
+            self.vecMatMulRuntime(
+                self.shortconv_proj_buf[0 .. 3 * dim],
+                self.norm_buf[0..dim],
+                layer.shortconv_in_proj,
+                &layer.shortconv_in_proj_quant,
+                dim,
+                3 * dim,
+            );
+        }
         sanitizeNonFiniteInPlace(self.shortconv_proj_buf[0 .. 3 * dim]);
+        self.profileAdd(&self.profile_stats.shortconv_in_proj_ns, in_proj_start);
 
         const b = self.shortconv_proj_buf[0..dim];
         const c = self.shortconv_proj_buf[dim .. 2 * dim];
         const x = self.shortconv_proj_buf[2 * dim .. 3 * dim];
         const state = kv_cache.recurrent_cache.?[layer_idx];
         const window = self.shortconv_window_buf[0 .. window_steps * dim];
+        const conv_start = self.profileStart();
         for (0..dim) |channel| {
             const state_base = channel * recurrent_steps;
             const window_base = channel * window_steps;
@@ -4579,16 +5026,32 @@ pub const Model = struct {
                 state[state_base + recurrent_steps - 1] = window[window_base + recurrent_steps];
             }
         }
+        self.profileAdd(&self.profile_stats.shortconv_conv_ns, conv_start);
 
-        self.vecMatMulRuntime(
-            self.norm_buf[0..dim],
-            self.shortconv_out_buf[0..dim],
-            layer.shortconv_out_proj,
-            &layer.shortconv_out_proj_quant,
-            dim,
-            dim,
-        );
-        sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+        const out_proj_start = self.profileStart();
+        const fused_residual = if (envFlagEnabled("PLLM_ENABLE_SHORTCONV_RESIDUAL_FUSION"))
+            self.tryMetalQ4KProjectionAdd(
+                &layer.shortconv_out_proj_quant,
+                self.shortconv_out_buf[0..dim],
+                self.hidden_buf[0..dim],
+                dim,
+                dim,
+            )
+        else
+            false;
+        if (!fused_residual) {
+            self.vecMatMulRuntime(
+                self.norm_buf[0..dim],
+                self.shortconv_out_buf[0..dim],
+                layer.shortconv_out_proj,
+                &layer.shortconv_out_proj_quant,
+                dim,
+                dim,
+            );
+            sanitizeNonFiniteInPlace(self.norm_buf[0..dim]);
+        }
+        self.profileAdd(&self.profile_stats.shortconv_out_proj_ns, out_proj_start);
+        return fused_residual;
     }
 
     fn forwardInner(self: *Model, token: u32, pos: usize, kv_cache: *KVCache, compute_logits: bool) []f32 {
@@ -4599,20 +5062,38 @@ pub const Model = struct {
         const ff: usize = self.config.n_ff;
         const vocab: usize = self.config.vocab_size;
         const use_accel = comptime accelerate.isAvailable();
+        const forward_start = self.profileStart();
+        if (self.profiling_enabled) self.profile_stats.forward_calls +%= 1;
 
         const tok: usize = @min(token, @as(u32, @intCast(vocab - 1)));
         const emb_off = tok * dim;
+        const embedding_start = self.profileStart();
         for (0..dim) |i| self.hidden_buf[i] = @as(f32, weights.token_embedding[emb_off + i]);
         sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
+        self.profileAdd(&self.profile_stats.embedding_ns, embedding_start);
 
         for (0..n_layers) |l| {
             const layer = &weights.layers[l];
+            var attn_residual_fused = false;
+            if (self.profiling_enabled) {
+                self.profile_stats.layers_processed +%= 1;
+                if (layer.is_recurrent) {
+                    self.profile_stats.recurrent_layers +%= 1;
+                } else {
+                    self.profile_stats.attention_layers +%= 1;
+                }
+            }
 
             if (layer.is_recurrent) {
+                const shortconv_start = self.profileStart();
+                const shortconv_norm_start = self.profileStart();
                 self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], layer.attn_norm, use_accel);
-                self.runShortConvLayer(layer, l, kv_cache);
+                self.profileAdd(&self.profile_stats.shortconv_norm_ns, shortconv_norm_start);
+                attn_residual_fused = self.runShortConvLayer(layer, l, kv_cache);
+                self.profileAdd(&self.profile_stats.shortconv_ns, shortconv_start);
             } else {
                 const layer_kv_dim = layer.n_kv_heads * head_dim;
+                const attn_outer_prep_start = self.profileStart();
                 const fused_qkv_rmsnorm = self.tryFusedQ4KTripleRmsNorm(
                     self.hidden_buf[0..dim],
                     layer.attn_norm,
@@ -4631,12 +5112,18 @@ pub const Model = struct {
                 if (!fused_qkv_rmsnorm) {
                     self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], layer.attn_norm, use_accel);
                 }
-                self.runAttentionLayer(layer, l, pos, kv_cache, use_accel, fused_qkv_rmsnorm);
+                self.profileAdd(&self.profile_stats.attn_prep_ns, attn_outer_prep_start);
+                attn_residual_fused = self.runAttentionLayer(layer, l, pos, kv_cache, use_accel, fused_qkv_rmsnorm);
             }
 
-            self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.norm_buf[0..dim], use_accel);
+            if (!attn_residual_fused) {
+                const attn_residual_start = self.profileStart();
+                self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.norm_buf[0..dim], use_accel);
+                self.profileAdd(&self.profile_stats.attn_residual_ns, attn_residual_start);
+            }
             sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
 
+            const ffn_prep_start = self.profileStart();
             const ffn_fused_rmsnorm = self.tryFusedQ4KPairRmsNorm(
                 self.hidden_buf[0..dim],
                 layer.ffn_norm,
@@ -4674,20 +5161,47 @@ pub const Model = struct {
             sanitizeNonFiniteInPlace(self.gate_buf[0..ff]);
             sanitizeNonFiniteInPlace(self.up_buf[0..ff]);
             swiglu(self.gate_buf[0..ff], self.gate_buf[0..ff], self.up_buf[0..ff]);
-            self.vecMatMulRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
-            sanitizeNonFiniteInPlace(self.ffn_out_buf[0..dim]);
+            self.profileAdd(&self.profile_stats.ffn_prep_ns, ffn_prep_start);
 
-            self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim], use_accel);
+            const ffn_down_start = self.profileStart();
+            const ffn_residual_fused = if (envFlagEnabled("PLLM_ENABLE_FFN_DOWN_RESIDUAL_FUSION"))
+                self.tryMetalQ4KProjectionAdd(
+                    &layer.w_down_quant,
+                    self.gate_buf[0..ff],
+                    self.hidden_buf[0..dim],
+                    ff,
+                    dim,
+                )
+            else
+                false;
+            if (!ffn_residual_fused) {
+                self.vecMatMulRuntime(self.ffn_out_buf[0..dim], self.gate_buf[0..ff], layer.w_down, &layer.w_down_quant, ff, dim);
+                sanitizeNonFiniteInPlace(self.ffn_out_buf[0..dim]);
+            }
+            self.profileAdd(&self.profile_stats.ffn_down_ns, ffn_down_start);
+
+            if (!ffn_residual_fused) {
+                const ffn_residual_start = self.profileStart();
+                self.vecAddRuntime(self.hidden_buf, self.hidden_buf, self.ffn_out_buf[0..dim], use_accel);
+                self.profileAdd(&self.profile_stats.ffn_residual_ns, ffn_residual_start);
+            }
             sanitizeNonFiniteInPlace(self.hidden_buf[0..dim]);
         }
 
         if (compute_logits) {
+            const logits_start = self.profileStart();
+            const logits_norm_start = self.profileStart();
             self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], weights.final_norm, use_accel);
-            self.vecMatMulRuntime(self.logits_buf[0..vocab], self.norm_buf[0..dim], weights.lm_head, &weights.lm_head_quant, dim, vocab);
+            self.profileAdd(&self.profile_stats.logits_norm_ns, logits_norm_start);
+            const logits_head_start = self.profileStart();
+            self.vecMatMulLmHeadRuntime(self.logits_buf[0..vocab], self.norm_buf[0..dim], weights.lm_head, &weights.lm_head_quant, dim, vocab);
             sanitizeNonFiniteInPlace(self.logits_buf[0..vocab]);
+            self.profileAdd(&self.profile_stats.logits_head_ns, logits_head_start);
+            self.profileAdd(&self.profile_stats.logits_ns, logits_start);
         }
 
         if (pos + 1 > kv_cache.seq_len) kv_cache.seq_len = @intCast(pos + 1);
+        self.profileAdd(&self.profile_stats.total_forward_ns, forward_start);
         return self.logits_buf[0..vocab];
     }
 
