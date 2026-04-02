@@ -59,6 +59,7 @@ describe('RegistryComponent', () => {
     const fixture = TestBed.createComponent(RegistryComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges(); // triggers ngOnInit → load()
   });
 
   afterEach(() => {
@@ -185,11 +186,21 @@ describe('RegistryComponent', () => {
   }));
 
   it('should restore persisted tags from localStorage on load', fakeAsync(() => {
-    localStorage.setItem('model_tags', JSON.stringify({ 'aaaa-1111': 'prod-v1' }));
+    // Flush the initial load request from beforeEach
     httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
     tick();
-    expect(component.taggedCount()).toBe(1);
-    expect(component.models()[0].tag).toBe('prod-v1');
+
+    // Set localStorage and create a fresh component so tags are read from storage in constructor
+    localStorage.setItem('model_tags', JSON.stringify({ 'aaaa-1111': 'prod-v1' }));
+    const freshFixture = TestBed.createComponent(RegistryComponent);
+    freshFixture.detectChanges();
+
+    httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
+    tick();
+
+    const freshComponent = freshFixture.componentInstance;
+    expect(freshComponent.taggedCount()).toBe(1);
+    expect(freshComponent.models()[0].tag).toBe('prod-v1');
   }));
 
   // ── deploy ────────────────────────────────────────────────────────────────────

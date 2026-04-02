@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
@@ -63,73 +65,94 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent],
+  imports: [CommonModule, ReactiveFormsModule, Ui5WebcomponentsModule, JobDetailComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Model Optimizer</h1>
-        <button class="btn-primary" (click)="loadData()">↻ Refresh</button>
+        <ui5-title level="H3">Model Optimizer</ui5-title>
+        <ui5-button design="Transparent" icon="refresh" (click)="loadData()">Refresh</ui5-button>
       </div>
 
       <!-- Engine & Dataset -->
-      <h2 class="section-title">Engine Configuration</h2>
-      <div class="card grid-2" style="margin-bottom: 1.5rem;">
-        <div class="form-group">
-          <label>Training Framework</label>
-          <select formControlName="framework" class="form-input">
-            <option value="PyTorch">PyTorch Native (SFTTrainer)</option>
-            <option value="TensorFlow" disabled>TensorFlow (Coming Soon)</option>
-          </select>
+      <ui5-title level="H5" style="margin-bottom: 0.75rem;">Engine Configuration</ui5-title>
+      <ui5-card style="margin-bottom: 1.5rem;">
+        <div style="padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label>Training Framework</label>
+            <ui5-select [formControl]="frameworkControl" style="width: 100%;">
+              <ui5-option value="PyTorch">PyTorch Native (SFTTrainer)</ui5-option>
+              <ui5-option value="TensorFlow" disabled>TensorFlow (Coming Soon)</ui5-option>
+            </ui5-select>
+          </div>
+          <div class="form-group">
+            <label>Dataset Split</label>
+            <ui5-select [formControl]="datasetControl" style="width: 100%;">
+              <ui5-option value="spider-train">Spider Training Split (Text-to-SQL)</ui5-option>
+              <ui5-option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</ui5-option>
+            </ui5-select>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Dataset Split</label>
-          <select formControlName="dataset" class="form-input">
-            <option value="spider-train">Spider Training Split (Text-to-SQL)</option>
-            <option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</option>
-          </select>
-        </div>
-      </div>
+      </ui5-card>
 
       <!-- Mangle Data Validation -->
-      <h2 class="section-title">Datalog Validation Pre-Flight</h2>
-      <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-left: 4px solid var(--sapBrandColor);">
-        <div>
-          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
-          @if (mangleStatus() === 'passed') {
-            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">✓ All 48 Invariants Passed</span>
-          } @else if (mangleStatus() === 'failed') {
-            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">⚠ Datalog Violation Detected</span>
-          } @else {
-            <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
-          }
+      <ui5-title level="H5" style="margin-bottom: 0.75rem;">Datalog Validation Pre-Flight</ui5-title>
+      <ui5-card style="margin-bottom: 2rem;">
+        <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--sapBrandColor);">
+          <div>
+            <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
+            @if (mangleStatus() === 'passed') {
+              <ui5-tag design="Positive">✓ All 48 Invariants Passed</ui5-tag>
+            } @else if (mangleStatus() === 'failed') {
+              <ui5-tag design="Negative">⚠ Datalog Violation Detected</ui5-tag>
+            } @else {
+              <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
+            }
+          </div>
+          <ui5-button design="Default" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
+            {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
+          </ui5-button>
         </div>
-        <button type="button" class="btn-secondary" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
-          {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
-        </button>
-      </div>
+      </ui5-card>
 
       <!-- Model Catalog -->
       <section class="section">
-        <h2 class="section-title">Model Catalog</h2>
+        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Model Catalog</ui5-title>
         <div class="model-grid">
           @for (m of models(); track m.name) {
-            <div
+            <ui5-card
               class="model-card"
               [class.model-card--selected]="jobForm.value.model_name === m.name"
+              [class.model-card--recommended]="m.recommended_quant === 'int4_awq'"
+              interactive
               (click)="selectModel(m)"
             >
-              <div class="model-name">{{ m.name }}</div>
-              <div class="model-meta">
-                <span class="badge">{{ m.parameters }}</span>
-                <span class="badge">{{ m.size_gb }} GB</span>
-                <span class="badge badge--quant">{{ m.recommended_quant }}</span>
-              </div>
-              @if (!m.t4_compatible) {
-                <div class="text-small t4-warn">⚠ T4 incompatible</div>
+              @if (m.recommended_quant === 'int4_awq') {
+                <div class="recommended-ribbon">★ Recommended</div>
               }
-            </div>
+              <div class="model-card-body">
+                <div class="model-name-row">
+                  <div class="model-name">{{ m.name.split('/').pop() }}</div>
+                  <ui5-tag class="size-indicator size-{{ getModelSize(m) }}" design="Set2">{{ getModelSize(m) }}</ui5-tag>
+                </div>
+                <div class="model-org text-small text-muted">{{ m.name.includes('/') ? m.name.split('/')[0] : 'community' }}</div>
+                <div class="model-meta">
+                  <ui5-tag design="Set2">{{ m.parameters }}</ui5-tag>
+                  <ui5-tag design="Set2">{{ m.size_gb }} GB</ui5-tag>
+                  <ui5-tag design="Set2">{{ m.recommended_quant }}</ui5-tag>
+                </div>
+                <div class="model-arch-tags">
+                  <ui5-tag design="Set2">Transformer</ui5-tag>
+                  <ui5-tag design="Set2">Causal LM</ui5-tag>
+                  @if (m.t4_compatible) {
+                    <ui5-tag design="Positive">T4 ✓</ui5-tag>
+                  } @else {
+                    <ui5-tag design="Critical">T4 ✗</ui5-tag>
+                  }
+                </div>
+              </div>
+            </ui5-card>
           }
         </div>
         @if (!models().length && !loading()) {
@@ -139,7 +162,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       <!-- Create Job Form -->
       <section class="section">
-        <h2 class="section-title">Create Optimization Job</h2>
+        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Create Optimization Job</ui5-title>
         <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()">
           
           <!-- Novice Mode -->
@@ -147,12 +170,12 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="form-row">
               <div class="field-group">
                 <label class="field-label">Template</label>
-                <select class="form-input" (change)="applyTemplate($any($event.target).value)">
-                  <option value="">Select a template…</option>
-                  <option value="sql">Fine-tune Text-to-SQL (Recommended)</option>
-                  <option value="finance">Finance Schema Optimization</option>
-                  <option value="hr">HR Data Optimizer</option>
-                </select>
+                <ui5-select style="width: 100%;" (change)="applyTemplate($any($event.detail).selectedOption.value)">
+                  <ui5-option value="">Select a template…</ui5-option>
+                  <ui5-option value="sql">Fine-tune Text-to-SQL (Recommended)</ui5-option>
+                  <ui5-option value="finance">Finance Schema Optimization</ui5-option>
+                  <ui5-option value="hr">HR Data Optimizer</ui5-option>
+                </ui5-select>
               </div>
               <div class="field-group">
                 <label class="field-label">Model Name</label>
@@ -172,16 +195,37 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
               <div class="vram-header">
                 <span class="vram-title">⚡ A-Priori VRAM Profiler</span>
-                <span class="vram-values">{{ estimatedVram().toFixed(1) }} GB required / {{ gpuTotalNum() }} GB available</span>
+                <span class="vram-values">
+                  <span class="vram-used">{{ estimatedVram().toFixed(1) }} GB</span>
+                  <span class="vram-sep">/</span>
+                  <span>{{ gpuTotalNum() }} GB</span>
+                  <span class="vram-pct">({{ ((estimatedVram() / gpuTotalNum()) * 100).toFixed(0) }}%)</span>
+                </span>
               </div>
-              <div class="progress-bar">
-                <div class="progress-fill" 
-                     [style.width.%]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)" 
-                     [class.danger-fill]="isVramExceeded()">
+              <div class="vram-bar">
+                <div class="vram-fill vram-fill--animated"
+                     [style.width.%]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)"
+                     [class.vram-fill--green]="(estimatedVram() / gpuTotalNum()) < 0.5"
+                     [class.vram-fill--yellow]="(estimatedVram() / gpuTotalNum()) >= 0.5 && (estimatedVram() / gpuTotalNum()) < 0.8"
+                     [class.vram-fill--red]="(estimatedVram() / gpuTotalNum()) >= 0.8">
+                </div>
+                <div class="vram-segments">
+                  <div class="vram-segment" [style.width.%]="vramModelPct()">
+                    <span class="vram-segment-label">Weights</span>
+                  </div>
+                  <div class="vram-segment" [style.width.%]="vramKvPct()">
+                    <span class="vram-segment-label">KV Cache</span>
+                  </div>
+                  <div class="vram-segment" [style.width.%]="vramOverheadPct()">
+                    <span class="vram-segment-label">Overhead</span>
+                  </div>
                 </div>
               </div>
               @if (isVramExceeded()) {
-                <div class="text-small error-text mt-1">⚠ Critical: Configuration exceeds physical VRAM bounds. Job will OOM crash.</div>
+                <div class="vram-warning">
+                  <span class="vram-warning-icon">⚠</span>
+                  Critical: Configuration exceeds physical VRAM bounds. Job will OOM crash.
+                </div>
               }
             </div>
           }
@@ -195,19 +239,19 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               </div>
               <div class="field-group">
                 <label class="field-label">Quant Format</label>
-                <select class="form-input" formControlName="quant_format">
-                  <option value="int8">INT8 SmoothQuant (Fast)</option>
-                  <option value="int4_awq">INT4 AWQ (Best compression)</option>
-                  <option value="w4a16">W4A16 (Balanced)</option>
-                </select>
+                <ui5-select style="width: 100%;" formControlName="quant_format">
+                  <ui5-option value="int8">INT8 SmoothQuant (Fast)</ui5-option>
+                  <ui5-option value="int4_awq">INT4 AWQ (Best compression)</ui5-option>
+                  <ui5-option value="w4a16">W4A16 (Balanced)</ui5-option>
+                </ui5-select>
               </div>
               <div class="field-group">
                 <label class="field-label">Export Format</label>
-                <select class="form-input" formControlName="export_format">
-                  <option value="hf">HuggingFace</option>
-                  <option value="tensorrt_llm">TensorRT-LLM</option>
-                  <option value="vllm">vLLM</option>
-                </select>
+                <ui5-select style="width: 100%;" formControlName="export_format">
+                  <ui5-option value="hf">HuggingFace</ui5-option>
+                  <ui5-option value="tensorrt_llm">TensorRT-LLM</ui5-option>
+                  <ui5-option value="vllm">vLLM</ui5-option>
+                </ui5-select>
               </div>
               <div class="field-group">
                 <label class="field-label">Calib Samples <span class="badge badge--best">Best Practice: 512</span></label>
@@ -227,11 +271,11 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               <ng-container formGroupName="expertConfig">
                 <div class="field-group">
                   <label class="field-label">Compute Strategy</label>
-                  <select class="form-input" formControlName="compute">
-                    <option value="auto">Auto (Default)</option>
-                    <option value="deepspeed_1">DeepSpeed Stage 1</option>
-                    <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
-                  </select>
+                  <ui5-select style="width: 100%;" formControlName="compute">
+                    <ui5-option value="auto">Auto (Default)</ui5-option>
+                    <ui5-option value="deepspeed_1">DeepSpeed Stage 1</ui5-option>
+                    <ui5-option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</ui5-option>
+                  </ui5-select>
                 </div>
 
                 <div class="field-group full-width" style="background: rgba(8, 84, 160, 0.05); padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
@@ -264,97 +308,106 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           }
 
           <div class="form-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
+            <ui5-button type="Submit" design="Emphasized" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
               {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
-            </button>
+            </ui5-button>
           </div>
         </form>
       </section>
 
       <!-- Jobs Table -->
       <section class="section">
-        <h2 class="section-title">Jobs <span class="text-muted text-small">({{ jobs().length }})</span></h2>
+        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Jobs <span class="jobs-count">{{ jobs().length }}</span></ui5-title>
         @if (jobs().length) {
           <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Model</th>
-                  <th>Quant</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (j of jobs(); track j.id) {
-                  <ng-container>
-                    <tr class="job-row" (click)="toggleExpand(j.id)" [class.expanded]="expandedJobId() === j.id">
-                      <td class="mono text-small" style="cursor: pointer;">
-                        <span style="display: inline-block; width: 12px; margin-right: 4px;">{{ expandedJobId() === j.id ? '▼' : '▶' }}</span>
-                        {{ j.id.slice(0,8) }}
-                      </td>
-                      <td>{{ j.name }}</td>
-                      <td class="text-small">{{ j.config.model_name }}</td>
-                      <td><code>{{ j.config.quant_format }}</code></td>
-                      <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
-                      <td>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
-                          <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
-                          <span class="text-small text-muted">{{ calculateETA(j) }}</span>
-                        </div>
-                        <div class="progress-bar">
-                          <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
-                        </div>
-                        @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
-                          <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
-                            <svg viewBox="0 0 100 20" class="sparkline-svg" preserveAspectRatio="none">
-                              <polyline fill="none" class="train-line" [attr.points]="generateSparklinePath(j.history, 'train_loss')" />
-                              <polyline fill="none" class="val-line" [attr.points]="generateSparklinePath(j.history, 'val_loss')" />
-                            </svg>
-                          </div>
-                        }
-                        
-                        @if (j.evaluation) {
-                          <div class="eval-metrics mt-1">
-                            <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
-                            <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
-                            <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
-                          </div>
-                        }
-                      </td>
-                      <td class="text-small text-muted" style="min-width: 100px;">
-                        {{ j.created_at | date:'short' }}
-                        @if (j.status === 'completed') {
-                          <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;" (click)="$event.stopPropagation()">
-                            @if (!j.deployed) {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
-                                      (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                                {{ deployingJob() === j.id ? 'Loading...' : '🚀 Deploy Model' }}
-                              </button>
-                            } @else {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;" 
-                                      (click)="openChat(j)">
-                                💬 Chat Playground
-                              </button>
-                            }
-                          </div>
-                        }
-                      </td>
-                    </tr>
-                    @if (expandedJobId() === j.id) {
-                      <tr>
-                        <td colspan="7" style="padding: 0;">
-                          <app-job-detail [job]="j"></app-job-detail>
-                        </td>
-                      </tr>
+            <ui5-table>
+              <ui5-table-header-row slot="headerRow">
+                <ui5-table-header-cell>ID</ui5-table-header-cell>
+                <ui5-table-header-cell>Name</ui5-table-header-cell>
+                <ui5-table-header-cell>Model</ui5-table-header-cell>
+                <ui5-table-header-cell>Quant</ui5-table-header-cell>
+                <ui5-table-header-cell>Status</ui5-table-header-cell>
+                <ui5-table-header-cell>Progress</ui5-table-header-cell>
+                <ui5-table-header-cell>Actions</ui5-table-header-cell>
+              </ui5-table-header-row>
+              @for (j of jobs(); track j.id) {
+                <ui5-table-row class="job-row" (click)="toggleExpand(j.id)">
+                  <ui5-table-cell>
+                    <span class="expand-icon" [class.expand-icon--open]="expandedJobId() === j.id">▶</span>
+                    <code>{{ j.id.slice(0,8) }}</code>
+                  </ui5-table-cell>
+                  <ui5-table-cell>{{ j.name }}</ui5-table-cell>
+                  <ui5-table-cell>{{ j.config.model_name }}</ui5-table-cell>
+                  <ui5-table-cell><ui5-tag design="Set2">{{ j.config.quant_format }}</ui5-tag></ui5-table-cell>
+                  <ui5-table-cell>
+                    <ui5-tag [design]="j.status === 'completed' ? 'Positive' : j.status === 'failed' ? 'Negative' : j.status === 'running' ? 'Information' : 'Set2'">
+                      {{ j.status }}
+                    </ui5-tag>
+                  </ui5-table-cell>
+                  <ui5-table-cell style="min-width: 160px;">
+                    <div class="progress-info">
+                      <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
+                      <span class="text-small text-muted">{{ calculateETA(j) }}</span>
+                    </div>
+                    <ui5-progress-indicator [value]="j.progress * 100"
+                      [valueState]="j.status === 'completed' ? 'Positive' : j.status === 'failed' ? 'Negative' : 'Information'"
+                      style="width: 100%;"></ui5-progress-indicator>
+                    @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
+                      <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
+                        <svg viewBox="0 0 100 24" class="sparkline-svg" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient [attr.id]="'sparkGrad-' + j.id" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stop-color="rgba(8,84,160,0.2)" />
+                              <stop offset="100%" stop-color="rgba(8,84,160,0)" />
+                            </linearGradient>
+                          </defs>
+                          <path [attr.d]="generateSparklineArea(j.history, 'train_loss')" [attr.fill]="'url(#sparkGrad-' + j.id + ')'" />
+                          <path [attr.d]="generateSparklineCurve(j.history, 'train_loss')" fill="none" class="train-line" />
+                          <path [attr.d]="generateSparklineCurve(j.history, 'val_loss')" fill="none" class="val-line" />
+                        </svg>
+                      </div>
                     }
-                  </ng-container>
+                    @if (j.evaluation) {
+                      <div class="eval-metrics mt-1">
+                        <ui5-tag design="Positive">PPL: {{ j.evaluation.perplexity }}</ui5-tag>
+                        <ui5-tag design="Set2">Loss: {{ j.evaluation.eval_loss }}</ui5-tag>
+                        <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
+                      </div>
+                    }
+                  </ui5-table-cell>
+                  <ui5-table-cell class="actions-cell" (click)="$event.stopPropagation()">
+                    <span class="text-small text-muted">{{ j.created_at | date:'short' }}</span>
+                    @if (j.status === 'completed') {
+                      <div class="action-buttons">
+                        @if (!j.deployed) {
+                          <ui5-button design="Emphasized" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
+                            {{ deployingJob() === j.id ? '⏳ Deploying...' : '🚀 Deploy' }}
+                          </ui5-button>
+                        } @else {
+                          <ui5-button design="Transparent" (click)="openChat(j)">
+                            💬 Chat
+                          </ui5-button>
+                        }
+                      </div>
+                    }
+                    @if (j.status === 'running') {
+                      <div class="action-buttons">
+                        <span class="running-indicator">● Running</span>
+                      </div>
+                    }
+                  </ui5-table-cell>
+                </ui5-table-row>
+                @if (expandedJobId() === j.id) {
+                  <ui5-table-row class="detail-row">
+                    <ui5-table-cell colspan="7" class="detail-cell">
+                      <div class="detail-expand-wrapper">
+                        <app-job-detail [job]="j"></app-job-detail>
+                      </div>
+                    </ui5-table-cell>
+                  </ui5-table-row>
                 }
-              </tbody>
-            </table>
+              }
+            </ui5-table>
           </div>
         }
         @if (!jobs().length && !loading()) {
@@ -364,7 +417,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       @if (loading()) {
         <div class="loading-container">
-          <span class="loading-text">Loading…</span>
+          <ui5-busy-indicator active size="L" style="width: 100%; min-height: 100px;"></ui5-busy-indicator>
         </div>
       }
 
@@ -373,8 +426,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
         <div class="modal-overlay" (click)="closeChat()">
           <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h3 style="margin: 0; font-size: 1rem;">💬 Playground: {{ chatJob.config.model_name }}</h3>
-              <button class="close-btn" (click)="closeChat()">✕</button>
+              <ui5-title level="H5">💬 Playground: {{ chatJob.config.model_name }}</ui5-title>
+              <ui5-button design="Transparent" icon="decline" (click)="closeChat()"></ui5-button>
             </div>
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
@@ -385,13 +438,14 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               }
               @if (chatLoading()) {
                 <div class="chat-bubble loading">
+                  <ui5-busy-indicator active size="S"></ui5-busy-indicator>
                   <em style="font-size: 0.875rem; color: #666;">Model is computing tensors...</em>
                 </div>
               }
             </div>
             <div class="chat-input-area">
-              <input type="text" [formControl]="chatInput" class="form-input" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()" />
-              <button class="btn-primary" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</button>
+              <ui5-input [formControl]="chatInput" style="flex: 1;" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()"></ui5-input>
+              <ui5-button design="Emphasized" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</ui5-button>
             </div>
           </div>
         </div>
@@ -410,47 +464,122 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
     .model-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.875rem;
       margin-bottom: 0.5rem;
     }
 
     .model-card {
       background: var(--sapTile_Background, #fff);
       border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 0.875rem;
+      border-radius: 0.625rem;
       cursor: pointer;
-      transition: border-color 0.12s, box-shadow 0.12s;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
 
-      &:hover { border-color: var(--sapBrandColor, #0854a0); }
+      &:hover {
+        border-color: var(--sapBrandColor, #0854a0);
+        box-shadow: 0 4px 16px rgba(8, 84, 160, 0.12), 0 0 0 1px rgba(8, 84, 160, 0.08);
+        transform: translateY(-2px);
+      }
 
       &.model-card--selected {
         border-color: var(--sapBrandColor, #0854a0);
-        box-shadow: 0 0 0 2px rgba(8, 84, 160, 0.2);
+        box-shadow: 0 0 0 2px rgba(8, 84, 160, 0.25), 0 4px 12px rgba(8, 84, 160, 0.1);
+      }
+
+      &.model-card--recommended {
+        border-color: rgba(8, 84, 160, 0.3);
       }
     }
 
+    .model-card-body { padding: 0.875rem; }
+
+    .recommended-ribbon {
+      background: linear-gradient(135deg, var(--sapBrandColor, #0854a0), #1976d2);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.75rem;
+      text-align: center;
+    }
+
+    .model-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.15rem;
+    }
+
     .model-name {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--sapTextColor, #32363a);
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    .model-org {
+      font-size: 0.7rem;
       margin-bottom: 0.5rem;
-      word-break: break-all;
+    }
+
+    .size-indicator {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.25rem;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+
+      &.size-S { background: #e8f5e9; color: #2e7d32; }
+      &.size-M { background: #e3f2fd; color: #1565c0; }
+      &.size-L { background: #fff3e0; color: #e65100; }
+      &.size-XL { background: #fce4ec; color: #c62828; }
     }
 
     .model-meta {
       display: flex;
       flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .model-arch-tags {
+      display: flex;
+      flex-wrap: wrap;
       gap: 0.25rem;
     }
 
-    .badge {
+    .arch-pill {
+      font-size: 0.6rem;
       padding: 0.1rem 0.4rem;
+      border-radius: 1rem;
+      background: var(--sapList_Background, #f5f5f5);
+      color: var(--sapContent_LabelColor, #6a6d70);
+      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+
+      &.arch-pill--compat { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+      &.arch-pill--warn { background: #fff3e0; color: #e65100; border-color: #ffe0b2; }
+    }
+
+    .badge {
+      padding: 0.15rem 0.45rem;
       background: var(--sapList_Background, #f5f5f5);
       border-radius: 0.25rem;
       font-size: 0.7rem;
       color: var(--sapContent_LabelColor, #6a6d70);
+
+      &.badge--param {
+        background: var(--sapList_Background, #f5f5f5);
+        font-weight: 600;
+        color: var(--sapTextColor, #32363a);
+      }
 
       &.badge--quant {
         background: #e3f2fd;
@@ -587,41 +716,272 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     }
     
     .vram-profiler {
-      background: var(--sapList_Background, #f5f5f5);
+      background: var(--sapBaseColor, #fff);
       border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      border-radius: 0.625rem;
       margin-top: 1rem;
       grid-column: 1 / -1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    
+
     .vram-danger {
       border-color: var(--sapNegativeColor, #b00);
-      background: #ffebee;
-      color: #c62828;
+      background: #fff5f5;
     }
-    
+
     .vram-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
       font-size: 0.8125rem;
+    }
+
+    .vram-title { font-weight: 600; color: var(--sapTextColor, #32363a); }
+    .vram-values { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .vram-used { font-weight: 600; color: var(--sapTextColor, #32363a); }
+    .vram-sep { margin: 0 0.2rem; }
+    .vram-pct { margin-left: 0.3rem; font-weight: 600; }
+
+    .vram-bar {
+      height: 28px;
+      background: var(--sapList_Background, #f5f5f5);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+
+    .vram-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      position: absolute;
+      top: 0;
+      left: 0;
+
+      &.vram-fill--animated { animation: vramSlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+      &.vram-fill--green { background: linear-gradient(90deg, #43a047, #66bb6a); }
+      &.vram-fill--yellow { background: linear-gradient(90deg, #f9a825, #fdd835); }
+      &.vram-fill--red { background: linear-gradient(90deg, #e53935, #ff5252); }
+    }
+
+    @keyframes vramSlideIn { from { width: 0 !important; } }
+
+    .vram-segments {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      display: flex;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .vram-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid rgba(255,255,255,0.3);
+
+      &:last-child { border-right: none; }
+    }
+
+    .vram-segment-label {
+      font-size: 0.6rem;
       font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      white-space: nowrap;
+      overflow: hidden;
     }
-    
-    .danger-fill {
-      background: var(--sapNegativeColor, #b00) !important;
+
+    .vram-warning {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: #c62828;
+      font-weight: 500;
+      padding: 0.4rem 0;
     }
+
+    .vram-warning-icon { font-size: 0.875rem; }
     
-    .sparkline-container { width: 100%; height: 20px; background: rgba(0,0,0,0.02); border-radius: 2px; }
+    .jobs-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--sapList_Background, #f5f5f5);
+      color: var(--sapContent_LabelColor, #6a6d70);
+      font-size: 0.7rem;
+      font-weight: 600;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 1rem;
+      padding: 0 0.35rem;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .expand-icon {
+      display: inline-block;
+      width: 12px;
+      margin-right: 4px;
+      transition: transform 0.2s ease;
+      font-size: 0.6rem;
+
+      &.expand-icon--open { transform: rotate(90deg); }
+    }
+
+    .job-name-cell { font-weight: 500; }
+
+    .quant-code {
+      background: var(--sapList_Background, #f5f5f5);
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.2rem;
+      font-size: 0.75rem;
+    }
+
+    .status-badge-v2 {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: capitalize;
+
+      &.status-pending { background: #fff8e1; color: #f57f17; }
+      &.status-running { background: #e3f2fd; color: #1565c0; }
+      &.status-completed { background: #e8f5e9; color: #2e7d32; }
+      &.status-failed { background: #ffebee; color: #c62828; }
+      &.status-cancelled { background: #fafafa; color: #9e9e9e; }
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .status-running .status-dot { animation: statusPulse 1.5s ease-in-out infinite; }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.2rem;
+    }
+
+    .job-progress-bar {
+      height: 5px;
+      background: var(--sapList_Background, #f5f5f5);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .job-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--sapBrandColor, #0854a0);
+
+      &.job-progress--running {
+        background: linear-gradient(90deg, var(--sapBrandColor, #0854a0), #1976d2);
+        animation: progressShimmer 2s ease-in-out infinite;
+      }
+
+      &.job-progress--complete {
+        background: linear-gradient(90deg, #43a047, #66bb6a);
+      }
+    }
+
+    @keyframes progressShimmer {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .detail-cell { padding: 0 !important; }
+
+    .detail-expand-wrapper {
+      animation: expandIn 0.25s ease-out;
+      overflow: hidden;
+    }
+
+    @keyframes expandIn {
+      from { max-height: 0; opacity: 0; }
+      to { max-height: 600px; opacity: 1; }
+    }
+
+    .job-row {
+      cursor: pointer;
+      transition: background-color 0.15s;
+
+      &.expanded td { background: var(--sapList_Background, #f5f5f5); }
+    }
+
+    .actions-cell { min-width: 110px; }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
+    }
+
+    .btn-deploy {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--sapBrandColor, #0854a0);
+      color: #fff;
+      border: none;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+
+      &:hover:not(:disabled) { background: #0a6ed1; transform: translateY(-1px); }
+      &:disabled { opacity: 0.5; cursor: default; }
+    }
+
+    .btn-chat {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #00695c;
+      color: #fff;
+      border: none;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+
+      &:hover { background: #00897b; transform: translateY(-1px); }
+    }
+
+    .running-indicator {
+      font-size: 0.7rem;
+      color: #1565c0;
+      font-weight: 600;
+      animation: statusPulse 1.5s ease-in-out infinite;
+    }
+
+    .sparkline-container { width: 100%; height: 24px; background: rgba(0,0,0,0.015); border-radius: 4px; }
     .sparkline-svg { width: 100%; height: 100%; overflow: visible; }
     .train-line { stroke: var(--sapBrandColor, #0854a0); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 2 2; }
-    
+    .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 3 2; stroke-linecap: round; }
+
     .eval-metrics {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       padding-top: 0.25rem;
     }
     
@@ -692,6 +1052,9 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     })
   });
 
+  readonly frameworkControl = this.jobForm.controls.framework;
+  readonly datasetControl = this.jobForm.controls.dataset;
+
   readonly formValue = toSignal(this.jobForm.valueChanges, { initialValue: this.jobForm.getRawValue() });
 
   readonly estimatedVram = computed(() => {
@@ -726,20 +1089,82 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     return required > total * 0.95;
   });
 
+  readonly vramModelPct = computed(() => {
+    const total = this.estimatedVram();
+    if (total <= 0) return 0;
+    const overhead = 1.5;
+    const modelWeight = total - overhead;
+    return Math.max(0, (modelWeight * 0.7 / total) * 100);
+  });
+
+  readonly vramKvPct = computed(() => {
+    const total = this.estimatedVram();
+    if (total <= 0) return 0;
+    const overhead = 1.5;
+    const modelWeight = total - overhead;
+    return Math.max(0, (modelWeight * 0.3 / total) * 100);
+  });
+
+  readonly vramOverheadPct = computed(() => {
+    const total = this.estimatedVram();
+    if (total <= 0) return 0;
+    return Math.max(0, (1.5 / total) * 100);
+  });
+
   mathMin(a: number, b: number) { return Math.min(a, b); }
+
+  getModelSize(m: ModelInfo): string {
+    const gb = m.size_gb;
+    if (gb <= 2) return 'S';
+    if (gb <= 8) return 'M';
+    if (gb <= 20) return 'L';
+    return 'XL';
+  }
 
   generateSparklinePath(history: any[], key: 'train_loss' | 'val_loss'): string {
     if (!history || history.length < 2) return '';
-    const maxVal = Math.max(...history.map(h => Math.max(h.train_loss, h.val_loss)));
+    const maxVal = Math.max(...history.map((h: any) => Math.max(h.train_loss, h.val_loss)));
     const minVal = 0;
     const w = 100;
-    const h = 20;
-    
-    return history.map((pt, i) => {
+    const h = 24;
+
+    return history.map((pt: any, i: number) => {
       const x = (i / (history.length - 1)) * w;
       const y = h - ((pt[key] - minVal) / (maxVal - minVal) * h);
       return `${x},${y}`;
     }).join(' ');
+  }
+
+  generateSparklineCurve(history: any[], key: 'train_loss' | 'val_loss'): string {
+    if (!history || history.length < 2) return '';
+    const maxVal = Math.max(...history.map((h: any) => Math.max(h.train_loss, h.val_loss)));
+    const minVal = 0;
+    const w = 100;
+    const h = 24;
+    const pad = 2;
+
+    const points = history.map((pt: any, i: number) => ({
+      x: (i / (history.length - 1)) * w,
+      y: pad + (h - 2 * pad) - ((pt[key] - minVal) / (maxVal - minVal) * (h - 2 * pad))
+    }));
+
+    let d = `M ${points[0].x},${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpx = (prev.x + curr.x) / 2;
+      d += ` Q ${cpx},${prev.y} ${curr.x},${curr.y}`;
+    }
+    return d;
+  }
+
+  generateSparklineArea(history: any[], key: 'train_loss' | 'val_loss'): string {
+    const curve = this.generateSparklineCurve(history, key);
+    if (!curve) return '';
+    const w = 100;
+    const h = 24;
+    const firstX = 0;
+    return `${curve} L ${w},${h} L ${firstX},${h} Z`;
   }
 
   calculateETA(j: JobResponse): string {

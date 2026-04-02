@@ -34,6 +34,7 @@ describe('CompareComponent', () => {
     const fixture = TestBed.createComponent(CompareComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges(); // triggers ngOnInit → loadDeployedModels()
   });
 
   afterEach(() => {

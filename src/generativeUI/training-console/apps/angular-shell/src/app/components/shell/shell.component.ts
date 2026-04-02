@@ -1,9 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, HostListener, signal, computed, ElementRef, ViewChild } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { AuthService } from '../../services/auth.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
+import { filter } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 interface NavItem {
   label: string;
@@ -14,357 +18,190 @@ interface NavItem {
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
+  imports: [RouterOutlet, FormsModule, Ui5WebcomponentsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <div class="shell-layout">
-      @if (showSearch()) {
-        <div class="search-overlay" (click)="closeSearch()">
-          <div class="search-modal" (click)="$event.stopPropagation()">
-            <div class="search-header-container">
-              <span class="search-icon">🔍</span>
-              <input #searchInput type="text" class="search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Search pages... (e.g. Pipeline, Chat)" (keydown.enter)="selectFirstResult()" (keydown.escape)="closeSearch()" />
-              <button class="search-close-btn" (click)="closeSearch()">ESC</button>
-            </div>
-            <div class="search-results-list">
-              @for (res of searchResults(); track res.route) {
-                <div class="search-item" (click)="navigateFromSearch(res.route)">
-                  <span class="nav-icon" aria-hidden="true">{{ res.icon }}</span>
-                  <span class="nav-label">{{ res.label }}</span>
-                  <span class="search-shortcut">↵</span>
-                </div>
-              }
-              @if (searchResults().length === 0) {
-                <div class="search-empty">No results found matching "{{searchQuery()}}"</div>
-              }
-            </div>
+    <!-- Search Dialog -->
+    @if (showSearch()) {
+      <div class="search-overlay" (click)="closeSearch()">
+        <div class="search-modal" (click)="$event.stopPropagation()">
+          <div class="search-header-container">
+            <ui5-icon name="search" class="search-icon"></ui5-icon>
+            <input #searchInput type="text" class="search-input"
+              [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+              placeholder="Search pages... (e.g. Pipeline, Chat)"
+              (keydown.enter)="navigateToSelected()"
+              (keydown.escape)="closeSearch()"
+              (keydown.arrowDown)="moveSelection(1); $event.preventDefault()"
+              (keydown.arrowUp)="moveSelection(-1); $event.preventDefault()" />
+            <ui5-tag design="Set2" color-scheme="6">ESC</ui5-tag>
           </div>
-        </div>
-      }
-      
-      <header class="shell-header">
-        <div class="header-brand">
-          <span class="brand-icon">⚙</span>
-          <span class="brand-name">Training Console</span>
-          <span class="brand-version">v{{ version }}</span>
-          
-          @if (store.wsState() === 'connected') {
-             <span class="ws-badge connected">Live</span>
-          } @else if (store.wsState() === 'reconnecting' || store.wsState() === 'connecting') {
-             <span class="ws-badge warning">Reconnecting...</span>
-          } @else {
-             <span class="ws-badge error">Offline</span>
+          <ui5-list class="search-results-list">
+            @for (res of searchResults(); track res.route; let i = $index) {
+              <ui5-list-item-standard
+                icon="{{ res.icon }}"
+                [attr.selected]="i === selectedIndex() ? true : null"
+                (click)="navigateFromSearch(res.route)"
+                (mouseenter)="selectedIndex.set(i)">
+                {{ res.label }}
+              </ui5-list-item-standard>
+            }
+          </ui5-list>
+          @if (searchResults().length === 0) {
+            <div class="search-empty">No results found matching "{{ searchQuery() }}"</div>
           }
         </div>
-        <div class="header-actions">
-          <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)">
-            <option value="novice">Novice Mode</option>
-            <option value="intermediate">Intermediate Mode</option>
-            <option value="expert">Expert Mode</option>
-          </select>
-          <button class="header-btn" (click)="logout()" title="Sign out">Sign out</button>
-        </div>
-      </header>
-
-      <div class="shell-body">
-        <nav class="side-nav">
-          <ul class="nav-list">
-            @for (item of navItems; track item.route) {
-              <li>
-                <a
-                  [routerLink]="item.route"
-                  routerLinkActive="nav-link--active"
-                  class="nav-link"
-                  [attr.aria-label]="item.label"
-                >
-                  <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-                  <span class="nav-label">{{ item.label }}</span>
-                </a>
-              </li>
-            }
-          </ul>
-
-          <div class="nav-footer">
-            <div class="api-key-row">
-              <input
-                type="password"
-                class="api-key-input"
-                [(ngModel)]="apiKeyDraft"
-                placeholder="API key (optional)"
-                (keydown.enter)="saveApiKey()"
-              />
-              <button class="api-key-save" (click)="saveApiKey()">Save</button>
-            </div>
-          </div>
-        </nav>
-
-        <main class="shell-content" id="main-content">
-          <router-outlet />
-        </main>
       </div>
+    }
+
+    <!-- Shellbar -->
+    <ui5-shellbar
+      primary-title="Training Console"
+      secondary-title="v{{ version }}"
+      show-search-field="false">
+
+      <!-- WS Status badge -->
+      @if (store.wsState() === 'connected') {
+        <ui5-tag slot="startButton" design="Positive">Live</ui5-tag>
+      } @else if (store.wsState() === 'reconnecting' || store.wsState() === 'connecting') {
+        <ui5-tag slot="startButton" design="Critical">Reconnecting...</ui5-tag>
+      } @else {
+        <ui5-tag slot="startButton" design="Negative">Offline</ui5-tag>
+      }
+
+      <!-- Search button -->
+      <ui5-shellbar-item
+        icon="search"
+        text="Search (⌘K)"
+        (item-click)="toggleSearch()">
+      </ui5-shellbar-item>
+
+      <!-- Mode selector in profile slot area -->
+      <ui5-select slot="profile" style="min-width:130px"
+        (change)="onModeChange($event)">
+        <ui5-option value="novice" [attr.selected]="userSettings.mode() === 'novice' ? true : null">Novice</ui5-option>
+        <ui5-option value="intermediate" [attr.selected]="userSettings.mode() === 'intermediate' ? true : null">Intermediate</ui5-option>
+        <ui5-option value="expert" [attr.selected]="userSettings.mode() === 'expert' ? true : null">Expert</ui5-option>
+      </ui5-select>
+
+      <!-- Avatar with menu -->
+      <ui5-avatar slot="profile" initials="TC" size="XS" interactive
+        (click)="avatarMenuOpen.set(!avatarMenuOpen())">
+      </ui5-avatar>
+    </ui5-shellbar>
+
+    @if (avatarMenuOpen()) {
+      <div class="avatar-menu-backdrop" (click)="avatarMenuOpen.set(false)">
+        <div class="avatar-menu" (click)="$event.stopPropagation()">
+          <ui5-list>
+            <ui5-list-item-standard icon="log" (click)="logout()">Sign out</ui5-list-item-standard>
+          </ui5-list>
+        </div>
+      </div>
+    }
+
+    <!-- Navigation Layout with Side Navigation -->
+    <div class="shell-body">
+      <ui5-side-navigation class="side-nav" [class.side-nav--open]="sidebarOpen()">
+        @for (item of navItems; track item.route) {
+          <ui5-side-navigation-item
+            text="{{ item.label }}"
+            icon="{{ item.icon }}"
+            [attr.selected]="isActiveRoute(item.route) ? true : null"
+            (click)="navigateTo(item.route)">
+          </ui5-side-navigation-item>
+        }
+        <ui5-side-navigation-item slot="fixedItems" text="API Key" icon="key">
+        </ui5-side-navigation-item>
+      </ui5-side-navigation>
+
+      @if (sidebarOpen()) {
+        <div class="sidebar-backdrop" (click)="sidebarOpen.set(false)"></div>
+      }
+
+      <main class="shell-content" id="main-content">
+        <router-outlet />
+      </main>
     </div>
   `,
-  styles: [
-    `
-      .shell-layout {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-        background: var(--sapBackgroundColor, #f5f5f5);
-      }
+  styles: [`
+    :host {
+      display: flex; flex-direction: column; height: 100vh;
+      overflow: hidden; background: var(--sapBackgroundColor, #f5f5f5);
+    }
 
-      .search-overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(2px);
-        z-index: 1000;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding-top: 10vh;
-      }
-      .search-modal {
-        width: 100%;
-        max-width: 600px;
-        background: var(--sapBaseColor, #fff);
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      .search-header-container {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1.25rem;
-        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-      }
-      .search-icon { font-size: 1.2rem; margin-right: 0.75rem; }
-      .search-input {
-        flex: 1;
-        border: none;
-        outline: none;
-        font-size: 1.125rem;
-        background: transparent;
-        color: var(--sapTextColor, #32363a);
-      }
-      .search-close-btn {
-        background: var(--sapGroup_TitleBorderColor, #d9d9d9); 
-        border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem;
-        font-size: 0.75rem; color: var(--sapTextColor, #32363a); cursor: pointer; font-weight: 600;
-      }
-      .search-results-list {
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 0.5rem 0;
-      }
-      .search-item {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1.25rem;
-        cursor: pointer;
-        transition: background 0.1s;
-      }
-      .search-item:hover, .search-item.active {
-        background: var(--sapList_Hover_Background, #f5f5f5);
-      }
-      .search-item .nav-icon { margin-right: 0.75rem; }
-      .search-shortcut {
-        margin-left: auto;
-        color: var(--sapGroup_TitleBorderColor, #d9d9d9);
-        font-size: 1.1rem;
-        opacity: 0;
-      }
-      .search-item:hover .search-shortcut { opacity: 1; }
-      .search-empty {
-        padding: 1.5rem;
-        text-align: center;
-        color: var(--sapField_BorderColor, #89919a);
-      }
+    /* Search overlay */
+    .search-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+      z-index: 1000; display: flex; justify-content: center;
+      align-items: flex-start; padding-top: 10vh;
+      animation: fadeIn 0.15s ease-out;
+    }
+    .search-modal {
+      width: 100%; max-width: 560px;
+      background: var(--sapBaseColor, #fff); border-radius: 0.75rem;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.24); overflow: hidden;
+      display: flex; flex-direction: column;
+      animation: slideUp 0.2s ease-out;
+    }
+    .search-header-container {
+      display: flex; align-items: center;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+    }
+    .search-icon { margin-right: 0.75rem; opacity: 0.6; }
+    .search-input {
+      flex: 1; border: none; outline: none;
+      font-size: 1rem; background: transparent;
+      color: var(--sapTextColor, #32363a);
+    }
+    .search-results-list { max-height: 360px; overflow-y: auto; }
+    .search-empty {
+      padding: 2rem 1.25rem; text-align: center;
+      color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.875rem;
+    }
 
-      .shell-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 1.25rem;
-        height: 3rem;
-        background: var(--sapShellColor, #354a5e);
-        color: #fff;
-        flex-shrink: 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
+    /* Avatar menu */
+    .avatar-menu-backdrop {
+      position: fixed; inset: 0; z-index: 500;
+    }
+    .avatar-menu {
+      position: fixed; top: 2.75rem; right: 0.5rem;
+      background: var(--sapBaseColor, #fff); border-radius: 0.375rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      min-width: 160px; overflow: hidden; z-index: 501;
+      animation: slideUp 0.15s ease-out;
+    }
 
-      .header-brand {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 600;
-        font-size: 1rem;
-        letter-spacing: 0.01em;
-      }
+    /* Layout */
+    .shell-body { display: flex; flex: 1; overflow: hidden; position: relative; }
+    .side-nav { flex-shrink: 0; }
+    .shell-content { flex: 1; overflow-y: auto; }
+    .sidebar-backdrop { display: none; }
 
-      .brand-icon {
-        font-size: 1.25rem;
-      }
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp {
+      from { transform: translateY(0.5rem); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
 
-      .brand-name {
-        color: #fff;
-      }
-
-      .brand-version {
-        font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.6);
-        font-weight: 400;
-        margin-top: 0.1rem;
-      }
-
-      .ws-badge {
-        font-size: 0.65rem;
-        padding: 0.15rem 0.4rem;
-        border-radius: 0.25rem;
-        margin-left: 0.5rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-      }
-      .ws-badge.connected { background: #2e7d32; color: #fff; }
-      .ws-badge.warning { background: #f57c00; color: #fff; }
-      .ws-badge.error { background: #c62828; color: #fff; }
-
-      .header-btn {
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        color: #fff;
-        padding: 0.25rem 0.75rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        font-size: 0.8125rem;
-        transition: background 0.15s;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-      }
-
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-      }
-
-      .mode-select {
-        background: transparent;
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 0.25rem;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.8125rem;
-        outline: none;
-        cursor: pointer;
-
-        option {
-          background: var(--sapShellColor, #354a5e);
-          color: #fff;
-        }
-      }
-
-      .shell-body {
-        display: flex;
-        flex: 1;
-        overflow: hidden;
-      }
-
+    /* Responsive */
+    @media (max-width: 768px) {
       .side-nav {
-        width: 220px;
-        background: var(--sapBaseColor, #fff);
-        border-right: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        overflow-y: auto;
+        position: absolute; top: 0; bottom: 0; left: 0; z-index: 50;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 16px rgba(0,0,0,0.1);
       }
-
-      .nav-list {
-        list-style: none;
-        padding: 0.5rem 0;
-        margin: 0;
-        flex: 1;
+      .side-nav--open { transform: translateX(0); }
+      .sidebar-backdrop {
+        display: block; position: absolute; inset: 0; z-index: 40;
+        background: rgba(0,0,0,0.3);
       }
-
-      .nav-link {
-        display: flex;
-        align-items: center;
-        gap: 0.625rem;
-        padding: 0.625rem 1rem;
-        color: var(--sapTextColor, #32363a);
-        text-decoration: none;
-        font-size: 0.875rem;
-        border-left: 3px solid transparent;
-        transition: background 0.12s, border-color 0.12s;
-
-        &:hover {
-          background: var(--sapList_Hover_Background, #f5f5f5);
-        }
-
-        &.nav-link--active {
-          background: var(--sapList_SelectionBackgroundColor, #e8f2ff);
-          border-left-color: var(--sapBrandColor, #0854a0);
-          color: var(--sapBrandColor, #0854a0);
-          font-weight: 600;
-        }
-      }
-
-      .nav-icon {
-        font-size: 1rem;
-        width: 1.25rem;
-        text-align: center;
-      }
-
-      .nav-footer {
-        padding: 0.75rem;
-        border-top: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-      }
-
-      .api-key-row {
-        display: flex;
-        gap: 0.375rem;
-      }
-
-      .api-key-input {
-        flex: 1;
-        padding: 0.3rem 0.5rem;
-        font-size: 0.75rem;
-        border: 1px solid var(--sapField_BorderColor, #89919a);
-        border-radius: 0.25rem;
-        background: var(--sapField_Background, #fff);
-        color: var(--sapTextColor, #32363a);
-        min-width: 0;
-      }
-
-      .api-key-save {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.75rem;
-        background: var(--sapBrandColor, #0854a0);
-        color: #fff;
-        border: none;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        white-space: nowrap;
-
-        &:hover {
-          background: var(--sapButton_Hover_Background, #0a6ed1);
-        }
-      }
-
-      .shell-content {
-        flex: 1;
-        overflow-y: auto;
-      }
-    `,
-  ],
+    }
+  `],
 })
 export class ShellComponent {
   private readonly auth = inject(AuthService);
@@ -373,34 +210,49 @@ export class ShellComponent {
   readonly store = inject(AppStore);
 
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: '📊', route: '/dashboard' },
-    { label: 'Pipeline', icon: '🔄', route: '/pipeline' },
-    { label: 'Data Explorer', icon: '📂', route: '/data-explorer' },
-    { label: 'Data Cleaning', icon: '🧹', route: '/data-cleaning' },
-    { label: 'Model Optimizer', icon: '🤖', route: '/model-optimizer' },
-    { label: 'Registry', icon: '🏷️', route: '/registry' },
-    { label: 'HippoCPP', icon: '🕸', route: '/hippocpp' },
-    { label: 'Chat', icon: '💬', route: '/chat' },
-    { label: 'A/B Compare', icon: '⚖️', route: '/compare' },
+    { label: 'Dashboard', icon: 'home', route: '/dashboard' },
+    { label: 'Pipeline', icon: 'process', route: '/pipeline' },
+    { label: 'Data Explorer', icon: 'database', route: '/data-explorer' },
+    { label: 'Data Cleaning', icon: 'refresh', route: '/data-cleaning' },
+    { label: 'Model Optimizer', icon: 'ai', route: '/model-optimizer' },
+    { label: 'Registry', icon: 'shipping-status', route: '/registry' },
+    { label: 'HippoCPP', icon: 'chain-link', route: '/hippocpp' },
+    { label: 'Chat', icon: 'message-popup', route: '/chat' },
+    { label: 'A/B Compare', icon: 'compare', route: '/compare' },
   ];
 
   readonly version = '1.0.0';
   apiKeyDraft = this.auth.token() ?? '';
 
-  // --- Search State & Logic ---
+  // Track current URL for active route highlighting
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ),
+    { initialValue: null }
+  );
+
+  // --- UI State ---
   showSearch = signal(false);
   searchQuery = signal('');
-  
+  selectedIndex = signal(0);
+  sidebarOpen = signal(false);
+  avatarMenuOpen = signal(false);
+
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   searchResults = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.navItems;
-    return this.navItems.filter(i => 
-      i.label.toLowerCase().includes(q) || 
+    return this.navItems.filter(i =>
+      i.label.toLowerCase().includes(q) ||
       i.route.toLowerCase().includes(q)
     );
   });
+
+  isActiveRoute(route: string): boolean {
+    return this.router.url === route || this.router.url.startsWith(route + '/');
+  }
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
@@ -415,6 +267,7 @@ export class ShellComponent {
   toggleSearch() {
     this.showSearch.set(!this.showSearch());
     if (this.showSearch()) {
+      this.selectedIndex.set(0);
       setTimeout(() => this.searchInput?.nativeElement?.focus(), 50);
     } else {
       this.searchQuery.set('');
@@ -424,6 +277,21 @@ export class ShellComponent {
   closeSearch() {
     this.showSearch.set(false);
     this.searchQuery.set('');
+    this.selectedIndex.set(0);
+  }
+
+  moveSelection(delta: number) {
+    const len = this.searchResults().length;
+    if (!len) return;
+    this.selectedIndex.set((this.selectedIndex() + delta + len) % len);
+  }
+
+  navigateToSelected() {
+    const results = this.searchResults();
+    const idx = this.selectedIndex();
+    if (results.length > 0 && idx < results.length) {
+      this.navigateFromSearch(results[idx].route);
+    }
   }
 
   navigateFromSearch(route: string) {
@@ -431,13 +299,17 @@ export class ShellComponent {
     this.closeSearch();
   }
 
-  selectFirstResult() {
-    const results = this.searchResults();
-    if (results.length > 0) {
-      this.navigateFromSearch(results[0].route);
+  navigateTo(route: string) {
+    this.router.navigate([route]);
+  }
+
+  onModeChange(event: Event) {
+    const select = event.target as HTMLElement;
+    const selectedOption = (select as any).selectedOption;
+    if (selectedOption) {
+      this.userSettings.setMode(selectedOption.value);
     }
   }
-  // -------------------------
 
   saveApiKey(): void {
     if (this.apiKeyDraft.trim()) {
@@ -448,6 +320,7 @@ export class ShellComponent {
   }
 
   logout(): void {
+    this.avatarMenuOpen.set(false);
     this.auth.clearToken();
     this.router.navigate(['/login']);
   }

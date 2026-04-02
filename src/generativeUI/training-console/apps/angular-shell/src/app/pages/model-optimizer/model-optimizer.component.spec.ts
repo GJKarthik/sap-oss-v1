@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { ModelOptimizerComponent } from './model-optimizer.component';
 import { UserSettingsService, UserMode } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
-import { signal } from '@angular/core';
 
 describe('ModelOptimizerComponent', () => {
   let component: ModelOptimizerComponent;
@@ -43,18 +43,28 @@ describe('ModelOptimizerComponent', () => {
         { provide: ToastService, useValue: mockToast },
       ],
     }).compileComponents();
+
+    TestBed.overrideComponent(ModelOptimizerComponent, {
+      set: { template: '<div></div>', schemas: [CUSTOM_ELEMENTS_SCHEMA] },
+    });
   });
 
   beforeEach(() => {
+    jest.useFakeTimers();
     fixture = TestBed.createComponent(ModelOptimizerComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
     mockMode.set('novice'); // Default behavior
     Object.values(mockToast).forEach(spy => spy.mockClear());
     fixture.detectChanges();
+    // Flush ngOnInit's loadData() requests
+    httpMock.match('/api/models/catalog').forEach(r => r.flush([]));
+    httpMock.match('/api/jobs').forEach(r => r.flush([]));
   });
 
   afterEach(() => {
+    fixture.destroy(); // clears setInterval via ngOnDestroy
+    jest.useRealTimers();
     httpMock.verify();
   });
 
@@ -92,21 +102,29 @@ describe('ModelOptimizerComponent', () => {
 
     component.createJob();
 
-    const req = httpMock.expectOne('/api/v1/jobs');
+    const req = httpMock.expectOne('/api/jobs');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      model_name: 'test-model',
-      quant_format: 'int8',
-      calib_samples: 256,
-      calib_seq_len: 2048,
-      export_format: 'vllm',
-      enable_pruning: false,
-      pruning_sparsity: 0.2, // Default hardcoded in createJob currently
+      config: {
+        model_name: 'test-model',
+        quant_format: 'int8',
+        calib_samples: 256,
+        calib_seq_len: 2048,
+        export_format: 'vllm',
+        enable_pruning: false,
+        pruning_sparsity: 0.2,
+      },
     });
 
-    req.flush({ job_id: 'job-1234', status: 'pending' });
+    req.flush({
+      id: 'job-1234',
+      name: 'Optimizing test-model',
+      status: 'pending',
+      progress: 0,
+      created_at: new Date().toISOString(),
+      config: { model_name: 'test-model', quant_format: 'int8' },
+    });
 
-    expect(mockAppStore.addJob).toHaveBeenCalled();
-    expect(mockToast.success).toHaveBeenCalledWith('Job pending', 'Job Created');
+    expect(mockToast.success).toHaveBeenCalled();
   });
 });

@@ -4,6 +4,11 @@
  */
 
 :root {
+  --sapFontFamily: '72', '72full', Arial, Helvetica, sans-serif;
+  --sapFontSize: 0.875rem;
+  --sapFontSmallSize: 0.75rem;
+  --sapFontLargeSize: 1rem;
+  --sapFontHeader1Size: 1.5rem;
   --sapBackgroundColor: #f5f5f5;
   --sapShellColor: #354a5e;
   --sapBaseColor: #ffffff;
@@ -17,6 +22,13 @@
   --sapTile_Background: #ffffff;
   --sapTile_BorderColor: #e4e4e4;
   --sapContent_LabelColor: #6a6d70;
+  --sapContent_FocusColor: #0854a0;
+  --sapPositiveColor: #2b7d2b;
+  --sapNegativeColor: #b00020;
+  --sapCriticalColor: #e78c07;
+  --sapInformativeColor: #0854a0;
+  --sapNeutralColor: #6a6d70;
+  --sapButton_Hover_Background: #0a6ed1;
 }
 
 html,
@@ -257,3 +269,55 @@ pre {
   &.status-pending  { background: #f5f5f5; color: #757575; }
   &.status-info     { background: #e8eaf6; color: #283593; }
 }
+
+/* Dark mode foundations — applied via media query or data attribute */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sapBackgroundColor: #1a1a2e; --sapBaseColor: #16213e;
+    --sapTextColor: #e0e0e0; --sapTile_Background: #1e2a45;
+    --sapTile_BorderColor: #2a3a55; --sapShellColor: #0f1629;
+    --sapGroup_TitleBorderColor: #2a3a55; --sapField_Background: #1e2a45;
+    --sapField_BorderColor: #3a4a65; --sapList_Hover_Background: #1e2a45;
+    --sapList_SelectionBackgroundColor: #1a3a5c; --sapContent_LabelColor: #a0a4a8;
+  }
+}
+[data-theme="dark"] {
+  --sapBackgroundColor: #1a1a2e; --sapBaseColor: #16213e;
+  --sapTextColor: #e0e0e0; --sapTile_Background: #1e2a45;
+  --sapTile_BorderColor: #2a3a55; --sapShellColor: #0f1629;
+  --sapGroup_TitleBorderColor: #2a3a55; --sapField_Background: #1e2a45;
+  --sapField_BorderColor: #3a4a65; --sapList_Hover_Background: #1e2a45;
+  --sapList_SelectionBackgroundColor: #1a3a5c; --sapContent_LabelColor: #a0a4a8;
+}
+
+/* Animation utilities */
+@keyframes slideUp {
+  from { transform: translateY(0.5rem); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideInRight {
+  from { transform: translateX(1rem); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-slide-up       { animation: slideUp 0.25s ease-out; }
+.animate-slide-in-right { animation: slideInRight 0.25s ease-out; }
+.animate-pulse          { animation: pulse 1.5s ease-in-out infinite; }
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Transition utilities */
+.transition-all       { transition: all 0.2s ease; }
+.transition-colors    { transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease; }
+.transition-transform { transition: transform 0.2s ease; }

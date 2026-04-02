@@ -47,10 +47,12 @@ describe('AuthService', () => {
     });
 
     it('should load token from sessionStorage on init', () => {
-      // Set token directly in sessionStorage before creating service
+      // Set token directly in sessionStorage before creating a fresh service
       sessionStorage.setItem('training_console_api_key', 'preexisting-token');
-      
-      // Create a new service instance
+
+      // Reset TestBed to force a new singleton
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
       const newService = TestBed.inject(AuthService);
       expect(newService.token()).toBe('preexisting-token');
     });
