@@ -8,6 +8,7 @@ RUN yarn nx build angular-shell --configuration production
 
 FROM nginx:alpine
 COPY --from=build /app/dist/apps/angular-shell/browser /usr/share/nginx/html
-COPY apps/angular-shell/docker/nginx.conf /etc/nginx/conf.d/default.conf
+ENV SAP_API_BASE_URL=http://training-api:8000
+COPY apps/angular-shell/docker/nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

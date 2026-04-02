@@ -1,0 +1,14 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+COPY libs/openai-server/package.json ./
+RUN npm install
+
+COPY libs/openai-server/src ./src
+
+ENV PORT=8400
+
+EXPOSE 8400
+
+CMD ["npm", "start"]

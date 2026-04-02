@@ -1,0 +1,127 @@
+services:
+  suite-gateway:
+    image: nginx:1.27-alpine
+    depends_on:
+      - health-aggregator
+      - aifabric-web
+      - aifabric-api
+      - training-web
+      - training-api
+      - sac-web
+      - ui5-web
+      - ui5-mcp
+      - ui5-openai
+    ports:
+      - "8080:80"
+    environment:
+      AI_CORE_PAL_UPSTREAM: ${AI_CORE_PAL_UPSTREAM:-http://ui5-mcp:9160}
+      ES_MCP_UPSTREAM: ${ES_MCP_UPSTREAM:-http://ui5-mcp:9160}
+      ES_MCP_API_KEY: ${ES_MCP_API_KEY:-}
+    volumes:
+      - ./gateway/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+    restart: unless-stopped
+
+  health-aggregator:
+    build:
+      context: ./gateway/health
+      dockerfile: Dockerfile
+    environment:
+      AIFABRIC_WEB_HEALTH_URL: http://aifabric-web/health
+      AIFABRIC_API_HEALTH_URL: http://aifabric-api/health
+      TRAINING_WEB_HEALTH_URL: http://training-web/
+      TRAINING_API_HEALTH_URL: http://training-api/health
+      SAC_WEB_HEALTH_URL: http://sac-web/health
+      UI5_WEB_HEALTH_URL: http://ui5-web/health
+      UI5_MCP_HEALTH_URL: http://ui5-mcp:9160/health
+      UI5_OPENAI_HEALTH_URL: http://ui5-openai:8400/health
+      AI_CORE_PAL_HEALTH_URL: ${AI_CORE_PAL_HEALTH_URL:-}
+      ES_MCP_HEALTH_URL: ${ES_MCP_HEALTH_URL:-}
+      UI5_HARNESS_REPORT_URL: http://ui5-web/health
+    restart: unless-stopped
+
+  aifabric-api:
+    build:
+      context: ./aifabric-webcomponents-ngx
+      dockerfile: packages/api-server/Dockerfile
+    environment:
+      ENVIRONMENT: development
+      JWT_SECRET_KEY: suite-dev-secret
+      STORE_BACKEND: sqlite
+      STORE_DATABASE_PATH: /tmp/aifabric-suite.sqlite3
+      REQUIRE_MCP_DEPENDENCIES: "false"
+    restart: unless-stopped
+
+  aifabric-web:
+    build:
+      context: ./aifabric-webcomponents-ngx
+      dockerfile: apps/angular-shell/Dockerfile
+    depends_on:
+      - aifabric-api
+    environment:
+      SAP_API_BASE_URL: /api/v1
+      SAP_API_UPSTREAM: http://aifabric-api:8000
+    restart: unless-stopped
+
+  training-api:
+    build:
+      context: ./training-webcomponents-ngx/packages/api-server
+      dockerfile: Dockerfile
+    environment:
+      ALLOWED_ORIGINS: http://localhost:8080
+      PORT: 8000
+    restart: unless-stopped
+
+  training-web:
+    build:
+      context: ./training-webcomponents-ngx
+      dockerfile: apps/angular-shell/Dockerfile
+    depends_on:
+      - training-api
+    environment:
+      SAP_API_BASE_URL: http://training-api:8000
+    restart: unless-stopped
+
+  sac-web:
+    build:
+      context: ./sac-webcomponents-ngx
+      dockerfile: Dockerfile.suite
+    restart: unless-stopped
+
+  ui5-web:
+    build:
+      context: ./ui5-webcomponents-ngx-main
+      dockerfile: Dockerfile.suite-web
+    depends_on:
+      - ui5-mcp
+      - ui5-openai
+    restart: unless-stopped
+
+  ui5-mcp:
+    build:
+      context: ./ui5-webcomponents-ngx-main
+      dockerfile: mcp-server/Dockerfile.suite
+    environment:
+      MCP_ALLOW_ALL_ORIGINS: "true"
+      CORS_ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+    ports:
+      - "9160:9160"
+    restart: unless-stopped
+
+  ui5-openai:
+    build:
+      context: ./ui5-webcomponents-ngx-main
+      dockerfile: libs/openai-server/Dockerfile.suite
+    environment:
+      OPENAI_ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      PORT: 8400
+      AICORE_CLIENT_ID: ${AICORE_CLIENT_ID:-}
+      AICORE_CLIENT_SECRET: ${AICORE_CLIENT_SECRET:-}
+      AICORE_AUTH_URL: ${AICORE_AUTH_URL:-}
+      AICORE_BASE_URL: ${AICORE_BASE_URL:-}
+      AICORE_RESOURCE_GROUP: ${AICORE_RESOURCE_GROUP:-default}
+      AICORE_CHAT_DEPLOYMENT_ID: ${AICORE_CHAT_DEPLOYMENT_ID:-}
+      AICORE_EMBEDDING_DEPLOYMENT_ID: ${AICORE_EMBEDDING_DEPLOYMENT_ID:-}
+      OPENAI_INTERNAL_TOKEN: ${OPENAI_INTERNAL_TOKEN:-}
+    ports:
+      - "8400:8400"
+    restart: unless-stopped

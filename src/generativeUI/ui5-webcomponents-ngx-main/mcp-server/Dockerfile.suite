@@ -1,0 +1,12 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+COPY mcp-server/package.json mcp-server/package-lock.json ./
+RUN npm ci
+
+COPY mcp-server/src ./src
+
+EXPOSE 9160
+
+CMD ["npm", "start"]
