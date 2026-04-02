@@ -122,6 +122,34 @@ fn runQ4K(
     if (!result.success or !result.gpu_utilized) return error.StageDispatchFailed;
 }
 
+fn runQ4KForcedKernel(
+    lib: *metal_shaders.MetalShaderLibrary,
+    x: []const f32,
+    x_buf: metal_bindings.MTLBuffer,
+    weights: []const u8,
+    weight_buf: metal_bindings.MTLBuffer,
+    out: []f32,
+    out_buf: metal_bindings.MTLBuffer,
+    k: usize,
+    n: usize,
+    kernel: metal_shaders.VecMatKernel,
+) !void {
+    zeroFloatBuffer(out_buf, n);
+    const result = metal_shaders.dispatchVecMatMulQ4KForcedKernel(
+        lib,
+        x,
+        weights,
+        weight_buf,
+        out,
+        x_buf,
+        out_buf,
+        k,
+        n,
+        kernel,
+    );
+    if (!result.success or !result.gpu_utilized) return error.StageDispatchFailed;
+}
+
 fn runQ4KPair(
     lib: *metal_shaders.MetalShaderLibrary,
     x: []const f32,
@@ -167,6 +195,27 @@ fn benchmarkQ4KStage(
     try runQ4K(lib, x, x_buf, weights, weight_buf, out, out_buf, k, n);
     const start = std.time.nanoTimestamp();
     for (0..iterations) |_| try runQ4K(lib, x, x_buf, weights, weight_buf, out, out_buf, k, n);
+    const elapsed = std.time.nanoTimestamp() - start;
+    return .{ .label = label, .iterations = iterations, .elapsed_ns = @intCast(@max(elapsed, 0)) };
+}
+
+fn benchmarkQ4KForcedKernelStage(
+    label: []const u8,
+    lib: *metal_shaders.MetalShaderLibrary,
+    x: []const f32,
+    x_buf: metal_bindings.MTLBuffer,
+    weights: []const u8,
+    weight_buf: metal_bindings.MTLBuffer,
+    out: []f32,
+    out_buf: metal_bindings.MTLBuffer,
+    k: usize,
+    n: usize,
+    iterations: usize,
+    kernel: metal_shaders.VecMatKernel,
+) !BenchResult {
+    try runQ4KForcedKernel(lib, x, x_buf, weights, weight_buf, out, out_buf, k, n, kernel);
+    const start = std.time.nanoTimestamp();
+    for (0..iterations) |_| try runQ4KForcedKernel(lib, x, x_buf, weights, weight_buf, out, out_buf, k, n, kernel);
     const elapsed = std.time.nanoTimestamp() - start;
     return .{ .label = label, .iterations = iterations, .elapsed_ns = @intCast(@max(elapsed, 0)) };
 }
@@ -341,11 +390,25 @@ pub fn main() !void {
         vocab,
         lm_iterations,
     );
+    const lm_head_pair = try benchmarkQ4KForcedKernelStage(
+        "lm-head-q4k-pair",
+        lib,
+        x_dim,
+        x_dim_buf,
+        lm_head_weights,
+        lm_head_buf,
+        lm_head_out,
+        lm_head_out_buf,
+        dim,
+        vocab,
+        lm_iterations,
+        .q4_k_pair,
+    );
 
     std.debug.print("Decode Hot-Stage Microbenchmark\n", .{});
     std.debug.print("dim={} ff={} vocab={} base_iterations={}\n", .{ dim, ff, vocab, base_iterations });
     std.debug.print("weights use synthetic zeroed Q4_K matrices for stable shape timing.\n\n", .{});
-    inline for (.{ shortconv_in, shortconv_out, gate_up_pair, ffn_down, lm_head }) |result| {
+    inline for (.{ shortconv_in, shortconv_out, gate_up_pair, ffn_down, lm_head, lm_head_pair }) |result| {
         std.debug.print("  {s:<18} {d:>8.3} ms/call  {d:>9.1} calls/s  (iters={})\n", .{
             result.label,
             result.avgMs(),

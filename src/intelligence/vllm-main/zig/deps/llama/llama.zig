@@ -4466,6 +4466,46 @@ pub const Model = struct {
         self.vecMatMulF16WRuntime(out, x, weights_f16, k, n);
     }
 
+    fn useLmHeadPairKernel(vocab: usize) bool {
+        if (std.posix.getenv("PLLM_ENABLE_LM_HEAD_PAIR_KERNEL")) |raw| {
+            if (raw.len == 1 and raw[0] == '1') return vocab >= 64;
+        }
+        return false;
+    }
+
+    fn vecMatMulLmHeadRuntime(
+        self: *Model,
+        out: []f32,
+        x: []const f32,
+        weights_f16: []const f16,
+        weights_quant: *const QuantizedWeightMatrix,
+        k: usize,
+        n: usize,
+    ) void {
+        if (out.len < n or x.len < k) return;
+
+        if (weights_quant.dtype == .q4_k and useLmHeadPairKernel(n)) {
+            if (self.metal_lib) |lib| {
+                const weight_buf = self.getOrCreateMetalQuantBuffer(weights_quant);
+                const result = metal_shaders.dispatchVecMatMulQ4KForcedKernel(
+                    lib,
+                    x[0..k],
+                    weights_quant.data,
+                    weight_buf,
+                    out[0..n],
+                    self.metalBufferForSlice(x[0..k]),
+                    self.metalBufferForSlice(out[0..n]),
+                    k,
+                    n,
+                    .q4_k_pair,
+                );
+                if (result.success) return;
+            }
+        }
+
+        self.vecMatMulRuntime(out, x, weights_f16, weights_quant, k, n);
+    }
+
     pub fn deinit(self: *Model) void {
         const hidden_on_metal = self.metal_hidden_buf != null;
         const norm_on_metal = self.metal_norm_buf != null;
@@ -5058,7 +5098,7 @@ pub const Model = struct {
             self.applyLayerNormRuntime(self.norm_buf[0..dim], self.hidden_buf[0..dim], weights.final_norm, use_accel);
             self.profileAdd(&self.profile_stats.logits_norm_ns, logits_norm_start);
             const logits_head_start = self.profileStart();
-            self.vecMatMulRuntime(self.logits_buf[0..vocab], self.norm_buf[0..dim], weights.lm_head, &weights.lm_head_quant, dim, vocab);
+            self.vecMatMulLmHeadRuntime(self.logits_buf[0..vocab], self.norm_buf[0..dim], weights.lm_head, &weights.lm_head_quant, dim, vocab);
             sanitizeNonFiniteInPlace(self.logits_buf[0..vocab]);
             self.profileAdd(&self.profile_stats.logits_head_ns, logits_head_start);
             self.profileAdd(&self.profile_stats.logits_ns, logits_start);

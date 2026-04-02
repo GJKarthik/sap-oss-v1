@@ -720,14 +720,108 @@ fn useQ4KRows2Kernel(k: usize, n: usize) bool {
 }
 
 fn useQ4KPairKernel(k: usize, n: usize) bool {
+    _ = n;
     if (std.posix.getenv("PLLM_DISABLE_Q4K_PAIR_KERNEL")) |raw| {
         if (raw.len == 1 and raw[0] == '1') return false;
     }
     if (std.posix.getenv("PLLM_ENABLE_Q4K_PAIR_KERNEL")) |raw| {
         if (raw.len == 1 and raw[0] == '1') return k % 64 == 0 and k >= 64;
     }
-    if (n < 16384) return false;
-    return k % 64 == 0 and k >= 64;
+    return false;
+}
+
+fn dispatchVecMatMulQ4KKernel(
+    lib: *MetalShaderLibrary,
+    x: []const f32,
+    w: []const u8,
+    w_mtl: ?*anyopaque,
+    out: []f32,
+    x_mtl: ?*anyopaque,
+    out_mtl: ?*anyopaque,
+    k: usize,
+    n: usize,
+    kernel: VecMatKernel,
+) DispatchResult {
+    const start = std.time.nanoTimestamp();
+    if (n == 0 or out.len == 0) return DispatchResult.ok(0, 0, false);
+
+    if (lib.isReady()) gpu_dispatch: {
+        _ = w;
+        const weight_buf = w_mtl orelse break :gpu_dispatch;
+        const queue = lib.command_queue orelse break :gpu_dispatch;
+        var pool = &(lib.buffer_pool orelse break :gpu_dispatch);
+
+        const x_bytes = std.mem.sliceAsBytes(x);
+        const out_size = out.len * @sizeOf(f32);
+
+        const buf_x = x_mtl orelse blk: {
+            const uploaded = acquireUploadBuffer(pool, x_bytes) orelse break :gpu_dispatch;
+            break :blk uploaded;
+        };
+        defer if (x_mtl == null) pool.release(buf_x, x_bytes.len);
+
+        const buf_out = out_mtl orelse blk: {
+            const acquired = pool.acquire(out_size) orelse break :gpu_dispatch;
+            break :blk acquired;
+        };
+        defer if (out_mtl == null) pool.release(buf_out, out_size);
+
+        const pipeline = vecMatPipeline(lib, kernel) orelse break :gpu_dispatch;
+
+        const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse break :gpu_dispatch;
+        defer metal_bindings.release(cmd_buffer);
+        const encoder = metal_bindings.createComputeCommandEncoder(cmd_buffer) orelse break :gpu_dispatch;
+        defer metal_bindings.release(encoder);
+
+        metal_bindings.setComputePipelineState(encoder, pipeline);
+        metal_bindings.setBuffer(encoder, buf_x, 0, 0);
+        metal_bindings.setBuffer(encoder, weight_buf, 0, 1);
+        metal_bindings.setBuffer(encoder, buf_out, 0, 2);
+
+        var k_val: u32 = @intCast(k);
+        var n_val: u32 = @intCast(n);
+        metal_bindings.setBytes(encoder, @ptrCast(&k_val), @sizeOf(u32), 3);
+        metal_bindings.setBytes(encoder, @ptrCast(&n_val), @sizeOf(u32), 4);
+
+        const geometry = dispatchVecMatGeometry(kernel, n);
+        metal_bindings.dispatchThreadgroups(encoder, geometry.grid, geometry.threadgroup);
+        metal_bindings.endEncoding(encoder);
+        metal_bindings.commitCommandBuffer(cmd_buffer);
+        metal_bindings.waitUntilCompleted(cmd_buffer);
+
+        if (out_mtl == null) {
+            if (metal_bindings.getBufferContents(buf_out)) |contents| {
+                const result_ptr: [*]f32 = @ptrCast(@alignCast(contents));
+                @memcpy(out, result_ptr[0..out.len]);
+            } else {
+                break :gpu_dispatch;
+            }
+        } else if (metal_bindings.getBufferContents(buf_out)) |_| {
+            // Results are already visible through the shared output buffer.
+        } else {
+            break :gpu_dispatch;
+        }
+
+        const elapsed = std.time.nanoTimestamp() - start;
+        return DispatchResult.ok(elapsed, n, true);
+    }
+
+    return DispatchResult.err("Metal vecmat_q4_k unavailable");
+}
+
+pub fn dispatchVecMatMulQ4KForcedKernel(
+    lib: *MetalShaderLibrary,
+    x: []const f32,
+    w: []const u8,
+    w_mtl: ?*anyopaque,
+    out: []f32,
+    x_mtl: ?*anyopaque,
+    out_mtl: ?*anyopaque,
+    k: usize,
+    n: usize,
+    kernel: VecMatKernel,
+) DispatchResult {
+    return dispatchVecMatMulQ4KKernel(lib, x, w, w_mtl, out, x_mtl, out_mtl, k, n, kernel);
 }
 
 pub fn dispatchVectorAdd(
@@ -1052,77 +1146,13 @@ pub fn dispatchVecMatMulQ4K(
     k: usize,
     n: usize,
 ) DispatchResult {
-    const start = std.time.nanoTimestamp();
-    if (n == 0 or out.len == 0) return DispatchResult.ok(0, 0, false);
     const kernel: VecMatKernel = if (useQ4KRows2Kernel(k, n))
         .q4_k_rows2
     else if (useQ4KPairKernel(k, n))
         .q4_k_pair
     else
         .q4_k;
-
-    if (lib.isReady()) gpu_dispatch: {
-        _ = w;
-        const weight_buf = w_mtl orelse break :gpu_dispatch;
-        const queue = lib.command_queue orelse break :gpu_dispatch;
-        var pool = &(lib.buffer_pool orelse break :gpu_dispatch);
-
-        const x_bytes = std.mem.sliceAsBytes(x);
-        const out_size = out.len * @sizeOf(f32);
-
-        const buf_x = x_mtl orelse blk: {
-            const uploaded = acquireUploadBuffer(pool, x_bytes) orelse break :gpu_dispatch;
-            break :blk uploaded;
-        };
-        defer if (x_mtl == null) pool.release(buf_x, x_bytes.len);
-
-        const buf_out = out_mtl orelse blk: {
-            const acquired = pool.acquire(out_size) orelse break :gpu_dispatch;
-            break :blk acquired;
-        };
-        defer if (out_mtl == null) pool.release(buf_out, out_size);
-
-        const pipeline = vecMatPipeline(lib, kernel) orelse break :gpu_dispatch;
-
-        const cmd_buffer = metal_bindings.createCommandBuffer(queue) orelse break :gpu_dispatch;
-        defer metal_bindings.release(cmd_buffer);
-        const encoder = metal_bindings.createComputeCommandEncoder(cmd_buffer) orelse break :gpu_dispatch;
-        defer metal_bindings.release(encoder);
-
-        metal_bindings.setComputePipelineState(encoder, pipeline);
-        metal_bindings.setBuffer(encoder, buf_x, 0, 0);
-        metal_bindings.setBuffer(encoder, weight_buf, 0, 1);
-        metal_bindings.setBuffer(encoder, buf_out, 0, 2);
-
-        var k_val: u32 = @intCast(k);
-        var n_val: u32 = @intCast(n);
-        metal_bindings.setBytes(encoder, @ptrCast(&k_val), @sizeOf(u32), 3);
-        metal_bindings.setBytes(encoder, @ptrCast(&n_val), @sizeOf(u32), 4);
-
-        const geometry = dispatchVecMatGeometry(kernel, n);
-        metal_bindings.dispatchThreadgroups(encoder, geometry.grid, geometry.threadgroup);
-        metal_bindings.endEncoding(encoder);
-        metal_bindings.commitCommandBuffer(cmd_buffer);
-        metal_bindings.waitUntilCompleted(cmd_buffer);
-
-        if (out_mtl == null) {
-            if (metal_bindings.getBufferContents(buf_out)) |contents| {
-                const result_ptr: [*]f32 = @ptrCast(@alignCast(contents));
-                @memcpy(out, result_ptr[0..out.len]);
-            } else {
-                break :gpu_dispatch;
-            }
-        } else if (metal_bindings.getBufferContents(buf_out)) |_| {
-            // Results are already visible through the shared output buffer.
-        } else {
-            break :gpu_dispatch;
-        }
-
-        const elapsed = std.time.nanoTimestamp() - start;
-        return DispatchResult.ok(elapsed, n, true);
-    }
-
-    return DispatchResult.err("Metal vecmat_q4_k unavailable");
+    return dispatchVecMatMulQ4KKernel(lib, x, w, w_mtl, out, x_mtl, out_mtl, k, n, kernel);
 }
 
 pub fn dispatchVecMatMulQ4KAdd(
