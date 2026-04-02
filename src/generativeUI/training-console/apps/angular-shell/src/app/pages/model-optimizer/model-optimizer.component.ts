@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
@@ -63,62 +65,67 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent],
+  imports: [CommonModule, ReactiveFormsModule, Ui5WebcomponentsModule, JobDetailComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Model Optimizer</h1>
-        <button class="btn-primary" (click)="loadData()">↻ Refresh</button>
+        <ui5-title level="H3">Model Optimizer</ui5-title>
+        <ui5-button design="Transparent" icon="refresh" (click)="loadData()">Refresh</ui5-button>
       </div>
 
       <!-- Engine & Dataset -->
-      <h2 class="section-title">Engine Configuration</h2>
-      <div class="card grid-2" style="margin-bottom: 1.5rem;">
-        <div class="form-group">
-          <label>Training Framework</label>
-          <select [formControl]="frameworkControl" class="form-input">
-            <option value="PyTorch">PyTorch Native (SFTTrainer)</option>
-            <option value="TensorFlow" disabled>TensorFlow (Coming Soon)</option>
-          </select>
+      <ui5-title level="H5" style="margin-bottom: 0.75rem;">Engine Configuration</ui5-title>
+      <ui5-card style="margin-bottom: 1.5rem;">
+        <div style="padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label>Training Framework</label>
+            <ui5-select [formControl]="frameworkControl" style="width: 100%;">
+              <ui5-option value="PyTorch">PyTorch Native (SFTTrainer)</ui5-option>
+              <ui5-option value="TensorFlow" disabled>TensorFlow (Coming Soon)</ui5-option>
+            </ui5-select>
+          </div>
+          <div class="form-group">
+            <label>Dataset Split</label>
+            <ui5-select [formControl]="datasetControl" style="width: 100%;">
+              <ui5-option value="spider-train">Spider Training Split (Text-to-SQL)</ui5-option>
+              <ui5-option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</ui5-option>
+            </ui5-select>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Dataset Split</label>
-          <select [formControl]="datasetControl" class="form-input">
-            <option value="spider-train">Spider Training Split (Text-to-SQL)</option>
-            <option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</option>
-          </select>
-        </div>
-      </div>
+      </ui5-card>
 
       <!-- Mangle Data Validation -->
-      <h2 class="section-title">Datalog Validation Pre-Flight</h2>
-      <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-left: 4px solid var(--sapBrandColor);">
-        <div>
-          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
-          @if (mangleStatus() === 'passed') {
-            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">✓ All 48 Invariants Passed</span>
-          } @else if (mangleStatus() === 'failed') {
-            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">⚠ Datalog Violation Detected</span>
-          } @else {
-            <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
-          }
+      <ui5-title level="H5" style="margin-bottom: 0.75rem;">Datalog Validation Pre-Flight</ui5-title>
+      <ui5-card style="margin-bottom: 2rem;">
+        <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--sapBrandColor);">
+          <div>
+            <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
+            @if (mangleStatus() === 'passed') {
+              <ui5-tag design="Positive">✓ All 48 Invariants Passed</ui5-tag>
+            } @else if (mangleStatus() === 'failed') {
+              <ui5-tag design="Negative">⚠ Datalog Violation Detected</ui5-tag>
+            } @else {
+              <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
+            }
+          </div>
+          <ui5-button design="Default" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
+            {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
+          </ui5-button>
         </div>
-        <button type="button" class="btn-secondary" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
-          {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
-        </button>
-      </div>
+      </ui5-card>
 
       <!-- Model Catalog -->
       <section class="section">
-        <h2 class="section-title">Model Catalog</h2>
+        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Model Catalog</ui5-title>
         <div class="model-grid">
           @for (m of models(); track m.name) {
-            <div
+            <ui5-card
               class="model-card"
               [class.model-card--selected]="jobForm.value.model_name === m.name"
               [class.model-card--recommended]="m.recommended_quant === 'int4_awq'"
+              interactive
               (click)="selectModel(m)"
             >
               @if (m.recommended_quant === 'int4_awq') {
@@ -127,25 +134,25 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               <div class="model-card-body">
                 <div class="model-name-row">
                   <div class="model-name">{{ m.name.split('/').pop() }}</div>
-                  <span class="size-indicator size-{{ getModelSize(m) }}">{{ getModelSize(m) }}</span>
+                  <ui5-tag class="size-indicator size-{{ getModelSize(m) }}" design="Set2">{{ getModelSize(m) }}</ui5-tag>
                 </div>
                 <div class="model-org text-small text-muted">{{ m.name.includes('/') ? m.name.split('/')[0] : 'community' }}</div>
                 <div class="model-meta">
-                  <span class="badge badge--param">{{ m.parameters }}</span>
-                  <span class="badge">{{ m.size_gb }} GB</span>
-                  <span class="badge badge--quant">{{ m.recommended_quant }}</span>
+                  <ui5-tag design="Set2">{{ m.parameters }}</ui5-tag>
+                  <ui5-tag design="Set2">{{ m.size_gb }} GB</ui5-tag>
+                  <ui5-tag design="Set2">{{ m.recommended_quant }}</ui5-tag>
                 </div>
                 <div class="model-arch-tags">
-                  <span class="arch-pill">Transformer</span>
-                  <span class="arch-pill">Causal LM</span>
+                  <ui5-tag design="Set2">Transformer</ui5-tag>
+                  <ui5-tag design="Set2">Causal LM</ui5-tag>
                   @if (m.t4_compatible) {
-                    <span class="arch-pill arch-pill--compat">T4 ✓</span>
+                    <ui5-tag design="Positive">T4 ✓</ui5-tag>
                   } @else {
-                    <span class="arch-pill arch-pill--warn">T4 ✗</span>
+                    <ui5-tag design="Critical">T4 ✗</ui5-tag>
                   }
                 </div>
               </div>
-            </div>
+            </ui5-card>
           }
         </div>
         @if (!models().length && !loading()) {
@@ -155,7 +162,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       <!-- Create Job Form -->
       <section class="section">
-        <h2 class="section-title">Create Optimization Job</h2>
+        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Create Optimization Job</ui5-title>
         <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()">
           
           <!-- Novice Mode -->
@@ -301,117 +308,106 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           }
 
           <div class="form-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
+            <ui5-button type="Submit" design="Emphasized" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
               {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
-            </button>
+            </ui5-button>
           </div>
         </form>
       </section>
 
       <!-- Jobs Table -->
       <section class="section">
-        <h2 class="section-title">Jobs <span class="jobs-count">{{ jobs().length }}</span></h2>
+        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Jobs <span class="jobs-count">{{ jobs().length }}</span></ui5-title>
         @if (jobs().length) {
           <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Model</th>
-                  <th>Quant</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (j of jobs(); track j.id) {
-                  <ng-container>
-                    <tr class="job-row" (click)="toggleExpand(j.id)" [class.expanded]="expandedJobId() === j.id">
-                      <td class="mono text-small" style="cursor: pointer;">
-                        <span class="expand-icon" [class.expand-icon--open]="expandedJobId() === j.id">▶</span>
-                        {{ j.id.slice(0,8) }}
-                      </td>
-                      <td class="job-name-cell">{{ j.name }}</td>
-                      <td class="text-small">{{ j.config.model_name }}</td>
-                      <td><code class="quant-code">{{ j.config.quant_format }}</code></td>
-                      <td>
-                        <span class="status-badge-v2 status-{{ j.status }}">
-                          <span class="status-dot"></span>
-                          {{ j.status }}
-                        </span>
-                      </td>
-                      <td style="min-width: 160px;">
-                        <div class="progress-info">
-                          <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
-                          <span class="text-small text-muted">{{ calculateETA(j) }}</span>
-                        </div>
-                        <div class="job-progress-bar">
-                          <div class="job-progress-fill"
-                               [style.width.%]="j.progress * 100"
-                               [class.job-progress--running]="j.status === 'running'"
-                               [class.job-progress--complete]="j.status === 'completed'">
-                          </div>
-                        </div>
-                        @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
-                          <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
-                            <svg viewBox="0 0 100 24" class="sparkline-svg" preserveAspectRatio="none">
-                              <defs>
-                                <linearGradient [attr.id]="'sparkGrad-' + j.id" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stop-color="rgba(8,84,160,0.2)" />
-                                  <stop offset="100%" stop-color="rgba(8,84,160,0)" />
-                                </linearGradient>
-                              </defs>
-                              <path [attr.d]="generateSparklineArea(j.history, 'train_loss')" [attr.fill]="'url(#sparkGrad-' + j.id + ')'" />
-                              <path [attr.d]="generateSparklineCurve(j.history, 'train_loss')" fill="none" class="train-line" />
-                              <path [attr.d]="generateSparklineCurve(j.history, 'val_loss')" fill="none" class="val-line" />
-                            </svg>
-                          </div>
-                        }
-                        @if (j.evaluation) {
-                          <div class="eval-metrics mt-1">
-                            <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
-                            <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
-                            <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
-                          </div>
-                        }
-                      </td>
-                      <td class="actions-cell" (click)="$event.stopPropagation()">
-                        <span class="text-small text-muted">{{ j.created_at | date:'short' }}</span>
-                        @if (j.status === 'completed') {
-                          <div class="action-buttons">
-                            @if (!j.deployed) {
-                              <button class="btn-deploy" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                                {{ deployingJob() === j.id ? '⏳ Deploying...' : '🚀 Deploy' }}
-                              </button>
-                            } @else {
-                              <button class="btn-chat" (click)="openChat(j)">
-                                💬 Chat
-                              </button>
-                            }
-                          </div>
-                        }
-                        @if (j.status === 'running') {
-                          <div class="action-buttons">
-                            <span class="running-indicator">● Running</span>
-                          </div>
-                        }
-                      </td>
-                    </tr>
-                    @if (expandedJobId() === j.id) {
-                      <tr class="detail-row">
-                        <td colspan="7" class="detail-cell">
-                          <div class="detail-expand-wrapper">
-                            <app-job-detail [job]="j"></app-job-detail>
-                          </div>
-                        </td>
-                      </tr>
+            <ui5-table>
+              <ui5-table-header-row slot="headerRow">
+                <ui5-table-header-cell>ID</ui5-table-header-cell>
+                <ui5-table-header-cell>Name</ui5-table-header-cell>
+                <ui5-table-header-cell>Model</ui5-table-header-cell>
+                <ui5-table-header-cell>Quant</ui5-table-header-cell>
+                <ui5-table-header-cell>Status</ui5-table-header-cell>
+                <ui5-table-header-cell>Progress</ui5-table-header-cell>
+                <ui5-table-header-cell>Actions</ui5-table-header-cell>
+              </ui5-table-header-row>
+              @for (j of jobs(); track j.id) {
+                <ui5-table-row class="job-row" (click)="toggleExpand(j.id)">
+                  <ui5-table-cell>
+                    <span class="expand-icon" [class.expand-icon--open]="expandedJobId() === j.id">▶</span>
+                    <code>{{ j.id.slice(0,8) }}</code>
+                  </ui5-table-cell>
+                  <ui5-table-cell>{{ j.name }}</ui5-table-cell>
+                  <ui5-table-cell>{{ j.config.model_name }}</ui5-table-cell>
+                  <ui5-table-cell><ui5-tag design="Set2">{{ j.config.quant_format }}</ui5-tag></ui5-table-cell>
+                  <ui5-table-cell>
+                    <ui5-tag [design]="j.status === 'completed' ? 'Positive' : j.status === 'failed' ? 'Negative' : j.status === 'running' ? 'Information' : 'Set2'">
+                      {{ j.status }}
+                    </ui5-tag>
+                  </ui5-table-cell>
+                  <ui5-table-cell style="min-width: 160px;">
+                    <div class="progress-info">
+                      <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
+                      <span class="text-small text-muted">{{ calculateETA(j) }}</span>
+                    </div>
+                    <ui5-progress-indicator [value]="j.progress * 100"
+                      [valueState]="j.status === 'completed' ? 'Positive' : j.status === 'failed' ? 'Negative' : 'Information'"
+                      style="width: 100%;"></ui5-progress-indicator>
+                    @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
+                      <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
+                        <svg viewBox="0 0 100 24" class="sparkline-svg" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient [attr.id]="'sparkGrad-' + j.id" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stop-color="rgba(8,84,160,0.2)" />
+                              <stop offset="100%" stop-color="rgba(8,84,160,0)" />
+                            </linearGradient>
+                          </defs>
+                          <path [attr.d]="generateSparklineArea(j.history, 'train_loss')" [attr.fill]="'url(#sparkGrad-' + j.id + ')'" />
+                          <path [attr.d]="generateSparklineCurve(j.history, 'train_loss')" fill="none" class="train-line" />
+                          <path [attr.d]="generateSparklineCurve(j.history, 'val_loss')" fill="none" class="val-line" />
+                        </svg>
+                      </div>
                     }
-                  </ng-container>
+                    @if (j.evaluation) {
+                      <div class="eval-metrics mt-1">
+                        <ui5-tag design="Positive">PPL: {{ j.evaluation.perplexity }}</ui5-tag>
+                        <ui5-tag design="Set2">Loss: {{ j.evaluation.eval_loss }}</ui5-tag>
+                        <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
+                      </div>
+                    }
+                  </ui5-table-cell>
+                  <ui5-table-cell class="actions-cell" (click)="$event.stopPropagation()">
+                    <span class="text-small text-muted">{{ j.created_at | date:'short' }}</span>
+                    @if (j.status === 'completed') {
+                      <div class="action-buttons">
+                        @if (!j.deployed) {
+                          <ui5-button design="Emphasized" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
+                            {{ deployingJob() === j.id ? '⏳ Deploying...' : '🚀 Deploy' }}
+                          </ui5-button>
+                        } @else {
+                          <ui5-button design="Transparent" (click)="openChat(j)">
+                            💬 Chat
+                          </ui5-button>
+                        }
+                      </div>
+                    }
+                    @if (j.status === 'running') {
+                      <div class="action-buttons">
+                        <span class="running-indicator">● Running</span>
+                      </div>
+                    }
+                  </ui5-table-cell>
+                </ui5-table-row>
+                @if (expandedJobId() === j.id) {
+                  <ui5-table-row class="detail-row">
+                    <ui5-table-cell colspan="7" class="detail-cell">
+                      <div class="detail-expand-wrapper">
+                        <app-job-detail [job]="j"></app-job-detail>
+                      </div>
+                    </ui5-table-cell>
+                  </ui5-table-row>
                 }
-              </tbody>
-            </table>
+              }
+            </ui5-table>
           </div>
         }
         @if (!jobs().length && !loading()) {
@@ -421,7 +417,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       @if (loading()) {
         <div class="loading-container">
-          <span class="loading-text">Loading…</span>
+          <ui5-busy-indicator active size="L" style="width: 100%; min-height: 100px;"></ui5-busy-indicator>
         </div>
       }
 
@@ -430,8 +426,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
         <div class="modal-overlay" (click)="closeChat()">
           <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h3 style="margin: 0; font-size: 1rem;">💬 Playground: {{ chatJob.config.model_name }}</h3>
-              <button class="close-btn" (click)="closeChat()">✕</button>
+              <ui5-title level="H5">💬 Playground: {{ chatJob.config.model_name }}</ui5-title>
+              <ui5-button design="Transparent" icon="decline" (click)="closeChat()"></ui5-button>
             </div>
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
@@ -442,13 +438,14 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               }
               @if (chatLoading()) {
                 <div class="chat-bubble loading">
+                  <ui5-busy-indicator active size="S"></ui5-busy-indicator>
                   <em style="font-size: 0.875rem; color: #666;">Model is computing tensors...</em>
                 </div>
               }
             </div>
             <div class="chat-input-area">
-              <input type="text" [formControl]="chatInput" class="form-input" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()" />
-              <button class="btn-primary" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</button>
+              <ui5-input [formControl]="chatInput" style="flex: 1;" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()"></ui5-input>
+              <ui5-button design="Emphasized" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</ui5-button>
             </div>
           </div>
         </div>

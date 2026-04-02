@@ -3,6 +3,8 @@ import {
   signal, inject, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, NgZone, Input
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
@@ -24,69 +26,71 @@ interface LogLine { text: string; kind: 'info' | 'success' | 'error' | 'warn' | 
 @Component({
   selector: 'app-job-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="job-detail-panel">
-      <!-- Header -->
-      <div class="detail-header">
-        <div class="detail-meta">
-          <code class="job-id">{{ job.id.slice(0, 8) }}</code>
-          <span class="badge badge-{{ job.status }}">
-            <span class="badge-dot"></span>
-            {{ job.status }}
-          </span>
-          <span class="detail-model">{{ job.config['model_name'] }}</span>
-        </div>
-        <div class="ws-indicator" [class.live]="wsConnected()">
-          <span class="ws-dot"></span>
-          {{ wsConnected() ? 'Live' : 'Offline' }}
-        </div>
-      </div>
-
-      <!-- Progress -->
-      <div class="progress-row">
-        <div class="progress-bar">
-          <div class="progress-fill" [style.width]="liveProgress() + '%'"
-               [class.animated]="liveStatus() === 'running'"
-               [class.complete]="liveStatus() === 'completed'"></div>
-        </div>
-        <span class="progress-pct">{{ liveProgress().toFixed(0) }}%</span>
-      </div>
-
-      <!-- Loss Chart Canvas -->
-      <div class="chart-section">
-        <div class="chart-header">
-          <span class="chart-title">📉 Training Loss Curve</span>
-          @if (liveEval()) {
-            <div class="eval-badges">
-              <span class="eval-badge eval-badge--ppl">PPL {{ liveEval()!.perplexity }}</span>
-              <span class="eval-badge">Loss {{ liveEval()!.eval_loss }}</span>
-              <span class="eval-runtime">{{ liveEval()!.runtime_sec }}s</span>
-            </div>
-          }
-        </div>
-        <canvas #chartCanvas class="loss-canvas" width="600" height="200"></canvas>
-      </div>
-
-      <!-- Live Terminal -->
-      @if (logLines().length > 0) {
-        <div class="terminal">
-          <div class="terminal-head">
-            <span class="terminal-dot"></span>
-            <span class="terminal-dot terminal-dot--yellow"></span>
-            <span class="terminal-dot terminal-dot--green"></span>
-            <span class="terminal-title">Log Stream</span>
+    <ui5-card class="job-detail-panel">
+      <ui5-card-header slot="header"
+        [titleText]="job.id.slice(0, 8)"
+        [subtitleText]="job.config['model_name'] ? '' + job.config['model_name'] : ''">
+      </ui5-card-header>
+      <div style="padding: 1.25rem;">
+        <!-- Header -->
+        <div class="detail-header">
+          <div class="detail-meta">
+            <code class="job-id">{{ job.id.slice(0, 8) }}</code>
+            <ui5-tag [design]="job.status === 'completed' ? 'Positive' : job.status === 'failed' ? 'Negative' : job.status === 'running' ? 'Information' : 'Set2'">
+              {{ job.status }}
+            </ui5-tag>
+            <span class="detail-model">{{ job.config['model_name'] }}</span>
           </div>
-          <div class="terminal-body" #logBody>
-            @for (l of logLines(); track $index) {
-              <div class="log line-{{ l.kind }}">{{ l.text }}</div>
+          <ui5-tag [design]="wsConnected() ? 'Positive' : 'Set2'">
+            {{ wsConnected() ? 'Live' : 'Offline' }}
+          </ui5-tag>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-row">
+          <ui5-progress-indicator [value]="liveProgress()"
+            [valueState]="liveStatus() === 'completed' ? 'Positive' : liveStatus() === 'failed' ? 'Negative' : 'Information'"
+            style="flex: 1;"></ui5-progress-indicator>
+          <span class="progress-pct">{{ liveProgress().toFixed(0) }}%</span>
+        </div>
+
+        <!-- Loss Chart Canvas -->
+        <ui5-card style="margin-bottom: 1rem;">
+          <ui5-card-header slot="header" title-text="📉 Training Loss Curve"></ui5-card-header>
+          <div style="padding: 0.5rem;">
+            @if (liveEval()) {
+              <div class="eval-badges" style="padding: 0 0.5rem 0.5rem;">
+                <ui5-tag design="Information">PPL {{ liveEval()!.perplexity }}</ui5-tag>
+                <ui5-tag design="Set2">Loss {{ liveEval()!.eval_loss }}</ui5-tag>
+                <span class="eval-runtime">{{ liveEval()!.runtime_sec }}s</span>
+              </div>
             }
+            <canvas #chartCanvas class="loss-canvas" width="600" height="200"></canvas>
           </div>
-        </div>
-      }
-    </div>
+        </ui5-card>
+
+        <!-- Live Terminal -->
+        @if (logLines().length > 0) {
+          <div class="terminal">
+            <div class="terminal-head">
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot terminal-dot--yellow"></span>
+              <span class="terminal-dot terminal-dot--green"></span>
+              <span class="terminal-title">Log Stream</span>
+            </div>
+            <div class="terminal-body" #logBody>
+              @for (l of logLines(); track $index) {
+                <div class="log line-{{ l.kind }}">{{ l.text }}</div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </ui5-card>
   `,
   styles: [`
     .job-detail-panel {
