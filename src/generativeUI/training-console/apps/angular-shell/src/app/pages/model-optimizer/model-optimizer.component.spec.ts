@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { ModelOptimizerComponent } from './model-optimizer.component';
 import { UserSettingsService, UserMode } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
-import { signal } from '@angular/core';
 
 describe('ModelOptimizerComponent', () => {
   let component: ModelOptimizerComponent;
@@ -43,6 +43,10 @@ describe('ModelOptimizerComponent', () => {
         { provide: ToastService, useValue: mockToast },
       ],
     }).compileComponents();
+
+    TestBed.overrideComponent(ModelOptimizerComponent, {
+      set: { template: '<div></div>', schemas: [CUSTOM_ELEMENTS_SCHEMA] },
+    });
   });
 
   beforeEach(() => {

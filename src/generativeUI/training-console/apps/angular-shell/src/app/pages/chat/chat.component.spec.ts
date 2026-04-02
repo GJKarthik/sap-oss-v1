@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ChatComponent } from './chat.component';
 import { ToastService } from '../../services/toast.service';
 
@@ -30,6 +31,10 @@ describe('ChatComponent', () => {
         { provide: ToastService, useValue: MOCK_TOAST },
       ],
     }).compileComponents();
+
+    TestBed.overrideComponent(ChatComponent, {
+      set: { template: '<div></div>', schemas: [CUSTOM_ELEMENTS_SCHEMA] },
+    });
 
     fixture = TestBed.createComponent(ChatComponent);
     component = fixture.componentInstance;
