@@ -21,7 +21,7 @@ node_modules/
 dist/
 build/
 *.tgz
-**/.angular/cache/
+**/.angular/
 
 # Python
 __pycache__/
@@ -29,6 +29,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+**/.pytest_cache/
 
 # Rust
 target/
@@ -54,15 +55,14 @@ yarn-error.log*
 *.csv
 
 # Embedded git repos
-.claude/worktrees/
+.claude/
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .cursor/rules/snyk_rules.mdc
 src/training/data/massive_semantic/training_data.json
 
 # Nx daemon & workspace cache
-.nx/workspace-data/
-.nx/cache/
+**/.nx/
 
 # Gradle build caches and lock files
 **/.gradle/
@@ -75,3 +75,7 @@ src/training/data/massive_semantic/training_data.json
 # Yarn PnP runtime files
 .pnp.cjs
 .pnp.loader.mjs
+**/.yarn/
+
+# Temp directories
+tmp/

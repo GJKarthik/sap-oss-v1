@@ -9,6 +9,9 @@ import { ToastService } from '../../services/toast.service';
 import '@ui5/webcomponents-fiori/dist/ShellBar.js';
 import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
 import '@ui5/webcomponents/dist/Tag.js';
+import '@ui5/webcomponents/dist/Popover.js';
+import '@ui5/webcomponents/dist/List.js';
+import '@ui5/webcomponents/dist/StandardListItem.js';
 
 interface NavItem {
   label: string;
@@ -56,7 +59,7 @@ interface NavItem {
         show-product-switch
         (logo-click)="navigateTo('/dashboard')"
         (notifications-click)="openNotifications()"
-        (product-switch-click)="openProducts()"
+        (product-switch-click)="openProducts($event)"
       >
         @for (item of navItems; track item.route) {
           <ui5-shellbar-item
@@ -67,6 +70,15 @@ interface NavItem {
           ></ui5-shellbar-item>
         }
       </ui5-shellbar>
+
+      <ui5-popover #productPopover header-text="Product Switcher" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+        <ui5-list (item-click)="onProductSelect($event)">
+          <ui5-li icon="home" data-url="/aifabric/">AI Fabric Console</ui5-li>
+          <ui5-li icon="process" data-url="/training/" selected>Training Console</ui5-li>
+          <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">SAC AI Integration</ui5-li>
+          <ui5-li icon="grid" data-url="/ui5/">Joule AI Playground</ui5-li>
+        </ui5-list>
+      </ui5-popover>
 
       <nav class="app-nav" role="navigation" aria-label="Training navigation">
         @for (item of navItems; track item.route) {
@@ -346,6 +358,7 @@ export class ShellComponent {
   searchQuery = signal('');
   
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
   searchResults = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -443,7 +456,14 @@ export class ShellComponent {
     this.toast.info('No new notifications at the moment.');
   }
 
-  openProducts(): void {
-    this.toast.info('Product switch is available in demo mode.');
+  openProducts(event: any): void {
+    this.productPopover.nativeElement.showAt(event.detail.targetRef);
+  }
+
+  onProductSelect(event: any): void {
+    const url = event.detail.item.getAttribute('data-url');
+    if (url) {
+      window.location.href = url;
+    }
   }
 }

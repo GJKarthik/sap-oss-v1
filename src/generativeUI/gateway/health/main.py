@@ -21,7 +21,7 @@ CHECKS: list[tuple[str, str, bool]] = [
     ("sac_web", env("SAC_WEB_HEALTH_URL", "http://sac-web/health"), False),
     ("ui5_web", env("UI5_WEB_HEALTH_URL", "http://ui5-web/health"), False),
     ("ui5_mcp", env("UI5_MCP_HEALTH_URL", "http://ui5-mcp:9160/health"), False),
-    ("ui5_openai", env("UI5_OPENAI_HEALTH_URL", "http://ui5-openai:8400/health"), False),
+    ("cap_llm_openai", env("CAP_LLM_HEALTH_URL", "http://cap-llm-plugin:8080/health"), False),
     ("ui5_harness", env("UI5_HARNESS_REPORT_URL", "http://ui5-web/health"), False),
 ]
 

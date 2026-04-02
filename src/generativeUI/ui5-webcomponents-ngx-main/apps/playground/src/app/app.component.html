@@ -5,8 +5,10 @@
   <ui5-shellbar
     primary-title="UI5 Web Components NGX"
     secondary-title="Playground"
+    show-product-switch="true"
     [accessibilityAttributes]="shellbarA11y"
-    (logoClick)="navigateTo('/')">
+    (logoClick)="navigateTo('/')"
+    (product-switch-click)="openProducts($event)">
 
     <!-- Nav items (ui5-shellbar-item uses default slot in v2) -->
     <ui5-shellbar-item
@@ -143,6 +145,15 @@
       <ui5-button data-testid="demo-tour-end" design="Transparent" (click)="endDemoTour()">End Tour</ui5-button>
     </div>
   </section>
+
+  <ui5-popover #productPopover header-text="Product Switcher" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+    <ui5-list (item-click)="onProductSelect($event)">
+      <ui5-li icon="home" data-url="/aifabric/">AI Fabric Console</ui5-li>
+      <ui5-li icon="process" data-url="/training/">Training Console</ui5-li>
+      <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">SAC AI Integration</ui5-li>
+      <ui5-li icon="grid" data-url="/ui5/" selected>Joule AI Playground</ui5-li>
+    </ui5-list>
+  </ui5-popover>
 
   <playground-live-health-panel></playground-live-health-panel>
 

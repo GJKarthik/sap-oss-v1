@@ -1,0 +1,17 @@
+.git
+.github
+.cursor
+.idea
+.vscode
+
+node_modules
+dist
+coverage
+.angular
+.nx
+.cache
+
+artifacts
+tmp
+temp
+*.log

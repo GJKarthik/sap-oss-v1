@@ -5,7 +5,7 @@
  * Enhanced with accessibility features and responsive mobile navigation
  */
 
-import { Component, DestroyRef, HostListener, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, inject, ElementRef, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, finalize } from 'rxjs';
@@ -34,8 +34,9 @@ interface NavItem {
       primary-title="SAP AI Fabric Console"
       secondary-title="Enterprise AI Platform"
       [showNotifications]="false"
-      [showProductSwitch]="false"
+      showProductSwitch="true"
       (logo-click)="navigateTo('/dashboard')"
+      (product-switch-click)="openProducts($event)"
       (menu-item-click)="onMenuItemClick($event)"
       role="banner">
       
@@ -63,6 +64,15 @@ interface NavItem {
         interactive>
       </ui5-avatar>
     </ui5-shellbar>
+
+    <ui5-popover #productPopover header-text="Product Switcher" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+      <ui5-list (item-click)="onProductSelect($event)">
+        <ui5-li icon="home" data-url="/aifabric/" selected>AI Fabric Console</ui5-li>
+        <ui5-li icon="process" data-url="/training/">Training Console</ui5-li>
+        <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">SAC AI Integration</ui5-li>
+        <ui5-li icon="grid" data-url="/ui5/">Joule AI Playground</ui5-li>
+      </ui5-list>
+    </ui5-popover>
 
     <!-- Side Navigation -->
     <div class="shell-layout">
@@ -328,6 +338,8 @@ export class ShellComponent implements OnInit {
   isMobile = false;
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown' = 'unknown';
   currentUser = this.authService.getUser();
+
+  @ViewChild('productPopover') productPopover!: ElementRef<any>;
   
   navItems: NavItem[] = [
     { id: 'dashboard', text: 'Dashboard', icon: 'home', route: '/dashboard', description: 'View system overview and statistics' },
@@ -472,5 +484,16 @@ export class ShellComponent implements OnInit {
   onMenuItemClick(event: Event): void {
     // Handle menu item clicks from shellbar if needed
     console.debug('Menu item clicked:', event);
+  }
+
+  openProducts(event: any): void {
+    this.productPopover.nativeElement.showAt(event.detail.targetRef);
+  }
+
+  onProductSelect(event: any): void {
+    const url = event.detail.item.getAttribute('data-url');
+    if (url) {
+      window.location.href = url;
+    }
   }
 }

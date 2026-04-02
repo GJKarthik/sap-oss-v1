@@ -1,43 +1,32 @@
-worker_processes auto;
-
-events {
-  worker_connections 1024;
+upstream health_aggregator {
+  server health-aggregator:8090;
+}
+upstream aifabric_web {
+  server aifabric-web:80;
+}
+upstream training_web {
+  server training-web:80;
+}
+upstream sac_web {
+  server sac-web:80;
+}
+upstream ui5_web {
+  server ui5-web:80;
+}
+upstream ui5_mcp {
+  server ui5-mcp:9160;
+}
+upstream cap_llm_plugin {
+  server cap-llm-plugin:8080;
+}
+upstream aifabric_api {
+  server aifabric-api:8000;
+}
+upstream training_api {
+  server training-api:8000;
 }
 
-http {
-  include /etc/nginx/mime.types;
-  default_type application/octet-stream;
-  sendfile on;
-
-  upstream health_aggregator {
-    server health-aggregator:8090;
-  }
-  upstream aifabric_web {
-    server aifabric-web:80;
-  }
-  upstream training_web {
-    server training-web:80;
-  }
-  upstream sac_web {
-    server sac-web:80;
-  }
-  upstream ui5_web {
-    server ui5-web:80;
-  }
-  upstream ui5_mcp {
-    server ui5-mcp:9160;
-  }
-  upstream ui5_openai {
-    server ui5-openai:8400;
-  }
-  upstream aifabric_api {
-    server aifabric-api:8000;
-  }
-  upstream training_api {
-    server training-api:8000;
-  }
-
-  server {
+server {
     listen 80;
     server_name _;
 
@@ -162,7 +151,7 @@ http {
 
     location /api/v1/ui5/openai/ {
       rewrite ^/api/v1/ui5/openai/(.*)$ /$1 break;
-      proxy_pass http://ui5_openai;
+      proxy_pass http://cap_llm_plugin;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
@@ -197,5 +186,4 @@ http {
       default_type application/json;
       return 400 '{"status":"bad_request","message":"Use /api/v1/ui5/mcp/*, /api/v1/ui5/openai/*, /api/v1/ui5/pal/*, or /api/v1/ui5/es-mcp/*"}';
     }
-  }
 }

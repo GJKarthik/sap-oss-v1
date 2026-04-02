@@ -38,8 +38,8 @@ COPY srv/ ./srv/
 COPY mcp-server/ ./mcp-server/
 COPY mangle/ ./mangle/
 
-# Build if needed
-RUN npm run build --if-present
+# Build only when TypeScript compiler is available in image
+RUN if [ -x node_modules/.bin/tsc ]; then npm run build --if-present; else echo "Skipping build (tsc not installed in production image)"; fi
 
 # Set ownership
 RUN chown -R aicore:aicore /app

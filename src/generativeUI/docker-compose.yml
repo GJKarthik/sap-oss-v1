@@ -10,15 +10,15 @@ services:
       - sac-web
       - ui5-web
       - ui5-mcp
-      - ui5-openai
+      - cap-llm-plugin
     ports:
-      - "8080:80"
+      - "${SUITE_GATEWAY_PORT:-8080}:80"
     environment:
       AI_CORE_PAL_UPSTREAM: ${AI_CORE_PAL_UPSTREAM:-http://ui5-mcp:9160}
       ES_MCP_UPSTREAM: ${ES_MCP_UPSTREAM:-http://ui5-mcp:9160}
       ES_MCP_API_KEY: ${ES_MCP_API_KEY:-}
     volumes:
-      - ./gateway/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./gateway/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
     restart: unless-stopped
 
   health-aggregator:
@@ -33,7 +33,7 @@ services:
       SAC_WEB_HEALTH_URL: http://sac-web/health
       UI5_WEB_HEALTH_URL: http://ui5-web/health
       UI5_MCP_HEALTH_URL: http://ui5-mcp:9160/health
-      UI5_OPENAI_HEALTH_URL: http://ui5-openai:8400/health
+      CAP_LLM_HEALTH_URL: http://cap-llm-plugin:8080/health
       AI_CORE_PAL_HEALTH_URL: ${AI_CORE_PAL_HEALTH_URL:-}
       ES_MCP_HEALTH_URL: ${ES_MCP_HEALTH_URL:-}
       UI5_HARNESS_REPORT_URL: http://ui5-web/health
@@ -93,7 +93,7 @@ services:
       dockerfile: Dockerfile.suite-web
     depends_on:
       - ui5-mcp
-      - ui5-openai
+      - cap-llm-plugin
     restart: unless-stopped
 
   ui5-mcp:
@@ -107,21 +107,19 @@ services:
       - "9160:9160"
     restart: unless-stopped
 
-  ui5-openai:
+  cap-llm-plugin:
     build:
-      context: ./ui5-webcomponents-ngx-main
-      dockerfile: libs/openai-server/Dockerfile.suite
+      context: ../data/cap-llm-plugin-main
+      dockerfile: deploy/aicore/Dockerfile
     environment:
-      OPENAI_ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
-      PORT: 8400
+      PORT: 8080
       AICORE_CLIENT_ID: ${AICORE_CLIENT_ID:-}
       AICORE_CLIENT_SECRET: ${AICORE_CLIENT_SECRET:-}
       AICORE_AUTH_URL: ${AICORE_AUTH_URL:-}
       AICORE_BASE_URL: ${AICORE_BASE_URL:-}
       AICORE_RESOURCE_GROUP: ${AICORE_RESOURCE_GROUP:-default}
-      AICORE_CHAT_DEPLOYMENT_ID: ${AICORE_CHAT_DEPLOYMENT_ID:-}
-      AICORE_EMBEDDING_DEPLOYMENT_ID: ${AICORE_EMBEDDING_DEPLOYMENT_ID:-}
-      OPENAI_INTERNAL_TOKEN: ${OPENAI_INTERNAL_TOKEN:-}
-    ports:
-      - "8400:8400"
+      HANA_HOST: ${HANA_HOST:-}
+      HANA_PORT: ${HANA_PORT:-443}
+      HANA_USER: ${HANA_USER:-}
+      HANA_PASSWORD: ${HANA_PASSWORD:-}
     restart: unless-stopped

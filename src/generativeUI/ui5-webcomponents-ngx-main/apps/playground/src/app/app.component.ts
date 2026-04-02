@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { DemoTourService } from './core/demo-tour.service';
@@ -19,6 +19,8 @@ export class AppComponent implements OnInit, OnDestroy {
   demoTourActive = false;
   demoTourStepLabel = '';
   demoTourProgress = '';
+
+  @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -51,6 +53,17 @@ export class AppComponent implements OnInit, OnDestroy {
 
   navigateTo(path: string): void {
     this.router.navigate([path]);
+  }
+
+  openProducts(event: any): void {
+    this.productPopover.nativeElement.showAt(event.detail.targetRef);
+  }
+
+  onProductSelect(event: any): void {
+    const url = event.detail.item.getAttribute('data-url');
+    if (url) {
+      window.location.href = url;
+    }
   }
 
   onMenuItemClick(event: Event): void {
