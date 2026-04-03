@@ -281,6 +281,15 @@
   "compare.running": "جارٍ التشغيل…",
   "compare.bestShorter": "الأفضل (SQL أقصر)",
   "compare.errorResponse": "خطأ أو لا استجابة",
-  "compare.history": "سجل المقارنات"
+  "compare.history": "سجل المقارنات",
+
+  "relative.justNow": "الآن",
+  "relative.minutesAgo": "{count, plural, zero {منذ ٠ دقائق} one {منذ دقيقة} two {منذ دقيقتين} few {منذ {count} دقائق} many {منذ {count} دقيقة} other {منذ {count} دقيقة}}",
+  "relative.hoursAgo": "{count, plural, zero {منذ ٠ ساعات} one {منذ ساعة} two {منذ ساعتين} few {منذ {count} ساعات} many {منذ {count} ساعة} other {منذ {count} ساعة}}",
+  "relative.yesterday": "أمس",
+  "relative.daysAgo": "{count, plural, zero {منذ ٠ أيام} one {منذ يوم} two {منذ يومين} few {منذ {count} أيام} many {منذ {count} يومًا} other {منذ {count} يوم}}",
+  "relative.weeksAgo": "{count, plural, zero {منذ ٠ أسابيع} one {منذ أسبوع} two {منذ أسبوعين} few {منذ {count} أسابيع} many {منذ {count} أسبوعًا} other {منذ {count} أسبوع}}",
+  "relative.monthsAgo": "{count, plural, zero {منذ ٠ أشهر} one {منذ شهر} two {منذ شهرين} few {منذ {count} أشهر} many {منذ {count} شهرًا} other {منذ {count} شهر}}",
+  "relative.yearsAgo": "{count, plural, zero {منذ ٠ سنوات} one {منذ سنة} two {منذ سنتين} few {منذ {count} سنوات} many {منذ {count} سنة} other {منذ {count} سنة}}"
 }
 

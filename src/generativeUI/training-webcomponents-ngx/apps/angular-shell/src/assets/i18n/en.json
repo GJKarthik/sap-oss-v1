@@ -281,6 +281,15 @@
   "compare.running": "Running…",
   "compare.bestShorter": "Best (shorter SQL)",
   "compare.errorResponse": "Error or no response",
-  "compare.history": "Comparison History"
+  "compare.history": "Comparison History",
+
+  "relative.justNow": "Just now",
+  "relative.minutesAgo": "{count, plural, one {1 minute ago} other {{count} minutes ago}}",
+  "relative.hoursAgo": "{count, plural, one {1 hour ago} other {{count} hours ago}}",
+  "relative.yesterday": "Yesterday",
+  "relative.daysAgo": "{count, plural, one {1 day ago} other {{count} days ago}}",
+  "relative.weeksAgo": "{count, plural, one {1 week ago} other {{count} weeks ago}}",
+  "relative.monthsAgo": "{count, plural, one {1 month ago} other {{count} months ago}}",
+  "relative.yearsAgo": "{count, plural, one {1 year ago} other {{count} years ago}}"
 }
 

@@ -9,6 +9,7 @@ import { DatePipe } from '@angular/common';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
+import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
 interface PlatformComponent {
   icon: string;
@@ -21,7 +22,7 @@ interface PlatformComponent {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [],
+  imports: [LocaleNumberPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -42,17 +43,17 @@ interface PlatformComponent {
           <div class="stat-sub">{{ store.health().data?.version ?? '' }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ store.gpuUtilization() }}%</div>
+          <div class="stat-value">{{ store.gpuUtilization() | localeNumber:'decimal':0:0 }}%</div>
           <div class="stat-label">{{ i18n.t('dashboard.gpuUtil') }}</div>
           <div class="stat-sub">{{ store.gpu().data?.gpu_name ?? i18n.t('dashboard.noGpu') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ store.gpuMemoryUsed() }}</div>
+          <div class="stat-value">{{ store.gpuMemoryUsed() | localeNumber:'decimal':1:1 }}</div>
           <div class="stat-label">{{ i18n.t('dashboard.gpuMemUsed') }}</div>
           <div class="stat-sub">{{ i18n.t('dashboard.gpuMemTotal', { total: store.gpuMemoryTotal() }) }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ store.trainingPairCount() }}</div>
+          <div class="stat-value">{{ store.trainingPairCount() | localeNumber }}</div>
           <div class="stat-label">{{ i18n.t('dashboard.trainingPairs') }}</div>
           <div class="stat-sub">{{ store.isGraphAvailable() ? i18n.t('dashboard.graphActive') : i18n.t('dashboard.graphUnavailable') }}</div>
         </div>
@@ -68,7 +69,7 @@ interface PlatformComponent {
                 <tr><td>{{ i18n.t('dashboard.gpuDriver') }}</td><td>{{ gpuData.driver_version }}</td></tr>
                 <tr><td>{{ i18n.t('dashboard.gpuCuda') }}</td><td>{{ gpuData.cuda_version }}</td></tr>
                 <tr><td>{{ i18n.t('dashboard.gpuTemp') }}</td><td>{{ gpuData.temperature_c }} °C</td></tr>
-                <tr><td>{{ i18n.t('dashboard.gpuFreeMem') }}</td><td>{{ gpuData.free_memory_gb.toFixed(1) }} GB</td></tr>
+                <tr><td>{{ i18n.t('dashboard.gpuFreeMem') }}</td><td>{{ gpuData.free_memory_gb | localeNumber:'decimal':1:1 }} GB</td></tr>
               </tbody>
             </table>
           } @else if (!store.isDashboardLoading()) {
