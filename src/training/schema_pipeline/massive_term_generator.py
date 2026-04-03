@@ -2860,6 +2860,7 @@ def main():
     with open(arabic_dir / "arabic_training_pairs.jsonl", "w", encoding="utf-8") as f:
         for ex in arabic_examples:
             f.write(json.dumps(ex, ensure_ascii=False) + "\n")
+    from collections import Counter
     print(f"\n=== ARABIC TRAINING DATA ===")
     print(f"  Arabic examples: {len(arabic_examples):,} -> arabic_training/arabic_training_pairs.jsonl")
     ar_domains = Counter(e.get("domain", "") for e in arabic_examples)
