@@ -3,12 +3,13 @@ FROM node:20-slim AS build
 WORKDIR /workspace
 
 RUN corepack enable
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn ./.yarn
-RUN yarn install --immutable
 
 COPY . .
+RUN yarn install --immutable --mode=skip-build
 RUN yarn nx build playground --configuration=production --base-href /ui5/
 
 FROM nginx:1.27-alpine

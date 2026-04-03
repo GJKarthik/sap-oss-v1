@@ -28,6 +28,10 @@
   scrollbar-width: none;
 }
 
+:host-context([dir='rtl']) .app-nav {
+  direction: rtl;
+}
+
 .app-nav__item {
   background: none;
   border: none;

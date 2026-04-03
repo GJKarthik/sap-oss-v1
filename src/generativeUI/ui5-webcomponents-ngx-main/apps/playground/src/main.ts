@@ -28,9 +28,25 @@ const fallbackIconTexts = {
   SHELLBAR_LOGO_AREA: 'Logo area',
 };
 
+const fallbackIconTextsAr = {
+  ICON_ERROR: 'خطأ',
+  ICON_OVERFLOW: 'المزيد',
+  SHELLBAR_IMAGE_BTN: 'الشعار',
+  SHELLBAR_LABEL: 'شريط القشرة',
+  SHELLBAR_OVERFLOW: 'خيارات إضافية',
+  SHELLBAR_NOTIFICATIONS: 'الإشعارات',
+  SHELLBAR_NOTIFICATIONS_NO_COUNT: 'الإشعارات',
+  SHELLBAR_PROFILE: 'الملف الشخصي',
+  SHELLBAR_PRODUCTS: 'المنتجات',
+  SHELLBAR_SEARCH: 'بحث',
+  SHELLBAR_LOGO_AREA: 'منطقة الشعار',
+};
+
 // Work around missing i18n asset registration in dev builds.
 registerI18nLoader('@ui5/webcomponents-icons', 'en', async () => fallbackIconTexts);
 registerI18nLoader('@ui5/webcomponents-fiori', 'en', async () => fallbackIconTexts);
+registerI18nLoader('@ui5/webcomponents-icons', 'ar', async () => fallbackIconTextsAr);
+registerI18nLoader('@ui5/webcomponents-fiori', 'ar', async () => fallbackIconTextsAr);
 
 if (environment.production) {
   enableProdMode();

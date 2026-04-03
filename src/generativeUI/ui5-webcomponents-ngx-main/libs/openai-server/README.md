@@ -42,9 +42,20 @@ export AICORE_BASE_URL=https://api.ai.xxx.aws.ml.hana.ondemand.com
 | `/v1/assistants` | GET/POST | Assistants |
 | `/v1/threads` | POST | Threads |
 | `/v1/batches` | GET/POST | Batches |
+| `/v1/ocr/documents` | POST | OCR + invoice extraction contract |
+| `/v1/ocr/documents` | GET | List OCR documents |
+| `/v1/ocr/documents/:id` | GET | Retrieve OCR document result |
 | `/v1/hana/tables` | GET | Vector tables |
 | `/v1/hana/vectors` | POST | Store vectors |
 | `/v1/hana/search` | POST | Search vectors |
+
+### Arabic-first chat routing
+
+If `model` is omitted on `/v1/chat/completions`, the server auto-selects the Arabic-focused
+model alias `google/gemma-4-E4B-it` when either:
+
+- `x-ui-language: ar` (or request body `language: "ar"`) is provided, or
+- incoming message content includes Arabic script.
 
 ## Usage with Angular Service
 

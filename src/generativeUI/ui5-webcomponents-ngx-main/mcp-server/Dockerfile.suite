@@ -5,8 +5,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+COPY tsconfig.json ./tsconfig.json
 COPY src ./src
+RUN npm run build
 
 EXPOSE 9160
 
-CMD ["npm", "start"]
+CMD ["node", "dist/server.js"]

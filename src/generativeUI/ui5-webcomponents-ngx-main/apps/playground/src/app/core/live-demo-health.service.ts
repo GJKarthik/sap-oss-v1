@@ -4,7 +4,7 @@ import { catchError, forkJoin, map, Observable, of } from 'rxjs';
 import { LiveDemoConfig, validateLiveDemoConfig } from './live-demo-config';
 import { environment } from '../../environments/environment';
 
-export type LiveDemoRoute = 'generative' | 'joule' | 'components' | 'mcp';
+export type LiveDemoRoute = 'generative' | 'joule' | 'components' | 'mcp' | 'ocr';
 type ServiceName = 'AG-UI' | 'OpenAI' | 'MCP';
 
 export interface ServiceCheck {
@@ -26,6 +26,7 @@ const ROUTE_DEPENDENCIES: Record<LiveDemoRoute, ServiceName[]> = {
   joule: ['AG-UI'],
   components: ['OpenAI'],
   mcp: ['MCP'],
+  ocr: ['OpenAI'],
 };
 
 @Injectable({ providedIn: 'root' })

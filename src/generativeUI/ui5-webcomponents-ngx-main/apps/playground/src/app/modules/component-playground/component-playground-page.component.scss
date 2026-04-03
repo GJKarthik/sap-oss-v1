@@ -15,3 +15,10 @@
   color: var(--sapContent_LabelColor);
   font-size: 0.875rem;
 }
+
+.component-playground__model-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}

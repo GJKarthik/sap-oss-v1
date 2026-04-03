@@ -100,6 +100,21 @@
       </div>
     </ui5-card>
 
+    <ui5-card class="home-card" (click)="navigateOcr()">
+      <ui5-card-header
+        slot="header"
+        title-text="OCR Invoices"
+        subtitle-text="Arabic OCR and bilingual extraction"
+        interactive>
+      </ui5-card-header>
+      <div class="home-card__body">
+        <p class="home-card__desc">
+          Extract Arabic invoice text and financial fields with side-by-side Arabic and English output.
+        </p>
+        <ui5-button design="Emphasized" (click)="$event.stopPropagation(); navigateOcr()">Open OCR</ui5-button>
+      </div>
+    </ui5-card>
+
     <ui5-card class="home-card" (click)="navigateReadiness()">
       <ui5-card-header
         slot="header"

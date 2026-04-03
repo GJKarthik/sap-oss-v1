@@ -13,6 +13,11 @@
 import * as http from 'http';
 import * as https from 'https';
 import { URL } from 'url';
+import {
+  ARABIC_PRIMARY_CHAT_MODEL,
+  buildOcrExtractionResult,
+  resolveChatModelAlias,
+} from './domain';
 
 // =============================================================================
 // Configuration
@@ -27,6 +32,14 @@ interface AICoreConfig {
   chatDeploymentId?: string;
   embeddingDeploymentId?: string;
 }
+
+const SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS = [
+  'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+  'google-bert/bert-base-multilingual-uncased',
+  'jinaai/jina-embeddings-v3',
+] as const;
+
+const SUPPORTED_ARABIC_CHAT_MODELS = [ARABIC_PRIMARY_CHAT_MODEL] as const;
 
 function getConfig(): AICoreConfig {
   return {
@@ -176,6 +189,79 @@ function findDeployment(deployments: Deployment[], modelId: string): Deployment 
          deployments.find(d => modelId.substring(0, 8).includes(d.id.substring(0, 8)));
 }
 
+function findEmbeddingDeployment(
+  config: AICoreConfig,
+  deployments: Deployment[],
+  requestedModel?: string,
+): Deployment | undefined {
+  if (requestedModel) {
+    const direct = findDeployment(deployments, requestedModel);
+    if (direct) return direct;
+  }
+  if (config.embeddingDeploymentId) {
+    const configured = findDeployment(deployments, config.embeddingDeploymentId);
+    if (configured) return configured;
+  }
+  return (
+    deployments.find(d => /embed|multilingual|minilm|bert|jina/i.test(d.model)) ||
+    deployments[0]
+  );
+}
+
+function findChatDeployment(
+  config: AICoreConfig,
+  deployments: Deployment[],
+  requestedModel?: string,
+): Deployment | undefined {
+  if (requestedModel && !SUPPORTED_ARABIC_CHAT_MODELS.includes(requestedModel as typeof SUPPORTED_ARABIC_CHAT_MODELS[number])) {
+    const direct = findDeployment(deployments, requestedModel);
+    if (direct) return direct;
+  }
+  if (config.chatDeploymentId) {
+    const configured = findDeployment(deployments, config.chatDeploymentId);
+    if (configured) return configured;
+  }
+  return deployments.find(d => !/embed/i.test(d.model)) || deployments[0];
+}
+
+function buildModelCatalog(config: AICoreConfig, deployments: Deployment[]): Array<Record<string, unknown>> {
+  const catalog = deployments.map(d => ({
+    id: d.id,
+    object: 'model',
+    created: Math.floor(Date.now() / 1000),
+    owned_by: d.isAnthropic ? 'anthropic' : 'openai',
+    root: d.model,
+  }));
+
+  const embeddingDeployment = findEmbeddingDeployment(config, deployments);
+  const existingIds = new Set(catalog.map(item => item['id'] as string));
+  const arabicChatDeployment = findChatDeployment(config, deployments, SUPPORTED_ARABIC_CHAT_MODELS[0]);
+  const arabicChatAliases = SUPPORTED_ARABIC_CHAT_MODELS
+    .filter(alias => !existingIds.has(alias))
+    .map(alias => ({
+      id: alias,
+      object: 'model',
+      created: Math.floor(Date.now() / 1000),
+      owned_by: 'sap-aicore-alias',
+      root: arabicChatDeployment?.model || 'unknown',
+      language_focus: 'ar',
+    }));
+
+  const embeddingAliases = !embeddingDeployment
+    ? []
+    : SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS
+    .filter(alias => !existingIds.has(alias))
+    .map(alias => ({
+      id: alias,
+      object: 'model',
+      created: Math.floor(Date.now() / 1000),
+      owned_by: 'sap-aicore-alias',
+      root: embeddingDeployment.model,
+    }));
+
+  return [...arabicChatAliases, ...catalog, ...embeddingAliases];
+}
+
 // =============================================================================
 // In-Memory Storage
 // =============================================================================
@@ -187,6 +273,7 @@ const messages: Map<string, Array<Record<string, unknown>>> = new Map();
 const runs: Map<string, Record<string, unknown>> = new Map();
 const batches: Map<string, Record<string, unknown>> = new Map();
 const vectorTables: Map<string, Array<Record<string, unknown>>> = new Map();
+const ocrDocuments: Map<string, Record<string, unknown>> = new Map();
 
 // =============================================================================
 // Utility Functions
@@ -312,31 +399,37 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         });
       }
       const deployments = await getDeployments(config);
+      const modelCatalog = buildModelCatalog(config, deployments);
       return sendJson(res, 200, {
         object: 'list',
-        data: deployments.map(d => ({
-          id: d.id,
-          object: 'model',
-          created: Math.floor(Date.now() / 1000),
-          owned_by: d.isAnthropic ? 'anthropic' : 'openai',
-          root: d.model,
-        }))
+        data: modelCatalog,
       });
     }
 
-    if (/^\/v1\/models\/[\w-]+$/.test(path) && method === 'GET') {
+    if (path.startsWith('/v1/models/') && method === 'GET') {
       if (!ensureAICoreConfig(config)) {
         return sendError(res, 503, 'AI Core configuration missing');
       }
-      const modelId = path.split('/').pop()!;
+      const modelId = decodeURIComponent(path.replace('/v1/models/', '').trim());
+      if (!modelId) return sendError(res, 400, 'Model id is required');
       const deployments = await getDeployments(config);
-      const deployment = findDeployment(deployments, modelId);
+      const deployment =
+        findDeployment(deployments, modelId) ||
+        (SUPPORTED_ARABIC_CHAT_MODELS.includes(modelId as typeof SUPPORTED_ARABIC_CHAT_MODELS[number])
+          ? findChatDeployment(config, deployments, modelId)
+          : undefined) ||
+        (SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS.includes(modelId as typeof SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS[number])
+          ? findEmbeddingDeployment(config, deployments, modelId)
+          : undefined);
       if (!deployment) return sendError(res, 404, 'Model not found');
       return sendJson(res, 200, {
-        id: deployment.id,
+        id: modelId,
         object: 'model',
         created: Math.floor(Date.now() / 1000),
-        owned_by: deployment.isAnthropic ? 'anthropic' : 'openai',
+        owned_by: SUPPORTED_ARABIC_CHAT_MODELS.includes(modelId as typeof SUPPORTED_ARABIC_CHAT_MODELS[number]) ||
+          SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS.includes(modelId as typeof SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS[number])
+          ? 'sap-aicore-alias'
+          : deployment.isAnthropic ? 'anthropic' : 'openai',
         root: deployment.model,
       });
     }
@@ -347,9 +440,13 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return sendError(res, 503, 'AI Core configuration missing');
       }
       const body = await parseBody(req);
+      const resolvedModel = resolveChatModelAlias({
+        requestedModel: body['model'] as string | undefined,
+        uiLanguage: (req.headers['x-ui-language'] as string | undefined) || (body['language'] as string | undefined),
+        messages: body['messages'] as Array<{ content?: unknown }> | undefined,
+      });
       const deployments = await getDeployments(config);
-      let deployment = findDeployment(deployments, body['model'] as string);
-      if (!deployment && config.chatDeploymentId) deployment = findDeployment(deployments, config.chatDeploymentId);
+      const deployment = findChatDeployment(config, deployments, resolvedModel);
       if (!deployment) return sendError(res, 400, `Model ${body['model']} not found`);
 
       const completionId = `chatcmpl-${uuid()}`;
@@ -389,13 +486,17 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         const result = await aicoreRequest(config, 'POST',
           `/v2/inference/deployments/${deployment.id}/chat/completions`,
           {
-            model: body['model'],
+            model: resolvedModel,
             messages: body['messages'],
             max_tokens: body['max_tokens'],
             temperature: body['temperature'],
           }
         );
-        return sendJson(res, 200, { id: completionId, ...result as object, model: deployment.id });
+        return sendJson(res, 200, {
+          id: completionId,
+          ...result as object,
+          model: resolvedModel || deployment.id,
+        });
       }
     }
 
@@ -406,8 +507,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       }
       const body = await parseBody(req);
       const deployments = await getDeployments(config);
-      let deployment = findDeployment(deployments, body['model'] as string);
-      if (!deployment) deployment = deployments.find(d => d.model.toLowerCase().includes('embed')) || deployments[0];
+      const requestedModel = body['model'] as string | undefined;
+      const deployment = findEmbeddingDeployment(config, deployments, requestedModel);
       if (!deployment) return sendError(res, 400, 'No embedding model available');
 
       const inputs = Array.isArray(body['input']) ? body['input'] : [body['input']];
@@ -419,7 +520,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return sendJson(res, 200, {
         object: 'list',
         data: result.data || [],
-        model: deployment.id,
+        model: requestedModel || deployment.id,
         usage: result.usage || { prompt_tokens: 0, total_tokens: 0 },
       });
     }
@@ -582,6 +683,56 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return sendJson(res, 200, batch);
     }
 
+    // OCR + invoice extraction contracts (in-memory)
+    if (path === '/v1/ocr/documents' && method === 'POST') {
+      const body = await parseBody(req);
+      const textInput = (body['text'] as string | undefined)?.trim() || '';
+      const language = (body['language'] as string | undefined) || 'ar';
+      const documentType = (body['document_type'] as string | undefined) || 'invoice';
+      const mimeType = (body['mime_type'] as string | undefined) || 'application/octet-stream';
+      const fileContentBase64 = (body['file_content_base64'] as string | undefined) || '';
+      const extraction = buildOcrExtractionResult({
+        fileName: body['file_name'] as string | undefined,
+        mimeType,
+        fileContentBase64,
+        text: textInput,
+        language,
+        documentType,
+      });
+
+      const documentId = `ocrdoc_${uuid().replace(/-/g, '').substring(0, 24)}`;
+      const createdAt = Math.floor(Date.now() / 1000);
+      const response = {
+        id: documentId,
+        object: 'ocr.document',
+        status: 'processed',
+        created_at: createdAt,
+        file_name: body['file_name'] || `${documentId}.txt`,
+        mime_type: mimeType,
+        language_detected: language,
+        document_type: documentType,
+        source: 'contract',
+        extraction,
+      };
+      ocrDocuments.set(documentId, response);
+      return sendJson(res, 200, response);
+    }
+
+    if (path === '/v1/ocr/documents' && method === 'GET') {
+      return sendJson(res, 200, {
+        object: 'list',
+        data: Array.from(ocrDocuments.values()),
+      });
+    }
+
+    if (path.startsWith('/v1/ocr/documents/') && method === 'GET') {
+      const documentId = decodeURIComponent(path.replace('/v1/ocr/documents/', '').trim());
+      if (!documentId) return sendError(res, 400, 'Document id is required');
+      const document = ocrDocuments.get(documentId);
+      if (!document) return sendError(res, 404, 'OCR document not found');
+      return sendJson(res, 200, document);
+    }
+
     // Vector Store — protected by X-Internal-Token
     if (path === '/v1/hana/tables' && method === 'GET') {
       if (!checkInternalToken(req, res)) return;
@@ -598,7 +749,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       if (!tableName) return sendError(res, 400, 'table_name is required');
       
       const deployments = await getDeployments(config);
-      const deployment = deployments.find(d => d.model.toLowerCase().includes('embed')) || deployments[0];
+      const deployment = findEmbeddingDeployment(config, deployments, body['model'] as string | undefined);
       if (!deployment) return sendError(res, 400, 'No embedding model available');
       
       const result = await aicoreRequest(config, 'POST',
@@ -632,7 +783,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       if (!table || table.length === 0) return sendJson(res, 200, { object: 'list', data: [] });
       
       const deployments = await getDeployments(config);
-      const deployment = deployments.find(d => d.model.toLowerCase().includes('embed')) || deployments[0];
+      const deployment = findEmbeddingDeployment(config, deployments, body['model'] as string | undefined);
       if (!deployment) return sendError(res, 400, 'No embedding model available');
       
       const result = await aicoreRequest(config, 'POST',
@@ -687,6 +838,8 @@ Endpoints:
   GET  /v1/assistants       - Assistants
   POST /v1/threads          - Threads
   GET  /v1/batches          - Batches
+  POST /v1/ocr/documents    - OCR + invoice extraction
+  GET  /v1/ocr/documents    - OCR document list
   GET  /v1/hana/tables      - Vector tables
 `);
 });

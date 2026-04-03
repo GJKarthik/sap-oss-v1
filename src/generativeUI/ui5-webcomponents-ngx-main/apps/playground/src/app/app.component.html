@@ -3,8 +3,8 @@
 
   <!-- Fiori ShellBar -->
   <ui5-shellbar
-    primary-title="UI5 Web Components NGX"
-    secondary-title="Playground"
+    [primary-title]="'APP_TITLE' | ui5I18n"
+    [secondary-title]="'APP_SUBTITLE' | ui5I18n"
     show-product-switch="true"
     [accessibilityAttributes]="shellbarA11y"
     (logoClick)="navigateTo('/')"
@@ -13,49 +13,56 @@
     <!-- Nav items (ui5-shellbar-item uses default slot in v2) -->
     <ui5-shellbar-item
       icon="home"
-      text="Home"
+      [text]="'NAV_HOME' | ui5I18n"
       count=""
       (item-click)="navigateTo('/')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
       icon="form"
-      text="Forms Demo"
+      [text]="'NAV_FORMS' | ui5I18n"
       count=""
       (item-click)="navigateTo('/forms')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
       icon="ai"
-      text="Joule AI"
+      [text]="'NAV_JOULE' | ui5I18n"
       count=""
       (item-click)="navigateTo('/joule')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
       icon="collaborate"
-      text="Collaboration"
+      [text]="'NAV_COLLAB' | ui5I18n"
       count=""
       (item-click)="navigateTo('/collab')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
       icon="palette"
-      text="Components"
+      [text]="'NAV_COMPONENTS' | ui5I18n"
       count=""
       (item-click)="navigateTo('/components')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
       icon="chain-link"
-      text="MCP"
+      [text]="'NAV_MCP' | ui5I18n"
       count=""
       (item-click)="navigateTo('/mcp')">
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
+      icon="doc-attachment"
+      [text]="'NAV_OCR' | ui5I18n"
+      count=""
+      (item-click)="navigateTo('/ocr')">
+    </ui5-shellbar-item>
+
+    <ui5-shellbar-item
       icon="checklist"
-      text="Readiness"
+      [text]="'NAV_READINESS' | ui5I18n"
       count=""
       (item-click)="navigateTo('/readiness')">
     </ui5-shellbar-item>
@@ -76,56 +83,62 @@
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/')"
       (click)="navigateTo('/')">
-      Home
+      {{ 'NAV_HOME' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/forms')"
       (click)="navigateTo('/forms')">
-      Forms Demo
+      {{ 'NAV_FORMS' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/joule')"
       (click)="navigateTo('/joule')">
-      Joule AI
+      {{ 'NAV_JOULE' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/collab')"
       (click)="navigateTo('/collab')">
-      Collaboration
+      {{ 'NAV_COLLAB' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/generative')"
       (click)="navigateTo('/generative')">
-      Generative UI
+      {{ 'NAV_GENERATIVE' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/components')"
       (click)="navigateTo('/components')">
-      Components
+      {{ 'NAV_COMPONENTS' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/mcp')"
       (click)="navigateTo('/mcp')">
-      MCP
+      {{ 'NAV_MCP' | ui5I18n }}
+    </button>
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/ocr')"
+      (click)="navigateTo('/ocr')">
+      {{ 'NAV_OCR' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/readiness')"
       (click)="navigateTo('/readiness')">
-      Readiness
+      {{ 'NAV_READINESS' | ui5I18n }}
     </button>
 
     <div class="app-nav__spacer"></div>
 
     <!-- Theme switcher in nav bar -->
     <div class="app-nav__theme">
-      <label class="app-nav__theme-label">Theme</label>
+      <label class="app-nav__theme-label">{{ 'THEME_LABEL' | ui5I18n }}</label>
       <ui5-select style="min-width:160px" (change)="onThemeChange($event)">
         <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">Horizon</ui5-option>
         <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">Horizon Dark</ui5-option>
@@ -133,20 +146,27 @@
         <ui5-option value="sap_fiori_3_dark" [attr.selected]="currentTheme === 'sap_fiori_3_dark' ? true : null">Quartz Dark</ui5-option>
       </ui5-select>
     </div>
+    <div class="app-nav__theme">
+      <label class="app-nav__theme-label">{{ 'LANGUAGE_LABEL' | ui5I18n }}</label>
+      <ui5-select style="min-width:120px" (change)="onLanguageChange($event)">
+        <ui5-option value="en" [attr.selected]="currentLanguage === 'en' ? true : null">{{ 'LANGUAGE_EN' | ui5I18n }}</ui5-option>
+        <ui5-option value="ar" [attr.selected]="currentLanguage === 'ar' ? true : null">{{ 'LANGUAGE_AR' | ui5I18n }}</ui5-option>
+      </ui5-select>
+    </div>
   </nav>
 
   <section class="demo-tour-banner" *ngIf="demoTourActive" aria-label="Demo tour controls">
     <div class="demo-tour-banner__left">
       <ui5-tag design="Information">Demo Tour {{ demoTourProgress }}</ui5-tag>
-      <span>Current step: {{ demoTourStepLabel }}</span>
+      <span>{{ 'DEMO_TOUR_CURRENT_STEP' | ui5I18n }}: {{ demoTourStepLabel }}</span>
     </div>
     <div class="demo-tour-banner__actions">
-      <ui5-button data-testid="demo-tour-next" design="Emphasized" (click)="nextDemoStep()">Next Step</ui5-button>
-      <ui5-button data-testid="demo-tour-end" design="Transparent" (click)="endDemoTour()">End Tour</ui5-button>
+      <ui5-button data-testid="demo-tour-next" design="Emphasized" (click)="nextDemoStep()">{{ 'DEMO_TOUR_NEXT' | ui5I18n }}</ui5-button>
+      <ui5-button data-testid="demo-tour-end" design="Transparent" (click)="endDemoTour()">{{ 'DEMO_TOUR_END' | ui5I18n }}</ui5-button>
     </div>
   </section>
 
-  <ui5-popover #productPopover header-text="Product Switcher" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+  <ui5-popover #productPopover [header-text]="'PRODUCT_SWITCHER' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
     <ui5-list (item-click)="onProductSelect($event)">
       <ui5-li icon="home" data-url="/aifabric/">AI Fabric Console</ui5-li>
       <ui5-li icon="process" data-url="/training/">Training Console</ui5-li>

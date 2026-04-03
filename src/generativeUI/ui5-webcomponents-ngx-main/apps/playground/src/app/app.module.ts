@@ -42,6 +42,7 @@ import { LiveHealthPanelComponent } from './shared/live-health-panel/live-health
                         const http = inject(HttpClient);
                         return {
                             en: http.get('assets/i18n/messages_en', { responseType: 'text' }),
+                            ar: http.get('assets/i18n/messages_ar', { responseType: 'text' }),
                         };
                     }
                 }
@@ -79,6 +80,10 @@ import { LiveHealthPanelComponent } from './shared/live-health-panel/live-health
             {
                 path: 'mcp',
                 loadChildren: () => import('./modules/mcp/mcp.module').then(m => m.McpModule)
+            },
+            {
+                path: 'ocr',
+                loadChildren: () => import('./modules/ocr/ocr.module').then(m => m.OcrModule)
             },
             {
                 path: 'readiness',

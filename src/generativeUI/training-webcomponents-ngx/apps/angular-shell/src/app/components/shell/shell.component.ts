@@ -11,7 +11,7 @@ import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
 import '@ui5/webcomponents/dist/Tag.js';
 import '@ui5/webcomponents/dist/Popover.js';
 import '@ui5/webcomponents/dist/List.js';
-import '@ui5/webcomponents/dist/StandardListItem.js';
+import '@ui5/webcomponents/dist/ListItemStandard.js';
 
 interface NavItem {
   label: string;

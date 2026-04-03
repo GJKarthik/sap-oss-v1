@@ -1,5 +1,5 @@
 <section class="component-playground">
-  <ui5-title level="H3">Live Component Playground</ui5-title>
+  <ui5-title level="H3">{{ 'COMPONENT_PLAYGROUND_TITLE' | ui5I18n }}</ui5-title>
 
   <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
     {{ blockingReason }}
@@ -11,18 +11,25 @@
 
   <div class="component-playground__actions">
     <ui5-button design="Emphasized" [disabled]="loading || routeBlocked" (click)="loadModels()">
-      Refresh Live Catalog
+      {{ 'COMPONENT_PLAYGROUND_REFRESH' | ui5I18n }}
     </ui5-button>
-    <span class="component-playground__hint">Source: {{ models.length }} models from /v1/models</span>
+    <span class="component-playground__hint">{{ 'COMPONENT_PLAYGROUND_SOURCE' | ui5I18n : models.length }}</span>
   </div>
 
   <ui5-busy-indicator *ngIf="loading" active size="M"></ui5-busy-indicator>
 
   <ui5-list *ngIf="!loading && models.length > 0" separators="Inner">
-    <ui5-li *ngFor="let model of models">{{ model }}</ui5-li>
+    <ui5-li *ngFor="let model of models">
+      <div class="component-playground__model-row">
+        <span>{{ model }}</span>
+        <ui5-tag *ngIf="isArabicPrimaryModel(model)" design="Information">
+          {{ 'MODEL_TAG_ARABIC_PRIMARY' | ui5I18n }}
+        </ui5-tag>
+      </div>
+    </ui5-li>
   </ui5-list>
 
   <ui5-message-strip *ngIf="!loading && !routeBlocked && models.length === 0 && !lastError" design="Information" hide-close-button>
-    Live endpoint responded but no models were returned.
+    {{ 'COMPONENT_PLAYGROUND_EMPTY' | ui5I18n }}
   </ui5-message-strip>
 </section>

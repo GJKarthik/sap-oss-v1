@@ -24,7 +24,7 @@ import {I18nConfig, Translations} from "./i18n.types";
 @Injectable()
 export class I18nService {
   private parent: I18nService | null = inject(I18nService, {skipSelf: true, optional: true});
-  private currentLanguage$ = new BehaviorSubject<string>(getLanguage() || this.config.language as string);
+  private currentLanguage$: BehaviorSubject<string>;
   private readonly i18nBundle$: Observable<I18nBundle>;
   private loadedLanguages$ = new BehaviorSubject<string[]>([]);
 
@@ -33,6 +33,9 @@ export class I18nService {
     @Inject(I18N_NAMESPACE) private namespace: string,
     @Inject(I18N_TRANSLATIONS) private bundles: Translations = {}
   ) {
+    this.currentLanguage$ = new BehaviorSubject<string>(
+      getLanguage() || this.config.language as string,
+    );
     Object.keys(bundles).forEach((lang) => {
       registerI18nLoader(this.namespace, lang, async (localeId: string) => {
         const val = this.bundles[localeId];

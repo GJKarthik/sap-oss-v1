@@ -17,5 +17,6 @@ export class MainComponent {
   navigateGenerative(): void { this.router.navigate(['/generative']); }
   navigateComponents(): void { this.router.navigate(['/components']); }
   navigateMcp(): void { this.router.navigate(['/mcp']); }
+  navigateOcr(): void { this.router.navigate(['/ocr']); }
   navigateReadiness(): void { this.router.navigate(['/readiness']); }
 }

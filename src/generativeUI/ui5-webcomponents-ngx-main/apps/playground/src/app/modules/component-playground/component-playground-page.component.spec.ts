@@ -76,4 +76,32 @@ describe('ComponentPlaygroundPageComponent', () => {
     expect(component.models).toEqual([]);
     expect(component.lastError).toContain('Invalid model catalog contract');
   });
+
+  it('marks gemma alias as Arabic primary model', () => {
+    const http = makeHttp();
+    const health = makeHealthService();
+    const component = new ComponentPlaygroundPageComponent(http, health);
+
+    expect(component.isArabicPrimaryModel('google/gemma-4-E4B-it')).toBe(true);
+    expect(component.isArabicPrimaryModel('gpt-live-a')).toBe(false);
+  });
+
+  it('pins Arabic primary model to top of list', () => {
+    const http = makeHttp();
+    (http.get as jest.Mock).mockReturnValue(
+      of({
+        data: [
+          { id: 'gpt-live-z' },
+          { id: 'google/gemma-4-E4B-it' },
+          { id: 'gpt-live-a' },
+        ],
+      }),
+    );
+    const health = makeHealthService();
+    const component = new ComponentPlaygroundPageComponent(http, health);
+
+    component.ngOnInit();
+
+    expect(component.models[0]).toBe('google/gemma-4-E4B-it');
+  });
 });

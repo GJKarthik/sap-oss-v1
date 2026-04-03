@@ -14,6 +14,7 @@ interface ModelsResponse {
   standalone: false,
 })
 export class ComponentPlaygroundPageComponent implements OnInit {
+  private readonly arabicPrimaryModelId = 'google/gemma-4-E4B-it';
   models: string[] = [];
   loading = false;
   lastError: string | null = null;
@@ -47,7 +48,8 @@ export class ComponentPlaygroundPageComponent implements OnInit {
         const rawItems = response?.data ?? [];
         this.models = rawItems
           .map((item) => item.id?.trim())
-          .filter((id): id is string => Boolean(id));
+          .filter((id): id is string => Boolean(id))
+          .sort((a, b) => this.sortModels(a, b));
         const hasInvalidContract =
           Array.isArray(rawItems) &&
           rawItems.length > 0 &&
@@ -63,5 +65,17 @@ export class ComponentPlaygroundPageComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  isArabicPrimaryModel(modelId: string): boolean {
+    return modelId === this.arabicPrimaryModelId;
+  }
+
+  private sortModels(a: string, b: string): number {
+    const aPrimary = this.isArabicPrimaryModel(a);
+    const bPrimary = this.isArabicPrimaryModel(b);
+    if (aPrimary && !bPrimary) return -1;
+    if (!aPrimary && bPrimary) return 1;
+    return a.localeCompare(b);
   }
 }

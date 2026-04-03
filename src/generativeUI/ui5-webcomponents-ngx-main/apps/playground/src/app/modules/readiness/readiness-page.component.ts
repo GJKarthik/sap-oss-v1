@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 import { LiveDemoHealthService, ServiceCheck } from '../../core/live-demo-health.service';
 import { DemoTourService } from '../../core/demo-tour.service';
 
-type DemoRoute = 'generative' | 'joule' | 'components' | 'mcp';
+type DemoRoute = 'generative' | 'joule' | 'components' | 'mcp' | 'ocr';
 
 interface RouteStatus {
   route: DemoRoute;
@@ -44,6 +44,7 @@ export class ReadinessPageComponent implements OnInit {
       joule: this.healthService.checkRouteReadiness('joule'),
       components: this.healthService.checkRouteReadiness('components'),
       mcp: this.healthService.checkRouteReadiness('mcp'),
+      ocr: this.healthService.checkRouteReadiness('ocr'),
     }).subscribe((result) => {
       this.serviceChecks = result.services;
       this.routeStatuses = [
@@ -51,6 +52,7 @@ export class ReadinessPageComponent implements OnInit {
         this.toStatus('joule', 'Joule Chat', result.joule.blocking, result.joule.checks),
         this.toStatus('components', 'Component Playground', result.components.blocking, result.components.checks),
         this.toStatus('mcp', 'MCP Flow', result.mcp.blocking, result.mcp.checks),
+        this.toStatus('ocr', 'OCR Extraction', result.ocr.blocking, result.ocr.checks),
       ];
 
       const servicesHealthy = this.serviceChecks.every((check) => check.ok);

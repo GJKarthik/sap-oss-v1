@@ -1,0 +1,95 @@
+.ocr-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.ocr-page__controls,
+.ocr-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ocr-page__results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ocr-page__dropzone {
+  border: 2px dashed var(--sapField_BorderColor);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--sapContent_LabelColor);
+  background: var(--sapTile_Background);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ocr-page__dropzone--active {
+  border-color: var(--sapBrandColor);
+  background: var(--sapList_SelectionBackgroundColor);
+}
+
+.ocr-page__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--sapList_BorderColor);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: var(--sapList_Background);
+}
+
+.ocr-page__preview-meta,
+.ocr-page__preview-note {
+  font-size: 0.875rem;
+  color: var(--sapContent_LabelColor);
+}
+
+.ocr-page__preview-image {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border: 1px solid var(--sapList_BorderColor);
+  border-radius: 0.5rem;
+}
+
+.ocr-line-items-table-wrapper {
+  overflow-x: auto;
+}
+
+.ocr-line-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ocr-line-items-table th,
+.ocr-line-items-table td {
+  border: 1px solid var(--sapList_BorderColor);
+  padding: 0.5rem 0.625rem;
+  text-align: start;
+  vertical-align: top;
+}
+
+.ocr-line-items-table thead th {
+  background: var(--sapList_HeaderBackground);
+  font-weight: 600;
+}
+
+.ocr-line-items-table__num {
+  text-align: end !important;
+  white-space: nowrap;
+}
+
+pre {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--sapList_BorderColor);
+  border-radius: 0.5rem;
+  background: var(--sapList_Background);
+  white-space: pre-wrap;
+}
