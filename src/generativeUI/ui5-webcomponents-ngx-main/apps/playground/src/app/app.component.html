@@ -136,6 +136,18 @@
 
     <div class="app-nav__spacer"></div>
 
+    <!-- Language switcher in nav bar -->
+    <div class="app-nav__theme">
+      <label class="app-nav__theme-label">Language</label>
+      <ui5-select style="min-width:120px" (change)="onLanguageChange($event)">
+        <ui5-option *ngFor="let lang of languages"
+          [attr.value]="lang.code"
+          [attr.selected]="currentLanguage === lang.code ? true : null">
+          {{ lang.label }}
+        </ui5-option>
+      </ui5-select>
+    </div>
+
     <!-- Theme switcher in nav bar -->
     <div class="app-nav__theme">
       <label class="app-nav__theme-label">{{ 'THEME_LABEL' | ui5I18n }}</label>

@@ -171,3 +171,33 @@ genui-outlet {
     height: 50vh;
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// RTL overrides
+// ---------------------------------------------------------------------------
+
+:host-context([dir="rtl"]) {
+  .joule-chat-panel {
+    border-right: none;
+    border-left: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+  }
+
+  .presence-strip {
+    flex-direction: row-reverse;
+  }
+
+  .output-header {
+    flex-direction: row-reverse;
+  }
+
+  .governance-panel-header {
+    flex-direction: row-reverse;
+  }
+
+  @media (max-width: 768px) {
+    .joule-chat-panel {
+      border-left: none;
+    }
+  }
+}

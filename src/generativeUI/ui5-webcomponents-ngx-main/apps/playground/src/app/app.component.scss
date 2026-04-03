@@ -105,3 +105,31 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+
+// ---------------------------------------------------------------------------
+// RTL overrides
+// ---------------------------------------------------------------------------
+
+:host-context([dir="rtl"]) {
+  .app-nav {
+    direction: rtl;
+  }
+
+  .app-nav__item {
+    border-bottom: 2px solid transparent;
+
+    &--active {
+      border-bottom-color: var(--sapBrandColor, #0070f2);
+    }
+  }
+
+  .demo-tour-banner {
+    flex-direction: row-reverse;
+  }
+
+  .demo-tour-banner__left,
+  .demo-tour-banner__actions {
+    flex-direction: row-reverse;
+  }
+}
