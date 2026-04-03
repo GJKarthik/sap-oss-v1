@@ -2425,7 +2425,7 @@ class MassiveTermGenerator:
 
     def generate_real_schema_queries(self) -> int:
         """Generate training pairs from real metadata across all 4 pipelines."""
-        from schema_pipeline.real_schema_parser import load_all_metadata
+        from real_schema_parser import load_all_metadata
         meta = load_all_metadata()
         count = 0
 
@@ -2575,7 +2575,7 @@ class MassiveTermGenerator:
 
     def _validate_all_sql(self, verbose: bool = False) -> Tuple[int, int, int]:
         """Run HANASQLValidator on all generated examples, removing invalid ones."""
-        from schema_pipeline.sql_validator import HANASQLValidator
+        from sql_validator import HANASQLValidator
         validator = HANASQLValidator(strict=False)
 
         valid_count = 0
@@ -2664,7 +2664,7 @@ class MassiveTermGenerator:
         """Generate specialist data and merge into the main dataset."""
         count = 0
         try:
-            from schema_pipeline.specialist_data_generator import SpecialistDataGenerator
+            from specialist_data_generator import SpecialistDataGenerator
             gen = SpecialistDataGenerator()
             for gen_func in [
                 gen.generate_performance_examples,
@@ -2860,6 +2860,7 @@ def main():
     with open(arabic_dir / "arabic_training_pairs.jsonl", "w", encoding="utf-8") as f:
         for ex in arabic_examples:
             f.write(json.dumps(ex, ensure_ascii=False) + "\n")
+    from collections import Counter
     print(f"\n=== ARABIC TRAINING DATA ===")
     print(f"  Arabic examples: {len(arabic_examples):,} -> arabic_training/arabic_training_pairs.jsonl")
     ar_domains = Counter(e.get("domain", "") for e in arabic_examples)
