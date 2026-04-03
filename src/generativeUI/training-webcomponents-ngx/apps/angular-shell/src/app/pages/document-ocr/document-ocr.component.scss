@@ -1,0 +1,144 @@
+.ocr-page {
+  padding: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ocr-header {
+  margin-bottom: 1.5rem;
+  h1 { margin: 0; font-size: 1.5rem; color: var(--sapTextColor, #32363a); }
+  .ocr-subtitle { margin: 0.25rem 0 0; color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.875rem; }
+}
+
+/* Upload area */
+.upload-area {
+  border: 2px dashed var(--sapField_BorderColor, #89919a);
+  border-radius: 0.75rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--sapBaseColor, #fff);
+  &.drag-over {
+    border-color: var(--sapBrandColor, #0854a0);
+    background: var(--sapList_SelectionBackgroundColor, #e8f2ff);
+  }
+}
+.upload-content { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.upload-icon { font-size: 3rem; }
+.upload-title { font-size: 1.125rem; font-weight: 600; margin: 0; }
+.upload-hint { font-size: 0.8125rem; color: var(--sapContent_LabelColor, #6a6d70); margin: 0; }
+.upload-btn {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1.5rem; border-radius: 0.375rem; cursor: pointer;
+  background: var(--sapBrandColor, #0854a0); color: #fff; border: none; font-size: 0.875rem; font-weight: 600;
+  &:hover { opacity: 0.9; }
+}
+
+/* Progress */
+.processing { width: 100%; max-width: 400px; margin: 0 auto; }
+.progress-bar {
+  height: 6px; border-radius: 3px; background: var(--sapField_BorderColor, #d9d9d9); overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--sapBrandColor, #0854a0); border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.processing-text { margin-top: 0.75rem; font-size: 0.875rem; color: var(--sapContent_LabelColor, #6a6d70); }
+
+/* Actions bar */
+.actions-bar {
+  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.actions-spacer { flex: 1; }
+.action-btn {
+  padding: 0.375rem 0.75rem; border-radius: 0.375rem; border: 1px solid var(--sapField_BorderColor, #89919a);
+  background: var(--sapBaseColor, #fff); color: var(--sapTextColor, #32363a); font-size: 0.8125rem;
+  cursor: pointer; font-weight: 500;
+  &:hover { background: var(--sapList_Hover_Background, #f5f5f5); }
+  &.primary {
+    background: var(--sapBrandColor, #0854a0); color: #fff; border-color: transparent;
+    &:hover { opacity: 0.9; }
+  }
+}
+
+/* Tabs */
+.tab-bar {
+  display: flex; gap: 0; border-bottom: 2px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+  margin-bottom: 1rem;
+}
+.tab-btn {
+  padding: 0.5rem 1rem; border: none; background: transparent;
+  font-size: 0.875rem; cursor: pointer; color: var(--sapContent_LabelColor, #6a6d70);
+  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+  &.active {
+    color: var(--sapBrandColor, #0854a0); border-bottom-color: var(--sapBrandColor, #0854a0); font-weight: 600;
+  }
+  &:hover { color: var(--sapTextColor, #32363a); }
+}
+
+/* Text tab */
+.page-nav {
+  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;
+}
+.page-btn {
+  padding: 0.25rem 0.625rem; border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 0.25rem;
+  background: var(--sapBaseColor, #fff); cursor: pointer; font-size: 1rem;
+  &:disabled { opacity: 0.4; cursor: default; }
+}
+.page-info { font-size: 0.8125rem; color: var(--sapContent_LabelColor, #6a6d70); }
+.copy-btn {
+  margin-inline-start: auto;
+  padding: 0.25rem 0.625rem; border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 0.25rem;
+  background: var(--sapBaseColor, #fff); cursor: pointer; font-size: 0.8125rem;
+}
+.ocr-text {
+  background: var(--sapBaseColor, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+  border-radius: 0.5rem; padding: 1rem; font-family: inherit; white-space: pre-wrap;
+  line-height: 1.8; font-size: 0.9375rem; min-height: 200px; max-height: 500px; overflow-y: auto;
+}
+
+/* Tables tab */
+.detected-table {
+  margin-bottom: 1.5rem;
+  h3 { font-size: 0.9375rem; margin: 0 0 0.5rem; }
+  .table-meta { font-weight: 400; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+}
+.table-wrapper { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.875rem;
+  td {
+    padding: 0.5rem 0.75rem; border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+  }
+  tr:first-child td { font-weight: 600; background: var(--sapList_HeaderBackground, #f5f6f7); }
+}
+
+/* Financial tab */
+.kv-grid { display: grid; gap: 0.5rem; }
+.kv-row {
+  display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 0.75rem; align-items: center;
+  padding: 0.625rem 0.75rem; background: var(--sapBaseColor, #fff);
+  border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.375rem;
+}
+.kv-key { font-weight: 600; font-size: 0.875rem; }
+.kv-key-en { font-size: 0.8125rem; color: var(--sapContent_LabelColor, #6a6d70); }
+.kv-value { font-weight: 600; font-size: 0.9375rem; direction: ltr; }
+.kv-page { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+
+/* Metadata tab */
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+.meta-item {
+  padding: 0.75rem; background: var(--sapBaseColor, #fff);
+  border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.375rem;
+}
+.meta-label { display: block; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); margin-bottom: 0.25rem; }
+.meta-value { font-size: 1.125rem; font-weight: 600; }
+
+.empty-state { text-align: center; padding: 2rem; color: var(--sapContent_LabelColor, #6a6d70); }
+
+/* RTL adjustments */
+.rtl {
+  .actions-bar { flex-direction: row-reverse; }
+  .tab-bar { flex-direction: row-reverse; }
+  .page-nav { flex-direction: row-reverse; }
+  .kv-row { direction: rtl; }
+}

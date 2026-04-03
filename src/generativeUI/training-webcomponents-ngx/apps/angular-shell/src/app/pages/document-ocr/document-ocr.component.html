@@ -1,0 +1,157 @@
+<div class="ocr-page" [class.rtl]="i18n.isRtl()" [dir]="i18n.dir()">
+  <header class="ocr-header">
+    <h1>{{ i18n.t('ocr.title') }}</h1>
+    <p class="ocr-subtitle">{{ i18n.t('ocr.subtitle') }}</p>
+  </header>
+
+  <!-- Upload Area -->
+  @if (!result()) {
+    <div
+      class="upload-area"
+      [class.drag-over]="isDragOver()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      @if (isProcessing()) {
+        <div class="processing">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="progress()"></div>
+          </div>
+          <p class="processing-text">{{ i18n.t('ocr.processing') }}</p>
+        </div>
+      } @else {
+        <div class="upload-content">
+          <span class="upload-icon">📄</span>
+          <p class="upload-title">{{ i18n.t('ocr.upload.title') }}</p>
+          <p class="upload-hint">{{ i18n.t('ocr.upload.hint') }}</p>
+          <label class="upload-btn">
+            {{ i18n.t('ocr.upload.browse') }}
+            <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
+          </label>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Results -->
+  @if (result()) {
+    <div class="results-container">
+      <!-- Actions Bar -->
+      <div class="actions-bar">
+        <button class="action-btn primary" (click)="sendToChat()">{{ i18n.t('ocr.sendToChat') }}</button>
+        <button class="action-btn" (click)="exportJson()">{{ i18n.t('ocr.exportJson') }}</button>
+        <button class="action-btn" (click)="exportText()">{{ i18n.t('ocr.exportText') }}</button>
+        <div class="actions-spacer"></div>
+        <label class="action-btn">
+          {{ i18n.t('ocr.uploadAnother') }}
+          <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
+        </label>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        @for (tab of tabs; track tab) {
+          <button
+            class="tab-btn"
+            [class.active]="activeTab() === tab"
+            (click)="activeTab.set(tab)"
+          >{{ tabLabel(tab) }}</button>
+        }
+      </div>
+
+      <div class="tab-content">
+        <!-- Text Tab -->
+        @if (activeTab() === 'text') {
+          <div class="text-tab">
+            <div class="page-nav">
+              <button class="page-btn" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</button>
+              <span class="page-info">{{ i18n.t('ocr.page') }} {{ currentPage() }} / {{ totalPages() }}</span>
+              <button class="page-btn" [disabled]="currentPage() >= totalPages()" (click)="nextPage()">›</button>
+              <button class="copy-btn" (click)="copyText()">{{ i18n.t('ocr.copy') }}</button>
+            </div>
+            <pre class="ocr-text" dir="auto">{{ currentPageText() }}</pre>
+          </div>
+        }
+
+        <!-- Tables Tab -->
+        @if (activeTab() === 'tables') {
+          <div class="tables-tab">
+            @for (table of currentPageTables(); track table.table_index) {
+              <div class="detected-table">
+                <h3>{{ i18n.t('ocr.table') }} {{ table.table_index + 1 }}
+                  <span class="table-meta">({{ table.rows }}×{{ table.columns }}, {{ i18n.t('ocr.confidence') }}: {{ table.confidence | localeNumber:'decimal':1:1 }}%)</span>
+                </h3>
+                <div class="table-wrapper">
+                  <table dir="auto">
+                    @for (row of getTableRows(table); track $index) {
+                      <tr>
+                        @for (cell of row; track $index) {
+                          <td>{{ cell }}</td>
+                        }
+                      </tr>
+                    }
+                  </table>
+                </div>
+              </div>
+            }
+            @if (currentPageTables().length === 0) {
+              <p class="empty-state">{{ i18n.t('ocr.noTables') }}</p>
+            }
+            <div class="page-nav">
+              <button class="page-btn" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</button>
+              <span class="page-info">{{ i18n.t('ocr.page') }} {{ currentPage() }} / {{ totalPages() }}</span>
+              <button class="page-btn" [disabled]="currentPage() >= totalPages()" (click)="nextPage()">›</button>
+            </div>
+          </div>
+        }
+
+        <!-- Financial Fields Tab -->
+        @if (activeTab() === 'financial') {
+          <div class="financial-tab">
+            @if (financialFields().length > 0) {
+              <div class="kv-grid">
+                @for (field of financialFields(); track field.key_en + field.page) {
+                  <div class="kv-row">
+                    <span class="kv-key" dir="rtl">{{ field.key_ar }}</span>
+                    <span class="kv-key-en">{{ field.key_en }}</span>
+                    <span class="kv-value">{{ field.value }}</span>
+                    <span class="kv-page">{{ i18n.t('ocr.page') }} {{ field.page }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="empty-state">{{ i18n.t('ocr.noFinancialFields') }}</p>
+            }
+          </div>
+        }
+
+        <!-- Metadata Tab -->
+        @if (activeTab() === 'metadata') {
+          <div class="metadata-tab">
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">{{ i18n.t('ocr.meta.totalPages') }}</span>
+                <span class="meta-value">{{ result()!.total_pages }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">{{ i18n.t('ocr.meta.overallConfidence') }}</span>
+                <span class="meta-value">{{ result()!.overall_confidence | localeNumber:'decimal':1:1 }}%</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">{{ i18n.t('ocr.meta.processingTime') }}</span>
+                <span class="meta-value">{{ result()!.total_processing_time_s | localeNumber:'decimal':2:2 }}s</span>
+              </div>
+              @for (page of result()!.pages; track page.page_number) {
+                <div class="meta-item">
+                  <span class="meta-label">{{ i18n.t('ocr.page') }} {{ page.page_number }}</span>
+                  <span class="meta-value">{{ page.confidence | localeNumber:'decimal':1:1 }}% · {{ page.processing_time_s | localeNumber:'decimal':2:2 }}s</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
