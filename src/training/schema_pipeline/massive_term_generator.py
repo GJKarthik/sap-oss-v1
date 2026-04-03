@@ -2425,7 +2425,7 @@ class MassiveTermGenerator:
 
     def generate_real_schema_queries(self) -> int:
         """Generate training pairs from real metadata across all 4 pipelines."""
-        from schema_pipeline.real_schema_parser import load_all_metadata
+        from real_schema_parser import load_all_metadata
         meta = load_all_metadata()
         count = 0
 
@@ -2575,7 +2575,7 @@ class MassiveTermGenerator:
 
     def _validate_all_sql(self, verbose: bool = False) -> Tuple[int, int, int]:
         """Run HANASQLValidator on all generated examples, removing invalid ones."""
-        from schema_pipeline.sql_validator import HANASQLValidator
+        from sql_validator import HANASQLValidator
         validator = HANASQLValidator(strict=False)
 
         valid_count = 0
@@ -2664,7 +2664,7 @@ class MassiveTermGenerator:
         """Generate specialist data and merge into the main dataset."""
         count = 0
         try:
-            from schema_pipeline.specialist_data_generator import SpecialistDataGenerator
+            from specialist_data_generator import SpecialistDataGenerator
             gen = SpecialistDataGenerator()
             for gen_func in [
                 gen.generate_performance_examples,
