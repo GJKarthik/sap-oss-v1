@@ -1,5 +1,5 @@
 <section class="mcp-page">
-  <ui5-title level="H3">Live MCP Integration</ui5-title>
+  <ui5-title level="H3">{{ 'MCP_PAGE_TITLE' | ui5I18n }}</ui5-title>
 
   <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
     {{ blockingReason }}
@@ -17,11 +17,11 @@
     </ui5-select>
 
     <ui5-button design="Emphasized" [disabled]="invoking || loading || routeBlocked || !selectedTool" (click)="invokeSelectedTool()">
-      Invoke Tool
+      {{ 'MCP_INVOKE_BUTTON' | ui5I18n }}
     </ui5-button>
 
     <ui5-button design="Transparent" [disabled]="loading || routeBlocked" (click)="loadTools()">
-      Refresh Tools
+      {{ 'MCP_REFRESH_BUTTON' | ui5I18n }}
     </ui5-button>
   </div>
 

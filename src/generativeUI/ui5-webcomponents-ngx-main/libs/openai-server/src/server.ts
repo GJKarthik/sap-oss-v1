@@ -15,7 +15,8 @@ import * as https from 'https';
 import { URL } from 'url';
 import {
   ARABIC_PRIMARY_CHAT_MODEL,
-  buildOcrExtractionResult,
+  buildFallbackOcrExtractionResult,
+  normalizeOcrExtractionResult,
   resolveChatModelAlias,
 } from './domain';
 
@@ -40,6 +41,7 @@ const SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS = [
 ] as const;
 
 const SUPPORTED_ARABIC_CHAT_MODELS = [ARABIC_PRIMARY_CHAT_MODEL] as const;
+const GEMMA_MODEL_MATCHERS = ['gemma-4-e4b-it', 'gemma-4', 'gemma'];
 
 function getConfig(): AICoreConfig {
   return {
@@ -213,7 +215,13 @@ function findChatDeployment(
   deployments: Deployment[],
   requestedModel?: string,
 ): Deployment | undefined {
-  if (requestedModel && !SUPPORTED_ARABIC_CHAT_MODELS.includes(requestedModel as typeof SUPPORTED_ARABIC_CHAT_MODELS[number])) {
+  if (requestedModel) {
+    if (SUPPORTED_ARABIC_CHAT_MODELS.includes(requestedModel as typeof SUPPORTED_ARABIC_CHAT_MODELS[number])) {
+      const gemma = deployments.find((d) =>
+        GEMMA_MODEL_MATCHERS.some((matcher) => d.model.toLowerCase().includes(matcher)),
+      );
+      return gemma;
+    }
     const direct = findDeployment(deployments, requestedModel);
     if (direct) return direct;
   }
@@ -237,6 +245,7 @@ function buildModelCatalog(config: AICoreConfig, deployments: Deployment[]): Arr
   const existingIds = new Set(catalog.map(item => item['id'] as string));
   const arabicChatDeployment = findChatDeployment(config, deployments, SUPPORTED_ARABIC_CHAT_MODELS[0]);
   const arabicChatAliases = SUPPORTED_ARABIC_CHAT_MODELS
+    .filter(() => Boolean(arabicChatDeployment))
     .filter(alias => !existingIds.has(alias))
     .map(alias => ({
       id: alias,
@@ -331,6 +340,12 @@ function sendError(res: http.ServerResponse, status: number, message: string): v
 const OPENAI_INTERNAL_TOKEN = (process.env.OPENAI_INTERNAL_TOKEN ?? '').trim();
 const OPENAI_ALLOWED_ORIGINS = (process.env.OPENAI_ALLOWED_ORIGINS ?? '').trim()
   .split(',').map(o => o.trim()).filter(Boolean);
+const OPENAI_OCR_INTERNAL_TOKEN = (process.env.OPENAI_OCR_INTERNAL_TOKEN ?? '').trim();
+const OPENAI_OCR_MAX_UPLOAD_BYTES = Number.parseInt(process.env.OPENAI_OCR_MAX_UPLOAD_BYTES ?? '5242880', 10);
+const OPENAI_OCR_ALLOWED_MIME_TYPES = (process.env.OPENAI_OCR_ALLOWED_MIME_TYPES ?? 'text/plain,application/pdf,image/png,image/jpeg,image/webp')
+  .split(',')
+  .map((m) => m.trim().toLowerCase())
+  .filter(Boolean);
 
 if (!OPENAI_INTERNAL_TOKEN) {
   console.warn(
@@ -351,11 +366,78 @@ function checkInternalToken(req: http.IncomingMessage, res: http.ServerResponse)
   return true;
 }
 
+function checkOcrInternalToken(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+  if (!OPENAI_OCR_INTERNAL_TOKEN) return true;
+  const provided = (req.headers['x-ocr-token'] ?? '').toString().trim();
+  if (provided !== OPENAI_OCR_INTERNAL_TOKEN) {
+    sendJson(res, 401, { error: { message: 'Unauthorized: X-OCR-Token required for OCR routes', type: 'auth_error', code: 401 } });
+    return false;
+  }
+  return true;
+}
+
 function getAllowedOrigin(req: http.IncomingMessage): string {
   if (OPENAI_ALLOWED_ORIGINS.length === 0) return '*';
   const origin = (req.headers['origin'] ?? '').toString().trim();
   if (origin && OPENAI_ALLOWED_ORIGINS.includes(origin)) return origin;
   return OPENAI_ALLOWED_ORIGINS[0] ?? '';
+}
+
+function decodeBase64Payload(base64Text: string): Buffer {
+  return Buffer.from(base64Text, 'base64');
+}
+
+function parseJsonObject(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim();
+  const fenced = trimmed.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
+  try {
+    const parsed = JSON.parse(fenced);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function extractOcrWithModel(
+  config: AICoreConfig,
+  deployment: Deployment,
+  sourceText: string,
+): Promise<Record<string, unknown> | null> {
+  const prompt = [
+    'You extract Arabic invoice data into strict JSON.',
+    'Return only JSON with keys: document_type, original_ar, translated_en, financial_fields, line_items.',
+    'financial_fields must contain keys invoice_number, invoice_date, currency, vat_total, grand_total with confidence.',
+    'line_items must include description_ar, description_en, quantity, unit_price, total.',
+    'If value missing use empty string, 0, or low confidence.',
+    `Input:\n${sourceText}`,
+  ].join('\n');
+
+  if (deployment.isAnthropic) {
+    const result = await aicoreRequest(
+      config,
+      'POST',
+      `/v2/inference/deployments/${deployment.id}/invoke`,
+      {
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      },
+    ) as { content?: Array<{ text?: string }> };
+    return parseJsonObject(result.content?.[0]?.text || '');
+  }
+
+  const result = await aicoreRequest(
+    config,
+    'POST',
+    `/v2/inference/deployments/${deployment.id}/chat/completions`,
+    {
+      model: deployment.model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1200,
+      temperature: 0,
+    },
+  ) as { choices?: Array<{ message?: { content?: string } }> };
+  return parseJsonObject(result.choices?.[0]?.message?.content || '');
 }
 
 async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -366,7 +448,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers':
-        'Content-Type, Authorization, X-Internal-Token, X-Correlation-Id, x-correlation-id',
+        'Content-Type, Authorization, X-Internal-Token, X-OCR-Token, X-UI-Language, X-Correlation-Id, x-correlation-id',
     });
     res.end();
     return;
@@ -447,6 +529,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       });
       const deployments = await getDeployments(config);
       const deployment = findChatDeployment(config, deployments, resolvedModel);
+      if (resolvedModel && SUPPORTED_ARABIC_CHAT_MODELS.includes(resolvedModel as typeof SUPPORTED_ARABIC_CHAT_MODELS[number]) && !deployment) {
+        return sendError(res, 400, `Requested Arabic model alias ${resolvedModel} is unavailable in AI Core deployments`);
+      }
       if (!deployment) return sendError(res, 400, `Model ${body['model']} not found`);
 
       const completionId = `chatcmpl-${uuid()}`;
@@ -685,20 +770,52 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // OCR + invoice extraction contracts (in-memory)
     if (path === '/v1/ocr/documents' && method === 'POST') {
+      if (!checkOcrInternalToken(req, res)) return;
+      if (!ensureAICoreConfig(config)) {
+        return sendError(res, 503, 'AI Core configuration missing');
+      }
       const body = await parseBody(req);
       const textInput = (body['text'] as string | undefined)?.trim() || '';
       const language = (body['language'] as string | undefined) || 'ar';
       const documentType = (body['document_type'] as string | undefined) || 'invoice';
-      const mimeType = (body['mime_type'] as string | undefined) || 'application/octet-stream';
+      const mimeType = (body['mime_type'] as string | undefined)
+        || (textInput ? 'text/plain' : 'application/octet-stream');
       const fileContentBase64 = (body['file_content_base64'] as string | undefined) || '';
-      const extraction = buildOcrExtractionResult({
+      if ((fileContentBase64 || body['mime_type']) && !OPENAI_OCR_ALLOWED_MIME_TYPES.includes(mimeType.toLowerCase())) {
+        return sendError(res, 400, `Unsupported mime_type ${mimeType}`);
+      }
+      let decodedUploadBytes = 0;
+      if (fileContentBase64) {
+        try {
+          decodedUploadBytes = decodeBase64Payload(fileContentBase64).byteLength;
+        } catch {
+          return sendError(res, 400, 'Invalid base64 payload for file_content_base64');
+        }
+      }
+      if (decodedUploadBytes > OPENAI_OCR_MAX_UPLOAD_BYTES) {
+        return sendError(res, 413, `OCR upload too large. Max bytes: ${OPENAI_OCR_MAX_UPLOAD_BYTES}`);
+      }
+
+      const extractionFallbackInput = {
         fileName: body['file_name'] as string | undefined,
         mimeType,
         fileContentBase64,
         text: textInput,
         language,
         documentType,
-      });
+      };
+
+      const sourceText = textInput;
+      const deployments = await getDeployments(config);
+      const extractionDeployment = findChatDeployment(config, deployments, ARABIC_PRIMARY_CHAT_MODEL)
+        || findChatDeployment(config, deployments, undefined);
+      const extractedObject = sourceText && extractionDeployment
+        ? await extractOcrWithModel(config, extractionDeployment, sourceText)
+        : null;
+      const extraction = normalizeOcrExtractionResult(
+        extractedObject as Record<string, unknown> | undefined,
+        extractionFallbackInput,
+      );
 
       const documentId = `ocrdoc_${uuid().replace(/-/g, '').substring(0, 24)}`;
       const createdAt = Math.floor(Date.now() / 1000);
@@ -719,6 +836,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 
     if (path === '/v1/ocr/documents' && method === 'GET') {
+      if (!checkOcrInternalToken(req, res)) return;
       return sendJson(res, 200, {
         object: 'list',
         data: Array.from(ocrDocuments.values()),
@@ -726,6 +844,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 
     if (path.startsWith('/v1/ocr/documents/') && method === 'GET') {
+      if (!checkOcrInternalToken(req, res)) return;
       const documentId = decodeURIComponent(path.replace('/v1/ocr/documents/', '').trim());
       if (!documentId) return sendError(res, 400, 'Document id is required');
       const document = ocrDocuments.get(documentId);

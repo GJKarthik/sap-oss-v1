@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { OcrPageComponent } from './ocr-page.component';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
+import { environment } from '../../../environments/environment';
 
 function makeHttp() {
   return {
@@ -19,6 +20,10 @@ function makeHealthService() {
 }
 
 describe('OcrPageComponent', () => {
+  beforeEach(() => {
+    environment.ocrInternalToken = '';
+  });
+
   it('processes OCR text and stores extraction result', () => {
     const http = makeHttp();
     (http.get as jest.Mock).mockReturnValue(of({ data: [] }));
@@ -114,6 +119,7 @@ describe('OcrPageComponent', () => {
         mime_type: 'image/png',
         file_content_base64: 'ZmFrZQ==',
       }),
+      expect.any(Object),
     );
   });
 
@@ -165,5 +171,25 @@ describe('OcrPageComponent', () => {
     expect(component.filePreviewType).toBe('');
     expect(component.filePreviewUrl).toBe('');
     expect(component.filePreviewTextSnippet).toBe('');
+  });
+
+  it('adds X-OCR-Token header when configured in environment', () => {
+    environment.ocrInternalToken = 'test-ocr-token';
+    const http = makeHttp();
+    (http.get as jest.Mock).mockReturnValue(of({ data: [] }));
+    (http.post as jest.Mock).mockReturnValue(of({ extraction: {} }));
+    const health = makeHealthService();
+    const component = new OcrPageComponent(http, health);
+    component.ngOnInit();
+
+    component.processDocument();
+
+    expect(http.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Object),
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+    );
   });
 });

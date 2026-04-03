@@ -130,9 +130,29 @@ Edit `.env` and fill in the values for the services you want to use:
 | `AICORE_CLIENT_ID` / `AICORE_CLIENT_SECRET` / `AICORE_AUTH_URL` / `AICORE_BASE_URL` | SAP AI Core credentials | OpenAI-compat server |
 | `MCP_AUTH_TOKEN` | Bearer token for `/mcp` endpoint | MCP server (optional for localhost) |
 | `OPENAI_INTERNAL_TOKEN` | Internal token for `/v1/hana/*` routes | OpenAI-compat server |
+| `OPENAI_OCR_INTERNAL_TOKEN` | Internal token for `/v1/ocr/*` routes (`X-OCR-Token`) | OCR extraction routes |
+| `OPENAI_OCR_MAX_UPLOAD_BYTES` / `OPENAI_OCR_ALLOWED_MIME_TYPES` | OCR upload size and MIME guardrails | OCR extraction routes |
 | `KUZU_DB_PATH` | KùzuDB directory path (`:memory:` for dev) | Graph-RAG features |
 
 > **Note:** All services degrade gracefully when credentials are not set — the app starts and in-memory fallbacks are used.
+
+### OCR token wiring (frontend)
+
+The playground sends OCR auth header from Angular environment config:
+
+```ts
+// apps/playground/src/environments/environment.ts
+export const environment = {
+  // ...
+  ocrInternalToken: '',
+};
+```
+
+- If `ocrInternalToken` is empty, no `X-OCR-Token` header is sent.
+- If set, OCR requests include `X-OCR-Token: <value>`.
+- For secured deployments, set both:
+  - backend `OPENAI_OCR_INTERNAL_TOKEN`
+  - frontend `environment.ocrInternalToken` (or equivalent build-time replacement)
 
 ### 3. Start All Services
 

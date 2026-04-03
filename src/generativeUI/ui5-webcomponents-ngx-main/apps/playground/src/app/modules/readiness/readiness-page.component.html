@@ -1,31 +1,31 @@
 <section class="readiness-page">
   <div class="readiness-page__header">
     <div>
-      <ui5-title level="H3">Demo Readiness</ui5-title>
-      <p class="readiness-page__subtitle">Validate all live services and demo routes before presenting.</p>
+      <ui5-title level="H3">{{ 'READINESS_TITLE' | ui5I18n }}</ui5-title>
+      <p class="readiness-page__subtitle">{{ 'READINESS_SUBTITLE' | ui5I18n }}</p>
     </div>
     <div class="readiness-page__actions">
       <ui5-button data-testid="readiness-check-now" design="Transparent" [disabled]="loading" (click)="refresh()">
-        {{ loading ? 'Checking...' : 'Check Now' }}
+        {{ loading ? ('READINESS_CHECKING' | ui5I18n) : ('READINESS_CHECK_NOW' | ui5I18n) }}
       </ui5-button>
       <ui5-button data-testid="readiness-start-demo" design="Emphasized" [disabled]="loading || !demoReady" (click)="startDemo()">
-        Start Demo
+        {{ 'READINESS_START_DEMO' | ui5I18n }}
       </ui5-button>
     </div>
   </div>
 
   <ui5-message-strip [design]="demoReady ? 'Positive' : 'Negative'" hide-close-button>
-    {{ demoReady ? 'Demo Ready: all routes are live and healthy.' : 'Demo Blocked: fix failing services/routes below.' }}
+    {{ demoReady ? ('READINESS_READY_MESSAGE' | ui5I18n) : ('READINESS_BLOCKED_MESSAGE' | ui5I18n) }}
   </ui5-message-strip>
 
-  <div class="readiness-page__meta" *ngIf="lastCheckedAt">Last checked: {{ lastCheckedAt }}</div>
+  <div class="readiness-page__meta" *ngIf="lastCheckedAt">{{ 'READINESS_LAST_CHECKED' | ui5I18n }}: {{ lastCheckedAt }}</div>
 
   <div class="readiness-page__cards">
     <ui5-card *ngFor="let route of routeStatuses" class="readiness-page__card">
       <ui5-card-header slot="header" [attr.title-text]="route.label" [attr.subtitle-text]="route.route"></ui5-card-header>
       <div class="readiness-page__card-body">
         <ui5-tag [design]="route.blocking ? 'Negative' : 'Positive'">
-          {{ route.blocking ? 'Blocked' : 'Ready' }}
+          {{ route.blocking ? ('READINESS_STATUS_BLOCKED' | ui5I18n) : ('READINESS_STATUS_READY' | ui5I18n) }}
         </ui5-tag>
         <span>{{ route.reason }}</span>
       </div>

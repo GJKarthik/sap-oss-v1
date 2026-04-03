@@ -86,7 +86,7 @@ export function resolveChatModelAlias(input: ChatRoutingInput): string | undefin
   return undefined;
 }
 
-export function buildOcrExtractionResult(input: OcrDocumentInput): OcrExtractionResult {
+export function buildFallbackOcrExtractionResult(input: OcrDocumentInput): OcrExtractionResult {
   const originalText = input.text?.trim() || '';
   const isArabic = input.language === 'ar' || containsArabicScript(originalText);
   const fileHint = input.fileName ? ` [source file: ${input.fileName}]` : '';
@@ -115,5 +115,39 @@ export function buildOcrExtractionResult(input: OcrDocumentInput): OcrExtraction
         total: 0,
       },
     ],
+  };
+}
+
+export function normalizeOcrExtractionResult(
+  candidate: Partial<OcrExtractionResult> | undefined,
+  fallbackInput: OcrDocumentInput,
+): OcrExtractionResult {
+  const fallback = buildFallbackOcrExtractionResult(fallbackInput);
+  if (!candidate) return fallback;
+  const financial_fields = Array.isArray(candidate.financial_fields)
+    ? candidate.financial_fields
+      .map((field) => ({
+        key: String(field?.key || '').trim(),
+        value: String(field?.value || '').trim(),
+        confidence: Number(field?.confidence ?? 0),
+      }))
+      .filter((field) => field.key.length > 0)
+    : fallback.financial_fields;
+  const line_items = Array.isArray(candidate.line_items)
+    ? candidate.line_items.map((item) => ({
+      description_ar: String(item?.description_ar || ''),
+      description_en: String(item?.description_en || ''),
+      quantity: Number(item?.quantity ?? 0),
+      unit_price: Number(item?.unit_price ?? 0),
+      total: Number(item?.total ?? 0),
+    }))
+    : fallback.line_items;
+
+  return {
+    document_type: String(candidate.document_type || fallback.document_type),
+    original_ar: String(candidate.original_ar ?? fallback.original_ar),
+    translated_en: String(candidate.translated_en ?? fallback.translated_en),
+    financial_fields: financial_fields.length > 0 ? financial_fields : fallback.financial_fields,
+    line_items: line_items.length > 0 ? line_items : fallback.line_items,
   };
 }

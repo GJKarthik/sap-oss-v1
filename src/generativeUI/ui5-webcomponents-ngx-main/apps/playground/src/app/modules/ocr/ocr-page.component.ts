@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
 import { environment } from '../../../environments/environment';
@@ -73,7 +73,7 @@ export class OcrPageComponent implements OnInit {
       file_name: this.selectedFileName || `invoice-${Date.now()}.txt`,
       mime_type: this.selectedFileMimeType || undefined,
       file_content_base64: this.selectedFileBase64 || undefined,
-    }).subscribe({
+    }, this.getOcrRequestOptions()).subscribe({
       next: (response) => {
         this.result = response.extraction || null;
         this.loading = false;
@@ -129,7 +129,7 @@ export class OcrPageComponent implements OnInit {
     }
     this.loadingHistory = true;
     const endpoint = `${environment.openAiBaseUrl.replace(/\/$/, '')}/v1/ocr/documents`;
-    this.http.get<OcrDocumentListResponse>(endpoint).subscribe({
+    this.http.get<OcrDocumentListResponse>(endpoint, this.getOcrRequestOptions()).subscribe({
       next: (response) => {
         const list = response?.data ?? [];
         this.recentDocuments = list
@@ -156,7 +156,7 @@ export class OcrPageComponent implements OnInit {
     }
     this.lastError = null;
     const endpoint = `${environment.openAiBaseUrl.replace(/\/$/, '')}/v1/ocr/documents/${encodeURIComponent(documentId)}`;
-    this.http.get<OcrDocumentResponse>(endpoint).subscribe({
+    this.http.get<OcrDocumentResponse>(endpoint, this.getOcrRequestOptions()).subscribe({
       next: (response) => {
         this.result = response.extraction || null;
       },
@@ -237,5 +237,17 @@ export class OcrPageComponent implements OnInit {
       reader.onerror = () => reject(reader.error || new Error('Failed to read file as text'));
       reader.readAsText(file);
     });
+  }
+
+  private getOcrRequestOptions(): { headers?: HttpHeaders } {
+    const token = (environment.ocrInternalToken || '').trim();
+    if (!token) {
+      return {};
+    }
+    return {
+      headers: new HttpHeaders({
+        'X-OCR-Token': token,
+      }),
+    };
   }
 }
