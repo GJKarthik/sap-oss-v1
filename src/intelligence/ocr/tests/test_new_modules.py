@@ -387,6 +387,24 @@ class TestOCRCache:
             cache.put(f"k{i}", i)
         assert cache.size == 200
 
+    def test_cache_poisoning_get(self):
+        """Mutating a value returned by get() must NOT affect the cache."""
+        cache = OCRCache()
+        cache.put("k", {"pages": [{"text": "hello"}]})
+        first = cache.get("k")
+        first["pages"][0]["text"] = "MUTATED"
+        second = cache.get("k")
+        assert second["pages"][0]["text"] == "hello"
+
+    def test_cache_poisoning_put(self):
+        """Mutating the original object after put() must NOT affect the cache."""
+        cache = OCRCache()
+        obj = {"data": [1, 2, 3]}
+        cache.put("k", obj)
+        obj["data"].append(999)
+        cached = cache.get("k")
+        assert cached["data"] == [1, 2, 3]
+
 
 # ---------------------------------------------------------------------------
 # Async interface

@@ -1,5 +1,14 @@
 """Lightweight FastAPI wrapper for the Arabic OCR service.
 
+.. deprecated::
+    This module is deprecated.  Use ``server.py`` instead, which provides
+    all the same endpoints (including backwards-compatible ``/api/ocr/process``)
+    with tighter security defaults (no wildcard CORS, 50 MB upload cap,
+    callback URL allowlisting).
+
+    Start the canonical server with:
+        uvicorn intelligence.ocr.server:app --reload
+
 Endpoints:
     POST /api/ocr/process  — Upload a PDF and get structured OCR JSON
     GET  /api/ocr/health   — Health check
@@ -12,7 +21,16 @@ import asyncio
 import logging
 import os
 import tempfile
+import warnings
 from typing import Optional
+
+warnings.warn(
+    "intelligence.ocr.api is deprecated — use intelligence.ocr.server instead. "
+    "The server module provides all endpoints including /api/ocr/process for "
+    "backwards compatibility, with tighter security defaults.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +48,21 @@ from .arabic_ocr_service import ArabicOCRService, OCRResult
 from .pdf_processor import PDFProcessor
 
 app = FastAPI(
-    title="Arabic OCR API",
-    description="PDF upload and OCR processing for Arabic documents",
+    title="Arabic OCR API (DEPRECATED — use server.py)",
+    description="PDF upload and OCR processing for Arabic documents. "
+                "This module is deprecated; use intelligence.ocr.server instead.",
     version="1.0.0",
 )
 
-# Allow CORS for Angular dev server
+# CORS — tightened from wildcard to configurable origins
+_raw_origins = os.getenv("OCR_ALLOWED_ORIGINS", "")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 

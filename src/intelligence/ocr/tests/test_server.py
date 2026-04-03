@@ -173,6 +173,80 @@ class TestImageEndpoint:
         assert resp.status_code == 400
 
 
+# ---------------------------------------------------------------------------
+# Legacy backwards-compatible endpoints
+# ---------------------------------------------------------------------------
+
+class TestLegacyEndpoints:
+    def test_legacy_process_pdf(self, client):
+        """The deprecated /api/ocr/process should still work."""
+        path = _make_real_pdf(1)
+        try:
+            with open(path, "rb") as f:
+                resp = client.post(
+                    "/api/ocr/process",
+                    files={"file": ("test.pdf", f, "application/pdf")},
+                )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert "pages" in data
+        finally:
+            os.unlink(path)
+
+    def test_legacy_health(self, client):
+        """The deprecated /api/ocr/health should still work."""
+        resp = client.get("/api/ocr/health")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] in ("ok", "degraded", "unhealthy")
+        assert data["service"] == "arabic-ocr"
+
+
+# ---------------------------------------------------------------------------
+# CORS configuration
+# ---------------------------------------------------------------------------
+
+class TestCORSConfiguration:
+    def test_no_wildcard_cors(self, client):
+        """CORS should not allow wildcard origins by default."""
+        resp = client.options(
+            "/ocr/health",
+            headers={"Origin": "http://evil.example", "Access-Control-Request-Method": "GET"},
+        )
+        # Without OCR_ALLOWED_ORIGINS set, no origin should be allowed
+        assert resp.headers.get("access-control-allow-origin") != "*"
+
+
+# ---------------------------------------------------------------------------
+# Health check dependency coverage
+# ---------------------------------------------------------------------------
+
+class TestHealthDependencyCoverage:
+    def test_health_checks_httpx(self, client):
+        """Health endpoint should report httpx status."""
+        resp = client.get("/ocr/health")
+        data = resp.json()
+        # The health endpoint uses check_dependencies(), which now includes httpx
+        from ..dependencies import check_dependencies
+        report = check_dependencies()
+        dep_names = [d.name for d in report.dependencies]
+        assert "httpx" in dep_names
+
+    def test_health_checks_python_multipart(self, client):
+        """Health endpoint should report python-multipart status."""
+        from ..dependencies import check_dependencies
+        report = check_dependencies()
+        dep_names = [d.name for d in report.dependencies]
+        assert "python-multipart" in dep_names
+
+    def test_health_checks_arabic_lang_pack(self, client):
+        """Health endpoint should report Arabic language pack status."""
+        from ..dependencies import check_dependencies
+        report = check_dependencies()
+        dep_names = [d.name for d in report.dependencies]
+        assert "tesseract-ara (language pack)" in dep_names
+
+
 class TestCallbackValidation:
     def test_validate_callback_url_allowlist(self):
         old_hosts = os.environ.get("OCR_ALLOWED_CALLBACK_HOSTS")
@@ -186,3 +260,142 @@ class TestCallbackValidation:
                 os.environ.pop("OCR_ALLOWED_CALLBACK_HOSTS", None)
             else:
                 os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = old_hosts
+
+
+
+# ---------------------------------------------------------------------------
+# Metrics deadlock
+# ---------------------------------------------------------------------------
+
+class TestMetricsDeadlock:
+    """Verify that to_prometheus() and to_dict() don't deadlock."""
+
+    def test_to_prometheus_no_deadlock(self):
+        from ..metrics import OCRMetrics
+        m = OCRMetrics()
+        m.record_page(0.95, 1.2)
+        m.record_document()
+        result = m.to_prometheus()
+        assert "ocr_pages_processed_total 1" in result
+        assert "ocr_confidence_avg 0.95" in result
+
+    def test_to_dict_no_deadlock(self):
+        from ..metrics import OCRMetrics
+        m = OCRMetrics()
+        m.record_page(0.90, 0.5)
+        m.record_page(0.80, 1.0)
+        d = m.to_dict()
+        assert d["pages_processed"] == 2
+        assert d["avg_confidence"] == 0.85
+
+    def test_to_prometheus_and_to_dict_threaded(self):
+        """Call to_prometheus and to_dict from multiple threads to stress-test."""
+        import threading
+        from ..metrics import OCRMetrics
+
+        m = OCRMetrics()
+        for i in range(10):
+            m.record_page(0.9, 0.1 * i)
+
+        errors = []
+
+        def call_prometheus():
+            try:
+                m.to_prometheus()
+            except Exception as e:
+                errors.append(e)
+
+        def call_to_dict():
+            try:
+                m.to_dict()
+            except Exception as e:
+                errors.append(e)
+
+        threads = []
+        for _ in range(5):
+            threads.append(threading.Thread(target=call_prometheus))
+            threads.append(threading.Thread(target=call_to_dict))
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=5)
+
+        assert not errors
+        # All threads must have completed (not hung)
+        for t in threads:
+            assert not t.is_alive(), "Thread is still alive — possible deadlock"
+
+
+# ---------------------------------------------------------------------------
+# SSRF — batch endpoint callback validation
+# ---------------------------------------------------------------------------
+
+class TestBatchCallbackSSRF:
+    def test_batch_rejects_callback_without_allowlist(self, client):
+        """Batch endpoint must validate callback_url."""
+        old_hosts = os.environ.pop("OCR_ALLOWED_CALLBACK_HOSTS", None)
+        path = _make_real_pdf(1)
+        try:
+            with open(path, "rb") as f:
+                resp = client.post(
+                    "/ocr/batch?callback_url=http://127.0.0.1:1234",
+                    files=[("files", ("test.pdf", f, "application/pdf"))],
+                )
+            assert resp.status_code == 400
+        finally:
+            if old_hosts is not None:
+                os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = old_hosts
+            os.unlink(path)
+
+    def test_batch_rejects_metadata_endpoint(self, client):
+        """Batch endpoint must reject cloud metadata SSRF targets."""
+        old_hosts = os.environ.pop("OCR_ALLOWED_CALLBACK_HOSTS", None)
+        path = _make_real_pdf(1)
+        try:
+            with open(path, "rb") as f:
+                resp = client.post(
+                    "/ocr/batch?callback_url=http://169.254.169.254/latest/meta-data",
+                    files=[("files", ("test.pdf", f, "application/pdf"))],
+                )
+            assert resp.status_code == 400
+        finally:
+            if old_hosts is not None:
+                os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = old_hosts
+            os.unlink(path)
+
+
+# ---------------------------------------------------------------------------
+# Upload size enforcement
+# ---------------------------------------------------------------------------
+
+class TestUploadSizeLimit:
+    def test_pdf_oversized_rejected(self, client):
+        """PDF upload > 50 MB must return 413."""
+        from ..server import MAX_UPLOAD_SIZE
+        # Create content just over the limit
+        oversized = b"%PDF-1.4 " + b"X" * (MAX_UPLOAD_SIZE + 1)
+        resp = client.post(
+            "/ocr/pdf",
+            files={"file": ("big.pdf", io.BytesIO(oversized), "application/pdf")},
+        )
+        assert resp.status_code == 413
+
+    def test_image_oversized_rejected(self, client):
+        """Image upload > 50 MB must return 413."""
+        from ..server import MAX_UPLOAD_SIZE
+        oversized = b"\x89PNG" + b"X" * (MAX_UPLOAD_SIZE + 1)
+        resp = client.post(
+            "/ocr/image",
+            files={"file": ("big.png", io.BytesIO(oversized), "image/png")},
+        )
+        assert resp.status_code == 413
+
+    def test_batch_oversized_rejected(self, client):
+        """Batch upload with oversized file must return 413."""
+        from ..server import MAX_UPLOAD_SIZE
+        oversized = b"%PDF-1.4 " + b"X" * (MAX_UPLOAD_SIZE + 1)
+        resp = client.post(
+            "/ocr/batch",
+            files=[("files", ("big.pdf", io.BytesIO(oversized), "application/pdf"))],
+        )
+        assert resp.status_code == 413

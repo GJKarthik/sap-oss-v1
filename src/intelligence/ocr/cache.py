@@ -4,6 +4,7 @@ Avoids re-processing identical documents by keying cached results on a
 composite hash of file content + service configuration.
 """
 
+import copy
 import hashlib
 import json
 import logging
@@ -71,11 +72,13 @@ class OCRCache:
     def get(self, key: str) -> Optional[Any]:
         """Retrieve a cached result.
 
+        Returns a deep copy so callers cannot mutate the cached object.
+
         Args:
             key: Cache key from ``make_key``.
 
         Returns:
-            Cached OCRResult or None.
+            Deep copy of cached OCRResult, or None.
         """
         with self._lock:
             result = self._store.get(key)
@@ -85,10 +88,14 @@ class OCRCache:
                     self._order.remove(key)
                     self._order.append(key)
                 logger.debug("Cache hit: %s", key[:12])
-            return result
+                return copy.deepcopy(result)
+            return None
 
     def put(self, key: str, result: Any) -> None:
-        """Store a result in the cache.
+        """Store a deep copy of a result in the cache.
+
+        A deep copy is stored so the caller can safely mutate the original
+        object without poisoning the cache.
 
         Args:
             key: Cache key from ``make_key``.
@@ -97,7 +104,7 @@ class OCRCache:
         with self._lock:
             if key in self._store:
                 self._order.remove(key)
-            self._store[key] = result
+            self._store[key] = copy.deepcopy(result)
             self._order.append(key)
             # Evict oldest if over capacity
             while self.max_size > 0 and len(self._store) > self.max_size:
