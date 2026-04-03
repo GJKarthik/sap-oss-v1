@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 interface RegistryEntry {
@@ -29,41 +30,41 @@ interface RegistryEntry {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Model Registry</h1>
-        <button class="btn-refresh" (click)="load()">Refresh</button>
+        <h1 class="page-title">{{ i18n.t('registry.title') }}</h1>
+        <button class="btn-refresh" (click)="load()">{{ i18n.t('registry.refresh') }}</button>
       </div>
 
       <!-- Stats -->
       <div class="stats-grid" style="margin-bottom: 1.5rem;">
         <div class="stat-card">
           <div class="stat-value">{{ models().length }}</div>
-          <div class="stat-label">Total Jobs</div>
+          <div class="stat-label">{{ i18n.t('registry.totalJobs') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" style="color: #4caf50;">{{ completedCount() }}</div>
-          <div class="stat-label">Completed</div>
+          <div class="stat-label">{{ i18n.t('registry.completed') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" style="color: #0854a0;">{{ deployedCount() }}</div>
-          <div class="stat-label">Deployed</div>
+          <div class="stat-label">{{ i18n.t('registry.deployed') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ taggedCount() }}</div>
-          <div class="stat-label">Tagged</div>
+          <div class="stat-label">{{ i18n.t('registry.tagged') }}</div>
         </div>
       </div>
 
       <!-- Filter bar -->
       <div class="filter-bar">
         <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
-          <option value="">All Status</option>
-          <option value="completed">Completed</option>
+          <option value="">{{ i18n.t('registry.allStatus') }}</option>
+          <option value="completed">{{ i18n.t('registry.completed') }}</option>
           <option value="running">Running</option>
           <option value="failed">Failed</option>
         </select>
         <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem;">
           <input type="checkbox" [(ngModel)]="showDeployedOnly" (ngModelChange)="applyFilter()" />
-          Deployed only
+          {{ i18n.t('registry.deployedOnly') }}
         </label>
       </div>
 
@@ -73,14 +74,14 @@ interface RegistryEntry {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Tag / ID</th>
-                <th>Model</th>
-                <th>Status</th>
-                <th>Quant</th>
-                <th>Eval</th>
-                <th>Loss (final)</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th>{{ i18n.t('registry.tagId') }}</th>
+                <th>{{ i18n.t('registry.model') }}</th>
+                <th>{{ i18n.t('registry.status') }}</th>
+                <th>{{ i18n.t('registry.quant') }}</th>
+                <th>{{ i18n.t('registry.eval') }}</th>
+                <th>{{ i18n.t('registry.lossFinal') }}</th>
+                <th>{{ i18n.t('registry.created') }}</th>
+                <th>{{ i18n.t('registry.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -99,7 +100,7 @@ interface RegistryEntry {
                         @if (m.tag) {
                           <span class="tag-badge">{{ m.tag }}</span>
                         } @else {
-                          <span class="tag-placeholder">+ tag</span>
+                          <span class="tag-placeholder">{{ i18n.t('registry.addTag') }}</span>
                         }
                         <code class="id-code">{{ m.id.slice(0, 8) }}</code>
                       </div>
@@ -108,7 +109,7 @@ interface RegistryEntry {
                   <td class="text-small"><strong>{{ m.config['model_name'] }}</strong></td>
                   <td>
                     <span class="status-badge status-{{ m.status }}">{{ m.status }}</span>
-                    @if (m.deployed) { <span class="deployed-badge">Live</span> }
+                    @if (m.deployed) { <span class="deployed-badge">{{ i18n.t('registry.live') }}</span> }
                   </td>
                   <td><code class="text-small">{{ m.config['quant_format'] ?? '—' }}</code></td>
                   <td class="text-small">
@@ -125,12 +126,12 @@ interface RegistryEntry {
                   <td>
                     <div class="actions">
                       @if (m.deployed) {
-                        <a [href]="'/training/compare'" class="btn-xs btn-compare">Compare</a>
+                        <a [href]="'/training/compare'" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
                       }
                       @if (m.status === 'completed' && !m.deployed) {
-                        <button class="btn-xs btn-deploy" (click)="deploy(m)">Deploy</button>
+                        <button class="btn-xs btn-deploy" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</button>
                       }
-                      <button class="btn-xs btn-delete" (click)="deleteJob(m.id)">Delete</button>
+                      <button class="btn-xs btn-delete" (click)="deleteJob(m.id)">{{ i18n.t('registry.delete') }}</button>
                     </div>
                   </td>
                 </tr>
@@ -140,7 +141,7 @@ interface RegistryEntry {
         </div>
       } @else {
         <div class="empty-state">
-          <p class="text-muted">No training jobs match the current filter.</p>
+          <p class="text-muted">{{ i18n.t('registry.noMatch') }}</p>
         </div>
       }
     </div>
@@ -190,6 +191,7 @@ interface RegistryEntry {
 export class RegistryComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
 
   readonly models = signal<RegistryEntry[]>([]);
   readonly filtered = signal<RegistryEntry[]>([]);

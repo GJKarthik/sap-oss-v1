@@ -1,8 +1,9 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { I18nService } from '../../services/i18n.service';
 
 @Component({
   selector: 'app-login',
@@ -14,25 +15,25 @@ import { AuthService } from '../../services/auth.service';
       <div class="login-card">
         <div class="login-brand">
           <span class="login-icon"><ui5-icon name="machine"></ui5-icon></span>
-          <h1 class="login-title">Training Console</h1>
-          <p class="login-subtitle">SAP AI Training Platform</p>
+          <h1 class="login-title">{{ i18n.t('login.title') }}</h1>
+          <p class="login-subtitle">{{ i18n.t('login.subtitle') }}</p>
         </div>
 
         <form class="login-form" (ngSubmit)="submit()">
           <div class="field-group">
-            <label class="field-label" for="apiKey">API Key <span class="text-muted">(optional)</span></label>
+            <label class="field-label" for="apiKey">{{ i18n.t('login.apiKey') }} <span class="text-muted">{{ i18n.t('login.optional') }}</span></label>
             <input
               id="apiKey"
               type="password"
               class="login-input"
               [(ngModel)]="apiKey"
               name="apiKey"
-              placeholder="Enter API key or leave blank"
+              [placeholder]="i18n.t('login.placeholder')"
               autocomplete="current-password"
             />
           </div>
 
-          <button type="submit" class="login-submit">Enter Console</button>
+          <button type="submit" class="login-submit">{{ i18n.t('login.submit') }}</button>
         </form>
       </div>
     </div>
@@ -122,6 +123,7 @@ import { AuthService } from '../../services/auth.service';
   ],
 })
 export class LoginComponent {
+  readonly i18n = inject(I18nService);
   apiKey = '';
 
   constructor(

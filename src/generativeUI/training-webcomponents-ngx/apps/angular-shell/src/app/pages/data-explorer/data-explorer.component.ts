@@ -2,6 +2,7 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, signal, com
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 type AssetType = 'xlsx' | 'csv' | 'template';
@@ -33,19 +34,19 @@ interface SqlPair {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Data Explorer</h1>
+        <h1 class="page-title">{{ i18n.t('dataExplorer.title') }}</h1>
         <div class="tab-bar">
-          <button class="tab-btn" [class.active]="activeTab() === 'assets'" (click)="setTab('assets')">Data Assets</button>
-          <button class="tab-btn" [class.active]="activeTab() === 'pairs'" (click)="setTab('pairs')">SQL Training Pairs</button>
+          <button class="tab-btn" [class.active]="activeTab() === 'assets'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</button>
+          <button class="tab-btn" [class.active]="activeTab() === 'pairs'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</button>
         </div>
       </div>
 
       <!-- Tab: Data Assets -->
       @if (activeTab() === 'assets') {
         <div class="filter-bar" style="margin-bottom: 1rem;">
-          <input class="search-input" [(ngModel)]="searchTerm" placeholder="Filter assets…" />
+          <input class="search-input" [(ngModel)]="searchTerm" [placeholder]="i18n.t('dataExplorer.filterAssets')" />
           <select class="filter-select" [(ngModel)]="filterCategory">
-            <option value="">All categories</option>
+            <option value="">{{ i18n.t('dataExplorer.allCategories') }}</option>
             @for (c of categories(); track c) {
               <option [value]="c">{{ c }}</option>
             }
@@ -55,19 +56,19 @@ interface SqlPair {
         <div class="stats-grid" style="margin-bottom:1.5rem">
           <div class="stat-card">
             <div class="stat-value">{{ assets.length }}</div>
-            <div class="stat-label">Total Assets</div>
+            <div class="stat-label">{{ i18n.t('dataExplorer.totalAssets') }}</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">{{ excelCount() }}</div>
-            <div class="stat-label">Excel Files</div>
+            <div class="stat-label">{{ i18n.t('dataExplorer.excelFiles') }}</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">{{ csvCount() }}</div>
-            <div class="stat-label">CSV Files</div>
+            <div class="stat-label">{{ i18n.t('dataExplorer.csvFiles') }}</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">{{ templateCount() }}</div>
-            <div class="stat-label">Prompt Templates</div>
+            <div class="stat-label">{{ i18n.t('dataExplorer.promptTemplates') }}</div>
           </div>
         </div>
 
@@ -89,7 +90,7 @@ interface SqlPair {
         </div>
 
         @if (!filteredAssets().length) {
-          <p class="text-muted text-small">No assets match your filter.</p>
+          <p class="text-muted text-small">{{ i18n.t('dataExplorer.noAssetsMatch') }}</p>
         }
 
         @if (selected(); as sel) {
@@ -101,11 +102,11 @@ interface SqlPair {
             </div>
             <table class="info-table">
               <tbody>
-                <tr><td>Type</td><td>{{ sel.type.toUpperCase() }}</td></tr>
-                <tr><td>Category</td><td>{{ sel.category }}</td></tr>
-                <tr><td>Size</td><td>{{ sel.size }}</td></tr>
-                <tr><td>Description</td><td>{{ sel.description }}</td></tr>
-                <tr><td>Location</td><td><code>data/{{ sel.name }}</code></td></tr>
+                <tr><td>{{ i18n.t('dataExplorer.type') }}</td><td>{{ sel.type.toUpperCase() }}</td></tr>
+                <tr><td>{{ i18n.t('dataExplorer.category') }}</td><td>{{ sel.category }}</td></tr>
+                <tr><td>{{ i18n.t('dataExplorer.size') }}</td><td>{{ sel.size }}</td></tr>
+                <tr><td>{{ i18n.t('dataExplorer.description') }}</td><td>{{ sel.description }}</td></tr>
+                <tr><td>{{ i18n.t('dataExplorer.location') }}</td><td><code>data/{{ sel.name }}</code></td></tr>
               </tbody>
             </table>
           </div>
@@ -118,36 +119,36 @@ interface SqlPair {
           <div class="stats-grid" style="margin-bottom: 1rem;">
             <div class="stat-card">
               <div class="stat-value">{{ pairTotal() }}</div>
-              <div class="stat-label">Total Pairs</div>
+              <div class="stat-label">{{ i18n.t('dataExplorer.totalPairs') }}</div>
             </div>
             <div class="stat-card">
               <div class="stat-value" style="color: #4caf50;">{{ easyCount() }}</div>
-              <div class="stat-label">Easy</div>
+              <div class="stat-label">{{ i18n.t('dataExplorer.easy') }}</div>
             </div>
             <div class="stat-card">
               <div class="stat-value" style="color: #ff9800;">{{ mediumCount() }}</div>
-              <div class="stat-label">Medium</div>
+              <div class="stat-label">{{ i18n.t('dataExplorer.medium') }}</div>
             </div>
             <div class="stat-card">
               <div class="stat-value" style="color: #f44336;">{{ hardCount() }}</div>
-              <div class="stat-label">Hard</div>
+              <div class="stat-label">{{ i18n.t('dataExplorer.hard') }}</div>
             </div>
           </div>
 
           <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
-            <label style="font-size: 0.875rem; font-weight: 600;">Filter Difficulty:</label>
+            <label style="font-size: 0.875rem; font-weight: 600;">{{ i18n.t('dataExplorer.filterDifficulty') }}</label>
             <select class="filter-select" [(ngModel)]="difficultyFilter" (ngModelChange)="loadPairs()">
-              <option value="">All</option>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
+              <option value="">{{ i18n.t('dataExplorer.all') }}</option>
+              <option value="easy">{{ i18n.t('dataExplorer.easy') }}</option>
+              <option value="medium">{{ i18n.t('dataExplorer.medium') }}</option>
+              <option value="hard">{{ i18n.t('dataExplorer.hard') }}</option>
             </select>
-            <span class="text-small text-muted">Source: {{ pairSource() }}</span>
+            <span class="text-small text-muted">{{ i18n.t('dataExplorer.source') }}: {{ pairSource() }}</span>
           </div>
         </div>
 
         @if (pairsLoading()) {
-          <p class="text-muted text-small">Loading SQL pairs from the pipeline…</p>
+          <p class="text-muted text-small">{{ i18n.t('dataExplorer.loadingPairs') }}</p>
         }
 
         <div class="pairs-list">
@@ -167,7 +168,7 @@ interface SqlPair {
         @if (!pairs().length && !pairsLoading()) {
           <div style="text-align: center; padding: 3rem; color: #999;">
             <div style="font-size: 2rem; margin-bottom: 0.5rem;"><ui5-icon name="database"></ui5-icon></div>
-            <p>No training pairs found. Run the Pipeline first.</p>
+            <p>{{ i18n.t('dataExplorer.noPairs') }}</p>
           </div>
         }
       }
@@ -244,6 +245,7 @@ interface SqlPair {
 })
 export class DataExplorerComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  readonly i18n = inject(I18nService);
 
   searchTerm = '';
   filterCategory = '';

@@ -322,3 +322,25 @@ pre {
     flex-direction: column;
   }
 }
+
+/* ── RTL (Right-to-Left) Global Overrides ── */
+[dir='rtl'] {
+  direction: rtl;
+  text-align: right;
+
+  .page-header { flex-direction: row-reverse; }
+
+  .stats-grid,
+  .dashboard-grid { direction: rtl; }
+
+  .data-table th,
+  .data-table td { text-align: right; }
+
+  .ml-1 { margin-left: 0; margin-right: 0.5rem; }
+  .mr-1 { margin-right: 0; margin-left: 0.5rem; }
+
+  .skip-link { left: auto; right: 0; }
+
+  code, .code { direction: ltr; unicode-bidi: isolate; }
+  pre          { direction: ltr; unicode-bidi: isolate; text-align: left; }
+}

@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 interface DeployedModel {
@@ -25,16 +26,16 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">A/B Model Comparison</h1>
-        <span class="text-muted text-small">Test the same prompt against two deployed models side-by-side</span>
+        <h1 class="page-title">{{ i18n.t('compare.title') }}</h1>
+        <span class="text-muted text-small">{{ i18n.t('compare.subtitle') }}</span>
       </div>
 
       <!-- Model selectors -->
       <div class="selector-row">
         <div class="model-selector">
-          <label><strong>Model A</strong></label>
+          <label><strong>{{ i18n.t('compare.modelA') }}</strong></label>
           <select [(ngModel)]="modelA" class="sel-input">
-            <option value="">— Select —</option>
+            <option value="">{{ i18n.t('compare.select') }}</option>
             @for (m of deployedModels(); track m.id) {
               <option [value]="m.id">{{ m.label }}</option>
             }
@@ -43,11 +44,11 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
             <span class="badge-model">{{ modelNameFor(modelA) }}</span>
           }
         </div>
-        <div class="vs-divider">VS</div>
+        <div class="vs-divider">{{ i18n.t('compare.vs') }}</div>
         <div class="model-selector">
-          <label><strong>Model B</strong></label>
+          <label><strong>{{ i18n.t('compare.modelB') }}</strong></label>
           <select [(ngModel)]="modelB" class="sel-input">
-            <option value="">— Select —</option>
+            <option value="">{{ i18n.t('compare.select') }}</option>
             @for (m of deployedModels(); track m.id) {
               <option [value]="m.id">{{ m.label }}</option>
             }
@@ -61,18 +62,18 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
       @if (!deployedModels().length) {
         <div class="empty-state">
           <div style="font-size: 2rem; margin-bottom: 0.5rem;"><ui5-icon name="machine"></ui5-icon></div>
-          <p>No deployed models yet. Train a model and click <strong>Deploy Model</strong> in the Model Optimizer.</p>
+          <p>{{ i18n.t('compare.noDeployed') }}</p>
         </div>
       }
 
       <!-- Shared prompt input -->
       <div class="prompt-bar">
         <input class="prompt-input" [(ngModel)]="prompt"
-               placeholder="Enter a natural language question (e.g. 'What is the total balance for active accounts?')"
+               [placeholder]="i18n.t('compare.placeholder')"
                (keyup.enter)="runComparison()" />
         <button class="btn-run" (click)="runComparison()"
                 [disabled]="!modelA || !modelB || !prompt.trim() || loading()">
-          {{ loading() ? 'Running…' : 'Compare' }}
+          {{ loading() ? i18n.t('compare.running') : i18n.t('compare.compare') }}
         </button>
       </div>
 
@@ -81,24 +82,24 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
         <div class="results-grid">
           <div class="result-card" [class.winner]="isWinner('A')">
             <div class="result-header">
-              <span>Model A · {{ modelNameFor(modelA) }}</span>
-              @if (isWinner('A')) { <span class="winner-badge">Best (shorter SQL)</span> }
+              <span>{{ i18n.t('compare.modelA') }} · {{ modelNameFor(modelA) }}</span>
+              @if (isWinner('A')) { <span class="winner-badge">{{ i18n.t('compare.bestShorter') }}</span> }
             </div>
-            <pre class="result-sql">{{ resultA() ?? 'Error or no response' }}</pre>
+            <pre class="result-sql">{{ resultA() ?? i18n.t('compare.errorResponse') }}</pre>
           </div>
           <div class="result-card" [class.winner]="isWinner('B')">
             <div class="result-header">
-              <span>Model B · {{ modelNameFor(modelB) }}</span>
-              @if (isWinner('B')) { <span class="winner-badge">Best (shorter SQL)</span> }
+              <span>{{ i18n.t('compare.modelB') }} · {{ modelNameFor(modelB) }}</span>
+              @if (isWinner('B')) { <span class="winner-badge">{{ i18n.t('compare.bestShorter') }}</span> }
             </div>
-            <pre class="result-sql">{{ resultB() ?? 'Error or no response' }}</pre>
+            <pre class="result-sql">{{ resultB() ?? i18n.t('compare.errorResponse') }}</pre>
           </div>
         </div>
 
         <!-- History -->
         @if (history().length > 0) {
           <div class="history-section">
-            <h2 class="section-title">Comparison History</h2>
+            <h2 class="section-title">{{ i18n.t('compare.history') }}</h2>
             @for (h of history(); track $index) {
               <div class="history-card">
                 <p class="history-q"><strong>Q:</strong> {{ h.query }}</p>
@@ -154,6 +155,7 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
 export class CompareComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
 
   readonly deployedModels = signal<DeployedModel[]>([]);
   readonly loading = signal(false);

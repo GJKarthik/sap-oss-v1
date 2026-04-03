@@ -8,6 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { I18nService } from '../../services/i18n.service';
 
 interface ModelInfo {
   name: string;
@@ -69,50 +70,50 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Model Optimizer</h1>
-        <button class="btn-primary" (click)="loadData()">Refresh</button>
+        <h1 class="page-title">{{ i18n.t('modelOpt.title') }}</h1>
+        <button class="btn-primary" (click)="loadData()">{{ i18n.t('modelOpt.refresh') }}</button>
       </div>
 
       <!-- Engine & Dataset -->
-      <h2 class="section-title">Engine Configuration</h2>
+      <h2 class="section-title">{{ i18n.t('modelOpt.engineConfig') }}</h2>
       <div class="card grid-2" style="margin-bottom: 1.5rem;" [formGroup]="jobForm">
         <div class="form-group">
-          <label>Training Framework</label>
+          <label>{{ i18n.t('modelOpt.framework') }}</label>
           <select formControlName="framework" class="form-input">
-            <option value="PyTorch">PyTorch Native (SFTTrainer)</option>
-            <option value="TensorFlow" disabled>TensorFlow (Coming Soon)</option>
+            <option value="PyTorch">{{ i18n.t('modelOpt.pytorch') }}</option>
+            <option value="TensorFlow" disabled>{{ i18n.t('modelOpt.tensorflow') }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Dataset Split</label>
+          <label>{{ i18n.t('modelOpt.datasetSplit') }}</label>
           <select formControlName="dataset" class="form-input">
-            <option value="spider-train">Spider Training Split (Text-to-SQL)</option>
-            <option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</option>
+            <option value="spider-train">{{ i18n.t('modelOpt.spiderTrain') }}</option>
+            <option value="bird-train" disabled>{{ i18n.t('modelOpt.birdTrain') }}</option>
           </select>
         </div>
       </div>
 
       <!-- Mangle Data Validation -->
-      <h2 class="section-title">Datalog Validation Pre-Flight</h2>
-      <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-left: 4px solid var(--sapBrandColor);">
+      <h2 class="section-title">{{ i18n.t('modelOpt.datalogValidation') }}</h2>
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-inline-start: 4px solid var(--sapBrandColor);">
         <div>
-          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
+          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">{{ i18n.t('modelOpt.datalogDesc') }}</p>
           @if (mangleStatus() === 'passed') {
-            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">✓ All 48 Invariants Passed</span>
+            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">{{ i18n.t('modelOpt.invariantsPassed') }}</span>
           } @else if (mangleStatus() === 'failed') {
-            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">Datalog Violation Detected</span>
+            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">{{ i18n.t('modelOpt.violationDetected') }}</span>
           } @else {
-            <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
+            <span class="text-muted text-small" style="display: inline-block;">{{ i18n.t('modelOpt.unverified') }}</span>
           }
         </div>
         <button type="button" class="btn-secondary" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
-          {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
+          {{ mangleStatus() === 'checking' ? i18n.t('modelOpt.validating') : i18n.t('modelOpt.checkConstraints') }}
         </button>
       </div>
 
       <!-- Model Catalog -->
       <section class="section">
-        <h2 class="section-title">Model Catalog</h2>
+        <h2 class="section-title">{{ i18n.t('modelOpt.modelCatalog') }}</h2>
         <div class="model-grid">
           @for (m of models(); track m.name) {
             <div
@@ -127,52 +128,52 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                 <span class="badge badge--quant">{{ m.recommended_quant }}</span>
               </div>
               @if (!m.t4_compatible) {
-                <div class="text-small t4-warn">T4 incompatible</div>
+                <div class="text-small t4-warn">{{ i18n.t('modelOpt.t4Incompatible') }}</div>
               }
             </div>
           }
         </div>
         @if (!models().length && !loading()) {
-          <p class="text-muted text-small">No models found — is the backend running?</p>
+          <p class="text-muted text-small">{{ i18n.t('modelOpt.noModels') }}</p>
         }
       </section>
 
       <!-- Create Job Form -->
       <section class="section">
-        <h2 class="section-title">Create Optimization Job</h2>
+        <h2 class="section-title">{{ i18n.t('modelOpt.createJob') }}</h2>
         <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()">
           
           <!-- Novice Mode -->
           @if (userSettings.mode() === 'novice') {
             <div class="form-row">
               <div class="field-group">
-                <label class="field-label">Template</label>
+                <label class="field-label">{{ i18n.t('modelOpt.template') }}</label>
                 <select class="form-input" (change)="applyTemplate($any($event.target).value)">
-                  <option value="">Select a template…</option>
-                  <option value="sql">Fine-tune Text-to-SQL (Recommended)</option>
-                  <option value="finance">Finance Schema Optimization</option>
-                  <option value="hr">HR Data Optimizer</option>
+                  <option value="">{{ i18n.t('modelOpt.selectTemplate') }}</option>
+                  <option value="sql">{{ i18n.t('modelOpt.sqlTemplate') }}</option>
+                  <option value="finance">{{ i18n.t('modelOpt.financeTemplate') }}</option>
+                  <option value="hr">{{ i18n.t('modelOpt.hrTemplate') }}</option>
                 </select>
               </div>
               <div class="field-group">
-                <label class="field-label">Model Name</label>
-                <input class="form-input" formControlName="model_name" placeholder="Auto-populated by template" readonly />
+                <label class="field-label">{{ i18n.t('modelOpt.modelName') }}</label>
+                <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.autoPopulated')" readonly />
               </div>
             </div>
-            
+
             @if (jobForm.value.model_name) {
               <div class="cost-estimate">
-                <span class="icon"><ui5-icon name="loan"></ui5-icon></span> Estimated cost: ~$2.50 | Time: ~45 mins | Auto-scaling Compute
+                <span class="icon"><ui5-icon name="loan"></ui5-icon></span> {{ i18n.t('modelOpt.costEstimate') }}
               </div>
             }
           }
-          
+
           <!-- VRAM Integration (All Modes) -->
           @if (estimatedVram() > 0 && gpuTotalNum() > 0) {
             <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
               <div class="vram-header">
-                <span class="vram-title">A-Priori VRAM Profiler</span>
-                <span class="vram-values">{{ estimatedVram().toFixed(1) }} GB required / {{ gpuTotalNum() }} GB available</span>
+                <span class="vram-title">{{ i18n.t('modelOpt.vramProfiler') }}</span>
+                <span class="vram-values">{{ i18n.t('modelOpt.vramRequired').replace('{0}', estimatedVram().toFixed(1)).replace('{1}', '' + gpuTotalNum()) }}</span>
               </div>
               <div class="progress-bar">
                 <div class="progress-fill" 
@@ -181,28 +182,28 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                 </div>
               </div>
               @if (isVramExceeded()) {
-                <div class="text-small error-text mt-1">Critical: Configuration exceeds physical VRAM bounds. Job will OOM crash.</div>
+                <div class="text-small error-text mt-1">{{ i18n.t('modelOpt.vramExceeded') }}</div>
               }
             </div>
           }
-          
+
           <!-- Intermediate Mode -->
           @if (userSettings.mode() === 'intermediate') {
             <div class="form-row">
               <div class="field-group">
-                <label class="field-label">Model</label>
-                <input class="form-input" formControlName="model_name" placeholder="HuggingFace model name" />
+                <label class="field-label">{{ i18n.t('modelOpt.model') }}</label>
+                <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.hfModelName')" />
               </div>
               <div class="field-group">
-                <label class="field-label">Quant Format</label>
+                <label class="field-label">{{ i18n.t('modelOpt.quantFormat') }}</label>
                 <select class="form-input" formControlName="quant_format">
-                  <option value="int8">INT8 SmoothQuant (Fast)</option>
-                  <option value="int4_awq">INT4 AWQ (Best compression)</option>
-                  <option value="w4a16">W4A16 (Balanced)</option>
+                  <option value="int8">{{ i18n.t('modelOpt.int8') }}</option>
+                  <option value="int4_awq">{{ i18n.t('modelOpt.int4awq') }}</option>
+                  <option value="w4a16">{{ i18n.t('modelOpt.w4a16') }}</option>
                 </select>
               </div>
               <div class="field-group">
-                <label class="field-label">Export Format</label>
+                <label class="field-label">{{ i18n.t('modelOpt.exportFormat') }}</label>
                 <select class="form-input" formControlName="export_format">
                   <option value="hf">HuggingFace</option>
                   <option value="tensorrt_llm">TensorRT-LLM</option>
@@ -210,9 +211,9 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                 </select>
               </div>
               <div class="field-group">
-                <label class="field-label">Calib Samples <span class="badge badge--best">Best Practice: 512</span></label>
+                <label class="field-label">{{ i18n.t('modelOpt.calibSamples') }} <span class="badge badge--best">{{ i18n.t('modelOpt.bestPractice') }}</span></label>
                 <input type="range" class="form-input" formControlName="calib_samples" min="32" max="2048" step="32" />
-                <div class="text-small text-muted">{{ jobForm.value.calib_samples }} samples</div>
+                <div class="text-small text-muted">{{ jobForm.value.calib_samples }} {{ i18n.t('modelOpt.samples') }}</div>
               </div>
             </div>
           }
@@ -221,42 +222,42 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           @if (userSettings.mode() === 'expert') {
             <div class="form-row">
               <div class="field-group">
-                <label class="field-label">Model Override</label>
-                <input class="form-input" formControlName="model_name" placeholder="Custom URI / HF Repo" />
+                <label class="field-label">{{ i18n.t('modelOpt.modelOverride') }}</label>
+                <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.customUri')" />
               </div>
               <ng-container formGroupName="expertConfig">
                 <div class="field-group">
-                  <label class="field-label">Compute Strategy</label>
+                  <label class="field-label">{{ i18n.t('modelOpt.computeStrategy') }}</label>
                   <select class="form-input" formControlName="compute">
-                    <option value="auto">Auto (Default)</option>
-                    <option value="deepspeed_1">DeepSpeed Stage 1</option>
-                    <option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</option>
+                    <option value="auto">{{ i18n.t('modelOpt.autoDefault') }}</option>
+                    <option value="deepspeed_1">{{ i18n.t('modelOpt.deepspeed1') }}</option>
+                    <option value="deepspeed_3">{{ i18n.t('modelOpt.deepspeed3') }}</option>
                   </select>
                 </div>
 
                 <div class="field-group full-width" style="background: rgba(8, 84, 160, 0.05); padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
                   <div class="full-width" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: -0.5rem;">
                     <input type="checkbox" id="peftToggle" formControlName="use_peft" />
-                    <label for="peftToggle" class="field-label" style="margin: 0; font-weight: 600;">Enable PEFT (LoRA Matrices)</label>
+                    <label for="peftToggle" class="field-label" style="margin: 0; font-weight: 600;">{{ i18n.t('modelOpt.enablePeft') }}</label>
                   </div>
                   @if (jobForm.value.expertConfig?.use_peft) {
                     <div class="field-group">
-                      <label class="field-label">Rank (r)</label>
+                      <label class="field-label">{{ i18n.t('modelOpt.rank') }}</label>
                       <input type="number" class="form-input" formControlName="peft_r" />
                     </div>
                     <div class="field-group">
-                      <label class="field-label">LoRA Alpha</label>
+                      <label class="field-label">{{ i18n.t('modelOpt.loraAlpha') }}</label>
                       <input type="number" class="form-input" formControlName="peft_alpha" />
                     </div>
                     <div class="field-group">
-                      <label class="field-label">Dropout</label>
+                      <label class="field-label">{{ i18n.t('modelOpt.dropout') }}</label>
                       <input type="number" class="form-input" formControlName="peft_dropout" step="0.01" />
                     </div>
                   }
                 </div>
 
                 <div class="field-group full-width">
-                  <label class="field-label">Raw JSON Override (Arguments Map)</label>
+                  <label class="field-label">{{ i18n.t('modelOpt.rawJson') }}</label>
                   <textarea class="form-input mono" rows="5" formControlName="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
                 </div>
               </ng-container>
@@ -265,7 +266,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
           <div class="form-actions" style="margin-top: 1rem;">
             <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
-              {{ submitting() ? 'Submitting…' : 'Run Job' }}
+              {{ submitting() ? i18n.t('modelOpt.submitting') : i18n.t('modelOpt.runJob') }}
             </button>
           </div>
         </form>
@@ -273,19 +274,19 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       <!-- Jobs Table -->
       <section class="section">
-        <h2 class="section-title">Jobs <span class="text-muted text-small">({{ jobs().length }})</span></h2>
+        <h2 class="section-title">{{ i18n.t('modelOpt.jobs') }} <span class="text-muted text-small">({{ jobs().length }})</span></h2>
         @if (jobs().length) {
           <div class="table-wrapper">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Model</th>
-                  <th>Quant</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Created</th>
+                  <th>{{ i18n.t('modelOpt.jobId') }}</th>
+                  <th>{{ i18n.t('modelOpt.jobName') }}</th>
+                  <th>{{ i18n.t('modelOpt.jobModel') }}</th>
+                  <th>{{ i18n.t('modelOpt.jobQuant') }}</th>
+                  <th>{{ i18n.t('modelOpt.jobStatus') }}</th>
+                  <th>{{ i18n.t('modelOpt.jobProgress') }}</th>
+                  <th>{{ i18n.t('modelOpt.jobCreated') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -332,12 +333,12 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                             @if (!j.deployed) {
                               <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
                                       (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                                {{ deployingJob() === j.id ? 'Loading...' : 'Deploy Model' }}
+                                {{ deployingJob() === j.id ? i18n.t('modelOpt.deploying') : i18n.t('modelOpt.deployModel') }}
                               </button>
                             } @else {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;" 
+                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #00695c;"
                                       (click)="openChat(j)">
-                                Chat Playground
+                                {{ i18n.t('modelOpt.chatPlayground') }}
                               </button>
                             }
                           </div>
@@ -358,7 +359,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           </div>
         }
         @if (!jobs().length && !loading()) {
-          <p class="text-muted text-small">No jobs yet.</p>
+          <p class="text-muted text-small">{{ i18n.t('modelOpt.noJobs') }}</p>
         }
       </section>
 
@@ -373,25 +374,25 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
         <div class="modal-overlay" (click)="closeChat()">
           <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h3 style="margin: 0; font-size: 1rem;">Playground: {{ chatJob.config.model_name }}</h3>
+              <h3 style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: {{ chatJob.config.model_name }}</h3>
               <button class="close-btn" (click)="closeChat()">✕</button>
             </div>
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
                 <div class="chat-bubble" [class.user]="msg.role === 'user'">
-                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? 'You' : 'Model' }}</strong>
+                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.model') }}</strong>
                   <p style="margin: 0.2rem 0 0; font-size: 0.875rem;">{{ msg.text }}</p>
                 </div>
               }
               @if (chatLoading()) {
                 <div class="chat-bubble loading">
-                  <em style="font-size: 0.875rem; color: #666;">Model is computing tensors...</em>
+                  <em style="font-size: 0.875rem; color: #666;">{{ i18n.t('modelOpt.computing') }}</em>
                 </div>
               }
             </div>
             <div class="chat-input-area">
-              <input type="text" [formControl]="chatInput" class="form-input" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()" />
-              <button class="btn-primary" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</button>
+              <input type="text" [formControl]="chatInput" class="form-input" [placeholder]="i18n.t('modelOpt.promptModel')" (keyup.enter)="sendChat()" />
+              <button class="btn-primary" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">{{ i18n.t('chat.send') }}</button>
             </div>
           </div>
         </div>
@@ -655,6 +656,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   public readonly store = inject(AppStore);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
   private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 
 interface DataCleaningHealth {
   status: string;
@@ -43,37 +44,37 @@ interface DataCleaningWorkflowEventsResponse {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Data Cleaning Copilot</h1>
-        <p class="text-muted">Prepare and validate training data quality directly in model workflows.</p>
+        <h1 class="page-title">{{ i18n.t('dataCleaning.title') }}</h1>
+        <p class="text-muted">{{ i18n.t('dataCleaning.subtitle') }}</p>
       </div>
 
       <div class="toolbar">
         <span class="status-pill" [class.status-pill--ok]="healthStatus() === 'ok'">
-          Backend: {{ healthStatus() }}
+          {{ i18n.t('dataCleaning.backend') }}: {{ healthStatus() }}
         </span>
         @if (activeWorkflowId()) {
           <span class="status-pill" [class.status-pill--ok]="workflowStatus() === 'completed'">
-            Workflow: {{ workflowStatus() }}
+            {{ i18n.t('dataCleaning.workflow') }}: {{ workflowStatus() }}
           </span>
         }
         <button class="refresh-btn" (click)="refreshAll()" [disabled]="loadingHealth() || loadingChecks()">
-          Refresh
+          {{ i18n.t('dataCleaning.refresh') }}
         </button>
         <button class="refresh-btn" (click)="clearSession()" [disabled]="sending() || workflowRunning()">
-          Clear Session
+          {{ i18n.t('dataCleaning.clearSession') }}
         </button>
       </div>
 
       <div class="grid">
         <section class="panel">
-          <h2>Copilot Chat</h2>
+          <h2>{{ i18n.t('dataCleaning.copilotChat') }}</h2>
           <div class="chat-log">
             @if (!messages().length) {
-              <div class="empty">Ask for data quality checks, SQL cleanup suggestions, or anomaly prompts.</div>
+              <div class="empty">{{ i18n.t('dataCleaning.emptyChat') }}</div>
             }
             @for (msg of messages(); track msg.ts) {
               <div class="msg" [class.msg--user]="msg.role === 'user'" [class.msg--assistant]="msg.role === 'assistant'">
-                <div class="msg-role">{{ msg.role === 'user' ? 'You' : 'Copilot' }}</div>
+                <div class="msg-role">{{ msg.role === 'user' ? i18n.t('dataCleaning.you') : i18n.t('dataCleaning.copilot') }}</div>
                 <div class="msg-content">{{ msg.content }}</div>
               </div>
             }
@@ -84,27 +85,27 @@ interface DataCleaningWorkflowEventsResponse {
               name="prompt"
               [(ngModel)]="prompt"
               rows="2"
-              placeholder="e.g. Profile CUSTOMER table and suggest null-value remediations"
+              [placeholder]="i18n.t('dataCleaning.placeholder')"
             ></textarea>
             <button class="send-btn" type="submit" [disabled]="sending() || !prompt.trim()">
-              {{ sending() ? '...' : 'Send' }}
+              {{ sending() ? '...' : i18n.t('dataCleaning.send') }}
             </button>
           </form>
 
           <div class="workflow-cta">
             <button class="run-btn" (click)="runWorkflow()" [disabled]="workflowRunning() || !lastPrompt">
-              {{ workflowRunning() ? 'Running workflow...' : 'Run Data Cleaning Workflow' }}
+              {{ workflowRunning() ? i18n.t('dataCleaning.runningWorkflow') : i18n.t('dataCleaning.runWorkflow') }}
             </button>
-            <span class="empty">Uses your last prompt to create cleaning actions for training data.</span>
+            <span class="empty">{{ i18n.t('dataCleaning.workflowDesc') }}</span>
           </div>
         </section>
 
         <section class="panel">
-          <h2>Generated Checks</h2>
+          <h2>{{ i18n.t('dataCleaning.generatedChecks') }}</h2>
           @if (loadingChecks()) {
-            <div class="empty">Loading checks...</div>
+            <div class="empty">{{ i18n.t('dataCleaning.loadingChecks') }}</div>
           } @else if (!checks().length) {
-            <div class="empty">No checks generated yet. Send a chat prompt first.</div>
+            <div class="empty">{{ i18n.t('dataCleaning.noChecks') }}</div>
           } @else {
             <div class="checks-list">
               @for (check of checks(); track $index) {
@@ -113,9 +114,9 @@ interface DataCleaningWorkflowEventsResponse {
             </div>
           }
 
-          <h2>Workflow Events</h2>
+          <h2>{{ i18n.t('dataCleaning.workflowEvents') }}</h2>
           @if (!workflowEvents().length) {
-            <div class="empty">No workflow events yet. Run workflow after generating checks.</div>
+            <div class="empty">{{ i18n.t('dataCleaning.noEvents') }}</div>
           } @else {
             <div class="events-list">
               @for (event of workflowEvents(); track $index) {
@@ -178,6 +179,7 @@ interface DataCleaningWorkflowEventsResponse {
 export class DataCleaningComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
   private workflowPollTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly healthStatus = signal('unknown');
@@ -266,7 +268,7 @@ export class DataCleaningComponent implements OnInit, OnDestroy {
         this.workflowStatus.set('idle');
         this.workflowRunning.set(false);
         this.stopWorkflowPolling();
-        this.toast.info('Data cleaning session cleared');
+        this.toast.info(this.i18n.t('dataCleaning.sessionCleared'));
       },
       error: (error: HttpErrorResponse) => {
         this.toast.warning(this.extractDetail(error), 'Data Cleaning Session');

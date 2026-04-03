@@ -5,6 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 interface JobResponse {
@@ -37,7 +38,7 @@ interface LogLine { text: string; kind: 'info' | 'success' | 'error' | 'warn' | 
           <span class="text-small text-muted">{{ job.config['model_name'] }}</span>
         </div>
         <div class="ws-indicator" [class.live]="wsConnected()">
-          {{ wsConnected() ? 'Live' : 'Offline' }}
+          {{ wsConnected() ? i18n.t('app.live') : i18n.t('app.offline') }}
         </div>
       </div>
 
@@ -115,6 +116,7 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('logBody') private logBody?: ElementRef;
 
   private readonly http = inject(HttpClient);
+  readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly zone = inject(NgZone);
 
