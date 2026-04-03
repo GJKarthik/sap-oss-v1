@@ -3,6 +3,11 @@
  * SAP Fiori design guidelines, WCAG 2.1 AA
  */
 
+// ---------------------------------------------------------------------------
+// Arabic web fonts (async, non-blocking via font-display: swap)
+// ---------------------------------------------------------------------------
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap');
+
 :root {
   --sapFontFamily: "72", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --sapBackgroundColor: #f5f5f5;
@@ -327,6 +332,7 @@ pre {
 [dir='rtl'] {
   direction: rtl;
   text-align: right;
+  font-family: 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Segoe UI', Tahoma, sans-serif;
 
   .page-header { flex-direction: row-reverse; }
 
@@ -343,4 +349,35 @@ pre {
 
   code, .code { direction: ltr; unicode-bidi: isolate; }
   pre          { direction: ltr; unicode-bidi: isolate; text-align: left; }
+
+  /* BiDi isolation for technical/English content mixed with Arabic */
+  .technical,
+  .model-name,
+  .badge-model,
+  .mono,
+  .pair-sql,
+  .result-sql,
+  .asset-name,
+  .quant-badge {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  /* Chat message content: assistant responses (SQL/code) should stay LTR */
+  .message--assistant .message-content {
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: left;
+  }
+
+  // Force Western (European) numerals for financial data and general consistency
+  .financial-data,
+  .stat-value,
+  .currency,
+  [data-numerals="western"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
 }

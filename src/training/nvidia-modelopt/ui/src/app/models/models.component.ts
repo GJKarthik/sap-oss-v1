@@ -17,8 +17,8 @@ import { ApiService, Model } from '../services/api.service';
       <div class="models-grid">
         <div class="model-card" *ngFor="let model of models">
           <div class="model-header">
-            <h3>{{ model.id }}</h3>
-            <span class="model-type">{{ getModelType(model.id) }}</span>
+            <h3><bdi>{{ model.id }}</bdi></h3>
+            <span class="model-type"><bdi>{{ getModelType(model.id) }}</bdi></span>
           </div>
           <div class="model-details">
             <div class="detail-row">
@@ -32,7 +32,7 @@ import { ApiService, Model } from '../services/api.service';
             <div class="detail-row">
               <span class="label">Quantization</span>
               <span class="value quant-badge" [class]="getQuantClass(model.id)">
-                {{ getQuantization(model.id) }}
+                <bdi>{{ getQuantization(model.id) }}</bdi>
               </span>
             </div>
           </div>

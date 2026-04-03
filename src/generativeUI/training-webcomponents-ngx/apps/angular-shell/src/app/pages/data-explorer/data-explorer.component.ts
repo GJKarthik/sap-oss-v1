@@ -77,7 +77,7 @@ interface SqlPair {
             <div class="asset-card" (click)="select(a)" [class.asset-card--active]="selected()?.name === a.name">
               <div class="asset-icon"><ui5-icon [name]="iconFor(a.type)"></ui5-icon></div>
               <div class="asset-info">
-                <div class="asset-name">{{ a.name }}</div>
+                <div class="asset-name"><bdi>{{ a.name }}</bdi></div>
                 <div class="asset-desc text-muted text-small">{{ a.description }}</div>
                 <div class="asset-meta">
                   <span class="badge badge--{{ a.type }}">{{ a.type.toUpperCase() }}</span>
@@ -97,7 +97,7 @@ interface SqlPair {
           <div class="detail-panel">
             <div class="detail-header">
               <span class="detail-icon"><ui5-icon [name]="iconFor(sel.type)"></ui5-icon></span>
-              <h2 class="detail-title">{{ sel.name }}</h2>
+              <h2 class="detail-title"><bdi>{{ sel.name }}</bdi></h2>
               <button class="close-btn" (click)="clearSelection()">✕</button>
             </div>
             <table class="info-table">
@@ -106,7 +106,7 @@ interface SqlPair {
                 <tr><td>{{ i18n.t('dataExplorer.category') }}</td><td>{{ sel.category }}</td></tr>
                 <tr><td>{{ i18n.t('dataExplorer.size') }}</td><td>{{ sel.size }}</td></tr>
                 <tr><td>{{ i18n.t('dataExplorer.description') }}</td><td>{{ sel.description }}</td></tr>
-                <tr><td>{{ i18n.t('dataExplorer.location') }}</td><td><code>data/{{ sel.name }}</code></td></tr>
+                <tr><td>{{ i18n.t('dataExplorer.location') }}</td><td><code><bdi>data/{{ sel.name }}</bdi></code></td></tr>
               </tbody>
             </table>
           </div>
@@ -159,8 +159,8 @@ interface SqlPair {
                 <span class="badge badge--{{ pair.difficulty }}">{{ pair.difficulty }}</span>
                 <span class="badge" style="background: #e8eaf6; color: #283593;">{{ pair.db_id }}</span>
               </div>
-              <p class="pair-question">{{ pair.question }}</p>
-              <pre class="pair-sql">{{ pair.query }}</pre>
+              <p class="pair-question"><bdi>{{ pair.question }}</bdi></p>
+              <pre class="pair-sql"><bdi>{{ pair.query }}</bdi></pre>
             </div>
           }
         </div>

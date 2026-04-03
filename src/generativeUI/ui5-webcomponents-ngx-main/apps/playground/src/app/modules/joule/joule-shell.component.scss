@@ -195,6 +195,13 @@ genui-outlet {
     flex-direction: row-reverse;
   }
 
+  // BiDi isolation: code/technical output stays LTR
+  code, pre, .technical {
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: left;
+  }
+
   @media (max-width: 768px) {
     .joule-chat-panel {
       border-left: none;

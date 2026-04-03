@@ -96,7 +96,7 @@
     <ui5-title level="H5">{{ 'OCR_FINANCIAL_FIELDS' | ui5I18n }}</ui5-title>
     <ui5-list separators="Inner">
       <ui5-li *ngFor="let field of result.financial_fields">
-        {{ field.key }}: {{ field.value }} ({{ field.confidence }})
+        <bdi>{{ field.key }}</bdi>: <bdi>{{ field.value }}</bdi> (<bdi>{{ field.confidence }}</bdi>)
       </ui5-li>
     </ui5-list>
 

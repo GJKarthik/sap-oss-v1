@@ -132,4 +132,10 @@
   .demo-tour-banner__actions {
     flex-direction: row-reverse;
   }
+
+  // BiDi isolation for technical content
+  code, pre, .technical {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
 }

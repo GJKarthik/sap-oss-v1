@@ -83,8 +83,37 @@ input, select, textarea {
 ::-webkit-scrollbar-thumb {
   background: var(--nvidia-gray);
   border-radius: 4px;
-  
+
   &:hover {
     background: var(--nvidia-dark-gray);
+  }
+}
+
+/* ── RTL (Right-to-Left) BiDi Isolation ── */
+[dir='rtl'] {
+  direction: rtl;
+  text-align: right;
+
+  code, pre, .technical {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  pre {
+    text-align: left;
+  }
+
+  .model-header h3,
+  .model-type,
+  .quant-badge,
+  .model-select {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  .message .content {
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: left;
   }
 }
