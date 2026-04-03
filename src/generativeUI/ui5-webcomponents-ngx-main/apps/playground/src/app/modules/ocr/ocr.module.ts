@@ -5,6 +5,11 @@ import { RouterModule } from '@angular/router';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { Ui5I18nModule } from '@ui5/webcomponents-ngx/i18n';
 import { OcrPageComponent } from './ocr-page.component';
+import {
+  PlaygroundLocaleCurrencyPipe,
+  PlaygroundLocaleNumberPipe,
+  PlaygroundLocalePercentPipe,
+} from '../../shared/pipes/locale-format.pipe';
 
 @NgModule({
   declarations: [OcrPageComponent],
@@ -13,6 +18,9 @@ import { OcrPageComponent } from './ocr-page.component';
     FormsModule,
     Ui5WebcomponentsModule,
     Ui5I18nModule,
+    PlaygroundLocaleCurrencyPipe,
+    PlaygroundLocaleNumberPipe,
+    PlaygroundLocalePercentPipe,
     RouterModule.forChild([{ path: '', component: OcrPageComponent }]),
   ],
 })

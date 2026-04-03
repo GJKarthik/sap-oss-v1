@@ -5,6 +5,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
+import { LocaleDatePipe } from '../../shared/pipes/locale-date.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface ChatMessage {
@@ -30,7 +31,7 @@ interface CompletionResponse {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LocaleDatePipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -86,7 +87,7 @@ interface CompletionResponse {
             >
               <div class="message-role">{{ m.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}</div>
               <div class="message-content"><bdi>{{ m.content }}</bdi></div>
-              <div class="message-ts text-small text-muted">{{ m.ts | date:'HH:mm:ss' }}</div>
+              <div class="message-ts text-small text-muted">{{ m.ts | localeDate:'time' }}</div>
             </div>
           }
 

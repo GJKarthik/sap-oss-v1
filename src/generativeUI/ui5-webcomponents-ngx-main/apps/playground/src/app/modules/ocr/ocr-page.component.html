@@ -96,7 +96,7 @@
     <ui5-title level="H5">{{ 'OCR_FINANCIAL_FIELDS' | ui5I18n }}</ui5-title>
     <ui5-list separators="Inner">
       <ui5-li *ngFor="let field of result.financial_fields">
-        <bdi>{{ field.key }}</bdi>: <bdi>{{ field.value }}</bdi> (<bdi>{{ field.confidence }}</bdi>)
+        <bdi>{{ field.key }}</bdi>: <bdi>{{ field.value | localeCurrency:'SAR' }}</bdi> (<bdi>{{ field.confidence | localePercent }}</bdi>)
       </ui5-li>
     </ui5-list>
 
@@ -116,9 +116,9 @@
           <tr *ngFor="let item of result.line_items">
             <td>{{ item.description_en || '-' }}</td>
             <td>{{ item.description_ar || '-' }}</td>
-            <td class="ocr-line-items-table__num">{{ item.quantity }}</td>
-            <td class="ocr-line-items-table__num">{{ item.unit_price }}</td>
-            <td class="ocr-line-items-table__num">{{ item.total }}</td>
+            <td class="ocr-line-items-table__num">{{ item.quantity | localeNumber }}</td>
+            <td class="ocr-line-items-table__num">{{ item.unit_price | localeCurrency:'SAR' }}</td>
+            <td class="ocr-line-items-table__num">{{ item.total | localeCurrency:'SAR' }}</td>
           </tr>
         </tbody>
       </table>
