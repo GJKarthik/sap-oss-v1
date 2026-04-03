@@ -83,6 +83,20 @@ def _check_binary(name: str) -> bool:
     return shutil.which(name) is not None
 
 
+def _check_arabic_traineddata() -> bool:
+    """Check if the Tesseract Arabic language pack (ara.traineddata) is installed."""
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["tesseract", "--list-langs"],
+            capture_output=True, text=True, timeout=10,
+        )
+        return "ara" in result.stdout.split()
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return False
+
+
 def check_dependencies() -> DependencyReport:
     """Check all dependencies and return a full report."""
     report = DependencyReport()
@@ -147,6 +161,22 @@ def check_dependencies() -> DependencyReport:
         note="" if avail_fa else "Optional — server.py requires fastapi + uvicorn",
     ))
 
+    avail_httpx, ver_httpx = _check_module("httpx")
+    report.dependencies.append(DependencyStatus(
+        name="httpx",
+        available=avail_httpx, version=ver_httpx,
+        features=["Webhook delivery"],
+        note="" if avail_httpx else "Optional — webhook callbacks will be skipped",
+    ))
+
+    avail_mp, ver_mp = _check_module("multipart")
+    report.dependencies.append(DependencyStatus(
+        name="python-multipart",
+        available=avail_mp, version=ver_mp,
+        features=["File upload handling"],
+        note="" if avail_mp else "Optional — file upload endpoints require python-multipart",
+    ))
+
     # System binaries
     tess_ok = _check_binary("tesseract")
     report.dependencies.append(DependencyStatus(
@@ -162,6 +192,15 @@ def check_dependencies() -> DependencyReport:
         available=popp_ok,
         features=["PDF rendering for pdf2image"],
         note="" if popp_ok else "REQUIRED — install via brew/apt (poppler-utils)",
+    ))
+
+    # Arabic language pack
+    ara_ok = _check_arabic_traineddata()
+    report.dependencies.append(DependencyStatus(
+        name="tesseract-ara (language pack)",
+        available=ara_ok,
+        features=["Arabic language OCR"],
+        note="" if ara_ok else "Optional — Arabic OCR accuracy requires ara.traineddata",
     ))
 
     return report
