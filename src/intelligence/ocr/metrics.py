@@ -28,7 +28,7 @@ class OCRMetrics:
     _TIME_BUCKETS = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, float("inf")]
 
     def __init__(self):
-        self._lock = threading.RLock()
+        self._lock = threading.Lock()
         self.pages_processed: int = 0
         self.documents_processed: int = 0
         self.errors_total: int = 0
@@ -58,17 +58,22 @@ class OCRMetrics:
         with self._lock:
             self.documents_processed += 1
 
+    def _avg_confidence_unlocked(self) -> float:
+        """Internal helper — caller MUST hold self._lock."""
+        if self.confidence_count == 0:
+            return 0.0
+        return self.confidence_sum / self.confidence_count
+
     @property
     def avg_confidence(self) -> float:
         """Average confidence across all recorded pages."""
         with self._lock:
-            if self.confidence_count == 0:
-                return 0.0
-            return self.confidence_sum / self.confidence_count
+            return self._avg_confidence_unlocked()
 
     def to_prometheus(self) -> str:
         """Export metrics in Prometheus text exposition format."""
         with self._lock:
+            avg = self._avg_confidence_unlocked()
             lines = [
                 "# HELP ocr_pages_processed_total Total pages processed",
                 "# TYPE ocr_pages_processed_total counter",
@@ -84,7 +89,7 @@ class OCRMetrics:
                 "",
                 "# HELP ocr_confidence_avg Average OCR confidence",
                 "# TYPE ocr_confidence_avg gauge",
-                f"ocr_confidence_avg {self.avg_confidence:.2f}",
+                f"ocr_confidence_avg {avg:.2f}",
                 "",
                 "# HELP ocr_processing_time_seconds Processing time histogram",
                 "# TYPE ocr_processing_time_seconds histogram",
@@ -111,7 +116,7 @@ class OCRMetrics:
                 "pages_processed": self.pages_processed,
                 "documents_processed": self.documents_processed,
                 "errors_total": self.errors_total,
-                "avg_confidence": round(self.avg_confidence, 2),
+                "avg_confidence": round(self._avg_confidence_unlocked(), 2),
                 "processing_time_sum_s": round(self._time_sum, 4),
                 "time_histogram": dict(self._time_buckets),
             }

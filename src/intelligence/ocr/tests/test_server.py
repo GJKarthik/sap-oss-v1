@@ -83,7 +83,7 @@ class TestHealthEndpoint:
         resp = client.get("/ocr/health")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ok"
+        assert data["status"] in ("healthy", "degraded")
         assert data["service"] == "arabic-ocr"
 
 
@@ -198,7 +198,7 @@ class TestLegacyEndpoints:
         resp = client.get("/api/ocr/health")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] in ("ok", "degraded", "unhealthy")
+        assert data["status"] in ("healthy", "degraded", "unhealthy")
         assert data["service"] == "arabic-ocr"
 
 
@@ -399,3 +399,142 @@ class TestUploadSizeLimit:
             files=[("files", ("big.pdf", io.BytesIO(oversized), "application/pdf"))],
         )
         assert resp.status_code == 413
+
+
+
+# ---------------------------------------------------------------------------
+# DNS rebinding SSRF protection
+# ---------------------------------------------------------------------------
+
+class TestDNSRebindingProtection:
+    def test_callback_rejects_loopback_resolution(self):
+        """callback_url that resolves to 127.0.0.1 must be rejected."""
+        old_hosts = os.environ.get("OCR_ALLOWED_CALLBACK_HOSTS")
+        # Allowlist 'localhost' explicitly — DNS resolution should still block it
+        os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = "localhost"
+        try:
+            with pytest.raises(ValueError, match="private/loopback"):
+                _validate_callback_url("https://localhost/hook")
+        finally:
+            if old_hosts is None:
+                os.environ.pop("OCR_ALLOWED_CALLBACK_HOSTS", None)
+            else:
+                os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = old_hosts
+
+    def test_callback_rejects_unresolvable_host(self):
+        """callback_url with an unresolvable hostname must be rejected."""
+        old_hosts = os.environ.get("OCR_ALLOWED_CALLBACK_HOSTS")
+        os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = "this-host-does-not-exist-12345.invalid"
+        try:
+            with pytest.raises(ValueError, match="could not be resolved"):
+                _validate_callback_url("https://this-host-does-not-exist-12345.invalid/hook")
+        finally:
+            if old_hosts is None:
+                os.environ.pop("OCR_ALLOWED_CALLBACK_HOSTS", None)
+            else:
+                os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = old_hosts
+
+
+# ---------------------------------------------------------------------------
+# Streaming upload read
+# ---------------------------------------------------------------------------
+
+class TestStreamingUploadRead:
+    @pytest.mark.asyncio
+    async def test_read_with_limit_rejects_oversized(self):
+        """_read_with_limit should reject data exceeding max_size during streaming."""
+        from ..server import _read_with_limit
+        from fastapi import UploadFile, HTTPException
+
+        content = b"X" * 1024  # 1 KB
+        upload = UploadFile(file=io.BytesIO(content), filename="test.bin")
+        with pytest.raises(HTTPException) as exc_info:
+            await _read_with_limit(upload, 512)  # limit to 512 bytes
+        assert exc_info.value.status_code == 413
+
+    @pytest.mark.asyncio
+    async def test_read_with_limit_accepts_within_limit(self):
+        """_read_with_limit should return data within the size limit."""
+        from ..server import _read_with_limit
+        from fastapi import UploadFile
+
+        content = b"X" * 256
+        upload = UploadFile(file=io.BytesIO(content), filename="test.bin")
+        result = await _read_with_limit(upload, 512)
+        assert result == content
+
+
+# ---------------------------------------------------------------------------
+# Health endpoint degraded status
+# ---------------------------------------------------------------------------
+
+class TestHealthDegradedStatus:
+    def test_health_returns_degraded_when_optional_missing(self, client):
+        """Health should return degraded with unavailable_features when optional deps missing."""
+        import unittest.mock as mock
+        from ..dependencies import DependencyReport, DependencyStatus
+        from .. import dependencies as deps_mod
+
+        fake_report = DependencyReport(dependencies=[
+            DependencyStatus(name="pytesseract", available=True, features=["OCR"], note=""),
+            DependencyStatus(name="httpx", available=False, features=["Webhook delivery"],
+                             note="Optional — webhook callbacks will be skipped"),
+        ])
+
+        with mock.patch.object(deps_mod, "check_dependencies", return_value=fake_report):
+            resp = client.get("/ocr/health")
+        data = resp.json()
+        assert resp.status_code == 200
+        assert data["status"] == "degraded"
+        assert "Webhook delivery" in data.get("unavailable_features", [])
+
+    def test_health_returns_unhealthy_503_when_required_missing(self, client):
+        """Health should return 503 unhealthy when required deps are missing."""
+        import unittest.mock as mock
+        from ..dependencies import DependencyReport, DependencyStatus
+        from .. import dependencies as deps_mod
+
+        fake_report = DependencyReport(dependencies=[
+            DependencyStatus(name="pytesseract", available=False, features=["OCR"],
+                             note="REQUIRED — core functionality will fail"),
+        ])
+
+        with mock.patch.object(deps_mod, "check_dependencies", return_value=fake_report):
+            resp = client.get("/ocr/health")
+        data = resp.json()
+        assert resp.status_code == 503
+        assert data["status"] == "unhealthy"
+        assert "pytesseract" in data["missing_required"]
+
+
+# ---------------------------------------------------------------------------
+# Metrics plain Lock (no re-entrancy)
+# ---------------------------------------------------------------------------
+
+class TestMetricsPlainLock:
+    def test_uses_plain_lock(self):
+        """Metrics should use threading.Lock, not RLock."""
+        import threading
+        from ..metrics import OCRMetrics
+
+        m = OCRMetrics()
+        assert type(m._lock) is threading.Lock
+
+    def test_to_prometheus_completes_instantly(self):
+        """to_prometheus must not re-enter avg_confidence (would deadlock with Lock)."""
+        from ..metrics import OCRMetrics
+
+        m = OCRMetrics()
+        m.record_page(0.95, 1.0)
+        # If this deadlocks, the test will time out
+        result = m.to_prometheus()
+        assert "ocr_confidence_avg 0.95" in result
+
+    def test_to_dict_completes_instantly(self):
+        """to_dict must not re-enter avg_confidence (would deadlock with Lock)."""
+        from ..metrics import OCRMetrics
+
+        m = OCRMetrics()
+        m.record_page(0.90, 0.5)
+        d = m.to_dict()
+        assert d["avg_confidence"] == 0.9

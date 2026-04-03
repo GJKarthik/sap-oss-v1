@@ -1528,7 +1528,7 @@ class TestHealthCheckDeps:
         assert resp.status_code == 200
         data = resp.json()
         assert "status" in data
-        assert data["status"] in ("ok", "degraded", "unhealthy")
+        assert data["status"] in ("healthy", "degraded", "unhealthy")
         assert "missing_required" in data
         assert "missing_optional" in data
 
