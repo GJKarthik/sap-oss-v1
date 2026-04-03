@@ -63,6 +63,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/registry/registry.component').then((m) => m.RegistryComponent),
       },
+      {
+        path: 'document-ocr',
+        loadComponent: () =>
+          import('./pages/document-ocr/document-ocr.component').then(
+            (m) => m.DocumentOcrComponent
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

@@ -290,6 +290,37 @@
   "relative.daysAgo": "{count, plural, zero {منذ ٠ أيام} one {منذ يوم} two {منذ يومين} few {منذ {count} أيام} many {منذ {count} يومًا} other {منذ {count} يوم}}",
   "relative.weeksAgo": "{count, plural, zero {منذ ٠ أسابيع} one {منذ أسبوع} two {منذ أسبوعين} few {منذ {count} أسابيع} many {منذ {count} أسبوعًا} other {منذ {count} أسبوع}}",
   "relative.monthsAgo": "{count, plural, zero {منذ ٠ أشهر} one {منذ شهر} two {منذ شهرين} few {منذ {count} أشهر} many {منذ {count} شهرًا} other {منذ {count} شهر}}",
-  "relative.yearsAgo": "{count, plural, zero {منذ ٠ سنوات} one {منذ سنة} two {منذ سنتين} few {منذ {count} سنوات} many {منذ {count} سنة} other {منذ {count} سنة}}"
+  "relative.yearsAgo": "{count, plural, zero {منذ ٠ سنوات} one {منذ سنة} two {منذ سنتين} few {منذ {count} سنوات} many {منذ {count} سنة} other {منذ {count} سنة}}",
+
+  "nav.documentOcr": "مسح المستندات",
+
+  "ocr.title": "مسح المستندات",
+  "ocr.subtitle": "رفع مستندات PDF العربية لاستخراج النصوص والتحليل بالتعرف الضوئي",
+  "ocr.upload.title": "اسحب وأفلت ملف PDF هنا",
+  "ocr.upload.hint": "أو انقر للتصفح — ملفات PDF حتى 50 ميجابايت",
+  "ocr.upload.browse": "تصفح الملفات",
+  "ocr.processing": "جارٍ معالجة المستند…",
+  "ocr.demoMode": "وضع تجريبي: عرض نتائج OCR وهمية (واجهة API غير متاحة)",
+  "ocr.tab.text": "النص",
+  "ocr.tab.tables": "الجداول",
+  "ocr.tab.financial": "الحقول المالية",
+  "ocr.tab.metadata": "البيانات الوصفية",
+  "ocr.page": "صفحة",
+  "ocr.copy": "نسخ",
+  "ocr.copied": "تم نسخ النص إلى الحافظة",
+  "ocr.table": "جدول",
+  "ocr.confidence": "الثقة",
+  "ocr.noTables": "لم يتم اكتشاف جداول في هذه الصفحة.",
+  "ocr.noFinancialFields": "لم يتم اكتشاف حقول مالية.",
+  "ocr.sendToChat": "إرسال إلى المحادثة",
+  "ocr.exportJson": "تصدير JSON",
+  "ocr.exportText": "تصدير النص",
+  "ocr.uploadAnother": "رفع ملف آخر",
+  "ocr.meta.totalPages": "إجمالي الصفحات",
+  "ocr.meta.overallConfidence": "الثقة الإجمالية",
+  "ocr.meta.processingTime": "وقت المعالجة",
+  "ocr.error.notPdf": "يرجى اختيار ملف PDF.",
+  "ocr.error.tooLarge": "حجم الملف يتجاوز الحد الأقصى 50 ميجابايت.",
+  "ocr.error.processing": "فشلت معالجة OCR. يرجى المحاولة مرة أخرى."
 }
 

@@ -290,6 +290,37 @@
   "relative.daysAgo": "{count, plural, one {1 day ago} other {{count} days ago}}",
   "relative.weeksAgo": "{count, plural, one {1 week ago} other {{count} weeks ago}}",
   "relative.monthsAgo": "{count, plural, one {1 month ago} other {{count} months ago}}",
-  "relative.yearsAgo": "{count, plural, one {1 year ago} other {{count} years ago}}"
+  "relative.yearsAgo": "{count, plural, one {1 year ago} other {{count} years ago}}",
+
+  "nav.documentOcr": "Document OCR",
+
+  "ocr.title": "Document OCR",
+  "ocr.subtitle": "Upload Arabic PDF documents for OCR text extraction and analysis",
+  "ocr.upload.title": "Drag & drop a PDF file here",
+  "ocr.upload.hint": "or click to browse — PDF files up to 50 MB",
+  "ocr.upload.browse": "Browse Files",
+  "ocr.processing": "Processing document…",
+  "ocr.demoMode": "Demo mode: showing mock OCR results (API unavailable)",
+  "ocr.tab.text": "Text",
+  "ocr.tab.tables": "Tables",
+  "ocr.tab.financial": "Financial Fields",
+  "ocr.tab.metadata": "Metadata",
+  "ocr.page": "Page",
+  "ocr.copy": "Copy",
+  "ocr.copied": "Text copied to clipboard",
+  "ocr.table": "Table",
+  "ocr.confidence": "Confidence",
+  "ocr.noTables": "No tables detected on this page.",
+  "ocr.noFinancialFields": "No financial fields detected.",
+  "ocr.sendToChat": "Send to Chat",
+  "ocr.exportJson": "Export JSON",
+  "ocr.exportText": "Export Text",
+  "ocr.uploadAnother": "Upload Another",
+  "ocr.meta.totalPages": "Total Pages",
+  "ocr.meta.overallConfidence": "Overall Confidence",
+  "ocr.meta.processingTime": "Processing Time",
+  "ocr.error.notPdf": "Please select a PDF file.",
+  "ocr.error.tooLarge": "File exceeds maximum size of 50 MB.",
+  "ocr.error.processing": "OCR processing failed. Please try again."
 }
 

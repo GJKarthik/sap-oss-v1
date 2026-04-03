@@ -367,6 +367,7 @@ export class ShellComponent {
       { label: this.i18n.t('nav.hippocpp'), icon: 'chain-link', route: '/hippocpp' },
       { label: this.i18n.t('nav.chat'), icon: 'discussion-2', route: '/chat' },
       { label: this.i18n.t('nav.compare'), icon: 'compare', route: '/compare' },
+      { label: this.i18n.t('nav.documentOcr'), icon: 'document', route: '/document-ocr' },
     ];
   }
 
