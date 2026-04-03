@@ -173,7 +173,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
               <div class="vram-header">
                 <span class="vram-title">{{ i18n.t('modelOpt.vramProfiler') }}</span>
-                <span class="vram-values">{{ i18n.t('modelOpt.vramRequired').replace('{0}', estimatedVram().toFixed(1)).replace('{1}', '' + gpuTotalNum()) }}</span>
+                <span class="vram-values">{{ i18n.t('modelOpt.vramRequired', { required: estimatedVram().toFixed(1), available: gpuTotalNum() }) }}</span>
               </div>
               <div class="progress-bar">
                 <div class="progress-fill" 

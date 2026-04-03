@@ -58,7 +58,7 @@ interface CompletionResponse {
         <button class="btn-danger" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</button>
         @if (lastUsage()) {
           <div class="usage-info">
-            <span class="text-small text-muted">{{ i18n.t('chat.lastTokens').replace('{0}', '' + lastUsage()?.total_tokens) }}</span>
+            <span class="text-small text-muted">{{ i18n.t('chat.lastTokens', { count: lastUsage()?.total_tokens ?? 0 }) }}</span>
           </div>
         }
       </div>

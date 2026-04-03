@@ -73,7 +73,7 @@ interface LogLine {
           }
         </div>
         <div class="terminal-footer">
-          <span class="text-small text-muted">{{ logLines().length }} {{ i18n.t('pipeline.lines') }}</span>
+          <span class="text-small text-muted">{{ i18n.t('pipeline.lines', { count: logLines().length }) }}</span>
           <button class="btn-clear" (click)="clearLogs()">{{ i18n.t('pipeline.clear') }}</button>
         </div>
       </div>

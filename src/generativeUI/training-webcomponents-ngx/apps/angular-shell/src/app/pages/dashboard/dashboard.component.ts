@@ -49,7 +49,7 @@ interface PlatformComponent {
         <div class="stat-card">
           <div class="stat-value">{{ store.gpuMemoryUsed() }}</div>
           <div class="stat-label">{{ i18n.t('dashboard.gpuMemUsed') }}</div>
-          <div class="stat-sub">{{ i18n.t('dashboard.gpuMemTotal').replace('{0}', '' + store.gpuMemoryTotal()) }}</div>
+          <div class="stat-sub">{{ i18n.t('dashboard.gpuMemTotal', { total: store.gpuMemoryTotal() }) }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ store.trainingPairCount() }}</div>

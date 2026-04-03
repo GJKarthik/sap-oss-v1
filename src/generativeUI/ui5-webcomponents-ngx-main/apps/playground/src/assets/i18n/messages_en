@@ -23,7 +23,7 @@ DEMO_TOUR_END=End Tour
 PRODUCT_SWITCHER=Product Switcher
 COMPONENT_PLAYGROUND_TITLE=Live Component Playground
 COMPONENT_PLAYGROUND_REFRESH=Refresh Live Catalog
-COMPONENT_PLAYGROUND_SOURCE=Source: {0} models from /v1/models
+COMPONENT_PLAYGROUND_SOURCE=Source: {0, plural, =0 {no models} one {1 model} other {{0} models}} from /v1/models
 COMPONENT_PLAYGROUND_EMPTY=Live endpoint responded but no models were returned.
 MODEL_TAG_ARABIC_PRIMARY=Arabic Primary
 OCR_PAGE_TITLE=Arabic OCR and Invoice Extraction
@@ -146,9 +146,9 @@ FORMS_TABLE_COL_PRICE=Price
 JOULE_PRESENCE_LABEL=Live:
 JOULE_CHAT_PLACEHOLDER=Ask me to build a UI, fetch data, or start a workflow…
 JOULE_STATE_LABEL=Streaming state: {0}
-JOULE_REVIEW_ACTIONS=Review Actions ({0})
+JOULE_REVIEW_ACTIONS=Review Actions ({0, plural, =0 {none} one {1 action} other {{0} actions}})
 JOULE_CLEAR=Clear
-JOULE_PENDING_ACTIONS=Pending Actions ({0})
+JOULE_PENDING_ACTIONS=Pending Actions ({0, plural, =0 {none} one {1 action} other {{0} actions}})
 JOULE_EMPTY_STATE=Agent-generated UI will appear here.
 JOULE_RECEIVING=Receiving response…
 JOULE_ASK_HINT=Ask Joule a question to get started.
@@ -160,7 +160,7 @@ COLLAB_JOIN_ROOM=Join Room
 COLLAB_LEAVE_ROOM=Leave Room
 COLLAB_NO_SERVER_MSG=No live collaboration server is needed for this demo — connection attempts are gracefully handled.
 COLLAB_PARTICIPANTS_TITLE=Participants
-COLLAB_PARTICIPANTS_ONLINE={0} online
+COLLAB_PARTICIPANTS_ONLINE={0, plural, =0 {nobody online} one {1 online} other {{0} online}}
 COLLAB_NO_PARTICIPANTS=No participants yet. Join a room to see live presence.
 COLLAB_CURSOR_TITLE=Cursor Tracking
 COLLAB_CURSOR_SUBTITLE=Move mouse over canvas to broadcast position
