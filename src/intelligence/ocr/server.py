@@ -17,8 +17,10 @@ Start with:
 
 import asyncio
 import io
+import ipaddress
 import logging
 import os
+import socket
 import tempfile
 from typing import List, Optional
 from urllib.parse import urlparse
@@ -41,6 +43,28 @@ from .metrics import get_metrics
 # Maximum upload size (50 MB) — consistent with api.py
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
+# Streaming read chunk size (8 KB)
+_READ_CHUNK_SIZE = 8192
+
+
+async def _read_with_limit(file: UploadFile, max_size: int) -> bytes:
+    """Stream-read an upload enforcing *max_size* without buffering the whole body first."""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(_READ_CHUNK_SIZE)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail="File exceeds maximum size of 50 MB",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 app = FastAPI(
     title="Arabic OCR Service",
     description="REST API for Arabic/English PDF and image OCR processing",
@@ -62,9 +86,6 @@ app.add_middleware(
 
 # Default service instance (can be reconfigured via env vars)
 _service: Optional[ArabicOCRService] = None
-
-# Upload size limit (50 MB, matching api.py)
-MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
 # Concurrency limiter — prevents too many OCR jobs running at once
 _max_concurrent = int(os.getenv("OCR_MAX_CONCURRENT", "4"))
@@ -117,16 +138,45 @@ def _validate_callback_url(url: str) -> str:
     if hostname not in allowed_hosts:
         raise ValueError(f"callback_url host is not allowlisted: {hostname}")
 
+    # DNS rebinding protection: resolve hostname and reject private/loopback IPs
+    try:
+        addrinfos = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise ValueError(f"callback_url hostname could not be resolved: {hostname}") from exc
+    except socket.timeout:
+        raise ValueError(f"callback_url DNS resolution timed out for: {hostname}")
+
+    if not addrinfos:
+        raise ValueError(f"callback_url hostname resolved to no addresses: {hostname}")
+
+    old_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(2.0)
+    try:
+        for family, _type, _proto, _canonname, sockaddr in addrinfos:
+            ip_str = sockaddr[0]
+            try:
+                addr = ipaddress.ip_address(ip_str)
+            except ValueError:
+                continue
+            if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+                raise ValueError(
+                    f"callback_url resolves to a private/loopback address: "
+                    f"{hostname} -> {ip_str}"
+                )
+    finally:
+        socket.setdefaulttimeout(old_timeout)
+
     return parsed.geturl()
 
 
 @app.get("/ocr/health")
-async def health() -> dict:
+async def health():
     """Health check endpoint with dependency verification.
 
-    Returns ``status: "ok"`` when all required dependencies are available,
-    ``status: "degraded"`` when optional dependencies are missing, or
-    ``status: "unhealthy"`` when required dependencies are missing.
+    Returns ``status: "healthy"`` when all required dependencies are available,
+    ``status: "degraded"`` when optional service deps are missing (with affected
+    features listed), or ``status: "unhealthy"`` (HTTP 503) when required
+    dependencies are missing.
     """
     from .dependencies import check_dependencies
 
@@ -140,19 +190,31 @@ async def health() -> dict:
         if not d.available and "REQUIRED" not in d.note
     ]
 
+    # Map optional deps to the features they gate
+    unavailable_features: list[str] = []
+    for dep in report.dependencies:
+        if not dep.available and "REQUIRED" not in dep.note:
+            unavailable_features.extend(dep.features)
+
     if required_missing:
         status = "unhealthy"
     elif optional_missing:
         status = "degraded"
     else:
-        status = "ok"
+        status = "healthy"
 
-    return {
+    body = {
         "status": status,
         "service": "arabic-ocr",
         "missing_required": required_missing,
         "missing_optional": optional_missing,
     }
+    if unavailable_features:
+        body["unavailable_features"] = unavailable_features
+
+    if status == "unhealthy":
+        return JSONResponse(content=body, status_code=503)
+    return JSONResponse(content=body, status_code=200)
 
 
 @app.get("/ocr/metrics")
@@ -216,13 +278,8 @@ async def ocr_pdf(
             detail="Too many concurrent OCR requests. Try again later.",
         )
 
-    # Save upload to temp file (enforce size limit)
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_SIZE:
-        raise HTTPException(
-            status_code=413,
-            detail="File exceeds maximum size of 50 MB",
-        )
+    # Save upload to temp file (enforce size limit via streaming read)
+    content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(content)
         tmp.flush()
@@ -257,12 +314,7 @@ async def ocr_image(
     """
     from PIL import Image
 
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_SIZE:
-        raise HTTPException(
-            status_code=413,
-            detail="File exceeds maximum size of 50 MB",
-        )
+    content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
     try:
         image = Image.open(io.BytesIO(content))
     except Exception:
@@ -309,12 +361,7 @@ async def ocr_batch(
             all_results.append({"error": f"Not a PDF: {file.filename}"})
             continue
 
-        content = await file.read()
-        if len(content) > MAX_UPLOAD_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail="File exceeds maximum size of 50 MB",
-            )
+        content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             tmp.write(content)
             tmp.flush()
