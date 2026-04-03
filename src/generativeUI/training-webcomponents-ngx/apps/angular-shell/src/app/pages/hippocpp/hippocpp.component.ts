@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface GraphStats {
@@ -37,18 +38,13 @@ interface ArchLayer {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">HippoCPP Graph Engine</h1>
-        <button class="btn-refresh" (click)="loadStats()">Refresh</button>
+        <h1 class="page-title">{{ i18n.t('hippocpp.title') }}</h1>
+        <button class="btn-refresh" (click)="loadStats()">{{ i18n.t('hippocpp.refresh') }}</button>
       </div>
 
       <!-- About -->
       <div class="about-card">
-        <p>
-          <strong>HippoCPP</strong> is a multi-language port of the
-          <a href="https://kuzudb.com/" target="_blank" rel="noopener">Kuzu</a> embedded graph database,
-          implemented in <strong>Zig</strong> (1,251 source files) with GPU acceleration via
-          <strong>Mojo</strong> and declarative invariants in <strong>Mangle</strong>.
-        </p>
+        <p>{{ i18n.t('hippocpp.about') }}</p>
         <div class="tech-pills">
           <span class="pill pill--zig">Zig 0.15.1</span>
           <span class="pill pill--mojo">Mojo GPU</span>
@@ -62,27 +58,27 @@ interface ArchLayer {
         <div class="stat-card">
           <div class="stat-value">
             <span class="status-badge {{ stats()?.available ? 'status-success' : 'status-error' }}">
-              {{ stats()?.available ? 'Available' : 'Unavailable' }}
+              {{ stats()?.available ? i18n.t('hippocpp.available') : i18n.t('hippocpp.unavailable') }}
             </span>
           </div>
-          <div class="stat-label">Graph Store</div>
+          <div class="stat-label">{{ i18n.t('hippocpp.graphStore') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ stats()?.pair_count ?? '—' }}</div>
-          <div class="stat-label">Training Pairs Indexed</div>
+          <div class="stat-label">{{ i18n.t('hippocpp.pairsIndexed') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">1,251</div>
-          <div class="stat-label">Zig Source Files</div>
+          <div class="stat-label">{{ i18n.t('hippocpp.zigFiles') }}</div>
         </div>
       </div>
 
       <!-- Cypher Query Sandbox -->
       <section class="section">
-        <h2 class="section-title">Cypher Query Sandbox</h2>
+        <h2 class="section-title">{{ i18n.t('hippocpp.querySandbox') }}</h2>
         <div class="query-card">
           <div class="query-presets">
-            <span class="preset-label">Presets:</span>
+            <span class="preset-label">{{ i18n.t('hippocpp.presets') }}</span>
             @for (p of presets; track p.label) {
               <button class="preset-btn" (click)="setQuery(p.cypher)">{{ p.label }}</button>
             }
@@ -96,9 +92,9 @@ interface ArchLayer {
           ></textarea>
           <div class="query-actions">
             <button class="btn-primary" (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
-              {{ querying() ? 'Running…' : 'Execute' }}
+              {{ querying() ? i18n.t('hippocpp.running') : i18n.t('hippocpp.execute') }}
             </button>
-            <button class="btn-secondary" (click)="clearResults()">Clear</button>
+            <button class="btn-secondary" (click)="clearResults()">{{ i18n.t('hippocpp.clear') }}</button>
           </div>
         </div>
 
@@ -109,7 +105,7 @@ interface ArchLayer {
               <span class="status-badge {{ res.status === 'ok' ? 'status-success' : 'status-error' }}">
                 {{ res.status }}
               </span>
-              <span class="text-small text-muted">{{ res.count }} row(s)</span>
+              <span class="text-small text-muted">{{ res.count }} {{ i18n.t('hippocpp.row') }}</span>
             </div>
             @if (res.rows.length) {
               <div class="table-wrapper">
@@ -133,7 +129,7 @@ interface ArchLayer {
                 </table>
               </div>
             } @else {
-              <p class="text-muted text-small">No rows returned.</p>
+              <p class="text-muted text-small">{{ i18n.t('hippocpp.noRows') }}</p>
             }
           </div>
         }
@@ -145,7 +141,7 @@ interface ArchLayer {
 
       <!-- Architecture -->
       <section class="section">
-        <h2 class="section-title">Architecture</h2>
+        <h2 class="section-title">{{ i18n.t('hippocpp.architecture') }}</h2>
         <div class="arch-grid">
           @for (layer of archLayers; track layer.name) {
             <div class="arch-card">
@@ -347,6 +343,7 @@ interface ArchLayer {
 export class HippocppComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
   private readonly destroy$ = new Subject<void>();
 
   readonly stats = signal<GraphStats | null>(null);

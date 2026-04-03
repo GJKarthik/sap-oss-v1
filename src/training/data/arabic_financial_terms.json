@@ -1,0 +1,1172 @@
+{
+  "metadata": {
+    "description": "Arabic-English financial term glossary for bilingual text-to-SQL training",
+    "version": "1.0",
+    "domains": [
+      "performance",
+      "balance_sheet",
+      "treasury",
+      "esg",
+      "regulatory",
+      "risk",
+      "trade_finance",
+      "wealth",
+      "consumer"
+    ],
+    "total_terms": 122
+  },
+  "terms": {
+    "performance": [
+      {
+        "arabic": "إيرادات",
+        "english": "revenue",
+        "synonyms_ar": [
+          "دخل",
+          "عائدات",
+          "مبيعات"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "مصروفات",
+        "english": "expenses",
+        "synonyms_ar": [
+          "تكاليف",
+          "نفقات",
+          "مصاريف"
+        ],
+        "key": "expense"
+      },
+      {
+        "arabic": "أرباح",
+        "english": "profit",
+        "synonyms_ar": [
+          "صافي الربح",
+          "عائد",
+          "مكسب"
+        ],
+        "key": "profit"
+      },
+      {
+        "arabic": "هامش الربح",
+        "english": "profit margin",
+        "synonyms_ar": [
+          "هامش",
+          "نسبة الربح",
+          "هامش التشغيل"
+        ],
+        "key": "margin"
+      },
+      {
+        "arabic": "صافي دخل الفوائد",
+        "english": "net interest income",
+        "synonyms_ar": [
+          "دخل الفائدة",
+          "إيرادات الفوائد"
+        ],
+        "key": "nii"
+      },
+      {
+        "arabic": "هامش صافي الفائدة",
+        "english": "net interest margin",
+        "synonyms_ar": [
+          "هامش الفائدة",
+          "فارق الفائدة"
+        ],
+        "key": "nim"
+      },
+      {
+        "arabic": "دخل الرسوم",
+        "english": "fee income",
+        "synonyms_ar": [
+          "إيرادات العمولات",
+          "رسوم الخدمات",
+          "دخل العمولات"
+        ],
+        "key": "fee_income"
+      },
+      {
+        "arabic": "دخل التداول",
+        "english": "trading income",
+        "synonyms_ar": [
+          "إيرادات التداول",
+          "أرباح التداول",
+          "دخل الأسواق"
+        ],
+        "key": "trading_income"
+      },
+      {
+        "arabic": "انخفاض القيمة",
+        "english": "impairment",
+        "synonyms_ar": [
+          "خسارة انخفاض القيمة",
+          "تدني القيمة",
+          "إضمحلال"
+        ],
+        "key": "impairment"
+      },
+      {
+        "arabic": "نسبة التكلفة إلى الدخل",
+        "english": "cost income ratio",
+        "synonyms_ar": [
+          "نسبة الكفاءة",
+          "معدل التكاليف"
+        ],
+        "key": "cost_income_ratio"
+      },
+      {
+        "arabic": "العائد على حقوق الملكية",
+        "english": "return on equity",
+        "synonyms_ar": [
+          "عائد رأس المال",
+          "معدل العائد على الملكية"
+        ],
+        "key": "roe"
+      },
+      {
+        "arabic": "توزيعات الأرباح",
+        "english": "dividend",
+        "synonyms_ar": [
+          "أرباح موزعة",
+          "حصة الأرباح"
+        ],
+        "key": "dividend"
+      },
+      {
+        "arabic": "ربحية السهم",
+        "english": "earnings per share",
+        "synonyms_ar": [
+          "عائد السهم",
+          "أرباح السهم"
+        ],
+        "key": "eps"
+      }
+    ],
+    "balance_sheet": [
+      {
+        "arabic": "أصول",
+        "english": "assets",
+        "synonyms_ar": [
+          "موجودات",
+          "إجمالي الأصول",
+          "ممتلكات"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "خصوم",
+        "english": "liabilities",
+        "synonyms_ar": [
+          "التزامات",
+          "مطلوبات",
+          "ديون"
+        ],
+        "key": "liabilities"
+      },
+      {
+        "arabic": "حقوق الملكية",
+        "english": "equity",
+        "synonyms_ar": [
+          "رأس المال",
+          "حقوق المساهمين",
+          "صافي الأصول"
+        ],
+        "key": "equity"
+      },
+      {
+        "arabic": "ودائع",
+        "english": "deposits",
+        "synonyms_ar": [
+          "ودائع العملاء",
+          "ودائع بنكية",
+          "ودائع لأجل"
+        ],
+        "key": "deposits"
+      },
+      {
+        "arabic": "قروض",
+        "english": "loans",
+        "synonyms_ar": [
+          "سلف",
+          "تسهيلات ائتمانية",
+          "محفظة القروض"
+        ],
+        "key": "loans"
+      },
+      {
+        "arabic": "حسابات جارية وتوفير",
+        "english": "CASA",
+        "synonyms_ar": [
+          "ودائع منخفضة التكلفة",
+          "حسابات تحت الطلب"
+        ],
+        "key": "casa"
+      },
+      {
+        "arabic": "قروض متعثرة",
+        "english": "non-performing loans",
+        "synonyms_ar": [
+          "ديون مشكوك فيها",
+          "قروض رديئة",
+          "أصول غير عاملة"
+        ],
+        "key": "npl"
+      },
+      {
+        "arabic": "شهرة",
+        "english": "goodwill",
+        "synonyms_ar": [
+          "أصول غير ملموسة",
+          "قيمة العلامة التجارية"
+        ],
+        "key": "goodwill"
+      },
+      {
+        "arabic": "مخصصات",
+        "english": "provisions",
+        "synonyms_ar": [
+          "مخصص خسائر القروض",
+          "احتياطيات",
+          "مخصص الديون المعدومة"
+        ],
+        "key": "provisions"
+      },
+      {
+        "arabic": "ميزانية عمومية",
+        "english": "balance sheet",
+        "synonyms_ar": [
+          "قائمة المركز المالي",
+          "الميزانية"
+        ],
+        "key": "balance_sheet"
+      }
+    ],
+    "treasury": [
+      {
+        "arabic": "صرف أجنبي",
+        "english": "foreign exchange",
+        "synonyms_ar": [
+          "عملات أجنبية",
+          "تداول العملات",
+          "سعر الصرف"
+        ],
+        "key": "forex"
+      },
+      {
+        "arabic": "مشتقات مالية",
+        "english": "derivatives",
+        "synonyms_ar": [
+          "أدوات مالية مشتقة",
+          "منتجات مهيكلة"
+        ],
+        "key": "derivatives"
+      },
+      {
+        "arabic": "مقايضات",
+        "english": "swaps",
+        "synonyms_ar": [
+          "مبادلات",
+          "مقايضة أسعار الفائدة",
+          "مقايضة العملات"
+        ],
+        "key": "swaps"
+      },
+      {
+        "arabic": "خيارات",
+        "english": "options",
+        "synonyms_ar": [
+          "خيارات مالية",
+          "عقود الخيار"
+        ],
+        "key": "options"
+      },
+      {
+        "arabic": "سندات",
+        "english": "bonds",
+        "synonyms_ar": [
+          "أوراق دين",
+          "سندات حكومية",
+          "صكوك",
+          "سندات شركات"
+        ],
+        "key": "bonds"
+      },
+      {
+        "arabic": "القيمة السوقية",
+        "english": "mark to market",
+        "synonyms_ar": [
+          "التقييم بالسعر العادل",
+          "القيمة العادلة"
+        ],
+        "key": "mtm"
+      },
+      {
+        "arabic": "تحوط",
+        "english": "hedge",
+        "synonyms_ar": [
+          "تغطية المخاطر",
+          "مركز تحوطي"
+        ],
+        "key": "hedge"
+      },
+      {
+        "arabic": "حساسية سعر الفائدة",
+        "english": "PV01",
+        "synonyms_ar": [
+          "قيمة نقطة الأساس",
+          "مدة السند"
+        ],
+        "key": "pv01"
+      },
+      {
+        "arabic": "تسعير التحويل الداخلي",
+        "english": "funds transfer pricing",
+        "synonyms_ar": [
+          "سعر التحويل",
+          "تكلفة التمويل الداخلية"
+        ],
+        "key": "ftp"
+      },
+      {
+        "arabic": "إدارة الأصول والخصوم",
+        "english": "asset liability management",
+        "synonyms_ar": [
+          "إدارة الميزانية",
+          "تحليل الفجوة"
+        ],
+        "key": "alm"
+      },
+      {
+        "arabic": "القيمة الاسمية",
+        "english": "notional",
+        "synonyms_ar": [
+          "المبلغ الاسمي",
+          "القيمة الوجهية",
+          "أصل العقد"
+        ],
+        "key": "notional"
+      },
+      {
+        "arabic": "سيولة",
+        "english": "liquidity",
+        "synonyms_ar": [
+          "سيولة نقدية",
+          "موارد سائلة"
+        ],
+        "key": "lcr"
+      },
+      {
+        "arabic": "عائد",
+        "english": "yield",
+        "synonyms_ar": [
+          "عائد السند",
+          "معدل العائد",
+          "ريع"
+        ],
+        "key": "bonds"
+      },
+      {
+        "arabic": "محفظة",
+        "english": "portfolio",
+        "synonyms_ar": [
+          "محفظة استثمارية",
+          "حيازات",
+          "مقتنيات"
+        ],
+        "key": "bonds"
+      }
+    ],
+    "esg": [
+      {
+        "arabic": "انبعاثات كربونية",
+        "english": "carbon emissions",
+        "synonyms_ar": [
+          "ثاني أكسيد الكربون",
+          "غازات دفيئة",
+          "البصمة الكربونية"
+        ],
+        "key": "carbon"
+      },
+      {
+        "arabic": "النطاق الأول",
+        "english": "scope 1 emissions",
+        "synonyms_ar": [
+          "انبعاثات مباشرة",
+          "انبعاثات تشغيلية"
+        ],
+        "key": "scope1"
+      },
+      {
+        "arabic": "النطاق الثاني",
+        "english": "scope 2 emissions",
+        "synonyms_ar": [
+          "انبعاثات غير مباشرة",
+          "انبعاثات الطاقة المشتراة"
+        ],
+        "key": "scope2"
+      },
+      {
+        "arabic": "النطاق الثالث",
+        "english": "scope 3 emissions",
+        "synonyms_ar": [
+          "انبعاثات سلسلة القيمة",
+          "انبعاثات سلسلة التوريد"
+        ],
+        "key": "scope3"
+      },
+      {
+        "arabic": "طاقة متجددة",
+        "english": "renewable energy",
+        "synonyms_ar": [
+          "طاقة نظيفة",
+          "طاقة مستدامة",
+          "طاقة شمسية"
+        ],
+        "key": "renewable"
+      },
+      {
+        "arabic": "تصنيف بيئي واجتماعي وحوكمة",
+        "english": "ESG score",
+        "synonyms_ar": [
+          "تقييم الاستدامة",
+          "درجة الاستدامة"
+        ],
+        "key": "esg_score"
+      },
+      {
+        "arabic": "تمويل مستدام",
+        "english": "sustainable finance",
+        "synonyms_ar": [
+          "تمويل أخضر",
+          "قرض أخضر",
+          "سندات خضراء"
+        ],
+        "key": "sustainable_finance"
+      },
+      {
+        "arabic": "انبعاثات ممولة",
+        "english": "financed emissions",
+        "synonyms_ar": [
+          "انبعاثات المحفظة",
+          "انبعاثات الاستثمار"
+        ],
+        "key": "financed_emissions"
+      },
+      {
+        "arabic": "استهلاك المياه",
+        "english": "water consumption",
+        "synonyms_ar": [
+          "استخدام المياه",
+          "كثافة المياه"
+        ],
+        "key": "water"
+      },
+      {
+        "arabic": "النفايات",
+        "english": "waste",
+        "synonyms_ar": [
+          "مخلفات",
+          "نفايات مُعاد تدويرها",
+          "اقتصاد دائري"
+        ],
+        "key": "waste"
+      },
+      {
+        "arabic": "صافي الصفر",
+        "english": "net zero",
+        "synonyms_ar": [
+          "الحياد الكربوني",
+          "خفض الانبعاثات"
+        ],
+        "key": "carbon"
+      },
+      {
+        "arabic": "الحوكمة",
+        "english": "governance",
+        "synonyms_ar": [
+          "حوكمة الشركات",
+          "إدارة رشيدة"
+        ],
+        "key": "esg_score"
+      }
+    ],
+    "regulatory": [
+      {
+        "arabic": "نسبة كفاية رأس المال",
+        "english": "capital adequacy ratio",
+        "synonyms_ar": [
+          "معدل كفاية رأس المال",
+          "نسبة رأس المال"
+        ],
+        "key": "car"
+      },
+      {
+        "arabic": "رأس المال الأساسي العادي",
+        "english": "common equity tier 1",
+        "synonyms_ar": [
+          "الشريحة الأولى الأساسية",
+          "رأس المال الجوهري"
+        ],
+        "key": "cet1"
+      },
+      {
+        "arabic": "أصول مرجحة بالمخاطر",
+        "english": "risk weighted assets",
+        "synonyms_ar": [
+          "الأصول الموزونة بالمخاطر",
+          "أوزان المخاطر"
+        ],
+        "key": "rwa"
+      },
+      {
+        "arabic": "نسبة تغطية السيولة",
+        "english": "liquidity coverage ratio",
+        "synonyms_ar": [
+          "معدل تغطية السيولة",
+          "نسبة السيولة"
+        ],
+        "key": "lcr"
+      },
+      {
+        "arabic": "نسبة صافي التمويل المستقر",
+        "english": "net stable funding ratio",
+        "synonyms_ar": [
+          "معدل التمويل المستقر",
+          "نسبة التمويل طويل الأجل"
+        ],
+        "key": "nsfr"
+      },
+      {
+        "arabic": "نسبة الرافعة المالية",
+        "english": "leverage ratio",
+        "synonyms_ar": [
+          "معدل الرافعة",
+          "نسبة المديونية"
+        ],
+        "key": "leverage_ratio"
+      },
+      {
+        "arabic": "الشريحة الثانية",
+        "english": "tier 2 capital",
+        "synonyms_ar": [
+          "رأس المال المساند",
+          "رأس المال التكميلي"
+        ],
+        "key": "tier2"
+      },
+      {
+        "arabic": "بازل",
+        "english": "Basel",
+        "synonyms_ar": [
+          "معايير بازل",
+          "اتفاقية بازل الثالثة"
+        ],
+        "key": "car"
+      }
+    ],
+    "risk": [
+      {
+        "arabic": "القيمة المعرضة للمخاطر",
+        "english": "value at risk",
+        "synonyms_ar": [
+          "مخاطر السوق",
+          "الخسارة المحتملة"
+        ],
+        "key": "var"
+      },
+      {
+        "arabic": "التعرض",
+        "english": "exposure",
+        "synonyms_ar": [
+          "التعرض الائتماني",
+          "التعرض للمخاطر",
+          "صافي التعرض"
+        ],
+        "key": "exposure"
+      },
+      {
+        "arabic": "مخاطر الائتمان",
+        "english": "credit risk",
+        "synonyms_ar": [
+          "مخاطر التخلف عن السداد",
+          "مخاطر الطرف المقابل"
+        ],
+        "key": "credit_risk"
+      },
+      {
+        "arabic": "احتمالية التخلف عن السداد",
+        "english": "probability of default",
+        "synonyms_ar": [
+          "معدل التخلف",
+          "احتمال العجز"
+        ],
+        "key": "pd"
+      },
+      {
+        "arabic": "الخسارة عند التخلف",
+        "english": "loss given default",
+        "synonyms_ar": [
+          "معدل الخسارة",
+          "شدة الخسارة"
+        ],
+        "key": "lgd"
+      },
+      {
+        "arabic": "الخسارة الائتمانية المتوقعة",
+        "english": "expected credit loss",
+        "synonyms_ar": [
+          "مخصص الائتمان",
+          "خسائر معيار ٩"
+        ],
+        "key": "ecl"
+      },
+      {
+        "arabic": "مخاطر تشغيلية",
+        "english": "operational risk",
+        "synonyms_ar": [
+          "مخاطر العمليات",
+          "مخاطر الاحتيال"
+        ],
+        "key": "operational_risk"
+      },
+      {
+        "arabic": "اختبار الضغط",
+        "english": "stress test",
+        "synonyms_ar": [
+          "اختبار التحمل",
+          "تحليل السيناريوهات",
+          "سيناريو سلبي"
+        ],
+        "key": "stress_test"
+      }
+    ],
+    "trade_finance": [
+      {
+        "arabic": "تمويل التجارة",
+        "english": "trade finance",
+        "synonyms_ar": [
+          "تمويل تجاري",
+          "اعتمادات مستندية",
+          "خطابات ضمان"
+        ],
+        "key": "trade_finance"
+      },
+      {
+        "arabic": "إدارة النقد",
+        "english": "cash management",
+        "synonyms_ar": [
+          "إدارة السيولة",
+          "تجميع النقد"
+        ],
+        "key": "cash_management"
+      },
+      {
+        "arabic": "مدفوعات",
+        "english": "payments",
+        "synonyms_ar": [
+          "تحويلات",
+          "حوالات مالية",
+          "مدفوعات عابرة للحدود"
+        ],
+        "key": "payments"
+      },
+      {
+        "arabic": "ضمانات",
+        "english": "guarantees",
+        "synonyms_ar": [
+          "خطاب ضمان بنكي",
+          "كفالة مصرفية"
+        ],
+        "key": "guarantees"
+      }
+    ],
+    "wealth": [
+      {
+        "arabic": "أصول تحت الإدارة",
+        "english": "assets under management",
+        "synonyms_ar": [
+          "أموال مُدارة",
+          "محفظة مُدارة"
+        ],
+        "key": "aum"
+      },
+      {
+        "arabic": "دخل إدارة الثروات",
+        "english": "wealth management revenue",
+        "synonyms_ar": [
+          "إيرادات الخدمات المصرفية الخاصة",
+          "دخل الاستشارات"
+        ],
+        "key": "wealth_income"
+      }
+    ],
+    "consumer": [
+      {
+        "arabic": "رهن عقاري",
+        "english": "mortgage",
+        "synonyms_ar": [
+          "قرض سكني",
+          "تمويل عقاري",
+          "قرض منزل"
+        ],
+        "key": "mortgage"
+      },
+      {
+        "arabic": "بطاقة ائتمان",
+        "english": "credit card",
+        "synonyms_ar": [
+          "بطاقات بنكية",
+          "رصيد البطاقة"
+        ],
+        "key": "credit_card"
+      },
+      {
+        "arabic": "تأمين",
+        "english": "insurance",
+        "synonyms_ar": [
+          "أقساط التأمين",
+          "تأمين مصرفي"
+        ],
+        "key": "insurance"
+      }
+    ],
+    "general_financial": [
+      {
+        "arabic": "تدفقات نقدية",
+        "english": "cash flow",
+        "synonyms_ar": [
+          "تدفق نقدي تشغيلي",
+          "حركة النقد"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "رأس المال العامل",
+        "english": "working capital",
+        "synonyms_ar": [
+          "صافي رأس المال العامل"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "معدل الدوران",
+        "english": "turnover",
+        "synonyms_ar": [
+          "حجم المبيعات",
+          "معدل دوران الأصول"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "استهلاك",
+        "english": "depreciation",
+        "synonyms_ar": [
+          "إطفاء",
+          "إهلاك الأصول"
+        ],
+        "key": "expense"
+      },
+      {
+        "arabic": "فائض",
+        "english": "surplus",
+        "synonyms_ar": [
+          "فائض الميزانية",
+          "فائض تشغيلي"
+        ],
+        "key": "profit"
+      },
+      {
+        "arabic": "عجز",
+        "english": "deficit",
+        "synonyms_ar": [
+          "نقص",
+          "عجز مالي"
+        ],
+        "key": "expense"
+      },
+      {
+        "arabic": "تسويات",
+        "english": "adjustments",
+        "synonyms_ar": [
+          "تعديلات",
+          "تسويات محاسبية"
+        ],
+        "key": "expense"
+      },
+      {
+        "arabic": "إطفاء الدين",
+        "english": "amortization",
+        "synonyms_ar": [
+          "إطفاء القرض",
+          "سداد تدريجي"
+        ],
+        "key": "loans"
+      },
+      {
+        "arabic": "قيمة دفترية",
+        "english": "book value",
+        "synonyms_ar": [
+          "صافي القيمة الدفترية",
+          "القيمة المحاسبية"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "أرباح محتجزة",
+        "english": "retained earnings",
+        "synonyms_ar": [
+          "أرباح غير موزعة",
+          "احتياطي الأرباح"
+        ],
+        "key": "equity"
+      },
+      {
+        "arabic": "نقد ومعادل نقدي",
+        "english": "cash and equivalents",
+        "synonyms_ar": [
+          "نقدية",
+          "أرصدة نقدية"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "ذمم مدينة",
+        "english": "accounts receivable",
+        "synonyms_ar": [
+          "مدينون",
+          "مستحقات"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "ذمم دائنة",
+        "english": "accounts payable",
+        "synonyms_ar": [
+          "دائنون",
+          "مستحقات للغير"
+        ],
+        "key": "liabilities"
+      },
+      {
+        "arabic": "رأس مال مدفوع",
+        "english": "paid-up capital",
+        "synonyms_ar": [
+          "رأس المال المكتتب",
+          "رأس المال المصدر"
+        ],
+        "key": "equity"
+      },
+      {
+        "arabic": "إجمالي الدخل الشامل",
+        "english": "total comprehensive income",
+        "synonyms_ar": [
+          "الدخل الشامل الآخر",
+          "صافي الدخل الشامل"
+        ],
+        "key": "profit"
+      },
+      {
+        "arabic": "تقييم",
+        "english": "valuation",
+        "synonyms_ar": [
+          "تقدير القيمة",
+          "تقييم الأصول"
+        ],
+        "key": "mtm"
+      },
+      {
+        "arabic": "إعادة هيكلة",
+        "english": "restructuring",
+        "synonyms_ar": [
+          "إعادة تنظيم",
+          "إعادة هيكلة الديون"
+        ],
+        "key": "loans"
+      },
+      {
+        "arabic": "عمولة",
+        "english": "commission",
+        "synonyms_ar": [
+          "رسوم وساطة",
+          "عمولة تداول"
+        ],
+        "key": "fee_income"
+      },
+      {
+        "arabic": "فائدة",
+        "english": "interest",
+        "synonyms_ar": [
+          "سعر الفائدة",
+          "معدل الفائدة",
+          "ربح"
+        ],
+        "key": "nii"
+      },
+      {
+        "arabic": "ضريبة",
+        "english": "tax",
+        "synonyms_ar": [
+          "ضريبة الدخل",
+          "ضريبة القيمة المضافة",
+          "زكاة"
+        ],
+        "key": "expense"
+      },
+      {
+        "arabic": "استثمار",
+        "english": "investment",
+        "synonyms_ar": [
+          "استثمارات مالية",
+          "توظيف الأموال"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "عقار",
+        "english": "real estate",
+        "synonyms_ar": [
+          "عقارات",
+          "أصول عقارية"
+        ],
+        "key": "assets"
+      },
+      {
+        "arabic": "تمويل إسلامي",
+        "english": "Islamic finance",
+        "synonyms_ar": [
+          "مرابحة",
+          "إجارة",
+          "مضاربة",
+          "مشاركة"
+        ],
+        "key": "loans"
+      },
+      {
+        "arabic": "صكوك",
+        "english": "sukuk",
+        "synonyms_ar": [
+          "سندات إسلامية",
+          "صكوك سيادية"
+        ],
+        "key": "bonds"
+      },
+      {
+        "arabic": "مخاطر سعر الفائدة",
+        "english": "interest rate risk",
+        "synonyms_ar": [
+          "مخاطر أسعار العائد"
+        ],
+        "key": "irrbb"
+      },
+      {
+        "arabic": "مخاطر السوق",
+        "english": "market risk",
+        "synonyms_ar": [
+          "مخاطر تقلب الأسعار",
+          "مخاطر التداول"
+        ],
+        "key": "market_risk"
+      },
+      {
+        "arabic": "تركز المخاطر",
+        "english": "concentration risk",
+        "synonyms_ar": [
+          "مخاطر التركز الائتماني",
+          "تركز المحفظة"
+        ],
+        "key": "large_exposure"
+      },
+      {
+        "arabic": "تعرض كبير",
+        "english": "large exposure",
+        "synonyms_ar": [
+          "تعرضات كبيرة",
+          "حد الطرف المقابل"
+        ],
+        "key": "large_exposure"
+      },
+      {
+        "arabic": "غسيل أموال",
+        "english": "money laundering",
+        "synonyms_ar": [
+          "مكافحة غسل الأموال",
+          "تمويل الإرهاب"
+        ],
+        "key": "operational_risk"
+      },
+      {
+        "arabic": "امتثال",
+        "english": "compliance",
+        "synonyms_ar": [
+          "التزام تنظيمي",
+          "مخاطر الامتثال"
+        ],
+        "key": "operational_risk"
+      },
+      {
+        "arabic": "حوكمة المخاطر",
+        "english": "risk governance",
+        "synonyms_ar": [
+          "إطار إدارة المخاطر",
+          "لجنة المخاطر"
+        ],
+        "key": "operational_risk"
+      },
+      {
+        "arabic": "نسبة التعثر",
+        "english": "delinquency rate",
+        "synonyms_ar": [
+          "معدل التأخر في السداد",
+          "نسبة المتعثرين"
+        ],
+        "key": "npl"
+      },
+      {
+        "arabic": "معدل التغطية",
+        "english": "coverage ratio",
+        "synonyms_ar": [
+          "نسبة تغطية المخصصات",
+          "نسبة التغطية"
+        ],
+        "key": "provisions"
+      },
+      {
+        "arabic": "صافي القيمة الحالية",
+        "english": "net present value",
+        "synonyms_ar": [
+          "القيمة الحالية الصافية"
+        ],
+        "key": "mtm"
+      },
+      {
+        "arabic": "عائد الاستثمار",
+        "english": "return on investment",
+        "synonyms_ar": [
+          "معدل عائد الاستثمار",
+          "مردود الاستثمار"
+        ],
+        "key": "roe"
+      },
+      {
+        "arabic": "رسملة",
+        "english": "capitalization",
+        "synonyms_ar": [
+          "القيمة السوقية",
+          "رأسمال السوق"
+        ],
+        "key": "equity"
+      },
+      {
+        "arabic": "ائتمان",
+        "english": "credit",
+        "synonyms_ar": [
+          "تسهيلات ائتمانية",
+          "حد ائتماني",
+          "جدارة ائتمانية"
+        ],
+        "key": "loans"
+      },
+      {
+        "arabic": "تصنيف ائتماني",
+        "english": "credit rating",
+        "synonyms_ar": [
+          "تقييم ائتماني",
+          "درجة الائتمان"
+        ],
+        "key": "credit_risk"
+      },
+      {
+        "arabic": "خزينة",
+        "english": "treasury",
+        "synonyms_ar": [
+          "إدارة الخزينة",
+          "عمليات الخزينة"
+        ],
+        "key": "alm"
+      },
+      {
+        "arabic": "ربع سنوي",
+        "english": "quarterly",
+        "synonyms_ar": [
+          "تقرير ربع سنوي",
+          "نتائج فصلية"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "سنوي",
+        "english": "annual",
+        "synonyms_ar": [
+          "تقرير سنوي",
+          "نتائج سنوية",
+          "على أساس سنوي"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "مقارنة بالعام السابق",
+        "english": "year over year",
+        "synonyms_ar": [
+          "نمو سنوي",
+          "تغير سنوي",
+          "مقارنة سنوية"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "منذ بداية العام",
+        "english": "year to date",
+        "synonyms_ar": [
+          "من بداية السنة حتى تاريخه"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "أداء",
+        "english": "performance",
+        "synonyms_ar": [
+          "أداء مالي",
+          "نتائج الأعمال"
+        ],
+        "key": "profit"
+      },
+      {
+        "arabic": "ميزانية",
+        "english": "budget",
+        "synonyms_ar": [
+          "موازنة",
+          "خطة مالية",
+          "ميزانية تقديرية"
+        ],
+        "key": "expense"
+      },
+      {
+        "arabic": "توقعات",
+        "english": "forecast",
+        "synonyms_ar": [
+          "تنبؤات مالية",
+          "تقديرات"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "فعلي",
+        "english": "actual",
+        "synonyms_ar": [
+          "قيمة فعلية",
+          "أرقام فعلية"
+        ],
+        "key": "revenue"
+      },
+      {
+        "arabic": "انحراف",
+        "english": "variance",
+        "synonyms_ar": [
+          "فرق",
+          "انحراف عن الميزانية"
+        ],
+        "key": "expense"
+      }
+    ]
+  }
+}

@@ -8,6 +8,7 @@ import {
 import { DatePipe } from '@angular/common';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 
 interface PlatformComponent {
   icon: string;
@@ -26,9 +27,9 @@ interface PlatformComponent {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Dashboard</h1>
+        <h1 class="page-title">{{ i18n.t('dashboard.title') }}</h1>
         <button class="refresh-btn" (click)="refresh()" [disabled]="store.isDashboardLoading()">
-          {{ store.isDashboardLoading() ? 'Refreshing…' : 'Refresh' }}
+          {{ store.isDashboardLoading() ? i18n.t('dashboard.refreshing') : i18n.t('dashboard.refresh') }}
         </button>
       </div>
 
@@ -37,51 +38,51 @@ interface PlatformComponent {
           <div class="stat-value">
             <span [class]="'status-badge ' + store.healthBadge()">{{ store.health().data?.status ?? '—' }}</span>
           </div>
-          <div class="stat-label">Service Health</div>
+          <div class="stat-label">{{ i18n.t('dashboard.serviceHealth') }}</div>
           <div class="stat-sub">{{ store.health().data?.version ?? '' }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ store.gpuUtilization() }}%</div>
-          <div class="stat-label">GPU Utilisation</div>
-          <div class="stat-sub">{{ store.gpu().data?.gpu_name ?? 'No GPU' }}</div>
+          <div class="stat-label">{{ i18n.t('dashboard.gpuUtil') }}</div>
+          <div class="stat-sub">{{ store.gpu().data?.gpu_name ?? i18n.t('dashboard.noGpu') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ store.gpuMemoryUsed() }}</div>
-          <div class="stat-label">GPU Memory Used</div>
-          <div class="stat-sub">of {{ store.gpuMemoryTotal() }} GB total</div>
+          <div class="stat-label">{{ i18n.t('dashboard.gpuMemUsed') }}</div>
+          <div class="stat-sub">{{ i18n.t('dashboard.gpuMemTotal').replace('{0}', '' + store.gpuMemoryTotal()) }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ store.trainingPairCount() }}</div>
-          <div class="stat-label">Training Pairs (Graph)</div>
-          <div class="stat-sub">{{ store.isGraphAvailable() ? 'Graph store active' : 'Graph store unavailable' }}</div>
+          <div class="stat-label">{{ i18n.t('dashboard.trainingPairs') }}</div>
+          <div class="stat-sub">{{ store.isGraphAvailable() ? i18n.t('dashboard.graphActive') : i18n.t('dashboard.graphUnavailable') }}</div>
         </div>
       </div>
 
       <div class="dashboard-grid">
         <div class="info-card">
-          <h2 class="card-title">GPU Details</h2>
+          <h2 class="card-title">{{ i18n.t('dashboard.gpuDetails') }}</h2>
           @if (store.gpu().data; as gpuData) {
             <table class="info-table">
               <tbody>
-                <tr><td>Name</td><td>{{ gpuData.gpu_name }}</td></tr>
-                <tr><td>Driver</td><td>{{ gpuData.driver_version }}</td></tr>
-                <tr><td>CUDA</td><td>{{ gpuData.cuda_version }}</td></tr>
-                <tr><td>Temperature</td><td>{{ gpuData.temperature_c }} °C</td></tr>
-                <tr><td>Free Memory</td><td>{{ gpuData.free_memory_gb.toFixed(1) }} GB</td></tr>
+                <tr><td>{{ i18n.t('dashboard.gpuName') }}</td><td>{{ gpuData.gpu_name }}</td></tr>
+                <tr><td>{{ i18n.t('dashboard.gpuDriver') }}</td><td>{{ gpuData.driver_version }}</td></tr>
+                <tr><td>{{ i18n.t('dashboard.gpuCuda') }}</td><td>{{ gpuData.cuda_version }}</td></tr>
+                <tr><td>{{ i18n.t('dashboard.gpuTemp') }}</td><td>{{ gpuData.temperature_c }} °C</td></tr>
+                <tr><td>{{ i18n.t('dashboard.gpuFreeMem') }}</td><td>{{ gpuData.free_memory_gb.toFixed(1) }} GB</td></tr>
               </tbody>
             </table>
           } @else if (!store.isDashboardLoading()) {
-            <p class="text-muted">GPU data unavailable</p>
+            <p class="text-muted">{{ i18n.t('dashboard.gpuUnavailable') }}</p>
           }
           @if (store.isDashboardLoading()) {
             <div class="loading-container">
-              <span class="loading-text">Loading…</span>
+              <span class="loading-text">{{ i18n.t('dashboard.loading') }}</span>
             </div>
           }
         </div>
 
         <div class="info-card">
-          <h2 class="card-title">Platform Components</h2>
+          <h2 class="card-title">{{ i18n.t('dashboard.platformComponents') }}</h2>
           <ul class="component-list">
             @for (c of components; track c.name) {
               <li>
@@ -203,6 +204,7 @@ interface PlatformComponent {
 export class DashboardComponent implements OnInit {
   readonly store = inject(AppStore);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
 
   readonly components: PlatformComponent[] = [
     { icon: 'process', name: 'Pipeline', desc: '7-stage Text-to-SQL data generation', status: 'Active', badge: 'status-success' },
@@ -219,6 +221,6 @@ export class DashboardComponent implements OnInit {
     this.store.forceRefresh('health');
     this.store.forceRefresh('gpu');
     this.store.forceRefresh('graphStats');
-    this.toast.info('Refreshing dashboard data…');
+    this.toast.info(this.i18n.t('dashboard.refreshMsg'));
   }
 }

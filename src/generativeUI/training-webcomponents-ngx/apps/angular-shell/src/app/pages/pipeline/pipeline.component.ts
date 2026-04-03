@@ -5,6 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 type PipelineState = 'idle' | 'running' | 'completed' | 'error';
@@ -33,23 +34,23 @@ interface LogLine {
   template: `
     <div class="page-content">
       <div class="page-header">
-        <h1 class="page-title">Pipeline</h1>
-        <span class="text-muted text-small">7-stage Text-to-SQL data generation — Live WebSocket Stream</span>
+        <h1 class="page-title">{{ i18n.t('pipeline.title') }}</h1>
+        <span class="text-muted text-small">{{ i18n.t('pipeline.subtitle') }}</span>
       </div>
 
       <!-- Control card -->
       <div class="control-card">
         <div class="control-info">
-          <p>Converts banking Excel schemas into Spider/BIRD-format training pairs via a native Zig binary.</p>
-          <div class="flow-diagram">Excel → CSV → Schema Registry → Template Expansion → Validation → Spider/BIRD JSONL</div>
+          <p>{{ i18n.t('pipeline.description') }}</p>
+          <div class="flow-diagram">{{ i18n.t('pipeline.flowDiagram') }}</div>
         </div>
         <div class="control-actions">
           <div class="ws-badge" [class.ws-connected]="wsConnected()" [class.ws-disconnected]="!wsConnected()">
-            {{ wsConnected() ? 'Live' : 'Offline' }}
+            {{ wsConnected() ? i18n.t('app.live') : i18n.t('app.offline') }}
           </div>
           <button class="btn-primary" (click)="startPipeline()"
             [disabled]="pipelineState() === 'running' || starting()">
-            {{ starting() ? 'Starting…' : pipelineState() === 'running' ? 'Processing…' : 'Execute Pipeline' }}
+            {{ starting() ? i18n.t('pipeline.starting') : pipelineState() === 'running' ? i18n.t('pipeline.processing') : i18n.t('pipeline.execute') }}
           </button>
         </div>
       </div>
@@ -57,7 +58,7 @@ interface LogLine {
       <!-- Live Terminal -->
       <div class="pipeline-terminal" *ngIf="logLines().length > 0 || pipelineState() !== 'idle'">
         <div class="terminal-header">
-          <span class="terminal-title">Live Extraction Stream - WebSocket</span>
+          <span class="terminal-title">{{ i18n.t('pipeline.terminalTitle') }}</span>
           <span class="terminal-status" [class]="stateClass()">{{ pipelineState().toUpperCase() }}</span>
         </div>
         <div class="terminal-body" #terminalBody>
@@ -72,8 +73,8 @@ interface LogLine {
           }
         </div>
         <div class="terminal-footer">
-          <span class="text-small text-muted">{{ logLines().length }} lines</span>
-          <button class="btn-clear" (click)="clearLogs()">Clear</button>
+          <span class="text-small text-muted">{{ logLines().length }} {{ i18n.t('pipeline.lines') }}</span>
+          <button class="btn-clear" (click)="clearLogs()">{{ i18n.t('pipeline.clear') }}</button>
         </div>
       </div>
 
@@ -81,18 +82,18 @@ interface LogLine {
       @if (pipelineState() === 'idle' && logLines().length === 0) {
         <div class="idle-prompt">
           <div style="font-size: 2.5rem; margin-bottom: 0.75rem;"><ui5-icon name="connected"></ui5-icon></div>
-          <p>Connected to the live stream. Execute the pipeline to see Zig subprocess logs here in real-time.</p>
+          <p>{{ i18n.t('pipeline.idlePrompt') }}</p>
         </div>
       }
 
       <!-- Stage Progress -->
       <div class="stages-section">
-        <h2 class="section-title">Pipeline Stages</h2>
+        <h2 class="section-title">{{ i18n.t('pipeline.stages') }}</h2>
         <div class="stages-table-wrapper">
           <table class="stages-table">
             <thead>
               <tr>
-                <th>#</th><th>Stage</th><th>Tool</th><th>Input</th><th>Output</th><th>Status</th>
+                <th>{{ i18n.t('pipeline.stageNum') }}</th><th>{{ i18n.t('pipeline.stageName') }}</th><th>{{ i18n.t('pipeline.stageTool') }}</th><th>{{ i18n.t('pipeline.stageInput') }}</th><th>{{ i18n.t('pipeline.stageOutput') }}</th><th>{{ i18n.t('pipeline.stageStatus') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -115,7 +116,7 @@ interface LogLine {
 
       <!-- Quick commands -->
       <div class="pipeline-commands">
-        <h2 class="section-title">Run Commands</h2>
+        <h2 class="section-title">{{ i18n.t('pipeline.runCommands') }}</h2>
         <div class="cmd-grid">
           @for (cmd of commands; track cmd.title) {
             <div class="cmd-card">
@@ -250,6 +251,7 @@ interface LogLine {
 export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
   private readonly zone = inject(NgZone);
 
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
@@ -349,9 +351,9 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.appendLine(msg.text ?? '');
       this.updateStagesFromState(state);
       if (state === 'completed') {
-        this.toast.success('Pipeline finished — JSONL pairs ready for training!', 'Pipeline Complete');
+        this.toast.success(this.i18n.t('pipeline.completeMsg'), this.i18n.t('pipeline.completeTitle'));
       } else {
-        this.toast.error('Pipeline encountered an error. Check the terminal.', 'Pipeline Error');
+        this.toast.error(this.i18n.t('pipeline.errorMsg'), this.i18n.t('pipeline.errorTitle'));
       }
     }
   }
@@ -386,11 +388,11 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: () => {
         this.pipelineState.set('running');
         this.starting.set(false);
-        this.toast.success('Pipeline started — streaming logs live below', 'Started');
+        this.toast.success(this.i18n.t('pipeline.startedMsg'), this.i18n.t('pipeline.startedTitle'));
       },
       error: (e: { error?: { detail?: string } }) => {
-        const detail = e?.error?.detail || 'Failed to start pipeline';
-        this.toast.error(detail, 'Error');
+        const detail = e?.error?.detail || this.i18n.t('pipeline.startFailed');
+        this.toast.error(detail, this.i18n.t('pipeline.errorTitle'));
         this.starting.set(false);
       }
     });

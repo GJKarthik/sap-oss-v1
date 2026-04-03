@@ -941,6 +941,181 @@ FAKE_DIMS = [
     "social media platform", "browser type", "operating system",
 ]
 
+# =============================================================================
+# ARABIC FINANCIAL TERMS — mapped to English FINANCIAL_TERMS keys
+# =============================================================================
+
+ARABIC_FINANCIAL_TERMS = {
+    # P&L / Income
+    "revenue": ["إيرادات", "دخل", "عائدات", "مبيعات", "إجمالي الدخل", "صافي المبيعات", "إيرادات التشغيل"],
+    "expense": ["مصروفات", "تكاليف", "نفقات", "مصاريف", "مصاريف تشغيلية", "تكاليف إدارية"],
+    "profit": ["أرباح", "صافي الربح", "عائد", "مكسب", "ربح التشغيل", "أرباح قبل الضريبة", "صافي الدخل"],
+    "margin": ["هامش الربح", "هامش", "نسبة الربح", "هامش التشغيل", "هامش صافي"],
+    "nii": ["صافي دخل الفوائد", "دخل الفائدة", "إيرادات الفوائد", "صافي الفائدة"],
+    "nim": ["هامش صافي الفائدة", "هامش الفائدة", "فارق الفائدة", "هامش أسعار الفائدة"],
+    "fee_income": ["دخل الرسوم", "إيرادات العمولات", "رسوم الخدمات", "دخل العمولات", "عمولة"],
+    "trading_income": ["دخل التداول", "إيرادات التداول", "أرباح التداول", "دخل الأسواق"],
+    "impairment": ["انخفاض القيمة", "خسارة انخفاض القيمة", "تدني القيمة", "إضمحلال"],
+    "cost_income_ratio": ["نسبة التكلفة إلى الدخل", "نسبة الكفاءة", "معدل التكاليف"],
+    "roe": ["العائد على حقوق الملكية", "عائد رأس المال", "معدل العائد على الملكية", "عائد الاستثمار"],
+    "dividend": ["توزيعات الأرباح", "أرباح موزعة", "حصة الأرباح", "توزيعات نقدية"],
+    "eps": ["ربحية السهم", "عائد السهم", "أرباح السهم", "ربح السهم الأساسي"],
+    # Balance Sheet
+    "assets": ["أصول", "موجودات", "إجمالي الأصول", "ممتلكات", "أصول ثابتة", "أصول متداولة"],
+    "liabilities": ["خصوم", "التزامات", "مطلوبات", "ديون", "خصوم متداولة"],
+    "equity": ["حقوق الملكية", "رأس المال", "حقوق المساهمين", "صافي الأصول", "أرباح محتجزة"],
+    "deposits": ["ودائع", "ودائع العملاء", "ودائع بنكية", "ودائع لأجل", "ودائع التجزئة"],
+    "loans": ["قروض", "سلف", "تسهيلات ائتمانية", "محفظة القروض", "ائتمان"],
+    "casa": ["حسابات جارية وتوفير", "ودائع منخفضة التكلفة", "حسابات تحت الطلب"],
+    "npl": ["قروض متعثرة", "ديون مشكوك فيها", "قروض رديئة", "أصول غير عاملة", "نسبة التعثر"],
+    "goodwill": ["شهرة", "أصول غير ملموسة", "قيمة العلامة التجارية"],
+    "provisions": ["مخصصات", "مخصص خسائر القروض", "احتياطيات", "مخصص الديون المعدومة"],
+    # Treasury
+    "forex": ["صرف أجنبي", "عملات أجنبية", "تداول العملات", "سعر الصرف"],
+    "derivatives": ["مشتقات مالية", "أدوات مالية مشتقة", "منتجات مهيكلة"],
+    "swaps": ["مقايضات", "مبادلات", "مقايضة أسعار الفائدة", "مقايضة العملات"],
+    "options": ["خيارات", "خيارات مالية", "عقود الخيار"],
+    "bonds": ["سندات", "أوراق دين", "سندات حكومية", "صكوك", "سندات شركات", "دخل ثابت"],
+    "mtm": ["القيمة السوقية", "التقييم بالسعر العادل", "القيمة العادلة", "أرباح غير محققة"],
+    "hedge": ["تحوط", "تغطية المخاطر", "مركز تحوطي", "تحوط أسعار الفائدة"],
+    "pv01": ["حساسية سعر الفائدة", "قيمة نقطة الأساس", "مدة السند"],
+    "ftp": ["تسعير التحويل الداخلي", "سعر التحويل", "تكلفة التمويل الداخلية"],
+    "alm": ["إدارة الأصول والخصوم", "إدارة الميزانية", "تحليل الفجوة"],
+    "irrbb": ["مخاطر سعر الفائدة", "مخاطر أسعار العائد"],
+    "notional": ["القيمة الاسمية", "المبلغ الاسمي", "القيمة الوجهية", "أصل العقد"],
+    # Risk
+    "var": ["القيمة المعرضة للمخاطر", "مخاطر السوق", "الخسارة المحتملة"],
+    "exposure": ["التعرض", "التعرض الائتماني", "التعرض للمخاطر", "صافي التعرض"],
+    "credit_risk": ["مخاطر الائتمان", "مخاطر التخلف عن السداد", "مخاطر الطرف المقابل"],
+    "pd": ["احتمالية التخلف عن السداد", "معدل التخلف", "احتمال العجز"],
+    "lgd": ["الخسارة عند التخلف", "معدل الخسارة", "شدة الخسارة"],
+    "ecl": ["الخسارة الائتمانية المتوقعة", "مخصص الائتمان", "خسائر معيار ٩"],
+    "operational_risk": ["مخاطر تشغيلية", "مخاطر العمليات", "مخاطر الاحتيال", "مخاطر الامتثال"],
+    "market_risk": ["مخاطر السوق", "مخاطر تقلب الأسعار", "مخاطر التداول"],
+    "stress_test": ["اختبار الضغط", "اختبار التحمل", "تحليل السيناريوهات", "سيناريو سلبي"],
+    # ESG
+    "carbon": ["انبعاثات كربونية", "ثاني أكسيد الكربون", "غازات دفيئة", "البصمة الكربونية", "صافي الصفر"],
+    "scope1": ["النطاق الأول", "انبعاثات مباشرة", "انبعاثات تشغيلية"],
+    "scope2": ["النطاق الثاني", "انبعاثات غير مباشرة", "انبعاثات الطاقة المشتراة"],
+    "scope3": ["النطاق الثالث", "انبعاثات سلسلة القيمة", "انبعاثات سلسلة التوريد"],
+    "renewable": ["طاقة متجددة", "طاقة نظيفة", "طاقة مستدامة", "طاقة شمسية"],
+    "esg_score": ["تصنيف بيئي واجتماعي وحوكمة", "تقييم الاستدامة", "درجة الاستدامة"],
+    "sustainable_finance": ["تمويل مستدام", "تمويل أخضر", "قرض أخضر", "سندات خضراء"],
+    "financed_emissions": ["انبعاثات ممولة", "انبعاثات المحفظة", "انبعاثات الاستثمار"],
+    "water": ["استهلاك المياه", "استخدام المياه", "كثافة المياه"],
+    "waste": ["النفايات", "مخلفات", "نفايات مُعاد تدويرها", "اقتصاد دائري"],
+    # Regulatory
+    "car": ["نسبة كفاية رأس المال", "معدل كفاية رأس المال", "نسبة رأس المال"],
+    "cet1": ["رأس المال الأساسي العادي", "الشريحة الأولى الأساسية", "رأس المال الجوهري"],
+    "rwa": ["أصول مرجحة بالمخاطر", "الأصول الموزونة بالمخاطر", "أوزان المخاطر"],
+    "lcr": ["نسبة تغطية السيولة", "معدل تغطية السيولة", "نسبة السيولة", "سيولة"],
+    "nsfr": ["نسبة صافي التمويل المستقر", "معدل التمويل المستقر"],
+    "leverage_ratio": ["نسبة الرافعة المالية", "معدل الرافعة", "نسبة المديونية"],
+    "tier2": ["الشريحة الثانية", "رأس المال المساند", "رأس المال التكميلي"],
+    "mrel": ["الحد الأدنى لمتطلبات الأموال الخاصة", "قدرة استيعاب الخسائر"],
+    "large_exposure": ["تعرض كبير", "تعرضات كبيرة", "حد الطرف المقابل", "تركز المخاطر"],
+    # Trade Finance
+    "trade_finance": ["تمويل التجارة", "تمويل تجاري", "اعتمادات مستندية", "خطابات ضمان"],
+    "cash_management": ["إدارة النقد", "إدارة السيولة", "تجميع النقد"],
+    "payments": ["مدفوعات", "تحويلات", "حوالات مالية", "مدفوعات عابرة للحدود"],
+    "guarantees": ["ضمانات", "خطاب ضمان بنكي", "كفالة مصرفية"],
+    # Wealth / Consumer
+    "aum": ["أصول تحت الإدارة", "أموال مُدارة", "محفظة مُدارة"],
+    "wealth_income": ["دخل إدارة الثروات", "إيرادات الخدمات المصرفية الخاصة", "دخل الاستشارات"],
+    "mortgage": ["رهن عقاري", "قرض سكني", "تمويل عقاري", "قرض منزل"],
+    "credit_card": ["بطاقة ائتمان", "بطاقات بنكية", "رصيد البطاقة"],
+    "insurance": ["تأمين", "أقساط التأمين", "تأمين مصرفي"],
+}
+
+# Arabic question templates — natural Arabic phrasing with {term} placeholder
+ARABIC_QUESTION_TEMPLATES = {
+    "simple": [
+        "ما هو {term}؟",
+        "أظهر لي {term}",
+        "ما مقدار {term}؟",
+        "أريد معرفة {term}",
+        "كم يبلغ {term}؟",
+        "اعرض {term}",
+        "أحتاج {term}",
+        "ما قيمة {term}؟",
+        "احسب {term}",
+        "استخرج {term}",
+    ],
+    "aggregate": [
+        "ما هو إجمالي {term}؟",
+        "ما هو متوسط {term}؟",
+        "احسب مجموع {term}",
+        "ما أقصى قيمة لـ{term}؟",
+        "ما أدنى قيمة لـ{term}؟",
+        "أظهر إجمالي {term}",
+        "كم يبلغ إجمالي {term}؟",
+        "احسب متوسط {term}",
+    ],
+    "temporal": [
+        "ما هو {term} لعام {time}؟",
+        "أظهر {term} في {time}",
+        "{term} لفترة {time}",
+        "ما كان {term} في {time}؟",
+        "أعطني {term} حتى تاريخ {time}",
+        "كم بلغ {term} خلال {time}؟",
+        "اعرض بيانات {term} لفترة {time}",
+        "ما هو {term} اعتباراً من {time}؟",
+    ],
+    "dimensional": [
+        "أظهر {term} حسب {dim}",
+        "تفصيل {term} حسب {dim}",
+        "{term} موزع حسب {dim}",
+        "ما هو توزيع {term} حسب {dim}؟",
+        "اعرض {term} لكل {dim}",
+        "قسّم {term} حسب {dim}",
+    ],
+    "comparison": [
+        "قارن {term} بين {dim1} و {dim2}",
+        "{term} {dim1} مقابل {dim2}",
+        "ما الفرق في {term} بين {dim1} و {dim2}؟",
+        "قارن {term} عبر {dims}",
+    ],
+    "trend": [
+        "اتجاه {term}",
+        "{term} عبر الزمن",
+        "كيف تغير {term}؟",
+        "أظهر اتجاه {term} خلال الـ12 شهراً الماضية",
+        "ما هو نمو {term}؟",
+        "تطور {term} على مدار السنة",
+    ],
+    "ranking": [
+        "أعلى 10 {dim} حسب {term}",
+        "أدنى 10 {dim} حسب {term}",
+        "ما هو أعلى {term} حسب {dim}؟",
+        "ما هو أدنى {term} حسب {dim}؟",
+        "رتب {dim} حسب {term} تنازلياً",
+    ],
+    "yoy": [
+        "{term} مقارنة بالعام السابق",
+        "نمو {term} على أساس سنوي",
+        "التغير السنوي في {term}",
+        "{term} ربع بربع",
+        "ما هو معدل النمو السنوي في {term}؟",
+    ],
+    "budget": [
+        "قارن {term} الفعلي مقابل الميزانية لـ{time}",
+        "ما هو انحراف {term} عن الخطة في {time}؟",
+        "أظهر {term} الفعلي مقابل التوقعات",
+        "كم يبعد {term} عن الهدف المحدد؟",
+    ],
+}
+
+# Arabic dimensions for query generation
+ARABIC_DIMENSIONS = {
+    "segments": ["تجزئة", "شركات", "تجاري", "خدمات مصرفية خاصة", "إدارة الثروات", "الخزينة"],
+    "regions": ["سنغافورة", "ماليزيا", "إندونيسيا", "هونغ كونغ", "الصين", "الهند", "اليابان",
+                "آسيا والمحيط الهادئ", "أوروبا", "الشرق الأوسط", "أمريكا", "المملكة المتحدة"],
+    "time_periods": ["الربع الأول", "الربع الثاني", "الربع الثالث", "الربع الرابع",
+                     "2023", "2024", "2025", "2026",
+                     "الشهر الماضي", "هذا الشهر", "الربع الماضي", "هذا الربع",
+                     "العام الماضي", "هذا العام", "منذ بداية العام", "آخر 12 شهراً"],
+}
+
 # Multi-turn conversation templates
 MULTI_TURN_TEMPLATES = [
     {
@@ -1511,6 +1686,157 @@ class MassiveTermGenerator:
                        f"FROM {table} GROUP BY SEGMENT ORDER BY pct DESC")
                 if self._add_example(q, sql, {"domain": domain, "type": "subquery", "term": term}):
                     count += 1
+
+        return count
+
+    def generate_arabic_queries(self, term: str, synonyms_en: List[str], domain: str) -> int:
+        """Generate Arabic question → English SQL training pairs.
+
+        For each Arabic synonym of the given term, generates queries using
+        Arabic question templates while keeping SQL in English against the
+        same tables/columns used by the English generator.
+        """
+        count = 0
+        arabic_syns = ARABIC_FINANCIAL_TERMS.get(term, [])
+        if not arabic_syns:
+            return 0
+
+        tables = TABLES.get(domain, TABLES["performance"])
+        # Use first 3 English synonyms for column names (column names stay English)
+        en_cols = [(s, s.upper().replace(" ", "_")) for s in synonyms_en[:3]]
+
+        ar_time = ARABIC_DIMENSIONS["time_periods"]
+        ar_segs = ARABIC_DIMENSIONS["segments"]
+        ar_regs = ARABIC_DIMENSIONS["regions"]
+
+        for ar_term in arabic_syns:
+            for en_name, column in en_cols:
+                for table in tables[:3]:
+                    # --- Simple queries ---
+                    for tmpl in ARABIC_QUESTION_TEMPLATES["simple"]:
+                        q = tmpl.format(term=ar_term)
+                        sql = f"SELECT {column} FROM {table}"
+                        if self._add_example(q, sql, {
+                            "domain": domain, "type": "arabic_simple",
+                            "term": term, "language": "ar",
+                        }):
+                            count += 1
+
+                    # --- Aggregate queries ---
+                    for agg_ar, agg_sql in [("إجمالي", "SUM"), ("متوسط", "AVG")]:
+                        for tmpl in ARABIC_QUESTION_TEMPLATES["aggregate"][:4]:
+                            q = tmpl.format(term=ar_term)
+                            alias = f"{agg_sql}_{column}"
+                            sql = f"SELECT {agg_sql}({column}) as {alias} FROM {table}"
+                            if self._add_example(q, sql, {
+                                "domain": domain, "type": "arabic_aggregate",
+                                "term": term, "language": "ar",
+                            }):
+                                count += 1
+
+                    # --- Temporal queries ---
+                    for time_val in ar_time[:8]:
+                        for tmpl in ARABIC_QUESTION_TEMPLATES["temporal"][:4]:
+                            q = tmpl.format(term=ar_term, time=time_val)
+                            # Map Arabic time to English WHERE clause
+                            if time_val.isdigit() and len(time_val) == 4:
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE YEAR = {time_val}"
+                            elif time_val == "منذ بداية العام":
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = 'YTD'"
+                            elif time_val == "الربع الأول":
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = 'Q1'"
+                            elif time_val == "الربع الثاني":
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = 'Q2'"
+                            elif time_val == "الربع الثالث":
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = 'Q3'"
+                            elif time_val == "الربع الرابع":
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = 'Q4'"
+                            elif time_val == "آخر 12 شهراً":
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = 'TTM'"
+                            else:
+                                sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE PERIOD = '{time_val}'"
+                            if self._add_example(q, sql, {
+                                "domain": domain, "type": "arabic_temporal",
+                                "term": term, "language": "ar",
+                            }):
+                                count += 1
+
+                    # --- Dimensional queries ---
+                    for dim_ar, dim_sql in [("قطاع", "SEGMENT"), ("منطقة", "REGION"),
+                                            ("عملة", "CURRENCY"), ("منتج", "PRODUCT")]:
+                        for tmpl in ARABIC_QUESTION_TEMPLATES["dimensional"][:3]:
+                            q = tmpl.format(term=ar_term, dim=dim_ar)
+                            sql = f"SELECT {dim_sql}, SUM({column}) as {column} FROM {table} GROUP BY {dim_sql}"
+                            if self._add_example(q, sql, {
+                                "domain": domain, "type": "arabic_dimensional",
+                                "term": term, "language": "ar",
+                            }):
+                                count += 1
+
+                    # --- Segment filter queries ---
+                    for seg in ar_segs[:4]:
+                        q = f"ما هو {ar_term} لقطاع {seg}؟"
+                        sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE SEGMENT = '{seg}'"
+                        if self._add_example(q, sql, {
+                            "domain": domain, "type": "arabic_filtered",
+                            "term": term, "language": "ar",
+                        }):
+                            count += 1
+
+                    # --- Region filter queries ---
+                    for reg in ar_regs[:4]:
+                        q = f"أظهر {ar_term} في {reg}"
+                        sql = f"SELECT SUM({column}) as {column} FROM {table} WHERE REGION = '{reg}'"
+                        if self._add_example(q, sql, {
+                            "domain": domain, "type": "arabic_filtered",
+                            "term": term, "language": "ar",
+                        }):
+                            count += 1
+
+                    # --- YoY queries ---
+                    for tmpl in ARABIC_QUESTION_TEMPLATES["yoy"][:3]:
+                        q = tmpl.format(term=ar_term)
+                        sql = (f'SELECT "YEAR", SUM({column}) as {column}, '
+                               f'LAG(SUM({column})) OVER (ORDER BY "YEAR") as PREV '
+                               f'FROM {table} GROUP BY "YEAR" ORDER BY "YEAR"')
+                        if self._add_example(q, sql, {
+                            "domain": domain, "type": "arabic_yoy",
+                            "term": term, "language": "ar",
+                        }):
+                            count += 1
+
+                    # --- Ranking queries ---
+                    for tmpl in ARABIC_QUESTION_TEMPLATES["ranking"][:3]:
+                        q = tmpl.format(term=ar_term, dim="قطاع")
+                        sql = f"SELECT TOP 10 SEGMENT, SUM({column}) as {column} FROM {table} GROUP BY SEGMENT ORDER BY SUM({column}) DESC"
+                        if self._add_example(q, sql, {
+                            "domain": domain, "type": "arabic_ranking",
+                            "term": term, "language": "ar",
+                        }):
+                            count += 1
+
+                    # --- Comparison queries ---
+                    for i, seg1 in enumerate(ar_segs[:3]):
+                        for seg2 in ar_segs[i+1:i+2]:
+                            q = f"قارن {ar_term} بين {seg1} و {seg2}"
+                            sql = f"SELECT SEGMENT, SUM({column}) as {column} FROM {table} WHERE SEGMENT IN ('{seg1}', '{seg2}') GROUP BY SEGMENT"
+                            if self._add_example(q, sql, {
+                                "domain": domain, "type": "arabic_comparison",
+                                "term": term, "language": "ar",
+                            }):
+                                count += 1
+
+                    # --- Budget vs actual ---
+                    for tmpl in ARABIC_QUESTION_TEMPLATES["budget"][:2]:
+                        for time_val in ar_time[:4]:
+                            q = tmpl.format(term=ar_term, time=time_val)
+                            sql = (f"SELECT BOOKS, SUM({column}) as {column} FROM {table} "
+                                   f"WHERE BOOKS IN ('Actual', 'Budget') GROUP BY BOOKS")
+                            if self._add_example(q, sql, {
+                                "domain": domain, "type": "arabic_budget",
+                                "term": term, "language": "ar",
+                            }):
+                                count += 1
 
         return count
 
@@ -2175,14 +2501,15 @@ class MassiveTermGenerator:
                 c5 = self.generate_complex_queries(term, synonyms, domain)
                 c6 = self.generate_join_queries(term, synonyms, domain)
                 c7 = self.generate_subquery_examples(term, synonyms, domain)
+                c8 = self.generate_arabic_queries(term, synonyms, domain)
 
-                term_total = c1 + c2 + c3 + c4 + c5 + c6 + c7
+                term_total = c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8
                 total += term_total
 
                 if verbose:
                     print(f"  {term}: {term_total} examples "
                           f"(simple={c1} dim={c2} filter={c3} comp={c4} "
-                          f"complex={c5} join={c6} subquery={c7})")
+                          f"complex={c5} join={c6} subquery={c7} arabic={c8})")
 
         # Generate cross-cutting examples
         if verbose:
@@ -2525,6 +2852,19 @@ def main():
 
     generator.save(output_dir / "training_data.jsonl", format="jsonl")
     generator.save(output_dir / "training_data.json", format="json")
+
+    # Save Arabic-only subset
+    arabic_examples = [ex for ex in examples if ex.get("language") == "ar"]
+    arabic_dir = Path(__file__).parent.parent / "data" / "arabic_training"
+    arabic_dir.mkdir(parents=True, exist_ok=True)
+    with open(arabic_dir / "arabic_training_pairs.jsonl", "w", encoding="utf-8") as f:
+        for ex in arabic_examples:
+            f.write(json.dumps(ex, ensure_ascii=False) + "\n")
+    print(f"\n=== ARABIC TRAINING DATA ===")
+    print(f"  Arabic examples: {len(arabic_examples):,} -> arabic_training/arabic_training_pairs.jsonl")
+    ar_domains = Counter(e.get("domain", "") for e in arabic_examples)
+    for domain, cnt in sorted(ar_domains.items()):
+        print(f"    {domain}: {cnt:,}")
 
     # Stratified split
     print(f"\n=== STRATIFIED SPLIT (80/10/10) ===")

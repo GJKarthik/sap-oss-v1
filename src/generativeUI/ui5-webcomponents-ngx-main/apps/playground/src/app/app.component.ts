@@ -22,6 +22,11 @@ export class AppComponent implements OnInit, OnDestroy {
   demoTourStepLabel = '';
   demoTourProgress = '';
 
+  readonly languages = [
+    { code: 'en', label: 'English' },
+    { code: 'ar', label: 'العربية' },
+  ];
+
   @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
   private readonly destroy$ = new Subject<void>();
@@ -132,14 +137,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private applyTheme(theme: string): void {
-    document.documentElement.setAttribute('data-sap-theme', theme);
-  }
-
-  private applyLanguage(language: 'en' | 'ar'): void {
+  private applyLanguage(language: string): void {
+    this.currentLanguage = language;
     this.i18nService.setLanguage(language);
     document.documentElement.setAttribute('lang', language);
     document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
+  }
+
+  private applyTheme(theme: string): void {
+    document.documentElement.setAttribute('data-sap-theme', theme);
   }
 
   private updateDemoTourBanner(): void {

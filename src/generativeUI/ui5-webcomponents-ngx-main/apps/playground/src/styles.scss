@@ -99,3 +99,18 @@ ui5-page {
     background: var(--sapScrollBar_ThumbColor, rgba(0,0,0,0.35));
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// RTL global support
+// ---------------------------------------------------------------------------
+
+[dir="rtl"] {
+  body {
+    text-align: right;
+  }
+
+  ui-angular-root {
+    direction: rtl;
+  }
+}

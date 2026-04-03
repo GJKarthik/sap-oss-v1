@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface ChatMessage {
@@ -33,31 +34,31 @@ interface CompletionResponse {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="chat-layout">
+    <div class="chat-layout" [class.rtl]="i18n.isRtl()">
       <!-- Sidebar -->
       <div class="chat-sidebar">
-        <h2 class="sidebar-title">Chat Settings</h2>
+        <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>
         <div class="field-group">
-          <label class="field-label">Model</label>
+          <label class="field-label">{{ i18n.t('chat.model') }}</label>
           <input class="setting-input" [(ngModel)]="model" placeholder="e.g. Qwen/Qwen3.5-0.6B" />
         </div>
         <div class="field-group">
-          <label class="field-label">System Prompt</label>
+          <label class="field-label">{{ i18n.t('chat.systemPrompt') }}</label>
           <textarea class="setting-textarea" [(ngModel)]="systemPrompt" rows="5"
             placeholder="You are a helpful SQL assistant…"></textarea>
         </div>
         <div class="field-group">
-          <label class="field-label">Max Tokens: {{ maxTokens }}</label>
+          <label class="field-label">{{ i18n.t('chat.maxTokens') }}: {{ maxTokens }}</label>
           <input type="range" [(ngModel)]="maxTokens" min="64" max="4096" step="64" class="range-input" />
         </div>
         <div class="field-group">
-          <label class="field-label">Temperature: {{ temperature.toFixed(2) }}</label>
+          <label class="field-label">{{ i18n.t('chat.temperature') }}: {{ temperature.toFixed(2) }}</label>
           <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
         </div>
-        <button class="btn-danger" (click)="clearChat()">Clear Chat</button>
+        <button class="btn-danger" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</button>
         @if (lastUsage()) {
           <div class="usage-info">
-            <span class="text-small text-muted">Last: {{ lastUsage()?.total_tokens }} tokens</span>
+            <span class="text-small text-muted">{{ i18n.t('chat.lastTokens').replace('{0}', '' + lastUsage()?.total_tokens) }}</span>
           </div>
         }
       </div>
@@ -68,7 +69,7 @@ interface CompletionResponse {
           @if (!messages().length) {
             <div class="empty-state">
               <span class="empty-icon"><ui5-icon name="discussion-2"></ui5-icon></span>
-              <p>Send a message to start the conversation.</p>
+              <p>{{ i18n.t('chat.emptyState') }}</p>
               <div class="suggestion-chips">
                 @for (s of suggestions; track s) {
                   <button class="chip" (click)="usePrompt(s)">{{ s }}</button>
@@ -83,7 +84,7 @@ interface CompletionResponse {
               [class.message--user]="m.role === 'user'"
               [class.message--assistant]="m.role === 'assistant'"
             >
-              <div class="message-role">{{ m.role === 'user' ? 'You' : 'Assistant' }}</div>
+              <div class="message-role">{{ m.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}</div>
               <div class="message-content">{{ m.content }}</div>
               <div class="message-ts text-small text-muted">{{ m.ts | date:'HH:mm:ss' }}</div>
             </div>
@@ -102,11 +103,11 @@ interface CompletionResponse {
             [(ngModel)]="userInput"
             name="userInput"
             rows="2"
-            placeholder="Ask about SAP HANA SQL, schemas, or training data…"
+            [placeholder]="i18n.t('chat.inputPlaceholder')"
             (keydown.enter)="onEnter($event)"
           ></textarea>
           <button type="submit" class="send-btn" [disabled]="!userInput.trim() || sending()">
-            {{ sending() ? '…' : 'Send' }}
+            {{ sending() ? i18n.t('chat.sending') : i18n.t('chat.send') }}
           </button>
         </form>
       </div>
@@ -125,7 +126,7 @@ interface CompletionResponse {
     .chat-sidebar {
       width: 260px;
       background: var(--sapBaseColor, #fff);
-      border-right: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+      border-inline-end: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
@@ -133,6 +134,17 @@ interface CompletionResponse {
       overflow-y: auto;
       flex-shrink: 0;
     }
+
+    .rtl .chat-sidebar {
+      order: 1;
+    }
+
+    .rtl .chat-main {
+      order: 0;
+    }
+
+    .rtl .message--user { align-self: flex-start; }
+    .rtl .message--assistant { align-self: flex-end; }
 
     .sidebar-title {
       font-size: 0.9375rem;
@@ -315,6 +327,7 @@ export class ChatComponent implements OnDestroy {
 
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  readonly i18n = inject(I18nService);
   private readonly destroy$ = new Subject<void>();
 
   readonly messages = signal<ChatMessage[]>([]);
@@ -381,7 +394,7 @@ export class ChatComponent implements OnDestroy {
         },
         error: (e: HttpErrorResponse) => {
           const detail = (e.error as { detail?: string })?.detail ?? 'Request failed — is the ModelOpt backend running?';
-          this.toast.error(detail, 'Chat Error');
+          this.toast.error(detail, this.i18n.t('chat.errorTitle'));
           console.error('Chat request failed:', e);
           this.sending.set(false);
         },
@@ -391,7 +404,7 @@ export class ChatComponent implements OnDestroy {
   clearChat(): void {
     this.messages.set([]);
     this.lastUsage.set(null);
-    this.toast.info('Chat cleared');
+    this.toast.info(this.i18n.t('chat.cleared'));
   }
 
   private scrollToBottom(): void {
