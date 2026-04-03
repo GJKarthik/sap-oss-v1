@@ -68,6 +68,14 @@ export class ApiService {
     );
   }
 
+  listModels(): Observable<{ data: { id: string; object: string }[] }> {
+    return this.get<{ data: { id: string; object: string }[] }>('/v1/models');
+  }
+
+  getModelStatus(): Observable<{ status: string; model?: string }> {
+    return this.get<{ status: string; model?: string }>('/inference/arabic/status');
+  }
+
   delete<T>(path: string, timeoutMs?: number): Observable<T> {
     return this.withResilience(
       this.http.delete<T>(`${this.base}${path}`, {

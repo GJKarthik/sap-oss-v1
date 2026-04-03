@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, OnInit, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
@@ -41,7 +41,14 @@ interface CompletionResponse {
         <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.model') }}</label>
-          <input class="setting-input" dir="ltr" [(ngModel)]="model" placeholder="e.g. Qwen/Qwen3.5-0.6B" />
+          <select class="setting-input" dir="ltr" [(ngModel)]="model">
+            <option [value]="model">{{ model }}</option>
+            @for (m of availableModels(); track m) {
+              @if (m !== model) {
+                <option [value]="m">{{ m }}</option>
+              }
+            }
+          </select>
         </div>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.systemPrompt') }}</label>
@@ -72,7 +79,7 @@ interface CompletionResponse {
               <span class="empty-icon"><ui5-icon name="discussion-2"></ui5-icon></span>
               <p>{{ i18n.t('chat.emptyState') }}</p>
               <div class="suggestion-chips">
-                @for (s of suggestions; track s) {
+                @for (s of suggestions(); track s) {
                   <button class="chip" (click)="usePrompt(s)"><bdi>{{ s }}</bdi></button>
                 }
               </div>
@@ -85,7 +92,10 @@ interface CompletionResponse {
               [class.message--user]="m.role === 'user'"
               [class.message--assistant]="m.role === 'assistant'"
             >
-              <div class="message-role">{{ m.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}</div>
+              <div class="message-role">
+                {{ m.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}
+                <span class="lang-badge" [class.lang-badge--ar]="detectLang(m.content) === 'ar'">{{ detectLang(m.content) === 'ar' ? i18n.t('chat.languageBadge.ar') : i18n.t('chat.languageBadge.en') }}</span>
+              </div>
               <div class="message-content"><bdi>{{ m.content }}</bdi></div>
               <div class="message-ts text-small text-muted">{{ m.ts | localeDate:'time' }}</div>
             </div>
@@ -261,6 +271,24 @@ interface CompletionResponse {
 
     .message-ts { margin-top: 0.25rem; opacity: 0.6; }
 
+    .lang-badge {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.2rem;
+      background: var(--sapInformationBackground, #e0f0ff);
+      color: var(--sapInformationColor, #0854a0);
+      margin-inline-start: 0.35rem;
+      vertical-align: middle;
+      letter-spacing: 0.04em;
+    }
+
+    .lang-badge--ar {
+      background: var(--sapSuccessBackground, #e6f4ea);
+      color: var(--sapPositiveColor, #107e3e);
+    }
+
     .typing-indicator {
       display: flex;
       gap: 0.3rem;
@@ -323,7 +351,7 @@ interface CompletionResponse {
     }
   `],
 })
-export class ChatComponent implements OnDestroy {
+export class ChatComponent implements OnDestroy, OnInit {
   @ViewChild('messagesArea') messagesArea!: ElementRef<HTMLDivElement>;
 
   private readonly api = inject(ApiService);
@@ -334,22 +362,71 @@ export class ChatComponent implements OnDestroy {
   readonly messages = signal<ChatMessage[]>([]);
   readonly sending = signal(false);
   readonly lastUsage = signal<{ total_tokens: number } | null>(null);
+  readonly availableModels = signal<string[]>([]);
 
-  userInput = '';
-  model = 'Qwen/Qwen3.5-0.6B';
-  systemPrompt = 'You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.';
-  maxTokens = 1024;
-  temperature = 0.7;
+  private static readonly EN_SYSTEM_PROMPT = 'You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.';
+  private static readonly AR_SYSTEM_PROMPT = 'أنت مساعد ذكي متخصص في تحويل الأسئلة المالية باللغة العربية إلى استعلامات SQL لقواعد بيانات SAP HANA Cloud المصرفية.';
 
-  readonly suggestions = [
+  private static readonly EN_SUGGESTIONS = [
     'Write a SQL query to get total revenue by region',
     'Explain the NFRP schema hierarchy',
     'What are the Text-to-SQL training pair formats?',
   ];
 
+  private static readonly AR_SUGGESTIONS = [
+    'اكتب استعلام SQL لعرض إجمالي الإيرادات حسب المنطقة',
+    'اشرح هيكل مخطط NFRP',
+    'ما هي صيغ أزواج التدريب لتحويل النص إلى SQL؟',
+  ];
+
+  userInput = '';
+  model = 'Qwen/Qwen3.5-0.6B';
+  systemPrompt = ChatComponent.EN_SYSTEM_PROMPT;
+  maxTokens = 1024;
+  temperature = 0.7;
+
+  readonly suggestions = computed(() =>
+    this.i18n.currentLang() === 'ar' ? ChatComponent.AR_SUGGESTIONS : ChatComponent.EN_SUGGESTIONS
+  );
+
+  private readonly localeEffect = effect(() => {
+    const lang = this.i18n.currentLang();
+    if (lang === 'ar') {
+      this.systemPrompt = ChatComponent.AR_SYSTEM_PROMPT;
+      this.model = 'gemma4-arabic-finance';
+    } else {
+      this.systemPrompt = ChatComponent.EN_SYSTEM_PROMPT;
+      this.model = 'Qwen/Qwen3.5-0.6B';
+    }
+  });
+
+  ngOnInit(): void {
+    this.loadModels();
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Detect if text is predominantly Arabic by checking for Arabic Unicode range. */
+  detectLang(text: string): 'ar' | 'en' {
+    const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+    return arabicChars > text.length * 0.3 ? 'ar' : 'en';
+  }
+
+  private loadModels(): void {
+    this.api.listModels()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => {
+          const ids = resp.data?.map(m => m.id) ?? [];
+          this.availableModels.set(ids);
+        },
+        error: () => {
+          // Models endpoint unavailable — leave dropdown with current model only
+        },
+      });
   }
 
   usePrompt(s: string): void {
