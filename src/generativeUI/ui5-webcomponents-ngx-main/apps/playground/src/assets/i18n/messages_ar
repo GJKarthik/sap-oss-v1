@@ -21,6 +21,10 @@ DEMO_TOUR_CURRENT_STEP=الخطوة الحالية
 DEMO_TOUR_NEXT=الخطوة التالية
 DEMO_TOUR_END=إنهاء الجولة
 PRODUCT_SWITCHER=تبديل المنتج
+PRODUCT_AI_FABRIC=وحدة AI Fabric
+PRODUCT_TRAINING=وحدة التدريب
+PRODUCT_SAC=تكامل SAC AI
+PRODUCT_JOULE=ملعب Joule AI
 COMPONENT_PLAYGROUND_TITLE=ساحة المكونات الحية
 COMPONENT_PLAYGROUND_REFRESH=تحديث الكتالوج الحي
 COMPONENT_PLAYGROUND_SOURCE=المصدر: {0, plural, =0 {لا نماذج} one {نموذج واحد} two {نموذجان} few {{0} نماذج} many {{0} نموذجًا} other {{0} نموذج}} من /v1/models

@@ -205,6 +205,17 @@ import type {
       text-align: center;
       color: #bb0000;
     }
+    :host-context([dir='rtl']) .sac-chart__legend-item {
+      text-align: right;
+    }
+    :host-context([dir='rtl']) .sac-chart__body--legend-left .sac-chart__legend {
+      border-right: none;
+      border-left: 1px solid #e5e5e5;
+    }
+    :host-context([dir='rtl']) .sac-chart__body--legend-right .sac-chart__legend {
+      border-left: none;
+      border-right: 1px solid #e5e5e5;
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [SacChartService],

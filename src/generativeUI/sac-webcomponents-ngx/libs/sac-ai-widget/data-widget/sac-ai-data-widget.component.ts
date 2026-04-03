@@ -26,6 +26,8 @@ import {
   ChartType,
   Feed,
   FilterValueType,
+  SacI18nService,
+  SacTranslatePipe,
 } from '@sap-oss/sac-webcomponents-ngx/core';
 import type { ResultSet, FilterValue } from '@sap-oss/sac-webcomponents-ngx/datasource';
 import type { TableColumn, TableRow } from '@sap-oss/sac-webcomponents-ngx/table';
@@ -50,6 +52,7 @@ import {
   SacRangeFilterValue,
   SacWidgetSchema,
 } from '../types/sac-widget-schema';
+import type { SacLayoutConfig, SacGridConfig } from '../types/sac-widget-schema';
 import {
   FilterChangeEvent,
   FilterOption,
@@ -80,6 +83,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     SacFlexContainerComponent,
     SacGridContainerComponent,
     forwardRef(() => SacAiDataWidgetComponent),
+    SacTranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -140,7 +144,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
 
             <sac-divider
               *ngSwitchCase="'divider'"
-              [ariaLabel]="schema.ariaLabel || 'Content separator'"
+              [ariaLabel]="schema.ariaLabel || ('dataWidget.contentSeparator' | sacTranslate)"
             ></sac-divider>
 
             <sac-filter-dropdown
@@ -174,16 +178,16 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
                   type="date"
                   [value]="resolvedDateRange.low"
                   [disabled]="!resolvedInteractiveDimension"
-                  [attr.aria-label]="'Start date for ' + resolvedFilterLabel"
+                  [attr.aria-label]="'dataWidget.startDateFor' | sacTranslate:{ label: resolvedFilterLabel }"
                   (change)="handleDateRangeChange('low', $event)"
                 />
-                <span class="sac-ai-data-widget__date-separator" aria-hidden="true">to</span>
+                <span class="sac-ai-data-widget__date-separator" aria-hidden="true">{{ 'dataWidget.dateSeparator' | sacTranslate }}</span>
                 <input
                   class="sac-ai-data-widget__date-input"
                   type="date"
                   [value]="resolvedDateRange.high"
                   [disabled]="!resolvedInteractiveDimension"
-                  [attr.aria-label]="'End date for ' + resolvedFilterLabel"
+                  [attr.aria-label]="'dataWidget.endDateFor' | sacTranslate:{ label: resolvedFilterLabel }"
                   (change)="handleDateRangeChange('high', $event)"
                 />
               </div>
@@ -205,10 +209,10 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
             ></sac-slider>
 
             <div *ngSwitchCase="'range-slider'" class="sac-ai-data-widget__range-slider"
-                 role="group" [attr.aria-label]="resolvedSliderLabel + ' range'">
+                 role="group" [attr.aria-label]="'dataWidget.rangeLabel' | sacTranslate:{ label: resolvedSliderLabel }">
               <label class="sac-ai-data-widget__control-label">{{ resolvedSliderLabel }}</label>
               <sac-slider
-                [label]="'Low'"
+                [label]="'dataWidget.low' | sacTranslate"
                 [dimension]="resolvedInteractiveDimension"
                 [min]="resolvedSlider.min"
                 [max]="resolvedSlider.max"
@@ -220,7 +224,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
                 (sliderChange)="handleRangeSliderChange('low', $event)"
               ></sac-slider>
               <sac-slider
-                [label]="'High'"
+                [label]="'dataWidget.high' | sacTranslate"
                 [dimension]="resolvedInteractiveDimension"
                 [min]="resolvedSlider.min"
                 [max]="resolvedSlider.max"
@@ -241,7 +245,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
               [gap]="resolvedLayoutGap"
               [wrap]="resolvedFlexWrap"
               role="group"
-              [ariaLabel]="schema.ariaLabel || schema.title || 'Analytics workspace'"
+              [ariaLabel]="schema.ariaLabel || schema.title || ('dataWidget.analyticsWorkspace' | sacTranslate)"
             >
               <sac-ai-data-widget
                 *ngFor="let child of resolvedChildren; trackBy: trackByChild"
@@ -257,7 +261,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
               [rows]="resolvedGridRows"
               [gap]="resolvedLayoutGap"
               role="group"
-              [ariaLabel]="schema.ariaLabel || schema.title || 'Analytics workspace'"
+              [ariaLabel]="schema.ariaLabel || schema.title || ('dataWidget.analyticsWorkspace' | sacTranslate)"
             >
               <sac-ai-data-widget
                 *ngFor="let child of resolvedChildren; trackBy: trackByChild"
@@ -271,8 +275,8 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
 
         <ng-template #placeholder>
           <div class="sac-ai-data-widget__placeholder">
-            <span *ngIf="!schema.modelId">Configure a model to display data.</span>
-            <span *ngIf="schema.modelId && !hasBindings">Waiting for LLM to select dimensions or measures…</span>
+            <span *ngIf="!schema.modelId">{{ 'dataWidget.configureModel' | sacTranslate }}</span>
+            <span *ngIf="schema.modelId && !hasBindings">{{ 'dataWidget.waitingForLLM' | sacTranslate }}</span>
           </div>
         </ng-template>
       </div>
@@ -423,8 +427,8 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   chartFeeds = new Map<Feed, string[]>();
   tableColumns: TableColumn[] = [];
   tableRows: TableRow[] = [];
-  resolvedKpiTitle = 'KPI';
-  kpiValue: number | string = 'Awaiting data';
+  resolvedKpiTitle = '';
+  kpiValue: number | string = '';
   kpiTrend: KpiTrend = undefined;
   dataSource: WidgetDataSource | null = null;
 
@@ -439,6 +443,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   private readonly dataSourceService = inject(SacDataSourceService);
   private readonly session = inject(SacAiSessionService);
   private readonly toolDispatch = inject(SacToolDispatchService);
+  private readonly i18n = inject(SacI18nService);
 
   get hasBindings(): boolean {
     return this.schema.dimensions.length > 0 || this.schema.measures.length > 0;
@@ -457,7 +462,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   }
 
   get resolvedTextContent(): string {
-    return this.schema.text?.content?.trim() || this.schema.subtitle || this.schema.title || 'Generated content';
+    return this.schema.text?.content?.trim() || this.schema.subtitle || this.schema.title || this.i18n.t('dataWidget.generatedContent');
   }
 
   get resolvedHeadingLevel(): 1 | 2 | 3 | 4 | 5 | 6 {
@@ -473,11 +478,11 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   }
 
   get resolvedFilterLabel(): string {
-    return this.schema.title || this.schema.dimensions[0] || 'Filter';
+    return this.schema.title || this.schema.dimensions[0] || this.i18n.t('dataWidget.filter');
   }
 
   get resolvedFilterPlaceholder(): string {
-    return `Select ${this.resolvedFilterLabel.toLowerCase()}…`;
+    return this.i18n.t('dataWidget.selectPlaceholder', { label: this.resolvedFilterLabel.toLowerCase() });
   }
 
   get resolvedInteractiveDimension(): string {
@@ -519,7 +524,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   }
 
   get resolvedSliderLabel(): string {
-    return this.schema.title || this.resolvedSlider.dimension || 'Value';
+    return this.schema.title || this.resolvedSlider.dimension || this.i18n.t('dataWidget.value');
   }
 
   get resolvedSliderInitialValue(): number {
@@ -554,37 +559,37 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   }
 
   get resolvedFlexDirection(): 'row' | 'column' {
-    return 'direction' in (this.schema.layout ?? {}) && this.schema.layout?.direction === 'column'
-      ? 'column'
-      : 'row';
+    const layout = this.schema.layout as SacLayoutConfig | undefined;
+    return layout?.direction === 'column' ? 'column' : 'row';
   }
 
   get resolvedFlexJustify(): 'start' | 'center' | 'end' | 'space-between' | 'space-around' {
-    return 'justify' in (this.schema.layout ?? {}) && this.schema.layout?.justify
-      ? this.schema.layout.justify
-      : 'start';
+    const layout = this.schema.layout as SacLayoutConfig | undefined;
+    return layout?.justify ?? 'start';
   }
 
   get resolvedFlexAlign(): 'start' | 'center' | 'end' | 'stretch' {
-    return 'align' in (this.schema.layout ?? {}) && this.schema.layout?.align
-      ? this.schema.layout.align
-      : 'stretch';
+    const layout = this.schema.layout as SacLayoutConfig | undefined;
+    return layout?.align ?? 'stretch';
   }
 
   get resolvedFlexWrap(): boolean {
-    return 'wrap' in (this.schema.layout ?? {}) ? Boolean(this.schema.layout?.wrap) : true;
+    const layout = this.schema.layout as SacLayoutConfig | undefined;
+    return layout?.wrap !== undefined ? Boolean(layout.wrap) : true;
   }
 
   get resolvedGridColumns(): number {
-    if ('columns' in (this.schema.layout ?? {}) && typeof this.schema.layout?.columns === 'number') {
-      return Math.max(1, this.schema.layout.columns);
+    const grid = this.schema.layout as SacGridConfig | undefined;
+    if (grid?.columns !== undefined && typeof grid.columns === 'number') {
+      return Math.max(1, grid.columns);
     }
     return Math.max(1, this.resolvedChildren.length || 2);
   }
 
   get resolvedGridRows(): number | undefined {
-    if ('rows' in (this.schema.layout ?? {}) && typeof this.schema.layout?.rows === 'number') {
-      return Math.max(1, this.schema.layout.rows);
+    const grid = this.schema.layout as SacGridConfig | undefined;
+    if (grid?.rows !== undefined && typeof grid.rows === 'number') {
+      return Math.max(1, grid.rows);
     }
     return undefined;
   }
@@ -753,7 +758,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
       return `${filter.value.low} - ${filter.value.high}`;
     }
 
-    return String(filter.value ?? 'All');
+    return String(filter.value ?? this.i18n.t('dataWidget.all'));
   }
 
   private applyInputSchema(): void {
@@ -803,7 +808,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
           }
         },
         error: (error: Error) => {
-          this.statusMessage = `State sync failed: ${error.message}`;
+          this.statusMessage = this.i18n.t('dataWidget.stateSyncFailed', { message: error.message });
           this.flushView();
         },
       });
@@ -863,7 +868,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.resultSet = null;
-      this.statusMessage = `Live data unavailable; showing binding preview. (${message})`;
+      this.statusMessage = this.i18n.t('dataWidget.liveDataUnavailable', { message });
       this.syncPresentation();
     } finally {
       this.loading = false;
@@ -990,16 +995,16 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
 
   private buildPreviewRows(): TableRow[] {
     const rowCount = Math.min(this.schema.topK ?? 3, 3);
-    const dimensions = this.schema.dimensions.length ? this.schema.dimensions : ['Dimension'];
-    const measures = this.schema.measures.length ? this.schema.measures : ['Value'];
+    const dimensions = this.schema.dimensions.length ? this.schema.dimensions : [this.i18n.t('dataWidget.dimension')];
+    const measures = this.schema.measures.length ? this.schema.measures : [this.i18n.t('dataWidget.value')];
 
     return Array.from({ length: Math.max(1, rowCount) }, (_, index) => {
       const row: TableRow = { id: `preview-${index + 1}` };
 
       dimensions.forEach((dimension, dimensionIndex) => {
         row[dimension] = dimensionIndex === 0
-          ? `Member ${index + 1}`
-          : `Group ${dimensionIndex}-${index + 1}`;
+          ? this.i18n.t('dataWidget.member', { index: index + 1 })
+          : this.i18n.t('dataWidget.group', { group: dimensionIndex, index: index + 1 });
       });
 
       measures.forEach((measure, measureIndex) => {
@@ -1049,7 +1054,7 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
   }
 
   private buildKpiFromResultSet(resultSet: ResultSet): { title: string; value: number | string; trend: KpiTrend } {
-    const measureTitle = resultSet.measures[0] ?? this.schema.measures[0] ?? 'KPI';
+    const measureTitle = resultSet.measures[0] ?? this.schema.measures[0] ?? this.i18n.t('dataWidget.kpi');
     const measureIndex = resultSet.dimensions.length;
     const currentCell = resultSet.data[0]?.[measureIndex];
     const previousCell = resultSet.data[1]?.[measureIndex];
@@ -1058,15 +1063,15 @@ export class SacAiDataWidgetComponent implements OnInit, OnDestroy, OnChanges, W
 
     return {
       title: measureTitle,
-      value: currentValue ?? currentCell?.formatted ?? currentCell?.value ?? 'No data',
+      value: currentValue ?? currentCell?.formatted ?? currentCell?.value ?? this.i18n.t('dataWidget.noData'),
       trend: this.resolveTrend(currentValue, previousValue),
     };
   }
 
   private buildPreviewKpi(): { title: string; value: number | string; trend: KpiTrend } {
     return {
-      title: this.schema.measures[0] ?? this.schema.dimensions[0] ?? 'KPI',
-      value: 'Preview',
+      title: this.schema.measures[0] ?? this.schema.dimensions[0] ?? this.i18n.t('dataWidget.kpi'),
+      value: this.i18n.t('dataWidget.preview'),
       trend: undefined,
     };
   }

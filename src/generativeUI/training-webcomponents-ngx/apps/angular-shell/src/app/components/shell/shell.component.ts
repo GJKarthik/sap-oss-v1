@@ -478,7 +478,16 @@ export class ShellComponent {
   }
 
   openProducts(event: any): void {
-    this.productPopover.nativeElement.showAt(event.detail.targetRef);
+    const popover = this.productPopover?.nativeElement;
+    const target = event?.detail?.targetRef;
+    if (popover && target) {
+      if (typeof popover.showAt === 'function') {
+        popover.showAt(target);
+      } else {
+        popover.opener = target;
+        popover.open = true;
+      }
+    }
   }
 
   onProductSelect(event: any): void {

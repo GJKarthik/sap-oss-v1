@@ -22,8 +22,10 @@ import {
   EventEmitter,
   ChangeDetectionStrategy,
   HostBinding,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SacI18nService, SacTranslatePipe } from '@sap-oss/sac-webcomponents-ngx/core';
 import { FormsModule } from '@angular/forms';
 import type { SacDimensionFilter, SacDimensionFilterValue } from '../types/sac-widget-schema';
 
@@ -46,23 +48,23 @@ export interface FilterChangeEvent {
 @Component({
   selector: 'sac-filter-dropdown',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, SacTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sac-filter sac-filter--dropdown"
          [class.sac-filter--disabled]="disabled"
          role="group"
          [attr.aria-labelledby]="labelId">
-      <label [id]="labelId" class="sac-filter__label">{{ label }}</label>
+      <label [id]="labelId" class="sac-filter__label">{{ displayLabel }}</label>
       <select
         class="sac-filter__select"
-        [attr.aria-label]="ariaLabel || label"
+        [attr.aria-label]="ariaLabel || displayLabel"
         [attr.aria-describedby]="ariaDescription ? descId : null"
         [disabled]="disabled"
         [multiple]="multiple"
         [(ngModel)]="selectedValue"
         (ngModelChange)="onSelectionChange($event)">
-        <option *ngIf="!multiple && placeholder" value="" disabled>{{ placeholder }}</option>
+        <option *ngIf="!multiple && placeholder" value="" disabled>{{ displayPlaceholder }}</option>
         <option *ngFor="let opt of options" [value]="opt.value">{{ opt.label }}</option>
       </select>
       <span *ngIf="ariaDescription" [id]="descId" class="sr-only">{{ ariaDescription }}</span>
@@ -101,11 +103,13 @@ export interface FilterChangeEvent {
   `],
 })
 export class SacFilterDropdownComponent {
-  @Input() label = 'Filter';
+  private readonly i18n = inject(SacI18nService);
+
+  @Input() label = '';
   @Input() dimension = '';
   @Input() options: FilterOption[] = [];
   @Input() multiple = false;
-  @Input() placeholder = 'Select...';
+  @Input() placeholder = '';
   @Input() disabled = false;
   @Input() ariaLabel?: string;
   @Input() ariaDescription?: string;
@@ -114,6 +118,25 @@ export class SacFilterDropdownComponent {
 
   selectedValue: string | string[] = '';
   announcement = '';
+
+  get displayLabel(): string {
+    return this.label || this.i18n.t('filter.defaultLabel');
+  }
+
+  get displayPlaceholder(): string {
+    if (this.multiple) {
+      const selected = this.options.filter(o => o.selected);
+      if (selected.length > 0) {
+        return this.i18n.t('filter.selectedItems', { count: selected.length });
+      }
+    } else {
+      const selected = this.options.find(o => o.selected);
+      if (selected) {
+        return this.i18n.t('filter.selectedItem', { label: selected.label });
+      }
+    }
+    return this.placeholder || this.i18n.t('filter.defaultPlaceholder');
+  }
 
   get labelId(): string { return `filter-label-${this.dimension}`; }
   get descId(): string { return `filter-desc-${this.dimension}`; }
@@ -130,10 +153,10 @@ export class SacFilterDropdownComponent {
 
     // Announce change for screen readers
     if (Array.isArray(value)) {
-      this.announcement = `Selected ${value.length} items`;
+      this.announcement = this.i18n.t('filter.selectedItems', { count: value.length });
     } else {
       const label = this.options.find(o => o.value === value)?.label || value;
-      this.announcement = `Selected ${label}`;
+      this.announcement = this.i18n.t('filter.selectedItem', { label });
     }
   }
 }
@@ -145,13 +168,13 @@ export class SacFilterDropdownComponent {
 @Component({
   selector: 'sac-filter-checkbox',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, SacTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <fieldset class="sac-filter sac-filter--checkbox"
               [class.sac-filter--disabled]="disabled"
               [attr.aria-describedby]="ariaDescription ? descId : null">
-      <legend class="sac-filter__label">{{ label }}</legend>
+      <legend class="sac-filter__label">{{ displayLabel }}</legend>
       <div class="sac-filter__options" role="group">
         <label *ngFor="let opt of options; let i = index"
                class="sac-filter__checkbox-label"
@@ -198,7 +221,9 @@ export class SacFilterDropdownComponent {
   `],
 })
 export class SacFilterCheckboxComponent {
-  @Input() label = 'Filter';
+  private readonly i18n = inject(SacI18nService);
+
+  @Input() label = '';
   @Input() dimension = '';
   @Input() options: FilterOption[] = [];
   @Input() disabled = false;
@@ -223,9 +248,14 @@ export class SacFilterCheckboxComponent {
       filterType: 'MultipleValue',
     });
 
-    this.announcement = checked
-      ? `${option.label} selected, ${selectedValues.length} total`
-      : `${option.label} deselected, ${selectedValues.length} total`;
+    this.announce(
+      checked
+        ? this.i18n.t('filter.itemSelected', { label: option.label, count: selectedValues.length })
+        : this.i18n.t('filter.itemDeselected', { label: option.label, count: selectedValues.length }),
+    );
+  }
+
+  announce(message: string): void {
+    this.announcement = message;
   }
 }
-

@@ -22,8 +22,10 @@ import {
   EventEmitter,
   ChangeDetectionStrategy,
   OnInit,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SacI18nService } from '@sap-oss/sac-webcomponents-ngx/core';
 import { FormsModule } from '@angular/forms';
 import type { SacSliderConfig } from '../types/sac-widget-schema';
 
@@ -47,7 +49,7 @@ export interface SliderChangeEvent {
          role="group"
          [attr.aria-labelledby]="labelId">
       <div class="sac-slider__header">
-        <label [id]="labelId" class="sac-slider__label">{{ label }}</label>
+        <label [id]="labelId" class="sac-slider__label">{{ displayLabel }}</label>
         <span *ngIf="showValue" class="sac-slider__value" aria-hidden="true">
           {{ formatValue(value) }}
         </span>
@@ -56,7 +58,7 @@ export interface SliderChangeEvent {
         type="range"
         class="sac-slider__input"
         role="slider"
-        [attr.aria-label]="ariaLabel || label"
+        [attr.aria-label]="ariaLabel || displayLabel"
         [attr.aria-valuemin]="min"
         [attr.aria-valuemax]="max"
         [attr.aria-valuenow]="value"
@@ -120,7 +122,9 @@ export interface SliderChangeEvent {
   `],
 })
 export class SacSliderComponent implements OnInit {
-  @Input() label = 'Value';
+  private readonly i18n = inject(SacI18nService);
+
+  @Input() label = '';
   @Input() dimension = '';
   @Input() min = 0;
   @Input() max = 100;
@@ -135,6 +139,10 @@ export class SacSliderComponent implements OnInit {
 
   value = 0;
   announcement = '';
+
+  get displayLabel(): string {
+    return this.label || this.i18n.t('slider.defaultLabel');
+  }
 
   get labelId(): string { return `slider-label-${this.dimension}`; }
 
@@ -152,7 +160,7 @@ export class SacSliderComponent implements OnInit {
 
   onValueChange(value: number): void {
     this.sliderChange.emit({ dimension: this.dimension, value });
-    this.announcement = `${this.label}: ${this.formatValue(value)}`;
+    this.announcement = `${this.displayLabel}: ${this.formatValue(value)}`;
   }
 
   onKeyDown(event: KeyboardEvent): void {

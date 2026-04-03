@@ -21,6 +21,7 @@ import {
   ChangeDetectorRef, inject, ViewChild, ElementRef, AfterViewChecked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SacI18nService, SacTranslatePipe } from '@sap-oss/sac-webcomponents-ngx/core';
 import { Subscription } from 'rxjs';
 import {
   SacAgUiService,
@@ -63,10 +64,10 @@ interface PendingToolConfirmation {
 @Component({
   selector: 'sac-ai-chat-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SacTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="sac-chat-panel" aria-label="SAC AI Chat Assistant">
+    <section class="sac-chat-panel" [attr.aria-label]="'chat.ariaLabel' | sacTranslate">
       <!-- Screen reader announcements (visually hidden) -->
       <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {{ announcement }}
@@ -77,7 +78,7 @@ interface PendingToolConfirmation {
         class="sac-chat-messages"
         #scrollAnchor
         role="log"
-        aria-label="Chat messages"
+        [attr.aria-label]="'chat.messagesAriaLabel' | sacTranslate"
         aria-live="polite"
         aria-relevant="additions">
         <article
@@ -85,10 +86,10 @@ interface PendingToolConfirmation {
           class="sac-chat-message"
           [class.sac-chat-message--user]="msg.role === 'user'"
           [class.sac-chat-message--assistant]="msg.role === 'assistant'"
-          [attr.aria-label]="msg.role === 'user' ? 'You said' : 'Assistant response'">
+          [attr.aria-label]="msg.role === 'user' ? ('chat.userSaid' | sacTranslate) : ('chat.assistantResponse' | sacTranslate)">
           <span class="sac-chat-message__content">{{ msg.content }}</span>
           <span *ngIf="msg.streaming" class="sac-chat-cursor" aria-hidden="true">▌</span>
-          <span *ngIf="msg.streaming" class="sr-only">Response in progress</span>
+          <span *ngIf="msg.streaming" class="sr-only">{{ 'chat.responseInProgress' | sacTranslate }}</span>
         </article>
       </div>
 
@@ -96,30 +97,30 @@ interface PendingToolConfirmation {
         *ngIf="activeConfirmation"
         class="sac-chat-review"
         role="region"
-        aria-label="Planning action review">
+        [attr.aria-label]="'chat.planningReview' | sacTranslate">
         <div class="sac-chat-review__header">
           <div>
-            <div class="sac-chat-review__eyebrow">Approval required</div>
+            <div class="sac-chat-review__eyebrow">{{ 'chat.approvalRequired' | sacTranslate }}</div>
             <h3 class="sac-chat-review__title">{{ activeConfirmation.review.title }}</h3>
           </div>
           <span
             class="sac-chat-review__risk"
             [class.sac-chat-review__risk--high]="activeConfirmation.review.riskLevel === 'high'">
-            {{ activeConfirmation.review.riskLevel }} risk
+            {{ 'chat.risk' | sacTranslate:{ level: activeConfirmation.review.riskLevel } }}
           </span>
         </div>
 
         <p class="sac-chat-review__summary">{{ activeConfirmation.review.summary }}</p>
 
         <div class="sac-chat-review__section">
-          <div class="sac-chat-review__label">Affected scope</div>
+          <div class="sac-chat-review__label">{{ 'chat.affectedScope' | sacTranslate }}</div>
           <ul class="sac-chat-review__list">
             <li *ngFor="let item of activeConfirmation.review.affectedScope">{{ item }}</li>
           </ul>
         </div>
 
         <div class="sac-chat-review__section">
-          <div class="sac-chat-review__label">Rollback preview</div>
+          <div class="sac-chat-review__label">{{ 'chat.rollbackPreview' | sacTranslate }}</div>
           <p class="sac-chat-review__summary">{{ activeConfirmation.review.rollbackPreview.label }}</p>
           <ul class="sac-chat-review__list">
             <li *ngFor="let warning of activeConfirmation.review.rollbackPreview.warnings">{{ warning }}</li>
@@ -127,7 +128,7 @@ interface PendingToolConfirmation {
         </div>
 
         <div class="sac-chat-review__section">
-          <div class="sac-chat-review__label">Normalized arguments</div>
+          <div class="sac-chat-review__label">{{ 'chat.normalizedArguments' | sacTranslate }}</div>
           <pre class="sac-chat-review__args">{{ formatJson(activeConfirmation.review.normalizedArgs) }}</pre>
         </div>
 
@@ -141,14 +142,14 @@ interface PendingToolConfirmation {
             type="button"
             [disabled]="confirmationBusy"
             (click)="rejectActiveConfirmation()">
-            Reject
+            {{ 'chat.reject' | sacTranslate }}
           </button>
           <button
             class="sac-chat-review__button sac-chat-review__button--primary"
             type="button"
             [disabled]="confirmationBusy"
             (click)="approveActiveConfirmation()">
-            {{ confirmationBusy ? 'Working…' : activeConfirmation.review.confirmationLabel }}
+            {{ confirmationBusy ? ('chat.working' | sacTranslate) : activeConfirmation.review.confirmationLabel }}
           </button>
         </div>
       </section>
@@ -157,9 +158,9 @@ interface PendingToolConfirmation {
         *ngIf="replayEntries.length"
         class="sac-chat-audit"
         role="region"
-        aria-label="Workflow replay timeline">
+        [attr.aria-label]="'chat.workflowReplay' | sacTranslate">
         <div class="sac-chat-audit__header">
-          <h3 class="sac-chat-audit__title">Replay timeline</h3>
+          <h3 class="sac-chat-audit__title">{{ 'chat.replayTimeline' | sacTranslate }}</h3>
         </div>
         <div class="sac-chat-audit__list">
           <article
@@ -179,9 +180,9 @@ interface PendingToolConfirmation {
         *ngIf="auditEntries.length"
         class="sac-chat-audit"
         role="region"
-        aria-label="Workflow audit">
+        [attr.aria-label]="'chat.workflowAudit' | sacTranslate">
         <div class="sac-chat-audit__header">
-          <h3 class="sac-chat-audit__title">Recent activity</h3>
+          <h3 class="sac-chat-audit__title">{{ 'chat.recentActivity' | sacTranslate }}</h3>
         </div>
         <div class="sac-chat-audit__list">
           <article
@@ -203,15 +204,15 @@ interface PendingToolConfirmation {
       </section>
 
       <!-- Input area with proper labeling -->
-      <div class="sac-chat-input-row" role="form" aria-label="Send a message">
+      <div class="sac-chat-input-row" role="form" [attr.aria-label]="'chat.sendAMessage' | sacTranslate">
         <label for="sac-chat-input" class="sr-only">
-          Type your message
+          {{ 'chat.typeMessage' | sacTranslate }}
         </label>
         <input
           id="sac-chat-input"
           class="sac-chat-input"
           type="text"
-          [placeholder]="placeholder"
+          [placeholder]="placeholder || ('chat.defaultPlaceholder' | sacTranslate)"
           [value]="inputText"
           [disabled]="streaming"
           [attr.aria-disabled]="streaming"
@@ -219,15 +220,15 @@ interface PendingToolConfirmation {
           (input)="handleInput($event)"
           (keyup.enter)="send()"
         />
-        <span id="sac-chat-hint" class="sr-only">Press Enter to send</span>
+        <span id="sac-chat-hint" class="sr-only">{{ 'chat.pressEnter' | sacTranslate }}</span>
         <button
           class="sac-chat-send"
           type="button"
           [disabled]="!inputText.trim() || streaming"
           [attr.aria-disabled]="!inputText.trim() || streaming"
-          [attr.aria-label]="streaming ? 'Processing request' : 'Send message'"
+          [attr.aria-label]="streaming ? ('chat.processingRequest' | sacTranslate) : ('chat.sendMessage' | sacTranslate)"
           (click)="send()">
-          {{ streaming ? '…' : 'Ask' }}
+          {{ streaming ? '…' : ('chat.ask' | sacTranslate) }}
         </button>
       </div>
     </section>
@@ -625,7 +626,7 @@ interface PendingToolConfirmation {
   `],
 })
 export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
-  @Input() placeholder = 'Ask a question about your data…';
+  @Input() placeholder = '';
   @Input() modelId?: string;
 
   @ViewChild('scrollAnchor') private scrollAnchor?: ElementRef<HTMLElement>;
@@ -646,6 +647,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   private toolDispatch = inject(SacToolDispatchService);
   private session = inject(SacAiSessionService);
   private cdr = inject(ChangeDetectorRef);
+  private i18n = inject(SacI18nService);
 
   ngAfterViewChecked(): void {
     // Auto-scroll and announce new messages
@@ -656,7 +658,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       // Announce new assistant messages to screen readers
       const lastMsg = this.messages[this.messages.length - 1];
       if (lastMsg?.role === 'assistant' && !lastMsg.streaming) {
-        this.announceMessage('New response from assistant');
+        this.announceMessage(this.i18n.t('chat.newResponse'));
       }
     }
   }
@@ -667,7 +669,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
 
     this.inputText = '';
     this.messages.push({ id: this.uid(), role: 'user', content: text });
-    this.announceMessage('Message sent');
+    this.announceMessage(this.i18n.t('chat.messageSent'));
     this.clearConfirmationState();
     this.recordAudit('request.sent', 'processing', text);
     this.recordReplay('request.sent', text);
@@ -675,7 +677,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     const assistantMsg: ChatMessage = { id: this.uid(), role: 'assistant', content: '', streaming: true };
     this.messages.push(assistantMsg);
     this.streaming = true;
-    this.announceMessage('Processing your request');
+    this.announceMessage(this.i18n.t('chat.processingYourRequest'));
     this.cdr.markForCheck();
 
     this.streamSub = this.agUiService
@@ -689,12 +691,12 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
         error: (err: Error) => {
           this.resetPendingToolCalls();
           this.clearConfirmationState();
-          assistantMsg.content = `Error: ${err.message}`;
+          assistantMsg.content = this.i18n.t('chat.errorPrefix', { message: err.message });
           assistantMsg.streaming = false;
           this.streaming = false;
           this.recordAudit('stream.error', 'error', err.message);
           this.recordReplay('stream.error', err.message);
-          this.announceMessage(`Error: ${err.message}`);
+          this.announceMessage(this.i18n.t('chat.errorPrefix', { message: err.message }));
           this.cdr.markForCheck();
         },
         complete: () => {
@@ -704,7 +706,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
           this.streaming = false;
           this.recordAudit('stream.complete', 'completed', 'Assistant response finished');
           this.recordReplay('stream.complete', 'Assistant response finished');
-          this.announceMessage('Response complete');
+          this.announceMessage(this.i18n.t('chat.responseComplete'));
           this.cdr.markForCheck();
         },
       });
@@ -762,7 +764,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
           : (result.error ?? `Approved ${confirmation.review.toolName} but execution failed`),
       );
       this.advanceConfirmationQueue();
-      this.announceMessage(`Approved ${confirmation.review.toolName}`);
+      this.announceMessage(this.i18n.t('chat.approved', { tool: confirmation.review.toolName }));
     } catch (error) {
       this.recordAudit(
         'approval.error',
@@ -775,7 +777,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       );
       this.confirmationError = error instanceof Error
         ? error.message
-        : 'Failed to execute the reviewed action';
+        : this.i18n.t('chat.failedToExecute');
     } finally {
       this.confirmationBusy = false;
       this.cdr.markForCheck();
@@ -790,7 +792,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     const confirmation = this.activeConfirmation;
     const result: ToolResult = {
       success: false,
-      error: 'Rejected by user before executing planning action',
+      error: this.i18n.t('chat.rejectedByUser'),
       data: {
         code: 'USER_REJECTED',
         toolName: confirmation.review.toolName,
@@ -802,7 +804,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
     this.recordAudit('approval.rejected', 'rejected', `Rejected ${confirmation.review.toolName}`);
     this.recordReplay('approval.rejected', `Rejected ${confirmation.review.toolName}`);
     this.advanceConfirmationQueue();
-    this.announceMessage(`Rejected ${confirmation.review.toolName}`);
+    this.announceMessage(this.i18n.t('chat.rejected', { tool: confirmation.review.toolName }));
     this.cdr.markForCheck();
   }
 
@@ -937,7 +939,7 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
       this.confirmationError = '';
       this.recordAudit('approval.required', 'processing', review.summary);
       this.recordReplay('approval.required', review.summary);
-      this.announceMessage(`${review.title}. Review required.`);
+      this.announceMessage(this.i18n.t('chat.reviewRequired', { title: review.title }));
     } else {
       this.queuedConfirmations.push(pendingConfirmation);
       this.recordAudit('approval.queued', 'processing', `Queued review for ${review.toolName}`);

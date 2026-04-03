@@ -289,3 +289,20 @@ pre {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   RTL (Right-to-Left) Global Overrides
+   ========================================================================== */
+
+[dir='rtl'] {
+  direction: rtl;
+  text-align: right;
+
+  .skip-link { left: auto; right: 0; }
+
+  .ml-1 { margin-left: 0; margin-right: 0.5rem; }
+  .mr-1 { margin-right: 0; margin-left: 0.5rem; }
+
+  code, .code { direction: ltr; unicode-bidi: isolate; }
+  pre          { direction: ltr; unicode-bidi: isolate; text-align: left; }
+}

@@ -19,6 +19,21 @@ export { SacConfigService } from './lib/services/sac-config.service';
 export { SacApiService } from './lib/services/sac-api.service';
 export { SacAuthService } from './lib/services/sac-auth.service';
 export { SacEventService } from './lib/services/sac-event.service';
+export { SacI18nService } from './lib/services/sac-i18n.service';
+export type { SacSupportedLocale } from './lib/services/sac-i18n.service';
+
+// ---------------------------------------------------------------------------
+// Pipes
+// ---------------------------------------------------------------------------
+
+export { SacTranslatePipe } from './lib/pipes/sac-translate.pipe';
+
+// ---------------------------------------------------------------------------
+// i18n Translation Dictionaries
+// ---------------------------------------------------------------------------
+
+export { SAC_I18N_EN } from './lib/i18n/en';
+export { SAC_I18N_AR } from './lib/i18n/ar';
 
 // ---------------------------------------------------------------------------
 // Tokens

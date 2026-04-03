@@ -10,7 +10,7 @@ import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 import { catchError, shareReplay } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 
-export type SupportedLocale = 'en' | 'de' | 'fr' | 'es' | 'ja' | 'zh';
+export type SupportedLocale = 'en' | 'ar' | 'de' | 'fr' | 'es' | 'ja' | 'zh';
 
 export interface TranslationDictionary {
   [key: string]: string | TranslationDictionary;
@@ -30,7 +30,7 @@ export class I18nService implements OnDestroy {
   private readonly config: I18nConfig = {
     defaultLocale: 'en',
     fallbackLocale: 'en',
-    supportedLocales: ['en', 'de', 'fr', 'es', 'ja', 'zh'],
+    supportedLocales: ['en', 'ar', 'de', 'fr', 'es', 'ja', 'zh'],
     translationsPath: 'assets/i18n'
   };
 
@@ -76,8 +76,9 @@ export class I18nService implements OnDestroy {
       await this.loadTranslations(locale);
       this.localeSubject.next(locale);
       
-      // Update document language
+      // Update document language and direction
       document.documentElement.lang = locale;
+      document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
     } catch (error) {
       console.error(`Failed to load translations for "${locale}":`, error);
       
@@ -129,6 +130,7 @@ export class I18nService implements OnDestroy {
   getSupportedLocales(): Array<{ code: SupportedLocale; name: string; nativeName: string }> {
     const localeNames: Record<SupportedLocale, { name: string; nativeName: string }> = {
       en: { name: 'English', nativeName: 'English' },
+      ar: { name: 'Arabic', nativeName: 'العربية' },
       de: { name: 'German', nativeName: 'Deutsch' },
       fr: { name: 'French', nativeName: 'Français' },
       es: { name: 'Spanish', nativeName: 'Español' },

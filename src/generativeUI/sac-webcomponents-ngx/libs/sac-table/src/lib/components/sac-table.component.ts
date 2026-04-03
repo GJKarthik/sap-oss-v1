@@ -19,6 +19,7 @@ import {
   SimpleChanges,
   TrackByFunction,
 } from '@angular/core';
+import { SacI18nService } from '@sap-oss/sac-webcomponents-ngx/core';
 
 import { SacTableService } from '../services/sac-table.service';
 import type {
@@ -82,7 +83,7 @@ const EMPTY_SELECTION: TableSelection = {
           <tbody class="sac-table__body">
             <tr *ngIf="showEmptyState" class="sac-table__empty-row">
               <td class="sac-table__empty-cell" [attr.colspan]="emptyStateColumnSpan">
-                {{ loading ? 'Loading table data…' : 'No rows to display.' }}
+                {{ loading ? i18n.t('table.loadingData') : i18n.t('table.noRows') }}
               </td>
             </tr>
 
@@ -266,6 +267,8 @@ export class SacTableComponent implements OnInit, OnChanges, OnDestroy {
   private internalSortConfig: TableSortConfig | null = null;
   private selectionState: TableSelection = { ...EMPTY_SELECTION };
 
+  readonly i18n = inject(SacI18nService);
+
   constructor(
     private readonly tableService: SacTableService = inject(SacTableService),
     private readonly cdr: ChangeDetectorRef = inject(ChangeDetectorRef),
@@ -324,12 +327,12 @@ export class SacTableComponent implements OnInit, OnChanges, OnDestroy {
 
   get paginationInfo(): string {
     if (this.processedRows.length === 0) {
-      return '0 of 0';
+      return this.i18n.t('table.paginationEmpty');
     }
 
     const start = (this.currentPage - 1) * this.pageSize + 1;
     const end = Math.min(this.currentPage * this.pageSize, this.processedRows.length);
-    return `${start}-${end} of ${this.processedRows.length}`;
+    return this.i18n.t('table.paginationInfo', { start, end, total: this.processedRows.length });
   }
 
   get showEmptyState(): boolean {

@@ -20,8 +20,10 @@ import {
   Input,
   ChangeDetectionStrategy,
   SecurityContext,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SacI18nService } from '@sap-oss/sac-webcomponents-ngx/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import type { SacHeadingLevel, SacTextAlign } from '../types/sac-widget-schema';
 import { estimateTextHeight } from '../services/sac-text-layout.service';
@@ -210,8 +212,12 @@ export class SacTextBlockComponent {
   `],
 })
 export class SacDividerComponent {
+  private readonly i18n = inject(SacI18nService);
+
   @Input() variant: 'default' | 'light' | 'heavy' = 'default';
   @Input() spacing = 2; // 8px grid units
-  @Input() ariaLabel = 'Content separator';
+  @Input() set ariaLabel(value: string) { this._ariaLabel = value; }
+  get ariaLabel(): string { return this._ariaLabel || this.i18n.t('dataWidget.contentSeparator'); }
+  private _ariaLabel = '';
 }
 

@@ -11,7 +11,9 @@ import {
   Output,
   EventEmitter,
   ChangeDetectionStrategy,
+  inject,
 } from '@angular/core';
+import { SacI18nService } from '@sap-oss/sac-webcomponents-ngx/core';
 
 @Component({
   selector: 'sac-kpi',
@@ -23,7 +25,7 @@ import {
       <div class="sac-kpi__title" *ngIf="title">{{ title }}</div>
       <div class="sac-kpi__value">{{ formattedValue }}</div>
       <div class="sac-kpi__target" *ngIf="target !== undefined">
-        Target: {{ target }}
+        {{ i18n.t('kpi.target', { value: target }) }}
       </div>
       <div class="sac-kpi__trend" *ngIf="trend"
            [class.sac-kpi__trend--up]="trend === 'up'"
@@ -73,6 +75,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SacKpiComponent {
+  readonly i18n = inject(SacI18nService);
+
   @Input() widgetId = '';
   @Input() visible = true;
   @Input() cssClass = '';

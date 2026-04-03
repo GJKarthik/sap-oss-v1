@@ -21,6 +21,10 @@ DEMO_TOUR_CURRENT_STEP=Current step
 DEMO_TOUR_NEXT=Next Step
 DEMO_TOUR_END=End Tour
 PRODUCT_SWITCHER=Product Switcher
+PRODUCT_AI_FABRIC=AI Fabric Console
+PRODUCT_TRAINING=Training Console
+PRODUCT_SAC=SAC AI Integration
+PRODUCT_JOULE=Joule AI Playground
 COMPONENT_PLAYGROUND_TITLE=Live Component Playground
 COMPONENT_PLAYGROUND_REFRESH=Refresh Live Catalog
 COMPONENT_PLAYGROUND_SOURCE=Source: {0, plural, =0 {no models} one {1 model} other {{0} models}} from /v1/models
