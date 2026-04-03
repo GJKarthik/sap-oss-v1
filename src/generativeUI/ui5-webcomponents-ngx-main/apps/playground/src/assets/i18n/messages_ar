@@ -23,7 +23,7 @@ DEMO_TOUR_END=إنهاء الجولة
 PRODUCT_SWITCHER=تبديل المنتج
 COMPONENT_PLAYGROUND_TITLE=ساحة المكونات الحية
 COMPONENT_PLAYGROUND_REFRESH=تحديث الكتالوج الحي
-COMPONENT_PLAYGROUND_SOURCE=المصدر: {0} نموذج من /v1/models
+COMPONENT_PLAYGROUND_SOURCE=المصدر: {0, plural, =0 {لا نماذج} one {نموذج واحد} two {نموذجان} few {{0} نماذج} many {{0} نموذجًا} other {{0} نموذج}} من /v1/models
 COMPONENT_PLAYGROUND_EMPTY=استجابت الخدمة الحية لكن لم يتم إرجاع أي نماذج.
 MODEL_TAG_ARABIC_PRIMARY=النموذج العربي الأساسي
 OCR_PAGE_TITLE=استخراج OCR والفواتير العربية
@@ -146,10 +146,10 @@ FORMS_TABLE_COL_PRICE=السعر
 JOULE_PRESENCE_LABEL=مباشر:
 JOULE_CHAT_PLACEHOLDER=اطلب مني بناء واجهة أو جلب بيانات أو بدء سير عمل…
 JOULE_STATE_LABEL=حالة البث: {0}
-JOULE_REVIEW_ACTIONS=مراجعة الإجراءات ({0})
+JOULE_REVIEW_ACTIONS=مراجعة الإجراءات ({0, plural, =0 {لا شيء} one {إجراء واحد} two {إجراءان} few {{0} إجراءات} many {{0} إجراءً} other {{0} إجراء}})
 JOULE_CLEAR=مسح
-JOULE_PENDING_ACTIONS=الإجراءات المعلقة ({0})
-JOULE_EMPTY_STATE=ستظهر واجهة المستخدم المُنشأة بواسطة الوكيل هنا.
+JOULE_PENDING_ACTIONS=الإجراءات المعلقة ({0, plural, =0 {لا شيء} one {إجراء واحد} two {إجراءان} few {{0} إجراءات} many {{0} إجراءً} other {{0} إجراء}})
+JOULE_EMPTY_STATE=ستظهر واجهة المستخدم التي أنشأها الوكيل هنا.
 JOULE_RECEIVING=جارٍ استقبال الرد…
 JOULE_ASK_HINT=اطرح سؤالاً على جول للبدء.
 COLLAB_PAGE_TITLE=عرض التعاون
@@ -158,9 +158,9 @@ COLLAB_SESSION_SUBTITLE=انضم إلى غرفة تعاون
 COLLAB_ROOM_ID_LABEL=معرف الغرفة
 COLLAB_JOIN_ROOM=الانضمام إلى الغرفة
 COLLAB_LEAVE_ROOM=مغادرة الغرفة
-COLLAB_NO_SERVER_MSG=لا حاجة لخادم تعاون حي لهذا العرض — يتم التعامل مع محاولات الاتصال بشكل سلس.
+COLLAB_NO_SERVER_MSG=لا حاجة لخادم تعاون حي لهذا العرض — يتم التعامل مع محاولات الاتصال بسلاسة.
 COLLAB_PARTICIPANTS_TITLE=المشاركون
-COLLAB_PARTICIPANTS_ONLINE={0} متصل
+COLLAB_PARTICIPANTS_ONLINE={0, plural, =0 {لا أحد متصل} one {واحد متصل} two {اثنان متصلان} few {{0} متصلين} many {{0} متصلاً} other {{0} متصل}}
 COLLAB_NO_PARTICIPANTS=لا يوجد مشاركون بعد. انضم إلى غرفة لرؤية الحضور المباشر.
 COLLAB_CURSOR_TITLE=تتبع المؤشر
 COLLAB_CURSOR_SUBTITLE=حرك الفأرة فوق اللوحة لبث الموقع
