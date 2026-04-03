@@ -1,0 +1,47 @@
+{
+  "model_name": "gemma4-arabic-finance",
+  "display_name": "Gemma 4 E4B — Arabic Financial SQL",
+  "base_model": "google/gemma-4-E4B-it",
+  "fine_tune_method": "QLoRA via Unsloth",
+  "architecture": "gemma4",
+  "params_b": 8.0,
+  "context_length": 8192,
+  "languages": ["ar", "en"],
+  "domains": [
+    "Arabic financial text-to-SQL",
+    "SAP HANA BPC analytics",
+    "Banking regulatory reporting (SAMA/NFRP)"
+  ],
+  "training": {
+    "framework": "Unsloth + TRL SFTTrainer",
+    "lora_r": 16,
+    "lora_alpha": 16,
+    "target_modules": [
+      "q_proj", "k_proj", "v_proj", "o_proj",
+      "gate_proj", "up_proj", "down_proj"
+    ],
+    "data_source": "prepare_arabic_data.py (SAP BPC + banking schema pairs)",
+    "data_mix": "70% Arabic / 30% English"
+  },
+  "serving": {
+    "engine": "llama.cpp (GGUF)",
+    "default_quantization": "Q4_K_M",
+    "recommended_context": 8192,
+    "gateway": "OpenAI-compatible (Zig proxy)",
+    "port": 8080
+  },
+  "chat_template": "gemma",
+  "system_prompt": "أنت مساعد تحليلات مالية متخصص في استعلامات SQL لنظام SAP HANA. أجب باللغة العربية أو الإنجليزية حسب لغة السؤال.",
+  "test_prompts": [
+    {
+      "language": "ar",
+      "prompt": "ما هو إجمالي الإيرادات للربع الأول؟",
+      "expected_type": "SQL query"
+    },
+    {
+      "language": "en",
+      "prompt": "Show total revenue by cost centre for Q1 2025",
+      "expected_type": "SQL query"
+    }
+  ]
+}
