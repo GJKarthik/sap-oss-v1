@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5I18nModule } from '@ui5/webcomponents-ngx/i18n';
 import { OcrPageComponent } from './ocr-page.component';
 
 @NgModule({
@@ -11,6 +12,7 @@ import { OcrPageComponent } from './ocr-page.component';
     CommonModule,
     FormsModule,
     Ui5WebcomponentsModule,
+    Ui5I18nModule,
     RouterModule.forChild([{ path: '', component: OcrPageComponent }]),
   ],
 })

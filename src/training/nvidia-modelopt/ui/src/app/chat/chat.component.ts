@@ -13,14 +13,14 @@ import { ApiService, ChatCompletionRequest, Message } from '../services/api.serv
       <header class="chat-header">
         <h1>Chat with Model</h1>
         <select [(ngModel)]="selectedModel" class="model-select">
-          <option *ngFor="let model of models" [value]="model">{{ model }}</option>
+          <option *ngFor="let model of models" [value]="model"><bdi>{{ model }}</bdi></option>
         </select>
       </header>
 
       <div class="messages" #messagesContainer>
         <div *ngFor="let msg of messages" [class]="'message ' + msg.role">
           <div class="role">{{ msg.role | titlecase }}</div>
-          <div class="content">{{ msg.content }}</div>
+          <div class="content"><bdi>{{ msg.content }}</bdi></div>
         </div>
         <div *ngIf="isLoading" class="message assistant loading">
           <div class="role">Assistant</div>

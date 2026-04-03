@@ -40,7 +40,7 @@ interface CompletionResponse {
         <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.model') }}</label>
-          <input class="setting-input" [(ngModel)]="model" placeholder="e.g. Qwen/Qwen3.5-0.6B" />
+          <input class="setting-input" dir="ltr" [(ngModel)]="model" placeholder="e.g. Qwen/Qwen3.5-0.6B" />
         </div>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.systemPrompt') }}</label>
@@ -58,7 +58,7 @@ interface CompletionResponse {
         <button class="btn-danger" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</button>
         @if (lastUsage()) {
           <div class="usage-info">
-            <span class="text-small text-muted">{{ i18n.t('chat.lastTokens').replace('{0}', '' + lastUsage()?.total_tokens) }}</span>
+            <span class="text-small text-muted">{{ i18n.t('chat.lastTokens', { count: lastUsage()?.total_tokens ?? 0 }) }}</span>
           </div>
         }
       </div>
@@ -72,7 +72,7 @@ interface CompletionResponse {
               <p>{{ i18n.t('chat.emptyState') }}</p>
               <div class="suggestion-chips">
                 @for (s of suggestions; track s) {
-                  <button class="chip" (click)="usePrompt(s)">{{ s }}</button>
+                  <button class="chip" (click)="usePrompt(s)"><bdi>{{ s }}</bdi></button>
                 }
               </div>
             </div>
@@ -85,7 +85,7 @@ interface CompletionResponse {
               [class.message--assistant]="m.role === 'assistant'"
             >
               <div class="message-role">{{ m.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}</div>
-              <div class="message-content">{{ m.content }}</div>
+              <div class="message-content"><bdi>{{ m.content }}</bdi></div>
               <div class="message-ts text-small text-muted">{{ m.ts | date:'HH:mm:ss' }}</div>
             </div>
           }

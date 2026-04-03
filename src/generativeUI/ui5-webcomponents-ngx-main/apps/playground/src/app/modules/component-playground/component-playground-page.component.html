@@ -21,7 +21,7 @@
   <ui5-list *ngIf="!loading && models.length > 0" separators="Inner">
     <ui5-li *ngFor="let model of models">
       <div class="component-playground__model-row">
-        <span>{{ model }}</span>
+        <bdi>{{ model }}</bdi>
         <ui5-tag *ngIf="isArabicPrimaryModel(model)" design="Information">
           {{ 'MODEL_TAG_ARABIC_PRIMARY' | ui5I18n }}
         </ui5-tag>

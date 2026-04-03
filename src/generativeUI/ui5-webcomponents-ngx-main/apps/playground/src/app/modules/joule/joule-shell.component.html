@@ -7,7 +7,7 @@
     <!-- Collab presence strip -->
     @if (participants.length > 0) {
       <div class="presence-strip" role="status" aria-label="Active collaborators">
-        <span class="presence-label">Live:</span>
+        <span class="presence-label">{{ 'JOULE_PRESENCE_LABEL' | ui5I18n }}</span>
         @for (p of participants; track p.userId) {
           <span
             class="presence-avatar"
@@ -24,7 +24,7 @@
       [endpoint]="agUiEndpoint"
       transport="sse"
       title="Joule"
-      placeholder="Ask me to build a UI, fetch data, or start a workflow…"
+      [attr.placeholder]="'JOULE_CHAT_PLACEHOLDER' | ui5I18n"
       [autoConnect]="!routeBlocked"
       securityClass="internal">
     </joule-chat>
@@ -54,13 +54,13 @@
           design="Attention"
           icon="warning"
           (click)="toggleGovernancePanel()">
-          Review Actions ({{ pendingActions.length }})
+          {{ 'JOULE_REVIEW_ACTIONS' | ui5I18n : pendingActions.length }}
         </ui5-button>
       }
 
       @if (state !== 'idle') {
         <ui5-button design="Transparent" icon="refresh" (click)="clearSession()">
-          Clear
+          {{ 'JOULE_CLEAR' | ui5I18n }}
         </ui5-button>
       }
     </div>
@@ -69,7 +69,7 @@
     @if (showGovernancePanel && pendingActions.length > 0) {
       <div class="governance-panel-wrapper" role="region" aria-label="Governance review panel">
         <div class="governance-panel-header">
-          <span>Pending Actions ({{ pendingActions.length }})</span>
+          <span>{{ 'JOULE_PENDING_ACTIONS' | ui5I18n : pendingActions.length }}</span>
           <ui5-button design="Transparent" icon="decline" accessible-name="Close panel" (click)="toggleGovernancePanel()"></ui5-button>
         </div>
         <genui-governance-review-panel></genui-governance-review-panel>
@@ -81,11 +81,11 @@
     } @else {
       <div class="empty-state" role="status" aria-label="Waiting for agent output">
         <div class="empty-state__icon" aria-hidden="true">🤖</div>
-        <p class="empty-state__text">Agent-generated UI will appear here.</p>
+        <p class="empty-state__text">{{ 'JOULE_EMPTY_STATE' | ui5I18n }}</p>
         @if (state === 'streaming') {
-          <p class="empty-state__hint">Receiving response…</p>
+          <p class="empty-state__hint">{{ 'JOULE_RECEIVING' | ui5I18n }}</p>
         } @else {
-          <p class="empty-state__hint">Ask Joule a question to get started.</p>
+          <p class="empty-state__hint">{{ 'JOULE_ASK_HINT' | ui5I18n }}</p>
         }
       </div>
     }

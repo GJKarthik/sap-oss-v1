@@ -37,11 +37,11 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
           <select [(ngModel)]="modelA" class="sel-input">
             <option value="">{{ i18n.t('compare.select') }}</option>
             @for (m of deployedModels(); track m.id) {
-              <option [value]="m.id">{{ m.label }}</option>
+              <option [value]="m.id"><bdi>{{ m.label }}</bdi></option>
             }
           </select>
           @if (modelA) {
-            <span class="badge-model">{{ modelNameFor(modelA) }}</span>
+            <span class="badge-model"><bdi>{{ modelNameFor(modelA) }}</bdi></span>
           }
         </div>
         <div class="vs-divider">{{ i18n.t('compare.vs') }}</div>
@@ -50,11 +50,11 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
           <select [(ngModel)]="modelB" class="sel-input">
             <option value="">{{ i18n.t('compare.select') }}</option>
             @for (m of deployedModels(); track m.id) {
-              <option [value]="m.id">{{ m.label }}</option>
+              <option [value]="m.id"><bdi>{{ m.label }}</bdi></option>
             }
           </select>
           @if (modelB) {
-            <span class="badge-model">{{ modelNameFor(modelB) }}</span>
+            <span class="badge-model"><bdi>{{ modelNameFor(modelB) }}</bdi></span>
           }
         </div>
       </div>
@@ -82,17 +82,17 @@ interface ChatMessage { role: 'user' | 'model'; text: string; }
         <div class="results-grid">
           <div class="result-card" [class.winner]="isWinner('A')">
             <div class="result-header">
-              <span>{{ i18n.t('compare.modelA') }} · {{ modelNameFor(modelA) }}</span>
+              <span>{{ i18n.t('compare.modelA') }} · <bdi>{{ modelNameFor(modelA) }}</bdi></span>
               @if (isWinner('A')) { <span class="winner-badge">{{ i18n.t('compare.bestShorter') }}</span> }
             </div>
-            <pre class="result-sql">{{ resultA() ?? i18n.t('compare.errorResponse') }}</pre>
+            <pre class="result-sql"><bdi>{{ resultA() ?? i18n.t('compare.errorResponse') }}</bdi></pre>
           </div>
           <div class="result-card" [class.winner]="isWinner('B')">
             <div class="result-header">
-              <span>{{ i18n.t('compare.modelB') }} · {{ modelNameFor(modelB) }}</span>
+              <span>{{ i18n.t('compare.modelB') }} · <bdi>{{ modelNameFor(modelB) }}</bdi></span>
               @if (isWinner('B')) { <span class="winner-badge">{{ i18n.t('compare.bestShorter') }}</span> }
             </div>
-            <pre class="result-sql">{{ resultB() ?? i18n.t('compare.errorResponse') }}</pre>
+            <pre class="result-sql"><bdi>{{ resultB() ?? i18n.t('compare.errorResponse') }}</bdi></pre>
           </div>
         </div>
 

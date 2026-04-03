@@ -17,15 +17,15 @@
     </ui5-select>
 
     <ui5-button design="Emphasized" [disabled]="invoking || loading || routeBlocked || !selectedTool" (click)="invokeSelectedTool()">
-      {{ 'MCP_INVOKE_BUTTON' | ui5I18n }}
+      {{ 'MCP_INVOKE_TOOL' | ui5I18n }}
     </ui5-button>
 
     <ui5-button design="Transparent" [disabled]="loading || routeBlocked" (click)="loadTools()">
-      {{ 'MCP_REFRESH_BUTTON' | ui5I18n }}
+      {{ 'MCP_REFRESH_TOOLS' | ui5I18n }}
     </ui5-button>
   </div>
 
   <ui5-busy-indicator *ngIf="loading || invoking" active size="M"></ui5-busy-indicator>
 
-  <pre *ngIf="lastCallResult" class="mcp-page__result">{{ lastCallResult }}</pre>
+  <pre *ngIf="lastCallResult" class="mcp-page__result"><bdi>{{ lastCallResult }}</bdi></pre>
 </section>

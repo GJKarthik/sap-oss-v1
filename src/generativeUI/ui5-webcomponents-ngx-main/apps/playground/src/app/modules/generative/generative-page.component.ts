@@ -9,11 +9,11 @@ import { LiveDemoHealthService } from '../../core/live-demo-health.service';
   selector: 'app-generative-page',
   template: `
     <div style="padding: 2rem;">
-      <ui5-title level="H2" style="margin-bottom: 1rem;">Fluid Generative UI Demo</ui5-title>
+      <ui5-title level="H2" style="margin-bottom: 1rem;">{{ 'GENERATIVE_PAGE_TITLE' | ui5I18n }}</ui5-title>
       
       <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
-        <ui5-input #promptInput placeholder="Ask the AI to generate a Fiori screen..." style="flex: 1;"></ui5-input>
-        <ui5-button design="Emphasized" [disabled]="routeBlocked || loading" (click)="generateUI(promptInput.value)">Generate</ui5-button>
+        <ui5-input #promptInput [attr.placeholder]="'GENERATIVE_PROMPT_PLACEHOLDER' | ui5I18n" style="flex: 1;"></ui5-input>
+        <ui5-button design="Emphasized" [disabled]="routeBlocked || loading" (click)="generateUI(promptInput.value)">{{ 'GENERATIVE_BTN' | ui5I18n }}</ui5-button>
       </div>
 
       <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button style="margin-bottom: 1rem;">
@@ -22,7 +22,7 @@ import { LiveDemoHealthService } from '../../core/live-demo-health.service';
 
       <div *ngIf="loading" style="margin-bottom: 1rem;">
         <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-        <span style="margin-left: 0.5rem; color: var(--sapContent_LabelColor);">Thinking & Streaming...</span>
+        <span style="margin-left: 0.5rem; color: var(--sapContent_LabelColor);">{{ 'GENERATIVE_LOADING' | ui5I18n }}</span>
       </div>
 
       <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button style="margin-bottom: 1rem;">
@@ -30,14 +30,14 @@ import { LiveDemoHealthService } from '../../core/live-demo-health.service';
       </ui5-message-strip>
 
       <div *ngIf="lastIntent" style="margin-bottom: 1rem; padding: 0.5rem; background: var(--sapInformationBackground); border: 1px solid var(--sapInformationBorderColor); border-radius: 4px;">
-        <strong>Last Intent Bubbled to Agent:</strong> {{ lastIntent.action }} <br/>
+        <strong>{{ 'GENERATIVE_LAST_INTENT' | ui5I18n }}</strong> {{ lastIntent.action }} <br/>
         <small>Payload: {{ lastIntent.payload | json }}</small>
       </div>
 
       <div style="min-height: 400px; border: 1px solid var(--sapList_BorderColor); padding: 1rem; border-radius: 4px; background: var(--sapList_Background);">
         <app-generative-renderer *ngIf="uiSchema" [node]="uiSchema"></app-generative-renderer>
         <div *ngIf="!uiSchema && !loading" style="color: var(--sapContent_LabelColor); text-align: center; margin-top: 2rem;">
-          No UI generated yet. Try asking for an "Interactive Profile Form".
+          {{ 'GENERATIVE_EMPTY_HINT' | ui5I18n }}
         </div>
       </div>
     </div>

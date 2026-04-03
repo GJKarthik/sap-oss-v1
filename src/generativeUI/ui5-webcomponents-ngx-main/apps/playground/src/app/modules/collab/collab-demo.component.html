@@ -1,7 +1,7 @@
 <!-- Collaboration Demo Page -->
 <ui5-page background-design="Solid">
   <ui5-bar slot="header" design="Header">
-    <ui5-title slot="startContent" level="H3">Collaboration Demo</ui5-title>
+    <ui5-title slot="startContent" level="H3">{{ 'COLLAB_PAGE_TITLE' | ui5I18n }}</ui5-title>
     <div slot="endContent" style="display:flex;align-items:center;gap:0.5rem;">
       <ui5-badge
         [attr.color-scheme]="connectionState === 'connected' ? '8' : connectionState === 'connecting' ? '6' : '1'">
@@ -14,10 +14,10 @@
 
     <!-- Connection card -->
     <ui5-card>
-      <ui5-card-header slot="header" title-text="Session" subtitle-text="Join a collaboration room"></ui5-card-header>
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_SESSION_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_SESSION_SUBTITLE' | ui5I18n"></ui5-card-header>
       <div style="padding:1rem;display:flex;flex-direction:column;gap:0.75rem;">
         <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-          <ui5-label show-colon>Room ID</ui5-label>
+          <ui5-label show-colon>{{ 'COLLAB_ROOM_ID_LABEL' | ui5I18n }}</ui5-label>
           <ui5-input
             [value]="roomId"
             (input)="roomId = $any($event.target).value"
@@ -27,18 +27,18 @@
             design="Emphasized"
             [disabled]="connectionState === 'connected' || connectionState === 'connecting'"
             (click)="joinRoom()">
-            Join Room
+            {{ 'COLLAB_JOIN_ROOM' | ui5I18n }}
           </ui5-button>
           <ui5-button
             design="Negative"
             [disabled]="connectionState === 'disconnected'"
             (click)="leaveRoom()">
-            Leave Room
+            {{ 'COLLAB_LEAVE_ROOM' | ui5I18n }}
           </ui5-button>
         </div>
         @if (connectionState !== 'connected') {
         <ui5-message-strip design="Information">
-          No live collaboration server is needed for this demo — connection attempts are gracefully handled.
+          {{ 'COLLAB_NO_SERVER_MSG' | ui5I18n }}
         </ui5-message-strip>
         }
       </div>
@@ -46,11 +46,11 @@
 
     <!-- Participants card -->
     <ui5-card>
-      <ui5-card-header slot="header" title-text="Participants" [subtitle-text]="participants.length + ' online'"></ui5-card-header>
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_PARTICIPANTS_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_PARTICIPANTS_ONLINE' | ui5I18n : participants.length"></ui5-card-header>
       <div style="padding:1rem;">
         @if (participants.length === 0) {
         <div style="color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;">
-          No participants yet. Join a room to see live presence.
+          {{ 'COLLAB_NO_PARTICIPANTS' | ui5I18n }}
         </div>
         }
         <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
@@ -76,7 +76,7 @@
 
     <!-- Cursor canvas card -->
     <ui5-card>
-      <ui5-card-header slot="header" title-text="Cursor Tracking" subtitle-text="Move mouse over canvas to broadcast position"></ui5-card-header>
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_CURSOR_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_CURSOR_SUBTITLE' | ui5I18n"></ui5-card-header>
       <div style="padding:1rem;">
         <div
           (mousemove)="broadcastCursor($event)"
@@ -90,7 +90,7 @@
             cursor:crosshair;
             overflow:hidden;">
           <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--sapContent_LabelColor,#6a6d70);font-size:0.875rem;pointer-events:none;">
-            Move mouse here to broadcast cursor
+            {{ 'COLLAB_CURSOR_HINT' | ui5I18n }}
           </span>
           @for (c of cursors; track c.userId) {
           <span
@@ -107,17 +107,17 @@
 
     <!-- Event log card -->
     <ui5-card>
-      <ui5-card-header slot="header" title-text="Event Log" subtitle-text="Connection events"></ui5-card-header>
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_EVENT_LOG_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_EVENT_LOG_SUBTITLE' | ui5I18n"></ui5-card-header>
       <div style="padding:1rem;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;">
-          <ui5-button design="Transparent" (click)="clearLog()">Clear</ui5-button>
+          <ui5-button design="Transparent" (click)="clearLog()">{{ 'COLLAB_CLEAR' | ui5I18n }}</ui5-button>
         </div>
         <div class="event-log">
           @for (entry of log; track $index) {
           <div class="event-log__entry">{{ entry }}</div>
           }
           @if (log.length === 0) {
-          <div class="event-log__empty">No events yet.</div>
+          <div class="event-log__empty">{{ 'COLLAB_NO_EVENTS' | ui5I18n }}</div>
           }
         </div>
       </div>

@@ -121,11 +121,11 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               [class.model-card--selected]="jobForm.value.model_name === m.name"
               (click)="selectModel(m)"
             >
-              <div class="model-name">{{ m.name }}</div>
+              <div class="model-name"><bdi>{{ m.name }}</bdi></div>
               <div class="model-meta">
-                <span class="badge">{{ m.parameters }}</span>
-                <span class="badge">{{ m.size_gb }} GB</span>
-                <span class="badge badge--quant">{{ m.recommended_quant }}</span>
+                <span class="badge"><bdi>{{ m.parameters }}</bdi></span>
+                <span class="badge"><bdi>{{ m.size_gb }} GB</bdi></span>
+                <span class="badge badge--quant"><bdi>{{ m.recommended_quant }}</bdi></span>
               </div>
               @if (!m.t4_compatible) {
                 <div class="text-small t4-warn">{{ i18n.t('modelOpt.t4Incompatible') }}</div>
@@ -173,7 +173,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
               <div class="vram-header">
                 <span class="vram-title">{{ i18n.t('modelOpt.vramProfiler') }}</span>
-                <span class="vram-values">{{ i18n.t('modelOpt.vramRequired').replace('{0}', estimatedVram().toFixed(1)).replace('{1}', '' + gpuTotalNum()) }}</span>
+                <span class="vram-values">{{ i18n.t('modelOpt.vramRequired', { required: estimatedVram().toFixed(1), available: gpuTotalNum() }) }}</span>
               </div>
               <div class="progress-bar">
                 <div class="progress-fill" 
@@ -298,8 +298,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                         {{ j.id.slice(0,8) }}
                       </td>
                       <td>{{ j.name }}</td>
-                      <td class="text-small">{{ j.config.model_name }}</td>
-                      <td><code>{{ j.config.quant_format }}</code></td>
+                      <td class="text-small"><bdi>{{ j.config.model_name }}</bdi></td>
+                      <td><code><bdi>{{ j.config.quant_format }}</bdi></code></td>
                       <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
                       <td>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
@@ -374,14 +374,14 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
         <div class="modal-overlay" (click)="closeChat()">
           <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h3 style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: {{ chatJob.config.model_name }}</h3>
+              <h3 style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: <bdi>{{ chatJob.config.model_name }}</bdi></h3>
               <button class="close-btn" (click)="closeChat()">✕</button>
             </div>
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
                 <div class="chat-bubble" [class.user]="msg.role === 'user'">
                   <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.model') }}</strong>
-                  <p style="margin: 0.2rem 0 0; font-size: 0.875rem;">{{ msg.text }}</p>
+                  <p style="margin: 0.2rem 0 0; font-size: 0.875rem;"><bdi>{{ msg.text }}</bdi></p>
                 </div>
               }
               @if (chatLoading()) {

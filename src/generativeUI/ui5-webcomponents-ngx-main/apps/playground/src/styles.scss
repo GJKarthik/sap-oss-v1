@@ -1,6 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
 // ---------------------------------------------------------------------------
+// Arabic web fonts (async, non-blocking via font-display: swap)
+// ---------------------------------------------------------------------------
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap');
+
+// ---------------------------------------------------------------------------
 // Reset / base
 // ---------------------------------------------------------------------------
 
@@ -108,9 +113,40 @@ ui5-page {
 [dir="rtl"] {
   body {
     text-align: right;
+    font-family: 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Segoe UI', Tahoma, sans-serif;
   }
 
   ui-angular-root {
     direction: rtl;
+    font-family: 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Segoe UI', Tahoma, sans-serif;
+  }
+
+  // BiDi isolation for code and technical content mixed with Arabic
+  code, pre, .technical {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  pre {
+    text-align: left;
+  }
+
+  // Model names and technical identifiers stay LTR
+  .component-playground__model-row span,
+  .mcp-page__result {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  // Force Western (European) numerals for financial data and general consistency
+  .financial-data,
+  .stat-value,
+  .currency,
+  [data-numerals="western"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    // Ensure Western numerals by using a LTR numeral font first in the stack
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 }
