@@ -22,11 +22,6 @@ export class AppComponent implements OnInit, OnDestroy {
   demoTourStepLabel = '';
   demoTourProgress = '';
 
-  readonly languages = [
-    { code: 'en', label: 'English' },
-    { code: 'ar', label: 'العربية' },
-  ];
-
   @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
   private readonly destroy$ = new Subject<void>();
@@ -83,20 +78,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onMenuItemClick(event: Event): void {
     const detail = (event as CustomEvent).detail;
-    if (detail?.item?.text) {
-      const map: Record<string, string> = {
-        'Home': '/',
-        'Forms Demo': '/forms',
-        'Joule AI': '/joule',
-        'Collaboration': '/collab',
-        'Generative UI': '/generative',
-        'Components': '/components',
-        'MCP': '/mcp',
-        'OCR': '/ocr',
-        'Readiness': '/readiness',
-      };
-      const path = map[detail.item.text];
-      if (path) this.router.navigate([path]);
+    const path = detail?.item?.getAttribute?.('data-path');
+    if (path) {
+      this.router.navigate([path]);
     }
   }
 

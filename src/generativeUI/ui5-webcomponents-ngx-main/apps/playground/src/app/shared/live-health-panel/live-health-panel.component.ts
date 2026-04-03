@@ -4,6 +4,7 @@ import {
   LiveDemoHealthService,
   ServiceCheck,
 } from '../../core/live-demo-health.service';
+import { I18nService } from '@ui5/webcomponents-ngx/i18n';
 
 @Component({
   selector: 'playground-live-health-panel',
@@ -15,12 +16,15 @@ export class LiveHealthPanelComponent implements OnInit, OnDestroy {
   checks: ServiceCheck[] = [];
   blocking = true;
   loading = false;
-  summaryText = 'Checking live service health...';
+  summaryText = '';
   lastCheckedAt: string | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly healthService: LiveDemoHealthService) {}
+  constructor(
+    private readonly healthService: LiveDemoHealthService,
+    private readonly i18nService: I18nService,
+  ) {}
 
   ngOnInit(): void {
     this.refreshHealth();
@@ -34,9 +38,10 @@ export class LiveHealthPanelComponent implements OnInit, OnDestroy {
       .subscribe((checks) => {
         this.checks = checks;
         this.blocking = checks.some((check) => !check.ok);
-        this.summaryText = this.blocking
-          ? 'One or more live dependencies are unavailable'
-          : 'All live dependencies are healthy';
+        const key = this.blocking ? 'HEALTH_PANEL_UNAVAILABLE' : 'HEALTH_PANEL_HEALTHY';
+        this.i18nService.getText(key).pipe(takeUntil(this.destroy$)).subscribe((text) => {
+          this.summaryText = text;
+        });
         this.lastCheckedAt = new Date().toISOString();
         this.loading = false;
       });

@@ -69,10 +69,10 @@
 
     <!-- Theme switcher in profile slot -->
     <ui5-select slot="profile" style="min-width:160px" (change)="onThemeChange($event)">
-      <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">Horizon</ui5-option>
-      <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">Horizon Dark</ui5-option>
-      <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">Quartz Light</ui5-option>
-      <ui5-option value="sap_fiori_3_dark" [attr.selected]="currentTheme === 'sap_fiori_3_dark' ? true : null">Quartz Dark</ui5-option>
+      <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
+      <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
+      <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">{{ 'THEME_QUARTZ_LIGHT' | ui5I18n }}</ui5-option>
+      <ui5-option value="sap_fiori_3_dark" [attr.selected]="currentTheme === 'sap_fiori_3_dark' ? true : null">{{ 'THEME_QUARTZ_DARK' | ui5I18n }}</ui5-option>
     </ui5-select>
 
   </ui5-shellbar>
@@ -136,26 +136,14 @@
 
     <div class="app-nav__spacer"></div>
 
-    <!-- Language switcher in nav bar -->
-    <div class="app-nav__theme">
-      <label class="app-nav__theme-label">Language</label>
-      <ui5-select style="min-width:120px" (change)="onLanguageChange($event)">
-        <ui5-option *ngFor="let lang of languages"
-          [attr.value]="lang.code"
-          [attr.selected]="currentLanguage === lang.code ? true : null">
-          {{ lang.label }}
-        </ui5-option>
-      </ui5-select>
-    </div>
-
     <!-- Theme switcher in nav bar -->
     <div class="app-nav__theme">
       <label class="app-nav__theme-label">{{ 'THEME_LABEL' | ui5I18n }}</label>
       <ui5-select style="min-width:160px" (change)="onThemeChange($event)">
-        <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">Horizon</ui5-option>
-        <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">Horizon Dark</ui5-option>
-        <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">Quartz Light</ui5-option>
-        <ui5-option value="sap_fiori_3_dark" [attr.selected]="currentTheme === 'sap_fiori_3_dark' ? true : null">Quartz Dark</ui5-option>
+        <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
+        <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
+        <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">{{ 'THEME_QUARTZ_LIGHT' | ui5I18n }}</ui5-option>
+        <ui5-option value="sap_fiori_3_dark" [attr.selected]="currentTheme === 'sap_fiori_3_dark' ? true : null">{{ 'THEME_QUARTZ_DARK' | ui5I18n }}</ui5-option>
       </ui5-select>
     </div>
     <div class="app-nav__theme">
@@ -169,7 +157,7 @@
 
   <section class="demo-tour-banner" *ngIf="demoTourActive" aria-label="Demo tour controls">
     <div class="demo-tour-banner__left">
-      <ui5-tag design="Information">Demo Tour {{ demoTourProgress }}</ui5-tag>
+      <ui5-tag design="Information">{{ 'DEMO_TOUR_LABEL' | ui5I18n }} {{ demoTourProgress }}</ui5-tag>
       <span>{{ 'DEMO_TOUR_CURRENT_STEP' | ui5I18n }}: {{ demoTourStepLabel }}</span>
     </div>
     <div class="demo-tour-banner__actions">
@@ -180,10 +168,10 @@
 
   <ui5-popover #productPopover [header-text]="'PRODUCT_SWITCHER' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
     <ui5-list (item-click)="onProductSelect($event)">
-      <ui5-li icon="home" data-url="/aifabric/">AI Fabric Console</ui5-li>
-      <ui5-li icon="process" data-url="/training/">Training Console</ui5-li>
-      <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">SAC AI Integration</ui5-li>
-      <ui5-li icon="grid" data-url="/ui5/" selected>Joule AI Playground</ui5-li>
+      <ui5-li icon="home" data-url="/aifabric/">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
+      <ui5-li icon="process" data-url="/training/">{{ 'PRODUCT_TRAINING' | ui5I18n }}</ui5-li>
+      <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">{{ 'PRODUCT_SAC' | ui5I18n }}</ui5-li>
+      <ui5-li icon="grid" data-url="/ui5/" selected>{{ 'PRODUCT_JOULE' | ui5I18n }}</ui5-li>
     </ui5-list>
   </ui5-popover>
 

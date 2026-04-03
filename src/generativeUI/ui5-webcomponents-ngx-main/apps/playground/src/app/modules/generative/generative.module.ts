@@ -6,12 +6,14 @@ import { GenerativeRendererComponent } from './generative-renderer.component';
 import { GenerativeNodeBuilderComponent } from './generative-node-builder.component';
 
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5I18nModule } from '@ui5/webcomponents-ngx/i18n';
 
 @NgModule({
   declarations: [GenerativePageComponent, GenerativeRendererComponent, GenerativeNodeBuilderComponent],
   imports: [
     CommonModule,
     Ui5WebcomponentsModule,
+    Ui5I18nModule,
     RouterModule.forChild([
       { path: '', component: GenerativePageComponent }
     ])

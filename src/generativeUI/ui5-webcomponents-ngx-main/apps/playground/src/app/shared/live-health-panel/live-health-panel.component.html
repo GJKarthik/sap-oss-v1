@@ -1,15 +1,15 @@
 <section class="live-health-panel" aria-label="Service Health">
   <div class="live-health-panel__header">
     <div class="live-health-panel__title">
-      <ui5-title level="H6">Service Health</ui5-title>
-      <span class="live-health-panel__subtitle">Server-managed services, UI-managed readiness checks</span>
+      <ui5-title level="H6">{{ 'HEALTH_PANEL_TITLE' | ui5I18n }}</ui5-title>
+      <span class="live-health-panel__subtitle">{{ 'HEALTH_PANEL_SUBTITLE' | ui5I18n }}</span>
     </div>
     <div class="live-health-panel__actions">
       <ui5-button design="Transparent" [disabled]="loading" (click)="refreshHealth()">
-        {{ loading ? 'Checking...' : 'Check Now' }}
+        {{ loading ? ('HEALTH_PANEL_CHECKING' | ui5I18n) : ('HEALTH_PANEL_CHECK_NOW' | ui5I18n) }}
       </ui5-button>
       <ui5-tag [design]="blocking ? 'Negative' : 'Positive'">
-        {{ blocking ? 'Blocked' : 'Ready' }}
+        {{ blocking ? ('HEALTH_PANEL_BLOCKED' | ui5I18n) : ('HEALTH_PANEL_READY' | ui5I18n) }}
       </ui5-tag>
     </div>
   </div>
@@ -19,7 +19,7 @@
   </ui5-message-strip>
 
   <div class="live-health-panel__meta" *ngIf="lastCheckedAt">
-    Last checked: {{ lastCheckedAt }}
+    {{ 'HEALTH_PANEL_LAST_CHECKED' | ui5I18n : lastCheckedAt }}
   </div>
 
   <ui5-list separators="Inner">

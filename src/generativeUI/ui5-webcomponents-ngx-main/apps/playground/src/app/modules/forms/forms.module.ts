@@ -6,6 +6,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { FormsPageComponent } from './forms-page.component';
 import { Ui5MainModule } from '@ui5/webcomponents-ngx';
+import { Ui5I18nModule } from '@ui5/webcomponents-ngx/i18n';
 
 @NgModule({
   declarations: [FormsPageComponent],
@@ -13,6 +14,7 @@ import { Ui5MainModule } from '@ui5/webcomponents-ngx';
     CommonModule,
     ReactiveFormsModule,
     Ui5MainModule,
+    Ui5I18nModule,
     RouterModule.forChild([{ path: '', component: FormsPageComponent }]),
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

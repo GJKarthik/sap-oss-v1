@@ -1,7 +1,7 @@
 <section class="readiness-page">
   <div class="readiness-page__header">
     <div>
-      <ui5-title level="H3">{{ 'READINESS_TITLE' | ui5I18n }}</ui5-title>
+      <ui5-title level="H3">{{ 'READINESS_PAGE_TITLE' | ui5I18n }}</ui5-title>
       <p class="readiness-page__subtitle">{{ 'READINESS_SUBTITLE' | ui5I18n }}</p>
     </div>
     <div class="readiness-page__actions">
@@ -15,10 +15,10 @@
   </div>
 
   <ui5-message-strip [design]="demoReady ? 'Positive' : 'Negative'" hide-close-button>
-    {{ demoReady ? ('READINESS_READY_MESSAGE' | ui5I18n) : ('READINESS_BLOCKED_MESSAGE' | ui5I18n) }}
+    {{ demoReady ? ('READINESS_DEMO_READY' | ui5I18n) : ('READINESS_DEMO_BLOCKED' | ui5I18n) }}
   </ui5-message-strip>
 
-  <div class="readiness-page__meta" *ngIf="lastCheckedAt">{{ 'READINESS_LAST_CHECKED' | ui5I18n }}: {{ lastCheckedAt }}</div>
+  <div class="readiness-page__meta" *ngIf="lastCheckedAt">{{ 'READINESS_LAST_CHECKED' | ui5I18n : lastCheckedAt }}</div>
 
   <div class="readiness-page__cards">
     <ui5-card *ngFor="let route of routeStatuses" class="readiness-page__card">
