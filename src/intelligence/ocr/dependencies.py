@@ -161,20 +161,24 @@ def check_dependencies() -> DependencyReport:
         note="" if avail_fa else "Optional — server.py requires fastapi + uvicorn",
     ))
 
+    avail_multipart, ver_multipart = _check_module("multipart")
+    report.dependencies.append(DependencyStatus(
+        name="python-multipart",
+        available=avail_multipart,
+        version=ver_multipart,
+        features=["Multipart file uploads for REST API"],
+        note="" if avail_multipart else (
+            "Optional — /ocr/pdf, /ocr/image, and /ocr/batch require python-multipart"
+        ),
+    ))
+
     avail_httpx, ver_httpx = _check_module("httpx")
     report.dependencies.append(DependencyStatus(
         name="httpx",
-        available=avail_httpx, version=ver_httpx,
-        features=["Webhook delivery"],
-        note="" if avail_httpx else "Optional — webhook callbacks will be skipped",
-    ))
-
-    avail_mp, ver_mp = _check_module("multipart")
-    report.dependencies.append(DependencyStatus(
-        name="python-multipart",
-        available=avail_mp, version=ver_mp,
-        features=["File upload handling"],
-        note="" if avail_mp else "Optional — file upload endpoints require python-multipart",
+        available=avail_httpx,
+        version=ver_httpx,
+        features=["Webhook callback delivery"],
+        note="" if avail_httpx else "Optional — callback_url delivery requires httpx",
     ))
 
     # System binaries

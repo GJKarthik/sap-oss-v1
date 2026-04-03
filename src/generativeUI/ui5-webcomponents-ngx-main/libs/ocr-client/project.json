@@ -1,0 +1,23 @@
+{
+  "name": "ocr-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ocr-client/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/ocr-client/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/ocr-client"],
+      "options": {
+        "jestConfig": "libs/ocr-client/jest.config.ts"
+      }
+    }
+  }
+}
+

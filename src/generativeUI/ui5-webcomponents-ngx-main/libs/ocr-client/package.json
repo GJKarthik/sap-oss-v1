@@ -1,0 +1,33 @@
+{
+  "name": "@ui5/ocr-client",
+  "version": "1.0.0",
+  "description": "One function to extract text from any document. That's it.",
+  "author": "SAP SE (https://www.sap.com)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SAP/ui5-webcomponents-ngx.git",
+    "directory": "libs/ocr-client"
+  },
+  "keywords": [
+    "ocr",
+    "arabic",
+    "pdf",
+    "text-extraction",
+    "sap"
+  ],
+  "dependencies": {
+    "tslib": "^2.4.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./fesm2022/ui5-ocr-client.mjs"
+    }
+  }
+}
+

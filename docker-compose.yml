@@ -311,6 +311,39 @@ services:
     depends_on: [agent-router, vllm]
     networks: [platform-network]
 
+  arabic-ocr:
+    build:
+      context: ./src/intelligence/ocr
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8060:8060"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    environment:
+      - PORT=8060
+      - OCR_LANGUAGES=ara+eng
+      - OCR_DPI=300
+      - OCR_MAX_WORKERS=2
+      - OCR_MAX_CONCURRENT=4
+      - OCR_MAX_UPLOAD_BYTES=104857600
+      - OCR_ALLOWED_CALLBACK_HOSTS=${OCR_ALLOWED_CALLBACK_HOSTS:-}
+      - OCR_WEBHOOK_SECRET=${OCR_WEBHOOK_SECRET:-}
+    labels:
+      sap.ai.tier: "ai_core"
+      sap.ai.service: "arabic-ocr"
+      sap.ai.data_security: "confidential"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8060/ocr/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks: [platform-network]
+
   # ── Tier 4 ─ FinSight SAP BTP/BDC ──────────────────────────────────────
 
   model-optimizer:
@@ -358,6 +391,7 @@ services:
       - odata-schema
       - vllm
       - elasticsearch
+      - arabic-ocr
     networks: [platform-network]
 
 volumes:

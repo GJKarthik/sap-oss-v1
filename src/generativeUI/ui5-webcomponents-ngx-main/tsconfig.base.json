@@ -44,7 +44,8 @@
       "@ui5/genui-renderer": ["libs/genui-renderer/src/index.ts"],
       "@ui5/genui-streaming": ["libs/genui-streaming/src/index.ts"],
       "@ui5/genui-governance": ["libs/genui-governance/src/index.ts"],
-      "@ui5/genui-collab": ["libs/genui-collab/src/index.ts"]
+      "@ui5/genui-collab": ["libs/genui-collab/src/index.ts"],
+      "@ui5/ocr-client": ["libs/ocr-client/src/index.ts"]
     },
     "resolveJsonModule": true
   },
