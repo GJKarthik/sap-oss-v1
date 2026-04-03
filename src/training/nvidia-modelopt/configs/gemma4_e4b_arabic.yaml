@@ -1,0 +1,123 @@
+# Gemma 4 E4B Arabic Text-to-SQL Fine-Tuning Configuration
+#
+# Model: google/gemma-4-E4B-it (dense, NOT MoE)
+# Task:  Bilingual Arabic+English financial text-to-SQL
+# Framework: Unsloth + HuggingFace TRL/SFTTrainer
+#
+# Two presets:
+#   1. quick_test  — 100 steps, for verifying the pipeline
+#   2. full_train  — 3 epochs, for production training
+
+# ── Model ──────────────────────────────────────────────────
+model:
+  name: "google/gemma-4-E4B-it"
+  max_seq_length: 2048
+  load_in_4bit: true          # QLoRA via Unsloth
+  dtype: null                 # auto-detect (bf16 on Ampere+)
+
+# ── LoRA ───────────────────────────────────────────────────
+lora:
+  r: 16
+  alpha: 16
+  dropout: 0.0               # Unsloth recommendation for Gemma 4
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  use_rslora: false
+  loftq_config: null
+
+# ── Data ───────────────────────────────────────────────────
+data:
+  arabic_ratio: 0.7
+  max_seq_length: 2048
+  packing: false              # keep examples separate for eval clarity
+
+# ── Quick Test Preset (100 steps) ──────────────────────────
+quick_test:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  effective_batch_size: 8
+  max_steps: 100
+  num_train_epochs: 1         # ignored when max_steps is set
+
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "linear"
+  warmup_steps: 10
+
+  optim: "adamw_8bit"
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  bf16: true
+  fp16: false
+  tf32: true
+
+  gradient_checkpointing: true
+  gradient_checkpointing_method: "unsloth"   # 60% less VRAM
+
+  logging_steps: 10
+  save_strategy: "steps"
+  save_steps: 50
+  save_total_limit: 1
+
+  eval_strategy: "steps"
+  eval_steps: 50
+
+  seed: 42
+  remove_unused_columns: false    # Required — Gemma 4 needs mm_token_type_ids
+
+# ── Full Training Preset (3 epochs) ───────────────────────
+full_train:
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  effective_batch_size: 16
+  max_steps: -1               # train by epochs
+  num_train_epochs: 3
+
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+
+  optim: "adamw_8bit"
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  bf16: true
+  fp16: false
+  tf32: true
+
+  gradient_checkpointing: true
+  gradient_checkpointing_method: "unsloth"
+
+  logging_steps: 25
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 3
+
+  eval_strategy: "steps"
+  eval_steps: 250
+
+  seed: 42
+  remove_unused_columns: false
+
+# ── Hardware Notes ─────────────────────────────────────────
+hardware:
+  minimum_gpu: "1× GPU with 16 GB VRAM (e.g. T4, RTX 4060)"
+  recommended_gpu: "1× A100 40 GB or L4 24 GB"
+  expected_vram_4bit: "~12-16 GB (E4B QLoRA)"
+  notes: |
+    Gemma 4 E4B is a dense 4-billion-parameter model (not MoE).
+    With Unsloth QLoRA at 4-bit, it fits comfortably on a T4 (16 GB).
+    Use gradient_checkpointing="unsloth" for further VRAM savings.
+
+# ── GGUF Export ────────────────────────────────────────────
+gguf_export:
+  quantization_methods:
+    - "q4_k_m"                # Good balance of size/quality
+    - "q8_0"                  # Higher quality
+  # Export via: model.save_pretrained_gguf("output", tokenizer, quantization_method="q4_k_m")
