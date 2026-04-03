@@ -28,7 +28,7 @@ class OCRMetrics:
     _TIME_BUCKETS = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, float("inf")]
 
     def __init__(self):
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self.pages_processed: int = 0
         self.documents_processed: int = 0
         self.errors_total: int = 0

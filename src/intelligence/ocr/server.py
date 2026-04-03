@@ -20,13 +20,14 @@ import io
 import logging
 import os
 import tempfile
-from typing import Optional
+from typing import List, Optional
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
 try:
-    from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+    from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
+    from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
 except ImportError:
     raise ImportError(
@@ -37,14 +38,33 @@ except ImportError:
 from .arabic_ocr_service import ArabicOCRService, OCRResult, PageResult
 from .metrics import get_metrics
 
+# Maximum upload size (50 MB) — consistent with api.py
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024
+
 app = FastAPI(
     title="Arabic OCR Service",
     description="REST API for Arabic/English PDF and image OCR processing",
     version="1.0.0",
 )
 
+# Configurable CORS — defaults to no origins allowed (secure by default).
+# Set OCR_ALLOWED_ORIGINS env var to a comma-separated list of allowed origins.
+_raw_origins = os.getenv("OCR_ALLOWED_ORIGINS", "")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 # Default service instance (can be reconfigured via env vars)
 _service: Optional[ArabicOCRService] = None
+
+# Upload size limit (50 MB, matching api.py)
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
 # Concurrency limiter — prevents too many OCR jobs running at once
 _max_concurrent = int(os.getenv("OCR_MAX_CONCURRENT", "4"))
@@ -196,9 +216,14 @@ async def ocr_pdf(
             detail="Too many concurrent OCR requests. Try again later.",
         )
 
-    # Save upload to temp file
+    # Save upload to temp file (enforce size limit)
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail="File exceeds maximum size of 50 MB",
+        )
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        content = await file.read()
         tmp.write(content)
         tmp.flush()
         tmp_path = tmp.name
@@ -233,6 +258,11 @@ async def ocr_image(
     from PIL import Image
 
     content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail="File exceeds maximum size of 50 MB",
+        )
     try:
         image = Image.open(io.BytesIO(content))
     except Exception:
@@ -256,7 +286,7 @@ async def ocr_image(
 
 @app.post("/ocr/batch")
 async def ocr_batch(
-    files: list = File(...),
+    files: List[UploadFile] = File(...),
     detect_tables: bool = Query(True),
     callback_url: Optional[str] = Query(None),
 ) -> JSONResponse:
@@ -265,7 +295,11 @@ async def ocr_batch(
     All results are returned together, and if ``callback_url`` is provided,
     they are delivered in a single batched webhook POST.
     """
-    from typing import List as TList
+    if callback_url:
+        try:
+            callback_url = _validate_callback_url(callback_url)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
 
     sem = _get_semaphore()
     all_results: list = []
@@ -275,8 +309,13 @@ async def ocr_batch(
             all_results.append({"error": f"Not a PDF: {file.filename}"})
             continue
 
+        content = await file.read()
+        if len(content) > MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail="File exceeds maximum size of 50 MB",
+            )
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            content = await file.read()
             tmp.write(content)
             tmp.flush()
             tmp_path = tmp.name
@@ -305,3 +344,45 @@ async def ocr_batch(
         "batch_size": len(all_results),
         "results": all_results,
     })
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compatible route from deprecated api.py
+# ---------------------------------------------------------------------------
+
+@app.post("/api/ocr/process")
+async def legacy_process_pdf(
+    file: UploadFile = File(...),
+    start_page: Optional[int] = Query(None, ge=1),
+    end_page: Optional[int] = Query(None, ge=1),
+    detect_tables: bool = Query(True),
+) -> JSONResponse:
+    """Backwards-compatible endpoint delegating to ``/ocr/pdf``.
+
+    .. deprecated::
+        Use ``/ocr/pdf`` instead.  This endpoint exists only for
+        backwards compatibility and will be removed in a future release.
+    """
+    logger.warning(
+        "Deprecated endpoint /api/ocr/process called — migrate to /ocr/pdf"
+    )
+    return await ocr_pdf(
+        file=file,
+        start_page=start_page,
+        end_page=end_page,
+        detect_tables=detect_tables,
+        callback_url=None,
+    )
+
+
+@app.get("/api/ocr/health")
+async def legacy_health() -> dict:
+    """Backwards-compatible health endpoint delegating to ``/ocr/health``.
+
+    .. deprecated::
+        Use ``/ocr/health`` instead.
+    """
+    logger.warning(
+        "Deprecated endpoint /api/ocr/health called — migrate to /ocr/health"
+    )
+    return await health()
