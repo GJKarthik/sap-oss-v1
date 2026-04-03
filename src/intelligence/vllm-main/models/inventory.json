@@ -165,6 +165,33 @@
         "loader_status": "Hugging Face API returned 401 Unauthorized during anonymous validation; runtime still needs sharded safetensors support.",
         "use_case": "source-model-staging"
       },
+      "gemma4-arabic-finance-q4_k_m": {
+        "source": "local",
+        "origin": "google/gemma-4-E4B-it + QLoRA fine-tune",
+        "files": ["gemma4-arabic-finance-Q4_K_M.gguf"],
+        "size_mb": 4800,
+        "quantization": "Q4_K_M",
+        "architecture": "gemma4",
+        "params_b": 8.0,
+        "context_length": 8192,
+        "languages": ["ar", "en"],
+        "domains": ["arabic-financial-sql", "sap-hana-bpc", "banking-nfrp"],
+        "chat_template": "gemma",
+        "use_case": "arabic-finance-chat",
+        "fine_tune": {
+          "method": "QLoRA (Unsloth)",
+          "base_model": "unsloth/gemma-4-E4B-it-bnb-4bit",
+          "adapter_script": "scripts/train_gemma4_arabic.py",
+          "export_script": "scripts/export_gemma4_gguf.py"
+        },
+        "t4_config": {
+          "recommended_quant": "Q4_K_M",
+          "vram_gb": 4.8,
+          "max_context": 8192,
+          "max_concurrent": 12,
+          "engine": "gguf"
+        }
+      },
       "nemotron-3-nano-30b-a3b-bf16": {
         "source": "huggingface",
         "repo": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",

@@ -1,12 +1,14 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, HostListener, signal, computed, ElementRef, ViewChild } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, HostListener, signal, computed, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { DiagnosticsService } from '../../services/diagnostics.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
+import { ApiService } from '../../services/api.service';
 import '@ui5/webcomponents-fiori/dist/ShellBar.js';
 import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
 import '@ui5/webcomponents/dist/Tag.js';
@@ -94,6 +96,7 @@ interface NavItem {
         <div class="app-nav__spacer"></div>
 
         <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
+        <span class="model-status-indicator" [class.model-online]="arabicModelOnline()" [class.model-offline]="!arabicModelOnline()" [title]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ arabicModelOnline() ? '🟢' : '🔴' }} {{ i18n.t('chat.arabicFinanceModel') }}</span>
         <button class="header-btn lang-toggle" (click)="i18n.toggleLanguage()">{{ i18n.t('app.language') }}</button>
         <button class="header-btn" (click)="showDiagnostics.set(!showDiagnostics())" [title]="i18n.t('app.diagnostics')">
           {{ i18n.t('app.diagnostics') }}
@@ -329,6 +332,23 @@ interface NavItem {
         color: var(--sapNegativeColor, #b00);
       }
 
+      .model-status-indicator {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+        white-space: nowrap;
+      }
+
+      .model-online {
+        color: var(--sapPositiveColor, #107e3e);
+      }
+
+      .model-offline {
+        color: var(--sapNegativeColor, #b00);
+        opacity: 0.8;
+      }
+
       .lang-toggle {
         font-weight: 600;
         min-width: 5rem;
@@ -347,14 +367,17 @@ interface NavItem {
     `,
   ],
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly api = inject(ApiService);
   readonly diagnostics = inject(DiagnosticsService);
   readonly userSettings = inject(UserSettingsService);
   readonly store = inject(AppStore);
   readonly i18n = inject(I18nService);
+  private readonly destroy$ = new Subject<void>();
+  readonly arabicModelOnline = signal(false);
 
   get navItems(): NavItem[] {
     return [
@@ -373,6 +396,24 @@ export class ShellComponent {
 
   readonly version = '1.0.0';
   apiKeyDraft = this.auth.token() ?? '';
+
+  ngOnInit(): void {
+    this.checkArabicModelStatus();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private checkArabicModelStatus(): void {
+    this.api.getModelStatus()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => this.arabicModelOnline.set(resp.status === 'ready' || resp.status === 'online'),
+        error: () => this.arabicModelOnline.set(false),
+      });
+  }
 
   // --- Search State & Logic ---
   showSearch = signal(false);
