@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 
 export interface AuthTokens {
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
   token_type: string;
   expires_in: number;
 }
@@ -26,23 +26,11 @@ interface TokenClaims {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.restoreSession());
+  private accessToken: string | null = null;
+  private currentUser: UserInfo | null = null;
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   private refreshRequest$: Observable<AuthTokens> | null = null;
-
-  private restoreSession(): boolean {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      return false;
-    }
-
-    if (!this.persistUserFromToken(token)) {
-      this.clearAccessSession();
-      return false;
-    }
-
-    return true;
-  }
 
   private decodeTokenClaims(token: string): TokenClaims | null {
     const [, payload] = token.split('.');
@@ -70,35 +58,31 @@ export class AuthService {
     return claims.exp * 1000 <= Date.now();
   }
 
-  private persistUserFromToken(token: string): boolean {
+  private syncUserFromToken(token: string): boolean {
     const claims = this.decodeTokenClaims(token);
     if (!claims?.sub || this.isExpired(claims)) {
       return false;
     }
 
-    localStorage.setItem('user', JSON.stringify({
+    this.currentUser = {
       username: claims.sub,
       role: claims.role || 'viewer',
       email: claims.email,
-    } satisfies UserInfo));
+    };
 
     return true;
   }
 
   private clearAccessSession(): void {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-  }
-
-  private clearStoredSession(): void {
-    this.clearAccessSession();
-    localStorage.removeItem('refresh_token');
+    this.accessToken = null;
+    this.currentUser = null;
   }
 
   private storeTokens(tokens: AuthTokens): AuthTokens {
-    localStorage.setItem('auth_token', tokens.access_token);
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-    if (!this.persistUserFromToken(tokens.access_token)) {
+    this.accessToken = tokens.access_token;
+    if (!this.syncUserFromToken(tokens.access_token)) {
+      this.clearAccessSession();
+      this.isAuthenticatedSubject.next(false);
       throw new Error('Invalid access token payload');
     }
     this.isAuthenticatedSubject.next(true);
@@ -122,7 +106,7 @@ export class AuthService {
   }
 
   clearSession(): void {
-    this.clearStoredSession();
+    this.clearAccessSession();
     this.isAuthenticatedSubject.next(false);
   }
 
@@ -132,13 +116,12 @@ export class AuthService {
       return of(true);
     }
 
-    if (!localStorage.getItem('refresh_token')) {
-      return of(false);
-    }
-
     return this.refreshToken().pipe(
       map(() => true),
-      catchError(() => of(false))
+      catchError(() => {
+        this.clearSession();
+        return of(false);
+      })
     );
   }
 
@@ -154,7 +137,10 @@ export class AuthService {
     return this.http.post<AuthTokens>(
       `${environment.apiBaseUrl}/auth/login`,
       body.toString(),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        withCredentials: true,
+      }
     ).pipe(
       map(tokens => this.storeTokens(tokens)),
       catchError(err => {
@@ -165,18 +151,14 @@ export class AuthService {
   }
 
   refreshToken(): Observable<AuthTokens> {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) {
-      return throwError(() => new Error('No refresh token available'));
-    }
-
     if (this.refreshRequest$) {
       return this.refreshRequest$;
     }
 
     this.refreshRequest$ = this.http.post<AuthTokens>(
       `${environment.apiBaseUrl}/auth/refresh`,
-      { refresh_token: refreshToken }
+      {},
+      { withCredentials: true }
     ).pipe(
       map(tokens => this.storeTokens(tokens)),
       catchError(err => {
@@ -193,13 +175,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    const accessToken = localStorage.getItem('auth_token');
-    const refreshToken = localStorage.getItem('refresh_token');
-
-    if (!accessToken && !refreshToken) {
-      this.clearSession();
-      return of(void 0);
-    }
+    const accessToken = this.getToken();
 
     const headers = accessToken
       ? new HttpHeaders({ Authorization: `Bearer ${accessToken}` })
@@ -207,8 +183,8 @@ export class AuthService {
 
     return this.http.post(
       `${environment.apiBaseUrl}/auth/logout`,
-      refreshToken ? { refresh_token: refreshToken } : {},
-      { headers }
+      {},
+      { headers, withCredentials: true }
     ).pipe(
       map(() => void 0),
       catchError(() => of(void 0)),
@@ -219,32 +195,21 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    if (!this.accessToken) {
       return null;
     }
 
-    if (!this.persistUserFromToken(token)) {
+    if (!this.syncUserFromToken(this.accessToken)) {
       this.clearAccessSession();
       this.isAuthenticatedSubject.next(false);
       return null;
     }
 
-    return token;
+    return this.accessToken;
   }
 
   getUser(): UserInfo | null {
-    const user = localStorage.getItem('user');
-    if (!user) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(user) as UserInfo;
-    } catch {
-      this.clearSession();
-      return null;
-    }
+    return this.currentUser;
   }
 
   isAuthenticated(): boolean {

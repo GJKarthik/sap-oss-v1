@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 import bcrypt as _bcrypt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -50,13 +50,13 @@ def _verify_password(plain: str, hashed: str) -> bool:
 
 class TokenResponse(BaseModel):
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
     expires_in: int
 
 
 class TokenRefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 class LogoutRequest(BaseModel):
@@ -211,6 +211,38 @@ def create_refresh_token(data: dict) -> str:
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
+def _refresh_cookie_max_age_seconds() -> int:
+    return settings.jwt_refresh_token_expire_days * 86400
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        key=settings.auth_refresh_cookie_name,
+        value=refresh_token,
+        max_age=_refresh_cookie_max_age_seconds(),
+        httponly=True,
+        secure=bool(settings.auth_refresh_cookie_secure),
+        samesite=settings.auth_refresh_cookie_samesite,
+        path=settings.auth_refresh_cookie_path,
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.auth_refresh_cookie_name,
+        path=settings.auth_refresh_cookie_path,
+        secure=bool(settings.auth_refresh_cookie_secure),
+        httponly=True,
+        samesite=settings.auth_refresh_cookie_samesite,
+    )
+
+
+def _resolve_refresh_token(request: Request, token_from_body: Optional[str]) -> Optional[str]:
+    if token_from_body:
+        return token_from_body
+    return request.cookies.get(settings.auth_refresh_cookie_name)
+
+
 async def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     store: StoreBackend = Depends(get_store),
@@ -261,6 +293,7 @@ require_admin = require_roles("admin")
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     store: StoreBackend = Depends(get_store),
 ):
@@ -287,25 +320,32 @@ async def login(
     token_data = _build_token_data(user, form_data.username)
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
+    _set_refresh_cookie(response, refresh_token)
     _record_auth_event("login", "success")
 
     return TokenResponse(
         access_token=access_token,
-        refresh_token=refresh_token,
         expires_in=settings.jwt_access_token_expire_minutes * 60,
     )
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
-    body: TokenRefreshRequest,
+    request: Request,
+    response: Response,
+    body: Optional[TokenRefreshRequest] = None,
     store: StoreBackend = Depends(get_store),
 ):
     """Refresh an expired access token. Rotates the refresh token."""
     invalid_exc = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    encoded_refresh_token = _resolve_refresh_token(request, body.refresh_token if body else None)
+    if not encoded_refresh_token:
+        _record_auth_event("refresh", "failure")
+        raise invalid_exc
+
     try:
         payload = jwt.decode(
-            body.refresh_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
+            encoded_refresh_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
         )
         if payload.get("type") != "refresh":
             _record_auth_event("refresh", "failure")
@@ -330,10 +370,11 @@ async def refresh_token(
             await revoke_token(jti, ttl)
 
         token_data = _build_token_data(user, username)
+        rotated_refresh_token = create_refresh_token(token_data)
+        _set_refresh_cookie(response, rotated_refresh_token)
         _record_auth_event("refresh", "success")
         return TokenResponse(
             access_token=create_access_token(token_data),
-            refresh_token=create_refresh_token(token_data),
             expires_in=settings.jwt_access_token_expire_minutes * 60,
         )
     except JWTError:
@@ -343,12 +384,15 @@ async def refresh_token(
 
 @router.post("/logout")
 async def logout(
+    request: Request,
+    response: Response,
     body: Optional[LogoutRequest] = None,
     token: Optional[str] = Depends(oauth2_scheme),
 ):
     """Revoke the current access token and optional refresh token server-side."""
     await _revoke_encoded_token(token, "access")
-    await _revoke_encoded_token(body.refresh_token if body else None, "refresh")
+    await _revoke_encoded_token(_resolve_refresh_token(request, body.refresh_token if body else None), "refresh")
+    _clear_refresh_cookie(response)
     _record_auth_event("logout", "success")
     return {"status": "logged_out"}
 

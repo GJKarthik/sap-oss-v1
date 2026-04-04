@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Any
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 
 app = FastAPI(title="suite-health-aggregator", version="1.0.0")
 
@@ -64,7 +65,9 @@ async def probe(client: httpx.AsyncClient, name: str, url: str, required: bool) 
 
 async def run_checks() -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=3.0, follow_redirects=True) as client:
-        results = [await probe(client, name, url, required) for name, url, required in CHECKS]
+        results = await asyncio.gather(
+            *(probe(client, name, url, required) for name, url, required in CHECKS)
+        )
     required_failures = [item for item in results if item["required"] and not item["ok"]]
     return {
         "status": "ok" if not required_failures else "degraded",
@@ -75,11 +78,30 @@ async def run_checks() -> dict[str, Any]:
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
+    return {"suite": "sap-ai-open-source-suite", "status": "healthy"}
+
+
+@app.get("/live")
+async def live() -> dict[str, Any]:
+    return {"suite": "sap-ai-open-source-suite", "status": "healthy"}
+
+
+@app.get("/ready")
+async def ready(response: Response) -> dict[str, Any]:
     summary = await run_checks()
-    return {"suite": "sap-ai-open-source-suite", "status": summary["status"]}
+    response.status_code = 200 if summary["status"] == "ok" else 503
+    return {"suite": "sap-ai-open-source-suite", **summary}
 
 
 @app.get("/health/details")
-async def health_details() -> dict[str, Any]:
+async def health_details(response: Response) -> dict[str, Any]:
     summary = await run_checks()
+    response.status_code = 200 if summary["status"] == "ok" else 503
+    return {"suite": "sap-ai-open-source-suite", **summary}
+
+
+@app.get("/ready/details")
+async def ready_details(response: Response) -> dict[str, Any]:
+    summary = await run_checks()
+    response.status_code = 200 if summary["status"] == "ok" else 503
     return {"suite": "sap-ai-open-source-suite", **summary}

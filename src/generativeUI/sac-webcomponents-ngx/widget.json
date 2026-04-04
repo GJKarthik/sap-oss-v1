@@ -10,7 +10,8 @@
       "kind": "main",
       "tag": "sac-ai-widget",
       "url": "widget.js",
-      "integrity": ""
+      "ignoreIntegrity": false,
+      "integrity": "sha256-REPLACED-DURING-PACKAGE"
     }
   ],
   "properties": {

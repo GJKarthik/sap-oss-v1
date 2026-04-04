@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
+    auth_refresh_cookie_name: str = "aifabric_refresh_token"
+    auth_refresh_cookie_secure: bool | None = None
+    auth_refresh_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
+    auth_refresh_cookie_path: str = "/api/v1/auth"
     bootstrap_admin_username: str = ""
     bootstrap_admin_password: str = ""
     bootstrap_admin_email: str = "admin@sap-ai-fabric.local"
@@ -114,6 +118,14 @@ class Settings(BaseSettings):
             object.__setattr__(self, "seed_reference_data", is_local_environment)
         if self.require_mcp_dependencies is None:
             object.__setattr__(self, "require_mcp_dependencies", not is_local_environment)
+        if self.auth_refresh_cookie_secure is None:
+            object.__setattr__(self, "auth_refresh_cookie_secure", not is_local_environment)
+        if not self.auth_refresh_cookie_name.strip():
+            raise ValueError("AUTH_REFRESH_COOKIE_NAME must not be empty")
+        if not self.auth_refresh_cookie_path.startswith("/"):
+            raise ValueError("AUTH_REFRESH_COOKIE_PATH must start with '/'")
+        if self.auth_refresh_cookie_samesite == "none" and not self.auth_refresh_cookie_secure:
+            raise ValueError("AUTH_REFRESH_COOKIE_SAMESITE='none' requires AUTH_REFRESH_COOKIE_SECURE=true")
         if not is_local_environment:
             if self.debug:
                 raise ValueError("DEBUG must remain disabled outside development and test environments")
@@ -134,6 +146,8 @@ class Settings(BaseSettings):
                     raise ValueError("BOOTSTRAP_ADMIN_PASSWORD must not use the demo default password")
                 if len(password) < 12:
                     raise ValueError("BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters long")
+            if not self.auth_refresh_cookie_secure:
+                raise ValueError("AUTH_REFRESH_COOKIE_SECURE must remain enabled outside development and test environments")
 
         if backend == "hana":
             missing = [
