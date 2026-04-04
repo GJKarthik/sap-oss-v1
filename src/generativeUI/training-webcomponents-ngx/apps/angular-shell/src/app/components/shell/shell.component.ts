@@ -392,6 +392,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       { label: this.i18n.t('nav.compare'), icon: 'compare', route: '/compare' },
       { label: this.i18n.t('nav.documentOcr'), icon: 'document', route: '/document-ocr' },
       { label: this.i18n.t('nav.arabicWizard'), icon: 'learning-assistant', route: '/arabic-wizard' },
+      { label: this.i18n.t('nav.workflow'), icon: 'workflow-tasks', route: '/workflow' },
     ];
   }
 

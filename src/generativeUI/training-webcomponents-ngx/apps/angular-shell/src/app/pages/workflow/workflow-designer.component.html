@@ -1,0 +1,218 @@
+<div class="page-content workflow-page" [class.rtl]="i18n.isRtl()">
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">{{ i18n.t('workflow.title') }}</h1>
+    <div class="mode-toggle">
+      <button [class.active]="mode() === 'design'" (click)="setMode('design')">{{ i18n.t('workflow.designMode') }}</button>
+      <button [class.active]="mode() === 'execute'" (click)="setMode('execute')">{{ i18n.t('workflow.executeMode') }}</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    @if (mode() === 'design') {
+      <button class="tool-btn" [class.active]="designer().tool === 'select'" (click)="setTool('select')" [title]="i18n.t('workflow.select')">⊹</button>
+      <button class="tool-btn" [class.active]="designer().tool === 'place'" (click)="setTool('place')" [title]="i18n.t('workflow.addPlace')">◯</button>
+      <button class="tool-btn" [class.active]="designer().tool === 'transition'" (click)="setTool('transition')" [title]="i18n.t('workflow.addTransition')">▭</button>
+      <button class="tool-btn" [class.active]="designer().tool === 'arc'" (click)="setTool('arc')" [title]="i18n.t('workflow.addArc')">→</button>
+      <button class="tool-btn" [class.active]="designer().tool === 'delete'" (click)="setTool('delete')" [title]="i18n.t('workflow.delete')">✕</button>
+      <span class="toolbar-sep"></span>
+      <button class="tool-btn" (click)="wf.undo()" [title]="i18n.t('workflow.undo')">↩</button>
+      <button class="tool-btn" (click)="wf.redo()" [title]="i18n.t('workflow.redo')">↪</button>
+      <span class="toolbar-sep"></span>
+      <button class="tool-btn" (click)="showTemplates.set(!showTemplates())" [title]="i18n.t('workflow.templates')">📋</button>
+      <button class="tool-btn" (click)="exportNet()" [title]="i18n.t('workflow.export')">⤓</button>
+      <button class="tool-btn" (click)="showImport.set(!showImport())" [title]="i18n.t('workflow.import')">⤒</button>
+    }
+    @if (mode() === 'execute') {
+      <button class="tool-btn exec-btn" (click)="wf.play()" [disabled]="exec().running" [title]="i18n.t('workflow.play')">▶</button>
+      <button class="tool-btn exec-btn" (click)="wf.pause()" [disabled]="!exec().running" [title]="i18n.t('workflow.pause')">⏸</button>
+      <button class="tool-btn exec-btn" (click)="wf.step()" [disabled]="exec().running" [title]="i18n.t('workflow.step')">⏭</button>
+      <button class="tool-btn exec-btn" (click)="wf.reset()" [title]="i18n.t('workflow.reset')">⏹</button>
+      <span class="toolbar-sep"></span>
+      <label class="speed-label">{{ i18n.t('workflow.speed') }}:</label>
+      <select class="speed-select" [ngModel]="exec().speed" (ngModelChange)="wf.setSpeed($event)">
+        <option value="slow">{{ i18n.t('workflow.slow') }}</option>
+        <option value="normal">{{ i18n.t('workflow.normal') }}</option>
+        <option value="fast">{{ i18n.t('workflow.fast') }}</option>
+      </select>
+    }
+    <span class="toolbar-spacer"></span>
+    <button class="tool-btn" (click)="zoomOut()" title="−">−</button>
+    <span class="zoom-label">{{ (zoom() * 100) | number:'1.0-0' }}%</span>
+    <button class="tool-btn" (click)="zoomIn()" title="+">+</button>
+    <button class="tool-btn" (click)="resetView()" [title]="i18n.t('workflow.resetView')">⊞</button>
+  </div>
+
+  <!-- Deadlock warning -->
+  @if (exec().deadlock && mode() === 'execute') {
+    <div class="deadlock-banner">⚠️ {{ i18n.t('workflow.deadlock') }}</div>
+  }
+
+  <!-- Template gallery overlay -->
+  @if (showTemplates()) {
+    <div class="overlay" (click)="showTemplates.set(false)">
+      <div class="gallery-panel" (click)="$event.stopPropagation()">
+        <h3>{{ i18n.t('workflow.templates') }}</h3>
+        <div class="template-grid">
+          @for (tpl of templates; track tpl.id) {
+            <button class="template-card" (click)="wf.loadTemplate(tpl.id); showTemplates.set(false)">
+              <ui5-icon [name]="tpl.icon"></ui5-icon>
+              <span class="tpl-name">{{ i18n.t(tpl.nameKey) }}</span>
+              <span class="tpl-desc">{{ i18n.t(tpl.descKey) }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Import overlay -->
+  @if (showImport()) {
+    <div class="overlay" (click)="showImport.set(false)">
+      <div class="import-panel" (click)="$event.stopPropagation()">
+        <h3>{{ i18n.t('workflow.import') }}</h3>
+        <textarea class="import-textarea" [ngModel]="importText()" (ngModelChange)="importText.set($event)" [placeholder]="i18n.t('workflow.importHint')"></textarea>
+        <button class="primary-btn" (click)="importNet()">{{ i18n.t('workflow.importBtn') }}</button>
+      </div>
+    </div>
+  }
+
+  <!-- Main layout: canvas + side panel -->
+  <div class="canvas-layout">
+    <!-- SVG Canvas -->
+    <svg class="petri-canvas"
+      (mousedown)="onPanStart($event)"
+      (mousemove)="onMouseMove($event)"
+      (mouseup)="onMouseUp()"
+      (click)="onCanvasClick($event)">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+        </marker>
+      </defs>
+      <g [attr.transform]="'translate(' + panX() + ',' + panY() + ') scale(' + zoom() + ')'">
+        <!-- Arcs -->
+        @for (arc of net().arcs; track arc.id) {
+          <g class="arc-group" [class.selected]="designer().selectedId === arc.id" (click)="onArcClick(arc, $event)">
+            <path [attr.d]="arcPath(arc)" class="arc-line" [class.inhibitor]="arc.inhibitor"
+              marker-end="url(#arrowhead)" />
+            @if (arc.expression || arc.weight > 1) {
+              <text [attr.x]="arcMidpoint(arc).x" [attr.y]="arcMidpoint(arc).y - 8" class="arc-label">
+                {{ arc.expression || arc.weight }}
+              </text>
+            }
+          </g>
+        }
+        <!-- Places -->
+        @for (place of net().places; track place.id) {
+          <g class="place-group" [class.selected]="designer().selectedId === place.id"
+            (click)="onPlaceClick(place, $event)"
+            (mousedown)="onDragStart(place.id, 'place', $event)">
+            <circle [attr.cx]="place.position.x" [attr.cy]="place.position.y" r="28"
+              class="place-circle" />
+            <!-- Tokens -->
+            @for (token of place.tokens; track token.id; let idx = $index) {
+              <circle
+                [attr.cx]="place.position.x + tokenPositions(place.tokens)[idx].x"
+                [attr.cy]="place.position.y + tokenPositions(place.tokens)[idx].y"
+                r="5" [attr.fill]="token.colour" class="token-dot">
+                <title>{{ token.type }} {{ token.data | json }}</title>
+              </circle>
+            }
+            <!-- Token count badge -->
+            @if (place.tokens.length > 0) {
+              <circle [attr.cx]="place.position.x + 20" [attr.cy]="place.position.y - 20" r="10" class="token-badge" />
+              <text [attr.x]="place.position.x + 20" [attr.y]="place.position.y - 16" class="token-badge-text">{{ place.tokens.length }}</text>
+            }
+            <text [attr.x]="place.position.x" [attr.y]="place.position.y + 42" class="element-label">{{ place.name }}</text>
+          </g>
+        }
+        <!-- Transitions -->
+        @for (trans of net().transitions; track trans.id) {
+          <g class="transition-group" [class.selected]="designer().selectedId === trans.id"
+            [class.enabled]="trans.state === 'enabled'" [class.firing]="trans.state === 'firing'"
+            (click)="onTransitionClick(trans, $event)"
+            (mousedown)="onDragStart(trans.id, 'transition', $event)">
+            <rect [attr.x]="trans.position.x - 24" [attr.y]="trans.position.y - 18" width="48" height="36"
+              rx="4" class="transition-rect" [attr.fill]="transitionColor(trans.state)" />
+            <text [attr.x]="trans.position.x" [attr.y]="trans.position.y + 4" class="transition-label">{{ trans.name }}</text>
+            <text [attr.x]="trans.position.x" [attr.y]="trans.position.y + 42" class="element-label">{{ trans.name }}</text>
+          </g>
+        }
+      </g>
+    </svg>
+
+    <!-- Side panel -->
+    <aside class="side-panel">
+      @if (mode() === 'execute') {
+        <h3>{{ i18n.t('workflow.marking') }}</h3>
+        <div class="marking-list">
+          @for (place of net().places; track place.id) {
+            <div class="marking-item">
+              <span class="marking-name">{{ place.name }}</span>
+              <span class="marking-count">{{ place.tokens.length }}</span>
+            </div>
+          }
+        </div>
+        <h3>{{ i18n.t('workflow.firingHistory') }}</h3>
+        <div class="history-list">
+          @for (ev of exec().history; track ev.timestamp) {
+            <div class="history-item">
+              <span class="history-time">{{ ev.timestamp | date:'HH:mm:ss' }}</span>
+              <span class="history-name">{{ transitionName(ev.transitionId) }}</span>
+            </div>
+          }
+          @if (!exec().history.length) {
+            <div class="empty-history">{{ i18n.t('workflow.noHistory') }}</div>
+          }
+        </div>
+        <div class="exec-stats">
+          <span>{{ i18n.t('workflow.steps') }}: {{ exec().stepCount }}</span>
+        </div>
+      }
+
+      @if (mode() === 'design' && showProperties() && designer().selectedType === 'place') {
+        @if (selectedPlace(); as p) {
+          <h3>{{ i18n.t('workflow.placeProps') }}</h3>
+          <label>{{ i18n.t('workflow.name') }}</label>
+          <input type="text" [ngModel]="p.name" (ngModelChange)="updatePlace('name', $event)" />
+          <label>{{ i18n.t('workflow.tokenType') }}</label>
+          <select [ngModel]="p.tokenType" (ngModelChange)="updatePlace('tokenType', $event)">
+            <option value="data">Data</option>
+            <option value="control">Control</option>
+            <option value="resource">Resource</option>
+            <option value="error">Error</option>
+          </select>
+          <label>{{ i18n.t('workflow.capacity') }}</label>
+          <input type="number" [ngModel]="p.capacity" (ngModelChange)="updatePlace('capacity', $event)" />
+          <button class="add-token-btn" (click)="addTokenToPlace()">{{ i18n.t('workflow.addToken') }}</button>
+        }
+      }
+      @if (mode() === 'design' && showProperties() && designer().selectedType === 'transition') {
+        @if (selectedTransition(); as t) {
+          <h3>{{ i18n.t('workflow.transProps') }}</h3>
+          <label>{{ i18n.t('workflow.name') }}</label>
+          <input type="text" [ngModel]="t.name" (ngModelChange)="updateTransition('name', $event)" />
+          <label>{{ i18n.t('workflow.guard') }}</label>
+          <input type="text" [ngModel]="t.guard" (ngModelChange)="updateTransition('guard', $event)" />
+          <label>{{ i18n.t('workflow.priority') }}</label>
+          <input type="number" [ngModel]="t.priority" (ngModelChange)="updateTransition('priority', $event)" />
+        }
+      }
+      @if (mode() === 'design' && showProperties() && designer().selectedType === 'arc') {
+        @if (selectedArc(); as a) {
+          <h3>{{ i18n.t('workflow.arcProps') }}</h3>
+          <label>{{ i18n.t('workflow.expression') }}</label>
+          <input type="text" [ngModel]="a.expression" (ngModelChange)="updateArc('expression', $event)" />
+          <label>{{ i18n.t('workflow.weight') }}</label>
+          <input type="number" [ngModel]="a.weight" (ngModelChange)="updateArc('weight', $event)" />
+          <label class="checkbox-label">
+            <input type="checkbox" [ngModel]="a.inhibitor" (ngModelChange)="updateArc('inhibitor', $event)" />
+            {{ i18n.t('workflow.inhibitor') }}
+          </label>
+        }
+      }
+    </aside>
+  </div>
+</div>
