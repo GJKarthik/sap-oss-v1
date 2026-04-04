@@ -1,16 +1,35 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, computed,
-  CUSTOM_ELEMENTS_SCHEMA,
+  OnDestroy, CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { I18nService } from '../../services/i18n.service';
-import { OcrService, OcrResult, FinancialField, OcrDetectedTable } from '../../services/ocr.service';
+import { OcrService, OcrResult, FinancialField, OcrDetectedTable, OcrHealthReport } from '../../services/ocr.service';
+import { UserSettingsService } from '../../services/user-settings.service';
 import { DocumentContextService } from '../../services/document-context.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
-type TabId = 'text' | 'tables' | 'financial' | 'metadata';
+type NormalTab = 'text' | 'tables' | 'financial' | 'metadata';
+type ExpertTab = 'text' | 'fields' | 'qa' | 'export';
+type PageStatus = 'pending' | 'approved' | 'flagged';
+type ExportFormat = 'jsonl' | 'annotated' | 'pdf';
+
+export interface OcrCurationState {
+  result: OcrResult | null;
+  sourceFile: File | null;
+  activePage: number;
+  normalTab: NormalTab;
+  expertTab: ExpertTab;
+  corrections: Record<number, string>;
+  groundTruth: Record<string, string | null>;
+  pageStatus: Record<number, PageStatus>;
+  reviewNotes: Record<number, string>;
+  uploading: boolean;
+  processing: boolean;
+  progress: number;
+}
 
 @Component({
   selector: 'app-document-ocr',
@@ -21,49 +40,115 @@ type TabId = 'text' | 'tables' | 'financial' | 'metadata';
   templateUrl: './document-ocr.component.html',
   styleUrls: ['./document-ocr.component.scss'],
 })
-export class DocumentOcrComponent {
+export class DocumentOcrComponent implements OnDestroy {
   readonly i18n = inject(I18nService);
   private readonly ocr = inject(OcrService);
+  private readonly userSettings = inject(UserSettingsService);
   private readonly documentContext = inject(DocumentContextService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
-  // State
-  readonly isProcessing = signal(false);
-  readonly progress = signal(0);
-  readonly result = signal<OcrResult | null>(null);
-  readonly activeTab = signal<TabId>('text');
-  readonly currentPage = signal(1);
+  readonly state: OcrCurationState = {
+    result: null,
+    sourceFile: null,
+    activePage: 1,
+    normalTab: 'text',
+    expertTab: 'text',
+    corrections: {},
+    groundTruth: {},
+    pageStatus: {},
+    reviewNotes: {},
+    uploading: false,
+    processing: false,
+    progress: 0,
+  };
+
+  private readonly _state = signal<OcrCurationState>({ ...this.state });
+  readonly serviceAvailable = signal(true);
+  readonly missingDeps = signal<string[]>([]);
   readonly isDragOver = signal(false);
-  readonly selectedFile = signal<File | null>(null);
 
-  // Computed
-  readonly totalPages = computed(() => this.result()?.total_pages ?? 0);
+  readonly isExpert = computed(() => this.userSettings.mode() === 'expert');
+
   readonly currentPageResult = computed(() => {
-    const r = this.result();
-    if (!r) return null;
-    return r.pages.find(p => p.page_number === this.currentPage()) ?? null;
+    const s = this._state();
+    if (!s.result) return null;
+    return s.result.pages.find(p => p.page_number === s.activePage) ?? null;
   });
-  readonly currentPageText = computed(() => this.currentPageResult()?.text ?? '');
-  readonly currentPageTables = computed(() => this.currentPageResult()?.tables ?? []);
+
   readonly financialFields = computed(() => {
-    const r = this.result();
-    if (!r) return [];
-    return this.ocr.extractFinancialFields(r);
+    const s = this._state();
+    if (!s.result) return [];
+    return this.ocr.extractFinancialFieldsAll(s.result);
   });
+
+  readonly allTables = computed(() => {
+    const s = this._state();
+    if (!s.result) return [];
+    return s.result.pages.flatMap(p => p.tables);
+  });
+
   readonly allText = computed(() => {
-    const r = this.result();
-    if (!r) return '';
-    return r.pages.map(p => p.text).join('\n\n---\n\n');
+    const s = this._state();
+    if (!s.result) return '';
+    return s.result.pages.map(p => s.corrections[p.page_number] ?? p.text).join('\n\n---\n\n');
   });
 
-  readonly tabs: TabId[] = ['text', 'tables', 'financial', 'metadata'];
+  readonly qaStats = computed(() => {
+    const s = this._state();
+    const total = s.result?.total_pages ?? 0;
+    let approved = 0, pending = 0, flagged = 0;
+    for (let i = 1; i <= total; i++) {
+      const st = s.pageStatus[i] ?? 'pending';
+      if (st === 'approved') approved++;
+      else if (st === 'flagged') flagged++;
+      else pending++;
+    }
+    return { approved, pending, flagged, total };
+  });
 
-  tabLabel(tab: TabId): string {
-    return this.i18n.t(`ocr.tab.${tab}`);
+  readonly pdfDisabled = computed(() => {
+    return this.missingDeps().some(d => d.includes('reportlab') || d.includes('pypdf'));
+  });
+
+  readonly exportFormat = signal<ExportFormat>('jsonl');
+  readonly includeApproved = signal(true);
+  readonly includeFlagged = signal(false);
+  readonly includeGroundTruth = signal(true);
+
+  readonly normalTabs: NormalTab[] = ['text', 'tables', 'financial', 'metadata'];
+  readonly expertTabs: ExpertTab[] = ['text', 'fields', 'qa', 'export'];
+
+  private _healthInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    this.pollHealth();
+    this._healthInterval = setInterval(() => this.pollHealth(), 30_000);
   }
 
-  // File handling
+  pollHealth(): void {
+    this.ocr.checkHealth().subscribe({
+      next: (report) => this._applyHealth(report),
+      error: () => {
+        this.serviceAvailable.set(false);
+        this.missingDeps.set(['unknown']);
+      },
+    });
+  }
+
+  private _applyHealth(report: OcrHealthReport): void {
+    const healthy = report.status !== 'unhealthy';
+    this.serviceAvailable.set(healthy);
+    this.missingDeps.set([...(report.missing_optional ?? []), ...(report.missing_required ?? [])]);
+  }
+
+  ngOnDestroy(): void {
+    if (this._healthInterval !== null) {
+      clearInterval(this._healthInterval);
+      this._healthInterval = null;
+    }
+  }
+
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -80,16 +165,12 @@ export class DocumentOcrComponent {
     event.stopPropagation();
     this.isDragOver.set(false);
     const files = event.dataTransfer?.files;
-    if (files?.length) {
-      this.handleFile(files[0]);
-    }
+    if (files?.length) this.handleFile(files[0]);
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files?.length) {
-      this.handleFile(input.files[0]);
-    }
+    if (input.files?.length) this.handleFile(input.files[0]);
   }
 
   handleFile(file: File): void {
@@ -101,86 +182,132 @@ export class DocumentOcrComponent {
       this.toast.error(this.i18n.t('ocr.error.tooLarge'));
       return;
     }
-    this.selectedFile.set(file);
-    this.processFile(file);
+    this._mutate(s => {
+      s.sourceFile = file;
+      s.uploading = true;
+      s.processing = false;
+      s.progress = 0;
+      s.result = null;
+      s.corrections = {};
+      s.groundTruth = {};
+      s.pageStatus = {};
+      s.reviewNotes = {};
+      s.activePage = 1;
+    });
+    this._uploadFile(file);
   }
 
-  private processFile(file: File): void {
-    this.isProcessing.set(true);
-    this.progress.set(0);
-    this.result.set(null);
+  replaceFile(): void {
+    this._mutate(s => {
+      s.sourceFile = null;
+      s.result = null;
+      s.corrections = {};
+      s.groundTruth = {};
+      s.pageStatus = {};
+      s.reviewNotes = {};
+    });
+  }
 
-    // Simulate progress
+  private _uploadFile(file: File): void {
     const interval = setInterval(() => {
-      const curr = this.progress();
-      if (curr < 90) this.progress.set(curr + Math.random() * 15);
-    }, 400);
+      this._mutate(s => {
+        if (s.progress < 90) s.progress = Math.min(90, s.progress + Math.random() * 15);
+      });
+    }, 300);
 
-    this.ocr.processFile(file).subscribe({
+    this.ocr.uploadPdf(file).subscribe({
       next: (res) => {
         clearInterval(interval);
-        this.progress.set(100);
-        this.result.set(res);
-        this.currentPage.set(1);
-        this.isProcessing.set(false);
-        if (res.metadata?.['demo_mode']) {
-          this.toast.info(this.i18n.t('ocr.demoMode'));
-        }
+        this._mutate(s => {
+          s.uploading = false;
+          s.processing = false;
+          s.progress = 100;
+          s.result = res;
+          s.activePage = 1;
+          for (let i = 1; i <= res.total_pages; i++) {
+            s.pageStatus[i] = 'pending';
+          }
+        });
       },
-      error: () => {
+      error: (err) => {
         clearInterval(interval);
-        this.isProcessing.set(false);
-        this.toast.error(this.i18n.t('ocr.error.processing'));
+        const status = err?.status;
+        let key = 'ocr.error.processing';
+        if (status === 413) key = 'ocr.error.tooLarge';
+        else if (status === 429) key = 'ocr.error.serverBusy';
+        else if (status === 503) {
+          key = 'ocr.unavailable';
+          this.pollHealth();
+        }
+        this.toast.error(this.i18n.t(key));
+        this._mutate(s => { s.uploading = false; s.processing = false; });
       },
     });
   }
 
-  // Pagination
-  prevPage(): void {
-    if (this.currentPage() > 1) this.currentPage.set(this.currentPage() - 1);
-  }
-  nextPage(): void {
-    if (this.currentPage() < this.totalPages()) this.currentPage.set(this.currentPage() + 1);
+  setNormalTab(tab: NormalTab): void {
+    this._mutate(s => { s.normalTab = tab; });
   }
 
-  // Actions
-  copyText(): void {
-    navigator.clipboard.writeText(this.currentPageText());
-    this.toast.info(this.i18n.t('ocr.copied'));
+  prevPage(): void {
+    this._mutate(s => { if (s.activePage > 1) s.activePage--; });
+  }
+
+  nextPage(): void {
+    const total = this._state().result?.total_pages ?? 1;
+    this._mutate(s => { if (s.activePage < total) s.activePage++; });
+  }
+
+  goToPage(n: number): void {
+    this._mutate(s => { s.activePage = n; });
+  }
+
+  goToFlaggedPage(): void {
+    const r = this._state().result;
+    if (!r) return;
+    const flagged = r.pages.find(p => p.flagged_for_review);
+    if (flagged) {
+      this._mutate(s => { s.activePage = flagged.page_number; s.normalTab = 'text'; });
+    }
   }
 
   sendToChat(): void {
-    const r = this.result();
-    if (!r) return;
-    const fileName = this.selectedFile()?.name ?? r.file_path;
-    this.documentContext.setFromOcrResult(r, this.financialFields(), fileName);
-    this.router.navigate(['/chat']);
-  }
-
-  analyzeDocument(): void {
-    const r = this.result();
-    if (!r) return;
-    const fileName = this.selectedFile()?.name ?? r.file_path;
-    this.documentContext.setFromOcrResult(r, this.financialFields(), fileName);
-    this.documentContext.setInitialPrompt('حلل هذا المستند المالي واستخرج البيانات الرئيسية');
-    this.router.navigate(['/chat']);
+    const s = this._state();
+    if (!s.result) return;
+    const fileName = s.sourceFile?.name ?? s.result.file_path;
+    this.documentContext.setFromOcrResult(s.result, this.financialFields(), fileName);
+    this.router.navigate(['/training/chat']);
   }
 
   exportJson(): void {
-    const r = this.result();
+    const r = this._state().result;
     if (!r) return;
-    const blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
-    this.downloadBlob(blob, 'ocr-result.json');
+    this._downloadBlob(new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' }), 'ocr-result.json');
   }
 
   exportText(): void {
     const text = this.allText();
     if (!text) return;
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    this.downloadBlob(blob, 'ocr-text.txt');
+    this._downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'ocr-text.txt');
   }
 
-  private downloadBlob(blob: Blob, filename: string): void {
+  exportTableCsv(tableIndex: number): void {
+    const table = this.allTables()[tableIndex];
+    if (!table) return;
+    const rows: string[][] = [];
+    for (let r = 0; r < table.rows; r++) {
+      const row: string[] = [];
+      for (let c = 0; c < table.columns; c++) {
+        const cell = table.cells.find(cl => cl.row === r && cl.column === c);
+        row.push(cell?.text ?? '');
+      }
+      rows.push(row);
+    }
+    const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n');
+    this._downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `table-${tableIndex + 1}.csv`);
+  }
+
+  private _downloadBlob(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -189,7 +316,95 @@ export class DocumentOcrComponent {
     URL.revokeObjectURL(url);
   }
 
-  /** Build table rows for rendering a detected table. */
+  setExpertTab(tab: ExpertTab): void {
+    this._mutate(s => { s.expertTab = tab; });
+  }
+
+  setActivePage(n: number): void {
+    this._mutate(s => { s.activePage = n; });
+  }
+
+  approvePage(page = this._state().activePage): void {
+    this._mutate(s => { s.pageStatus[page] = 'approved'; });
+  }
+
+  flagPage(page = this._state().activePage): void {
+    this._mutate(s => { s.pageStatus[page] = 'flagged'; });
+  }
+
+  resetPageStatus(page = this._state().activePage): void {
+    this._mutate(s => { s.pageStatus[page] = 'pending'; });
+  }
+
+  setReviewNote(note: string, page = this._state().activePage): void {
+    this._mutate(s => { s.reviewNotes[page] = note; });
+  }
+
+  setCorrection(text: string, page = this._state().activePage): void {
+    this._mutate(s => { s.corrections[page] = text; });
+  }
+
+  resetCorrection(page = this._state().activePage): void {
+    this._mutate(s => { delete s.corrections[page]; });
+  }
+
+  setGroundTruth(key: string, value: string | null): void {
+    this._mutate(s => { s.groundTruth[key] = value; });
+  }
+
+  downloadDataset(): void {
+    const s = this._state();
+    if (!s.result) return;
+    const format = this.exportFormat();
+    const incApproved = this.includeApproved();
+    const incFlagged = this.includeFlagged();
+    const incGt = this.includeGroundTruth();
+
+    const pages = s.result.pages.filter(p => {
+      const st = s.pageStatus[p.page_number] ?? 'pending';
+      return (incApproved && st === 'approved') || (incFlagged && st === 'flagged');
+    });
+
+    if (format === 'jsonl') {
+      const lines = pages.map(p => JSON.stringify({
+        page: p.page_number,
+        text: s.corrections[p.page_number] ?? p.text,
+        ...(incGt ? { ground_truth_fields: s.groundTruth } : {}),
+        corrections: s.corrections,
+      }));
+      this._downloadBlob(new Blob([lines.join('\n')], { type: 'application/jsonl' }), 'training-dataset.jsonl');
+    } else if (format === 'annotated') {
+      const annotated = { ...s.result, corrections: s.corrections, ground_truth: incGt ? s.groundTruth : {} };
+      this._downloadBlob(new Blob([JSON.stringify(annotated, null, 2)], { type: 'application/json' }), 'annotated.json');
+    }
+  }
+
+  sendToPipeline(): void {
+    const s = this._state();
+    if (!s.result) return;
+    const pages = s.result.pages.filter(p => (s.pageStatus[p.page_number] ?? 'pending') === 'approved');
+    const lines = pages.map(p => ({
+      page: p.page_number,
+      text: s.corrections[p.page_number] ?? p.text,
+      ground_truth_fields: s.groundTruth,
+      corrections: s.corrections,
+    }));
+    this.ocr.sendToPipeline(lines).subscribe({
+      next: () => { this.toast.info(this.i18n.t('ocr.export.pipelineStub')); this.downloadDataset(); },
+      error: () => { this.toast.info(this.i18n.t('ocr.export.pipelineStub')); this.downloadDataset(); },
+    });
+  }
+
+  getState(): OcrCurationState {
+    return this._state();
+  }
+
+  confidenceClass(confidence: number): string {
+    if (confidence >= 90) return 'conf-high';
+    if (confidence >= 70) return 'conf-mid';
+    return 'conf-low';
+  }
+
   getTableRows(table: OcrDetectedTable): string[][] {
     const grid: string[][] = [];
     for (let r = 0; r < table.rows; r++) {
@@ -201,5 +416,99 @@ export class DocumentOcrComponent {
       grid.push(row);
     }
     return grid;
+  }
+
+  getPageRange(): number[] {
+    const total = this._state().result?.total_pages ?? 0;
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  flaggedCount(): number {
+    const r = this._state().result;
+    if (!r) return 0;
+    return r.pages.filter(p => p.flagged_for_review).length;
+  }
+
+  reviewedCount(): number {
+    const s = this._state();
+    return Object.values(s.pageStatus).filter(st => st !== 'pending').length;
+  }
+
+  pageConf(page: number): number {
+    const r = this._state().result;
+    return r?.pages.find(p => p.page_number === page)?.confidence ?? 0;
+  }
+
+  statusIcon(status: PageStatus): string {
+    if (status === 'approved') return '✓';
+    if (status === 'flagged') return '🚩';
+    return '⏳';
+  }
+
+  expertTabLabel(tab: ExpertTab): string {
+    const icons: Record<ExpertTab, string> = { text: '✏️ Text', fields: 'Fields', qa: 'QA', export: '🚀' };
+    return icons[tab];
+  }
+
+  currentPageDir(): 'rtl' | 'ltr' {
+    const text = this.currentPageResult()?.text ?? '';
+    return /[\u0600-\u06FF]/.test(text) ? 'rtl' : 'ltr';
+  }
+
+  hasLowConfRow(table: OcrDetectedTable, row: number): boolean {
+    return table.cells.some(c => c.row === row && c.confidence < 80);
+  }
+
+  getCellConf(table: OcrDetectedTable, row: number, col: number): number {
+    return table.cells.find(c => c.row === row && c.column === col)?.confidence ?? 100;
+  }
+
+  gtStatusClass(key: string): string {
+    const gt = this._state().groundTruth[key];
+    if (gt != null) return 'gt-verified';
+    const ocrField = this.financialFields().find(f => f.key_ar === key);
+    if (ocrField?.value) return 'gt-pending';
+    return 'gt-notfound';
+  }
+
+  gtStatusLabel(key: string, ocrValue: string | null): string {
+    const gt = this._state().groundTruth[key];
+    if (gt != null) return this.i18n.t('ocr.curation.gtVerified');
+    if (ocrValue) return this.i18n.t('ocr.curation.gtPending');
+    return this.i18n.t('ocr.curation.gtNotFound');
+  }
+
+  goToPageExpert(page: number): void {
+    this._mutate(s => { s.activePage = page; s.expertTab = 'text'; });
+  }
+
+  onCorrectionInput(event: Event): void {
+    const val = (event.target as HTMLTextAreaElement).value;
+    this.setCorrection(val);
+  }
+
+  onGroundTruthChange(event: Event, key: string): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.setGroundTruth(key, val || null);
+  }
+
+  onNoteChange(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.setReviewNote(val);
+  }
+
+  readonly canvasZoom = signal(1.0);
+  zoomIn(): void  { this.canvasZoom.set(Math.min(3, this.canvasZoom() + 0.25)); }
+  zoomOut(): void { this.canvasZoom.set(Math.max(0.5, this.canvasZoom() - 0.25)); }
+
+  onCanvasClick(_event: MouseEvent): void {
+    // pdf.js click-to-scroll implemented in Task 5
+  }
+
+  private _mutate(fn: (s: OcrCurationState) => void): void {
+    const next = { ...this._state() };
+    fn(next);
+    Object.assign(this.state, next);
+    this._state.set(next);
   }
 }
