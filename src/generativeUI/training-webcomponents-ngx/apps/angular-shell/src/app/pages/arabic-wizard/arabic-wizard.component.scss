@@ -1,0 +1,166 @@
+.wizard-page {
+  padding: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 4rem);
+}
+
+.wizard-page.rtl { direction: rtl; text-align: right; }
+
+.wizard-header {
+  margin-bottom: 1.5rem;
+  h1 { margin: 0; font-size: 1.5rem; color: var(--sapTextColor, #32363a); }
+  .wizard-subtitle { margin: 0.25rem 0 0; color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.875rem; }
+}
+
+/* Progress Bar */
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--sapBaseColor, #fff);
+  border-radius: 0.75rem;
+  border: 1px solid var(--sapField_BorderColor, #89919a);
+}
+
+.progress-step {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  background: none; border: none; cursor: pointer; padding: 0.5rem 1rem;
+  color: var(--sapContent_LabelColor, #6a6d70); transition: color 0.2s;
+  &:disabled { cursor: not-allowed; opacity: 0.5; }
+  &.active { color: var(--sapBrandColor, #0854a0); }
+  &.completed { color: var(--sapPositiveColor, #107e3e); }
+}
+
+.step-number {
+  width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border: 2px solid currentColor; font-weight: 600; font-size: 0.875rem;
+  .active & { background: var(--sapBrandColor, #0854a0); color: #fff; border-color: var(--sapBrandColor, #0854a0); }
+  .completed & { background: var(--sapPositiveColor, #107e3e); color: #fff; border-color: var(--sapPositiveColor, #107e3e); }
+}
+
+.step-label { font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
+.step-connector { flex: 1; height: 2px; background: var(--sapField_BorderColor, #89919a); min-width: 2rem;
+  &.completed { background: var(--sapPositiveColor, #107e3e); }
+}
+
+/* Wizard Content */
+.wizard-content { flex: 1; }
+.step-panel {
+  background: var(--sapBaseColor, #fff); border-radius: 0.75rem;
+  border: 1px solid var(--sapField_BorderColor, #89919a); padding: 1.5rem;
+  h2 { margin: 0 0 0.25rem; font-size: 1.25rem; color: var(--sapTextColor, #32363a); }
+  h3 { margin: 1.5rem 0 0.75rem; font-size: 1rem; color: var(--sapTextColor, #32363a); }
+}
+.step-instructions { margin: 0 0 1.5rem; color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.875rem; }
+
+/* Upload Area */
+.upload-area {
+  border: 2px dashed var(--sapField_BorderColor, #89919a); border-radius: 0.75rem;
+  padding: 3rem 2rem; text-align: center; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s; background: var(--sapBaseColor, #fff);
+  &.drag-over { border-color: var(--sapBrandColor, #0854a0); background: var(--sapList_SelectionBackgroundColor, #e8f2ff); }
+}
+.upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+.upload-label { font-size: 1rem; font-weight: 500; color: var(--sapTextColor, #32363a); margin: 0 0 0.5rem; }
+.upload-hint { font-size: 0.875rem; color: var(--sapContent_LabelColor, #6a6d70); margin: 0 0 1rem; }
+
+.processing-area { text-align: center; padding: 2rem; }
+.processing-label { font-size: 1rem; color: var(--sapTextColor, #32363a); margin-bottom: 1rem; }
+.progress-bar-container { width: 100%; max-width: 400px; margin: 0 auto; height: 8px;
+  background: var(--sapField_BorderColor, #89919a); border-radius: 4px; overflow: hidden;
+}
+.progress-bar-fill { height: 100%; background: var(--sapBrandColor, #0854a0); transition: width 0.3s ease; border-radius: 4px; }
+.progress-percent { margin-top: 0.5rem; font-size: 0.875rem; color: var(--sapContent_LabelColor, #6a6d70); }
+
+.upload-complete { text-align: center; padding: 2rem; }
+.success-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+/* Review */
+.review-stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.stat-card { flex: 1; min-width: 150px; padding: 1rem; background: var(--sapList_Background, #f5f5f5);
+  border-radius: 0.5rem; text-align: center;
+}
+.stat-label { display: block; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); margin-bottom: 0.25rem; }
+.stat-value { display: block; font-size: 1.25rem; font-weight: 600; color: var(--sapTextColor, #32363a); }
+
+.review-section { margin-top: 1.5rem; }
+.page-nav { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.ocr-text { background: var(--sapList_Background, #f5f5f5); padding: 1rem; border-radius: 0.5rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.875rem; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; min-height: 120px; outline: none;
+  border: 1px solid transparent;
+  &:focus { border-color: var(--sapBrandColor, #0854a0); }
+}
+.edit-hint { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); margin-top: 0.5rem; font-style: italic; }
+
+.fields-table { width: 100%; border-collapse: collapse;
+  th, td { padding: 0.625rem 0.75rem; text-align: start; border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5); font-size: 0.875rem; }
+  th { font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70); background: var(--sapList_Background, #f5f5f5); }
+}
+.empty-state { color: var(--sapContent_LabelColor, #6a6d70); font-style: italic; }
+
+/* Chat / Analyze Step */
+.system-prompt-badge {
+  display: inline-block; padding: 0.25rem 0.75rem; background: var(--sapInformationBackground, #e8f2ff);
+  color: var(--sapInformativeColor, #0a6ed1); border-radius: 1rem; font-size: 0.75rem; margin-bottom: 1rem;
+}
+.chat-area { display: flex; flex-direction: column; gap: 0.75rem; }
+.chat-messages-area { max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 1rem; background: var(--sapList_Background, #f5f5f5); border-radius: 0.5rem;
+}
+.chat-msg { display: flex;
+  &.user { justify-content: flex-end; }
+  &.assistant { justify-content: flex-start; }
+}
+.msg-bubble {
+  max-width: 75%; padding: 0.625rem 0.875rem; border-radius: 0.75rem; font-size: 0.875rem; line-height: 1.5;
+  .user & { background: var(--sapBrandColor, #0854a0); color: #fff; }
+  .assistant & { background: var(--sapBaseColor, #fff); border: 1px solid var(--sapField_BorderColor, #89919a); }
+}
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  padding: 0.3rem 0.75rem; background: var(--sapList_Background, #f5f5f5);
+  border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 1rem;
+  font-size: 0.8rem; cursor: pointer; transition: background 0.15s;
+  &:hover { background: var(--sapList_Hover_Background, #e8e8e8); }
+}
+.chat-input-row { display: flex; gap: 0.5rem; align-items: flex-end; }
+.chat-input {
+  flex: 1; padding: 0.5rem 0.75rem; border: 1px solid var(--sapField_BorderColor, #89919a);
+  border-radius: 0.5rem; font-size: 0.875rem; resize: none; font-family: inherit;
+  &:focus { outline: none; border-color: var(--sapBrandColor, #0854a0); }
+}
+
+/* Export Step */
+.export-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+.export-card {
+  padding: 1.5rem; border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 0.75rem;
+  cursor: pointer; text-align: center; transition: border-color 0.2s, box-shadow 0.2s;
+  &:hover { border-color: var(--sapBrandColor, #0854a0); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+  .export-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+  p { margin: 0; font-size: 0.8rem; color: var(--sapContent_LabelColor, #6a6d70); }
+}
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1.25rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500;
+  border: 1px solid transparent; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+.btn-primary { background: var(--sapBrandColor, #0854a0); color: #fff; border-color: var(--sapBrandColor, #0854a0);
+  &:hover:not(:disabled) { background: var(--sapButton_Emphasized_Hover_Background, #063c73); }
+}
+.btn-secondary { background: transparent; color: var(--sapTextColor, #32363a); border-color: var(--sapField_BorderColor, #89919a);
+  &:hover:not(:disabled) { background: var(--sapList_Hover_Background, #e8e8e8); }
+}
+.btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+
+/* Wizard Nav */
+.wizard-nav { display: flex; align-items: center; padding: 1.5rem 0; gap: 0.75rem; }
+.nav-spacer { flex: 1; }

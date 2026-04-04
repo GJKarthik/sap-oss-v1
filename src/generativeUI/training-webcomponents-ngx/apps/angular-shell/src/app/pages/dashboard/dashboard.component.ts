@@ -59,6 +59,69 @@ interface PlatformComponent {
         </div>
       </div>
 
+      <div class="section-header">
+        <h2 class="section-title">{{ i18n.t('dashboard.arabic.sectionTitle') }}</h2>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">
+            <span [class]="'status-badge ' + (store.arabicModelStatus() === 'online' ? 'status-success' : 'status-error')">
+              {{ store.arabicModelStatus() === 'online' ? i18n.t('dashboard.arabic.online') : i18n.t('dashboard.arabic.offline') }}
+            </span>
+          </div>
+          <div class="stat-label">{{ i18n.t('dashboard.arabic.modelStatus') }}</div>
+          <div class="stat-sub">{{ store.arabicModelName() }}</div>
+          @if (store.arabicModelStatus() === 'offline') {
+            <button class="deploy-btn" (click)="deployArabicModel()" [disabled]="store.arabicDeploying()">
+              {{ store.arabicDeploying() ? i18n.t('dashboard.arabic.deploying') : i18n.t('dashboard.arabic.deploy') }}
+            </button>
+          }
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ store.arabicPairCount() | localeNumber }}</div>
+          <div class="stat-label">{{ i18n.t('dashboard.arabic.trainingData') }}</div>
+          <div class="stat-sub">{{ i18n.t('dashboard.arabic.glossaryTerms', { count: store.arabicGlossaryCount() }) }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">
+            <span [class]="'status-badge ' + (store.arabicOcrHealthy() ? 'status-success' : 'status-error')">
+              {{ store.arabicOcrHealthy() ? i18n.t('dashboard.arabic.healthy') : i18n.t('dashboard.arabic.unhealthy') }}
+            </span>
+          </div>
+          <div class="stat-label">{{ i18n.t('dashboard.arabic.ocrService') }}</div>
+          <div class="stat-sub">{{ i18n.t('dashboard.arabic.ocrStats', { docs: store.arabicOcrDocsProcessed(), confidence: store.arabicOcrAvgConfidence() }) }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ store.arabicTranslationCoverage() | localeNumber:'decimal':1:1 }}%</div>
+          <div class="stat-label">{{ i18n.t('dashboard.arabic.translationCoverage') }}</div>
+          <div class="stat-sub">{{ i18n.t('dashboard.arabic.uiStringsTranslated') }}</div>
+        </div>
+      </div>
+
+      @if (store.arabicMetrics().data; as metrics) {
+        <div class="dashboard-grid">
+          <div class="info-card">
+            <h2 class="card-title">{{ i18n.t('dashboard.arabic.domainCoverage') }}</h2>
+            <table class="info-table">
+              <tbody>
+                @for (entry of domainEntries(metrics.training_data.domain_coverage); track entry[0]) {
+                  <tr>
+                    <td>{{ entry[0] }}</td>
+                    <td>
+                      <div class="coverage-bar-container">
+                        <div class="coverage-bar" [style.width.%]="entry[1]"></div>
+                        <span class="coverage-pct">{{ entry[1] }}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
       <div class="dashboard-grid">
         <div class="info-card">
           <h2 class="card-title">{{ i18n.t('dashboard.gpuDetails') }}</h2>
@@ -200,6 +263,50 @@ interface PlatformComponent {
       color: var(--sapContent_LabelColor, #6a6d70);
       font-size: 0.875rem;
     }
+
+    .section-header {
+      margin: 1.5rem 0 0.5rem;
+    }
+
+    .section-title {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      color: var(--sapTextColor, #32363a);
+      margin: 0;
+    }
+
+    .deploy-btn {
+      margin-top: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--sapPositiveColor, #107e3e);
+      color: #fff;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.8125rem;
+
+      &:disabled { opacity: 0.5; cursor: default; }
+      &:hover:not(:disabled) { background: #0d6b34; }
+    }
+
+    .coverage-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .coverage-bar {
+      height: 0.5rem;
+      background: var(--sapBrandColor, #0854a0);
+      border-radius: 0.25rem;
+      min-width: 0.25rem;
+    }
+
+    .coverage-pct {
+      font-size: 0.75rem;
+      color: var(--sapContent_LabelColor, #6a6d70);
+      min-width: 2.5rem;
+    }
   `],
 })
 export class DashboardComponent implements OnInit {
@@ -212,6 +319,7 @@ export class DashboardComponent implements OnInit {
     { icon: 'machine', name: 'Model Optimizer', desc: 'FastAPI + NVIDIA ModelOpt', status: 'Active', badge: 'status-success' },
     { icon: 'chain-link', name: 'HippoCPP', desc: 'Zig graph database engine', status: 'Active', badge: 'status-success' },
     { icon: 'folder', name: 'Data Assets', desc: 'Banking Excel/CSV training data', status: 'Ready', badge: 'status-info' },
+    { icon: 'globe', name: 'Arabic AI Model', desc: 'Gemma 4 fine-tuned Arabic finance', status: 'Ready', badge: 'status-info' },
   ];
 
   ngOnInit(): void {
@@ -222,6 +330,20 @@ export class DashboardComponent implements OnInit {
     this.store.forceRefresh('health');
     this.store.forceRefresh('gpu');
     this.store.forceRefresh('graphStats');
+    this.store.forceRefresh('arabicMetrics');
     this.toast.info(this.i18n.t('dashboard.refreshMsg'));
+  }
+
+  deployArabicModel(): void {
+    const jobs = this.store.completedJobs();
+    if (jobs.length > 0) {
+      this.store.deployArabicModel(jobs[0].id);
+    } else {
+      this.toast.error(this.i18n.t('dashboard.arabic.noCompletedJobs'));
+    }
+  }
+
+  domainEntries(coverage: Record<string, number>): [string, number][] {
+    return Object.entries(coverage);
   }
 }

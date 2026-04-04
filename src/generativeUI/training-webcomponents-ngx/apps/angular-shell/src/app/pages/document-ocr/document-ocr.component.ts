@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { I18nService } from '../../services/i18n.service';
 import { OcrService, OcrResult, FinancialField, OcrDetectedTable } from '../../services/ocr.service';
+import { DocumentContextService } from '../../services/document-context.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
@@ -23,6 +24,7 @@ type TabId = 'text' | 'tables' | 'financial' | 'metadata';
 export class DocumentOcrComponent {
   readonly i18n = inject(I18nService);
   private readonly ocr = inject(OcrService);
+  private readonly documentContext = inject(DocumentContextService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
@@ -148,8 +150,19 @@ export class DocumentOcrComponent {
   }
 
   sendToChat(): void {
-    const text = this.allText();
-    sessionStorage.setItem('ocr_context', text);
+    const r = this.result();
+    if (!r) return;
+    const fileName = this.selectedFile()?.name ?? r.file_path;
+    this.documentContext.setFromOcrResult(r, this.financialFields(), fileName);
+    this.router.navigate(['/chat']);
+  }
+
+  analyzeDocument(): void {
+    const r = this.result();
+    if (!r) return;
+    const fileName = this.selectedFile()?.name ?? r.file_path;
+    this.documentContext.setFromOcrResult(r, this.financialFields(), fileName);
+    this.documentContext.setInitialPrompt('حلل هذا المستند المالي واستخرج البيانات الرئيسية');
     this.router.navigate(['/chat']);
   }
 

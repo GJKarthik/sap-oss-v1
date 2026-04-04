@@ -48,6 +48,28 @@ export interface ModelInfo {
   t4_compatible: boolean;
 }
 
+export interface ArabicMetrics {
+  model: {
+    status: 'online' | 'offline';
+    name: string;
+    deployed_at: string | null;
+    gateway_url: string | null;
+  };
+  training_data: {
+    arabic_pair_count: number;
+    glossary_term_count: number;
+    domain_coverage: Record<string, number>;
+  };
+  ocr: {
+    healthy: boolean;
+    documents_processed: number;
+    avg_confidence: number;
+  };
+  translation: {
+    coverage_pct: number;
+  };
+}
+
 export interface JobHistory {
   epoch: number;
   train_loss: number;
@@ -96,7 +118,11 @@ interface AppState {
   // Model Optimizer
   models: CachedData<ModelInfo[]>;
   jobs: CachedData<JobResponse[]>;
-  
+
+  // Arabic AI
+  arabicMetrics: CachedData<ArabicMetrics>;
+  arabicDeploying: boolean;
+
   // Global UI
   sidebarCollapsed: boolean;
 }
@@ -115,6 +141,8 @@ const initialState: AppState = {
   graphStats: initialCachedData(),
   models: initialCachedData(),
   jobs: initialCachedData(),
+  arabicMetrics: initialCachedData(),
+  arabicDeploying: false,
   sidebarCollapsed: false,
 };
 
@@ -128,6 +156,7 @@ const CACHE_CONFIG = {
   graphStats: { staleTime: 60_000, maxAge: 120_000 }, // 60s stale, 2min max
   models: { staleTime: 300_000, maxAge: 600_000 },    // 5min stale, 10min max
   jobs: { staleTime: 5_000, maxAge: 15_000 },         // 5s stale, 15s max
+  arabicMetrics: { staleTime: 30_000, maxAge: 60_000 }, // 30s stale, 60s max
 } as const;
 type CacheKey = keyof typeof CACHE_CONFIG;
 
@@ -181,9 +210,21 @@ export const AppStore = signalStore(
       store.jobs().data?.filter((j) => j.status === 'completed') ?? []
     ),
     
+    // Arabic AI
+    arabicModelStatus: computed(() => store.arabicMetrics().data?.model.status ?? 'offline'),
+    arabicModelName: computed(() => store.arabicMetrics().data?.model.name ?? '—'),
+    arabicPairCount: computed(() => store.arabicMetrics().data?.training_data.arabic_pair_count ?? 0),
+    arabicGlossaryCount: computed(() => store.arabicMetrics().data?.training_data.glossary_term_count ?? 0),
+    arabicDomainCoverage: computed(() => store.arabicMetrics().data?.training_data.domain_coverage ?? {}),
+    arabicOcrHealthy: computed(() => store.arabicMetrics().data?.ocr.healthy ?? false),
+    arabicOcrDocsProcessed: computed(() => store.arabicMetrics().data?.ocr.documents_processed ?? 0),
+    arabicOcrAvgConfidence: computed(() => store.arabicMetrics().data?.ocr.avg_confidence ?? 0),
+    arabicTranslationCoverage: computed(() => store.arabicMetrics().data?.translation.coverage_pct ?? 0),
+    isArabicMetricsLoading: computed(() => store.arabicMetrics().state === 'loading'),
+
     // Loading states
-    isDashboardLoading: computed(() => 
-      store.health().state === 'loading' || 
+    isDashboardLoading: computed(() =>
+      store.health().state === 'loading' ||
       store.gpu().state === 'loading' ||
       store.graphStats().state === 'loading'
     ),
@@ -390,6 +431,60 @@ export const AppStore = signalStore(
       ),
       
       // ======================================================================
+      // Arabic Metrics
+      // ======================================================================
+      loadArabicMetrics: rxMethod<void>(
+        pipe(
+          tap(() => {
+            const cached = store.arabicMetrics();
+            if (cached.state !== 'loading' && isCacheStale(cached, 'arabicMetrics')) {
+              updateCache('arabicMetrics', { state: 'loading' });
+            }
+          }),
+          exhaustMap(() => {
+            const cached = store.arabicMetrics();
+            if (isCacheValid(cached, 'arabicMetrics') && !isCacheStale(cached, 'arabicMetrics')) {
+              return of(null);
+            }
+            return api.get<ArabicMetrics>('/dashboard/arabic-metrics').pipe(
+              tap((data) => {
+                updateCache('arabicMetrics', {
+                  data,
+                  lastFetched: Date.now(),
+                  state: 'loaded',
+                  error: null,
+                });
+              }),
+              catchError((err) => {
+                updateCache('arabicMetrics', {
+                  state: 'error',
+                  error: err.message || 'Failed to load Arabic metrics',
+                });
+                return of(null);
+              })
+            );
+          })
+        )
+      ),
+
+      deployArabicModel(jobId: string): void {
+        patchState(store, { arabicDeploying: true });
+        api.post<{ status: string }>(`/jobs/${jobId}/deploy-arabic`, {}).pipe(
+          tap(() => {
+            patchState(store, { arabicDeploying: false });
+            toast.success('Arabic model deployed successfully');
+            updateCache('arabicMetrics', { lastFetched: null } as any);
+            this.loadArabicMetrics();
+          }),
+          catchError((err) => {
+            patchState(store, { arabicDeploying: false });
+            toast.error(err.message || 'Failed to deploy Arabic model');
+            return of(null);
+          })
+        ).subscribe();
+      },
+
+      // ======================================================================
       // Mutations
       // ======================================================================
       addJob(job: JobResponse): void {
@@ -420,6 +515,7 @@ export const AppStore = signalStore(
         this.loadHealth();
         this.loadGpu();
         this.loadGraphStats();
+        this.loadArabicMetrics();
       },
       
       loadModelOptimizerData(): void {
@@ -442,6 +538,7 @@ export const AppStore = signalStore(
           case 'graphStats': this.loadGraphStats(); break;
           case 'models': this.loadModels(); break;
           case 'jobs': this.loadJobs(); break;
+          case 'arabicMetrics': this.loadArabicMetrics(); break;
         }
       },
 
