@@ -77,6 +77,13 @@ export const routes: Routes = [
             (m) => m.ArabicWizardComponent
           ),
       },
+      {
+        path: 'workflow',
+        loadComponent: () =>
+          import('./pages/workflow/workflow-designer.component').then(
+            (m) => m.WorkflowDesignerComponent
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

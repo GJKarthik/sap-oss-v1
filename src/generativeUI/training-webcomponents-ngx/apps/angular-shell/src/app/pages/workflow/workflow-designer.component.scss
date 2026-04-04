@@ -1,0 +1,122 @@
+.workflow-page {
+  display: flex; flex-direction: column; height: 100%; gap: 0;
+  &.rtl { direction: rtl; }
+}
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+.page-title { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.mode-toggle {
+  display: flex; gap: 0;
+  button {
+    padding: 0.375rem 1rem; border: 1px solid var(--sapBrandColor, #0854a0); background: transparent;
+    color: var(--sapBrandColor, #0854a0); cursor: pointer; font-size: 0.8125rem;
+    &:first-child { border-radius: 4px 0 0 4px; }
+    &:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+    &.active { background: var(--sapBrandColor, #0854a0); color: #fff; }
+  }
+}
+.toolbar {
+  display: flex; align-items: center; gap: 0.25rem;
+  padding: 0.375rem 1rem; border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+  background: var(--sapBaseColor, #fff);
+}
+.tool-btn {
+  width: 2rem; height: 2rem; border: 1px solid transparent; border-radius: 4px;
+  background: transparent; cursor: pointer; font-size: 1rem; display: flex;
+  align-items: center; justify-content: center; color: var(--sapTextColor, #333);
+  &:hover { background: var(--sapList_Hover_Background, #e5e5e5); }
+  &.active { background: var(--sapSelectedColor, #0854a0); color: #fff; border-color: var(--sapSelectedColor, #0854a0); }
+  &:disabled { opacity: 0.4; cursor: default; }
+}
+.exec-btn { font-size: 0.875rem; }
+.toolbar-sep { width: 1px; height: 1.5rem; background: var(--sapGroup_ContentBorderColor, #d9d9d9); margin: 0 0.25rem; }
+.toolbar-spacer { flex: 1; }
+.speed-label { font-size: 0.75rem; color: var(--sapContent_LabelColor, #666); }
+.speed-select { font-size: 0.75rem; padding: 0.2rem; border-radius: 4px; border: 1px solid var(--sapField_BorderColor, #bbb); }
+.zoom-label { font-size: 0.75rem; min-width: 3rem; text-align: center; }
+
+.deadlock-banner {
+  padding: 0.5rem 1rem; background: #fff3cd; color: #856404; border-bottom: 1px solid #ffc107;
+  font-weight: 600; text-align: center; font-size: 0.875rem;
+}
+
+.canvas-layout { display: flex; flex: 1; overflow: hidden; }
+.petri-canvas {
+  flex: 1; background: var(--sapBackgroundColor, #f5f5f5);
+  cursor: crosshair; user-select: none;
+  background-image: radial-gradient(circle, #ddd 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* SVG Elements */
+.place-circle { fill: #fff; stroke: #333; stroke-width: 2; cursor: pointer; }
+.place-group.selected .place-circle { stroke: var(--sapBrandColor, #0854a0); stroke-width: 3; }
+.token-dot { stroke: #fff; stroke-width: 1; }
+.token-badge { fill: var(--sapBrandColor, #0854a0); }
+.token-badge-text { fill: #fff; font-size: 10px; text-anchor: middle; dominant-baseline: central; }
+.element-label { font-size: 11px; text-anchor: middle; fill: var(--sapTextColor, #333); pointer-events: none; }
+
+.transition-rect { stroke: #333; stroke-width: 2; cursor: pointer; }
+.transition-group.selected .transition-rect { stroke: var(--sapBrandColor, #0854a0); stroke-width: 3; }
+.transition-group.enabled .transition-rect { stroke: #4caf50; stroke-width: 2.5; }
+.transition-group.firing .transition-rect { stroke: #ffeb3b; stroke-width: 3; }
+.transition-label { font-size: 9px; text-anchor: middle; dominant-baseline: central; fill: #fff; pointer-events: none; }
+
+.arc-line { fill: none; stroke: #666; stroke-width: 2; cursor: pointer; }
+.arc-line.inhibitor { stroke-dasharray: 6 3; }
+.arc-group.selected .arc-line { stroke: var(--sapBrandColor, #0854a0); stroke-width: 3; }
+.arc-label { font-size: 10px; text-anchor: middle; fill: #666; }
+
+/* Side panel */
+.side-panel {
+  width: 240px; border-left: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+  padding: 0.75rem; overflow-y: auto; background: var(--sapBaseColor, #fff);
+  font-size: 0.8125rem;
+  h3 { margin: 0 0 0.5rem; font-size: 0.875rem; }
+  label { display: block; margin: 0.5rem 0 0.25rem; color: var(--sapContent_LabelColor, #666); font-size: 0.75rem; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; padding: 0.375rem; border: 1px solid var(--sapField_BorderColor, #bbb);
+    border-radius: 4px; font-size: 0.8125rem; box-sizing: border-box;
+  }
+}
+.rtl .side-panel { border-left: none; border-right: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9); }
+
+.marking-list { margin-bottom: 1rem; }
+.marking-item { display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid #eee; }
+.marking-name { font-size: 0.8125rem; }
+.marking-count { font-weight: 600; color: var(--sapBrandColor, #0854a0); }
+
+.history-list { max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem; }
+.history-item { display: flex; gap: 0.5rem; padding: 0.2rem 0; font-size: 0.75rem; border-bottom: 1px solid #f0f0f0; }
+.history-time { color: #999; }
+.empty-history { color: #999; font-size: 0.75rem; text-align: center; padding: 1rem 0; }
+.exec-stats { font-size: 0.75rem; color: #666; margin-top: 0.5rem; }
+
+.add-token-btn, .primary-btn {
+  margin-top: 0.5rem; padding: 0.375rem 0.75rem; background: var(--sapBrandColor, #0854a0);
+  color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8125rem;
+}
+.checkbox-label { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+
+/* Overlays */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+}
+.gallery-panel, .import-panel {
+  background: var(--sapBaseColor, #fff); border-radius: 8px; padding: 1.5rem;
+  min-width: 400px; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  h3 { margin: 0 0 1rem; }
+}
+.template-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.template-card {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 1rem; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;
+  background: transparent; transition: border-color 0.2s;
+  &:hover { border-color: var(--sapBrandColor, #0854a0); }
+}
+.tpl-name { font-weight: 600; font-size: 0.8125rem; }
+.tpl-desc { font-size: 0.6875rem; color: #666; text-align: center; }
+.import-textarea { width: 100%; height: 200px; font-family: monospace; font-size: 0.75rem; border: 1px solid #bbb; border-radius: 4px; padding: 0.5rem; box-sizing: border-box; resize: vertical; }
