@@ -249,10 +249,19 @@ class TestHealthDependencyCoverage:
 
 class TestCallbackValidation:
     def test_validate_callback_url_allowlist(self):
+        import socket
+        import unittest.mock as mock
+
+        # Mock DNS resolution so this test doesn't depend on real network access
+        fake_addrinfo = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0)),
+        ]
+
         old_hosts = os.environ.get("OCR_ALLOWED_CALLBACK_HOSTS")
         os.environ["OCR_ALLOWED_CALLBACK_HOSTS"] = "example.com"
         try:
-            assert _validate_callback_url("https://example.com/hook").endswith("/hook")
+            with mock.patch("socket.getaddrinfo", return_value=fake_addrinfo):
+                assert _validate_callback_url("https://example.com/hook").endswith("/hook")
             with pytest.raises(ValueError, match="allowlisted"):
                 _validate_callback_url("https://evil.example/hook")
         finally:
