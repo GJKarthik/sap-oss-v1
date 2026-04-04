@@ -1,0 +1,4 @@
+# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/logging_config.py
+# hypothesis_version: 6.151.10
+
+['INFO', 'confidence', 'dpi', 'elapsed_s', 'error', 'exception', 'file_hash', 'funcName', 'intelligence.ocr', 'languages', 'level', 'lineno', 'logger', 'message', 'module', 'page_number', 'pages_processed', 'request_id', 'timestamp']

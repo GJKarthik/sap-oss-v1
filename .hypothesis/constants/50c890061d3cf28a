@@ -1,0 +1,4 @@
+# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/differ.py
+# hypothesis_version: 6.151.10
+
+[-1.0, 0.0, 1.0, 'OCRResult', 'avg_confidence_a', 'avg_confidence_b', 'char_error_rate', 'confidence_a', 'confidence_b', 'confidence_delta', 'file_path_a', 'file_path_b', 'page_diffs', 'page_number', 'pages_changed', 'pages_improved', 'pages_regressed', 'text_changed', 'total_pages']

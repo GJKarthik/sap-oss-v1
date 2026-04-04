@@ -1,0 +1,4 @@
+# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/dependencies.py
+# hypothesis_version: 6.151.10
+
+[', ', '--list-langs', 'Arabic language OCR', 'Hough-line deskew', 'OCR engine', 'OCR text extraction', 'PIL', 'PyPDF2', 'REST API server', 'VERSION', '__version__', 'all_available', 'ara', 'arabic_reshaper', 'available', 'bidi', 'cv2', 'cv2 (opencv)', 'dependencies', 'fastapi', 'features', 'httpx', 'missing', 'multipart', 'name', 'note', 'numpy', 'pdf2image', 'pdftoppm', 'poppler (pdftoppm)', 'pypdf', 'pypdf/PyPDF2', 'pytesseract', 'python-multipart', 'reportlab', 'tesseract', 'tesseract (binary)', 'version', '✓', '✗']

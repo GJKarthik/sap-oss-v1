@@ -1,0 +1,4 @@
+# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/language_detector.py
+# hypothesis_version: 6.151.10
+
+[0.05, '+', '[\\u0400-\\u04FF]', '[\\u0900-\\u097F]', '[\\u4E00-\\u9FFF]', '[a-zA-Z]', '[áéíóúñüÁÉÍÓÚÑÜ¿¡]', '[äöüßÄÖÜ]', 'ara', 'chi_sim', 'deu', 'eng', 'fra', 'hin', 'jpn', 'kor', 'rus', 'spa', 'zho']

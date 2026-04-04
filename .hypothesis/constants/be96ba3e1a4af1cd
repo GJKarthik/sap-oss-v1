@@ -1,0 +1,4 @@
+# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/table_detector.py
+# hypothesis_version: 6.151.10
+
+[0.15, 0.3, 255, 'L', 'np.ndarray']
