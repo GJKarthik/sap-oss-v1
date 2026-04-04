@@ -51,8 +51,16 @@ export interface OcrResult {
 export interface FinancialField {
   key_ar: string;
   key_en: string;
-  value: string;
-  page: number;
+  /** Extracted value string, or null when not found in any page. */
+  value: string | null;
+  currency?: string;
+  page: number | null;
+}
+
+export interface OcrHealthReport {
+  status: 'ok' | 'degraded' | 'unhealthy';
+  missing_optional?: string[];
+  missing_required?: string[];
 }
 
 const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
@@ -74,47 +82,72 @@ const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
 
 @Injectable({ providedIn: 'root' })
 export class OcrService {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = '/api/ocr';
+  static readonly FINANCIAL_GLOSSARY = FINANCIAL_GLOSSARY;
 
-  /** Upload a PDF for OCR processing. Falls back to mock data if API unavailable. */
-  processFile(file: File): Observable<OcrResult> {
+  private readonly http = inject(HttpClient);
+
+  /** Upload a PDF for OCR processing via the new /ocr/pdf endpoint. */
+  uploadPdf(file: File): Observable<OcrResult> {
     const formData = new FormData();
     formData.append('file', file, file.name);
-
-    return this.http.post<OcrResult>(`${this.apiUrl}/process`, formData).pipe(
+    return this.http.post<OcrResult>('/ocr/pdf', formData).pipe(
       catchError(() => of(this.generateMockResult(file.name)))
     );
   }
 
-  /** Extract financial fields from OCR result using glossary matching. */
-  extractFinancialFields(result: OcrResult): FinancialField[] {
-    const fields: FinancialField[] = [];
-    for (const page of result.pages) {
-      const text = page.text;
-      for (const term of FINANCIAL_GLOSSARY) {
-        const idx = text.indexOf(term.ar);
+  /** Check OCR service health. */
+  checkHealth(): Observable<OcrHealthReport> {
+    return this.http.get<OcrHealthReport>('/ocr/health');
+  }
+
+  /**
+   * Extract all 14 financial glossary terms from an OCR result.
+   * Every term is always present in the returned array; value is null when not found.
+   */
+  extractFinancialFieldsAll(result: OcrResult): FinancialField[] {
+    return FINANCIAL_GLOSSARY.map(term => {
+      for (const page of result.pages) {
+        const idx = page.text.indexOf(term.ar);
         if (idx >= 0) {
-          // Try to extract a numeric value after the term
-          const after = text.substring(idx + term.ar.length, idx + term.ar.length + 60);
+          const after = page.text.substring(idx + term.ar.length, idx + term.ar.length + 60);
           const numMatch = after.match(/[\d,،.]+/);
-          fields.push({
+          return {
             key_ar: term.ar,
             key_en: term.en,
-            value: numMatch ? numMatch[0] : '—',
+            value: numMatch ? numMatch[0] : null,
+            currency: 'SAR',
             page: page.page_number,
-          });
+          };
         }
       }
-    }
-    return fields;
+      return { key_ar: term.ar, key_en: term.en, value: null, currency: 'SAR', page: null };
+    });
+  }
+
+  /**
+   * Send approved pages as a JSONL training dataset to the pipeline.
+   * V1 stub — backend endpoint not yet implemented.
+   */
+  sendToPipeline(lines: object[]): Observable<unknown> {
+    const body = { dataset: lines };
+    return this.http.post('/api/v1/training/ocr-dataset', body);
+  }
+
+  /** @deprecated Use uploadPdf(). Will be removed when all callers are migrated. */
+  processFile(file: File): Observable<OcrResult> {
+    return this.uploadPdf(file);
+  }
+
+  /** @deprecated Use extractFinancialFieldsAll(). Returns only found fields for backward compatibility. */
+  extractFinancialFields(result: OcrResult): FinancialField[] {
+    return this.extractFinancialFieldsAll(result).filter(f => f.value !== null);
   }
 
   /** Generate mock OCR result for demo/development when API is unavailable. */
   private generateMockResult(fileName: string): OcrResult {
     return {
       file_path: fileName,
-      total_pages: 2,
+      total_pages: 3,
       pages: [
         {
           page_number: 1,
@@ -150,13 +183,23 @@ export class OcrService {
           confidence: 89.2, width: 2480, height: 3508,
           flagged_for_review: false, processing_time_s: 1.87, errors: [],
         },
+        {
+          page_number: 3,
+          text: 'قائمة الدخل\nالدخل التشغيلي: 180,000\nالزكاة والضريبة: 42,000',
+          text_regions: [
+            { text: 'قائمة الدخل', confidence: 67.0, language: 'ara' },
+          ],
+          tables: [],
+          confidence: 67.0, width: 2480, height: 3508,
+          flagged_for_review: true, processing_time_s: 1.10, errors: [],
+        },
       ],
       metadata: {
-        languages: 'ara+eng', dpi: 300, pages_processed: 2,
+        languages: 'ara+eng', dpi: 300, pages_processed: 3,
         pages_with_errors: 0, demo_mode: true,
       },
-      overall_confidence: 90.35,
-      total_processing_time_s: 4.21,
+      overall_confidence: 82.6,
+      total_processing_time_s: 5.31,
       errors: [],
     };
   }
