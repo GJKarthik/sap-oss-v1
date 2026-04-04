@@ -16,7 +16,10 @@ from datetime import datetime, timezone
 
 
 class MangleEngine:
-    """Mangle query interface for governance rules."""
+    """Mangle query interface for governance rules.
+
+    petri_stage/2 is supplied by the CPN runtime in @sap-ai-sdk/mcp-server, not this stub.
+    """
     
     def __init__(self, rules_paths: Optional[List[str]] = None):
         self.rules_paths = rules_paths or []
@@ -118,7 +121,10 @@ class MangleEngine:
         
         if predicate == "autonomy_level":
             return [{"level": "L2"}]
-        
+
+        if predicate == "petri_stage":
+            return []
+
         return []
 
 
