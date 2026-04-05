@@ -80,7 +80,6 @@ def test_production_defaults_disable_reference_data_seeding_and_require_mcp_depe
     assert production_settings.seed_reference_data is False
     assert production_settings.require_mcp_dependencies is True
     assert production_settings.expose_api_docs is False
-    assert production_settings.auth_refresh_cookie_secure is True
 
 
 def test_production_rejects_debug_and_docs_surfaces() -> None:
@@ -113,9 +112,6 @@ def test_login_and_me_return_the_real_user_role(client) -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["refresh_token"] is None
-    assert response.cookies.get(settings.auth_refresh_cookie_name)
-    assert "HttpOnly" in response.headers["set-cookie"]
 
     me_response = client.get(
         "/api/v1/auth/me",
@@ -156,15 +152,13 @@ def test_refresh_rotates_and_revokes_the_previous_refresh_token(client) -> None:
     )
     assert response.status_code == 200
 
-    refresh_token = response.cookies.get(settings.auth_refresh_cookie_name)
-    assert refresh_token
+    refresh_token = response.json()["refresh_token"]
 
     refresh_response = client.post(
         "/api/v1/auth/refresh",
+        json={"refresh_token": refresh_token},
     )
     assert refresh_response.status_code == 200
-    assert refresh_response.cookies.get(settings.auth_refresh_cookie_name)
-    assert refresh_response.cookies.get(settings.auth_refresh_cookie_name) != refresh_token
 
     replay_response = client.post(
         "/api/v1/auth/refresh",
@@ -186,7 +180,10 @@ def test_refresh_uses_current_role_from_store(client, store) -> None:
         lambda user: {**user, "role": "viewer"},
     )
 
-    refresh_response = client.post("/api/v1/auth/refresh")
+    refresh_response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": response.json()["refresh_token"]},
+    )
 
     assert refresh_response.status_code == 200
 
@@ -218,7 +215,10 @@ def test_inactive_user_cannot_refresh(client, store) -> None:
         lambda user: {**user, "is_active": False},
     )
 
-    refresh_response = client.post("/api/v1/auth/refresh")
+    refresh_response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": response.json()["refresh_token"]},
+    )
 
     assert refresh_response.status_code == 401
 
@@ -230,16 +230,15 @@ def test_logout_revokes_access_and_refresh_tokens(client) -> None:
     )
     assert response.status_code == 200
     token = response.json()["access_token"]
-    refresh_token = response.cookies.get(settings.auth_refresh_cookie_name)
-    assert refresh_token
+    refresh_token = response.json()["refresh_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     logout_response = client.post(
         "/api/v1/auth/logout",
         headers=headers,
+        json={"refresh_token": refresh_token},
     )
     assert logout_response.status_code == 200
-    assert settings.auth_refresh_cookie_name not in client.cookies or not client.cookies.get(settings.auth_refresh_cookie_name)
 
     me_response = client.get("/api/v1/auth/me", headers=headers)
     assert me_response.status_code == 401

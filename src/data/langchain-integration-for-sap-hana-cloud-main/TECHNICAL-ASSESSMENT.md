@@ -249,7 +249,7 @@ The `AICoreConfig` and `HANAConfig` dataclasses are populated from environment v
 
 ## 12. Governance Agent
 
-`agent/langchain_hana_agent.py` implements `LangChainHanaAgent`, the governance-aware agent for HANA data access. Its architecture mirrors the agents in `cap-llm-plugin` and `odata-vocabularies` — an inline `MangleEngine` stub holds governance facts that drive routing, safety, and prompting decisions. The `petri_stage/2` atom referenced in `mangle/domain/odps_compliance.mg` is intended to be populated by the Colored Petri Net runtime in `@sap-ai-sdk/mcp-server` (see that package’s `orchestration_run` / `mangle_query`); the Python `MangleEngine` does not implement Petri firing semantics.
+`agent/langchain_hana_agent.py` implements `LangChainHanaAgent`, the governance-aware agent for HANA data access. Its architecture mirrors the agents in `cap-llm-plugin` and `odata-vocabularies` — an inline `MangleEngine` stub holds governance facts that drive routing, safety, and prompting decisions.
 
 **MangleEngine facts.** Seven fact sets are loaded at construction: `agent_config` (4 key/value pairs), `agent_can_use` (6 permitted tools: `hana_vector_search`, `hana_similarity_search`, `hana_query`, `get_schema_info`, `list_tables`, `mangle_query`), `agent_requires_approval` (4 high-risk tools: `execute_sql`, `insert_embeddings`, `delete_embeddings`, `modify_table`), `confidential_schemas` (6: TRADING, RISK, TREASURY, CUSTOMER, FINANCIAL, INTERNAL), `public_schemas` (3: PUBLIC, REFERENCE, METADATA), `hana_data_keywords` (11: select, from, table, column, trading, risk, treasury, customer, vector, embedding, similarity), and `prompting_policy` (system prompt, max_tokens: 4 096, temperature: 0.3).
 

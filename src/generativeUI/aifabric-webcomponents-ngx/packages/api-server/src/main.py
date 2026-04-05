@@ -40,8 +40,6 @@ structlog.configure(
 )
 
 logger = structlog.get_logger()
-STRICT_CONTENT_SECURITY_POLICY = "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
-DOCS_PATH_PREFIXES = ("/api/docs", "/api/redoc")
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
@@ -106,18 +104,11 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 def _apply_security_headers(response, request_path: str) -> None:
-    for header, value in _security_headers_for_path(request_path).items():
+    for header, value in SECURITY_HEADERS.items():
         response.headers.setdefault(header, value)
 
     if request_path.startswith("/api/v1/auth/"):
         response.headers.setdefault("Cache-Control", "no-store")
-
-
-def _security_headers_for_path(request_path: str) -> dict[str, str]:
-    headers = dict(SECURITY_HEADERS)
-    if not any(request_path.startswith(prefix) for prefix in DOCS_PATH_PREFIXES):
-        headers["Content-Security-Policy"] = STRICT_CONTENT_SECURITY_POLICY
-    return headers
 
 
 def _rate_limit_policy(path: str) -> tuple[str, int, str] | None:
@@ -142,7 +133,7 @@ class SecurityHeadersMiddleware:
         async def send_with_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
-                for header, value in _security_headers_for_path(request_path).items():
+                for header, value in SECURITY_HEADERS.items():
                     headers.setdefault(header, value)
                 if request_path.startswith("/api/v1/auth/"):
                     headers.setdefault("Cache-Control", "no-store")

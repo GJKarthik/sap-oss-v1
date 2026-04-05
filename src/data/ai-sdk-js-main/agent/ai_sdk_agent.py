@@ -120,9 +120,6 @@ class MangleEngine:
     """
     Mangle query interface for governance rules.
     In production, connect to actual Mangle engine.
-
-    petri_stage/2 and other CPN-derived facts are not mirrored here; query the
-    SAP AI SDK MCP server (mangle_query / orchestration_run with built-in CPN scenarios).
     """
     
     def __init__(self, rules_paths: Optional[List[str]] = None):
@@ -227,10 +224,7 @@ class MangleEngine:
         
         if predicate == "autonomy_level":
             return [{"level": "L2"}]
-
-        if predicate == "petri_stage":
-            return []
-
+        
         return []
     
     def assert_fact(self, fact: str):

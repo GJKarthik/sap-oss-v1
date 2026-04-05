@@ -65,6 +65,8 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@ngrx/signals": "20"
+    "@messageformat/core": "^3.4.0",
+    "@ngrx/signals": "20",
+    "pdfjs-dist": "^5.6.205"
   }
 }
