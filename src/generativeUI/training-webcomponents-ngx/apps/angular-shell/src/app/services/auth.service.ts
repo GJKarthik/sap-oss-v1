@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 const TOKEN_KEY = 'training_console_api_key';
 
@@ -44,6 +45,26 @@ export class AuthService {
   setToken(token: string): void {
     this._token.set(token);
     sessionStorage.setItem(TOKEN_KEY, token);
+  }
+
+  getToken(): string | null {
+    return this._token();
+  }
+
+  buildWebSocketUrl(path: string): string {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const apiBase = window.__TRAINING_CONFIG__?.apiBaseUrl?.trim() || environment.apiBaseUrl;
+    const normalizedBase = apiBase.replace(/\/$/, '');
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const wsOrigin = normalizedBase.startsWith('http')
+      ? normalizedBase.replace(/^http/i, 'ws')
+      : `${protocol}//${window.location.host}${normalizedBase}`;
+    const url = new URL(`${wsOrigin}${normalizedPath}`);
+    const token = this._token();
+    if (token) {
+      url.searchParams.set('token', token);
+    }
+    return url.toString();
   }
 
   /**

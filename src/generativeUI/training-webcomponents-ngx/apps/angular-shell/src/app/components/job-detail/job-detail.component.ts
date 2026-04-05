@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 
 interface JobResponse {
   id: string;
@@ -119,6 +119,7 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly zone = inject(NgZone);
+  private readonly auth = inject(AuthService);
 
   readonly wsConnected = signal(false);
   readonly liveStatus = signal<string>('pending');
@@ -149,8 +150,7 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private connect() {
-    const wsBase = environment.apiBaseUrl.replace(/^http/, 'ws');
-    this.ws = new WebSocket(`${wsBase}/ws/jobs/${this.job.id}`);
+    this.ws = new WebSocket(this.auth.buildWebSocketUrl(`/ws/jobs/${this.job.id}`));
 
     this.ws.onopen = () => this.zone.run(() => this.wsConnected.set(true));
 

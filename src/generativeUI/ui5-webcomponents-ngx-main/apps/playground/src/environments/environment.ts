@@ -12,6 +12,7 @@ export const environment = {
   mcpBaseUrl: 'http://localhost:9160/mcp',
   requireRealBackends: true as const,
   collabWsUrl: '/collab',
+  collabAuthToken: '',
 };
 
 /*

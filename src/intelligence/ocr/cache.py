@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import threading
+from collections import OrderedDict
 from dataclasses import asdict
 from typing import Any, Dict, Optional
 
@@ -50,8 +51,7 @@ class OCRCache:
         if max_size < 0:
             raise ValueError(f"max_size must be >= 0, got {max_size}")
         self.max_size = max_size
-        self._store: Dict[str, Any] = {}
-        self._order: list[str] = []
+        self._store: OrderedDict = OrderedDict()
         self._lock = threading.Lock()
 
     def make_key(self, file_path: str, config: Dict[str, Any]) -> str:
@@ -83,10 +83,7 @@ class OCRCache:
         with self._lock:
             result = self._store.get(key)
             if result is not None:
-                # Move to end (most recently used)
-                if key in self._order:
-                    self._order.remove(key)
-                    self._order.append(key)
+                self._store.move_to_end(key)  # O(1) LRU promotion
                 logger.debug("Cache hit: %s", key[:12])
                 return copy.deepcopy(result)
             return None
@@ -102,33 +99,28 @@ class OCRCache:
             result: OCRResult to cache.
         """
         with self._lock:
-            if key in self._store:
-                self._order.remove(key)
             self._store[key] = copy.deepcopy(result)
-            self._order.append(key)
-            # Evict oldest if over capacity
+            self._store.move_to_end(key)  # O(1) — promote to MRU end
+            # Evict oldest (front of OrderedDict) if over capacity
             while self.max_size > 0 and len(self._store) > self.max_size:
-                oldest = self._order.pop(0)
-                self._store.pop(oldest, None)
+                oldest, _ = self._store.popitem(last=False)
                 logger.debug("Cache evicted: %s", oldest[:12])
 
     def invalidate(self, key: str) -> None:
         """Remove a specific entry from the cache."""
         with self._lock:
             self._store.pop(key, None)
-            if key in self._order:
-                self._order.remove(key)
 
     def clear(self) -> None:
         """Remove all entries from the cache."""
         with self._lock:
             self._store.clear()
-            self._order.clear()
 
     @property
     def size(self) -> int:
         """Number of entries currently in the cache."""
-        return len(self._store)
+        with self._lock:
+            return len(self._store)
 
 
 
@@ -259,8 +251,9 @@ class DiskCache:
     @property
     def size(self) -> int:
         """Number of entries currently in the cache."""
-        cur = self._conn.execute("SELECT COUNT(*) FROM ocr_cache")
-        return cur.fetchone()[0]
+        with self._lock:
+            cur = self._conn.execute("SELECT COUNT(*) FROM ocr_cache")
+            return cur.fetchone()[0]
 
     def close(self) -> None:
         """Close the database connection."""

@@ -1113,6 +1113,7 @@ class ArabicOCRService:
         """Apply Arabic text reshaping and BiDi reordering.
 
         Ensures Arabic text is displayed in correct right-to-left order.
+        Returns *text* unchanged if it contains no Arabic characters.
 
         Args:
             text: Raw OCR text.
@@ -1121,6 +1122,10 @@ class ArabicOCRService:
             Properly ordered Arabic text.
         """
         if not text or not text.strip():
+            return text
+
+        # Skip expensive reshape+BiDi for Latin-only content
+        if not self._ARABIC_PATTERN.search(text):
             return text
 
         try:

@@ -4,6 +4,8 @@ Tests for the Training Console API Server.
 
 import pytest
 from httpx import AsyncClient, ASGITransport
+from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 # Import the app with lifespan management
 from src.main import app
@@ -84,3 +86,62 @@ async def test_data_cleaning_workflow_native(client: AsyncClient):
     events_response = await client.get(f"/data-cleaning/workflow/{run_id}/events")
     assert events_response.status_code == 200
     assert len(events_response.json()["events"]) > 0
+
+
+def test_protected_route_requires_bearer_when_auth_enabled(monkeypatch) -> None:
+    monkeypatch.setenv("TRAINING_REQUIRE_AUTH", "true")
+    monkeypatch.setenv("TRAINING_API_AUTH_TOKEN", "test-secret")
+
+    with TestClient(app) as client:
+        unauthorized = client.post("/data-cleaning/chat", json={"message": "Find nulls"})
+        assert unauthorized.status_code == 401
+
+        authorized = client.post(
+            "/data-cleaning/chat",
+            json={"message": "Find nulls"},
+            headers={"Authorization": "Bearer test-secret"},
+        )
+        assert authorized.status_code == 200
+
+
+def test_websocket_requires_token_when_auth_enabled(monkeypatch) -> None:
+    monkeypatch.setenv("TRAINING_REQUIRE_AUTH", "true")
+    monkeypatch.setenv("TRAINING_API_AUTH_TOKEN", "test-secret")
+    monkeypatch.setattr("src.main.get_all_jobs", lambda: [])
+    monkeypatch.setattr("src.main.get_system_telemetry", lambda: {"gpu_name": "stub"})
+
+    with TestClient(app) as client:
+        with pytest.raises(WebSocketDisconnect) as exc_info:
+            with client.websocket_connect("/ws"):
+                pass
+        assert exc_info.value.code == 1008
+
+        with client.websocket_connect("/ws?token=test-secret") as websocket:
+            payload = websocket.receive_json()
+            assert payload["type"] == "gpu"
+
+
+@pytest.mark.anyio
+async def test_mangle_validate_times_out_with_gateway_status(monkeypatch, client: AsyncClient) -> None:
+    async def fake_run(*args, **kwargs):
+        raise TimeoutError("Subprocess timed out after 1.0s")
+
+    monkeypatch.setattr("src.main._run_captured_subprocess", fake_run)
+
+    response = await client.post("/mangle/validate")
+    assert response.status_code == 504
+    assert "timed out" in response.json()["detail"]
+
+
+@pytest.mark.anyio
+async def test_mangle_validate_fails_closed_without_simulation(monkeypatch, client: AsyncClient) -> None:
+    async def fake_run(*args, **kwargs):
+        return 1, "validation failed", "syntax error"
+
+    monkeypatch.setenv("ALLOW_SIMULATED_RESULTS", "false")
+    monkeypatch.setattr("src.main._run_captured_subprocess", fake_run)
+
+    response = await client.post("/mangle/validate")
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["status"] == "failed"

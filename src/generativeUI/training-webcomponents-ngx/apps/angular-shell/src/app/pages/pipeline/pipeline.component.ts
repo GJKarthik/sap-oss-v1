@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 
 type PipelineState = 'idle' | 'running' | 'completed' | 'error';
 type StageStatus = 'idle' | 'running' | 'done' | 'error';
@@ -300,6 +300,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
   private readonly zone = inject(NgZone);
+  private readonly auth = inject(AuthService);
 
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
 
@@ -354,10 +355,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private connectWebSocket() {
-    const wsBase = environment.apiBaseUrl.replace(/^http/, 'ws');
-    const wsUrl = `${wsBase}/ws/pipeline`;
-
-    this.ws = new WebSocket(wsUrl);
+    this.ws = new WebSocket(this.auth.buildWebSocketUrl('/ws/pipeline'));
 
     this.ws.onopen = () => {
       this.zone.run(() => {

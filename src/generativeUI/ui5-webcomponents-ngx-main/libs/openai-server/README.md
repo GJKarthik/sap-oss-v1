@@ -28,7 +28,10 @@ export AICORE_CLIENT_ID=your-client-id
 export AICORE_CLIENT_SECRET=your-client-secret
 export AICORE_AUTH_URL=https://xxx.authentication.xxx.hana.ondemand.com/oauth/token
 export AICORE_BASE_URL=https://api.ai.xxx.aws.ml.hana.ondemand.com
-# Optional OCR hardening
+# Localhost-only mode is for isolated development only.
+export OPENAI_LOCALHOST_ONLY=1
+export OPENAI_INTERNAL_TOKEN=your-hana-route-token
+# OCR hardening
 export OPENAI_OCR_INTERNAL_TOKEN=your-ocr-internal-token
 export OPENAI_OCR_MAX_UPLOAD_BYTES=5242880
 export OPENAI_OCR_ALLOWED_MIME_TYPES=text/plain,application/pdf,image/png,image/jpeg,image/webp

@@ -26,6 +26,28 @@ function deliver(service: CollaborationService, message: unknown): void {
   (service as unknown as { handleMessage: (msg: unknown) => void }).handleMessage(message);
 }
 
+class FakeWebSocket {
+  static instances: FakeWebSocket[] = [];
+  onopen: (() => void) | null = null;
+  onmessage: ((event: MessageEvent<string>) => void) | null = null;
+  onclose: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  sent: string[] = [];
+
+  constructor(public readonly url: string) {
+    FakeWebSocket.instances.push(this);
+    queueMicrotask(() => this.onopen?.());
+  }
+
+  send(payload: string): void {
+    this.sent.push(payload);
+  }
+
+  close(): void {
+    this.onclose?.();
+  }
+}
+
 describe('CollaborationService', () => {
   it('participants$ emits an empty array before any room is joined', (done) => {
     const svc = makeService(makeConfig());
@@ -172,5 +194,32 @@ describe('CollaborationService', () => {
 
     expect(mergedSet).toBeInstanceOf(ORSet);
     expect(Array.from(mergedSet.value).sort()).toEqual(['local-tag', 'remote-tag']);
+  });
+
+  it('adds the auth token to the websocket handshake and join payload when configured', async () => {
+    const originalWebSocket = globalThis.WebSocket;
+    const globalWithFakeSocket = globalThis as typeof globalThis & { WebSocket: typeof WebSocket };
+    FakeWebSocket.instances = [];
+    globalWithFakeSocket.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+
+    try {
+      const svc = makeService(makeConfig({
+        websocketUrl: '/collab',
+        authTokenProvider: () => 'secret-token',
+      }));
+
+      await svc.joinRoom('workspace-1');
+
+      expect(FakeWebSocket.instances).toHaveLength(1);
+      const socket = FakeWebSocket.instances[0];
+      expect(socket.url).toContain('room=workspace-1');
+      expect(socket.url).toContain('token=secret-token');
+
+      const joinMessage = JSON.parse(socket.sent[0]) as { authToken?: string; type: string };
+      expect(joinMessage.type).toBe('join');
+      expect(joinMessage.authToken).toBe('secret-token');
+    } finally {
+      globalWithFakeSocket.WebSocket = originalWebSocket;
+    }
   });
 });

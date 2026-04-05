@@ -114,6 +114,7 @@ interface JoinMessage {
   userId: string;
   displayName: string;
   avatarUrl?: string;
+  authToken?: string;
 }
 
 interface LeaveMessage {
@@ -172,6 +173,8 @@ export interface CollabConfig {
   userId: string;
   displayName: string;
   avatarUrl?: string;
+  authToken?: string;
+  authTokenProvider?: () => string | null | undefined;
   cursorThrottleMs?: number;
   presenceIntervalMs?: number;
   reconnectDelayMs?: number;
@@ -199,6 +202,19 @@ function normalizeComponentId(componentId?: string): string {
 
 function denormalizeComponentId(componentId: string): string | undefined {
   return componentId === ROOT_COMPONENT_ID ? undefined : componentId;
+}
+
+function resolveWebSocketUrl(baseUrl: string, roomId: string, authToken?: string): string {
+  const normalizedBase = /^wss?:\/\//i.test(baseUrl)
+    ? new URL(baseUrl)
+    : new URL(
+        `${globalThis.location?.protocol === 'https:' ? 'wss:' : 'ws:'}//${globalThis.location?.host ?? 'localhost'}${baseUrl.startsWith('/') ? baseUrl : `/${baseUrl}`}`
+      );
+  normalizedBase.searchParams.set('room', roomId);
+  if (authToken) {
+    normalizedBase.searchParams.set('token', authToken);
+  }
+  return normalizedBase.toString();
 }
 
 function toPublicSnapshot(snapshot: InternalComponentStateSnapshot): ComponentStateSnapshot {
@@ -326,6 +342,13 @@ export class CollaborationService implements OnDestroy {
     this.config = config;
   }
 
+  private resolveAuthToken(): string | undefined {
+    const dynamic = this.config?.authTokenProvider?.()?.trim();
+    if (dynamic) return dynamic;
+    const configured = this.config?.authToken?.trim();
+    return configured || undefined;
+  }
+
   /**
    * Join a collaboration room.
    */
@@ -343,7 +366,8 @@ export class CollaborationService implements OnDestroy {
 
     return new Promise((resolve, reject) => {
       try {
-        const url = `${this.config!.websocketUrl}?room=${roomId}`;
+        const authToken = this.resolveAuthToken();
+        const url = resolveWebSocketUrl(this.config!.websocketUrl, roomId, authToken);
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
@@ -356,6 +380,7 @@ export class CollaborationService implements OnDestroy {
             userId: this.config!.userId,
             displayName: this.config!.displayName,
             avatarUrl: this.config!.avatarUrl,
+            authToken,
           });
 
           this.startPresenceHeartbeat();

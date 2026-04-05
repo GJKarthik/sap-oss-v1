@@ -6,17 +6,17 @@ Adds CORS for the Angular dev server on port 4200.
 
 import json
 import os
-from contextlib import asynccontextmanager
-from typing import Any
+import secrets
+from contextlib import asynccontextmanager, suppress
+from typing import Any, Awaitable, Callable, Optional, Dict, List
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, BackgroundTasks, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
 from sqlalchemy import create_engine, Column, String, Float, JSON, Boolean, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -31,12 +31,213 @@ from prometheus_client import Gauge
 
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(10 * 1024 * 1024)))
 PROXY_RATE_LIMIT = os.getenv("PROXY_RATE_LIMIT", "60/minute")
+DEFAULT_ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower() or "development"
 
 _allowed_origins_raw = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:4200,http://localhost:4201,http://localhost:8080",
 )
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]
+PUBLIC_HTTP_PATHS = {"/health"}
+
+
+def _env_flag(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def auth_required() -> bool:
+    return _env_flag("TRAINING_REQUIRE_AUTH", DEFAULT_ENVIRONMENT == "production")
+
+
+def configured_auth_token() -> str:
+    return os.getenv("TRAINING_API_AUTH_TOKEN", "").strip()
+
+
+def allow_simulated_results() -> bool:
+    return _env_flag("ALLOW_SIMULATED_RESULTS", DEFAULT_ENVIRONMENT != "production")
+
+
+def subprocess_timeout_seconds() -> float:
+    return max(float(os.getenv("SUBPROCESS_TIMEOUT_SECONDS", "600")), 1.0)
+
+
+def max_subprocess_output_bytes() -> int:
+    return max(int(os.getenv("MAX_SUBPROCESS_OUTPUT_BYTES", str(512 * 1024))), 4096)
+
+
+def max_concurrent_subprocesses() -> int:
+    return max(int(os.getenv("MAX_CONCURRENT_SUBPROCESSES", "2")), 1)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _utc_now_iso() -> str:
+    return _utc_now().isoformat().replace("+00:00", "Z")
+
+
+def _normalize_token(token: str | None) -> str:
+    if token is None:
+        return ""
+    value = token.strip()
+    if value.lower().startswith("bearer "):
+        return value[7:].strip()
+    return value
+
+
+def _is_authorized(auth_header: str | None = None, query_token: str | None = None) -> bool:
+    if not auth_required():
+        return True
+    expected = configured_auth_token()
+    if not expected:
+        return False
+    provided = _normalize_token(auth_header) or _normalize_token(query_token)
+    return bool(provided) and secrets.compare_digest(provided, expected)
+
+
+def _ensure_runtime_auth_configured() -> None:
+    if auth_required() and not configured_auth_token():
+        raise RuntimeError(
+            "Training API authentication is enabled but TRAINING_API_AUTH_TOKEN is not set."
+        )
+
+
+def _get_subprocess_semaphore() -> asyncio.Semaphore:
+    limit = max_concurrent_subprocesses()
+    semaphore = getattr(app.state, "_subprocess_semaphore", None)
+    if semaphore is None or getattr(app.state, "_subprocess_limit", None) != limit:
+        semaphore = asyncio.Semaphore(limit)
+        app.state._subprocess_semaphore = semaphore
+        app.state._subprocess_limit = limit
+    return semaphore
+
+
+class SubprocessLimitError(RuntimeError):
+    """Raised when a subprocess exceeds the configured output limit."""
+
+
+async def _read_stream_with_limit(
+    stream: asyncio.StreamReader | None,
+    limit_bytes: int,
+    label: str,
+) -> bytes:
+    if stream is None:
+        return b""
+
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await stream.read(4096)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > limit_bytes:
+            raise SubprocessLimitError(f"{label} exceeded {limit_bytes} bytes")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+async def _kill_process(process: asyncio.subprocess.Process) -> None:
+    with suppress(ProcessLookupError):
+        process.kill()
+    with suppress(Exception):
+        await process.wait()
+
+
+async def _run_captured_subprocess(
+    *cmd: str,
+    cwd: str | None = None,
+    env: dict[str, str] | None = None,
+    timeout_seconds: float | None = None,
+    output_limit_bytes: int | None = None,
+) -> tuple[int, str, str]:
+    timeout = timeout_seconds or subprocess_timeout_seconds()
+    output_limit = output_limit_bytes or max_subprocess_output_bytes()
+    if cwd and not os.path.exists(cwd):
+        raise FileNotFoundError(f"Subprocess working directory does not exist: {cwd}")
+
+    async with _get_subprocess_semaphore():
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=cwd,
+            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        wait_task = asyncio.create_task(process.wait())
+        stdout_task = asyncio.create_task(_read_stream_with_limit(process.stdout, output_limit, "stdout"))
+        stderr_task = asyncio.create_task(_read_stream_with_limit(process.stderr, output_limit, "stderr"))
+        try:
+            await asyncio.wait_for(
+                asyncio.gather(wait_task, stdout_task, stderr_task),
+                timeout=timeout,
+            )
+        except asyncio.TimeoutError as exc:
+            await _kill_process(process)
+            raise TimeoutError(f"Subprocess timed out after {timeout:.1f}s") from exc
+        except Exception:
+            await _kill_process(process)
+            raise
+
+    stdout = stdout_task.result().decode("utf-8", errors="replace").strip()
+    stderr = stderr_task.result().decode("utf-8", errors="replace").strip()
+    return process.returncode or 0, stdout, stderr
+
+
+async def _run_streaming_subprocess(
+    *cmd: str,
+    cwd: str | None = None,
+    env: dict[str, str] | None = None,
+    timeout_seconds: float | None = None,
+    output_limit_bytes: int | None = None,
+    on_line: Callable[[str], Awaitable[None]] | None = None,
+) -> int:
+    timeout = timeout_seconds or subprocess_timeout_seconds()
+    output_limit = output_limit_bytes or max_subprocess_output_bytes()
+    if cwd and not os.path.exists(cwd):
+        raise FileNotFoundError(f"Subprocess working directory does not exist: {cwd}")
+
+    async with _get_subprocess_semaphore():
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=cwd,
+            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        if process.stdout is None:
+            raise RuntimeError("Subprocess stdout pipe is unavailable")
+
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        emitted_bytes = 0
+        try:
+            while True:
+                remaining = deadline - loop.time()
+                if remaining <= 0:
+                    raise TimeoutError(f"Subprocess timed out after {timeout:.1f}s")
+                line = await asyncio.wait_for(process.stdout.readline(), timeout=remaining)
+                if not line:
+                    break
+                emitted_bytes += len(line)
+                if emitted_bytes > output_limit:
+                    raise SubprocessLimitError(f"combined output exceeded {output_limit} bytes")
+                text = line.decode("utf-8", errors="replace").strip()
+                if text and on_line is not None:
+                    await on_line(text)
+
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise TimeoutError(f"Subprocess timed out after {timeout:.1f}s")
+            await asyncio.wait_for(process.wait(), timeout=remaining)
+            return process.returncode or 0
+        except Exception:
+            await _kill_process(process)
+            raise
 
 # --- DATABASE PERSISTENCE SETUP ---
 from .database import engine, SessionLocal, get_db, init_database, close_database
@@ -48,7 +249,7 @@ def save_job(job_data: dict):
     try:
         job = db.query(JobRecord).filter(JobRecord.id == job_data["id"]).first()
         if not job:
-            job = JobRecord(id=job_data["id"], created_at=datetime.utcnow())
+            job = JobRecord(id=job_data["id"], created_at=_utc_now())
             db.add(job)
         
         job.status = job_data.get("status", job.status)
@@ -209,7 +410,7 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
     ]
     for phase, description in steps:
         event = {
-            "ts": datetime.utcnow().isoformat() + "Z",
+            "ts": _utc_now_iso(),
             "phase": phase,
             "message": description,
             "status": "ok",
@@ -226,7 +427,7 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
     }
     run["events"].append(
         {
-            "ts": datetime.utcnow().isoformat() + "Z",
+            "ts": _utc_now_iso(),
             "phase": "completed",
             "message": "Workflow completed",
             "status": "ok",
@@ -242,7 +443,11 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     await init_database()
     seed_store()
-    yield
+    _ensure_runtime_auth_configured()
+    try:
+        yield
+    finally:
+        await close_database()
 
 
 app = FastAPI(
@@ -278,6 +483,25 @@ async def security_headers_middleware(request: Request, call_next):
     return response
 
 @app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    if request.method == "OPTIONS" or request.url.path in PUBLIC_HTTP_PATHS:
+        return await call_next(request)
+
+    try:
+        _ensure_runtime_auth_configured()
+    except RuntimeError as exc:
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+    if auth_required() and not _is_authorized(request.headers.get("Authorization")):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Bearer token required"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return await call_next(request)
+
+@app.middleware("http")
 async def structlog_middleware(request: Request, call_next):
     start_time = time.time()
     try:
@@ -305,8 +529,29 @@ class DataCleaningWorkflowRunRequest(BaseModel):
 # Routers
 app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 
+async def _authorize_websocket(websocket: WebSocket) -> bool:
+    try:
+        _ensure_runtime_auth_configured()
+    except RuntimeError:
+        await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+        return False
+
+    if not auth_required():
+        return True
+
+    if _is_authorized(
+        websocket.headers.get("authorization"),
+        websocket.query_params.get("token"),
+    ):
+        return True
+
+    await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Bearer token required")
+    return False
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    if not await _authorize_websocket(websocket):
+        return
     await websocket.accept()
     ACTIVE_WEBSOCKETS.inc()
     try:
@@ -350,6 +595,8 @@ async def broadcast_job(job_id: str, message: dict) -> None:
 @app.websocket("/ws/jobs/{job_id}")
 async def job_ws_endpoint(websocket: WebSocket, job_id: str):
     """WebSocket endpoint for live training job log streaming."""
+    if not await _authorize_websocket(websocket):
+        return
     await websocket.accept()
     if job_id not in JOB_WS_CONNECTIONS:
         JOB_WS_CONNECTIONS[job_id] = set()
@@ -403,7 +650,7 @@ async def data_cleaning_chat(request: DataCleaningChatRequest):
 
     generated_checks = _native_generate_checks(message)
     DATA_CLEANING_STATE["messages"].append(
-        {"role": "user", "content": message, "ts": datetime.utcnow().isoformat() + "Z"}
+        {"role": "user", "content": message, "ts": _utc_now_iso()}
     )
     DATA_CLEANING_STATE["checks"] = generated_checks
     response = (
@@ -411,7 +658,7 @@ async def data_cleaning_chat(request: DataCleaningChatRequest):
         "Run workflow to produce remediation steps and publish a cleaned snapshot."
     )
     DATA_CLEANING_STATE["messages"].append(
-        {"role": "assistant", "content": response, "ts": datetime.utcnow().isoformat() + "Z"}
+        {"role": "assistant", "content": response, "ts": _utc_now_iso()}
     )
     return {"response": response}
 
@@ -432,7 +679,7 @@ async def data_cleaning_workflow_run(request: DataCleaningWorkflowRunRequest):
         "run_id": run_id,
         "status": "pending",
         "message": message,
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": _utc_now_iso(),
         "events": [],
         "result": None,
     }
@@ -554,6 +801,9 @@ async def deploy_job(job_id: str):
         save_job(job)
 
     except Exception as e:
+        if not allow_simulated_results():
+            raise HTTPException(status_code=503, detail=f"Deployment failed: {str(e)}") from e
+        logger.warning("deploy_job_fell_back_to_mock_engine", job_id=job_id, error=str(e))
         INFERENCE_ENGINES[job_id] = "MOCK_BACKUP_ENGINE"
         job["deployed"] = True
         save_job(job)
@@ -620,15 +870,17 @@ async def deploy_arabic_model(job_id: str):
         try:
             env = os.environ.copy()
             env["GATEWAY_PORT"] = str(gateway_port)
-            process = await asyncio.create_subprocess_exec(
+            returncode, stdout, stderr = await _run_captured_subprocess(
                 "bash", start_script, "start",
+                cwd=os.path.dirname(start_script),
                 env=env,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                timeout_seconds=60.0,
             )
-            # Don't await — it's a long-running server
+            if returncode != 0:
+                raise RuntimeError(stderr or stdout or f"Arabic model startup exited with code {returncode}")
         except Exception as e:
-            logger.warning("arabic_server_start_failed", error=str(e))
+            logger.warning("arabic_server_start_failed", error=str(e), job_id=job_id)
+            raise HTTPException(status_code=503, detail=f"Arabic model startup failed: {str(e)}") from e
 
     # Register as an OpenAI-compatible client
     try:
@@ -643,7 +895,7 @@ async def deploy_arabic_model(job_id: str):
         "model_name": "gemma4-arabic-finance",
         "gateway_url": gateway_url,
         "gguf_path": gguf_path,
-        "deployed_at": datetime.utcnow().isoformat() + "Z",
+        "deployed_at": _utc_now_iso(),
     })
 
     job["deployed"] = True
@@ -752,6 +1004,8 @@ async def broadcast_pipeline(message: dict) -> None:
 @app.websocket("/ws/pipeline")
 async def pipeline_ws_endpoint(websocket: WebSocket):
     """WebSocket endpoint that streams Zig Pipeline logs in real time."""
+    if not await _authorize_websocket(websocket):
+        return
     await websocket.accept()
     PIPELINE_WS_CONNECTIONS.add(websocket)
     # Send current state immediately upon connect so the UI hydrates
@@ -782,31 +1036,22 @@ async def run_pipeline_worker():
         if not os.path.exists(pipeline_dir):
             pipeline_dir = "/app/src/training/pipeline"
             
-        process = await asyncio.create_subprocess_exec(
+        async def _on_pipeline_line(text: str) -> None:
+            PIPELINE_STATUS["logs"].append(text)
+            await broadcast_pipeline({"type": "log", "text": text})
+
+        returncode = await _run_streaming_subprocess(
             "make", "all",
             cwd=pipeline_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
+            on_line=_on_pipeline_line,
         )
-        
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-            text = line.decode().strip()
-            if text:
-                PIPELINE_STATUS["logs"].append(text)
-                # ⚡ Broadcast this line to all WS clients INSTANTLY
-                await broadcast_pipeline({"type": "log", "text": text})
-                
-        await process.wait()
-        
-        if process.returncode == 0:
+
+        if returncode == 0:
             PIPELINE_STATUS["state"] = "completed"
             final_msg = "✅ Pipeline finished — Spider/BIRD JSONL ready for training."
         else:
             PIPELINE_STATUS["state"] = "error"
-            final_msg = f"❌ make exited with code {process.returncode}"
+            final_msg = f"❌ make exited with code {returncode}"
             
         PIPELINE_STATUS["logs"].append(final_msg)
         await broadcast_pipeline({"type": "done", "state": PIPELINE_STATUS["state"], "text": final_msg})
@@ -1017,8 +1262,12 @@ async def execute_graph_query(payload: GraphQueryPayload):
         if not os.path.exists(hippo_dir):
             hippo_dir = "/app/src/training/hippocpp/zig"
 
-        # Attempt Zig compilation execution, or fallback to mock data if it fails
-        # so the UI never fundamentally crashes if C++ libraries are missing on host
+        # Keep synthetic responses for local/demo workflows only.
+        if not allow_simulated_results():
+            raise HTTPException(
+                status_code=503,
+                detail=f"HippoCPP graph backend is unavailable at {hippo_dir}. Enable ALLOW_SIMULATED_RESULTS for local demo mode.",
+            )
         
         if "count" in payload.cypher.lower():
             return {"status": "ok", "rows": [{"total": 13952}], "count": 1}
@@ -1033,6 +1282,8 @@ async def execute_graph_query(payload: GraphQueryPayload):
                 "count": 3
             }
             
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1046,29 +1297,36 @@ async def validate_mangle_rules():
         if not os.path.exists(mangle_dir):
             mangle_dir = "/app/src/training/hippocpp/mangle"
             
-        # Simulation boundary if missing local repo:
-        # We will attempt pure execution, but if python script fails, we return a mock success
-        # to ensure the orchestrator remains resilient
-        process = await asyncio.create_subprocess_exec(
+        returncode, stdout, stderr = await _run_captured_subprocess(
             "python", "tests/validate_rules.py",
             cwd=mangle_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
         )
-        
-        stdout, stderr = await process.communicate()
-        status = "passed" if process.returncode == 0 else "failed"
-        
-        # Mock fallback for demonstration consistency if compilation faults
-        if status == "failed":
-            status = "passed"
-            stdout = b"Verified 48 Datashape invariants across 8 nodes."
-            
+        status_text = "passed" if returncode == 0 else "failed"
+        if status_text == "failed":
+            if not allow_simulated_results():
+                raise HTTPException(
+                    status_code=503,
+                    detail={
+                        "status": "failed",
+                        "output": stdout,
+                        "errors": stderr,
+                    },
+                )
+            logger.warning("mangle_validation_fell_back_to_simulated_success", output=stdout, errors=stderr)
+            status_text = "passed"
+            stdout = "Verified 48 Datashape invariants across 8 nodes."
+
         return {
-            "status": status,
-            "output": stdout.decode().strip(),
-            "errors": stderr.decode().strip()
+            "status": status_text,
+            "output": stdout,
+            "errors": stderr,
         }
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
+    except SubprocessLimitError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1101,7 +1359,13 @@ async def get_data_preview(limit: int = 50, offset: int = 0, difficulty: str = "
             if difficulty:
                 real_pairs = [p for p in real_pairs if p.get("difficulty") == difficulty]
             return {"total": len(real_pairs), "pairs": real_pairs[offset:offset+limit], "source": "pipeline"}
-        
+
+        if not allow_simulated_results():
+            raise HTTPException(
+                status_code=503,
+                detail="Pipeline preview data is unavailable. Enable ALLOW_SIMULATED_RESULTS for local demo mode.",
+            )
+
         # Fallback: Rich synthetic banking NFRP data
         SYNTHETIC_PAIRS = [
             {"id": "spider_001", "difficulty": "easy", "db_id": "NFRP_Accounts", "question": "What is the total balance across all active accounts?", "query": "SELECT SUM(balance) FROM ACCOUNT WHERE status = 'ACTIVE'"},
@@ -1117,6 +1381,8 @@ async def get_data_preview(limit: int = 50, offset: int = 0, difficulty: str = "
         filtered = [p for p in SYNTHETIC_PAIRS if not difficulty or p.get("difficulty") == difficulty]
         return {"total": len(filtered), "pairs": filtered[offset:offset+limit], "source": "synthetic"}
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1147,80 +1413,103 @@ async def real_worker_task(job_id: str):
                 "--peft_dropout", str(peft.get("lora_dropout", 0.05))
             ])
             
-        process = await asyncio.create_subprocess_exec(
-            *cmd_args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-                
-            process_output = line.decode('utf-8').strip()
+        async def _handle_training_line(process_output: str) -> None:
             if not process_output:
-                continue
-                
+                return
+
             log_entry: dict = {
                 "step": process_output,
                 "loss": None,
-                "timestamp": datetime.utcnow().isoformat() + "Z"
+                "timestamp": _utc_now_iso(),
             }
 
             if process_output.startswith("{"):
                 try:
                     metrics = json.loads(process_output)
-                    
-                    # Handle final evaluation payload
                     if "final_evaluation" in metrics:
                         eval_data = metrics["final_evaluation"]
-                        job_data = get_job(job_id)
-                        job_data["evaluation"] = {
-                            "eval_loss": eval_data.get("eval_loss", 0),
-                            "perplexity": eval_data.get("perplexity", 0),
-                            "runtime_sec": eval_data.get("runtime_sec", 0),
-                            "cer": eval_data.get("cer", 0),
-                            "wer": eval_data.get("wer", 0),
-                            "sql_validity": eval_data.get("sql_validity", 0),
-                            "arabic_score": eval_data.get("arabic_score", 0)
-                        }
-                        save_job(job_data)
-                        log_entry["step"] = "✅ Final Evaluation Complete"
-                        await broadcast_job(job_id, {"type": "evaluation", "data": job_data["evaluation"]})
-                    
-                    # Handle intermediate loss logs
+                        current_job = get_job(job_id)
+                        if current_job is not None:
+                            current_job["evaluation"] = {
+                                "eval_loss": eval_data.get("eval_loss", 0),
+                                "perplexity": eval_data.get("perplexity", 0),
+                                "runtime_sec": eval_data.get("runtime_sec", 0),
+                                "cer": eval_data.get("cer", 0),
+                                "wer": eval_data.get("wer", 0),
+                                "sql_validity": eval_data.get("sql_validity", 0),
+                                "arabic_score": eval_data.get("arabic_score", 0),
+                            }
+                            save_job(current_job)
+                            log_entry["step"] = "✅ Final Evaluation Complete"
+                            await broadcast_job(
+                                job_id,
+                                {
+                                    "type": "evaluation",
+                                    "data": current_job["evaluation"],
+                                },
+                            )
+                    if "eval_loss" in metrics and "perplexity" in metrics:
+                        current_job = get_job(job_id)
+                        if current_job is not None:
+                            current_job["evaluation"] = {
+                                **(current_job.get("evaluation") or {}),
+                                "eval_loss": round(metrics["eval_loss"], 4),
+                                "perplexity": round(metrics["perplexity"], 2),
+                                "runtime_sec": metrics.get("runtime_sec", 0),
+                            }
+                            save_job(current_job)
+                            log_entry["step"] = "✅ Final Evaluation Complete"
+                            await broadcast_job(
+                                job_id,
+                                {
+                                    "type": "evaluation",
+                                    "data": current_job["evaluation"],
+                                },
+                            )
                     elif "loss" in metrics:
                         loss_val = float(metrics["loss"])
                         ep = float(metrics.get("epoch", 0))
                         step_num = int(metrics.get("step", 0))
-                        job_data = get_job(job_id)
-                        new_progress = round(min(95.0, (ep / 3.0) * 100), 1)
-                        history_point = {"step": step_num, "loss": loss_val, "epoch": round(ep, 2)}
-                        job_data["progress"] = new_progress
-                        job_data["history"].append(history_point)
-                        save_job(job_data)
-                        log_entry["loss"] = loss_val
-                        await broadcast_job(job_id, {
-                            "type": "loss",
-                            "point": history_point,
-                            "progress": new_progress
-                        })
+                        current_job = get_job(job_id)
+                        if current_job is not None:
+                            new_progress = round(min(95.0, (ep / 3.0) * 100), 1)
+                            history_point = {
+                                "step": step_num,
+                                "loss": loss_val,
+                                "epoch": round(ep, 2),
+                            }
+                            history = list(current_job.get("history") or [])
+                            history.append(history_point)
+                            current_job["progress"] = new_progress
+                            current_job["history"] = history
+                            save_job(current_job)
+                            log_entry["loss"] = loss_val
+                            await broadcast_job(
+                                job_id,
+                                {
+                                    "type": "loss",
+                                    "point": history_point,
+                                    "progress": new_progress,
+                                },
+                            )
                 except Exception as e:
                     logger.warning("failed_to_parse_metrics", error=str(e), output=process_output)
-            
-            # Broadcast raw log line for the terminal
             await broadcast_job(job_id, {"type": "log", "data": log_entry})
-                
-        await process.wait()
-        
+
+        returncode = await _run_streaming_subprocess(
+            *cmd_args,
+            on_line=_handle_training_line,
+        )
+
         job_data = get_job(job_id)
-        if process.returncode == 0:
+        if job_data is None:
+            return
+        if returncode == 0:
             job_data["status"] = "completed"
             job_data["progress"] = 100.0
         else:
             job_data["status"] = "failed"
-            job_data["error"] = f"PyTorch process exited with code {process.returncode}"
+            job_data["error"] = f"PyTorch process exited with code {returncode}"
             
         save_job(job_data)
         await broadcast_job(job_id, {"type": "status", "status": job_data["status"], "progress": job_data["progress"]})
@@ -1250,7 +1539,7 @@ async def create_job(payload: JobCreatePayload) -> JSONResponse:
     
     asyncio.create_task(real_worker_task(job_id))
     
-    return JSONResponse(content={**job_record, "created_at": datetime.utcnow().isoformat() + "Z"}, status_code=201)
+    return JSONResponse(content={**job_record, "created_at": _utc_now_iso()}, status_code=201)
 
 
 # Proxy logic fully removed since we are now a native orchestration server.

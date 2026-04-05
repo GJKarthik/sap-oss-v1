@@ -30,6 +30,7 @@ import logging
 import os
 import socket
 import tempfile
+import time
 from typing import List, Optional
 from urllib.parse import urlparse
 
@@ -51,10 +52,56 @@ from .arabic_ocr_service import ArabicOCRService, OCRResult, PageResult
 from .metrics import get_metrics
 
 # Maximum upload size (50 MB) — consistent with api.py
-MAX_UPLOAD_SIZE = 50 * 1024 * 1024
+MAX_UPLOAD_SIZE = int(os.getenv("OCR_MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
 
 # Streaming read chunk size (8 KB)
 _READ_CHUNK_SIZE = 8192
+
+# Background tasks — strong references prevent GC before completion
+_background_tasks: set = set()
+
+# Health check cache — avoids expensive dep probing (subprocess) on every request
+_health_cache: dict = {"required_missing": None, "checked_at": 0.0}
+_HEALTH_CACHE_TTL = 60.0
+
+
+def _fire_and_forget(coro) -> None:
+    """Schedule a coroutine as a background task, retaining a strong reference."""
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
+
+async def _require_healthy() -> None:
+    """Raise HTTP 503 if required dependencies are unavailable.
+
+    Result is cached for ``_HEALTH_CACHE_TTL`` seconds to avoid running a
+    blocking subprocess (``tesseract --list-langs``) on every request.
+    """
+    now = time.monotonic()
+    cached = _health_cache["required_missing"]
+    if cached is not None and now - _health_cache["checked_at"] < _HEALTH_CACHE_TTL:
+        if cached:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Service unhealthy — missing required dependencies: {cached}",
+            )
+        return
+
+    from .dependencies import check_dependencies
+
+    report = await asyncio.to_thread(check_dependencies)
+    required_missing = [
+        d.name for d in report.dependencies
+        if not d.available and "REQUIRED" in d.note
+    ]
+    _health_cache["required_missing"] = required_missing
+    _health_cache["checked_at"] = now
+    if required_missing:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Service unhealthy — missing required dependencies: {required_missing}",
+        )
 
 
 async def _read_with_limit(file: UploadFile, max_size: int) -> bytes:
@@ -69,7 +116,10 @@ async def _read_with_limit(file: UploadFile, max_size: int) -> bytes:
         if total > max_size:
             raise HTTPException(
                 status_code=413,
-                detail="File exceeds maximum size of 50 MB",
+                detail=(
+                    "File exceeds maximum size of "
+                    f"{max_size // (1024 * 1024)} MB"
+                ),
             )
         chunks.append(chunk)
     return b"".join(chunks)
@@ -189,22 +239,17 @@ def _validate_callback_url(url: str) -> str:
     if not addrinfos:
         raise ValueError(f"callback_url hostname resolved to no addresses: {hostname}")
 
-    old_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(2.0)
-    try:
-        for family, _type, _proto, _canonname, sockaddr in addrinfos:
-            ip_str = sockaddr[0]
-            try:
-                addr = ipaddress.ip_address(ip_str)
-            except ValueError:
-                continue
-            if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
-                raise ValueError(
-                    f"callback_url resolves to a private/loopback address: "
-                    f"{hostname} -> {ip_str}"
-                )
-    finally:
-        socket.setdefaulttimeout(old_timeout)
+    for _family, _type, _proto, _canonname, sockaddr in addrinfos:
+        ip_str = sockaddr[0]
+        try:
+            addr = ipaddress.ip_address(ip_str)
+        except ValueError:
+            continue
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            raise ValueError(
+                f"callback_url resolves to a private/loopback address: "
+                f"{hostname} -> {ip_str}"
+            )
 
     return parsed.geturl()
 
@@ -274,7 +319,9 @@ async def _send_webhook(url: str, payload: dict) -> None:
 
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(url, json=payload)
-            logger.info("Webhook %s responded %d", url, resp.status_code)
+            _p = urlparse(url)
+            _safe = f"{_p.scheme}://{_p.hostname}{_p.path}"
+            logger.info("Webhook %s responded %d", _safe, resp.status_code)
     except ImportError:
         logger.warning("httpx not installed — webhook skipped")
     except Exception as e:
@@ -294,42 +341,41 @@ async def _process_uploaded_pdf(
     detect_tables: bool,
     callback_url: Optional[str],
 ) -> JSONResponse:
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File exceeds maximum size of {MAX_UPLOAD_BYTES // (1024 * 1024)} MB",
-        )
+    await _require_healthy()
+    content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
     if not _accepts_as_pdf(file.filename, content):
         raise HTTPException(status_code=400, detail="File must be a PDF")
 
     if callback_url:
         try:
-            callback_url = _validate_callback_url(callback_url)
+            callback_url = await asyncio.to_thread(
+                _validate_callback_url, callback_url
+            )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
 
     sem = _get_semaphore()
-    if sem.locked():
-        raise HTTPException(
-            status_code=429,
-            detail="Too many concurrent OCR requests. Try again later.",
-        )
-
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(content)
         tmp.flush()
         tmp_path = tmp.name
 
+    acquired = False
     try:
-        async with sem:
-            service = _get_service()
-            result = await service.process_pdf_async(
-                tmp_path, start_page, end_page, detect_tables
+        if sem.locked():
+            raise HTTPException(
+                status_code=429,
+                detail="Too many concurrent OCR requests. Try again later.",
             )
+        await sem.acquire()
+        acquired = True
+        service = _get_service()
+        result = await service.process_pdf_async(
+            tmp_path, start_page, end_page, detect_tables
+        )
         result_dict = result.to_dict()
         if callback_url:
-            asyncio.create_task(_send_webhook(callback_url, result_dict))
+            _fire_and_forget(_send_webhook(callback_url, result_dict))
         return JSONResponse(content=result_dict)
     except HTTPException:
         raise
@@ -337,6 +383,8 @@ async def _process_uploaded_pdf(
         logger.error("OCR processing failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
+        if acquired:
+            sem.release()
         try:
             os.unlink(tmp_path)
         except OSError:
@@ -393,6 +441,8 @@ async def ocr_image(
     Accepts PNG, JPEG, TIFF, BMP formats.
     Requests are rate-limited by ``OCR_MAX_CONCURRENT``.
     """
+    await _require_healthy()
+
     from PIL import Image
 
     content = await file.read()
@@ -433,9 +483,12 @@ async def ocr_batch(
     All results are returned together, and if ``callback_url`` is provided,
     they are delivered in a single batched webhook POST.
     """
+    await _require_healthy()
+
     if callback_url:
         try:
-            callback_url = _validate_callback_url(callback_url)
+            # Run in thread: socket.getaddrinfo is blocking
+            callback_url = await asyncio.to_thread(_validate_callback_url, callback_url)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -476,9 +529,7 @@ async def ocr_batch(
             os.unlink(tmp_path)
 
     if callback_url:
-        asyncio.ensure_future(
-            _send_batched_webhook(callback_url, all_results)
-        )
+        _fire_and_forget(_send_batched_webhook(callback_url, all_results))
 
     return JSONResponse(content={
         "batch_size": len(all_results),

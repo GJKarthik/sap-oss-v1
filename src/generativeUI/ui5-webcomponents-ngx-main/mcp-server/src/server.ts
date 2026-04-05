@@ -750,6 +750,19 @@ const mcpServer = new MCPServer();
 const app = express();
 app.use(express.json({ limit: `${MAX_JSON_BODY_BYTES}b` }));
 
+function envFlag(name: string, defaultValue: boolean): boolean {
+  const raw = (process.env[name] ?? '').trim().toLowerCase();
+  if (!raw) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(raw);
+}
+
+const LOCALHOST_CORS_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:4200',
+  'http://127.0.0.1:4200',
+];
+
 // =============================================================================
 // Bearer-token authentication middleware
 // Set MCP_AUTH_TOKEN in the environment to require authentication on /mcp.
@@ -757,16 +770,27 @@ app.use(express.json({ limit: `${MAX_JSON_BODY_BYTES}b` }));
 // =============================================================================
 
 const MCP_AUTH_TOKEN = (process.env.MCP_AUTH_TOKEN ?? '').trim();
+const MCP_LOCALHOST_ONLY = envFlag('MCP_LOCALHOST_ONLY', (process.env.NODE_ENV ?? '').trim() !== 'production');
 
-if (!MCP_AUTH_TOKEN) {
+if (!MCP_AUTH_TOKEN && !MCP_LOCALHOST_ONLY) {
+  throw new Error(
+    'MCP_AUTH_TOKEN must be set unless MCP_LOCALHOST_ONLY=1. Refusing to start an unauthenticated MCP server.',
+  );
+}
+
+if (!MCP_AUTH_TOKEN && MCP_LOCALHOST_ONLY) {
   console.warn(
-    'WARNING: MCP_AUTH_TOKEN is not set. The /mcp endpoint is unauthenticated. ' +
-    'Set MCP_AUTH_TOKEN to a secure random token before any non-localhost deployment.',
+    'WARNING: MCP_AUTH_TOKEN is not set. The /mcp endpoint is unauthenticated in localhost-only mode. ' +
+    'Set MCP_AUTH_TOKEN before any shared or remote deployment.',
   );
 }
 
 function requireBearerAuth(req: Request, res: Response, next: (err?: unknown) => void): void {
-  if (!MCP_AUTH_TOKEN) { next(); return; }
+  if (!MCP_AUTH_TOKEN) {
+    if (MCP_LOCALHOST_ONLY) { next(); return; }
+    res.status(503).json({ jsonrpc: '2.0', id: null, error: { code: -32002, message: 'Server misconfigured: MCP_AUTH_TOKEN is required' } });
+    return;
+  }
   const authHeader = (req.headers['authorization'] ?? '').trim();
   if (!authHeader.startsWith('Bearer ')) {
     res.status(401).json({ jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Unauthorized: Bearer token required' } });
@@ -782,18 +806,25 @@ function requireBearerAuth(req: Request, res: Response, next: (err?: unknown) =>
 
 // Finding 4: CORS with startup warning and dev escape
 const MCP_ALLOW_ALL_ORIGINS = ['1', 'true', 'yes'].includes((process.env.MCP_ALLOW_ALL_ORIGINS ?? '').trim().toLowerCase());
+if (MCP_ALLOW_ALL_ORIGINS && !MCP_LOCALHOST_ONLY) {
+  throw new Error('MCP_ALLOW_ALL_ORIGINS=1 is only permitted when MCP_LOCALHOST_ONLY=1.');
+}
 const corsAllowedOrigins = (() => {
   const raw = (process.env.CORS_ALLOWED_ORIGINS ?? '').trim();
   if (raw) return raw.split(',').map(o => o.trim()).filter(Boolean);
-  if (!MCP_ALLOW_ALL_ORIGINS) {
+  if (MCP_LOCALHOST_ONLY && !MCP_ALLOW_ALL_ORIGINS) {
     console.warn(
       'WARNING: CORS_ALLOWED_ORIGINS is not set. Defaulting to localhost only. ' +
       'Non-localhost origins (Angular dev server on a named host, BTP, Docker) will be rejected. ' +
       'Set CORS_ALLOWED_ORIGINS to a comma-separated list of allowed origins, or set ' +
       'MCP_ALLOW_ALL_ORIGINS=1 for development.',
     );
+    return LOCALHOST_CORS_ORIGINS;
   }
-  return ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:4200', 'http://127.0.0.1:4200'];
+  if (MCP_ALLOW_ALL_ORIGINS) return [];
+  throw new Error(
+    'CORS_ALLOWED_ORIGINS must be set unless MCP_LOCALHOST_ONLY=1 or MCP_ALLOW_ALL_ORIGINS=1 for local development.',
+  );
 })();
 const getCorsOrigin = (req: Request): string => {
   if (MCP_ALLOW_ALL_ORIGINS) return '*';

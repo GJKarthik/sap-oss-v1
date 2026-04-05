@@ -11,6 +11,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, tap, catchError, of, timer, exhaustMap, retry } from 'rxjs';
 import { webSocket } from 'rxjs/webSocket';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { NotificationService } from '../services/notification.service';
 
@@ -231,6 +232,7 @@ export const AppStore = signalStore(
   })),
   
   withMethods((store, api = inject(ApiService), toast = inject(ToastService)) => {
+    const auth = inject(AuthService);
     
     // Helper to update cached data
     const updateCache = <K extends CacheKey>(
@@ -546,9 +548,7 @@ export const AppStore = signalStore(
       // WebSockets
       // ======================================================================
       connectWs(): void {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const wsUrl = `${protocol}//${host}/api/ws`;
+        const wsUrl = auth.buildWebSocketUrl('/ws');
 
         patchState(store, { wsState: 'connecting' });
 

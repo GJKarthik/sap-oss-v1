@@ -565,6 +565,79 @@ class TestHealthDegradedStatus:
 
 
 # ---------------------------------------------------------------------------
+# Health gating — OCR endpoints must honour the health status
+# ---------------------------------------------------------------------------
+
+class TestHealthGating:
+    def _make_unhealthy_report(self):
+        from ..dependencies import DependencyReport, DependencyStatus
+        return DependencyReport(dependencies=[
+            DependencyStatus(
+                name="tesseract (binary)",
+                available=False,
+                features=["OCR engine"],
+                note="REQUIRED — install via brew/apt",
+            ),
+        ])
+
+    def _reset_health_cache(self):
+        from .. import server as server_mod
+        server_mod._health_cache.update({"required_missing": None, "checked_at": 0.0})
+
+    def test_pdf_returns_503_when_unhealthy(self, client):
+        """POST /ocr/pdf must return 503 when required deps are missing."""
+        import unittest.mock as mock
+        from .. import dependencies as deps_mod
+
+        self._reset_health_cache()
+        with mock.patch.object(deps_mod, "check_dependencies", return_value=self._make_unhealthy_report()):
+            resp = client.post(
+                "/ocr/pdf",
+                files={"file": ("test.pdf", io.BytesIO(b"%PDF-1.4"), "application/pdf")},
+            )
+        assert resp.status_code == 503
+        assert "missing" in resp.json()["detail"].lower()
+
+    def test_image_returns_503_when_unhealthy(self, client):
+        """POST /ocr/image must return 503 when required deps are missing."""
+        import unittest.mock as mock
+        from .. import dependencies as deps_mod
+
+        self._reset_health_cache()
+        with mock.patch.object(deps_mod, "check_dependencies", return_value=self._make_unhealthy_report()):
+            resp = client.post(
+                "/ocr/image",
+                files={"file": ("test.png", io.BytesIO(b"\x89PNG"), "image/png")},
+            )
+        assert resp.status_code == 503
+
+    def test_batch_returns_503_when_unhealthy(self, client):
+        """POST /ocr/batch must return 503 when required deps are missing."""
+        import unittest.mock as mock
+        from .. import dependencies as deps_mod
+
+        self._reset_health_cache()
+        with mock.patch.object(deps_mod, "check_dependencies", return_value=self._make_unhealthy_report()):
+            resp = client.post(
+                "/ocr/batch",
+                files=[("files", ("test.pdf", io.BytesIO(b"%PDF-1.4"), "application/pdf"))],
+            )
+        assert resp.status_code == 503
+
+    def test_health_endpoint_itself_not_gated(self, client):
+        """GET /ocr/health must always respond, even when service is unhealthy."""
+        import unittest.mock as mock
+        from .. import dependencies as deps_mod
+
+        self._reset_health_cache()
+        with mock.patch.object(deps_mod, "check_dependencies", return_value=self._make_unhealthy_report()):
+            resp = client.get("/ocr/health")
+        # Health endpoint reports 503 unhealthy but always responds
+        assert resp.status_code == 503
+        assert resp.json()["status"] == "unhealthy"
+
+
+# ---------------------------------------------------------------------------
 # Metrics plain Lock (no re-entrancy)
 # ---------------------------------------------------------------------------
 

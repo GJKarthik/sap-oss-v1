@@ -34,6 +34,19 @@ interface AICoreConfig {
   embeddingDeploymentId?: string;
 }
 
+function envFlag(name: string, defaultValue: boolean): boolean {
+  const raw = (process.env[name] ?? '').trim().toLowerCase();
+  if (!raw) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(raw);
+}
+
+const LOCALHOST_CORS_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:4200',
+  'http://127.0.0.1:4200',
+] as const;
+
 const SUPPORTED_MULTILINGUAL_EMBEDDING_MODELS = [
   'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
   'google-bert/bert-base-multilingual-uncased',
@@ -338,8 +351,16 @@ function sendError(res: http.ServerResponse, status: number, message: string): v
 // =============================================================================
 
 const OPENAI_INTERNAL_TOKEN = (process.env.OPENAI_INTERNAL_TOKEN ?? '').trim();
-const OPENAI_ALLOWED_ORIGINS = (process.env.OPENAI_ALLOWED_ORIGINS ?? '').trim()
-  .split(',').map(o => o.trim()).filter(Boolean);
+const OPENAI_LOCALHOST_ONLY = envFlag('OPENAI_LOCALHOST_ONLY', (process.env.NODE_ENV ?? '').trim() !== 'production');
+const OPENAI_ALLOWED_ORIGINS = (() => {
+  const configured = (process.env.OPENAI_ALLOWED_ORIGINS ?? '').trim()
+    .split(',').map(o => o.trim()).filter(Boolean);
+  if (configured.length > 0) return configured;
+  if (OPENAI_LOCALHOST_ONLY) return [...LOCALHOST_CORS_ORIGINS];
+  throw new Error(
+    'OPENAI_ALLOWED_ORIGINS must be set unless OPENAI_LOCALHOST_ONLY=1. Refusing wildcard CORS in non-localhost mode.',
+  );
+})();
 const OPENAI_OCR_INTERNAL_TOKEN = (process.env.OPENAI_OCR_INTERNAL_TOKEN ?? '').trim();
 const OPENAI_OCR_MAX_UPLOAD_BYTES = Number.parseInt(process.env.OPENAI_OCR_MAX_UPLOAD_BYTES ?? '5242880', 10);
 const OPENAI_OCR_ALLOWED_MIME_TYPES = (process.env.OPENAI_OCR_ALLOWED_MIME_TYPES ?? 'text/plain,application/pdf,image/png,image/jpeg,image/webp')
@@ -347,17 +368,32 @@ const OPENAI_OCR_ALLOWED_MIME_TYPES = (process.env.OPENAI_OCR_ALLOWED_MIME_TYPES
   .map((m) => m.trim().toLowerCase())
   .filter(Boolean);
 
-if (!OPENAI_INTERNAL_TOKEN) {
+if (!OPENAI_INTERNAL_TOKEN && !OPENAI_LOCALHOST_ONLY) {
+  throw new Error(
+    'OPENAI_INTERNAL_TOKEN must be set unless OPENAI_LOCALHOST_ONLY=1. Refusing to expose HANA routes without a token.',
+  );
+}
+
+if (!OPENAI_OCR_INTERNAL_TOKEN && !OPENAI_LOCALHOST_ONLY) {
+  throw new Error(
+    'OPENAI_OCR_INTERNAL_TOKEN must be set unless OPENAI_LOCALHOST_ONLY=1. Refusing to expose OCR routes without a token.',
+  );
+}
+
+if (!OPENAI_INTERNAL_TOKEN && OPENAI_LOCALHOST_ONLY) {
   console.warn(
     'WARNING: OPENAI_INTERNAL_TOKEN is not set. ' +
-    '/v1/hana/* endpoints are unauthenticated and proxy a production HANA Cloud instance. ' +
-    'Set OPENAI_INTERNAL_TOKEN to a secure random token and ensure this server is ' +
-    'accessible only within a trusted network segment.',
+    '/v1/hana/* endpoints are unauthenticated in localhost-only mode. ' +
+    'Set OPENAI_INTERNAL_TOKEN before any shared or remote deployment.',
   );
 }
 
 function checkInternalToken(req: http.IncomingMessage, res: http.ServerResponse): boolean {
-  if (!OPENAI_INTERNAL_TOKEN) return true;
+  if (!OPENAI_INTERNAL_TOKEN) {
+    if (OPENAI_LOCALHOST_ONLY) return true;
+    sendJson(res, 503, { error: { message: 'Server misconfigured: X-Internal-Token is required for HANA routes', type: 'config_error', code: 503 } });
+    return false;
+  }
   const provided = (req.headers['x-internal-token'] ?? '').toString().trim();
   if (provided !== OPENAI_INTERNAL_TOKEN) {
     sendJson(res, 401, { error: { message: 'Unauthorized: X-Internal-Token required for HANA routes', type: 'auth_error', code: 401 } });
@@ -367,7 +403,11 @@ function checkInternalToken(req: http.IncomingMessage, res: http.ServerResponse)
 }
 
 function checkOcrInternalToken(req: http.IncomingMessage, res: http.ServerResponse): boolean {
-  if (!OPENAI_OCR_INTERNAL_TOKEN) return true;
+  if (!OPENAI_OCR_INTERNAL_TOKEN) {
+    if (OPENAI_LOCALHOST_ONLY) return true;
+    sendJson(res, 503, { error: { message: 'Server misconfigured: X-OCR-Token is required for OCR routes', type: 'config_error', code: 503 } });
+    return false;
+  }
   const provided = (req.headers['x-ocr-token'] ?? '').toString().trim();
   if (provided !== OPENAI_OCR_INTERNAL_TOKEN) {
     sendJson(res, 401, { error: { message: 'Unauthorized: X-OCR-Token required for OCR routes', type: 'auth_error', code: 401 } });
@@ -377,7 +417,6 @@ function checkOcrInternalToken(req: http.IncomingMessage, res: http.ServerRespon
 }
 
 function getAllowedOrigin(req: http.IncomingMessage): string {
-  if (OPENAI_ALLOWED_ORIGINS.length === 0) return '*';
   const origin = (req.headers['origin'] ?? '').toString().trim();
   if (origin && OPENAI_ALLOWED_ORIGINS.includes(origin)) return origin;
   return OPENAI_ALLOWED_ORIGINS[0] ?? '';
