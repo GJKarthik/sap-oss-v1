@@ -7,7 +7,7 @@
   <!-- ── Upload zone (full / compact) ─────────────────────────────────── -->
   @if (!getState().result) {
     <div
-      class="upload-zone"
+      class="upload-area"
       [class.drag-over]="isDragOver()"
       [class.disabled]="!serviceAvailable()"
       (dragover)="onDragOver($event)"
