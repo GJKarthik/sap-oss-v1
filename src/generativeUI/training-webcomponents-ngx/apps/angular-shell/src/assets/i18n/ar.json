@@ -130,6 +130,10 @@
   "pipeline.cmdArabicGenerateCmd": "cd src/training/schema_pipeline && python massive_term_generator.py",
 
   "chat.settings": "إعدادات المحادثة",
+  "chat.mode": "وضع المحادثة",
+  "chat.mode.document": "مستند واحد",
+  "chat.mode.library": "المكتبة (RAG)",
+  "chat.selectStore": "قاعدة المعرفة",
   "chat.model": "النموذج",
   "chat.systemPrompt": "موجه النظام",
   "chat.maxTokens": "الحد الأقصى للرموز",

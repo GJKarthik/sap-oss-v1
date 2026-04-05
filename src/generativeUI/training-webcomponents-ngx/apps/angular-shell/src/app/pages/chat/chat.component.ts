@@ -43,6 +43,30 @@ interface CompletionResponse {
       <!-- Sidebar -->
       <div class="chat-sidebar">
         <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>
+        
+        <div class="field-group">
+          <label class="field-label">{{ i18n.t('chat.mode') }}</label>
+          <div class="mode-toggle-group">
+            <button class="mode-btn" [class.active]="mode() === 'document'" (click)="mode.set('document')">
+              {{ i18n.t('chat.mode.document') }}
+            </button>
+            <button class="mode-btn" [class.active]="mode() === 'library'" (click)="mode.set('library')">
+              {{ i18n.t('chat.mode.library') }}
+            </button>
+          </div>
+        </div>
+
+        @if (mode() === 'library') {
+          <div class="field-group">
+            <label class="field-label">{{ i18n.t('chat.selectStore') }}</label>
+            <select class="setting-input" [ngModel]="selectedStore()" (ngModelChange)="selectedStore.set($event)">
+              @for (store of vectorStores(); track store.table_name) {
+                <option [value]="store.table_name">{{ store.table_name }}</option>
+              }
+            </select>
+          </div>
+        }
+
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.model') }}</label>
           <select class="setting-input" dir="ltr" [(ngModel)]="model">
@@ -190,6 +214,32 @@ interface CompletionResponse {
     }
 
     .range-input { width: 100%; }
+
+    .mode-toggle-group {
+      display: flex;
+      background: var(--sapList_Background, #f5f5f5);
+      border-radius: 0.375rem;
+      padding: 0.2rem;
+      gap: 0.2rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      color: var(--sapContent_LabelColor, #6a6d70);
+      transition: all 0.15s;
+      &.active {
+        background: #fff;
+        color: var(--sapBrandColor, #0854a0);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+    }
 
     .btn-danger {
       padding: 0.375rem 0.75rem;
@@ -529,7 +579,7 @@ export class ChatComponent implements OnDestroy, OnInit {
     }
   }
 
-  send(): void {
+  async send(): Promise<void> {
     const content = this.userInput.trim();
     if (!content || this.sending()) return;
 
@@ -538,13 +588,30 @@ export class ChatComponent implements OnDestroy, OnInit {
     this.sending.set(true);
     this.scrollToBottom();
 
-    // Build system messages: base prompt + optional document context
+    // Build system messages: base prompt + optional context
     const systemMessages: { role: string; content: string }[] = [
       { role: 'system', content: this.systemPrompt },
     ];
-    const docCtx = this.docContext.buildSystemContext();
-    if (docCtx) {
-      systemMessages.push({ role: 'system', content: docCtx });
+
+    // Mode-specific context retrieval
+    if (this.mode() === 'document') {
+      const docCtx = this.docContext.buildSystemContext();
+      if (docCtx) {
+        systemMessages.push({ role: 'system', content: docCtx });
+      }
+    } else if (this.mode() === 'library' && this.selectedStore()) {
+      try {
+        const ragRes = await firstValueFrom(this.vector.query(content, this.selectedStore()!));
+        if (ragRes.context_docs.length > 0) {
+          const contextText = ragRes.context_docs.map(d => d.content).join('\n\n');
+          systemMessages.push({
+            role: 'system',
+            content: `Use the following retrieved context from the knowledge base to answer the user query. If the information is not in the context, say so.\n\nContext:\n${contextText}`
+          });
+        }
+      } catch (err) {
+        console.warn('RAG retrieval failed, falling back to base model', err);
+      }
     }
 
     const payload: CompletionRequest = {
