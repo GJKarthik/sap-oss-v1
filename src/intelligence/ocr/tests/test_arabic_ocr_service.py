@@ -551,7 +551,6 @@ class TestPageTimeout:
         assert captured["timeout"] is not None
         assert 0 < captured["timeout"] <= 1.5
 
-
 # ---------------------------------------------------------------------------
 # Retry logic
 # ---------------------------------------------------------------------------
