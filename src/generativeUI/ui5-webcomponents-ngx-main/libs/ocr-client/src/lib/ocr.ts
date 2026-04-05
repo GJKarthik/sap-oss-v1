@@ -3,6 +3,38 @@ import { OCRConfig, ScanOptions, ScanResult } from './types';
 
 const DEFAULT_TIMEOUT = 120_000;
 
+/** First bytes of a PDF file (`%PDF`). */
+const PDF_MAGIC = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+
+function looksLikePdf(buffer: ArrayBuffer): boolean {
+  const u8 = new Uint8Array(buffer);
+  if (u8.length < PDF_MAGIC.length) {
+    return false;
+  }
+  for (let i = 0; i < PDF_MAGIC.length; i++) {
+    if (u8[i] !== PDF_MAGIC[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** First *maxBytes* of a blob (handles engines without ``slice().arrayBuffer``). */
+async function blobHeadArrayBuffer(blob: Blob, maxBytes: number): Promise<ArrayBuffer> {
+  const sliced = blob.slice(0, maxBytes);
+  if (typeof sliced.arrayBuffer === 'function') {
+    return sliced.arrayBuffer();
+  }
+  if (typeof blob.arrayBuffer === 'function') {
+    const full = await blob.arrayBuffer();
+    return full.byteLength <= maxBytes ? full : full.slice(0, maxBytes);
+  }
+  if (typeof Response !== 'undefined') {
+    return new Response(sliced).arrayBuffer();
+  }
+  throw new TypeError('Cannot read blob header: missing Blob#arrayBuffer');
+}
+
 /**
  * OCR client. One class, three methods.
  *
@@ -88,7 +120,11 @@ export class OCR {
       });
       if (!resp.ok) return false;
       const data = await resp.json();
-      return data.status === 'ok' || data.status === 'degraded';
+      return (
+        data.status === 'healthy' ||
+        data.status === 'ok' ||
+        data.status === 'degraded'
+      );
     } catch {
       return false;
     }
@@ -104,14 +140,16 @@ export class OCR {
       if (!resp.ok) throw new Error(`Cannot fetch ${input}: ${resp.status}`);
       const blob = await resp.blob();
       const name = input.split('/').pop() || 'document';
-      const isPdf = name.toLowerCase().endsWith('.pdf');
+      const head = await blobHeadArrayBuffer(blob, 8);
+      const isPdf =
+        name.toLowerCase().endsWith('.pdf') || looksLikePdf(head);
       return { file: new File([blob], name), isPdf };
     }
 
-    const name =
-      input instanceof File ? input.name : 'upload';
-    const isPdf = name.toLowerCase().endsWith('.pdf');
+    const name = input instanceof File ? input.name : 'upload';
+    const head = await blobHeadArrayBuffer(input, 8);
+    const isPdf =
+      name.toLowerCase().endsWith('.pdf') || looksLikePdf(head);
     return { file: input, isPdf };
   }
 }
-

@@ -1111,6 +1111,23 @@ class TestConfidenceAnalytics:
         assert "median_confidence" in s
         assert "total_words" in s
         assert s["total_pages"] == 1
+        assert s["pages_with_errors"] == 0
+        assert s["total_error_messages"] == 0
+
+    def test_summary_error_counts(self):
+        result = OCRResult(
+            file_path="/x.pdf",
+            total_pages=3,
+            pages=[
+                PageResult(page_number=1, text="a", errors=["e1", "e2"]),
+                PageResult(page_number=2, text="b", errors=[]),
+                PageResult(page_number=3, text="c", errors=["e3"]),
+            ],
+        )
+        s = ArabicOCRService.get_analytics(result)["summary"]
+        assert s["pages_with_errors"] == 2
+        assert s["total_error_messages"] == 3
+        assert s["error_rate"] == pytest.approx(2 / 3, abs=0.001)
 
     def test_analytics_empty_result(self):
         result = OCRResult(file_path="/empty.pdf", total_pages=0)

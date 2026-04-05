@@ -1,18 +1,26 @@
 """FastAPI REST service for the Arabic OCR module.
 
 Endpoints:
-    POST /ocr/pdf        — Upload a PDF and get OCR results
-    POST /ocr/image      — Upload an image and get OCR results
-    GET  /ocr/health     — Health check
+    POST /ocr/pdf           — Upload a PDF and get OCR results
+    POST /ocr/image         — Upload an image and get OCR results
+    GET  /ocr/health        — Health check (dependency report)
+    GET  /api/ocr/health    — Legacy minimal health (backward compatible)
+    POST /api/ocr/process   — Legacy PDF upload (same as ``/ocr/pdf``)
 
 Environment variables:
     OCR_LANGUAGES       Tesseract languages (default: ara+eng)
     OCR_DPI             PDF conversion DPI (default: 300)
     OCR_MAX_WORKERS     Parallel page workers (default: 2)
     OCR_MAX_CONCURRENT  Max concurrent OCR requests (default: 4)
+    OCR_CORS_ORIGINS    Comma-separated allowed origins for CORS. If unset,
+                        CORS middleware is not added. Use ``*`` for any origin
+                        (credentials disabled). Specific origins enable credentials.
 
 Start with:
     uvicorn intelligence.ocr.server:app --reload
+
+The ``intelligence.ocr.api`` module re-exports this same ``app`` for one
+entry point.
 """
 
 import asyncio
@@ -27,8 +35,10 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
 try:
-    from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
+    from fastapi import FastAPI, File, HTTPException, Query, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
 except ImportError:
@@ -71,18 +81,48 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configurable CORS — defaults to no origins allowed (secure by default).
-# Set OCR_ALLOWED_ORIGINS env var to a comma-separated list of allowed origins.
-_raw_origins = os.getenv("OCR_ALLOWED_ORIGINS", "")
-_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
+def _configure_cors(application: FastAPI) -> None:
+    """Add CORS when ``OCR_CORS_ORIGINS`` is set.
+
+    ``allow_origins=[\"*\"]`` is only used with ``allow_credentials=False``
+    (browser-compatible).
+    """
+    raw = os.getenv("OCR_CORS_ORIGINS", "").strip()
+    if not raw:
+        return
+    parts = [o.strip() for o in raw.split(",") if o.strip()]
+    if not parts:
+        return
+    if parts == ["*"]:
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    else:
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=parts,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+
+_configure_cors(app)
+
+
+def _content_is_pdf_magic(content: bytes) -> bool:
+    return len(content) >= 4 and content.startswith(b"%PDF")
+
+
+def _accepts_as_pdf(filename: Optional[str], content: bytes) -> bool:
+    if filename and filename.lower().endswith(".pdf"):
+        return True
+    return _content_is_pdf_magic(content)
 
 # Default service instance (can be reconfigured via env vars)
 _service: Optional[ArabicOCRService] = None
@@ -247,6 +287,62 @@ async def _send_batched_webhook(url: str, results: list) -> None:
     await _send_webhook(url, payload)
 
 
+async def _process_uploaded_pdf(
+    file: UploadFile,
+    start_page: Optional[int],
+    end_page: Optional[int],
+    detect_tables: bool,
+    callback_url: Optional[str],
+) -> JSONResponse:
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File exceeds maximum size of {MAX_UPLOAD_BYTES // (1024 * 1024)} MB",
+        )
+    if not _accepts_as_pdf(file.filename, content):
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+
+    if callback_url:
+        try:
+            callback_url = _validate_callback_url(callback_url)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+
+    sem = _get_semaphore()
+    if sem.locked():
+        raise HTTPException(
+            status_code=429,
+            detail="Too many concurrent OCR requests. Try again later.",
+        )
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp.write(content)
+        tmp.flush()
+        tmp_path = tmp.name
+
+    try:
+        async with sem:
+            service = _get_service()
+            result = await service.process_pdf_async(
+                tmp_path, start_page, end_page, detect_tables
+            )
+        result_dict = result.to_dict()
+        if callback_url:
+            asyncio.create_task(_send_webhook(callback_url, result_dict))
+        return JSONResponse(content=result_dict)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("OCR processing failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+
 @app.post("/ocr/pdf")
 async def ocr_pdf(
     file: UploadFile = File(...),
@@ -263,43 +359,28 @@ async def ocr_pdf(
     If ``callback_url`` is provided, the result is also POSTed to that
     URL as JSON once processing completes.
     """
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="File must be a PDF")
-    if callback_url:
-        try:
-            callback_url = _validate_callback_url(callback_url)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
+    return await _process_uploaded_pdf(
+        file, start_page, end_page, detect_tables, callback_url
+    )
 
-    sem = _get_semaphore()
-    if sem.locked():
-        raise HTTPException(
-            status_code=429,
-            detail="Too many concurrent OCR requests. Try again later.",
-        )
 
-    # Save upload to temp file (enforce size limit via streaming read)
-    content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        tmp.write(content)
-        tmp.flush()
-        tmp_path = tmp.name
+@app.get("/api/ocr/health")
+async def legacy_api_health() -> dict:
+    """Minimal health JSON for legacy ``/api/ocr/*`` clients."""
+    return {"status": "ok", "service": "arabic-ocr-api"}
 
-    try:
-        async with sem:
-            service = _get_service()
-            result = await service.process_pdf_async(
-                tmp_path, start_page, end_page, detect_tables
-            )
-        result_dict = result.to_dict()
-        if callback_url:
-            asyncio.create_task(_send_webhook(callback_url, result_dict))
-        return JSONResponse(content=result_dict)
-    except Exception as e:
-        logger.error("OCR processing failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        os.unlink(tmp_path)
+
+@app.post("/api/ocr/process")
+async def legacy_api_process(
+    file: UploadFile = File(...),
+    start_page: Optional[int] = Query(None, ge=1),
+    end_page: Optional[int] = Query(None, ge=1),
+    detect_tables: bool = Query(True),
+) -> JSONResponse:
+    """Legacy PDF upload path (same behaviour as ``POST /ocr/pdf``)."""
+    return await _process_uploaded_pdf(
+        file, start_page, end_page, detect_tables, callback_url=None
+    )
 
 
 @app.post("/ocr/image")
@@ -314,7 +395,12 @@ async def ocr_image(
     """
     from PIL import Image
 
-    content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File exceeds maximum size of {MAX_UPLOAD_BYTES // (1024 * 1024)} MB",
+        )
     try:
         image = Image.open(io.BytesIO(content))
     except Exception:
@@ -357,11 +443,18 @@ async def ocr_batch(
     all_results: list = []
 
     for file in files:
-        if not file.filename or not file.filename.lower().endswith(".pdf"):
+        content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            all_results.append({
+                "file": file.filename,
+                "error": f"File exceeds maximum size of "
+                f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB",
+            })
+            continue
+        if not _accepts_as_pdf(file.filename, content):
             all_results.append({"error": f"Not a PDF: {file.filename}"})
             continue
 
-        content = await _read_with_limit(file, MAX_UPLOAD_SIZE)
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             tmp.write(content)
             tmp.flush()
@@ -391,45 +484,3 @@ async def ocr_batch(
         "batch_size": len(all_results),
         "results": all_results,
     })
-
-
-# ---------------------------------------------------------------------------
-# Backwards-compatible route from deprecated api.py
-# ---------------------------------------------------------------------------
-
-@app.post("/api/ocr/process")
-async def legacy_process_pdf(
-    file: UploadFile = File(...),
-    start_page: Optional[int] = Query(None, ge=1),
-    end_page: Optional[int] = Query(None, ge=1),
-    detect_tables: bool = Query(True),
-) -> JSONResponse:
-    """Backwards-compatible endpoint delegating to ``/ocr/pdf``.
-
-    .. deprecated::
-        Use ``/ocr/pdf`` instead.  This endpoint exists only for
-        backwards compatibility and will be removed in a future release.
-    """
-    logger.warning(
-        "Deprecated endpoint /api/ocr/process called — migrate to /ocr/pdf"
-    )
-    return await ocr_pdf(
-        file=file,
-        start_page=start_page,
-        end_page=end_page,
-        detect_tables=detect_tables,
-        callback_url=None,
-    )
-
-
-@app.get("/api/ocr/health")
-async def legacy_health() -> dict:
-    """Backwards-compatible health endpoint delegating to ``/ocr/health``.
-
-    .. deprecated::
-        Use ``/ocr/health`` instead.
-    """
-    logger.warning(
-        "Deprecated endpoint /api/ocr/health called — migrate to /ocr/health"
-    )
-    return await health()

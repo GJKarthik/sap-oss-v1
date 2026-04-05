@@ -63,6 +63,7 @@ class AnalyticsSummary(TypedDict):
     total_words: int
     total_pages: int
     pages_with_errors: int
+    total_error_messages: int
     error_rate: float
 
 

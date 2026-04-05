@@ -86,6 +86,21 @@ class TestHealthEndpoint:
         assert data["status"] in ("healthy", "degraded")
         assert data["service"] == "arabic-ocr"
 
+    def test_legacy_api_health(self, client):
+        resp = client.get("/api/ocr/health")
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "status": "ok",
+            "service": "arabic-ocr-api",
+        }
+
+
+def test_api_module_reexports_server_app():
+    from ..api import app as api_app
+    from ..server import app as server_app
+
+    assert api_app is server_app
+
 
 # ---------------------------------------------------------------------------
 # PDF upload
@@ -114,6 +129,39 @@ class TestPDFEndpoint:
             files={"file": ("test.txt", io.BytesIO(content), "text/plain")},
         )
         assert resp.status_code == 400
+
+    def test_upload_pdf_magic_bytes_without_pdf_extension(self, client):
+        path = _make_real_pdf(1)
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+            resp = client.post(
+                "/ocr/pdf",
+                files={"file": ("document.bin", io.BytesIO(data), "application/octet-stream")},
+            )
+            assert resp.status_code == 200
+            assert "pages" in resp.json()
+        finally:
+            os.unlink(path)
+
+    def test_legacy_process_matches_pdf_endpoint(self, client):
+        path = _make_real_pdf(1)
+        try:
+            with open(path, "rb") as f:
+                p1 = client.post(
+                    "/ocr/pdf",
+                    files={"file": ("test.pdf", f, "application/pdf")},
+                )
+            with open(path, "rb") as f:
+                p2 = client.post(
+                    "/api/ocr/process",
+                    files={"file": ("test.pdf", f, "application/pdf")},
+                )
+            assert p1.status_code == 200
+            assert p2.status_code == 200
+            assert p1.json()["total_pages"] == p2.json()["total_pages"]
+        finally:
+            os.unlink(path)
 
     def test_upload_pdf_with_params(self, client):
         path = _make_real_pdf(2)

@@ -512,7 +512,10 @@ class ArabicOCRService:
         Returns a dict with:
           - per_page: list of {page, confidence, word_count, flagged}
           - histogram: confidence bucket counts (0-10, 10-20, ..., 90-100)
-          - summary: min/max/mean/median confidence, total words, error rate
+          - summary: min/max/mean/median confidence, total words,
+            ``pages_with_errors`` (count of pages with ≥1 error message),
+            ``total_error_messages`` (sum of error strings), and
+            ``error_rate`` (fraction of pages with errors).
 
         Args:
             result: An OCRResult to analyse.
@@ -523,12 +526,16 @@ class ArabicOCRService:
         page_stats = []
         all_confidences: List[float] = []
         total_words = 0
-        total_errors = 0
+        pages_with_errors_count = 0
+        total_error_messages = 0
 
         for page in result.pages:
             word_count = len(page.text.split()) if page.text else 0
             total_words += word_count
-            total_errors += len(page.errors)
+            err_n = len(page.errors)
+            total_error_messages += err_n
+            if err_n:
+                pages_with_errors_count += 1
             page_stats.append({
                 "page": page.page_number,
                 "confidence": round(page.confidence, 2),
@@ -567,9 +574,13 @@ class ArabicOCRService:
             "median_confidence": round(median, 2),
             "total_words": total_words,
             "total_pages": len(result.pages),
-            "pages_with_errors": total_errors,
+            "pages_with_errors": pages_with_errors_count,
+            "total_error_messages": total_error_messages,
             "error_rate": round(
-                total_errors / len(result.pages) if result.pages else 0, 4
+                pages_with_errors_count / len(result.pages)
+                if result.pages
+                else 0,
+                4,
             ),
         }
 
@@ -609,25 +620,32 @@ class ArabicOCRService:
             result.errors.append(f"Cannot open TIFF: {e}")
             return result
 
-        frames: List[Image.Image] = []
         try:
+            page_idx = 0
             while True:
-                frames.append(tiff.copy())
-                tiff.seek(tiff.tell() + 1)
-        except EOFError:
-            pass
+                page_idx += 1
+                frame = tiff.copy()
+                try:
+                    rgb = frame.convert("RGB")
+                    page_img = PageImage(
+                        page_number=page_idx,
+                        image=rgb,
+                        width=frame.width,
+                        height=frame.height,
+                        dpi=self.dpi,
+                    )
+                    page_result = self._process_page(page_img, detect_tables)
+                    result.pages.append(page_result)
+                finally:
+                    frame.close()
+                try:
+                    tiff.seek(tiff.tell() + 1)
+                except EOFError:
+                    break
+        finally:
+            tiff.close()
 
-        result.total_pages = len(frames)
-        for i, frame in enumerate(frames):
-            page_img = PageImage(
-                page_number=i + 1,
-                image=frame.convert("RGB"),
-                width=frame.width,
-                height=frame.height,
-                dpi=self.dpi,
-            )
-            page_result = self._process_page(page_img, detect_tables)
-            result.pages.append(page_result)
+        result.total_pages = len(result.pages)
 
         elapsed = time.monotonic() - t0
         result.total_processing_time_s = round(elapsed, 4)
