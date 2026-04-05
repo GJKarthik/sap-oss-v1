@@ -1,0 +1,76 @@
+<div class="analytics-page" [dir]="i18n.dir()">
+  <div class="analytics-header">
+    <h1>{{ i18n.t('analytics.title') }}</h1>
+    <p class="analytics-subtitle">{{ i18n.t('analytics.subtitle') }}</p>
+  </div>
+
+  <div class="analytics-controls card">
+    <div class="field-group">
+      <label for="store-select">{{ i18n.t('analytics.selectStore') }}</label>
+      <select id="store-select" [ngModel]="selectedStore()" (ngModelChange)="onStoreChange($event)">
+        @for (store of vectorStores(); track store.table_name) {
+          <option [value]="store.table_name">{{ store.table_name }}</option>
+        }
+      </select>
+    </div>
+    <button class="btn-outline" (click)="loadAnalytics(selectedStore()!)" [disabled]="isLoading() || !selectedStore()">
+      @if (isLoading()) { <span class="spinner"></span> }
+      {{ i18n.t('analytics.refresh') }}
+    </button>
+  </div>
+
+  @if (analyticsData()) {
+    <div class="summary-grid">
+      <div class="stat-card card">
+        <span class="stat-label">{{ i18n.t('analytics.totalRevenue') }}</span>
+        <span class="stat-value">{{ analyticsData().summary.total_revenue | localeNumber:'decimal':0:0 }}</span>
+        <span class="stat-meta">SAR</span>
+      </div>
+      <div class="stat-card card">
+        <span class="stat-label">{{ i18n.t('analytics.totalProfit') }}</span>
+        <span class="stat-value" [class]="getTrendClass(analyticsData().summary.total_profit)">
+          {{ analyticsData().summary.total_profit | localeNumber:'decimal':0:0 }}
+        </span>
+        <span class="stat-meta">SAR</span>
+      </div>
+      <div class="stat-card card">
+        <span class="stat-label">{{ i18n.t('analytics.docCount') }}</span>
+        <span class="stat-value">{{ analyticsData().summary.count }}</span>
+        <span class="stat-meta">{{ i18n.t('ocr.page') }}s</span>
+      </div>
+    </div>
+
+    <div class="analytics-content card">
+      <h3>{{ i18n.t('analytics.trendsTitle') }}</h3>
+      <div class="metrics-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ i18n.t('analytics.col.source') }}</th>
+              <th>{{ i18n.t('analytics.col.date') }}</th>
+              <th class="text-end">{{ i18n.t('analytics.col.revenue') }}</th>
+              <th class="text-end">{{ i18n.t('analytics.col.profit') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of analyticsData().metrics; track row.source + row.date) {
+              <tr>
+                <td><bdi>{{ row.source }}</bdi></td>
+                <td>{{ row.date | localeDate:'date' }}</td>
+                <td class="text-end">{{ row.revenue | localeNumber:'decimal':0:0 }}</td>
+                <td class="text-end" [class]="getTrendClass(row.profit)">
+                  {{ row.profit | localeNumber:'decimal':0:0 }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else if (isLoading()) {
+    <div class="loading-state">
+      <ui5-busy-indicator active size="L"></ui5-busy-indicator>
+      <p>{{ i18n.t('analytics.loading') }}</p>
+    </div>
+  }
+</div>

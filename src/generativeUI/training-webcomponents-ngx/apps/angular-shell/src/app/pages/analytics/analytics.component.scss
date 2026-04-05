@@ -1,0 +1,108 @@
+.analytics-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.analytics-header {
+  margin-bottom: 2rem;
+  h1 { margin: 0; font-size: 1.75rem; color: var(--sapTextColor, #32363a); }
+  .analytics-subtitle { margin: 0.5rem 0 0; color: var(--sapContent_LabelColor, #6a6d70); }
+}
+
+.card {
+  background: var(--sapBaseColor, #fff);
+  border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.analytics-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  label { font-size: 0.8125rem; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70); }
+}
+
+select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--sapField_BorderColor, #89919a);
+  border-radius: 0.375rem;
+  min-width: 250px;
+  background: #fff;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  .stat-label { font-size: 0.875rem; color: var(--sapContent_LabelColor, #6a6d70); }
+  .stat-value { font-size: 2rem; font-weight: 700; color: var(--sapTextColor, #32363a); }
+  .stat-meta { font-size: 0.75rem; color: #999; font-weight: 600; }
+  
+  .trend-up { color: var(--sapIndicationColor_4, #00701a); }
+  .trend-down { color: var(--sapIndicationColor_3, #bb0000); }
+}
+
+.analytics-content {
+  h3 { margin: 0 0 1.5rem; font-size: 1.125rem; }
+}
+
+.metrics-table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  
+  th {
+    text-align: start;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    font-weight: 600;
+  }
+  
+  td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .text-end { text-align: end; }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem;
+  gap: 1rem;
+  p { color: var(--sapContent_LabelColor, #6a6d70); }
+}
+
+.spinner {
+  display: inline-block; width: 1rem; height: 1rem; border: 2px solid rgba(0,0,0,0.1);
+  border-radius: 50%; border-top-color: var(--sapBrandColor, #0854a0);
+  animation: spin 1s linear infinite;
+  margin-inline-end: 0.5rem;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

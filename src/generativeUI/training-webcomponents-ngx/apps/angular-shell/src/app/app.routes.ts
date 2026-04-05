@@ -78,6 +78,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'analytics',
+        loadComponent: () =>
+          import('./pages/analytics/analytics.component').then(
+            (m) => m.AnalyticsComponent
+          ),
+      },
+      {
         path: 'arabic-wizard',
         loadComponent: () =>
           import('./pages/arabic-wizard/arabic-wizard.component').then(

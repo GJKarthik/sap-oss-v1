@@ -23,6 +23,7 @@
   "nav.chat": "Chat",
   "nav.compare": "A/B Compare",
   "nav.semanticSearch": "Semantic Search",
+  "nav.analytics": "Financial Analytics",
 
   "mode.novice": "Novice",
   "mode.intermediate": "Intermediate",
@@ -528,6 +529,21 @@
   "search.noResults": "No matching documents found in this knowledge base.",
   "search.error.loadStores": "Failed to load knowledge bases",
   "search.error.queryFailed": "Search query failed",
+
+  "analytics.title": "Financial Analytics",
+  "analytics.subtitle": "Bilingual trend analysis across indexed document library",
+  "analytics.selectStore": "Select Knowledge Base",
+  "analytics.refresh": "Refresh Data",
+  "analytics.totalRevenue": "Total Revenue",
+  "analytics.totalProfit": "Total Net Profit",
+  "analytics.docCount": "Documents Indexed",
+  "analytics.trendsTitle": "Financial Trends by Document",
+  "analytics.col.source": "Document Source",
+  "analytics.col.date": "Ingestion Date",
+  "analytics.col.revenue": "Revenue",
+  "analytics.col.profit": "Net Profit",
+  "analytics.loading": "Aggregating financial data from HANA...",
+  "analytics.error.loadFailed": "Failed to aggregate analytics data",
 
   "nav.workflow": "Workflow Designer",
 
