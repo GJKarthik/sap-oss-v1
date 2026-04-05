@@ -45,6 +45,10 @@ interface JobResponse {
     perplexity: number;
     eval_loss: number;
     runtime_sec: number;
+    cer?: number;
+    wer?: number;
+    sql_validity?: number;
+    arabic_score?: number;
   };
 }
 
@@ -333,6 +337,10 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                           <div class="eval-metrics mt-1">
                             <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
                             <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
+                            @if (j.evaluation.cer) { <span class="badge badge--warn" title="Character Error Rate">CER: {{ j.evaluation.cer }}</span> }
+                            @if (j.evaluation.wer) { <span class="badge badge--warn" title="Word Error Rate">WER: {{ j.evaluation.wer }}</span> }
+                            @if (j.evaluation.sql_validity) { <span class="badge badge--success" title="SQL Syntax Validity">SQL: {{ (j.evaluation.sql_validity * 100).toFixed(0) }}%</span> }
+                            @if (j.evaluation.arabic_score) { <span class="badge badge--info" title="Linguistic Quality Score">AR: {{ (j.evaluation.arabic_score * 100).toFixed(0) }}%</span> }
                             <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
                           </div>
                         }
@@ -568,6 +576,21 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     .badge--best {
       background: #e0f2f1;
       color: #00695c;
+    }
+
+    .badge--warn {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .badge--success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .badge--info {
+      background: #e1f5fe;
+      color: #0277bd;
     }
 
     .t4-warn {

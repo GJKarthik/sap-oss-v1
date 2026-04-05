@@ -1168,20 +1168,28 @@ async def real_worker_task(job_id: str):
                 "timestamp": datetime.utcnow().isoformat() + "Z"
             }
 
-            if process_output.startswith("{") and "loss" in process_output:
+            if process_output.startswith("{"):
                 try:
                     metrics = json.loads(process_output)
-                    if "eval_loss" in metrics and "perplexity" in metrics:
+                    
+                    # Handle final evaluation payload
+                    if "final_evaluation" in metrics:
+                        eval_data = metrics["final_evaluation"]
                         job_data = get_job(job_id)
                         job_data["evaluation"] = {
-                            "eval_loss": round(metrics["eval_loss"], 4),
-                            "perplexity": round(metrics["perplexity"], 2),
-                            "runtime_sec": metrics.get("runtime_sec", 0)
+                            "eval_loss": eval_data.get("eval_loss", 0),
+                            "perplexity": eval_data.get("perplexity", 0),
+                            "runtime_sec": eval_data.get("runtime_sec", 0),
+                            "cer": eval_data.get("cer", 0),
+                            "wer": eval_data.get("wer", 0),
+                            "sql_validity": eval_data.get("sql_validity", 0),
+                            "arabic_score": eval_data.get("arabic_score", 0)
                         }
                         save_job(job_data)
                         log_entry["step"] = "✅ Final Evaluation Complete"
-                        # Broadcast evaluation payload for chart overlay
                         await broadcast_job(job_id, {"type": "evaluation", "data": job_data["evaluation"]})
+                    
+                    # Handle intermediate loss logs
                     elif "loss" in metrics:
                         loss_val = float(metrics["loss"])
                         ep = float(metrics.get("epoch", 0))
@@ -1193,14 +1201,13 @@ async def real_worker_task(job_id: str):
                         job_data["history"].append(history_point)
                         save_job(job_data)
                         log_entry["loss"] = loss_val
-                        # Broadcast chart data point live
                         await broadcast_job(job_id, {
                             "type": "loss",
                             "point": history_point,
                             "progress": new_progress
                         })
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("failed_to_parse_metrics", error=str(e), output=process_output)
             
             # Broadcast raw log line for the terminal
             await broadcast_job(job_id, {"type": "log", "data": log_entry})

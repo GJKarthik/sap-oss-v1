@@ -530,6 +530,21 @@
   "search.error.loadStores": "فشل تحميل قواعد المعرفة",
   "search.error.queryFailed": "فشل استعلام البحث",
 
+  "analytics.title": "التحليلات المالية",
+  "analytics.subtitle": "تحليل الاتجاهات ثنائي اللغة عبر مكتبة المستندات المفهرسة",
+  "analytics.selectStore": "اختر قاعدة المعرفة",
+  "analytics.refresh": "تحديث البيانات",
+  "analytics.totalRevenue": "إجمالي الإيرادات",
+  "analytics.totalProfit": "إجمالي صافي الربح",
+  "analytics.docCount": "المستندات المفهرسة",
+  "analytics.trendsTitle": "الاتجاهات المالية حسب المستند",
+  "analytics.col.source": "مصدر المستند",
+  "analytics.col.date": "تاريخ الإدخال",
+  "analytics.col.revenue": "الإيرادات",
+  "analytics.col.profit": "صافي الربح",
+  "analytics.loading": "تجميع البيانات المالية من HANA...",
+  "analytics.error.loadFailed": "فشل تجميع بيانات التحليلات",
+
   "nav.workflow": "مصمم سير العمل",
 
   "workflow.title": "مصمم سير العمل",
