@@ -32,7 +32,6 @@ import { SacCoreModule, SacAuthService } from '@sap-oss/sac-webcomponents-ngx/co
 import { SAC_AI_BACKEND_URL, SAC_TENANT_URL, SAC_MODEL_ID } from './tokens';
 import { SacAiChatPanelComponent } from './chat/sac-ai-chat-panel.component';
 import { SacAiDataWidgetComponent } from './data-widget/sac-ai-data-widget.component';
-import { getTenantFromTenantUrl, normalizeConfiguredUrl } from './url-validation';
 
 // P2-002: Import expanded widget components
 import { SacFilterDropdownComponent, SacFilterCheckboxComponent } from './components/sac-filter.component';
@@ -85,7 +84,7 @@ class SacAiWidgetEntry extends HTMLElement {
       }
 
       this.bootstrapped = true;
-      this.startBootstrap();
+      void this.bootstrap();
       return;
     }
 
@@ -103,14 +102,6 @@ class SacAiWidgetEntry extends HTMLElement {
   // Bootstrap
   // ---------------------------------------------------------------------------
 
-  private startBootstrap(): void {
-    void this.bootstrap().catch((error: unknown) => {
-      this.bootstrapped = false;
-      const message = error instanceof Error ? error.message : String(error);
-      this.renderBootstrapError(message);
-    });
-  }
-
   private async bootstrap(): Promise<void> {
     const {
       capBackendUrl = '',
@@ -119,21 +110,19 @@ class SacAiWidgetEntry extends HTMLElement {
       sacBearerToken = '',
     } = this.props;
 
-    const validatedBackendUrl = normalizeConfiguredUrl(capBackendUrl, 'capBackendUrl');
-    const validatedTenantUrl = normalizeConfiguredUrl(tenantUrl, 'tenantUrl');
-    const tenant = getTenantFromTenantUrl(validatedTenantUrl);
+    const tenant = tenantUrl.replace(/^https?:\/\//, '').split('.')[0] ?? 'default';
 
     this.appRef = await createApplication({
       providers: [
         importProvidersFrom(
           SacCoreModule.forRoot({
-            apiUrl: validatedTenantUrl,
+            apiUrl: tenantUrl,
             authToken: sacBearerToken,
             tenant,
           }),
         ),
-        { provide: SAC_AI_BACKEND_URL, useValue: validatedBackendUrl },
-        { provide: SAC_TENANT_URL, useValue: validatedTenantUrl },
+        { provide: SAC_AI_BACKEND_URL, useValue: capBackendUrl },
+        { provide: SAC_TENANT_URL, useValue: tenantUrl },
         { provide: SAC_MODEL_ID, useValue: modelId },
       ],
     });
@@ -174,29 +163,6 @@ class SacAiWidgetEntry extends HTMLElement {
     this.syncToken();
     this.syncInputs();
     this.flushViews();
-  }
-
-  private renderBootstrapError(message: string): void {
-    const shadow = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
-    shadow.innerHTML = '';
-
-    const host = document.createElement('div');
-    host.setAttribute('role', 'alert');
-    host.style.cssText = [
-      'display:flex',
-      'align-items:center',
-      'justify-content:center',
-      'height:100%',
-      'padding:1rem',
-      'box-sizing:border-box',
-      'background:#fff5f5',
-      'border:1px solid #d32f2f',
-      'color:#7f1d1d',
-      'font:14px/1.5 sans-serif',
-      'text-align:center',
-    ].join(';');
-    host.textContent = `SAC AI Widget configuration error: ${message}`;
-    shadow.appendChild(host);
   }
 
   private syncToken(): void {

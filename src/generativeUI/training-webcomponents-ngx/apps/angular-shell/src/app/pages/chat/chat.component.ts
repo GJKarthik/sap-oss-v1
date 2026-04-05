@@ -5,7 +5,6 @@ import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { DocumentContextService } from '../../services/document-context.service';
 import { LocaleDatePipe } from '../../shared/pipes/locale-date.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -65,12 +64,6 @@ interface CompletionResponse {
           <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
         </div>
         <button class="btn-danger" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</button>
-        @if (docContext.hasContext()) {
-          <div class="document-context-badge">
-            <span class="doc-badge-text"><bdi>{{ i18n.t('chat.documentContextBadge', { name: docContext.context()?.documentName ?? '' }) }}</bdi></span>
-            <button class="btn-clear-ctx" (click)="clearDocumentContext()">{{ i18n.t('chat.clearDocumentContext') }}</button>
-          </div>
-        }
         @if (lastUsage()) {
           <div class="usage-info">
             <span class="text-small text-muted">{{ i18n.t('chat.lastTokens', { count: lastUsage()?.total_tokens ?? 0 }) }}</span>
@@ -86,9 +79,6 @@ interface CompletionResponse {
               <span class="empty-icon"><ui5-icon name="discussion-2"></ui5-icon></span>
               <p>{{ i18n.t('chat.emptyState') }}</p>
               <div class="suggestion-chips">
-                @if (docContext.hasContext()) {
-                  <button class="chip chip--doc" (click)="usePrompt(i18n.t('chat.documentSuggestion'))"><bdi>{{ i18n.t('chat.documentSuggestion') }}</bdi></button>
-                }
                 @for (s of suggestions(); track s) {
                   <button class="chip" (click)="usePrompt(s)"><bdi>{{ s }}</bdi></button>
                 }
@@ -200,42 +190,6 @@ interface CompletionResponse {
     }
 
     .usage-info { padding-top: 0.25rem; }
-
-    .document-context-badge {
-      padding: 0.5rem;
-      background: var(--sapInformationBackground, #e0f0ff);
-      border: 1px solid var(--sapInformationColor, #0854a0);
-      border-radius: 0.375rem;
-      font-size: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-    }
-
-    .doc-badge-text {
-      color: var(--sapInformationColor, #0854a0);
-      font-weight: 600;
-      word-break: break-word;
-    }
-
-    .btn-clear-ctx {
-      padding: 0.25rem 0.5rem;
-      background: transparent;
-      color: var(--sapNegativeColor, #b00);
-      border: 1px solid var(--sapNegativeColor, #b00);
-      border-radius: 0.2rem;
-      cursor: pointer;
-      font-size: 0.7rem;
-      align-self: flex-start;
-      &:hover { background: #ffebee; }
-    }
-
-    .chip--doc {
-      background: var(--sapInformationBackground, #e0f0ff);
-      border-color: var(--sapInformationColor, #0854a0);
-      color: var(--sapInformationColor, #0854a0);
-      font-weight: 600;
-    }
 
     .chat-main {
       flex: 1;
@@ -403,7 +357,6 @@ export class ChatComponent implements OnDestroy, OnInit {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
-  readonly docContext = inject(DocumentContextService);
   private readonly destroy$ = new Subject<void>();
 
   readonly messages = signal<ChatMessage[]>([]);
@@ -449,29 +402,6 @@ export class ChatComponent implements OnDestroy, OnInit {
 
   ngOnInit(): void {
     this.loadModels();
-    this.initDocumentContext();
-  }
-
-  /** Handle document context passed from OCR page. */
-  private initDocumentContext(): void {
-    if (!this.docContext.hasContext()) return;
-
-    // Add document context as a system message in the chat
-    const docSystemMsg = this.docContext.buildSystemContext();
-    if (docSystemMsg) {
-      this.messages.update((msgs: ChatMessage[]) => [
-        ...msgs,
-        { role: 'system', content: docSystemMsg, ts: new Date() },
-      ]);
-    }
-
-    // If there's an initial prompt (from "Analyze Document"), auto-send it
-    const initialPrompt = this.docContext.consumeInitialPrompt();
-    if (initialPrompt) {
-      this.userInput = initialPrompt;
-      // Delay to allow UI to render first
-      setTimeout(() => this.send(), 100);
-    }
   }
 
   ngOnDestroy(): void {
@@ -519,25 +449,14 @@ export class ChatComponent implements OnDestroy, OnInit {
     this.sending.set(true);
     this.scrollToBottom();
 
-    // Build system messages: base prompt + optional document context
-    const systemMessages: { role: string; content: string }[] = [
-      { role: 'system', content: this.systemPrompt },
-    ];
-    const docCtx = this.docContext.buildSystemContext();
-    if (docCtx) {
-      systemMessages.push({ role: 'system', content: docCtx });
-    }
-
     const payload: CompletionRequest = {
       model: this.model,
       stream: false,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
       messages: [
-        ...systemMessages,
-        ...this.messages()
-          .filter((m: ChatMessage) => m.role !== 'system')
-          .map((m: ChatMessage) => ({ role: m.role, content: m.content })),
+        { role: 'system', content: this.systemPrompt },
+        ...this.messages().map((m: ChatMessage) => ({ role: m.role, content: m.content })),
       ],
     };
 
@@ -563,15 +482,7 @@ export class ChatComponent implements OnDestroy, OnInit {
   clearChat(): void {
     this.messages.set([]);
     this.lastUsage.set(null);
-    this.docContext.clear();
     this.toast.info(this.i18n.t('chat.cleared'));
-  }
-
-  clearDocumentContext(): void {
-    this.docContext.clear();
-    // Remove the system message from the chat
-    this.messages.update((msgs: ChatMessage[]) => msgs.filter(m => m.role !== 'system'));
-    this.toast.info(this.i18n.t('chat.documentContextCleared'));
   }
 
   private scrollToBottom(): void {

@@ -107,13 +107,6 @@ odps_compliance_score(Id, 9) :-
 # ------------------------------------------------------------
 
 # Applications have additional requirements beyond base ODPS
-#
-# petri_stage(App, Stage) is NOT defined here: it is supplied at runtime by the
-# Colored Petri Net engine in @sap-ai-sdk/mcp-server (orchestration_run on
-# odps_close_process, cpn_reset/cpn_fire/cpn_step). Export those facts into the
-# Mangle fact store or query mangle_query(predicate="petri_stage") over MCP.
-# Example static fact for offline tests only:
-#   petri_stage("example_app", "S02").
 
 odps_incomplete(App, "no_api_endpoints") :-
     data_product(App, _, "application", _),

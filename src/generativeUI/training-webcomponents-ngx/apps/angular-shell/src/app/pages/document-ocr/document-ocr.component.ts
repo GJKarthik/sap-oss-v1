@@ -1,60 +1,76 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, computed,
-  OnDestroy, CUSTOM_ELEMENTS_SCHEMA,
+  CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { I18nService } from '../../services/i18n.service';
-import { OcrService, OcrResult, FinancialField, OcrDetectedTable, OcrHealthReport } from '../../services/ocr.service';
-import { UserSettingsService } from '../../services/user-settings.service';
-import { DocumentContextService } from '../../services/document-context.service';
+import {
+  OcrService, OcrResult, FinancialField, OcrDetectedTable, OcrHealthStatus,
+} from '../../services/ocr.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
-import { BilingualDateComponent } from '../../shared/components/bilingual-date/bilingual-date.component';
-import { GlossaryHighlightPipe } from '../../shared/pipes/glossary-highlight.pipe';
-import { VectorService, VectorStore } from '../../services/vector.service';
-
-type NormalTab = 'text' | 'tables' | 'financial' | 'metadata';
-type ExpertTab = 'text' | 'fields' | 'qa' | 'export';
-type PageStatus = 'pending' | 'approved' | 'flagged';
-type ExportFormat = 'jsonl' | 'annotated' | 'pdf';
+import { UserSettingsService } from '../../services/user-settings.service';
+import { DocumentContextService } from '../../services/document-context.service';
 
 export interface OcrCurationState {
-  result: OcrResult | null;
+  /** The raw PDF File object uploaded by the user. */
   sourceFile: File | null;
+  /** OCR result returned from the backend. */
+  result: OcrResult | null;
+  /** Currently viewed page (1-based). */
   activePage: number;
-  normalTab: NormalTab;
-  expertTab: ExpertTab;
+  /** Active tab in normal (non-expert) mode. */
+  normalTab: 'text' | 'tables' | 'financial' | 'metadata';
+  /** Active tab in expert mode. */
+  expertTab: 'text' | 'fields' | 'qa' | 'export';
+  /** Per-page correction strings keyed by page number. */
   corrections: Record<number, string>;
+  /** Ground truth strings keyed by field id. */
   groundTruth: Record<string, string | null>;
-  pageStatus: Record<number, PageStatus>;
+  /** Per-page curation status. */
+  pageStatus: Record<number, 'pending' | 'approved' | 'flagged'>;
+  /** Per-page review notes keyed by page number. */
   reviewNotes: Record<number, string>;
+  /** Whether a file upload/send is in progress. */
   uploading: boolean;
+  /** Whether OCR processing is in progress. */
   processing: boolean;
+  /** Upload progress 0–100. */
   progress: number;
 }
 
 @Component({
   selector: 'app-document-ocr',
   standalone: true,
-  imports: [CommonModule, LocaleNumberPipe, BilingualDateComponent, GlossaryHighlightPipe],
+  imports: [CommonModule, LocaleNumberPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './document-ocr.component.html',
   styleUrls: ['./document-ocr.component.scss'],
 })
-export class DocumentOcrComponent implements OnDestroy {
+export class DocumentOcrComponent {
   readonly i18n = inject(I18nService);
   private readonly ocr = inject(OcrService);
-  private readonly userSettings = inject(UserSettingsService);
-  private readonly documentContext = inject(DocumentContextService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
-  private readonly vector = inject(VectorService);
+  private readonly userSettings = inject(UserSettingsService);
+  private readonly documentContext = inject(DocumentContextService);
 
-  readonly state: OcrCurationState = {
-    result: null,
+  // Canvas ref for pdf.js rendering
+  @ViewChild('pageCanvas') private _canvasRef!: ElementRef<HTMLCanvasElement>;
+
+  // Correction editor ref (expert mode)
+  @ViewChild('correctionEditor') private _editorRef!: ElementRef<HTMLTextAreaElement>;
+
+  // Component-level health signals (not in curation state)
+  readonly serviceAvailable = signal(false);
+  readonly missingDeps = signal<string[]>([]);
+
+  // Curation state (single source of truth)
+  private readonly _state = signal<OcrCurationState>({
     sourceFile: null,
+    result: null,
     activePage: 1,
     normalTab: 'text',
     expertTab: 'text',
@@ -65,18 +81,38 @@ export class DocumentOcrComponent implements OnDestroy {
     uploading: false,
     processing: false,
     progress: 0,
-  };
+  });
 
-  private readonly _state = signal<OcrCurationState>({ ...this.state });
-  readonly serviceAvailable = signal(true);
-  readonly missingDeps = signal<string[]>([]);
-  readonly isDragOver = signal(false);
+  // Canvas zoom level
+  readonly canvasZoom = signal(1);
 
+  // Width of the unscaled page in PDF user units (set after rendering)
+  private readonly _currentPageWidth = signal(0);
+
+  // Public readonly state accessor
+  getState(): OcrCurationState {
+    return this._state();
+  }
+
+  // Derived signals
+  readonly isProcessing = computed(() => this._state().processing);
+  readonly progress = computed(() => this._state().progress);
+  readonly result = computed(() => this._state().result);
+
+  // Health status derived for template compatibility
+  readonly healthStatus = computed(() =>
+    this.serviceAvailable()
+      ? ({ status: 'healthy' } as OcrHealthStatus)
+      : ({ status: 'unavailable' } as OcrHealthStatus)
+  );
+
+  // Expert mode: derived from UserSettingsService.mode()
   readonly isExpert = computed(() => this.userSettings.mode() === 'expert');
 
-  readonly vectorStores = signal<VectorStore[]>([]);
-  readonly indexingTo = signal<string | null>(null);
-  readonly aiExtraction = computed(() => (this._state() as any).aiResult);
+  readonly pdfDisabled = computed(() => !this.serviceAvailable());
+
+  readonly totalPages = computed(() => this._state().result?.total_pages ?? 0);
+  readonly currentPage = computed(() => this._state().activePage);
 
   readonly currentPageResult = computed(() => {
     const s = this._state();
@@ -84,83 +120,79 @@ export class DocumentOcrComponent implements OnDestroy {
     return s.result.pages.find(p => p.page_number === s.activePage) ?? null;
   });
 
-  readonly financialFields = computed(() => {
+  readonly currentPageText = computed(() => {
     const s = this._state();
-    if (!s.result) return [];
-    return this.ocr.extractFinancialFieldsAll(s.result);
+    const page = this.currentPageResult();
+    if (!page) return '';
+    return s.corrections[s.activePage] ?? page.text;
   });
 
-  readonly allTables = computed(() => {
-    const s = this._state();
-    if (!s.result) return [];
-    return s.result.pages.flatMap(p => p.tables);
+  readonly currentPageTables = computed(() => this.currentPageResult()?.tables ?? []);
+
+  readonly financialFields = computed(() => {
+    const r = this._state().result;
+    if (!r) return [];
+    return this.ocr.extractFinancialFields(r);
   });
 
   readonly allText = computed(() => {
-    const s = this._state();
-    if (!s.result) return '';
-    return s.result.pages.map(p => s.corrections[p.page_number] ?? p.text).join('\n\n---\n\n');
+    const r = this._state().result;
+    if (!r) return '';
+    return r.pages.map(p => {
+      const s = this._state();
+      return s.corrections[p.page_number] ?? p.text;
+    }).join('\n\n---\n\n');
   });
 
-  readonly qaStats = computed(() => {
-    const s = this._state();
-    const total = s.result?.total_pages ?? 0;
-    let approved = 0, pending = 0, flagged = 0;
-    for (let i = 1; i <= total; i++) {
-      const st = s.pageStatus[i] ?? 'pending';
-      if (st === 'approved') approved++;
-      else if (st === 'flagged') flagged++;
-      else pending++;
-    }
-    return { approved, pending, flagged, total };
-  });
-
-  readonly pdfDisabled = computed(() => {
-    return this.missingDeps().some(d => d.includes('reportlab') || d.includes('pypdf'));
-  });
-
-  readonly exportFormat = signal<ExportFormat>('jsonl');
-  readonly includeApproved = signal(true);
-  readonly includeFlagged = signal(false);
-  readonly includeGroundTruth = signal(true);
-
-  readonly normalTabs: NormalTab[] = ['text', 'tables', 'financial', 'metadata'];
-  readonly expertTabs: ExpertTab[] = ['text', 'fields', 'qa', 'export'];
-
-  private _healthInterval: ReturnType<typeof setInterval> | null = null;
+  readonly isDragOver = signal(false);
+  readonly activeTab = signal<'text' | 'tables' | 'financial' | 'metadata'>('text');
+  readonly tabs: ('text' | 'tables' | 'financial' | 'metadata')[] = ['text', 'tables', 'financial', 'metadata'];
 
   constructor() {
-    this.pollHealth();
-    this._healthInterval = setInterval(() => this.pollHealth(), 30_000);
-    this.loadVectorStores();
-  }
+    // Poll health on startup
+    this._pollHealth();
 
-  loadVectorStores(): void {
-    this.vector.fetchStores().subscribe(stores => this.vectorStores.set(stores));
-  }
-
-  pollHealth(): void {
-    this.ocr.checkHealth().subscribe({
-      next: (report) => this._applyHealth(report),
-      error: () => {
-        this.serviceAvailable.set(false);
-        this.missingDeps.set(['unknown']);
-      },
+    // Auto-render page when result/page/zoom changes in expert mode
+    effect(() => {
+      const s = this._state();
+      const zoom = this.canvasZoom(); // track zoom changes reactively
+      if (s.result && s.sourceFile && this.isExpert()) {
+        this._renderPage(s.activePage, s.sourceFile, zoom);
+      }
     });
   }
 
-  private _applyHealth(report: OcrHealthReport): void {
-    const healthy = report.status !== 'unhealthy';
-    this.serviceAvailable.set(healthy);
-    this.missingDeps.set([...(report.missing_optional ?? []), ...(report.missing_required ?? [])]);
+  // ─── State mutation helper ──────────────────────────────────────────────────
+
+  _mutate(fn: (draft: OcrCurationState) => void): void {
+    this._state.update(s => {
+      const copy = {
+        ...s,
+        corrections: { ...s.corrections },
+        groundTruth: { ...s.groundTruth },
+        pageStatus: { ...s.pageStatus },
+        reviewNotes: { ...s.reviewNotes },
+      };
+      fn(copy);
+      return copy;
+    });
   }
 
-  ngOnDestroy(): void {
-    if (this._healthInterval !== null) {
-      clearInterval(this._healthInterval);
-      this._healthInterval = null;
-    }
+  // ─── Health ─────────────────────────────────────────────────────────────────
+
+  private _applyHealth(status: OcrHealthStatus): void {
+    this.serviceAvailable.set(status.status !== 'unavailable');
+    // missingDeps would come from a richer health report; default to empty
+    this.missingDeps.set([]);
   }
+
+  private _pollHealth(): void {
+    this.ocr.checkHealth().subscribe(status => {
+      this._applyHealth(status);
+    });
+  }
+
+  // ─── File handling ───────────────────────────────────────────────────────────
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -178,12 +210,16 @@ export class DocumentOcrComponent implements OnDestroy {
     event.stopPropagation();
     this.isDragOver.set(false);
     const files = event.dataTransfer?.files;
-    if (files?.length) this.handleFile(files[0]);
+    if (files?.length) {
+      this.handleFile(files[0]);
+    }
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files?.length) this.handleFile(input.files[0]);
+    if (input.files?.length) {
+      this.handleFile(input.files[0]);
+    }
   }
 
   handleFile(file: File): void {
@@ -197,139 +233,121 @@ export class DocumentOcrComponent implements OnDestroy {
     }
     this._mutate(s => {
       s.sourceFile = file;
-      s.uploading = true;
-      s.processing = false;
-      (s as any).extractingAi = false;
-      s.progress = 0;
       s.result = null;
-      (s as any).aiResult = null;
-      s.corrections = {};
-      s.groundTruth = {};
-      s.pageStatus = {};
-      s.reviewNotes = {};
       s.activePage = 1;
+      s.corrections = {};
+      s.pageStatus = {};
+      s.processing = true;
+      s.progress = 0;
     });
-    this._uploadFile(file);
+    this._processFile(file);
   }
 
   replaceFile(): void {
     this._mutate(s => {
       s.sourceFile = null;
       s.result = null;
-      (s as any).aiResult = null;
+      s.activePage = 1;
       s.corrections = {};
-      s.groundTruth = {};
       s.pageStatus = {};
-      s.reviewNotes = {};
+      s.processing = false;
+      s.progress = 0;
     });
   }
 
-  runAiExtraction(): void {
-    const text = this.allText();
-    if (!text || (this._state() as any).extractingAi) return;
-
-    this._mutate(s => { (s as any).extractingAi = true; });
-    this.ocr.extractInformation(text, this._state().sourceFile?.name).subscribe({
-      next: (res) => {
-        this._mutate(s => {
-          (s as any).aiResult = res;
-          (s as any).extractingAi = false;
-          (s as any).normalTab = 'ai';
-        });
-        this.toast.success(this.i18n.t('ocr.ai.success'));
-      },
-      error: () => {
-        this._mutate(s => { (s as any).extractingAi = false; });
-        this.toast.error(this.i18n.t('ocr.ai.error'));
-      },
-    });
-  }
-
-  indexDocument(tableName: string): void {
-    const s = this._state();
-    if (!s.result || this.indexingTo()) return;
-
-    this.indexingTo.set(tableName);
-    const documents = s.result.pages.map(p => s.corrections[p.page_number] ?? p.text);
-    const metadatas = s.result.pages.map(p => ({
-      page: p.page_number,
-      source: s.sourceFile?.name ?? s.result!.file_path,
-      confidence: p.confidence
-    }));
-
-    this.vector.addDocuments(tableName, documents, metadatas).subscribe({
-      next: () => {
-        this.indexingTo.set(null);
-        this.toast.success(this.i18n.t('ocr.vector.indexSuccess', { table: tableName }));
-      },
-      error: () => {
-        this.indexingTo.set(null);
-        this.toast.error(this.i18n.t('ocr.vector.indexError'));
-      }
-    });
-  }
-
-  private _uploadFile(file: File): void {
+  private _processFile(file: File): void {
     const interval = setInterval(() => {
       this._mutate(s => {
         if (s.progress < 90) s.progress = Math.min(90, s.progress + Math.random() * 15);
       });
-    }, 300);
+    }, 400);
 
-    this.ocr.uploadPdf(file).subscribe({
+    this.ocr.extractFinancialFieldsAll(file).subscribe({
       next: (res) => {
         clearInterval(interval);
         this._mutate(s => {
-          s.uploading = false;
-          s.processing = false;
-          s.progress = 100;
           s.result = res;
+          s.progress = 100;
+          s.processing = false;
           s.activePage = 1;
-          for (let i = 1; i <= res.total_pages; i++) {
-            s.pageStatus[i] = 'pending';
-          }
         });
-      },
-      error: (err) => {
-        clearInterval(interval);
-        const status = err?.status;
-        let key = 'ocr.error.processing';
-        if (status === 413) key = 'ocr.error.tooLarge';
-        else if (status === 429) key = 'ocr.error.serverBusy';
-        else if (status === 503) {
-          key = 'ocr.unavailable';
-          this.pollHealth();
+        if (res.metadata?.['demo_mode']) {
+          this.toast.info(this.i18n.t('ocr.demoMode'));
         }
-        this.toast.error(this.i18n.t(key));
-        this._mutate(s => { s.uploading = false; s.processing = false; });
+      },
+      error: () => {
+        clearInterval(interval);
+        this._mutate(s => {
+          s.processing = false;
+        });
+        this.toast.error(this.i18n.t('ocr.error.processing'));
       },
     });
   }
 
-  setNormalTab(tab: NormalTab): void {
-    this._mutate(s => { s.normalTab = tab; });
+  // ─── Curation ────────────────────────────────────────────────────────────────
+
+  setCorrection(pageNum: number, text: string): void {
+    this._mutate(s => { s.corrections[pageNum] = text; });
   }
+
+  approvePage(pageNum: number): void {
+    this._mutate(s => { s.pageStatus[pageNum] = 'approved'; });
+  }
+
+  flagPage(pageNum: number): void {
+    this._mutate(s => { s.pageStatus[pageNum] = 'flagged'; });
+  }
+
+  /** @deprecated Use flagPage() instead. */
+  rejectPage(pageNum: number): void {
+    this.flagPage(pageNum);
+  }
+
+  sendToPipeline(): void {
+    const result = this._state().result;
+    if (!result) return;
+
+    this._mutate(s => { s.uploading = true; });
+    this.ocr.sendToPipeline(result).subscribe({
+      next: () => {
+        this._mutate(s => { s.uploading = false; });
+        this.toast.info(this.i18n.t('ocr.curation.sent'));
+      },
+      error: () => {
+        this._mutate(s => { s.uploading = false; });
+        this.toast.error(this.i18n.t('ocr.curation.sendError'));
+      },
+    });
+  }
+
+  // ─── Pagination ──────────────────────────────────────────────────────────────
 
   prevPage(): void {
     this._mutate(s => { if (s.activePage > 1) s.activePage--; });
   }
 
   nextPage(): void {
-    const total = this._state().result?.total_pages ?? 1;
-    this._mutate(s => { if (s.activePage < total) s.activePage++; });
+    this._mutate(s => {
+      if (s.result && s.activePage < s.result.total_pages) s.activePage++;
+    });
   }
 
-  goToPage(n: number): void {
-    this._mutate(s => { s.activePage = n; });
+  // ─── Zoom ────────────────────────────────────────────────────────────────────
+
+  zoomIn(): void { this.canvasZoom.update(z => Math.min(z + 0.25, 4)); }
+  zoomOut(): void { this.canvasZoom.update(z => Math.max(z - 0.25, 0.25)); }
+  resetZoom(): void { this.canvasZoom.set(1); }
+
+  // ─── Actions ─────────────────────────────────────────────────────────────────
+
+  tabLabel(tab: string): string {
+    return this.i18n.t(`ocr.tab.${tab}`);
   }
 
-  goToFlaggedPage(): void {
-    const r = this._state().result;
-    if (!r) return;
-    const flagged = r.pages.find(p => p.flagged_for_review);
-    if (flagged) {
-      this._mutate(s => { s.activePage = flagged.page_number; s.normalTab = 'text'; });
-    }
+  copyText(): void {
+    navigator.clipboard.writeText(this.currentPageText());
+    this.toast.info(this.i18n.t('ocr.copied'));
   }
 
   sendToChat(): void {
@@ -343,29 +361,15 @@ export class DocumentOcrComponent implements OnDestroy {
   exportJson(): void {
     const r = this._state().result;
     if (!r) return;
-    this._downloadBlob(new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' }), 'ocr-result.json');
+    const blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
+    this._downloadBlob(blob, 'ocr-result.json');
   }
 
   exportText(): void {
     const text = this.allText();
     if (!text) return;
-    this._downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'ocr-text.txt');
-  }
-
-  exportTableCsv(tableIndex: number): void {
-    const table = this.allTables()[tableIndex];
-    if (!table) return;
-    const rows: string[][] = [];
-    for (let r = 0; r < table.rows; r++) {
-      const row: string[] = [];
-      for (let c = 0; c < table.columns; c++) {
-        const cell = table.cells.find(cl => cl.row === r && cl.column === c);
-        row.push(cell?.text ?? '');
-      }
-      rows.push(row);
-    }
-    const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n');
-    this._downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `table-${tableIndex + 1}.csv`);
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    this._downloadBlob(blob, 'ocr-text.txt');
   }
 
   private _downloadBlob(blob: Blob, filename: string): void {
@@ -377,109 +381,7 @@ export class DocumentOcrComponent implements OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  setExpertTab(tab: ExpertTab): void {
-    this._mutate(s => { s.expertTab = tab; });
-  }
-
-  setActivePage(n: number): void {
-    this._mutate(s => { s.activePage = n; });
-  }
-
-  approvePage(page = this._state().activePage): void {
-    this._mutate(s => { s.pageStatus[page] = 'approved'; });
-  }
-
-  flagPage(page = this._state().activePage): void {
-    this._mutate(s => { s.pageStatus[page] = 'flagged'; });
-  }
-
-  resetPageStatus(page = this._state().activePage): void {
-    this._mutate(s => { s.pageStatus[page] = 'pending'; });
-  }
-
-  setReviewNote(note: string, page = this._state().activePage): void {
-    this._mutate(s => { s.reviewNotes[page] = note; });
-  }
-
-  setCorrection(text: string, page = this._state().activePage): void {
-    this._mutate(s => { s.corrections[page] = text; });
-  }
-
-  resetCorrection(page = this._state().activePage): void {
-    this._mutate(s => { delete s.corrections[page]; });
-  }
-
-  setGroundTruth(key: string, value: string | null): void {
-    this._mutate(s => { s.groundTruth[key] = value; });
-  }
-
-  downloadDataset(): void {
-    const s = this._state();
-    if (!s.result) return;
-    const format = this.exportFormat();
-    const incApproved = this.includeApproved();
-    const incFlagged = this.includeFlagged();
-    const incGt = this.includeGroundTruth();
-
-    const pages = s.result.pages.filter(p => {
-      const st = s.pageStatus[p.page_number] ?? 'pending';
-      return (incApproved && st === 'approved') || (incFlagged && st === 'flagged');
-    });
-
-    if (format === 'jsonl') {
-      const lines = pages.map(p => JSON.stringify({
-        page: p.page_number,
-        text: s.corrections[p.page_number] ?? p.text,
-        ...(incGt ? { ground_truth_fields: s.groundTruth } : {}),
-        corrections: s.corrections,
-      }));
-      this._downloadBlob(new Blob([lines.join('\n')], { type: 'application/jsonl' }), 'training-dataset.jsonl');
-    } else if (format === 'annotated') {
-      const annotated = { ...s.result, corrections: s.corrections, ground_truth: incGt ? s.groundTruth : {} };
-      this._downloadBlob(new Blob([JSON.stringify(annotated, null, 2)], { type: 'application/json' }), 'annotated.json');
-    }
-  }
-
-  sendToPipeline(): void {
-    const s = this._state();
-    if (!s.result) return;
-    const pages = s.result.pages.filter(p => (s.pageStatus[p.page_number] ?? 'pending') === 'approved');
-    if (!pages.length) {
-      this.toast.error(this.i18n.t('ocr.export.noPagesApproved'));
-      return;
-    }
-    const lines = pages.map(p => ({
-      page: p.page_number,
-      text: s.corrections[p.page_number] ?? p.text,
-      ground_truth_fields: s.groundTruth,
-      corrections: s.corrections,
-      source_file: s.sourceFile?.name ?? s.result!.file_path,
-    }));
-    this._mutate(st => { st.uploading = true; });
-    this.ocr.sendToPipeline(lines).subscribe({
-      next: () => {
-        this._mutate(st => { st.uploading = false; });
-        this.toast.success(this.i18n.t('ocr.export.pipelineSent'));
-      },
-      error: () => {
-        this._mutate(st => { st.uploading = false; });
-        // Graceful fallback: notify and offer local download
-        this.toast.error(this.i18n.t('ocr.export.pipelineError'));
-        this.downloadDataset();
-      },
-    });
-  }
-
-  getState(): OcrCurationState {
-    return this._state();
-  }
-
-  confidenceClass(confidence: number): string {
-    if (confidence >= 90) return 'conf-high';
-    if (confidence >= 70) return 'conf-mid';
-    return 'conf-low';
-  }
-
+  /** Build table rows for rendering a detected table. */
   getTableRows(table: OcrDetectedTable): string[][] {
     const grid: string[][] = [];
     for (let r = 0; r < table.rows; r++) {
@@ -493,102 +395,68 @@ export class DocumentOcrComponent implements OnDestroy {
     return grid;
   }
 
-  getPageRange(): number[] {
-    const total = this._state().result?.total_pages ?? 0;
-    return Array.from({ length: total }, (_, i) => i + 1);
+  // ─── pdf.js rendering ────────────────────────────────────────────────────────
+
+  private async _renderPage(pageNum: number, file: File, zoom = 1): Promise<void> {
+    const canvas = this._canvasRef?.nativeElement;
+    if (!canvas) return;
+
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/pdf.worker.min.mjs';
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(pageNum);
+
+      const dpr = window.devicePixelRatio || 1;
+      const viewport = page.getViewport({ scale: zoom * 1.5 * dpr });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.width = `${viewport.width / dpr}px`;
+      canvas.style.height = `${viewport.height / dpr}px`;
+
+      const ctx = canvas.getContext('2d')!;
+      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+      this._currentPageWidth.set(page.getViewport({ scale: 1 }).width);
+    } catch {
+      // pdf.js unavailable in test environment — silently skip
+    }
   }
 
-  flaggedCount(): number {
-    const r = this._state().result;
-    if (!r) return 0;
-    return r.pages.filter(p => p.flagged_for_review).length;
-  }
+  onCanvasClick(event: MouseEvent): void {
+    const canvas = this._canvasRef?.nativeElement;
+    const page = this.currentPageResult();
+    if (!canvas || !page || !this._currentPageWidth()) return;
 
-  reviewedCount(): number {
-    const s = this._state();
-    return Object.values(s.pageStatus).filter(st => st !== 'pending').length;
-  }
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+    const scale = canvas.offsetWidth / this._currentPageWidth();
 
-  pageConf(page: number): number {
-    const r = this._state().result;
-    return r?.pages.find(p => p.page_number === page)?.confidence ?? 0;
-  }
+    const region = page.text_regions.find(
+      (r: { bbox?: { x: number; y: number; width: number; height: number }; text: string }) => {
+        if (!r.bbox) return false;
+        const { x, y, width, height } = r.bbox;
+        return clickX >= x * scale && clickX <= (x + width) * scale
+            && clickY >= y * scale && clickY <= (y + height) * scale;
+      }
+    );
 
-  statusIcon(status: PageStatus): string {
-    if (status === 'approved') return '✓';
-    if (status === 'flagged') return '🚩';
-    return '⏳';
-  }
-
-  expertTabLabel(tab: ExpertTab): string {
-    const icons: Record<ExpertTab, string> = { text: '✏️ Text', fields: 'Fields', qa: 'QA', export: '🚀' };
-    return icons[tab];
-  }
-
-  currentPageDir(): 'rtl' | 'ltr' {
-    const text = this.currentPageResult()?.text ?? '';
-    return /[\u0600-\u06FF]/.test(text) ? 'rtl' : 'ltr';
-  }
-
-  hasLowConfRow(table: OcrDetectedTable, row: number): boolean {
-    return table.cells.some(c => c.row === row && c.confidence < 80);
-  }
-
-  getCellConf(table: OcrDetectedTable, row: number, col: number): number {
-    return table.cells.find(c => c.row === row && c.column === col)?.confidence ?? 100;
-  }
-
-  gtStatusClass(key: string): string {
-    const gt = this._state().groundTruth[key];
-    if (gt != null) return 'gt-verified';
-    const ocrField = this.financialFields().find(f => f.key_ar === key);
-    if (ocrField?.value) return 'gt-pending';
-    return 'gt-notfound';
-  }
-
-  gtStatusLabel(key: string, ocrValue: string | null): string {
-    const gt = this._state().groundTruth[key];
-    if (gt != null) return this.i18n.t('ocr.curation.gtVerified');
-    if (ocrValue) return this.i18n.t('ocr.curation.gtPending');
-    return this.i18n.t('ocr.curation.gtNotFound');
-  }
-
-  goToPageExpert(page: number): void {
-    this._mutate(s => { s.activePage = page; s.expertTab = 'text'; });
-  }
-
-  onCorrectionInput(event: Event): void {
-    const val = (event.target as HTMLTextAreaElement).value;
-    this.setCorrection(val);
-  }
-
-  onGroundTruthChange(event: Event, key: string): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.setGroundTruth(key, val || null);
-  }
-
-  onNoteChange(event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.setReviewNote(val);
-  }
-
-  readonly canvasZoom = signal(1.0);
-  zoomIn(): void  { this.canvasZoom.set(Math.min(3, this.canvasZoom() + 0.25)); }
-  zoomOut(): void { this.canvasZoom.set(Math.max(0.5, this.canvasZoom() - 0.25)); }
-
-  onCanvasClick(_event: MouseEvent): void {
-    // pdf.js click-to-scroll implemented in Task 5
-  }
-
-  isDate(value: string | null): boolean {
-    if (!value) return false;
-    return /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{2}\/\d{2}\/\d{4}$/.test(value);
-  }
-
-  private _mutate(fn: (s: OcrCurationState) => void): void {
-    const next = { ...this._state() };
-    fn(next);
-    Object.assign(this.state, next);
-    this._state.set(next);
+    if (region) {
+      const editor = this._editorRef?.nativeElement;
+      if (editor) {
+        const s = this._state();
+        const text = s.corrections[s.activePage] ?? page.text;
+        const idx = text.indexOf(region.text);
+        if (idx >= 0) {
+          const linesBefore = text.substring(0, idx).split('\n').length;
+          editor.scrollTop = linesBefore * 20;
+        }
+      }
+    }
   }
 }

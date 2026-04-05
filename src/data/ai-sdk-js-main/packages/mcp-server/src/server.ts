@@ -12,9 +12,6 @@ import * as https from 'https';
 import { URL } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuid } from 'uuid';
-import { CpnEngine } from './cpn/engine';
-import { getBuiltinNet } from './cpn/builtin-nets';
-import type { CpnNetDefinition } from './cpn/types';
 
 let _getKuzuStore: (() => import('./kuzu-store').KuzuStore) | null = null;
 try {
@@ -106,18 +103,6 @@ function getRemoteMcpEndpoints(envKey: string): string[] {
     .map(v => v.trim())
     .filter(Boolean)
     .map(normalizeMcpEndpoint);
-}
-
-function isSelfMcpEndpoint(endpoint: string): boolean {
-  const port = Number.parseInt(process.env.MCP_PORT || '9090', 10) || 9090;
-  try {
-    const u = new URL(endpoint);
-    const epPort = u.port ? Number.parseInt(u.port, 10) : u.protocol === 'https:' ? 443 : 80;
-    const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
-    return local && epPort === port;
-  } catch {
-    return false;
-  }
 }
 
 function unwrapMcpToolResult(result: unknown): unknown {
@@ -264,8 +249,7 @@ class MCPServer {
   private prompts: Map<string, Prompt> = new Map();
   private toolHandlers: Map<string, (args: Record<string, unknown>) => Promise<unknown>> = new Map();
   private facts: Map<string, unknown[]> = new Map(); // Mangle fact store
-  private cpnEngine: CpnEngine = new CpnEngine();
-
+  
   constructor() {
     this.registerTools();
     this.registerResources();
@@ -424,67 +408,6 @@ class MCPServer {
       },
     });
     this.toolHandlers.set('kuzu_query', this.handleKuzuQueryTool.bind(this));
-
-    // Colored Petri net (CPN) workflow engine — ODPS close-process scenarios + debugging tools
-    this.tools.set('cpn_load', {
-      name: 'cpn_load',
-      description: 'Load a Colored Petri Net from a JSON definition (places, transitions, initialMarking)',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          definition: { type: 'string', description: 'JSON object matching CpnNetDefinition schema' },
-        },
-        required: ['definition'],
-      },
-    });
-    this.toolHandlers.set('cpn_load', this.handleCpnLoadTool.bind(this));
-
-    this.tools.set('cpn_reset', {
-      name: 'cpn_reset',
-      description: 'Reset marking to a built-in scenario (e.g. odps_close_process) with optional appId',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          scenario: { type: 'string', description: 'Built-in scenario id (odps_close_process)' },
-          appId: { type: 'string', description: 'Application id seeded into token payloads' },
-        },
-        required: ['scenario'],
-      },
-    });
-    this.toolHandlers.set('cpn_reset', this.handleCpnResetTool.bind(this));
-
-    this.tools.set('cpn_marking', {
-      name: 'cpn_marking',
-      description: 'Return current CPN marking (multiset of colored tokens per place)',
-      inputSchema: {
-        type: 'object',
-        properties: {},
-      },
-    });
-    this.toolHandlers.set('cpn_marking', this.handleCpnMarkingTool.bind(this));
-
-    this.tools.set('cpn_fire', {
-      name: 'cpn_fire',
-      description: 'Fire a single transition by id if enabled',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          transitionId: { type: 'string', description: 'Transition id from the loaded net' },
-        },
-        required: ['transitionId'],
-      },
-    });
-    this.toolHandlers.set('cpn_fire', this.handleCpnFireTool.bind(this));
-
-    this.tools.set('cpn_step', {
-      name: 'cpn_step',
-      description: 'Fire the first enabled transition (deterministic order)',
-      inputSchema: {
-        type: 'object',
-        properties: {},
-      },
-    });
-    this.toolHandlers.set('cpn_step', this.handleCpnStepTool.bind(this));
   }
 
   // ===========================================================================
@@ -569,9 +492,6 @@ class MCPServer {
 
     // Tool invocation facts (audit log)
     this.facts.set('tool_invocation', []);
-
-    // petri_stage(App, Stage) facts — populated by CPN engine (see syncPetriStageFromMarking)
-    this.facts.set('petri_stage', []);
   }
 
   private getFederatedMcpEndpoints(): string[] {
@@ -595,40 +515,7 @@ class MCPServer {
       });
     }
 
-    return Array.from(endpoints).filter((ep) => !isSelfMcpEndpoint(ep));
-  }
-
-  /** Linear ODPS close-process stages: emit cumulative reachability for compliance rules. */
-  private expandLinearOdpsStages(stage: string): string[] {
-    const order = ['S01', 'S02', 'S03'];
-    const idx = order.indexOf(stage);
-    if (idx === -1) return stage ? [stage] : [];
-    return order.slice(0, idx + 1);
-  }
-
-  /** Derive petri_stage rows from current CPN marking (cumulative stages per app). */
-  private syncPetriStageFromMarking(): void {
-    const rows: Array<{ app: string; stage: string }> = [];
-    const seen = new Set<string>();
-    const snap = this.cpnEngine.markingSnapshot();
-    for (const tokens of Object.values(snap)) {
-      if (!Array.isArray(tokens)) continue;
-      for (const t of tokens) {
-        if (!t || typeof t !== 'object') continue;
-        const p = t.payload;
-        if (!p || typeof p !== 'object') continue;
-        const app = String((p as { appId?: unknown }).appId ?? '');
-        const st = String((p as { stage?: unknown }).stage ?? '');
-        if (!app || !st) continue;
-        for (const s of this.expandLinearOdpsStages(st)) {
-          const key = `${app}|${s}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          rows.push({ app, stage: s });
-        }
-      }
-    }
-    this.facts.set('petri_stage', rows);
+    return Array.from(endpoints);
   }
 
   // ===========================================================================
@@ -743,6 +630,7 @@ class MCPServer {
   }
 
   private async handleOrchestrationTool(args: Record<string, unknown>): Promise<unknown> {
+    // Orchestration scenarios
     const scenario = args.scenario as string;
     const input = typeof args.input === 'string' ? safeJsonParse<unknown>(args.input, args.input) : args.input;
 
@@ -761,103 +649,11 @@ class MCPServer {
       }
     }
 
-    const builtin = scenario ? getBuiltinNet(scenario) : undefined;
-    if (builtin) {
-      const body =
-        typeof input === 'object' && input !== null && !Array.isArray(input)
-          ? (input as Record<string, unknown>)
-          : {};
-      const appId = String(body.appId ?? body.App ?? 'default-app');
-      this.cpnEngine.seedInitialWithApp(builtin, appId);
-      const run = this.cpnEngine.run({ mode: 'max', maxSteps: 1000 });
-      this.syncPetriStageFromMarking();
-      const ok = run.status === 'completed' || run.status === 'maxSteps';
-      return {
-        scenario,
-        input: body,
-        status: ok ? 'completed' : run.status,
-        engine: 'cpn',
-        netId: builtin.id,
-        trace: run.trace,
-        finalMarking: run.finalMarking,
-        petri_stage: this.facts.get('petri_stage'),
-        message: run.message,
-      };
-    }
-
     return {
       scenario,
       input,
       status: 'Orchestration not yet implemented',
-      message:
-        'No federated orchestration MCP matched and scenario is not a built-in CPN id (try odps_close_process)',
-    };
-  }
-
-  private async handleCpnLoadTool(args: Record<string, unknown>): Promise<unknown> {
-    const raw = args.definition;
-    const def = typeof raw === 'string' ? safeJsonParse<CpnNetDefinition | null>(raw, null) : raw;
-    if (!def || typeof def !== 'object') {
-      return { error: 'definition must be a JSON object or string' };
-    }
-    try {
-      this.cpnEngine.loadNet(def as CpnNetDefinition);
-      this.syncPetriStageFromMarking();
-      return { ok: true, netId: (def as { id?: string }).id, marking: this.cpnEngine.markingSnapshot() };
-    } catch (e) {
-      return { ok: false, error: String(e) };
-    }
-  }
-
-  private async handleCpnResetTool(args: Record<string, unknown>): Promise<unknown> {
-    const scenario = String(args.scenario ?? '');
-    const net = getBuiltinNet(scenario);
-    if (!net) {
-      return { error: `Unknown built-in CPN scenario: ${scenario}` };
-    }
-    const appId = String(args.appId ?? 'default-app');
-    this.cpnEngine.seedInitialWithApp(net, appId);
-    this.syncPetriStageFromMarking();
-    return {
-      ok: true,
-      scenario,
-      appId,
-      marking: this.cpnEngine.markingSnapshot(),
-      petri_stage: this.facts.get('petri_stage'),
-    };
-  }
-
-  private async handleCpnMarkingTool(_args: Record<string, unknown>): Promise<unknown> {
-    if (!this.cpnEngine.getNetId()) {
-      return { marking: {}, message: 'No net loaded; use cpn_reset or cpn_load' };
-    }
-    return { netId: this.cpnEngine.getNetId(), marking: this.cpnEngine.markingSnapshot() };
-  }
-
-  private async handleCpnFireTool(args: Record<string, unknown>): Promise<unknown> {
-    const transitionId = String(args.transitionId ?? '');
-    const r = this.cpnEngine.fire(transitionId);
-    this.syncPetriStageFromMarking();
-    return {
-      ...r,
-      marking: this.cpnEngine.markingSnapshot(),
-      petri_stage: this.facts.get('petri_stage'),
-    };
-  }
-
-  private async handleCpnStepTool(_args: Record<string, unknown>): Promise<unknown> {
-    const enabled = this.cpnEngine.enabledTransitions();
-    if (enabled.length === 0) {
-      return { ok: false, error: 'No enabled transitions', marking: this.cpnEngine.markingSnapshot() };
-    }
-    const id = enabled[0]!;
-    const r = this.cpnEngine.fire(id);
-    this.syncPetriStageFromMarking();
-    return {
-      fired: id,
-      ...r,
-      marking: this.cpnEngine.markingSnapshot(),
-      petri_stage: this.facts.get('petri_stage'),
+      message: 'Use orchestration package for full support',
     };
   }
 
@@ -970,25 +766,7 @@ class MCPServer {
   private async handleMangleQueryTool(args: Record<string, unknown>): Promise<unknown> {
     const predicate = args.predicate as string;
     const queryArgs = Array.isArray(args.args) ? args.args : safeJsonParse<unknown[]>(args.args, []);
-
-    if (predicate === 'petri_stage') {
-      const rows = (this.facts.get('petri_stage') || []) as Array<{ app: string; stage: string }>;
-      const a0 = queryArgs[0] != null ? String(queryArgs[0]) : '';
-      const a1 = queryArgs[1] != null ? String(queryArgs[1]) : '';
-      let filtered = rows;
-      if (a0) filtered = filtered.filter((r) => r.app === a0);
-      if (a1) filtered = filtered.filter((r) => r.stage === a1);
-      return { predicate, args: queryArgs, results: filtered };
-    }
-
-    if (predicate === 'cpn_enabled') {
-      return { predicate, results: this.cpnEngine.enabledTransitions() };
-    }
-
-    if (predicate === 'cpn_marking_snapshot') {
-      return { predicate, results: [{ marking: this.cpnEngine.markingSnapshot(), netId: this.cpnEngine.getNetId() }] };
-    }
-
+    
     // Simple fact lookup
     const facts = this.facts.get(predicate);
     if (facts) {
@@ -1252,10 +1030,6 @@ deployment_ready(DeploymentId) :-
 service_available(Name) :-
     service_registry(Name, _, _).
 
-# petri_stage(App, Stage) — facts are maintained by the in-process CPN engine
-# (orchestration_run on built-in scenarios, cpn_fire, cpn_step, cpn_reset).
-# Query via mangle_query predicate petri_stage with optional args [App, Stage].
-
 # Tool Invocation Audit
 recent_invocation(Tool, Deployment, Timestamp) :-
     tool_invocation(Tool, Deployment, Timestamp),
@@ -1406,15 +1180,10 @@ Tools:
   - ai_core_embed       - Embeddings via AI Core
   - hana_vector_search  - HANA vector similarity search
   - list_deployments    - List AI Core deployments
-  - orchestration_run   - Run orchestration scenarios (federated MCP, then built-in CPN)
-  - mangle_query        - Query Mangle reasoning engine (+ petri_stage / cpn_*)
+  - orchestration_run   - Run orchestration scenarios
+  - mangle_query        - Query Mangle reasoning engine
   - kuzu_index          - Index AI SDK entities into KùzuDB graph
   - kuzu_query          - Read-only Cypher query against KùzuDB graph
-  - cpn_load            - Load Colored Petri Net JSON
-  - cpn_reset           - Reset built-in CPN scenario marking
-  - cpn_marking         - Current CPN marking
-  - cpn_fire            - Fire one transition
-  - cpn_step            - Fire first enabled transition
 
 Resources:
   - deployment://list   - AI Core deployments

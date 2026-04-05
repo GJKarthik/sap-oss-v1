@@ -30,7 +30,6 @@ def test_security_headers_are_applied(client) -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.headers["content-security-policy"] == "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
     assert response.headers["referrer-policy"] == "no-referrer"

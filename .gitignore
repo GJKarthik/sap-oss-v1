@@ -79,3 +79,4 @@ src/training/data/massive_semantic/training_data.json
 
 # Temp directories
 tmp/
+**/apps/angular-shell/src/assets/pdf.worker.min.mjs

@@ -1,11 +1,14 @@
 import { Injectable, signal, computed, DOCUMENT } from '@angular/core';
 import { inject } from '@angular/core';
+import MessageFormat from '@messageformat/core';
 
 export type Language = 'en' | 'ar';
 
 interface TranslationMap {
   [key: string]: string;
 }
+
+const LOCALE_MAP: Record<Language, string> = { en: 'en', ar: 'ar' };
 
 @Injectable({ providedIn: 'root' })
 export class I18nService {
@@ -29,12 +32,6 @@ export class I18nService {
   }
 
   private async loadTranslations(): Promise<void> {
-    if (typeof fetch !== 'function') {
-      this.mfCache.clear();
-      this.applyDirection();
-      return;
-    }
-
     try {
       const [enResp, arResp] = await Promise.all([
         fetch('assets/i18n/en.json'),
@@ -100,123 +97,11 @@ export class I18nService {
     const cacheKey = `${lang}:${key}`;
     let fn = this.mfCache.get(cacheKey);
     if (!fn) {
-      fn = (params: Record<string, unknown>) => this.formatTemplate(raw, params, lang);
+      const mf = new MessageFormat(LOCALE_MAP[lang]);
+      fn = mf.compile(raw);
       this.mfCache.set(cacheKey, fn);
     }
     return fn;
-  }
-
-  private formatTemplate(raw: string, params: Record<string, unknown>, lang: Language): string {
-    let result = '';
-
-    for (let cursor = 0; cursor < raw.length;) {
-      if (raw[cursor] !== '{') {
-        result += raw[cursor];
-        cursor += 1;
-        continue;
-      }
-
-      const closingIndex = this.findMatchingBrace(raw, cursor);
-      if (closingIndex === -1) {
-        result += raw.slice(cursor);
-        break;
-      }
-
-      const expression = raw.slice(cursor + 1, closingIndex).trim();
-      result += this.evaluateExpression(expression, params, lang);
-      cursor = closingIndex + 1;
-    }
-
-    return result;
-  }
-
-  private evaluateExpression(expression: string, params: Record<string, unknown>, lang: Language): string {
-    const pluralMatch = expression.match(/^([^,]+),\s*plural,\s*([\s\S]+)$/);
-    if (pluralMatch) {
-      return this.evaluatePlural(pluralMatch[1].trim(), pluralMatch[2], params, lang);
-    }
-
-    const value = params[expression];
-    return value == null ? `{${expression}}` : String(value);
-  }
-
-  private evaluatePlural(
-    variableName: string,
-    optionsSource: string,
-    params: Record<string, unknown>,
-    lang: Language,
-  ): string {
-    const count = this.readPluralCount(params[variableName]);
-    const options = this.parsePluralOptions(optionsSource);
-    const exactKey = `=${count}`;
-    const pluralCategory = new Intl.PluralRules(lang).select(count);
-    const selected = options.get(exactKey) ?? options.get(pluralCategory) ?? options.get('other') ?? '';
-
-    return this.formatTemplate(selected, params, lang);
-  }
-
-  private parsePluralOptions(source: string): Map<string, string> {
-    const options = new Map<string, string>();
-    let cursor = 0;
-
-    while (cursor < source.length) {
-      while (cursor < source.length && /\s/.test(source[cursor])) {
-        cursor += 1;
-      }
-
-      const selectorStart = cursor;
-      while (cursor < source.length && !/\s/.test(source[cursor])) {
-        cursor += 1;
-      }
-      const selector = source.slice(selectorStart, cursor);
-      if (!selector) {
-        break;
-      }
-
-      while (cursor < source.length && /\s/.test(source[cursor])) {
-        cursor += 1;
-      }
-
-      if (source[cursor] !== '{') {
-        break;
-      }
-
-      const closingIndex = this.findMatchingBrace(source, cursor);
-      if (closingIndex === -1) {
-        break;
-      }
-
-      options.set(selector, source.slice(cursor + 1, closingIndex));
-      cursor = closingIndex + 1;
-    }
-
-    return options;
-  }
-
-  private findMatchingBrace(source: string, startIndex: number): number {
-    let depth = 0;
-
-    for (let cursor = startIndex; cursor < source.length; cursor += 1) {
-      if (source[cursor] === '{') {
-        depth += 1;
-      } else if (source[cursor] === '}') {
-        depth -= 1;
-        if (depth === 0) {
-          return cursor;
-        }
-      }
-    }
-
-    return -1;
-  }
-
-  private readPluralCount(value: unknown): number {
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : 0;
-    }
-
-    const numericValue = Number(value);
-    return Number.isFinite(numericValue) ? numericValue : 0;
   }
 
   private applyDirection(): void {
@@ -227,3 +112,4 @@ export class I18nService {
     }
   }
 }
+
