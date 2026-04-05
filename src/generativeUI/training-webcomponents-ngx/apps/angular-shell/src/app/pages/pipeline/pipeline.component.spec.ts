@@ -82,8 +82,8 @@ describe('PipelineComponent', () => {
     stages.forEach(s => expect(s.status).toBe('idle'));
   });
 
-  it('should expose 5 run commands', () => {
-    expect(component.commands).toHaveLength(5);
+  it('should expose 4 run commands', () => {
+    expect(component.commands).toHaveLength(4);
   });
 
   // ── WebSocket connectivity ───────────────────────────────────────────────────

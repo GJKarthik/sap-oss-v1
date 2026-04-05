@@ -70,13 +70,6 @@ export const routes: Routes = [
             (m) => m.DocumentOcrComponent
           ),
       },
-      {
-        path: 'arabic-wizard',
-        loadComponent: () =>
-          import('./pages/arabic-wizard/arabic-wizard.component').then(
-            (m) => m.ArabicWizardComponent
-          ),
-      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

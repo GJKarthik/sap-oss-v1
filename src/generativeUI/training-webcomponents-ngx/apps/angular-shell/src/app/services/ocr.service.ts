@@ -51,16 +51,14 @@ export interface OcrResult {
 export interface FinancialField {
   key_ar: string;
   key_en: string;
-  /** Extracted value string, or null when not found in any page. */
-  value: string | null;
-  currency?: string;
-  page: number | null;
+  value: string;
+  page: number;
 }
 
-export interface OcrHealthReport {
-  status: 'ok' | 'degraded' | 'unhealthy';
-  missing_optional?: string[];
-  missing_required?: string[];
+export interface OcrHealthStatus {
+  status: 'healthy' | 'degraded' | 'unavailable';
+  version?: string;
+  message?: string;
 }
 
 const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
@@ -82,79 +80,76 @@ const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
 
 @Injectable({ providedIn: 'root' })
 export class OcrService {
-  static readonly FINANCIAL_GLOSSARY = FINANCIAL_GLOSSARY;
-
   private readonly http = inject(HttpClient);
 
-  /** Upload a PDF for OCR processing via the new /ocr/pdf endpoint. */
-  uploadPdf(file: File): Observable<OcrResult> {
+  /** Check health of the OCR service. */
+  checkHealth(): Observable<OcrHealthStatus> {
+    return this.http.get<OcrHealthStatus>('/ocr/health').pipe(
+      catchError(() => of({ status: 'unavailable' as const, message: 'Service unreachable' }))
+    );
+  }
+
+  /**
+   * Upload a PDF for OCR processing via the new /ocr/pdf endpoint.
+   * Falls back to mock data if API unavailable.
+   */
+  extractFinancialFieldsAll(file: File): Observable<OcrResult> {
     const formData = new FormData();
     formData.append('file', file, file.name);
+
     return this.http.post<OcrResult>('/ocr/pdf', formData).pipe(
       catchError(() => of(this.generateMockResult(file.name)))
     );
   }
 
-  /** Check OCR service health. */
-  checkHealth(): Observable<OcrHealthReport> {
-    return this.http.get<OcrHealthReport>('/ocr/health');
+  /** Send OCR result to the downstream pipeline. */
+  sendToPipeline(result: OcrResult): Observable<{ queued: boolean }> {
+    return this.http.post<{ queued: boolean }>('/ocr/pipeline', result).pipe(
+      catchError(() => of({ queued: false }))
+    );
   }
 
-  /**
-   * Extract all 14 financial glossary terms from an OCR result.
-   * Every term is always present in the returned array; value is null when not found.
-   */
-  extractFinancialFieldsAll(result: OcrResult): FinancialField[] {
-    return FINANCIAL_GLOSSARY.map(term => {
-      for (const page of result.pages) {
-        const idx = page.text.indexOf(term.ar);
+  /** Extract financial fields from OCR result using glossary matching. */
+  extractFinancialFields(result: OcrResult): FinancialField[] {
+    const fields: FinancialField[] = [];
+    for (const page of result.pages) {
+      const text = page.text;
+      for (const term of FINANCIAL_GLOSSARY) {
+        const idx = text.indexOf(term.ar);
         if (idx >= 0) {
-          const after = page.text.substring(idx + term.ar.length, idx + term.ar.length + 60);
+          const after = text.substring(idx + term.ar.length, idx + term.ar.length + 60);
           const numMatch = after.match(/[\d,،.]+/);
-          return {
+          fields.push({
             key_ar: term.ar,
             key_en: term.en,
-            value: numMatch ? numMatch[0] : null,
-            currency: 'SAR',
+            value: numMatch ? numMatch[0] : '—',
             page: page.page_number,
-          };
+          });
         }
       }
-      return { key_ar: term.ar, key_en: term.en, value: null, currency: 'SAR', page: null };
-    });
+    }
+    return fields;
   }
 
   /**
-   * Send approved pages as a JSONL training dataset to the pipeline.
-   * V1 stub — backend endpoint not yet implemented.
+   * @deprecated Use extractFinancialFieldsAll() instead.
    */
-  sendToPipeline(lines: object[]): Observable<unknown> {
-    const body = { dataset: lines };
-    return this.http.post('/api/v1/training/ocr-dataset', body);
-  }
-
-  /** @deprecated Use uploadPdf(). Will be removed when all callers are migrated. */
   processFile(file: File): Observable<OcrResult> {
-    return this.uploadPdf(file);
-  }
-
-  /** @deprecated Use extractFinancialFieldsAll(). Returns only found fields for backward compatibility. */
-  extractFinancialFields(result: OcrResult): FinancialField[] {
-    return this.extractFinancialFieldsAll(result).filter(f => f.value !== null);
+    return this.extractFinancialFieldsAll(file);
   }
 
   /** Generate mock OCR result for demo/development when API is unavailable. */
   private generateMockResult(fileName: string): OcrResult {
     return {
       file_path: fileName,
-      total_pages: 3,
+      total_pages: 2,
       pages: [
         {
           page_number: 1,
           text: 'بسم الله الرحمن الرحيم\n\nالتقرير المالي السنوي\nإجمالي الإيرادات: 1,250,000 ريال\nصافي الربح: 340,000 ريال\nإجمالي الأصول: 5,600,000 ريال',
           text_regions: [
-            { text: 'بسم الله الرحمن الرحيم', confidence: 95.2, language: 'ara' },
-            { text: 'التقرير المالي السنوي', confidence: 92.1, language: 'ara' },
+            { text: 'بسم الله الرحمن الرحيم', confidence: 95.2, language: 'ara', bbox: { x: 100, y: 50, width: 400, height: 30 } },
+            { text: 'التقرير المالي السنوي', confidence: 92.1, language: 'ara', bbox: { x: 120, y: 90, width: 350, height: 28 } },
           ],
           tables: [
             {
@@ -183,23 +178,13 @@ export class OcrService {
           confidence: 89.2, width: 2480, height: 3508,
           flagged_for_review: false, processing_time_s: 1.87, errors: [],
         },
-        {
-          page_number: 3,
-          text: 'قائمة الدخل\nالدخل التشغيلي: 180,000\nالزكاة والضريبة: 42,000',
-          text_regions: [
-            { text: 'قائمة الدخل', confidence: 67.0, language: 'ara' },
-          ],
-          tables: [],
-          confidence: 67.0, width: 2480, height: 3508,
-          flagged_for_review: true, processing_time_s: 1.10, errors: [],
-        },
       ],
       metadata: {
-        languages: 'ara+eng', dpi: 300, pages_processed: 3,
+        languages: 'ara+eng', dpi: 300, pages_processed: 2,
         pages_with_errors: 0, demo_mode: true,
       },
-      overall_confidence: 82.6,
-      total_processing_time_s: 5.31,
+      overall_confidence: 90.35,
+      total_processing_time_s: 4.21,
       errors: [],
     };
   }

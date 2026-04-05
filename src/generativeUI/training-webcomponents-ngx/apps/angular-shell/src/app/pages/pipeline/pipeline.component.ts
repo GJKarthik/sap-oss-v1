@@ -48,10 +48,6 @@ interface LogLine {
           <div class="ws-badge" [class.ws-connected]="wsConnected()" [class.ws-disconnected]="!wsConnected()">
             {{ wsConnected() ? i18n.t('app.live') : i18n.t('app.offline') }}
           </div>
-          <label class="arabic-toggle">
-            <input type="checkbox" [checked]="includeArabic()" (change)="toggleArabic()" [disabled]="pipelineState() === 'running'" />
-            <span>{{ i18n.t('pipeline.includeArabic') }}</span>
-          </label>
           <button class="btn-primary" (click)="startPipeline()"
             [disabled]="pipelineState() === 'running' || starting()">
             {{ starting() ? i18n.t('pipeline.starting') : pipelineState() === 'running' ? i18n.t('pipeline.processing') : i18n.t('pipeline.execute') }}
@@ -81,31 +77,6 @@ interface LogLine {
           <button class="btn-clear" (click)="clearLogs()">{{ i18n.t('pipeline.clear') }}</button>
         </div>
       </div>
-
-      <!-- Arabic Stats -->
-      @if (arabicPairCount() !== null) {
-        <div class="arabic-stats-card">
-          <h2 class="section-title">{{ i18n.t('pipeline.arabicStats') }}</h2>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-value">{{ arabicPairCount() | number }}</span>
-              <span class="stat-label">{{ i18n.t('pipeline.arabicPairCount') }}</span>
-            </div>
-            @if (arabicGlossaryTerms() !== null) {
-              <div class="stat-item">
-                <span class="stat-value">{{ arabicGlossaryTerms() | number }}</span>
-                <span class="stat-label">{{ i18n.t('pipeline.arabicGlossaryTerms') }}</span>
-              </div>
-            }
-            @if (arabicDomains().length > 0) {
-              <div class="stat-item">
-                <span class="stat-value">{{ arabicDomains().length }}</span>
-                <span class="stat-label">{{ i18n.t('pipeline.arabicDomains') }}</span>
-              </div>
-            }
-          </div>
-        </div>
-      }
 
       <!-- Idle state prompt -->
       @if (pipelineState() === 'idle' && logLines().length === 0) {
@@ -269,24 +240,6 @@ interface LogLine {
     .stage-name { font-weight: 500; }
     .section-title { font-size: 1rem; font-weight: 600; color: var(--sapTextColor, #32363a); margin: 0 0 0.75rem; }
 
-    /* Arabic toggle */
-    .arabic-toggle {
-      display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
-      font-size: 0.8125rem; color: var(--sapTextColor, #32363a);
-      input { cursor: pointer; }
-      input:disabled { cursor: not-allowed; }
-    }
-
-    /* Arabic stats */
-    .arabic-stats-card {
-      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.5rem;
-    }
-    .stats-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
-    .stat-item { display: flex; flex-direction: column; gap: 0.25rem; }
-    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--sapBrandColor, #0854a0); }
-    .stat-label { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); text-transform: uppercase; letter-spacing: 0.04em; }
-
     /* Commands */
     .pipeline-commands { margin-bottom: 1.5rem; }
     .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
@@ -307,16 +260,12 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly logLines = signal<LogLine[]>([]);
   readonly starting = signal(false);
   readonly wsConnected = signal(false);
-  readonly includeArabic = signal(false);
-  readonly arabicPairCount = signal<number | null>(null);
-  readonly arabicGlossaryTerms = signal<number | null>(null);
-  readonly arabicDomains = signal<string[]>([]);
 
   private ws: WebSocket | null = null;
   private reconnectTimer: any = null;
   private shouldAutoScroll = true;
 
-  private readonly baseStages: PipelineStage[] = [
+  readonly stages = signal<PipelineStage[]>([
     { num: 1, name: 'Preconvert', tool: 'Python (openpyxl)', input: 'data/*.xlsx', output: 'staging/*.csv', status: 'idle' },
     { num: 2, name: 'Build', tool: 'zig build', input: 'Source code', output: 'Pipeline binary', status: 'idle' },
     { num: 3, name: 'Extract Schema', tool: 'Zig', input: 'staging/*.csv', output: 'Schema registry', status: 'idle' },
@@ -324,20 +273,13 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     { num: 5, name: 'Expand', tool: 'Zig', input: 'Templates + Schema', output: 'Text-SQL pairs', status: 'idle' },
     { num: 6, name: 'Validate', tool: 'Mangle', input: 'Pairs + Rules', output: 'Validated pairs', status: 'idle' },
     { num: 7, name: 'Format', tool: 'Zig', input: 'Validated pairs', output: 'Spider/BIRD JSONL', status: 'idle' },
-  ];
-
-  private readonly arabicStage: PipelineStage = {
-    num: 8, name: 'Arabic Pairs', tool: 'Python (massive_term_generator)', input: 'Glossary + Templates', output: 'Arabic Text-SQL JSONL', status: 'idle'
-  };
-
-  readonly stages = signal<PipelineStage[]>([...this.baseStages]);
+  ]);
 
   readonly commands = [
     { title: 'Full pipeline (all 7 stages)', command: 'cd pipeline && make all' },
     { title: 'Step 1 — Preconvert Excel → CSV', command: 'cd pipeline && make preconvert' },
     { title: 'Step 2 — Build Zig binary', command: 'cd pipeline/zig && zig build' },
     { title: 'Run Zig pipeline tests', command: 'cd pipeline/zig && zig build test' },
-    { title: 'Generate Arabic training pairs', command: 'cd src/training/schema_pipeline && python massive_term_generator.py' },
   ];
 
   ngOnInit() {
@@ -395,7 +337,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     };
   }
 
-  private handleMessage(msg: {type: string; state?: string; logs?: string[]; text?: string; source?: string; pair_count?: number; glossary_terms?: number; domains?: string[]}) {
+  private handleMessage(msg: {type: string; state?: string; logs?: string[]; text?: string}) {
     if (msg.type === 'init') {
       const state = (msg.state ?? 'idle') as PipelineState;
       this.pipelineState.set(state);
@@ -403,12 +345,6 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.updateStagesFromState(state);
     } else if (msg.type === 'log') {
       this.appendLine(msg.text ?? '');
-    } else if (msg.type === 'arabic_done') {
-      if (msg.pair_count != null) this.arabicPairCount.set(msg.pair_count);
-      if (msg.glossary_terms != null) this.arabicGlossaryTerms.set(msg.glossary_terms);
-      if (msg.domains) this.arabicDomains.set(msg.domains);
-      this.appendLine(msg.text ?? '');
-      this.stages.update(stages => stages.map(s => s.num === 8 ? { ...s, status: 'done' } : s));
     } else if (msg.type === 'done') {
       const state = (msg.state ?? 'completed') as PipelineState;
       this.pipelineState.set(state);
@@ -416,9 +352,6 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.updateStagesFromState(state);
       if (state === 'completed') {
         this.toast.success(this.i18n.t('pipeline.completeMsg'), this.i18n.t('pipeline.completeTitle'));
-        if (this.includeArabic()) {
-          this.startArabicPipeline();
-        }
       } else {
         this.toast.error(this.i18n.t('pipeline.errorMsg'), this.i18n.t('pipeline.errorTitle'));
       }
@@ -467,44 +400,6 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   clearLogs() {
     this.logLines.set([]);
-  }
-
-  toggleArabic() {
-    const next = !this.includeArabic();
-    this.includeArabic.set(next);
-    if (next) {
-      this.stages.set([...this.baseStages, { ...this.arabicStage, status: 'idle' }]);
-    } else {
-      this.stages.set([...this.baseStages]);
-      this.arabicPairCount.set(null);
-      this.arabicGlossaryTerms.set(null);
-      this.arabicDomains.set([]);
-    }
-  }
-
-  private startArabicPipeline() {
-    this.stages.update(stages => stages.map(s => s.num === 8 ? { ...s, status: 'running' } : s));
-    this.appendLine('🌍 Starting Arabic data generation (massive_term_generator.py)…');
-    this.http.post(`${environment.apiBaseUrl}/pipeline/start-arabic`, {}).subscribe({
-      next: () => {
-        this.appendLine('🌍 Arabic generation started — streaming logs…');
-      },
-      error: (e: { error?: { detail?: string } }) => {
-        const detail = e?.error?.detail || this.i18n.t('pipeline.arabicError');
-        this.toast.error(detail, this.i18n.t('pipeline.errorTitle'));
-        this.stages.update(stages => stages.map(s => s.num === 8 ? { ...s, status: 'error' } : s));
-      }
-    });
-  }
-
-  fetchArabicStats() {
-    this.http.get<{pair_count: number; glossary_terms: number; domains: string[]}>(`${environment.apiBaseUrl}/pipeline/arabic-stats`).subscribe({
-      next: (stats) => {
-        this.arabicPairCount.set(stats.pair_count);
-        this.arabicGlossaryTerms.set(stats.glossary_terms);
-        this.arabicDomains.set(stats.domains);
-      }
-    });
   }
 
   stateClass(): string {
