@@ -37,9 +37,17 @@ describe('DocumentOcrComponent', () => {
     userSettings = TestBed.inject(UserSettingsService);
     httpMock = TestBed.inject(HttpTestingController);
 
+    // Satisfy GlossaryService → TranslationMemoryService bootstrap fetch
+    const tmReq = httpMock.expectOne('/api/rag/tm');
+    tmReq.flush([]);
+
     // Satisfy health-check on init
     const req = httpMock.expectOne('/ocr/health');
     req.flush({ status: 'ok', missing_optional: [] });
+
+    // Satisfy vector stores fetch on init
+    const vsReq = httpMock.expectOne('/api/v1/vector/stores');
+    vsReq.flush([]);
 
     fixture.detectChanges();
   });

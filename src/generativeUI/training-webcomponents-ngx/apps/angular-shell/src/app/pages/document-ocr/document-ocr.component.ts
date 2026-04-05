@@ -10,6 +10,9 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { DocumentContextService } from '../../services/document-context.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
+import { BilingualDateComponent } from '../../shared/components/bilingual-date/bilingual-date.component';
+import { GlossaryHighlightPipe } from '../../shared/pipes/glossary-highlight.pipe';
+import { VectorService, VectorStore } from '../../services/vector.service';
 
 type NormalTab = 'text' | 'tables' | 'financial' | 'metadata';
 type ExpertTab = 'text' | 'fields' | 'qa' | 'export';
@@ -34,7 +37,7 @@ export interface OcrCurationState {
 @Component({
   selector: 'app-document-ocr',
   standalone: true,
-  imports: [CommonModule, LocaleNumberPipe],
+  imports: [CommonModule, LocaleNumberPipe, BilingualDateComponent, GlossaryHighlightPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './document-ocr.component.html',
@@ -47,6 +50,7 @@ export class DocumentOcrComponent implements OnDestroy {
   private readonly documentContext = inject(DocumentContextService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly vector = inject(VectorService);
 
   readonly state: OcrCurationState = {
     result: null,
@@ -69,6 +73,10 @@ export class DocumentOcrComponent implements OnDestroy {
   readonly isDragOver = signal(false);
 
   readonly isExpert = computed(() => this.userSettings.mode() === 'expert');
+
+  readonly vectorStores = signal<VectorStore[]>([]);
+  readonly indexingTo = signal<string | null>(null);
+  readonly aiExtraction = computed(() => (this._state() as any).aiResult);
 
   readonly currentPageResult = computed(() => {
     const s = this._state();
@@ -124,6 +132,11 @@ export class DocumentOcrComponent implements OnDestroy {
   constructor() {
     this.pollHealth();
     this._healthInterval = setInterval(() => this.pollHealth(), 30_000);
+    this.loadVectorStores();
+  }
+
+  loadVectorStores(): void {
+    this.vector.fetchStores().subscribe(stores => this.vectorStores.set(stores));
   }
 
   pollHealth(): void {
@@ -186,8 +199,10 @@ export class DocumentOcrComponent implements OnDestroy {
       s.sourceFile = file;
       s.uploading = true;
       s.processing = false;
+      (s as any).extractingAi = false;
       s.progress = 0;
       s.result = null;
+      (s as any).aiResult = null;
       s.corrections = {};
       s.groundTruth = {};
       s.pageStatus = {};
@@ -201,10 +216,56 @@ export class DocumentOcrComponent implements OnDestroy {
     this._mutate(s => {
       s.sourceFile = null;
       s.result = null;
+      (s as any).aiResult = null;
       s.corrections = {};
       s.groundTruth = {};
       s.pageStatus = {};
       s.reviewNotes = {};
+    });
+  }
+
+  runAiExtraction(): void {
+    const text = this.allText();
+    if (!text || (this._state() as any).extractingAi) return;
+
+    this._mutate(s => { (s as any).extractingAi = true; });
+    this.ocr.extractInformation(text, this._state().sourceFile?.name).subscribe({
+      next: (res) => {
+        this._mutate(s => {
+          (s as any).aiResult = res;
+          (s as any).extractingAi = false;
+          (s as any).normalTab = 'ai';
+        });
+        this.toast.success(this.i18n.t('ocr.ai.success'));
+      },
+      error: () => {
+        this._mutate(s => { (s as any).extractingAi = false; });
+        this.toast.error(this.i18n.t('ocr.ai.error'));
+      },
+    });
+  }
+
+  indexDocument(tableName: string): void {
+    const s = this._state();
+    if (!s.result || this.indexingTo()) return;
+
+    this.indexingTo.set(tableName);
+    const documents = s.result.pages.map(p => s.corrections[p.page_number] ?? p.text);
+    const metadatas = s.result.pages.map(p => ({
+      page: p.page_number,
+      source: s.sourceFile?.name ?? s.result!.file_path,
+      confidence: p.confidence
+    }));
+
+    this.vector.addDocuments(tableName, documents, metadatas).subscribe({
+      next: () => {
+        this.indexingTo.set(null);
+        this.toast.success(this.i18n.t('ocr.vector.indexSuccess', { table: tableName }));
+      },
+      error: () => {
+        this.indexingTo.set(null);
+        this.toast.error(this.i18n.t('ocr.vector.indexError'));
+      }
     });
   }
 
@@ -383,15 +444,29 @@ export class DocumentOcrComponent implements OnDestroy {
     const s = this._state();
     if (!s.result) return;
     const pages = s.result.pages.filter(p => (s.pageStatus[p.page_number] ?? 'pending') === 'approved');
+    if (!pages.length) {
+      this.toast.error(this.i18n.t('ocr.export.noPagesApproved'));
+      return;
+    }
     const lines = pages.map(p => ({
       page: p.page_number,
       text: s.corrections[p.page_number] ?? p.text,
       ground_truth_fields: s.groundTruth,
       corrections: s.corrections,
+      source_file: s.sourceFile?.name ?? s.result!.file_path,
     }));
+    this._mutate(st => { st.uploading = true; });
     this.ocr.sendToPipeline(lines).subscribe({
-      next: () => { this.toast.info(this.i18n.t('ocr.export.pipelineStub')); this.downloadDataset(); },
-      error: () => { this.toast.info(this.i18n.t('ocr.export.pipelineStub')); this.downloadDataset(); },
+      next: () => {
+        this._mutate(st => { st.uploading = false; });
+        this.toast.success(this.i18n.t('ocr.export.pipelineSent'));
+      },
+      error: () => {
+        this._mutate(st => { st.uploading = false; });
+        // Graceful fallback: notify and offer local download
+        this.toast.error(this.i18n.t('ocr.export.pipelineError'));
+        this.downloadDataset();
+      },
     });
   }
 
@@ -503,6 +578,11 @@ export class DocumentOcrComponent implements OnDestroy {
 
   onCanvasClick(_event: MouseEvent): void {
     // pdf.js click-to-scroll implemented in Task 5
+  }
+
+  isDate(value: string | null): boolean {
+    if (!value) return false;
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{2}\/\d{2}\/\d{4}$/.test(value);
   }
 
   private _mutate(fn: (s: OcrCurationState) => void): void {

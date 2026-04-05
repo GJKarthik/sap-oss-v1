@@ -1220,6 +1220,54 @@ async def real_worker_task(job_id: str):
             save_job(job_data)
             await broadcast_job(job_id, {"type": "status", "status": "failed", "progress": 0})
 
+# ---------------------------------------------------------------------------
+# OCR Dataset Ingestion
+# ---------------------------------------------------------------------------
+
+class OcrDatasetPayload(BaseModel):
+    dataset: List[Dict[str, Any]]
+    source: Optional[str] = None
+
+OCR_DATASET_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "ocr-datasets")
+
+
+@app.post("/v1/training/ocr-dataset")
+async def ingest_ocr_dataset(payload: OcrDatasetPayload) -> JSONResponse:
+    """
+    Receive approved OCR pages as a JSONL training dataset from the curation UI.
+    Appends entries to a timestamped JSONL file under packages/api-server/data/ocr-datasets/.
+    Returns a receipt with the record count and file path.
+    """
+    if not payload.dataset:
+        raise HTTPException(status_code=422, detail="dataset must be a non-empty list")
+
+    os.makedirs(OCR_DATASET_DIR, exist_ok=True)
+
+    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    filename = f"ocr-dataset-{ts}.jsonl"
+    filepath = os.path.join(OCR_DATASET_DIR, filename)
+
+    def _write() -> int:
+        with open(filepath, "w", encoding="utf-8") as fh:
+            for record in payload.dataset:
+                fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        return len(payload.dataset)
+
+    count = await asyncio.to_thread(_write)
+
+    logger.info("ocr_dataset_ingested", count=count, file=filename, source=payload.source)
+
+    return JSONResponse(
+        content={
+            "status": "accepted",
+            "records": count,
+            "file": filename,
+            "message": f"Ingested {count} OCR training record(s). Dataset written to {filename}.",
+        },
+        status_code=201,
+    )
+
+
 @app.post("/jobs")
 async def create_job(payload: JobCreatePayload) -> JSONResponse:
     job_id = str(uuid.uuid4())

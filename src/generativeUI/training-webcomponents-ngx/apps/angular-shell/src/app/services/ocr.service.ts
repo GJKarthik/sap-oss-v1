@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, catchError } from 'rxjs';
+import { GlossaryService } from './glossary.service';
 
 export interface OcrTextRegion {
   text: string;
@@ -57,34 +58,39 @@ export interface FinancialField {
   page: number | null;
 }
 
+export interface InvoiceField {
+  key: string;
+  value: string;
+  confidence: number;
+}
+
+export interface InvoiceLineItem {
+  description_ar: string;
+  description_en: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface OcrExtractionResult {
+  id: string;
+  document_type: string;
+  original_ar: string;
+  translated_en: string;
+  financial_fields: InvoiceField[];
+  line_items: InvoiceLineItem[];
+}
+
 export interface OcrHealthReport {
   status: 'ok' | 'degraded' | 'unhealthy';
   missing_optional?: string[];
   missing_required?: string[];
 }
 
-const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
-  { ar: 'إجمالي الإيرادات', en: 'Total Revenue' },
-  { ar: 'صافي الربح', en: 'Net Profit' },
-  { ar: 'إجمالي الأصول', en: 'Total Assets' },
-  { ar: 'إجمالي الالتزامات', en: 'Total Liabilities' },
-  { ar: 'حقوق المساهمين', en: 'Shareholders Equity' },
-  { ar: 'التدفقات النقدية', en: 'Cash Flows' },
-  { ar: 'رأس المال', en: 'Capital' },
-  { ar: 'الأرباح المحتجزة', en: 'Retained Earnings' },
-  { ar: 'المصروفات التشغيلية', en: 'Operating Expenses' },
-  { ar: 'الدخل التشغيلي', en: 'Operating Income' },
-  { ar: 'الزكاة والضريبة', en: 'Zakat and Tax' },
-  { ar: 'ربحية السهم', en: 'Earnings Per Share' },
-  { ar: 'الميزانية العمومية', en: 'Balance Sheet' },
-  { ar: 'قائمة الدخل', en: 'Income Statement' },
-];
-
 @Injectable({ providedIn: 'root' })
 export class OcrService {
-  static readonly FINANCIAL_GLOSSARY = FINANCIAL_GLOSSARY;
-
   private readonly http = inject(HttpClient);
+  private readonly glossary = inject(GlossaryService);
 
   /** Upload a PDF for OCR processing via the new /ocr/pdf endpoint. */
   uploadPdf(file: File): Observable<OcrResult> {
@@ -101,27 +107,59 @@ export class OcrService {
   }
 
   /**
-   * Extract all 14 financial glossary terms from an OCR result.
-   * Every term is always present in the returned array; value is null when not found.
+   * Extract all financial glossary terms from an OCR result.
    */
   extractFinancialFieldsAll(result: OcrResult): FinancialField[] {
-    return FINANCIAL_GLOSSARY.map(term => {
+    return this.glossary.entries().map(term => {
       for (const page of result.pages) {
         const idx = page.text.indexOf(term.ar);
         if (idx >= 0) {
-          const after = page.text.substring(idx + term.ar.length, idx + term.ar.length + 60);
-          const numMatch = after.match(/[\d,،.]+/);
+          // CPA-level extraction: look for numbers in a 100-char window
+          const after = page.text.substring(idx + term.ar.length, idx + term.ar.length + 100);
+          const numMatch = after.match(/[\d,،.%]+|\([\d,،.%]+\)/);
+          
+          let val = numMatch ? numMatch[0] : null;
+          
+          // Technical normalization: convert (123) to -123 for analytics
+          if (val && val.startsWith('(') && val.endsWith(')')) {
+            val = '-' + val.substring(1, val.length - 1);
+          }
+
           return {
             key_ar: term.ar,
             key_en: term.en,
-            value: numMatch ? numMatch[0] : null,
-            currency: 'SAR',
+            value: val,
+            currency: val && val.includes('%') ? '%' : 'SAR',
             page: page.page_number,
           };
         }
       }
       return { key_ar: term.ar, key_en: term.en, value: null, currency: 'SAR', page: null };
     });
+  }
+
+  /**
+   * Run LLM-powered extraction and translation on Arabic OCR text.
+   * Enforces strict IFRS/CPA banking standards via GlossaryService constraints.
+   */
+  extractInformation(text: string, fileName?: string): Observable<OcrExtractionResult> {
+    const body = {
+      text,
+      file_name: fileName,
+      language: 'ar',
+      document_type: 'invoice',
+      system_instructions: this.glossary.getSystemPromptSnippet()
+    };
+    return this.http.post<OcrExtractionResult>('/api/openai/v1/ocr/documents', body).pipe(
+      catchError(() => of({
+        id: 'error-stub',
+        document_type: 'invoice',
+        original_ar: text,
+        translated_en: '[Translation error or service unavailable]',
+        financial_fields: [],
+        line_items: [],
+      }))
+    );
   }
 
   /**
