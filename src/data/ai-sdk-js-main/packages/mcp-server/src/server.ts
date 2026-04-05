@@ -73,6 +73,17 @@ interface Prompt {
   arguments?: Array<{ name: string; description: string; required?: boolean }>;
 }
 
+interface PetriStageRow {
+  app: string;
+  stage: string;
+}
+
+interface CpnRunContext {
+  runId: string;
+  engine: CpnEngine;
+  petriStage: PetriStageRow[];
+}
+
 // =============================================================================
 // AI Core Configuration
 // =============================================================================
@@ -264,7 +275,8 @@ class MCPServer {
   private prompts: Map<string, Prompt> = new Map();
   private toolHandlers: Map<string, (args: Record<string, unknown>) => Promise<unknown>> = new Map();
   private facts: Map<string, unknown[]> = new Map(); // Mangle fact store
-  private cpnEngine: CpnEngine = new CpnEngine();
+  private cpnRuns: Map<string, CpnRunContext> = new Map();
+  private activeCpnRunId: string | null = null;
 
   constructor() {
     this.registerTools();
@@ -346,6 +358,7 @@ class MCPServer {
         properties: {
           scenario: { type: 'string', description: 'Orchestration scenario name' },
           input: { type: 'string', description: 'Input data as JSON' },
+          runId: { type: 'string', description: 'Optional workflow run id for the built-in CPN runtime' },
         },
         required: ['scenario', 'input'],
       },
@@ -361,6 +374,7 @@ class MCPServer {
         properties: {
           predicate: { type: 'string', description: 'Predicate to query (e.g., "deployment_ready")' },
           args: { type: 'string', description: 'Arguments as JSON array' },
+          runId: { type: 'string', description: 'Optional workflow run id for CPN-backed predicates' },
         },
         required: ['predicate'],
       },
@@ -433,6 +447,7 @@ class MCPServer {
         type: 'object',
         properties: {
           definition: { type: 'string', description: 'JSON object matching CpnNetDefinition schema' },
+          runId: { type: 'string', description: 'Optional run id to isolate this loaded net' },
         },
         required: ['definition'],
       },
@@ -447,6 +462,7 @@ class MCPServer {
         properties: {
           scenario: { type: 'string', description: 'Built-in scenario id (odps_close_process)' },
           appId: { type: 'string', description: 'Application id seeded into token payloads' },
+          runId: { type: 'string', description: 'Optional run id to isolate this built-in net instance' },
         },
         required: ['scenario'],
       },
@@ -458,7 +474,9 @@ class MCPServer {
       description: 'Return current CPN marking (multiset of colored tokens per place)',
       inputSchema: {
         type: 'object',
-        properties: {},
+        properties: {
+          runId: { type: 'string', description: 'Optional run id; defaults to the active CPN run' },
+        },
       },
     });
     this.toolHandlers.set('cpn_marking', this.handleCpnMarkingTool.bind(this));
@@ -470,6 +488,7 @@ class MCPServer {
         type: 'object',
         properties: {
           transitionId: { type: 'string', description: 'Transition id from the loaded net' },
+          runId: { type: 'string', description: 'Optional run id; defaults to the active CPN run' },
         },
         required: ['transitionId'],
       },
@@ -481,7 +500,9 @@ class MCPServer {
       description: 'Fire the first enabled transition (deterministic order)',
       inputSchema: {
         type: 'object',
-        properties: {},
+        properties: {
+          runId: { type: 'string', description: 'Optional run id; defaults to the active CPN run' },
+        },
       },
     });
     this.toolHandlers.set('cpn_step', this.handleCpnStepTool.bind(this));
@@ -570,7 +591,7 @@ class MCPServer {
     // Tool invocation facts (audit log)
     this.facts.set('tool_invocation', []);
 
-    // petri_stage(App, Stage) facts — populated by CPN engine (see syncPetriStageFromMarking)
+    // petri_stage(App, Stage) facts — aggregated across all CPN runs.
     this.facts.set('petri_stage', []);
   }
 
@@ -606,11 +627,57 @@ class MCPServer {
     return order.slice(0, idx + 1);
   }
 
-  /** Derive petri_stage rows from current CPN marking (cumulative stages per app). */
-  private syncPetriStageFromMarking(): void {
-    const rows: Array<{ app: string; stage: string }> = [];
+  private normalizeRunId(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed !== '' ? trimmed : null;
+  }
+
+  private getOrCreateCpnRun(runId: string): CpnRunContext {
+    const existing = this.cpnRuns.get(runId);
+    if (existing) return existing;
+    const created: CpnRunContext = {
+      runId,
+      engine: new CpnEngine(),
+      petriStage: [],
+    };
+    this.cpnRuns.set(runId, created);
+    return created;
+  }
+
+  private getReadableCpnRun(args: Record<string, unknown>): CpnRunContext | null {
+    const runId = this.normalizeRunId(args.runId) ?? this.activeCpnRunId;
+    if (!runId) return null;
+    return this.cpnRuns.get(runId) ?? null;
+  }
+
+  private getWritableCpnRun(args: Record<string, unknown>): CpnRunContext {
+    const runId = this.normalizeRunId(args.runId) ?? this.activeCpnRunId ?? uuid();
+    const ctx = this.getOrCreateCpnRun(runId);
+    this.activeCpnRunId = runId;
+    return ctx;
+  }
+
+  private refreshPetriStageFacts(): PetriStageRow[] {
+    const rows: PetriStageRow[] = [];
     const seen = new Set<string>();
-    const snap = this.cpnEngine.markingSnapshot();
+    for (const ctx of this.cpnRuns.values()) {
+      for (const row of ctx.petriStage) {
+        const key = `${row.app}|${row.stage}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push(row);
+      }
+    }
+    this.facts.set('petri_stage', rows);
+    return rows;
+  }
+
+  /** Derive petri_stage rows from current CPN marking (cumulative stages per app). */
+  private syncPetriStageFromMarking(ctx: CpnRunContext): PetriStageRow[] {
+    const rows: PetriStageRow[] = [];
+    const seen = new Set<string>();
+    const snap = ctx.engine.markingSnapshot();
     for (const tokens of Object.values(snap)) {
       if (!Array.isArray(tokens)) continue;
       for (const t of tokens) {
@@ -628,7 +695,9 @@ class MCPServer {
         }
       }
     }
-    this.facts.set('petri_stage', rows);
+    ctx.petriStage = rows;
+    this.refreshPetriStageFacts();
+    return rows;
   }
 
   // ===========================================================================
@@ -767,20 +836,23 @@ class MCPServer {
         typeof input === 'object' && input !== null && !Array.isArray(input)
           ? (input as Record<string, unknown>)
           : {};
+      const runId = this.normalizeRunId(body.runId) ?? this.normalizeRunId(args.runId) ?? uuid();
       const appId = String(body.appId ?? body.App ?? 'default-app');
-      this.cpnEngine.seedInitialWithApp(builtin, appId);
-      const run = this.cpnEngine.run({ mode: 'max', maxSteps: 1000 });
-      this.syncPetriStageFromMarking();
-      const ok = run.status === 'completed' || run.status === 'maxSteps';
+      const ctx = this.getOrCreateCpnRun(runId);
+      this.activeCpnRunId = runId;
+      ctx.engine.seedInitialWithApp(builtin, appId);
+      const run = ctx.engine.run({ mode: 'max', maxSteps: 1000 });
+      const petriStage = this.syncPetriStageFromMarking(ctx);
       return {
+        runId,
         scenario,
         input: body,
-        status: ok ? 'completed' : run.status,
+        status: run.status,
         engine: 'cpn',
         netId: builtin.id,
         trace: run.trace,
         finalMarking: run.finalMarking,
-        petri_stage: this.facts.get('petri_stage'),
+        petri_stage: petriStage,
         message: run.message,
       };
     }
@@ -800,12 +872,19 @@ class MCPServer {
     if (!def || typeof def !== 'object') {
       return { error: 'definition must be a JSON object or string' };
     }
+    const ctx = this.getWritableCpnRun(args);
     try {
-      this.cpnEngine.loadNet(def as CpnNetDefinition);
-      this.syncPetriStageFromMarking();
-      return { ok: true, netId: (def as { id?: string }).id, marking: this.cpnEngine.markingSnapshot() };
+      ctx.engine.loadNet(def as CpnNetDefinition);
+      const petriStage = this.syncPetriStageFromMarking(ctx);
+      return {
+        ok: true,
+        runId: ctx.runId,
+        netId: (def as { id?: string }).id,
+        marking: ctx.engine.markingSnapshot(),
+        petri_stage: petriStage,
+      };
     } catch (e) {
-      return { ok: false, error: String(e) };
+      return { ok: false, runId: ctx.runId, error: String(e) };
     }
   }
 
@@ -815,49 +894,65 @@ class MCPServer {
     if (!net) {
       return { error: `Unknown built-in CPN scenario: ${scenario}` };
     }
+    const ctx = this.getWritableCpnRun(args);
     const appId = String(args.appId ?? 'default-app');
-    this.cpnEngine.seedInitialWithApp(net, appId);
-    this.syncPetriStageFromMarking();
+    ctx.engine.seedInitialWithApp(net, appId);
+    const petriStage = this.syncPetriStageFromMarking(ctx);
     return {
       ok: true,
+      runId: ctx.runId,
       scenario,
       appId,
-      marking: this.cpnEngine.markingSnapshot(),
-      petri_stage: this.facts.get('petri_stage'),
+      marking: ctx.engine.markingSnapshot(),
+      petri_stage: petriStage,
     };
   }
 
-  private async handleCpnMarkingTool(_args: Record<string, unknown>): Promise<unknown> {
-    if (!this.cpnEngine.getNetId()) {
-      return { marking: {}, message: 'No net loaded; use cpn_reset or cpn_load' };
+  private async handleCpnMarkingTool(args: Record<string, unknown>): Promise<unknown> {
+    const ctx = this.getReadableCpnRun(args);
+    if (!ctx) {
+      return { marking: {}, message: 'No active CPN run; use cpn_reset, cpn_load, or orchestration_run' };
     }
-    return { netId: this.cpnEngine.getNetId(), marking: this.cpnEngine.markingSnapshot() };
+    if (!ctx.engine.getNetId()) {
+      return { runId: ctx.runId, marking: {}, message: 'No net loaded; use cpn_reset or cpn_load' };
+    }
+    return { runId: ctx.runId, netId: ctx.engine.getNetId(), marking: ctx.engine.markingSnapshot() };
   }
 
   private async handleCpnFireTool(args: Record<string, unknown>): Promise<unknown> {
+    const ctx = this.getReadableCpnRun(args);
+    if (!ctx) {
+      return { ok: false, error: 'No active CPN run; use cpn_reset, cpn_load, or orchestration_run' };
+    }
     const transitionId = String(args.transitionId ?? '');
-    const r = this.cpnEngine.fire(transitionId);
-    this.syncPetriStageFromMarking();
+    const r = ctx.engine.fire(transitionId);
+    const petriStage = this.syncPetriStageFromMarking(ctx);
     return {
+      runId: ctx.runId,
       ...r,
-      marking: this.cpnEngine.markingSnapshot(),
-      petri_stage: this.facts.get('petri_stage'),
+      marking: ctx.engine.markingSnapshot(),
+      petri_stage: petriStage,
     };
   }
 
-  private async handleCpnStepTool(_args: Record<string, unknown>): Promise<unknown> {
-    const enabled = this.cpnEngine.enabledTransitions();
+  private async handleCpnStepTool(args: Record<string, unknown>): Promise<unknown> {
+    const ctx = this.getReadableCpnRun(args);
+    if (!ctx) {
+      return { ok: false, error: 'No active CPN run; use cpn_reset, cpn_load, or orchestration_run' };
+    }
+    const enabled = ctx.engine.enabledTransitions();
     if (enabled.length === 0) {
-      return { ok: false, error: 'No enabled transitions', marking: this.cpnEngine.markingSnapshot() };
+      return { ok: false, runId: ctx.runId, error: 'No enabled transitions', marking: ctx.engine.markingSnapshot() };
     }
     const id = enabled[0]!;
-    const r = this.cpnEngine.fire(id);
-    this.syncPetriStageFromMarking();
+    const r = ctx.engine.fire(id);
+    const petriStage = this.syncPetriStageFromMarking(ctx);
     return {
+      runId: ctx.runId,
       fired: id,
       ...r,
-      marking: this.cpnEngine.markingSnapshot(),
-      petri_stage: this.facts.get('petri_stage'),
+      marking: ctx.engine.markingSnapshot(),
+      petri_stage: petriStage,
     };
   }
 
@@ -970,23 +1065,48 @@ class MCPServer {
   private async handleMangleQueryTool(args: Record<string, unknown>): Promise<unknown> {
     const predicate = args.predicate as string;
     const queryArgs = Array.isArray(args.args) ? args.args : safeJsonParse<unknown[]>(args.args, []);
+    const requestedRunId = this.normalizeRunId(args.runId);
 
     if (predicate === 'petri_stage') {
-      const rows = (this.facts.get('petri_stage') || []) as Array<{ app: string; stage: string }>;
+      const rows = requestedRunId
+        ? [...(this.cpnRuns.get(requestedRunId)?.petriStage ?? [])]
+        : ((this.facts.get('petri_stage') || []) as PetriStageRow[]);
       const a0 = queryArgs[0] != null ? String(queryArgs[0]) : '';
       const a1 = queryArgs[1] != null ? String(queryArgs[1]) : '';
       let filtered = rows;
       if (a0) filtered = filtered.filter((r) => r.app === a0);
       if (a1) filtered = filtered.filter((r) => r.stage === a1);
-      return { predicate, args: queryArgs, results: filtered };
+      return { predicate, args: queryArgs, runId: requestedRunId ?? undefined, results: filtered };
     }
 
     if (predicate === 'cpn_enabled') {
-      return { predicate, results: this.cpnEngine.enabledTransitions() };
+      const ctx = this.getReadableCpnRun(args);
+      if (!ctx) {
+        return {
+          predicate,
+          runId: requestedRunId ?? this.activeCpnRunId ?? undefined,
+          results: [],
+          message: 'No active CPN run',
+        };
+      }
+      return { predicate, runId: ctx.runId, results: ctx.engine.enabledTransitions() };
     }
 
     if (predicate === 'cpn_marking_snapshot') {
-      return { predicate, results: [{ marking: this.cpnEngine.markingSnapshot(), netId: this.cpnEngine.getNetId() }] };
+      const ctx = this.getReadableCpnRun(args);
+      if (!ctx) {
+        return {
+          predicate,
+          runId: requestedRunId ?? this.activeCpnRunId ?? undefined,
+          results: [],
+          message: 'No active CPN run',
+        };
+      }
+      return {
+        predicate,
+        runId: ctx.runId,
+        results: [{ runId: ctx.runId, marking: ctx.engine.markingSnapshot(), netId: ctx.engine.getNetId() }],
+      };
     }
 
     // Simple fact lookup

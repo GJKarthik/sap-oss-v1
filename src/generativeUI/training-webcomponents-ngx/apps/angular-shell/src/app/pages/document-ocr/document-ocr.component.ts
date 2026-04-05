@@ -10,17 +10,20 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { DocumentContextService } from '../../services/document-context.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
+import { BilingualDateComponent } from '../../shared/components/bilingual-date/bilingual-date.component';
+import { VectorService, VectorStore } from '../../services/vector.service';
 
 type NormalTab = 'text' | 'tables' | 'financial' | 'metadata';
-type ExpertTab = 'text' | 'fields' | 'qa' | 'export';
+type ExpertTab = 'text' | 'fields' | 'ai' | 'qa' | 'export';
 type PageStatus = 'pending' | 'approved' | 'flagged';
 type ExportFormat = 'jsonl' | 'annotated' | 'pdf';
 
 export interface OcrCurationState {
   result: OcrResult | null;
+  aiResult: any | null;
   sourceFile: File | null;
   activePage: number;
-  normalTab: NormalTab;
+  normalTab: NormalTab | 'ai';
   expertTab: ExpertTab;
   corrections: Record<number, string>;
   groundTruth: Record<string, string | null>;
@@ -28,13 +31,14 @@ export interface OcrCurationState {
   reviewNotes: Record<number, string>;
   uploading: boolean;
   processing: boolean;
+  extractingAi: boolean;
   progress: number;
 }
 
 @Component({
   selector: 'app-document-ocr',
   standalone: true,
-  imports: [CommonModule, LocaleNumberPipe],
+  imports: [CommonModule, LocaleNumberPipe, BilingualDateComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './document-ocr.component.html',
@@ -47,9 +51,11 @@ export class DocumentOcrComponent implements OnDestroy {
   private readonly documentContext = inject(DocumentContextService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly vector = inject(VectorService);
 
   readonly state: OcrCurationState = {
     result: null,
+    aiResult: null,
     sourceFile: null,
     activePage: 1,
     normalTab: 'text',
@@ -60,6 +66,7 @@ export class DocumentOcrComponent implements OnDestroy {
     reviewNotes: {},
     uploading: false,
     processing: false,
+    extractingAi: false,
     progress: 0,
   };
 
@@ -69,6 +76,11 @@ export class DocumentOcrComponent implements OnDestroy {
   readonly isDragOver = signal(false);
 
   readonly isExpert = computed(() => this.userSettings.mode() === 'expert');
+
+  readonly vectorStores = signal<VectorStore[]>([]);
+  readonly indexingTo = signal<string | null>(null);
+
+  readonly aiExtraction = computed(() => this._state().aiResult);
 
   readonly currentPageResult = computed(() => {
     const s = this._state();
@@ -116,14 +128,19 @@ export class DocumentOcrComponent implements OnDestroy {
   readonly includeFlagged = signal(false);
   readonly includeGroundTruth = signal(true);
 
-  readonly normalTabs: NormalTab[] = ['text', 'tables', 'financial', 'metadata'];
-  readonly expertTabs: ExpertTab[] = ['text', 'fields', 'qa', 'export'];
+  readonly normalTabs: (NormalTab | 'ai')[] = ['text', 'tables', 'financial', 'metadata', 'ai'];
+  readonly expertTabs: ExpertTab[] = ['text', 'fields', 'ai', 'qa', 'export'];
 
   private _healthInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.pollHealth();
     this._healthInterval = setInterval(() => this.pollHealth(), 30_000);
+    this.loadVectorStores();
+  }
+
+  loadVectorStores(): void {
+    this.vector.fetchStores().subscribe(stores => this.vectorStores.set(stores));
   }
 
   pollHealth(): void {
@@ -186,8 +203,10 @@ export class DocumentOcrComponent implements OnDestroy {
       s.sourceFile = file;
       s.uploading = true;
       s.processing = false;
+      s.extractingAi = false;
       s.progress = 0;
       s.result = null;
+      s.aiResult = null;
       s.corrections = {};
       s.groundTruth = {};
       s.pageStatus = {};
@@ -201,10 +220,56 @@ export class DocumentOcrComponent implements OnDestroy {
     this._mutate(s => {
       s.sourceFile = null;
       s.result = null;
+      s.aiResult = null;
       s.corrections = {};
       s.groundTruth = {};
       s.pageStatus = {};
       s.reviewNotes = {};
+    });
+  }
+
+  runAiExtraction(): void {
+    const text = this.allText();
+    if (!text || this._state().extractingAi) return;
+
+    this._mutate(s => { s.extractingAi = true; });
+    this.ocr.extractInformation(text, this._state().sourceFile?.name).subscribe({
+      next: (res) => {
+        this._mutate(s => {
+          s.aiResult = res;
+          s.extractingAi = false;
+          s.normalTab = 'ai';
+        });
+        this.toast.success(this.i18n.t('ocr.ai.success'));
+      },
+      error: () => {
+        this._mutate(s => { s.extractingAi = false; });
+        this.toast.error(this.i18n.t('ocr.ai.error'));
+      },
+    });
+  }
+
+  indexDocument(tableName: string): void {
+    const s = this._state();
+    if (!s.result || this.indexingTo()) return;
+
+    this.indexingTo.set(tableName);
+    const documents = s.result.pages.map(p => s.corrections[p.page_number] ?? p.text);
+    const metadatas = s.result.pages.map(p => ({
+      page: p.page_number,
+      source: s.sourceFile?.name ?? s.result!.file_path,
+      confidence: p.confidence
+    }));
+
+    this.vector.addDocuments(tableName, documents, metadatas).subscribe({
+      next: () => {
+        this.indexingTo.set(null);
+        this.toast.success(this.i18n.t('ocr.vector.indexSuccess', { table: tableName }));
+      },
+      error: () => {
+        this.indexingTo.set(null);
+        this.toast.error(this.i18n.t('ocr.vector.indexError'));
+      }
     });
   }
 
@@ -446,7 +511,7 @@ export class DocumentOcrComponent implements OnDestroy {
   }
 
   expertTabLabel(tab: ExpertTab): string {
-    const icons: Record<ExpertTab, string> = { text: '✏️ Text', fields: 'Fields', qa: 'QA', export: '🚀' };
+    const icons: Record<ExpertTab, string> = { text: '✏️ Text', fields: 'Fields', ai: '✨ AI', qa: 'QA', export: '🚀' };
     return icons[tab];
   }
 
@@ -503,6 +568,12 @@ export class DocumentOcrComponent implements OnDestroy {
 
   onCanvasClick(_event: MouseEvent): void {
     // pdf.js click-to-scroll implemented in Task 5
+  }
+
+  isDate(value: string | null): boolean {
+    if (!value) return false;
+    // Simple heuristic: YYYY-MM-DD or contains year-like numbers
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{2}\/\d{2}\/\d{4}$/.test(value);
   }
 
   private _mutate(fn: (s: OcrCurationState) => void): void {

@@ -40,7 +40,8 @@ ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",")
 
 # --- DATABASE PERSISTENCE SETUP ---
 from .database import engine, SessionLocal, get_db, init_database, close_database
-from .store import JobRecord, get_store
+from .store import JobRecord, get_store, seed_store
+from . import rag
 
 def save_job(job_data: dict):
     db = SessionLocal()
@@ -239,6 +240,8 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
+    await init_database()
+    seed_store()
     yield
 
 
@@ -298,6 +301,9 @@ class DataCleaningChatRequest(BaseModel):
 
 class DataCleaningWorkflowRunRequest(BaseModel):
     message: str
+
+# Routers
+app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

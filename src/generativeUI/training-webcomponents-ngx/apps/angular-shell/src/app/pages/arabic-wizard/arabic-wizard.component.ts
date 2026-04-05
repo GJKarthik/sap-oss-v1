@@ -9,6 +9,7 @@ import { OcrService, OcrResult } from '../../services/ocr.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
+import { BilingualDateComponent } from '../../shared/components/bilingual-date/bilingual-date.component';
 import { Subject, takeUntil } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -40,7 +41,7 @@ interface CompletionResponse {
 @Component({
   selector: 'app-arabic-wizard',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocaleNumberPipe, DecimalPipe],
+  imports: [CommonModule, FormsModule, LocaleNumberPipe, DecimalPipe, BilingualDateComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './arabic-wizard.component.html',
@@ -226,6 +227,11 @@ export class ArabicWizardComponent implements OnDestroy {
 
   onTextEdit(_event: FocusEvent): void {
     // Placeholder for future edit persistence
+  }
+
+  isDate(value: string | null): boolean {
+    if (!value) return false;
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{2}\/\d{2}\/\d{4}$/.test(value);
   }
 
   // --- Chat / Analyze ---

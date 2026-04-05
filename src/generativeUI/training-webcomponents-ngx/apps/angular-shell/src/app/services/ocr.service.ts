@@ -57,6 +57,29 @@ export interface FinancialField {
   page: number | null;
 }
 
+export interface InvoiceField {
+  key: string;
+  value: string;
+  confidence: number;
+}
+
+export interface InvoiceLineItem {
+  description_ar: string;
+  description_en: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface OcrExtractionResult {
+  id: string;
+  document_type: string;
+  original_ar: string;
+  translated_en: string;
+  financial_fields: InvoiceField[];
+  line_items: InvoiceLineItem[];
+}
+
 export interface OcrHealthReport {
   status: 'ok' | 'degraded' | 'unhealthy';
   missing_optional?: string[];
@@ -122,6 +145,32 @@ export class OcrService {
       }
       return { key_ar: term.ar, key_en: term.en, value: null, currency: 'SAR', page: null };
     });
+  }
+
+  /**
+   * Run LLM-powered extraction and translation on Arabic OCR text.
+   * Calls the /v1/ocr/documents endpoint of the openai-server.
+   */
+  extractInformation(text: string, fileName?: string): Observable<OcrExtractionResult> {
+    const body = {
+      text,
+      file_name: fileName,
+      language: 'ar',
+      document_type: 'invoice',
+    };
+    // Note: openai-server typically runs on port 8400, but in the monorepo 
+    // it may be proxied through nginx /api/openai/ or similar.
+    // Based on nginx.conf, we can use the /v1/ocr/documents endpoint.
+    return this.http.post<OcrExtractionResult>('/api/openai/v1/ocr/documents', body).pipe(
+      catchError(() => of({
+        id: 'error-stub',
+        document_type: 'invoice',
+        original_ar: text,
+        translated_en: '[Translation error or service unavailable]',
+        financial_fields: [],
+        line_items: [],
+      }))
+    );
   }
 
   /**

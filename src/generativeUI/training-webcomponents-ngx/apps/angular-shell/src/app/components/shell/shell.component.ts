@@ -106,6 +106,18 @@ interface NavItem {
           <option value="intermediate">{{ i18n.t('mode.intermediate') }}</option>
           <option value="expert">{{ i18n.t('mode.expert') }}</option>
         </select>
+
+        @if (i18n.currentLang() === 'ar') {
+          <select class="mode-select" [ngModel]="userSettings.calendar()" (ngModelChange)="userSettings.setCalendar($event)">
+            <option value="gregorian">{{ i18n.t('gregorianLabel') }}</option>
+            <option value="hijri">{{ i18n.t('hijriLabel') }}</option>
+          </select>
+          <select class="mode-select" [ngModel]="userSettings.numbering()" (ngModelChange)="userSettings.setNumbering($event)">
+            <option value="latn">123</option>
+            <option value="arab">١٢٣</option>
+          </select>
+        }
+
         <button class="header-btn" (click)="logout()" [title]="i18n.t('app.signOut')">{{ i18n.t('app.signOut') }}</button>
       </nav>
 
@@ -391,6 +403,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       { label: this.i18n.t('nav.chat'), icon: 'discussion-2', route: '/chat' },
       { label: this.i18n.t('nav.compare'), icon: 'compare', route: '/compare' },
       { label: this.i18n.t('nav.documentOcr'), icon: 'document', route: '/document-ocr' },
+      { label: this.i18n.t('nav.semanticSearch'), icon: 'search', route: '/semantic-search' },
       { label: this.i18n.t('nav.arabicWizard'), icon: 'learning-assistant', route: '/arabic-wizard' },
       { label: this.i18n.t('nav.workflow'), icon: 'workflow-tasks', route: '/workflow' },
     ];

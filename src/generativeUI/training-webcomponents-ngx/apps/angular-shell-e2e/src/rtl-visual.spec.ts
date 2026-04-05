@@ -114,6 +114,26 @@ test.describe('RTL Visual Regression Tests', () => {
         fullPage: true,
       });
     });
+
+    test('dropdown select options RTL', async ({ page }) => {
+      await page.goto('/model-optimizer', { waitUntil: 'networkidle' });
+      const select = page.locator('select').first();
+      await select.click();
+      // Dropdown options should be aligned correctly in RTL
+      await expect(page).toHaveScreenshot('rtl-dropdown-open.png', SCREENSHOT_OPTS);
+    });
+
+    test('chat modal RTL layout', async ({ page }) => {
+      await page.goto('/model-optimizer', { waitUntil: 'networkidle' });
+      // Find a completed job and open its chat
+      const completedJobDeployBtn = page.locator('tr.job-row:has-text("completed") button:has-text("Playground")').first();
+      if (await completedJobDeployBtn.isVisible()) {
+        await completedJobDeployBtn.click();
+        const modal = page.locator('.modal-content');
+        await expect(modal).toBeVisible();
+        await expect(modal).toHaveScreenshot('rtl-chat-modal.png', SCREENSHOT_OPTS);
+      }
+    });
   });
 
   test.describe('Document OCR Page', () => {

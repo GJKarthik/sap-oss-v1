@@ -1,12 +1,15 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, OnInit, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, firstValueFrom } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { DocumentContextService } from '../../services/document-context.service';
+import { VectorService, VectorStore } from '../../services/vector.service';
 import { LocaleDatePipe } from '../../shared/pipes/locale-date.pipe';
+
+export type ChatMode = 'document' | 'library';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface ChatMessage {
@@ -402,6 +405,7 @@ export class ChatComponent implements OnDestroy, OnInit {
 
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  private readonly vector = inject(VectorService);
   readonly i18n = inject(I18nService);
   readonly docContext = inject(DocumentContextService);
   private readonly destroy$ = new Subject<void>();
@@ -410,6 +414,11 @@ export class ChatComponent implements OnDestroy, OnInit {
   readonly sending = signal(false);
   readonly lastUsage = signal<{ total_tokens: number } | null>(null);
   readonly availableModels = signal<string[]>([]);
+
+  // RAG / Mode state
+  readonly mode = signal<ChatMode>('document');
+  readonly vectorStores = signal<VectorStore[]>([]);
+  readonly selectedStore = signal<string | null>(null);
 
   private static readonly EN_SYSTEM_PROMPT = 'You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.';
   private static readonly AR_SYSTEM_PROMPT = 'أنت مساعد ذكي متخصص في تحويل الأسئلة المالية باللغة العربية إلى استعلامات SQL لقواعد بيانات SAP HANA Cloud المصرفية.';
@@ -449,7 +458,17 @@ export class ChatComponent implements OnDestroy, OnInit {
 
   ngOnInit(): void {
     this.loadModels();
+    this.loadVectorStores();
     this.initDocumentContext();
+  }
+
+  loadVectorStores(): void {
+    this.vector.fetchStores().subscribe(stores => {
+      this.vectorStores.set(stores);
+      if (stores.length > 0 && !this.selectedStore()) {
+        this.selectedStore.set(stores[0].table_name);
+      }
+    });
   }
 
   /** Handle document context passed from OCR page. */

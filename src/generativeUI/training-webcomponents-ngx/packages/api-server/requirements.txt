@@ -13,6 +13,7 @@ pynvml>=11.5.0
 
 # Persistence
 sqlalchemy>=2.0.0
+hdbcli>=2.19.21
 
 # Deep Learning Logic
 torch>=2.0.0

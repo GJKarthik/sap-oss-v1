@@ -8,13 +8,9 @@
 
 import { Pipe, PipeTransform, inject } from '@angular/core';
 import { I18nService, Language } from '../../services/i18n.service';
+import { UserSettingsService, CalendarType, NumberingSystem } from '../../services/user-settings.service';
 
 export type LocaleDateFormatStyle = 'short' | 'medium' | 'long' | 'full' | 'relative' | 'datetime' | 'date' | 'time';
-
-const LOCALE_MAP: Record<Language, string> = {
-  en: 'en-US',
-  ar: 'ar-SA-u-nu-latn',
-};
 
 @Pipe({
   name: 'localeDate',
@@ -23,11 +19,13 @@ const LOCALE_MAP: Record<Language, string> = {
 })
 export class LocaleDatePipe implements PipeTransform {
   private readonly i18n = inject(I18nService);
+  private readonly userSettings = inject(UserSettingsService);
 
   transform(
     value: string | number | Date | null | undefined,
     style: LocaleDateFormatStyle = 'datetime',
-    calendar?: 'gregorian' | 'hijri',
+    calendarOverride?: CalendarType,
+    numberingOverride?: NumberingSystem,
   ): string {
     if (!value) return '';
 
@@ -41,9 +39,16 @@ export class LocaleDatePipe implements PipeTransform {
     }
 
     const lang = this.i18n.currentLang();
-    let locale = LOCALE_MAP[lang] ?? LOCALE_MAP['en'];
-    if (calendar === 'hijri' && lang === 'ar') {
-      locale = 'ar-SA-u-ca-islamic-nu-latn';
+    const calendar = calendarOverride ?? (lang === 'ar' ? this.userSettings.calendar() : 'gregorian');
+    const numbering = numberingOverride ?? (lang === 'ar' ? this.userSettings.numbering() : 'latn');
+
+    let locale = lang === 'ar' ? 'ar-SA' : 'en-US';
+    
+    // Construct BCP 47 locale with Unicode extensions
+    if (lang === 'ar') {
+      const ca = calendar === 'hijri' ? 'islamic' : 'gregory';
+      const nu = numbering === 'arab' ? 'arab' : 'latn';
+      locale = `${locale}-u-ca-${ca}-nu-${nu}`;
     }
 
     const options = this.getOptions(style);
@@ -83,9 +88,7 @@ export class LocaleDatePipe implements PipeTransform {
 
     // Future dates — just format normally
     if (diffMs < 0) {
-      const lang = this.i18n.currentLang();
-      const locale = LOCALE_MAP[lang] ?? LOCALE_MAP['en'];
-      return new Intl.DateTimeFormat(locale, this.getOptions('datetime')).format(date);
+      return this.transform(date, 'datetime');
     }
 
     if (diffSeconds < 60) return this.i18n.t('relative.justNow');

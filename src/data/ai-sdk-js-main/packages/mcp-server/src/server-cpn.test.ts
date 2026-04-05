@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2024 SAP SE
 
 import { MCPServer } from './server';
+import { CpnEngine } from './cpn/engine';
 
 describe('MCPServer CPN + mangle_query', () => {
   it('orchestration_run executes built-in odps_close_process and populates petri_stage facts', async () => {
@@ -77,5 +78,103 @@ describe('MCPServer CPN + mangle_query', () => {
     const mqBody = JSON.parse(mqText) as { results: Array<{ app: string; stage: string }> };
     expect(mqBody.results.some((r) => r.app === 'x1' && r.stage === 'S01')).toBe(true);
     expect(mqBody.results.some((r) => r.app === 'x1' && r.stage === 'S02')).toBe(true);
+  });
+
+  it('isolates CPN run state when runId is provided', async () => {
+    const server = new MCPServer();
+
+    await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'cpn_reset',
+        arguments: { scenario: 'odps_close_process', appId: 'run-a-app', runId: 'run-a' },
+      },
+    });
+    await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: {
+        name: 'cpn_step',
+        arguments: { runId: 'run-a' },
+      },
+    });
+    await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 3,
+      method: 'tools/call',
+      params: {
+        name: 'cpn_reset',
+        arguments: { scenario: 'odps_close_process', appId: 'run-b-app', runId: 'run-b' },
+      },
+    });
+
+    const runAStages = await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 4,
+      method: 'tools/call',
+      params: {
+        name: 'mangle_query',
+        arguments: { predicate: 'petri_stage', runId: 'run-a', args: '[]' },
+      },
+    });
+    const runAText = (runAStages.result as { content: Array<{ text: string }> }).content[0]!.text;
+    const runABody = JSON.parse(runAText) as { results: Array<{ app: string; stage: string }> };
+    expect(runABody.results).toEqual(
+      expect.arrayContaining([
+        { app: 'run-a-app', stage: 'S01' },
+        { app: 'run-a-app', stage: 'S02' },
+      ]),
+    );
+    expect(runABody.results.some((r) => r.app === 'run-a-app' && r.stage === 'S03')).toBe(false);
+
+    const runBStages = await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: {
+        name: 'mangle_query',
+        arguments: { predicate: 'petri_stage', runId: 'run-b', args: '[]' },
+      },
+    });
+    const runBText = (runBStages.result as { content: Array<{ text: string }> }).content[0]!.text;
+    const runBBody = JSON.parse(runBText) as { results: Array<{ app: string; stage: string }> };
+    expect(runBBody.results).toEqual([{ app: 'run-b-app', stage: 'S01' }]);
+  });
+
+  it('preserves maxSteps status from the CPN runtime', async () => {
+    const runSpy = jest.spyOn(CpnEngine.prototype, 'run').mockReturnValue({
+      status: 'maxSteps',
+      trace: [],
+      finalMarking: {},
+      message: 'Stopped after 1000 steps',
+    });
+
+    try {
+      const server = new MCPServer();
+      const res = await server.handleRequest({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'orchestration_run',
+          arguments: {
+            scenario: 'odps_close_process',
+            input: JSON.stringify({ appId: 'loop-app' }),
+          },
+        },
+      });
+
+      expect(res.error).toBeUndefined();
+      const text = (res.result as { content: Array<{ text: string }> }).content[0]!.text;
+      const body = JSON.parse(text) as { status: string; engine: string; message?: string };
+      expect(body.engine).toBe('cpn');
+      expect(body.status).toBe('maxSteps');
+      expect(body.message).toContain('Stopped after 1000 steps');
+    } finally {
+      runSpy.mockRestore();
+    }
   });
 });

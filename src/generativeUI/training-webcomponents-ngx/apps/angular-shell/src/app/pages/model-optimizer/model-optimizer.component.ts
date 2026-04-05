@@ -9,6 +9,7 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
+import { arabicScriptValidator } from '../../utils/validators';
 
 interface ModelInfo {
   name: string;
@@ -158,6 +159,16 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
               <div class="field-group">
                 <label class="field-label">{{ i18n.t('modelOpt.modelName') }}</label>
                 <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.autoPopulated')" readonly />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field-group full-width">
+                <label class="field-label">{{ i18n.t('modelOpt.arabicDescription') }}</label>
+                <input class="form-input" formControlName="arabic_description" [placeholder]="i18n.t('modelOpt.arabicDescriptionPlaceholder')" />
+                @if (jobForm.get('arabic_description')?.errors?.['arabicScript']) {
+                  <div class="text-small error-text mt-1">{{ i18n.t('modelOpt.arabicScriptOnly') }}</div>
+                }
               </div>
             </div>
 
@@ -677,6 +688,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
   readonly jobForm = this.fb.nonNullable.group({
     model_name: ['', Validators.required],
+    arabic_description: ['', [arabicScriptValidator()]],
     quant_format: ['int8', Validators.required],
     calib_samples: [512, [Validators.required, Validators.min(32)]],
     calib_seq_len: [2048, Validators.required],

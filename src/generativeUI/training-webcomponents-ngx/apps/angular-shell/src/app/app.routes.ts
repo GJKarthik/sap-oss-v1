@@ -71,6 +71,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'semantic-search',
+        loadComponent: () =>
+          import('./pages/semantic-search/semantic-search.component').then(
+            (m) => m.SemanticSearchComponent
+          ),
+      },
+      {
         path: 'arabic-wizard',
         loadComponent: () =>
           import('./pages/arabic-wizard/arabic-wizard.component').then(

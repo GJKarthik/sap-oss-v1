@@ -61,6 +61,20 @@
   }
 }
 
+.btn-outline-green {
+  padding: 0.375rem 0.75rem; border-radius: 0.375rem;
+  border: 1px solid var(--sapIndicationColor_4, #00701a);
+  background: #fff; color: var(--sapIndicationColor_4, #00701a);
+  font-size: 0.8125rem; cursor: pointer; font-weight: 600;
+  display: flex; align-items: center;
+  &:hover { background: #f6fff8; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.vector-index-group {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
 /* Tabs */
 .tab-bar {
   display: flex; gap: 0; border-bottom: 2px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
@@ -134,6 +148,95 @@ table {
 .meta-value { font-size: 1.125rem; font-weight: 600; }
 
 .empty-state { text-align: center; padding: 2rem; color: var(--sapContent_LabelColor, #6a6d70); }
+
+/* AI Extraction tab */
+.ai-empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 4rem 2rem; text-align: center; background: var(--sapBaseColor, #fff);
+  border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.75rem;
+  .ai-empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+  h3 { margin: 0 0 0.5rem; font-size: 1.25rem; }
+  p { margin: 0 0 1.5rem; color: var(--sapContent_LabelColor, #6a6d70); max-width: 400px; }
+}
+
+.ai-extraction-results {
+  display: flex; flex-direction: column; gap: 2rem;
+  padding: 1rem; background: var(--sapBaseColor, #fff);
+  border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.75rem;
+}
+
+.ai-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+  padding-bottom: 1rem;
+  h3 { margin: 0; font-size: 1.125rem; color: var(--sapBrandColor, #0854a0); }
+}
+
+.ai-badge {
+  background: var(--sapIndicationColor_4, #00701a); color: #fff;
+  padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.ai-translated-section {
+  h4 { margin: 0 0 0.75rem; font-size: 0.9375rem; color: var(--sapContent_LabelColor, #6a6d70); }
+  .translated-text-box {
+    padding: 1.25rem; background: #f8f9fa; border-radius: 0.5rem;
+    font-size: 1rem; line-height: 1.7; border-inline-start: 4px solid var(--sapBrandColor, #0854a0);
+    white-space: pre-wrap;
+  }
+}
+
+.ai-fields-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
+}
+
+.ai-field-card {
+  padding: 1rem; background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem;
+  display: flex; flex-direction: column; gap: 0.25rem; position: relative;
+  .ai-field-label { font-size: 0.75rem; color: #6c757d; font-weight: 600; text-transform: uppercase; }
+  .ai-field-value { font-size: 1.125rem; font-weight: 700; color: #212529; }
+  .ai-field-conf {
+    position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.7rem; font-weight: 700;
+    padding: 0.125rem 0.375rem; border-radius: 1rem;
+    &.conf-high { background: #d4edda; color: #155724; }
+    &.conf-mid { background: #fff3cd; color: #856404; }
+    &.conf-low { background: #f8d7da; color: #721c24; }
+  }
+}
+
+.ai-items-section {
+  h4 { margin: 0 0 1rem; font-size: 0.9375rem; color: var(--sapContent_LabelColor, #6a6d70); }
+}
+
+.ai-items-table {
+  width: 100%; border-collapse: collapse; font-size: 0.875rem;
+  th { text-align: start; padding: 0.75rem; background: #f8f9fa; border-bottom: 2px solid #dee2e6; }
+  td { padding: 0.75rem; border-bottom: 1px solid #eee; }
+}
+
+.spinner {
+  display: inline-block; width: 1rem; height: 1rem; border: 2px solid rgba(255,255,255,.3);
+  border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite;
+  margin-inline-end: 0.5rem;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Field comparison container */
+.field-comparison-container {
+  display: flex; gap: 2rem; align-items: flex-start;
+  .field-table-wrap {
+    flex: 1; min-width: 0;
+    h3 { margin: 0 0 1rem; font-size: 1rem; color: #6a6d70; text-transform: uppercase; letter-spacing: 0.05em; }
+  }
+  .ai-diff {
+    border-inline-start: 1px solid #dee2e6; padding-inline-start: 2rem;
+    h3 { color: var(--sapBrandColor, #0854a0); }
+  }
+}
+
+.gt-value-en { font-weight: 700; color: #212529; }
 
 /* RTL adjustments */
 .rtl {

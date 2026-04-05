@@ -119,7 +119,13 @@
                     <tr>
                       <td dir="rtl">{{ field.key_ar }}</td>
                       <td>{{ field.key_en }}</td>
-                      <td>{{ field.value }}</td>
+                      <td>
+                        @if (isDate(field.value)) {
+                          <app-bilingual-date [date]="field.value" [showLabels]="false"></app-bilingual-date>
+                        } @else {
+                          {{ field.value }}
+                        }
+                      </td>
                       <td>{{ field.page }}</td>
                     </tr>
                   }

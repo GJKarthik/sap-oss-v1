@@ -1,0 +1,95 @@
+<div class="search-page" [dir]="i18n.dir()">
+  <div class="search-header">
+    <h1>{{ i18n.t('search.title') }}</h1>
+    <p class="search-subtitle">{{ i18n.t('search.subtitle') }}</p>
+  </div>
+
+  <div class="search-controls">
+    <div class="control-row">
+      <div class="field-group store-selector">
+        <label for="store-select">{{ i18n.t('search.selectStore') }}</label>
+        <select id="store-select" [ngModel]="selectedStore()" (ngModelChange)="selectedStore.set($event)">
+          @for (store of vectorStores(); track store.table_name) {
+            <option [value]="store.table_name">{{ store.table_name }} ({{ store.documents_added }} docs)</option>
+          }
+        </select>
+      </div>
+
+      <div class="field-group query-input-wrap">
+        <label for="query-input">{{ i18n.t('search.askQuestion') }}</label>
+        <div class="input-with-button">
+          <input
+            id="query-input"
+            type="text"
+            [ngModel]="queryText()"
+            (ngModelChange)="queryText.set($event)"
+            [placeholder]="i18n.t('search.placeholder')"
+            (keydown.enter)="onSearch()"
+          />
+          <button class="btn-primary" (click)="onSearch()" [disabled]="isSearching() || !queryText().trim()">
+            @if (isSearching()) { <span class="spinner"></span> }
+            {{ i18n.t('search.runAction') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (searchHistory().length > 0) {
+      <div class="history-chips">
+        <span class="history-label">{{ i18n.t('search.recent') }}:</span>
+        @for (item of searchHistory(); track item.ts) {
+          <button class="chip" (click)="useHistory(item.query)">{{ item.query }}</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (searchResult()) {
+    <div class="results-container">
+      <div class="answer-section card">
+        <div class="section-header">
+          <h3>{{ i18n.t('search.answerTitle') }}</h3>
+          <span class="source-badge">{{ searchResult()?.source }}</span>
+        </div>
+        <div class="answer-text">
+          {{ searchResult()?.answer }}
+        </div>
+      </div>
+
+      <div class="context-section">
+        <h3>{{ i18n.t('search.contextTitle') }}</h3>
+        <div class="context-grid">
+          @for (doc of searchResult()?.context_docs; track doc.id) {
+            <div class="context-card card">
+              <div class="card-header">
+                <span class="doc-id">#{{ doc.id.substring(0, 8) }}</span>
+                <span class="score-badge" [class.high]="doc.score > 0.8">
+                  {{ (doc.score * 100) | number:'1.0-0' }}% match
+                </span>
+              </div>
+              <div class="doc-content" [dir]="'auto'">
+                {{ doc.content }}
+              </div>
+              @if (doc.metadata) {
+                <div class="doc-meta">
+                  <span *ngIf="doc.metadata.source">📄 {{ doc.metadata.source }}</span>
+                  <span *ngIf="doc.metadata.page">· p.{{ doc.metadata.page }}</span>
+                </div>
+              }
+            </div>
+          } @empty {
+            <div class="empty-results card">
+              {{ i18n.t('search.noResults') }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (!isSearching()) {
+    <div class="search-empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3>{{ i18n.t('search.emptyTitle') }}</h3>
+      <p>{{ i18n.t('search.emptyHint') }}</p>
+    </div>
+  }
+</div>

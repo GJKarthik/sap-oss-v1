@@ -94,6 +94,30 @@ Every pull request must:
 
 ---
 
+## Arabic Localization Standards
+
+To maintain high-quality support for Arabic-speaking enterprise users, follow these rules:
+
+### 1. Bidirectional (BiDi) Safety
+- Use the `<bdi>` tag for dynamic content that mixes languages (e.g., model names, file paths) to prevent text bleeding.
+- Ensure all containers have `dir="auto"` if they contain user-generated text.
+- Use `i18n.dir()` on top-level page containers to automatically switch layouts.
+
+### 2. Numbers and Dates
+- **Never** hardcode date formats. Use the `localeDate` pipe.
+- For financial figures, use `LocaleNumberPipe` to ensure proper decimal separators and digit grouping for Arabic.
+- When displaying dates in Arabic context, prefer the `BilingualDateComponent` to show both Hijri and Gregorian calendars.
+
+### 3. Pluralization
+- Use ICU message format for all strings with variables.
+- Arabic requires 6 plural forms (`zero`, `one`, `two`, `few`, `many`, `other`). Ensure all these forms are present in `ar.json`.
+
+### 4. RTL Layout
+- Use logical CSS properties where possible (e.g., `margin-inline-start` instead of `margin-left`).
+- Verify that icons are correctly mirrored if they imply direction (e.g., arrows, progress bars).
+
+---
+
 ## Pull Request Checklist
 
 - [ ] `yarn nx test angular-shell` passes

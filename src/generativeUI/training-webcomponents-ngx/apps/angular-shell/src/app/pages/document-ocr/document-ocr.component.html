@@ -134,7 +134,11 @@
                 </div>
                 <div class="financial-value">
                   @if (field.value !== null) {
-                    <span class="value-amount">{{ field.value }}</span>
+                    @if (isDate(field.value)) {
+                      <app-bilingual-date [date]="field.value" [showLabels]="false"></app-bilingual-date>
+                    } @else {
+                      <span class="value-amount">{{ field.value }}</span>
+                    }
                     <span class="value-meta">{{ field.currency ?? 'SAR' }} · p.{{ field.page }}</span>
                   } @else {
                     <span class="value-missing">—</span>
@@ -180,9 +184,93 @@
           </div>
         </div>
 
+        <!-- AI Extraction tab -->
+        <div class="tab-panel" id="tabpanel-ai" role="tabpanel" aria-labelledby="tab-ai" [class.hidden]="getState().normalTab !== 'ai'">
+          @if (getState().aiResult) {
+            <div class="ai-extraction-results">
+              <div class="ai-header">
+                <h3>{{ i18n.t('ocr.ai.summaryTitle') }}</h3>
+                <span class="ai-badge">LLM Powered</span>
+              </div>
+              
+              <div class="ai-translated-section">
+                <h4>{{ i18n.t('ocr.ai.translatedTitle') }}</h4>
+                <div class="translated-text-box" [dir]="'ltr'">
+                  {{ getState().aiResult.translated_en }}
+                </div>
+              </div>
+
+              <div class="ai-fields-grid">
+                @for (field of getState().aiResult.financial_fields; track field.key) {
+                  <div class="ai-field-card">
+                    <span class="ai-field-label">{{ field.key | titlecase }}</span>
+                    @if (isDate(field.value)) {
+                      <app-bilingual-date [date]="field.value" [showLabels]="false"></app-bilingual-date>
+                    } @else {
+                      <span class="ai-field-value">{{ field.value }}</span>
+                    }
+                    <div class="ai-field-conf" [class]="confidenceClass(field.confidence * 100)">
+                      {{ (field.confidence * 100) | number:'1.0-0' }}%
+                    </div>
+                  </div>
+                }
+              </div>
+
+              @if (getState().aiResult.line_items?.length > 0) {
+                <div class="ai-items-section">
+                  <h4>{{ i18n.t('ocr.ai.itemsTitle') }}</h4>
+                  <table class="ai-items-table">
+                    <thead>
+                      <tr>
+                        <th>{{ i18n.t('ocr.ai.descAr') }}</th>
+                        <th>{{ i18n.t('ocr.ai.descEn') }}</th>
+                        <th>{{ i18n.t('ocr.ai.qty') }}</th>
+                        <th>{{ i18n.t('ocr.ai.total') }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of getState().aiResult.line_items; track $index) {
+                        <tr>
+                          <td dir="rtl">{{ item.description_ar }}</td>
+                          <td dir="ltr">{{ item.description_en }}</td>
+                          <td>{{ item.quantity }}</td>
+                          <td>{{ item.total | localeNumber:'decimal':2:2 }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="ai-empty-state">
+              <div class="ai-empty-icon">🤖</div>
+              <h3>{{ i18n.t('ocr.ai.emptyTitle') }}</h3>
+              <p>{{ i18n.t('ocr.ai.emptyHint') }}</p>
+              <button class="btn-primary" (click)="runAiExtraction()" [disabled]="getState().extractingAi">
+                @if (getState().extractingAi) {
+                  <span class="spinner"></span> {{ i18n.t('ocr.ai.extracting') }}
+                } @else {
+                  ✨ {{ i18n.t('ocr.ai.runAction') }}
+                }
+              </button>
+            </div>
+          }
+        </div>
+
         <!-- Action bar -->
         <div class="action-bar">
-          <button class="btn-primary" (click)="sendToChat()">→ {{ i18n.t('ocr.sendToChat') }}</button>
+          <button class="btn-primary" (click)="$event.stopPropagation(); sendToChat()">→ {{ i18n.t('ocr.sendToChat') }}</button>
+          
+          @if (vectorStores().length > 0) {
+            <div class="vector-index-group">
+              <button class="btn-outline-green" [disabled]="indexingTo() !== null" (click)="indexDocument(vectorStores()[0].table_name)">
+                @if (indexingTo()) { <span class="spinner"></span> }
+                ✨ {{ i18n.t('ocr.indexTo') }} {{ vectorStores()[0].table_name }}
+              </button>
+            </div>
+          }
+
           <button class="btn-outline-blue" (click)="exportJson()">⬇ {{ i18n.t('ocr.exportJson') }}</button>
           <button class="btn-outline" (click)="exportText()">⬇ {{ i18n.t('ocr.exportText') }}</button>
           <div class="action-bar__spacer"></div>
@@ -228,6 +316,43 @@
             }
           </div>
 
+          <!-- AI Extraction tab (Expert) -->
+          <div class="tab-panel" id="etabpanel-ai" role="tabpanel" aria-labelledby="etab-ai" [class.hidden]="getState().expertTab !== 'ai'">
+            @if (getState().aiResult) {
+              <div class="ai-extraction-results expert-ai-wrap">
+                <div class="ai-header">
+                  <h3>{{ i18n.t('ocr.ai.summaryTitle') }}</h3>
+                  <button class="btn-xs btn-outline" (click)="runAiExtraction()">🔄 {{ i18n.t('ocr.ai.runAction') }}</button>
+                </div>
+                
+                <div class="ai-translated-section">
+                  <h4>{{ i18n.t('ocr.ai.translatedTitle') }}</h4>
+                  <div class="translated-text-box" dir="ltr">
+                    {{ getState().aiResult.translated_en }}
+                  </div>
+                </div>
+
+                <div class="ai-fields-grid">
+                  @for (field of getState().aiResult.financial_fields; track field.key) {
+                    <div class="ai-field-card">
+                      <span class="ai-field-label">{{ field.key | titlecase }}</span>
+                      <span class="ai-field-value">{{ field.value }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="ai-empty-state">
+                <div class="ai-empty-icon">🤖</div>
+                <h3>{{ i18n.t('ocr.ai.emptyTitle') }}</h3>
+                <button class="btn-primary" (click)="runAiExtraction()" [disabled]="getState().extractingAi">
+                  @if (getState().extractingAi) { <span class="spinner"></span> }
+                  ✨ {{ i18n.t('ocr.ai.runAction') }}
+                </button>
+              </div>
+            }
+          </div>
+
           <!-- ✏️ Text tab -->
           <div class="tab-panel expert-text-panel" id="etabpanel-text" role="tabpanel" aria-labelledby="etab-text" [class.hidden]="getState().expertTab !== 'text'">
             <div class="diff-legend">
@@ -246,35 +371,68 @@
 
           <!-- Fields tab -->
           <div class="tab-panel" id="etabpanel-fields" role="tabpanel" aria-labelledby="etab-fields" [class.hidden]="getState().expertTab !== 'fields'">
-            <table class="gt-table">
-              <thead>
-                <tr>
-                  <th>Field (AR / EN)</th>
-                  <th>OCR value</th>
-                  <th>Ground truth</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (field of financialFields(); track field.key_en) {
-                  <tr>
-                    <td>
-                      <div dir="rtl" class="gt-ar">{{ field.key_ar }}</div>
-                      <div class="gt-en">{{ field.key_en }}</div>
-                    </td>
-                    <td>
-                      <span [class.strikethrough]="getState().groundTruth[field.key_ar] != null">{{ field.value ?? '—' }}</span>
-                    </td>
-                    <td>
-                      <input type="text" class="gt-input" [value]="getState().groundTruth[field.key_ar] ?? ''" (change)="onGroundTruthChange($event, field.key_ar)" [attr.aria-label]="'Ground truth for ' + field.key_en" />
-                    </td>
-                    <td>
-                      <span class="gt-status" [class]="gtStatusClass(field.key_ar)">{{ gtStatusLabel(field.key_ar, field.value) }}</span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+            <div class="field-comparison-container">
+              <div class="field-table-wrap">
+                <h3>Rule-based (AR)</h3>
+                <table class="gt-table">
+                  <thead>
+                    <tr>
+                      <th>Field (AR / EN)</th>
+                      <th>OCR value</th>
+                      <th>Ground truth</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (field of financialFields(); track field.key_en) {
+                      <tr>
+                        <td>
+                          <div dir="rtl" class="gt-ar">{{ field.key_ar }}</div>
+                          <div class="gt-en">{{ field.key_en }}</div>
+                        </td>
+                        <td>
+                          <span [class.strikethrough]="getState().groundTruth[field.key_ar] != null">{{ field.value ?? '—' }}</span>
+                        </td>
+                        <td>
+                          <input type="text" class="gt-input" [value]="getState().groundTruth[field.key_ar] ?? ''" (change)="onGroundTruthChange($event, field.key_ar)" [attr.aria-label]="'Ground truth for ' + field.key_en" />
+                        </td>
+                        <td>
+                          <span class="gt-status" [class]="gtStatusClass(field.key_ar)">{{ gtStatusLabel(field.key_ar, field.value) }}</span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              @if (getState().aiResult) {
+                <div class="field-table-wrap ai-diff">
+                  <h3>AI-extracted (EN)</h3>
+                  <table class="gt-table">
+                    <thead>
+                      <tr>
+                        <th>Field Name</th>
+                        <th>LLM value</th>
+                        <th>Confidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (field of getState().aiResult.financial_fields; track field.key) {
+                        <tr>
+                          <td class="gt-en">{{ field.key | titlecase }}</td>
+                          <td class="gt-value-en">{{ field.value }}</td>
+                          <td>
+                            <span class="conf-badge" [class]="confidenceClass(field.confidence * 100)">
+                              {{ (field.confidence * 100) | number:'1.0-0' }}%
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
           </div>
 
           <!-- QA tab -->
