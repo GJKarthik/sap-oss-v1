@@ -1,10 +1,10 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
-import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { environment } from '../../../environments/environment';
 
 type AssetType = 'xlsx' | 'csv' | 'template';
@@ -39,292 +39,294 @@ interface SqlPair {
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">Data Explorer</ui5-title>
-        <div slot="endContent">
-          <ui5-segmented-button>
-            <ui5-segmented-button-item [pressed]="activeTab() === 'assets'" (click)="setTab('assets')">📂 Data Assets</ui5-segmented-button-item>
-            <ui5-segmented-button-item [pressed]="activeTab() === 'pairs'" (click)="setTab('pairs')">🔍 SQL Training Pairs</ui5-segmented-button-item>
-          </ui5-segmented-button>
-        </div>
       </ui5-bar>
 
-      <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+      <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+        <ui5-tabcontainer (tab-select)="onTabSelect($event)" fixed>
+          <ui5-tab text="Data Assets" icon="folder-full" [selected]="activeTab() === 'assets'" data-tab-id="assets"></ui5-tab>
+          <ui5-tab text="SQL Training Pairs" icon="search" [selected]="activeTab() === 'pairs'" data-tab-id="pairs"></ui5-tab>
+        </ui5-tabcontainer>
 
-      <!-- Tab: Data Assets -->
-      @if (activeTab() === 'assets') {
-        <div class="filter-bar">
-          <ui5-input type="Text" placeholder="Filter assets…" [value]="searchTerm" (input)="searchTerm = $any($event).target.value" icon="search" style="width: 200px;"></ui5-input>
-          <ui5-select (change)="filterCategory = $any($event).detail.selectedOption.value">
-            <ui5-option value="">All categories</ui5-option>
-            @for (c of categories(); track c) {
-              <ui5-option [value]="c">{{ c }}</ui5-option>
-            }
-          </ui5-select>
-        </div>
+        <!-- Tab: Data Assets -->
+        @if (activeTab() === 'assets') {
+          <div class="filter-bar">
+            <ui5-input type="Text" placeholder="Filter assets…" [value]="searchTerm"
+              (input)="searchTerm = $any($event).target.value" show-clear-icon>
+              <ui5-icon slot="icon" name="search"></ui5-icon>
+            </ui5-input>
+            <ui5-select (change)="onCategoryChange($event)">
+              <ui5-option value="" [selected]="!filterCategory">All categories</ui5-option>
+              @for (c of categories(); track c) {
+                <ui5-option [value]="c" [selected]="filterCategory === c">{{ c }}</ui5-option>
+              }
+            </ui5-select>
+          </div>
 
-        <div class="stats-grid">
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="Total Assets"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ assets.length }}</ui5-title>
-            </div>
-          </ui5-card>
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="Excel Files"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ excelCount() }}</ui5-title>
-            </div>
-          </ui5-card>
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="CSV Files"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ csvCount() }}</ui5-title>
-            </div>
-          </ui5-card>
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="Prompt Templates"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ templateCount() }}</ui5-title>
-            </div>
-          </ui5-card>
-        </div>
+          <div class="stats-grid">
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Total Assets" [subtitleText]="'' + assets.length"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-title level="H1">{{ assets.length }}</ui5-title>
+              </div>
+            </ui5-card>
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Excel Files" [subtitleText]="'' + excelCount()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-title level="H1">{{ excelCount() }}</ui5-title>
+              </div>
+            </ui5-card>
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="CSV Files" [subtitleText]="'' + csvCount()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-title level="H1">{{ csvCount() }}</ui5-title>
+              </div>
+            </ui5-card>
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Prompt Templates" [subtitleText]="'' + templateCount()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-title level="H1">{{ templateCount() }}</ui5-title>
+              </div>
+            </ui5-card>
+          </div>
 
-        <div class="asset-grid">
-          @for (a of filteredAssets(); track a.name) {
-            <ui5-card interactive (click)="select(a)" [class.asset-card--active]="selected()?.name === a.name">
-              <ui5-card-header slot="header" [titleText]="a.name" [subtitleText]="a.description"></ui5-card-header>
-              <div style="padding: 0.75rem 1rem;">
-                <div class="asset-meta">
-                  <ui5-tag [design]="a.type === 'xlsx' ? 'Positive' : a.type === 'csv' ? 'Information' : 'Set2'">{{ a.type.toUpperCase() }}</ui5-tag>
-                  <ui5-tag design="Set2">{{ a.category }}</ui5-tag>
-                  <span class="text-small text-muted">{{ a.size }}</span>
+          <div class="asset-grid">
+            @for (a of filteredAssets(); track a.name) {
+              <ui5-card class="asset-card" [class.asset-card--active]="selected()?.name === a.name" (click)="select(a)">
+                <ui5-card-header slot="header" [titleText]="a.name" [subtitleText]="a.description"></ui5-card-header>
+                <div style="padding: 0.5rem 1rem 0.75rem; display: flex; gap: 0.375rem; align-items: center; flex-wrap: wrap;">
+                  <ui5-tag design="Set2">{{ a.type.toUpperCase() }}</ui5-tag>
+                  <ui5-tag>{{ a.category }}</ui5-tag>
+                  <ui5-tag design="Set2">{{ a.size }}</ui5-tag>
                 </div>
+              </ui5-card>
+            }
+          </div>
+
+          @if (!filteredAssets().length) {
+            <ui5-illustrated-message name="NoData">
+              <ui5-title slot="title" level="H5">No assets match your filter.</ui5-title>
+            </ui5-illustrated-message>
+          }
+
+          @if (selected(); as sel) {
+            <ui5-card>
+              <ui5-card-header slot="header" [titleText]="sel.name" [subtitleText]="sel.type.toUpperCase()">
+                <ui5-button slot="action" icon="decline" design="Transparent" (click)="clearSelection()"></ui5-button>
+              </ui5-card-header>
+              <div style="padding: 0;">
+                <ui5-list>
+                  <ui5-list-item-standard description="Type"><ui5-text>{{ sel.type.toUpperCase() }}</ui5-text></ui5-list-item-standard>
+                  <ui5-list-item-standard description="Category"><ui5-text>{{ sel.category }}</ui5-text></ui5-list-item-standard>
+                  <ui5-list-item-standard description="Size"><ui5-text>{{ sel.size }}</ui5-text></ui5-list-item-standard>
+                  <ui5-list-item-standard description="Description"><ui5-text>{{ sel.description }}</ui5-text></ui5-list-item-standard>
+                  <ui5-list-item-standard description="Location"><ui5-text>data/{{ sel.name }}</ui5-text></ui5-list-item-standard>
+                </ui5-list>
               </div>
             </ui5-card>
           }
-        </div>
-
-        @if (!filteredAssets().length) {
-          <ui5-message-strip design="Information" hide-close-button>No assets match your filter.</ui5-message-strip>
         }
 
-        @if (selected(); as sel) {
-          <ui5-card>
-            <ui5-card-header slot="header" [titleText]="sel.name" [subtitleText]="sel.description">
-            </ui5-card-header>
-            <div style="padding: 1rem;">
-              <div class="detail-header">
-                <span class="detail-icon">{{ iconFor(sel.type) }}</span>
-                <ui5-button design="Transparent" icon="decline" (click)="clearSelection()" style="margin-left: auto;"></ui5-button>
+        <!-- Tab: SQL Training Pairs -->
+        @if (activeTab() === 'pairs') {
+          <!-- Stats Cards -->
+          <div class="stats-grid">
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Total Records" [subtitleText]="'' + pairTotal()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-icon name="bar-chart" style="font-size: 1.5rem; color: var(--sapContent_IconColor);"></ui5-icon>
+                <ui5-title level="H1">{{ pairTotal() }}</ui5-title>
               </div>
-              <table class="info-table">
-                <tbody>
-                  <tr><td>Type</td><td>{{ sel.type.toUpperCase() }}</td></tr>
-                  <tr><td>Category</td><td>{{ sel.category }}</td></tr>
-                  <tr><td>Size</td><td>{{ sel.size }}</td></tr>
-                  <tr><td>Description</td><td>{{ sel.description }}</td></tr>
-                  <tr><td>Location</td><td><code>data/{{ sel.name }}</code></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </ui5-card>
-        }
-      }
+            </ui5-card>
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Avg Difficulty" [subtitleText]="avgDifficulty()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-icon name="line-chart" style="font-size: 1.5rem; color: var(--sapContent_IconColor);"></ui5-icon>
+                <ui5-title level="H1">{{ avgDifficulty() }}</ui5-title>
+              </div>
+            </ui5-card>
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Topics" [subtitleText]="'' + topicCount()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-icon name="tag" style="font-size: 1.5rem; color: var(--sapContent_IconColor);"></ui5-icon>
+                <ui5-title level="H1">{{ topicCount() }}</ui5-title>
+              </div>
+            </ui5-card>
+            <ui5-card>
+              <ui5-card-header slot="header" title-text="Query Types" [subtitleText]="'' + queryTypeCount()"></ui5-card-header>
+              <div class="stat-card-body">
+                <ui5-icon name="electrocardiogram" style="font-size: 1.5rem; color: var(--sapContent_IconColor);"></ui5-icon>
+                <ui5-title level="H1">{{ queryTypeCount() }}</ui5-title>
+              </div>
+            </ui5-card>
+          </div>
 
-      <!-- Tab: SQL Training Pairs -->
-      @if (activeTab() === 'pairs') {
-        <!-- Stats Cards -->
-        <div class="stats-grid">
+          <!-- Difficulty Distribution Bar -->
           <ui5-card>
-            <ui5-card-header slot="header" title-text="Total Records"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ pairTotal() }}</ui5-title>
+            <ui5-card-header slot="header" title-text="Difficulty Distribution"></ui5-card-header>
+            <div style="padding: 0.875rem 1rem;">
+              <div class="difficulty-bar">
+                @if (easyPct() > 0) {
+                  <div class="difficulty-segment difficulty-segment--easy" [style.width.%]="easyPct()">
+                    <span class="difficulty-segment-text">{{ easyPct() }}%</span>
+                  </div>
+                }
+                @if (mediumPct() > 0) {
+                  <div class="difficulty-segment difficulty-segment--medium" [style.width.%]="mediumPct()">
+                    <span class="difficulty-segment-text">{{ mediumPct() }}%</span>
+                  </div>
+                }
+                @if (hardPct() > 0) {
+                  <div class="difficulty-segment difficulty-segment--hard" [style.width.%]="hardPct()">
+                    <span class="difficulty-segment-text">{{ hardPct() }}%</span>
+                  </div>
+                }
+              </div>
+              <div class="difficulty-legend">
+                <span class="difficulty-legend-item"><span class="difficulty-dot difficulty-dot--easy"></span> Easy ({{ easyCount() }})</span>
+                <span class="difficulty-legend-item"><span class="difficulty-dot difficulty-dot--medium"></span> Medium ({{ mediumCount() }})</span>
+                <span class="difficulty-legend-item"><span class="difficulty-dot difficulty-dot--hard"></span> Hard ({{ hardCount() }})</span>
+              </div>
             </div>
           </ui5-card>
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="Avg Difficulty"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ avgDifficulty() }}</ui5-title>
-            </div>
-          </ui5-card>
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="Topics"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ topicCount() }}</ui5-title>
-            </div>
-          </ui5-card>
-          <ui5-card>
-            <ui5-card-header slot="header" title-text="Query Types"></ui5-card-header>
-            <div style="padding: 1rem; text-align: center;">
-              <ui5-title level="H1">{{ queryTypeCount() }}</ui5-title>
-            </div>
-          </ui5-card>
-        </div>
 
-        <!-- Difficulty Distribution Bar -->
-        <div class="difficulty-bar-container">
-          <span class="difficulty-bar-label">Difficulty Distribution</span>
-          <div class="difficulty-bar">
-            @if (easyPct() > 0) {
-              <div class="difficulty-segment difficulty-segment--easy" [style.width.%]="easyPct()">
-                <span class="difficulty-segment-text">{{ easyPct() }}%</span>
-              </div>
-            }
-            @if (mediumPct() > 0) {
-              <div class="difficulty-segment difficulty-segment--medium" [style.width.%]="mediumPct()">
-                <span class="difficulty-segment-text">{{ mediumPct() }}%</span>
-              </div>
-            }
-            @if (hardPct() > 0) {
-              <div class="difficulty-segment difficulty-segment--hard" [style.width.%]="hardPct()">
-                <span class="difficulty-segment-text">{{ hardPct() }}%</span>
-              </div>
+          <!-- Search + Filter -->
+          <div class="pairs-controls">
+            <ui5-input type="Text" placeholder="Search queries..." [value]="pairSearch()"
+              (input)="onSearchChange($any($event).target.value)" show-clear-icon style="width: 260px;">
+              <ui5-icon slot="icon" name="search"></ui5-icon>
+            </ui5-input>
+            <ui5-segmented-button (selection-change)="onDifficultySegmentChange($event)">
+              <ui5-segmented-button-item [pressed]="difficultyFilter === ''" data-difficulty="">All ({{ pairTotal() }})</ui5-segmented-button-item>
+              <ui5-segmented-button-item [pressed]="difficultyFilter === 'easy'" data-difficulty="easy">Easy ({{ easyCount() }})</ui5-segmented-button-item>
+              <ui5-segmented-button-item [pressed]="difficultyFilter === 'medium'" data-difficulty="medium">Medium ({{ mediumCount() }})</ui5-segmented-button-item>
+              <ui5-segmented-button-item [pressed]="difficultyFilter === 'hard'" data-difficulty="hard">Hard ({{ hardCount() }})</ui5-segmented-button-item>
+            </ui5-segmented-button>
+            @if (difficultyFilter || pairSearch()) {
+              <ui5-button icon="decline" design="Transparent" (click)="clearAllFilters()">Clear all</ui5-button>
             }
           </div>
-          <div class="difficulty-legend">
-            <span class="difficulty-legend-item"><span class="difficulty-dot difficulty-dot--easy"></span> Easy ({{ easyCount() }})</span>
-            <span class="difficulty-legend-item"><span class="difficulty-dot difficulty-dot--medium"></span> Medium ({{ mediumCount() }})</span>
-            <span class="difficulty-legend-item"><span class="difficulty-dot difficulty-dot--hard"></span> Hard ({{ hardCount() }})</span>
-          </div>
-        </div>
 
-        <!-- Search + Filter Chips -->
-        <div class="pairs-controls">
-          <ui5-input type="Text" placeholder="Search queries..." icon="search" [value]="pairSearch()" (input)="onSearchChange($any($event).target.value)" style="width: 260px;"></ui5-input>
-          <ui5-segmented-button>
-            <ui5-segmented-button-item [pressed]="difficultyFilter === ''" (click)="setDifficulty('')">All ({{ pairTotal() }})</ui5-segmented-button-item>
-            <ui5-segmented-button-item [pressed]="difficultyFilter === 'easy'" (click)="setDifficulty('easy')">Easy ({{ easyCount() }})</ui5-segmented-button-item>
-            <ui5-segmented-button-item [pressed]="difficultyFilter === 'medium'" (click)="setDifficulty('medium')">Medium ({{ mediumCount() }})</ui5-segmented-button-item>
-            <ui5-segmented-button-item [pressed]="difficultyFilter === 'hard'" (click)="setDifficulty('hard')">Hard ({{ hardCount() }})</ui5-segmented-button-item>
-          </ui5-segmented-button>
-          @if (difficultyFilter || pairSearch()) {
-            <ui5-button design="Transparent" icon="decline" (click)="clearAllFilters()">Clear all</ui5-button>
+          @if (pairsLoading()) {
+            <ui5-busy-indicator active size="L" style="width: 100%; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            </ui5-busy-indicator>
           }
-        </div>
 
-        @if (pairsLoading()) {
-          <ui5-busy-indicator active size="L" style="width: 100%; min-height: 100px;"></ui5-busy-indicator>
-        }
-
-        <!-- Data Table -->
-        @if (!pairsLoading() && pagedPairs().length) {
-          <ui5-table>
-            <ui5-table-header-row slot="headerRow">
-              <ui5-table-header-cell><span class="sortable-th" (click)="toggleSort('id')">ID {{ sortIndicator('id') }}</span></ui5-table-header-cell>
-              <ui5-table-header-cell><span class="sortable-th" (click)="toggleSort('difficulty')">Difficulty {{ sortIndicator('difficulty') }}</span></ui5-table-header-cell>
-              <ui5-table-header-cell><span class="sortable-th" (click)="toggleSort('db_id')">Database {{ sortIndicator('db_id') }}</span></ui5-table-header-cell>
-              <ui5-table-header-cell><span class="sortable-th" (click)="toggleSort('question')">Question {{ sortIndicator('question') }}</span></ui5-table-header-cell>
-              <ui5-table-header-cell>SQL Query</ui5-table-header-cell>
-            </ui5-table-header-row>
-            @for (pair of pagedPairs(); track pair.id) {
-              <ui5-table-row (click)="toggleRow(pair.id)">
-                <ui5-table-cell><span class="cell-mono">{{ pair.id }}</span></ui5-table-cell>
-                <ui5-table-cell>
-                  <ui5-tag [design]="pair.difficulty === 'easy' ? 'Positive' : pair.difficulty === 'medium' ? 'Critical' : 'Negative'">{{ pair.difficulty }}</ui5-tag>
-                </ui5-table-cell>
-                <ui5-table-cell><ui5-tag design="Set2">{{ pair.db_id }}</ui5-tag></ui5-table-cell>
-                <ui5-table-cell>{{ pair.question }}</ui5-table-cell>
-                <ui5-table-cell><code class="sql-inline" [innerHTML]="highlightSql(pair.query)"></code></ui5-table-cell>
-              </ui5-table-row>
-              @if (expandedRow() === pair.id) {
-                <ui5-table-row>
-                  <ui5-table-cell colspan="5">
-                    <div class="expanded-sql-block">
-                      <div class="expanded-sql-header">
-                        <span>Full SQL Query</span>
-                        <ui5-tag [design]="pair.difficulty === 'easy' ? 'Positive' : pair.difficulty === 'medium' ? 'Critical' : 'Negative'">{{ pair.difficulty }}</ui5-tag>
-                      </div>
-                      <pre class="expanded-sql-code" [innerHTML]="highlightSql(pair.query)"></pre>
-                    </div>
+          <!-- Data Table -->
+          @if (!pairsLoading() && pagedPairs().length) {
+            <ui5-table>
+              <ui5-table-header-row slot="headerRow">
+                <ui5-table-header-cell (click)="toggleSort('id')" style="cursor: pointer;">
+                  ID {{ sortIndicator('id') }}
+                </ui5-table-header-cell>
+                <ui5-table-header-cell (click)="toggleSort('difficulty')" style="cursor: pointer;">
+                  Difficulty {{ sortIndicator('difficulty') }}
+                </ui5-table-header-cell>
+                <ui5-table-header-cell (click)="toggleSort('db_id')" style="cursor: pointer;">
+                  Database {{ sortIndicator('db_id') }}
+                </ui5-table-header-cell>
+                <ui5-table-header-cell (click)="toggleSort('question')" style="cursor: pointer;">
+                  Question {{ sortIndicator('question') }}
+                </ui5-table-header-cell>
+                <ui5-table-header-cell>SQL Query</ui5-table-header-cell>
+              </ui5-table-header-row>
+              @for (pair of pagedPairs(); track pair.id) {
+                <ui5-table-row (click)="toggleRow(pair.id)" style="cursor: pointer;"
+                  [class.row-expanded]="expandedRow() === pair.id">
+                  <ui5-table-cell><code>{{ pair.id }}</code></ui5-table-cell>
+                  <ui5-table-cell>
+                    <ui5-tag [design]="difficultyDesign(pair.difficulty)">{{ pair.difficulty }}</ui5-tag>
                   </ui5-table-cell>
+                  <ui5-table-cell><ui5-tag design="Set2">{{ pair.db_id }}</ui5-tag></ui5-table-cell>
+                  <ui5-table-cell>{{ pair.question }}</ui5-table-cell>
+                  <ui5-table-cell><code class="sql-inline" [innerHTML]="highlightSql(pair.query)"></code></ui5-table-cell>
                 </ui5-table-row>
+                @if (expandedRow() === pair.id) {
+                  <ui5-table-row>
+                    <ui5-table-cell colspan="5">
+                      <div class="expanded-sql-block">
+                        <div class="expanded-sql-header">
+                          <span>Full SQL Query</span>
+                          <ui5-tag [design]="difficultyDesign(pair.difficulty)">{{ pair.difficulty }}</ui5-tag>
+                        </div>
+                        <pre class="expanded-sql-code" [innerHTML]="highlightSql(pair.query)"></pre>
+                      </div>
+                    </ui5-table-cell>
+                  </ui5-table-row>
+                }
               }
-            }
-          </ui5-table>
+            </ui5-table>
 
-          <!-- Pagination -->
-          <div class="pagination-bar">
-            <div class="pagination-info">
-              Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredPairsCount() }} records
+            <!-- Pagination -->
+            <div class="pagination-bar">
+              <ui5-text>Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredPairsCount() }} records</ui5-text>
+              <div class="pagination-controls">
+                <ui5-text style="font-size: 0.75rem;">Rows per page:</ui5-text>
+                <ui5-select style="width: 70px;" (change)="onPageSizeChange($event)">
+                  <ui5-option value="10" [selected]="pageSize() === 10">10</ui5-option>
+                  <ui5-option value="25" [selected]="pageSize() === 25">25</ui5-option>
+                  <ui5-option value="50" [selected]="pageSize() === 50">50</ui5-option>
+                </ui5-select>
+                <ui5-button icon="navigation-left-arrow" design="Transparent" [disabled]="currentPage() <= 1" (click)="prevPage()"></ui5-button>
+                <ui5-text style="font-size: 0.75rem; min-width: 80px; text-align: center;">Page {{ currentPage() }} of {{ totalPages() }}</ui5-text>
+                <ui5-button icon="navigation-right-arrow" design="Transparent" [disabled]="currentPage() >= totalPages()" (click)="nextPage()"></ui5-button>
+              </div>
             </div>
-            <div class="pagination-controls">
-              <span class="rows-label">Rows per page:</span>
-              <ui5-select (change)="setPageSize(+$any($event).detail.selectedOption.value)">
-                <ui5-option value="10" [selected]="pageSize() === 10">10</ui5-option>
-                <ui5-option value="25" [selected]="pageSize() === 25">25</ui5-option>
-                <ui5-option value="50" [selected]="pageSize() === 50">50</ui5-option>
-              </ui5-select>
-              <ui5-button design="Transparent" icon="navigation-left-arrow" [disabled]="currentPage() <= 1" (click)="prevPage()">Prev</ui5-button>
-              <span class="page-num">Page {{ currentPage() }} of {{ totalPages() }}</span>
-              <ui5-button design="Transparent" icon="navigation-right-arrow" icon-end [disabled]="currentPage() >= totalPages()" (click)="nextPage()">Next</ui5-button>
-            </div>
-          </div>
-        }
+          }
 
-        <!-- Empty State -->
-        @if (!pagedPairs().length && !pairsLoading()) {
-          <ui5-illustrated-message name="NoData">
-            <ui5-button design="Emphasized" (click)="clearAllFilters()">Reset filters</ui5-button>
-          </ui5-illustrated-message>
+          <!-- Empty State -->
+          @if (!pagedPairs().length && !pairsLoading()) {
+            <ui5-illustrated-message name="NoData">
+              <ui5-title slot="title" level="H5">No matching records</ui5-title>
+              <ui5-text slot="subtitle">Try adjusting your search or filters</ui5-text>
+              <ui5-button design="Emphasized" (click)="clearAllFilters()">Reset filters</ui5-button>
+            </ui5-illustrated-message>
+          }
         }
-      }
-
       </div>
     </ui5-page>
   `,
   styles: [`
-    /* ── Layout ── */
-    .filter-bar { display: flex; gap: 0.5rem; align-items: center; }
+    /* Layout */
+    .filter-bar { display: flex; gap: 0.75rem; align-items: center; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+    }
+    @media (min-width: 1024px) {
+      :host .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-card-body {
+      padding: 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    }
     .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
-    .asset-card--active { outline: 2px solid var(--sapBrandColor, #0854a0); }
-    .asset-meta { display: flex; gap: 0.375rem; align-items: center; flex-wrap: wrap; }
-    .text-small { font-size: 0.75rem; }
-    .text-muted { color: var(--sapContent_LabelColor, #6a6d70); }
+    .asset-card { cursor: pointer; }
+    .asset-card--active { box-shadow: 0 0 0 2px var(--sapBrandColor, #0854a0); }
 
-    /* ── Detail Panel ── */
-    .detail-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-    .detail-icon { font-size: 1.5rem; }
-    .info-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem;
-      td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-        &:first-child { color: var(--sapContent_LabelColor, #6a6d70); width: 30%; font-weight: 500; }
-      }
-      tr:last-child td { border-bottom: none; }
-    }
-
-    /* ── Stats Grid ── */
-    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    @media (min-width: 1440px) {
-      :host .stats-grid { grid-template-columns: repeat(4, 1fr) !important; }
-    }
-
-    /* ── Difficulty Distribution ── */
-    .difficulty-bar-container {
-      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 0.875rem 1rem;
-    }
-    .difficulty-bar-label { font-size: 0.75rem; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70); margin-bottom: 0.5rem; display: block; }
+    /* Difficulty Distribution */
     .difficulty-bar {
       display: flex; height: 1.25rem; border-radius: 0.625rem; overflow: hidden; background: var(--sapBackgroundColor, #f5f5f5);
     }
-    .difficulty-segment { display: flex; align-items: center; justify-content: center; transition: width 0.4s ease; }
+    .difficulty-segment {
+      display: flex; align-items: center; justify-content: center; transition: width 0.4s ease;
+    }
     .difficulty-segment--easy { background: #4caf50; }
     .difficulty-segment--medium { background: #ff9800; }
     .difficulty-segment--hard { background: #f44336; }
     .difficulty-segment-text { font-size: 0.625rem; font-weight: 700; color: #fff; }
-    .difficulty-legend { display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .difficulty-legend {
+      display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70);
+    }
     .difficulty-legend-item { display: flex; align-items: center; gap: 0.25rem; }
     .difficulty-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; display: inline-block; }
     .difficulty-dot--easy { background: #4caf50; }
     .difficulty-dot--medium { background: #ff9800; }
     .difficulty-dot--hard { background: #f44336; }
 
-    /* ── Controls ── */
-    .pairs-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    /* Controls */
+    .pairs-controls {
+      display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+    }
 
-    /* ── Table ── */
-    .sortable-th { cursor: pointer; user-select: none; &:hover { color: var(--sapBrandColor, #0854a0); } }
-    .cell-mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.75rem; }
-
-    /* ── SQL Syntax Highlighting ── */
+    /* SQL Syntax Highlighting */
     .sql-inline {
       font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.75rem;
       color: var(--sapTextColor, #32363a); background: none; white-space: nowrap;
@@ -334,7 +336,7 @@ interface SqlPair {
     :host ::ng-deep .sql-string { color: #2e7d32; }
     :host ::ng-deep .sql-number { color: #e65100; }
 
-    /* ── Expanded Row ── */
+    /* Expanded Row */
     .expanded-sql-block { padding: 1rem; }
     .expanded-sql-header {
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;
@@ -349,15 +351,13 @@ interface SqlPair {
     :host ::ng-deep .expanded-sql-code .sql-string { color: #ce9178; }
     :host ::ng-deep .expanded-sql-code .sql-number { color: #b5cea8; }
 
-    /* ── Pagination ── */
+    /* Pagination */
     .pagination-bar {
       display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem;
-      font-size: 0.8125rem;
+      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
+      border-top: none; border-radius: 0 0 0.5rem 0.5rem; font-size: 0.8125rem;
     }
-    .pagination-info { color: var(--sapContent_LabelColor, #6a6d70); }
     .pagination-controls { display: flex; align-items: center; gap: 0.5rem; }
-    .rows-label { color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.75rem; }
-    .page-num { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); min-width: 80px; text-align: center; }
   `],
 })
 export class DataExplorerComponent implements OnInit {
@@ -487,6 +487,37 @@ export class DataExplorerComponent implements OnInit {
   setTab(tab: TabId) {
     this.activeTab.set(tab);
     if (tab === 'pairs') this.loadPairs();
+  }
+
+  onTabSelect(event: any) {
+    const tab = event?.detail?.tab;
+    const tabId = tab?.getAttribute?.('data-tab-id') as TabId;
+    if (tabId) this.setTab(tabId);
+  }
+
+  onCategoryChange(event: any) {
+    const val = event?.detail?.selectedOption?.getAttribute?.('value') ?? '';
+    this.filterCategory = val;
+  }
+
+  onDifficultySegmentChange(event: any) {
+    const item = event?.detail?.selectedItem;
+    const d = item?.getAttribute?.('data-difficulty') as Difficulty ?? '';
+    this.setDifficulty(d);
+  }
+
+  onPageSizeChange(event: any) {
+    const val = event?.detail?.selectedOption?.getAttribute?.('value');
+    if (val) this.setPageSize(Number(val));
+  }
+
+  difficultyDesign(difficulty: string): string {
+    switch (difficulty) {
+      case 'easy': return 'Positive';
+      case 'medium': return 'Critical';
+      case 'hard': return 'Negative';
+      default: return 'Set2';
+    }
   }
 
   loadPairs() {

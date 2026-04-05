@@ -4,9 +4,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
+import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 
@@ -23,166 +23,165 @@ interface DeployedModel {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
-      <div class="page-header">
-        <h1 class="page-title">A/B Model Comparison</h1>
-        <span class="subtitle">Test the same prompt against two deployed models side-by-side</span>
-      </div>
+    <ui5-page background-design="Solid">
+      <ui5-bar slot="header" design="Header">
+        <ui5-title slot="startContent" level="H3">A/B Model Comparison</ui5-title>
+      </ui5-bar>
 
-      <!-- Model selectors -->
-      <div class="selector-row">
-        <div class="model-selector-card">
-          <div class="selector-label">
-            <span class="label-dot dot-a"></span>
-            Model A
-          </div>
-          <ui5-select (change)="onModelASelect($event)" style="width: 100%;">
-            <ui5-option value="" [selected]="!modelA">— Choose a model —</ui5-option>
-            @for (m of deployedModels(); track m.id) {
-              <ui5-option [attr.value]="m.id" [selected]="m.id === modelA">{{ m.label }}</ui5-option>
-            }
-          </ui5-select>
-          @if (modelA) {
-            <div class="model-meta">
-              <ui5-tag design="Set2">{{ modelNameFor(modelA) }}</ui5-tag>
-              <ui5-tag design="Set2">{{ modelA.slice(0, 8) }}</ui5-tag>
-            </div>
-          }
-        </div>
+      <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+        <ui5-text style="color: var(--sapContent_LabelColor);">Test the same prompt against two deployed models side-by-side</ui5-text>
 
-        <ui5-button icon="sort" design="Transparent" (click)="swapModels()"
-                [disabled]="!modelA && !modelB" title="Swap models"
-                style="align-self: center; margin-top: 1rem;">
-        </ui5-button>
-
-        <div class="model-selector-card">
-          <div class="selector-label">
-            <span class="label-dot dot-b"></span>
-            Model B
-          </div>
-          <ui5-select (change)="onModelBSelect($event)" style="width: 100%;">
-            <ui5-option value="" [selected]="!modelB">— Choose a model —</ui5-option>
-            @for (m of deployedModels(); track m.id) {
-              <ui5-option [attr.value]="m.id" [selected]="m.id === modelB">{{ m.label }}</ui5-option>
-            }
-          </ui5-select>
-          @if (modelB) {
-            <div class="model-meta">
-              <ui5-tag design="Set2">{{ modelNameFor(modelB) }}</ui5-tag>
-              <ui5-tag design="Set2">{{ modelB.slice(0, 8) }}</ui5-tag>
-            </div>
-          }
-        </div>
-      </div>
-
-      @if (!deployedModels().length) {
-        <div class="empty-state">
-          <div class="empty-icon">🚀</div>
-          <p class="empty-title">No Deployed Models</p>
-          <p class="empty-desc">Train a model and click <strong>Deploy Model</strong> in the Model Optimizer to get started.</p>
-        </div>
-      }
-
-      <!-- Shared prompt input -->
-      <div class="prompt-bar">
-        <div class="prompt-wrapper">
-          <span class="prompt-icon">💬</span>
-          <input class="prompt-input" [(ngModel)]="prompt"
-                 placeholder="Enter a natural language question (e.g. 'What is the total balance for active accounts?')"
-                 (keyup.enter)="runComparison()" />
-        </div>
-        <ui5-button design="Emphasized" icon="play" (click)="runComparison()"
-                [disabled]="!modelA || !modelB || !prompt.trim() || loading()">
-          {{ loading() ? 'Running…' : 'Compare' }}
-        </ui5-button>
-      </div>
-
-      <!-- Summary verdict -->
-      @if (resultA() !== null && resultB() !== null) {
-        <ui5-card class="fade-in">
-          <ui5-card-header slot="header" title-text="Comparison Summary"></ui5-card-header>
-          <div class="verdict-body">
-            <div class="verdict-metric">
-              <span class="verdict-label">Response Length</span>
-              <div class="verdict-bars">
-                <div class="verdict-bar-row">
-                  <span class="bar-label">A</span>
-                  <div class="bar-track">
-                    <div class="bar-fill bar-a" [style.width.%]="barWidth('A')"></div>
-                  </div>
-                  <span class="bar-value" [class.bar-winner]="isWinner('A')">{{ resultA()!.length }} chars</span>
+        <!-- Model selectors -->
+        <div class="selector-row">
+          <ui5-card class="selector-card">
+            <ui5-card-header slot="header" title-text="Model A"></ui5-card-header>
+            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <ui5-select style="width: 100%;" (change)="onModelAChange($event)">
+                <ui5-option value="" [selected]="!modelA">— Choose a model —</ui5-option>
+                @for (m of deployedModels(); track m.id) {
+                  <ui5-option [value]="m.id" [selected]="modelA === m.id">{{ m.label }}</ui5-option>
+                }
+              </ui5-select>
+              @if (modelA) {
+                <div style="display: flex; gap: 0.375rem; align-items: center;">
+                  <ui5-tag design="Set2">{{ modelNameFor(modelA) }}</ui5-tag>
+                  <ui5-text style="font-size: 0.75rem; font-family: monospace;">{{ modelA.slice(0, 8) }}</ui5-text>
                 </div>
-                <div class="verdict-bar-row">
-                  <span class="bar-label">B</span>
-                  <div class="bar-track">
-                    <div class="bar-fill bar-b" [style.width.%]="barWidth('B')"></div>
-                  </div>
-                  <span class="bar-value" [class.bar-winner]="isWinner('B')">{{ resultB()!.length }} chars</span>
-                </div>
-              </div>
-            </div>
-            <div class="verdict-metric">
-              <span class="verdict-label">Line Count</span>
-              <div class="verdict-bars">
-                <div class="verdict-bar-row">
-                  <span class="bar-label">A</span>
-                  <div class="bar-track">
-                    <div class="bar-fill bar-a" [style.width.%]="lineBarWidth('A')"></div>
-                  </div>
-                  <span class="bar-value" [class.bar-winner]="lineCount(resultA()!) <= lineCount(resultB()!)">{{ lineCount(resultA()!) }} lines</span>
-                </div>
-                <div class="verdict-bar-row">
-                  <span class="bar-label">B</span>
-                  <div class="bar-track">
-                    <div class="bar-fill bar-b" [style.width.%]="lineBarWidth('B')"></div>
-                  </div>
-                  <span class="bar-value" [class.bar-winner]="lineCount(resultB()!) <= lineCount(resultA()!)">{{ lineCount(resultB()!) }} lines</span>
-                </div>
-              </div>
-            </div>
-            <div class="verdict-winner">
-              @if (resultA()!.length === resultB()!.length) {
-                <span class="verdict-tie">🤝 It's a tie — both responses are equal length</span>
-              } @else if (isWinner('A')) {
-                <span class="verdict-win">🏆 <strong>Model A</strong> produced a more concise response</span>
-              } @else {
-                <span class="verdict-win">🏆 <strong>Model B</strong> produced a more concise response</span>
               }
             </div>
-          </div>
-        </ui5-card>
-      }
-
-      <!-- Side-by-side results -->
-      @if (resultA() !== null || resultB() !== null) {
-        <div class="results-grid">
-          <ui5-card [class.winner]="isWinner('A')" class="fade-in">
-            <ui5-card-header slot="header" [titleText]="'Model A · ' + modelNameFor(modelA)"
-              [subtitleText]="isWinner('A') ? '🏆 Winner' : ''"></ui5-card-header>
-            <div style="padding: 0.5rem 0.875rem;">
-              <div class="result-stats">
-                <span>{{ resultA()?.length ?? 0 }} chars</span>
-                <span>{{ lineCount(resultA() ?? '') }} lines</span>
-              </div>
-              <pre class="result-sql">{{ resultA() ?? 'Error or no response' }}</pre>
-            </div>
           </ui5-card>
-          <ui5-card [class.winner]="isWinner('B')" class="fade-in">
-            <ui5-card-header slot="header" [titleText]="'Model B · ' + modelNameFor(modelB)"
-              [subtitleText]="isWinner('B') ? '🏆 Winner' : ''"></ui5-card-header>
-            <div style="padding: 0.5rem 0.875rem;">
-              <div class="result-stats">
-                <span>{{ resultB()?.length ?? 0 }} chars</span>
-                <span>{{ lineCount(resultB() ?? '') }} lines</span>
-              </div>
-              <pre class="result-sql">{{ resultB() ?? 'Error or no response' }}</pre>
+
+          <ui5-button icon="sort" design="Transparent" (click)="swapModels()"
+                      [disabled]="!modelA && !modelB" tooltip="Swap models"
+                      style="align-self: center; margin-top: 1rem;"></ui5-button>
+
+          <ui5-card class="selector-card">
+            <ui5-card-header slot="header" title-text="Model B"></ui5-card-header>
+            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <ui5-select style="width: 100%;" (change)="onModelBChange($event)">
+                <ui5-option value="" [selected]="!modelB">— Choose a model —</ui5-option>
+                @for (m of deployedModels(); track m.id) {
+                  <ui5-option [value]="m.id" [selected]="modelB === m.id">{{ m.label }}</ui5-option>
+                }
+              </ui5-select>
+              @if (modelB) {
+                <div style="display: flex; gap: 0.375rem; align-items: center;">
+                  <ui5-tag design="Set2">{{ modelNameFor(modelB) }}</ui5-tag>
+                  <ui5-text style="font-size: 0.75rem; font-family: monospace;">{{ modelB.slice(0, 8) }}</ui5-text>
+                </div>
+              }
             </div>
           </ui5-card>
         </div>
 
-        <!-- Diff view -->
-        @if (resultA() && resultB() && resultA() !== resultB()) {
-          <ui5-panel header-text="Output Diff" [collapsed]="!showDiff()" (toggle)="showDiff.set(!showDiff())">
+        @if (!deployedModels().length) {
+          <ui5-illustrated-message name="NoData">
+            <ui5-title slot="title" level="H4">No Deployed Models</ui5-title>
+            <ui5-text>Train a model and click Deploy Model in the Model Optimizer to get started.</ui5-text>
+          </ui5-illustrated-message>
+        }
+
+        <!-- Shared prompt input -->
+        <div class="prompt-bar">
+          <ui5-input style="flex: 1;" [(ngModel)]="prompt"
+                     placeholder="Enter a natural language question (e.g. 'What is the total balance for active accounts?')"
+                     (keyup.enter)="runComparison()">
+            <ui5-icon slot="icon" name="discussion"></ui5-icon>
+          </ui5-input>
+          <ui5-button design="Emphasized" icon="media-play" (click)="runComparison()"
+                      [disabled]="!modelA || !modelB || !prompt.trim() || loading()">
+            {{ loading() ? 'Running…' : 'Compare' }}
+          </ui5-button>
+        </div>
+
+        <ui5-busy-indicator [active]="loading()" size="L" style="width: 100%;">
+
+        <!-- Summary verdict -->
+        @if (resultA() !== null && resultB() !== null) {
+          <ui5-card class="fade-in">
+            <ui5-card-header slot="header" title-text="Comparison Summary"></ui5-card-header>
+            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <div class="verdict-metric">
+                <ui5-label>RESPONSE LENGTH</ui5-label>
+                <div class="verdict-bars">
+                  <div class="verdict-bar-row">
+                    <ui5-label>A</ui5-label>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-a" [style.width.%]="barWidth('A')"></div>
+                    </div>
+                    <ui5-text [class.bar-winner]="isWinner('A')">{{ resultA()!.length }} chars</ui5-text>
+                  </div>
+                  <div class="verdict-bar-row">
+                    <ui5-label>B</ui5-label>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-b" [style.width.%]="barWidth('B')"></div>
+                    </div>
+                    <ui5-text [class.bar-winner]="isWinner('B')">{{ resultB()!.length }} chars</ui5-text>
+                  </div>
+                </div>
+              </div>
+              <div class="verdict-metric">
+                <ui5-label>LINE COUNT</ui5-label>
+                <div class="verdict-bars">
+                  <div class="verdict-bar-row">
+                    <ui5-label>A</ui5-label>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-a" [style.width.%]="lineBarWidth('A')"></div>
+                    </div>
+                    <ui5-text [class.bar-winner]="lineCount(resultA()!) <= lineCount(resultB()!)">{{ lineCount(resultA()!) }} lines</ui5-text>
+                  </div>
+                  <div class="verdict-bar-row">
+                    <ui5-label>B</ui5-label>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-b" [style.width.%]="lineBarWidth('B')"></div>
+                    </div>
+                    <ui5-text [class.bar-winner]="lineCount(resultB()!) <= lineCount(resultA()!)">{{ lineCount(resultB()!) }} lines</ui5-text>
+                  </div>
+                </div>
+              </div>
+              <div style="padding-top: 0.5rem; border-top: 1px solid var(--sapTile_BorderColor, #e4e4e4); text-align: center;">
+                @if (resultA()!.length === resultB()!.length) {
+                  <ui5-tag design="Set2">🤝 It's a tie — both responses are equal length</ui5-tag>
+                } @else if (isWinner('A')) {
+                  <ui5-tag design="Positive">🏆 Model A produced a more concise response</ui5-tag>
+                } @else {
+                  <ui5-tag design="Positive">🏆 Model B produced a more concise response</ui5-tag>
+                }
+              </div>
+            </div>
+          </ui5-card>
+        }
+
+        <!-- Side-by-side results -->
+        @if (resultA() !== null || resultB() !== null) {
+          <div class="results-grid">
+            <ui5-card [class.winner]="isWinner('A')" class="fade-in">
+              <ui5-card-header slot="header" title-text="Model A · {{ modelNameFor(modelA) }}"
+                [status]="isWinner('A') ? '🏆 Winner' : ''"></ui5-card-header>
+              <div style="padding: 0;">
+                <div class="result-stats">
+                  <ui5-text>{{ resultA()?.length ?? 0 }} chars</ui5-text>
+                  <ui5-text>{{ lineCount(resultA() ?? '') }} lines</ui5-text>
+                </div>
+                <pre class="result-sql">{{ resultA() ?? 'Error or no response' }}</pre>
+              </div>
+            </ui5-card>
+            <ui5-card [class.winner]="isWinner('B')" class="fade-in">
+              <ui5-card-header slot="header" title-text="Model B · {{ modelNameFor(modelB) }}"
+                [status]="isWinner('B') ? '🏆 Winner' : ''"></ui5-card-header>
+              <div style="padding: 0;">
+                <div class="result-stats">
+                  <ui5-text>{{ resultB()?.length ?? 0 }} chars</ui5-text>
+                  <ui5-text>{{ lineCount(resultB() ?? '') }} lines</ui5-text>
+                </div>
+                <pre class="result-sql">{{ resultB() ?? 'Error or no response' }}</pre>
+              </div>
+            </ui5-card>
+          </div>
+
+          <!-- Diff view -->
+          @if (resultA() && resultB() && resultA() !== resultB()) {
+            <ui5-panel header-text="Output Diff" [collapsed]="!showDiff()" (toggle)="showDiff.set(!showDiff())">
               <div class="diff-body">
                 @for (line of diffLines(); track $index) {
                   <div class="diff-line" [class.diff-add]="line.type === 'add'"
@@ -193,162 +192,71 @@ interface DeployedModel {
                   </div>
                 }
               </div>
-          </ui5-panel>
-        }
+            </ui5-panel>
+          }
 
-        <!-- History -->
-        @if (history().length > 0) {
-          <div class="history-section">
-            <h2 class="section-title">
-              <span>📋 Comparison History</span>
-              <span class="history-count">{{ history().length }}</span>
-            </h2>
-            @for (h of history(); track $index) {
-              <ui5-card>
-                <ui5-card-header slot="header" [titleText]="'#' + (history().length - $index) + ' ' + h.query"></ui5-card-header>
-                <div style="padding: 0.875rem;">
-                  <div class="history-grid">
+          <!-- History -->
+          @if (history().length > 0) {
+            <ui5-panel header-text="Comparison History ({{ history().length }})">
+              @for (h of history(); track $index) {
+                <ui5-card style="margin-bottom: 0.625rem;">
+                  <ui5-card-header slot="header" [titleText]="'#' + (history().length - $index) + ' ' + h.query"></ui5-card-header>
+                  <div class="history-grid" style="padding: 0.875rem;">
                     <div class="history-col">
                       <div class="history-col-label">
-                        <span class="label-dot dot-a"></span> Model A
+                        <ui5-tag design="Information">Model A</ui5-tag>
                         @if (h.a.length <= h.b.length) { <ui5-tag design="Positive">✓</ui5-tag> }
                       </div>
-                      <pre>{{ h.a }}</pre>
+                      <pre class="history-pre">{{ h.a }}</pre>
                     </div>
                     <div class="history-col">
                       <div class="history-col-label">
-                        <span class="label-dot dot-b"></span> Model B
+                        <ui5-tag design="Information">Model B</ui5-tag>
                         @if (h.b.length <= h.a.length) { <ui5-tag design="Positive">✓</ui5-tag> }
                       </div>
-                      <pre>{{ h.b }}</pre>
+                      <pre class="history-pre">{{ h.b }}</pre>
                     </div>
                   </div>
-                </div>
-              </ui5-card>
-            }
-          </div>
+                </ui5-card>
+              }
+            </ui5-panel>
+          }
         }
-      }
-    </div>
+
+        </ui5-busy-indicator>
+      </div>
+    </ui5-page>
   `,
   styles: [`
-    .subtitle { color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.875rem; }
-
     /* Selector row */
-    .selector-row { display: flex; align-items: stretch; gap: 0.75rem; margin-bottom: 1.5rem; }
-    .model-selector-card { flex: 1; background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem;
-      padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;
-      transition: box-shadow 0.2s; }
-    .model-selector-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .selector-label { font-weight: 700; font-size: 0.8125rem; display: flex; align-items: center; gap: 0.5rem;
-      color: var(--sapTextColor, #32363a); }
-    .label-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot-a { background: var(--sapBrandColor, #0854a0); }
-    .dot-b { background: #e57300; }
-    .sel-input { padding: 0.5rem 0.625rem; border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.375rem; font-size: 0.875rem; background: var(--sapBaseColor, #fff);
-      width: 100%; transition: border-color 0.2s; outline: none; }
-    .sel-input:focus { border-color: var(--sapBrandColor, #0854a0); box-shadow: 0 0 0 2px rgba(8,84,160,0.12); }
-    .model-meta { display: flex; gap: 0.375rem; align-items: center; }
-    .badge-model { font-size: 0.6875rem; background: #e8f2ff; color: var(--sapBrandColor, #0854a0);
-      padding: 2px 8px; border-radius: 1rem; font-weight: 600; }
-    .badge-id { font-size: 0.625rem; color: var(--sapContent_LabelColor, #6a6d70); font-family: monospace; }
-
-    /* Swap button */
-    .swap-btn { align-self: center; width: 40px; height: 40px; border-radius: 50%;
-      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all 0.3s ease; margin-top: 1rem; flex-shrink: 0; }
-    .swap-btn:hover:not(:disabled) { background: var(--sapBrandColor, #0854a0); border-color: var(--sapBrandColor, #0854a0); }
-    .swap-btn:hover:not(:disabled) .swap-icon { color: #fff; }
-    .swap-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .swap-icon { font-size: 1.125rem; color: var(--sapTextColor, #32363a); transition: transform 0.4s ease, color 0.2s; }
-    .swap-btn.spinning .swap-icon { transform: rotate(180deg); }
-
-    /* Empty state */
-    .empty-state { text-align: center; padding: 3rem 2rem; background: var(--sapTile_Background, #fff);
-      border: 2px dashed var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.75rem;
-      margin-bottom: 1.5rem; }
-    .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
-    .empty-title { margin: 0 0 0.375rem; font-size: 1rem; font-weight: 700; color: var(--sapTextColor, #32363a); }
-    .empty-desc { margin: 0; color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.875rem; }
+    .selector-row { display: flex; align-items: stretch; gap: 0.75rem; }
+    .selector-card { flex: 1; }
 
     /* Prompt bar */
-    .prompt-bar { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
-    .prompt-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
-    .prompt-icon { position: absolute; left: 0.75rem; font-size: 1rem; z-index: 1; }
-    .prompt-input { width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.25rem;
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem;
-      font-size: 0.875rem; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
-    .prompt-input:focus { border-color: var(--sapBrandColor, #0854a0);
-      box-shadow: 0 0 0 3px rgba(8,84,160,0.1); }
-    .btn-run { padding: 0.75rem 1.5rem; background: var(--sapBrandColor, #0854a0); color: #fff;
-      border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.875rem;
-      white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;
-      transition: background 0.2s, transform 0.1s; }
-    .btn-run:hover:not(:disabled) { background: #063d75; transform: translateY(-1px); }
-    .btn-run:active:not(:disabled) { transform: translateY(0); }
-    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
-    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff; border-radius: 50%; display: inline-block;
-      animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .prompt-bar { display: flex; gap: 0.75rem; align-items: center; }
 
-    /* Verdict card */
-    .verdict-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; margin-bottom: 1.5rem; overflow: hidden; }
-    .verdict-header { padding: 0.625rem 1rem; background: var(--sapShellColor, #354a5e); color: #fff;
-      font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.02em; }
-    .verdict-body { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    /* Verdict metrics */
     .verdict-metric { display: flex; flex-direction: column; gap: 0.375rem; }
-    .verdict-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--sapContent_LabelColor, #6a6d70); }
     .verdict-bars { display: flex; flex-direction: column; gap: 0.25rem; }
     .verdict-bar-row { display: flex; align-items: center; gap: 0.5rem; }
-    .bar-label { font-size: 0.75rem; font-weight: 700; width: 14px; color: var(--sapTextColor, #32363a); }
     .bar-track { flex: 1; height: 20px; background: var(--sapBackgroundColor, #f5f5f5);
       border-radius: 4px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; min-width: 4px; }
     .bar-a { background: linear-gradient(90deg, var(--sapBrandColor, #0854a0), #2979ff); }
     .bar-b { background: linear-gradient(90deg, #e57300, #ff9800); }
-    .bar-value { font-size: 0.75rem; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70);
-      min-width: 70px; text-align: right; }
-    .bar-winner { color: #2e7d32; }
-    .verdict-winner { padding-top: 0.5rem; border-top: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      text-align: center; }
-    .verdict-win { font-size: 0.875rem; color: #2e7d32; }
-    .verdict-tie { font-size: 0.875rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .bar-winner { color: #2e7d32; font-weight: 600; }
 
     /* Results */
-    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-    .result-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; }
-    .result-card.winner { border-color: #4caf50; box-shadow: 0 0 0 2px rgba(76,175,80,0.15); }
-    .result-header { display: flex; justify-content: space-between; align-items: center;
-      padding: 0.625rem 0.875rem; border-bottom: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      font-size: 0.8125rem; font-weight: 700; }
-    .result-header-left { display: flex; align-items: center; gap: 0.5rem; }
-    .header-a { background: rgba(8,84,160,0.04); }
-    .header-b { background: rgba(229,115,0,0.04); }
-    .winner-badge { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 1rem;
-      font-size: 0.6875rem; font-weight: 700; animation: fadeScale 0.3s ease; }
-    @keyframes fadeScale { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .winner { border: 2px solid #4caf50 !important; box-shadow: 0 0 0 2px rgba(76,175,80,0.15); }
     .result-stats { display: flex; gap: 1rem; padding: 0.375rem 0.875rem;
       background: var(--sapBackgroundColor, #f5f5f5); font-size: 0.6875rem;
-      color: var(--sapContent_LabelColor, #6a6d70); border-bottom: 1px solid var(--sapTile_BorderColor, #e4e4e4); }
+      border-bottom: 1px solid var(--sapTile_BorderColor, #e4e4e4); }
     .result-sql { margin: 0; padding: 1rem; background: #1e1e2e; color: #a9dc76;
       font-family: 'SFMono-Regular', 'Cascadia Code', Consolas, monospace; font-size: 0.8rem;
       white-space: pre-wrap; word-break: break-all; min-height: 80px; line-height: 1.5; }
 
-    /* Diff section */
-    .diff-section { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; margin-bottom: 1.5rem; overflow: hidden; }
-    .diff-header { display: flex; justify-content: space-between; align-items: center;
-      padding: 0.625rem 0.875rem; cursor: pointer; font-size: 0.8125rem; font-weight: 700;
-      background: var(--sapBackgroundColor, #f5f5f5); user-select: none; }
-    .diff-header:hover { background: #ebebeb; }
-    .diff-toggle { font-size: 0.6875rem; color: var(--sapBrandColor, #0854a0); font-weight: 600; }
+    /* Diff */
     .diff-body { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.75rem;
       max-height: 300px; overflow-y: auto; }
     .diff-line { display: flex; padding: 1px 0.75rem; line-height: 1.6; }
@@ -361,25 +269,10 @@ interface DeployedModel {
     .diff-text { white-space: pre-wrap; word-break: break-all; }
 
     /* History */
-    .history-section { margin-top: 0.5rem; }
-    .section-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.75rem;
-      display: flex; align-items: center; gap: 0.5rem; }
-    .history-count { background: var(--sapBrandColor, #0854a0); color: #fff; font-size: 0.625rem;
-      padding: 2px 7px; border-radius: 1rem; font-weight: 700; }
-    .history-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem; padding: 0.875rem; margin-bottom: 0.625rem;
-      transition: box-shadow 0.2s; }
-    .history-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .history-q { margin: 0 0 0.625rem; font-size: 0.8125rem; font-weight: 600;
-      display: flex; align-items: center; gap: 0.5rem; }
-    .history-num { background: var(--sapBackgroundColor, #f5f5f5); color: var(--sapContent_LabelColor, #6a6d70);
-      font-size: 0.625rem; padding: 2px 6px; border-radius: 3px; font-weight: 700; }
     .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .history-col { display: flex; flex-direction: column; gap: 0.25rem; }
-    .history-col-label { font-size: 0.6875rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;
-      color: var(--sapContent_LabelColor, #6a6d70); }
-    .mini-winner { color: #2e7d32; font-weight: 700; font-size: 0.75rem; }
-    .history-col pre { margin: 0; background: var(--sapBackgroundColor, #f5f5f5); padding: 0.5rem;
+    .history-col-label { display: flex; align-items: center; gap: 0.375rem; }
+    .history-pre { margin: 0; background: var(--sapBackgroundColor, #f5f5f5); padding: 0.5rem;
       border-radius: 0.375rem; font-size: 0.75rem; white-space: pre-wrap;
       word-break: break-all; line-height: 1.4; border: 1px solid var(--sapTile_BorderColor, #e4e4e4); }
 
@@ -429,6 +322,16 @@ export class CompareComponent implements OnInit {
     this.loadDeployedModels();
   }
 
+  onModelAChange(event: Event) {
+    const el = event.target as HTMLSelectElement;
+    this.modelA = (el as any).selectedOption?.value ?? '';
+  }
+
+  onModelBChange(event: Event) {
+    const el = event.target as HTMLSelectElement;
+    this.modelB = (el as any).selectedOption?.value ?? '';
+  }
+
   loadDeployedModels() {
     this.http.get<{ id: string; status: string; config: { model_name: string }; deployed: boolean }[]>(
       `${environment.apiBaseUrl}/jobs`
@@ -444,14 +347,6 @@ export class CompareComponent implements OnInit {
         this.deployedModels.set(deployed);
       }
     });
-  }
-
-  onModelASelect(event: any): void {
-    this.modelA = event.detail?.selectedOption?.getAttribute('value') ?? '';
-  }
-
-  onModelBSelect(event: any): void {
-    this.modelB = event.detail?.selectedOption?.getAttribute('value') ?? '';
   }
 
   modelNameFor(id: string): string {

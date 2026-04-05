@@ -35,70 +35,69 @@ interface CompletionResponse {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="chat-layout">
+    <ui5-page background-design="Solid">
+      <div class="chat-layout">
       <!-- Sidebar -->
       <div class="chat-sidebar">
-        <div class="sidebar-header">
-          <ui5-icon name="action-settings" class="sidebar-icon"></ui5-icon>
-          <ui5-title level="H5">Settings</ui5-title>
-        </div>
-
-        <!-- Model Section -->
-        <ui5-panel header-text="Model" [collapsed]="collapsedSections['model']">
-          <div class="section-body">
-            <ui5-select [(ngModel)]="model" name="model" style="width: 100%;">
-              <ui5-option value="Qwen/Qwen3.5-0.6B">Qwen 3.5 0.6B — Fast &amp; lightweight</ui5-option>
-              <ui5-option value="Qwen/Qwen2.5-1.5B">Qwen 2.5 1.5B — Balanced</ui5-option>
-              <ui5-option value="meta-llama/Llama-3.1-8B">Llama 3.1 8B — High quality</ui5-option>
+        <ui5-panel header-text="Model" collapsed>
+          <div class="panel-body">
+            <ui5-select (change)="onModelChange($event)" style="width: 100%;">
+              <ui5-option value="Qwen/Qwen3.5-0.6B" [selected]="model === 'Qwen/Qwen3.5-0.6B'">Qwen 3.5 0.6B — Fast &amp; lightweight</ui5-option>
+              <ui5-option value="Qwen/Qwen2.5-1.5B" [selected]="model === 'Qwen/Qwen2.5-1.5B'">Qwen 2.5 1.5B — Balanced</ui5-option>
+              <ui5-option value="meta-llama/Llama-3.1-8B" [selected]="model === 'meta-llama/Llama-3.1-8B'">Llama 3.1 8B — High quality</ui5-option>
             </ui5-select>
             <span class="field-hint">Active: {{ model.split('/')[1] }}</span>
           </div>
         </ui5-panel>
 
-        <!-- Parameters Section -->
-        <ui5-panel header-text="Parameters" [collapsed]="collapsedSections['params']">
-          <div class="section-body">
+        <ui5-panel header-text="Parameters" collapsed>
+          <div class="panel-body">
             <div class="field-group">
               <label class="field-label">Temperature: <strong>{{ temperature.toFixed(2) }}</strong></label>
-              <ui5-slider [value]="temperature" min="0" max="2" step="0.1"
-                (input)="onTemperatureChange($event)" show-tooltip></ui5-slider>
+              <ui5-slider [value]="temperature" min="0" max="2" step="0.05"
+                show-tooltip label-interval="0"
+                (input)="onTemperatureChange($event)"></ui5-slider>
               <div class="range-labels"><span>Precise</span><span>Creative</span></div>
             </div>
             <div class="field-group">
               <label class="field-label">Max Tokens: <strong>{{ maxTokens }}</strong></label>
               <ui5-slider [value]="maxTokens" min="64" max="4096" step="64"
-                (input)="onMaxTokensChange($event)" show-tooltip></ui5-slider>
+                show-tooltip label-interval="0"
+                (input)="onMaxTokensChange($event)"></ui5-slider>
               <div class="range-labels"><span>64</span><span>4096</span></div>
             </div>
           </div>
         </ui5-panel>
 
-        <!-- System Prompt Section -->
-        <ui5-panel header-text="System Prompt" [collapsed]="collapsedSections['prompt']">
-          <div class="section-body">
-            <ui5-textarea [(ngModel)]="systemPrompt" name="systemPrompt" rows="5"
-              placeholder="You are a helpful SQL assistant…" growing style="width: 100%;"></ui5-textarea>
+        <ui5-panel header-text="System Prompt" collapsed>
+          <div class="panel-body">
+            <ui5-text-area [value]="systemPrompt" rows="5"
+              placeholder="You are a helpful SQL assistant…"
+              (input)="onSystemPromptChange($event)"
+              growing growing-max-lines="10"
+              style="width: 100%;"></ui5-text-area>
           </div>
         </ui5-panel>
 
         <!-- Token Usage -->
         @if (lastUsage()) {
           <div class="token-usage">
-            <ui5-title level="H6">Token Usage</ui5-title>
-            <div class="token-progress-group">
-              <label class="field-label">Prompt: {{ lastUsage()?.prompt_tokens }}</label>
-              <ui5-progress-indicator [value]="promptPct()" value-state="Information"></ui5-progress-indicator>
+            <div class="token-header">Token Usage</div>
+            <ui5-progress-indicator
+              [value]="totalUsagePct()"
+              [displayValue]="lastUsage()?.total_tokens + ' / ' + maxContextWindow + ' tokens'"
+              [valueState]="usageValueState()">
+            </ui5-progress-indicator>
+            <div class="token-details">
+              <span class="token-label"><span class="dot dot-prompt"></span>Prompt: {{ lastUsage()?.prompt_tokens }}</span>
+              <span class="token-label"><span class="dot dot-completion"></span>Completion: {{ lastUsage()?.completion_tokens }}</span>
             </div>
-            <div class="token-progress-group">
-              <label class="field-label">Completion: {{ lastUsage()?.completion_tokens }}</label>
-              <ui5-progress-indicator [value]="completionPct()" value-state="None"></ui5-progress-indicator>
-            </div>
-            <div class="token-total">{{ lastUsage()?.total_tokens }} / {{ maxContextWindow }} tokens · ~{{ '$' + costEstimate() }}</div>
+            <div class="token-total">~{{ '$' + costEstimate() }}</div>
           </div>
         }
 
         <div class="sidebar-spacer"></div>
-        <ui5-button design="Negative" icon="delete" (click)="clearChat()">Clear Chat</ui5-button>
+        <ui5-button icon="delete" design="Negative" (click)="clearChat()">Clear Chat</ui5-button>
       </div>
 
       <!-- Chat area -->
@@ -107,7 +106,7 @@ interface CompletionResponse {
           @if (!messages().length) {
             <div class="empty-state">
               <div class="welcome-icon">🤖</div>
-              <ui5-title level="H3">SAP HANA SQL Assistant</ui5-title>
+              <h3 class="welcome-title">SAP HANA SQL Assistant</h3>
               <p class="welcome-sub">Ask me about schemas, write SQL queries, or explore training data.</p>
               <div class="suggestion-chips">
                 @for (s of suggestions; track s) {
@@ -146,33 +145,33 @@ interface CompletionResponse {
 
         <!-- Scroll to bottom FAB -->
         @if (showScrollBtn()) {
-          <ui5-button class="scroll-fab" icon="slim-arrow-down" design="Transparent"
-            (click)="scrollToBottom()" title="Scroll to bottom"></ui5-button>
+          <ui5-button icon="navigation-down-arrow" design="Transparent" class="scroll-fab"
+            (click)="scrollToBottom()"></ui5-button>
         }
 
         <form class="chat-input-row" (ngSubmit)="send()">
           <div class="input-wrapper">
-            <textarea
+            <ui5-text-area
               #chatInput
-              class="chat-input"
-              [(ngModel)]="userInput"
-              name="userInput"
-              rows="1"
+              [value]="userInput"
+              (input)="onUserInputChange($event)"
               placeholder="Ask about SAP HANA SQL, schemas, or training data…"
+              growing growing-max-lines="5"
               (keydown.enter)="onEnter($event)"
-              (input)="autoGrow($event)"
-            ></textarea>
+              style="width: 100%;"
+            ></ui5-text-area>
             <div class="input-meta">
               <span class="char-count">{{ userInput.length }}</span>
               <span class="key-hint">⌘ Enter to send</span>
             </div>
           </div>
-          <ui5-button icon="paper-plane" design="Emphasized" type="submit"
-            [disabled]="!userInput.trim() || sending()" (click)="send()">
-          </ui5-button>
+          <ui5-button icon="paper-plane" design="Emphasized"
+            [disabled]="!userInput.trim() || sending()"
+            (click)="send()"></ui5-button>
         </form>
       </div>
     </div>
+    </ui5-page>
   `,
   styles: [`
     :host { display: flex; height: 100%; }
@@ -198,18 +197,7 @@ interface CompletionResponse {
       flex-shrink: 0;
     }
 
-    .sidebar-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .sidebar-icon { font-size: 1.125rem; }
-
-    .section-body {
-      padding: 0.5rem 0.75rem 0.75rem;
-    }
+    .panel-body { padding: 0.5rem 0; }
 
     .field-hint {
       display: block;
@@ -244,7 +232,37 @@ interface CompletionResponse {
       margin-top: 0.25rem;
     }
 
-    .token-progress-group { margin-bottom: 0.5rem; }
+    .token-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--sapTextColor, #32363a);
+      margin-bottom: 0.5rem;
+    }
+
+    .token-details {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .token-label {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.6875rem;
+      color: var(--sapContent_LabelColor, #6a6d70);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-prompt { background: var(--sapBrandColor, #0854a0); }
+    .dot-completion { background: var(--sapShellColor, #354a5e); }
 
     .token-total {
       font-size: 0.6875rem;
@@ -286,7 +304,12 @@ interface CompletionResponse {
 
     .welcome-icon { font-size: 3.5rem; margin-bottom: 0.25rem; }
 
-
+    .welcome-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--sapTextColor, #32363a);
+      margin: 0;
+    }
 
     .welcome-sub {
       font-size: 0.875rem;
@@ -409,7 +432,6 @@ interface CompletionResponse {
       bottom: 80px;
       right: 1.5rem;
       z-index: 5;
-      animation: fadeIn 0.15s ease-out;
     }
 
     /* ─── Input Area ─── */
@@ -427,42 +449,13 @@ interface CompletionResponse {
       position: relative;
     }
 
-    .chat-input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.625rem 0.75rem;
-      padding-bottom: 1.5rem;
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.75rem;
-      font-size: 0.875rem;
-      background: var(--sapBackgroundColor, #f5f5f5);
-      color: var(--sapTextColor, #32363a);
-      resize: none;
-      font-family: inherit;
-      min-height: 2.5rem;
-      max-height: 9rem;
-      overflow-y: auto;
-      transition: border-color 0.15s ease;
-    }
-
-    .chat-input:focus {
-      outline: none;
-      border-color: var(--sapBrandColor, #0854a0);
-    }
-
     .input-meta {
-      position: absolute;
-      bottom: 0.375rem;
-      left: 0.75rem;
-      right: 0.75rem;
       display: flex;
       justify-content: space-between;
       font-size: 0.625rem;
       color: var(--sapContent_LabelColor, #6a6d70);
-      pointer-events: none;
+      padding: 0.125rem 0.25rem;
     }
-
-
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
@@ -489,8 +482,6 @@ export class ChatComponent implements OnDestroy {
   temperature = 0.7;
   maxContextWindow = 8192;
 
-  collapsedSections: Record<string, boolean> = { model: false, params: false, prompt: true };
-
   readonly suggestions = [
     'Write a SQL query to get total revenue by region',
     'Explain the NFRP schema hierarchy',
@@ -514,23 +505,44 @@ export class ChatComponent implements OnDestroy {
     return cost.toFixed(4);
   });
 
+  readonly totalUsagePct = computed(() => {
+    const u = this.lastUsage();
+    return u ? Math.min((u.total_tokens / this.maxContextWindow) * 100, 100) : 0;
+  });
+
+  readonly usageValueState = computed(() => {
+    const pct = this.totalUsagePct();
+    if (pct < 50) return 'Positive';
+    if (pct < 80) return 'Critical';
+    return 'Negative';
+  });
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  toggleSection(key: string): void {
-    this.collapsedSections[key] = !this.collapsedSections[key];
+  onModelChange(event: Event): void {
+    const detail = (event as CustomEvent).detail;
+    this.model = detail?.selectedOption?.value ?? this.model;
   }
 
   onTemperatureChange(event: Event): void {
-    const el = event.target as HTMLInputElement;
-    this.temperature = Number(el.getAttribute('value') ?? (event as CustomEvent).detail?.value ?? this.temperature);
+    this.temperature = (event as CustomEvent).detail?.value ?? this.temperature;
   }
 
   onMaxTokensChange(event: Event): void {
-    const el = event.target as HTMLInputElement;
-    this.maxTokens = Number(el.getAttribute('value') ?? (event as CustomEvent).detail?.value ?? this.maxTokens);
+    this.maxTokens = (event as CustomEvent).detail?.value ?? this.maxTokens;
+  }
+
+  onSystemPromptChange(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.systemPrompt = target?.value ?? this.systemPrompt;
+  }
+
+  onUserInputChange(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.userInput = target?.value ?? '';
   }
 
   usePrompt(s: string): void {
@@ -549,12 +561,6 @@ export class ChatComponent implements OnDestroy {
     const el = this.messagesArea.nativeElement;
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
     this.showScrollBtn.set(!atBottom);
-  }
-
-  autoGrow(event: Event): void {
-    const el = event.target as HTMLTextAreaElement;
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 144) + 'px';
   }
 
   send(): void {

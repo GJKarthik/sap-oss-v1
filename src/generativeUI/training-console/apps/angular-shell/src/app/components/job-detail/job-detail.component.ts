@@ -30,67 +30,61 @@ interface LogLine { text: string; kind: 'info' | 'success' | 'error' | 'warn' | 
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui5-card class="job-detail-panel">
-      <ui5-card-header slot="header"
-        [titleText]="job.id.slice(0, 8)"
-        [subtitleText]="job.config['model_name'] ? '' + job.config['model_name'] : ''">
-      </ui5-card-header>
-      <div style="padding: 1.25rem;">
-        <!-- Header -->
-        <div class="detail-header">
-          <div class="detail-meta">
-            <code class="job-id">{{ job.id.slice(0, 8) }}</code>
-            <ui5-tag [design]="job.status === 'completed' ? 'Positive' : job.status === 'failed' ? 'Negative' : job.status === 'running' ? 'Information' : 'Set2'">
-              {{ job.status }}
-            </ui5-tag>
-            <span class="detail-model">{{ job.config['model_name'] }}</span>
-          </div>
-          <ui5-tag [design]="wsConnected() ? 'Positive' : 'Set2'">
-            {{ wsConnected() ? 'Live' : 'Offline' }}
-          </ui5-tag>
+    <div class="job-detail-panel">
+      <!-- Header -->
+      <div class="detail-header">
+        <div class="detail-meta">
+          <ui5-tag design="Set2" style="font-family: monospace;">{{ job.id.slice(0, 8) }}</ui5-tag>
+          <ui5-tag [design]="getStatusDesign(job.status)">{{ job.status }}</ui5-tag>
+          <ui5-text style="font-size: 0.75rem; color: var(--sapContent_LabelColor);">{{ job.config['model_name'] }}</ui5-text>
         </div>
-
-        <!-- Progress -->
-        <div class="progress-row">
-          <ui5-progress-indicator [value]="liveProgress()"
-            [valueState]="liveStatus() === 'completed' ? 'Positive' : liveStatus() === 'failed' ? 'Negative' : 'Information'"
-            style="flex: 1;"></ui5-progress-indicator>
-          <span class="progress-pct">{{ liveProgress().toFixed(0) }}%</span>
-        </div>
-
-        <!-- Loss Chart Canvas -->
-        <ui5-card style="margin-bottom: 1rem;">
-          <ui5-card-header slot="header" title-text="📉 Training Loss Curve"></ui5-card-header>
-          <div style="padding: 0.5rem;">
-            @if (liveEval()) {
-              <div class="eval-badges" style="padding: 0 0.5rem 0.5rem;">
-                <ui5-tag design="Information">PPL {{ liveEval()!.perplexity }}</ui5-tag>
-                <ui5-tag design="Set2">Loss {{ liveEval()!.eval_loss }}</ui5-tag>
-                <span class="eval-runtime">{{ liveEval()!.runtime_sec }}s</span>
-              </div>
-            }
-            <canvas #chartCanvas class="loss-canvas" width="600" height="200"></canvas>
-          </div>
-        </ui5-card>
-
-        <!-- Live Terminal -->
-        @if (logLines().length > 0) {
-          <div class="terminal">
-            <div class="terminal-head">
-              <span class="terminal-dot"></span>
-              <span class="terminal-dot terminal-dot--yellow"></span>
-              <span class="terminal-dot terminal-dot--green"></span>
-              <span class="terminal-title">Log Stream</span>
-            </div>
-            <div class="terminal-body" #logBody>
-              @for (l of logLines(); track $index) {
-                <div class="log line-{{ l.kind }}">{{ l.text }}</div>
-              }
-            </div>
-          </div>
-        }
+        <ui5-tag [design]="wsConnected() ? 'Positive' : 'Set2'">
+          {{ wsConnected() ? '● Live' : '○ Offline' }}
+        </ui5-tag>
       </div>
-    </ui5-card>
+
+      <!-- Progress -->
+      <div class="progress-row">
+        <ui5-progress-indicator style="flex: 1;"
+          [value]="liveProgress()"
+          [valueState]="liveStatus() === 'completed' ? 'Positive' : liveStatus() === 'failed' ? 'Negative' : 'Information'"
+          [displayValue]="liveProgress().toFixed(0) + '%'">
+        </ui5-progress-indicator>
+      </div>
+
+      <!-- Loss Chart Canvas -->
+      <ui5-card style="margin-bottom: 1rem;">
+        <ui5-card-header slot="header" title-text="📉 Training Loss Curve">
+        </ui5-card-header>
+        <div style="padding: 0;">
+          @if (liveEval()) {
+            <div class="eval-badges" style="padding: 0.5rem 1rem; display: flex; gap: 0.4rem; align-items: center;">
+              <ui5-tag design="Information">PPL {{ liveEval()!.perplexity }}</ui5-tag>
+              <ui5-tag design="Positive">Loss {{ liveEval()!.eval_loss }}</ui5-tag>
+              <ui5-text style="font-size: 0.65rem; color: var(--sapContent_LabelColor);">{{ liveEval()!.runtime_sec }}s</ui5-text>
+            </div>
+          }
+          <canvas #chartCanvas class="loss-canvas" width="600" height="200"></canvas>
+        </div>
+      </ui5-card>
+
+      <!-- Live Terminal -->
+      @if (logLines().length > 0) {
+        <div class="terminal">
+          <div class="terminal-head">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot terminal-dot--yellow"></span>
+            <span class="terminal-dot terminal-dot--green"></span>
+            <ui5-text style="color: #8b949e; font-size: 0.65rem; font-weight: 600; margin-left: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em;">Log Stream</ui5-text>
+          </div>
+          <div class="terminal-body" #logBody>
+            @for (l of logLines(); track $index) {
+              <div class="log line-{{ l.kind }}">{{ l.text }}</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
   `,
   styles: [`
     .job-detail-panel {
@@ -335,6 +329,16 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   private reconnect: any = null;
   // Loss data: [step, loss]
   private lossPoints: [number, number][] = [];
+
+  getStatusDesign(status: string): string {
+    const map: Record<string, string> = {
+      pending: 'Critical',
+      running: 'Information',
+      completed: 'Positive',
+      failed: 'Negative',
+    };
+    return map[status] ?? 'Set2';
+  }
 
   ngOnInit() {
     this.liveStatus.set(this.job.status);

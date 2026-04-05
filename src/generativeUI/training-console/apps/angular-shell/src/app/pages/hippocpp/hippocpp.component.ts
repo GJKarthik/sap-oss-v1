@@ -109,11 +109,12 @@ interface HistoryItem {
           </ui5-card>
         </div>
 
-        <!-- Cypher Query Sandbox -->
+      <!-- Cypher Query Sandbox -->
         <ui5-card>
           <ui5-card-header slot="header" title-text="Cypher Query Sandbox"
             subtitle-text="Run queries against the graph"></ui5-card-header>
           <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+
             <!-- Preset Cards -->
             <div class="preset-grid">
               @for (p of presets; track p.label) {
@@ -127,7 +128,8 @@ interface HistoryItem {
                 </ui5-card>
               }
             </div>
-            <!-- Code Editor (custom dark textarea) -->
+
+            <!-- Code Editor (keep custom dark textarea) -->
             <div class="editor-wrapper">
               <div class="editor-gutter" aria-hidden="true">
                 @for (line of editorLines(); track $index) {
@@ -153,10 +155,12 @@ interface HistoryItem {
               </ui5-button>
               <ui5-button design="Transparent" (click)="clearResults()">Clear</ui5-button>
             </div>
+
             <!-- Loading -->
             @if (querying()) {
               <ui5-busy-indicator active size="L" style="width: 100%; min-height: 100px;"></ui5-busy-indicator>
             }
+
             <!-- Results -->
             @if (result(); as res) {
               <div class="results-section">
@@ -195,6 +199,7 @@ interface HistoryItem {
                 }
               </div>
             }
+
             <!-- Error State -->
             @if (queryError()) {
               <ui5-message-strip design="Negative" hide-close-button>
@@ -202,6 +207,7 @@ interface HistoryItem {
               </ui5-message-strip>
               <ui5-button design="Negative" icon="refresh" (click)="runQuery()">Try Again</ui5-button>
             }
+
           </div>
         </ui5-card>
 
@@ -253,19 +259,21 @@ interface HistoryItem {
     /* ── Header ── */
     .db-info { color: var(--sapContent_LabelColor, #6a6d70); font-size: 0.7rem; margin-left: 0.5rem; }
 
-
     /* ── Tech Pills ── */
     .tech-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
     /* ── Stats Grid ── */
-    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+    }
     @media (min-width: 1440px) {
       :host .stats-grid { grid-template-columns: repeat(4, 1fr) !important; }
     }
 
     /* ── Preset Grid ── */
     .preset-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
     }
     .preset-card.active { outline: 2px solid var(--sapBrandColor, #0854a0); }
     .preset-code {

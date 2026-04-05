@@ -50,45 +50,45 @@ interface LogLine {
           <div class="control-info">
             <!-- Visual Flow Diagram / Stepper -->
             <div class="pipeline-stepper">
-            @for (s of stages(); track s.num) {
-              <div class="stepper-step" [class.step-done]="s.status === 'done'" [class.step-active]="s.status === 'running'" [class.step-error]="s.status === 'error'">
-                <div class="step-node">
-                  @if (s.status === 'done') { <span class="step-icon">✓</span> }
-                  @else if (s.status === 'error') { <span class="step-icon">✕</span> }
-                  @else if (s.status === 'running') { <span class="step-icon step-icon-pulse">{{ s.num }}</span> }
-                  @else { <span class="step-icon">{{ s.num }}</span> }
+              @for (s of stages(); track s.num) {
+                <div class="stepper-step" [class.step-done]="s.status === 'done'" [class.step-active]="s.status === 'running'" [class.step-error]="s.status === 'error'">
+                  <div class="step-node">
+                    @if (s.status === 'done') { <span class="step-icon">✓</span> }
+                    @else if (s.status === 'error') { <span class="step-icon">✕</span> }
+                    @else if (s.status === 'running') { <span class="step-icon step-icon-pulse">{{ s.num }}</span> }
+                    @else { <span class="step-icon">{{ s.num }}</span> }
+                  </div>
+                  <span class="step-label">{{ s.name }}</span>
                 </div>
-                <span class="step-label">{{ s.name }}</span>
-              </div>
-              @if (s.num < stages().length) {
-                <div class="stepper-connector" [class.connector-done]="s.status === 'done'" [class.connector-active]="s.status === 'running'"></div>
+                @if (s.num < stages().length) {
+                  <div class="stepper-connector" [class.connector-done]="s.status === 'done'" [class.connector-active]="s.status === 'running'"></div>
+                }
               }
-            }
+            </div>
           </div>
-        </div>
-        <div class="control-actions">
-          <ui5-tag [attr.design]="wsConnected() ? 'Positive' : 'Negative'">
-            {{ wsConnected() ? '● Live' : '● Offline' }}
-          </ui5-tag>
-          <div class="btn-group">
-            <ui5-button design="Emphasized" (click)="startPipeline()"
-              [attr.disabled]="(pipelineState() === 'running' || starting()) || null"
-              icon="play">
-              @if (starting()) {
-                Starting…
-              } @else if (pipelineState() === 'running') {
-                Processing…
-              } @else {
-                Execute Pipeline
-              }
-            </ui5-button>
-            <ui5-button design="Negative" (click)="stopPipeline()"
-              [attr.disabled]="(pipelineState() !== 'running') || null"
-              icon="stop">
-              Stop
-            </ui5-button>
+          <div class="control-actions">
+            <ui5-tag [attr.design]="wsConnected() ? 'Positive' : 'Negative'">
+              {{ wsConnected() ? '● Live' : '● Offline' }}
+            </ui5-tag>
+            <div class="btn-group">
+              <ui5-button design="Emphasized" (click)="startPipeline()"
+                [attr.disabled]="(pipelineState() === 'running' || starting()) || null"
+                icon="play">
+                @if (starting()) {
+                  Starting…
+                } @else if (pipelineState() === 'running') {
+                  Processing…
+                } @else {
+                  Execute Pipeline
+                }
+              </ui5-button>
+              <ui5-button design="Negative" (click)="stopPipeline()"
+                [attr.disabled]="(pipelineState() !== 'running') || null"
+                icon="stop">
+                Stop
+              </ui5-button>
+            </div>
           </div>
-        </div>
         </div>
       </ui5-card>
 
@@ -119,8 +119,8 @@ interface LogLine {
         <div class="terminal-footer">
           <span class="text-small text-muted">{{ logLines().length }} lines</span>
           <div class="terminal-footer-actions">
-            <ui5-button design="Transparent" icon="copy" (click)="copyLogs()" title="Copy output">Copy</ui5-button>
-            <ui5-button design="Transparent" icon="delete" (click)="clearLogs()" title="Clear output">Clear</ui5-button>
+            <button class="btn-term" (click)="copyLogs()" title="Copy output">📋 Copy</button>
+            <button class="btn-term btn-term-danger" (click)="clearLogs()" title="Clear output">🗑 Clear</button>
           </div>
         </div>
       </div>

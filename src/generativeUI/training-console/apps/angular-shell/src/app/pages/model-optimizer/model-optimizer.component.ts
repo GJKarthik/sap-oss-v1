@@ -69,27 +69,31 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
-      <div class="page-header">
-        <ui5-title level="H3">Model Optimizer</ui5-title>
-        <ui5-button design="Transparent" icon="refresh" (click)="loadData()">Refresh</ui5-button>
-      </div>
+    <ui5-page background-design="Solid">
+      <ui5-bar slot="header" design="Header">
+        <ui5-title slot="startContent" level="H3">Model Optimizer</ui5-title>
+        <ui5-button slot="endContent" icon="refresh" design="Transparent"
+          (click)="loadData()">Refresh</ui5-button>
+      </ui5-bar>
+
+      <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
 
       <!-- Engine & Dataset -->
-      <ui5-title level="H5" style="margin-bottom: 0.75rem;">Engine Configuration</ui5-title>
-      <ui5-card style="margin-bottom: 1.5rem;">
+      <ui5-title level="H5">Engine Configuration</ui5-title>
+      <ui5-card>
+        <ui5-card-header slot="header" title-text="Engine & Dataset"></ui5-card-header>
         <div style="padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label>Training Framework</label>
-            <ui5-select [formControl]="frameworkControl" style="width: 100%;">
-              <ui5-option value="PyTorch">PyTorch Native (SFTTrainer)</ui5-option>
+          <div class="field-group">
+            <ui5-label for="frameworkSelect">Training Framework</ui5-label>
+            <ui5-select id="frameworkSelect" style="width: 100%;" (change)="onFrameworkChange($event)">
+              <ui5-option value="PyTorch" [selected]="frameworkControl.value === 'PyTorch'">PyTorch Native (SFTTrainer)</ui5-option>
               <ui5-option value="TensorFlow" disabled>TensorFlow (Coming Soon)</ui5-option>
             </ui5-select>
           </div>
-          <div class="form-group">
-            <label>Dataset Split</label>
-            <ui5-select [formControl]="datasetControl" style="width: 100%;">
-              <ui5-option value="spider-train">Spider Training Split (Text-to-SQL)</ui5-option>
+          <div class="field-group">
+            <ui5-label for="datasetSelect">Dataset Split</ui5-label>
+            <ui5-select id="datasetSelect" style="width: 100%;" (change)="onDatasetChange($event)">
+              <ui5-option value="spider-train" [selected]="datasetControl.value === 'spider-train'">Spider Training Split (Text-to-SQL)</ui5-option>
               <ui5-option value="bird-train" disabled>BIRD Benchmark (Coming Soon)</ui5-option>
             </ui5-select>
           </div>
@@ -97,18 +101,20 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       </ui5-card>
 
       <!-- Mangle Data Validation -->
-      <ui5-title level="H5" style="margin-bottom: 0.75rem;">Datalog Validation Pre-Flight</ui5-title>
-      <ui5-card style="margin-bottom: 2rem;">
-        <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--sapBrandColor);">
+      <ui5-title level="H5">Datalog Validation Pre-Flight</ui5-title>
+      <ui5-card>
+        <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">Verify dataset mathematical integrity against <strong>Mangle</strong> schema invariants prior to tensor optimization.</p>
-            @if (mangleStatus() === 'passed') {
-              <ui5-tag design="Positive">✓ All 48 Invariants Passed</ui5-tag>
-            } @else if (mangleStatus() === 'failed') {
-              <ui5-tag design="Negative">⚠ Datalog Violation Detected</ui5-tag>
-            } @else {
-              <span class="text-muted text-small" style="display: inline-block;">Data invariants unverified.</span>
-            }
+            <ui5-text style="font-size: 0.875rem;">Verify dataset mathematical integrity against Mangle schema invariants prior to tensor optimization.</ui5-text>
+            <div style="margin-top: 0.25rem;">
+              @if (mangleStatus() === 'passed') {
+                <ui5-tag design="Positive">✓ All 48 Invariants Passed</ui5-tag>
+              } @else if (mangleStatus() === 'failed') {
+                <ui5-tag design="Negative">⚠ Datalog Violation Detected</ui5-tag>
+              } @else {
+                <ui5-tag design="Set2">Data invariants unverified</ui5-tag>
+              }
+            </div>
           </div>
           <ui5-button design="Default" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
             {{ mangleStatus() === 'checking' ? 'Validating...' : 'Check Constraints' }}
@@ -118,29 +124,27 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       <!-- Model Catalog -->
       <section class="section">
-        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Model Catalog</ui5-title>
+        <ui5-title level="H5">Model Catalog</ui5-title>
         <div class="model-grid">
           @for (m of models(); track m.name) {
             <ui5-card
               class="model-card"
               [class.model-card--selected]="jobForm.value.model_name === m.name"
               [class.model-card--recommended]="m.recommended_quant === 'int4_awq'"
-              interactive
               (click)="selectModel(m)"
             >
-              @if (m.recommended_quant === 'int4_awq') {
-                <div class="recommended-ribbon">★ Recommended</div>
-              }
+              <ui5-card-header slot="header"
+                [titleText]="m.name.split('/').pop() ?? m.name"
+                [subtitleText]="m.name.includes('/') ? m.name.split('/')[0] : 'community'">
+              </ui5-card-header>
               <div class="model-card-body">
-                <div class="model-name-row">
-                  <div class="model-name">{{ m.name.split('/').pop() }}</div>
-                  <ui5-tag class="size-indicator size-{{ getModelSize(m) }}" design="Set2">{{ getModelSize(m) }}</ui5-tag>
-                </div>
-                <div class="model-org text-small text-muted">{{ m.name.includes('/') ? m.name.split('/')[0] : 'community' }}</div>
+                @if (m.recommended_quant === 'int4_awq') {
+                  <ui5-tag design="Positive" style="margin-bottom: 0.5rem;">★ Recommended</ui5-tag>
+                }
                 <div class="model-meta">
                   <ui5-tag design="Set2">{{ m.parameters }}</ui5-tag>
                   <ui5-tag design="Set2">{{ m.size_gb }} GB</ui5-tag>
-                  <ui5-tag design="Set2">{{ m.recommended_quant }}</ui5-tag>
+                  <ui5-tag design="Information">{{ m.recommended_quant }}</ui5-tag>
                 </div>
                 <div class="model-arch-tags">
                   <ui5-tag design="Set2">Transformer</ui5-tag>
@@ -156,37 +160,38 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           }
         </div>
         @if (!models().length && !loading()) {
-          <p class="text-muted text-small">No models found — is the backend running?</p>
+          <ui5-message-strip design="Warning" hide-close-button>No models found — is the backend running?</ui5-message-strip>
         }
       </section>
 
       <!-- Create Job Form -->
       <section class="section">
-        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Create Optimization Job</ui5-title>
-        <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()">
-          
+        <ui5-title level="H5">Create Optimization Job</ui5-title>
+        <ui5-card>
+        <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()" style="padding: 1.25rem;">
+
           <!-- Novice Mode -->
           @if (userSettings.mode() === 'novice') {
             <div class="form-row">
               <div class="field-group">
-                <label class="field-label">Template</label>
-                <ui5-select style="width: 100%;" (change)="applyTemplate($any($event.detail).selectedOption.value)">
-                  <ui5-option value="">Select a template…</ui5-option>
+                <ui5-label>Template</ui5-label>
+                <ui5-select style="width: 100%;" (change)="onTemplateChange($event)">
+                  <ui5-option value="" selected>Select a template…</ui5-option>
                   <ui5-option value="sql">Fine-tune Text-to-SQL (Recommended)</ui5-option>
                   <ui5-option value="finance">Finance Schema Optimization</ui5-option>
                   <ui5-option value="hr">HR Data Optimizer</ui5-option>
                 </ui5-select>
               </div>
               <div class="field-group">
-                <label class="field-label">Model Name</label>
-                <input class="form-input" formControlName="model_name" placeholder="Auto-populated by template" readonly />
+                <ui5-label>Model Name</ui5-label>
+                <ui5-input style="width: 100%;" formControlName="model_name" placeholder="Auto-populated by template" readonly></ui5-input>
               </div>
             </div>
-            
+
             @if (jobForm.value.model_name) {
-              <div class="cost-estimate">
-                <span class="icon">💰</span> Estimated cost: ~$2.50 | Time: ~45 mins | Auto-scaling Compute
-              </div>
+              <ui5-message-strip design="Information" hide-close-button style="margin-bottom: 1rem;">
+                💰 Estimated cost: ~$2.50 | Time: ~45 mins | Auto-scaling Compute
+              </ui5-message-strip>
             }
           }
           
@@ -234,29 +239,31 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           @if (userSettings.mode() === 'intermediate') {
             <div class="form-row">
               <div class="field-group">
-                <label class="field-label">Model</label>
-                <input class="form-input" formControlName="model_name" placeholder="HuggingFace model name" />
+                <ui5-label>Model</ui5-label>
+                <ui5-input style="width: 100%;" formControlName="model_name" placeholder="HuggingFace model name"></ui5-input>
               </div>
               <div class="field-group">
-                <label class="field-label">Quant Format</label>
-                <ui5-select style="width: 100%;" formControlName="quant_format">
-                  <ui5-option value="int8">INT8 SmoothQuant (Fast)</ui5-option>
-                  <ui5-option value="int4_awq">INT4 AWQ (Best compression)</ui5-option>
-                  <ui5-option value="w4a16">W4A16 (Balanced)</ui5-option>
+                <ui5-label>Quant Format</ui5-label>
+                <ui5-select style="width: 100%;" (change)="onQuantFormatChange($event)">
+                  <ui5-option value="int8" [selected]="jobForm.value.quant_format === 'int8'">INT8 SmoothQuant (Fast)</ui5-option>
+                  <ui5-option value="int4_awq" [selected]="jobForm.value.quant_format === 'int4_awq'">INT4 AWQ (Best compression)</ui5-option>
+                  <ui5-option value="w4a16" [selected]="jobForm.value.quant_format === 'w4a16'">W4A16 (Balanced)</ui5-option>
                 </ui5-select>
               </div>
               <div class="field-group">
-                <label class="field-label">Export Format</label>
-                <ui5-select style="width: 100%;" formControlName="export_format">
-                  <ui5-option value="hf">HuggingFace</ui5-option>
-                  <ui5-option value="tensorrt_llm">TensorRT-LLM</ui5-option>
-                  <ui5-option value="vllm">vLLM</ui5-option>
+                <ui5-label>Export Format</ui5-label>
+                <ui5-select style="width: 100%;" (change)="onExportFormatChange($event)">
+                  <ui5-option value="hf" [selected]="jobForm.value.export_format === 'hf'">HuggingFace</ui5-option>
+                  <ui5-option value="tensorrt_llm" [selected]="jobForm.value.export_format === 'tensorrt_llm'">TensorRT-LLM</ui5-option>
+                  <ui5-option value="vllm" [selected]="jobForm.value.export_format === 'vllm'">vLLM</ui5-option>
                 </ui5-select>
               </div>
               <div class="field-group">
-                <label class="field-label">Calib Samples <span class="badge badge--best">Best Practice: 512</span></label>
-                <input type="range" class="form-input" formControlName="calib_samples" min="32" max="2048" step="32" />
-                <div class="text-small text-muted">{{ jobForm.value.calib_samples }} samples</div>
+                <ui5-label>Calib Samples <ui5-tag design="Positive" style="margin-left: 0.5rem;">Best Practice: 512</ui5-tag></ui5-label>
+                <ui5-slider [value]="jobForm.value.calib_samples ?? 512" min="32" max="2048" step="32"
+                  show-tooltip label-interval="8"
+                  (input)="onCalibSamplesChange($event)"></ui5-slider>
+                <ui5-text style="font-size: 0.75rem; color: var(--sapContent_LabelColor);">{{ jobForm.value.calib_samples }} samples</ui5-text>
               </div>
             </div>
           }
@@ -265,95 +272,103 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           @if (userSettings.mode() === 'expert') {
             <div class="form-row">
               <div class="field-group">
-                <label class="field-label">Model Override</label>
-                <input class="form-input" formControlName="model_name" placeholder="Custom URI / HF Repo" />
+                <ui5-label>Model Override</ui5-label>
+                <ui5-input style="width: 100%;" formControlName="model_name" placeholder="Custom URI / HF Repo"></ui5-input>
               </div>
               <ng-container formGroupName="expertConfig">
                 <div class="field-group">
-                  <label class="field-label">Compute Strategy</label>
-                  <ui5-select style="width: 100%;" formControlName="compute">
-                    <ui5-option value="auto">Auto (Default)</ui5-option>
-                    <ui5-option value="deepspeed_1">DeepSpeed Stage 1</ui5-option>
-                    <ui5-option value="deepspeed_3">DeepSpeed Stage 3 (Multi-Node)</ui5-option>
+                  <ui5-label>Compute Strategy</ui5-label>
+                  <ui5-select style="width: 100%;" (change)="onComputeStrategyChange($event)">
+                    <ui5-option value="auto" [selected]="jobForm.value.expertConfig?.compute === 'auto'">Auto (Default)</ui5-option>
+                    <ui5-option value="deepspeed_1" [selected]="jobForm.value.expertConfig?.compute === 'deepspeed_1'">DeepSpeed Stage 1</ui5-option>
+                    <ui5-option value="deepspeed_3" [selected]="jobForm.value.expertConfig?.compute === 'deepspeed_3'">DeepSpeed Stage 3 (Multi-Node)</ui5-option>
                   </ui5-select>
                 </div>
 
                 <div class="field-group full-width" style="background: rgba(8, 84, 160, 0.05); padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
                   <div class="full-width" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: -0.5rem;">
-                    <input type="checkbox" id="peftToggle" formControlName="use_peft" />
-                    <label for="peftToggle" class="field-label" style="margin: 0; font-weight: 600;">Enable PEFT (LoRA Matrices)</label>
+                    <ui5-checkbox id="peftToggle" text="Enable PEFT (LoRA Matrices)"
+                      [checked]="jobForm.value.expertConfig?.use_peft ?? false"
+                      (change)="onPeftToggle($event)"></ui5-checkbox>
                   </div>
                   @if (jobForm.value.expertConfig?.use_peft) {
                     <div class="field-group">
-                      <label class="field-label">Rank (r)</label>
-                      <input type="number" class="form-input" formControlName="peft_r" />
+                      <ui5-label>Rank (r)</ui5-label>
+                      <ui5-input type="Number" style="width: 100%;" formControlName="peft_r"></ui5-input>
                     </div>
                     <div class="field-group">
-                      <label class="field-label">LoRA Alpha</label>
-                      <input type="number" class="form-input" formControlName="peft_alpha" />
+                      <ui5-label>LoRA Alpha</ui5-label>
+                      <ui5-input type="Number" style="width: 100%;" formControlName="peft_alpha"></ui5-input>
                     </div>
                     <div class="field-group">
-                      <label class="field-label">Dropout</label>
-                      <input type="number" class="form-input" formControlName="peft_dropout" step="0.01" />
+                      <ui5-label>Dropout</ui5-label>
+                      <ui5-input type="Number" style="width: 100%;" formControlName="peft_dropout"></ui5-input>
                     </div>
                   }
                 </div>
 
                 <div class="field-group full-width">
-                  <label class="field-label">Raw JSON Override (Arguments Map)</label>
-                  <textarea class="form-input mono" rows="5" formControlName="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
+                  <ui5-label>Raw JSON Override (Arguments Map)</ui5-label>
+                  <ui5-textarea style="width: 100%;" rows="5" formControlName="rawJson"
+                    placeholder='{"quant_format": "int8", "enable_pruning": true}'></ui5-textarea>
                 </div>
               </ng-container>
             </div>
           }
 
           <div class="form-actions" style="margin-top: 1rem;">
-            <ui5-button type="Submit" design="Emphasized" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
+            <ui5-button design="Emphasized" type="Submit" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
               {{ submitting() ? 'Submitting…' : '▶ Run Job' }}
             </ui5-button>
           </div>
         </form>
+        </ui5-card>
       </section>
 
       <!-- Jobs Table -->
       <section class="section">
-        <ui5-title level="H5" style="margin-bottom: 0.75rem;">Jobs <span class="jobs-count">{{ jobs().length }}</span></ui5-title>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <ui5-title level="H5">Jobs</ui5-title>
+          <ui5-tag design="Set2">{{ jobs().length }}</ui5-tag>
+        </div>
         @if (jobs().length) {
-          <div class="table-wrapper">
-            <ui5-table>
-              <ui5-table-header-row slot="headerRow">
-                <ui5-table-header-cell>ID</ui5-table-header-cell>
-                <ui5-table-header-cell>Name</ui5-table-header-cell>
-                <ui5-table-header-cell>Model</ui5-table-header-cell>
-                <ui5-table-header-cell>Quant</ui5-table-header-cell>
-                <ui5-table-header-cell>Status</ui5-table-header-cell>
-                <ui5-table-header-cell>Progress</ui5-table-header-cell>
-                <ui5-table-header-cell>Actions</ui5-table-header-cell>
-              </ui5-table-header-row>
-              @for (j of jobs(); track j.id) {
-                <ui5-table-row class="job-row" (click)="toggleExpand(j.id)">
-                  <ui5-table-cell>
+          <ui5-table>
+            <ui5-table-header-row slot="headerRow">
+              <ui5-table-header-cell>ID</ui5-table-header-cell>
+              <ui5-table-header-cell>Name</ui5-table-header-cell>
+              <ui5-table-header-cell>Model</ui5-table-header-cell>
+              <ui5-table-header-cell>Quant</ui5-table-header-cell>
+              <ui5-table-header-cell>Status</ui5-table-header-cell>
+              <ui5-table-header-cell min-width="160">Progress</ui5-table-header-cell>
+              <ui5-table-header-cell>Actions</ui5-table-header-cell>
+            </ui5-table-header-row>
+            @for (j of jobs(); track j.id) {
+              <ui5-table-row class="job-row" (click)="toggleExpand(j.id)" style="cursor: pointer;">
+                <ui5-table-cell>
+                  <code style="font-size: 0.75rem;">
                     <span class="expand-icon" [class.expand-icon--open]="expandedJobId() === j.id">▶</span>
-                    <code>{{ j.id.slice(0,8) }}</code>
-                  </ui5-table-cell>
-                  <ui5-table-cell>{{ j.name }}</ui5-table-cell>
-                  <ui5-table-cell>{{ j.config.model_name }}</ui5-table-cell>
-                  <ui5-table-cell><ui5-tag design="Set2">{{ j.config.quant_format }}</ui5-tag></ui5-table-cell>
-                  <ui5-table-cell>
-                    <ui5-tag [design]="j.status === 'completed' ? 'Positive' : j.status === 'failed' ? 'Negative' : j.status === 'running' ? 'Information' : 'Set2'">
-                      {{ j.status }}
-                    </ui5-tag>
-                  </ui5-table-cell>
-                  <ui5-table-cell style="min-width: 160px;">
+                    {{ j.id.slice(0,8) }}
+                  </code>
+                </ui5-table-cell>
+                <ui5-table-cell><ui5-text style="font-weight: 500;">{{ j.name }}</ui5-text></ui5-table-cell>
+                <ui5-table-cell><ui5-text style="font-size: 0.8rem;">{{ j.config.model_name }}</ui5-text></ui5-table-cell>
+                <ui5-table-cell><ui5-tag design="Set2">{{ j.config.quant_format }}</ui5-tag></ui5-table-cell>
+                <ui5-table-cell>
+                  <ui5-tag [design]="getStatusDesign(j.status)">{{ j.status }}</ui5-tag>
+                </ui5-table-cell>
+                <ui5-table-cell>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                     <div class="progress-info">
-                      <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
-                      <span class="text-small text-muted">{{ calculateETA(j) }}</span>
+                      <ui5-text style="font-size: 0.75rem;">{{ (j.progress * 100).toFixed(0) }}%</ui5-text>
+                      <ui5-text style="font-size: 0.75rem; color: var(--sapContent_LabelColor);">{{ calculateETA(j) }}</ui5-text>
                     </div>
-                    <ui5-progress-indicator [value]="j.progress * 100"
+                    <ui5-progress-indicator
+                      [value]="j.progress * 100"
                       [valueState]="j.status === 'completed' ? 'Positive' : j.status === 'failed' ? 'Negative' : 'Information'"
-                      style="width: 100%;"></ui5-progress-indicator>
+                      style="min-width: 120px;">
+                    </ui5-progress-indicator>
                     @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
-                      <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
+                      <div class="sparkline-container" title="Training Loss (Solid) vs Val Loss (Dashed)">
                         <svg viewBox="0 0 100 24" class="sparkline-svg" preserveAspectRatio="none">
                           <defs>
                             <linearGradient [attr.id]="'sparkGrad-' + j.id" x1="0" y1="0" x2="0" y2="1">
@@ -368,89 +383,79 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                       </div>
                     }
                     @if (j.evaluation) {
-                      <div class="eval-metrics mt-1">
-                        <ui5-tag design="Positive">PPL: {{ j.evaluation.perplexity }}</ui5-tag>
-                        <ui5-tag design="Set2">Loss: {{ j.evaluation.eval_loss }}</ui5-tag>
-                        <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
+                      <div class="eval-metrics">
+                        <ui5-tag design="Positive" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</ui5-tag>
+                        <ui5-tag design="Set2" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</ui5-tag>
+                        <ui5-text style="font-size: 0.7rem; color: var(--sapContent_LabelColor);">{{ j.evaluation.runtime_sec }}s</ui5-text>
                       </div>
                     }
-                  </ui5-table-cell>
-                  <ui5-table-cell class="actions-cell" (click)="$event.stopPropagation()">
-                    <span class="text-small text-muted">{{ j.created_at | date:'short' }}</span>
+                  </div>
+                </ui5-table-cell>
+                <ui5-table-cell (click)="$event.stopPropagation()">
+                  <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <ui5-text style="font-size: 0.75rem; color: var(--sapContent_LabelColor);">{{ j.created_at | date:'short' }}</ui5-text>
                     @if (j.status === 'completed') {
-                      <div class="action-buttons">
-                        @if (!j.deployed) {
-                          <ui5-button design="Emphasized" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                            {{ deployingJob() === j.id ? '⏳ Deploying...' : '🚀 Deploy' }}
-                          </ui5-button>
-                        } @else {
-                          <ui5-button design="Transparent" (click)="openChat(j)">
-                            💬 Chat
-                          </ui5-button>
-                        }
-                      </div>
+                      @if (!j.deployed) {
+                        <ui5-button design="Emphasized" icon="process" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
+                          {{ deployingJob() === j.id ? 'Deploying...' : 'Deploy' }}
+                        </ui5-button>
+                      } @else {
+                        <ui5-button design="Transparent" icon="discussion" (click)="openChat(j)">Chat</ui5-button>
+                      }
                     }
                     @if (j.status === 'running') {
-                      <div class="action-buttons">
-                        <span class="running-indicator">● Running</span>
-                      </div>
+                      <ui5-tag design="Information" class="running-indicator">● Running</ui5-tag>
                     }
+                  </div>
+                </ui5-table-cell>
+              </ui5-table-row>
+              @if (expandedJobId() === j.id) {
+                <ui5-table-row class="detail-row">
+                  <ui5-table-cell colspan="7" class="detail-cell">
+                    <div class="detail-expand-wrapper">
+                      <app-job-detail [job]="j"></app-job-detail>
+                    </div>
                   </ui5-table-cell>
                 </ui5-table-row>
-                @if (expandedJobId() === j.id) {
-                  <ui5-table-row class="detail-row">
-                    <ui5-table-cell colspan="7" class="detail-cell">
-                      <div class="detail-expand-wrapper">
-                        <app-job-detail [job]="j"></app-job-detail>
-                      </div>
-                    </ui5-table-cell>
-                  </ui5-table-row>
-                }
               }
-            </ui5-table>
-          </div>
+            }
+          </ui5-table>
         }
         @if (!jobs().length && !loading()) {
-          <p class="text-muted text-small">No jobs yet.</p>
+          <ui5-message-strip design="Information" hide-close-button>No jobs yet.</ui5-message-strip>
         }
       </section>
 
       @if (loading()) {
-        <div class="loading-container">
-          <ui5-busy-indicator active size="L" style="width: 100%; min-height: 100px;"></ui5-busy-indicator>
-        </div>
+        <ui5-busy-indicator active size="L" style="width: 100%; padding: 2rem;"></ui5-busy-indicator>
       }
 
       <!-- Chat Playground Modal -->
       @if (activeChatJob(); as chatJob) {
-        <div class="modal-overlay" (click)="closeChat()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <ui5-title level="H5">💬 Playground: {{ chatJob.config.model_name }}</ui5-title>
-              <ui5-button design="Transparent" icon="decline" (click)="closeChat()"></ui5-button>
-            </div>
-            <div class="chat-window">
-              @for (msg of chatHistory(); track $index) {
-                <div class="chat-bubble" [class.user]="msg.role === 'user'">
-                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? 'You' : 'Model' }}</strong>
-                  <p style="margin: 0.2rem 0 0; font-size: 0.875rem;">{{ msg.text }}</p>
-                </div>
-              }
-              @if (chatLoading()) {
-                <div class="chat-bubble loading">
-                  <ui5-busy-indicator active size="S"></ui5-busy-indicator>
-                  <em style="font-size: 0.875rem; color: #666;">Model is computing tensors...</em>
-                </div>
-              }
-            </div>
-            <div class="chat-input-area">
-              <ui5-input [formControl]="chatInput" style="flex: 1;" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()"></ui5-input>
-              <ui5-button design="Emphasized" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</ui5-button>
-            </div>
+        <ui5-dialog [open]="true" header-text="💬 Playground: {{ chatJob.config.model_name }}" (after-close)="closeChat()">
+          <div class="chat-window">
+            @for (msg of chatHistory(); track $index) {
+              <div class="chat-bubble" [class.user]="msg.role === 'user'">
+                <ui5-text style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? 'You' : 'Model' }}</ui5-text>
+                <ui5-text style="display: block; margin-top: 0.2rem; font-size: 0.875rem;">{{ msg.text }}</ui5-text>
+              </div>
+            }
+            @if (chatLoading()) {
+              <div class="chat-bubble loading">
+                <ui5-busy-indicator active size="S"></ui5-busy-indicator>
+                <ui5-text style="font-size: 0.875rem; color: #666;">Model is computing tensors...</ui5-text>
+              </div>
+            }
           </div>
-        </div>
+          <div slot="footer" class="chat-input-area">
+            <ui5-input style="flex: 1;" [formControl]="chatInput" placeholder="Prompt your finetuned model..." (keyup.enter)="sendChat()"></ui5-input>
+            <ui5-button design="Emphasized" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">Send</ui5-button>
+          </div>
+        </ui5-dialog>
       }
-    </div>
+
+      </div>
+    </ui5-page>
   `,
   styles: [`
     .section { margin-bottom: 2rem; }
@@ -1077,7 +1082,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   });
 
   readonly gpuTotalNum = computed(() => {
-    const t = this.store.gpuMemoryTotal() as string;
+    const t = this.store.gpuMemoryTotal();
     if (t === '—') return 0;
     return parseFloat(t);
   });
@@ -1284,6 +1289,58 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     } else {
       this.jobForm.patchValue({ model_name: '' });
     }
+  }
+
+  // UI5 select/slider change handlers
+  onFrameworkChange(event: any): void {
+    const val = event?.detail?.selectedOption?.getAttribute('value') ?? event?.detail?.selectedOption?.value;
+    if (val) this.frameworkControl.setValue(val);
+  }
+
+  onDatasetChange(event: any): void {
+    const val = event?.detail?.selectedOption?.getAttribute('value') ?? event?.detail?.selectedOption?.value;
+    if (val) this.datasetControl.setValue(val);
+  }
+
+  onTemplateChange(event: any): void {
+    const val = event?.detail?.selectedOption?.getAttribute('value') ?? event?.detail?.selectedOption?.value ?? '';
+    this.applyTemplate(val);
+  }
+
+  onQuantFormatChange(event: any): void {
+    const val = event?.detail?.selectedOption?.getAttribute('value') ?? event?.detail?.selectedOption?.value;
+    if (val) this.jobForm.patchValue({ quant_format: val });
+  }
+
+  onExportFormatChange(event: any): void {
+    const val = event?.detail?.selectedOption?.getAttribute('value') ?? event?.detail?.selectedOption?.value;
+    if (val) this.jobForm.patchValue({ export_format: val });
+  }
+
+  onCalibSamplesChange(event: any): void {
+    const val = event?.detail?.value ?? event?.target?.value;
+    if (val != null) this.jobForm.patchValue({ calib_samples: +val });
+  }
+
+  onComputeStrategyChange(event: any): void {
+    const val = event?.detail?.selectedOption?.getAttribute('value') ?? event?.detail?.selectedOption?.value;
+    if (val) this.jobForm.controls.expertConfig.controls.compute.setValue(val);
+  }
+
+  onPeftToggle(event: any): void {
+    const checked = event?.detail?.checked ?? false;
+    this.jobForm.controls.expertConfig.controls.use_peft.setValue(checked);
+  }
+
+  getStatusDesign(status: string): string {
+    const map: Record<string, string> = {
+      pending: 'Critical',
+      running: 'Information',
+      completed: 'Positive',
+      failed: 'Negative',
+      cancelled: 'Set2',
+    };
+    return map[status] ?? 'Set2';
   }
 
   createJob(): void {
