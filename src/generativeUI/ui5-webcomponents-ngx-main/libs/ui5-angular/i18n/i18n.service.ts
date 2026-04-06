@@ -7,8 +7,6 @@ import parseProperties from "@ui5/webcomponents-base/dist/PropertiesFileFormat.j
 import {getLanguage, setLanguage} from "@ui5/webcomponents-base/dist/config/Language.js";
 import {
   BehaviorSubject,
-  filter,
-  first,
   firstValueFrom,
   from,
   isObservable,
@@ -16,7 +14,6 @@ import {
   Observable,
   of,
   switchMap,
-  tap
 } from "rxjs";
 import {I18N_NAMESPACE, I18N_ROOT_CONFIG, I18N_TRANSLATIONS} from "./i18n.tokens";
 import {I18nConfig, Translations} from "./i18n.types";
@@ -25,7 +22,7 @@ import {I18nConfig, Translations} from "./i18n.types";
 export class I18nService {
   private parent: I18nService | null = inject(I18nService, {skipSelf: true, optional: true});
   private currentLanguage$: BehaviorSubject<string>;
-  private readonly i18nBundle$: Observable<I18nBundle>;
+  private i18nBundle$: Observable<I18nBundle>;
   private loadedLanguages$ = new BehaviorSubject<string[]>([]);
 
   constructor(
@@ -51,7 +48,9 @@ export class I18nService {
         return result;
       });
     });
-    this.i18nBundle$ = from(getI18nBundle(this.namespace));
+    this.i18nBundle$ = this.currentLanguage$.pipe(
+      switchMap(() => from(getI18nBundle(this.namespace)))
+    );
   }
 
   currentLanguage(): string | undefined {
@@ -73,11 +72,9 @@ export class I18nService {
       return this.parent.setLanguage(language);
     }
     setLanguage(language);
-    this.loadedLanguages$.pipe(
-      filter(langs => langs.includes(language)),
-      first(),
-      tap(() => this.currentLanguage$.next(language))
-    ).subscribe();
+    getI18nBundle(this.namespace).then(() => {
+      this.currentLanguage$.next(language);
+    });
   }
 
   getText(key: string, ...placeholders: any[]): Observable<string> {
