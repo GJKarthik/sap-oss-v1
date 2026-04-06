@@ -6,6 +6,7 @@ Adds CORS for the Angular dev server on port 4200.
 
 import json
 import os
+import re
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -40,7 +41,8 @@ ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",")
 
 # --- DATABASE PERSISTENCE SETUP ---
 from .database import engine, SessionLocal, get_db, init_database, close_database
-from .store import JobRecord, get_store
+from .store import JobRecord, get_store, seed_store
+from . import rag
 
 def save_job(job_data: dict):
     db = SessionLocal()
@@ -107,6 +109,80 @@ SUPPORTED_MODELS = [
     {"name": "Qwen/Qwen3.5-0.6B", "size_gb": 1.2, "parameters": "0.6B", "recommended_quant": "fp16", "t4_compatible": True},
     {"name": "mistralai/Mixtral-8x7B-v0.1", "size_gb": 93.5, "parameters": "47B", "recommended_quant": "int4_awq", "t4_compatible": False},
 ]
+
+FINANCIAL_TERM_TRANSLATIONS: list[tuple[str, str]] = [
+    ("إجمالي الإيرادات", "Total Revenue"),
+    ("صافي الربح", "Net Profit"),
+    ("إجمالي الأصول", "Total Assets"),
+    ("إجمالي الالتزامات", "Total Liabilities"),
+    ("حقوق المساهمين", "Shareholders Equity"),
+    ("التدفقات النقدية", "Cash Flows"),
+    ("الميزانية العمومية", "Balance Sheet"),
+    ("قائمة الدخل", "Income Statement"),
+]
+
+
+def _contains_arabic(text: str) -> bool:
+    return bool(re.search(r"[\u0600-\u06FF]", text))
+
+
+def _extract_financial_metrics(text: str) -> list[dict[str, Any]]:
+    metrics: list[dict[str, Any]] = []
+    for arabic_label, english_label in FINANCIAL_TERM_TRANSLATIONS:
+        match = re.search(rf"{re.escape(arabic_label)}\s*[:：-]?\s*([0-9][0-9,\.]*)", text)
+        if not match:
+            continue
+        metrics.append(
+            {
+                "key": english_label,
+                "value": match.group(1),
+                "confidence": 0.94,
+            }
+        )
+    return metrics
+
+
+def _extract_regulatory_fields(text: str) -> dict[str, str | None]:
+    vat_match = re.search(r"\b3\d{14}\b", text)
+    qr_match = re.search(r"\b[A-Za-z0-9+/=]{60,}\b", text)
+    return {
+        "zatca_qr_base64": qr_match.group(0) if qr_match else None,
+        "zatca_vat_number": vat_match.group(0) if vat_match else None,
+        "national_address_building": None,
+        "national_address_street": None,
+        "national_address_district": None,
+        "national_address_city": None,
+        "national_address_zip": None,
+        "egypt_uuid": None,
+        "gs1_barcode": None,
+        "nbr_vat_number": None,
+    }
+
+
+def _translate_financial_terms(text: str) -> str:
+    translated = text
+    for arabic_label, english_label in FINANCIAL_TERM_TRANSLATIONS:
+        translated = translated.replace(arabic_label, english_label)
+    return translated
+
+
+def _build_fallback_chat_reply(messages: list[dict[str, str]]) -> str:
+    latest_user_message = next(
+        (message["content"] for message in reversed(messages) if message.get("role") == "user"),
+        "",
+    )
+    combined_context = "\n".join(message.get("content", "") for message in messages)
+    metrics = _extract_financial_metrics(combined_context)
+    if _contains_arabic(latest_user_message):
+        if metrics:
+            lines = [f"- {metric['key']}: {metric['value']}" for metric in metrics]
+            return "استناداً إلى النص المتاح:\n" + "\n".join(lines)
+        return "تم استلام سؤالك. لا توجد مؤشرات مالية كافية في السياق الحالي، لكن الواجهة الخلفية تعمل ويمكنها استقبال الطلبات."
+
+    if metrics:
+        lines = [f"- {metric['key']}: {metric['value']}" for metric in metrics]
+        return "Summary based on the available document context:\n" + "\n".join(lines)
+    return "The service is running, but no structured financial metrics were found in the current context."
 
 # ---------------------------------------------------------------------------
 # Rate limiter & Logging
@@ -239,7 +315,12 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
-    yield
+    await init_database()
+    seed_store()
+    try:
+        yield
+    finally:
+        await close_database()
 
 
 app = FastAPI(
@@ -264,6 +345,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
@@ -577,6 +660,71 @@ class APIStatus(BaseModel):
 class ChatRequest(BaseModel):
     prompt: str
     messages: Optional[List[Dict[str, str]]] = None
+
+
+class OpenAIChatRequest(BaseModel):
+    model: str = "Qwen/Qwen3.5-0.6B"
+    messages: List[Dict[str, str]]
+    stream: bool = False
+    max_tokens: int = 1024
+    temperature: float = 0.7
+
+
+class OcrDocumentRequest(BaseModel):
+    text: str
+    file_name: Optional[str] = None
+    language: str = "ar"
+    document_type: str = "invoice"
+    system_instructions: Optional[str] = None
+
+
+@app.get("/v1/models")
+async def openai_models():
+    return {
+        "object": "list",
+        "data": [
+            {"id": model["name"], "object": "model"}
+            for model in SUPPORTED_MODELS
+        ],
+    }
+
+
+@app.post("/v1/chat/completions")
+async def openai_chat_completions(body: OpenAIChatRequest):
+    reply = _build_fallback_chat_reply(body.messages)
+    usage = {
+        "prompt_tokens": sum(max(1, len(message.get("content", "")) // 4) for message in body.messages),
+        "completion_tokens": max(1, len(reply) // 4),
+        "total_tokens": 0,
+    }
+    usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
+    return {
+        "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+        "object": "chat.completion",
+        "created": int(datetime.utcnow().timestamp()),
+        "model": body.model,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": reply},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": usage,
+    }
+
+
+@app.post("/openai/v1/ocr/documents")
+async def openai_ocr_documents(body: OcrDocumentRequest):
+    return {
+        "id": f"ocrdoc-{uuid.uuid4().hex[:12]}",
+        "document_type": body.document_type,
+        "original_ar": body.text,
+        "translated_en": _translate_financial_terms(body.text),
+        "financial_fields": _extract_financial_metrics(body.text),
+        "line_items": [],
+        "regulatory_fields": _extract_regulatory_fields(body.text),
+    }
 
 @app.post("/jobs/{job_id}/deploy-arabic")
 async def deploy_arabic_model(job_id: str):

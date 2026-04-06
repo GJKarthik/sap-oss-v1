@@ -16,7 +16,7 @@
     <span class="component-playground__hint">{{ 'COMPONENT_PLAYGROUND_SOURCE' | ui5I18n : models.length }}</span>
   </div>
 
-  <ui5-busy-indicator *ngIf="loading" active size="M" [text]="'LOADING' | ui5I18n"></ui5-busy-indicator>
+  <ui5-busy-indicator *ngIf="loading" active size="M" [text]="'LOADING_MODELS' | ui5I18n"></ui5-busy-indicator>
 
   <ui5-list *ngIf="!loading && models.length > 0" separators="Inner">
     <ui5-li *ngFor="let model of models">

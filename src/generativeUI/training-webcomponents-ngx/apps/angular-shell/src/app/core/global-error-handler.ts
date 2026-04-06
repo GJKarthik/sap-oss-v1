@@ -1,10 +1,11 @@
-import { ErrorHandler, Injectable, Injector, NgZone } from '@angular/core';
+import { ErrorHandler, Injectable, Injector, NgZone, inject } from '@angular/core';
 import { ToastService } from '../services/toast.service';
 import { LogService } from '../services/log.service';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  constructor(private injector: Injector, private zone: NgZone) {}
+  private readonly injector = inject(Injector);
+  private readonly zone = inject(NgZone);
 
   handleError(error: unknown): void {
     const toast = this.injector.get(ToastService);

@@ -23,7 +23,17 @@ import { CommonModule } from '@angular/common';
   `],
 })
 export class BilingualDateComponent {
+  @Input() set date(v: string | Date | null | undefined) {
+    this.updateValue(v);
+  }
+
   @Input() set value(v: string | Date | null | undefined) {
+    this.updateValue(v);
+  }
+
+  @Input() showLabels = true;
+
+  private updateValue(v: string | Date | null | undefined): void {
     const d = v ? new Date(v) : null;
     if (!d || isNaN(d.getTime())) {
       this.gregorian = '—';

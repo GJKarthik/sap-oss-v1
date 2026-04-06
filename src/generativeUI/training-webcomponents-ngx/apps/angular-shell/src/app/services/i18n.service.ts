@@ -32,6 +32,12 @@ export class I18nService {
   }
 
   private async loadTranslations(): Promise<void> {
+    if (typeof fetch !== 'function') {
+      this.mfCache.clear();
+      this.applyDirection();
+      return;
+    }
+
     try {
       const [enResp, arResp] = await Promise.all([
         fetch('assets/i18n/en.json'),
@@ -95,13 +101,15 @@ export class I18nService {
 
   private compileCached(lang: Language, key: string, raw: string): (params: Record<string, unknown>) => string {
     const cacheKey = `${lang}:${key}`;
-    let fn = this.mfCache.get(cacheKey);
-    if (!fn) {
-      const mf = new MessageFormat(LOCALE_MAP[lang]);
-      fn = mf.compile(raw);
-      this.mfCache.set(cacheKey, fn);
+    const cached = this.mfCache.get(cacheKey);
+    if (cached) {
+      return cached;
     }
-    return fn;
+
+    const mf = new MessageFormat(LOCALE_MAP[lang]);
+    const compiled = mf.compile(raw);
+    this.mfCache.set(cacheKey, compiled);
+    return compiled;
   }
 
   private applyDirection(): void {
@@ -112,4 +120,3 @@ export class I18nService {
     }
   }
 }
-

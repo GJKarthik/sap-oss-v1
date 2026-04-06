@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy, ContentChild, TemplateRef } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**

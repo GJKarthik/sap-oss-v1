@@ -439,11 +439,11 @@ export const AppStore = signalStore(
       // Cache Invalidation
       // ======================================================================
       invalidateCache(key: CacheKey): void {
-        updateCache(key, { lastFetched: null, state: 'idle' } as any);
+        updateCache(key, { lastFetched: null, state: 'idle' } as Partial<AppState[typeof key]>);
       },
       
       forceRefresh(key: CacheKey): void {
-        updateCache(key, { lastFetched: null } as any);
+        updateCache(key, { lastFetched: null } as Partial<AppState[typeof key]>);
         switch (key) {
           case 'health': this.loadHealth(); break;
           case 'gpu': this.loadGpu(); break;
@@ -503,7 +503,7 @@ export const AppStore = signalStore(
       // Opportunistically request permission
       notification.requestPermission();
 
-      let previousCompletedJobs = new Set<string>();
+      const previousCompletedJobs = new Set<string>();
 
       effect(() => {
         const jobsData = store.jobs().data;

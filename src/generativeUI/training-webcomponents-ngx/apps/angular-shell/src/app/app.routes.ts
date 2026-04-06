@@ -70,6 +70,34 @@ export const routes: Routes = [
             (m) => m.DocumentOcrComponent
           ),
       },
+      {
+        path: 'semantic-search',
+        loadComponent: () =>
+          import('./pages/semantic-search/semantic-search.component').then(
+            (m) => m.SemanticSearchComponent
+          ),
+      },
+      {
+        path: 'analytics',
+        loadComponent: () =>
+          import('./pages/analytics/analytics.component').then(
+            (m) => m.AnalyticsComponent
+          ),
+      },
+      {
+        path: 'glossary-manager',
+        loadComponent: () =>
+          import('./pages/glossary-manager/glossary-manager.component').then(
+            (m) => m.GlossaryManagerComponent
+          ),
+      },
+      {
+        path: 'arabic-wizard',
+        loadComponent: () =>
+          import('./pages/arabic-wizard/arabic-wizard.component').then(
+            (m) => m.ArabicWizardComponent
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

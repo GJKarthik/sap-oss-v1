@@ -4,10 +4,10 @@ import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 export interface VectorStore {
-  /** Unique identifier / table name used for indexing and querying. */
   table_name: string;
-  document_count: number;
-  created_at: string;
+  embedding_model: string;
+  documents_added: number;
+  created_at?: string;
 }
 
 export interface VectorContextDoc {
@@ -18,48 +18,81 @@ export interface VectorContextDoc {
 
 export interface VectorQueryResult {
   context_docs: VectorContextDoc[];
-  table: string;
+  table_name: string;
+  query: string;
+  answer: string;
+  status: string;
+  source?: string;
 }
 
 export interface VectorAddResult {
-  added: number;
-  table: string;
+  documents_added: number;
+  status: string;
+}
+
+export interface VectorAnalyticsResult {
+  total_revenue: number;
+  total_profit: number;
+  doc_count: number;
+  rows: Array<{
+    source: string;
+    date: string;
+    revenue: number;
+    profit: number;
+  }>;
 }
 
 @Injectable({ providedIn: 'root' })
 export class VectorService {
   private readonly http = inject(HttpClient);
+  private readonly base = '/api/rag';
 
-  /** List all available vector stores. */
   fetchStores(): Observable<VectorStore[]> {
-    return this.http.get<VectorStore[]>('/api/v1/vector/stores').pipe(
+    return this.http.get<VectorStore[]>(`${this.base}/stores`).pipe(
       catchError(() => of([])),
     );
   }
 
-  /** Semantic search against a named vector store. */
-  query(question: string, tableName: string): Observable<VectorQueryResult> {
-    return this.http.post<VectorQueryResult>('/api/v1/vector/query', {
+  query(question: string, tableName: string, k = 4): Observable<VectorQueryResult> {
+    return this.http.post<VectorQueryResult>(`${this.base}/query`, {
       query: question,
-      table: tableName,
-      top_k: 5,
+      table_name: tableName,
+      k,
     }).pipe(
-      catchError(() => of({ context_docs: [], table: tableName })),
+      catchError(() => of({
+        context_docs: [],
+        table_name: tableName,
+        query: question,
+        answer: '',
+        status: 'unavailable',
+      })),
     );
   }
 
-  /** Add documents to a named vector store. */
   addDocuments(
     tableName: string,
     documents: string[],
     metadatas: Record<string, unknown>[],
   ): Observable<VectorAddResult> {
-    return this.http.post<VectorAddResult>('/api/v1/vector/add', {
-      table: tableName,
+    return this.http.post<VectorAddResult>(`${this.base}/documents`, {
+      table_name: tableName,
       documents,
       metadatas,
     }).pipe(
-      catchError(() => of({ added: 0, table: tableName })),
+      catchError(() => of({ documents_added: 0, status: 'unavailable' })),
+    );
+  }
+
+  fetchAnalytics(tableName: string): Observable<VectorAnalyticsResult> {
+    return this.http.post<VectorAnalyticsResult>(`${this.base}/analytics`, {
+      store: tableName,
+    }).pipe(
+      catchError(() => of({
+        total_revenue: 0,
+        total_profit: 0,
+        doc_count: 0,
+        rows: [],
+      })),
     );
   }
 }

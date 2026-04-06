@@ -1,3 +1,6 @@
+<!-- Skip to content (A-05) -->
+<a class="skip-link" href="#main-content">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
+
 <!-- App Shell -->
 <a class="skip-link" href="#main-content" (click)="skipToMain($event)">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
 <div class="app-shell">
@@ -181,7 +184,7 @@
   <playground-live-health-panel></playground-live-health-panel>
 
   <!-- Main Content -->
-  <main class="app-content" id="main-content" tabindex="-1">
+  <main id="main-content" class="app-content" tabindex="-1">
     <router-outlet></router-outlet>
   </main>
 

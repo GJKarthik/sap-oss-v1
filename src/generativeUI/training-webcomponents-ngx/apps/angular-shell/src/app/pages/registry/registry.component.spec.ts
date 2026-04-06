@@ -172,7 +172,12 @@ describe('RegistryComponent', () => {
 
     expect(component.editingTag()).toBeNull();
     expect(component.taggedCount()).toBe(1);
-    expect(JSON.parse(localStorage.getItem('model_tags')!)).toEqual({ 'aaaa-1111': 'v1-baseline' });
+    const storedTags = localStorage.getItem('model_tags');
+    expect(storedTags).not.toBeNull();
+    if (!storedTags) {
+      throw new Error('Expected persisted model tags');
+    }
+    expect(JSON.parse(storedTags)).toEqual({ 'aaaa-1111': 'v1-baseline' });
     expect(toastSpy.success).toHaveBeenCalled();
   }));
 

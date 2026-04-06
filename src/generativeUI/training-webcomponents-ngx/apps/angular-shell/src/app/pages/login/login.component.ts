@@ -124,12 +124,9 @@ import { I18nService } from '../../services/i18n.service';
 })
 export class LoginComponent {
   readonly i18n = inject(I18nService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   apiKey = '';
-
-  constructor(
-    private auth: AuthService,
-    private router: Router
-  ) {}
 
   submit(): void {
     if (this.apiKey.trim()) {

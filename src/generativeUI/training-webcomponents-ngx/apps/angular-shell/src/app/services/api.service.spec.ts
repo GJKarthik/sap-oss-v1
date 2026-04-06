@@ -7,6 +7,14 @@ describe('ApiService', () => {
   let service: ApiService;
   let httpMock: HttpTestingController;
 
+  const expectApiError = (err: ApiError | undefined): ApiError => {
+    expect(err).toBeInstanceOf(ApiError);
+    if (!err) {
+      throw new Error('Expected ApiError to be defined');
+    }
+    return err;
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -102,10 +110,10 @@ describe('ApiService', () => {
       const req = httpMock.expectOne('/api/not-found');
       req.flush('Resource not found', { status: 404, statusText: 'Not Found' });
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect(err!.status).toBe(404);
-      expect(err!.detail).toBe('Resource not found');
-      expect(err!.url).toBe('/api/not-found');
+      const apiError = expectApiError(err);
+      expect(apiError.status).toBe(404);
+      expect(apiError.detail).toBe('Resource not found');
+      expect(apiError.url).toBe('/api/not-found');
     });
 
     it('should extract detail from JSON error body', () => {
@@ -116,8 +124,8 @@ describe('ApiService', () => {
       const req = httpMock.expectOne('/api/validate');
       req.flush({ detail: 'Field X is required' }, { status: 422, statusText: 'Unprocessable Entity' });
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect(err!.detail).toBe('Field X is required');
+      const apiError = expectApiError(err);
+      expect(apiError.detail).toBe('Field X is required');
     });
 
     it('should extract message from JSON error body when detail is absent', () => {
@@ -128,8 +136,8 @@ describe('ApiService', () => {
       const req = httpMock.expectOne('/api/forbidden');
       req.flush({ message: 'Not allowed' }, { status: 403, statusText: 'Forbidden' });
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect(err!.detail).toBe('Not allowed');
+      const apiError = expectApiError(err);
+      expect(apiError.detail).toBe('Not allowed');
     });
 
     it('should use fallback detail for empty error body', fakeAsync(() => {
@@ -144,8 +152,8 @@ describe('ApiService', () => {
       tick(1000);
       httpMock.expectOne('/api/empty-error').flush(null, { status: 500, statusText: 'Internal Server Error' });
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect(err!.detail).toBe('An unexpected error occurred.');
+      const apiError = expectApiError(err);
+      expect(apiError.detail).toBe('An unexpected error occurred.');
     }));
   });
 
@@ -180,8 +188,8 @@ describe('ApiService', () => {
       // No further requests expected
       httpMock.expectNone('/api/bad-request');
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect(err!.status).toBe(400);
+      const apiError = expectApiError(err);
+      expect(apiError.status).toBe(400);
     });
 
     it('should exhaust retries and normalise to ApiError after max attempts', fakeAsync(() => {
@@ -200,8 +208,8 @@ describe('ApiService', () => {
       // Attempt 3 (retry 2)
       httpMock.expectOne('/api/always-fails').flush('error', { status: 503, statusText: 'Unavailable' });
 
-      expect(err).toBeInstanceOf(ApiError);
-      expect(err!.status).toBe(503);
+      const apiError = expectApiError(err);
+      expect(apiError.status).toBe(503);
     }));
   });
 });

@@ -294,7 +294,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                   <ng-container>
                     <tr class="job-row" (click)="toggleExpand(j.id)" [class.expanded]="expandedJobId() === j.id">
                       <td class="mono text-small" style="cursor: pointer;">
-                        <span style="display: inline-block; width: 12px; margin-right: 4px;">{{ expandedJobId() === j.id ? '-' : '+' }}</span>
+                        <span style="display: inline-block; width: 12px; margin-inline-end: 4px;">{{ expandedJobId() === j.id ? '-' : '+' }}</span>
                         {{ j.id.slice(0,8) }}
                       </td>
                       <td>{{ j.name }}</td>
@@ -365,22 +365,22 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 
       @if (loading()) {
         <div class="loading-container">
-          <span class="loading-text">Loading…</span>
+          <span class="loading-text">{{ i18n.t('common.loading') }}</span>
         </div>
       }
 
       <!-- Chat Playground Modal -->
       @if (activeChatJob(); as chatJob) {
-        <div class="modal-overlay" (click)="closeChat()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-overlay" (click)="closeChat()" (keydown.escape)="closeChat()">
+          <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="chat-modal-title" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h3 style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: <bdi>{{ chatJob.config.model_name }}</bdi></h3>
-              <button class="close-btn" (click)="closeChat()">✕</button>
+              <h3 id="chat-modal-title" style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: <bdi>{{ chatJob.config.model_name }}</bdi></h3>
+              <button class="close-btn" [attr.aria-label]="i18n.t('modelOpt.closeModal')" (click)="closeChat()">✕</button>
             </div>
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
                 <div class="chat-bubble" [class.user]="msg.role === 'user'">
-                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.model') }}</strong>
+                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.modelRole') }}</strong>
                   <p style="margin: 0.2rem 0 0; font-size: 0.875rem;"><bdi>{{ msg.text }}</bdi></p>
                 </div>
               }
@@ -631,23 +631,23 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
     }
     .modal-content {
-      background: #fff; width: 500px; max-width: 90vw; border-radius: 0.5rem; overflow: hidden;
+      background: var(--sapBackgroundColor, #fff); width: 500px; max-width: 90vw; border-radius: 0.5rem; overflow: hidden;
       display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
     .modal-header {
-      padding: 1rem; background: #f5f5f5; border-bottom: 1px solid #e4e4e4;
+      padding: 1rem; background: var(--sapList_HeaderBackground, #f5f5f5); border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
       display: flex; justify-content: space-between; align-items: center;
     }
-    .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666; }
+    .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--sapContent_LabelColor, #666); }
     .chat-window {
-      padding: 1rem; height: 300px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 0.8rem;
+      padding: 1rem; height: 300px; overflow-y: auto; background: var(--sapGroup_ContentBackground, #fafafa); display: flex; flex-direction: column; gap: 0.8rem;
     }
     .chat-bubble {
-      padding: 0.75rem; border-radius: 0.5rem; max-width: 85%; background: #e3f2fd; align-self: flex-start;
-      &.user { background: #e8f5e9; align-self: flex-end; }
+      padding: 0.75rem; border-radius: 0.5rem; max-width: 85%; background: var(--sapInformationBackground, #e3f2fd); align-self: flex-start;
+      &.user { background: var(--sapSuccessBackground, #e8f5e9); align-self: flex-end; }
     }
     .chat-input-area {
-      padding: 1rem; background: #fff; border-top: 1px solid #e4e4e4; display: flex; gap: 0.5rem;
+      padding: 1rem; background: var(--sapBackgroundColor, #fff); border-top: 1px solid var(--sapList_BorderColor, #e4e4e4); display: flex; gap: 0.5rem;
     }
   `],
 })
@@ -661,7 +661,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   readonly expandedJobId = signal<string | null>(null);
-  private refreshInterval: any;
+  private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly models = signal<ModelInfo[]>([]);
   readonly jobs = signal<JobResponse[]>([]);
@@ -730,7 +730,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
   mathMin(a: number, b: number) { return Math.min(a, b); }
 
-  generateSparklinePath(history: any[], key: 'train_loss' | 'val_loss'): string {
+  generateSparklinePath(history: JobHistory[], key: 'train_loss' | 'val_loss'): string {
     if (!history || history.length < 2) return '';
     const maxVal = Math.max(...history.map(h => Math.max(h.train_loss, h.val_loss)));
     const minVal = 0;
@@ -768,7 +768,6 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     this.refreshInterval = setInterval(() => {
       // Don't poll REST if a row is actively WS streaming
       if (!this.expandedJobId() && !this.loading()) {
-        const isBackground = true;
         this.api.get<JobResponse[]>('/jobs').pipe(takeUntil(this.destroy$)).subscribe({
           next: (res) => this.jobs.set(res)
         });
@@ -795,15 +794,15 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res.status === 'passed') {
           this.mangleStatus.set('passed');
-          this.toast.success('Datalog schema constraints successfully verified.', 'Mangle Passed');
+          this.toast.success(this.i18n.t('modelOpt.manglePassed'), this.i18n.t('modelOpt.manglePassedTitle'));
         } else {
           this.mangleStatus.set('failed');
-          this.toast.error('Mangle invariant violations detected!', 'Mangle Failed');
+          this.toast.error(this.i18n.t('modelOpt.mangleFailed'), this.i18n.t('modelOpt.mangleFailedTitle'));
         }
       },
       error: () => {
         this.mangleStatus.set('failed');
-        this.toast.error('Failed to execute Mangle validation bounds.', 'Check Failed');
+        this.toast.error(this.i18n.t('modelOpt.mangleCheckFailed'), this.i18n.t('modelOpt.checkFailedTitle'));
       }
     });
   }
@@ -814,14 +813,14 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     forkJoin({
       models: this.api.get<ModelInfo[]>('/models/catalog').pipe(
         catchError((err: HttpErrorResponse) => {
-          this.toast.error('Failed to load model catalog', 'Models');
+          this.toast.error(this.i18n.t('modelOpt.catalogFailed'), this.i18n.t('modelOpt.modelsTitle'));
           console.error('Model catalog failed:', err);
           return of([]);
         })
       ),
       jobs: this.api.get<JobResponse[]>('/jobs').pipe(
         catchError((err: HttpErrorResponse) => {
-          this.toast.warning('Failed to load jobs', 'Jobs');
+          this.toast.warning(this.i18n.t('modelOpt.jobsFailed'), this.i18n.t('modelOpt.jobsTitle'));
           console.warn('Jobs load failed:', err);
           return of([]);
         })
@@ -835,7 +834,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
           this.loading.set(false);
         },
         error: (err: HttpErrorResponse) => {
-          this.toast.error('Failed to load data', 'Error');
+          this.toast.error(this.i18n.t('modelOpt.loadFailed'), this.i18n.t('common.error'));
           console.error('Load failed:', err);
           this.loading.set(false);
         },
@@ -844,7 +843,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
   selectModel(m: ModelInfo): void {
     if (this.userSettings.mode() === 'novice') {
-      this.toast.info('Switch to Intermediate mode to select a model manually.');
+      this.toast.info(this.i18n.t('modelOpt.switchMode'));
       return;
     }
     this.jobForm.patchValue({
@@ -896,7 +895,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
           const parsedOverride = JSON.parse(expert.rawJson) as Record<string, unknown>;
           payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: expert.compute };
         } catch (e) {
-          this.toast.error('Invalid JSON configuration', 'Syntax Error');
+          this.toast.error(this.i18n.t('modelOpt.invalidJson'), this.i18n.t('modelOpt.syntaxErrorTitle'));
           this.submitting.set(false);
           return;
         }
@@ -916,7 +915,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
         },
         error: (e: HttpErrorResponse) => {
           const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
-          this.toast.error(`Failed to create job: ${detail}`, 'Job Error');
+          this.toast.error(this.i18n.t('modelOpt.jobCreateFailed', { detail }), this.i18n.t('modelOpt.jobErrorTitle'));
           console.error('Job creation failed:', e);
           this.submitting.set(false);
         },
@@ -939,12 +938,12 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     this.api.post(`/jobs/${job.id}/deploy`, {}).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.jobs.update(jobs => jobs.map(j => j.id === job.id ? {...j, deployed: true} : j));
-        this.toast.success('Model mounted to inference pool successfully.', 'Deploy Complete');
+        this.toast.success(this.i18n.t('modelOpt.deploySuccess'), this.i18n.t('modelOpt.deployCompleteTitle'));
         this.deployingJob.set(null);
       },
       error: (e: HttpErrorResponse) => {
         const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
-        this.toast.error(`Deploy failed: ${detail}`, 'Deployment Error');
+        this.toast.error(this.i18n.t('modelOpt.deployFailed', { detail }), this.i18n.t('modelOpt.deployErrorTitle'));
         this.deployingJob.set(null);
       }
     });
@@ -976,7 +975,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       },
       error: (e: HttpErrorResponse) => {
         const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
-        this.toast.error(`Inference failed: ${detail}`, 'Error');
+        this.toast.error(this.i18n.t('modelOpt.inferenceFailed', { detail }), this.i18n.t('common.error'));
         this.chatLoading.set(false);
       }
     });

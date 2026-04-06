@@ -86,4 +86,9 @@ export const SAC_I18N_EN: Record<string, string> = {
   'table.noRows': 'No rows to display.',
   'table.paginationEmpty': '0 of 0',
   'table.paginationInfo': '{{start}}-{{end}} of {{total}}',
+  'table.selectAll': 'Select all rows',
+  'table.selectRow': 'Select row {{id}}',
+  'table.previousPage': 'Previous page',
+  'table.nextPage': 'Next page',
+  'table.defaultAriaLabel': 'Data table',
 };

@@ -2,10 +2,9 @@ import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionSt
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
-import { ApiService } from '../../services/api.service';
+import { ApiError, ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { HttpErrorResponse } from '@angular/common/http';
 
 interface GraphStats {
   available: boolean;
@@ -389,9 +388,8 @@ export class HippocppComponent implements OnInit, OnDestroy {
     this.api.get<GraphStats>('/graph/stats')
       .pipe(
         takeUntil(this.destroy$),
-        catchError((err: HttpErrorResponse) => {
+        catchError(() => {
           this.toast.warning('Graph stats unavailable', 'Graph');
-          console.warn('Graph stats failed:', err);
           return of(null);
         })
       )
@@ -420,11 +418,12 @@ export class HippocppComponent implements OnInit, OnDestroy {
             this.toast.success(`Query returned ${r.count} row(s)`, 'Query Complete');
           }
         },
-        error: (e: HttpErrorResponse) => {
-          const detail = (e.error as { detail?: string })?.detail ?? 'Query failed';
+        error: (e: ApiError | { error?: { detail?: string } }) => {
+          const detail = e instanceof ApiError
+            ? e.detail
+            : e.error?.detail ?? 'Query failed';
           this.queryError.set(detail);
           this.toast.error(detail, 'Query Error');
-          console.error('Query failed:', e);
           this.querying.set(false);
         },
       });

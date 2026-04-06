@@ -59,7 +59,10 @@ describe('CompareComponent', () => {
     tick();
     const models = component.deployedModels();
     models.forEach(m => {
-      const job = MOCK_JOBS.find(j => j.id === m.id)!;
+      const job = MOCK_JOBS.find(j => j.id === m.id);
+      if (!job) {
+        throw new Error(`Expected mock job ${m.id} to exist`);
+      }
       expect(job.deployed).toBe(true);
       expect(job.status).toBe('completed');
     });

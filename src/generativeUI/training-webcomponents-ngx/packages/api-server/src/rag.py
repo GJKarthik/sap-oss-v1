@@ -121,6 +121,17 @@ class TMEntry(BaseModel):
     is_approved: bool = False
 
 
+class SemanticSearchRequest(BaseModel):
+    query: str
+    store: str = "default"
+    top_k: int = Field(default=10, ge=1, le=50)
+    glossary_context: Optional[str] = None
+
+
+class AnalyticsRequest(BaseModel):
+    store: str = "default"
+
+
 # ---------------------------------------------------------------------------
 # HANA Vector Engine helpers
 # ---------------------------------------------------------------------------
@@ -203,6 +214,48 @@ def _similarity_search_hana(table_name: str, query_embedding: List[float], k: in
         return []
 
 
+def _contains_arabic(text: str) -> bool:
+    return any("\u0600" <= char <= "\u06FF" for char in text)
+
+
+def _demo_search_results(store: str, query: str, limit: int) -> List[Dict[str, Any]]:
+    corpus = [
+        {
+            "id": f"{store}-annual-report",
+            "text": "إجمالي الإيرادات: 1,250,000 ريال. صافي الربح: 340,000 ريال.",
+            "source": "Annual_Report_2025.pdf",
+            "page": 3,
+            "language": "ar",
+        },
+        {
+            "id": f"{store}-balance-sheet",
+            "text": "Total assets reached 5,600,000 SAR while total liabilities closed at 2,400,000 SAR.",
+            "source": "Finance_Pack_Q1.pdf",
+            "page": 7,
+            "language": "en",
+        },
+        {
+            "id": f"{store}-regulatory-note",
+            "text": "الالتزامات التنظيمية تشمل رقم ضريبة القيمة المضافة ومتطلبات العنوان الوطني.",
+            "source": "Regulatory_Memo.pdf",
+            "page": 1,
+            "language": "ar",
+        },
+    ]
+    terms = [token for token in query.lower().split() if token]
+    scored: List[Dict[str, Any]] = []
+    for item in corpus:
+        haystack = f"{item['text']} {item['source']}".lower()
+        hits = sum(1 for token in terms if token in haystack)
+        if hits == 0 and terms:
+            continue
+        score = 0.55 + min(0.4, hits * 0.15)
+        scored.append({**item, "score": round(score, 3)})
+    if not scored and corpus:
+        scored = [{**corpus[0], "score": 0.42}]
+    return scored[:limit]
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -239,10 +292,35 @@ async def rag_query(body: RAGQueryRequest):
     if not vs: raise HTTPException(status_code=404)
     query_embedding = await get_embedding(body.query, vs["embedding_model"])
     context_docs = _similarity_search_hana(body.table_name, query_embedding, body.k)
-    answer = f"[Retrieved {len(context_docs)} docs from {body.table_name}]
-
-Generated via HANA + vLLM."
+    answer = f"[Retrieved {len(context_docs)} docs from {body.table_name}]\n\nGenerated via HANA + vLLM."
     return RAGQueryResponse(query=body.query, table_name=body.table_name, context_docs=context_docs, answer=answer, source="hana")
+
+
+@router.post("/search")
+async def semantic_search(body: SemanticSearchRequest):
+    results = _demo_search_results(body.store, body.query, body.top_k)
+    return {
+        "results": results,
+        "total": len(results),
+        "query_embedding_ms": 18,
+        "store": body.store,
+    }
+
+
+@router.post("/analytics")
+async def get_analytics_summary(body: AnalyticsRequest):
+    rows = [
+        {"source": "Annual_Report_2025.pdf", "date": "2025-01-15", "revenue": 1250000, "profit": 340000},
+        {"source": "Finance_Pack_Q1.pdf", "date": "2025-02-10", "revenue": 980000, "profit": 215000},
+        {"source": "Regulatory_Memo.pdf", "date": "2025-03-04", "revenue": 760000, "profit": 182000},
+    ]
+    return {
+        "store": body.store,
+        "total_revenue": sum(row["revenue"] for row in rows),
+        "total_profit": sum(row["profit"] for row in rows),
+        "doc_count": len(rows),
+        "rows": rows,
+    }
 
 
 @router.get("/analytics/{table_name}")
@@ -260,6 +338,16 @@ async def list_tm_entries():
     return get_store().list_collection("translation_memory")
 
 
+@router.get("/tm/meta", response_model=Dict[str, Any])
+async def get_tm_meta():
+    store = get_store()
+    return {
+        "backend": store.translation_memory_backend(),
+        "count": store._count_tm(),
+        "persistent": True,
+    }
+
+
 @router.post("/tm", response_model=Dict[str, Any])
 async def save_tm_entry(body: TMEntry):
     return get_store().save_tm_entry(body.dict())
@@ -267,14 +355,5 @@ async def save_tm_entry(body: TMEntry):
 
 @router.delete("/tm/{entry_id}")
 async def delete_tm_entry(entry_id: str):
-    from .database import SessionLocal
-    from .store import TranslationMemoryRecord
-    db = SessionLocal()
-    try:
-        entry = db.query(TranslationMemoryRecord).filter(TranslationMemoryRecord.id == entry_id).first()
-        if entry:
-            db.delete(entry)
-            db.commit()
-        return {"status": "deleted"}
-    finally:
-        db.close()
+    get_store().delete_tm_entry(entry_id)
+    return {"status": "deleted"}

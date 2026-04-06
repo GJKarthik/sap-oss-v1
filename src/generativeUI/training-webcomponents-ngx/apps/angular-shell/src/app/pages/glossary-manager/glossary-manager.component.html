@@ -1,0 +1,125 @@
+<div class="glossary-page" [dir]="i18n.dir()">
+  <div class="page-header">
+    <div>
+      <h1>{{ i18n.t('glossary.title') }}</h1>
+      <p class="subtitle">{{ i18n.t('glossary.subtitle') }}</p>
+      <div class="backend-row">
+        <span class="backend-label">{{ i18n.t('glossary.backend.label') }}</span>
+        <span class="backend-chip" [class.backend-chip--hana]="tmBackend() === 'hana'">
+          {{ tmBackendLabel() }}
+        </span>
+      </div>
+    </div>
+    <button class="btn-primary" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</button>
+  </div>
+
+  @if (showAddForm()) {
+    <div class="add-form card">
+      <h3>{{ i18n.t('glossary.addTitle') }}</h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Source Language</label>
+          <select [(ngModel)]="newEntry.source_lang">
+            <option value="en">English</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Source Text</label>
+          <input type="text" [(ngModel)]="newEntry.source_text" placeholder="e.g. Statutory Reserve" />
+        </div>
+        <div class="field-group">
+          <label>Target Text</label>
+          <input type="text" [(ngModel)]="newEntry.target_text" placeholder="e.g. الاحتياطي النظامي" />
+        </div>
+        <div class="field-group">
+          <label>Category</label>
+          <select [(ngModel)]="newEntry.category">
+            <option value="financial">Financial</option>
+            <option value="regulatory">Regulatory</option>
+            <option value="general">General</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" (click)="saveNewEntry()">Save Override</button>
+        <button class="btn-outline" (click)="showAddForm.set(false)">Cancel</button>
+      </div>
+    </div>
+  }
+
+  <!-- Section 1: Translation Memory (Human-in-the-loop) -->
+  <section class="section">
+    <div class="section-header">
+      <h2>{{ i18n.t('glossary.tmSection') }}</h2>
+      <span class="badge">{{ tmEntries().length }} overrides</span>
+    </div>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Source (EN/AR)</th>
+            <th>Approved Mapping</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of tmEntries(); track e.id) {
+            <tr>
+              <td><bdi>{{ e.source_text }}</bdi> <span class="lang-tag">{{ e.source_lang }}</span></td>
+              <td><bdi>{{ e.target_text }}</bdi> <span class="lang-tag">{{ e.target_lang }}</span></td>
+              <td><span class="cat-tag">{{ e.category }}</span></td>
+              <td>
+                <span class="status-chip" [class.approved]="e.is_approved">
+                  {{ e.is_approved ? 'Approved' : 'Pending' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-row">
+                  <button *ngIf="!e.is_approved" class="btn-icon" (click)="approveEntry(e)" title="Approve">✅</button>
+                  <button class="btn-icon delete" (click)="deleteEntry(e.id)" title="Delete">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty-cell">{{ i18n.t('glossary.noOverrides') }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Section 2: Official Static Glossary -->
+  <section class="section">
+    <div class="section-header">
+      <h2>{{ i18n.t('glossary.staticSection') }}</h2>
+      <span class="badge">{{ glossary.entries().length }} terms</span>
+    </div>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Technical Term (English)</th>
+            <th>Official Translation (Arabic)</th>
+            <th>Category</th>
+            <th>IFRS Context</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of glossary.entries(); track e.en) {
+            <tr>
+              <td><strong>{{ e.en }}</strong></td>
+              <td dir="rtl">{{ e.ar }}</td>
+              <td><span class="cat-tag">{{ e.category }}</span></td>
+              <td><span class="ifrs-tag">{{ e.ifrs_context }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

@@ -13,7 +13,6 @@ jest.mock('../../../environments/environment', () => ({
 }));
 
 function makeWsMock() {
-  const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
   const sent: unknown[] = [];
   return {
     sent,
@@ -147,7 +146,10 @@ describe('PipelineComponent', () => {
     ['ordinary info text', 'info'],
   ])('parseLine classifies "%s" as %s', (text, kind) => {
     wsMock.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ type: 'log', text }) }));
-    const last = component.logLines().at(-1)!;
+    const last = component.logLines().at(-1);
+    if (!last) {
+      throw new Error('Expected a log line to be appended');
+    }
     expect(last.kind).toBe(kind);
   });
 

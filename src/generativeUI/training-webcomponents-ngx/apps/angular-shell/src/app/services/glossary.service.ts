@@ -10,6 +10,18 @@ export interface GlossaryEntry {
   definition_en?: string;
 }
 
+/** A structured finding from crossCheck() — identifies a term used without its canonical pair. */
+export interface CrossCheckFinding {
+  /** The term found in the text (e.g. an Arabic term, or an English one). */
+  sourceTerm: string;
+  /** The canonical paired translation that was absent (the "correct" form). */
+  expectedTerm: string;
+  /** Language of sourceTerm ('ar' | 'en'). */
+  sourceLang: string;
+  /** Language of expectedTerm ('ar' | 'en'). */
+  targetLang: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -91,22 +103,35 @@ export class GlossaryService {
     return this._entries().find(e => e.ar === term || e.en === term);
   }
 
-  /** 
-   * Cross-checks text for non-standard technical terms.
-   * Useful for auditing LLM translations.
+  /**
+   * Cross-checks text for non-standard technical terms against the official IFRS/CPA glossary.
+   * Returns structured findings so callers can build override UIs without parsing strings.
+   *
+   * @param text      The LLM response to audit.
+   * @param targetLang The language the text is primarily written in.
+   *   - 'ar': checks whether English source terms appear without their Arabic equivalents
+   *   - 'en': checks whether Arabic source terms appear without their English equivalents
    */
-  crossCheck(text: string, targetLang: 'ar' | 'en'): string[] {
-    const findings: string[] = [];
+  crossCheck(text: string, targetLang: 'ar' | 'en'): CrossCheckFinding[] {
+    const findings: CrossCheckFinding[] = [];
+    // sourceMap: key=term expected to appear, value=its canonical pair
     const sourceMap = targetLang === 'ar' ? this.enToArMap() : this.arToEnMap();
-    
-    sourceMap.forEach((target, source) => {
-      // If the source term is found but the corresponding target term is NOT in the text
-      // (Simplified logic: in a real system we'd use NLP to verify mapping alignment)
-      if (text.toLowerCase().includes(source.toLowerCase()) && !text.includes(target)) {
-        findings.push(`Potential non-standard term for "${source}". Expected "${target}".`);
+    const sourceLang: 'ar' | 'en' = targetLang === 'ar' ? 'en' : 'ar';
+
+    // Apply approved overrides first — if an override exists for a source term, skip it
+    // (the human has already resolved that mapping)
+    const overrideSourceTerms = new Set(this._overrides().map(o => o.source_text.toLowerCase()));
+
+    sourceMap.forEach((expectedTerm, sourceTerm) => {
+      if (overrideSourceTerms.has(sourceTerm.toLowerCase())) return;
+      if (
+        text.toLowerCase().includes(sourceTerm.toLowerCase()) &&
+        !text.includes(expectedTerm)
+      ) {
+        findings.push({ sourceTerm, expectedTerm, sourceLang, targetLang });
       }
     });
-    
+
     return findings;
   }
 

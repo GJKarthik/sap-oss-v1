@@ -1,6 +1,14 @@
+import warnings
+
 import psutil
 try:
-    import pynvml
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The pynvml package is deprecated.*",
+            category=FutureWarning,
+        )
+        import pynvml
     HAS_NVML = True
     pynvml.nvmlInit()
 except BaseException:

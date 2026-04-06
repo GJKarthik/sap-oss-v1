@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ToastService, ToastType, Toast } from './toast.service';
+import { ToastService } from './toast.service';
 
 describe('ToastService', () => {
   let service: ToastService;
@@ -67,7 +67,7 @@ describe('ToastService', () => {
   describe('dismiss()', () => {
     it('should remove a specific toast by id', () => {
       const id1 = service.show('Message 1');
-      const id2 = service.show('Message 2');
+      service.show('Message 2');
       expect(service.toasts().length).toBe(2);
 
       service.dismiss(id1);

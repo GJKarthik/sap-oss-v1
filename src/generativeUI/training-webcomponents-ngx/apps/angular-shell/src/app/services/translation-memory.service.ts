@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 export interface TMEntry {
   id?: string;
@@ -11,6 +11,12 @@ export interface TMEntry {
   category: string;
   is_approved: boolean;
   created_at?: string;
+}
+
+export interface TMBackendMeta {
+  backend: 'sqlite' | 'hana';
+  count: number;
+  persistent: boolean;
 }
 
 @Injectable({
@@ -24,16 +30,24 @@ export class TranslationMemoryService {
     return this.http.get<TMEntry[]>(this.base);
   }
 
+  getMeta(): Observable<TMBackendMeta> {
+    return this.http.get<TMBackendMeta>(`${this.base}/meta`);
+  }
+
   save(entry: TMEntry): Observable<TMEntry> {
     return this.http.post<TMEntry>(this.base, entry);
   }
 
-  delete(entryId: string): Observable<any> {
-    return this.http.delete(`${this.base}/${entryId}`);
+  delete(entryId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${entryId}`);
   }
 
   /** Gets all approved overrides for a specific language pair. */
   getOverrides(sourceLang: string, targetLang: string): Observable<TMEntry[]> {
-    return this.list(); // In production, filter on backend
+    return this.list().pipe(
+      map((entries) => entries.filter((entry) => (
+        entry.source_lang === sourceLang && entry.target_lang === targetLang
+      )))
+    );
   }
 }

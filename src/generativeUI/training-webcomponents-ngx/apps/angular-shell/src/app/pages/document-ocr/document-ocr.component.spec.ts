@@ -5,6 +5,7 @@ import { DocumentOcrComponent, OcrCurationState } from './document-ocr.component
 import { ToastService } from '../../services/toast.service';
 import { Router } from '@angular/router';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { OcrResult } from '../../services/ocr.service';
 
 const MOCK_TOAST = {
   success: jest.fn(),
@@ -17,7 +18,7 @@ const MOCK_ROUTER = {
   navigate: jest.fn(),
 };
 
-const MOCK_OCR_RESULT = {
+const MOCK_OCR_RESULT: OcrResult = {
   total_pages: 2,
   pages: [
     {
@@ -85,6 +86,7 @@ describe('DocumentOcrComponent', () => {
   afterEach(() => {
     // Flush any pending health check requests
     httpMock.match('/ocr/health').forEach(r => r.flush({ status: 'unavailable' }));
+    httpMock.match('/api/rag/tm').forEach(r => r.flush([]));
     httpMock.verify();
   });
 
@@ -216,13 +218,13 @@ describe('DocumentOcrComponent', () => {
   });
 
   it('nextPage increments page when result available', () => {
-    component['_mutate']((s: OcrCurationState) => { s.result = MOCK_OCR_RESULT as any; s.activePage = 1; });
+    component['_mutate']((s: OcrCurationState) => { s.result = MOCK_OCR_RESULT; s.activePage = 1; });
     component.nextPage();
     expect(component.getState().activePage).toBe(2);
   });
 
   it('nextPage does not exceed total pages', () => {
-    component['_mutate']((s: OcrCurationState) => { s.result = MOCK_OCR_RESULT as any; s.activePage = 2; });
+    component['_mutate']((s: OcrCurationState) => { s.result = MOCK_OCR_RESULT; s.activePage = 2; });
     component.nextPage();
     expect(component.getState().activePage).toBe(2);
   });
@@ -257,7 +259,7 @@ describe('DocumentOcrComponent', () => {
 
   it('currentPageText returns correction if available', () => {
     component['_mutate']((s: OcrCurationState) => {
-      s.result = MOCK_OCR_RESULT as any;
+      s.result = MOCK_OCR_RESULT;
       s.activePage = 1;
       s.corrections = { 1: 'custom correction' };
     });
@@ -266,7 +268,7 @@ describe('DocumentOcrComponent', () => {
 
   it('currentPageText returns original text if no correction', () => {
     component['_mutate']((s: OcrCurationState) => {
-      s.result = MOCK_OCR_RESULT as any;
+      s.result = MOCK_OCR_RESULT;
       s.activePage = 1;
     });
     expect(component.currentPageText()).toBe('إجمالي الإيرادات: 1,250,000');
@@ -316,7 +318,7 @@ describe('DocumentOcrComponent', () => {
   it('sendToPipeline sends result to /ocr/pipeline', fakeAsync(() => {
     fixture.detectChanges();
     httpMock.expectOne('/ocr/health').flush({ status: 'unavailable' });
-    component['_mutate']((s: OcrCurationState) => { s.result = MOCK_OCR_RESULT as any; });
+    component['_mutate']((s: OcrCurationState) => { s.result = MOCK_OCR_RESULT; });
     component.sendToPipeline();
     expect(component.getState().uploading).toBe(true);
     httpMock.expectOne('/ocr/pipeline').flush({ queued: true });

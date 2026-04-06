@@ -36,9 +36,21 @@ services:
       retries: 3
     networks: [platform-network]
 
-  data-copilot:
+  geni-ui:
     build:
       context: ./src/generativeUI/training-webcomponents-ngx
+      dockerfile: apps/angular-shell/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - SAP_API_BASE_URL=http://api-gateway:80
+    depends_on: [api-gateway]
+    networks: [platform-network]
+
+  data-copilot:
+    build:
+      context: ./src/generativeUI/training-webcomponents-ngx/packages/api-server
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:

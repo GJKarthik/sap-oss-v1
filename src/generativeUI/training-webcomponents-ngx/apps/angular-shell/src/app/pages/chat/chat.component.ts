@@ -7,11 +7,25 @@ import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { LocaleDatePipe } from '../../shared/pipes/locale-date.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
+import { GlossaryService, CrossCheckFinding } from '../../services/glossary.service';
+import { TranslationMemoryService } from '../../services/translation-memory.service';
+
+/** CrossCheckFinding enriched with UI-state for the inline override form. */
+interface AuditFinding extends CrossCheckFinding {
+  /** Current value of the override text input. Pre-filled with expectedTerm. */
+  overrideInput: string;
+  /** Whether the inline override form is open for this finding. */
+  showForm: boolean;
+  /** Whether a save request is in-flight. */
+  saving: boolean;
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   ts: Date;
+  /** Glossary audit findings attached to assistant messages. */
+  auditFindings?: AuditFinding[];
 }
 
 interface CompletionRequest {
@@ -73,7 +87,7 @@ interface CompletionResponse {
 
       <!-- Chat area -->
       <div class="chat-main">
-        <div class="messages-area" #messagesArea>
+        <div class="messages-area" #messagesArea role="log" aria-live="polite" aria-relevant="additions">
           @if (!messages().length) {
             <div class="empty-state">
               <span class="empty-icon"><ui5-icon name="discussion-2"></ui5-icon></span>
@@ -98,12 +112,47 @@ interface CompletionResponse {
               </div>
               <div class="message-content"><bdi>{{ m.content }}</bdi></div>
               <div class="message-ts text-small text-muted">{{ m.ts | localeDate:'time' }}</div>
+
+              @if (m.role === 'assistant' && m.auditFindings?.length) {
+                <div class="audit-panel">
+                  <div class="audit-heading">{{ i18n.t('chat.translationAudit') }}</div>
+                  @for (f of m.auditFindings; track f.sourceTerm) {
+                    <div class="audit-finding">
+                      <span class="audit-term">{{ f.sourceTerm }}</span>
+                      <span class="audit-arrow">→</span>
+                      <span class="audit-expected">{{ f.expectedTerm }}</span>
+                      @if (!f.showForm) {
+                        <button class="btn-override" (click)="openOverride(m.ts, f.sourceTerm)">
+                          {{ i18n.t('chat.applyOverride') }}
+                        </button>
+                      }
+                      @if (f.showForm) {
+                        <div class="override-form">
+                          <input
+                            class="override-input"
+                            [value]="f.overrideInput"
+                            (input)="setOverrideInput(m.ts, f.sourceTerm, $event)"
+                            [placeholder]="i18n.t('chat.overridePlaceholder')"
+                          />
+                          <button class="btn-save" [disabled]="f.saving" (click)="saveOverride(m.ts, f)">
+                            {{ i18n.t('chat.saveOverride') }}
+                          </button>
+                          <button class="btn-cancel" (click)="cancelOverride(m.ts, f.sourceTerm)">
+                            {{ i18n.t('chat.cancelOverride') }}
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
           }
 
           @if (sending()) {
-            <div class="typing-indicator">
-              <span></span><span></span><span></span>
+            <div class="typing-indicator" role="status" [attr.aria-label]="i18n.t('chat.assistantTyping')">
+              <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+              <span class="sr-only">{{ i18n.t('chat.assistantTyping') }}</span>
             </div>
           }
         </div>
@@ -144,6 +193,22 @@ interface CompletionResponse {
       gap: 1rem;
       overflow-y: auto;
       flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .chat-sidebar { display: none; }
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
     }
 
     .rtl .chat-sidebar {
@@ -289,6 +354,97 @@ interface CompletionResponse {
       color: var(--sapPositiveColor, #107e3e);
     }
 
+    /* ── Translation Audit Panel ───────────────────────────────────────── */
+
+    .audit-panel {
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--sapWarningBackground, #fef7e0);
+      border: 1px solid var(--sapWarningBorderColor, #f0ab00);
+      border-radius: 0.375rem;
+      font-size: 0.8125rem;
+    }
+
+    .audit-heading {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--sapCriticalColor, #e76500);
+      margin-bottom: 0.5rem;
+    }
+
+    .audit-finding {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      padding: 0.25rem 0;
+      border-bottom: 1px dashed var(--sapWarningBorderColor, #f0ab00);
+      &:last-child { border-bottom: none; }
+    }
+
+    .audit-term { font-weight: 600; color: var(--sapNegativeColor, #b00); }
+    .audit-arrow { opacity: 0.5; }
+    .audit-expected { font-weight: 600; color: var(--sapPositiveColor, #107e3e); }
+
+    .btn-override {
+      margin-inline-start: auto;
+      padding: 0.15rem 0.5rem;
+      background: transparent;
+      color: var(--sapBrandColor, #0854a0);
+      border: 1px solid var(--sapBrandColor, #0854a0);
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      &:hover { background: var(--sapInformationBackground, #e0f0ff); }
+    }
+
+    .override-form {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-top: 0.25rem;
+    }
+
+    .override-input {
+      flex: 1;
+      min-width: 8rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--sapField_BorderColor, #89919a);
+      border-radius: 0.25rem;
+      font-size: 0.8125rem;
+      background: var(--sapField_Background, #fff);
+      color: var(--sapTextColor, #32363a);
+    }
+
+    .btn-save {
+      padding: 0.25rem 0.6rem;
+      background: var(--sapPositiveColor, #107e3e);
+      color: #fff;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      &:disabled { opacity: 0.5; cursor: default; }
+      &:hover:not(:disabled) { background: var(--sapPositiveTextColor, #0d6633); }
+    }
+
+    .btn-cancel {
+      padding: 0.25rem 0.6rem;
+      background: transparent;
+      color: var(--sapContent_LabelColor, #6a6d70);
+      border: 1px solid var(--sapContent_LabelColor, #6a6d70);
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      &:hover { background: var(--sapList_Hover_Background, #e8e8e8); }
+    }
+
+    /* ────────────────────────────────────────────────────────────────── */
+
     .typing-indicator {
       display: flex;
       gap: 0.3rem;
@@ -357,6 +513,8 @@ export class ChatComponent implements OnDestroy, OnInit {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
+  private readonly glossary = inject(GlossaryService);
+  private readonly tm = inject(TranslationMemoryService);
   private readonly destroy$ = new Subject<void>();
 
   readonly messages = signal<ChatMessage[]>([]);
@@ -449,13 +607,16 @@ export class ChatComponent implements OnDestroy, OnInit {
     this.sending.set(true);
     this.scrollToBottom();
 
+    // Gap 1: prepend live glossary constraints + approved overrides to every API call.
+    const resolvedSystemPrompt = this.systemPrompt + this.glossary.getSystemPromptSnippet();
+
     const payload: CompletionRequest = {
       model: this.model,
       stream: false,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
       messages: [
-        { role: 'system', content: this.systemPrompt },
+        { role: 'system', content: resolvedSystemPrompt },
         ...this.messages().map((m: ChatMessage) => ({ role: m.role, content: m.content })),
       ],
     };
@@ -465,7 +626,21 @@ export class ChatComponent implements OnDestroy, OnInit {
       .subscribe({
         next: (resp: CompletionResponse) => {
           const reply = resp.choices?.[0]?.message?.content ?? '(empty response)';
-          this.messages.update((msgs: ChatMessage[]) => [...msgs, { role: 'assistant', content: reply, ts: new Date() }]);
+
+          // Gap 3: cross-check the reply for non-standard IFRS/CPA terms.
+          const replyLang = this.detectLang(reply);
+          const rawFindings = this.glossary.crossCheck(reply, replyLang);
+          const auditFindings: AuditFinding[] = rawFindings.map(f => ({
+            ...f,
+            overrideInput: f.expectedTerm,
+            showForm: false,
+            saving: false,
+          }));
+
+          this.messages.update((msgs: ChatMessage[]) => [
+            ...msgs,
+            { role: 'assistant', content: reply, ts: new Date(), auditFindings },
+          ]);
           if (resp.usage) this.lastUsage.set(resp.usage);
           this.sending.set(false);
           this.scrollToBottom();
@@ -478,6 +653,106 @@ export class ChatComponent implements OnDestroy, OnInit {
         },
       });
   }
+
+  // ─── Override form lifecycle (Gap 2) ──────────────────────────────────────
+
+  /** Open the inline override input for a specific finding. */
+  openOverride(ts: Date, sourceTerm: string): void {
+    this.messages.update(msgs => msgs.map(m => {
+      if (m.ts !== ts) return m;
+      return {
+        ...m,
+        auditFindings: (m.auditFindings ?? []).map(f =>
+          f.sourceTerm === sourceTerm ? { ...f, showForm: true } : f
+        ),
+      };
+    }));
+  }
+
+  /** Sync the override text input value into signal state. */
+  setOverrideInput(ts: Date, sourceTerm: string, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.messages.update(msgs => msgs.map(m => {
+      if (m.ts !== ts) return m;
+      return {
+        ...m,
+        auditFindings: (m.auditFindings ?? []).map(f =>
+          f.sourceTerm === sourceTerm ? { ...f, overrideInput: value } : f
+        ),
+      };
+    }));
+  }
+
+  /** Close the override form without saving. */
+  cancelOverride(ts: Date, sourceTerm: string): void {
+    this.messages.update(msgs => msgs.map(m => {
+      if (m.ts !== ts) return m;
+      return {
+        ...m,
+        auditFindings: (m.auditFindings ?? []).map(f =>
+          f.sourceTerm === sourceTerm ? { ...f, showForm: false } : f
+        ),
+      };
+    }));
+  }
+
+  /**
+   * Save the override to Translation Memory, then remove the resolved finding
+   * from the audit panel and reload glossary overrides so future API calls
+   * immediately pick up the correction.
+   */
+  saveOverride(ts: Date, finding: AuditFinding): void {
+    // Mark as saving so the button disables
+    this.messages.update(msgs => msgs.map(m => {
+      if (m.ts !== ts) return m;
+      return {
+        ...m,
+        auditFindings: (m.auditFindings ?? []).map(f =>
+          f.sourceTerm === finding.sourceTerm ? { ...f, saving: true } : f
+        ),
+      };
+    }));
+
+    this.tm.save({
+      source_text: finding.sourceTerm,
+      target_text: finding.overrideInput,
+      source_lang: finding.sourceLang,
+      target_lang: finding.targetLang,
+      category: 'banking',
+      is_approved: true,
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: () => {
+        // Drop the resolved finding from the panel
+        this.messages.update(msgs => msgs.map(m => {
+          if (m.ts !== ts) return m;
+          return {
+            ...m,
+            auditFindings: (m.auditFindings ?? []).filter(f => f.sourceTerm !== finding.sourceTerm),
+          };
+        }));
+        // Reload approved overrides so getSystemPromptSnippet() uses the new entry
+        this.glossary.loadOverrides();
+        this.toast.info(this.i18n.t('chat.tmSaved'));
+      },
+      error: () => {
+        // Unblock the button
+        this.messages.update(msgs => msgs.map(m => {
+          if (m.ts !== ts) return m;
+          return {
+            ...m,
+            auditFindings: (m.auditFindings ?? []).map(f =>
+              f.sourceTerm === finding.sourceTerm ? { ...f, saving: false } : f
+            ),
+          };
+        }));
+        this.toast.error(this.i18n.t('chat.tmError'));
+      },
+    });
+  }
+
+  // ─── Utilities ────────────────────────────────────────────────────────────
 
   clearChat(): void {
     this.messages.set([]);
