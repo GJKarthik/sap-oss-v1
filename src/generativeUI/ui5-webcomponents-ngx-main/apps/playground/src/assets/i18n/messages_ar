@@ -195,6 +195,8 @@ HEALTH_PANEL_LAST_CHECKED=آخر فحص: {0}
 HEALTH_PANEL_CHECKING_MSG=جارٍ فحص صحة الخدمات الحية...
 HEALTH_PANEL_UNAVAILABLE=واحدة أو أكثر من التبعيات الحية غير متاحة
 HEALTH_PANEL_HEALTHY=جميع التبعيات الحية سليمة
+HEALTH_PANEL_DEMO_MODE=وضع العرض — خدمات الخلفية غير متصلة
+HEALTH_PANEL_DEMO_MODE_TAG=وضع العرض
 RELATIVE_JUST_NOW=الآن
 RELATIVE_MINUTES_AGO={0, plural, =0 {منذ ٠ دقائق} one {منذ دقيقة} two {منذ دقيقتين} few {منذ {0} دقائق} many {منذ {0} دقيقة} other {منذ {0} دقيقة}}
 RELATIVE_HOURS_AGO={0, plural, =0 {منذ ٠ ساعات} one {منذ ساعة} two {منذ ساعتين} few {منذ {0} ساعات} many {منذ {0} ساعة} other {منذ {0} ساعة}}
