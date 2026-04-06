@@ -9,6 +9,7 @@ import { ChangeDetectorRef, Injectable, OnDestroy, Pipe, PipeTransform, inject }
 import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 import { catchError, shareReplay } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 export type SupportedLocale = 'en' | 'ar' | 'de' | 'fr' | 'es' | 'ja' | 'zh';
 
@@ -64,7 +65,9 @@ export class I18nService implements OnDestroy {
    */
   async setLocale(locale: SupportedLocale): Promise<void> {
     if (!this.config.supportedLocales.includes(locale)) {
-      console.warn(`Locale "${locale}" is not supported. Falling back to "${this.config.fallbackLocale}"`);
+      if (!environment.production) {
+        console.warn(`Locale "${locale}" is not supported. Falling back to "${this.config.fallbackLocale}"`);
+      }
       locale = this.config.fallbackLocale;
     }
 
@@ -80,7 +83,9 @@ export class I18nService implements OnDestroy {
       document.documentElement.lang = locale;
       document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
     } catch (error) {
-      console.error(`Failed to load translations for "${locale}":`, error);
+      if (!environment.production) {
+        console.error(`Failed to load translations for "${locale}":`, error);
+      }
       
       // Fallback to default if not already
       if (locale !== this.config.fallbackLocale) {
@@ -96,7 +101,9 @@ export class I18nService implements OnDestroy {
     const value = this.getNestedValue(this.currentTranslations, key);
     
     if (typeof value !== 'string') {
-      console.warn(`Translation key "${key}" not found`);
+      if (!environment.production) {
+        console.warn(`Translation key "${key}" not found`);
+      }
       return key;
     }
 
@@ -175,7 +182,9 @@ export class I18nService implements OnDestroy {
       
       const translation$ = this.http.get<TranslationDictionary>(url).pipe(
         catchError(error => {
-          console.error(`Failed to load translations from ${url}:`, error);
+          if (!environment.production) {
+            console.error(`Failed to load translations from ${url}:`, error);
+          }
           return of({});
         }),
         shareReplay(1)
