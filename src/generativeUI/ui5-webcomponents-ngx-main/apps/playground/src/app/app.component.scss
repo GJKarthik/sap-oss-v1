@@ -83,6 +83,17 @@
   }
 }
 
+@media (max-width: 1024px) and (min-width: 601px) {
+  .app-nav__item {
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .app-nav__theme-label {
+    display: none;
+  }
+}
+
 .demo-tour-banner {
   display: flex;
   align-items: center;
@@ -111,29 +122,8 @@
 // RTL overrides
 // ---------------------------------------------------------------------------
 
+// BiDi isolation for technical content (both LTR & RTL contexts)
 :host-context([dir="rtl"]) {
-  .app-nav {
-    direction: rtl;
-  }
-
-  .app-nav__item {
-    border-bottom: 2px solid transparent;
-
-    &--active {
-      border-bottom-color: var(--sapBrandColor, #0070f2);
-    }
-  }
-
-  .demo-tour-banner {
-    flex-direction: row-reverse;
-  }
-
-  .demo-tour-banner__left,
-  .demo-tour-banner__actions {
-    flex-direction: row-reverse;
-  }
-
-  // BiDi isolation for technical content
   code, pre, .technical {
     direction: ltr;
     unicode-bidi: isolate;

@@ -48,7 +48,7 @@ export interface FilterChangeEvent {
 @Component({
   selector: 'sac-filter-dropdown',
   standalone: true,
-  imports: [CommonModule, SacTranslatePipe],
+  imports: [CommonModule, FormsModule, SacTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sac-filter sac-filter--dropdown"
@@ -94,6 +94,10 @@ export interface FilterChangeEvent {
     }
     .sac-filter__select:disabled {
       opacity: 0.5; cursor: not-allowed; background: var(--sapField_ReadOnly_Background, #f7f7f7);
+    }
+    .sac-filter__select--changed {
+      border-color: var(--sapBrandColor, #0854a0);
+      box-shadow: 0 0 0 1px var(--sapBrandColor, #0854a0);
     }
     .sac-filter--disabled { opacity: 0.6; }
     .sr-only {

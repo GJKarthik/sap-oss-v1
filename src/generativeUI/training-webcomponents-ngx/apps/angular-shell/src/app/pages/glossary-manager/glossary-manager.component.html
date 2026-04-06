@@ -18,22 +18,22 @@
       <h3>{{ i18n.t('glossary.addTitle') }}</h3>
       <div class="form-grid">
         <div class="field-group">
-          <label>Source Language</label>
+          <label>{{ i18n.t('glossary.sourceLanguage') }}</label>
           <select [(ngModel)]="newEntry.source_lang">
             <option value="en">English</option>
             <option value="ar">Arabic</option>
           </select>
         </div>
         <div class="field-group">
-          <label>Source Text</label>
+          <label>{{ i18n.t('glossary.sourceText') }}</label>
           <input type="text" [(ngModel)]="newEntry.source_text" placeholder="e.g. Statutory Reserve" />
         </div>
         <div class="field-group">
-          <label>Target Text</label>
+          <label>{{ i18n.t('glossary.targetText') }}</label>
           <input type="text" [(ngModel)]="newEntry.target_text" placeholder="e.g. الاحتياطي النظامي" />
         </div>
         <div class="field-group">
-          <label>Category</label>
+          <label>{{ i18n.t('glossary.category') }}</label>
           <select [(ngModel)]="newEntry.category">
             <option value="financial">Financial</option>
             <option value="regulatory">Regulatory</option>
@@ -42,8 +42,8 @@
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn-primary" (click)="saveNewEntry()">Save Override</button>
-        <button class="btn-outline" (click)="showAddForm.set(false)">Cancel</button>
+        <button class="btn-primary" (click)="saveNewEntry()">{{ i18n.t('glossary.saveOverride') }}</button>
+        <button class="btn-outline" (click)="showAddForm.set(false)">{{ i18n.t('glossary.cancel') }}</button>
       </div>
     </div>
   }
@@ -58,11 +58,11 @@
       <table>
         <thead>
           <tr>
-            <th>Source (EN/AR)</th>
-            <th>Approved Mapping</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>{{ i18n.t('glossary.th.source') }}</th>
+            <th>{{ i18n.t('glossary.th.mapping') }}</th>
+            <th>{{ i18n.t('glossary.th.category') }}</th>
+            <th>{{ i18n.t('glossary.th.status') }}</th>
+            <th>{{ i18n.t('glossary.th.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -73,13 +73,13 @@
               <td><span class="cat-tag">{{ e.category }}</span></td>
               <td>
                 <span class="status-chip" [class.approved]="e.is_approved">
-                  {{ e.is_approved ? 'Approved' : 'Pending' }}
+                  {{ e.is_approved ? i18n.t('glossary.approved') : i18n.t('glossary.pending') }}
                 </span>
               </td>
               <td>
                 <div class="action-row">
-                  <button *ngIf="!e.is_approved" class="btn-icon" (click)="approveEntry(e)" title="Approve">✅</button>
-                  <button class="btn-icon delete" (click)="deleteEntry(e.id)" title="Delete">🗑️</button>
+                  <button *ngIf="!e.is_approved" class="btn-icon" (click)="approveEntry(e)" [title]="i18n.t('glossary.approve')">✅</button>
+                  <button class="btn-icon delete" (click)="deleteEntry(e.id)" [title]="i18n.t('glossary.delete')">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -103,10 +103,10 @@
       <table>
         <thead>
           <tr>
-            <th>Technical Term (English)</th>
-            <th>Official Translation (Arabic)</th>
-            <th>Category</th>
-            <th>IFRS Context</th>
+            <th>{{ i18n.t('glossary.th.termEn') }}</th>
+            <th>{{ i18n.t('glossary.th.termAr') }}</th>
+            <th>{{ i18n.t('glossary.th.category') }}</th>
+            <th>{{ i18n.t('glossary.th.ifrsContext') }}</th>
           </tr>
         </thead>
         <tbody>

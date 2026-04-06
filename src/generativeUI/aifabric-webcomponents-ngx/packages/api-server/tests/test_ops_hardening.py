@@ -12,8 +12,8 @@ def _production_settings_kwargs(**overrides):
         "hana_host": "hana.example.test",
         "hana_user": "DBADMIN",
         "hana_password": "super-secret-password",
-        "langchain_mcp_url": "https://langchain.example.test/mcp",
-        "streaming_mcp_url": "https://streaming.example.test/mcp",
+        "elasticsearch_mcp_url": "https://elasticsearch.example.test/mcp",
+        "pal_mcp_url": "https://pal.example.test/mcp",
         "data_cleaning_mcp_url": "https://cleaning.example.test/mcp",
     }
     values.update(overrides)
@@ -92,12 +92,12 @@ def test_mcp_proxy_requests_are_rate_limited(monkeypatch, client, admin_headers)
     monkeypatch.setattr(mcp_proxy, "_forward", fake_forward)
 
     first_response = client.post(
-        "/api/v1/mcp/langchain",
+        "/api/v1/mcp/elasticsearch",
         headers=admin_headers,
         json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
     )
     second_response = client.post(
-        "/api/v1/mcp/langchain",
+        "/api/v1/mcp/elasticsearch",
         headers=admin_headers,
         json={"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
     )
@@ -110,7 +110,7 @@ def test_mcp_proxy_requests_are_rate_limited(monkeypatch, client, admin_headers)
 
 def test_readiness_returns_503_when_required_mcp_dependency_is_unavailable(monkeypatch, client) -> None:
     async def fake_probe(service_name: str, target_url: str, timeout_seconds: float = 5.0) -> dict:
-        if service_name == "langchain-hana-mcp":
+        if service_name == "elasticsearch-mcp":
             return {"status": "error", "service": service_name, "target": target_url, "error": "offline"}
         return {"status": "ok", "service": service_name, "target": target_url}
 
@@ -122,8 +122,8 @@ def test_readiness_returns_503_when_required_mcp_dependency_is_unavailable(monke
     assert response.status_code == 503
     body = response.json()
     assert body["status"] == "not_ready"
-    assert body["failed_dependencies"] == ["langchain_mcp"]
-    assert body["checks"]["langchain_mcp"]["status"] == "error"
+    assert body["failed_dependencies"] == ["elasticsearch_mcp"]
+    assert body["checks"]["elasticsearch_mcp"]["status"] == "error"
 
 
 def test_operations_dashboard_reports_auth_and_alert_state(monkeypatch, client, admin_headers) -> None:
@@ -132,7 +132,7 @@ def test_operations_dashboard_reports_auth_and_alert_state(monkeypatch, client, 
     monkeypatch.setattr("src.routes.metrics.settings.require_mcp_dependencies", True)
 
     async def fake_probe(service_name: str, target_url: str, timeout_seconds: float = 5.0) -> dict:
-        if service_name == "langchain-hana-mcp":
+        if service_name == "elasticsearch-mcp":
             return {"status": "error", "service": service_name, "target": target_url, "error": "offline"}
         return {"status": "healthy", "service": service_name, "target": target_url}
 

@@ -305,7 +305,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
   &__num   { font-weight: 700; font-size: 0.875rem; }
   &__status { font-size: 1rem; }
   &__conf  { font-size: 0.6875rem; color: var(--sapContent_LabelColor, #6a6d70); }
-  &__note  { font-size: 0.6875rem; text-align: left; margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68px; }
+  &__note  { font-size: 0.6875rem; text-align: start; margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68px; }
 }
 .btn-xs { font-size: 0.6875rem; padding: 0.125rem 0.375rem; margin-top: 0.25rem; border: 1px solid #28a745; color: #28a745; background: none; border-radius: 3px; cursor: pointer; }
 .qa-summary { font-size: 0.8125rem; color: var(--sapContent_LabelColor, #6a6d70); }
@@ -348,7 +348,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 }
 
 // ── Viewer zoom ───────────────────────────────────────────────────────────
-.viewer-zoom { display: flex; align-items: center; gap: 0.25rem; margin-left: auto; font-size: 0.75rem; }
+.viewer-zoom { display: flex; align-items: center; gap: 0.25rem; margin-inline-start: auto; font-size: 0.75rem; }
 
 // ── kv-* aliases (financial fields tab) ──────────────────────────────────
 .kv-grid { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -529,7 +529,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
     border-radius: 50%;
     border-top-color: #fff;
     animation: spin 1s linear infinite;
-    margin-right: 0.5rem;
+    margin-inline-end: 0.5rem;
   }
 }
 

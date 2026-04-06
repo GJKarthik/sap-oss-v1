@@ -292,7 +292,7 @@ interface ArchLayer {
       th {
         padding: 0.5rem 0.75rem;
         background: var(--sapList_HeaderBackground, #f5f5f5);
-        text-align: left;
+        text-align: start;
         font-weight: 600;
         font-size: 0.7rem;
         text-transform: uppercase;

@@ -217,5 +217,125 @@ class TestMCPServerHandleRequest(unittest.TestCase):
         self.assertIsNotNone(resp.error)
 
 
+class TestSanitizeIdentifier(unittest.TestCase):
+    def test_valid_identifier(self):
+        from mcp_server.server import _sanitize_identifier
+        self.assertEqual(_sanitize_identifier("EMBEDDINGS"), "EMBEDDINGS")
+
+    def test_valid_with_underscore(self):
+        from mcp_server.server import _sanitize_identifier
+        self.assertEqual(_sanitize_identifier("MY_TABLE_1"), "MY_TABLE_1")
+
+    def test_rejects_sql_injection(self):
+        from mcp_server.server import _sanitize_identifier
+        with self.assertRaises(ValueError):
+            _sanitize_identifier('"; DROP TABLE --')
+
+    def test_rejects_spaces(self):
+        from mcp_server.server import _sanitize_identifier
+        with self.assertRaises(ValueError):
+            _sanitize_identifier("MY TABLE")
+
+    def test_rejects_empty(self):
+        from mcp_server.server import _sanitize_identifier
+        with self.assertRaises(ValueError):
+            _sanitize_identifier("")
+
+    def test_rejects_starts_with_number(self):
+        from mcp_server.server import _sanitize_identifier
+        with self.assertRaises(ValueError):
+            _sanitize_identifier("1TABLE")
+
+
+class TestVectorStoreHandler(unittest.TestCase):
+    def setUp(self):
+        self.server = MCPServer()
+
+    def test_requires_table_name(self):
+        result = self.server._handle_langchain_vector_store({})
+        self.assertIn("error", result)
+        self.assertIn("table_name", result["error"])
+
+    def test_returns_local_stub_without_hana(self):
+        result = self.server._handle_langchain_vector_store({"table_name": "EMBEDDINGS"})
+        self.assertEqual(result["table_name"], "EMBEDDINGS")
+        self.assertEqual(result["status"], "created/retrieved")
+        # Without HANA_HOST set, should return local backend
+        self.assertIn(result["backend"], ("local", "federated"))
+
+    def test_updates_facts_store(self):
+        self.server._handle_langchain_vector_store({"table_name": "TEST_TABLE"})
+        stores = [s for s in self.server.facts["vector_stores"] if s["table_name"] == "TEST_TABLE"]
+        self.assertEqual(len(stores), 1)
+
+
+class TestAddDocumentsHandler(unittest.TestCase):
+    def setUp(self):
+        self.server = MCPServer()
+
+    def test_requires_table_name(self):
+        result = self.server._handle_langchain_add_documents({"documents": "[]"})
+        self.assertIn("error", result)
+        self.assertIn("table_name", result["error"])
+
+    def test_invalid_json_documents_treated_as_empty(self):
+        result = self.server._handle_langchain_add_documents({"table_name": "T", "documents": "not-json"})
+        # parse_json_arg falls back to [], so 0 documents added
+        self.assertEqual(result["documents_added"], 0)
+
+    def test_rejects_non_list_documents(self):
+        result = self.server._handle_langchain_add_documents({"table_name": "T", "documents": '{"key": "val"}'})
+        self.assertIn("error", result)
+
+    def test_returns_buffered_local_without_hana(self):
+        docs = json.dumps([{"content": "hello", "metadata": {}}])
+        result = self.server._handle_langchain_add_documents({"table_name": "EMBEDDINGS", "documents": docs})
+        self.assertEqual(result["table_name"], "EMBEDDINGS")
+        self.assertIn(result["status"], ("buffered-local", "federated", "hana"))
+        self.assertEqual(result["documents_added"], 1)
+
+    def test_truncates_excess_documents(self):
+        docs = json.dumps([{"content": f"doc{i}"} for i in range(5)])
+        result = self.server._handle_langchain_add_documents({"table_name": "T", "documents": docs})
+        self.assertLessEqual(result["documents_added"], 5)
+
+
+class TestSimilaritySearchHandler(unittest.TestCase):
+    def setUp(self):
+        self.server = MCPServer()
+
+    def test_requires_table_and_query(self):
+        result = self.server._handle_langchain_similarity_search({"table_name": "T"})
+        self.assertIn("error", result)
+
+    def test_requires_query(self):
+        result = self.server._handle_langchain_similarity_search({"table_name": "T", "query": ""})
+        self.assertIn("error", result)
+
+    def test_returns_degraded_without_hana(self):
+        result = self.server._handle_langchain_similarity_search({"table_name": "EMBEDDINGS", "query": "test query"})
+        self.assertEqual(result["table_name"], "EMBEDDINGS")
+        self.assertIn(result["status"], ("degraded-no-remote", "federated", "hana"))
+
+
+class TestRagChainHandler(unittest.TestCase):
+    def setUp(self):
+        self.server = MCPServer()
+
+    def test_requires_query_and_table(self):
+        result = self.server._handle_langchain_rag_chain({"query": "test"})
+        self.assertIn("error", result)
+
+    def test_requires_query(self):
+        result = self.server._handle_langchain_rag_chain({"table_name": "T", "query": ""})
+        self.assertIn("error", result)
+
+    def test_returns_degraded_fallback_without_backends(self):
+        result = self.server._handle_langchain_rag_chain({"query": "test question", "table_name": "EMBEDDINGS"})
+        self.assertIn("status", result)
+        self.assertIn("query", result)
+        self.assertIn("context_docs", result)
+
+
 if __name__ == "__main__":
     unittest.main()

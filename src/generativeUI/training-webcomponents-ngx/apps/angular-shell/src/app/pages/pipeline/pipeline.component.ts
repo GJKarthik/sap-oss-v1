@@ -155,23 +155,27 @@ interface LogLine {
 
     /* Terminal */
     .pipeline-terminal {
-      background: #0d1117; border-radius: 0.5rem; margin-bottom: 1.5rem;
+      --term-bg: var(--sapShell_Background, #0d1117);
+      --term-border: var(--sapShell_BorderColor, #30363d);
+      --term-header: var(--sapShell_InteractiveBackground, #161b22);
+      --term-muted: var(--sapContent_LabelColor, #8b949e);
+      background: var(--term-bg); border-radius: 0.5rem; margin-bottom: 1.5rem;
       overflow: hidden; font-family: 'SFMono-Regular', Consolas, monospace;
       font-size: 0.8rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      border: 1px solid #30363d;
+      border: 1px solid var(--term-border);
     }
     .terminal-header {
-      background: #161b22; padding: 0.5rem 1rem; display: flex;
+      background: var(--term-header); padding: 0.5rem 1rem; display: flex;
       justify-content: space-between; align-items: center;
-      border-bottom: 1px solid #30363d;
+      border-bottom: 1px solid var(--term-border);
     }
-    .terminal-title { color: #8b949e; font-weight: 600; font-size: 0.75rem; }
+    .terminal-title { color: var(--term-muted); font-weight: 600; font-size: 0.75rem; }
     .terminal-status {
       font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 0.2rem;
-      &.state-running { background: #1f3a2e; color: #3fb950; }
-      &.state-completed { background: #0d2818; color: #56d364; }
-      &.state-error { background: #3b1219; color: #f85149; }
-      &.state-idle { background: #21262d; color: #8b949e; }
+      &.state-running { background: #1f3a2e; color: var(--sapPositiveColor, #3fb950); }
+      &.state-completed { background: #0d2818; color: var(--sapPositiveColor, #56d364); }
+      &.state-error { background: #3b1219; color: var(--sapNegativeColor, #f85149); }
+      &.state-idle { background: #21262d; color: var(--term-muted); }
     }
     .terminal-body {
       padding: 0.875rem 1rem; min-height: 120px; max-height: 450px;
@@ -180,25 +184,29 @@ interface LogLine {
     }
     .log-line {
       display: flex; gap: 0.5rem; line-height: 1.5;
-      .log-prefix { color: #30363d; user-select: none; flex-shrink: 0; }
-      &.log-line--info { color: #e6edf3; }
-      &.log-line--success { color: #3fb950; }
-      &.log-line--error { color: #f85149; }
-      &.log-line--warn { color: #d29922; }
-      &.log-line--dim { color: #8b949e; }
+      .log-prefix { color: var(--term-border); user-select: none; flex-shrink: 0; }
+      &.log-line--info { color: var(--sapContent_ContrastTextColor, #e6edf3); }
+      &.log-line--success { color: var(--sapPositiveColor, #3fb950); }
+      &.log-line--error { color: var(--sapNegativeColor, #f85149); }
+      &.log-line--warn { color: var(--sapCriticalColor, #d29922); }
+      &.log-line--dim { color: var(--term-muted); }
     }
     .cursor-blink {
-      color: #3fb950; animation: blink 1s step-end infinite;
+      color: var(--sapPositiveColor, #3fb950); animation: blink 1s step-end infinite;
     }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .cursor-blink { animation: none; }
+      .terminal-body { scroll-behavior: auto; }
+    }
     .terminal-footer {
-      padding: 0.3rem 1rem; background: #161b22; border-top: 1px solid #30363d;
+      padding: 0.3rem 1rem; background: var(--term-header); border-top: 1px solid var(--term-border);
       display: flex; justify-content: space-between; align-items: center;
     }
     .btn-clear {
-      background: transparent; border: 1px solid #30363d; color: #8b949e;
+      background: transparent; border: 1px solid var(--term-border); color: var(--term-muted);
       padding: 0.15rem 0.5rem; border-radius: 0.2rem; cursor: pointer; font-size: 0.7rem;
-      &:hover { background: #21262d; color: #e6edf3; }
+      &:hover { background: var(--term-header); color: var(--sapContent_ContrastTextColor, #e6edf3); }
     }
 
     /* Idle */
@@ -414,7 +422,8 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  clearLogs() {
+  clearLogs(): void {
+    if (this.logLines().length > 0 && !confirm(this.i18n.t('pipeline.confirmClear'))) return;
     this.logLines.set([]);
   }
 

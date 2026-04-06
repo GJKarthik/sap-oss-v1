@@ -103,7 +103,7 @@ Phase 1 production behavior is now enforced by configuration:
 - `JWT_SECRET_KEY` must not use the default value
 - `SEED_REFERENCE_DATA=false`
 - `REQUIRE_MCP_DEPENDENCIES=true`
-- `LANGCHAIN_MCP_URL` and `STREAMING_MCP_URL` must be set to non-local URLs
+- `ELASTICSEARCH_MCP_URL` and `PAL_MCP_URL` must be set to non-local URLs
 
 The Angular container serves static assets through Nginx and injects `runtime-config.js` at startup, so API and MCP endpoints can be changed with environment variables instead of rebuilding the frontend image.
 
@@ -133,8 +133,8 @@ The frontend reads `window.__SAP_CONFIG__` from `runtime-config.js`.
 Supported container environment variables:
 
 - `SAP_API_BASE_URL`
-- `SAP_LANGCHAIN_MCP_URL`
-- `SAP_STREAMING_MCP_URL`
+- `SAP_ELASTICSEARCH_MCP_URL`
+- `SAP_PAL_MCP_URL`
 - `SAP_API_UPSTREAM` for the Nginx reverse proxy target
 
 ## Development

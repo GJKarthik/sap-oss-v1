@@ -12,8 +12,8 @@ FROM nginx:1.27-alpine
 
 ENV SAP_API_BASE_URL=/api/v1 \
     SAP_API_UPSTREAM=http://api:8000 \
-    SAP_LANGCHAIN_MCP_URL= \
-    SAP_STREAMING_MCP_URL=
+    SAP_ELASTICSEARCH_MCP_URL= \
+    SAP_PAL_MCP_URL=
 
 COPY apps/angular-shell/docker/nginx.conf /etc/nginx/templates/default.conf.template
 COPY apps/angular-shell/docker/entrypoint.sh /entrypoint.sh

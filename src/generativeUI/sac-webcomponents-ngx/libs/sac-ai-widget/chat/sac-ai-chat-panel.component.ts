@@ -205,22 +205,22 @@ interface PendingToolConfirmation {
 
       <!-- Input area with proper labeling -->
       <div class="sac-chat-input-row" role="form" [attr.aria-label]="'chat.sendAMessage' | sacTranslate">
-        <label for="sac-chat-input" class="sr-only">
+        <label [for]="inputId" class="sr-only">
           {{ 'chat.typeMessage' | sacTranslate }}
         </label>
         <input
-          id="sac-chat-input"
+          [id]="inputId"
           class="sac-chat-input"
           type="text"
           [placeholder]="placeholder || ('chat.defaultPlaceholder' | sacTranslate)"
           [value]="inputText"
           [disabled]="streaming"
           [attr.aria-disabled]="streaming"
-          aria-describedby="sac-chat-hint"
+          [attr.aria-describedby]="hintId"
           (input)="handleInput($event)"
           (keyup.enter)="send()"
         />
-        <span id="sac-chat-hint" class="sr-only">{{ 'chat.pressEnter' | sacTranslate }}</span>
+        <span [id]="hintId" class="sr-only">{{ 'chat.pressEnter' | sacTranslate }}</span>
         <button
           class="sac-chat-send"
           type="button"
@@ -327,7 +327,7 @@ interface PendingToolConfirmation {
 
     .sac-chat-review__list {
       margin: var(--sac-spacing-xs) 0 0;
-      padding-left: 18px;
+      padding-inline-start: 18px;
     }
 
     .sac-chat-review__args {
@@ -615,6 +615,15 @@ interface PendingToolConfirmation {
       cursor: not-allowed;
     }
 
+    @media (max-width: 320px) {
+      .sac-chat-input-row {
+        flex-direction: column;
+      }
+      .sac-chat-send {
+        width: 100%;
+      }
+    }
+
     /* === High Contrast Mode === */
     @media (forced-colors: active) {
       .sac-chat-message,
@@ -626,6 +635,9 @@ interface PendingToolConfirmation {
   `],
 })
 export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
+  private static nextId = 0;
+  private readonly instanceId = SacAiChatPanelComponent.nextId++;
+
   @Input() placeholder = '';
   @Input() modelId?: string;
 
@@ -648,6 +660,9 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   private session = inject(SacAiSessionService);
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(SacI18nService);
+
+  get inputId(): string { return `sac-chat-input-${this.instanceId}`; }
+  get hintId(): string { return `sac-chat-hint-${this.instanceId}`; }
 
   ngAfterViewChecked(): void {
     // Auto-scroll and announce new messages

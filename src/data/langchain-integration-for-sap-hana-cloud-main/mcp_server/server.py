@@ -12,6 +12,7 @@ import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 from typing import Any
+import re
 import urllib.request
 import urllib.error
 
@@ -26,6 +27,53 @@ except ImportError:
         _kuzu_store_factory = _get_kuzu_store
     except ImportError:
         _kuzu_store_factory = None
+
+# HANA Cloud connection settings (same env vars as deploy/aicore and sap_openai_server)
+HANA_HOST = os.environ.get("HANA_HOST", "")
+HANA_PORT = int(os.environ.get("HANA_PORT", "443"))
+HANA_USER = os.environ.get("HANA_USER", "")
+HANA_PASSWORD = os.environ.get("HANA_PASSWORD", "")
+HANA_SCHEMA = os.environ.get("HANA_SCHEMA", "AINUCLEUS")
+
+_SAFE_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,126}$")
+
+_hana_connection = None
+_hana_lock = None  # initialized lazily after threading import
+
+
+def _sanitize_identifier(name: str) -> str:
+    """Validate and return a safe SQL identifier, or raise ValueError."""
+    name = name.strip()
+    if not _SAFE_IDENTIFIER_RE.match(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
+
+
+def _get_hana_connection():
+    """Lazy singleton HANA connection via hdbcli. Returns None if unavailable."""
+    global _hana_connection, _hana_lock
+    if not HANA_HOST:
+        return None
+    if _hana_connection is not None:
+        return _hana_connection
+    if _hana_lock is None:
+        _hana_lock = threading.Lock()
+    with _hana_lock:
+        if _hana_connection is not None:
+            return _hana_connection
+        try:
+            from hdbcli import dbapi
+            _hana_connection = dbapi.connect(
+                address=HANA_HOST,
+                port=HANA_PORT,
+                user=HANA_USER,
+                password=HANA_PASSWORD,
+                encrypt=True,
+            )
+            return _hana_connection
+        except Exception:
+            return None
+
 
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
@@ -642,6 +690,22 @@ class MCPServer:
             return {"content": result.get("content", [{}])[0].get("text", ""), "model": deployment["id"]}
         return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/chat/completions", {"messages": messages, "max_tokens": max_tokens})
 
+    def _embed_texts(self, texts: list) -> list | None:
+        """Embed texts via AI Core. Returns list of float vectors, or None on failure."""
+        config = get_config()
+        if not config_ready(config):
+            return None
+        deployments = aicore_request(config, "GET", "/v2/lm/deployments")
+        resources = deployments.get("resources", [])
+        deployment = next((d for d in resources if "embed" in str(d.get("details", {})).lower()), resources[0] if resources else None)
+        if not deployment:
+            return None
+        result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/embeddings", {"input": texts})
+        data = result.get("data")
+        if not isinstance(data, list):
+            return None
+        return [item.get("embedding", []) for item in data if isinstance(item, dict)]
+
     def _handle_langchain_vector_store(self, args: dict) -> dict:
         table_name = str(args.get("table_name", "") or "").strip()
         if table_name == "":
@@ -653,6 +717,7 @@ class MCPServer:
         else:
             self.facts["vector_stores"].append({"table_name": table_name, "embedding_model": embedding_model, "documents_added": 0})
 
+        # L1 — try federation
         probe = self._federated_mcp_call(
             "mangle_query",
             {"predicate": "service_available", "args": "[]"},
@@ -666,6 +731,32 @@ class MCPServer:
                 "backend": "federated",
                 "source": probe["source"],
             }
+
+        # L2 — try direct HANA connection
+        conn = _get_hana_connection()
+        if conn is not None:
+            try:
+                schema = _sanitize_identifier(HANA_SCHEMA)
+                safe_table = _sanitize_identifier(table_name)
+                cur = conn.cursor()
+                try:
+                    cur.execute(f'SELECT COUNT(*) FROM "{schema}"."{safe_table}"')
+                    row_count = cur.fetchone()[0]
+                finally:
+                    cur.close()
+                return {
+                    "table_name": table_name,
+                    "embedding_model": embedding_model,
+                    "status": "created/retrieved",
+                    "backend": "hana",
+                    "row_count": row_count,
+                }
+            except ValueError as e:
+                return {"error": str(e)}
+            except Exception:
+                pass  # fall through to local stub
+
+        # L3 — local stub
         return {"table_name": table_name, "embedding_model": embedding_model, "status": "created/retrieved", "backend": "local"}
 
     def _handle_langchain_add_documents(self, args: dict) -> dict:
@@ -679,6 +770,8 @@ class MCPServer:
         total_documents = len(docs)
         documents_added = min(total_documents, MAX_DOCS_PER_CALL)
         docs = docs[:documents_added]
+
+        # L1 — try federation
         delegation = self._federated_mcp_call(
             "hana_vector_add",
             {"table_name": table_name, "documents": json.dumps(docs)},
@@ -694,6 +787,43 @@ class MCPServer:
                 "result": delegation["result"],
             }
 
+        # L2 — try direct HANA connection
+        conn = _get_hana_connection()
+        if conn is not None and documents_added > 0:
+            try:
+                schema = _sanitize_identifier(HANA_SCHEMA)
+                safe_table = _sanitize_identifier(table_name)
+                texts = [str(d.get("content", d) if isinstance(d, dict) else d) for d in docs]
+                metadatas = [json.dumps(d.get("metadata", {})) if isinstance(d, dict) else "{}" for d in docs]
+                embeddings = self._embed_texts(texts)
+                if embeddings and len(embeddings) == len(texts):
+                    sql = (
+                        f'INSERT INTO "{schema}"."{safe_table}" '
+                        f'("VEC_TEXT", "VEC_META", "VEC_VECTOR") '
+                        f'VALUES (?, ?, TO_REAL_VECTOR(?))'
+                    )
+                    cur = conn.cursor()
+                    try:
+                        for i in range(len(texts)):
+                            cur.execute(sql, (texts[i], metadatas[i], str(embeddings[i])))
+                    finally:
+                        cur.close()
+                    for store in self.facts.get("vector_stores", []):
+                        if store.get("table_name") == table_name:
+                            store["documents_added"] = int(store.get("documents_added", 0)) + documents_added
+                            break
+                    return {
+                        "table_name": table_name,
+                        "documents_added": documents_added,
+                        "truncated": total_documents > documents_added,
+                        "status": "hana",
+                    }
+            except ValueError as e:
+                return {"error": str(e)}
+            except Exception:
+                pass  # fall through to local stub
+
+        # L3 — local stub
         for store in self.facts.get("vector_stores", []):
             if store.get("table_name") == table_name:
                 store["documents_added"] = int(store.get("documents_added", 0)) + documents_added
@@ -711,6 +841,8 @@ class MCPServer:
         query = str(args.get("query", "") or "")
         if table_name == "" or query.strip() == "":
             return {"error": "table_name and query are required"}
+
+        # L1 — try federation
         delegation = self._federated_mcp_call(
             "hana_vector_search",
             {"table_name": table_name, "query": query, "top_k": k},
@@ -726,6 +858,51 @@ class MCPServer:
                 "source": delegation["source"],
                 "result": remote_result,
             }
+
+        # L2 — try direct HANA connection
+        conn = _get_hana_connection()
+        if conn is not None:
+            try:
+                schema = _sanitize_identifier(HANA_SCHEMA)
+                safe_table = _sanitize_identifier(table_name)
+                embeddings = self._embed_texts([query])
+                if embeddings and len(embeddings) > 0:
+                    query_vec = str(embeddings[0])
+                    sql = (
+                        f'SELECT TOP {int(k)} '
+                        f'"VEC_TEXT", "VEC_META", '
+                        f'COSINE_SIMILARITY("VEC_VECTOR", TO_REAL_VECTOR(?)) AS "SCORE" '
+                        f'FROM "{schema}"."{safe_table}" '
+                        f'ORDER BY "SCORE" DESC'
+                    )
+                    cur = conn.cursor()
+                    try:
+                        cur.execute(sql, (query_vec,))
+                        rows = cur.fetchall()
+                    finally:
+                        cur.close()
+                    results = []
+                    for row in rows:
+                        meta = {}
+                        if row[1]:
+                            try:
+                                meta = json.loads(row[1])
+                            except (json.JSONDecodeError, TypeError):
+                                pass
+                        results.append({"content": row[0], "metadata": meta, "score": float(row[2])})
+                    return {
+                        "table_name": table_name,
+                        "query": query,
+                        "k": k,
+                        "results": results,
+                        "status": "hana",
+                    }
+            except ValueError as e:
+                return {"error": str(e)}
+            except Exception:
+                pass  # fall through to degraded
+
+        # L3 — degraded stub
         return {"table_name": table_name, "query": query, "k": k, "results": [], "status": "degraded-no-remote"}
 
     def _handle_langchain_rag_chain(self, args: dict) -> dict:
@@ -759,13 +936,37 @@ class MCPServer:
             fallback_context = search_result.get("result", search_result.get("results", []))
             if not isinstance(fallback_context, list):
                 fallback_context = []
-            base = {
-                "query": query,
-                "table_name": table_name,
-                "context_docs": fallback_context,
-                "answer": "Federated RAG backend unavailable; returning retrieval-only fallback.",
-                "status": "degraded-fallback",
-            }
+            search_status = search_result.get("status", "degraded-no-remote")
+
+            # If we got real results (from HANA or federation), generate an answer via chat
+            if fallback_context and search_status in ("hana", "federated"):
+                context_text = "\n\n".join(
+                    doc.get("content", "") if isinstance(doc, dict) else str(doc)
+                    for doc in fallback_context
+                )
+                chat_result = self._handle_langchain_chat({
+                    "messages": json.dumps([
+                        {"role": "system", "content": f"Answer the user's question using ONLY the following context documents. If the context does not contain the answer, say so.\n\n{context_text}"},
+                        {"role": "user", "content": query},
+                    ]),
+                    "max_tokens": MAX_TOOL_TOKENS,
+                })
+                answer = chat_result.get("content", chat_result.get("choices", [{}])[0].get("message", {}).get("content", "")) if not chat_result.get("error") else f"Retrieval succeeded but chat failed: {chat_result.get('error')}"
+                base = {
+                    "query": query,
+                    "table_name": table_name,
+                    "context_docs": fallback_context,
+                    "answer": answer,
+                    "status": f"rag-{search_status}",
+                }
+            else:
+                base = {
+                    "query": query,
+                    "table_name": table_name,
+                    "context_docs": fallback_context,
+                    "answer": "No retrieval backend available; returning empty context.",
+                    "status": "degraded-fallback",
+                }
 
         # L4 — attach graph context from KùzuDB when available
         if _kuzu_store_factory is not None:

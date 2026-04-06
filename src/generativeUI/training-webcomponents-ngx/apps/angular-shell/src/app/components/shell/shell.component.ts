@@ -90,7 +90,6 @@ type ProductSelectEvent = Event & {
           <ui5-shellbar-item
             [attr.icon]="item.icon"
             [attr.text]="item.label"
-            count=""
             (item-click)="navigateTo(item.route)"
           ></ui5-shellbar-item>
         }
@@ -128,10 +127,10 @@ type ProductSelectEvent = Event & {
         <div class="app-nav__spacer"></div>
 
         <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
-        <span class="model-status-indicator" [class.model-online]="arabicModelOnline()" [class.model-offline]="!arabicModelOnline()" [title]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ arabicModelOnline() ? '🟢' : '🔴' }} {{ i18n.t('chat.arabicFinanceModel') }}</span>
+        <span class="model-status-indicator" [class.model-online]="arabicModelOnline()" [class.model-offline]="!arabicModelOnline()" [title]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')" role="status"><span class="model-status-dot" aria-hidden="true"></span> {{ i18n.t('chat.arabicFinanceModel') }}</span>
         
         @if (userSettings.showLanguageOptions()) {
-          <select class="mode-select" [ngModel]="i18n.currentLang()" (ngModelChange)="i18n.setLanguage($event)">
+          <select class="mode-select" [ngModel]="i18n.currentLang()" (ngModelChange)="i18n.setLanguage($event)" [attr.aria-label]="i18n.t('app.languageSelect')">
             <option value="en">English</option>
             <option value="ar">العربية (Arabic)</option>
           </select>
@@ -140,7 +139,7 @@ type ProductSelectEvent = Event & {
         <button class="header-btn" (click)="showDiagnostics.set(!showDiagnostics())" [title]="i18n.t('app.diagnostics')">
           {{ i18n.t('app.diagnostics') }}
         </button>
-        <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)">
+        <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)" [attr.aria-label]="i18n.t('app.modeSelect')">
           <option value="novice">{{ i18n.t('mode.novice') }}</option>
           <option value="intermediate">{{ i18n.t('mode.intermediate') }}</option>
           <option value="expert">{{ i18n.t('mode.expert') }}</option>
@@ -258,7 +257,7 @@ type ProductSelectEvent = Event & {
       }
 
       .header-btn {
-        background: #fff;
+        background: var(--sapBaseColor, #fff);
         border: 1px solid var(--sapField_BorderColor, #89919a);
         color: var(--sapTextColor, #32363a);
         padding: 0.25rem 0.75rem;
@@ -277,7 +276,7 @@ type ProductSelectEvent = Event & {
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 1rem;
-        background: #fff;
+        background: var(--sapBaseColor, #fff);
         border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
       }
 
@@ -306,7 +305,7 @@ type ProductSelectEvent = Event & {
       }
 
       .mode-select {
-        background: #fff;
+        background: var(--sapField_Background, #fff);
         color: var(--sapTextColor, #32363a);
         border: 1px solid var(--sapField_BorderColor, #89919a);
         border-radius: 0.25rem;
@@ -316,7 +315,7 @@ type ProductSelectEvent = Event & {
         cursor: pointer;
 
         option {
-          background: #fff;
+          background: var(--sapField_Background, #fff);
           color: var(--sapTextColor, #32363a);
         }
       }
@@ -328,7 +327,7 @@ type ProductSelectEvent = Event & {
 
       .diagnostics-drawer {
         border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-        background: #fff;
+        background: var(--sapBaseColor, #fff);
         padding: 0.75rem 1rem;
       }
 
@@ -381,10 +380,28 @@ type ProductSelectEvent = Event & {
       .model-online {
         color: var(--sapPositiveColor, #107e3e);
       }
+      .model-online .model-status-dot::before {
+        content: '';
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--sapPositiveColor, #107e3e);
+        margin-inline-end: 4px;
+        vertical-align: middle;
+      }
 
       .model-offline {
         color: var(--sapNegativeColor, #b00);
         opacity: 0.8;
+      }
+      .model-offline .model-status-dot::before {
+        content: '';
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--sapNegativeColor, #b00);
+        margin-inline-end: 4px;
+        vertical-align: middle;
       }
 
       .lang-toggle {

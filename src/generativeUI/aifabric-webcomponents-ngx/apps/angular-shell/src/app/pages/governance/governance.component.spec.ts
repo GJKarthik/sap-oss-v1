@@ -36,13 +36,20 @@ describe('GovernanceComponent', () => {
   }
 
   afterEach(() => {
+    httpMock?.match('assets/i18n/en.json').forEach(request => request.flush({}));
     httpMock?.verify();
     TestBed.resetTestingModule();
   });
 
+  function flushI18n(): void {
+    const requests = httpMock.match('assets/i18n/en.json');
+    requests.forEach(request => request.flush({}));
+  }
+
   it('hides mutating controls for viewer sessions', async () => {
     await setup('viewer');
     fixture.detectChanges();
+    flushI18n();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/governance`).flush({
       rules: [
@@ -62,6 +69,7 @@ describe('GovernanceComponent', () => {
   it('shows mutating controls for admin sessions', async () => {
     await setup('admin');
     fixture.detectChanges();
+    flushI18n();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/governance`).flush({
       rules: [
@@ -80,6 +88,7 @@ describe('GovernanceComponent', () => {
   it('opens the creation form for admin sessions', async () => {
     await setup('admin');
     fixture.detectChanges();
+    flushI18n();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/governance`).flush({
       rules: [],

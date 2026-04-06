@@ -199,11 +199,11 @@ async def dashboard_stats(
     active_rules = sum(1 for r in store.list_records("governance_rules") if r.get("active", True))
     total_users = store.count("users")
 
-    langchain_url = settings.langchain_mcp_url.replace("/mcp", "/health")
-    streaming_url = settings.streaming_mcp_url.replace("/mcp", "/health")
+    elasticsearch_url = settings.elasticsearch_mcp_url.replace("/mcp", "/health")
+    pal_url = settings.pal_mcp_url.replace("/mcp", "/health")
     services = await asyncio.gather(
-        _probe_service("langchain-hana-mcp", langchain_url),
-        _probe_service("ai-core-streaming-mcp", streaming_url),
+        _probe_service("elasticsearch-mcp", elasticsearch_url),
+        _probe_service("ai-core-pal-mcp", pal_url),
     )
 
     return DashboardStats(
@@ -220,11 +220,11 @@ async def dashboard_stats(
 @router.get("/services", response_model=List[ServiceMetrics])
 async def service_health(_: UserInfo = Depends(get_current_user)):
     """Probe all backend service health endpoints."""
-    langchain_url = settings.langchain_mcp_url.replace("/mcp", "/health")
-    streaming_url = settings.streaming_mcp_url.replace("/mcp", "/health")
+    elasticsearch_url = settings.elasticsearch_mcp_url.replace("/mcp", "/health")
+    pal_url = settings.pal_mcp_url.replace("/mcp", "/health")
     results = await asyncio.gather(
-        _probe_service("langchain-hana-mcp", langchain_url),
-        _probe_service("ai-core-streaming-mcp", streaming_url),
+        _probe_service("elasticsearch-mcp", elasticsearch_url),
+        _probe_service("ai-core-pal-mcp", pal_url),
     )
     return list(results)
 
@@ -238,8 +238,8 @@ async def operations_dashboard(
     auth_snapshot = auth_metrics_snapshot(settings.alert_window_seconds)
     store_health = store.health_snapshot()
     service_health_snapshot = await asyncio.gather(
-        probe_health("langchain-hana-mcp", settings.langchain_mcp_url, settings.mcp_healthcheck_timeout_seconds),
-        probe_health("ai-core-streaming-mcp", settings.streaming_mcp_url, settings.mcp_healthcheck_timeout_seconds),
+        probe_health("elasticsearch-mcp", settings.elasticsearch_mcp_url, settings.mcp_healthcheck_timeout_seconds),
+        probe_health("ai-core-pal-mcp", settings.pal_mcp_url, settings.mcp_healthcheck_timeout_seconds),
     )
     mcp_snapshot = mcp_metrics_snapshot(settings.alert_window_seconds)
     alerts = _build_alerts(auth_snapshot, mcp_snapshot, store_health, list(service_health_snapshot))

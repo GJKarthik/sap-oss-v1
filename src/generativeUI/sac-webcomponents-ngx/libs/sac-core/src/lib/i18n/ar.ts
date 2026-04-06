@@ -66,6 +66,8 @@ export const SAC_I18N_AR: Record<string, string> = {
   'dataWidget.dimension': 'البُعد',
   'dataWidget.all': 'الكل',
   'dataWidget.rangeLabel': 'نطاق {{label}}',
+  'dataWidget.from': 'من',
+  'dataWidget.to': 'إلى',
 
   // ── Filter ──────────────────────────────────────────────────────────
   'filter.defaultLabel': 'تصفية',

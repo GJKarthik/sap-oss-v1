@@ -68,6 +68,12 @@ export class CollabDemoComponent implements OnInit, OnDestroy {
     this.addLog('Left room');
   }
 
+  confirmLeaveRoom(): void {
+    if (confirm('Leave the collaboration room? You will be disconnected from all participants.')) {
+      this.leaveRoom();
+    }
+  }
+
   broadcastCursor(event: MouseEvent): void {
     if (this.connectionState !== 'connected') return;
     this.collab.broadcastCursor(event.offsetX, event.offsetY);

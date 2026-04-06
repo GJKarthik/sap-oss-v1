@@ -9,9 +9,14 @@
     <div
       class="upload-area"
       [class.drag-over]="isDragOver()"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="i18n.t('ocr.upload.dropzoneLabel')"
       (dragover)="onDragOver($event)"
       (dragleave)="onDragLeave($event)"
       (drop)="onDrop($event)"
+      (keydown.enter)="fileInput.click()"
+      (keydown.space)="fileInput.click(); $event.preventDefault()"
     >
       @if (isProcessing()) {
         <div class="processing">
@@ -27,7 +32,7 @@
           <p class="upload-hint">{{ i18n.t('ocr.upload.hint') }}</p>
           <label class="upload-btn">
             {{ i18n.t('ocr.upload.browse') }}
-            <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
+            <input #fileInput type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
           </label>
         </div>
       }

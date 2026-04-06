@@ -2,9 +2,9 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../services/auth.service';
-import { McpService, StreamSession } from '../../services/mcp.service';
+import { forkJoin } from 'rxjs';
 import { EmptyStateComponent } from '../../shared';
+import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../services/mcp.service';
 
 @Component({
   selector: 'app-streaming',
@@ -13,155 +13,153 @@ import { EmptyStateComponent } from '../../shared';
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Streaming Sessions</ui5-title>
-        <ui5-button 
-          slot="endContent" 
-          icon="refresh" 
-          (click)="refresh()" 
-          [disabled]="loading"
-          aria-label="Refresh streaming sessions">
+        <ui5-title slot="startContent" level="H3">Search Operations</ui5-title>
+        <ui5-button
+          slot="endContent"
+          icon="refresh"
+          (click)="refresh()"
+          [disabled]="loading">
           {{ loading ? 'Loading...' : 'Refresh' }}
         </ui5-button>
       </ui5-bar>
-      <div class="streaming-content" role="region" aria-label="Streaming sessions management">
-        <!-- Loading indicator -->
-        <div class="loading-container" *ngIf="loading" role="status" aria-live="polite">
-          <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-          <span class="loading-text">Loading streaming sessions...</span>
-        </div>
 
-        <ui5-message-strip 
-          *ngIf="error" 
-          design="Negative" 
+      <div class="operations-content">
+        <ui5-message-strip
+          *ngIf="error"
+          design="Negative"
           [hideCloseButton]="false"
-          (close)="error = ''"
-          role="alert">
+          (close)="error = ''">
           {{ error }}
         </ui5-message-strip>
-        <ui5-message-strip 
-          *ngIf="success" 
-          design="Positive" 
-          [hideCloseButton]="false"
-          (close)="success = ''"
-          role="status">
-          {{ success }}
-        </ui5-message-strip>
-        <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true">
-          Viewer mode: stream control actions are disabled.
-        </ui5-message-strip>
 
-        <ui5-card [class.card-loading]="loading">
-          <ui5-card-header 
-            slot="header" 
-            title-text="Active Streams" 
-            subtitle-text="Real-time AI streaming sessions"
-            [additionalText]="streams.length + ''">
-          </ui5-card-header>
-          <ui5-table 
-            *ngIf="streams.length > 0" 
-            aria-label="Active streaming sessions"
-            [class.table-loading]="stopping">
-            <ui5-table-header-cell><span>Stream ID</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Deployment</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Actions</span></ui5-table-header-cell>
-            <ui5-table-row *ngFor="let stream of streams; trackBy: trackByStreamId">
-              <ui5-table-cell>
-                <code class="stream-id">{{ stream.stream_id }}</code>
-              </ui5-table-cell>
-              <ui5-table-cell>{{ stream.deployment_id }}</ui5-table-cell>
-              <ui5-table-cell>
-                <ui5-tag [design]="getStatusDesign(stream.status)">{{ stream.status }}</ui5-tag>
-              </ui5-table-cell>
-              <ui5-table-cell>
-                <ui5-button 
-                  *ngIf="canManage" 
-                  design="Negative" 
-                  icon="stop" 
-                  (click)="stopStream(stream.stream_id)"
-                  [disabled]="stopping"
-                  [attr.aria-label]="'Stop stream ' + stream.stream_id">
-                  {{ stopping ? 'Stopping...' : 'Stop' }}
-                </ui5-button>
-                <span *ngIf="!canManage" class="read-only-label">Read only</span>
-              </ui5-table-cell>
-            </ui5-table-row>
-          </ui5-table>
+        <div class="grid">
+          <ui5-card>
+            <ui5-card-header
+              slot="header"
+              title-text="Elasticsearch Cluster"
+              subtitle-text="Live cluster health and shard state">
+            </ui5-card-header>
+            <div class="card-content" *ngIf="clusterHealth; else clusterEmpty">
+              <div class="metric-row">
+                <span>Status</span>
+                <ui5-tag [design]="clusterTagDesign(clusterHealth.status)">
+                  {{ clusterHealth.status || 'unknown' }}
+                </ui5-tag>
+              </div>
+              <div class="metric-row">
+                <span>Cluster Name</span>
+                <strong>{{ clusterHealth.cluster_name || 'n/a' }}</strong>
+              </div>
+              <div class="metric-row">
+                <span>Nodes</span>
+                <strong>{{ clusterHealth.number_of_nodes ?? 'n/a' }}</strong>
+              </div>
+              <div class="metric-row">
+                <span>Active Shards</span>
+                <strong>{{ clusterHealth.active_shards ?? 'n/a' }}</strong>
+              </div>
+            </div>
+            <ng-template #clusterEmpty>
+              <app-empty-state
+                icon="search"
+                title="Cluster state unavailable"
+                description="Refresh the page after the Elasticsearch MCP service becomes reachable.">
+              </app-empty-state>
+            </ng-template>
+          </ui5-card>
 
-          <app-empty-state
-            *ngIf="!loading && streams.length === 0"
-            icon="play"
-            title="No Active Streams"
-            description="There are no active streaming sessions at this time. Streams are created when AI models are accessed through the streaming API.">
-          </app-empty-state>
-        </ui5-card>
+          <ui5-card>
+            <ui5-card-header
+              slot="header"
+              title-text="Registered Knowledge Bases"
+              subtitle-text="Search indices tracked by the console"
+              [additionalText]="vectorStores.length + ''">
+            </ui5-card-header>
+            <ui5-table *ngIf="vectorStores.length > 0; else emptyStores">
+              <ui5-table-header-cell><span>Knowledge Base</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>Embedding Model</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>Documents</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
+
+              <ui5-table-row *ngFor="let store of vectorStores; trackBy: trackByStore">
+                <ui5-table-cell>{{ store.table_name }}</ui5-table-cell>
+                <ui5-table-cell>{{ store.embedding_model }}</ui5-table-cell>
+                <ui5-table-cell>{{ store.documents_added }}</ui5-table-cell>
+                <ui5-table-cell>
+                  <ui5-tag [design]="store.status === 'active' ? 'Positive' : 'Neutral'">
+                    {{ store.status || 'unknown' }}
+                  </ui5-tag>
+                </ui5-table-cell>
+              </ui5-table-row>
+            </ui5-table>
+
+            <ng-template #emptyStores>
+              <app-empty-state
+                icon="database"
+                title="No knowledge bases registered"
+                description="Create a knowledge base in Search Studio to begin indexing documents.">
+              </app-empty-state>
+            </ng-template>
+          </ui5-card>
+        </div>
       </div>
     </ui5-page>
   `,
   styles: [`
-    .streaming-content { 
-      padding: 1rem; 
-      max-width: 1200px;
+    .operations-content {
+      padding: 1rem;
+      max-width: 1400px;
       margin: 0 auto;
-    }
-    
-    .loading-container {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      flex-direction: column;
       gap: 1rem;
     }
 
-    .loading-text {
-      color: var(--sapContent_LabelColor);
-    }
-    
-    ui5-message-strip { 
-      margin-bottom: 1rem; 
-    }
-    
-    .card-loading {
-      opacity: 0.6;
-      pointer-events: none;
+    .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     }
 
-    .table-loading {
-      opacity: 0.6;
-      pointer-events: none;
+    .card-content {
+      padding: 1rem;
+      display: grid;
+      gap: 0.75rem;
     }
 
-    .stream-id {
-      font-family: monospace;
-      font-size: var(--sapFontSmallSize);
-      background: var(--sapList_Background);
-      padding: 0.125rem 0.375rem;
-      border-radius: 4px;
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--sapList_BorderColor);
     }
-    
-    .read-only-label { 
-      color: var(--sapContent_LabelColor); 
-      font-size: var(--sapFontSmallSize); 
+
+    .metric-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    ui5-message-strip {
+      margin-bottom: 0.25rem;
     }
 
     @media (max-width: 768px) {
-      .streaming-content {
+      .operations-content {
         padding: 0.75rem;
       }
     }
-  `]
+  `],
 })
 export class StreamingComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly authService = inject(AuthService);
 
-  streams: StreamSession[] = [];
+  vectorStores: VectorStore[] = [];
+  clusterHealth: ElasticsearchClusterHealth | null = null;
   loading = false;
-  stopping = false;
   error = '';
-  success = '';
-  readonly canManage = this.authService.getUser()?.role === 'admin';
 
   ngOnInit(): void {
     this.refresh();
@@ -170,56 +168,38 @@ export class StreamingComponent implements OnInit {
   refresh(): void {
     this.loading = true;
     this.error = '';
-    this.mcpService.fetchStreams()
+    forkJoin({
+      clusterHealth: this.mcpService.getElasticsearchClusterHealth(),
+      vectorStores: this.mcpService.fetchVectorStores(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: streams => { 
-          this.streams = streams; 
-          this.loading = false; 
+        next: ({ clusterHealth, vectorStores }) => {
+          this.clusterHealth = clusterHealth;
+          this.vectorStores = vectorStores;
+          this.loading = false;
         },
-        error: () => { 
-          this.error = 'Failed to load streaming sessions.'; 
-          this.loading = false; 
-        }
+        error: () => {
+          this.error = 'Failed to load search operations data.';
+          this.loading = false;
+        },
       });
   }
 
-  stopStream(id: string): void {
-    if (!this.canManage) {
-      return;
-    }
-    this.stopping = true;
-    this.error = '';
-    this.success = '';
-    this.mcpService.stopStream(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.success = `Stream "${id}" has been stopped.`;
-          this.stopping = false;
-          this.refresh();
-        },
-        error: () => { 
-          this.error = `Failed to stop stream "${id}".`; 
-          this.stopping = false;
-        }
-      });
+  trackByStore(index: number, store: VectorStore): string {
+    return `${store.table_name}-${index}`;
   }
 
-  trackByStreamId(index: number, stream: StreamSession): string {
-    return stream.stream_id;
-  }
-
-  getStatusDesign(status: string): 'Positive' | 'Critical' | 'Negative' | 'Neutral' {
-    const normalizedStatus = status.toLowerCase();
-    if (normalizedStatus === 'active' || normalizedStatus === 'running') {
+  clusterTagDesign(status: string | undefined): 'Positive' | 'Critical' | 'Negative' | 'Neutral' {
+    const normalized = (status || '').toLowerCase();
+    if (normalized === 'green' || normalized === 'healthy') {
       return 'Positive';
     }
-    if (normalizedStatus === 'error' || normalizedStatus === 'failed') {
-      return 'Negative';
-    }
-    if (normalizedStatus === 'stopping' || normalizedStatus === 'pending') {
+    if (normalized === 'yellow' || normalized === 'degraded') {
       return 'Critical';
+    }
+    if (normalized === 'red' || normalized === 'error') {
+      return 'Negative';
     }
     return 'Neutral';
   }

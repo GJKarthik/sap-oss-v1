@@ -23,7 +23,7 @@
 }
 
 .home-hero__subtitle {
-  font-size: 1.0625rem;
+  font-size: var(--sapFontSize, 0.875rem);
   color: var(--sapContent_LabelColor, #6a6d70);
   margin: 0;
   line-height: 1.5;
@@ -34,7 +34,7 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
   width: 100%;
-  max-width: 860px;
+  max-width: min(1200px, 90vw);
   margin-bottom: 2rem;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .home-info {
-  max-width: 860px;
+  max-width: min(1200px, 90vw);
   width: 100%;
 }
 

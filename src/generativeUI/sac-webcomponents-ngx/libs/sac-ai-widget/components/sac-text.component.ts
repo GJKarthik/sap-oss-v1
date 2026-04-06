@@ -54,12 +54,12 @@ import { estimateTextHeight } from '../services/sac-text-layout.service';
       color: var(--sapTextColor, #32363a);
       font-family: var(--sapFontFamily, 'SAP 72', Arial, sans-serif);
     }
-    .sac-heading--1 { font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 16px; }
-    .sac-heading--2 { font-size: 24px; font-weight: 600; line-height: 1.3; margin-bottom: 8px; }
-    .sac-heading--3 { font-size: 20px; font-weight: 600; line-height: 1.35; margin-bottom: 8px; }
-    .sac-heading--4 { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
-    .sac-heading--5 { font-size: 16px; font-weight: 600; line-height: 1.45; margin-bottom: 8px; }
-    .sac-heading--6 { font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 8px; }
+    .sac-heading--1 { font-size: var(--sapFontHeader1Size, 32px); font-weight: 700; line-height: 1.25; margin-bottom: 16px; }
+    .sac-heading--2 { font-size: var(--sapFontHeader2Size, 24px); font-weight: 600; line-height: 1.3; margin-bottom: 8px; }
+    .sac-heading--3 { font-size: var(--sapFontHeader3Size, 20px); font-weight: 600; line-height: 1.35; margin-bottom: 8px; }
+    .sac-heading--4 { font-size: var(--sapFontHeader4Size, 16px); font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
+    .sac-heading--5 { font-size: var(--sapFontHeader5Size, 16px); font-weight: 600; line-height: 1.45; margin-bottom: 8px; }
+    .sac-heading--6 { font-size: var(--sapFontHeader6Size, 14px); font-weight: 600; line-height: 1.5; margin-bottom: 8px; }
   `],
 })
 export class SacHeadingComponent {
@@ -135,7 +135,7 @@ export class SacHeadingComponent {
       outline-offset: 2px;
     }
     .sac-text-block__content ul, .sac-text-block__content ol {
-      margin: 8px 0; padding-left: 24px;
+      margin: 8px 0; padding-inline-start: 24px;
     }
     .sac-text-block__content li { margin: 4px 0; }
     .sac-text-block__content code {

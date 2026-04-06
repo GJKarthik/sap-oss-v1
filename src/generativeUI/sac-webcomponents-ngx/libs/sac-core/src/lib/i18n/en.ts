@@ -66,6 +66,8 @@ export const SAC_I18N_EN: Record<string, string> = {
   'dataWidget.dimension': 'Dimension',
   'dataWidget.all': 'All',
   'dataWidget.rangeLabel': '{{label}} range',
+  'dataWidget.from': 'From',
+  'dataWidget.to': 'To',
 
   // ── Filter ──────────────────────────────────────────────────────────
   'filter.defaultLabel': 'Filter',

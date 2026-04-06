@@ -1,21 +1,21 @@
 """
 RAG (Retrieval-Augmented Generation) routes for SAP AI Fabric Console.
 Vector store registry persisted via the configured shared store backend.
-Document indexing and similarity search backed by HANA Cloud Vector Engine via hdbcli.
+Document indexing and similarity search backed by Elasticsearch MCP with AI Core embeddings.
 """
 
 import json
-import uuid
 from dataclasses import asdict
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from ..config import settings
 from ..models import VectorStore as VectorStoreDC
 from ..routes.auth import UserInfo, get_current_user, log_admin_action, require_admin
+from ..routes import mcp_proxy
 from ..store import StoreBackend, get_store
 
 router = APIRouter()
@@ -71,97 +71,93 @@ class SimilaritySearchRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# HANA Vector Engine helpers
+# Elasticsearch MCP helpers
 # ---------------------------------------------------------------------------
 
-def _quote_identifier(identifier: str) -> str:
-    return '"' + identifier.replace('"', '""') + '"'
+def _correlation_id(scope: str, table_name: str, offset: int = 0) -> str:
+    return f"rag-{scope}-{table_name}-{offset}"
 
 
-def _hana_connection():
-    """Return a synchronous hdbcli connection using settings."""
-    import hdbcli.dbapi as hdbcli  # type: ignore
-    return hdbcli.connect(
-        address=settings.hana_host,
-        port=settings.hana_port,
-        user=settings.hana_user,
-        password=settings.hana_password,
-        encrypt=settings.hana_encrypt,
-    )
-
-
-def _ensure_vector_table(table_name: str, embedding_dim: int = 1536) -> None:
-    """Create the HANA vector table if it does not already exist."""
-    safe_table = _quote_identifier(table_name)
-    conn = _hana_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {safe_table} (
-                "ID"        NVARCHAR(100) PRIMARY KEY,
-                "CONTENT"   NCLOB,
-                "METADATA"  NCLOB,
-                "EMBEDDING" REAL_VECTOR({embedding_dim})
-            )
-            """
+def _normalize_es_hits(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    hits = payload.get("hits", {}).get("hits", []) if isinstance(payload, dict) else []
+    normalized: list[dict[str, Any]] = []
+    for hit in hits:
+        source = hit.get("_source", {}) if isinstance(hit, dict) else {}
+        metadata = source.get("metadata", {})
+        normalized.append(
+            {
+                "id": hit.get("_id"),
+                "content": source.get("content", ""),
+                "metadata": metadata if isinstance(metadata, dict) else {},
+                "score": float(hit.get("_score") or 0.0),
+            }
         )
-        conn.commit()
-    finally:
-        conn.close()
+    return normalized
 
 
-def _insert_documents(
+async def _index_documents_es(
     table_name: str,
     documents: List[str],
     metadatas: Optional[List[Dict[str, Any]]],
-) -> int:
-    """Insert text documents into the HANA vector table with placeholder embeddings."""
-    safe_table = _quote_identifier(table_name)
-    conn = _hana_connection()
-    try:
-        cursor = conn.cursor()
-        count = 0
-        for i, doc in enumerate(documents):
-            meta = json.dumps(metadatas[i] if metadatas and i < len(metadatas) else {})
-            zero_vec = "[" + ",".join(["0.0"] * 1536) + "]"
-            cursor.execute(
-                f"""
-                INSERT INTO {safe_table} ("ID", "CONTENT", "METADATA", "EMBEDDING")
-                VALUES (?, ?, ?, TO_REAL_VECTOR(?))
-                """,
-                (str(uuid.uuid4()), doc, meta, zero_vec),
+) -> tuple[int, list[str]]:
+    count = 0
+    errors: list[str] = []
+    for index, doc in enumerate(documents):
+        metadata = metadatas[index] if metadatas and index < len(metadatas) else {}
+        try:
+            embedding_result = await mcp_proxy.call_tool(
+                mcp_proxy.settings.elasticsearch_mcp_url,
+                "generate_embedding",
+                {"text": doc},
+                _correlation_id("embed", table_name, index),
             )
+            if isinstance(embedding_result, dict) and embedding_result.get("error"):
+                raise RuntimeError(str(embedding_result["error"]))
+            embedding = embedding_result.get("data", [{}])[0].get("embedding", []) if isinstance(embedding_result, dict) else []
+            if not isinstance(embedding, list) or not embedding:
+                raise RuntimeError("Embedding payload was empty")
+
+            index_payload = {
+                "content": doc,
+                "metadata": metadata,
+                "embedding": embedding,
+                "indexed_at": datetime.now(timezone.utc).isoformat(),
+            }
+            index_result = await mcp_proxy.call_tool(
+                mcp_proxy.settings.elasticsearch_mcp_url,
+                "es_index",
+                {
+                    "index": table_name,
+                    "document": json.dumps(index_payload),
+                },
+                _correlation_id("index", table_name, index),
+            )
+            if isinstance(index_result, dict) and index_result.get("error"):
+                raise RuntimeError(str(index_result["error"]))
             count += 1
-        conn.commit()
-        return count
-    finally:
-        conn.close()
+        except Exception as exc:
+            errors.append(f"document {index + 1}: {exc}")
+            logger.warning("Elasticsearch document indexing failed", index=table_name, error=str(exc))
+
+    return count, errors
 
 
-def _similarity_search_hana(table_name: str, query: str, k: int) -> List[Dict[str, Any]]:
-    """Execute a cosine similarity search in HANA Cloud Vector Engine."""
-    zero_vec = "[" + ",".join(["0.0"] * 1536) + "]"
-    safe_table = _quote_identifier(table_name)
-    conn = _hana_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""
-            SELECT TOP ? "ID", "CONTENT", "METADATA",
-                   COSINE_SIMILARITY("EMBEDDING", TO_REAL_VECTOR(?)) AS "SCORE"
-            FROM {safe_table}
-            ORDER BY "SCORE" DESC
-            """,
-            (k, zero_vec),
-        )
-        rows = cursor.fetchall()
-        return [
-            {"id": r[0], "content": r[1], "metadata": json.loads(r[2] or "{}"), "score": float(r[3])}
-            for r in rows
-        ]
-    finally:
-        conn.close()
+async def _similarity_search_es(table_name: str, query: str, k: int) -> List[Dict[str, Any]]:
+    """Execute semantic similarity search through Elasticsearch MCP."""
+    result = await mcp_proxy.call_tool(
+        mcp_proxy.settings.elasticsearch_mcp_url,
+        "ai_semantic_search",
+        {
+            "index": table_name,
+            "query": query,
+            "vector_field": "embedding",
+            "k": k,
+        },
+        _correlation_id("search", table_name, k),
+    )
+    if isinstance(result, dict) and result.get("error"):
+        raise RuntimeError(str(result["error"]))
+    return _normalize_es_hits(result if isinstance(result, dict) else {})
 
 
 # ---------------------------------------------------------------------------
@@ -184,7 +180,7 @@ async def create_vector_store(
     store: StoreBackend = Depends(get_store),
     current_user: UserInfo = Depends(require_admin),
 ):
-    """Register a new vector store and provision the HANA Cloud table."""
+    """Register a new Elasticsearch-backed knowledge base in the shared store."""
     if store.has_record("vector_stores", body.table_name):
         log_admin_action(
             actor=current_user,
@@ -198,11 +194,6 @@ async def create_vector_store(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Vector store '{body.table_name}' already exists",
         )
-
-    try:
-        _ensure_vector_table(body.table_name)
-    except Exception as exc:
-        logger.warning("HANA table creation skipped", reason=str(exc), table=body.table_name)
 
     vs = VectorStoreDC(table_name=body.table_name, embedding_model=body.embedding_model)
     created = store.set_record("vector_stores", body.table_name, asdict(vs))
@@ -223,7 +214,7 @@ async def add_documents(
     store: StoreBackend = Depends(get_store),
     current_user: UserInfo = Depends(require_admin),
 ):
-    """Add documents to a vector store (persists to HANA and updates registry count)."""
+    """Add documents to a knowledge base using AI Core embeddings and Elasticsearch MCP."""
     vs = store.get_record("vector_stores", body.table_name)
     if vs is None:
         log_admin_action(
@@ -239,12 +230,20 @@ async def add_documents(
             detail=f"Vector store '{body.table_name}' not found",
         )
 
-    count = 0
-    try:
-        count = _insert_documents(body.table_name, body.documents, body.metadatas)
-    except Exception as exc:
-        logger.warning("HANA document insert failed", reason=str(exc), table=body.table_name)
-        count = len(body.documents)
+    count, errors = await _index_documents_es(body.table_name, body.documents, body.metadatas)
+    if count == 0 and errors:
+        log_admin_action(
+            actor=current_user,
+            resource="vector_stores",
+            action="add_documents",
+            result="failure",
+            target=body.table_name,
+            errors=errors,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to index documents via Elasticsearch MCP",
+        )
 
     store.mutate_record(
         "vector_stores",
@@ -261,8 +260,9 @@ async def add_documents(
         result="success",
         target=body.table_name,
         documents_added=count,
+        errors=errors,
     )
-    return DocumentAddResponse(documents_added=count)
+    return DocumentAddResponse(documents_added=count, status="partially_indexed" if errors else "indexed")
 
 
 @router.post("/query", response_model=RAGQueryResponse)
@@ -271,7 +271,7 @@ async def rag_query(
     store: StoreBackend = Depends(get_store),
     _: UserInfo = Depends(get_current_user),
 ):
-    """Execute a RAG query: similarity search in HANA Cloud + placeholder LLM answer."""
+    """Execute a search-backed RAG query using Elasticsearch semantic retrieval."""
     if not store.has_record("vector_stores", body.table_name):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -280,15 +280,15 @@ async def rag_query(
 
     context_docs: List[Any] = []
     try:
-        context_docs = _similarity_search_hana(body.table_name, body.query, body.k)
+        context_docs = await _similarity_search_es(body.table_name, body.query, body.k)
     except Exception as exc:
-        logger.warning("HANA similarity search failed", reason=str(exc), table=body.table_name)
+        logger.warning("Elasticsearch similarity search failed", reason=str(exc), table=body.table_name)
 
-    context_text = "\n".join(d.get("content", "") for d in context_docs)
+    context_text = "\n\n".join(d.get("content", "") for d in context_docs[:3])
     answer = (
-        f"[Retrieved {len(context_docs)} document(s) from HANA vector store '{body.table_name}']\n"
-        f"Context:\n{context_text}\n\n"
-        "Connect SAP AI Core deployment to generate an answer from the above context."
+        f"[Retrieved {len(context_docs)} document(s) from Elasticsearch knowledge base '{body.table_name}']\n"
+        f"Top evidence:\n{context_text}\n\n"
+        "Use PAL workbench or a direct SAP AI Core inference flow to interpret the retrieved evidence."
     ) if context_docs else (
         f"No documents found in '{body.table_name}' for query: {body.query}"
     )
@@ -298,7 +298,7 @@ async def rag_query(
         table_name=body.table_name,
         context_docs=context_docs,
         answer=answer,
-        source="hana-cloud-vector-engine",
+        source="elasticsearch-mcp",
     )
 
 
@@ -308,7 +308,7 @@ async def similarity_search(
     store: StoreBackend = Depends(get_store),
     _: UserInfo = Depends(get_current_user),
 ):
-    """Perform cosine similarity search directly on a HANA Cloud vector store."""
+    """Perform semantic similarity search directly on an Elasticsearch-backed knowledge base."""
     if not store.has_record("vector_stores", body.table_name):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -317,8 +317,8 @@ async def similarity_search(
 
     results: List[Any] = []
     try:
-        results = _similarity_search_hana(body.table_name, body.query, body.k)
+        results = await _similarity_search_es(body.table_name, body.query, body.k)
     except Exception as exc:
-        logger.warning("HANA similarity search failed", reason=str(exc), table=body.table_name)
+        logger.warning("Elasticsearch similarity search failed", reason=str(exc), table=body.table_name)
 
     return {"results": results, "status": "completed"}

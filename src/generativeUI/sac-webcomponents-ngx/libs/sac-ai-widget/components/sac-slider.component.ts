@@ -84,7 +84,7 @@ export interface SliderChangeEvent {
     }
     .sac-slider__value {
       font-size: 14px; font-weight: 600; color: var(--sapBrandColor, #0854a0);
-      min-width: 56px; text-align: right;
+      min-width: 56px; text-align: end;
     }
     .sac-slider__input {
       width: 100%; height: 8px; cursor: pointer;

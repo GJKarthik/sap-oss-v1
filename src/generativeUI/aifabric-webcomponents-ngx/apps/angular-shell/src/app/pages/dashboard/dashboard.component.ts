@@ -2,7 +2,7 @@
  * Dashboard Component - Angular/UI5 Version
  *
  * Uses UI5 Web Components following ui5-webcomponents-ngx standards
- * Connects to real MCP backends (langchain-hana, ai-core-streaming)
+ * Connects to real MCP backends (elasticsearch-mcp, ai-core-pal)
  * Enhanced with accessibility features and responsive design
  */
 
@@ -63,27 +63,27 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
         <div class="stats-grid" [class.loading]="loading">
           
           <!-- Services Health Card -->
-          <ui5-card class="stat-card">
-            <ui5-card-header 
-              slot="header" 
-              title-text="Services"
-              subtitle-text="Backend MCP Services"
+            <ui5-card class="stat-card">
+              <ui5-card-header 
+                slot="header" 
+                title-text="Services"
+                subtitle-text="Backend MCP Services"
               [additionalText]="stats.servicesHealthy + '/' + stats.totalServices">
               <ui5-icon slot="avatar" name="overview-chart"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
               <div class="service-item">
-                <ui5-icon [name]="health.langchain?.status === 'healthy' ? 'status-positive' : 'status-negative'"></ui5-icon>
-                <span>LangChain HANA</span>
-                <ui5-tag [design]="health.langchain?.status === 'healthy' ? 'Positive' : 'Negative'">
-                  {{ health.langchain?.status || 'Unknown' }}
+                <ui5-icon [name]="health.elasticsearch?.status === 'healthy' ? 'status-positive' : 'status-negative'"></ui5-icon>
+                <span>Elasticsearch MCP</span>
+                <ui5-tag [design]="health.elasticsearch?.status === 'healthy' ? 'Positive' : 'Negative'">
+                  {{ health.elasticsearch?.status || 'Unknown' }}
                 </ui5-tag>
               </div>
               <div class="service-item">
-                <ui5-icon [name]="health.streaming?.status === 'healthy' ? 'status-positive' : 'status-negative'"></ui5-icon>
-                <span>AI Core Streaming</span>
-                <ui5-tag [design]="health.streaming?.status === 'healthy' ? 'Positive' : 'Negative'">
-                  {{ health.streaming?.status || 'Unknown' }}
+                <ui5-icon [name]="health.pal?.status === 'healthy' ? 'status-positive' : 'status-negative'"></ui5-icon>
+                <span>AI Core PAL</span>
+                <ui5-tag [design]="health.pal?.status === 'healthy' ? 'Positive' : 'Negative'">
+                  {{ health.pal?.status || 'Unknown' }}
                 </ui5-tag>
               </div>
             </div>
@@ -108,19 +108,19 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
             </div>
           </ui5-card>
 
-          <!-- Streams Card -->
+          <!-- PAL Tools Card -->
           <ui5-card class="stat-card">
             <ui5-card-header 
               slot="header" 
-              title-text="Active Streams"
-              subtitle-text="Streaming Sessions"
-              [additionalText]="stats.activeStreams + ''">
-              <ui5-icon slot="avatar" name="play"></ui5-icon>
+              title-text="PAL Tooling"
+              subtitle-text="Available analytics tools"
+              [additionalText]="stats.availablePalTools + ''">
+              <ui5-icon slot="avatar" name="process"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
-              <div class="stat-value">{{ stats.activeStreams }}</div>
-              <div class="stat-label">Live Connections</div>
-              <ui5-tag design="Neutral">{{ stats.totalStreams }} total</ui5-tag>
+              <div class="stat-value">{{ stats.availablePalTools }}</div>
+              <div class="stat-label">Registered PAL tools</div>
+              <ui5-tag design="Neutral">PAL + HANA operations</ui5-tag>
             </div>
           </ui5-card>
 
@@ -128,15 +128,15 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
           <ui5-card class="stat-card">
             <ui5-card-header 
               slot="header" 
-              title-text="Vector Stores"
-              subtitle-text="HANA Cloud Vector"
-              [additionalText]="stats.vectorStores + ''">
+              title-text="Knowledge Bases"
+              subtitle-text="Elasticsearch-backed search"
+              [additionalText]="stats.totalKnowledgeBases + ''">
               <ui5-icon slot="avatar" name="database"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
               <div class="stat-value">{{ stats.documentsIndexed | number }}</div>
               <div class="stat-label">Documents Indexed</div>
-              <ui5-tag design="Neutral">{{ stats.vectorStores }} stores</ui5-tag>
+              <ui5-tag design="Neutral">{{ stats.totalKnowledgeBases }} bases</ui5-tag>
             </div>
           </ui5-card>
 
@@ -186,13 +186,16 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
           </ui5-card-header>
           <div class="quick-actions" *ngIf="showActions">
             <ui5-button design="Emphasized" icon="add" (click)="goTo('/playground')">
-              New Chat
+              PAL Workbench
             </ui5-button>
             <ui5-button design="Default" icon="documents" (click)="goTo('/rag')">
-              RAG Studio
+              Search Studio
             </ui5-button>
             <ui5-button design="Default" icon="database" (click)="goTo('/data')">
               Data Explorer
+            </ui5-button>
+            <ui5-button design="Default" icon="search" (click)="goTo('/streaming')">
+              Search Ops
             </ui5-button>
             <ui5-button design="Default" icon="org-chart" (click)="goTo('/lineage')">
               Lineage View
@@ -369,20 +372,19 @@ export class DashboardComponent implements OnInit {
     totalServices: 2,
     activeDeployments: 0,
     totalDeployments: 0,
-    activeStreams: 0,
-    totalStreams: 0,
-    vectorStores: 0,
+    availablePalTools: 0,
+    totalKnowledgeBases: 0,
     documentsIndexed: 0,
     overallHealth: 'unknown'
   };
   
   health: {
-    langchain: ServiceHealth | null;
-    streaming: ServiceHealth | null;
+    elasticsearch: ServiceHealth | null;
+    pal: ServiceHealth | null;
     overall: 'healthy' | 'degraded' | 'error' | 'unknown';
   } = {
-    langchain: null,
-    streaming: null,
+    elasticsearch: null,
+    pal: null,
     overall: 'unknown'
   };
   operations: OperationsDashboard | null = null;
@@ -428,11 +430,11 @@ export class DashboardComponent implements OnInit {
     }
     if (this.health.overall === 'degraded') {
       const issues = [];
-      if (this.health.langchain?.status !== 'healthy') {
-        issues.push('LangChain HANA');
+      if (this.health.elasticsearch?.status !== 'healthy') {
+        issues.push('Elasticsearch MCP');
       }
-      if (this.health.streaming?.status !== 'healthy') {
-        issues.push('AI Core Streaming');
+      if (this.health.pal?.status !== 'healthy') {
+        issues.push('AI Core PAL');
       }
       return `Some services are degraded: ${issues.join(', ')}`;
     }
