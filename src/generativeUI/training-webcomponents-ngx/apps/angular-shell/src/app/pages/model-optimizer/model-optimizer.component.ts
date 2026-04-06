@@ -905,32 +905,16 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
     const payload = { config: payloadConfig };
 
-    const fakeId = 'job-optimistic-' + Date.now();
-    const optimisticJob: JobResponse = {
-      id: fakeId,
-      name: `Optimizing ${formVal.model_name}`,
-      status: 'pending',
-      progress: 0,
-      created_at: new Date().toISOString(),
-      config: payloadConfig as JobConfig,
-    };
-    
-    // Optimistic UI update
-    this.jobs.update((jobs) => [optimisticJob, ...jobs]);
-
     this.api.post<JobResponse>('/jobs', payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (j: JobResponse) => {
-          // Replace optimistic mock with actual job
-          this.jobs.update((jobs) => jobs.map(existing => existing.id === fakeId ? j : existing));
+          this.jobs.update((jobs) => [j, ...jobs]);
           this.toast.success(`Job ${j.id.slice(0, 8)} submitted successfully`, 'Job Created');
           this.submitting.set(false);
-          this.jobForm.patchValue({ model_name: '' }); // Reset main field post-success
+          this.jobForm.patchValue({ model_name: '' });
         },
         error: (e: HttpErrorResponse) => {
-          // Rollback on failure
-          this.jobs.update((jobs) => jobs.filter(existing => existing.id !== fakeId));
           const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
           this.toast.error(`Failed to create job: ${detail}`, 'Job Error');
           console.error('Job creation failed:', e);
