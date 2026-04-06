@@ -2,14 +2,29 @@ import { of } from 'rxjs';
 import { LiveHealthPanelComponent } from './live-health-panel.component';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
 
+jest.mock('@ui5/webcomponents-ngx/i18n', () => ({
+  I18nService: class {
+    getText(key: string) {
+      const translations: Record<string, string> = {
+        HEALTH_PANEL_CHECKING: 'Checking live service health...',
+        HEALTH_PANEL_HEALTHY: 'All live dependencies are healthy',
+        HEALTH_PANEL_UNAVAILABLE: 'Some live dependencies are unavailable',
+      };
+      return require('rxjs').of(translations[key] ?? key);
+    }
+  },
+}));
+
+const i18nMock = new (jest.requireMock('@ui5/webcomponents-ngx/i18n').I18nService)();
+
 describe('LiveHealthPanelComponent', () => {
   it('starts with checking state before ngOnInit', () => {
     const service = {
       checkAllServices: () => of([]),
     } as unknown as LiveDemoHealthService;
-    const component = new LiveHealthPanelComponent(service);
+    const component = new LiveHealthPanelComponent(service, i18nMock);
 
-    expect(component.summaryText).toBe('Checking live service health...');
+    expect(component.summaryText).toBe('');
     expect(component.blocking).toBe(true);
   });
 
@@ -22,7 +37,7 @@ describe('LiveHealthPanelComponent', () => {
           { name: 'MCP', ok: true, status: 200, url: '/health' },
         ]),
     } as unknown as LiveDemoHealthService;
-    const component = new LiveHealthPanelComponent(service);
+    const component = new LiveHealthPanelComponent(service, i18nMock);
     component.ngOnInit();
 
     expect(component.blocking).toBe(false);
@@ -35,7 +50,7 @@ describe('LiveHealthPanelComponent', () => {
         of([{ name: 'AG-UI', ok: true, status: 200, url: '/ag-ui/health' }]),
       ),
     } as unknown as LiveDemoHealthService;
-    const component = new LiveHealthPanelComponent(service);
+    const component = new LiveHealthPanelComponent(service, i18nMock);
 
     component.refreshHealth();
 
@@ -47,7 +62,7 @@ describe('LiveHealthPanelComponent', () => {
     const service = {
       checkAllServices: () => of([]),
     } as unknown as LiveDemoHealthService;
-    const component = new LiveHealthPanelComponent(service);
+    const component = new LiveHealthPanelComponent(service, i18nMock);
 
     expect(
       component.getCheckStatusText({

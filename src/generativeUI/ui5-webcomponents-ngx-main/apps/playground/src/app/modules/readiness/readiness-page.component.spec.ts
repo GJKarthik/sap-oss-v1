@@ -34,7 +34,7 @@ describe('ReadinessPageComponent', () => {
     component.refresh();
 
     expect(component.demoReady).toBe(true);
-    expect(component.routeStatuses.length).toBe(4);
+    expect(component.routeStatuses.length).toBe(5);
     expect(component.lastCheckedAt).not.toBeNull();
   });
 
