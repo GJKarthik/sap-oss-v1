@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ChatComponent } from './chat.component';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 
 const MOCK_TOAST = {
   success: jest.fn(),
@@ -29,7 +30,19 @@ describe('ChatComponent', () => {
     fixture = TestBed.createComponent(ChatComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-    
+
+    // Inject real translations so i18n.t() returns translated strings
+    const i18n = TestBed.inject(I18nService);
+    (i18n as any).translations = {
+      en: {
+        'chat.cleared': 'Chat cleared',
+        'chat.confirmClear': 'Are you sure you want to clear the chat?',
+      },
+      ar: {},
+    };
+    (i18n as any).loaded = true;
+    (i18n as any).mfCache.clear();
+
     // Clear mocks between tests
     Object.values(MOCK_TOAST).forEach(spy => spy.mockClear());
     fixture.detectChanges();
@@ -47,13 +60,15 @@ describe('ChatComponent', () => {
   });
 
   it('clearChat() should empty messages and show info toast', () => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+
     component.messages.set([{ role: 'user', content: 'test', ts: new Date() }]);
     expect(component.messages().length).toBe(1);
 
     component.clearChat();
 
     expect(component.messages().length).toBe(0);
-    expect(MOCK_TOAST.info).toHaveBeenCalledWith('chat.cleared');
+    expect(MOCK_TOAST.info).toHaveBeenCalledWith('Chat cleared');
   });
 
   it('send() should append user message and call api.post', fakeAsync(() => {

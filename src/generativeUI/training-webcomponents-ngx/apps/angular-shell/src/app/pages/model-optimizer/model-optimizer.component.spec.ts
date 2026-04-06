@@ -5,6 +5,7 @@ import { ModelOptimizerComponent } from './model-optimizer.component';
 import { UserSettingsService, UserMode } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 import { signal } from '@angular/core';
 
 describe('ModelOptimizerComponent', () => {
@@ -49,6 +50,24 @@ describe('ModelOptimizerComponent', () => {
     fixture = TestBed.createComponent(ModelOptimizerComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
+
+    // Inject real translations so i18n.t() returns translated strings
+    const i18n = TestBed.inject(I18nService);
+    (i18n as any).translations = {
+      en: {
+        'modelOpt.switchMode': 'Switch to Intermediate mode to select a model manually.',
+        'modelOpt.catalogFailed': 'Failed to load model catalog',
+        'modelOpt.modelsTitle': 'Models',
+        'modelOpt.jobsFailed': 'Failed to load jobs',
+        'modelOpt.jobsTitle': 'Jobs',
+        'modelOpt.loadFailed': 'Load failed',
+        'common.error': 'Error',
+      },
+      ar: {},
+    };
+    (i18n as any).loaded = true;
+    (i18n as any).mfCache.clear();
+
     mockMode.set('novice'); // Default behavior
     Object.values(mockToast).forEach(spy => spy.mockClear());
     fixture.detectChanges();
