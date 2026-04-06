@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable, of, catchError, throwError } from 'rxjs';
 
 export interface OcrTextRegion {
   text: string;
@@ -91,21 +91,20 @@ export class OcrService {
 
   /**
    * Upload a PDF for OCR processing via the new /ocr/pdf endpoint.
-   * Falls back to mock data if API unavailable.
    */
   extractFinancialFieldsAll(file: File): Observable<OcrResult> {
     const formData = new FormData();
     formData.append('file', file, file.name);
 
     return this.http.post<OcrResult>('/ocr/pdf', formData).pipe(
-      catchError(() => of(this.generateMockResult(file.name)))
+      catchError(err => throwError(() => err))
     );
   }
 
   /** Send OCR result to the downstream pipeline. */
   sendToPipeline(result: OcrResult): Observable<{ queued: boolean }> {
     return this.http.post<{ queued: boolean }>('/ocr/pipeline', result).pipe(
-      catchError(() => of({ queued: false }))
+      catchError(err => throwError(() => err))
     );
   }
 
@@ -136,56 +135,5 @@ export class OcrService {
    */
   processFile(file: File): Observable<OcrResult> {
     return this.extractFinancialFieldsAll(file);
-  }
-
-  /** Generate mock OCR result for demo/development when API is unavailable. */
-  private generateMockResult(fileName: string): OcrResult {
-    return {
-      file_path: fileName,
-      total_pages: 2,
-      pages: [
-        {
-          page_number: 1,
-          text: 'بسم الله الرحمن الرحيم\n\nالتقرير المالي السنوي\nإجمالي الإيرادات: 1,250,000 ريال\nصافي الربح: 340,000 ريال\nإجمالي الأصول: 5,600,000 ريال',
-          text_regions: [
-            { text: 'بسم الله الرحمن الرحيم', confidence: 95.2, language: 'ara', bbox: { x: 100, y: 50, width: 400, height: 30 } },
-            { text: 'التقرير المالي السنوي', confidence: 92.1, language: 'ara', bbox: { x: 120, y: 90, width: 350, height: 28 } },
-          ],
-          tables: [
-            {
-              table_index: 0, rows: 3, columns: 2, confidence: 88.5,
-              cells: [
-                { row: 0, column: 0, text: 'البند', confidence: 90 },
-                { row: 0, column: 1, text: 'المبلغ', confidence: 91 },
-                { row: 1, column: 0, text: 'إجمالي الإيرادات', confidence: 89 },
-                { row: 1, column: 1, text: '1,250,000', confidence: 94 },
-                { row: 2, column: 0, text: 'صافي الربح', confidence: 87 },
-                { row: 2, column: 1, text: '340,000', confidence: 93 },
-              ],
-            },
-          ],
-          confidence: 91.5, width: 2480, height: 3508,
-          flagged_for_review: false, processing_time_s: 2.34, errors: [],
-        },
-        {
-          page_number: 2,
-          text: 'الميزانية العمومية\nإجمالي الالتزامات: 2,100,000 ريال\nحقوق المساهمين: 3,500,000 ريال\n\nBalance Sheet Summary\nTotal Liabilities: SAR 2,100,000',
-          text_regions: [
-            { text: 'الميزانية العمومية', confidence: 93.0, language: 'ara' },
-            { text: 'Balance Sheet Summary', confidence: 96.5, language: 'eng' },
-          ],
-          tables: [],
-          confidence: 89.2, width: 2480, height: 3508,
-          flagged_for_review: false, processing_time_s: 1.87, errors: [],
-        },
-      ],
-      metadata: {
-        languages: 'ara+eng', dpi: 300, pages_processed: 2,
-        pages_with_errors: 0, demo_mode: true,
-      },
-      overall_confidence: 90.35,
-      total_processing_time_s: 4.21,
-      errors: [],
-    };
   }
 }
