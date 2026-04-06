@@ -495,7 +495,7 @@ export const AppStore = signalStore(
       // Opportunistically request permission
       notification.requestPermission();
 
-      let previousCompletedJobs = new Set<string>();
+      const previousCompletedJobs = new Set<string>();
 
       effect(() => {
         const jobsData = store.jobs().data;

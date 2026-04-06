@@ -18,10 +18,12 @@ export interface OcrCurationState {
   sourceFile: File | null;
   /** OCR result returned from the backend. */
   result: OcrResult | null;
+  aiResult: import('../../services/ocr.service').OcrExtractionResult | null;
+  extractingAi: boolean;
   /** Currently viewed page (1-based). */
   activePage: number;
   /** Active tab in normal (non-expert) mode. */
-  normalTab: 'text' | 'tables' | 'financial' | 'metadata';
+  normalTab: 'text' | 'tables' | 'financial' | 'metadata' | 'ai';
   /** Active tab in expert mode. */
   expertTab: 'text' | 'fields' | 'qa' | 'export';
   /** Per-page correction strings keyed by page number. */
@@ -71,6 +73,8 @@ export class DocumentOcrComponent {
   private readonly _state = signal<OcrCurationState>({
     sourceFile: null,
     result: null,
+    aiResult: null,
+    extractingAi: false,
     activePage: 1,
     normalTab: 'text',
     expertTab: 'text',
@@ -98,6 +102,8 @@ export class DocumentOcrComponent {
   readonly isProcessing = computed(() => this._state().processing);
   readonly progress = computed(() => this._state().progress);
   readonly result = computed(() => this._state().result);
+  readonly aiExtraction = computed(() => this._state().aiResult);
+  readonly extractingAi = computed(() => this._state().extractingAi);
 
   // Health status derived for template compatibility
   readonly healthStatus = computed(() =>
@@ -145,8 +151,8 @@ export class DocumentOcrComponent {
   });
 
   readonly isDragOver = signal(false);
-  readonly activeTab = signal<'text' | 'tables' | 'financial' | 'metadata'>('text');
-  readonly tabs: ('text' | 'tables' | 'financial' | 'metadata')[] = ['text', 'tables', 'financial', 'metadata'];
+  readonly activeTab = signal<'text' | 'tables' | 'financial' | 'metadata' | 'ai'>('text');
+  readonly tabs: ('text' | 'tables' | 'financial' | 'metadata' | 'ai')[] = ['text', 'tables', 'financial', 'metadata', 'ai'];
 
   constructor() {
     // Poll health on startup
@@ -234,6 +240,8 @@ export class DocumentOcrComponent {
     this._mutate(s => {
       s.sourceFile = file;
       s.result = null;
+      s.aiResult = null;
+      s.extractingAi = false;
       s.activePage = 1;
       s.corrections = {};
       s.pageStatus = {};
@@ -247,11 +255,34 @@ export class DocumentOcrComponent {
     this._mutate(s => {
       s.sourceFile = null;
       s.result = null;
+      s.aiResult = null;
+      s.extractingAi = false;
       s.activePage = 1;
       s.corrections = {};
       s.pageStatus = {};
       s.processing = false;
       s.progress = 0;
+    });
+  }
+
+  runAiExtraction(): void {
+    const text = this.allText();
+    if (!text || this.extractingAi()) return;
+
+    this._mutate(s => { s.extractingAi = true; });
+    this.ocr.extractInformation(text, this._state().sourceFile?.name).subscribe({
+      next: (res) => {
+        this._mutate(s => {
+          s.aiResult = res;
+          s.extractingAi = false;
+          s.normalTab = 'ai';
+        });
+        this.toast.success(this.i18n.t('ocr.ai.success'));
+      },
+      error: () => {
+        this._mutate(s => { s.extractingAi = false; });
+        this.toast.error(this.i18n.t('ocr.ai.error'));
+      },
     });
   }
 
@@ -355,7 +386,7 @@ export class DocumentOcrComponent {
     if (!s.result) return;
     const fileName = s.sourceFile?.name ?? s.result.file_path;
     this.documentContext.setFromOcrResult(s.result, this.financialFields(), fileName);
-    this.router.navigate(['/training/chat']);
+    this.router.navigate(['/chat']);
   }
 
   exportJson(): void {

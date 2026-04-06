@@ -151,6 +151,70 @@
             </div>
           </div>
         }
+
+        <!-- AI Extraction Tab -->
+        @if (activeTab() === 'ai') {
+          <div class="ai-tab">
+            @if (aiExtraction()) {
+              <div class="ai-extraction-results">
+                <div class="ai-header">
+                  <h3>{{ i18n.t('ocr.ai.summaryTitle') }}</h3>
+                  <span class="ai-badge">LLM Powered</span>
+                </div>
+
+                <!-- Compliance Checks Section -->
+                @if (aiExtraction()?.compliance_checks?.length) {
+                  <div class="compliance-section">
+                    <h4>Localized Compliance Checks (FATCA, Withholding Tax, E-Invoicing)</h4>
+                    <div class="compliance-grid">
+                      @for (check of aiExtraction()!.compliance_checks; track check.rule_name) {
+                        <div class="compliance-card card">
+                          <div class="card-header">
+                            <span class="rule-name">{{ check.rule_name }}</span>
+                            <span class="country-badge">{{ check.country }}</span>
+                          </div>
+                          <div class="card-body">
+                            <p>{{ check.details }}</p>
+                          </div>
+                          <div class="card-footer">
+                            <span class="status-badge" [class.success]="check.status === 'passed'" [class.error]="check.status === 'failed'" [class.warning]="check.status === 'warning'">
+                              {{ check.status | uppercase }}
+                            </span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <div class="ai-translated-section">
+                  <h4>{{ i18n.t('ocr.ai.translatedTitle') }}</h4>
+                  <div class="translated-text-box" dir="ltr">
+                    {{ aiExtraction()!.translated_en }}
+                  </div>
+                </div>
+
+                <div class="ai-fields-grid">
+                  @for (field of aiExtraction()!.financial_fields; track field.key) {
+                    <div class="ai-field-card">
+                      <span class="ai-field-label">{{ field.key | titlecase }}</span>
+                      <span class="ai-field-value">{{ field.value }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="ai-empty-state">
+                <div class="ai-empty-icon">🤖</div>
+                <h3>{{ i18n.t('ocr.ai.emptyTitle') }}</h3>
+                <button class="btn-primary" (click)="runAiExtraction()" [disabled]="extractingAi()">
+                  @if (extractingAi()) { <span class="spinner"></span> }
+                  ✨ {{ i18n.t('ocr.ai.runAction') }}
+                </button>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
   }

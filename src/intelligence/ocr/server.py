@@ -84,6 +84,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.post("/ocr/pipeline")
+async def queue_pipeline(request: Request) -> JSONResponse:
+    """Compatibility endpoint used by the Angular OCR curation flow."""
+    payload = await request.json()
+    page_count = len(payload.get("pages", [])) if isinstance(payload, dict) else 0
+    return JSONResponse(
+        content={
+            "queued": True,
+            "pages_received": page_count,
+            "status": "accepted",
+        }
+    )
+
 # Default service instance (can be reconfigured via env vars)
 _service: Optional[ArabicOCRService] = None
 

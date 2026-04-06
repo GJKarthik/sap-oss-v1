@@ -14,7 +14,15 @@ interface JobResponse {
   progress: number;
   config: Record<string, unknown>;
   history: { step: number; loss: number; epoch: number }[];
-  evaluation?: { perplexity: number; eval_loss: number; runtime_sec: number };
+  evaluation?: {
+    perplexity: number;
+    eval_loss: number;
+    runtime_sec: number;
+    cer?: number;
+    wer?: number;
+    sql_validity?: number;
+    arabic_score?: number;
+  };
   deployed?: boolean;
   created_at: string;
   error?: string;
@@ -56,7 +64,13 @@ interface LogLine { text: string; kind: 'info' | 'success' | 'error' | 'warn' | 
         <div class="chart-header">
           <span><ui5-icon name="line-chart"></ui5-icon> Training Loss Curve</span>
           @if (liveEval()) {
-            <span class="eval-badge">PPL {{ liveEval()!.perplexity }} · Loss {{ liveEval()!.eval_loss }}</span>
+            <div class="eval-row">
+              <span class="eval-badge">PPL {{ liveEval()!.perplexity }}</span>
+              <span class="eval-badge eval-badge--loss">Loss {{ liveEval()!.eval_loss }}</span>
+              @if (liveEval()!.cer) { <span class="eval-badge eval-badge--warn">CER {{ liveEval()!.cer }}</span> }
+              @if (liveEval()!.sql_validity) { <span class="eval-badge eval-badge--success">SQL {{ (liveEval()!.sql_validity! * 100).toFixed(0) }}%</span> }
+              @if (liveEval()!.arabic_score) { <span class="eval-badge eval-badge--info">AR {{ (liveEval()!.arabic_score! * 100).toFixed(0) }}%</span> }
+            </div>
           }
         </div>
         <canvas #chartCanvas class="loss-canvas" width="600" height="180"></canvas>
@@ -98,7 +112,12 @@ interface LogLine { text: string; kind: 'info' | 'success' | 'error' | 'warn' | 
     .chart-section { background: #fff; border: 1px solid #e4e4e4; border-radius: 0.5rem; margin-bottom: 1rem; overflow: hidden; }
     .chart-header { display: flex; justify-content: space-between; align-items: center;
       padding: 0.5rem 0.75rem; background: #f5f5f5; font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid #e4e4e4; }
-    .eval-badge { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 1rem; font-size: 0.75rem; font-weight: 600; }
+    .eval-row { display: flex; gap: 0.375rem; align-items: center; }
+    .eval-badge { background: #e0f2f1; color: #00695c; padding: 2px 8px; border-radius: 1rem; font-size: 0.7rem; font-weight: 600;
+      &.eval-badge--loss { background: #f5f5f5; color: #666; }
+      &.eval-badge--warn { background: #fff3e0; color: #e65100; }
+      &.eval-badge--success { background: #e8f5e9; color: #2e7d32; }
+      &.eval-badge--info { background: #e1f5fe; color: #0277bd; } }
     .loss-canvas { width: 100%; display: block; }
     .terminal { background: #0d1117; border-radius: 0.5rem; overflow: hidden; font-family: monospace; font-size: 0.75rem; }
     .terminal-head { background: #161b22; padding: 0.4rem 0.75rem; color: #8b949e; font-size: 0.7rem; font-weight: 600; }
@@ -123,7 +142,15 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly wsConnected = signal(false);
   readonly liveStatus = signal<string>('pending');
   readonly liveProgress = signal(0);
-  readonly liveEval = signal<{ perplexity: number; eval_loss: number; runtime_sec: number } | null>(null);
+  readonly liveEval = signal<{
+    perplexity: number;
+    eval_loss: number;
+    runtime_sec: number;
+    cer?: number;
+    wer?: number;
+    sql_validity?: number;
+    arabic_score?: number;
+  } | null>(null);
   readonly logLines = signal<LogLine[]>([]);
 
   private ws: WebSocket | null = null;
@@ -149,7 +176,9 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private connect() {
-    const wsBase = environment.apiBaseUrl.replace(/^http/, 'ws');
+    const wsBase = environment.apiBaseUrl.startsWith('http')
+      ? environment.apiBaseUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
+      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
     this.ws = new WebSocket(`${wsBase}/ws/jobs/${this.job.id}`);
 
     this.ws.onopen = () => this.zone.run(() => this.wsConnected.set(true));
@@ -191,7 +220,15 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       this.liveProgress.set((msg['progress'] as number) ?? this.liveProgress());
       this.drawChart();
     } else if (type === 'evaluation') {
-      const ev = msg['data'] as { perplexity: number; eval_loss: number; runtime_sec: number };
+      const ev = msg['data'] as {
+        perplexity: number;
+        eval_loss: number;
+        runtime_sec: number;
+        cer?: number;
+        wer?: number;
+        sql_validity?: number;
+        arabic_score?: number;
+      };
       this.liveEval.set(ev);
     } else if (type === 'status') {
       this.liveStatus.set(msg['status'] as string);

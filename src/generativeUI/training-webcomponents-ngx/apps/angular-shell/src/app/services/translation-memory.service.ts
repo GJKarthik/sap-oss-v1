@@ -13,6 +13,12 @@ export interface TMEntry {
   created_at?: string;
 }
 
+export interface TMBackendMeta {
+  backend: 'sqlite' | 'hana';
+  count: number;
+  persistent: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -22,6 +28,10 @@ export class TranslationMemoryService {
 
   list(): Observable<TMEntry[]> {
     return this.http.get<TMEntry[]>(this.base);
+  }
+
+  getMeta(): Observable<TMBackendMeta> {
+    return this.http.get<TMBackendMeta>(`${this.base}/meta`);
   }
 
   save(entry: TMEntry): Observable<TMEntry> {

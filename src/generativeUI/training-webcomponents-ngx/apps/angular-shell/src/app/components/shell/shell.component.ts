@@ -11,6 +11,8 @@ import { I18nService } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
 import '@ui5/webcomponents-fiori/dist/ShellBar.js';
 import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
+import '@ui5/webcomponents/dist/Avatar.js';
+import '@ui5/webcomponents/dist/Switch.js';
 import '@ui5/webcomponents/dist/Tag.js';
 import '@ui5/webcomponents/dist/Popover.js';
 import '@ui5/webcomponents/dist/List.js';
@@ -63,7 +65,9 @@ interface NavItem {
         (logo-click)="navigateTo('/dashboard')"
         (notifications-click)="openNotifications()"
         (product-switch-click)="openProducts($event)"
+        (profile-click)="openProfile($event)"
       >
+        <ui5-avatar slot="profile" icon="employee"></ui5-avatar>
         @for (item of navItems; track item.route) {
           <ui5-shellbar-item
             [attr.icon]="item.icon"
@@ -73,6 +77,16 @@ interface NavItem {
           ></ui5-shellbar-item>
         }
       </ui5-shellbar>
+
+      <ui5-popover #profilePopover [attr.header-text]="i18n.t('app.profile')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+        <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem; min-width: 250px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label style="font-size: 0.875rem; color: var(--sapTextColor);">{{ i18n.t('app.showLanguageOptions') }}</label>
+            <ui5-switch [checked]="userSettings.showLanguageOptions()" (change)="toggleLanguageOptions($event)"></ui5-switch>
+          </div>
+          <ui5-button design="Transparent" icon="log" (click)="logout()" style="width: 100%;">{{ i18n.t('app.signOut') }}</ui5-button>
+        </div>
+      </ui5-popover>
 
       <ui5-popover #productPopover [attr.header-text]="i18n.t('product.switcher')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
         <ui5-list (item-click)="onProductSelect($event)">
@@ -97,7 +111,14 @@ interface NavItem {
 
         <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
         <span class="model-status-indicator" [class.model-online]="arabicModelOnline()" [class.model-offline]="!arabicModelOnline()" [title]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ arabicModelOnline() ? '🟢' : '🔴' }} {{ i18n.t('chat.arabicFinanceModel') }}</span>
-        <button class="header-btn lang-toggle" (click)="i18n.toggleLanguage()">{{ i18n.t('app.language') }}</button>
+        
+        @if (userSettings.showLanguageOptions()) {
+          <select class="mode-select" [ngModel]="i18n.currentLang()" (ngModelChange)="i18n.setLanguage($event)">
+            <option value="en">English</option>
+            <option value="ar">العربية (Arabic)</option>
+          </select>
+        }
+        
         <button class="header-btn" (click)="showDiagnostics.set(!showDiagnostics())" [title]="i18n.t('app.diagnostics')">
           {{ i18n.t('app.diagnostics') }}
         </button>
@@ -106,7 +127,6 @@ interface NavItem {
           <option value="intermediate">{{ i18n.t('mode.intermediate') }}</option>
           <option value="expert">{{ i18n.t('mode.expert') }}</option>
         </select>
-        <button class="header-btn" (click)="logout()" [title]="i18n.t('app.signOut')">{{ i18n.t('app.signOut') }}</button>
       </nav>
 
       @if (showDiagnostics()) {
@@ -391,6 +411,10 @@ export class ShellComponent implements OnInit, OnDestroy {
       { label: this.i18n.t('nav.chat'), icon: 'discussion-2', route: '/chat' },
       { label: this.i18n.t('nav.compare'), icon: 'compare', route: '/compare' },
       { label: this.i18n.t('nav.documentOcr'), icon: 'document', route: '/document-ocr' },
+      { label: this.i18n.t('nav.semanticSearch'), icon: 'search', route: '/semantic-search' },
+      { label: this.i18n.t('nav.analytics'), icon: 'lead', route: '/analytics' },
+      { label: this.i18n.t('nav.glossaryManager'), icon: 'activity-items', route: '/glossary-manager' },
+      { label: this.i18n.t('nav.arabicWizard'), icon: 'learning-assistant', route: '/arabic-wizard' },
     ];
   }
 
@@ -422,6 +446,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
   @ViewChild('productPopover') productPopover!: ElementRef<any>;
+  @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
 
   searchResults = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -538,4 +563,26 @@ export class ShellComponent implements OnInit, OnDestroy {
       window.location.href = url;
     }
   }
+
+  openProfile(event: any): void {
+    const popover = this.profilePopover?.nativeElement;
+    const target = event?.detail?.targetRef;
+    if (popover && target) {
+      if (typeof popover.showAt === 'function') {
+        popover.showAt(target);
+      } else {
+        popover.opener = target;
+        popover.open = true;
+      }
+    }
+  }
+
+  toggleLanguageOptions(event: any): void {
+    const checked = event.target?.checked;
+    this.userSettings.setShowLanguageOptions(checked);
+    if (!checked && this.i18n.currentLang() !== 'en') {
+      this.i18n.setLanguage('en');
+    }
+  }
 }
+

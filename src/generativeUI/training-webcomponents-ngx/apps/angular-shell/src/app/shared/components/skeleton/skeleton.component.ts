@@ -182,6 +182,6 @@ import { CommonModule } from '@angular/common';
 })
 export class SkeletonComponent {
   @Input() type: 'text' | 'avatar' | 'card' | 'table-row' | 'stat' = 'text';
-  @Input() width: string = '100%';
-  @Input() height: string = '';
+  @Input() width = '100%';
+  @Input() height = '';
 }

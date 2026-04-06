@@ -296,7 +296,9 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private connectWebSocket() {
-    const wsBase = environment.apiBaseUrl.replace(/^http/, 'ws');
+    const wsBase = environment.apiBaseUrl.startsWith('http')
+      ? environment.apiBaseUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
+      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
     const wsUrl = `${wsBase}/ws/pipeline`;
 
     this.ws = new WebSocket(wsUrl);

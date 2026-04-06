@@ -1,11 +1,22 @@
 {
   "/api": {
-    "target": "http://localhost:8001",
+    "target": "http://localhost:8004",
     "secure": false,
     "changeOrigin": true,
     "ws": true,
     "pathRewrite": {
       "^/api": ""
     }
+  },
+  "/ws": {
+    "target": "http://localhost:8004",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true
+  },
+  "/ocr": {
+    "target": "http://localhost:8060",
+    "secure": false,
+    "changeOrigin": true
   }
 }
