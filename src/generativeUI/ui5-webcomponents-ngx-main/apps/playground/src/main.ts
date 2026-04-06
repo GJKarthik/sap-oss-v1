@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
+
+// Set NODE_ENV to production to eliminate Lit dev mode warning
+if (typeof (globalThis as any).process === 'undefined') {
+  (globalThis as any).process = { env: { NODE_ENV: 'production' } };
+} else if (!(globalThis as any).process.env.NODE_ENV) {
+  (globalThis as any).process.env.NODE_ENV = 'production';
+}
+
 import {enableProdMode} from '@angular/core';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import '@ui5/webcomponents/dist/Assets.js';
@@ -9,6 +17,7 @@ import '@ui5/webcomponents-localization/dist/Assets.js';
 import '@ui5/webcomponents-icons/dist/Assets.js';
 import '@ui5/webcomponents-icons-tnt/dist/Assets.js';
 import '@ui5/webcomponents-icons-business-suite/dist/Assets.js';
+import '@ui5/webcomponents-icons-business-suite/dist/AllIcons.js';
 import { registerI18nLoader } from '@ui5/webcomponents-base/dist/asset-registries/i18n.js';
 
 import {AppModule} from './app/app.module';
@@ -26,6 +35,7 @@ const fallbackIconTexts = {
   SHELLBAR_PRODUCTS: 'Products',
   SHELLBAR_SEARCH: 'Search',
   SHELLBAR_LOGO_AREA: 'Logo area',
+  SHELLBAR_PRODUCT_SWITCH_BTN: 'Product Switch',
 };
 
 const fallbackIconTextsAr = {
@@ -40,6 +50,7 @@ const fallbackIconTextsAr = {
   SHELLBAR_PRODUCTS: 'المنتجات',
   SHELLBAR_SEARCH: 'بحث',
   SHELLBAR_LOGO_AREA: 'منطقة الشعار',
+  SHELLBAR_PRODUCT_SWITCH_BTN: 'تبديل المنتج',
 };
 
 // Work around missing i18n asset registration in dev builds.
