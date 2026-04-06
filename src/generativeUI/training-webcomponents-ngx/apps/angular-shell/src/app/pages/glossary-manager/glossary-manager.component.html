@@ -10,7 +10,7 @@
         </span>
       </div>
     </div>
-    <button class="btn-primary" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</button>
+    <ui5-button design="Emphasized" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</ui5-button>
   </div>
 
   @if (showAddForm()) {
@@ -42,8 +42,8 @@
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn-primary" (click)="saveNewEntry()">Save Override</button>
-        <button class="btn-outline" (click)="showAddForm.set(false)">Cancel</button>
+        <ui5-button design="Emphasized" (click)="saveNewEntry()">Save Override</ui5-button>
+        <ui5-button design="Transparent" (click)="showAddForm.set(false)">Cancel</ui5-button>
       </div>
     </div>
   }
@@ -78,8 +78,8 @@
               </td>
               <td>
                 <div class="action-row">
-                  <button *ngIf="!e.is_approved" class="btn-icon" (click)="approveEntry(e)" title="Approve">✅</button>
-                  <button class="btn-icon delete" (click)="deleteEntry(e.id)" title="Delete">🗑️</button>
+                  <ui5-button *ngIf="!e.is_approved" design="Default" icon="accept" (click)="approveEntry(e)" title="Approve"></ui5-button>
+                  <ui5-button design="Negative" icon="delete" (click)="deleteEntry(e.id)" title="Delete"></ui5-button>
                 </div>
               </td>
             </tr>

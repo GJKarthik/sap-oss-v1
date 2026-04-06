@@ -36,8 +36,8 @@ interface SqlPair {
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('dataExplorer.title') }}</h1>
         <div class="tab-bar">
-          <button class="tab-btn" [class.active]="activeTab() === 'assets'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</button>
-          <button class="tab-btn" [class.active]="activeTab() === 'pairs'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</button>
+          <ui5-button [design]="activeTab() === 'assets' ? 'Emphasized' : 'Default'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</ui5-button>
+          <ui5-button [design]="activeTab() === 'pairs' ? 'Emphasized' : 'Default'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</ui5-button>
         </div>
       </div>
 
@@ -74,7 +74,7 @@ interface SqlPair {
 
         <div class="asset-grid">
           @for (a of filteredAssets(); track a.name) {
-            <div class="asset-card" (click)="select(a)" [class.asset-card--active]="selected()?.name === a.name">
+            <div class="asset-card" tabindex="0" role="button" (click)="select(a)" (keydown.enter)="select(a)" (keydown.space)="$event.preventDefault(); select(a)" [class.asset-card--active]="selected()?.name === a.name">
               <div class="asset-icon"><ui5-icon [name]="iconFor(a.type)"></ui5-icon></div>
               <div class="asset-info">
                 <div class="asset-name"><bdi>{{ a.name }}</bdi></div>
@@ -98,7 +98,7 @@ interface SqlPair {
             <div class="detail-header">
               <span class="detail-icon"><ui5-icon [name]="iconFor(sel.type)"></ui5-icon></span>
               <h2 class="detail-title"><bdi>{{ sel.name }}</bdi></h2>
-              <button class="close-btn" (click)="clearSelection()">✕</button>
+              <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('dataExplorer.closeDetail')" (click)="clearSelection()"></ui5-button>
             </div>
             <table class="info-table">
               <tbody>
@@ -122,15 +122,15 @@ interface SqlPair {
               <div class="stat-label">{{ i18n.t('dataExplorer.totalPairs') }}</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value" style="color: #4caf50;">{{ easyCount() }}</div>
+              <div class="stat-value" style="color: var(--sapPositiveColor, #4caf50);">{{ easyCount() }}</div>
               <div class="stat-label">{{ i18n.t('dataExplorer.easy') }}</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value" style="color: #ff9800;">{{ mediumCount() }}</div>
+              <div class="stat-value" style="color: var(--sapCriticalColor, #ff9800);">{{ mediumCount() }}</div>
               <div class="stat-label">{{ i18n.t('dataExplorer.medium') }}</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value" style="color: #f44336;">{{ hardCount() }}</div>
+              <div class="stat-value" style="color: var(--sapNegativeColor, #f44336);">{{ hardCount() }}</div>
               <div class="stat-label">{{ i18n.t('dataExplorer.hard') }}</div>
             </div>
           </div>
@@ -157,7 +157,7 @@ interface SqlPair {
               <div class="pair-header">
                 <span class="pair-id text-small text-muted">#{{ pair.id }}</span>
                 <span class="badge badge--{{ pair.difficulty }}">{{ pair.difficulty }}</span>
-                <span class="badge" style="background: #e8eaf6; color: #283593;">{{ pair.db_id }}</span>
+                <span class="badge" style="background: var(--sapInformationBackground, #e8eaf6); color: var(--sapInformativeColor, #283593);">{{ pair.db_id }}</span>
               </div>
               <p class="pair-question"><bdi>{{ pair.question }}</bdi></p>
               <pre class="pair-sql"><bdi>{{ pair.query }}</bdi></pre>
@@ -166,7 +166,7 @@ interface SqlPair {
         </div>
 
         @if (!pairs().length && !pairsLoading()) {
-          <div style="text-align: center; padding: 3rem; color: #999;">
+          <div style="text-align: center; padding: 3rem; color: var(--sapContent_LabelColor, #999);">
             <div style="font-size: 2rem; margin-bottom: 0.5rem;"><ui5-icon name="database"></ui5-icon></div>
             <p>{{ i18n.t('dataExplorer.noPairs') }}</p>
           </div>
@@ -179,7 +179,7 @@ interface SqlPair {
     .tab-btn {
       padding: 0.375rem 0.875rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.875rem;
       border: 1px solid var(--sapField_BorderColor, #89919a); background: transparent; color: var(--sapTextColor, #32363a);
-      &.active { background: var(--sapBrandColor, #0854a0); color: #fff; border-color: var(--sapBrandColor); font-weight: 600; }
+      &.active { background: var(--sapBrandColor, #0854a0); color: var(--sapButton_Emphasized_TextColor, #fff); border-color: var(--sapBrandColor); font-weight: 600; }
       &:hover:not(.active) { background: var(--sapList_Hover_Background, #f5f5f5); }
     }
     .filter-bar { display: flex; gap: 0.5rem; align-items: center; }
@@ -213,12 +213,12 @@ interface SqlPair {
     .badge {
       padding: 0.1rem 0.4rem; background: var(--sapList_Background, #f5f5f5); border-radius: 0.25rem;
       font-size: 0.7rem; color: var(--sapContent_LabelColor, #6a6d70);
-      &.badge--xlsx { background: #e8f5e9; color: #2e7d32; }
-      &.badge--csv  { background: #e3f2fd; color: #1565c0; }
-      &.badge--template { background: #fff3e0; color: #e65100; }
-      &.badge--easy { background: #e8f5e9; color: #2e7d32; }
-      &.badge--medium { background: #fff8e1; color: #f57f17; }
-      &.badge--hard { background: #ffebee; color: #c62828; }
+      &.badge--xlsx { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveTextColor, #2e7d32); }
+      &.badge--csv  { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #1565c0); }
+      &.badge--template { background: var(--sapWarningBackground, #fff3e0); color: var(--sapCriticalTextColor, #e65100); }
+      &.badge--easy { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveTextColor, #2e7d32); }
+      &.badge--medium { background: var(--sapWarningBackground, #fff8e1); color: var(--sapCriticalTextColor, #f57f17); }
+      &.badge--hard { background: var(--sapErrorBackground, #ffebee); color: var(--sapNegativeTextColor, #c62828); }
     }
     .detail-panel { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem; padding: 1.25rem; margin-top: 1rem; }
     .detail-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
@@ -236,9 +236,9 @@ interface SqlPair {
     .pair-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem; overflow: hidden; }
     .pair-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--sapList_HeaderBackground, #f7f7f7); border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4); }
     .pair-id { font-family: monospace; }
-    .pair-question { margin: 0.75rem 1rem 0.5rem; font-size: 0.875rem; color: #333; font-weight: 500; }
+    .pair-question { margin: 0.75rem 1rem 0.5rem; font-size: 0.875rem; color: var(--sapTextColor, #333); font-weight: 500; }
     .pair-sql {
-      margin: 0; padding: 0.75rem 1rem; background: #1e1e1e; color: #9cdcfe; font-size: 0.8rem;
+      margin: 0; padding: 0.75rem 1rem; background: var(--sapShell_Background, #1e1e1e); color: var(--sapShell_TextColor, #9cdcfe); font-size: 0.8rem;
       font-family: 'SFMono-Regular', Consolas, monospace; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
     }
   `],
@@ -281,13 +281,7 @@ export class DataExplorerComponent implements OnInit {
   ];
 
   readonly categories = computed(() => [...new Set(this.assets.map(a => a.category))].sort());
-  filteredAssets(): DataAsset[] {
-    return this.assets.filter(a => {
-      const matchSearch = !this.searchTerm || a.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || a.description.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchCat = !this.filterCategory || a.category === this.filterCategory;
-      return matchSearch && matchCat;
-    });
-  }
+
   readonly excelCount = computed(() => this.assets.filter(a => a.type === 'xlsx').length);
   readonly csvCount = computed(() => this.assets.filter(a => a.type === 'csv').length);
   readonly templateCount = computed(() => this.assets.filter(a => a.type === 'template').length);
@@ -320,6 +314,17 @@ export class DataExplorerComponent implements OnInit {
   iconFor(type: AssetType): string {
     const icons: Record<AssetType, string> = { xlsx: 'excel-attachment', csv: 'document-text', template: 'document' };
     return icons[type] ?? 'document';
+  }
+
+  filteredAssets(): DataAsset[] {
+    const query = this.searchTerm.toLowerCase();
+    return this.assets.filter((asset) => {
+      const matchSearch = !query
+        || asset.name.toLowerCase().includes(query)
+        || asset.description.toLowerCase().includes(query);
+      const matchCategory = !this.filterCategory || asset.category === this.filterCategory;
+      return matchSearch && matchCategory;
+    });
   }
 
   select(a: DataAsset): void {
