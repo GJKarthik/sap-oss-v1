@@ -39,7 +39,7 @@ interface AnalyticsResponse {
             <p class="page-subtitle">{{ i18n.t('analytics.subtitle') }}</p>
           </div>
           <div class="header-actions">
-            <select class="store-select" [(ngModel)]="selectedStore" (ngModelChange)="loadData()">
+            <select class="store-select" name="analyticsStore" [(ngModel)]="selectedStore" (ngModelChange)="loadData()">
               @for (s of stores; track s) {
                 <option [value]="s">{{ s }}</option>
               }

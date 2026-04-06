@@ -4,11 +4,12 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { I18nService } from '../../services/i18n.service';
+import { I18nService, Language } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { GlossaryService } from '../../services/glossary.service';
 import { takeUntil, Subject } from 'rxjs';
+import { detectTextLanguage, normalizeLanguageCode } from '../../shared/utils/language-utils';
 
 export interface SearchResult {
   id: string;
@@ -16,7 +17,7 @@ export interface SearchResult {
   score: number;
   source: string;
   page?: number;
-  language: 'ar' | 'en';
+  language: string;
 }
 
 interface SearchResponse {
@@ -42,11 +43,11 @@ interface SearchResponse {
         <div class="search-input-row">
           <input
             class="search-input"
-            [(ngModel)]="query"
+            name="query" [(ngModel)]="query"
             [placeholder]="i18n.t('semanticSearch.placeholder')"
             (keydown.enter)="search()"
           />
-          <select class="store-select" [(ngModel)]="selectedStore">
+          <select class="store-select" name="selectedStore" [(ngModel)]="selectedStore">
             @for (s of stores; track s) {
               <option [value]="s">{{ s }}</option>
             }
@@ -82,8 +83,8 @@ interface SearchResponse {
                 <span class="result-score" [class.high]="r.score >= 0.8" [class.medium]="r.score >= 0.5 && r.score < 0.8">
                   {{ (r.score * 100).toFixed(1) }}%
                 </span>
-                <span class="lang-badge" [class.lang-badge--ar]="r.language === 'ar'">
-                  {{ r.language === 'ar' ? i18n.t('chat.languageBadge.ar') : i18n.t('chat.languageBadge.en') }}
+                <span class="lang-badge" [class.lang-badge--ar]="resultLanguage(r) === 'ar'" [class.lang-badge--fr]="resultLanguage(r) === 'fr'">
+                  {{ i18n.t('chat.languageBadge.' + resultLanguage(r)) }}
                 </span>
               </div>
               <div class="result-text"><bdi>{{ r.text }}</bdi></div>
@@ -181,6 +182,10 @@ interface SearchResponse {
       background: var(--sapSuccessBackground, #e6f4ea);
       color: var(--sapPositiveColor, #107e3e);
     }
+    .lang-badge--fr {
+      background: var(--sapWarningBackground, #fef7e0);
+      color: var(--sapCriticalColor, #e76500);
+    }
 
     .result-text {
       font-size: 0.8125rem; line-height: 1.6;
@@ -208,6 +213,10 @@ export class SemanticSearchComponent implements OnDestroy {
   query = '';
   selectedStore = 'default';
   stores = ['default', 'financial_reports', 'regulatory_docs'];
+
+  resultLanguage(result: SearchResult): Language {
+    return normalizeLanguageCode(result.language) ?? detectTextLanguage(result.text, this.i18n.currentLang());
+  }
 
   search(): void {
     const q = this.query.trim();

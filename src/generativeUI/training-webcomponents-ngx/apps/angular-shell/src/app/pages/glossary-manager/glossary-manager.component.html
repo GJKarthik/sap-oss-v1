@@ -19,25 +19,35 @@
       <div class="form-grid">
         <div class="field-group">
           <label>{{ i18n.t('glossary.sourceLanguage') }}</label>
-          <select [(ngModel)]="newEntry.source_lang">
-            <option value="en">English</option>
-            <option value="ar">Arabic</option>
+          <select name="sourceLang" [(ngModel)]="newEntry.source_lang" (ngModelChange)="onSourceLanguageChange()">
+            @for (language of supportedLanguages; track language) {
+              <option [value]="language">{{ languageLabel(language) }}</option>
+            }
+          </select>
+        </div>
+        <div class="field-group">
+          <label>{{ i18n.t('glossary.targetLanguage') }}</label>
+          <select name="targetLang" [(ngModel)]="newEntry.target_lang">
+            @for (language of availableTargetLanguages(); track language) {
+              <option [value]="language">{{ languageLabel(language) }}</option>
+            }
           </select>
         </div>
         <div class="field-group">
           <label>{{ i18n.t('glossary.sourceText') }}</label>
-          <input type="text" [(ngModel)]="newEntry.source_text" placeholder="e.g. Statutory Reserve" />
+          <input type="text" name="sourceText" [(ngModel)]="newEntry.source_text" [placeholder]="i18n.t('glossary.placeholder.sourceText')" />
         </div>
         <div class="field-group">
           <label>{{ i18n.t('glossary.targetText') }}</label>
-          <input type="text" [(ngModel)]="newEntry.target_text" placeholder="e.g. الاحتياطي النظامي" />
+          <input type="text" name="targetText" [(ngModel)]="newEntry.target_text" [placeholder]="i18n.t('glossary.placeholder.targetText')" />
         </div>
         <div class="field-group">
           <label>{{ i18n.t('glossary.category') }}</label>
-          <select [(ngModel)]="newEntry.category">
-            <option value="financial">Financial</option>
-            <option value="regulatory">Regulatory</option>
-            <option value="general">General</option>
+          <select name="category" [(ngModel)]="newEntry.category">
+            <option value="financial">{{ i18n.t('glossary.category.financial') }}</option>
+            <option value="banking">{{ i18n.t('glossary.category.banking') }}</option>
+            <option value="regulatory">{{ i18n.t('glossary.category.regulatory') }}</option>
+            <option value="general">{{ i18n.t('glossary.category.general') }}</option>
           </select>
         </div>
       </div>
@@ -52,7 +62,7 @@
   <section class="section">
     <div class="section-header">
       <h2>{{ i18n.t('glossary.tmSection') }}</h2>
-      <span class="badge">{{ tmEntries().length }} overrides</span>
+      <span class="badge">{{ i18n.t('glossary.overridesCount', { count: tmEntries().length }) }}</span>
     </div>
     <div class="card table-wrap">
       <table>
@@ -68,9 +78,9 @@
         <tbody>
           @for (e of tmEntries(); track e.id) {
             <tr>
-              <td><bdi>{{ e.source_text }}</bdi> <span class="lang-tag">{{ e.source_lang }}</span></td>
-              <td><bdi>{{ e.target_text }}</bdi> <span class="lang-tag">{{ e.target_lang }}</span></td>
-              <td><span class="cat-tag">{{ e.category }}</span></td>
+              <td><bdi>{{ e.source_text }}</bdi> <span class="lang-tag">{{ languageLabel(e.source_lang) }}</span></td>
+              <td><bdi>{{ e.target_text }}</bdi> <span class="lang-tag">{{ languageLabel(e.target_lang) }}</span></td>
+              <td><span class="cat-tag">{{ categoryLabel(e.category) }}</span></td>
               <td>
                 <span class="status-chip" [class.approved]="e.is_approved">
                   {{ e.is_approved ? i18n.t('glossary.approved') : i18n.t('glossary.pending') }}
@@ -97,7 +107,7 @@
   <section class="section">
     <div class="section-header">
       <h2>{{ i18n.t('glossary.staticSection') }}</h2>
-      <span class="badge">{{ glossary.entries().length }} terms</span>
+      <span class="badge">{{ i18n.t('glossary.termsCount', { count: glossary.entries().length }) }}</span>
     </div>
     <div class="card table-wrap">
       <table>
@@ -105,6 +115,7 @@
           <tr>
             <th>{{ i18n.t('glossary.th.termEn') }}</th>
             <th>{{ i18n.t('glossary.th.termAr') }}</th>
+            <th>{{ i18n.t('glossary.th.termFr') }}</th>
             <th>{{ i18n.t('glossary.th.category') }}</th>
             <th>{{ i18n.t('glossary.th.ifrsContext') }}</th>
           </tr>
@@ -114,7 +125,8 @@
             <tr>
               <td><strong>{{ e.en }}</strong></td>
               <td dir="rtl">{{ e.ar }}</td>
-              <td><span class="cat-tag">{{ e.category }}</span></td>
+              <td>{{ e.fr }}</td>
+              <td><span class="cat-tag">{{ categoryLabel(e.category) }}</span></td>
               <td><span class="ifrs-tag">{{ e.ifrs_context }}</span></td>
             </tr>
           }

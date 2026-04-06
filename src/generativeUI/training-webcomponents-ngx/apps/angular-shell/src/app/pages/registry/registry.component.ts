@@ -56,14 +56,14 @@ interface RegistryEntry {
 
       <!-- Filter bar -->
       <div class="filter-bar">
-        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
+        <select class="filter-select" name="filterStatus" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
           <option value="">{{ i18n.t('registry.allStatus') }}</option>
           <option value="completed">{{ i18n.t('registry.completed') }}</option>
           <option value="running">Running</option>
           <option value="failed">Failed</option>
         </select>
         <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem;">
-          <input type="checkbox" [(ngModel)]="showDeployedOnly" (ngModelChange)="applyFilter()" />
+          <input type="checkbox" name="showDeployedOnly" [(ngModel)]="showDeployedOnly" (ngModelChange)="applyFilter()" />
           {{ i18n.t('registry.deployedOnly') }}
         </label>
       </div>
@@ -90,7 +90,7 @@ interface RegistryEntry {
                   <td>
                     @if (editingTag() === m.id) {
                       <div style="display: flex; gap: 0.3rem;">
-                        <input class="tag-input" [(ngModel)]="tagDraft"
+                        <input class="tag-input" name="tagDraft" [(ngModel)]="tagDraft"
                                (keyup.enter)="saveTag(m.id)" (keyup.escape)="cancelTag()" />
                         <button class="btn-xs btn-save" (click)="saveTag(m.id)">✓</button>
                         <button class="btn-xs" (click)="cancelTag()">✕</button>

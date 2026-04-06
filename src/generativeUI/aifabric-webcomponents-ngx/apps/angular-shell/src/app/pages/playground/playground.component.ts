@@ -16,6 +16,12 @@ interface InvocationEntry {
   timestamp: Date;
 }
 
+interface ToolFieldSummary {
+  name: string;
+  type: string;
+  required: boolean;
+}
+
 @Component({
   selector: 'app-playground',
   standalone: true,
@@ -35,6 +41,19 @@ interface InvocationEntry {
       </ui5-bar>
 
       <div class="workbench-container">
+        <section class="workbench-hero" aria-label="PAL Workbench guide">
+          <div class="workbench-hero__copy">
+            <span class="workbench-hero__eyebrow">Expert tool</span>
+            <ui5-title level="H4">Run PAL tooling with a guided contract, then inspect the backend response.</ui5-title>
+            <p>Choose a tool, load its schema-backed template, and only then drop into the JSON payload when you need expert control.</p>
+          </div>
+          <div class="workbench-hero__steps">
+            <span class="workbench-step">1. Pick a PAL tool</span>
+            <span class="workbench-step">2. Load the suggested arguments</span>
+            <span class="workbench-step">3. Run and review the real backend result</span>
+          </div>
+        </section>
+
         <ui5-message-strip
           *ngIf="error"
           design="Negative"
@@ -79,11 +98,30 @@ interface InvocationEntry {
                 <span>{{ selectedTool.description || 'No description provided.' }}</span>
               </div>
 
+              <div class="tool-schema" *ngIf="selectedToolFields.length > 0">
+                <div class="tool-schema__header">
+                  <strong>Tool contract</strong>
+                  <ui5-tag design="Information">{{ requiredToolFieldCount }} required</ui5-tag>
+                </div>
+                <div class="tool-schema__fields">
+                  <div *ngFor="let field of selectedToolFields" class="tool-schema__field">
+                    <div class="tool-schema__field-copy">
+                      <span class="tool-schema__field-name">{{ field.name }}</span>
+                      <span class="tool-schema__field-type">{{ field.type }}</span>
+                    </div>
+                    <ui5-tag [design]="field.required ? 'Critical' : 'Neutral'">
+                      {{ field.required ? 'Required' : 'Optional' }}
+                    </ui5-tag>
+                  </div>
+                </div>
+              </div>
+
               <div class="field-group">
                 <label for="pal-tool-args" class="field-label">Arguments (JSON)</label>
                 <ui5-textarea
                   id="pal-tool-args"
                   ngDefaultControl
+                  name="argumentsText"
                   [(ngModel)]="argumentsText"
                   [rows]="12"
                   growing
@@ -169,6 +207,64 @@ interface InvocationEntry {
       margin: 0 auto;
     }
 
+    .workbench-hero {
+      display: grid;
+      gap: 1rem;
+      padding: 1.25rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(245, 247, 250, 0.88));
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 88%, white);
+      box-shadow: var(--sapContent_Shadow1);
+    }
+
+    .workbench-hero__copy {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .workbench-hero__copy ui5-title,
+    .workbench-hero__copy p {
+      margin: 0;
+    }
+
+    .workbench-hero__copy p {
+      color: var(--sapContent_LabelColor);
+      max-width: 48rem;
+      line-height: 1.5;
+    }
+
+    .workbench-hero__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sapBrandColor) 12%, white);
+      color: var(--sapBrandColor);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .workbench-hero__steps {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .workbench-step {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 88%, white);
+      color: var(--sapTextColor);
+      font-size: var(--sapFontSmallSize);
+      font-weight: 600;
+    }
+
     .columns {
       display: grid;
       gap: 1rem;
@@ -198,6 +294,54 @@ interface InvocationEntry {
       border-radius: 0.75rem;
       background: var(--sapList_Background);
       border: 1px solid var(--sapList_BorderColor);
+    }
+
+    .tool-schema {
+      display: grid;
+      gap: 0.75rem;
+      padding: 0.9rem;
+      border-radius: 0.75rem;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--sapList_BorderColor);
+    }
+
+    .tool-schema__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .tool-schema__fields {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .tool-schema__field {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.65rem;
+      background: var(--sapList_Background);
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 90%, white);
+    }
+
+    .tool-schema__field-copy {
+      display: grid;
+      gap: 0.15rem;
+    }
+
+    .tool-schema__field-name {
+      font-weight: 600;
+      color: var(--sapTextColor);
+    }
+
+    .tool-schema__field-type {
+      color: var(--sapContent_LabelColor);
+      font-size: var(--sapFontSmallSize);
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     }
 
     .actions {
@@ -286,6 +430,27 @@ export class PlaygroundComponent implements OnInit {
 
   get selectedTool(): MCPToolDefinition | undefined {
     return this.palTools.find(tool => tool.name === this.selectedToolName);
+  }
+
+  get selectedToolFields(): ToolFieldSummary[] {
+    const properties = this.selectedTool?.inputSchema?.['properties'];
+    const required = Array.isArray(this.selectedTool?.inputSchema?.['required'])
+      ? (this.selectedTool?.inputSchema?.['required'] as string[])
+      : [];
+
+    if (!properties || typeof properties !== 'object') {
+      return [];
+    }
+
+    return Object.entries(properties as Record<string, Record<string, unknown>>).map(([name, definition]) => ({
+      name,
+      type: typeof definition?.type === 'string' ? definition.type : 'unknown',
+      required: required.includes(name),
+    }));
+  }
+
+  get requiredToolFieldCount(): number {
+    return this.selectedToolFields.filter(field => field.required).length;
   }
 
   ngOnInit(): void {

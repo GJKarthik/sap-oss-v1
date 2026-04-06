@@ -276,6 +276,8 @@ interface SafetyGateStatus {
         <div class="provenance-search">
           <ui5-input 
             placeholder="Enter fact ID to trace provenance..."
+            ngDefaultControl
+            name="provenanceSearchId"
             [(ngModel)]="provenanceSearchId"
             (keyup.enter)="searchProvenance()"
             accessible-name="Fact ID for provenance search">
@@ -636,15 +638,9 @@ export class SafetyGateComponent implements OnInit {
         `${environment.apiBaseUrl}/safety-gate/status`
       ).toPromise();
       this.gateStatus = response || null;
-    } catch {
-      // Use mock data for demo
-      this.gateStatus = {
-        gate_status: 'open',
-        active_violations: 0,
-        pending_warnings: 0,
-        last_evaluation: new Date().toISOString(),
-        health_score: 98.5
-      };
+    } catch (err) {
+      console.error('Failed to load gate status:', err);
+      this.gateStatus = null;
     }
   }
 
@@ -654,16 +650,9 @@ export class SafetyGateComponent implements OnInit {
         `${environment.apiBaseUrl}/safety-gate/validation-stats`
       ).toPromise();
       this.validationStats = response || null;
-    } catch {
-      // Use mock data for demo
-      this.validationStats = {
-        total_facts_processed: 15842,
-        facts_validated: 15127,
-        facts_rejected: 715,
-        acceptance_rate: 95.5,
-        avg_validation_time_us: 12.3,
-        last_updated: new Date().toISOString()
-      };
+    } catch (err) {
+      console.error('Failed to load validation stats:', err);
+      this.validationStats = null;
     }
   }
 
@@ -705,37 +694,9 @@ export class SafetyGateComponent implements OnInit {
           this.provenanceChain = response.chain || [];
           this.loading = false;
         },
-        error: () => {
-          // Mock data for demo
-          this.provenanceChain = [
-            {
-              fact_id: parseInt(this.provenanceSearchId),
-              predicate: 'can_access("user123", "resource456")',
-              is_base_fact: false,
-              derivation_rule: 'access_control_rule',
-              source_facts: [1, 2],
-              confidence: 0.95,
-              timestamp: new Date().toISOString()
-            },
-            {
-              fact_id: 1,
-              predicate: 'role("user123", "admin")',
-              is_base_fact: true,
-              derivation_rule: '',
-              source_facts: [],
-              confidence: 1.0,
-              timestamp: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              fact_id: 2,
-              predicate: 'resource_policy("resource456", "admin_only")',
-              is_base_fact: true,
-              derivation_rule: '',
-              source_facts: [],
-              confidence: 1.0,
-              timestamp: new Date(Date.now() - 7200000).toISOString()
-            }
-          ];
+        error: (err) => {
+          console.error('Failed to search provenance:', err);
+          this.provenanceChain = [];
           this.loading = false;
         }
       });

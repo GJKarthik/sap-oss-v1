@@ -44,8 +44,8 @@ interface SqlPair {
       <!-- Tab: Data Assets -->
       @if (activeTab() === 'assets') {
         <div class="filter-bar" style="margin-bottom: 1rem;">
-          <input class="search-input" [(ngModel)]="searchTerm" [placeholder]="i18n.t('dataExplorer.filterAssets')" />
-          <select class="filter-select" [(ngModel)]="filterCategory">
+          <input class="search-input" name="searchTerm" [(ngModel)]="searchTerm" [placeholder]="i18n.t('dataExplorer.filterAssets')" />
+          <select class="filter-select" name="filterCategory" [(ngModel)]="filterCategory">
             <option value="">{{ i18n.t('dataExplorer.allCategories') }}</option>
             @for (c of categories(); track c) {
               <option [value]="c">{{ c }}</option>
@@ -137,7 +137,7 @@ interface SqlPair {
 
           <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
             <label style="font-size: 0.875rem; font-weight: 600;">{{ i18n.t('dataExplorer.filterDifficulty') }}</label>
-            <select class="filter-select" [(ngModel)]="difficultyFilter" (ngModelChange)="loadPairs()">
+            <select class="filter-select" name="difficultyFilter" [(ngModel)]="difficultyFilter" (ngModelChange)="loadPairs()">
               <option value="">{{ i18n.t('dataExplorer.all') }}</option>
               <option value="easy">{{ i18n.t('dataExplorer.easy') }}</option>
               <option value="medium">{{ i18n.t('dataExplorer.medium') }}</option>

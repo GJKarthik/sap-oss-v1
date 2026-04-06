@@ -67,6 +67,7 @@ export interface SliderChangeEvent {
         [max]="max"
         [step]="step"
         [disabled]="disabled"
+        name="sacSliderValue"
         [(ngModel)]="value"
         (ngModelChange)="onValueChange($event)"
         (keydown)="onKeyDown($event)" />

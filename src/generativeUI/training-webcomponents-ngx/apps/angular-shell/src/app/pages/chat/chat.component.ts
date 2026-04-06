@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
-import { I18nService } from '../../services/i18n.service';
+import { I18nService, Language } from '../../services/i18n.service';
 import { LocaleDatePipe } from '../../shared/pipes/locale-date.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GlossaryService, CrossCheckFinding } from '../../services/glossary.service';
 import { TranslationMemoryService } from '../../services/translation-memory.service';
+import { detectTextLanguage } from '../../shared/utils/language-utils';
 
 /** CrossCheckFinding enriched with UI-state for the inline override form. */
 interface AuditFinding extends CrossCheckFinding {
@@ -34,6 +35,7 @@ interface CompletionRequest {
   stream: boolean;
   max_tokens: number;
   temperature: number;
+  ui_language?: Language;
 }
 
 interface CompletionResponse {
@@ -55,7 +57,7 @@ interface CompletionResponse {
         <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.model') }}</label>
-          <select class="setting-input" dir="ltr" [(ngModel)]="model">
+          <select class="setting-input" dir="ltr" name="chatModel" [(ngModel)]="model">
             <option [value]="model">{{ model }}</option>
             @for (m of availableModels(); track m) {
               @if (m !== model) {
@@ -66,16 +68,16 @@ interface CompletionResponse {
         </div>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.systemPrompt') }}</label>
-          <textarea class="setting-textarea" [(ngModel)]="systemPrompt" rows="5"
+          <textarea class="setting-textarea" name="systemPrompt" [(ngModel)]="systemPrompt" rows="5"
             placeholder="You are a helpful SQL assistant…"></textarea>
         </div>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.maxTokens') }}: {{ maxTokens }}</label>
-          <input type="range" [(ngModel)]="maxTokens" min="64" max="4096" step="64" class="range-input" />
+          <input type="range" name="maxTokens" [(ngModel)]="maxTokens" min="64" max="4096" step="64" class="range-input" />
         </div>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.temperature') }}: {{ temperature.toFixed(2) }}</label>
-          <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
+          <input type="range" name="temperature" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
         </div>
         <button class="btn-danger" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</button>
         @if (lastUsage()) {
@@ -108,7 +110,7 @@ interface CompletionResponse {
             >
               <div class="message-role">
                 {{ m.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.assistant') }}
-                <span class="lang-badge" [class.lang-badge--ar]="detectLang(m.content) === 'ar'">{{ detectLang(m.content) === 'ar' ? i18n.t('chat.languageBadge.ar') : i18n.t('chat.languageBadge.en') }}</span>
+                <span class="lang-badge" [class.lang-badge--ar]="detectLang(m.content) === 'ar'" [class.lang-badge--fr]="detectLang(m.content) === 'fr'">{{ i18n.t('chat.languageBadge.' + detectLang(m.content)) }}</span>
               </div>
               <div class="message-content"><bdi>{{ m.content }}</bdi></div>
               <div class="message-ts text-small text-muted">{{ m.ts | localeDate:'time' }}</div>
@@ -353,6 +355,10 @@ interface CompletionResponse {
       background: var(--sapSuccessBackground, #e6f4ea);
       color: var(--sapPositiveColor, #107e3e);
     }
+    .lang-badge--fr {
+      background: var(--sapWarningBackground, #fef7e0);
+      color: var(--sapCriticalColor, #e76500);
+    }
 
     /* ── Translation Audit Panel ───────────────────────────────────────── */
 
@@ -529,6 +535,7 @@ export class ChatComponent implements OnDestroy, OnInit {
 
   private static readonly EN_SYSTEM_PROMPT = 'You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.';
   private static readonly AR_SYSTEM_PROMPT = 'أنت مساعد ذكي متخصص في تحويل الأسئلة المالية باللغة العربية إلى استعلامات SQL لقواعد بيانات SAP HANA Cloud المصرفية.';
+  private static readonly FR_SYSTEM_PROMPT = 'Vous etes un assistant Text-to-SQL utile pour les schemas bancaires SAP HANA Cloud.';
 
   private static readonly EN_SUGGESTIONS = [
     'Write a SQL query to get total revenue by region',
@@ -542,21 +549,37 @@ export class ChatComponent implements OnDestroy, OnInit {
     'ما هي صيغ أزواج التدريب لتحويل النص إلى SQL؟',
   ];
 
+  private static readonly FR_SUGGESTIONS = [
+    'Ecris une requete SQL pour obtenir le chiffre d\'affaires total par region',
+    'Explique la hierarchie du schema NFRP',
+    'Quels sont les formats de paires d\'entrainement Text-to-SQL ?',
+  ];
+
   userInput = '';
   model = 'Qwen/Qwen3.5-0.6B';
   systemPrompt = ChatComponent.EN_SYSTEM_PROMPT;
   maxTokens = 1024;
   temperature = 0.7;
 
-  readonly suggestions = computed(() =>
-    this.i18n.currentLang() === 'ar' ? ChatComponent.AR_SUGGESTIONS : ChatComponent.EN_SUGGESTIONS
-  );
+  readonly suggestions = computed(() => {
+    const lang = this.i18n.currentLang();
+    if (lang === 'ar') {
+      return ChatComponent.AR_SUGGESTIONS;
+    }
+    if (lang === 'fr') {
+      return ChatComponent.FR_SUGGESTIONS;
+    }
+    return ChatComponent.EN_SUGGESTIONS;
+  });
 
   private readonly localeEffect = effect(() => {
     const lang = this.i18n.currentLang();
     if (lang === 'ar') {
       this.systemPrompt = ChatComponent.AR_SYSTEM_PROMPT;
       this.model = 'gemma4-arabic-finance';
+    } else if (lang === 'fr') {
+      this.systemPrompt = ChatComponent.FR_SYSTEM_PROMPT;
+      this.model = 'Qwen/Qwen3.5-0.6B';
     } else {
       this.systemPrompt = ChatComponent.EN_SYSTEM_PROMPT;
       this.model = 'Qwen/Qwen3.5-0.6B';
@@ -572,10 +595,8 @@ export class ChatComponent implements OnDestroy, OnInit {
     this.destroy$.complete();
   }
 
-  /** Detect if text is predominantly Arabic by checking for Arabic Unicode range. */
-  detectLang(text: string): 'ar' | 'en' {
-    const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
-    return arabicChars > text.length * 0.3 ? 'ar' : 'en';
+  detectLang(text: string): Language {
+    return detectTextLanguage(text, this.i18n.currentLang());
   }
 
   private loadModels(): void {
@@ -620,6 +641,7 @@ export class ChatComponent implements OnDestroy, OnInit {
       stream: false,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
+      ui_language: this.i18n.currentLang(),
       messages: [
         { role: 'system', content: resolvedSystemPrompt },
         ...this.messages().map((m: ChatMessage) => ({ role: m.role, content: m.content })),

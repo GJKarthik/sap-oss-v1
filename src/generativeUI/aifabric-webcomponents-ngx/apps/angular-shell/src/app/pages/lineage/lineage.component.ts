@@ -71,6 +71,7 @@ import { EmptyStateComponent } from '../../shared';
               <ui5-textarea 
                 id="cypher-query"
                 ngDefaultControl 
+                name="cypherQuery"
                 [(ngModel)]="cypherQuery" 
                 placeholder="MATCH (n) RETURN n LIMIT 10" 
                 [rows]="3"

@@ -475,9 +475,9 @@ export const AppStore = signalStore(
 
         subject.pipe(
           retry({
+            count: 3,
             delay: (error, retryCount) => {
               patchState(store, { wsState: 'reconnecting' });
-              console.warn(`WebSocket disconnected. Reconnect attempt ${retryCount}...`);
               // Exponential backoff capped at 10 seconds
               return timer(Math.min(1000 * Math.pow(2, retryCount), 10000));
             }

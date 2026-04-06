@@ -32,7 +32,7 @@ interface DeployedModel {
       <div class="selector-row">
         <div class="model-selector">
           <label><strong>{{ i18n.t('compare.modelA') }}</strong></label>
-          <select [(ngModel)]="modelA" class="sel-input">
+          <select name="modelA" [(ngModel)]="modelA" class="sel-input">
             <option value="">{{ i18n.t('compare.select') }}</option>
             @for (m of deployedModels(); track m.id) {
               <option [value]="m.id"><bdi>{{ m.label }}</bdi></option>
@@ -45,7 +45,7 @@ interface DeployedModel {
         <div class="vs-divider">{{ i18n.t('compare.vs') }}</div>
         <div class="model-selector">
           <label><strong>{{ i18n.t('compare.modelB') }}</strong></label>
-          <select [(ngModel)]="modelB" class="sel-input">
+          <select name="modelB" [(ngModel)]="modelB" class="sel-input">
             <option value="">{{ i18n.t('compare.select') }}</option>
             @for (m of deployedModels(); track m.id) {
               <option [value]="m.id"><bdi>{{ m.label }}</bdi></option>
@@ -69,7 +69,7 @@ interface DeployedModel {
 
       <!-- Shared prompt input -->
       <div class="prompt-bar">
-        <input class="prompt-input" [(ngModel)]="prompt"
+        <input class="prompt-input" name="prompt" [(ngModel)]="prompt"
                [placeholder]="i18n.t('compare.placeholder')"
                (keyup.enter)="runComparison()" />
         <button class="btn-run" (click)="runComparison()"

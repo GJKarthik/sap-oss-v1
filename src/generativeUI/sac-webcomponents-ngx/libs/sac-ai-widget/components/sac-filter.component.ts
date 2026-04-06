@@ -62,6 +62,7 @@ export interface FilterChangeEvent {
         [attr.aria-describedby]="ariaDescription ? descId : null"
         [disabled]="disabled"
         [multiple]="multiple"
+        name="sacFilterValue"
         [(ngModel)]="selectedValue"
         (ngModelChange)="onSelectionChange($event)">
         <option *ngIf="!multiple && placeholder" value="" disabled>{{ displayPlaceholder }}</option>
