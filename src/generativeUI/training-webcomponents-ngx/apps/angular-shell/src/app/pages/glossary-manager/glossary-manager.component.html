@@ -10,7 +10,7 @@
         </span>
       </div>
     </div>
-    <ui5-button design="Emphasized" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</ui5-button>
+    <button class="btn-primary" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</button>
   </div>
 
   @if (showAddForm()) {
@@ -18,22 +18,22 @@
       <h3>{{ i18n.t('glossary.addTitle') }}</h3>
       <div class="form-grid">
         <div class="field-group">
-          <label>{{ i18n.t('glossary.sourceLanguage') }}</label>
+          <label>Source Language</label>
           <select [(ngModel)]="newEntry.source_lang">
             <option value="en">English</option>
             <option value="ar">Arabic</option>
           </select>
         </div>
         <div class="field-group">
-          <label>{{ i18n.t('glossary.sourceText') }}</label>
+          <label>Source Text</label>
           <input type="text" [(ngModel)]="newEntry.source_text" [placeholder]="i18n.t('glossary.placeholderSource')" />
         </div>
         <div class="field-group">
-          <label>{{ i18n.t('glossary.targetText') }}</label>
+          <label>Target Text</label>
           <input type="text" [(ngModel)]="newEntry.target_text" [placeholder]="i18n.t('glossary.placeholderTarget')" />
         </div>
         <div class="field-group">
-          <label>{{ i18n.t('glossary.category') }}</label>
+          <label>Category</label>
           <select [(ngModel)]="newEntry.category">
             <option value="financial">Financial</option>
             <option value="regulatory">Regulatory</option>
@@ -42,8 +42,8 @@
         </div>
       </div>
       <div class="form-actions">
-        <ui5-button design="Emphasized" (click)="saveNewEntry()">{{ i18n.t('glossary.saveOverride') }}</ui5-button>
-        <ui5-button design="Transparent" (click)="showAddForm.set(false)">{{ i18n.t('glossary.cancel') }}</ui5-button>
+        <button class="btn-primary" (click)="saveNewEntry()">Save Override</button>
+        <button class="btn-outline" (click)="showAddForm.set(false)">Cancel</button>
       </div>
     </div>
   }
@@ -58,11 +58,11 @@
       <table>
         <thead>
           <tr>
-            <th>{{ i18n.t('glossary.th.source') }}</th>
-            <th>{{ i18n.t('glossary.th.mapping') }}</th>
-            <th>{{ i18n.t('glossary.th.category') }}</th>
-            <th>{{ i18n.t('glossary.th.status') }}</th>
-            <th>{{ i18n.t('glossary.th.actions') }}</th>
+            <th>Source (EN/AR)</th>
+            <th>Approved Mapping</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -73,13 +73,13 @@
               <td><span class="cat-tag">{{ e.category }}</span></td>
               <td>
                 <span class="status-chip" [class.approved]="e.is_approved">
-                  {{ e.is_approved ? i18n.t('glossary.approved') : i18n.t('glossary.pending') }}
+                  {{ e.is_approved ? 'Approved' : 'Pending' }}
                 </span>
               </td>
               <td>
                 <div class="action-row">
-                  <ui5-button *ngIf="!e.is_approved" design="Default" icon="accept" (click)="approveEntry(e)" [title]="i18n.t('glossary.approve')"></ui5-button>
-                  <ui5-button design="Negative" icon="delete" (click)="deleteEntry(e.id)" [title]="i18n.t('glossary.delete')"></ui5-button>
+                  <button *ngIf="!e.is_approved" class="btn-icon" (click)="approveEntry(e)" title="Approve">✅</button>
+                  <button class="btn-icon delete" (click)="deleteEntry(e.id)" title="Delete">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -103,10 +103,10 @@
       <table>
         <thead>
           <tr>
-            <th>{{ i18n.t('glossary.th.termEn') }}</th>
-            <th>{{ i18n.t('glossary.th.termAr') }}</th>
-            <th>{{ i18n.t('glossary.th.category') }}</th>
-            <th>{{ i18n.t('glossary.th.ifrsContext') }}</th>
+            <th>Technical Term (English)</th>
+            <th>Official Translation (Arabic)</th>
+            <th>Category</th>
+            <th>IFRS Context</th>
           </tr>
         </thead>
         <tbody>
