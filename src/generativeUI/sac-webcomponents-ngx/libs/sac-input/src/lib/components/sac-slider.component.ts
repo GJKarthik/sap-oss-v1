@@ -88,7 +88,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       min-width: 30px;
     }
     .sac-slider__max {
-      text-align: right;
+      text-align: end;
     }
     .sac-slider__value {
       text-align: center;

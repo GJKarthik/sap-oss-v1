@@ -169,7 +169,7 @@ import type {
       cursor: pointer;
       padding: 0;
       font: inherit;
-      text-align: left;
+      text-align: start;
     }
     .sac-chart__legend-item--hidden {
       opacity: 0.45;
@@ -206,7 +206,7 @@ import type {
       color: #bb0000;
     }
     :host-context([dir='rtl']) .sac-chart__legend-item {
-      text-align: right;
+      text-align: end;
     }
     :host-context([dir='rtl']) .sac-chart__body--legend-left .sac-chart__legend {
       border-right: none;

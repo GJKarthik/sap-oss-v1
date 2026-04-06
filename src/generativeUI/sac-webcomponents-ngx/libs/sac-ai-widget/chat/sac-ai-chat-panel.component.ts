@@ -205,11 +205,11 @@ interface PendingToolConfirmation {
 
       <!-- Input area with proper labeling -->
       <div class="sac-chat-input-row" role="form" [attr.aria-label]="'chat.sendAMessage' | sacTranslate">
-        <label for="sac-chat-input" class="sr-only">
+        <label [attr.for]="inputId" class="sr-only">
           {{ 'chat.typeMessage' | sacTranslate }}
         </label>
         <input
-          id="sac-chat-input"
+          [id]="inputId"
           class="sac-chat-input"
           type="text"
           [placeholder]="placeholder || ('chat.defaultPlaceholder' | sacTranslate)"
@@ -327,7 +327,7 @@ interface PendingToolConfirmation {
 
     .sac-chat-review__list {
       margin: var(--sac-spacing-xs) 0 0;
-      padding-left: 18px;
+      padding-inline-start: 18px;
     }
 
     .sac-chat-review__args {
@@ -623,9 +623,23 @@ interface PendingToolConfirmation {
         border: 1px solid CanvasText;
       }
     }
+
+    /* === Narrow-viewport breakpoint === */
+    @media (max-width: 320px) {
+      .sac-chat-input-row {
+        flex-direction: column;
+      }
+      .sac-chat-input-row button,
+      .sac-chat-input-row input {
+        width: 100%;
+      }
+    }
   `],
 })
 export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
+  private static nextId = 0;
+  readonly inputId = `sac-chat-input-${++SacAiChatPanelComponent.nextId}`;
+
   @Input() placeholder = '';
   @Input() modelId?: string;
 
