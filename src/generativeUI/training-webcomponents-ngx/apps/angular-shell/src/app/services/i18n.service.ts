@@ -26,7 +26,8 @@ export class I18nService {
   private mfCache = new Map<string, (params: Record<string, unknown>) => string>();
 
   constructor() {
-    this.loadTranslations();
+    // loadTranslations() is called via APP_INITIALIZER in app.config.ts
+    // so translations are ready before any component renders.
   }
 
   private loadSavedLang(): Language {
@@ -34,7 +35,7 @@ export class I18nService {
     return (saved === 'ar' || saved === 'en') ? saved : 'en';
   }
 
-  private async loadTranslations(): Promise<void> {
+  async loadTranslations(): Promise<void> {
     if (typeof fetch !== 'function') {
       this.mfCache.clear();
       this.applyDirection();

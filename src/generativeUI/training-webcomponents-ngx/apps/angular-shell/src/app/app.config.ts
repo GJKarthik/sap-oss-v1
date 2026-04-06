@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection, ErrorHandler } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, ErrorHandler, provideAppInitializer, inject } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withInterceptors, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';
@@ -8,6 +8,7 @@ import { diagnosticsInterceptor } from './interceptors/diagnostics.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
 import { timeoutInterceptor } from './interceptors/timeout.interceptor';
 import { GlobalErrorHandler } from './core/global-error-handler';
+import { I18nService } from './services/i18n.service';
 
 /**
  * Application configuration with providers for routing, HTTP client,
@@ -17,6 +18,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    provideAppInitializer(() => inject(I18nService).loadTranslations()),
     provideRouter(
       routes,
       withComponentInputBinding(),
