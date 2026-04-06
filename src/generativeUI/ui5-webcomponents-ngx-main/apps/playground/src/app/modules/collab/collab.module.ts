@@ -15,9 +15,8 @@ import { CollabDemoComponent } from './collab-demo.component';
     Ui5I18nModule,
     GenUiCollabModule.forRoot({
       websocketUrl: environment.collabWsUrl,
-      // TODO: replace with authenticated user ID and display name from an auth service
-      userId: 'playground-user-' + Math.random().toString(36).slice(2, 7),
-      displayName: 'Playground User',
+      userId: environment.collabUserId,
+      displayName: environment.collabDisplayName,
     }),
     RouterModule.forChild([{ path: '', component: CollabDemoComponent }]),
   ],
