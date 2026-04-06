@@ -33,9 +33,14 @@ describe('GovernanceComponent', () => {
 
     fixture = TestBed.createComponent(GovernanceComponent);
     httpMock = TestBed.inject(HttpTestingController);
+
+    // Flush the i18n translation request triggered by the root-provided I18nService
+    httpMock.match('assets/i18n/en.json').forEach(req => req.flush({}));
   }
 
   afterEach(() => {
+    // Flush any outstanding i18n translation requests before verifying
+    httpMock?.match('assets/i18n/en.json').forEach(req => req.flush({}));
     httpMock?.verify();
     TestBed.resetTestingModule();
   });
