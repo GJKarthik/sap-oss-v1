@@ -18,7 +18,6 @@ export class GenerativeIntentService {
 
   // Dispatch an intent back to the root
   dispatch(intent: UIIntent) {
-    console.log('[GenerativeIntentService] Bubbling Intent:', intent);
     this.intentSubject.next(intent);
   }
 }

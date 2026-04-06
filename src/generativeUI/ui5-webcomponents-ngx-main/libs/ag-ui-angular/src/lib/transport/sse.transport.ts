@@ -278,7 +278,7 @@ export class SseTransport implements AgUiTransport {
       30000 // Max 30 seconds
     );
 
-    console.log(`[SSE Transport] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempt}/${maxRetries})`);
+    console.warn(`[SSE Transport] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempt}/${maxRetries})`);
 
     timer(delay)
       .pipe(takeUntil(this.destroySubject))

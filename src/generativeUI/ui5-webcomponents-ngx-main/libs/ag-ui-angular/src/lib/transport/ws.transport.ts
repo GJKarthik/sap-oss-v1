@@ -276,7 +276,7 @@ export class WsTransport implements AgUiTransport {
     }
 
     // Abnormal closure - attempt reconnection
-    console.log(`[WS Transport] Connection closed: ${event.code} ${event.reason}`);
+    console.warn(`[WS Transport] Connection closed: ${event.code} ${event.reason}`);
 
     if (this.config.reconnect !== false) {
       this.attemptReconnect(initialReject);
@@ -351,7 +351,7 @@ export class WsTransport implements AgUiTransport {
       30000 // Max 30 seconds
     );
 
-    console.log(`[WS Transport] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempt}/${maxRetries})`);
+    console.warn(`[WS Transport] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempt}/${maxRetries})`);
 
     timer(delay)
       .pipe(takeUntil(this.destroySubject))

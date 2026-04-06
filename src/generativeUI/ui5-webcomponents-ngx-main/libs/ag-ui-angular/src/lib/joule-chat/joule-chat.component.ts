@@ -483,7 +483,9 @@ export class JouleChatComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.agUiClient.disconnect().catch(() => {});
+    this.agUiClient.disconnect().catch(() => {
+      // Intentionally swallowed: component is being destroyed, so disconnect errors are harmless.
+    });
   }
 
   // ---------------------------------------------------------------------------
