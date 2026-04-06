@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nService } from './i18n.service';
 
+interface I18nServiceTestAccess {
+  translations: Record<'en' | 'ar', Record<string, string>>;
+  loaded: boolean;
+  mfCache: Map<string, (params: Record<string, unknown>) => string>;
+}
+
 describe('I18nService – ICU MessageFormat', () => {
   let service: I18nService;
 
@@ -21,17 +27,23 @@ describe('I18nService – ICU MessageFormat', () => {
   beforeEach(() => {
     localStorage.clear();
     // Mock fetch to prevent real HTTP calls
-    (globalThis as any).fetch = jest.fn().mockImplementation((url: string) => {
+    const fetchMock = jest.fn((input: RequestInfo | URL) => {
+      const url = String(input);
       const body = url.includes('ar.json') ? arTranslations : enTranslations;
-      return Promise.resolve({ json: () => Promise.resolve(body) });
+      return Promise.resolve({ json: () => Promise.resolve(body) } as Response);
+    }) as typeof fetch;
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetchMock,
     });
 
     TestBed.configureTestingModule({});
     service = TestBed.inject(I18nService);
     // Directly inject translations to avoid async loading issues
-    (service as any).translations = { en: enTranslations, ar: arTranslations };
-    (service as any).loaded = true;
-    (service as any).mfCache.clear();
+    const serviceState = service as unknown as I18nServiceTestAccess;
+    serviceState.translations = { en: enTranslations, ar: arTranslations };
+    serviceState.loaded = true;
+    serviceState.mfCache.clear();
   });
 
   afterEach(() => {

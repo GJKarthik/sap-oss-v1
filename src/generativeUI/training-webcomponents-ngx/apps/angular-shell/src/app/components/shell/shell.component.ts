@@ -24,6 +24,24 @@ interface NavItem {
   route: string;
 }
 
+type Ui5PopoverElement = HTMLElement & {
+  showAt?: (target: HTMLElement) => void;
+  opener?: HTMLElement;
+  open?: boolean;
+};
+
+type ShellbarClickEvent = Event & {
+  detail?: {
+    targetRef?: HTMLElement | null;
+  };
+};
+
+type ProductSelectEvent = Event & {
+  detail?: {
+    item?: Element | null;
+  };
+};
+
 @Component({
   selector: 'app-shell',
   standalone: true,
@@ -445,8 +463,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   searchQuery = signal('');
   
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('productPopover') productPopover!: ElementRef<any>;
-  @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
+  @ViewChild('productPopover') productPopover!: ElementRef<Ui5PopoverElement>;
+  @ViewChild('profilePopover') profilePopover!: ElementRef<Ui5PopoverElement>;
 
   searchResults = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -544,7 +562,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.toast.info(this.i18n.t('app.noNotifications'));
   }
 
-  openProducts(event: any): void {
+  openProducts(event: ShellbarClickEvent): void {
     const popover = this.productPopover?.nativeElement;
     const target = event?.detail?.targetRef;
     if (popover && target) {
@@ -557,14 +575,14 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  onProductSelect(event: any): void {
-    const url = event.detail.item.getAttribute('data-url');
+  onProductSelect(event: ProductSelectEvent): void {
+    const url = event.detail?.item?.getAttribute('data-url');
     if (url) {
       window.location.href = url;
     }
   }
 
-  openProfile(event: any): void {
+  openProfile(event: ShellbarClickEvent): void {
     const popover = this.profilePopover?.nativeElement;
     const target = event?.detail?.targetRef;
     if (popover && target) {
@@ -577,12 +595,12 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleLanguageOptions(event: any): void {
-    const checked = event.target?.checked;
+  toggleLanguageOptions(event: Event): void {
+    const target = event.target as (EventTarget & { checked?: boolean }) | null;
+    const checked = Boolean(target?.checked);
     this.userSettings.setShowLanguageOptions(checked);
     if (!checked && this.i18n.currentLang() !== 'en') {
       this.i18n.setLanguage('en');
     }
   }
 }
-

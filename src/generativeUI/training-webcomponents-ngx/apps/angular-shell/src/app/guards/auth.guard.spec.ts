@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 
@@ -26,7 +26,9 @@ describe('authGuard', () => {
   });
 
   const runGuard = () => {
-    return TestBed.runInInjectionContext(() => authGuard({} as any, {} as any));
+    const route = new ActivatedRouteSnapshot();
+    const state = { url: '/protected' } as RouterStateSnapshot;
+    return TestBed.runInInjectionContext(() => authGuard(route, state));
   };
 
   it('should allow access when authenticated', () => {

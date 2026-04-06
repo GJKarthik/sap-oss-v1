@@ -167,8 +167,11 @@ describe('ChatComponent', () => {
 
     const finding = component.messages()[0].auditFindings?.[0];
     expect(finding).toBeDefined();
+    if (!finding) {
+      throw new Error('Expected an audit finding to be present');
+    }
 
-    component.saveOverride(ts, finding!);
+    component.saveOverride(ts, finding);
 
     expect(MOCK_TM.save).toHaveBeenCalledWith({
       source_text: 'صافي الربح',

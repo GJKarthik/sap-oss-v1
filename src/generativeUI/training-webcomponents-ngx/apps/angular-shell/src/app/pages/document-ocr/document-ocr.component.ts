@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { I18nService } from '../../services/i18n.service';
 import {
-  OcrService, OcrResult, FinancialField, OcrDetectedTable, OcrHealthStatus,
+  OcrService, OcrResult, OcrDetectedTable, OcrHealthStatus,
 } from '../../services/ocr.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
@@ -449,7 +449,8 @@ export class DocumentOcrComponent {
       canvas.style.width = `${viewport.width / dpr}px`;
       canvas.style.height = `${viewport.height / dpr}px`;
 
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
       await page.render({ canvasContext: ctx, viewport, canvas }).promise;
 
       this._currentPageWidth.set(page.getViewport({ scale: 1 }).width);

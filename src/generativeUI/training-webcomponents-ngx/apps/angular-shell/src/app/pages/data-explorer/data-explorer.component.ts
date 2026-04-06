@@ -281,11 +281,6 @@ export class DataExplorerComponent implements OnInit {
   ];
 
   readonly categories = computed(() => [...new Set(this.assets.map(a => a.category))].sort());
-  readonly filteredAssets = computed(() => this.assets.filter(a => {
-    const matchSearch = !this.searchTerm || a.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || a.description.toLowerCase().includes(this.searchTerm.toLowerCase());
-    const matchCat = !this.filterCategory || a.category === this.filterCategory;
-    return matchSearch && matchCat;
-  }));
   readonly excelCount = computed(() => this.assets.filter(a => a.type === 'xlsx').length);
   readonly csvCount = computed(() => this.assets.filter(a => a.type === 'csv').length);
   readonly templateCount = computed(() => this.assets.filter(a => a.type === 'template').length);
@@ -318,6 +313,17 @@ export class DataExplorerComponent implements OnInit {
   iconFor(type: AssetType): string {
     const icons: Record<AssetType, string> = { xlsx: 'excel-attachment', csv: 'document-text', template: 'document' };
     return icons[type] ?? 'document';
+  }
+
+  filteredAssets(): DataAsset[] {
+    const query = this.searchTerm.toLowerCase();
+    return this.assets.filter((asset) => {
+      const matchSearch = !query
+        || asset.name.toLowerCase().includes(query)
+        || asset.description.toLowerCase().includes(query);
+      const matchCategory = !this.filterCategory || asset.category === this.filterCategory;
+      return matchSearch && matchCategory;
+    });
   }
 
   select(a: DataAsset): void {

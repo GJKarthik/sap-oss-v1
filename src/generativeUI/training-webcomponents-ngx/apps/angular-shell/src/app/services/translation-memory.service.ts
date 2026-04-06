@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 export interface TMEntry {
   id?: string;
@@ -38,12 +38,16 @@ export class TranslationMemoryService {
     return this.http.post<TMEntry>(this.base, entry);
   }
 
-  delete(entryId: string): Observable<any> {
-    return this.http.delete(`${this.base}/${entryId}`);
+  delete(entryId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${entryId}`);
   }
 
   /** Gets all approved overrides for a specific language pair. */
   getOverrides(sourceLang: string, targetLang: string): Observable<TMEntry[]> {
-    return this.list(); // In production, filter on backend
+    return this.list().pipe(
+      map((entries) => entries.filter((entry) => (
+        entry.source_lang === sourceLang && entry.target_lang === targetLang
+      )))
+    );
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { Observable, of, tap, shareReplay, timer, switchMap, catchError } from 'rxjs';
+import { Observable, of, tap, shareReplay, catchError } from 'rxjs';
 
 /**
  * Cache entry with metadata for stale-while-revalidate strategy

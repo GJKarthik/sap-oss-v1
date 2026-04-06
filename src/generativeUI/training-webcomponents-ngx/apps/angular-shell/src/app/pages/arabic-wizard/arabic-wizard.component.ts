@@ -228,7 +228,7 @@ export class ArabicWizardComponent implements OnDestroy {
     if (this.currentPage() < total) this.currentPage.update((page) => page + 1);
   }
 
-  onTextEdit(_event: FocusEvent): void {
+  onTextEdit(): void {
     // Editing is currently local-only; persistence is added once review storage is wired.
   }
 

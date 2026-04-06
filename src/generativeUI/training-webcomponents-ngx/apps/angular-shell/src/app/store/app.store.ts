@@ -131,6 +131,14 @@ const CACHE_CONFIG = {
 } as const;
 type CacheKey = keyof typeof CACHE_CONFIG;
 
+type WsMessage =
+  | { type: 'gpu'; data: GpuStatus }
+  | { type: 'jobs'; data: JobResponse[] }
+  | { type: string; data?: unknown };
+
+const isGpuWsMessage = (msg: WsMessage): msg is Extract<WsMessage, { type: 'gpu' }> => msg.type === 'gpu';
+const isJobsWsMessage = (msg: WsMessage): msg is Extract<WsMessage, { type: 'jobs' }> => msg.type === 'jobs';
+
 function isCacheValid<T>(cached: CachedData<T>, key: keyof typeof CACHE_CONFIG): boolean {
   if (!cached.lastFetched) return false;
   const age = Date.now() - cached.lastFetched;
@@ -431,11 +439,11 @@ export const AppStore = signalStore(
       // Cache Invalidation
       // ======================================================================
       invalidateCache(key: CacheKey): void {
-        updateCache(key, { lastFetched: null, state: 'idle' } as any);
+        updateCache(key, { lastFetched: null, state: 'idle' } as Partial<AppState[typeof key]>);
       },
       
       forceRefresh(key: CacheKey): void {
-        updateCache(key, { lastFetched: null } as any);
+        updateCache(key, { lastFetched: null } as Partial<AppState[typeof key]>);
         switch (key) {
           case 'health': this.loadHealth(); break;
           case 'gpu': this.loadGpu(); break;
@@ -455,7 +463,7 @@ export const AppStore = signalStore(
 
         patchState(store, { wsState: 'connecting' });
 
-        const subject = webSocket({
+        const subject = webSocket<WsMessage>({
           url: wsUrl,
           openObserver: {
             next: () => patchState(store, { wsState: 'connected' })
@@ -475,10 +483,10 @@ export const AppStore = signalStore(
             }
           })
         ).subscribe({
-          next: (msg: any) => {
-            if (msg.type === 'gpu') {
+          next: (msg: WsMessage) => {
+            if (isGpuWsMessage(msg)) {
               updateCache('gpu', { data: msg.data, state: 'loaded', lastFetched: Date.now() });
-            } else if (msg.type === 'jobs') {
+            } else if (isJobsWsMessage(msg)) {
               updateCache('jobs', { data: msg.data, state: 'loaded', lastFetched: Date.now() });
             }
           },

@@ -1,6 +1,6 @@
 import {
   Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy,
-  signal, inject, OnInit, NgZone
+  signal, inject, OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,8 +14,6 @@ interface DeployedModel {
   label: string;
   model_name: string;
 }
-
-interface ChatMessage { role: 'user' | 'model'; text: string; }
 
 @Component({
   selector: 'app-compare',

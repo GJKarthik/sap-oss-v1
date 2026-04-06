@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { CacheService } from './cache.service';
 
@@ -39,7 +39,7 @@ describe('CacheService', () => {
 
       service.get('/expired', fetchFn, { staleTime: 0, maxAge: 0 }).subscribe(() => {
         setTimeout(() => {
-          service.get('/expired', fetchFn, { staleTime: 0, maxAge: 0 }).subscribe((result) => {
+          service.get('/expired', fetchFn, { staleTime: 0, maxAge: 0 }).subscribe(() => {
             expect(fetchFn).toHaveBeenCalledTimes(2);
             done();
           });

@@ -1,6 +1,6 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ToastService, Toast, ToastType } from '../../services/toast.service';
+import { ToastService, ToastType } from '../../services/toast.service';
 
 @Component({
   selector: 'app-toast',

@@ -1,19 +1,9 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { AppStore, GpuStatus, HealthStatus } from './app.store';
+import { AppStore, HealthStatus } from './app.store';
 
 const MOCK_HEALTH: HealthStatus = { status: 'healthy', service: 'training-webcomponents-ngx-api', version: '1.0.0' };
-const MOCK_GPU: GpuStatus = {
-  gpu_name: 'NVIDIA T4',
-  total_memory_gb: 16,
-  used_memory_gb: 4,
-  free_memory_gb: 12,
-  utilization_percent: 25,
-  temperature_c: 45,
-  driver_version: '535.0',
-  cuda_version: '12.2',
-};
 
 describe('AppStore', () => {
   let store: InstanceType<typeof AppStore>;
@@ -64,6 +54,10 @@ describe('AppStore', () => {
     it('sets state to error on HTTP failure', fakeAsync(() => {
       store.loadHealth();
       tick();
+      httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
+      tick(500);
+      httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
+      tick(1000);
       httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
       tick();
 

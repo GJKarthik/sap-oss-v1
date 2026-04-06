@@ -661,7 +661,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   readonly expandedJobId = signal<string | null>(null);
-  private refreshInterval: any;
+  private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly models = signal<ModelInfo[]>([]);
   readonly jobs = signal<JobResponse[]>([]);
@@ -730,7 +730,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
   mathMin(a: number, b: number) { return Math.min(a, b); }
 
-  generateSparklinePath(history: any[], key: 'train_loss' | 'val_loss'): string {
+  generateSparklinePath(history: JobHistory[], key: 'train_loss' | 'val_loss'): string {
     if (!history || history.length < 2) return '';
     const maxVal = Math.max(...history.map(h => Math.max(h.train_loss, h.val_loss)));
     const minVal = 0;
@@ -768,7 +768,6 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     this.refreshInterval = setInterval(() => {
       // Don't poll REST if a row is actively WS streaming
       if (!this.expandedJobId() && !this.loading()) {
-        const isBackground = true;
         this.api.get<JobResponse[]>('/jobs').pipe(takeUntil(this.destroy$)).subscribe({
           next: (res) => this.jobs.set(res)
         });

@@ -5,7 +5,6 @@ import {
   ChangeDetectionStrategy,
   inject,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';

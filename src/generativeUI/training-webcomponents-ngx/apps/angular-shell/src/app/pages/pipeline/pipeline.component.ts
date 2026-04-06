@@ -262,7 +262,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly wsConnected = signal(false);
 
   private ws: WebSocket | null = null;
-  private reconnectTimer: any = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldAutoScroll = true;
 
   readonly stages = signal<PipelineStage[]>([

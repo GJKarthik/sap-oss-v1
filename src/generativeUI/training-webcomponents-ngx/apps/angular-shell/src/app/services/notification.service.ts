@@ -7,7 +7,6 @@ export class NotificationService {
   
   async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
-      console.warn('Browser does not support desktop notifications');
       return false;
     }
     

@@ -32,6 +32,12 @@ export class I18nService {
   }
 
   private async loadTranslations(): Promise<void> {
+    if (typeof fetch !== 'function') {
+      this.mfCache.clear();
+      this.applyDirection();
+      return;
+    }
+
     try {
       const [enResp, arResp] = await Promise.all([
         fetch('assets/i18n/en.json'),

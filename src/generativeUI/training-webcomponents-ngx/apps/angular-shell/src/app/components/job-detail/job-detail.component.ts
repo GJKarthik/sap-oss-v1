@@ -154,7 +154,7 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly logLines = signal<LogLine[]>([]);
 
   private ws: WebSocket | null = null;
-  private reconnect: any = null;
+  private reconnect: ReturnType<typeof setTimeout> | null = null;
   // Loss data: [step, loss]
   private lossPoints: [number, number][] = [];
 
