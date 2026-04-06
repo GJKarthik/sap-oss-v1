@@ -36,8 +36,8 @@ interface SqlPair {
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('dataExplorer.title') }}</h1>
         <div class="tab-bar">
-          <button class="tab-btn" [class.active]="activeTab() === 'assets'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</button>
-          <button class="tab-btn" [class.active]="activeTab() === 'pairs'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</button>
+          <ui5-button [design]="activeTab() === 'assets' ? 'Emphasized' : 'Default'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</ui5-button>
+          <ui5-button [design]="activeTab() === 'pairs' ? 'Emphasized' : 'Default'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</ui5-button>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ interface SqlPair {
             <div class="detail-header">
               <span class="detail-icon"><ui5-icon [name]="iconFor(sel.type)"></ui5-icon></span>
               <h2 class="detail-title"><bdi>{{ sel.name }}</bdi></h2>
-              <button class="close-btn" [attr.aria-label]="i18n.t('dataExplorer.closeDetail')" (click)="clearSelection()">✕</button>
+              <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('dataExplorer.closeDetail')" (click)="clearSelection()"></ui5-button>
             </div>
             <table class="info-table">
               <tbody>
@@ -226,7 +226,7 @@ interface SqlPair {
     .detail-title { flex: 1; font-size: 0.9375rem; font-weight: 600; margin: 0; }
     .close-btn { background: transparent; border: none; cursor: pointer; font-size: 1rem; color: var(--sapContent_LabelColor, #6a6d70); padding: 0.25rem; }
     .info-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem;
-      td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
+      td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4); text-align: start;
         &:first-child { color: var(--sapContent_LabelColor, #6a6d70); width: 30%; font-weight: 500; }
       }
       tr:last-child td { border-bottom: none; }
@@ -281,6 +281,7 @@ export class DataExplorerComponent implements OnInit {
   ];
 
   readonly categories = computed(() => [...new Set(this.assets.map(a => a.category))].sort());
+
   readonly excelCount = computed(() => this.assets.filter(a => a.type === 'xlsx').length);
   readonly csvCount = computed(() => this.assets.filter(a => a.type === 'csv').length);
   readonly templateCount = computed(() => this.assets.filter(a => a.type === 'template').length);

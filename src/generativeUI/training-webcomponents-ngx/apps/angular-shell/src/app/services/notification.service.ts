@@ -18,7 +18,7 @@ export class NotificationService {
       const permission = await Notification.requestPermission();
       return permission === 'granted';
     } catch (e) {
-      console.error('Failed to request notification permission', e);
+      // Notification permission request failed — fall through to return false
       return false;
     }
   }

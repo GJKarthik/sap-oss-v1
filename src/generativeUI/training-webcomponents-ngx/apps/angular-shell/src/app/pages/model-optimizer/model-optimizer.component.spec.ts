@@ -60,6 +60,8 @@ describe('ModelOptimizerComponent', () => {
 
   afterEach(() => {
     component.ngOnDestroy();
+    // Flush any pending init requests from ngOnInit → loadData()
+    httpMock.match(() => true).forEach(r => r.flush([]));
     httpMock.verify();
   });
 
@@ -70,7 +72,7 @@ describe('ModelOptimizerComponent', () => {
   it('shows toast when a model is clicked in novice mode', () => {
     component.selectModel({ name: 'Model A', recommended_quant: 'int4', t4_compatible: true, size_gb: 4, parameters: '1B' });
     
-    expect(mockToast.info).toHaveBeenCalledWith('Switch to Intermediate mode to select a model manually.');
+    expect(mockToast.info).toHaveBeenCalledWith('modelOpt.switchMode');
     expect(component.jobForm.value.model_name).not.toBe('Model A');
   });
 

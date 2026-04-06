@@ -13,6 +13,9 @@ import { SacChartComponent } from '../libs/sac-chart/src/lib/components/sac-char
 import { SacChartService } from '../libs/sac-chart/src/lib/services/sac-chart.service';
 import { SacDataSourceService } from '../libs/sac-datasource/src/lib/services/sac-datasource.service';
 import { SacDataActionService, SacPlanningModelService } from '../libs/sac-planning/src/index';
+import { SacI18nService } from '../libs/sac-core/src/lib/services/sac-i18n.service';
+
+
 
 type WidgetDataSource = {
   id: string;
@@ -127,6 +130,7 @@ describe('widget and chart integration', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacAiSessionService, useValue: session },
         { provide: SacDataSourceService, useValue: dataSources },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 
@@ -296,6 +300,7 @@ describe('widget and chart integration', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacAiSessionService, useValue: session },
         { provide: SacDataSourceService, useValue: dataSources },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 
@@ -346,6 +351,7 @@ describe('widget and chart integration', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacAiSessionService, useValue: session },
         { provide: SacDataSourceService, useValue: dataSources },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 
@@ -448,6 +454,7 @@ describe('widget and chart integration', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacAiSessionService, useValue: session },
         { provide: SacDataSourceService, useValue: dataSources },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 

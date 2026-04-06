@@ -577,6 +577,13 @@
   "modelOpt.deployFailed": "Deploy failed: {detail}",
   "modelOpt.deployErrorTitle": "Deployment Error",
   "modelOpt.inferenceFailed": "Inference failed: {detail}",
+
+  "status.online": "Online",
+  "status.offline": "Offline",
+  "chat.clearConfirm": "Are you sure you want to clear the chat history?",
+
+  "form.errorsTitle": "Please fix the following errors:",
   "modelOpt.formErrors": "Please correct the following errors:",
-  "modelOpt.errorModelRequired": "Model name is required"
+  "modelOpt.errorModelRequired": "Model name is required.",
+  "modelOpt.errorQuantRequired": "Quantization format is required."
 }

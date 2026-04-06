@@ -182,6 +182,7 @@ describe('PipelineComponent', () => {
   // ── clearLogs ────────────────────────────────────────────────────────────────
 
   it('clearLogs() should empty the log lines signal', () => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     wsMock.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ type: 'log', text: 'hello' }) }));
     expect(component.logLines()).toHaveLength(1);
     component.clearLogs();

@@ -183,3 +183,14 @@ ui5-page {
     unicode-bidi: isolate;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Reduced motion: respect prefers-reduced-motion
+// ---------------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

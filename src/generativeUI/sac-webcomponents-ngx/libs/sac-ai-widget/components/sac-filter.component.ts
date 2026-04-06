@@ -48,7 +48,7 @@ export interface FilterChangeEvent {
 @Component({
   selector: 'sac-filter-dropdown',
   standalone: true,
-  imports: [CommonModule, FormsModule, SacTranslatePipe],
+  imports: [CommonModule, SacTranslatePipe, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sac-filter sac-filter--dropdown"
@@ -91,6 +91,9 @@ export interface FilterChangeEvent {
     .sac-filter__select:focus-visible {
       outline: none; border-color: var(--sapField_Focus_BorderColor, #0854a0);
       box-shadow: 0 0 0 2px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
+    }
+    .sac-filter__select {
+      transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
     }
     .sac-filter__select:disabled {
       opacity: 0.5; cursor: not-allowed; background: var(--sapField_ReadOnly_Background, #f7f7f7);
@@ -206,7 +209,13 @@ export class SacFilterDropdownComponent {
     .sac-filter__options { display: flex; flex-direction: column; gap: 8px; }
     .sac-filter__checkbox-label {
       display: flex; align-items: center; gap: 8px; cursor: pointer;
-      padding: 4px 8px; border-radius: 4px; transition: background 0.15s;
+      padding: 4px 8px; border-radius: 4px;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+    }
+    .sac-filter__checkbox-label--checked {
+      border-color: var(--sapBrandColor, #0854a0);
+      background: color-mix(in srgb, var(--sapBrandColor, #0854a0) 6%, transparent);
     }
     .sac-filter__checkbox-label:hover:not(.sac-filter--disabled *) {
       background: var(--sapList_Hover_Background, rgba(0,0,0,0.04));

@@ -1,6 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService, ToastType } from '../../services/toast.service';
+import '@ui5/webcomponents/dist/Button.js';
 
 @Component({
   selector: 'app-toast',
@@ -21,13 +22,13 @@ import { ToastService, ToastType } from '../../services/toast.service';
             <div class="toast-title" *ngIf="toast.title">{{ toast.title }}</div>
             <div class="toast-message">{{ toast.message }}</div>
           </div>
-          <button 
-            class="toast-close" 
+          <ui5-button
+            design="Transparent"
+            icon="decline"
             (click)="toastService.dismiss(toast.id)"
             aria-label="Dismiss notification"
           >
-            ✕
-          </button>
+          </ui5-button>
         </div>
       }
     </div>

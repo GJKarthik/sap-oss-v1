@@ -65,7 +65,7 @@ function getPropertyType(type: Type | undefined, resolvedJsons: Record<string, J
     return 'any';
   }
   if (!type?.text) {
-    console.log(type);
+    console.warn('[schema-parser] Type object missing text property:', type);
   }
   const mappedType = typesMap[type.text.toLowerCase()];
   if (mappedType) {
@@ -83,7 +83,8 @@ function getPropertyType(type: Type | undefined, resolvedJsons: Record<string, J
 
 const resolveFile = (ref: Reference): string => {
   /**
-   * TODO remove when it's fixed
+   * Fallback: when `ref.module` is absent, use `ref.package` as the module path.
+   * This handles cases where the schema omits the module field.
    */
   if (!ref.module && ref.package) {
     return ref.package;
@@ -146,7 +147,7 @@ const refToImportData = (resolvedJsons: Record<string, JavaScriptModule[]>, ref:
     // throw new Error(`Cannot find export for ${ref.package}/${ref.module}#${ref.name}`);
   })();
   if (val.path === '') {
-    console.log(val);
+    console.warn('[schema-parser] Resolved reference has empty path:', val);
   }
   return val;
 }

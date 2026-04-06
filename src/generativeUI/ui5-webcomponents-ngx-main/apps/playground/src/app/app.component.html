@@ -2,6 +2,7 @@
 <a class="skip-link" href="#main-content">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
 
 <!-- App Shell -->
+<a class="skip-link" href="#main-content" (click)="skipToMain($event)">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
 <div class="app-shell">
 
   <!-- Fiori ShellBar -->
@@ -63,7 +64,7 @@
     </ui5-shellbar-item>
 
     <!-- Theme switcher in profile slot -->
-    <ui5-select slot="profile" style="min-width:160px" (change)="onThemeChange($event)">
+    <ui5-select slot="profile" style="min-width:160px" [attr.accessible-name]="'THEME_LABEL' | ui5I18n" (change)="onThemeChange($event)">
       <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
       <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
       <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">{{ 'THEME_QUARTZ_LIGHT' | ui5I18n }}</ui5-option>
@@ -159,7 +160,7 @@
     </div>
   </nav>
 
-  <section class="demo-tour-banner" *ngIf="demoTourActive" aria-label="Demo tour controls">
+  <section class="demo-tour-banner" *ngIf="demoTourActive && !demoTourDismissed" aria-label="Demo tour controls">
     <div class="demo-tour-banner__left">
       <ui5-tag design="Information">{{ 'DEMO_TOUR_LABEL' | ui5I18n }} {{ demoTourProgress }}</ui5-tag>
       <span>{{ 'DEMO_TOUR_CURRENT_STEP' | ui5I18n }}: {{ demoTourStepLabel }}</span>
@@ -167,6 +168,7 @@
     <div class="demo-tour-banner__actions">
       <ui5-button data-testid="demo-tour-next" design="Emphasized" (click)="nextDemoStep()">{{ 'DEMO_TOUR_NEXT' | ui5I18n }}</ui5-button>
       <ui5-button data-testid="demo-tour-end" design="Transparent" (click)="endDemoTour()">{{ 'DEMO_TOUR_END' | ui5I18n }}</ui5-button>
+      <ui5-button data-testid="demo-tour-dismiss" design="Transparent" (click)="dismissDemoTour()">{{ 'DEMO_TOUR_DISMISS' | ui5I18n }}</ui5-button>
     </div>
   </section>
 
@@ -182,7 +184,7 @@
   <playground-live-health-panel></playground-live-health-panel>
 
   <!-- Main Content -->
-  <main id="main-content" class="app-content">
+  <main id="main-content" class="app-content" tabindex="-1">
     <router-outlet></router-outlet>
   </main>
 

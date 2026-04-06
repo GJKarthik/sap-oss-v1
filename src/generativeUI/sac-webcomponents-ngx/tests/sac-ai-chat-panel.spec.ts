@@ -8,6 +8,9 @@ import { AgUiEvent, SacAgUiService } from '../libs/sac-ai-widget/ag-ui/sac-ag-ui
 import { SacAiChatPanelComponent } from '../libs/sac-ai-widget/chat/sac-ai-chat-panel.component';
 import { SacToolDispatchService } from '../libs/sac-ai-widget/chat/sac-tool-dispatch.service';
 import { SacAiSessionService } from '../libs/sac-ai-widget/session/sac-ai-session.service';
+import { SacI18nService } from '../libs/sac-core/src/lib/services/sac-i18n.service';
+
+
 
 async function flushAsync(): Promise<void> {
   await Promise.resolve();
@@ -101,6 +104,7 @@ describe('SacAiChatPanelComponent', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacToolDispatchService, useValue: toolDispatch },
         { provide: SacAiSessionService, useValue: session },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 
@@ -207,6 +211,7 @@ describe('SacAiChatPanelComponent', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacToolDispatchService, useValue: toolDispatch },
         { provide: SacAiSessionService, useValue: session },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 
@@ -309,6 +314,7 @@ describe('SacAiChatPanelComponent', () => {
         { provide: SacAgUiService, useValue: agUi },
         { provide: SacToolDispatchService, useValue: toolDispatch },
         { provide: SacAiSessionService, useValue: session },
+        { provide: SacI18nService, useClass: SacI18nService },
       ],
     });
 

@@ -72,7 +72,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       cursor: not-allowed;
     }
     .sac-checkbox__label {
-      margin-left: 8px;
+      margin-inline-start: 8px;
       font-size: 14px;
     }
   `],

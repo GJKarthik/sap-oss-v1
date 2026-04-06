@@ -17,6 +17,10 @@ import '@ui5/webcomponents/dist/Tag.js';
 import '@ui5/webcomponents/dist/Popover.js';
 import '@ui5/webcomponents/dist/List.js';
 import '@ui5/webcomponents/dist/ListItemStandard.js';
+import '@ui5/webcomponents/dist/Button.js';
+import '@ui5/webcomponents/dist/Select.js';
+import '@ui5/webcomponents/dist/Option.js';
+import '@ui5/webcomponents/dist/Tag.js';
 
 interface NavItem {
   label: string;
@@ -56,7 +60,7 @@ type ProductSelectEvent = Event & {
             <div class="search-header-container">
               <ui5-icon class="search-icon" name="search"></ui5-icon>
               <input #searchInput type="text" class="search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" [placeholder]="i18n.t('app.search.placeholder')" (keydown.enter)="selectFirstResult()" (keydown.escape)="closeSearch()" />
-              <button class="search-close-btn" (click)="closeSearch()">{{ i18n.t('app.search.esc') }}</button>
+              <ui5-button design="Transparent" (click)="closeSearch()">{{ i18n.t('app.search.esc') }}</ui5-button>
             </div>
             <div class="search-results-list">
               @for (res of searchResults(); track res.route) {
@@ -116,41 +120,42 @@ type ProductSelectEvent = Event & {
 
       <nav class="app-nav" role="navigation" aria-label="Training navigation">
         @for (item of navItems; track item.route) {
-          <button
+          <ui5-button
+            design="Transparent"
             class="app-nav__item"
             [class.app-nav__item--active]="isActive(item.route)"
             (click)="navigateTo(item.route)">
             {{ item.label }}
-          </button>
+          </ui5-button>
         }
 
         <div class="app-nav__spacer"></div>
 
         <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
-        <span class="model-status-indicator" [class.model-online]="arabicModelOnline()" [class.model-offline]="!arabicModelOnline()" [title]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')" role="status"><span class="model-status-dot" aria-hidden="true"></span> {{ i18n.t('chat.arabicFinanceModel') }}</span>
-        
+        <ui5-tag [design]="arabicModelOnline() ? 'Positive' : 'Negative'" [attr.aria-label]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ i18n.t('chat.arabicFinanceModel') }}: {{ arabicModelOnline() ? i18n.t('status.online') : i18n.t('status.offline') }}</ui5-tag>
+
         @if (userSettings.showLanguageOptions()) {
-          <select class="mode-select" [ngModel]="i18n.currentLang()" (ngModelChange)="i18n.setLanguage($event)" [attr.aria-label]="i18n.t('app.languageSelect')">
-            <option value="en">English</option>
-            <option value="ar">العربية (Arabic)</option>
-          </select>
+          <ui5-select [ngModel]="i18n.currentLang()" (change)="onLangChange($event)">
+            <ui5-option value="en">English</ui5-option>
+            <ui5-option value="ar">العربية (Arabic)</ui5-option>
+          </ui5-select>
         }
         
-        <button class="header-btn" (click)="showDiagnostics.set(!showDiagnostics())" [title]="i18n.t('app.diagnostics')">
+        <ui5-button design="Transparent" (click)="showDiagnostics.set(!showDiagnostics())" [attr.title]="i18n.t('app.diagnostics')">
           {{ i18n.t('app.diagnostics') }}
-        </button>
-        <select class="mode-select" [ngModel]="userSettings.mode()" (ngModelChange)="userSettings.setMode($event)" [attr.aria-label]="i18n.t('app.modeSelect')">
-          <option value="novice">{{ i18n.t('mode.novice') }}</option>
-          <option value="intermediate">{{ i18n.t('mode.intermediate') }}</option>
-          <option value="expert">{{ i18n.t('mode.expert') }}</option>
-        </select>
+        </ui5-button>
+        <ui5-select [ngModel]="userSettings.mode()" (change)="onModeChange($event)">
+          <ui5-option value="novice">{{ i18n.t('mode.novice') }}</ui5-option>
+          <ui5-option value="intermediate">{{ i18n.t('mode.intermediate') }}</ui5-option>
+          <ui5-option value="expert">{{ i18n.t('mode.expert') }}</ui5-option>
+        </ui5-select>
       </nav>
 
       @if (showDiagnostics()) {
         <aside class="diagnostics-drawer" [attr.aria-label]="i18n.t('diagnostics.title')">
           <div class="diagnostics-header">
             <strong>{{ i18n.t('diagnostics.title') }}</strong>
-            <button class="header-btn" (click)="showDiagnostics.set(false)">{{ i18n.t('diagnostics.close') }}</button>
+            <ui5-button design="Transparent" (click)="showDiagnostics.set(false)">{{ i18n.t('diagnostics.close') }}</ui5-button>
           </div>
           <div class="diagnostics-list">
             @for (entry of diagnostics.entries(); track entry.route) {
@@ -609,6 +614,24 @@ export class ShellComponent implements OnInit, OnDestroy {
         popover.opener = target;
         popover.open = true;
       }
+    }
+  }
+
+  onLangChange(event: Event): void {
+    const detail = (event as CustomEvent).detail;
+    const selectedOption = detail?.selectedOption;
+    const value = selectedOption?.getAttribute('value') ?? selectedOption?.value;
+    if (value) {
+      this.i18n.setLanguage(value);
+    }
+  }
+
+  onModeChange(event: Event): void {
+    const detail = (event as CustomEvent).detail;
+    const selectedOption = detail?.selectedOption;
+    const value = selectedOption?.getAttribute('value') ?? selectedOption?.value;
+    if (value) {
+      this.userSettings.setMode(value);
     }
   }
 

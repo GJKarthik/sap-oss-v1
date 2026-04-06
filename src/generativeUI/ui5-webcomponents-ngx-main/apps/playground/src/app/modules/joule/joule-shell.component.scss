@@ -13,6 +13,8 @@
 
 .joule-chat-panel {
   width: 400px;
+  min-width: 280px;
+  max-width: min(400px, 40vw);
   flex-shrink: 0;
   border-right: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
   display: flex;
@@ -45,7 +47,7 @@
   padding: 0.2rem 0.5rem;
   border-radius: 0.25rem;
   background: var(--sapNeutralBackground, #e0e0e0);
-  color: var(--sapNeutralColor, #333);
+  color: var(--sapNeutralBorderColor, #687a87);
   text-transform: capitalize;
 
   &--streaming,
@@ -98,8 +100,8 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
-  background: var(--sapInfoBackground, #e8f4fd);
-  border-bottom: 1px solid var(--sapInfoBorderColor, #0070f2);
+  background: var(--sapInformationBackground, #e8f4fd);
+  border-bottom: 1px solid var(--sapInformationBorderColor, #0070f2);
   font-size: 0.75rem;
 }
 

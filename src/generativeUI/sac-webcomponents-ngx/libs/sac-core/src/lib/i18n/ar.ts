@@ -93,4 +93,8 @@ export const SAC_I18N_AR: Record<string, string> = {
   'table.previousPage': 'الصفحة السابقة',
   'table.nextPage': 'الصفحة التالية',
   'table.defaultAriaLabel': 'جدول البيانات',
+
+  // ── Widget ──────────────────────────────────────────────────────────
+  'widget.dateFrom': 'من',
+  'widget.dateTo': 'إلى',
 };

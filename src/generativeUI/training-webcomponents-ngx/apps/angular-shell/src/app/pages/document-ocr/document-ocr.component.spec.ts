@@ -187,8 +187,7 @@ describe('DocumentOcrComponent', () => {
     component.handleFile(file);
     httpMock.expectOne('/ocr/pdf').flush({ message: 'Server error' }, { status: 500, statusText: 'Server Error' });
     tick(500);
-    // The catchError in OcrService returns mock data, not an error
-    // So processing succeeds with mock result
+    // OcrService propagates the error; component error handler resets processing and shows toast
     expect(component.getState().processing).toBe(false);
   }));
 

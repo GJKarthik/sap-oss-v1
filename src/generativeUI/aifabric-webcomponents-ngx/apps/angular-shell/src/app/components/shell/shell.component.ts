@@ -481,9 +481,9 @@ export class ShellComponent implements OnInit {
     this.mobileNavOpen = false;
   }
 
-  onMenuItemClick(event: Event): void {
-    // Handle menu item clicks from shellbar if needed
-    console.debug('Menu item clicked:', event);
+  onMenuItemClick(_event: Event): void {
+    // Kept for future shell bar menu extensions (e.g. shellbar-item clicks).
+    // No menu items are currently configured in the template.
   }
 
   openProducts(event: any): void {

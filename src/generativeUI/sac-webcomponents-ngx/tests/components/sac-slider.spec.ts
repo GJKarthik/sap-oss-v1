@@ -1,9 +1,11 @@
+import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
   SacSliderComponent,
   SliderChangeEvent,
 } from '../../libs/sac-ai-widget/components/sac-slider.component';
+import { SacI18nService } from '../../libs/sac-core/src/lib/services/sac-i18n.service';
 
 /** Create a minimal KeyboardEvent-like object for Node.js environment. */
 function keyEvent(key: string): KeyboardEvent {
@@ -12,7 +14,10 @@ function keyEvent(key: string): KeyboardEvent {
 
 describe('SacSliderComponent', () => {
   function createSlider(): SacSliderComponent {
-    return new SacSliderComponent();
+    const injector = Injector.create({
+      providers: [{ provide: SacI18nService, useClass: SacI18nService }],
+    });
+    return runInInjectionContext(injector, () => new SacSliderComponent());
   }
 
   it('initializes value to initialValue when provided', () => {

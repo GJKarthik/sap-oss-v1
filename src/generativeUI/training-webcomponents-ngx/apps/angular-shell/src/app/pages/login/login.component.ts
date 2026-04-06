@@ -33,7 +33,7 @@ import { I18nService } from '../../services/i18n.service';
             />
           </div>
 
-          <button type="submit" class="login-submit">{{ i18n.t('login.submit') }}</button>
+          <ui5-button design="Emphasized" (click)="submit()" style="width: 100%;">{{ i18n.t('login.submit') }}</ui5-button>
         </form>
       </div>
     </div>

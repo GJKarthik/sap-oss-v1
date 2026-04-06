@@ -14,7 +14,7 @@
  *   });
  */
 
-import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject, isDevMode } from '@angular/core';
 import { Observable, Subscriber } from 'rxjs';
 import { SacAuthService } from '@sap-oss/sac-webcomponents-ngx/core';
 import { SAC_AI_BACKEND_URL } from '../tokens';
@@ -243,12 +243,16 @@ export class SacAgUiService implements OnDestroy {
   dispatchToolResult(toolCallId: string, result: unknown): void {
     const pendingToolCall = this.pendingToolCalls.get(toolCallId);
     if (!pendingToolCall) {
-      console.warn(`[SacAgUiService] Ignoring tool result for unknown toolCallId: ${toolCallId}`);
+      if (isDevMode()) {
+        console.warn(`[SacAgUiService] Ignoring tool result for unknown toolCallId: ${toolCallId}`);
+      }
       return;
     }
 
     if (this.inFlightToolResults.has(toolCallId)) {
-      console.warn(`[SacAgUiService] Tool result already in flight for toolCallId: ${toolCallId}`);
+      if (isDevMode()) {
+        console.warn(`[SacAgUiService] Tool result already in flight for toolCallId: ${toolCallId}`);
+      }
       return;
     }
 
@@ -279,7 +283,9 @@ export class SacAgUiService implements OnDestroy {
         }
       })
       .catch((err: Error) => {
-        console.error('[SacAgUiService] dispatchToolResult failed:', err.message);
+        if (isDevMode()) {
+          console.error('[SacAgUiService] dispatchToolResult failed:', err.message);
+        }
       })
       .finally(() => {
         this.inFlightToolResults.delete(toolCallId);

@@ -99,7 +99,7 @@ export interface RadioOption {
       background: #0854a0;
     }
     .sac-radio__text {
-      margin-left: 8px;
+      margin-inline-start: 8px;
       font-size: 14px;
     }
   `],

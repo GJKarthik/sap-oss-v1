@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024 SAP SE
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
@@ -25,6 +25,8 @@ export class CollabDemoComponent implements OnInit, OnDestroy {
   cursors: CursorPosition[] = [];
   roomId = 'playground-demo-room';
   log: string[] = [];
+
+  @ViewChild('leaveConfirmDialog') leaveConfirmDialog!: ElementRef<any>;
 
   constructor(
     private collab: CollaborationService,
@@ -68,10 +70,13 @@ export class CollabDemoComponent implements OnInit, OnDestroy {
     this.addLog('Left room');
   }
 
-  confirmLeaveRoom(): void {
-    if (confirm('Leave the collaboration room? You will be disconnected from all participants.')) {
-      this.leaveRoom();
-    }
+  confirmLeave(): void {
+    this.leaveConfirmDialog.nativeElement.show();
+  }
+
+  onConfirmLeave(): void {
+    this.leaveConfirmDialog.nativeElement.close();
+    this.leaveRoom();
   }
 
   broadcastCursor(event: MouseEvent): void {

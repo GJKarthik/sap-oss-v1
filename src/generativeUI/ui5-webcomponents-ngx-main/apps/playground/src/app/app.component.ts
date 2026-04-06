@@ -19,6 +19,7 @@ export class AppComponent implements OnInit, OnDestroy {
     logo: { name: 'UI5 Web Components NGX Playground' },
   };
   demoTourActive = false;
+  demoTourDismissed = false;
   demoTourStepLabel = '';
   demoTourProgress = '';
 
@@ -38,6 +39,8 @@ export class AppComponent implements OnInit, OnDestroy {
       this.currentTheme = saved;
       this.applyTheme(saved);
     }
+    this.demoTourDismissed = localStorage.getItem('demo-tour-dismissed') === 'true';
+
     const savedLanguage = localStorage.getItem('ui5-language');
     const language = savedLanguage === 'ar' ? 'ar' : 'en';
     this.currentLanguage = language;
@@ -54,6 +57,15 @@ export class AppComponent implements OnInit, OnDestroy {
       });
 
     this.updateDemoTourBanner();
+  }
+
+  skipToMain(event: Event): void {
+    event.preventDefault();
+    const main = document.getElementById('main-content');
+    if (main) {
+      main.focus();
+      main.scrollIntoView();
+    }
   }
 
   isActive(path: string): boolean {
@@ -114,6 +126,13 @@ export class AppComponent implements OnInit, OnDestroy {
   endDemoTour(): void {
     this.demoTour.stop();
     localStorage.setItem('ui5-demo-tour-dismissed', 'true');
+    this.updateDemoTourBanner();
+  }
+
+  dismissDemoTour(): void {
+    this.demoTourDismissed = true;
+    localStorage.setItem('demo-tour-dismissed', 'true');
+    this.demoTour.stop();
     this.updateDemoTourBanner();
   }
 

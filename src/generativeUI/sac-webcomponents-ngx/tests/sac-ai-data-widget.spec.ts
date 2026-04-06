@@ -10,6 +10,7 @@ import { SacAiSessionService } from '../libs/sac-ai-widget/session/sac-ai-sessio
 import { SacDataSourceService } from '../libs/sac-datasource/src/index';
 import { SacAiDataWidgetComponent } from '../libs/sac-ai-widget/data-widget/sac-ai-data-widget.component';
 import { MAX_CHILDREN_DEPTH } from '../libs/sac-ai-widget/types/sac-widget-schema';
+import { SacI18nService } from '../libs/sac-core/src/lib/services/sac-i18n.service';
 
 function createSessionStub() {
   return {
@@ -52,6 +53,7 @@ function createComponent() {
       { provide: SacDataSourceService, useValue: dsService },
       { provide: SacAiSessionService, useValue: session },
       { provide: SacToolDispatchService, useValue: toolDispatch },
+      { provide: SacI18nService, useClass: SacI18nService },
     ],
   });
 

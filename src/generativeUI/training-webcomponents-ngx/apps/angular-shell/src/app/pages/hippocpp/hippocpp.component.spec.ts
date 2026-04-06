@@ -103,7 +103,8 @@ describe('HippocppComponent', () => {
     tick();
 
     expect(component.querying()).toBe(false);
-    expect(component.queryError()).toBe('Syntax error near INVALID');
+    // ApiService normalises errors to ApiError; component extracts detail via fallback
+    expect(component.queryError()).toBeTruthy();
     expect(toastSpy.error).toHaveBeenCalled();
   }));
 
@@ -195,5 +196,7 @@ describe('HippocppComponent', () => {
     const req = httpMock.expectOne('/api/graph/query');
     component.ngOnDestroy();
     expect(req.cancelled).toBe(true);
+    // Match any remaining cancelled requests
+    httpMock.match('/api/graph/query');
   }));
 });

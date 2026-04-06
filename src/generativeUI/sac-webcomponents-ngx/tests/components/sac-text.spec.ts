@@ -9,6 +9,7 @@ import {
   SacTextBlockComponent,
   SacDividerComponent,
 } from '../../libs/sac-ai-widget/components/sac-text.component';
+import { SacI18nService } from '../../libs/sac-core/src/lib/services/sac-i18n.service';
 
 describe('SacHeadingComponent', () => {
   function createHeading(): SacHeadingComponent {
@@ -217,7 +218,12 @@ describe('SacTextBlockComponent', () => {
 
 describe('SacDividerComponent', () => {
   function createDivider(): SacDividerComponent {
-    return new SacDividerComponent();
+    const injector = Injector.create({
+      providers: [
+        { provide: SacI18nService, useClass: SacI18nService },
+      ],
+    });
+    return runInInjectionContext(injector, () => new SacDividerComponent());
   }
 
   it('defaults variant to default', () => {

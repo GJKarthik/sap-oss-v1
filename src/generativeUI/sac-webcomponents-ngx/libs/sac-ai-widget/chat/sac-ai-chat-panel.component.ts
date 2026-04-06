@@ -205,7 +205,7 @@ interface PendingToolConfirmation {
 
       <!-- Input area with proper labeling -->
       <div class="sac-chat-input-row" role="form" [attr.aria-label]="'chat.sendAMessage' | sacTranslate">
-        <label [for]="inputId" class="sr-only">
+        <label [attr.for]="inputId" class="sr-only">
           {{ 'chat.typeMessage' | sacTranslate }}
         </label>
         <input
@@ -630,6 +630,17 @@ interface PendingToolConfirmation {
       .sac-chat-input,
       .sac-chat-send {
         border: 1px solid CanvasText;
+      }
+    }
+
+    /* === Narrow-viewport breakpoint === */
+    @media (max-width: 320px) {
+      .sac-chat-input-row {
+        flex-direction: column;
+      }
+      .sac-chat-input-row button,
+      .sac-chat-input-row input {
+        width: 100%;
       }
     }
   `],

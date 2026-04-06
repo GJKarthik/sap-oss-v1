@@ -105,6 +105,11 @@ interface SafetyGateStatus {
         </div>
       </ui5-card>
 
+      <!-- Gate Status Error -->
+      <ui5-message-strip *ngIf="gateStatusError" design="Negative" role="alert">
+        Failed to load gate status. <ui5-link (click)="loadGateStatus()">Retry</ui5-link>
+      </ui5-message-strip>
+
       <!-- Loading State -->
       <div class="loading-container" *ngIf="loading" role="status" aria-live="polite">
         <ui5-busy-indicator active size="M"></ui5-busy-indicator>
@@ -123,12 +128,15 @@ interface SafetyGateStatus {
 
       <!-- Validation Statistics Card (H1) -->
       <ui5-card class="stats-card">
-        <ui5-card-header 
-          slot="header" 
-          title-text="LLM Fact Validation Gateway" 
+        <ui5-card-header
+          slot="header"
+          title-text="LLM Fact Validation Gateway"
           subtitle-text="H1: Schema and safety validation for LLM-generated facts">
           <ui5-icon slot="avatar" name="validate"></ui5-icon>
         </ui5-card-header>
+        <ui5-message-strip *ngIf="validationStatsError" design="Negative" role="alert">
+          Failed to load validation statistics. <ui5-link (click)="loadValidationStats()">Retry</ui5-link>
+        </ui5-message-strip>
         <div class="stats-grid" *ngIf="validationStats">
           <div class="stat-item">
             <span class="stat-value">{{ validationStats.total_facts_processed | number }}</span>
@@ -168,6 +176,10 @@ interface SafetyGateStatus {
           [additionalText]="completenessWarnings.length + ''">
           <ui5-icon slot="avatar" name="warning"></ui5-icon>
         </ui5-card-header>
+        <ui5-message-strip *ngIf="warningError" design="Negative" role="alert"
+          [hideCloseButton]="false" (close)="warningError = ''">
+          {{ warningError }}
+        </ui5-message-strip>
         <ui5-table *ngIf="completenessWarnings.length > 0" aria-label="Completeness warnings table">
           <ui5-table-header-cell><span>Evaluation ID</span></ui5-table-header-cell>
           <ui5-table-header-cell><span>Iterations</span></ui5-table-header-cell>
@@ -273,16 +285,20 @@ interface SafetyGateStatus {
           subtitle-text="H3: Derivation chain tracking for governance audit">
           <ui5-icon slot="avatar" name="tree"></ui5-icon>
         </ui5-card-header>
+        <ui5-message-strip *ngIf="provenanceError" design="Negative" role="alert"
+          [hideCloseButton]="false" (close)="provenanceError = ''">
+          {{ provenanceError }}
+        </ui5-message-strip>
         <div class="provenance-search">
-          <ui5-input 
+          <ui5-input
             placeholder="Enter fact ID to trace provenance..."
             [(ngModel)]="provenanceSearchId"
             (keyup.enter)="searchProvenance()"
             accessible-name="Fact ID for provenance search">
           </ui5-input>
-          <ui5-button 
-            design="Emphasized" 
-            icon="search" 
+          <ui5-button
+            design="Emphasized"
+            icon="search"
             (click)="searchProvenance()"
             [disabled]="!provenanceSearchId || loading">
             Trace
@@ -600,6 +616,10 @@ export class SafetyGateComponent implements OnInit {
   loading = false;
   mutating = false;
   error = '';
+  gateStatusError = false;
+  validationStatsError = false;
+  provenanceError = '';
+  warningError = '';
 
   // Data
   gateStatus: SafetyGateStatus | null = null;
@@ -618,6 +638,9 @@ export class SafetyGateComponent implements OnInit {
   loadData(): void {
     this.loading = true;
     this.error = '';
+    this.gateStatusError = false;
+    this.validationStatsError = false;
+    this.warningError = '';
 
     // Load all safety gate data in parallel
     Promise.all([
@@ -630,40 +653,29 @@ export class SafetyGateComponent implements OnInit {
     });
   }
 
-  private async loadGateStatus(): Promise<void> {
+  async loadGateStatus(): Promise<void> {
     try {
+      this.gateStatusError = false;
       const response = await this.http.get<SafetyGateStatus>(
         `${environment.apiBaseUrl}/safety-gate/status`
       ).toPromise();
       this.gateStatus = response || null;
     } catch {
-      // Use mock data for demo
-      this.gateStatus = {
-        gate_status: 'open',
-        active_violations: 0,
-        pending_warnings: 0,
-        last_evaluation: new Date().toISOString(),
-        health_score: 98.5
-      };
+      this.gateStatusError = true;
+      this.gateStatus = null;
     }
   }
 
-  private async loadValidationStats(): Promise<void> {
+  async loadValidationStats(): Promise<void> {
     try {
+      this.validationStatsError = false;
       const response = await this.http.get<ValidationStats>(
         `${environment.apiBaseUrl}/safety-gate/validation-stats`
       ).toPromise();
       this.validationStats = response || null;
     } catch {
-      // Use mock data for demo
-      this.validationStats = {
-        total_facts_processed: 15842,
-        facts_validated: 15127,
-        facts_rejected: 715,
-        acceptance_rate: 95.5,
-        avg_validation_time_us: 12.3,
-        last_updated: new Date().toISOString()
-      };
+      this.validationStatsError = true;
+      this.validationStats = null;
     }
   }
 
@@ -674,7 +686,6 @@ export class SafetyGateComponent implements OnInit {
       ).toPromise();
       this.completenessWarnings = response?.warnings || [];
     } catch {
-      // Empty for demo
       this.completenessWarnings = [];
     }
   }
@@ -686,7 +697,6 @@ export class SafetyGateComponent implements OnInit {
       ).toPromise();
       this.safetyViolations = response?.violations || [];
     } catch {
-      // Empty for demo
       this.safetyViolations = [];
     }
   }
@@ -697,6 +707,7 @@ export class SafetyGateComponent implements OnInit {
     }
 
     this.loading = true;
+    this.provenanceError = '';
     this.http.get<{ chain: ProvenanceRecord[] }>(
       `${environment.apiBaseUrl}/safety-gate/provenance/${this.provenanceSearchId}`
     ).pipe(takeUntilDestroyed(this.destroyRef))
@@ -706,36 +717,8 @@ export class SafetyGateComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          // Mock data for demo
-          this.provenanceChain = [
-            {
-              fact_id: parseInt(this.provenanceSearchId),
-              predicate: 'can_access("user123", "resource456")',
-              is_base_fact: false,
-              derivation_rule: 'access_control_rule',
-              source_facts: [1, 2],
-              confidence: 0.95,
-              timestamp: new Date().toISOString()
-            },
-            {
-              fact_id: 1,
-              predicate: 'role("user123", "admin")',
-              is_base_fact: true,
-              derivation_rule: '',
-              source_facts: [],
-              confidence: 1.0,
-              timestamp: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              fact_id: 2,
-              predicate: 'resource_policy("resource456", "admin_only")',
-              is_base_fact: true,
-              derivation_rule: '',
-              source_facts: [],
-              confidence: 1.0,
-              timestamp: new Date(Date.now() - 7200000).toISOString()
-            }
-          ];
+          this.provenanceError = 'Failed to load provenance chain';
+          this.provenanceChain = [];
           this.loading = false;
         }
       });
@@ -759,7 +742,7 @@ export class SafetyGateComponent implements OnInit {
           }
         },
         error: () => {
-          warning.resolved = true; // Optimistic for demo
+          this.warningError = 'Failed to resolve warning. Please try again.';
           this.mutating = false;
         }
       });

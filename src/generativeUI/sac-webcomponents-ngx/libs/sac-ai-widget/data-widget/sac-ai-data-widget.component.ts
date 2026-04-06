@@ -175,7 +175,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
               <label class="sac-ai-data-widget__control-label">{{ resolvedFilterLabel }}</label>
               <div class="sac-ai-data-widget__date-inputs">
                 <div class="sac-ai-data-widget__date-field">
-                  <label class="sac-ai-data-widget__date-label">{{ 'dataWidget.from' | sacTranslate }}</label>
+                  <label class="sac-ai-data-widget__date-label">{{ 'widget.dateFrom' | sacTranslate }}</label>
                   <input
                     class="sac-ai-data-widget__date-input"
                     type="date"
@@ -187,7 +187,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
                 </div>
                 <span class="sac-ai-data-widget__date-separator" aria-hidden="true">{{ 'dataWidget.dateSeparator' | sacTranslate }}</span>
                 <div class="sac-ai-data-widget__date-field">
-                  <label class="sac-ai-data-widget__date-label">{{ 'dataWidget.to' | sacTranslate }}</label>
+                  <label class="sac-ai-data-widget__date-label">{{ 'widget.dateTo' | sacTranslate }}</label>
                   <input
                     class="sac-ai-data-widget__date-input"
                     type="date"
@@ -413,9 +413,9 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       flex: 1;
     }
     .sac-ai-data-widget__date-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      color: var(--sapContent_LabelColor, #6a6d70);
+      color: var(--sapNeutralTextColor, #5b738b);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
@@ -423,6 +423,8 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       color: var(--sapNeutralTextColor, #5b738b);
       font-size: 12px;
       text-transform: uppercase;
+      align-self: flex-end;
+      padding-bottom: 12px;
     }
     .sac-ai-data-widget__filter-chip {
       background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, var(--sapBackgroundColor, #fafafa));

@@ -54,12 +54,14 @@ describe('AppStore', () => {
     it('sets state to error on HTTP failure', fakeAsync(() => {
       store.loadHealth();
       tick();
+      // 502 is retryable — flush all retry attempts
       httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
       tick(500);
       httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
       tick(1000);
       httpMock.expectOne('/api/health').flush('', { status: 502, statusText: 'Bad Gateway' });
       tick();
+      tick(); // additional tick for signal propagation
 
       expect(store.health().state).toBe('error');
       expect(store.health().error).toBeTruthy();

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, DOCUMENT } from '@angular/core';
+import { Injectable, signal, computed, DOCUMENT, isDevMode } from '@angular/core';
 import { inject } from '@angular/core';
 import MessageFormat from '@messageformat/core';
 
@@ -47,7 +47,9 @@ export class I18nService {
       this.translations.ar = await arResp.json();
       this.loaded = true;
     } catch (e) {
-      console.warn('Failed to load translations, using keys as fallback', e);
+      if (isDevMode()) {
+        console.warn('Failed to load translations, using keys as fallback', e);
+      }
     }
     this.mfCache.clear();
     this.applyDirection();

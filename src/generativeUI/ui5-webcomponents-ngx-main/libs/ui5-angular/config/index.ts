@@ -13,8 +13,8 @@ const setters: Record<keyof Ui5Config, (val: any) => void> = {
 
 @NgModule({})
 export class Ui5WebcomponentsConfigModule {
-  constructor(@Inject('rootConfig') config: Ui5Config) {
-    console.log({config});
+  constructor(@Inject('rootConfig') _config: Ui5Config) {
+    // Configuration is applied via the forRoot() factory; no runtime action needed here.
   }
 
   static forRoot(config: Partial<Ui5Config>) {

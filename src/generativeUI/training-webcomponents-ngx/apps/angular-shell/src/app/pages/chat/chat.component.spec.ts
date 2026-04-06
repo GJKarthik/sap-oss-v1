@@ -85,6 +85,7 @@ describe('ChatComponent', () => {
   });
 
   it('clearChat() should empty messages and show info toast', () => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     component.messages.set([{ role: 'user', content: 'test', ts: new Date() }]);
 
     component.clearChat();

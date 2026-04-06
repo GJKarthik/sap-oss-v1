@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import '@ui5/webcomponents/dist/Button.js';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
@@ -9,6 +10,7 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
+import { LogService } from '../../services/log.service';
 
 interface ModelInfo {
   name: string;
@@ -71,7 +73,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     <div class="page-content">
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('modelOpt.title') }}</h1>
-        <button class="btn-primary" (click)="loadData()">{{ i18n.t('modelOpt.refresh') }}</button>
+        <ui5-button design="Emphasized" (click)="loadData()">{{ i18n.t('modelOpt.refresh') }}</ui5-button>
       </div>
 
       <!-- Engine & Dataset -->
@@ -106,9 +108,9 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <span class="text-muted text-small" style="display: inline-block;">{{ i18n.t('modelOpt.unverified') }}</span>
           }
         </div>
-        <button type="button" class="btn-secondary" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
+        <ui5-button design="Default" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
           {{ mangleStatus() === 'checking' ? i18n.t('modelOpt.validating') : i18n.t('modelOpt.checkConstraints') }}
-        </button>
+        </ui5-button>
       </div>
 
       <!-- Model Catalog -->
@@ -141,7 +143,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       <!-- Create Job Form -->
       <section class="section">
         <h2 class="section-title">{{ i18n.t('modelOpt.createJob') }}</h2>
-        <form class="job-form" [formGroup]="jobForm" (ngSubmit)="createJob()">
+        <form class="job-form" [formGroup]="jobForm" (ngSubmit)="$event.preventDefault()">
           
           <!-- Novice Mode -->
           @if (userSettings.mode() === 'novice') {
@@ -264,21 +266,15 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             </div>
           }
 
-          @if (jobForm.invalid && jobForm.touched) {
-            <div class="form-error-summary" role="alert">
-              <strong>{{ i18n.t('modelOpt.formErrors') }}</strong>
-              <ul>
-                @if (jobForm.controls['model_name']?.errors?.['required']) {
-                  <li>{{ i18n.t('modelOpt.errorModelRequired') }}</li>
-                }
-              </ul>
-            </div>
-          }
+          <div *ngIf="formErrors().length" role="alert" class="error-summary">
+            <strong>{{ i18n.t('form.errorsTitle') }}</strong>
+            <ul><li *ngFor="let e of formErrors()">{{ e }}</li></ul>
+          </div>
 
           <div class="form-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-primary" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
+            <ui5-button design="Emphasized" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
               {{ submitting() ? i18n.t('modelOpt.submitting') : i18n.t('modelOpt.runJob') }}
-            </button>
+            </ui5-button>
           </div>
         </form>
       </section>
@@ -342,15 +338,15 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
                         @if (j.status === 'completed') {
                           <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;" (click)="$event.stopPropagation()">
                             @if (!j.deployed) {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" 
+                              <ui5-button design="Emphasized"
                                       (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
                                 {{ deployingJob() === j.id ? i18n.t('modelOpt.deploying') : i18n.t('modelOpt.deployModel') }}
-                              </button>
+                              </ui5-button>
                             } @else {
-                              <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: var(--sapPositiveColor, #00695c);"
+                              <ui5-button design="Emphasized"
                                       (click)="openChat(j)">
                                 {{ i18n.t('modelOpt.chatPlayground') }}
-                              </button>
+                              </ui5-button>
                             }
                           </div>
                         }
@@ -386,7 +382,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
           <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="chat-modal-title" (click)="$event.stopPropagation()">
             <div class="modal-header">
               <h3 id="chat-modal-title" style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: <bdi>{{ chatJob.config.model_name }}</bdi></h3>
-              <button class="close-btn" [attr.aria-label]="i18n.t('modelOpt.closeModal')" (click)="closeChat()">✕</button>
+              <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('modelOpt.closeModal')" (click)="closeChat()"></ui5-button>
             </div>
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
@@ -403,7 +399,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             </div>
             <div class="chat-input-area">
               <input type="text" [formControl]="chatInput" class="form-input" [placeholder]="i18n.t('modelOpt.promptModel')" (keyup.enter)="sendChat()" />
-              <button class="btn-primary" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">{{ i18n.t('chat.send') }}</button>
+              <ui5-button design="Emphasized" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">{{ i18n.t('chat.send') }}</ui5-button>
             </div>
           </div>
         </div>
@@ -671,6 +667,18 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     .chat-input-area {
       padding: 1rem; background: var(--sapBackgroundColor, #fff); border-top: 1px solid var(--sapList_BorderColor, #e4e4e4); display: flex; gap: 0.5rem;
     }
+
+    .error-summary {
+      background: var(--sapErrorBackground, #ffebee);
+      border: 1px solid var(--sapNegativeColor, #b00);
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      color: var(--sapNegativeColor, #b00);
+      font-size: 0.8125rem;
+    }
+    .error-summary ul { margin: 0.25rem 0 0; padding-inline-start: 1.25rem; }
+    .error-summary li { margin-bottom: 0.15rem; }
   `],
 })
 export class ModelOptimizerComponent implements OnInit, OnDestroy {
@@ -680,6 +688,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
   private readonly fb = inject(FormBuilder);
+  private readonly log = inject(LogService);
   private readonly destroy$ = new Subject<void>();
 
   readonly expandedJobId = signal<string | null>(null);
@@ -696,6 +705,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   readonly chatInput = this.fb.control('');
   readonly chatHistory = signal<{role: 'user'|'model', text: string}[]>([]);
   readonly chatLoading = signal(false);
+  readonly formErrors = signal<string[]>([]);
 
   readonly jobForm = this.fb.nonNullable.group({
     model_name: ['', Validators.required],
@@ -836,14 +846,14 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       models: this.api.get<ModelInfo[]>('/models/catalog').pipe(
         catchError((err: HttpErrorResponse) => {
           this.toast.error(this.i18n.t('modelOpt.catalogFailed'), this.i18n.t('modelOpt.modelsTitle'));
-          console.error('Model catalog failed:', err);
+          this.log.error('Model catalog failed', 'ModelOptimizer', err);
           return of([]);
         })
       ),
       jobs: this.api.get<JobResponse[]>('/jobs').pipe(
         catchError((err: HttpErrorResponse) => {
           this.toast.warning(this.i18n.t('modelOpt.jobsFailed'), this.i18n.t('modelOpt.jobsTitle'));
-          console.warn('Jobs load failed:', err);
+          this.log.warn('Jobs load failed', 'ModelOptimizer', err);
           return of([]);
         })
       ),
@@ -857,7 +867,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.toast.error(this.i18n.t('modelOpt.loadFailed'), this.i18n.t('common.error'));
-          console.error('Load failed:', err);
+          this.log.error('Load failed', 'ModelOptimizer', err);
           this.loading.set(false);
         },
       });
@@ -885,7 +895,20 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   }
 
   createJob(): void {
-    if (this.jobForm.invalid) return;
+    const errors: string[] = [];
+    if (this.jobForm.controls.model_name.invalid) {
+      errors.push(this.i18n.t('modelOpt.errorModelRequired'));
+    }
+    if (this.jobForm.controls.quant_format.invalid) {
+      errors.push(this.i18n.t('modelOpt.errorQuantRequired'));
+    }
+    try {
+      if (this.isVramExceeded()) {
+        errors.push(this.i18n.t('modelOpt.vramExceeded'));
+      }
+    } catch { /* VRAM signals unavailable */ }
+    this.formErrors.set(errors);
+    if (this.jobForm.invalid || errors.length) return;
     this.submitting.set(true);
 
     const formVal = this.jobForm.getRawValue();
@@ -926,35 +949,19 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
     const payload = { config: payloadConfig };
 
-    const fakeId = 'job-optimistic-' + Date.now();
-    const optimisticJob: JobResponse = {
-      id: fakeId,
-      name: `Optimizing ${formVal.model_name}`,
-      status: 'pending',
-      progress: 0,
-      created_at: new Date().toISOString(),
-      config: payloadConfig as JobConfig,
-    };
-    
-    // Optimistic UI update
-    this.jobs.update((jobs) => [optimisticJob, ...jobs]);
-
     this.api.post<JobResponse>('/jobs', payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (j: JobResponse) => {
-          // Replace optimistic mock with actual job
-          this.jobs.update((jobs) => jobs.map(existing => existing.id === fakeId ? j : existing));
-          this.toast.success(this.i18n.t('modelOpt.jobCreatedMsg', { id: j.id.slice(0, 8) }), this.i18n.t('modelOpt.jobCreatedTitle'));
+          this.jobs.update((jobs) => [j, ...jobs]);
+          this.toast.success(`Job ${j.id.slice(0, 8)} submitted successfully`, 'Job Created');
           this.submitting.set(false);
-          this.jobForm.patchValue({ model_name: '' }); // Reset main field post-success
+          this.jobForm.patchValue({ model_name: '' });
         },
         error: (e: HttpErrorResponse) => {
-          // Rollback on failure
-          this.jobs.update((jobs) => jobs.filter(existing => existing.id !== fakeId));
           const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
           this.toast.error(this.i18n.t('modelOpt.jobCreateFailed', { detail }), this.i18n.t('modelOpt.jobErrorTitle'));
-          console.error('Job creation failed:', e);
+          this.log.error('Job creation failed', 'ModelOptimizer', e);
           this.submitting.set(false);
         },
       });

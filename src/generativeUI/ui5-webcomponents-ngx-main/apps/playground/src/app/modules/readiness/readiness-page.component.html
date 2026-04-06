@@ -20,6 +20,10 @@
 
   <div class="readiness-page__meta" *ngIf="lastCheckedAt">{{ 'READINESS_LAST_CHECKED' | ui5I18n : lastCheckedAt }}</div>
 
+  <ui5-message-strip *ngIf="demoReady" design="Positive" hide-close-button>
+    {{ 'READINESS_ALL_GO' | ui5I18n }}
+  </ui5-message-strip>
+
   <div class="readiness-page__cards">
     <ui5-card *ngFor="let route of routeStatuses" class="readiness-page__card">
       <ui5-card-header slot="header" [attr.title-text]="route.label" [attr.subtitle-text]="route.route"></ui5-card-header>

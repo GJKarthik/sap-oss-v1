@@ -102,10 +102,10 @@ export interface SliderChangeEvent {
       outline: none;
     }
     .sac-slider__input:focus-visible::-webkit-slider-thumb {
-      box-shadow: 0 0 0 3px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, #000);
     }
     .sac-slider__input:focus-visible::-moz-range-thumb {
-      box-shadow: 0 0 0 3px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, #000);
     }
     .sac-slider__input:disabled {
       opacity: 0.5; cursor: not-allowed;

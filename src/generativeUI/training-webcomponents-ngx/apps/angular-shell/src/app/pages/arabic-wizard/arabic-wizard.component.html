@@ -6,7 +6,8 @@
 
   <div class="wizard-progress" role="navigation" aria-label="Wizard steps">
     @for (step of steps; track step.id; let idx = $index) {
-      <button
+      <ui5-button
+        design="Transparent"
         class="progress-step"
         [class.active]="currentStep() === idx"
         [class.completed]="completedSteps().includes(idx)"
@@ -15,7 +16,7 @@
         [attr.aria-current]="currentStep() === idx ? 'step' : null">
         <span class="step-number">{{ idx + 1 }}</span>
         <span class="step-label">{{ i18n.t(step.labelKey) }}</span>
-      </button>
+      </ui5-button>
       @if (idx < steps.length - 1) {
         <div class="step-connector" [class.completed]="completedSteps().includes(idx)"></div>
       }
@@ -39,7 +40,7 @@
             <div class="upload-icon">📄</div>
             <p class="upload-label">{{ i18n.t('wizard.upload.dropHere') }}</p>
             <p class="upload-hint">{{ i18n.t('wizard.upload.browseHint') }}</p>
-            <button class="btn btn-primary" type="button">{{ i18n.t('wizard.upload.browse') }}</button>
+            <ui5-button design="Emphasized" type="button">{{ i18n.t('wizard.upload.browse') }}</ui5-button>
             <input #fileInput type="file" accept=".pdf" hidden (change)="onFileSelected($event)" />
           </div>
         }
@@ -87,9 +88,9 @@
           <div class="review-section">
             <h3>{{ i18n.t('wizard.review.extractedText') }}</h3>
             <div class="page-nav">
-              <button class="btn btn-sm" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</button>
+              <ui5-button design="Transparent" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</ui5-button>
               <span>{{ i18n.t('wizard.review.pageNav', { current: currentPage(), total: result.total_pages }) }}</span>
-              <button class="btn btn-sm" [disabled]="currentPage() >= result.total_pages" (click)="nextPage()">›</button>
+              <ui5-button design="Transparent" [disabled]="currentPage() >= result.total_pages" (click)="nextPage()">›</ui5-button>
             </div>
             <pre class="ocr-text" dir="auto" [contentEditable]="true" (blur)="onTextEdit($event)">{{ currentPageText() }}</pre>
             <p class="edit-hint">{{ i18n.t('wizard.review.editHint') }}</p>
@@ -151,7 +152,7 @@
 
           <div class="chat-suggestions">
             @for (suggestion of chatSuggestions(); track suggestion) {
-              <button class="chip" (click)="usePrompt(suggestion)"><bdi>{{ suggestion }}</bdi></button>
+              <ui5-button design="Default" (click)="usePrompt(suggestion)"><bdi>{{ suggestion }}</bdi></ui5-button>
             }
           </div>
 
@@ -163,9 +164,9 @@
               rows="2"
               [placeholder]="i18n.t('wizard.analyze.askQuestion')"
               (keydown.enter)="onChatEnter($event)"></textarea>
-            <button type="submit" class="btn btn-primary" [disabled]="!chatInput.trim() || chatSending()">
+            <ui5-button design="Emphasized" (click)="sendChatMessage()" [disabled]="!chatInput.trim() || chatSending()">
               {{ chatSending() ? i18n.t('wizard.analyze.sending') : i18n.t('wizard.analyze.send') }}
-            </button>
+            </ui5-button>
           </form>
         </div>
       </div>
@@ -199,19 +200,19 @@
 
   <div class="wizard-nav">
     @if (currentStep() > 0) {
-      <button class="btn btn-secondary" (click)="previousStep()">
+      <ui5-button design="Transparent" (click)="previousStep()">
         {{ i18n.t('wizard.nav.previous') }}
-      </button>
+      </ui5-button>
     }
     <div class="nav-spacer"></div>
     @if (currentStep() < steps.length - 1) {
-      <button class="btn btn-primary" [disabled]="!canAdvance()" (click)="nextStep()">
+      <ui5-button design="Emphasized" [disabled]="!canAdvance()" (click)="nextStep()">
         {{ i18n.t('wizard.nav.next') }}
-      </button>
+      </ui5-button>
     } @else {
-      <button class="btn btn-primary" (click)="startOver()">
+      <ui5-button design="Emphasized" (click)="startOver()">
         {{ i18n.t('wizard.nav.startOver') }}
-      </button>
+      </ui5-button>
     }
   </div>
 </div>

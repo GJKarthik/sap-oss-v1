@@ -1,11 +1,14 @@
 import '@angular/compiler';
 
-import { ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SacTableComponent } from '../libs/sac-table/src/lib/components/sac-table.component';
 import { SacTableService } from '../libs/sac-table/src/lib/services/sac-table.service';
 import type { TableColumn } from '../libs/sac-table/src/lib/types/table.types';
+import { SacI18nService } from '../libs/sac-core/src/lib/services/sac-i18n.service';
+
+
 
 const columns: TableColumn[] = [
   { id: 'region', label: 'Region', sortable: true },
@@ -21,7 +24,10 @@ const rows = [
 describe('SacTableComponent', () => {
   it('supports uncontrolled sorting, paginates processed rows, and selects only the visible page rows', () => {
     const cdr = { markForCheck: vi.fn() } as ChangeDetectorRef;
-    const component = new SacTableComponent(new SacTableService(), cdr);
+    const injector = Injector.create({
+      providers: [{ provide: SacI18nService, useClass: SacI18nService }],
+    });
+    const component = runInInjectionContext(injector, () => new SacTableComponent(new SacTableService(), cdr));
     const sortEvents: unknown[] = [];
     const pageEvents: unknown[] = [];
     const selectionEvents: unknown[] = [];
@@ -64,7 +70,10 @@ describe('SacTableComponent', () => {
 
   it('respects controlled sort config and filter inputs when rows change', () => {
     const cdr = { markForCheck: vi.fn() } as ChangeDetectorRef;
-    const component = new SacTableComponent(new SacTableService(), cdr);
+    const injector = Injector.create({
+      providers: [{ provide: SacI18nService, useClass: SacI18nService }],
+    });
+    const component = runInInjectionContext(injector, () => new SacTableComponent(new SacTableService(), cdr));
 
     component.columns = columns;
     component.rows = rows;

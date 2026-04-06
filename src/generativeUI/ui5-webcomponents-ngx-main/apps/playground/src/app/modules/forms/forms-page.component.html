@@ -96,9 +96,7 @@
               formControlName="name"
               [attr.placeholder]="'FORMS_PLACEHOLDER_NAME' | ui5I18n"
               [attr.value-state]="profileForm.controls.name.invalid && profileForm.controls.name.touched ? 'Negative' : 'None'">
-              @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
               <div slot="valueStateMessage">{{ 'FORMS_ERROR_NAME_REQUIRED' | ui5I18n }}</div>
-              }
             </ui5-input>
             @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
             <ui5-text style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
@@ -114,11 +112,10 @@
               formControlName="email"
               [attr.placeholder]="'FORMS_PLACEHOLDER_EMAIL' | ui5I18n"
               [attr.value-state]="profileForm.controls.email.invalid && profileForm.controls.email.touched ? 'Negative' : 'None'">
-              @if (profileForm.controls.email.invalid && profileForm.controls.email.touched) {
-              <div slot="valueStateMessage">
-                @if (profileForm.controls.email.errors?.['required']) { {{ 'FORMS_ERROR_EMAIL_REQUIRED' | ui5I18n }} }
-                @if (profileForm.controls.email.errors?.['email']) { {{ 'FORMS_ERROR_EMAIL_INVALID' | ui5I18n }} }
-              </div>
+              @if (profileForm.controls.email.errors?.['required']) {
+                <div slot="valueStateMessage">{{ 'FORMS_ERROR_EMAIL_REQUIRED' | ui5I18n }}</div>
+              } @else if (profileForm.controls.email.errors?.['email']) {
+                <div slot="valueStateMessage">{{ 'FORMS_ERROR_EMAIL_INVALID' | ui5I18n }}</div>
               }
             </ui5-input>
             @if (profileForm.controls.email.invalid && profileForm.controls.email.touched) {

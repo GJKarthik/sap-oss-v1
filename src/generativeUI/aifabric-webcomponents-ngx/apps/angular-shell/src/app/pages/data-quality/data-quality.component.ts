@@ -706,27 +706,37 @@ export class DataQualityComponent implements OnInit {
   }
 
   loadTables(): void {
-    // Mock tables for demo
-    this.tables = [
-      { name: 'Users', columns: [
-        { name: 'Id', type: 'INTEGER', nullable: false, primary_key: true },
-        { name: 'Email', type: 'VARCHAR(255)', nullable: true, primary_key: false },
-        { name: 'Name', type: 'VARCHAR(100)', nullable: true, primary_key: false },
-        { name: 'CreatedAt', type: 'TIMESTAMP', nullable: false, primary_key: false }
-      ]},
-      { name: 'Orders', columns: [
-        { name: 'OrderId', type: 'INTEGER', nullable: false, primary_key: true },
-        { name: 'UserId', type: 'INTEGER', nullable: false, primary_key: false },
-        { name: 'Amount', type: 'DECIMAL(10,2)', nullable: true, primary_key: false },
-        { name: 'OrderDate', type: 'DATE', nullable: false, primary_key: false }
-      ]},
-      { name: 'Transactions', columns: [
-        { name: 'TxnId', type: 'BIGINT', nullable: false, primary_key: true },
-        { name: 'Amount', type: 'DECIMAL(15,2)', nullable: false, primary_key: false },
-        { name: 'Currency', type: 'CHAR(3)', nullable: false, primary_key: false },
-        { name: 'Timestamp', type: 'TIMESTAMP', nullable: false, primary_key: false }
-      ]}
-    ];
+    const request = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'list_tables',
+        arguments: {}
+      }
+    };
+
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          if (response.result?.content?.[0]?.text) {
+            try {
+              this.tables = JSON.parse(response.result.content[0].text);
+            } catch {
+              this.tables = [];
+              this.error = 'Failed to load tables';
+            }
+          } else {
+            this.tables = [];
+            this.error = 'Failed to load tables';
+          }
+        },
+        error: () => {
+          this.error = 'Failed to load tables';
+          this.tables = [];
+        }
+      });
   }
 
   onTableSelect(): void {
@@ -761,58 +771,21 @@ export class DataQualityComponent implements OnInit {
               const content = JSON.parse(response.result.content[0].text);
               this.checkResults = content.checks || [];
             } catch {
-              this.checkResults = this.getMockValidationResults();
+              this.checkResults = [];
+              this.error = 'Invalid response format';
             }
           } else {
-            this.checkResults = this.getMockValidationResults();
+            this.checkResults = [];
+            this.error = 'No validation results returned';
           }
           this.loading = false;
         },
         error: err => {
           this.error = 'Failed to run validation: ' + (err.message || 'Unknown error');
-          this.checkResults = this.getMockValidationResults();
+          this.checkResults = [];
           this.loading = false;
         }
       });
-  }
-
-  private getMockValidationResults(): CheckResult[] {
-    return [
-      {
-        check_name: 'null_check_email',
-        description: 'Check for NULL values in Email column',
-        status: 'failed',
-        violations_count: 15,
-        violations: Array.from({ length: 15 }, (_, i) => ({
-          row_index: i * 10 + 5,
-          column: 'Email',
-          value: null,
-          expected: 'NOT NULL',
-          message: 'Email should not be null'
-        })),
-        execution_time_ms: 45
-      },
-      {
-        check_name: 'unique_check_id',
-        description: 'Check uniqueness of Id column',
-        status: 'passed',
-        violations_count: 0,
-        violations: [],
-        execution_time_ms: 23
-      },
-      {
-        check_name: 'format_check_email',
-        description: 'Check email format validity',
-        status: 'warning',
-        violations_count: 3,
-        violations: [
-          { row_index: 42, column: 'Email', value: 'invalid-email', expected: 'Valid email format', message: 'Missing @ symbol' },
-          { row_index: 156, column: 'Email', value: 'test@', expected: 'Valid email format', message: 'Missing domain' },
-          { row_index: 892, column: 'Email', value: '@domain.com', expected: 'Valid email format', message: 'Missing local part' }
-        ],
-        execution_time_ms: 89
-      }
-    ];
   }
 
   runProfiling(): void {
@@ -820,17 +793,44 @@ export class DataQualityComponent implements OnInit {
 
     this.loading = true;
     this.loadingMessage = 'Profiling data...';
+    this.error = '';
 
-    // Mock profiling results
-    setTimeout(() => {
-      this.profileResults = [
-        { column: 'Id', type: 'INTEGER', null_count: 0, null_percentage: 0, unique_count: 1000, unique_percentage: 100, min: 1, max: 1000, mean: 500.5, std: 288.7, sample_values: [1, 2, 3] },
-        { column: 'Email', type: 'VARCHAR', null_count: 15, null_percentage: 1.5, unique_count: 985, unique_percentage: 98.5, sample_values: ['user@example.com'] },
-        { column: 'Name', type: 'VARCHAR', null_count: 8, null_percentage: 0.8, unique_count: 850, unique_percentage: 85, sample_values: ['John Doe'] },
-        { column: 'CreatedAt', type: 'TIMESTAMP', null_count: 0, null_percentage: 0, unique_count: 998, unique_percentage: 99.8, sample_values: ['2024-01-15'] }
-      ];
-      this.loading = false;
-    }, 1500);
+    const request = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'profile_table',
+        arguments: {
+          table_name: this.profilingTable,
+          sample_size: this.sampleSize || 1000
+        }
+      }
+    };
+
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          if (response.result?.content?.[0]?.text) {
+            try {
+              this.profileResults = JSON.parse(response.result.content[0].text);
+            } catch {
+              this.profileResults = [];
+              this.error = 'Profiling failed';
+            }
+          } else {
+            this.profileResults = [];
+            this.error = 'Profiling failed';
+          }
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'Profiling failed';
+          this.profileResults = [];
+          this.loading = false;
+        }
+      });
   }
 
   detectAnomalies(): void {
@@ -838,19 +838,45 @@ export class DataQualityComponent implements OnInit {
 
     this.loading = true;
     this.loadingMessage = 'Detecting anomalies...';
+    this.error = '';
 
-    // Mock anomaly results
-    setTimeout(() => {
-      this.anomalyResult = {
-        column: this.anomalyColumn,
-        method: this.anomalyMethod,
-        anomalies_count: 12,
-        anomaly_indices: [45, 123, 456, 789, 1001, 1234, 1567, 1890, 2100, 2345, 2678, 2901],
-        threshold: 3.0,
-        statistics: { mean: 250.00, std: 75.50, min_anomaly: -50.00, max_anomaly: 2500.00 }
-      };
-      this.loading = false;
-    }, 2000);
+    const request = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'detect_anomalies',
+        arguments: {
+          table_name: this.anomalyTable,
+          column: this.anomalyColumn,
+          method: this.anomalyMethod
+        }
+      }
+    };
+
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          if (response.result?.content?.[0]?.text) {
+            try {
+              this.anomalyResult = JSON.parse(response.result.content[0].text);
+            } catch {
+              this.anomalyResult = null;
+              this.error = 'Anomaly detection failed';
+            }
+          } else {
+            this.anomalyResult = null;
+            this.error = 'Anomaly detection failed';
+          }
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'Anomaly detection failed';
+          this.anomalyResult = null;
+          this.loading = false;
+        }
+      });
   }
 
   loadPendingApprovals(): void {
