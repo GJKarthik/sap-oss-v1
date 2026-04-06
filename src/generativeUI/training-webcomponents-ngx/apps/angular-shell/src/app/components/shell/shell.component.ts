@@ -90,7 +90,7 @@ type ProductSelectEvent = Event & {
         (profile-click)="openProfile($event)"
       >
         <ui5-avatar slot="profile" icon="employee"></ui5-avatar>
-        @for (item of navItems; track item.route) {
+        @for (item of navItems(); track item.route) {
           <ui5-shellbar-item
             [attr.icon]="item.icon"
             [attr.text]="item.label"
@@ -120,7 +120,7 @@ type ProductSelectEvent = Event & {
       </ui5-popover>
 
       <nav class="app-nav" role="navigation" aria-label="Training navigation">
-        @for (item of navItems; track item.route) {
+        @for (item of navItems(); track item.route) {
           <ui5-button
             design="Transparent"
             class="app-nav__item"
@@ -422,7 +422,18 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   readonly arabicModelOnline = signal(false);
 
-  get navItems(): NavItem[] {
+  /**
+   * Computed signal so the nav labels reactively update when
+   * translations finish loading or the language changes.
+   * Reading `translationsReady` and `currentLang` inside the
+   * computed guarantees Angular re-evaluates after the async
+   * fetch completes (fixes the SPA-navigation i18n regression).
+   */
+  readonly navItems = computed(() => {
+    // Subscribe to reactive signals so Angular knows to re-render
+    this.i18n.translationsReady();
+    this.i18n.currentLang();
+
     return [
       { label: this.i18n.t('nav.dashboard'), icon: 'home', route: '/dashboard' },
       { label: this.i18n.t('nav.pipeline'), icon: 'process', route: '/pipeline' },
@@ -439,7 +450,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       { label: this.i18n.t('nav.glossaryManager'), icon: 'activity-items', route: '/glossary-manager' },
       { label: this.i18n.t('nav.arabicWizard'), icon: 'learning-assistant', route: '/arabic-wizard' },
     ];
-  }
+  });
 
   readonly version = '1.0.0';
   apiKeyDraft = this.auth.token() ?? '';
@@ -473,8 +484,8 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   searchResults = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.navItems;
-    return this.navItems.filter(i => 
+    if (!q) return this.navItems();
+    return this.navItems().filter(i =>
       i.label.toLowerCase().includes(q) || 
       i.route.toLowerCase().includes(q)
     );
