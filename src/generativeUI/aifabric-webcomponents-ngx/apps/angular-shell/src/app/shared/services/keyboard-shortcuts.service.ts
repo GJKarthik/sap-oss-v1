@@ -166,7 +166,7 @@ export class KeyboardShortcutsService implements OnDestroy {
     this.register({
       id: 'nav-streaming',
       keys: ['g', 's'],
-      description: 'Go to Streaming',
+      description: 'Go to Search Ops',
       category: 'navigation',
       action: () => this.navigate('/streaming')
     });
@@ -174,7 +174,7 @@ export class KeyboardShortcutsService implements OnDestroy {
     this.register({
       id: 'nav-rag',
       keys: ['g', 'r'],
-      description: 'Go to RAG Studio',
+      description: 'Go to Search Studio',
       category: 'navigation',
       action: () => this.navigate('/rag')
     });
@@ -190,7 +190,7 @@ export class KeyboardShortcutsService implements OnDestroy {
     this.register({
       id: 'nav-playground',
       keys: ['g', 'l'],
-      description: 'Go to Playground',
+      description: 'Go to PAL Workbench',
       category: 'navigation',
       action: () => this.navigate('/playground')
     });

@@ -125,6 +125,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   endDemoTour(): void {
     this.demoTour.stop();
+    localStorage.setItem('ui5-demo-tour-dismissed', 'true');
     this.updateDemoTourBanner();
   }
 
@@ -152,7 +153,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private updateDemoTourBanner(): void {
-    this.demoTourActive = this.demoTour.active;
+    const dismissed = localStorage.getItem('ui5-demo-tour-dismissed') === 'true';
+    this.demoTourActive = this.demoTour.active && !dismissed;
     const step = this.demoTour.currentStep;
     if (!step) {
       this.demoTourStepLabel = '';

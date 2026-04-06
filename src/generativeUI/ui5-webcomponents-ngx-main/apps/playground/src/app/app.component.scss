@@ -95,6 +95,17 @@
   }
 }
 
+@media (max-width: 1024px) and (min-width: 601px) {
+  .app-nav__item {
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .app-nav__theme-label {
+    display: none;
+  }
+}
+
 .demo-tour-banner {
   display: flex;
   align-items: center;
@@ -136,6 +147,14 @@
 
   .app-nav__theme-label {
     display: none;
+  }
+}
+
+// BiDi isolation for technical content (both LTR & RTL contexts)
+:host-context([dir="rtl"]) {
+  code, pre, .technical {
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 }
 

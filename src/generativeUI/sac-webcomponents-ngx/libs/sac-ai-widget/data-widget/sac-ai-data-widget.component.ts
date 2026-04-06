@@ -82,6 +82,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     SacDividerComponent,
     SacFlexContainerComponent,
     SacGridContainerComponent,
+    // forwardRef required: SacAiDataWidgetComponent references itself for recursive container rendering
     forwardRef(() => SacAiDataWidgetComponent),
     SacTranslatePipe,
   ],
@@ -426,7 +427,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       padding-bottom: 12px;
     }
     .sac-ai-data-widget__filter-chip {
-      background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, var(--sapBackgroundColor, #fff));
+      background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, var(--sapBackgroundColor, #fafafa));
       color: var(--sapButton_Emphasized_Background, #0070f2);
       border-radius: 999px;
       padding: 4px 8px;

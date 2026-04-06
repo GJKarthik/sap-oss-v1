@@ -80,19 +80,19 @@ async function run() {
   if (REQUIRE_MCP) {
     checks.push(
       {
-        name: 'LangChain MCP health',
+        name: 'Elasticsearch MCP health',
         required: true,
         run: async () =>
           loginResult.token
-            ? checkProtected(`${apiOrigin}/api/v1/mcp/langchain/health`, loginResult.token)
+            ? checkProtected(`${apiOrigin}/api/v1/mcp/elasticsearch/health`, loginResult.token)
             : { ok: false, status: 401, detail: 'Skipped because login failed' },
       },
       {
-        name: 'Streaming MCP health',
+        name: 'PAL MCP health',
         required: true,
         run: async () =>
           loginResult.token
-            ? checkProtected(`${apiOrigin}/api/v1/mcp/streaming/health`, loginResult.token)
+            ? checkProtected(`${apiOrigin}/api/v1/mcp/pal/health`, loginResult.token)
             : { ok: false, status: 401, detail: 'Skipped because login failed' },
       },
       {

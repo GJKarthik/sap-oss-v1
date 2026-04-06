@@ -33,8 +33,8 @@ describe('McpService', () => {
     httpMock = TestBed.inject(HttpTestingController);
 
     flushHealthChecks(
-      { status: 'healthy', service: 'langchain-hana-mcp' },
-      { status: 'healthy', service: 'ai-core-streaming-mcp' }
+      { status: 'healthy', service: 'elasticsearch-mcp' },
+      { status: 'healthy', service: 'ai-core-pal-mcp' }
     );
   });
 
@@ -47,8 +47,8 @@ describe('McpService', () => {
     const completion = firstValueFrom(service.checkAllHealth());
 
     flushHealthChecks(
-      { status: 'healthy', service: 'langchain-hana-mcp' },
-      { status: 'error', service: 'ai-core-streaming-mcp', error: 'Connection failed' }
+      { status: 'healthy', service: 'elasticsearch-mcp' },
+      { status: 'error', service: 'ai-core-pal-mcp', error: 'Connection failed' }
     );
 
     await completion;
@@ -59,8 +59,8 @@ describe('McpService', () => {
     }).unsubscribe();
 
     expect(latestHealth).toEqual({
-      langchain: { status: 'healthy', service: 'langchain-hana-mcp' },
-      streaming: { status: 'error', service: 'ai-core-streaming-mcp', error: 'Connection failed' },
+      elasticsearch: { status: 'healthy', service: 'elasticsearch-mcp' },
+      pal: { status: 'error', service: 'ai-core-pal-mcp', error: 'Connection failed' },
       overall: 'degraded',
     });
   });
@@ -91,12 +91,12 @@ describe('McpService', () => {
 
     authState$.next(true);
     flushHealthChecks(
-      { status: 'healthy', service: 'langchain-hana-mcp' },
-      { status: 'healthy', service: 'ai-core-streaming-mcp' }
+      { status: 'healthy', service: 'elasticsearch-mcp' },
+      { status: 'healthy', service: 'ai-core-pal-mcp' }
     );
   });
 
-  it('calls the deployments MCP tool and exposes the returned resources', async () => {
+  it('calls the deployments endpoint and exposes the returned resources', async () => {
     const deployments: Deployment[] = [
       { id: 'deployment-1', status: 'RUNNING', scenarioId: 'scenario-a' },
     ];
@@ -123,32 +123,41 @@ describe('McpService', () => {
     expect(latestDeployments).toEqual(deployments);
   });
 
-  it('surfaces deployment request failures instead of converting them into empty lists', async () => {
-    const resultPromise = firstValueFrom(service.fetchDeployments());
-    const request = httpMock.expectOne(`${environment.apiBaseUrl}/deployments`);
+  it('loads PAL tools through the MCP proxy', async () => {
+    const resultPromise = firstValueFrom(service.fetchPalTools());
+    const request = httpMock.expectOne(environment.palMcpUrl);
 
-    request.flush({ detail: 'backend unavailable' }, { status: 503, statusText: 'Service Unavailable' });
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body.method).toBe('tools/list');
 
-    await expect(resultPromise).rejects.toMatchObject({
-      error: { detail: 'backend unavailable' },
+    request.flush({
+      jsonrpc: '2.0',
+      id: request.request.body.id,
+      result: {
+        tools: [{ name: 'pal_forecast', description: 'Forecast data' }],
+      },
     });
+
+    await expect(resultPromise).resolves.toEqual([
+      { name: 'pal_forecast', description: 'Forecast data' },
+    ]);
   });
 
-  function flushHealthChecks(langchain: ServiceHealth, streaming: ServiceHealth): void {
+  function flushHealthChecks(elasticsearch: ServiceHealth, pal: ServiceHealth): void {
     const requests = httpMock.match(request => request.method === 'GET' && request.url.endsWith('/health'));
     expect(requests).toHaveLength(2);
 
-    const langchainRequest = requests.find(request =>
-      request.request.url === `${environment.langchainMcpUrl}/health`
+    const elasticsearchRequest = requests.find(request =>
+      request.request.url === `${environment.elasticsearchMcpUrl}/health`
     );
-    const streamingRequest = requests.find(request =>
-      request.request.url === `${environment.streamingMcpUrl}/health`
+    const palRequest = requests.find(request =>
+      request.request.url === `${environment.palMcpUrl}/health`
     );
 
-    expect(langchainRequest).toBeDefined();
-    expect(streamingRequest).toBeDefined();
+    expect(elasticsearchRequest).toBeDefined();
+    expect(palRequest).toBeDefined();
 
-    langchainRequest!.flush(langchain);
-    streamingRequest!.flush(streaming);
+    elasticsearchRequest!.flush(elasticsearch);
+    palRequest!.flush(pal);
   }
 });

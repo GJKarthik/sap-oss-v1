@@ -156,7 +156,7 @@ interface RegistryEntry {
     .table-wrapper { overflow-x: auto; }
     .data-table { width: 100%; border-collapse: collapse; background: #fff;
       border: 1px solid #e4e4e4; border-radius: 0.5rem; overflow: hidden;
-      th { padding: 0.5rem 0.75rem; background: #f5f5f5; text-align: left; font-weight: 600;
+      th { padding: 0.5rem 0.75rem; background: #f5f5f5; text-align: start; font-weight: 600;
         font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6a6d70;
         border-bottom: 1px solid #e4e4e4; }
       td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e4e4e4; vertical-align: middle; }
@@ -170,7 +170,7 @@ interface RegistryEntry {
     .id-code { font-size: 0.7rem; color: #6a6d70; }
     .tag-input { padding: 2px 6px; font-size: 0.75rem; border: 1px solid #89919a;
       border-radius: 0.2rem; width: 90px; }
-    .deployed-badge { font-size: 0.7rem; margin-left: 4px; color: var(--sapPositiveColor, #2e7d32); font-weight: 600; }
+    .deployed-badge { font-size: 0.7rem; margin-inline-start: 4px; color: var(--sapPositiveColor, #2e7d32); font-weight: 600; }
     .status-badge { padding: 2px 8px; border-radius: 1rem; font-size: 0.7rem; font-weight: 600;
       &.status-completed { background: #e8f5e9; color: #2e7d32; }
       &.status-running { background: #e3f2fd; color: #1565c0; }

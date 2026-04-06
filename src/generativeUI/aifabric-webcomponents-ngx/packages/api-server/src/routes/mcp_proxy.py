@@ -2,8 +2,8 @@
 MCP Proxy routes for SAP AI Fabric Console.
 
 Proxies JSON-RPC requests from the Angular frontend to the MCP servers:
-  - LangChain HANA MCP  (langchain_mcp_url) - RAG and vector store operations
-  - AI Core Streaming MCP (streaming_mcp_url) - Streaming LLM sessions
+  - Elasticsearch MCP (elasticsearch_mcp_url) - search and indexing operations
+  - AI Core PAL MCP (pal_mcp_url) - analytics and orchestration tools
   - Data Cleaning Copilot MCP (data_cleaning_mcp_url) - Data quality validation
 
 This centralises all traffic through the FastAPI backend so that:
@@ -14,6 +14,7 @@ This centralises all traffic through the FastAPI backend so that:
 """
 
 from collections import defaultdict, deque
+import json
 import time
 from typing import Any, Dict, Optional
 
@@ -82,10 +83,10 @@ def _describe_exception(exc: Exception) -> str:
 
 
 def _service_name(target_url: str) -> str:
-    if target_url == settings.langchain_mcp_url:
-        return "langchain-hana-mcp"
-    if target_url == settings.streaming_mcp_url:
-        return "ai-core-streaming-mcp"
+    if target_url == settings.elasticsearch_mcp_url:
+        return "elasticsearch-mcp"
+    if target_url == settings.pal_mcp_url:
+        return "ai-core-pal-mcp"
     if target_url == settings.data_cleaning_mcp_url:
         return "data-cleaning-copilot-mcp"
     return target_url
@@ -110,7 +111,7 @@ def recent_mcp_failures(window_seconds: int) -> dict[str, int]:
 
 
 def mcp_metrics_snapshot(window_seconds: int) -> dict:
-    services = ("langchain-hana-mcp", "ai-core-streaming-mcp", "data-cleaning-copilot-mcp")
+    services = ("elasticsearch-mcp", "ai-core-pal-mcp", "data-cleaning-copilot-mcp")
     recent_failures = recent_mcp_failures(window_seconds)
     return {
         "recent_failures": recent_failures,
@@ -150,13 +151,22 @@ async def _read_json_body(request: Request) -> dict | None:
         return None
 
 
-async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
-    """Forward a JSON-RPC body to the target MCP server and return its response."""
-    service_name = _service_name(target_url)
+def _upstream_headers(target_url: str, correlation_id: str) -> dict[str, str]:
     headers = {
         "Content-Type": "application/json",
         "X-Correlation-ID": correlation_id,
     }
+    if target_url == settings.elasticsearch_mcp_url and settings.elasticsearch_mcp_api_key:
+        headers["Authorization"] = f"ApiKey {settings.elasticsearch_mcp_api_key}"
+    if target_url == settings.pal_mcp_url and settings.pal_mcp_bearer_token:
+        headers["Authorization"] = f"Bearer {settings.pal_mcp_bearer_token}"
+    return headers
+
+
+async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
+    """Forward a JSON-RPC body to the target MCP server and return its response."""
+    service_name = _service_name(target_url)
+    headers = _upstream_headers(target_url, correlation_id)
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(target_url, json=body, headers=headers)
@@ -200,6 +210,59 @@ async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
         )
 
 
+def _parse_tool_result(response: dict) -> Any:
+    if response.get("error"):
+        message = response["error"].get("message", "Unknown MCP tool error")
+        raise RuntimeError(message)
+    result = response.get("result")
+    if not isinstance(result, dict):
+        return result
+    content = result.get("content")
+    if isinstance(content, list) and content:
+        text = content[0].get("text")
+        if isinstance(text, str):
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                return text
+    return result
+
+
+async def call_tool(target_url: str, tool_name: str, arguments: dict[str, Any], correlation_id: str) -> Any:
+    response = await _forward(
+        target_url,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": tool_name,
+                "arguments": arguments,
+            },
+        },
+        correlation_id,
+    )
+    return _parse_tool_result(response)
+
+
+async def list_tools(target_url: str, correlation_id: str) -> list[dict[str, Any]]:
+    response = await _forward(
+        target_url,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/list",
+            "params": {},
+        },
+        correlation_id,
+    )
+    if response.get("error"):
+        message = response["error"].get("message", "Unknown MCP list-tools error")
+        raise RuntimeError(message)
+    tools = response.get("result", {}).get("tools", [])
+    return tools if isinstance(tools, list) else []
+
+
 async def probe_health(service_name: str, target_url: str, timeout_seconds: float = 5.0) -> dict:
     health_url = _health_url(target_url)
     try:
@@ -238,16 +301,16 @@ def _get_correlation_id(request: Request, counter: int = 0) -> str:
 
 
 # ---------------------------------------------------------------------------
-# LangChain HANA MCP proxy
+# Elasticsearch MCP proxy
 # ---------------------------------------------------------------------------
 
-@router.post("/langchain", summary="Proxy to LangChain HANA MCP")
-async def langchain_proxy(
+@router.post("/elasticsearch", summary="Proxy to Elasticsearch MCP")
+async def elasticsearch_proxy(
     request: Request,
     _: UserInfo = Depends(get_current_user),
 ):
     """
-    Forward JSON-RPC requests to the LangChain HANA MCP server.
+    Forward JSON-RPC requests to the Elasticsearch MCP server.
     Auth is enforced here — the downstream MCP server need not check tokens.
     """
     body = await _read_json_body(request)
@@ -255,34 +318,34 @@ async def langchain_proxy(
         return Response(status_code=204)
     corr_id = _get_correlation_id(request)
     logger.info(
-        "MCP proxy → langchain",
+        "MCP proxy → elasticsearch",
         method=body.get("method"),
         correlation_id=corr_id,
     )
-    return await _forward(settings.langchain_mcp_url, body, corr_id)
+    return await _forward(settings.elasticsearch_mcp_url, body, corr_id)
 
 
-@router.get("/langchain/health", summary="LangChain MCP health")
-async def langchain_health(_: UserInfo = Depends(get_current_user)):
-    """Probe the LangChain HANA MCP /health endpoint."""
+@router.get("/elasticsearch/health", summary="Elasticsearch MCP health")
+async def elasticsearch_health(_: UserInfo = Depends(get_current_user)):
+    """Probe the Elasticsearch MCP /health endpoint."""
     return await probe_health(
-        service_name="langchain-hana-mcp",
-        target_url=settings.langchain_mcp_url,
+        service_name="elasticsearch-mcp",
+        target_url=settings.elasticsearch_mcp_url,
         timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
     )
 
 
 # ---------------------------------------------------------------------------
-# AI Core Streaming MCP proxy
+# AI Core PAL MCP proxy
 # ---------------------------------------------------------------------------
 
-@router.post("/streaming", summary="Proxy to AI Core Streaming MCP")
-async def streaming_proxy(
+@router.post("/pal", summary="Proxy to AI Core PAL MCP")
+async def pal_proxy(
     request: Request,
     _: UserInfo = Depends(get_current_user),
 ):
     """
-    Forward JSON-RPC requests to the AI Core Streaming MCP server.
+    Forward JSON-RPC requests to the AI Core PAL MCP server.
     Auth is enforced here — the downstream MCP server need not check tokens.
     """
     body = await _read_json_body(request)
@@ -290,19 +353,19 @@ async def streaming_proxy(
         return Response(status_code=204)
     corr_id = _get_correlation_id(request)
     logger.info(
-        "MCP proxy → streaming",
+        "MCP proxy → pal",
         method=body.get("method"),
         correlation_id=corr_id,
     )
-    return await _forward(settings.streaming_mcp_url, body, corr_id)
+    return await _forward(settings.pal_mcp_url, body, corr_id)
 
 
-@router.get("/streaming/health", summary="Streaming MCP health")
-async def streaming_health(_: UserInfo = Depends(get_current_user)):
-    """Probe the AI Core Streaming MCP /health endpoint."""
+@router.get("/pal/health", summary="PAL MCP health")
+async def pal_health(_: UserInfo = Depends(get_current_user)):
+    """Probe the AI Core PAL MCP /health endpoint."""
     return await probe_health(
-        service_name="ai-core-streaming-mcp",
-        target_url=settings.streaming_mcp_url,
+        service_name="ai-core-pal-mcp",
+        target_url=settings.pal_mcp_url,
         timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
     )
 

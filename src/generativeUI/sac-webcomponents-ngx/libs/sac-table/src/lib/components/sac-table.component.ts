@@ -222,7 +222,7 @@ const EMPTY_SELECTION: TableSelection = {
       padding: 12px 16px;
       border-top: 1px solid var(--sapList_BorderColor, #e5e5e5);
       display: flex;
-      justify-content: flex-end;
+      justify-content: end;
     }
     .sac-table__pagination {
       display: flex;
@@ -286,10 +286,15 @@ export class SacTableComponent implements OnInit, OnChanges, OnDestroy {
   @Input() visible = true;
   @Input() cssClass = '';
 
+  /** @deprecated Prefer `cellClick` — the `on` prefix is an Angular anti-pattern. */
   @Output() onCellClick = new EventEmitter<TableCellClickEvent>();
+  /** @deprecated Prefer `rowClick` — the `on` prefix is an Angular anti-pattern. */
   @Output() onRowClick = new EventEmitter<TableRowClickEvent>();
+  /** @deprecated Prefer `selectionChange` — the `on` prefix is an Angular anti-pattern. */
   @Output() onSelectionChange = new EventEmitter<TableSelectionChangeEvent>();
+  /** @deprecated Prefer `sortChange` — the `on` prefix is an Angular anti-pattern. */
   @Output() onSortChange = new EventEmitter<TableSortChangeEvent>();
+  /** @deprecated Prefer `pageChange` — the `on` prefix is an Angular anti-pattern. */
   @Output() onPageChange = new EventEmitter<TablePageChangeEvent>();
 
   currentPage = 1;

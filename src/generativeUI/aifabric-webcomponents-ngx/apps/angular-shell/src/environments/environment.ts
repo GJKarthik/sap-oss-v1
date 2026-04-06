@@ -2,17 +2,19 @@ import { getRuntimeConfig } from './runtime-config';
 
 const runtimeConfig = getRuntimeConfig();
 const apiBaseUrl = runtimeConfig.apiBaseUrl || '/api/v1';
+const elasticsearchMcpUrl = runtimeConfig.elasticsearchMcpUrl || runtimeConfig.langchainMcpUrl || `${apiBaseUrl}/mcp/elasticsearch`;
+const palMcpUrl = runtimeConfig.palMcpUrl || runtimeConfig.streamingMcpUrl || `${apiBaseUrl}/mcp/pal`;
 
 export const environment = {
   production: false,
   apiBaseUrl,
-  langchainMcpUrl: runtimeConfig.langchainMcpUrl || `${apiBaseUrl}/mcp/langchain`,
-  streamingMcpUrl: runtimeConfig.streamingMcpUrl || `${apiBaseUrl}/mcp/streaming`,
+  elasticsearchMcpUrl,
+  palMcpUrl,
   hanaHost: '',
   hanaPort: 443,
   aiCoreBaseUrl: '',
   aiCoreResourceGroup: 'default',
   enableRag: true,
-  enableStreaming: true,
+  enablePalWorkbench: true,
   enableKuzuGraph: true,
 };

@@ -98,6 +98,10 @@ export interface FilterChangeEvent {
     .sac-filter__select:disabled {
       opacity: 0.5; cursor: not-allowed; background: var(--sapField_ReadOnly_Background, #f7f7f7);
     }
+    .sac-filter__select--changed {
+      border-color: var(--sapBrandColor, #0854a0);
+      box-shadow: 0 0 0 1px var(--sapBrandColor, #0854a0);
+    }
     .sac-filter--disabled { opacity: 0.6; }
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;

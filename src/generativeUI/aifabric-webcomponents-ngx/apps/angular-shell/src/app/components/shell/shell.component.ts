@@ -343,13 +343,13 @@ export class ShellComponent implements OnInit {
   
   navItems: NavItem[] = [
     { id: 'dashboard', text: 'Dashboard', icon: 'home', route: '/dashboard', description: 'View system overview and statistics' },
-    { id: 'streaming', text: 'Streaming', icon: 'play', route: '/streaming', description: 'Manage streaming sessions' },
+    { id: 'streaming', text: 'Search Ops', icon: 'search', route: '/streaming', description: 'Inspect Elasticsearch and PAL service state' },
     { id: 'deployments', text: 'Deployments', icon: 'machine', route: '/deployments', description: 'Manage AI model deployments' },
-    { id: 'rag', text: 'RAG Studio', icon: 'documents', route: '/rag', description: 'Retrieval-Augmented Generation workspace' },
+    { id: 'rag', text: 'Search Studio', icon: 'documents', route: '/rag', description: 'Elasticsearch-backed retrieval workspace' },
     { id: 'data-quality', text: 'Data Quality', icon: 'validate', route: '/data-quality', description: 'AI-powered data validation and cleaning' },
     { id: 'governance', text: 'Governance', icon: 'shield', route: '/governance', description: 'Configure governance rules and policies' },
     { id: 'data', text: 'Data Explorer', icon: 'database', route: '/data', description: 'Explore vector stores and data' },
-    { id: 'playground', text: 'Playground', icon: 'lab', route: '/playground', description: 'Test AI prompts and interactions' },
+    { id: 'playground', text: 'PAL Workbench', icon: 'lab', route: '/playground', description: 'Run PAL tools against registered data assets' },
     { id: 'lineage', text: 'Lineage', icon: 'org-chart', route: '/lineage', description: 'View data lineage and relationships' },
   ];
 

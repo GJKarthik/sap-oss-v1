@@ -94,7 +94,6 @@ type ProductSelectEvent = Event & {
           <ui5-shellbar-item
             [attr.icon]="item.icon"
             [attr.text]="item.label"
-            count=""
             (item-click)="navigateTo(item.route)"
           ></ui5-shellbar-item>
         }
@@ -134,7 +133,7 @@ type ProductSelectEvent = Event & {
 
         <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
         <ui5-tag [design]="arabicModelOnline() ? 'Positive' : 'Negative'" [attr.aria-label]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ i18n.t('chat.arabicFinanceModel') }}: {{ arabicModelOnline() ? i18n.t('status.online') : i18n.t('status.offline') }}</ui5-tag>
-        
+
         @if (userSettings.showLanguageOptions()) {
           <ui5-select [ngModel]="i18n.currentLang()" (change)="onLangChange($event)">
             <ui5-option value="en">English</ui5-option>
@@ -263,7 +262,7 @@ type ProductSelectEvent = Event & {
       }
 
       .header-btn {
-        background: #fff;
+        background: var(--sapBaseColor, #fff);
         border: 1px solid var(--sapField_BorderColor, #89919a);
         color: var(--sapTextColor, #32363a);
         padding: 0.25rem 0.75rem;
@@ -282,7 +281,7 @@ type ProductSelectEvent = Event & {
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 1rem;
-        background: #fff;
+        background: var(--sapBaseColor, #fff);
         border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
       }
 
@@ -311,7 +310,7 @@ type ProductSelectEvent = Event & {
       }
 
       .mode-select {
-        background: #fff;
+        background: var(--sapField_Background, #fff);
         color: var(--sapTextColor, #32363a);
         border: 1px solid var(--sapField_BorderColor, #89919a);
         border-radius: 0.25rem;
@@ -321,7 +320,7 @@ type ProductSelectEvent = Event & {
         cursor: pointer;
 
         option {
-          background: #fff;
+          background: var(--sapField_Background, #fff);
           color: var(--sapTextColor, #32363a);
         }
       }
@@ -333,7 +332,7 @@ type ProductSelectEvent = Event & {
 
       .diagnostics-drawer {
         border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-        background: #fff;
+        background: var(--sapBaseColor, #fff);
         padding: 0.75rem 1rem;
       }
 
@@ -386,10 +385,28 @@ type ProductSelectEvent = Event & {
       .model-online {
         color: var(--sapPositiveColor, #107e3e);
       }
+      .model-online .model-status-dot::before {
+        content: '';
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--sapPositiveColor, #107e3e);
+        margin-inline-end: 4px;
+        vertical-align: middle;
+      }
 
       .model-offline {
         color: var(--sapNegativeColor, #b00);
         opacity: 0.8;
+      }
+      .model-offline .model-status-dot::before {
+        content: '';
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--sapNegativeColor, #b00);
+        margin-inline-end: 4px;
+        vertical-align: middle;
       }
 
       .lang-toggle {

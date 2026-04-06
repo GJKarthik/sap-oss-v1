@@ -108,7 +108,7 @@ interface LogLine { text: string; kind: 'info' | 'success' | 'error' | 'warn' | 
       &.animated { animation: pulse 2s ease-in-out infinite; }
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-    .progress-pct { font-size: 0.75rem; color: #666; min-width: 35px; text-align: right; }
+    .progress-pct { font-size: 0.75rem; color: #666; min-width: 35px; text-align: end; }
     .chart-section { background: #fff; border: 1px solid #e4e4e4; border-radius: 0.5rem; margin-bottom: 1rem; overflow: hidden; }
     .chart-header { display: flex; justify-content: space-between; align-items: center;
       padding: 0.5rem 0.75rem; background: #f5f5f5; font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid #e4e4e4; }

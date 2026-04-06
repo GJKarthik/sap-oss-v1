@@ -14,6 +14,8 @@ from pydantic_settings import BaseSettings
 DEFAULT_JWT_SECRET = "change-me-in-production"
 DEFAULT_STORE_DATABASE_PATH = Path(__file__).resolve().parents[1] / ".data" / "aifabric-webcomponents-ngx.sqlite3"
 LOCAL_ENVIRONMENTS = {"development", "dev", "local", "test"}
+DEFAULT_PAL_MCP_URL = "http://localhost:8084/mcp"
+DEFAULT_ELASTICSEARCH_MCP_URL = "http://localhost:9120/mcp"
 
 
 def _is_local_url(value: str) -> bool:
@@ -86,9 +88,15 @@ class Settings(BaseSettings):
     hana_store_table_prefix: str = "SAP_AIFABRIC"
 
     # MCP service endpoints (used by metrics health probes)
-    langchain_mcp_url: str = "http://localhost:9140/mcp"
-    streaming_mcp_url: str = "http://localhost:9190/mcp"
+    pal_mcp_url: str = DEFAULT_PAL_MCP_URL
+    elasticsearch_mcp_url: str = DEFAULT_ELASTICSEARCH_MCP_URL
     data_cleaning_mcp_url: str = "http://localhost:9110/mcp"
+    pal_mcp_bearer_token: str = ""
+    elasticsearch_mcp_api_key: str = ""
+
+    # Legacy aliases kept for migration from the previous LangChain/Streaming layout
+    langchain_mcp_url: str = ""
+    streaming_mcp_url: str = ""
 
     # Logging
     log_level: str = "INFO"
@@ -114,6 +122,10 @@ class Settings(BaseSettings):
             object.__setattr__(self, "seed_reference_data", is_local_environment)
         if self.require_mcp_dependencies is None:
             object.__setattr__(self, "require_mcp_dependencies", not is_local_environment)
+        if self.elasticsearch_mcp_url == DEFAULT_ELASTICSEARCH_MCP_URL and self.langchain_mcp_url:
+            object.__setattr__(self, "elasticsearch_mcp_url", self.langchain_mcp_url)
+        if self.pal_mcp_url == DEFAULT_PAL_MCP_URL and self.streaming_mcp_url:
+            object.__setattr__(self, "pal_mcp_url", self.streaming_mcp_url)
         if not is_local_environment:
             if self.debug:
                 raise ValueError("DEBUG must remain disabled outside development and test environments")
@@ -161,8 +173,8 @@ class Settings(BaseSettings):
             missing_upstreams = [
                 field_name
                 for field_name, value in (
-                    ("LANGCHAIN_MCP_URL", self.langchain_mcp_url),
-                    ("STREAMING_MCP_URL", self.streaming_mcp_url),
+                    ("ELASTICSEARCH_MCP_URL", self.elasticsearch_mcp_url),
+                    ("PAL_MCP_URL", self.pal_mcp_url),
                 )
                 if not value
             ]
@@ -174,8 +186,8 @@ class Settings(BaseSettings):
                 local_upstreams = [
                     field_name
                     for field_name, value in (
-                        ("LANGCHAIN_MCP_URL", self.langchain_mcp_url),
-                        ("STREAMING_MCP_URL", self.streaming_mcp_url),
+                        ("ELASTICSEARCH_MCP_URL", self.elasticsearch_mcp_url),
+                        ("PAL_MCP_URL", self.pal_mcp_url),
                         ("DATA_CLEANING_MCP_URL", self.data_cleaning_mcp_url),
                     )
                     if _is_local_url(value) and value

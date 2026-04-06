@@ -207,14 +207,14 @@ async def _readiness_checks() -> dict:
         "docs_exposed": bool(app.docs_url),
     }
     if settings.require_mcp_dependencies:
-        checks["langchain_mcp"] = await mcp_proxy.probe_health(
-            service_name="langchain-hana-mcp",
-            target_url=settings.langchain_mcp_url,
+        checks["elasticsearch_mcp"] = await mcp_proxy.probe_health(
+            service_name="elasticsearch-mcp",
+            target_url=settings.elasticsearch_mcp_url,
             timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
         )
-        checks["streaming_mcp"] = await mcp_proxy.probe_health(
-            service_name="ai-core-streaming-mcp",
-            target_url=settings.streaming_mcp_url,
+        checks["pal_mcp"] = await mcp_proxy.probe_health(
+            service_name="ai-core-pal-mcp",
+            target_url=settings.pal_mcp_url,
             timeout_seconds=settings.mcp_healthcheck_timeout_seconds,
         )
     return checks
@@ -263,7 +263,7 @@ async def readiness_check():
         checks = await _readiness_checks()
         dependency_failures = [
             name
-            for name in ("langchain_mcp", "streaming_mcp")
+            for name in ("elasticsearch_mcp", "pal_mcp")
             if isinstance(checks.get(name), dict) and checks[name].get("status") not in {"ok", "healthy", "ready"}
         ]
         if dependency_failures:

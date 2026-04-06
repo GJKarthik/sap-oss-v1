@@ -103,7 +103,7 @@ interface PlatformComponent {
     .refresh-btn {
       padding: 0.375rem 0.875rem;
       background: var(--sapBrandColor, #0854a0);
-      color: #fff;
+      color: var(--sapButton_Emphasized_TextColor, #fff);
       border: none;
       border-radius: 0.25rem;
       cursor: pointer;

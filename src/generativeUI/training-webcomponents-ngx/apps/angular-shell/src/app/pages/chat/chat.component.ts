@@ -308,7 +308,7 @@ interface CompletionResponse {
       &.message--user {
         align-self: flex-end;
         background: var(--sapBrandColor, #0854a0);
-        color: #fff;
+        color: var(--sapButton_Emphasized_TextColor, #fff);
       }
 
       &.message--assistant {
@@ -505,6 +505,11 @@ interface CompletionResponse {
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .message { animation: none; }
+      .typing-indicator span { animation: none; }
     }
   `],
 })
@@ -757,6 +762,7 @@ export class ChatComponent implements OnDestroy, OnInit {
   // ─── Utilities ────────────────────────────────────────────────────────────
 
   clearChat(): void {
+    if (this.messages().length > 0 && !confirm(this.i18n.t('chat.confirmClear'))) return;
     this.messages.set([]);
     this.lastUsage.set(null);
     this.toast.info(this.i18n.t('chat.cleared'));

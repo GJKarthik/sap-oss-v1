@@ -1,5 +1,7 @@
 type RuntimeConfig = {
   apiBaseUrl?: string;
+  elasticsearchMcpUrl?: string;
+  palMcpUrl?: string;
   langchainMcpUrl?: string;
   streamingMcpUrl?: string;
 };

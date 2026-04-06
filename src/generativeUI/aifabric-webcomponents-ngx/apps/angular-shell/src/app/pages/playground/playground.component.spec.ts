@@ -4,84 +4,47 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import { McpService } from '../../services/mcp.service';
-import { TextLayoutService } from '../../services/text-layout.service';
 import { PlaygroundComponent } from './playground.component';
 
 describe('PlaygroundComponent', () => {
   let fixture: ComponentFixture<PlaygroundComponent>;
   let component: PlaygroundComponent;
   let mcpService: {
-    listGenUiSessions: jest.Mock;
-    getGenUiSession: jest.Mock;
-    saveGenUiSession: jest.Mock;
-    setGenUiSessionBookmark: jest.Mock;
-    archiveGenUiSession: jest.Mock;
-    cloneGenUiSession: jest.Mock;
-    setGenUiSessionArchived: jest.Mock;
-    streamingChat: jest.Mock;
-  };
-  let textLayoutService: {
-    measureHeight: jest.Mock;
+    fetchPalTools: jest.Mock;
+    invokePalTool: jest.Mock;
   };
 
   beforeEach(async () => {
     mcpService = {
-      listGenUiSessions: jest.fn().mockReturnValue(
-        of({
-          sessions: [
-            {
-              id: 'session-1',
-              title: 'A long dashboard title',
-              owner_username: 'admin',
-              is_bookmarked: false,
-              messages: [],
-              ui_state: {},
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              is_archived: false,
-              archived_at: null,
+      fetchPalTools: jest.fn().mockReturnValue(
+        of([
+          {
+            name: 'pal_forecast',
+            description: 'Run forecasting',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                table_name: { type: 'string' },
+                value_column: { type: 'string' },
+                horizon: { type: 'number' },
+              },
+              required: ['table_name', 'value_column'],
             },
-          ],
-          total: 1,
-        })
+          },
+        ])
       ),
-      getGenUiSession: jest.fn(),
-      saveGenUiSession: jest.fn().mockReturnValue(
+      invokePalTool: jest.fn().mockReturnValue(
         of({
-          id: 'session-1',
-          title: 'A long dashboard title',
-          owner_username: 'admin',
-          is_bookmarked: false,
-          messages: [],
-          ui_state: {},
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_archived: false,
-          archived_at: null,
+          status: 'success',
+          rows: [{ period: 1, forecast: 42 }],
         })
       ),
-      setGenUiSessionBookmark: jest.fn(),
-      archiveGenUiSession: jest.fn(),
-      cloneGenUiSession: jest.fn(),
-      setGenUiSessionArchived: jest.fn(),
-      streamingChat: jest.fn().mockReturnValue(
-        of({
-          content: 'assistant reply',
-          model: 'test-model',
-          streaming: true,
-        })
-      ),
-    };
-
-    textLayoutService = {
-      measureHeight: jest.fn().mockReturnValue(24),
     };
 
     await TestBed.configureTestingModule({
       imports: [PlaygroundComponent],
       providers: [
         { provide: McpService, useValue: mcpService },
-        { provide: TextLayoutService, useValue: textLayoutService },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -94,31 +57,36 @@ describe('PlaygroundComponent', () => {
       .compileComponents();
   });
 
-  it('measures session title heights when loading history', () => {
+  it('loads PAL tools and seeds the argument template from the selected tool schema', () => {
     fixture = TestBed.createComponent(PlaygroundComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(mcpService.listGenUiSessions).toHaveBeenCalled();
-    expect(textLayoutService.measureHeight).toHaveBeenCalled();
-    expect(component.savedSessions[0].estimatedTitleHeightPx).toBe(24);
+    expect(mcpService.fetchPalTools).toHaveBeenCalled();
+    expect(component.selectedToolName).toBe('pal_forecast');
+    expect(component.argumentsText).toContain('"table_name"');
+    expect(component.argumentsText).toContain('"value_column"');
   });
 
-  it('measures user and assistant message heights during chat flow', () => {
+  it('invokes the selected PAL tool and records the result', () => {
     fixture = TestBed.createComponent(PlaygroundComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    component.inputText = 'Hello pretext';
-    component.sendMessage();
+    component.argumentsText = JSON.stringify({
+      table_name: 'SALES_HISTORY',
+      value_column: 'REVENUE',
+      horizon: 6,
+    });
 
-    expect(mcpService.streamingChat).toHaveBeenCalled();
-    const userMessage = component.messages.find(message => message.role === 'user');
-    const assistantMessage = component.messages.find(message => message.role === 'assistant');
+    component.runTool();
 
-    expect(userMessage?.estimatedHeightPx).toBe(24);
-    expect(assistantMessage?.estimatedHeightPx).toBe(24);
-    expect(textLayoutService.measureHeight).toHaveBeenCalled();
+    expect(mcpService.invokePalTool).toHaveBeenCalledWith('pal_forecast', {
+      table_name: 'SALES_HISTORY',
+      value_column: 'REVENUE',
+      horizon: 6,
+    });
+    expect(component.invocations).toHaveLength(1);
+    expect(component.invocations[0].state).toBe('success');
   });
 });
-

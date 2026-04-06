@@ -83,7 +83,7 @@ def test_mcp_proxy_forwards_authenticated_requests(monkeypatch, client, admin_he
     monkeypatch.setattr(mcp_proxy, "_forward", fake_forward)
 
     response = client.post(
-        "/api/v1/mcp/langchain",
+        "/api/v1/mcp/elasticsearch",
         headers={**admin_headers, "X-Correlation-ID": "corr-123"},
         json={"jsonrpc": "2.0", "id": 7, "method": "tools/list", "params": {}},
     )
@@ -91,7 +91,7 @@ def test_mcp_proxy_forwards_authenticated_requests(monkeypatch, client, admin_he
     assert response.status_code == 200
     assert response.json()["result"] == {"ok": True}
     assert forwarded == {
-        "target_url": settings.langchain_mcp_url,
+        "target_url": settings.elasticsearch_mcp_url,
         "body": {"jsonrpc": "2.0", "id": 7, "method": "tools/list", "params": {}},
         "correlation_id": "corr-123",
     }
@@ -121,7 +121,7 @@ async def test_mcp_proxy_returns_jsonrpc_error_when_upstream_unreachable() -> No
 @pytest.mark.asyncio
 async def test_mcp_proxy_read_json_body_returns_none_on_client_disconnect() -> None:
     class DisconnectingRequest:
-        url = type("Url", (), {"path": "/api/v1/mcp/langchain"})()
+        url = type("Url", (), {"path": "/api/v1/mcp/elasticsearch"})()
 
         async def json(self) -> dict:
             raise ClientDisconnect()

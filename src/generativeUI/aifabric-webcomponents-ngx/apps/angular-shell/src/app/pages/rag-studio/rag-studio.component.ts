@@ -26,7 +26,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">RAG Studio</ui5-title>
+        <ui5-title slot="startContent" level="H3">Search Studio</ui5-title>
         <ui5-button 
           slot="endContent" 
           icon="refresh" 
@@ -47,7 +47,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
         </ui5-button>
       </ui5-bar>
 
-      <div class="rag-container" role="region" aria-label="RAG Studio workspace">
+      <div class="rag-container" role="region" aria-label="Search Studio workspace">
         <!-- Loading indicator -->
         <div class="loading-container" *ngIf="storesLoading && vectorStores.length === 0" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>
@@ -75,7 +75,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
         </ui5-message-strip>
 
         <ui5-card *ngIf="showCreateForm && canManage" class="create-form-card">
-          <ui5-card-header slot="header" title-text="Create Knowledge Base" subtitle-text="Register a vector store in HANA"></ui5-card-header>
+          <ui5-card-header slot="header" title-text="Create Knowledge Base" subtitle-text="Register an Elasticsearch-backed knowledge base"></ui5-card-header>
           <form class="form-grid" (ngSubmit)="createStore()">
             <div class="field-group">
               <label for="table-name-input" class="field-label">
@@ -121,7 +121,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
               <ui5-card-header 
                 slot="header" 
                 title-text="Knowledge Bases" 
-                subtitle-text="Vector stores for RAG"
+                subtitle-text="Elasticsearch-backed search indices"
                 [additionalText]="vectorStores.length + ''">
               </ui5-card-header>
               <ui5-list 
@@ -195,13 +195,13 @@ function readErrorMessage(error: unknown, fallback: string): string {
 
               <div class="query-area">
                 <div class="field-group">
-                  <label for="query-input" class="field-label">Ask a Question</label>
+                  <label for="query-input" class="field-label">Search Query</label>
                   <ui5-textarea 
                     id="query-input"
                     ngDefaultControl 
                     [(ngModel)]="queryText" 
                     name="query"
-                    placeholder="Enter your question..." 
+                    placeholder="Enter a search question..." 
                     [rows]="3"
                     accessible-name="RAG query input">
                   </ui5-textarea>
@@ -218,11 +218,11 @@ function readErrorMessage(error: unknown, fallback: string): string {
 
               <div *ngIf="ragResult" class="result-area" role="region" aria-label="Query results">
                 <div class="answer-section">
-                  <h4>Answer</h4>
+                  <h4>Search Summary</h4>
                   <p class="answer-text">{{ ragResult.answer }}</p>
                 </div>
                 <div class="context-section">
-                  <h4>Context Documents</h4>
+                  <h4>Retrieved Documents</h4>
                   <ui5-list *ngIf="ragResult.context_docs.length > 0; else emptyContext" aria-label="Context documents">
                     <ui5-li *ngFor="let doc of ragResult.context_docs; trackBy: trackByIndex">
                       {{ formatContextDoc(doc) }}
@@ -566,7 +566,7 @@ export class RagStudioComponent implements OnInit {
           this.queryLoading = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, 'RAG query failed.');
+          this.error = readErrorMessage(err, 'Search query failed.');
           this.queryLoading = false;
         }
       });

@@ -64,20 +64,17 @@ interface DeploymentListResponse {
   count: number;
 }
 
+export interface MCPToolDefinition {
+  name: string;
+  description?: string;
+  inputSchema?: Record<string, unknown>;
+}
+
 interface DashboardStatsResponse {
   total_deployments: number;
   running_deployments: number;
   total_vector_stores: number;
   total_documents: number;
-}
-
-export interface StreamSession {
-  stream_id: string;
-  deployment_id: string;
-  status: string;
-  config: Record<string, unknown>;
-  events: unknown[];
-  started_at: number;
 }
 
 export interface VectorStore {
@@ -102,11 +99,18 @@ export interface DashboardStats {
   totalServices: number;
   activeDeployments: number;
   totalDeployments: number;
-  activeStreams: number;
-  totalStreams: number;
-  vectorStores: number;
+  availablePalTools: number;
+  totalKnowledgeBases: number;
   documentsIndexed: number;
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown';
+}
+
+export interface ElasticsearchClusterHealth {
+  cluster_name?: string;
+  status?: string;
+  number_of_nodes?: number;
+  active_shards?: number;
+  [key: string]: unknown;
 }
 
 export interface GenUiSessionMessage {
@@ -201,27 +205,25 @@ export class McpService {
 
   private requestId = 0;
   private correlationCounter = 0;
-  private readonly langchainUrl = environment.langchainMcpUrl;
-  private readonly streamingUrl = environment.streamingMcpUrl;
-  private readonly langchainHealthUrl = `${environment.langchainMcpUrl}/health`;
-  private readonly streamingHealthUrl = `${environment.streamingMcpUrl}/health`;
+  private readonly elasticsearchUrl = environment.elasticsearchMcpUrl;
+  private readonly palUrl = environment.palMcpUrl;
+  private readonly elasticsearchHealthUrl = `${environment.elasticsearchMcpUrl}/health`;
+  private readonly palHealthUrl = `${environment.palMcpUrl}/health`;
   private healthPollingSubscription: Subscription | null = null;
 
   // Reactive state
   private healthSubject = new BehaviorSubject<{
-    langchain: ServiceHealth | null;
-    streaming: ServiceHealth | null;
+    elasticsearch: ServiceHealth | null;
+    pal: ServiceHealth | null;
     overall: 'healthy' | 'degraded' | 'error' | 'unknown';
-  }>({ langchain: null, streaming: null, overall: 'unknown' });
+  }>({ elasticsearch: null, pal: null, overall: 'unknown' });
 
   private deploymentsSubject = new BehaviorSubject<Deployment[]>([]);
-  private streamsSubject = new BehaviorSubject<StreamSession[]>([]);
   private vectorStoresSubject = new BehaviorSubject<VectorStore[]>([]);
 
   // Public observables
   public health$ = this.healthSubject.asObservable();
   public deployments$ = this.deploymentsSubject.asObservable();
-  public streams$ = this.streamsSubject.asObservable();
   public vectorStores$ = this.vectorStoresSubject.asObservable();
 
   constructor() {
@@ -254,45 +256,45 @@ export class McpService {
   private stopHealthPolling(): void {
     this.healthPollingSubscription?.unsubscribe();
     this.healthPollingSubscription = null;
-    this.healthSubject.next({ langchain: null, streaming: null, overall: 'unknown' });
+    this.healthSubject.next({ elasticsearch: null, pal: null, overall: 'unknown' });
   }
 
   checkAllHealth(): Observable<void> {
-    const langchainHealth$ = this.http.get<ServiceHealth>(
-      this.langchainHealthUrl
+    const elasticsearchHealth$ = this.http.get<ServiceHealth>(
+      this.elasticsearchHealthUrl
     ).pipe(
       catchError(err => of<ServiceHealth>({
         status: 'error',
-        service: 'langchain-hana-mcp',
+        service: 'elasticsearch-mcp',
         error: err.message || 'Connection failed'
       }))
     );
 
-    const streamingHealth$ = this.http.get<ServiceHealth>(
-      this.streamingHealthUrl
+    const palHealth$ = this.http.get<ServiceHealth>(
+      this.palHealthUrl
     ).pipe(
       catchError(err => of<ServiceHealth>({
         status: 'error',
-        service: 'ai-core-streaming-mcp',
+        service: 'ai-core-pal-mcp',
         error: err.message || 'Connection failed'
       }))
     );
 
     return forkJoin({
-      langchain: langchainHealth$,
-      streaming: streamingHealth$
+      elasticsearch: elasticsearchHealth$,
+      pal: palHealth$
     }).pipe(
-      map(({ langchain, streaming }) => {
+      map(({ elasticsearch, pal }) => {
         let overall: 'healthy' | 'degraded' | 'error' | 'unknown' = 'unknown';
-        if (langchain.status === 'healthy' && streaming.status === 'healthy') {
+        if (elasticsearch.status === 'healthy' && pal.status === 'healthy') {
           overall = 'healthy';
-        } else if (langchain.status === 'error' && streaming.status === 'error') {
+        } else if (elasticsearch.status === 'error' && pal.status === 'error') {
           overall = 'error';
         } else {
           overall = 'degraded';
         }
 
-        this.healthSubject.next({ langchain, streaming, overall });
+        this.healthSubject.next({ elasticsearch, pal, overall });
       })
     );
   }
@@ -354,7 +356,14 @@ export class McpService {
     }).pipe(
       map(result => {
         const text = result.content?.[0]?.text;
-        return text ? JSON.parse(text) : result;
+        if (!text) {
+          return result as T;
+        }
+        try {
+          return JSON.parse(text) as T;
+        } catch {
+          return text as T;
+        }
       })
     );
   }
@@ -402,32 +411,21 @@ export class McpService {
   }
 
   // ===========================================================================
-  // Streams
+  // PAL / Elasticsearch
   // ===========================================================================
 
-  fetchStreams(): Observable<StreamSession[]> {
-    return this.callTool<{ active_streams?: StreamSession[]; error?: string }>(
-      this.streamingUrl,
-      'stream_status',
-      {}
-    ).pipe(
-      map(result => {
-        const streams = result.active_streams || [];
-        this.streamsSubject.next(streams);
-        return streams;
-      })
+  fetchPalTools(): Observable<MCPToolDefinition[]> {
+    return this.mcpRequest<{ tools?: MCPToolDefinition[] }>(this.palUrl, 'tools/list').pipe(
+      map(result => result.tools || [])
     );
   }
 
-  startStream(deploymentId: string, config: Record<string, unknown> = {}): Observable<{ stream_id: string; status: string }> {
-    return this.callTool(this.streamingUrl, 'start_stream', {
-      deployment_id: deploymentId,
-      config: JSON.stringify(config)
-    });
+  invokePalTool<T>(toolName: string, args: Record<string, unknown>): Observable<T> {
+    return this.callTool<T>(this.palUrl, toolName, args);
   }
 
-  stopStream(streamId: string): Observable<{ stream_id: string; status: string }> {
-    return this.callTool(this.streamingUrl, 'stop_stream', { stream_id: streamId });
+  getElasticsearchClusterHealth(): Observable<ElasticsearchClusterHealth> {
+    return this.callTool<ElasticsearchClusterHealth>(this.elasticsearchUrl, 'es_cluster_health', {});
   }
 
   // ===========================================================================
@@ -487,24 +485,6 @@ export class McpService {
         k,
       })
     );
-  }
-
-  // ===========================================================================
-  // Chat
-  // ===========================================================================
-
-  chat(messages: Array<{ role: string; content: string }>, maxTokens = 1024): Observable<{ content: string; model: string }> {
-    return this.callTool(this.langchainUrl, 'langchain_chat', {
-      messages: JSON.stringify(messages),
-      max_tokens: maxTokens
-    });
-  }
-
-  streamingChat(messages: Array<{ role: string; content: string }>, maxTokens = 1024): Observable<{ content: string; model: string; streaming: boolean }> {
-    return this.callTool(this.streamingUrl, 'streaming_chat', {
-      messages: JSON.stringify(messages),
-      max_tokens: maxTokens
-    });
   }
 
   // ===========================================================================
@@ -571,20 +551,19 @@ export class McpService {
       dashboard: this.withRequestTimeout(
         this.http.get<DashboardStatsResponse>(`${environment.apiBaseUrl}/metrics/dashboard`)
       ),
-      streams: this.fetchStreams(),
+      palTools: this.fetchPalTools(),
     }).pipe(
-      map(({ dashboard, streams }) => {
+      map(({ dashboard, palTools }) => {
         const health = this.healthSubject.getValue();
 
         return {
-          servicesHealthy: (health.langchain?.status === 'healthy' ? 1 : 0) +
-            (health.streaming?.status === 'healthy' ? 1 : 0),
+          servicesHealthy: (health.elasticsearch?.status === 'healthy' ? 1 : 0) +
+            (health.pal?.status === 'healthy' ? 1 : 0),
           totalServices: 2,
           activeDeployments: dashboard.running_deployments,
           totalDeployments: dashboard.total_deployments,
-          activeStreams: streams.filter(s => s.status === 'active').length,
-          totalStreams: streams.length,
-          vectorStores: dashboard.total_vector_stores,
+          availablePalTools: palTools.length,
+          totalKnowledgeBases: dashboard.total_vector_stores,
           documentsIndexed: dashboard.total_documents,
           overallHealth: health.overall,
         } satisfies DashboardStats;
