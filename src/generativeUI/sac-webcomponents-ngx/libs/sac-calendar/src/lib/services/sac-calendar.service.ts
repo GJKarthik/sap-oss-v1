@@ -5,8 +5,9 @@
  * Wraps CalendarService from sap-sac-webcomponents-ts/src/calendar.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { SacApiService } from '@sap-oss/sac-ngx-core';
 
 import type {
   CalendarTask,
@@ -18,6 +19,7 @@ import type {
 
 @Injectable()
 export class SacCalendarService {
+  private readonly api = inject(SacApiService);
   private readonly tasks$ = new BehaviorSubject<CalendarTask[]>([]);
   private readonly events$ = new BehaviorSubject<CalendarEvent[]>([]);
   private readonly processes$ = new BehaviorSubject<CalendarProcess[]>([]);
@@ -51,33 +53,47 @@ export class SacCalendarService {
   async getTasks(filter?: CalendarFilter): Promise<CalendarTask[]> {
     this.loading$.next(true);
     try {
-      // Placeholder — delegates to SAC REST API
-      return this.tasks$.value;
+      const filterParams = filter ? '?' + new URLSearchParams(filter as Record<string, string>).toString() : '';
+      const tasks = await this.api.get<CalendarTask[]>('/calendar/tasks' + filterParams);
+      this.tasks$.next(tasks);
+      return tasks;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
     } finally {
       this.loading$.next(false);
     }
   }
 
   async createTask(task: Omit<CalendarTask, 'id'>): Promise<CalendarTask> {
-    const newTask: CalendarTask = { ...task, id: this.generateId() };
-    this.tasks$.next([...this.tasks$.value, newTask]);
-    return newTask;
+    try {
+      const newTask = await this.api.post<CalendarTask>('/calendar/tasks', task);
+      this.tasks$.next([...this.tasks$.value, newTask]);
+      return newTask;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async updateTask(taskId: string, updates: Partial<CalendarTask>): Promise<CalendarTask | null> {
-    const tasks = this.tasks$.value;
-    const idx = tasks.findIndex(t => t.id === taskId);
-    if (idx === -1) return null;
-    const updated = { ...tasks[idx], ...updates };
-    tasks[idx] = updated;
-    this.tasks$.next([...tasks]);
-    return updated;
+    try {
+      const updated = await this.api.put<CalendarTask>('/calendar/tasks/' + taskId, updates);
+      const tasks = this.tasks$.value.map(t => t.id === taskId ? updated : t);
+      this.tasks$.next(tasks);
+      return updated;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async deleteTask(taskId: string): Promise<boolean> {
-    const tasks = this.tasks$.value.filter(t => t.id !== taskId);
-    this.tasks$.next(tasks);
-    return true;
+    try {
+      await this.api.delete('/calendar/tasks/' + taskId);
+      const tasks = this.tasks$.value.filter(t => t.id !== taskId);
+      this.tasks$.next(tasks);
+      return true;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -87,32 +103,47 @@ export class SacCalendarService {
   async getEvents(filter?: CalendarFilter): Promise<CalendarEvent[]> {
     this.loading$.next(true);
     try {
-      return this.events$.value;
+      const filterParams = filter ? '?' + new URLSearchParams(filter as Record<string, string>).toString() : '';
+      const events = await this.api.get<CalendarEvent[]>('/calendar/events' + filterParams);
+      this.events$.next(events);
+      return events;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
     } finally {
       this.loading$.next(false);
     }
   }
 
   async createEvent(event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent> {
-    const newEvent: CalendarEvent = { ...event, id: this.generateId() };
-    this.events$.next([...this.events$.value, newEvent]);
-    return newEvent;
+    try {
+      const newEvent = await this.api.post<CalendarEvent>('/calendar/events', event);
+      this.events$.next([...this.events$.value, newEvent]);
+      return newEvent;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async updateEvent(eventId: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent | null> {
-    const events = this.events$.value;
-    const idx = events.findIndex(e => e.id === eventId);
-    if (idx === -1) return null;
-    const updated = { ...events[idx], ...updates };
-    events[idx] = updated;
-    this.events$.next([...events]);
-    return updated;
+    try {
+      const updated = await this.api.put<CalendarEvent>('/calendar/events/' + eventId, updates);
+      const events = this.events$.value.map(ev => ev.id === eventId ? updated : ev);
+      this.events$.next(events);
+      return updated;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async deleteEvent(eventId: string): Promise<boolean> {
-    const events = this.events$.value.filter(e => e.id !== eventId);
-    this.events$.next(events);
-    return true;
+    try {
+      await this.api.delete('/calendar/events/' + eventId);
+      const events = this.events$.value.filter(e => e.id !== eventId);
+      this.events$.next(events);
+      return true;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -120,23 +151,34 @@ export class SacCalendarService {
   // ---------------------------------------------------------------------------
 
   async getProcesses(): Promise<CalendarProcess[]> {
-    return this.processes$.value;
+    try {
+      const processes = await this.api.get<CalendarProcess[]>('/calendar/processes');
+      this.processes$.next(processes);
+      return processes;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async createProcess(process: Omit<CalendarProcess, 'id'>): Promise<CalendarProcess> {
-    const newProcess: CalendarProcess = { ...process, id: this.generateId() };
-    this.processes$.next([...this.processes$.value, newProcess]);
-    return newProcess;
+    try {
+      const newProcess = await this.api.post<CalendarProcess>('/calendar/processes', process);
+      this.processes$.next([...this.processes$.value, newProcess]);
+      return newProcess;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async updateProcess(processId: string, updates: Partial<CalendarProcess>): Promise<CalendarProcess | null> {
-    const processes = this.processes$.value;
-    const idx = processes.findIndex(p => p.id === processId);
-    if (idx === -1) return null;
-    const updated = { ...processes[idx], ...updates };
-    processes[idx] = updated;
-    this.processes$.next([...processes]);
-    return updated;
+    try {
+      const updated = await this.api.put<CalendarProcess>('/calendar/processes/' + processId, updates);
+      const processes = this.processes$.value.map(p => p.id === processId ? updated : p);
+      this.processes$.next(processes);
+      return updated;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -144,28 +186,47 @@ export class SacCalendarService {
   // ---------------------------------------------------------------------------
 
   async getReminders(): Promise<CalendarReminder[]> {
-    return this.reminders$.value;
+    try {
+      const reminders = await this.api.get<CalendarReminder[]>('/calendar/reminders');
+      this.reminders$.next(reminders);
+      return reminders;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async createReminder(reminder: Omit<CalendarReminder, 'id'>): Promise<CalendarReminder> {
-    const newReminder: CalendarReminder = { ...reminder, id: this.generateId() };
-    this.reminders$.next([...this.reminders$.value, newReminder]);
-    return newReminder;
+    try {
+      const newReminder = await this.api.post<CalendarReminder>('/calendar/reminders', reminder);
+      this.reminders$.next([...this.reminders$.value, newReminder]);
+      return newReminder;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async dismissReminder(reminderId: string): Promise<boolean> {
-    const reminders = this.reminders$.value;
-    const idx = reminders.findIndex(r => r.id === reminderId);
-    if (idx === -1) return false;
-    reminders[idx] = { ...reminders[idx], dismissed: true };
-    this.reminders$.next([...reminders]);
-    return true;
+    try {
+      await this.api.put('/calendar/reminders/' + reminderId + '/dismiss', {});
+      const reminders = this.reminders$.value.map(r =>
+        r.id === reminderId ? { ...r, dismissed: true } : r
+      );
+      this.reminders$.next(reminders);
+      return true;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   async deleteReminder(reminderId: string): Promise<boolean> {
-    const reminders = this.reminders$.value.filter(r => r.id !== reminderId);
-    this.reminders$.next(reminders);
-    return true;
+    try {
+      await this.api.delete('/calendar/reminders/' + reminderId);
+      const reminders = this.reminders$.value.filter(r => r.id !== reminderId);
+      this.reminders$.next(reminders);
+      return true;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   // ---------------------------------------------------------------------------

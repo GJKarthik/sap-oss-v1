@@ -5,8 +5,9 @@
  * Wraps SearchToInsight from sap-sac-webcomponents-ts/src/builtins.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
+import { SacApiService } from '@sap-oss/sac-ngx-core';
 
 import type {
   SearchToInsightDialogMode,
@@ -15,6 +16,7 @@ import type {
 
 @Injectable()
 export class SearchToInsightService {
+  private readonly api = inject(SacApiService);
   private readonly searchResult$ = new Subject<SearchToInsightResult>();
   private readonly dialogClosed$ = new Subject<void>();
   private dialogOpen = false;
@@ -36,7 +38,9 @@ export class SearchToInsightService {
   open(mode?: SearchToInsightDialogMode): void {
     this.mode = mode ?? 'both';
     this.dialogOpen = true;
-    // Placeholder — delegates to SAC REST API
+    this.api.post('/builtins/search-to-insight/open', { mode: this.mode }).catch(() => {
+      // Best-effort: dialog state is managed locally even if API call fails
+    });
   }
 
   /**
@@ -72,18 +76,25 @@ export class SearchToInsightService {
    * Execute a search query programmatically.
    */
   async search(query: string): Promise<SearchToInsightResult> {
-    // Placeholder — delegates to SAC REST API
-    const result: SearchToInsightResult = { query };
-    this.searchResult$.next(result);
-    return result;
+    try {
+      const result = await this.api.post<SearchToInsightResult>('/builtins/search-to-insight/search', { query });
+      this.searchResult$.next(result);
+      return result;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   /**
    * Apply an insight result to the current story.
    */
   async applyInsight(result: SearchToInsightResult): Promise<void> {
-    // Placeholder — delegates to SAC REST API
-    this.searchResult$.next(result);
+    try {
+      await this.api.post('/builtins/search-to-insight/apply', result);
+      this.searchResult$.next(result);
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   destroy(): void {
