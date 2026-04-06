@@ -1,3 +1,4 @@
+import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -5,10 +6,16 @@ import {
   SacFilterCheckboxComponent,
   FilterChangeEvent,
 } from '../../libs/sac-ai-widget/components/sac-filter.component';
+import { SacI18nService } from '../../libs/sac-core/src/lib/services/sac-i18n.service';
+
+
 
 describe('SacFilterDropdownComponent', () => {
   function createDropdown(): SacFilterDropdownComponent {
-    return new SacFilterDropdownComponent();
+    const injector = Injector.create({
+      providers: [{ provide: SacI18nService, useClass: SacI18nService }],
+    });
+    return runInInjectionContext(injector, () => new SacFilterDropdownComponent());
   }
 
   it('emits SingleValue filterChange on single selection', () => {
@@ -82,7 +89,10 @@ describe('SacFilterDropdownComponent', () => {
 
 describe('SacFilterCheckboxComponent', () => {
   function createCheckbox(): SacFilterCheckboxComponent {
-    return new SacFilterCheckboxComponent();
+    const injector = Injector.create({
+      providers: [{ provide: SacI18nService, useClass: SacI18nService }],
+    });
+    return runInInjectionContext(injector, () => new SacFilterCheckboxComponent());
   }
 
   it('emits MultipleValue with selected option values', () => {
