@@ -95,6 +95,7 @@
     "@nx/plugin": "22.0.2",
     "@nx/storybook": "22.0.2",
     "@nx/workspace": "22.0.2",
+    "@playwright/test": "^1.59.1",
     "@schematics/angular": "20.3.9",
     "@storybook/angular": "9.1.0",
     "@storybook/mdx2-csf": "^1.1.0",
