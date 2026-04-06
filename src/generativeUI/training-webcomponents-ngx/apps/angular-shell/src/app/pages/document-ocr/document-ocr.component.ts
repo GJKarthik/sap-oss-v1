@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { I18nService } from '../../services/i18n.service';
 import {
-  OcrService, OcrResult, OcrDetectedTable, OcrHealthStatus,
+  OcrService, OcrResult, OcrDetectedTable, OcrHealthStatus, OcrExtractionResult,
 } from '../../services/ocr.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
@@ -18,7 +18,7 @@ export interface OcrCurationState {
   sourceFile: File | null;
   /** OCR result returned from the backend. */
   result: OcrResult | null;
-  aiResult: import('../../services/ocr.service').OcrExtractionResult | null;
+  aiResult: OcrExtractionResult | null;
   extractingAi: boolean;
   /** Currently viewed page (1-based). */
   activePage: number;
@@ -271,7 +271,7 @@ export class DocumentOcrComponent {
 
     this._mutate(s => { s.extractingAi = true; });
     this.ocr.extractInformation(text, this._state().sourceFile?.name).subscribe({
-      next: (res) => {
+      next: (res: OcrExtractionResult) => {
         this._mutate(s => {
           s.aiResult = res;
           s.extractingAi = false;

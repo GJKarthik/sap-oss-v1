@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError, throwError } from 'rxjs';
+import { Observable, of, catchError, throwError, map } from 'rxjs';
+import { GlossaryService } from './glossary.service';
 
 export interface OcrTextRegion {
   text: string;
@@ -61,6 +62,17 @@ export interface OcrHealthStatus {
   message?: string;
 }
 
+export interface OcrExtractionResult {
+  id: string;
+  document_type: string;
+  original_ar: string;
+  translated_en: string;
+  financial_fields: { key: string; value: string; confidence: number }[];
+  line_items: { description_ar: string; description_en: string; quantity: number; unit_price: number; total: number }[];
+  compliance_checks: { check: string; passed: boolean; details?: string }[];
+  regulatory_fields: Record<string, string>;
+}
+
 const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
   { ar: 'إجمالي الإيرادات', en: 'Total Revenue' },
   { ar: 'صافي الربح', en: 'Net Profit' },
@@ -81,6 +93,7 @@ const FINANCIAL_GLOSSARY: { ar: string; en: string }[] = [
 @Injectable({ providedIn: 'root' })
 export class OcrService {
   private readonly http = inject(HttpClient);
+  private readonly glossary = inject(GlossaryService);
 
   /** Check health of the OCR service. */
   checkHealth(): Observable<OcrHealthStatus> {
@@ -128,6 +141,26 @@ export class OcrService {
       }
     }
     return fields;
+  }
+
+  /**
+   * Send OCR text to the AI extraction endpoint for structured data extraction.
+   * Appends glossary constraints to the system instructions.
+   */
+  extractInformation(text: string, fileName?: string): Observable<OcrExtractionResult> {
+    const glossarySnippet = this.glossary.getSystemPromptSnippet();
+    const systemInstructions =
+      'Extract the following specific regulatory fields from the document text. ' +
+      'Return structured JSON with document_type, original_ar, translated_en, financial_fields, line_items, compliance_checks, and regulatory_fields.' +
+      glossarySnippet;
+
+    return this.http.post<OcrExtractionResult>('/api/openai/v1/ocr/documents', {
+      text,
+      file_name: fileName,
+      system_instructions: systemInstructions,
+    }).pipe(
+      catchError(err => throwError(() => err))
+    );
   }
 
   /**
