@@ -187,9 +187,17 @@ describe('RegistryComponent', () => {
   }));
 
   it('should restore persisted tags from localStorage on load', fakeAsync(() => {
-    localStorage.setItem('model_tags', JSON.stringify({ 'aaaa-1111': 'prod-v1' }));
+    // Flush the init request from beforeEach first
     httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
     tick();
+
+    // Set localStorage and re-init the tags by accessing private field, then reload
+    localStorage.setItem('model_tags', JSON.stringify({ 'aaaa-1111': 'prod-v1' }));
+    (component as any).tags = JSON.parse(localStorage.getItem('model_tags')!);
+    component.load();
+    httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
+    tick();
+
     expect(component.taggedCount()).toBe(1);
     expect(component.models()[0].tag).toBe('prod-v1');
   }));

@@ -281,11 +281,13 @@ export class DataExplorerComponent implements OnInit {
   ];
 
   readonly categories = computed(() => [...new Set(this.assets.map(a => a.category))].sort());
-  readonly filteredAssets = computed(() => this.assets.filter(a => {
-    const matchSearch = !this.searchTerm || a.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || a.description.toLowerCase().includes(this.searchTerm.toLowerCase());
-    const matchCat = !this.filterCategory || a.category === this.filterCategory;
-    return matchSearch && matchCat;
-  }));
+  filteredAssets(): DataAsset[] {
+    return this.assets.filter(a => {
+      const matchSearch = !this.searchTerm || a.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || a.description.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchCat = !this.filterCategory || a.category === this.filterCategory;
+      return matchSearch && matchCat;
+    });
+  }
   readonly excelCount = computed(() => this.assets.filter(a => a.type === 'xlsx').length);
   readonly csvCount = computed(() => this.assets.filter(a => a.type === 'csv').length);
   readonly templateCount = computed(() => this.assets.filter(a => a.type === 'template').length);

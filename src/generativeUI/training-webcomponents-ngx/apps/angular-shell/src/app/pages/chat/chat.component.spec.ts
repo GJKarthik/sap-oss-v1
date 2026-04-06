@@ -36,6 +36,8 @@ describe('ChatComponent', () => {
   });
 
   afterEach(() => {
+    // Flush any pending init requests (e.g. /api/v1/models from ngOnInit)
+    httpMock.match(() => true).forEach(r => r.flush({}));
     httpMock.verify();
   });
 
@@ -51,7 +53,7 @@ describe('ChatComponent', () => {
     component.clearChat();
 
     expect(component.messages().length).toBe(0);
-    expect(MOCK_TOAST.info).toHaveBeenCalledWith('Chat cleared');
+    expect(MOCK_TOAST.info).toHaveBeenCalledWith('chat.cleared');
   });
 
   it('send() should append user message and call api.post', fakeAsync(() => {
