@@ -74,6 +74,10 @@ export class CollabDemoComponent implements OnInit, OnDestroy {
     this.leaveConfirmDialog.nativeElement.show();
   }
 
+  cancelLeave(): void {
+    this.leaveConfirmDialog.nativeElement.close();
+  }
+
   onConfirmLeave(): void {
     this.leaveConfirmDialog.nativeElement.close();
     this.leaveRoom();
