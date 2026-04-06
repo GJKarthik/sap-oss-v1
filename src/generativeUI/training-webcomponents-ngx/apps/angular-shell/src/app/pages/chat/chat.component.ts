@@ -8,6 +8,7 @@ import { I18nService } from '../../services/i18n.service';
 import { LocaleDatePipe } from '../../shared/pipes/locale-date.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GlossaryService, CrossCheckFinding } from '../../services/glossary.service';
+import { LogService } from '../../services/log.service';
 import { TranslationMemoryService } from '../../services/translation-memory.service';
 
 /** CrossCheckFinding enriched with UI-state for the inline override form. */
@@ -515,6 +516,7 @@ export class ChatComponent implements OnDestroy, OnInit {
   readonly i18n = inject(I18nService);
   private readonly glossary = inject(GlossaryService);
   private readonly tm = inject(TranslationMemoryService);
+  private readonly log = inject(LogService);
   private readonly destroy$ = new Subject<void>();
 
   readonly messages = signal<ChatMessage[]>([]);
@@ -648,7 +650,7 @@ export class ChatComponent implements OnDestroy, OnInit {
         error: (e: HttpErrorResponse) => {
           const detail = (e.error as { detail?: string })?.detail ?? 'Request failed — is the ModelOpt backend running?';
           this.toast.error(detail, this.i18n.t('chat.errorTitle'));
-          console.error('Chat request failed:', e);
+          this.log.error('Chat request failed', 'Chat', e);
           this.sending.set(false);
         },
       });

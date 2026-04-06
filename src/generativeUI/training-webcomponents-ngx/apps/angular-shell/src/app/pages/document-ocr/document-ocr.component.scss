@@ -75,9 +75,9 @@
 
   &__label { font-weight: 600; color: var(--sapCriticalColor, #856404); }
   &__page { padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem; }
-  &__page--approved { background: #d4edda; color: #155724; }
-  &__page--pending  { background: #fff3cd; color: #856404; }
-  &__page--flagged  { background: #f8d7da; color: #721c24; }
+  &__page--approved { background: var(--sapSuccessBackground, #d4edda); color: var(--sapPositiveTextColor, #155724); }
+  &__page--pending  { background: var(--sapWarningBackground, #fff3cd); color: var(--sapCriticalTextColor, #856404); }
+  &__page--flagged  { background: var(--sapErrorBackground, #f8d7da); color: var(--sapNegativeTextColor, #721c24); }
 }
 
 // ── Content area + split pane ──────────────────────────────────────────────
@@ -93,12 +93,12 @@
   flex: 1; display: flex; flex-direction: column;
   border: 1px solid var(--sapField_BorderColor, #ccc);
   border-radius: 0.5rem 0 0 0.5rem; overflow: hidden;
-  background: #f0f0f0;
+  background: var(--sapGroup_ContentBackground, #f0f0f0);
 
   &__toolbar {
     display: flex; align-items: center; gap: 0.5rem;
-    background: #444; color: #fff; padding: 0.375rem 0.75rem; font-size: 0.8125rem;
-    button { background: transparent; border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 0.125rem 0.375rem; border-radius: 3px; cursor: pointer; }
+    background: var(--sapShell_Background, #444); color: var(--sapShell_TextColor, #fff); padding: 0.375rem 0.75rem; font-size: 0.8125rem;
+    button { background: transparent; border: 1px solid rgba(255,255,255,.3); color: var(--sapShell_TextColor, #fff); padding: 0.125rem 0.375rem; border-radius: 3px; cursor: pointer; }
   }
 
   &__canvas-wrap {
@@ -155,9 +155,9 @@
 .conf-badge {
   padding: 0.125rem 0.625rem; border-radius: 10px; font-size: 0.75rem; font-weight: 600;
 }
-.conf-high { background: #d4edda; color: #155724; }
-.conf-mid  { background: #fff3cd; color: #856404; }
-.conf-low  { background: #f8d7da; color: #721c24; }
+.conf-high { background: var(--sapSuccessBackground, #d4edda); color: var(--sapPositiveTextColor, #155724); }
+.conf-mid  { background: var(--sapWarningBackground, #fff3cd); color: var(--sapCriticalTextColor, #856404); }
+.conf-low  { background: var(--sapErrorBackground, #f8d7da); color: var(--sapNegativeTextColor, #721c24); }
 
 // Page nav
 .page-nav {
@@ -202,7 +202,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 .meta-item {
   background: var(--sapList_Background, #f5f5f5); border-radius: 0.375rem; padding: 0.625rem;
   display: flex; flex-direction: column; gap: 0.25rem;
-  &.meta-high { background: #d4edda; }
+  &.meta-high { background: var(--sapSuccessBackground, #d4edda); }
   &.meta-warn { background: var(--sapWarningBackground, #fff3cd); }
 }
 .meta-label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sapContent_LabelColor, #6a6d70); }
@@ -264,9 +264,9 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 .legend-chip { display: flex; align-items: center; gap: 0.25rem; }
 
 // Diff highlight colour key (colour alone never carries meaning — icons accompany these in the template)
-.corrected  { color: #155724; }   // green  — reviewer-corrected text
-.low-conf   { color: #856404; }   // amber  — low-confidence region (< 80%)
-.unreviewed { color: #721c24; }   // red    — not yet reviewed
+.corrected  { color: var(--sapPositiveTextColor, #155724); }   // green  — reviewer-corrected text
+.low-conf   { color: var(--sapCriticalTextColor, #856404); }   // amber  — low-confidence region (< 80%)
+.unreviewed { color: var(--sapNegativeTextColor, #721c24); }   // red    — not yet reviewed
 
 .correction-editor {
   width: 100%; height: calc(100% - 3rem); resize: none;
@@ -288,9 +288,9 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 .strikethrough { text-decoration: line-through; color: var(--sapContent_LabelColor, #6a6d70); }
 .gt-input { width: 100%; border: 1px solid var(--sapField_BorderColor, #ccc); border-radius: 0.25rem; padding: 0.25rem 0.375rem; font-size: 0.8125rem; }
 .gt-status { font-size: 0.75rem; font-weight: 600; }
-.gt-verified { color: #155724; }
-.gt-pending  { color: #856404; }
-.gt-notfound { color: #721c24; }
+.gt-verified { color: var(--sapPositiveTextColor, #155724); }
+.gt-pending  { color: var(--sapCriticalTextColor, #856404); }
+.gt-notfound { color: var(--sapNegativeTextColor, #721c24); }
 
 // ── Expert mode — QA grid ─────────────────────────────────────────────────
 .qa-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
@@ -298,16 +298,16 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
   width: 80px; border: 2px solid transparent; border-radius: 0.5rem; padding: 0.5rem;
   text-align: center; cursor: pointer; font-size: 0.75rem;
   transition: border-color 0.15s;
-  &--approved { background: #d4edda; border-color: #28a745; }
-  &--pending  { background: var(--sapList_Background, #f5f5f5); border-color: #ccc; }
-  &--flagged  { background: #f8d7da; border-color: #dc3545; }
+  &--approved { background: var(--sapSuccessBackground, #d4edda); border-color: var(--sapPositiveColor, #28a745); }
+  &--pending  { background: var(--sapList_Background, #f5f5f5); border-color: var(--sapField_BorderColor, #ccc); }
+  &--flagged  { background: var(--sapErrorBackground, #f8d7da); border-color: var(--sapNegativeColor, #dc3545); }
   &--active   { box-shadow: 0 0 0 3px rgba(8, 84, 160, 0.3); }
   &__num   { font-weight: 700; font-size: 0.875rem; }
   &__status { font-size: 1rem; }
   &__conf  { font-size: 0.6875rem; color: var(--sapContent_LabelColor, #6a6d70); }
   &__note  { font-size: 0.6875rem; text-align: left; margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68px; }
 }
-.btn-xs { font-size: 0.6875rem; padding: 0.125rem 0.375rem; margin-top: 0.25rem; border: 1px solid #28a745; color: #28a745; background: none; border-radius: 3px; cursor: pointer; }
+.btn-xs { font-size: 0.6875rem; padding: 0.125rem 0.375rem; margin-top: 0.25rem; border: 1px solid var(--sapPositiveColor, #28a745); color: var(--sapPositiveColor, #28a745); background: none; border-radius: 3px; cursor: pointer; }
 .qa-summary { font-size: 0.8125rem; color: var(--sapContent_LabelColor, #6a6d70); }
 
 // ── QA controls (always visible in expert mode) ────────────────────────────
@@ -316,9 +316,9 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
   padding: 0.5rem 0.875rem; border-top: 1px solid var(--sapField_BorderColor, #e5e5e5);
   background: var(--sapList_Background, #fafafa);
 }
-.btn-approve { background: #28a745; color: #fff; border: none; border-radius: 0.25rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; cursor: pointer; }
-.btn-flag    { background: #dc3545; color: #fff; border: none; border-radius: 0.25rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; cursor: pointer; }
-.btn-reset   { background: #6c757d; color: #fff; border: none; border-radius: 0.25rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; cursor: pointer; }
+.btn-approve { background: var(--sapPositiveColor, #28a745); color: var(--sapButton_Emphasized_TextColor, #fff); border: none; border-radius: 0.25rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; cursor: pointer; }
+.btn-flag    { background: var(--sapNegativeColor, #dc3545); color: var(--sapButton_Emphasized_TextColor, #fff); border: none; border-radius: 0.25rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; cursor: pointer; }
+.btn-reset   { background: var(--sapNeutralColor, #6c757d); color: var(--sapButton_Emphasized_TextColor, #fff); border: none; border-radius: 0.25rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; cursor: pointer; }
 .note-input  { flex: 1; min-width: 120px; border: 1px solid var(--sapField_BorderColor, #ccc); border-radius: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.8125rem; }
 
 // ── Export panel ──────────────────────────────────────────────────────────
@@ -342,9 +342,9 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 .dataset-bar { display: flex; gap: 2px; height: 10px; flex: 1; border-radius: 5px; overflow: hidden; }
 .dataset-bar__seg {
   flex: 1;
-  &--approved { background: #28a745; }
-  &--pending  { background: #ccc; }
-  &--flagged  { background: #dc3545; }
+  &--approved { background: var(--sapPositiveColor, #28a745); }
+  &--pending  { background: var(--sapField_BorderColor, #ccc); }
+  &--flagged  { background: var(--sapNegativeColor, #dc3545); }
 }
 
 // ── Viewer zoom ───────────────────────────────────────────────────────────
@@ -412,8 +412,8 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
   gap: 1rem;
   h3 { margin: 0; font-size: 1.25rem; color: var(--sapTextColor, #32363a); }
   .ai-badge {
-    background: #e3f2fd;
-    color: #1565c0;
+    background: var(--sapInformationBackground, #e3f2fd);
+    color: var(--sapInformativeTextColor, #1565c0);
     padding: 0.2rem 0.6rem;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -442,20 +442,20 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: #fdfdfd;
-  border-left: 4px solid #ccc;
+  background: var(--sapTile_Background, #fdfdfd);
+  border-left: 4px solid var(--sapField_BorderColor, #ccc);
   
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    .rule-name { font-weight: 600; font-size: 0.875rem; color: #333; }
-    .country-badge { font-size: 0.7rem; font-weight: bold; color: #555; background: #eee; padding: 2px 6px; border-radius: 4px; }
+    .rule-name { font-weight: 600; font-size: 0.875rem; color: var(--sapTextColor, #333); }
+    .country-badge { font-size: 0.7rem; font-weight: bold; color: var(--sapContent_LabelColor, #555); background: var(--sapGroup_ContentBorderColor, #eee); padding: 2px 6px; border-radius: 4px; }
   }
   
   .card-body p {
     font-size: 0.8125rem;
-    color: #555;
+    color: var(--sapContent_LabelColor, #555);
     margin: 0;
     line-height: 1.4;
   }
@@ -469,9 +469,9 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
       padding: 2px 6px;
       border-radius: 4px;
       
-      &.success { background: #e6f4ea; color: #1e7e34; }
-      &.error { background: #fce8e6; color: #d93025; }
-      &.warning { background: #fef7e0; color: #f29900; }
+      &.success { background: var(--sapSuccessBackground, #e6f4ea); color: var(--sapPositiveTextColor, #1e7e34); }
+      &.error { background: var(--sapErrorBackground, #fce8e6); color: var(--sapNegativeTextColor, #d93025); }
+      &.warning { background: var(--sapWarningBackground, #fef7e0); color: var(--sapCriticalTextColor, #f29900); }
     }
   }
 }
@@ -479,7 +479,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 .ai-translated-section {
   h4 { margin: 0 0 0.5rem; font-size: 1rem; color: var(--sapContent_LabelColor, #6a6d70); }
   .translated-text-box {
-    background: #f9f9f9;
+    background: var(--sapGroup_ContentBackground, #f9f9f9);
     padding: 1rem;
     border-radius: 0.5rem;
     border-left: 4px solid var(--sapBrandColor, #0854a0);
@@ -497,7 +497,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
 }
 
 .ai-field-card {
-  background: #fff;
+  background: var(--sapTile_Background, #fff);
   border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
   padding: 1rem;
   border-radius: 0.5rem;
@@ -527,7 +527,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
     height: 1rem;
     border: 2px solid rgba(255,255,255,0.3);
     border-radius: 50%;
-    border-top-color: #fff;
+    border-top-color: var(--sapBackgroundColor, #fff);
     animation: spin 1s linear infinite;
     margin-right: 0.5rem;
   }

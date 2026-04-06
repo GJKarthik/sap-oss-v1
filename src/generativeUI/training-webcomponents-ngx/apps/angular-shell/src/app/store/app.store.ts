@@ -13,6 +13,7 @@ import { webSocket } from 'rxjs/webSocket';
 import { ApiService } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
 import { NotificationService } from '../services/notification.service';
+import { LogService } from '../services/log.service';
 
 // ============================================================================
 // Types
@@ -197,7 +198,7 @@ export const AppStore = signalStore(
     ),
   })),
   
-  withMethods((store, api = inject(ApiService), toast = inject(ToastService)) => {
+  withMethods((store, api = inject(ApiService), toast = inject(ToastService), log = inject(LogService)) => {
     
     // Helper to update cached data
     const updateCache = <K extends CacheKey>(
@@ -477,7 +478,7 @@ export const AppStore = signalStore(
           retry({
             delay: (error, retryCount) => {
               patchState(store, { wsState: 'reconnecting' });
-              console.warn(`WebSocket disconnected. Reconnect attempt ${retryCount}...`);
+              log.warn(`WebSocket disconnected. Reconnect attempt ${retryCount}...`, 'AppStore');
               // Exponential backoff capped at 10 seconds
               return timer(Math.min(1000 * Math.pow(2, retryCount), 10000));
             }
@@ -491,7 +492,7 @@ export const AppStore = signalStore(
             }
           },
           error: (err) => {
-            console.error('WS Fatal Error:', err);
+            log.error('WS Fatal Error', 'AppStore', err);
             patchState(store, { wsState: 'error' });
           },
         });

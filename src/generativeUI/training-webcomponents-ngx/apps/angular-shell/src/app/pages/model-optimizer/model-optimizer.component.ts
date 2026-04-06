@@ -9,6 +9,7 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
+import { LogService } from '../../services/log.service';
 
 interface ModelInfo {
   name: string;
@@ -658,6 +659,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
   private readonly fb = inject(FormBuilder);
+  private readonly log = inject(LogService);
   private readonly destroy$ = new Subject<void>();
 
   readonly expandedJobId = signal<string | null>(null);
@@ -814,14 +816,14 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       models: this.api.get<ModelInfo[]>('/models/catalog').pipe(
         catchError((err: HttpErrorResponse) => {
           this.toast.error(this.i18n.t('modelOpt.catalogFailed'), this.i18n.t('modelOpt.modelsTitle'));
-          console.error('Model catalog failed:', err);
+          this.log.error('Model catalog failed', 'ModelOptimizer', err);
           return of([]);
         })
       ),
       jobs: this.api.get<JobResponse[]>('/jobs').pipe(
         catchError((err: HttpErrorResponse) => {
           this.toast.warning(this.i18n.t('modelOpt.jobsFailed'), this.i18n.t('modelOpt.jobsTitle'));
-          console.warn('Jobs load failed:', err);
+          this.log.warn('Jobs load failed', 'ModelOptimizer', err);
           return of([]);
         })
       ),
@@ -835,7 +837,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.toast.error(this.i18n.t('modelOpt.loadFailed'), this.i18n.t('common.error'));
-          console.error('Load failed:', err);
+          this.log.error('Load failed', 'ModelOptimizer', err);
           this.loading.set(false);
         },
       });
@@ -916,7 +918,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
         error: (e: HttpErrorResponse) => {
           const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
           this.toast.error(this.i18n.t('modelOpt.jobCreateFailed', { detail }), this.i18n.t('modelOpt.jobErrorTitle'));
-          console.error('Job creation failed:', e);
+          this.log.error('Job creation failed', 'ModelOptimizer', e);
           this.submitting.set(false);
         },
       });

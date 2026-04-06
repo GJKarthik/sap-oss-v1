@@ -211,7 +211,7 @@ export class CacheService {
     // Use setTimeout to push to next tick (non-blocking)
     setTimeout(() => {
       this.fetchAndCache(key, fetchFn).subscribe({
-        error: (err) => console.warn(`Background revalidation failed for ${key}:`, err),
+        error: () => { /* background revalidation is best-effort */ },
       });
     }, 0);
   }

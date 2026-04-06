@@ -84,7 +84,7 @@ export interface SliderChangeEvent {
     }
     .sac-slider__value {
       font-size: 14px; font-weight: 600; color: var(--sapBrandColor, #0854a0);
-      min-width: 56px; text-align: right;
+      min-width: 56px; text-align: end;
     }
     .sac-slider__input {
       width: 100%; height: 8px; cursor: pointer;
@@ -102,10 +102,10 @@ export interface SliderChangeEvent {
       outline: none;
     }
     .sac-slider__input:focus-visible::-webkit-slider-thumb {
-      box-shadow: 0 0 0 3px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, #000);
     }
     .sac-slider__input:focus-visible::-moz-range-thumb {
-      box-shadow: 0 0 0 3px var(--sapContent_FocusColor, rgba(0, 112, 242, 0.3));
+      box-shadow: 0 0 0 2px var(--sapContent_FocusColor, #000);
     }
     .sac-slider__input:disabled {
       opacity: 0.5; cursor: not-allowed;

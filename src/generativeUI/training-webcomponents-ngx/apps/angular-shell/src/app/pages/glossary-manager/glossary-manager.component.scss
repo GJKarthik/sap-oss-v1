@@ -22,7 +22,7 @@
 
 .backend-label {
   font-size: 0.75rem;
-  color: #6a6d70;
+  color: var(--sapContent_LabelColor, #6a6d70);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -32,19 +32,19 @@
   align-items: center;
   padding: 0.25rem 0.625rem;
   border-radius: 999px;
-  background: #fdf1d3;
-  color: #8a5a00;
+  background: var(--sapWarningBackground, #fdf1d3);
+  color: var(--sapCriticalTextColor, #8a5a00);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .backend-chip--hana {
-  background: #e6f4ea;
-  color: #1f6d38;
+  background: var(--sapSuccessBackground, #e6f4ea);
+  color: var(--sapPositiveTextColor, #1f6d38);
 }
 
 .card {
-  background: #fff;
+  background: var(--sapTile_Background, #fff);
   border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
   border-radius: 0.75rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -59,15 +59,15 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
-  h2 { margin: 0; font-size: 1.125rem; color: #6a6d70; text-transform: uppercase; letter-spacing: 0.05em; }
+  h2 { margin: 0; font-size: 1.125rem; color: var(--sapContent_LabelColor, #6a6d70); text-transform: uppercase; letter-spacing: 0.05em; }
 }
 
 .badge {
   padding: 0.125rem 0.5rem;
-  background: #f0f2f5;
+  background: var(--sapGroup_ContentBackground, #f0f2f5);
   border-radius: 1rem;
   font-size: 0.75rem;
-  color: #666;
+  color: var(--sapContent_LabelColor, #666);
   font-weight: 600;
 }
 
@@ -83,15 +83,15 @@ table {
   th {
     text-align: start;
     padding: 1rem;
-    background: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    color: #6a6d70;
+    background: var(--sapList_HeaderBackground, #f8f9fa);
+    border-bottom: 2px solid var(--sapGroup_ContentBorderColor, #dee2e6);
+    color: var(--sapContent_LabelColor, #6a6d70);
     font-weight: 600;
   }
-  
+
   td {
     padding: 1rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #eee);
     vertical-align: middle;
   }
 }
@@ -100,8 +100,8 @@ table {
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #999;
-  background: #f5f5f5;
+  color: var(--sapContent_LabelColor, #999);
+  background: var(--sapGroup_ContentBackground, #f5f5f5);
   padding: 1px 4px;
   border-radius: 2px;
   margin-inline-start: 0.375rem;
@@ -110,7 +110,7 @@ table {
 .cat-tag {
   font-size: 0.75rem;
   color: var(--sapBrandColor, #0854a0);
-  background: #e1f5fe;
+  background: var(--sapInformationBackground, #e1f5fe);
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: 600;
@@ -118,8 +118,8 @@ table {
 
 .ifrs-tag {
   font-size: 0.75rem;
-  color: #00695c;
-  background: #e0f2f1;
+  color: var(--sapPositiveTextColor, #00695c);
+  background: var(--sapSuccessBackground, #e0f2f1);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -129,9 +129,9 @@ table {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 1rem;
-  background: #fff3e0;
-  color: #e65100;
-  &.approved { background: #e8f5e9; color: #2e7d32; }
+  background: var(--sapWarningBackground, #fff3e0);
+  color: var(--sapCriticalTextColor, #e65100);
+  &.approved { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveTextColor, #2e7d32); }
 }
 
 .action-row {
@@ -142,8 +142,8 @@ table {
 .btn-icon {
   background: transparent; border: none; cursor: pointer; font-size: 1.1rem;
   padding: 4px; border-radius: 4px; transition: background 0.2s;
-  &:hover { background: #f5f5f5; }
-  &.delete:hover { background: #ffebee; }
+  &:hover { background: var(--sapList_Hover_Background, #f5f5f5); }
+  &.delete:hover { background: var(--sapErrorBackground, #ffebee); }
 }
 
 .add-form {
@@ -164,10 +164,10 @@ table {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  label { font-size: 0.75rem; font-weight: 600; color: #666; }
+  label { font-size: 0.75rem; font-weight: 600; color: var(--sapContent_LabelColor, #666); }
   input, select {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--sapField_BorderColor, #ced4da);
     border-radius: 0.375rem;
     font-size: 0.875rem;
   }
@@ -181,6 +181,6 @@ table {
 .empty-cell {
   text-align: center;
   padding: 3rem !important;
-  color: #999;
+  color: var(--sapContent_LabelColor, #999);
   font-style: italic;
 }

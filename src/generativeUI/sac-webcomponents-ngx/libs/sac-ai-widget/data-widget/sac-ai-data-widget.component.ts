@@ -173,23 +173,29 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
             <div *ngSwitchCase="'filter-date-range'" class="sac-ai-data-widget__date-range">
               <label class="sac-ai-data-widget__control-label">{{ resolvedFilterLabel }}</label>
               <div class="sac-ai-data-widget__date-inputs">
-                <input
-                  class="sac-ai-data-widget__date-input"
-                  type="date"
-                  [value]="resolvedDateRange.low"
-                  [disabled]="!resolvedInteractiveDimension"
-                  [attr.aria-label]="'dataWidget.startDateFor' | sacTranslate:{ label: resolvedFilterLabel }"
-                  (change)="handleDateRangeChange('low', $event)"
-                />
+                <div class="sac-ai-data-widget__date-field">
+                  <label class="sac-ai-data-widget__date-label">{{ 'widget.dateFrom' | sacTranslate }}</label>
+                  <input
+                    class="sac-ai-data-widget__date-input"
+                    type="date"
+                    [value]="resolvedDateRange.low"
+                    [disabled]="!resolvedInteractiveDimension"
+                    [attr.aria-label]="'dataWidget.startDateFor' | sacTranslate:{ label: resolvedFilterLabel }"
+                    (change)="handleDateRangeChange('low', $event)"
+                  />
+                </div>
                 <span class="sac-ai-data-widget__date-separator" aria-hidden="true">{{ 'dataWidget.dateSeparator' | sacTranslate }}</span>
-                <input
-                  class="sac-ai-data-widget__date-input"
-                  type="date"
-                  [value]="resolvedDateRange.high"
-                  [disabled]="!resolvedInteractiveDimension"
-                  [attr.aria-label]="'dataWidget.endDateFor' | sacTranslate:{ label: resolvedFilterLabel }"
-                  (change)="handleDateRangeChange('high', $event)"
-                />
+                <div class="sac-ai-data-widget__date-field">
+                  <label class="sac-ai-data-widget__date-label">{{ 'widget.dateTo' | sacTranslate }}</label>
+                  <input
+                    class="sac-ai-data-widget__date-input"
+                    type="date"
+                    [value]="resolvedDateRange.high"
+                    [disabled]="!resolvedInteractiveDimension"
+                    [attr.aria-label]="'dataWidget.endDateFor' | sacTranslate:{ label: resolvedFilterLabel }"
+                    (change)="handleDateRangeChange('high', $event)"
+                  />
+                </div>
               </div>
             </div>
 
@@ -319,7 +325,7 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
     }
     .sac-ai-data-widget__child {
       min-width: 0;
-      min-height: 200px;
+      min-height: 120px;
       border: 1px solid var(--sapList_BorderColor, #e5e5e5);
       border-radius: var(--sapElement_BorderCornerRadius, 8px);
       background: linear-gradient(180deg, var(--sapList_Background, #fff) 0%, var(--sapBackgroundColor, #fafcff) 100%);
@@ -399,10 +405,25 @@ type KpiTrend = 'up' | 'down' | 'neutral' | undefined;
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .sac-ai-data-widget__date-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .sac-ai-data-widget__date-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sapNeutralTextColor, #5b738b);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .sac-ai-data-widget__date-separator {
       color: var(--sapNeutralTextColor, #5b738b);
       font-size: 12px;
       text-transform: uppercase;
+      align-self: flex-end;
+      padding-bottom: 12px;
     }
     .sac-ai-data-widget__filter-chip {
       background: color-mix(in srgb, var(--sapButton_Emphasized_Background, #0070f2) 12%, var(--sapBackgroundColor, #fff));

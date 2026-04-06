@@ -73,7 +73,7 @@ export class GlossaryService {
   loadOverrides(): void {
     this.tm.list().subscribe({
       next: entries => this._overrides.set(entries.filter(e => e.is_approved)),
-      error: () => console.warn('Failed to load TM overrides')
+      error: () => { /* non-critical: TM overrides unavailable */ }
     });
   }
 

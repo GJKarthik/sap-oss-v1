@@ -199,6 +199,7 @@ export class ErrorBoundaryComponent {
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -211,7 +212,9 @@ export class GlobalErrorHandler implements ErrorHandler {
 
   handleError(error: Error): void {
     // Log to console in development
-    console.error('Global error caught:', error);
+    if (!environment.production) {
+      console.error('Global error caught:', error);
+    }
 
     const errorInfo: ErrorInfo = {
       message: this.getUserFriendlyMessage(error),
