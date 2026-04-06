@@ -5,20 +5,33 @@
  * Enhanced with accessibility features and responsive mobile navigation
  */
 
-import { Component, DestroyRef, HostListener, OnInit, inject, ElementRef, ViewChild } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, inject, ElementRef, ViewChild, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { McpService } from '../../services/mcp.service';
+import {
+  AI_FABRIC_NAV_ITEMS,
+  AI_FABRIC_NAV_SECTIONS,
+  AiFabricNavItem,
+  AiFabricNavSection,
+  AiFabricNavSectionId,
+} from '../../app.navigation';
 
-interface NavItem {
-  id: string;
-  text: string;
-  icon: string;
-  route: string;
-  description: string;
-}
+type PopoverElement = HTMLElement & {
+  showAt?: (target: HTMLElement) => void;
+  opener?: HTMLElement;
+  open?: boolean;
+};
+
+type ProductSwitchEvent = CustomEvent<{
+  targetRef?: HTMLElement;
+}>;
+
+type ProductSelectEvent = CustomEvent<{
+  item?: Element | null;
+}>;
 
 @Component({
   selector: 'app-shell',
@@ -37,19 +50,29 @@ interface NavItem {
       showProductSwitch="true"
       (logo-click)="navigateTo('/dashboard')"
       (product-switch-click)="openProducts($event)"
-      (menu-item-click)="onMenuItemClick($event)"
+      (profile-click)="openProfile($event)"
       role="banner">
       
       <!-- Menu Button for Mobile -->
-      <ui5-button 
+      <ui5-button
         slot="startButton"
         icon="menu2"
         design="Transparent"
-        [attr.aria-label]="sideNavCollapsed ? 'Open navigation menu' : 'Close navigation menu'"
-        [attr.aria-expanded]="!sideNavCollapsed"
+        [attr.aria-label]="getMenuButtonLabel()"
+        [attr.aria-expanded]="isNavExpanded()"
         aria-controls="side-navigation"
         (click)="toggleSideNav()"
         class="menu-button">
+      </ui5-button>
+
+      <!-- Cmd+K hint -->
+      <ui5-button
+        slot="startButton"
+        design="Transparent"
+        class="kbd-hint"
+        (click)="toggleSearch()"
+        aria-label="Open search (Cmd+K)">
+        ⌘K
       </ui5-button>
       
       <!-- Logo -->
@@ -69,10 +92,59 @@ interface NavItem {
       <ui5-list (item-click)="onProductSelect($event)">
         <ui5-li icon="home" data-url="/aifabric/" selected>AI Fabric Console</ui5-li>
         <ui5-li icon="process" data-url="/training/">Training Console</ui5-li>
-        <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">SAC AI Integration</ui5-li>
+        <ui5-li icon="product" data-url="/sac/">SAC AI Integration</ui5-li>
         <ui5-li icon="grid" data-url="/ui5/">Joule AI Playground</ui5-li>
       </ui5-list>
     </ui5-popover>
+
+    <ui5-popover #profilePopover header-text="Workspace" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+      <div class="profile-panel">
+        <div class="profile-panel__section">
+          <div class="profile-panel__title">Session</div>
+          <div class="profile-panel__identity">{{ getSessionLabel() }}</div>
+          <div class="profile-panel__meta">v1.0.0</div>
+        </div>
+        <div class="profile-panel__section">
+          <div class="profile-panel__title">Language</div>
+          <select
+            class="mode-select mode-select--block"
+            [value]="currentLocale"
+            (change)="onLocaleChange($event)"
+            aria-label="Select language">
+            <option value="en">English</option>
+            <option value="ar">العربية (Arabic)</option>
+          </select>
+        </div>
+        <div class="profile-panel__section">
+          <div class="profile-panel__title">System status</div>
+          <div class="profile-panel__status">
+            <ui5-icon
+              [name]="getStatusIcon()"
+              [attr.aria-hidden]="true"
+              class="status-icon"
+              [class.status-healthy]="overallHealth === 'healthy'"
+              [class.status-degraded]="overallHealth === 'degraded'"
+              [class.status-error]="overallHealth === 'error'">
+            </ui5-icon>
+            <span>{{ getStatusText() }}</span>
+          </div>
+          <div class="profile-panel__meta">{{ getCurrentPageLabel() }}</div>
+        </div>
+        <ui5-button design="Transparent" icon="log" (click)="logout()">Logout</ui5-button>
+      </div>
+    </ui5-popover>
+
+    <section class="status-banner" *ngIf="showStatusBanner()" role="status" aria-live="polite">
+      <ui5-icon
+        [name]="getStatusIcon()"
+        [attr.aria-hidden]="true"
+        class="status-icon"
+        [class.status-healthy]="overallHealth === 'healthy'"
+        [class.status-degraded]="overallHealth === 'degraded'"
+        [class.status-error]="overallHealth === 'error'">
+      </ui5-icon>
+      <span>{{ getStatusText() }}</span>
+    </section>
 
     <!-- Side Navigation -->
     <div class="shell-layout">
@@ -92,33 +164,31 @@ interface NavItem {
           aria-hidden="true">
         </div>
         
-        <ui5-side-navigation 
-          class="side-nav" 
-          [collapsed]="sideNavCollapsed && !isMobile">
-          <ui5-side-navigation-item 
-            *ngFor="let item of navItems"
-            [text]="item.text"
-            [icon]="item.icon"
-            [selected]="isActive(item.route)"
-            [attr.aria-current]="isActive(item.route) ? 'page' : null"
-            [attr.aria-label]="item.description"
-            (click)="navigateTo(item.route); closeMobileNav()">
-          </ui5-side-navigation-item>
-          
-          <ui5-side-navigation-item 
-            slot="fixedItems" 
-            text="Logout" 
-            icon="log" 
-            aria-label="Sign out of the application"
-            (click)="logout()">
-          </ui5-side-navigation-item>
-        </ui5-side-navigation>
+        <aside class="side-nav" [class.side-nav--compact]="isCompactNav()">
+          <section class="side-nav__section" *ngFor="let section of navSections">
+            <div class="side-nav__section-label" *ngIf="!isCompactNav()">
+              {{ section.label }}
+            </div>
+            <button
+              type="button"
+              class="side-nav__item"
+              *ngFor="let item of getItemsForSection(section.id)"
+              [class.side-nav__item--active]="isActive(item.route)"
+              [attr.aria-current]="isActive(item.route) ? 'page' : null"
+              [attr.aria-label]="item.description"
+              [title]="isCompactNav() ? item.text : item.description"
+              (click)="navigateTo(item.route); closeMobileNav()">
+              <ui5-icon class="side-nav__item-icon" [name]="item.icon" [attr.aria-hidden]="true"></ui5-icon>
+              <span class="side-nav__item-text" *ngIf="!isCompactNav()">{{ item.text }}</span>
+            </button>
+          </section>
+        </aside>
       </nav>
 
       <!-- Main Content Area -->
-      <main 
-        id="main-content" 
-        class="main-content" 
+      <main
+        id="main-content"
+        class="main-content"
         role="main"
         [attr.aria-label]="getCurrentPageLabel()"
         tabindex="-1">
@@ -126,206 +196,52 @@ interface NavItem {
       </main>
     </div>
 
-    <!-- Status Footer -->
-    <footer class="status-footer" role="contentinfo">
-      <div class="status-indicator" [attr.aria-label]="'System status: ' + getStatusText()">
-        <ui5-icon 
-          [name]="getStatusIcon()"
-          [attr.aria-hidden]="true"
-          class="status-icon"
-          [class.status-healthy]="overallHealth === 'healthy'"
-          [class.status-degraded]="overallHealth === 'degraded'"
-          [class.status-error]="overallHealth === 'error'">
-        </ui5-icon>
-        <span>{{ getStatusText() }}</span>
+    <!-- Search Overlay -->
+    <div class="search-overlay" *ngIf="showSearch()" (click)="closeSearch()" (keydown.escape)="closeSearch()">
+      <div class="search-modal" (click)="$event.stopPropagation()" role="dialog" aria-label="Quick navigation search">
+        <div class="search-modal__input-row">
+          <ui5-icon name="search" aria-hidden="true"></ui5-icon>
+          <input
+            #searchInput
+            type="text"
+            class="search-modal__input"
+            placeholder="Search pages..."
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+            (keydown.enter)="selectFirstResult()"
+            (keydown.escape)="closeSearch()"
+            (keydown.tab)="trapSearchFocus($event)"
+            aria-label="Search navigation pages" />
+          <kbd class="search-modal__kbd">esc</kbd>
+        </div>
+        <ul class="search-modal__results" role="listbox">
+          <li
+            *ngFor="let res of searchResults(); let i = index"
+            class="search-modal__result"
+            [class.search-modal__result--active]="i === 0"
+            role="option"
+            [attr.aria-selected]="i === 0"
+            (click)="navigateFromSearch(res.route)">
+            <ui5-icon [name]="res.icon" aria-hidden="true"></ui5-icon>
+            <div class="search-modal__result-text">
+              <span class="search-modal__result-title">{{ res.text }}</span>
+              <span class="search-modal__result-desc">{{ res.description }}</span>
+            </div>
+            <span class="search-modal__result-route">{{ res.route }}</span>
+          </li>
+        </ul>
+        <div class="search-modal__footer" *ngIf="searchResults().length === 0 && searchQuery()">
+          No results for "{{ searchQuery() }}"
+        </div>
       </div>
-      <span class="version">
-        <span class="session-info">{{ getSessionLabel() }}</span>
-        <span class="separator" aria-hidden="true">|</span>
-        <span>v1.0.0</span>
-        <span class="separator hide-mobile" aria-hidden="true">|</span>
-        <span class="hide-mobile">UI5 Web Components</span>
-      </span>
+    </div>
+
+    <footer class="shell-footer">
+      <span>SAP AI Fabric Console v1.0.0</span>
+      <span class="shell-footer__status">{{ getStatusText() }}</span>
     </footer>
-  `,
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    
-    /* Skip link for accessibility */
-    .skip-link {
-      position: absolute;
-      top: -40px;
-      left: 0;
-      background: var(--sapBrandColor);
-      color: white;
-      padding: 0.5rem 1rem;
-      z-index: 1000;
-      text-decoration: none;
-      font-weight: 500;
-      border-radius: 0 0 4px 0;
-      transition: top 0.2s ease;
-    }
-    
-    .skip-link:focus {
-      top: 0;
-      outline: 2px solid var(--sapContent_FocusColor);
-      outline-offset: 2px;
-    }
-    
-    ui5-shellbar {
-      --_ui5_shellbar_root_height: 44px;
-    }
-    
-    .menu-button {
-      display: none;
-    }
-    
-    .shell-layout {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .side-nav-container {
-      position: relative;
-      z-index: 100;
-    }
-    
-    .side-nav {
-      width: 240px;
-      flex-shrink: 0;
-      border-right: 1px solid var(--sapList_BorderColor);
-      height: 100%;
-      transition: width 0.2s ease;
-    }
-    
-    .side-nav-container.collapsed .side-nav {
-      width: 48px;
-    }
-    
-    .nav-backdrop {
-      display: none;
-    }
-    
-    .main-content {
-      flex: 1;
-      overflow: auto;
-      background: var(--sapBackgroundColor);
-      outline: none;
-    }
-    
-    .main-content:focus {
-      outline: 2px solid var(--sapContent_FocusColor);
-      outline-offset: -2px;
-    }
-    
-    .status-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 1rem;
-      background: var(--sapList_Background);
-      border-top: 1px solid var(--sapList_BorderColor);
-      font-size: var(--sapFontSmallSize);
-      color: var(--sapContent_LabelColor);
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .status-icon {
-      font-size: 1rem;
-    }
-    
-    .status-icon.status-healthy {
-      color: var(--sapPositiveColor, #107e3e);
-    }
-    
-    .status-icon.status-degraded {
-      color: var(--sapCriticalColor, #e9730c);
-    }
-    
-    .status-icon.status-error {
-      color: var(--sapNegativeColor, #b00);
-    }
-    
-    .version {
-      color: var(--sapContent_LabelColor);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    
-    .separator {
-      opacity: 0.5;
-    }
-    
-    /* Mobile Responsive Styles */
-    @media (max-width: 768px) {
-      .menu-button {
-        display: inline-flex;
-      }
-      
-      .side-nav-container {
-        position: fixed;
-        top: 44px;
-        left: 0;
-        bottom: 0;
-        width: 0;
-        overflow: hidden;
-        transition: width 0.3s ease;
-        z-index: 200;
-      }
-      
-      .side-nav-container.mobile-open {
-        width: 280px;
-      }
-      
-      .side-nav-container.mobile-open .side-nav {
-        width: 280px;
-      }
-      
-      .nav-backdrop {
-        display: block;
-        position: fixed;
-        top: 44px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: -1;
-      }
-      
-      .hide-mobile {
-        display: none;
-      }
-      
-      .session-info {
-        max-width: 150px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-    }
-    
-    /* Tablet Responsive Styles */
-    @media (min-width: 769px) and (max-width: 1024px) {
-      .side-nav {
-        width: 200px;
-      }
-    }
-  `]
+
+  `
 })
 export class ShellComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -338,30 +254,45 @@ export class ShellComponent implements OnInit {
   isMobile = false;
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown' = 'unknown';
   currentUser = this.authService.getUser();
+  currentLocale = 'en';
 
-  @ViewChild('productPopover') productPopover!: ElementRef<any>;
+  // Search overlay state
+  showSearch = signal(false);
+  searchQuery = signal('');
+  searchResults = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return this.navItems;
+    return this.navItems.filter(item =>
+      item.text.toLowerCase().includes(query) ||
+      item.description.toLowerCase().includes(query) ||
+      item.route.toLowerCase().includes(query)
+    );
+  });
+
+  @ViewChild('productPopover') productPopover!: ElementRef<PopoverElement>;
+  @ViewChild('profilePopover') profilePopover!: ElementRef<PopoverElement>;
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   
-  navItems: NavItem[] = [
-    { id: 'dashboard', text: 'Dashboard', icon: 'home', route: '/dashboard', description: 'View system overview and statistics' },
-    { id: 'streaming', text: 'Search Ops', icon: 'search', route: '/streaming', description: 'Inspect Elasticsearch and PAL service state' },
-    { id: 'deployments', text: 'Deployments', icon: 'machine', route: '/deployments', description: 'Manage AI model deployments' },
-    { id: 'rag', text: 'Search Studio', icon: 'documents', route: '/rag', description: 'Elasticsearch-backed retrieval workspace' },
-    { id: 'data-quality', text: 'Data Quality', icon: 'validate', route: '/data-quality', description: 'AI-powered data validation and cleaning' },
-    { id: 'governance', text: 'Governance', icon: 'shield', route: '/governance', description: 'Configure governance rules and policies' },
-    { id: 'data', text: 'Data Explorer', icon: 'database', route: '/data', description: 'Explore vector stores and data' },
-    { id: 'playground', text: 'PAL Workbench', icon: 'lab', route: '/playground', description: 'Run PAL tools against registered data assets' },
-    { id: 'lineage', text: 'Lineage', icon: 'org-chart', route: '/lineage', description: 'View data lineage and relationships' },
-  ];
+  readonly navItems: AiFabricNavItem[] = AI_FABRIC_NAV_ITEMS;
+  readonly navSections: AiFabricNavSection[] = AI_FABRIC_NAV_SECTIONS;
 
   @HostListener('window:resize')
   onResize(): void {
     this.checkMobile();
   }
 
-  @HostListener('window:keydown.escape')
-  onEscapeKey(): void {
-    if (this.mobileNavOpen) {
-      this.closeMobileNav();
+  @HostListener('window:keydown', ['$event'])
+  onGlobalKeydown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      event.preventDefault();
+      this.toggleSearch();
+    }
+    if (event.key === 'Escape') {
+      if (this.showSearch()) {
+        this.closeSearch();
+      } else if (this.mobileNavOpen) {
+        this.closeMobileNav();
+      }
     }
   }
 
@@ -431,6 +362,26 @@ export class ShellComponent implements OnInit {
     return currentNav ? currentNav.description : 'Main content area';
   }
 
+  isNavExpanded(): boolean {
+    return this.isMobile ? this.mobileNavOpen : !this.sideNavCollapsed;
+  }
+
+  getMenuButtonLabel(): string {
+    return this.isNavExpanded() ? 'Close navigation menu' : 'Open navigation menu';
+  }
+
+  showStatusBanner(): boolean {
+    return this.overallHealth === 'degraded' || this.overallHealth === 'error';
+  }
+
+  isCompactNav(): boolean {
+    return this.sideNavCollapsed && !this.isMobile;
+  }
+
+  getItemsForSection(sectionId: AiFabricNavSectionId): AiFabricNavItem[] {
+    return this.navItems.filter(item => item.section === sectionId);
+  }
+
   logout(): void {
     this.closeMobileNav();
     this.authService.logout()
@@ -469,6 +420,13 @@ export class ShellComponent implements OnInit {
     }
   }
 
+  onLocaleChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.currentLocale = select.value;
+    document.documentElement.setAttribute('lang', this.currentLocale);
+    document.documentElement.setAttribute('dir', this.currentLocale === 'ar' ? 'rtl' : 'ltr');
+  }
+
   toggleSideNav(): void {
     if (this.isMobile) {
       this.mobileNavOpen = !this.mobileNavOpen;
@@ -481,19 +439,65 @@ export class ShellComponent implements OnInit {
     this.mobileNavOpen = false;
   }
 
-  onMenuItemClick(event: Event): void {
-    // Handle menu item clicks from shellbar if needed
-    console.debug('Menu item clicked:', event);
+  toggleSearch(): void {
+    if (this.showSearch()) {
+      this.closeSearch();
+    } else {
+      this.searchQuery.set('');
+      this.showSearch.set(true);
+      setTimeout(() => this.searchInput?.nativeElement.focus());
+    }
   }
 
-  openProducts(event: any): void {
-    this.productPopover.nativeElement.showAt(event.detail.targetRef);
+  closeSearch(): void {
+    this.showSearch.set(false);
+    this.searchQuery.set('');
   }
 
-  onProductSelect(event: any): void {
-    const url = event.detail.item.getAttribute('data-url');
+  navigateFromSearch(route: string): void {
+    this.closeSearch();
+    this.navigateTo(route);
+  }
+
+  selectFirstResult(): void {
+    const results = this.searchResults();
+    if (results.length > 0) {
+      this.navigateFromSearch(results[0].route);
+    }
+  }
+
+  trapSearchFocus(event: Event): void {
+    event.preventDefault();
+    this.searchInput?.nativeElement.focus();
+  }
+
+  openProducts(event: Event): void {
+    const detail = (event as ProductSwitchEvent).detail;
+    this.showPopover(this.productPopover.nativeElement, detail?.targetRef);
+  }
+
+  openProfile(event: Event): void {
+    const detail = (event as ProductSwitchEvent).detail;
+    this.showPopover(this.profilePopover.nativeElement, detail?.targetRef);
+  }
+
+  onProductSelect(event: Event): void {
+    const detail = (event as ProductSelectEvent).detail;
+    const url = detail?.item?.getAttribute('data-url');
     if (url) {
       window.location.href = url;
     }
+  }
+
+  private showPopover(popover: PopoverElement, target?: HTMLElement): void {
+    if (!target) {
+      return;
+    }
+    if (typeof popover.showAt === 'function') {
+      popover.showAt(target);
+      return;
+    }
+    popover.opener = target;
+    popover.open = true;
   }
 }

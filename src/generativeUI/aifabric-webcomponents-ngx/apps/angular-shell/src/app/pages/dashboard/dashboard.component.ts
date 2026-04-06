@@ -13,11 +13,12 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '../../services/mcp.service';
+import { EmptyStateComponent } from '../../shared';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent],
   template: `
     <!-- Page Header -->
     <ui5-page background-design="Solid">
@@ -35,10 +36,19 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
 
       <!-- Main Content -->
       <div class="dashboard-content" role="region" aria-label="Dashboard overview">
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" *ngIf="loading && !error" role="status" aria-live="polite">
-          <ui5-busy-indicator active size="L"></ui5-busy-indicator>
-          <span class="loading-text">Loading dashboard data...</span>
+        <!-- Skeleton Loading Cards -->
+        <div class="stats-grid" *ngIf="loading && !error" role="status" aria-live="polite" aria-label="Loading dashboard data">
+          <div class="skeleton-card" *ngFor="let i of [1,2,3,4]" aria-hidden="true" role="presentation">
+            <div class="skeleton-card__header">
+              <div class="skeleton-bar skeleton-bar--circle"></div>
+              <div class="skeleton-bar skeleton-bar--title"></div>
+            </div>
+            <div class="skeleton-card__body">
+              <div class="skeleton-bar skeleton-bar--lg"></div>
+              <div class="skeleton-bar skeleton-bar--sm"></div>
+              <div class="skeleton-bar skeleton-bar--md"></div>
+            </div>
+          </div>
         </div>
         
         <ui5-message-strip
@@ -59,8 +69,39 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
           {{ getHealthMessage() }}
         </ui5-message-strip>
 
+        <section class="hero-panel" aria-label="AI Fabric mission and core workflows">
+          <div class="hero-panel__copy">
+            <span class="hero-panel__eyebrow">AI ops and governance</span>
+            <ui5-title level="H2">Operate retrieval, validation, and governance from one console.</ui5-title>
+            <p>
+              Use this dashboard to confirm backend health, move into Search Studio or Data Quality,
+              and keep expert tooling available without letting it dominate the primary workflow.
+            </p>
+          </div>
+          <div class="hero-panel__metrics">
+            <div class="hero-metric">
+              <span class="hero-metric__label">Healthy services</span>
+              <span class="hero-metric__value">{{ stats.servicesHealthy }}/{{ stats.totalServices }}</span>
+            </div>
+            <div class="hero-metric">
+              <span class="hero-metric__label">Deployments</span>
+              <span class="hero-metric__value">{{ stats.activeDeployments }}</span>
+            </div>
+            <div class="hero-metric">
+              <span class="hero-metric__label">Active alerts</span>
+              <span class="hero-metric__value">{{ getActiveAlertCount() }}</span>
+            </div>
+          </div>
+          <div class="hero-panel__actions">
+            <ui5-button design="Emphasized" icon="documents" (click)="goTo('/rag')">Search Studio</ui5-button>
+            <ui5-button design="Default" icon="validate" (click)="goTo('/data-quality')">Data Quality</ui5-button>
+            <ui5-button design="Default" icon="machine" (click)="goTo('/deployments')">Deployments</ui5-button>
+            <ui5-button design="Default" icon="shield" (click)="goTo('/governance')">Governance</ui5-button>
+          </div>
+        </section>
+
         <!-- Stats Cards Row -->
-        <div class="stats-grid" [class.loading]="loading">
+        <div class="stats-grid" *ngIf="!loading">
           
           <!-- Services Health Card -->
             <ui5-card class="stat-card">
@@ -91,21 +132,30 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
 
           <!-- Deployments Card -->
           <ui5-card class="stat-card">
-            <ui5-card-header 
-              slot="header" 
+            <ui5-card-header
+              slot="header"
               title-text="Model Deployments"
               subtitle-text="AI Core Deployments"
               [additionalText]="stats.activeDeployments + '/' + stats.totalDeployments">
               <ui5-icon slot="avatar" name="machine"></ui5-icon>
             </ui5-card-header>
-            <div class="card-content">
+            <div class="card-content" *ngIf="stats.activeDeployments > 0">
               <div class="stat-value">{{ stats.activeDeployments }}</div>
               <div class="stat-label">Active Models</div>
-              <ui5-progress-indicator 
+              <ui5-progress-indicator
                 [value]="getDeploymentPercentage()"
-                [valueState]="stats.activeDeployments > 0 ? 'Positive' : 'None'">
+                valueState="Positive">
               </ui5-progress-indicator>
             </div>
+            <app-empty-state
+              *ngIf="stats.activeDeployments === 0"
+              icon="machine"
+              title="No Active Deployments"
+              description="Deploy your first model to get started."
+              actionText="Go to Deployments"
+              actionIcon="add"
+              (actionClicked)="goTo('/deployments')">
+            </app-empty-state>
           </ui5-card>
 
           <!-- PAL Tools Card -->
@@ -180,22 +230,21 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
         <ui5-card class="actions-card">
           <ui5-card-header 
             slot="header" 
-            title-text="Quick Actions"
+            title-text="Expert Tools"
+            subtitle-text="Secondary and specialist surfaces"
             interactive
             (click)="toggleActions()">
+            <ui5-icon slot="action" [name]="showActions ? 'slim-arrow-up' : 'slim-arrow-down'"></ui5-icon>
           </ui5-card-header>
           <div class="quick-actions" *ngIf="showActions">
             <ui5-button design="Emphasized" icon="add" (click)="goTo('/playground')">
               PAL Workbench
             </ui5-button>
-            <ui5-button design="Default" icon="documents" (click)="goTo('/rag')">
-              Search Studio
+            <ui5-button design="Default" icon="search" (click)="goTo('/streaming')">
+              Search Ops
             </ui5-button>
             <ui5-button design="Default" icon="database" (click)="goTo('/data')">
               Data Explorer
-            </ui5-button>
-            <ui5-button design="Default" icon="search" (click)="goTo('/streaming')">
-              Search Ops
             </ui5-button>
             <ui5-button design="Default" icon="org-chart" (click)="goTo('/lineage')">
               Lineage View
@@ -241,19 +290,80 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
       position: relative;
       min-height: 400px;
     }
-    
-    .loading-overlay {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 3rem;
+
+    .hero-panel {
+      display: grid;
       gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 244, 253, 0.7));
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 88%, white);
+      box-shadow: var(--sapContent_Shadow1);
     }
-    
-    .loading-text {
+
+    .hero-panel__copy {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .hero-panel__copy ui5-title,
+    .hero-panel__copy p {
+      margin: 0;
+    }
+
+    .hero-panel__copy p {
       color: var(--sapContent_LabelColor);
-      font-size: var(--sapFontSize);
+      max-width: 48rem;
+      line-height: 1.5;
+    }
+
+    .hero-panel__eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sapBrandColor) 12%, white);
+      color: var(--sapBrandColor);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-panel__metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .hero-metric {
+      display: grid;
+      gap: 0.25rem;
+      padding: 0.9rem 1rem;
+      border-radius: 0.85rem;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 88%, white);
+    }
+
+    .hero-metric__label {
+      color: var(--sapContent_LabelColor);
+      font-size: var(--sapFontSmallSize);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-metric__value {
+      color: var(--sapTextColor);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .hero-panel__actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
     
     .stats-grid {
@@ -261,17 +371,83 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1rem;
       margin-bottom: 1rem;
-      transition: opacity 0.2s ease;
     }
-    
-    .stats-grid.loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-    
+
     .stat-card {
       min-height: 180px;
       max-width: 400px;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      animation: cardEnter 0.3s ease-out both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0ms; }
+    .stat-card:nth-child(2) { animation-delay: 50ms; }
+    .stat-card:nth-child(3) { animation-delay: 100ms; }
+    .stat-card:nth-child(4) { animation-delay: 150ms; }
+    .stat-card:nth-child(5) { animation-delay: 200ms; }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Skeleton Cards */
+    .skeleton-card {
+      min-height: 180px;
+      max-width: 400px;
+      border-radius: 0.75rem;
+      border: 1px solid var(--sapList_BorderColor);
+      background: var(--sapGroup_ContentBackground, #fff);
+      overflow: hidden;
+      animation: cardEnter 0.3s ease-out both;
+    }
+
+    .skeleton-card:nth-child(1) { animation-delay: 0ms; }
+    .skeleton-card:nth-child(2) { animation-delay: 50ms; }
+    .skeleton-card:nth-child(3) { animation-delay: 100ms; }
+    .skeleton-card:nth-child(4) { animation-delay: 150ms; }
+
+    .skeleton-card__header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      border-bottom: 1px solid var(--sapList_BorderColor);
+    }
+
+    .skeleton-card__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding: 1rem;
+    }
+
+    .skeleton-bar {
+      border-radius: 0.375rem;
+      background: linear-gradient(90deg, var(--sapList_Background, #f5f5f5) 25%, rgba(255,255,255,0.6) 50%, var(--sapList_Background, #f5f5f5) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    .skeleton-bar--circle { width: 2rem; height: 2rem; border-radius: 50%; flex-shrink: 0; }
+    .skeleton-bar--title { height: 0.875rem; width: 60%; }
+    .skeleton-bar--lg { height: 2rem; width: 40%; }
+    .skeleton-bar--sm { height: 0.75rem; width: 55%; }
+    .skeleton-bar--md { height: 0.75rem; width: 80%; }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton-bar { animation: none; }
+      .stat-card, .skeleton-card { animation: none; }
     }
     
     @media (min-width: 1200px) {
@@ -343,6 +519,10 @@ import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '
       .dashboard-content {
         padding: 0.75rem;
       }
+
+      .hero-panel {
+        padding: 1rem;
+      }
       
       .stat-value {
         font-size: 2rem;
@@ -364,7 +544,7 @@ export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
   
   loading = true;
-  showActions = true;
+  showActions = false;
   error = '';
   
   stats: DashboardStats = {

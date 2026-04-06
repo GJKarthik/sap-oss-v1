@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, DestroyRef, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
-import { EmptyStateComponent, DateFormatPipe } from '../../shared';
+import { EmptyStateComponent, DateFormatPipe, ConfirmationDialogComponent, ConfirmationDialogData } from '../../shared';
 
 /**
  * Data Quality Component
@@ -103,10 +103,29 @@ interface PendingApprovalsResponse {
   approvals?: PendingApproval[];
 }
 
+interface ProfileToolResponse {
+  row_count?: number;
+  columns?: Record<string, Partial<ProfileResult>>;
+}
+
+interface AnomalyToolResponse {
+  method?: string;
+  threshold?: number;
+  anomalies_found?: number;
+  anomaly_indices?: number[];
+  statistics?: Partial<AnomalyResult['statistics']>;
+}
+
+interface DialogElement extends HTMLElement {
+  show(): void;
+  close(): void;
+}
+
 @Component({
   selector: 'app-data-quality',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, DateFormatPipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, DateFormatPipe, ConfirmationDialogComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="data-quality-container" role="region" aria-label="Data Quality Dashboard">
       <!-- Header -->
@@ -114,6 +133,31 @@ interface PendingApprovalsResponse {
         <h1>Data Quality Studio</h1>
         <p class="subtitle">AI-powered data validation using Data Cleaning Copilot</p>
       </div>
+
+      <section class="studio-hero" aria-label="Data Quality core workflow">
+        <div class="studio-hero__copy">
+          <span class="studio-hero__eyebrow">Core workflow</span>
+          <ui5-title level="H4">Validate tables, profile columns, and govern cleaning actions in one surface.</ui5-title>
+          <p>
+            Start with validation, move into profiling and anomaly review, then approve generated cleaning queries
+            only when a real data mutation needs human signoff.
+          </p>
+        </div>
+        <div class="studio-hero__metrics">
+          <div class="studio-metric">
+            <span class="studio-metric__label">MCP</span>
+            <span class="studio-metric__value">{{ mcpHealthy ? 'Connected' : 'Unavailable' }}</span>
+          </div>
+          <div class="studio-metric">
+            <span class="studio-metric__label">Tables</span>
+            <span class="studio-metric__value">{{ tables.length }}</span>
+          </div>
+          <div class="studio-metric">
+            <span class="studio-metric__label">Pending approvals</span>
+            <span class="studio-metric__value">{{ pendingApprovals.length }}</span>
+          </div>
+        </div>
+      </section>
 
       <!-- MCP Status Banner -->
       <ui5-card class="status-card" [class.status-healthy]="mcpHealthy" [class.status-unhealthy]="!mcpHealthy">
@@ -151,7 +195,7 @@ interface PendingApprovalsResponse {
                 <ui5-icon slot="avatar" name="database"></ui5-icon>
               </ui5-card-header>
               <div class="form-row">
-                <ui5-select [(ngModel)]="selectedTable" (change)="onTableSelect()" accessible-name="Table selection">
+                <ui5-select ngDefaultControl name="selectedTable" [(ngModel)]="selectedTable" (change)="onTableSelect()" accessible-name="Table selection">
                   <ui5-option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</ui5-option>
                 </ui5-select>
                 <ui5-button design="Emphasized" icon="play" (click)="runValidation()" 
@@ -248,10 +292,10 @@ interface PendingApprovalsResponse {
                 <ui5-icon slot="avatar" name="pie-chart"></ui5-icon>
               </ui5-card-header>
               <div class="form-row">
-                <ui5-select [(ngModel)]="profilingTable" accessible-name="Table for profiling">
+                <ui5-select ngDefaultControl name="profilingTable" [(ngModel)]="profilingTable" accessible-name="Table for profiling">
                   <ui5-option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</ui5-option>
                 </ui5-select>
-                <ui5-input type="Number" [(ngModel)]="sampleSize" placeholder="Sample size (default: 1000)"
+                <ui5-input type="Number" ngDefaultControl name="sampleSize" [(ngModel)]="sampleSize" placeholder="Sample size (default: 1000)"
                           accessible-name="Sample size"></ui5-input>
                 <ui5-button design="Emphasized" icon="analytics" (click)="runProfiling()"
                             [disabled]="!profilingTable || loading || !mcpHealthy">
@@ -303,12 +347,12 @@ interface PendingApprovalsResponse {
                 <ui5-icon slot="avatar" name="warning"></ui5-icon>
               </ui5-card-header>
               <div class="form-row">
-                <ui5-select [(ngModel)]="anomalyTable" accessible-name="Table for anomaly detection">
+                <ui5-select ngDefaultControl name="anomalyTable" [(ngModel)]="anomalyTable" accessible-name="Table for anomaly detection">
                   <ui5-option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</ui5-option>
                 </ui5-select>
-                <ui5-input [(ngModel)]="anomalyColumn" placeholder="Column name"
+                <ui5-input ngDefaultControl name="anomalyColumn" [(ngModel)]="anomalyColumn" placeholder="Column name"
                           accessible-name="Column for anomaly detection"></ui5-input>
-                <ui5-select [(ngModel)]="anomalyMethod" accessible-name="Detection method">
+                <ui5-select ngDefaultControl name="anomalyMethod" [(ngModel)]="anomalyMethod" accessible-name="Detection method">
                   <ui5-option value="zscore">Z-Score</ui5-option>
                   <ui5-option value="iqr">IQR (Interquartile Range)</ui5-option>
                   <ui5-option value="isolation_forest">Isolation Forest</ui5-option>
@@ -368,7 +412,22 @@ interface PendingApprovalsResponse {
                               subtitle-text="Review and approve generated cleaning queries">
                 <ui5-icon slot="avatar" name="task"></ui5-icon>
               </ui5-card-header>
+              <div class="batch-toolbar" *ngIf="pendingApprovals.length > 0">
+                <ui5-checkbox
+                  text="Select all"
+                  [checked]="selectedApprovalIds.size === pendingApprovals.length && pendingApprovals.length > 0"
+                  (change)="toggleSelectAll()">
+                </ui5-checkbox>
+                <ui5-button
+                  design="Positive"
+                  icon="accept"
+                  [disabled]="selectedApprovalIds.size === 0 || mutating || !canApprove"
+                  (click)="batchApprove()">
+                  Approve selected ({{ selectedApprovalIds.size }})
+                </ui5-button>
+              </div>
               <ui5-table *ngIf="pendingApprovals.length > 0" aria-label="Pending approvals">
+                <ui5-table-header-cell><span></span></ui5-table-header-cell>
                 <ui5-table-header-cell><span>ID</span></ui5-table-header-cell>
                 <ui5-table-header-cell><span>Tool</span></ui5-table-header-cell>
                 <ui5-table-header-cell><span>Table</span></ui5-table-header-cell>
@@ -376,6 +435,9 @@ interface PendingApprovalsResponse {
                 <ui5-table-header-cell><span>Requested</span></ui5-table-header-cell>
                 <ui5-table-header-cell><span>Actions</span></ui5-table-header-cell>
                 <ui5-table-row *ngFor="let approval of pendingApprovals">
+                  <ui5-table-cell>
+                    <ui5-checkbox [checked]="selectedApprovalIds.has(approval.id)" (change)="toggleApprovalSelection(approval.id)"></ui5-checkbox>
+                  </ui5-table-cell>
                   <ui5-table-cell><code>{{ approval.id | slice:0:8 }}...</code></ui5-table-cell>
                   <ui5-table-cell><ui5-tag design="Information">{{ approval.tool }}</ui5-tag></ui5-table-cell>
                   <ui5-table-cell>{{ approval.table_name }}</ui5-table-cell>
@@ -445,194 +507,322 @@ interface PendingApprovalsResponse {
         </div>
         <div slot="footer">
           <ui5-button design="Transparent" (click)="closeQueryDialog()">Cancel</ui5-button>
-          <ui5-button design="Negative" (click)="rejectQuery(selectedApproval); closeQueryDialog()">Reject</ui5-button>
-          <ui5-button design="Positive" (click)="approveQuery(selectedApproval); closeQueryDialog()">Approve</ui5-button>
+          <ui5-button design="Negative" (click)="rejectSelectedApproval()" [disabled]="mutating || !canApprove || !selectedApproval">Reject</ui5-button>
+          <ui5-button design="Positive" (click)="approveSelectedApproval()" [disabled]="mutating || !canApprove || !selectedApproval">Approve</ui5-button>
         </div>
       </ui5-dialog>
+
+      <!-- Batch Approve Confirmation Dialog -->
+      <app-confirmation-dialog
+        [data]="batchConfirmData"
+        [open]="showBatchConfirm"
+        (confirmed)="executeBatchApprove()"
+        (cancelled)="showBatchConfirm = false">
+      </app-confirmation-dialog>
     </div>
   `,
   styles: [`
     .data-quality-container {
+      display: grid;
+      gap: 1rem;
       padding: 1rem;
-      max-width: 1400px;
+      max-width: 1440px;
       margin: 0 auto;
     }
 
     .page-header {
-      margin-bottom: 1rem;
+      display: grid;
+      gap: 0.35rem;
     }
 
-    .page-header h1 {
+    .page-header h1,
+    .page-header p {
       margin: 0;
-      font-size: 1.75rem;
     }
 
     .subtitle {
       color: var(--sapContent_LabelColor);
-      margin: 0.25rem 0 0;
+      line-height: 1.5;
+    }
+
+    .studio-hero {
+      display: grid;
+      gap: 1rem;
+      padding: 1.4rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 244, 253, 0.72));
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 88%, white);
+      box-shadow: var(--sapContent_Shadow1);
+    }
+
+    .studio-hero__copy {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .studio-hero__copy ui5-title,
+    .studio-hero__copy p {
+      margin: 0;
+    }
+
+    .studio-hero__copy p {
+      color: var(--sapContent_LabelColor);
+      max-width: 48rem;
+      line-height: 1.5;
+    }
+
+    .studio-hero__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sapBrandColor) 12%, white);
+      color: var(--sapBrandColor);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .studio-hero__metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .studio-metric {
+      display: grid;
+      gap: 0.25rem;
+      padding: 0.9rem 1rem;
+      border-radius: 0.85rem;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor) 88%, white);
+    }
+
+    .studio-metric__label {
+      color: var(--sapContent_LabelColor);
+      font-size: var(--sapFontSmallSize);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .studio-metric__value {
+      color: var(--sapTextColor);
+      font-size: 1.15rem;
+      font-weight: 700;
     }
 
     .status-card {
-      margin-bottom: 1rem;
+      overflow: hidden;
     }
-
-    .status-card.status-healthy { border-left: 4px solid var(--sapPositiveColor); }
-    .status-card.status-unhealthy { border-left: 4px solid var(--sapNegativeColor); }
 
     .status-banner {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.75rem 1rem;
+      padding: 0.9rem 1rem;
     }
 
-    .icon-healthy { color: var(--sapPositiveColor); }
-    .icon-unhealthy { color: var(--sapNegativeColor); }
+    .status-text {
+      flex: 1;
+      font-weight: 600;
+    }
 
-    .status-text { flex: 1; font-weight: 500; }
+    .icon-healthy {
+      color: var(--sapPositiveColor);
+    }
+
+    .icon-unhealthy {
+      color: var(--sapNegativeColor);
+    }
 
     .loading-container {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      gap: 1rem;
+      gap: 0.6rem;
+      padding: 0.9rem 1rem;
+      border-radius: 0.85rem;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid var(--sapList_BorderColor);
+    }
+
+    .loading-text {
+      color: var(--sapContent_LabelColor);
     }
 
     .main-tabs {
-      margin-top: 1rem;
+      display: block;
+      background: transparent;
     }
 
     .tab-content {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       gap: 1rem;
-      padding: 1rem 0;
+      padding: 1rem 0 0;
     }
 
     .form-row {
       display: flex;
       gap: 0.75rem;
-      padding: 1rem;
       flex-wrap: wrap;
-      align-items: flex-end;
+      padding: 1rem;
+      align-items: center;
     }
 
-    .form-row ui5-select, .form-row ui5-input {
-      min-width: 200px;
+    .form-row > * {
+      flex: 1 1 200px;
+    }
+
+    .schema-preview,
+    .results-summary,
+    .anomaly-stats,
+    .dialog-content,
+    .query-info {
+      padding: 1rem;
     }
 
     .schema-preview {
-      padding: 1rem;
-      border-top: 1px solid var(--sapContent_ForegroundBorderColor);
+      display: grid;
+      gap: 0.75rem;
+      border-top: 1px solid var(--sapList_BorderColor);
     }
 
-    .schema-preview h4 {
-      margin: 0 0 0.75rem;
+    .schema-preview h4,
+    .anomaly-indices h4,
+    .dialog-content h3,
+    .dialog-content h4,
+    .query-info p {
+      margin: 0;
     }
-
-    .icon-yes { color: var(--sapPositiveColor); }
-    .icon-no { color: var(--sapNegativeColor); }
 
     .results-summary {
-      display: flex;
-      gap: 2rem;
-      padding: 1rem;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
     }
 
-    .summary-stat {
-      text-align: center;
-      padding: 1rem;
-      border-radius: 8px;
-      min-width: 100px;
+    .summary-stat,
+    .stat-box {
+      display: grid;
+      gap: 0.25rem;
+      padding: 0.9rem 1rem;
+      border-radius: 0.85rem;
+      background: var(--sapList_Background);
+      border: 1px solid var(--sapList_BorderColor);
     }
 
-    .summary-stat.passed { background: rgba(0, 200, 0, 0.1); }
-    .summary-stat.failed { background: rgba(200, 0, 0, 0.1); }
-    .summary-stat.warning { background: rgba(200, 200, 0, 0.1); }
+    .summary-stat.passed,
+    .stat-box.warning {
+      border-color: color-mix(in srgb, var(--sapPositiveColor) 25%, var(--sapList_BorderColor));
+    }
 
-    .summary-stat .stat-value {
-      display: block;
-      font-size: 2rem;
+    .summary-stat.failed {
+      border-color: color-mix(in srgb, var(--sapNegativeColor) 25%, var(--sapList_BorderColor));
+    }
+
+    .summary-stat.warning {
+      border-color: color-mix(in srgb, var(--sapCriticalColor) 25%, var(--sapList_BorderColor));
+    }
+
+    .stat-value {
+      color: var(--sapTextColor);
+      font-size: 1.2rem;
       font-weight: 700;
     }
 
-    .summary-stat.passed .stat-value { color: var(--sapPositiveColor); }
-    .summary-stat.failed .stat-value { color: var(--sapNegativeColor); }
-    .summary-stat.warning .stat-value { color: var(--sapWarningColor); }
-
-    .check-info { display: flex; flex-direction: column; }
-    .check-desc { font-size: 0.875rem; color: var(--sapContent_LabelColor); }
-
-    .violation-count { color: var(--sapNegativeColor); font-weight: 600; }
-    .warning-value { color: var(--sapWarningColor); }
-
-    .anomaly-stats {
-      display: flex;
-      gap: 1rem;
-      padding: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .stat-box {
-      background: var(--sapBackgroundColor);
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
-      text-align: center;
-    }
-
-    .stat-box.warning {
-      border-left: 3px solid var(--sapWarningColor);
-    }
-
-    .stat-box .stat-label {
-      display: block;
-      font-size: 0.75rem;
+    .stat-label {
       color: var(--sapContent_LabelColor);
-    }
-
-    .stat-box .stat-value {
-      display: block;
-      font-size: 1.25rem;
+      font-size: var(--sapFontSmallSize);
       font-weight: 600;
     }
 
+    .check-info {
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .check-desc {
+      color: var(--sapContent_LabelColor);
+      font-size: var(--sapFontSmallSize);
+    }
+
+    .violation-count,
+    .warning-value {
+      color: var(--sapCriticalColor);
+      font-weight: 700;
+    }
+
+    .anomaly-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
     .anomaly-indices {
-      padding: 1rem;
+      display: grid;
+      gap: 0.75rem;
+      padding: 0 1rem 1rem;
     }
 
     .index-chips {
       display: flex;
-      flex-wrap: wrap;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .dialog-content {
-      padding: 1rem;
-      min-width: 500px;
-    }
-
-    .sql-code {
-      background: var(--sapBackgroundColor);
-      padding: 1rem;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-family: monospace;
-      white-space: pre-wrap;
-    }
-
-    .truncation-note {
-      font-style: italic;
-      color: var(--sapContent_LabelColor);
+      display: grid;
+      gap: 0.75rem;
+      min-width: min(70vw, 960px);
     }
 
     .query-info {
-      margin: 1rem 0;
+      display: grid;
+      gap: 0.35rem;
+      padding: 0;
     }
 
-    .query-info p {
-      margin: 0.5rem 0;
+    .sql-code {
+      margin: 0;
+      padding: 1rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-radius: 0.75rem;
+      background: var(--sapShell_Background);
+      border: 1px solid var(--sapList_BorderColor);
+      color: var(--sapContent_ContrastTextColor);
+    }
+
+    .truncation-note {
+      color: var(--sapContent_LabelColor);
+      font-size: var(--sapFontSmallSize);
+    }
+
+    ui5-card,
+    ui5-message-strip,
+    ui5-table {
+      width: 100%;
+    }
+
+    @media (max-width: 720px) {
+      .data-quality-container {
+        padding: 0.75rem;
+      }
+
+      .studio-hero {
+        padding: 1rem;
+      }
+
+      .form-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .dialog-content {
+        min-width: auto;
+      }
     }
   `]
 })
@@ -640,6 +830,9 @@ export class DataQualityComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+
+  @ViewChild('violationsDialog') private violationsDialog?: ElementRef<DialogElement>;
+  @ViewChild('queryDialog') private queryDialog?: ElementRef<DialogElement>;
 
   // State
   loading = false;
@@ -656,10 +849,11 @@ export class DataQualityComponent implements OnInit {
   profileResults: ProfileResult[] = [];
   anomalyResult: AnomalyResult | null = null;
   pendingApprovals: PendingApproval[] = [];
+  selectedApprovalIds = new Set<string>();
 
   // Form inputs
   profilingTable = '';
-  sampleSize = 1000;
+  sampleSize = '1000';
   anomalyTable = '';
   anomalyColumn = '';
   anomalyMethod = 'zscore';
@@ -667,6 +861,8 @@ export class DataQualityComponent implements OnInit {
   // Dialog state
   selectedCheck: CheckResult | null = null;
   selectedApproval: PendingApproval | null = null;
+  showBatchConfirm = false;
+  batchConfirmData: ConfirmationDialogData = { title: '', message: '' };
 
   readonly canApprove = this.authService.getUser()?.role === 'admin';
 
@@ -706,27 +902,33 @@ export class DataQualityComponent implements OnInit {
   }
 
   loadTables(): void {
-    // Mock tables for demo
-    this.tables = [
-      { name: 'Users', columns: [
-        { name: 'Id', type: 'INTEGER', nullable: false, primary_key: true },
-        { name: 'Email', type: 'VARCHAR(255)', nullable: true, primary_key: false },
-        { name: 'Name', type: 'VARCHAR(100)', nullable: true, primary_key: false },
-        { name: 'CreatedAt', type: 'TIMESTAMP', nullable: false, primary_key: false }
-      ]},
-      { name: 'Orders', columns: [
-        { name: 'OrderId', type: 'INTEGER', nullable: false, primary_key: true },
-        { name: 'UserId', type: 'INTEGER', nullable: false, primary_key: false },
-        { name: 'Amount', type: 'DECIMAL(10,2)', nullable: true, primary_key: false },
-        { name: 'OrderDate', type: 'DATE', nullable: false, primary_key: false }
-      ]},
-      { name: 'Transactions', columns: [
-        { name: 'TxnId', type: 'BIGINT', nullable: false, primary_key: true },
-        { name: 'Amount', type: 'DECIMAL(15,2)', nullable: false, primary_key: false },
-        { name: 'Currency', type: 'CHAR(3)', nullable: false, primary_key: false },
-        { name: 'Timestamp', type: 'TIMESTAMP', nullable: false, primary_key: false }
-      ]}
-    ];
+    const request = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'list_tables',
+        arguments: {}
+      }
+    };
+
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          try {
+            const content = JSON.parse(response.result?.content?.[0]?.text ?? '{}');
+            this.tables = content.tables || [];
+          } catch {
+            this.tables = [];
+            this.error = 'Failed to load tables';
+          }
+        },
+        error: () => {
+          this.tables = [];
+          this.error = 'Failed to load tables';
+        }
+      });
   }
 
   onTableSelect(): void {
@@ -758,61 +960,23 @@ export class DataQualityComponent implements OnInit {
           if (response.result) {
             // Parse MCP response
             try {
-              const content = JSON.parse(response.result.content[0].text);
+              const content = JSON.parse(response.result.content?.[0]?.text ?? '{}');
               this.checkResults = content.checks || [];
             } catch {
-              this.checkResults = this.getMockValidationResults();
+              this.checkResults = [];
+              this.error = 'Invalid response format';
             }
           } else {
-            this.checkResults = this.getMockValidationResults();
+            this.checkResults = [];
+            this.error = 'No results returned';
           }
           this.loading = false;
         },
         error: err => {
           this.error = 'Failed to run validation: ' + (err.message || 'Unknown error');
-          this.checkResults = this.getMockValidationResults();
           this.loading = false;
         }
       });
-  }
-
-  private getMockValidationResults(): CheckResult[] {
-    return [
-      {
-        check_name: 'null_check_email',
-        description: 'Check for NULL values in Email column',
-        status: 'failed',
-        violations_count: 15,
-        violations: Array.from({ length: 15 }, (_, i) => ({
-          row_index: i * 10 + 5,
-          column: 'Email',
-          value: null,
-          expected: 'NOT NULL',
-          message: 'Email should not be null'
-        })),
-        execution_time_ms: 45
-      },
-      {
-        check_name: 'unique_check_id',
-        description: 'Check uniqueness of Id column',
-        status: 'passed',
-        violations_count: 0,
-        violations: [],
-        execution_time_ms: 23
-      },
-      {
-        check_name: 'format_check_email',
-        description: 'Check email format validity',
-        status: 'warning',
-        violations_count: 3,
-        violations: [
-          { row_index: 42, column: 'Email', value: 'invalid-email', expected: 'Valid email format', message: 'Missing @ symbol' },
-          { row_index: 156, column: 'Email', value: 'test@', expected: 'Valid email format', message: 'Missing domain' },
-          { row_index: 892, column: 'Email', value: '@domain.com', expected: 'Valid email format', message: 'Missing local part' }
-        ],
-        execution_time_ms: 89
-      }
-    ];
   }
 
   runProfiling(): void {
@@ -820,17 +984,43 @@ export class DataQualityComponent implements OnInit {
 
     this.loading = true;
     this.loadingMessage = 'Profiling data...';
+    this.error = '';
+    this.profileResults = [];
 
-    // Mock profiling results
-    setTimeout(() => {
-      this.profileResults = [
-        { column: 'Id', type: 'INTEGER', null_count: 0, null_percentage: 0, unique_count: 1000, unique_percentage: 100, min: 1, max: 1000, mean: 500.5, std: 288.7, sample_values: [1, 2, 3] },
-        { column: 'Email', type: 'VARCHAR', null_count: 15, null_percentage: 1.5, unique_count: 985, unique_percentage: 98.5, sample_values: ['user@example.com'] },
-        { column: 'Name', type: 'VARCHAR', null_count: 8, null_percentage: 0.8, unique_count: 850, unique_percentage: 85, sample_values: ['John Doe'] },
-        { column: 'CreatedAt', type: 'TIMESTAMP', null_count: 0, null_percentage: 0, unique_count: 998, unique_percentage: 99.8, sample_values: ['2024-01-15'] }
-      ];
-      this.loading = false;
-    }, 1500);
+    const parsedSampleSize = Number.parseInt(this.sampleSize, 10);
+    const request = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'data_profiling',
+        arguments: {
+          table_name: this.profilingTable,
+          ...(Number.isFinite(parsedSampleSize) && parsedSampleSize > 0 ? { sample_size: parsedSampleSize } : {}),
+        }
+      }
+    };
+
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          try {
+            const content = JSON.parse(response.result?.content?.[0]?.text ?? '{}') as ProfileToolResponse;
+            this.profileResults = this.mapProfileResults(content);
+            if (this.profileResults.length === 0) {
+              this.error = 'No profiling results returned';
+            }
+          } catch {
+            this.error = 'Invalid profiling response format';
+          }
+          this.loading = false;
+        },
+        error: err => {
+          this.error = 'Failed to run profiling: ' + (err.message || 'Unknown error');
+          this.loading = false;
+        }
+      });
   }
 
   detectAnomalies(): void {
@@ -838,19 +1028,40 @@ export class DataQualityComponent implements OnInit {
 
     this.loading = true;
     this.loadingMessage = 'Detecting anomalies...';
+    this.error = '';
+    this.anomalyResult = null;
 
-    // Mock anomaly results
-    setTimeout(() => {
-      this.anomalyResult = {
-        column: this.anomalyColumn,
-        method: this.anomalyMethod,
-        anomalies_count: 12,
-        anomaly_indices: [45, 123, 456, 789, 1001, 1234, 1567, 1890, 2100, 2345, 2678, 2901],
-        threshold: 3.0,
-        statistics: { mean: 250.00, std: 75.50, min_anomaly: -50.00, max_anomaly: 2500.00 }
-      };
-      this.loading = false;
-    }, 2000);
+    const request = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'anomaly_detection',
+        arguments: {
+          table_name: this.anomalyTable,
+          column_name: this.anomalyColumn,
+          method: this.anomalyMethod,
+        }
+      }
+    };
+
+    this.http.post<McpToolResultEnvelope>(`${environment.apiBaseUrl}/mcp/data-cleaning`, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          try {
+            const content = JSON.parse(response.result?.content?.[0]?.text ?? '{}') as AnomalyToolResponse;
+            this.anomalyResult = this.mapAnomalyResult(content);
+          } catch {
+            this.error = 'Invalid anomaly detection response format';
+          }
+          this.loading = false;
+        },
+        error: err => {
+          this.error = 'Failed to detect anomalies: ' + (err.message || 'Unknown error');
+          this.loading = false;
+        }
+      });
   }
 
   loadPendingApprovals(): void {
@@ -866,6 +1077,69 @@ export class DataQualityComponent implements OnInit {
       });
   }
 
+  toggleSelectAll(): void {
+    if (this.selectedApprovalIds.size === this.pendingApprovals.length) {
+      this.selectedApprovalIds.clear();
+    } else {
+      this.selectedApprovalIds = new Set(this.pendingApprovals.map(a => a.id));
+    }
+  }
+
+  toggleApprovalSelection(id: string): void {
+    if (this.selectedApprovalIds.has(id)) {
+      this.selectedApprovalIds.delete(id);
+    } else {
+      this.selectedApprovalIds.add(id);
+    }
+  }
+
+  batchApprove(): void {
+    const ids = [...this.selectedApprovalIds];
+    if (ids.length === 0 || this.mutating || !this.canApprove) return;
+
+    const tableNames = [...new Set(
+      ids.map(id => this.pendingApprovals.find(a => a.id === id)?.table_name).filter(Boolean),
+    )];
+
+    this.batchConfirmData = {
+      title: 'Approve Cleaning Queries',
+      message: `You are about to approve ${ids.length} cleaning quer${ids.length === 1 ? 'y' : 'ies'} affecting table${tableNames.length === 1 ? '' : 's'} ${tableNames.join(', ')}. This will modify data.`,
+      confirmText: 'Approve',
+      cancelText: 'Cancel',
+      confirmDesign: 'Positive',
+      icon: 'alert',
+    };
+    this.showBatchConfirm = true;
+  }
+
+  executeBatchApprove(): void {
+    this.showBatchConfirm = false;
+    const ids = [...this.selectedApprovalIds];
+    if (ids.length === 0) return;
+
+    this.mutating = true;
+    let remaining = ids.length;
+    for (const id of ids) {
+      const approval = this.pendingApprovals.find(a => a.id === id);
+      if (!approval) { remaining--; continue; }
+      this.http.post<unknown>(`${environment.apiBaseUrl}/governance/data-cleaning/${id}/approve`, {})
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.pendingApprovals = this.pendingApprovals.filter(a => a.id !== id);
+            this.selectedApprovalIds.delete(id);
+            remaining--;
+            if (remaining <= 0) this.mutating = false;
+          },
+          error: () => {
+            this.selectedApprovalIds.delete(id);
+            remaining--;
+            if (remaining <= 0) this.mutating = false;
+          }
+        });
+    }
+  }
+
   approveQuery(approval: PendingApproval): void {
     this.mutating = true;
     this.http.post<unknown>(`${environment.apiBaseUrl}/governance/data-cleaning/${approval.id}/approve`, {})
@@ -873,11 +1147,13 @@ export class DataQualityComponent implements OnInit {
       .subscribe({
         next: () => {
           this.pendingApprovals = this.pendingApprovals.filter(a => a.id !== approval.id);
+          if (this.selectedApproval?.id === approval.id) {
+            this.closeQueryDialog();
+          }
           this.mutating = false;
         },
-        error: () => {
-          approval.status = 'approved';
-          this.pendingApprovals = this.pendingApprovals.filter(a => a.id !== approval.id);
+        error: err => {
+          this.error = 'Failed to approve query: ' + (err.message || 'Unknown error');
           this.mutating = false;
         }
       });
@@ -890,10 +1166,13 @@ export class DataQualityComponent implements OnInit {
       .subscribe({
         next: () => {
           this.pendingApprovals = this.pendingApprovals.filter(a => a.id !== approval.id);
+          if (this.selectedApproval?.id === approval.id) {
+            this.closeQueryDialog();
+          }
           this.mutating = false;
         },
-        error: () => {
-          this.pendingApprovals = this.pendingApprovals.filter(a => a.id !== approval.id);
+        error: err => {
+          this.error = 'Failed to reject query: ' + (err.message || 'Unknown error');
           this.mutating = false;
         }
       });
@@ -901,19 +1180,33 @@ export class DataQualityComponent implements OnInit {
 
   showViolations(check: CheckResult): void {
     this.selectedCheck = check;
-    // Would open violationsDialog
+    this.violationsDialog?.nativeElement.show();
   }
 
   closeViolationsDialog(): void {
+    this.violationsDialog?.nativeElement.close();
     this.selectedCheck = null;
   }
 
   reviewApproval(approval: PendingApproval): void {
     this.selectedApproval = approval;
-    // Would open queryDialog
+    this.queryDialog?.nativeElement.show();
+  }
+
+  approveSelectedApproval(): void {
+    if (this.selectedApproval && this.canApprove && !this.mutating) {
+      this.approveQuery(this.selectedApproval);
+    }
+  }
+
+  rejectSelectedApproval(): void {
+    if (this.selectedApproval && this.canApprove && !this.mutating) {
+      this.rejectQuery(this.selectedApproval);
+    }
   }
 
   closeQueryDialog(): void {
+    this.queryDialog?.nativeElement.close();
     this.selectedApproval = null;
   }
 
@@ -928,5 +1221,63 @@ export class DataQualityComponent implements OnInit {
 
   trackByCheckName(index: number, check: CheckResult): string {
     return check.check_name;
+  }
+
+  private mapProfileResults(content: ProfileToolResponse): ProfileResult[] {
+    const rowCount = this.asNumber(content.row_count);
+    const columns = content.columns ?? {};
+
+    return Object.entries(columns).map(([column, rawProfile]) => {
+      const nullCount = this.asNumber(rawProfile.null_count);
+      const uniqueCount = this.asNumber(rawProfile.unique_count);
+
+      return {
+        column,
+        type: typeof rawProfile.type === 'string' ? rawProfile.type : 'UNKNOWN',
+        null_count: nullCount,
+        null_percentage: rowCount > 0 ? (nullCount / rowCount) * 100 : 0,
+        unique_count: uniqueCount,
+        unique_percentage: rowCount > 0 ? (uniqueCount / rowCount) * 100 : 0,
+        min: this.asRangeValue(rawProfile.min),
+        max: this.asRangeValue(rawProfile.max),
+        mean: this.asOptionalNumber(rawProfile.mean),
+        std: this.asOptionalNumber(rawProfile.std),
+        sample_values: Array.isArray(rawProfile.sample_values) ? rawProfile.sample_values : [],
+      };
+    });
+  }
+
+  private mapAnomalyResult(content: AnomalyToolResponse): AnomalyResult {
+    return {
+      column: this.anomalyColumn,
+      method: typeof content.method === 'string' ? content.method : this.anomalyMethod,
+      anomalies_count: this.asNumber(content.anomalies_found),
+      anomaly_indices: Array.isArray(content.anomaly_indices)
+        ? content.anomaly_indices.filter((value): value is number => typeof value === 'number')
+        : [],
+      threshold: this.asNumber(content.threshold),
+      statistics: {
+        mean: this.asNumber(content.statistics?.mean),
+        std: this.asNumber(content.statistics?.std),
+        min_anomaly: this.asNumber(content.statistics?.min_anomaly),
+        max_anomaly: this.asNumber(content.statistics?.max_anomaly),
+      }
+    };
+  }
+
+  private asNumber(value: unknown): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  }
+
+  private asOptionalNumber(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  }
+
+  private asRangeValue(value: unknown): number | string | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    return typeof value === 'string' && value.length > 0 ? value : undefined;
   }
 }
