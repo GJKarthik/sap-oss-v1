@@ -9,6 +9,7 @@ jest.mock('@ui5/webcomponents-ngx/i18n', () => ({
         HEALTH_PANEL_CHECKING: 'Checking live service health...',
         HEALTH_PANEL_HEALTHY: 'All live dependencies are healthy',
         HEALTH_PANEL_UNAVAILABLE: 'Some live dependencies are unavailable',
+        HEALTH_PANEL_DEMO_MODE: 'Demo Mode — backend services not connected',
       };
       return require('rxjs').of(translations[key] ?? key);
     }
@@ -56,6 +57,40 @@ describe('LiveHealthPanelComponent', () => {
 
     expect((service.checkAllServices as jest.Mock)).toHaveBeenCalledTimes(1);
     expect(component.lastCheckedAt).not.toBeNull();
+  });
+
+  it('shows demo mode when all services are offline (status 0)', () => {
+    const service = {
+      checkAllServices: () =>
+        of([
+          { name: 'AG-UI', ok: false, status: 0, url: '/ag-ui/health', error: 'Http failure response for http://localhost:9160/health: 0 Unknown Error' },
+          { name: 'OpenAI', ok: false, status: 0, url: '/health', error: 'Http failure response for http://localhost:8400/health: 0 Unknown Error' },
+          { name: 'MCP', ok: false, status: 0, url: '/health', error: 'Http failure response for http://localhost:9160/health: 0 Unknown Error' },
+        ]),
+    } as unknown as LiveDemoHealthService;
+    const component = new LiveHealthPanelComponent(service, i18nMock);
+    component.ngOnInit();
+
+    expect(component.allOffline).toBe(true);
+    expect(component.blocking).toBe(true);
+    expect(component.summaryText).toContain('Demo Mode');
+  });
+
+  it('shows blocked when some services fail with real errors (not all status 0)', () => {
+    const service = {
+      checkAllServices: () =>
+        of([
+          { name: 'AG-UI', ok: true, status: 200, url: '/ag-ui/health' },
+          { name: 'OpenAI', ok: false, status: 503, url: '/health', error: 'Service Unavailable' },
+          { name: 'MCP', ok: false, status: 0, url: '/health', error: 'Unknown Error' },
+        ]),
+    } as unknown as LiveDemoHealthService;
+    const component = new LiveHealthPanelComponent(service, i18nMock);
+    component.ngOnInit();
+
+    expect(component.allOffline).toBe(false);
+    expect(component.blocking).toBe(true);
+    expect(component.summaryText).toContain('unavailable');
   });
 
   it('exposes readable status text for each service check', () => {

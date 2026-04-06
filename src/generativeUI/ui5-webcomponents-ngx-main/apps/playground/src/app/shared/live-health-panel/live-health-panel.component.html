@@ -8,13 +8,13 @@
       <ui5-button design="Transparent" [disabled]="loading" (click)="refreshHealth()">
         {{ loading ? ('HEALTH_PANEL_CHECKING' | ui5I18n) : ('HEALTH_PANEL_CHECK_NOW' | ui5I18n) }}
       </ui5-button>
-      <ui5-tag [design]="blocking ? 'Negative' : 'Positive'">
-        {{ blocking ? ('HEALTH_PANEL_BLOCKED' | ui5I18n) : ('HEALTH_PANEL_READY' | ui5I18n) }}
+      <ui5-tag [design]="allOffline ? 'Information' : (blocking ? 'Negative' : 'Positive')">
+        {{ allOffline ? ('HEALTH_PANEL_DEMO_MODE_TAG' | ui5I18n) : (blocking ? ('HEALTH_PANEL_BLOCKED' | ui5I18n) : ('HEALTH_PANEL_READY' | ui5I18n)) }}
       </ui5-tag>
     </div>
   </div>
 
-  <ui5-message-strip [design]="blocking ? 'Negative' : 'Positive'" hide-close-button>
+  <ui5-message-strip [design]="allOffline ? 'Information' : (blocking ? 'Negative' : 'Positive')" hide-close-button>
     {{ summaryText }}
   </ui5-message-strip>
 
@@ -22,7 +22,7 @@
     {{ 'HEALTH_PANEL_LAST_CHECKED' | ui5I18n : lastCheckedAt }}
   </div>
 
-  <ui5-list separators="Inner">
+  <ui5-list separators="Inner" *ngIf="!allOffline">
     <ui5-li-custom *ngFor="let check of checks">
       <div class="live-health-panel__row">
         <span class="live-health-panel__service">{{ check.name }}</span>

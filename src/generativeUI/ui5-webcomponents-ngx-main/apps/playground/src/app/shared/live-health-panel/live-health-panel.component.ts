@@ -15,6 +15,7 @@ import { I18nService } from '@ui5/webcomponents-ngx/i18n';
 export class LiveHealthPanelComponent implements OnInit, OnDestroy {
   checks: ServiceCheck[] = [];
   blocking = true;
+  allOffline = false;
   loading = false;
   summaryText = '';
   lastCheckedAt: string | null = null;
@@ -38,7 +39,17 @@ export class LiveHealthPanelComponent implements OnInit, OnDestroy {
       .subscribe((checks) => {
         this.checks = checks;
         this.blocking = checks.some((check) => !check.ok);
-        const key = this.blocking ? 'HEALTH_PANEL_UNAVAILABLE' : 'HEALTH_PANEL_HEALTHY';
+        this.allOffline = checks.length > 0 && checks.every(
+          (check) => !check.ok && (check.status === 0 || check.status === undefined),
+        );
+        let key: string;
+        if (this.allOffline) {
+          key = 'HEALTH_PANEL_DEMO_MODE';
+        } else if (this.blocking) {
+          key = 'HEALTH_PANEL_UNAVAILABLE';
+        } else {
+          key = 'HEALTH_PANEL_HEALTHY';
+        }
         this.i18nService.getText(key).pipe(takeUntil(this.destroy$)).subscribe((text) => {
           this.summaryText = text;
         });
