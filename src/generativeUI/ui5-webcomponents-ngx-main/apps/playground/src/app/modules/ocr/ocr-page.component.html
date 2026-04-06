@@ -30,6 +30,7 @@
   <div class="ocr-page__controls">
     <ui5-label for="ocr-file">{{ 'OCR_UPLOAD_LABEL' | ui5I18n }}</ui5-label>
     <input
+      #fileInput
       id="ocr-file"
       type="file"
       accept=".txt,.pdf,.png,.jpg,.jpeg,.webp"
@@ -41,6 +42,11 @@
   <div
     class="ocr-page__dropzone"
     [class.ocr-page__dropzone--active]="isDragOver"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="'OCR_DROPZONE_HINT' | ui5I18n"
+    (keydown.enter)="fileInput.click()"
+    (keydown.space)="fileInput.click()"
     (dragover)="onDragOver($event)"
     (dragleave)="onDragLeave($event)"
     (drop)="onDrop($event)">
@@ -78,7 +84,7 @@
     </ui5-button>
   </div>
 
-  <ui5-busy-indicator *ngIf="loading || loadingHistory" active size="M"></ui5-busy-indicator>
+  <ui5-busy-indicator *ngIf="loading || loadingHistory" active size="M" [text]="'LOADING' | ui5I18n"></ui5-busy-indicator>
 
   <ui5-list *ngIf="recentDocuments.length > 0" separators="Inner">
     <ui5-li *ngFor="let document of recentDocuments" (click)="loadDocument(document.id)">
@@ -103,13 +109,14 @@
     <ui5-title level="H5">{{ 'OCR_LINE_ITEMS' | ui5I18n }}</ui5-title>
     <div class="ocr-line-items-table-wrapper">
       <table class="ocr-line-items-table">
+        <caption class="sr-only">{{ 'OCR_LINE_ITEMS' | ui5I18n }}</caption>
         <thead>
           <tr>
-            <th>{{ 'OCR_LINEITEM_COL_DESC_EN' | ui5I18n }}</th>
-            <th>{{ 'OCR_LINEITEM_COL_DESC_AR' | ui5I18n }}</th>
-            <th class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_QTY' | ui5I18n }}</th>
-            <th class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_UNIT_PRICE' | ui5I18n }}</th>
-            <th class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_TOTAL' | ui5I18n }}</th>
+            <th scope="col">{{ 'OCR_LINEITEM_COL_DESC_EN' | ui5I18n }}</th>
+            <th scope="col">{{ 'OCR_LINEITEM_COL_DESC_AR' | ui5I18n }}</th>
+            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_QTY' | ui5I18n }}</th>
+            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_UNIT_PRICE' | ui5I18n }}</th>
+            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_TOTAL' | ui5I18n }}</th>
           </tr>
         </thead>
         <tbody>

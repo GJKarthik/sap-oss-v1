@@ -205,7 +205,6 @@ RELATIVE_MONTHS_AGO={0, plural, one {1 month ago} other {{0} months ago}}
 RELATIVE_YEARS_AGO={0, plural, one {1 year ago} other {{0} years ago}}
 SKIP_TO_CONTENT=Skip to content
 LOADING=Loading…
-LOADING=Loading\u2026
 COLLAB_LEAVE_CONFIRM_TITLE=Leave Room?
 COLLAB_LEAVE_CONFIRM_TEXT=You will disconnect from the collaboration session. Other participants will no longer see your presence.
 COLLAB_LEAVE_CONFIRM_CANCEL=Cancel
