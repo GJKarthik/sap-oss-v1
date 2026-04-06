@@ -82,7 +82,7 @@ type ProductSelectEvent = Event & {
         [attr.primary-title]="i18n.t('app.title')"
         [attr.secondary-title]="i18n.t('app.subtitle')"
         show-notifications
-        notifications-count="3"
+        notifications-count="0"
         show-product-switch
         (logo-click)="navigateTo('/dashboard')"
         (notifications-click)="openNotifications()"
