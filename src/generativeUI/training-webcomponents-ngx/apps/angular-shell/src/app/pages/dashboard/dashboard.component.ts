@@ -28,9 +28,9 @@ interface PlatformComponent {
     <div class="page-content">
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('dashboard.title') }}</h1>
-        <button class="refresh-btn" (click)="refresh()" [disabled]="store.isDashboardLoading()">
+        <ui5-button design="Default" (click)="refresh()" [disabled]="store.isDashboardLoading()">
           {{ store.isDashboardLoading() ? i18n.t('dashboard.refreshing') : i18n.t('dashboard.refresh') }}
-        </button>
+        </ui5-button>
       </div>
 
       <div class="stats-grid">

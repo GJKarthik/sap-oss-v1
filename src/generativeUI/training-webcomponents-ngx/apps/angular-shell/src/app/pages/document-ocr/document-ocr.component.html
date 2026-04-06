@@ -39,9 +39,9 @@
     <div class="results-container">
       <!-- Actions Bar -->
       <div class="actions-bar">
-        <button class="action-btn primary" (click)="sendToChat()">{{ i18n.t('ocr.sendToChat') }}</button>
-        <button class="action-btn" (click)="exportJson()">{{ i18n.t('ocr.exportJson') }}</button>
-        <button class="action-btn" (click)="exportText()">{{ i18n.t('ocr.exportText') }}</button>
+        <ui5-button design="Emphasized" (click)="sendToChat()">{{ i18n.t('ocr.sendToChat') }}</ui5-button>
+        <ui5-button design="Default" (click)="exportJson()">{{ i18n.t('ocr.exportJson') }}</ui5-button>
+        <ui5-button design="Default" (click)="exportText()">{{ i18n.t('ocr.exportText') }}</ui5-button>
         <div class="actions-spacer"></div>
         <label class="action-btn">
           {{ i18n.t('ocr.uploadAnother') }}
@@ -52,11 +52,10 @@
       <!-- Tabs -->
       <div class="tab-bar">
         @for (tab of tabs; track tab) {
-          <button
-            class="tab-btn"
-            [class.active]="activeTab() === tab"
+          <ui5-button
+            [design]="activeTab() === tab ? 'Emphasized' : 'Default'"
             (click)="activeTab.set(tab)"
-          >{{ tabLabel(tab) }}</button>
+          >{{ tabLabel(tab) }}</ui5-button>
         }
       </div>
 
@@ -65,10 +64,10 @@
         @if (activeTab() === 'text') {
           <div class="text-tab">
             <div class="page-nav">
-              <button class="page-btn" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</button>
+              <ui5-button design="Transparent" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</ui5-button>
               <span class="page-info">{{ i18n.t('ocr.page') }} {{ currentPage() }} / {{ totalPages() }}</span>
-              <button class="page-btn" [disabled]="currentPage() >= totalPages()" (click)="nextPage()">›</button>
-              <button class="copy-btn" (click)="copyText()">{{ i18n.t('ocr.copy') }}</button>
+              <ui5-button design="Transparent" [disabled]="currentPage() >= totalPages()" (click)="nextPage()">›</ui5-button>
+              <ui5-button design="Default" (click)="copyText()">{{ i18n.t('ocr.copy') }}</ui5-button>
             </div>
             <pre class="ocr-text" dir="auto">{{ currentPageText() }}</pre>
           </div>
@@ -99,9 +98,9 @@
               <p class="empty-state">{{ i18n.t('ocr.noTables') }}</p>
             }
             <div class="page-nav">
-              <button class="page-btn" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</button>
+              <ui5-button design="Transparent" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</ui5-button>
               <span class="page-info">{{ i18n.t('ocr.page') }} {{ currentPage() }} / {{ totalPages() }}</span>
-              <button class="page-btn" [disabled]="currentPage() >= totalPages()" (click)="nextPage()">›</button>
+              <ui5-button design="Transparent" [disabled]="currentPage() >= totalPages()" (click)="nextPage()">›</ui5-button>
             </div>
           </div>
         }
@@ -207,10 +206,10 @@
               <div class="ai-empty-state">
                 <div class="ai-empty-icon">🤖</div>
                 <h3>{{ i18n.t('ocr.ai.emptyTitle') }}</h3>
-                <button class="btn-primary" (click)="runAiExtraction()" [disabled]="extractingAi()">
+                <ui5-button design="Emphasized" (click)="runAiExtraction()" [disabled]="extractingAi()">
                   @if (extractingAi()) { <span class="spinner"></span> }
                   ✨ {{ i18n.t('ocr.ai.runAction') }}
-                </button>
+                </ui5-button>
               </div>
             }
           </div>

@@ -44,9 +44,9 @@ interface AnalyticsResponse {
                 <option [value]="s">{{ s }}</option>
               }
             </select>
-            <button class="btn-refresh" (click)="loadData()" [disabled]="loading()">
+            <ui5-button design="Default" (click)="loadData()" [disabled]="loading()">
               {{ i18n.t('analytics.refresh') }}
-            </button>
+            </ui5-button>
           </div>
         </div>
       </header>

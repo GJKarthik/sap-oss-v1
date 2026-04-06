@@ -48,10 +48,10 @@ interface LogLine {
           <div class="ws-badge" [class.ws-connected]="wsConnected()" [class.ws-disconnected]="!wsConnected()">
             {{ wsConnected() ? i18n.t('app.live') : i18n.t('app.offline') }}
           </div>
-          <button class="btn-primary" (click)="startPipeline()"
+          <ui5-button design="Emphasized" (click)="startPipeline()"
             [disabled]="pipelineState() === 'running' || starting()">
             {{ starting() ? i18n.t('pipeline.starting') : pipelineState() === 'running' ? i18n.t('pipeline.processing') : i18n.t('pipeline.execute') }}
-          </button>
+          </ui5-button>
         </div>
       </div>
 
@@ -74,7 +74,7 @@ interface LogLine {
         </div>
         <div class="terminal-footer">
           <span class="text-small text-muted">{{ i18n.t('pipeline.lines', { count: logLines().length }) }}</span>
-          <button class="btn-clear" (click)="clearLogs()">{{ i18n.t('pipeline.clear') }}</button>
+          <ui5-button design="Transparent" (click)="clearLogs()">{{ i18n.t('pipeline.clear') }}</ui5-button>
         </div>
       </div>
 

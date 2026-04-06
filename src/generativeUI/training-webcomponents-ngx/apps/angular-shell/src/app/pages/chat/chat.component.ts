@@ -78,7 +78,7 @@ interface CompletionResponse {
           <label class="field-label">{{ i18n.t('chat.temperature') }}: {{ temperature.toFixed(2) }}</label>
           <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
         </div>
-        <button class="btn-danger" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</button>
+        <ui5-button design="Negative" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</ui5-button>
         @if (lastUsage()) {
           <div class="usage-info">
             <span class="text-small text-muted">{{ i18n.t('chat.lastTokens', { count: lastUsage()?.total_tokens ?? 0 }) }}</span>
@@ -95,7 +95,7 @@ interface CompletionResponse {
               <p>{{ i18n.t('chat.emptyState') }}</p>
               <div class="suggestion-chips">
                 @for (s of suggestions(); track s) {
-                  <button class="chip" (click)="usePrompt(s)"><bdi>{{ s }}</bdi></button>
+                  <ui5-button design="Default" (click)="usePrompt(s)"><bdi>{{ s }}</bdi></ui5-button>
                 }
               </div>
             </div>
@@ -123,9 +123,9 @@ interface CompletionResponse {
                       <span class="audit-arrow">→</span>
                       <span class="audit-expected">{{ f.expectedTerm }}</span>
                       @if (!f.showForm) {
-                        <button class="btn-override" (click)="openOverride(m.ts, f.sourceTerm)">
+                        <ui5-button design="Default" (click)="openOverride(m.ts, f.sourceTerm)">
                           {{ i18n.t('chat.applyOverride') }}
-                        </button>
+                        </ui5-button>
                       }
                       @if (f.showForm) {
                         <div class="override-form">
@@ -135,12 +135,12 @@ interface CompletionResponse {
                             (input)="setOverrideInput(m.ts, f.sourceTerm, $event)"
                             [placeholder]="i18n.t('chat.overridePlaceholder')"
                           />
-                          <button class="btn-save" [disabled]="f.saving" (click)="saveOverride(m.ts, f)">
+                          <ui5-button design="Emphasized" [disabled]="f.saving" (click)="saveOverride(m.ts, f)">
                             {{ i18n.t('chat.saveOverride') }}
-                          </button>
-                          <button class="btn-cancel" (click)="cancelOverride(m.ts, f.sourceTerm)">
+                          </ui5-button>
+                          <ui5-button design="Transparent" (click)="cancelOverride(m.ts, f.sourceTerm)">
                             {{ i18n.t('chat.cancelOverride') }}
-                          </button>
+                          </ui5-button>
                         </div>
                       }
                     </div>
@@ -167,9 +167,9 @@ interface CompletionResponse {
             [placeholder]="i18n.t('chat.inputPlaceholder')"
             (keydown.enter)="onEnter($event)"
           ></textarea>
-          <button type="submit" class="send-btn" [disabled]="!userInput.trim() || sending()">
+          <ui5-button design="Emphasized" type="submit" (click)="send()" [disabled]="!userInput.trim() || sending()">
             {{ sending() ? i18n.t('chat.sending') : i18n.t('chat.send') }}
-          </button>
+          </ui5-button>
         </form>
       </div>
     </div>

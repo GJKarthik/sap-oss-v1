@@ -38,7 +38,7 @@ interface ArchLayer {
     <div class="page-content">
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('hippocpp.title') }}</h1>
-        <button class="btn-refresh" (click)="loadStats()">{{ i18n.t('hippocpp.refresh') }}</button>
+        <ui5-button design="Default" (click)="loadStats()">{{ i18n.t('hippocpp.refresh') }}</ui5-button>
       </div>
 
       <!-- About -->
@@ -79,7 +79,7 @@ interface ArchLayer {
           <div class="query-presets">
             <span class="preset-label">{{ i18n.t('hippocpp.presets') }}</span>
             @for (p of presets; track p.label) {
-              <button class="preset-btn" (click)="setQuery(p.cypher)">{{ p.label }}</button>
+              <ui5-button design="Default" (click)="setQuery(p.cypher)">{{ p.label }}</ui5-button>
             }
           </div>
           <textarea
@@ -90,10 +90,10 @@ interface ArchLayer {
             placeholder="MATCH (n) RETURN n LIMIT 10"
           ></textarea>
           <div class="query-actions">
-            <button class="btn-primary" (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
+            <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
               {{ querying() ? i18n.t('hippocpp.running') : i18n.t('hippocpp.execute') }}
-            </button>
-            <button class="btn-secondary" (click)="clearResults()">{{ i18n.t('hippocpp.clear') }}</button>
+            </ui5-button>
+            <ui5-button design="Transparent" (click)="clearResults()">{{ i18n.t('hippocpp.clear') }}</ui5-button>
           </div>
         </div>
 

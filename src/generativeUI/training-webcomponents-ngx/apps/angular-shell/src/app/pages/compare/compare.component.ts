@@ -72,10 +72,10 @@ interface DeployedModel {
         <input class="prompt-input" [(ngModel)]="prompt"
                [placeholder]="i18n.t('compare.placeholder')"
                (keyup.enter)="runComparison()" />
-        <button class="btn-run" (click)="runComparison()"
+        <ui5-button design="Emphasized" (click)="runComparison()"
                 [disabled]="!modelA || !modelB || !prompt.trim() || loading()">
           {{ loading() ? i18n.t('compare.running') : i18n.t('compare.compare') }}
-        </button>
+        </ui5-button>
       </div>
 
       <!-- Side-by-side results -->

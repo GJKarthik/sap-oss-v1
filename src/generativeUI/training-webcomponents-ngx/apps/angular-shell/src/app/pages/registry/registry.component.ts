@@ -31,7 +31,7 @@ interface RegistryEntry {
     <div class="page-content">
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('registry.title') }}</h1>
-        <button class="btn-refresh" (click)="load()">{{ i18n.t('registry.refresh') }}</button>
+        <ui5-button design="Default" (click)="load()">{{ i18n.t('registry.refresh') }}</ui5-button>
       </div>
 
       <!-- Stats -->
@@ -92,8 +92,8 @@ interface RegistryEntry {
                       <div style="display: flex; gap: 0.3rem;">
                         <input class="tag-input" [(ngModel)]="tagDraft"
                                (keyup.enter)="saveTag(m.id)" (keyup.escape)="cancelTag()" />
-                        <button class="btn-xs btn-save" (click)="saveTag(m.id)">✓</button>
-                        <button class="btn-xs" (click)="cancelTag()">✕</button>
+                        <ui5-button design="Emphasized" (click)="saveTag(m.id)">✓</ui5-button>
+                        <ui5-button design="Transparent" (click)="cancelTag()">✕</ui5-button>
                       </div>
                     } @else {
                       <div class="tag-cell" (click)="startTag(m)">
@@ -129,9 +129,9 @@ interface RegistryEntry {
                         <a [href]="'/training/compare'" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
                       }
                       @if (m.status === 'completed' && !m.deployed) {
-                        <button class="btn-xs btn-deploy" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</button>
+                        <ui5-button design="Emphasized" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</ui5-button>
                       }
-                      <button class="btn-xs btn-delete" (click)="deleteJob(m.id)">{{ i18n.t('registry.delete') }}</button>
+                      <ui5-button design="Negative" (click)="deleteJob(m.id)">{{ i18n.t('registry.delete') }}</ui5-button>
                     </div>
                   </td>
                 </tr>

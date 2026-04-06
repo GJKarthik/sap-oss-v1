@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -40,6 +40,7 @@ interface DataCleaningWorkflowEventsResponse {
   selector: 'app-data-cleaning',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
@@ -57,12 +58,12 @@ interface DataCleaningWorkflowEventsResponse {
             {{ i18n.t('dataCleaning.workflow') }}: {{ workflowStatus() }}
           </span>
         }
-        <button class="refresh-btn" (click)="refreshAll()" [disabled]="loadingHealth() || loadingChecks()">
+        <ui5-button design="Default" (click)="refreshAll()" [disabled]="loadingHealth() || loadingChecks()">
           {{ i18n.t('dataCleaning.refresh') }}
-        </button>
-        <button class="refresh-btn" (click)="clearSession()" [disabled]="sending() || workflowRunning()">
+        </ui5-button>
+        <ui5-button design="Transparent" (click)="clearSession()" [disabled]="sending() || workflowRunning()">
           {{ i18n.t('dataCleaning.clearSession') }}
-        </button>
+        </ui5-button>
       </div>
 
       <div class="grid">
@@ -87,15 +88,15 @@ interface DataCleaningWorkflowEventsResponse {
               rows="2"
               [placeholder]="i18n.t('dataCleaning.placeholder')"
             ></textarea>
-            <button class="send-btn" type="submit" [disabled]="sending() || !prompt.trim()">
+            <ui5-button design="Emphasized" (click)="sendMessage()" [disabled]="sending() || !prompt.trim()">
               {{ sending() ? '...' : i18n.t('dataCleaning.send') }}
-            </button>
+            </ui5-button>
           </form>
 
           <div class="workflow-cta">
-            <button class="run-btn" (click)="runWorkflow()" [disabled]="workflowRunning() || !lastPrompt">
+            <ui5-button design="Emphasized" (click)="runWorkflow()" [disabled]="workflowRunning() || !lastPrompt">
               {{ workflowRunning() ? i18n.t('dataCleaning.runningWorkflow') : i18n.t('dataCleaning.runWorkflow') }}
-            </button>
+            </ui5-button>
             <span class="empty">{{ i18n.t('dataCleaning.workflowDesc') }}</span>
           </div>
         </section>

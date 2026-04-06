@@ -556,5 +556,9 @@
 
   "status.online": "Online",
   "status.offline": "Offline",
-  "chat.clearConfirm": "Are you sure you want to clear the chat history?"
+  "chat.clearConfirm": "Are you sure you want to clear the chat history?",
+
+  "form.errorsTitle": "Please fix the following errors:",
+  "modelOpt.errorModelRequired": "Model name is required.",
+  "modelOpt.errorQuantRequired": "Quantization format is required."
 }

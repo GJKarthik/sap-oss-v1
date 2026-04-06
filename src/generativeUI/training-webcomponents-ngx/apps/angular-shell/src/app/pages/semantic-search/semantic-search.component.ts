@@ -51,9 +51,9 @@ interface SearchResponse {
               <option [value]="s">{{ s }}</option>
             }
           </select>
-          <button class="btn-search" [disabled]="searching() || !query.trim()" (click)="search()">
+          <ui5-button design="Emphasized" [disabled]="searching() || !query.trim()" (click)="search()">
             {{ searching() ? i18n.t('semanticSearch.searching') : i18n.t('semanticSearch.search') }}
-          </button>
+          </ui5-button>
         </div>
         @if (queryTime()) {
           <span class="text-small text-muted">{{ i18n.t('semanticSearch.queryTime', { ms: queryTime() }) }}</span>

@@ -12,7 +12,7 @@ export default {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+  transformIgnorePatterns: ['node_modules/(?!(@ui5|lit|@lit).*|.*\\.mjs$)'],
   moduleNameMapper: {
     '^@messageformat/core$': '<rootDir>/src/testing/messageformat-core.mock.ts',
   },

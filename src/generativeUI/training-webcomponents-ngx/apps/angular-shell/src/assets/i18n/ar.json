@@ -556,5 +556,9 @@
 
   "status.online": "متصل",
   "status.offline": "غير متصل",
-  "chat.clearConfirm": "هل أنت متأكد من مسح سجل المحادثة؟"
+  "chat.clearConfirm": "هل أنت متأكد من مسح سجل المحادثة؟",
+
+  "form.errorsTitle": "يرجى تصحيح الأخطاء التالية:",
+  "modelOpt.errorModelRequired": "اسم النموذج مطلوب.",
+  "modelOpt.errorQuantRequired": "صيغة التكميم مطلوبة."
 }
