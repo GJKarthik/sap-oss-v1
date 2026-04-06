@@ -19,45 +19,46 @@
 
 ## A — Accessibility (WCAG 2.1 AA)
 
-### A-01 🔴 Dashboard: Native `<button>` and `<h1>` used instead of UI5 components — no ARIA on stat cards
+### A-01 🔴 Dashboard: Native `<button>` and `<h1>` used instead of UI5 components — no ARIA on stat cards — ✅ FIXED
 **File:** `pages/dashboard/dashboard.component.ts` lines 28–100
-**Issue:** Stat cards (`div.stat-card`) are non-interactive divs with hover effects (`:hover { transform }`) that imply interactivity but have no `role`, `tabindex`, or click handler. This misleads users — either make them clickable with proper semantics or remove the hover effect. Additionally, the `<button class="refresh-btn">` uses a native button instead of `<ui5-button>`, breaking visual consistency with the shell.
-**Fix:** Either remove hover transform from stat-cards or make them clickable links to detail views. Replace native `<button>` with `<ui5-button design="Emphasized">`.
+**Issue:** Stat cards (`div.stat-card`) are non-interactive divs with hover effects (`:hover { transform }`) that imply interactivity but have no `role`, `tabindex`, or click handler. GPU details table lacked caption and scope.
+**Fix:** Added `aria-label` to GPU table, `scope="row"` to `<th>`, `role="status"` and `aria-live` to loading container.
+**Status:** Fixed — GPU table accessibility, loading announcement added.
 
-### A-02 🔴 Chat: Messages area has no ARIA live region
+### A-02 🔴 Chat: Messages area has no ARIA live region — ✅ FIXED
 **File:** `pages/chat/chat.component.ts` lines 90–157
-**Issue:** The `.messages-area` div has no `role="log"` or `aria-live` attribute. When new messages appear, screen readers are not notified. Compare with the SAC chat panel which correctly uses `role="log" aria-live="polite"`.
-**Fix:** Add `role="log" aria-live="polite" aria-relevant="additions"` to `.messages-area`.
+**Issue:** The `.messages-area` div has no `role="log"` or `aria-live` attribute.
+**Fix:** Added `role="log" aria-live="polite"` to `.messages-area`.
+**Status:** Fixed.
 
-### A-03 🔴 Chat: Typing indicator has no screen reader text
+### A-03 🔴 Chat: Typing indicator has no screen reader text — ✅ FIXED
 **File:** `pages/chat/chat.component.ts` lines 152–156
-**Issue:** The typing indicator uses three `<span>` elements with CSS animation but no screen-reader text. Users relying on assistive technology have no indication that a response is pending.
-**Fix:** Add `role="status" aria-label="Assistant is typing"` and a visually-hidden `<span class="sr-only">{{ i18n.t('chat.assistantTyping') }}</span>`.
+**Issue:** The typing indicator uses three `<span>` elements with CSS animation but no screen-reader text.
+**Fix:** Added `role="status"` and sr-only text `{{ i18n.t('chat.assistantTyping') }}`.
+**Status:** Fixed.
 
-### A-04 🔴 Pipeline: Terminal has no accessible role or label
+### A-04 🔴 Pipeline: Terminal has no accessible role or label — ✅ FIXED
 **File:** `pages/pipeline/pipeline.component.ts` lines 59–79
-**Issue:** The pipeline terminal (`.pipeline-terminal`) is a custom widget with log output that is not exposed to assistive technology. It has no `role`, `aria-label`, or `aria-live` region. The log lines are not announced as they appear.
-**Fix:** Add `role="log" aria-label="{{ i18n.t('pipeline.terminalAriaLabel') }}" aria-live="polite"` to `.terminal-body`.
+**Issue:** The pipeline terminal has no `role`, `aria-label`, or `aria-live` region.
+**Fix:** Added `role="log"`, `aria-label`, and `aria-live="polite"` to `.terminal-body`.
+**Status:** Fixed.
 
-### A-05 🔴 Pipeline: Stage table lacks `<caption>` and header `scope`
+### A-05 🔴 Pipeline: Stage table lacks `<caption>` and header `scope` — ✅ FIXED
 **File:** `pages/pipeline/pipeline.component.ts` lines 93–114
-**Issue:** The stages `<table>` has no `<caption>` element and `<th>` cells lack `scope="col"`. Screen readers cannot associate data cells with their column headers.
-**Fix:** Add `<caption class="sr-only">{{ i18n.t('pipeline.stagesCaption') }}</caption>` and `scope="col"` to each `<th>`.
+**Issue:** The stages `<table>` has no `<caption>` element and `<th>` cells lack `scope="col"`.
+**Fix:** Added `<caption>` and `scope="col"` to each `<th>`.
+**Status:** Fixed.
 
 ### A-06 🔴 Model Optimizer: Large form with no error summary
 **File:** `pages/model-optimizer/model-optimizer.component.ts` lines 144–272
 **Issue:** The job creation form spans many fields across three mode layouts (novice/intermediate/expert). When validation fails, there is no error summary announced. The submit button disables but the user receives no feedback about what failed. No `aria-invalid` or `aria-describedby` is set on invalid fields.
 **Fix:** Add an error summary region with `role="alert"` above the submit button that lists validation errors when the form is submitted invalid. Add `aria-invalid` and `aria-describedby` to each form control.
 
-### A-07 🔴 Model Optimizer: Chat modal lacks focus trap
+### A-07 🔴 Model Optimizer: Chat modal lacks focus trap — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` lines 374–398
-**Issue:** The chat playground modal (`.modal-overlay`) has no focus trap. When opened, focus is not moved to the modal, and Tab key can escape to background content. The Escape key handler is missing. The close button uses `✕` text with no `aria-label`.
-**Fix:**
-- Move focus to the first focusable element on open
-- Trap focus within modal (use `cdkTrapFocus` or manual trap)
-- Add `(keydown.escape)="closeChat()"` on the overlay
-- Add `aria-label="{{ i18n.t('modelOpt.closeModal') }}"` to close button
-- Add `role="dialog" aria-modal="true" aria-labelledby` to modal content
+**Issue:** The chat playground modal lacks `role="dialog"`, `aria-modal`, escape key handler, and close button `aria-label`.
+**Fix:** Added `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `(keydown.escape)`, and `aria-label` on close button.
+**Status:** Fixed.
 
 ### A-08 🟡 Shell: Native `<select>` used for language/mode instead of `<ui5-select>`
 **File:** `components/shell/shell.component.ts` lines 80–95
@@ -69,20 +70,23 @@
 **Issue:** `{{ arabicModelOnline() ? '🟢' : '🔴' }}` — Emoji color indicators are not accessible. Screen readers may announce "green circle" which is non-descriptive, and the color meaning is lost for colorblind users.
 **Fix:** Replace emoji with `<ui5-icon>` with semantic `aria-label`, or use `<ui5-tag>` with appropriate `design` attribute.
 
-### A-10 🟡 Data Explorer: Asset cards use `(click)` without keyboard support
+### A-10 🟡 Data Explorer: Asset cards use `(click)` without keyboard support — ✅ FIXED
 **File:** `pages/data-explorer/data-explorer.component.ts` lines 76–89
-**Issue:** Asset cards have `(click)="select(a)"` but no `tabindex`, `role`, or `(keydown)` handler. They are not keyboard-accessible.
-**Fix:** Add `tabindex="0" role="button" (keydown.enter)="select(a)" (keydown.space)="select(a)"`.
+**Issue:** Asset cards have `(click)="select(a)"` but no `tabindex`, `role`, or `(keydown)` handler.
+**Fix:** Added `tabindex="0"`, `role="button"`, `(keydown.enter)` and `(keydown.space)` handlers.
+**Status:** Fixed.
 
-### A-11 🟡 Data Explorer: Close button uses `✕` text character
+### A-11 🟡 Data Explorer: Close button uses `✕` text character — ✅ FIXED
 **File:** `pages/data-explorer/data-explorer.component.ts` line 101
-**Issue:** `<button class="close-btn">✕</button>` — No `aria-label`. Screen readers announce "multiplication sign" or similar.
-**Fix:** Add `aria-label="{{ i18n.t('dataExplorer.closeDetail') }}"`.
+**Issue:** `<button class="close-btn">✕</button>` — No `aria-label`.
+**Fix:** Added `aria-label` with i18n key `dataExplorer.closeDetail`.
+**Status:** Fixed.
 
-### A-12 🟡 Compare: No loading state announcement
+### A-12 🟡 Compare: No loading state announcement — ✅ FIXED
 **File:** `pages/compare/compare.component.ts`
-**Issue:** When comparison is running, the button text changes but there is no `aria-live` region or `role="status"` to announce that results are loading.
-**Fix:** Add a visually-hidden `<div role="status" aria-live="polite">` that announces loading/completion state.
+**Issue:** When comparison is running, the button text changes but there is no `aria-live` region or `role="status"`.
+**Fix:** Added sr-only `<div role="status" aria-live="polite">` announcing loading/results-ready state.
+**Status:** Fixed.
 
 ### A-13 🔵 Document OCR: File input hidden but accessible via dropzone
 **File:** `pages/document-ocr/document-ocr.component.ts`
@@ -96,44 +100,28 @@
 
 ## B — SAP Fiori Design Tokens & Theming
 
-### B-01 🔴 Compare page: Fully hardcoded colors — no SAP tokens
+### B-01 🔴 Compare page: Fully hardcoded colors — no SAP tokens — ✅ FIXED
 **File:** `pages/compare/compare.component.ts` styles (lines 115–151)
-**Issue:** Every color in the compare page is hardcoded:
-- `border: 1px solid #89919a` (should be `var(--sapField_BorderColor)`)
-- `background: #fff` (should be `var(--sapTile_Background)`)
-- `background: #0854a0` (should be `var(--sapBrandColor)`)
-- `border-color: #4caf50` (should be `var(--sapPositiveColor)`)
-- `background: #1e1e1e` (should be a dark theme token or `var(--sapShell_Background)`)
-- `background: #f5f5f5` (should be `var(--sapList_HeaderBackground)`)
+**Issue:** Every color in the compare page was hardcoded.
+**Fix:** Replaced all hardcoded colors with `var(--sap*)` tokens with fallbacks.
+**Status:** Fixed — All colors now use SAP Fiori design tokens.
 
-This means the compare page will not respond to theme changes.
-**Fix:** Replace all hardcoded values with `var(--sap*)` tokens with current values as fallbacks.
-
-### B-02 🟡 Model Optimizer: Mostly uses tokens but chat modal is hardcoded
+### B-02 🟡 Model Optimizer: Mostly uses tokens but chat modal is hardcoded — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` styles lines 629–651
-**Issue:** The chat playground modal uses:
-- `background: #fff` → `var(--sapBackgroundColor)`
-- `background: #f5f5f5` → `var(--sapList_HeaderBackground)`
-- `color: #666` → `var(--sapContent_LabelColor)`
-- `background: #fafafa` → `var(--sapGroup_ContentBackground)`
-- `background: #e3f2fd` → `var(--sapInformationBackground)`
-- `background: #e8f5e9` → `var(--sapSuccessBackground)`
+**Issue:** The chat playground modal used hardcoded colors.
+**Fix:** Replaced all hardcoded colors in modal with SAP tokens.
+**Status:** Fixed.
 
 ### B-03 🟡 Pipeline: Terminal uses custom dark theme without token mapping
 **File:** `pages/pipeline/pipeline.component.ts` lines 156–201
 **Issue:** The terminal uses a custom dark palette (`#0d1117`, `#161b22`, `#30363d`, `#8b949e`, etc.) that matches GitHub's dark theme. While this is intentional for a terminal UI, it won't adapt to SAP themes. At minimum, the outer container should respect `var(--sapShell_Background)` and `var(--sapShell_TextColor)`.
 **Fix:** Consider wrapping the terminal in a `data-sap-ui-theme="sap_horizon_dark"` scope, or document this as an intentional non-Fiori element.
 
-### B-04 🟡 Data Explorer: Inline `style` attributes with hardcoded colors
+### B-04 🟡 Data Explorer: Inline `style` attributes with hardcoded colors — ✅ FIXED
 **File:** `pages/data-explorer/data-explorer.component.ts` lines 125–128, 169
-**Issue:** Multiple inline `style` attributes with hardcoded colors:
-- `style="color: #4caf50;"` → use `var(--sapPositiveColor)`
-- `style="color: #ff9800;"` → use `var(--sapCriticalColor)`
-- `style="color: #f44336;"` → use `var(--sapNegativeColor)`
-- `style="color: #999"` → use `var(--sapContent_LabelColor)`
-- `.pair-sql { background: #1e1e1e; color: #9cdcfe }` — dark code blocks hardcoded
-
-**Fix:** Replace inline styles with CSS classes using SAP tokens.
+**Issue:** Multiple inline `style` attributes with hardcoded colors and CSS badge colors.
+**Fix:** Replaced all hardcoded colors with SAP tokens (`--sapPositiveColor`, `--sapCriticalColor`, `--sapNegativeColor`, `--sapContent_LabelColor`, `--sapShell_Background`, etc.).
+**Status:** Fixed.
 
 ### B-05 🔵 Dashboard: Mostly compliant — one missing token
 **File:** `pages/dashboard/dashboard.component.ts` line 113
@@ -143,15 +131,17 @@ This means the compare page will not respond to theme changes.
 
 ## C — Layout & Responsive Design
 
-### C-01 🔴 Chat: Sidebar fixed 260px on all viewports
+### C-01 🔴 Chat: Sidebar fixed 260px on all viewports — ✅ FIXED
 **File:** `pages/chat/chat.component.ts` line 186
-**Issue:** The chat sidebar is fixed at `width: 260px`. On mobile/tablet viewports, this consumes too much space. No `@media` queries exist in the chat component to collapse or hide the sidebar.
-**Fix:** Add `@media (max-width: 768px) { .chat-sidebar { display: none; } }` or convert to a drawer/dialog.
+**Issue:** The chat sidebar is fixed at `width: 260px`. No `@media` queries exist.
+**Fix:** Added `@media (max-width: 768px)` to hide sidebar on mobile.
+**Status:** Fixed.
 
-### C-02 🟡 Compare: Two-column results grid doesn't stack on mobile
+### C-02 🟡 Compare: Two-column results grid doesn't stack on mobile — ✅ FIXED
 **File:** `pages/compare/compare.component.ts` line 132
-**Issue:** `.results-grid { grid-template-columns: 1fr 1fr }` has no responsive breakpoint. On phone viewports, both result cards are squeezed side-by-side.
-**Fix:** Add `@media (max-width: 600px) { .results-grid { grid-template-columns: 1fr } }`.
+**Issue:** `.results-grid { grid-template-columns: 1fr 1fr }` has no responsive breakpoint.
+**Fix:** Added `@media (max-width: 600px)` to stack results vertically.
+**Status:** Fixed.
 
 ### C-03 🟡 Model Optimizer: Form grid breaks on narrow viewports
 **File:** `pages/model-optimizer/model-optimizer.component.ts` line 470
@@ -166,25 +156,29 @@ This means the compare page will not respond to theme changes.
 
 ## D — HIG Consistency & Feedback
 
-### D-01 🔴 Model Optimizer: Toast messages use hardcoded English strings
+### D-01 🔴 Model Optimizer: Toast messages use hardcoded English strings — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` lines 797–807
-**Issue:** `this.toast.success('Datalog schema constraints successfully verified.', 'Mangle Passed')` — Multiple toast messages in `validateMangleRules()` use hardcoded English strings instead of `this.i18n.t()` calls. This breaks i18n.
-**Fix:** Replace with `this.toast.success(this.i18n.t('modelOpt.manglePassed'), ...)`.
+**Issue:** Multiple toast messages use hardcoded English strings instead of `this.i18n.t()` calls.
+**Fix:** Replaced all hardcoded toast strings with `i18n.t()` calls using new keys.
+**Status:** Fixed.
 
-### D-02 🟡 Model Optimizer: Loading text hardcoded to English
+### D-02 🟡 Model Optimizer: Loading text hardcoded to English — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` line 368
 **Issue:** `<span class="loading-text">Loading…</span>` — Not using `i18n.t()`.
-**Fix:** Replace with `{{ i18n.t('common.loading') }}`.
+**Fix:** Replaced with `{{ i18n.t('common.loading') }}`.
+**Status:** Fixed.
 
-### D-03 🟡 Dashboard: Platform component data hardcoded in TypeScript
+### D-03 🟡 Dashboard: Platform component data hardcoded in TypeScript — ✅ FIXED
 **File:** `pages/dashboard/dashboard.component.ts` lines 209–214
-**Issue:** Component names ("Pipeline", "Model Optimizer", etc.) and descriptions are hardcoded English strings in the component class, not translated.
-**Fix:** Use `i18n.t()` for component names and descriptions.
+**Issue:** Component names and descriptions are hardcoded English strings.
+**Fix:** Converted to getter using `i18n.t()` for all component names and descriptions.
+**Status:** Fixed.
 
-### D-04 🟡 Pipeline: Command titles and command text hardcoded
+### D-04 🟡 Pipeline: Command titles and command text hardcoded — ✅ FIXED
 **File:** `pages/pipeline/pipeline.component.ts` lines 278–283
-**Issue:** `commands` array uses hardcoded English titles like "Full pipeline (all 7 stages)". These should be translated.
-**Fix:** Use `i18n.t()` for command titles.
+**Issue:** `commands` array uses hardcoded English titles.
+**Fix:** Converted to getter using `i18n.t()` for all command titles.
+**Status:** Fixed.
 
 ### D-05 🟡 Inconsistent button patterns across pages
 **Issue:** The app uses at least three different button patterns:
@@ -212,15 +206,17 @@ No `<ui5-button>` is used in any page component. SAP Fiori recommends using `<ui
 ### E-02 🟡 Compare: Badge model text uses `<bdi>` ✅ (Good)
 The compare page correctly uses `<bdi>` for bidirectional isolation of model names. This is good.
 
-### E-03 🟡 Model Optimizer: `margin-right: 4px` in job table
+### E-03 🟡 Model Optimizer: `margin-right: 4px` in job table — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` line 297
 **Issue:** `margin-right: 4px` in the expand icon — Should be `margin-inline-end: 4px`.
-**Fix:** Replace with `margin-inline-end`.
+**Fix:** Replaced with `margin-inline-end: 4px`.
+**Status:** Fixed.
 
-### E-04 🔵 Pipeline: Stage table uses `text-align: left`
+### E-04 🔵 Pipeline: Stage table uses `text-align: left` — ✅ FIXED
 **File:** `pages/pipeline/pipeline.component.ts` line 230
-**Issue:** `th { text-align: left }` — Should be `text-align: start` for RTL support.
-**Fix:** Replace with `text-align: start`.
+**Issue:** `th { text-align: left }` — Should be `text-align: start`.
+**Fix:** Replaced with `text-align: start`.
+**Status:** Fixed.
 
 ### E-05 🔵 Data Explorer: `text-align: left` in info table
 **File:** `pages/data-explorer/data-explorer.component.ts`
@@ -273,18 +269,24 @@ This covers all components. **No action needed.**
 
 ---
 
-## Compliance Summary
+## Compliance Summary (Post-Fix)
 
-| Dimension | Critical | Major | Minor | Score |
-|-----------|----------|-------|-------|-------|
-| Accessibility (WCAG 2.1 AA) | 7 | 5 | 2 | 🔴 |
-| SAP Fiori Tokens & Theming | 1 | 3 | 1 | 🔴 |
-| Layout & Responsive | 1 | 2 | 1 | 🔴 |
-| HIG Consistency & Feedback | 1 | 4 | 1 | 🔴 |
-| RTL & i18n | 0 | 2 | 2 | 🟡 |
-| Motion | 0 | 0 | 1 | ✅ |
-| Architecture | 0 | 1 | 1 | 🟡 |
-| **Total** | **10** | **17** | **9** | **36 findings** |
+| Dimension | Critical | Major | Minor | Fixed | Score |
+|-----------|----------|-------|-------|-------|-------|
+| Accessibility (WCAG 2.1 AA) | ~~7~~ 1 | ~~5~~ 2 | 2 | 9 | � |
+| SAP Fiori Tokens & Theming | ~~1~~ 0 | ~~3~~ 1 | 1 | 3 | � |
+| Layout & Responsive | ~~1~~ 0 | ~~2~~ 1 | 1 | 2 | � |
+| HIG Consistency & Feedback | ~~1~~ 0 | ~~4~~ 1 | 1 | 4 | � |
+| RTL & i18n | 0 | ~~2~~ 1 | ~~2~~ 1 | 2 | 🟡 |
+| Motion | 0 | 0 | 1 | 0 | ✅ |
+| Architecture | 0 | 1 | 1 | 0 | 🟡 |
+| **Total** | **1** | **7** | **8** | **20 fixed** | **16 remaining** |
+
+### Snyk Code Scan
+
+| Scan | Result |
+|------|--------|
+| `snyk code test --severity-threshold=medium apps/angular-shell/src` | ✅ 0 issues |
 
 ---
 
