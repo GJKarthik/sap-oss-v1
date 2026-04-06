@@ -13,6 +13,8 @@
 
 .joule-chat-panel {
   width: 400px;
+  min-width: 280px;
+  max-width: min(400px, 40vw);
   flex-shrink: 0;
   border-right: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
   display: flex;
@@ -45,7 +47,7 @@
   padding: 0.2rem 0.5rem;
   border-radius: 0.25rem;
   background: var(--sapNeutralBackground, #e0e0e0);
-  color: var(--sapNeutralColor, #333);
+  color: var(--sapNeutralBorderColor, #687a87);
   text-transform: capitalize;
 
   &--streaming,
@@ -115,7 +117,7 @@
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
-  color: white;
+  color: var(--sapContent_ContrastTextColor, #fff);
   font-size: 0.65rem;
   font-weight: 700;
   cursor: default;
@@ -152,6 +154,12 @@ genui-outlet {
     color: var(--sapContent_LabelColor, #6a6d70);
     font-size: 0.8rem;
     opacity: 0.75;
+  }
+}
+
+@media (max-width: 1024px) {
+  .joule-chat-panel {
+    width: 320px;
   }
 }
 
