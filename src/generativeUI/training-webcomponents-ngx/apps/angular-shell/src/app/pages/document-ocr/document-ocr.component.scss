@@ -235,7 +235,7 @@ th { background: var(--sapList_SelectionBackgroundColor, #f0f6ff); color: var(--
   &:hover { background: var(--sapList_HoverBackground, #f5f5f5); }
   &.primary {
     background: var(--sapBrandColor, #0854a0);
-    color: #fff;
+    color: var(--sapButton_Emphasized_TextColor, #fff);
     border-color: transparent;
     &:hover { opacity: 0.9; }
   }

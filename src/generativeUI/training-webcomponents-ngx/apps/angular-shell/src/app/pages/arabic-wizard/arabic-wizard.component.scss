@@ -78,13 +78,13 @@
 
   .active & {
     background: var(--sapBrandColor, #0854a0);
-    color: #fff;
+    color: var(--sapButton_Emphasized_TextColor, #fff);
     border-color: var(--sapBrandColor, #0854a0);
   }
 
   .completed & {
     background: var(--sapPositiveColor, #107e3e);
-    color: #fff;
+    color: var(--sapButton_Emphasized_TextColor, #fff);
     border-color: var(--sapPositiveColor, #107e3e);
   }
 }
@@ -350,7 +350,7 @@
 
   .user & {
     background: var(--sapBrandColor, #0854a0);
-    color: #fff;
+    color: var(--sapButton_Emphasized_TextColor, #fff);
   }
 
   .assistant & {
@@ -453,7 +453,7 @@
 
 .btn-primary {
   background: var(--sapBrandColor, #0854a0);
-  color: #fff;
+  color: var(--sapShell_TextColor, #fff);
   border-color: var(--sapBrandColor, #0854a0);
 
   &:hover:not(:disabled) {
