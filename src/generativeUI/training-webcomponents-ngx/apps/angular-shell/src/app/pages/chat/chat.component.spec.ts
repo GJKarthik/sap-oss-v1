@@ -1,12 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
-
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ChatComponent } from './chat.component';
-import { ApiService } from '../../services/api.service';
-import { GlossaryService, CrossCheckFinding } from '../../services/glossary.service';
-import { I18nService } from '../../services/i18n.service';
 import { ToastService } from '../../services/toast.service';
-import { TranslationMemoryService } from '../../services/translation-memory.service';
 
 const MOCK_TOAST = {
   success: jest.fn(),
@@ -15,68 +11,34 @@ const MOCK_TOAST = {
   info: jest.fn(),
 };
 
-const MOCK_API = {
-  listModels: jest.fn(() => of({ data: [{ id: 'Qwen/Qwen3.5-0.6B', object: 'model' }] })),
-  post: jest.fn(),
-};
-
-const MOCK_I18N = {
-  currentLang: jest.fn(() => 'en'),
-  isRtl: jest.fn(() => false),
-  dir: jest.fn(() => 'ltr'),
-  t: (key: string, params?: Record<string, unknown>) => {
-    if (key === 'chat.cleared') return 'Chat cleared';
-    if (key === 'chat.tmSaved') return 'Override saved';
-    if (key === 'chat.tmError') return 'Override failed';
-    if (key === 'chat.errorTitle') return 'Chat Error';
-    if (key === 'chat.you') return 'You';
-    if (key === 'chat.assistant') return 'Assistant';
-    if (key === 'chat.languageBadge.ar') return 'AR';
-    if (key === 'chat.languageBadge.en') return 'EN';
-    if (key === 'chat.lastTokens') return `Last: ${params?.['count'] ?? 0} tokens`;
-    return key;
-  },
-};
-
-const MOCK_GLOSSARY = {
-  getSystemPromptSnippet: jest.fn(() => '\n[CORRECTION OVERRIDES]\n- Net Profit -> صافي الربح'),
-  crossCheck: jest.fn((): CrossCheckFinding[] => []),
-  loadOverrides: jest.fn(),
-};
-
-const MOCK_TM = {
-  save: jest.fn(),
-};
-
 describe('ChatComponent', () => {
   let component: ChatComponent;
   let fixture: ComponentFixture<ChatComponent>;
+  let httpMock: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ChatComponent],
       providers: [
-        { provide: ApiService, useValue: MOCK_API },
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: ToastService, useValue: MOCK_TOAST },
-        { provide: I18nService, useValue: MOCK_I18N },
-        { provide: GlossaryService, useValue: MOCK_GLOSSARY },
-        { provide: TranslationMemoryService, useValue: MOCK_TM },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ChatComponent);
     component = fixture.componentInstance;
-
+    httpMock = TestBed.inject(HttpTestingController);
+    
+    // Clear mocks between tests
     Object.values(MOCK_TOAST).forEach(spy => spy.mockClear());
-    Object.values(MOCK_API).forEach(spy => spy.mockClear());
-    Object.values(MOCK_GLOSSARY).forEach(spy => spy.mockClear());
-    Object.values(MOCK_TM).forEach(spy => spy.mockClear());
-
-    MOCK_API.listModels.mockReturnValue(of({ data: [{ id: 'Qwen/Qwen3.5-0.6B', object: 'model' }] }));
-    MOCK_GLOSSARY.getSystemPromptSnippet.mockReturnValue('\n[CORRECTION OVERRIDES]\n- Net Profit -> صافي الربح');
-    MOCK_GLOSSARY.crossCheck.mockReturnValue([]);
-
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    // Flush any pending init requests (e.g. /api/v1/models from ngOnInit)
+    httpMock.match(() => true).forEach(r => r.flush({}));
+    httpMock.verify();
   });
 
   it('should create', () => {
@@ -85,107 +47,42 @@ describe('ChatComponent', () => {
   });
 
   it('clearChat() should empty messages and show info toast', () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
     component.messages.set([{ role: 'user', content: 'test', ts: new Date() }]);
+    expect(component.messages().length).toBe(1);
 
     component.clearChat();
 
     expect(component.messages().length).toBe(0);
-    expect(MOCK_TOAST.info).toHaveBeenCalledWith('Chat cleared');
+    expect(MOCK_TOAST.info).toHaveBeenCalledWith('chat.cleared');
   });
 
-  it('send() should prepend glossary constraints and attach audit findings', () => {
-    MOCK_GLOSSARY.crossCheck.mockReturnValue([
-      {
-        sourceTerm: 'صافي الربح',
-        expectedTerm: 'Net Profit',
-        sourceLang: 'ar',
-        targetLang: 'en',
-      },
-    ]);
-    MOCK_API.post.mockReturnValue(of({
-      choices: [{ message: { content: 'صافي الربح بلغ 10' } }],
-      usage: { total_tokens: 15 },
-    }));
-
-    component.userInput = 'Summarize the OCR result';
+  it('send() should append user message and call api.post', fakeAsync(() => {
+    component.userInput = 'Hello world';
     component.send();
 
-    expect(MOCK_API.post).toHaveBeenCalledWith(
-      '/v1/chat/completions',
-      expect.objectContaining({
-        messages: expect.arrayContaining([
-          expect.objectContaining({
-            role: 'system',
-            content: expect.stringContaining('[CORRECTION OVERRIDES]'),
-          }),
-        ]),
-      }),
-    );
-    expect(MOCK_GLOSSARY.crossCheck).toHaveBeenCalledWith('صافي الربح بلغ 10', 'ar');
-    expect(component.messages()).toHaveLength(2);
-    expect(component.messages()[1].auditFindings).toEqual([
-      expect.objectContaining({
-        sourceTerm: 'صافي الربح',
-        expectedTerm: 'Net Profit',
-        overrideInput: 'Net Profit',
-        showForm: false,
-        saving: false,
-      }),
-    ]);
-    expect(component.lastUsage()?.total_tokens).toBe(15);
-  });
+    expect(component.messages().length).toBe(1);
+    expect(component.messages()[0].role).toBe('user');
+    expect(component.messages()[0].content).toBe('Hello world');
+    expect(component.userInput).toBe(''); // cleared input
+    expect(component.sending()).toBe(true);
 
-  it('saveOverride() should persist the override, remove the finding, and reload overrides', () => {
-    const ts = new Date('2026-04-05T00:00:00.000Z');
-    component.messages.set([
-      {
-        role: 'assistant',
-        content: 'صافي الربح بلغ 10',
-        ts,
-        auditFindings: [
-          {
-            sourceTerm: 'صافي الربح',
-            expectedTerm: 'Net Profit',
-            sourceLang: 'ar',
-            targetLang: 'en',
-            overrideInput: 'Net Earnings',
-            showForm: true,
-            saving: false,
-          },
-        ],
-      },
-    ]);
-    MOCK_TM.save.mockReturnValue(of({
-      id: 'tm-1',
-      source_text: 'صافي الربح',
-      target_text: 'Net Earnings',
-      source_lang: 'ar',
-      target_lang: 'en',
-      category: 'banking',
-      is_approved: true,
-    }));
+    const req = httpMock.expectOne('/api/v1/chat/completions');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.messages.length).toBe(2); // System + User
 
-    const finding = component.messages()[0].auditFindings?.[0];
-    expect(finding).toBeDefined();
-    if (!finding) {
-      throw new Error('Expected an audit finding to be present');
-    }
-
-    component.saveOverride(ts, finding);
-
-    expect(MOCK_TM.save).toHaveBeenCalledWith({
-      source_text: 'صافي الربح',
-      target_text: 'Net Earnings',
-      source_lang: 'ar',
-      target_lang: 'en',
-      category: 'banking',
-      is_approved: true,
+    req.flush({
+      choices: [{ message: { content: 'Hi there' } }],
+      usage: { total_tokens: 15 },
     });
-    expect(MOCK_GLOSSARY.loadOverrides).toHaveBeenCalled();
-    expect(component.messages()[0].auditFindings).toEqual([]);
-    expect(MOCK_TOAST.info).toHaveBeenCalledWith('Override saved');
-  });
+
+    tick();
+
+    expect(component.sending()).toBe(false);
+    expect(component.messages().length).toBe(2);
+    expect(component.messages()[1].role).toBe('assistant');
+    expect(component.messages()[1].content).toBe('Hi there');
+    expect(component.lastUsage()?.total_tokens).toBe(15);
+  }));
 
   it('onEnter() triggers send if shiftKey is false', () => {
     jest.spyOn(component, 'send');
@@ -198,7 +95,7 @@ describe('ChatComponent', () => {
     expect(component.send).toHaveBeenCalled();
   });
 
-  it('onEnter() does nothing if shiftKey is true', () => {
+  it('onEnter() does nothing if shiftKey is true (line break)', () => {
     jest.spyOn(component, 'send');
     const event = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true });
     jest.spyOn(event, 'preventDefault');

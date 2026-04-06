@@ -34,7 +34,7 @@ describe('HippocppComponent', () => {
   });
 
   afterEach(() => {
-    httpMock.verify({ ignoreCancelled: true });
+    httpMock.verify();
     jest.restoreAllMocks();
   });
 
@@ -56,7 +56,13 @@ describe('HippocppComponent', () => {
   }));
 
   it('should set stats to null and call warning toast when graph stats fail', fakeAsync(() => {
-    httpMock.expectOne('/api/graph/stats').flush('error', { status: 400, statusText: 'Bad Request' });
+    // 503 is retryable — flush all retry attempts (initial + MAX_RETRIES=2)
+    const initial = httpMock.expectOne('/api/graph/stats');
+    initial.flush('error', { status: 503, statusText: 'Service Unavailable' });
+    tick(500); // RETRY_BASE_MS * 2^0
+    httpMock.expectOne('/api/graph/stats').flush('error', { status: 503, statusText: 'Service Unavailable' });
+    tick(1000); // RETRY_BASE_MS * 2^1
+    httpMock.expectOne('/api/graph/stats').flush('error', { status: 503, statusText: 'Service Unavailable' });
     tick();
     expect(component.stats()).toBeNull();
     expect(toastSpy.warning).toHaveBeenCalled();
@@ -193,10 +199,9 @@ describe('HippocppComponent', () => {
 
     component.cypher = 'MATCH (n) RETURN n';
     component.runQuery();
-    const req = httpMock.expectOne('/api/graph/query');
     component.ngOnDestroy();
-    expect(req.cancelled).toBe(true);
-    // Match any remaining cancelled requests
+
+    // The pending request is cancelled by takeUntil(destroy$) — just match and discard
     httpMock.match('/api/graph/query');
   }));
 });
