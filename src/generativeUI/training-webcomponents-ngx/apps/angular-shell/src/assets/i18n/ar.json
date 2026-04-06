@@ -552,5 +552,9 @@
   "modelOpt.deployCompleteTitle": "اكتمل النشر",
   "modelOpt.deployFailed": "فشل النشر: {detail}",
   "modelOpt.deployErrorTitle": "خطأ في النشر",
-  "modelOpt.inferenceFailed": "فشل الاستدلال: {detail}"
+  "modelOpt.inferenceFailed": "فشل الاستدلال: {detail}",
+
+  "status.online": "متصل",
+  "status.offline": "غير متصل",
+  "chat.clearConfirm": "هل أنت متأكد من مسح سجل المحادثة؟"
 }

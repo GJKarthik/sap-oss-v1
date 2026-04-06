@@ -226,7 +226,7 @@ interface SqlPair {
     .detail-title { flex: 1; font-size: 0.9375rem; font-weight: 600; margin: 0; }
     .close-btn { background: transparent; border: none; cursor: pointer; font-size: 1rem; color: var(--sapContent_LabelColor, #6a6d70); padding: 0.25rem; }
     .info-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem;
-      td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
+      td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4); text-align: start;
         &:first-child { color: var(--sapContent_LabelColor, #6a6d70); width: 30%; font-weight: 500; }
       }
       tr:last-child td { border-bottom: none; }
