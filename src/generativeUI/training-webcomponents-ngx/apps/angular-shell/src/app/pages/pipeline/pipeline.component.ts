@@ -33,10 +33,34 @@ interface LogLine {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
-      <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('pipeline.title') }}</h1>
-        <span class="text-muted text-small">{{ i18n.t('pipeline.subtitle') }}</span>
-      </div>
+      <section class="pipeline-hero">
+        <div class="pipeline-hero__copy">
+          <span class="pipeline-hero__eyebrow">{{ i18n.t('pipeline.eyebrow') }}</span>
+          <div class="page-header">
+            <h1 class="page-title">{{ i18n.t('pipeline.title') }}</h1>
+            <span class="text-muted text-small">{{ i18n.t('pipeline.subtitle') }}</span>
+          </div>
+        </div>
+
+        <div class="pipeline-overview">
+          <div class="pipeline-overview__item">
+            <span class="pipeline-overview__label">{{ i18n.t('pipeline.overviewState') }}</span>
+            <span class="pipeline-overview__value">{{ pipelineState() }}</span>
+          </div>
+          <div class="pipeline-overview__item">
+            <span class="pipeline-overview__label">{{ i18n.t('pipeline.overviewCompleted') }}</span>
+            <span class="pipeline-overview__value">{{ completedStageCount }} / {{ stages().length }}</span>
+          </div>
+          <div class="pipeline-overview__item">
+            <span class="pipeline-overview__label">{{ i18n.t('pipeline.overviewLogs') }}</span>
+            <span class="pipeline-overview__value">{{ logLines().length }}</span>
+          </div>
+          <div class="pipeline-overview__item">
+            <span class="pipeline-overview__label">{{ i18n.t('pipeline.overviewTransport') }}</span>
+            <span class="pipeline-overview__value">WebSocket</span>
+          </div>
+        </div>
+      </section>
 
       <!-- Control card -->
       <div class="control-card">
@@ -48,6 +72,7 @@ interface LogLine {
           <div class="ws-badge" [class.ws-connected]="wsConnected()" [class.ws-disconnected]="!wsConnected()">
             {{ wsConnected() ? i18n.t('app.live') : i18n.t('app.offline') }}
           </div>
+          <div class="control-focus">{{ activeStageLabel }}</div>
           <button class="btn-primary" (click)="startPipeline()"
             [disabled]="pipelineState() === 'running' || starting()">
             {{ starting() ? i18n.t('pipeline.starting') : pipelineState() === 'running' ? i18n.t('pipeline.processing') : i18n.t('pipeline.execute') }}
@@ -81,7 +106,7 @@ interface LogLine {
       <!-- Idle state prompt -->
       @if (pipelineState() === 'idle' && logLines().length === 0) {
         <div class="idle-prompt">
-          <div style="font-size: 2.5rem; margin-bottom: 0.75rem;"><ui5-icon name="connected"></ui5-icon></div>
+          <div class="idle-prompt__icon"><ui5-icon name="connected"></ui5-icon></div>
           <p>{{ i18n.t('pipeline.idlePrompt') }}</p>
         </div>
       }
@@ -127,9 +152,80 @@ interface LogLine {
           }
         </div>
       </div>
+
+      <!-- Clear logs confirmation dialog -->
+      <ui5-dialog #clearDialog [attr.header-text]="i18n.t('pipeline.clear')">
+        <div style="padding: 1rem;">
+          <p style="margin: 0;">{{ i18n.t('pipeline.confirmClear') }}</p>
+        </div>
+        <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.5rem 1rem;">
+          <ui5-button design="Transparent" (click)="dismissClearDialog()">Cancel</ui5-button>
+          <ui5-button design="Negative" (click)="confirmClearLogs()">{{ i18n.t('pipeline.clear') }}</ui5-button>
+        </div>
+      </ui5-dialog>
     </div>
   `,
   styles: [`
+    .pipeline-hero {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1.4rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(240, 247, 255, 0.8));
+      border: 1px solid color-mix(in srgb, var(--sapTile_BorderColor, #e4e4e4) 90%, white);
+      box-shadow: var(--sapContent_Shadow1, 0 2px 8px rgba(0, 0, 0, 0.12));
+    }
+
+    .pipeline-hero__copy {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .pipeline-hero__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sapBrandColor, #0854a0) 12%, white);
+      color: var(--sapBrandColor, #0854a0);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pipeline-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .pipeline-overview__item {
+      display: grid;
+      gap: 0.3rem;
+      padding: 0.9rem 1rem;
+      border-radius: 0.85rem;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid color-mix(in srgb, var(--sapTile_BorderColor, #e4e4e4) 90%, white);
+    }
+
+    .pipeline-overview__label {
+      color: var(--sapContent_LabelColor, #6a6d70);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pipeline-overview__value {
+      color: var(--sapTextColor, #32363a);
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
     /* Control card */
     .control-card {
       display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
@@ -139,6 +235,13 @@ interface LogLine {
     }
     .control-info { flex: 1; p { margin: 0 0 0.75rem; } }
     .control-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
+
+    .control-focus {
+      color: var(--sapContent_LabelColor, #6a6d70);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: end;
+    }
 
     .ws-badge {
       padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;
@@ -217,6 +320,11 @@ interface LogLine {
       p { margin: 0; }
     }
 
+    .idle-prompt__icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
     /* Buttons */
     .btn-primary {
       background: var(--sapButton_Emphasized_Background, #0854a0); color: #fff;
@@ -266,6 +374,20 @@ interface LogLine {
     .cmd-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem; padding: 1rem; }
     .cmd-title { font-size: 0.8125rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--sapTextColor, #32363a); }
     pre { margin: 0; font-size: 0.8rem; background: var(--sapList_Background, #f5f5f5); padding: 0.5rem; border-radius: 0.25rem; overflow-x: auto; }
+
+    @media (max-width: 720px) {
+      .control-card {
+        flex-direction: column;
+      }
+
+      .control-actions {
+        align-items: flex-start;
+      }
+
+      .control-focus {
+        text-align: start;
+      }
+    }
   `],
 })
 export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
@@ -275,6 +397,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   private readonly zone = inject(NgZone);
 
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
+  @ViewChild('clearDialog') private clearDialog?: ElementRef<HTMLElement & { show(): void; close(): void }>;
 
   readonly pipelineState = signal<PipelineState>('idle');
   readonly logLines = signal<LogLine[]>([]);
@@ -294,6 +417,21 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     { num: 6, name: 'Validate', tool: 'Mangle', input: 'Pairs + Rules', output: 'Validated pairs', status: 'idle' },
     { num: 7, name: 'Format', tool: 'Zig', input: 'Validated pairs', output: 'Spider/BIRD JSONL', status: 'idle' },
   ]);
+
+  get completedStageCount(): number {
+    return this.stages().filter(stage => stage.status === 'done').length;
+  }
+
+  get activeStageLabel(): string {
+    const activeStage = this.stages().find(stage => stage.status === 'running');
+    if (activeStage) {
+      return `${activeStage.num}. ${activeStage.name}`;
+    }
+    if (this.pipelineState() === 'completed') {
+      return this.i18n.t('pipeline.overviewFinished');
+    }
+    return this.i18n.t('pipeline.overviewWaiting');
+  }
 
   get commands() {
     return [
@@ -411,6 +549,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.http.post(`${environment.apiBaseUrl}/pipeline/start`, {}).subscribe({
       next: () => {
         this.pipelineState.set('running');
+        this.updateStagesFromState('running');
         this.starting.set(false);
         this.toast.success(this.i18n.t('pipeline.startedMsg'), this.i18n.t('pipeline.startedTitle'));
       },
@@ -423,8 +562,20 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   clearLogs(): void {
-    if (this.logLines().length > 0 && !confirm(this.i18n.t('pipeline.confirmClear'))) return;
+    if (this.logLines().length === 0) {
+      this.logLines.set([]);
+      return;
+    }
+    this.clearDialog?.nativeElement.show();
+  }
+
+  confirmClearLogs(): void {
+    this.clearDialog?.nativeElement.close();
     this.logLines.set([]);
+  }
+
+  dismissClearDialog(): void {
+    this.clearDialog?.nativeElement.close();
   }
 
   stateClass(): string {
@@ -451,4 +602,5 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     } catch { /* noop */ }
   }
+
 }

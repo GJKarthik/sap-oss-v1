@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     hana_user: str = ""
     hana_password: str = ""
     hana_encrypt: bool = True
+    hana_ssl_validate_certificate: bool = False
     hana_store_schema: str = ""
     hana_store_table_prefix: str = "SAP_AIFABRIC"
 
@@ -120,8 +121,10 @@ class Settings(BaseSettings):
             object.__setattr__(self, "expose_api_docs", is_local_environment or self.debug)
         if self.seed_reference_data is None:
             object.__setattr__(self, "seed_reference_data", is_local_environment)
-        if self.require_mcp_dependencies is None:
-            object.__setattr__(self, "require_mcp_dependencies", not is_local_environment)
+        if not is_local_environment:
+            object.__setattr__(self, "require_mcp_dependencies", True)
+        elif self.require_mcp_dependencies is None:
+            object.__setattr__(self, "require_mcp_dependencies", False)
         if self.elasticsearch_mcp_url == DEFAULT_ELASTICSEARCH_MCP_URL and self.langchain_mcp_url:
             object.__setattr__(self, "elasticsearch_mcp_url", self.langchain_mcp_url)
         if self.pal_mcp_url == DEFAULT_PAL_MCP_URL and self.streaming_mcp_url:
@@ -182,20 +185,21 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "MCP dependency checks require the following settings: " + ", ".join(missing_upstreams)
                 )
-            if not is_local_environment:
-                local_upstreams = [
-                    field_name
-                    for field_name, value in (
-                        ("ELASTICSEARCH_MCP_URL", self.elasticsearch_mcp_url),
-                        ("PAL_MCP_URL", self.pal_mcp_url),
-                        ("DATA_CLEANING_MCP_URL", self.data_cleaning_mcp_url),
-                    )
-                    if _is_local_url(value) and value
-                ]
-                if local_upstreams:
-                    raise ValueError(
-                        "Production MCP upstreams must not point to localhost: " + ", ".join(local_upstreams)
-                    )
+
+        if not is_local_environment:
+            local_upstreams = [
+                field_name
+                for field_name, value in (
+                    ("ELASTICSEARCH_MCP_URL", self.elasticsearch_mcp_url),
+                    ("PAL_MCP_URL", self.pal_mcp_url),
+                    ("DATA_CLEANING_MCP_URL", self.data_cleaning_mcp_url),
+                )
+                if _is_local_url(value) and value
+            ]
+            if local_upstreams:
+                raise ValueError(
+                    "Production MCP upstreams must not point to localhost: " + ", ".join(local_upstreams)
+                )
 
         return self
 

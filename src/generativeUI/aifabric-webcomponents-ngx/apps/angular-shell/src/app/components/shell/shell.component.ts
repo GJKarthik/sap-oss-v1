@@ -11,6 +11,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { McpService } from '../../services/mcp.service';
+import { I18nService, SupportedLocale } from '../../shared/services/i18n.service';
 import {
   AI_FABRIC_NAV_ITEMS,
   AI_FABRIC_NAV_SECTIONS,
@@ -111,8 +112,9 @@ type ProductSelectEvent = CustomEvent<{
             [value]="currentLocale"
             (change)="onLocaleChange($event)"
             aria-label="Select language">
-            <option value="en">English</option>
-            <option value="ar">العربية (Arabic)</option>
+            <option *ngFor="let locale of localeOptions" [value]="locale.code">
+              {{ locale.label }}
+            </option>
           </select>
         </div>
         <div class="profile-panel__section">
@@ -207,20 +209,24 @@ type ProductSelectEvent = CustomEvent<{
             class="search-modal__input"
             placeholder="Search pages..."
             [value]="searchQuery()"
-            (input)="searchQuery.set($any($event.target).value)"
-            (keydown.enter)="selectFirstResult()"
+            (input)="onSearchInput($any($event.target).value)"
+            (keydown.enter)="selectHighlightedResult()"
             (keydown.escape)="closeSearch()"
+            (keydown.arrowdown)="moveSelection(1, $event)"
+            (keydown.arrowup)="moveSelection(-1, $event)"
             (keydown.tab)="trapSearchFocus($event)"
-            aria-label="Search navigation pages" />
+            aria-label="Search navigation pages"
+            [attr.aria-activedescendant]="'search-result-' + selectedIndex()" />
           <kbd class="search-modal__kbd">esc</kbd>
         </div>
         <ul class="search-modal__results" role="listbox">
           <li
             *ngFor="let res of searchResults(); let i = index"
             class="search-modal__result"
-            [class.search-modal__result--active]="i === 0"
+            [class.search-modal__result--active]="i === selectedIndex()"
             role="option"
-            [attr.aria-selected]="i === 0"
+            [id]="'search-result-' + i"
+            [attr.aria-selected]="i === selectedIndex()"
             (click)="navigateFromSearch(res.route)">
             <ui5-icon [name]="res.icon" aria-hidden="true"></ui5-icon>
             <div class="search-modal__result-text">
@@ -248,17 +254,19 @@ export class ShellComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly mcpService = inject(McpService);
+  private readonly i18n = inject(I18nService);
 
   sideNavCollapsed = false;
   mobileNavOpen = false;
   isMobile = false;
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown' = 'unknown';
   currentUser = this.authService.getUser();
-  currentLocale = 'en';
+  currentLocale: SupportedLocale = 'en';
 
   // Search overlay state
   showSearch = signal(false);
   searchQuery = signal('');
+  selectedIndex = signal(0);
   searchResults = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     if (!query) return this.navItems;
@@ -275,6 +283,10 @@ export class ShellComponent implements OnInit {
   
   readonly navItems: AiFabricNavItem[] = AI_FABRIC_NAV_ITEMS;
   readonly navSections: AiFabricNavSection[] = AI_FABRIC_NAV_SECTIONS;
+  readonly localeOptions = this.i18n.getSupportedLocales().map((locale) => ({
+    ...locale,
+    label: locale.code === 'en' ? locale.name : `${locale.nativeName} (${locale.name})`,
+  }));
 
   @HostListener('window:resize')
   onResize(): void {
@@ -298,6 +310,12 @@ export class ShellComponent implements OnInit {
 
   ngOnInit(): void {
     this.checkMobile();
+
+    this.i18n.locale$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((locale) => {
+        this.currentLocale = locale;
+      });
     
     this.mcpService.health$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -422,9 +440,7 @@ export class ShellComponent implements OnInit {
 
   onLocaleChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
-    this.currentLocale = select.value;
-    document.documentElement.setAttribute('lang', this.currentLocale);
-    document.documentElement.setAttribute('dir', this.currentLocale === 'ar' ? 'rtl' : 'ltr');
+    void this.i18n.setLocale(select.value as SupportedLocale);
   }
 
   toggleSideNav(): void {
@@ -459,11 +475,24 @@ export class ShellComponent implements OnInit {
     this.navigateTo(route);
   }
 
-  selectFirstResult(): void {
+  onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    this.selectedIndex.set(0);
+  }
+
+  selectHighlightedResult(): void {
     const results = this.searchResults();
-    if (results.length > 0) {
-      this.navigateFromSearch(results[0].route);
+    const idx = this.selectedIndex();
+    if (results.length > 0 && idx < results.length) {
+      this.navigateFromSearch(results[idx].route);
     }
+  }
+
+  moveSelection(delta: number, event: Event): void {
+    event.preventDefault();
+    const len = this.searchResults().length;
+    if (len === 0) return;
+    this.selectedIndex.set((this.selectedIndex() + delta + len) % len);
   }
 
   trapSearchFocus(event: Event): void {
