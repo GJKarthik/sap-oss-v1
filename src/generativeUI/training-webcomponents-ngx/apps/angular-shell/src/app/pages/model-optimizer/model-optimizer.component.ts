@@ -99,11 +99,11 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       <h2 class="section-title">{{ i18n.t('modelOpt.datalogValidation') }}</h2>
       <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-inline-start: 4px solid var(--sapBrandColor);">
         <div>
-          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: var(--sapTextColor, #333);">{{ i18n.t('modelOpt.datalogDesc') }}</p>
+          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">{{ i18n.t('modelOpt.datalogDesc') }}</p>
           @if (mangleStatus() === 'passed') {
-            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: var(--sapPositiveBackground, #e8f5e9);">{{ i18n.t('modelOpt.invariantsPassed') }}</span>
+            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">{{ i18n.t('modelOpt.invariantsPassed') }}</span>
           } @else if (mangleStatus() === 'failed') {
-            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: var(--sapNegativeBackground, #ffebee);">{{ i18n.t('modelOpt.violationDetected') }}</span>
+            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">{{ i18n.t('modelOpt.violationDetected') }}</span>
           } @else {
             <span class="text-muted text-small" style="display: inline-block;">{{ i18n.t('modelOpt.unverified') }}</span>
           }
@@ -270,7 +270,6 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <strong>{{ i18n.t('form.errorsTitle') }}</strong>
             <ul><li *ngFor="let e of formErrors()">{{ e }}</li></ul>
           </div>
-
           <div class="form-actions" style="margin-top: 1rem;">
             <ui5-button design="Emphasized" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
               {{ submitting() ? i18n.t('modelOpt.submitting') : i18n.t('modelOpt.runJob') }}
@@ -387,13 +386,13 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
             <div class="chat-window">
               @for (msg of chatHistory(); track $index) {
                 <div class="chat-bubble" [class.user]="msg.role === 'user'">
-                    <strong style="font-size: 0.75rem; color: var(--sapContent_LabelColor);">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.modelRole') }}</strong>
+                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.modelRole') }}</strong>
                   <p style="margin: 0.2rem 0 0; font-size: 0.875rem;"><bdi>{{ msg.text }}</bdi></p>
                 </div>
               }
               @if (chatLoading()) {
                 <div class="chat-bubble loading">
-                  <em style="font-size: 0.875rem; color: var(--sapContent_LabelColor, #666);">{{ i18n.t('modelOpt.computing') }}</em>
+                  <em style="font-size: 0.875rem; color: #666;">{{ i18n.t('modelOpt.computing') }}</em>
                 </div>
               }
             </div>
@@ -461,8 +460,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       color: var(--sapContent_LabelColor, #6a6d70);
 
       &.badge--quant {
-        background: var(--sapInformationBackground, #e3f2fd);
-        color: var(--sapInformationColor, #1565c0);
+        background: #e3f2fd;
+        color: #1565c0;
       }
     }
 
@@ -500,7 +499,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     .btn-primary {
       padding: 0.375rem 0.875rem;
       background: var(--sapBrandColor, #0854a0);
-      color: var(--sapButton_Emphasized_TextColor, #fff);
+      color: #fff;
       border: none;
       border-radius: 0.25rem;
       cursor: pointer;
@@ -525,7 +524,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       th {
         padding: 0.5rem 0.75rem;
         background: var(--sapList_HeaderBackground, #f5f5f5);
-        text-align: start;
+        text-align: left;
         font-weight: 600;
         color: var(--sapContent_LabelColor, #6a6d70);
         font-size: 0.7rem;
@@ -562,32 +561,21 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     }
 
     .badge--best {
-      background: var(--sapPositiveBackground, #e0f2f1);
-      color: var(--sapPositiveColor, #00695c);
+      background: #e0f2f1;
+      color: #00695c;
     }
 
     .t4-warn {
-      color: var(--sapNegativeColor, #c62828);
+      color: #c62828;
     }
 
     .full-width {
       grid-column: 1 / -1;
     }
 
-    .form-error-summary {
-      background: var(--sapNegativeBackground, #ffebee);
-      border: 1px solid var(--sapNegativeColor, #b00);
-      border-radius: 0.375rem;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1rem;
-      font-size: 0.8125rem;
-      color: var(--sapNegativeColor, #b00);
-      ul { margin: 0.25rem 0 0; padding-inline-start: 1.25rem; }
-    }
-
     .cost-estimate {
-      background: var(--sapInformationBackground, #e8f4fd);
-      color: var(--sapInformationColor, #0d47a1);
+      background: #e8f4fd;
+      color: #0d47a1;
       padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       font-size: 0.8125rem;
@@ -616,8 +604,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     
     .vram-danger {
       border-color: var(--sapNegativeColor, #b00);
-      background: var(--sapNegativeBackground, #ffebee);
-      color: var(--sapNegativeColor, #c62828);
+      background: #ffebee;
+      color: #c62828;
     }
     
     .vram-header {

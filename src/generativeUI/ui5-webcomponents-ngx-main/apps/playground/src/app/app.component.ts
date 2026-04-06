@@ -136,6 +136,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateDemoTourBanner();
   }
 
+  dismissDemoTour(): void {
+    this.demoTourDismissed = true;
+    localStorage.setItem('demo-tour-dismissed', 'true');
+    this.demoTour.stop();
+    this.updateDemoTourBanner();
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

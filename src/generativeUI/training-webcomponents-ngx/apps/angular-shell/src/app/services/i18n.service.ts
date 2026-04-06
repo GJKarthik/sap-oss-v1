@@ -18,6 +18,9 @@ export class I18nService {
   readonly isRtl = computed(() => this.currentLang() === 'ar');
   readonly dir = computed(() => this.isRtl() ? 'rtl' : 'ltr');
 
+  /** Flips to true once translation JSON files have been loaded. */
+  readonly translationsReady = signal(false);
+
   private translations: Record<Language, TranslationMap> = { en: {}, ar: {} };
   private loaded = false;
   private mfCache = new Map<string, (params: Record<string, unknown>) => string>();
@@ -46,6 +49,7 @@ export class I18nService {
       this.translations.en = await enResp.json();
       this.translations.ar = await arResp.json();
       this.loaded = true;
+      this.translationsReady.set(true);
     } catch (e) {
       if (isDevMode()) {
         console.warn('Failed to load translations, using keys as fallback', e);

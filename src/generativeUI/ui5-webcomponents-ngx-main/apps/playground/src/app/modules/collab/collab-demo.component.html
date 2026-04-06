@@ -57,10 +57,10 @@
           @for (p of participants; track p.userId) {
           <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--sapGroup_TitleBorderColor,#d9d9d9);background:var(--sapBackgroundColor,#fff);">
             <span
-              role="img"
-              [attr.aria-label]="p.displayName"
               [style.background]="p.color"
-              style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;color:var(--sapContent_ContrastTextColor, #fff);font-weight:700;font-size:0.8rem;">
+              style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;color:white;font-weight:700;font-size:0.8rem;"
+              role="img"
+              [attr.aria-label]="p.displayName">
               {{ p.displayName.charAt(0).toUpperCase() }}
             </span>
             <div>
@@ -130,7 +130,7 @@
   <ui5-dialog #leaveConfirmDialog [attr.header-text]="'COLLAB_LEAVE_CONFIRM_TITLE' | ui5I18n">
     <p style="padding:1rem;">{{ 'COLLAB_LEAVE_CONFIRM_TEXT' | ui5I18n }}</p>
     <div slot="footer" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.5rem 1rem;">
-      <ui5-button design="Transparent" (click)="leaveConfirmDialog.close()">{{ 'COLLAB_LEAVE_CONFIRM_CANCEL' | ui5I18n }}</ui5-button>
+      <ui5-button design="Transparent" (click)="cancelLeave()">{{ 'COLLAB_LEAVE_CONFIRM_CANCEL' | ui5I18n }}</ui5-button>
       <ui5-button design="Negative" (click)="onConfirmLeave()">{{ 'COLLAB_LEAVE_CONFIRM_LEAVE' | ui5I18n }}</ui5-button>
     </div>
   </ui5-dialog>

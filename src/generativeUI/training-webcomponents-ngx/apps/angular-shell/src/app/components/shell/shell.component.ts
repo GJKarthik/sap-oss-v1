@@ -90,10 +90,11 @@ type ProductSelectEvent = Event & {
         (profile-click)="openProfile($event)"
       >
         <ui5-avatar slot="profile" icon="employee"></ui5-avatar>
-        @for (item of navItems; track item.route) {
+        @for (item of navItems(); track item.route) {
           <ui5-shellbar-item
             [attr.icon]="item.icon"
             [attr.text]="item.label"
+            count=""
             (item-click)="navigateTo(item.route)"
           ></ui5-shellbar-item>
         }
@@ -119,7 +120,7 @@ type ProductSelectEvent = Event & {
       </ui5-popover>
 
       <nav class="app-nav" role="navigation" aria-label="Training navigation">
-        @for (item of navItems; track item.route) {
+        @for (item of navItems(); track item.route) {
           <ui5-button
             design="Transparent"
             class="app-nav__item"
@@ -133,7 +134,7 @@ type ProductSelectEvent = Event & {
 
         <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
         <ui5-tag [design]="arabicModelOnline() ? 'Positive' : 'Negative'" [attr.aria-label]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ i18n.t('chat.arabicFinanceModel') }}: {{ arabicModelOnline() ? i18n.t('status.online') : i18n.t('status.offline') }}</ui5-tag>
-
+        
         @if (userSettings.showLanguageOptions()) {
           <ui5-select [ngModel]="i18n.currentLang()" (change)="onLangChange($event)">
             <ui5-option value="en">English</ui5-option>
@@ -262,7 +263,7 @@ type ProductSelectEvent = Event & {
       }
 
       .header-btn {
-        background: var(--sapBaseColor, #fff);
+        background: #fff;
         border: 1px solid var(--sapField_BorderColor, #89919a);
         color: var(--sapTextColor, #32363a);
         padding: 0.25rem 0.75rem;
@@ -281,7 +282,7 @@ type ProductSelectEvent = Event & {
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 1rem;
-        background: var(--sapBaseColor, #fff);
+        background: #fff;
         border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
       }
 
@@ -310,7 +311,7 @@ type ProductSelectEvent = Event & {
       }
 
       .mode-select {
-        background: var(--sapField_Background, #fff);
+        background: #fff;
         color: var(--sapTextColor, #32363a);
         border: 1px solid var(--sapField_BorderColor, #89919a);
         border-radius: 0.25rem;
@@ -320,7 +321,7 @@ type ProductSelectEvent = Event & {
         cursor: pointer;
 
         option {
-          background: var(--sapField_Background, #fff);
+          background: #fff;
           color: var(--sapTextColor, #32363a);
         }
       }
@@ -332,7 +333,7 @@ type ProductSelectEvent = Event & {
 
       .diagnostics-drawer {
         border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-        background: var(--sapBaseColor, #fff);
+        background: #fff;
         padding: 0.75rem 1rem;
       }
 
@@ -385,28 +386,10 @@ type ProductSelectEvent = Event & {
       .model-online {
         color: var(--sapPositiveColor, #107e3e);
       }
-      .model-online .model-status-dot::before {
-        content: '';
-        display: inline-block;
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        background: var(--sapPositiveColor, #107e3e);
-        margin-inline-end: 4px;
-        vertical-align: middle;
-      }
 
       .model-offline {
         color: var(--sapNegativeColor, #b00);
         opacity: 0.8;
-      }
-      .model-offline .model-status-dot::before {
-        content: '';
-        display: inline-block;
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        background: var(--sapNegativeColor, #b00);
-        margin-inline-end: 4px;
-        vertical-align: middle;
       }
 
       .lang-toggle {
@@ -439,7 +422,18 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   readonly arabicModelOnline = signal(false);
 
-  get navItems(): NavItem[] {
+  /**
+   * Computed signal so the nav labels reactively update when
+   * translations finish loading or the language changes.
+   * Reading `translationsReady` and `currentLang` inside the
+   * computed guarantees Angular re-evaluates after the async
+   * fetch completes (fixes the SPA-navigation i18n regression).
+   */
+  readonly navItems = computed(() => {
+    // Subscribe to reactive signals so Angular knows to re-render
+    this.i18n.translationsReady();
+    this.i18n.currentLang();
+
     return [
       { label: this.i18n.t('nav.dashboard'), icon: 'home', route: '/dashboard' },
       { label: this.i18n.t('nav.pipeline'), icon: 'process', route: '/pipeline' },
@@ -456,7 +450,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       { label: this.i18n.t('nav.glossaryManager'), icon: 'activity-items', route: '/glossary-manager' },
       { label: this.i18n.t('nav.arabicWizard'), icon: 'learning-assistant', route: '/arabic-wizard' },
     ];
-  }
+  });
 
   readonly version = '1.0.0';
   apiKeyDraft = this.auth.token() ?? '';
@@ -490,8 +484,8 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   searchResults = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.navItems;
-    return this.navItems.filter(i => 
+    if (!q) return this.navItems();
+    return this.navItems().filter(i =>
       i.label.toLowerCase().includes(q) || 
       i.route.toLowerCase().includes(q)
     );
