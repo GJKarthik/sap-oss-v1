@@ -59,7 +59,7 @@ type ProductSelectEvent = Event & {
           <div class="search-modal" (click)="$event.stopPropagation()">
             <div class="search-header-container">
               <ui5-icon class="search-icon" name="search"></ui5-icon>
-              <input #searchInput type="text" class="search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" [placeholder]="i18n.t('app.search.placeholder')" (keydown.enter)="selectFirstResult()" (keydown.escape)="closeSearch()" />
+              <input #searchInput type="text" class="search-input" name="searchQuery" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" [placeholder]="i18n.t('app.search.placeholder')" (keydown.enter)="selectFirstResult()" (keydown.escape)="closeSearch()" />
               <ui5-button design="Transparent" (click)="closeSearch()">{{ i18n.t('app.search.esc') }}</ui5-button>
             </div>
             <div class="search-results-list">
@@ -132,23 +132,27 @@ type ProductSelectEvent = Event & {
 
         <div class="app-nav__spacer"></div>
 
-        <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
-        <ui5-tag [design]="arabicModelOnline() ? 'Positive' : 'Negative'" [attr.aria-label]="arabicModelOnline() ? i18n.t('chat.modelOnline') : i18n.t('chat.modelOffline')">{{ i18n.t('chat.arabicFinanceModel') }}: {{ arabicModelOnline() ? i18n.t('status.online') : i18n.t('status.offline') }}</ui5-tag>
+        @if (store.wsState() !== 'offline') {
+          <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
+        }
+        @if (arabicModelOnline()) {
+          <ui5-tag design="Positive" [attr.aria-label]="i18n.t('chat.modelOnline')">{{ i18n.t('chat.arabicFinanceModel') }}: {{ i18n.t('status.online') }}</ui5-tag>
+        }
         
         @if (userSettings.showLanguageOptions()) {
-          <ui5-select [ngModel]="i18n.currentLang()" (change)="onLangChange($event)">
-            <ui5-option value="en">English</ui5-option>
-            <ui5-option value="ar">العربية (Arabic)</ui5-option>
+          <ui5-select (change)="onLangChange($event)">
+            <ui5-option value="en" [attr.selected]="i18n.currentLang() === 'en' ? '' : null">English</ui5-option>
+            <ui5-option value="ar" [attr.selected]="i18n.currentLang() === 'ar' ? '' : null">العربية (Arabic)</ui5-option>
           </ui5-select>
         }
         
         <ui5-button design="Transparent" (click)="showDiagnostics.set(!showDiagnostics())" [attr.title]="i18n.t('app.diagnostics')">
           {{ i18n.t('app.diagnostics') }}
         </ui5-button>
-        <ui5-select [ngModel]="userSettings.mode()" (change)="onModeChange($event)">
-          <ui5-option value="novice">{{ i18n.t('mode.novice') }}</ui5-option>
-          <ui5-option value="intermediate">{{ i18n.t('mode.intermediate') }}</ui5-option>
-          <ui5-option value="expert">{{ i18n.t('mode.expert') }}</ui5-option>
+        <ui5-select (change)="onModeChange($event)">
+          <ui5-option value="novice" [attr.selected]="userSettings.mode() === 'novice' ? '' : null">{{ i18n.t('mode.novice') }}</ui5-option>
+          <ui5-option value="intermediate" [attr.selected]="userSettings.mode() === 'intermediate' ? '' : null">{{ i18n.t('mode.intermediate') }}</ui5-option>
+          <ui5-option value="expert" [attr.selected]="userSettings.mode() === 'expert' ? '' : null">{{ i18n.t('mode.expert') }}</ui5-option>
         </ui5-select>
       </nav>
 
