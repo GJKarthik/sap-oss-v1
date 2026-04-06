@@ -52,9 +52,14 @@ describe('ModelOptimizerComponent', () => {
     mockMode.set('novice'); // Default behavior
     Object.values(mockToast).forEach(spy => spy.mockClear());
     fixture.detectChanges();
+    httpMock.expectOne('/api/models/catalog').flush([
+      { name: 'TestModel', size_gb: 4, parameters: '1B', recommended_quant: 'int8', t4_compatible: true },
+    ]);
+    httpMock.expectOne('/api/jobs').flush([]);
   });
 
   afterEach(() => {
+    component.ngOnDestroy();
     httpMock.verify();
   });
 
@@ -92,21 +97,30 @@ describe('ModelOptimizerComponent', () => {
 
     component.createJob();
 
-    const req = httpMock.expectOne('/api/v1/jobs');
+    const req = httpMock.expectOne('/api/jobs');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      model_name: 'test-model',
-      quant_format: 'int8',
-      calib_samples: 256,
-      calib_seq_len: 2048,
-      export_format: 'vllm',
-      enable_pruning: false,
-      pruning_sparsity: 0.2, // Default hardcoded in createJob currently
+      config: {
+        model_name: 'test-model',
+        quant_format: 'int8',
+        calib_samples: 256,
+        calib_seq_len: 2048,
+        export_format: 'vllm',
+        enable_pruning: false,
+        pruning_sparsity: 0.2,
+      },
     });
 
-    req.flush({ job_id: 'job-1234', status: 'pending' });
+    req.flush({
+      id: 'job-1234',
+      name: 'Optimizing test-model',
+      status: 'pending',
+      progress: 0,
+      created_at: '2026-04-06T00:00:00Z',
+      config: req.request.body.config,
+    });
 
-    expect(mockAppStore.addJob).toHaveBeenCalled();
-    expect(mockToast.success).toHaveBeenCalledWith('Job pending', 'Job Created');
+    expect(component.jobs()[0]?.id).toBe('job-1234');
+    expect(mockToast.success).toHaveBeenCalledWith('Job job-1234 submitted successfully', 'Job Created');
   });
 });

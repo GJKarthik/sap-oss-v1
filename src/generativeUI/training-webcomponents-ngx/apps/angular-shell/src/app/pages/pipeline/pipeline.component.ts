@@ -61,7 +61,7 @@ interface LogLine {
           <span class="terminal-title">{{ i18n.t('pipeline.terminalTitle') }}</span>
           <span class="terminal-status" [class]="stateClass()">{{ pipelineState().toUpperCase() }}</span>
         </div>
-        <div class="terminal-body" #terminalBody>
+        <div class="terminal-body" #terminalBody role="log" aria-live="polite" [attr.aria-label]="i18n.t('pipeline.terminalTitle')">
           @for (line of logLines(); track $index) {
             <div class="log-line log-line--{{ line.kind }}">
               <span class="log-prefix">›</span>
@@ -91,9 +91,10 @@ interface LogLine {
         <h2 class="section-title">{{ i18n.t('pipeline.stages') }}</h2>
         <div class="stages-table-wrapper">
           <table class="stages-table">
+            <caption class="sr-only">{{ i18n.t('pipeline.stages') }}</caption>
             <thead>
               <tr>
-                <th>{{ i18n.t('pipeline.stageNum') }}</th><th>{{ i18n.t('pipeline.stageName') }}</th><th>{{ i18n.t('pipeline.stageTool') }}</th><th>{{ i18n.t('pipeline.stageInput') }}</th><th>{{ i18n.t('pipeline.stageOutput') }}</th><th>{{ i18n.t('pipeline.stageStatus') }}</th>
+                <th scope="col">{{ i18n.t('pipeline.stageNum') }}</th><th scope="col">{{ i18n.t('pipeline.stageName') }}</th><th scope="col">{{ i18n.t('pipeline.stageTool') }}</th><th scope="col">{{ i18n.t('pipeline.stageInput') }}</th><th scope="col">{{ i18n.t('pipeline.stageOutput') }}</th><th scope="col">{{ i18n.t('pipeline.stageStatus') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -227,7 +228,7 @@ interface LogLine {
       overflow: hidden; border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
       th {
         padding: 0.625rem 0.75rem; background: var(--sapList_HeaderBackground, #f5f5f5);
-        text-align: left; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70);
+        text-align: start; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70);
         border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
         text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.04em;
       }
@@ -242,6 +243,17 @@ interface LogLine {
 
     /* Commands */
     .pipeline-commands { margin-bottom: 1.5rem; }
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
     .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
     .cmd-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem; padding: 1rem; }
     .cmd-title { font-size: 0.8125rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--sapTextColor, #32363a); }
@@ -275,12 +287,14 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     { num: 7, name: 'Format', tool: 'Zig', input: 'Validated pairs', output: 'Spider/BIRD JSONL', status: 'idle' },
   ]);
 
-  readonly commands = [
-    { title: 'Full pipeline (all 7 stages)', command: 'cd pipeline && make all' },
-    { title: 'Step 1 — Preconvert Excel → CSV', command: 'cd pipeline && make preconvert' },
-    { title: 'Step 2 — Build Zig binary', command: 'cd pipeline/zig && zig build' },
-    { title: 'Run Zig pipeline tests', command: 'cd pipeline/zig && zig build test' },
-  ];
+  get commands() {
+    return [
+      { title: this.i18n.t('pipeline.cmd.all'), command: 'cd pipeline && make all' },
+      { title: this.i18n.t('pipeline.cmd.preconvert'), command: 'cd pipeline && make preconvert' },
+      { title: this.i18n.t('pipeline.cmd.build'), command: 'cd pipeline/zig && zig build' },
+      { title: this.i18n.t('pipeline.cmd.test'), command: 'cd pipeline/zig && zig build test' },
+    ];
+  }
 
   ngOnInit() {
     this.connectWebSocket();

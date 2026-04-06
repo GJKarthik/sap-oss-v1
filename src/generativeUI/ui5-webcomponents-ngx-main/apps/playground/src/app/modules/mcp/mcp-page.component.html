@@ -25,7 +25,7 @@
     </ui5-button>
   </div>
 
-  <ui5-busy-indicator *ngIf="loading || invoking" active size="M"></ui5-busy-indicator>
+  <ui5-busy-indicator *ngIf="loading || invoking" active size="M" [text]="'LOADING' | ui5I18n"></ui5-busy-indicator>
 
   <pre *ngIf="lastCallResult" class="mcp-page__result"><bdi>{{ lastCallResult }}</bdi></pre>
 </section>

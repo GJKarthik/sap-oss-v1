@@ -86,4 +86,9 @@ export const SAC_I18N_AR: Record<string, string> = {
   'table.noRows': 'لا توجد صفوف للعرض.',
   'table.paginationEmpty': '٠ من ٠',
   'table.paginationInfo': '{{start}}-{{end}} من {{total}}',
+  'table.selectAll': 'تحديد كل الصفوف',
+  'table.selectRow': 'تحديد الصف {{id}}',
+  'table.previousPage': 'الصفحة السابقة',
+  'table.nextPage': 'الصفحة التالية',
+  'table.defaultAriaLabel': 'جدول البيانات',
 };

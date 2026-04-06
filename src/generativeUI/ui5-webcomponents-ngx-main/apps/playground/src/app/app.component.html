@@ -1,3 +1,6 @@
+<!-- Skip to content (A-05) -->
+<a class="skip-link" href="#main-content">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
+
 <!-- App Shell -->
 <div class="app-shell">
 
@@ -82,54 +85,63 @@
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/')"
+      [attr.aria-current]="isActive('/') ? 'page' : null"
       (click)="navigateTo('/')">
       {{ 'NAV_HOME' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/forms')"
+      [attr.aria-current]="isActive('/forms') ? 'page' : null"
       (click)="navigateTo('/forms')">
       {{ 'NAV_FORMS' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/joule')"
+      [attr.aria-current]="isActive('/joule') ? 'page' : null"
       (click)="navigateTo('/joule')">
       {{ 'NAV_JOULE' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/collab')"
+      [attr.aria-current]="isActive('/collab') ? 'page' : null"
       (click)="navigateTo('/collab')">
       {{ 'NAV_COLLAB' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/generative')"
+      [attr.aria-current]="isActive('/generative') ? 'page' : null"
       (click)="navigateTo('/generative')">
       {{ 'NAV_GENERATIVE' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/components')"
+      [attr.aria-current]="isActive('/components') ? 'page' : null"
       (click)="navigateTo('/components')">
       {{ 'NAV_COMPONENTS' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/mcp')"
+      [attr.aria-current]="isActive('/mcp') ? 'page' : null"
       (click)="navigateTo('/mcp')">
       {{ 'NAV_MCP' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/ocr')"
+      [attr.aria-current]="isActive('/ocr') ? 'page' : null"
       (click)="navigateTo('/ocr')">
       {{ 'NAV_OCR' | ui5I18n }}
     </button>
     <button
       class="app-nav__item"
       [class.app-nav__item--active]="isActive('/readiness')"
+      [attr.aria-current]="isActive('/readiness') ? 'page' : null"
       (click)="navigateTo('/readiness')">
       {{ 'NAV_READINESS' | ui5I18n }}
     </button>
@@ -139,7 +151,7 @@
     <!-- Theme switcher in nav bar -->
     <div class="app-nav__theme">
       <label class="app-nav__theme-label">{{ 'THEME_LABEL' | ui5I18n }}</label>
-      <ui5-select style="min-width:160px" (change)="onThemeChange($event)">
+      <ui5-select style="min-width:160px" [attr.accessible-name]="'THEME_LABEL' | ui5I18n" (change)="onThemeChange($event)">
         <ui5-option value="sap_horizon" [attr.selected]="currentTheme === 'sap_horizon' ? true : null">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
         <ui5-option value="sap_horizon_dark" [attr.selected]="currentTheme === 'sap_horizon_dark' ? true : null">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
         <ui5-option value="sap_fiori_3" [attr.selected]="currentTheme === 'sap_fiori_3' ? true : null">{{ 'THEME_QUARTZ_LIGHT' | ui5I18n }}</ui5-option>
@@ -148,7 +160,7 @@
     </div>
     <div class="app-nav__theme">
       <label class="app-nav__theme-label">{{ 'LANGUAGE_LABEL' | ui5I18n }}</label>
-      <ui5-select style="min-width:120px" (change)="onLanguageChange($event)">
+      <ui5-select style="min-width:120px" [attr.accessible-name]="'LANGUAGE_LABEL' | ui5I18n" (change)="onLanguageChange($event)">
         <ui5-option value="en" [attr.selected]="currentLanguage === 'en' ? true : null">{{ 'LANGUAGE_EN' | ui5I18n }}</ui5-option>
         <ui5-option value="ar" [attr.selected]="currentLanguage === 'ar' ? true : null">{{ 'LANGUAGE_AR' | ui5I18n }}</ui5-option>
       </ui5-select>
@@ -178,7 +190,7 @@
   <playground-live-health-panel></playground-live-health-panel>
 
   <!-- Main Content -->
-  <main class="app-content">
+  <main id="main-content" class="app-content">
     <router-outlet></router-outlet>
   </main>
 

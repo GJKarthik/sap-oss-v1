@@ -87,7 +87,7 @@ interface CompletionResponse {
 
       <!-- Chat area -->
       <div class="chat-main">
-        <div class="messages-area" #messagesArea>
+        <div class="messages-area" #messagesArea role="log" aria-live="polite" aria-relevant="additions">
           @if (!messages().length) {
             <div class="empty-state">
               <span class="empty-icon"><ui5-icon name="discussion-2"></ui5-icon></span>
@@ -150,8 +150,9 @@ interface CompletionResponse {
           }
 
           @if (sending()) {
-            <div class="typing-indicator">
-              <span></span><span></span><span></span>
+            <div class="typing-indicator" role="status" [attr.aria-label]="i18n.t('chat.assistantTyping')">
+              <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+              <span class="sr-only">{{ i18n.t('chat.assistantTyping') }}</span>
             </div>
           }
         </div>
@@ -192,6 +193,22 @@ interface CompletionResponse {
       gap: 1rem;
       overflow-y: auto;
       flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .chat-sidebar { display: none; }
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
     }
 
     .rtl .chat-sidebar {

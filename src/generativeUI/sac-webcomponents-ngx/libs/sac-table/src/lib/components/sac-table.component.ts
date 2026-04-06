@@ -53,37 +53,44 @@ const EMPTY_SELECTION: TableSelection = {
       </div>
 
       <div class="sac-table__container">
-        <table class="sac-table__grid">
+        <table class="sac-table__grid" role="grid" [attr.aria-label]="title || i18n.t('table.defaultAriaLabel')">
           <thead class="sac-table__head">
             <tr>
-              <th *ngIf="showSelectAll" class="sac-table__th sac-table__th--checkbox">
+              <th *ngIf="showSelectAll" class="sac-table__th sac-table__th--checkbox" scope="col">
                 <input
                   type="checkbox"
                   [checked]="allDisplayedRowsSelected"
                   [indeterminate]="selectionIndeterminate"
+                  [attr.aria-label]="i18n.t('table.selectAll')"
                   (change)="toggleSelectAll($event)"
                 />
               </th>
-              <th *ngIf="selectable && !multiSelect" class="sac-table__th sac-table__th--checkbox"></th>
+              <th *ngIf="selectable && !multiSelect" class="sac-table__th sac-table__th--checkbox" scope="col"></th>
               <th
                 *ngFor="let col of columns; trackBy: trackByColumnId"
                 class="sac-table__th"
+                scope="col"
                 [class.sac-table__th--sortable]="col.sortable"
                 [style.width]="col.width"
                 [style.text-align]="resolveColumnAlignment(col)"
+                [attr.tabindex]="col.sortable ? 0 : null"
+                [attr.role]="col.sortable ? 'columnheader' : null"
+                [attr.aria-sort]="effectiveSortConfig?.column === col.id ? (effectiveSortConfig?.direction === 'asc' ? 'ascending' : 'descending') : null"
                 (click)="col.sortable && handleSort(col)"
+                (keydown.enter)="col.sortable && handleSort(col)"
+                (keydown.space)="col.sortable && $event.preventDefault(); col.sortable && handleSort(col)"
               >
                 {{ col.label }}
-                <span class="sac-table__sort-icon" *ngIf="col.sortable">
+                <span class="sac-table__sort-icon" *ngIf="col.sortable" aria-hidden="true">
                   {{ effectiveSortConfig?.column === col.id ? (effectiveSortConfig?.direction === 'asc' ? '▲' : '▼') : '' }}
                 </span>
               </th>
             </tr>
           </thead>
           <tbody class="sac-table__body">
-            <tr *ngIf="showEmptyState" class="sac-table__empty-row">
+            <tr *ngIf="!loading && showEmptyState" class="sac-table__empty-row">
               <td class="sac-table__empty-cell" [attr.colspan]="emptyStateColumnSpan">
-                {{ loading ? i18n.t('table.loadingData') : i18n.t('table.noRows') }}
+                {{ i18n.t('table.noRows') }}
               </td>
             </tr>
 
@@ -97,6 +104,7 @@ const EMPTY_SELECTION: TableSelection = {
                 <input
                   type="checkbox"
                   [checked]="isRowSelected(row)"
+                  [attr.aria-label]="i18n.t('table.selectRow', { id: row.id })"
                   (click)="$event.stopPropagation()"
                   (change)="toggleRowSelection(row, $event)"
                 />
@@ -117,32 +125,46 @@ const EMPTY_SELECTION: TableSelection = {
       <div class="sac-table__footer" *ngIf="hasPagination">
         <div class="sac-table__pagination">
           <span>{{ paginationInfo }}</span>
-          <button [disabled]="currentPage <= 1" (click)="goToPage(currentPage - 1)">←</button>
-          <button [disabled]="currentPage >= totalPages" (click)="goToPage(currentPage + 1)">→</button>
+          <button [disabled]="currentPage <= 1" [attr.aria-label]="i18n.t('table.previousPage')" (click)="goToPage(currentPage - 1)">←</button>
+          <button [disabled]="currentPage >= totalPages" [attr.aria-label]="i18n.t('table.nextPage')" (click)="goToPage(currentPage + 1)">→</button>
         </div>
       </div>
 
-      <div class="sac-table__loading" *ngIf="loading">
-        <span class="sac-table__spinner"></span>
+      <div class="sac-table__loading" *ngIf="loading" role="status" aria-live="polite">
+        <span class="sac-table__spinner" aria-hidden="true"></span>
+        <span class="sac-table__sr-only">{{ i18n.t('table.loadingData') }}</span>
       </div>
     </div>
   `,
   styles: [`
     .sac-table {
       position: relative;
-      border: 1px solid #e5e5e5;
+      border: 1px solid var(--sapList_BorderColor, #e5e5e5);
       border-radius: 4px;
       overflow: hidden;
-      background: #fff;
+      background: var(--sapList_Background, #fff);
+      font-family: var(--sapFontFamily, '72', Arial, sans-serif);
     }
     .sac-table__header {
       padding: 12px 16px;
-      border-bottom: 1px solid #e5e5e5;
+      border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5);
     }
     .sac-table__title {
       margin: 0;
-      font-size: 14px;
+      font-size: var(--sapFontSize, 14px);
       font-weight: 600;
+      color: var(--sapTextColor, #32363a);
+    }
+    .sac-table__sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
     }
     .sac-table__container {
       overflow-x: auto;
@@ -153,52 +175,52 @@ const EMPTY_SELECTION: TableSelection = {
     }
     .sac-table__th {
       padding: 12px 16px;
-      text-align: left;
+      text-align: start;
       font-weight: 600;
-      font-size: 12px;
-      color: #32363a;
-      background: #f5f6f7;
-      border-bottom: 1px solid #e5e5e5;
+      font-size: var(--sapFontSmallSize, 12px);
+      color: var(--sapTextColor, #32363a);
+      background: var(--sapList_HeaderBackground, #f5f6f7);
+      border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5);
       white-space: nowrap;
     }
     .sac-table__th--sortable {
       cursor: pointer;
     }
     .sac-table__th--sortable:hover {
-      background: #e5e5e5;
+      background: var(--sapList_Hover_Background, #e5e5e5);
     }
     .sac-table__th--checkbox {
       width: 40px;
       text-align: center;
     }
     .sac-table__sort-icon {
-      margin-left: 4px;
+      margin-inline-start: 4px;
       font-size: 10px;
     }
     .sac-table__td {
       padding: 10px 16px;
-      font-size: 14px;
-      border-bottom: 1px solid #e5e5e5;
-      color: #32363a;
+      font-size: var(--sapFontSize, 14px);
+      border-bottom: 1px solid var(--sapList_BorderColor, #e5e5e5);
+      color: var(--sapTextColor, #32363a);
     }
     .sac-table__td--checkbox {
       text-align: center;
     }
     .sac-table__row:hover {
-      background: #f5f6f7;
+      background: var(--sapList_Hover_Background, #f5f6f7);
     }
     .sac-table__row--selected {
-      background: #e6f0fa;
+      background: var(--sapList_SelectionBackgroundColor, #e6f0fa);
     }
     .sac-table__empty-cell {
       padding: 24px 16px;
       text-align: center;
-      color: #6a6d70;
+      color: var(--sapContent_LabelColor, #6a6d70);
       font-size: 13px;
     }
     .sac-table__footer {
       padding: 12px 16px;
-      border-top: 1px solid #e5e5e5;
+      border-top: 1px solid var(--sapList_BorderColor, #e5e5e5);
       display: flex;
       justify-content: flex-end;
     }
@@ -209,9 +231,10 @@ const EMPTY_SELECTION: TableSelection = {
     }
     .sac-table__pagination button {
       padding: 4px 12px;
-      border: 1px solid #89919a;
+      border: 1px solid var(--sapField_BorderColor, #89919a);
       border-radius: 4px;
-      background: white;
+      background: var(--sapButton_Background, white);
+      color: var(--sapButton_TextColor, #32363a);
       cursor: pointer;
     }
     .sac-table__pagination button:disabled {
@@ -224,19 +247,26 @@ const EMPTY_SELECTION: TableSelection = {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.8);
+      background: var(--sapBlockLayer_Background, rgba(255, 255, 255, 0.8));
     }
     .sac-table__spinner {
       width: 32px;
       height: 32px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #0854a0;
+      border: 3px solid var(--sapContent_ForegroundBorderColor, #f3f3f3);
+      border-top: 3px solid var(--sapBrandColor, #0854a0);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sac-table__spinner { animation: none; }
+    }
+    @media (max-width: 600px) {
+      .sac-table__th, .sac-table__td { padding: 8px 10px; font-size: 12px; }
+      .sac-table__footer { padding: 8px 10px; }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -373,7 +403,7 @@ export class SacTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   resolveColumnAlignment(column: TableColumn): string {
-    return column.align ?? 'left';
+    return column.align ?? 'start';
   }
 
   toggleSelectAll(event: Event): void {

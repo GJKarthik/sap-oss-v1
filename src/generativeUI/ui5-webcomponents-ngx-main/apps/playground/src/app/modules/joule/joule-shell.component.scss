@@ -115,7 +115,7 @@
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
-  color: white;
+  color: var(--sapContent_ContrastTextColor, #fff);
   font-size: 0.65rem;
   font-weight: 700;
   cursor: default;
@@ -152,6 +152,12 @@ genui-outlet {
     color: var(--sapContent_LabelColor, #6a6d70);
     font-size: 0.8rem;
     opacity: 0.75;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .joule-chat-panel {
+    width: 320px;
   }
 }
 

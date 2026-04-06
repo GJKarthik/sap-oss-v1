@@ -213,6 +213,7 @@ export class RegistryComponent implements OnInit {
   load() {
     this.http.get<RegistryEntry[]>(`${environment.apiBaseUrl}/jobs`).subscribe({
       next: (jobs) => {
+        this.tags = JSON.parse(localStorage.getItem('model_tags') ?? '{}');
         const enriched = jobs.map(j => ({ ...j, tag: this.tags[j.id] }));
         this.models.set(enriched);
         this.applyFilter();

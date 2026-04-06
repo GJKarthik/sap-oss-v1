@@ -62,20 +62,20 @@ interface PlatformComponent {
         <div class="info-card">
           <h2 class="card-title">{{ i18n.t('dashboard.gpuDetails') }}</h2>
           @if (store.gpu().data; as gpuData) {
-            <table class="info-table">
+            <table class="info-table" [attr.aria-label]="i18n.t('dashboard.gpuDetails')">
               <tbody>
-                <tr><td>{{ i18n.t('dashboard.gpuName') }}</td><td>{{ gpuData.gpu_name }}</td></tr>
-                <tr><td>{{ i18n.t('dashboard.gpuDriver') }}</td><td>{{ gpuData.driver_version }}</td></tr>
-                <tr><td>{{ i18n.t('dashboard.gpuCuda') }}</td><td>{{ gpuData.cuda_version }}</td></tr>
-                <tr><td>{{ i18n.t('dashboard.gpuTemp') }}</td><td>{{ gpuData.temperature_c }} °C</td></tr>
-                <tr><td>{{ i18n.t('dashboard.gpuFreeMem') }}</td><td>{{ gpuData.free_memory_gb | localeNumber:'decimal':1:1 }} GB</td></tr>
+                <tr><th scope="row">{{ i18n.t('dashboard.gpuName') }}</th><td>{{ gpuData.gpu_name }}</td></tr>
+                <tr><th scope="row">{{ i18n.t('dashboard.gpuDriver') }}</th><td>{{ gpuData.driver_version }}</td></tr>
+                <tr><th scope="row">{{ i18n.t('dashboard.gpuCuda') }}</th><td>{{ gpuData.cuda_version }}</td></tr>
+                <tr><th scope="row">{{ i18n.t('dashboard.gpuTemp') }}</th><td>{{ gpuData.temperature_c }} °C</td></tr>
+                <tr><th scope="row">{{ i18n.t('dashboard.gpuFreeMem') }}</th><td>{{ gpuData.free_memory_gb | localeNumber:'decimal':1:1 }} GB</td></tr>
               </tbody>
             </table>
           } @else if (!store.isDashboardLoading()) {
             <p class="text-muted">{{ i18n.t('dashboard.gpuUnavailable') }}</p>
           }
           @if (store.isDashboardLoading()) {
-            <div class="loading-container">
+            <div class="loading-container" role="status" aria-live="polite">
               <span class="loading-text">{{ i18n.t('dashboard.loading') }}</span>
             </div>
           }
@@ -144,14 +144,16 @@ interface PlatformComponent {
       border-collapse: collapse;
       font-size: 0.8125rem;
 
-      td {
+      th, td {
         padding: 0.3rem 0.5rem;
         border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
+      }
 
-        &:first-child {
-          color: var(--sapContent_LabelColor, #6a6d70);
-          width: 40%;
-        }
+      th {
+        color: var(--sapContent_LabelColor, #6a6d70);
+        width: 40%;
+        font-weight: normal;
+        text-align: start;
       }
     }
 
@@ -206,12 +208,14 @@ export class DashboardComponent implements OnInit {
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
 
-  readonly components: PlatformComponent[] = [
-    { icon: 'process', name: 'Pipeline', desc: '7-stage Text-to-SQL data generation', status: 'Active', badge: 'status-success' },
-    { icon: 'machine', name: 'Model Optimizer', desc: 'FastAPI + NVIDIA ModelOpt', status: 'Active', badge: 'status-success' },
-    { icon: 'chain-link', name: 'HippoCPP', desc: 'Zig graph database engine', status: 'Active', badge: 'status-success' },
-    { icon: 'folder', name: 'Data Assets', desc: 'Banking Excel/CSV training data', status: 'Ready', badge: 'status-info' },
-  ];
+  get components(): PlatformComponent[] {
+    return [
+      { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), status: 'Active', badge: 'status-success' },
+      { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), status: 'Active', badge: 'status-success' },
+      { icon: 'chain-link', name: this.i18n.t('dashboard.comp.hippocpp'), desc: this.i18n.t('dashboard.comp.hippocppDesc'), status: 'Active', badge: 'status-success' },
+      { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), status: 'Ready', badge: 'status-info' },
+    ];
+  }
 
   ngOnInit(): void {
     this.store.loadDashboardData();
