@@ -216,11 +216,11 @@ interface PendingToolConfirmation {
           [value]="inputText"
           [disabled]="streaming"
           [attr.aria-disabled]="streaming"
-          [attr.aria-describedby]="hintId"
+          aria-describedby="sac-chat-hint"
           (input)="handleInput($event)"
           (keyup.enter)="send()"
         />
-        <span [id]="hintId" class="sr-only">{{ 'chat.pressEnter' | sacTranslate }}</span>
+        <span id="sac-chat-hint" class="sr-only">{{ 'chat.pressEnter' | sacTranslate }}</span>
         <button
           class="sac-chat-send"
           type="button"
@@ -615,15 +615,6 @@ interface PendingToolConfirmation {
       cursor: not-allowed;
     }
 
-    @media (max-width: 320px) {
-      .sac-chat-input-row {
-        flex-direction: column;
-      }
-      .sac-chat-send {
-        width: 100%;
-      }
-    }
-
     /* === High Contrast Mode === */
     @media (forced-colors: active) {
       .sac-chat-message,
@@ -647,7 +638,7 @@ interface PendingToolConfirmation {
 })
 export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   private static nextId = 0;
-  private readonly instanceId = SacAiChatPanelComponent.nextId++;
+  readonly inputId = `sac-chat-input-${++SacAiChatPanelComponent.nextId}`;
 
   @Input() placeholder = '';
   @Input() modelId?: string;
@@ -671,9 +662,6 @@ export class SacAiChatPanelComponent implements OnDestroy, AfterViewChecked {
   private session = inject(SacAiSessionService);
   private cdr = inject(ChangeDetectorRef);
   private i18n = inject(SacI18nService);
-
-  get inputId(): string { return `sac-chat-input-${this.instanceId}`; }
-  get hintId(): string { return `sac-chat-hint-${this.instanceId}`; }
 
   ngAfterViewChecked(): void {
     // Auto-scroll and announce new messages
