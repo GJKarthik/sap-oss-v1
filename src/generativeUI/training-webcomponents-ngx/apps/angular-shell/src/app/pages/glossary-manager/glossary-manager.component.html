@@ -26,11 +26,11 @@
         </div>
         <div class="field-group">
           <label>Source Text</label>
-          <input type="text" [(ngModel)]="newEntry.source_text" placeholder="e.g. Statutory Reserve" />
+          <input type="text" [(ngModel)]="newEntry.source_text" [placeholder]="i18n.t('glossary.placeholderSource')" />
         </div>
         <div class="field-group">
           <label>Target Text</label>
-          <input type="text" [(ngModel)]="newEntry.target_text" placeholder="e.g. الاحتياطي النظامي" />
+          <input type="text" [(ngModel)]="newEntry.target_text" [placeholder]="i18n.t('glossary.placeholderTarget')" />
         </div>
         <div class="field-group">
           <label>Category</label>
