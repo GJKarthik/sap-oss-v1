@@ -66,11 +66,11 @@ export const AppStore = signalStore(
       const h = store.health.data();
       const p = store.pipelineState();
       
-      if (p === 'running') return 'The Zig engine is currently weaving new knowledge from your banking schemas.';
-      if (!h) return 'Platform initializing...';
-      if (h.status === 'healthy') return 'Your AI ecosystem is fully synchronized and ready for production inference.';
-      if (h.dependencies.hana_vector !== 'healthy') return 'HANA Vector Engine is offline. Knowledge retrieval is currently limited.';
-      return 'The platform is operating in a degraded state. Check system telemetry.';
+      if (p === 'running') return 'narrative.running';
+      if (!h) return 'narrative.initializing';
+      if (h.status === 'healthy') return 'narrative.healthy';
+      if (h.dependencies.hana_vector !== 'healthy') return 'narrative.hanaOffline';
+      return 'narrative.degraded';
     }),
 
     // ── Jony's Atmospheric Color ──────────────────────────────────────────

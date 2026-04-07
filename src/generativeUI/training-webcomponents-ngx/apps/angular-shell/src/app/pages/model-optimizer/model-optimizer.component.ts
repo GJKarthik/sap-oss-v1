@@ -625,8 +625,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       font-weight: 600;
     }
     
-    .danger-fill {
-      background: var(--sapNegativeColor, #b00) !important;
+    .progress-fill.danger-fill {
+      background: var(--sapNegativeColor, #b00);
     }
     
     .sparkline-container { width: 100%; height: 20px; background: rgba(0,0,0,0.02); border-radius: 2px; }
@@ -745,9 +745,8 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   });
 
   readonly gpuTotalNum = computed(() => {
-    const t = this.store.gpuMemoryTotal() as string;
-    if (t === '—') return 0;
-    return parseFloat(t);
+    const t = this.store.gpuMemoryTotal();
+    return typeof t === 'number' ? t : 0;
   });
 
   readonly isVramExceeded = computed(() => {

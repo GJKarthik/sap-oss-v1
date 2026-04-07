@@ -46,9 +46,9 @@ interface PlatformComponent {
           <!-- Hero State -->
           <section class="hero-unibody">
             <div class="hero-text slideUp">
-              <span class="material-label">Production Intelligence</span>
+              <span class="material-label">{{ i18n.t('dashboard.productionIntelligence') }}</span>
               <ui5-title level="H1">{{ i18n.t('dashboard.welcome') }}</ui5-title>
-              <p class="narrative-text" role="status" aria-live="polite">{{ store.platformNarrative() }}</p>
+              <p class="narrative-text" role="status" aria-live="polite">{{ i18n.t(store.platformNarrative()) }}</p>
             </div>
             
             <div class="telemetry-grid">
@@ -59,7 +59,7 @@ interface PlatformComponent {
                 </div>
                 <div class="stat-main">
                   <span class="stat-value">{{ store.health().data?.status ?? '—' }}</span>
-                  <ui5-tag [design]="store.healthBadge()">Core Service</ui5-tag>
+                  <ui5-tag [design]="store.healthBadge()">{{ i18n.t('dashboard.coreService') }}</ui5-tag>
                 </div>
                 <div class="stat-footer">
                   <div class="mini-dep" [class.active]="getDepStatus('hana_vector') === 'healthy'">HANA</div>
@@ -74,7 +74,7 @@ interface PlatformComponent {
                 </div>
                 <div class="stat-main">
                   <span class="stat-value">{{ store.gpuUtilization() }}%</span>
-                  <span class="stat-label">VRAM Usage</span>
+                  <span class="stat-label">{{ i18n.t('dashboard.vramUsage') }}</span>
                 </div>
                 <div class="progress-track">
                   <div class="progress-fill" [style.width.%]="store.gpuUtilization()"></div>
@@ -85,7 +85,7 @@ interface PlatformComponent {
 
           <!-- Core Materials -->
           <section class="materials-section">
-            <ui5-title level="H4" class="section-title">System Ecosystem</ui5-title>
+            <ui5-title level="H4" class="section-title">{{ i18n.t('dashboard.systemEcosystem') }}</ui5-title>
             <div class="materials-grid">
               @for (comp of components(); track comp.name; let i = $index) {
                 <div class="glass-panel material-card slideUp" 
@@ -110,7 +110,7 @@ interface PlatformComponent {
           <footer class="insights-aura fadeIn" [style.--stagger]="'0.6s'">
             <div class="aura-message">
               <ui5-icon name="lightbulb"></ui5-icon>
-              <span>Platform analyzed <strong>{{ store.trainingPairCount() | localeNumber }}</strong> training pairs across production schemas.</span>
+              <span>{{ i18n.t('dashboard.insightsPrefix') }} <strong>{{ store.trainingPairCount() | localeNumber }}</strong> {{ i18n.t('dashboard.insightsSuffix') }}</span>
             </div>
           </footer>
         </div>
@@ -181,10 +181,10 @@ export class DashboardComponent implements OnInit {
   readonly i18n = inject(I18nService);
 
   readonly components = computed<PlatformComponent[]>(() => [
-    { icon: 'process', name: this.i18n.t('nav.pipeline'), desc: 'Automated Text-to-SQL generation pipeline', status: 'Production', badge: 'status-success' },
-    { icon: 'machine', name: this.i18n.t('nav.training'), desc: 'Model optimization and quantization', status: 'Active', badge: 'status-success' },
-    { icon: 'chain-link', name: 'HippoCPP Engine', desc: 'High-performance graph database', status: 'Ready', badge: 'status-info' },
-    { icon: 'folder', name: this.i18n.t('nav.assets'), desc: 'Training data and schema registry', status: 'Ready', badge: 'status-info' },
+    { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), status: 'Production', badge: 'status-success' },
+    { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), status: 'Active', badge: 'status-success' },
+    { icon: 'chain-link', name: this.i18n.t('dashboard.comp.hippocpp'), desc: this.i18n.t('dashboard.comp.hippocppDesc'), status: 'Ready', badge: 'status-info' },
+    { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), status: 'Ready', badge: 'status-info' },
   ]);
 
   ngOnInit(): void { this.store.loadDashboardData(); }

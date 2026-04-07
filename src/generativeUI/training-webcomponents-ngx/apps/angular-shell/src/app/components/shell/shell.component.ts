@@ -31,7 +31,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <a href="#main-content" class="skip-link" (click)="skipToMain($event)">Skip to main content</a>
+    <a href="#main-content" class="skip-link" (click)="skipToMain($event)">{{ i18n.t('shell.skipToMain') }}</a>
     <div class="app-canvas" [ngClass]="store.atmosphericClass()" [style.transform]="canvasTransform()"></div>
 
     <div class="app-shell" [class.rtl]="i18n.isRtl()" (mousemove)="onMouseMove($event)">
@@ -41,13 +41,13 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
           [secondaryTitle]="i18n.t('app.subtitle')"
           (profile-click)="onProfileClick($event)">
           <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
-          <ui5-button icon="search" slot="endContent" (click)="toggleSearch()" aria-label="Search (⌘K)"></ui5-button>
-          <ui5-button icon="settings" slot="endContent" aria-label="Settings"></ui5-button>
+          <ui5-button icon="search" slot="endContent" (click)="toggleSearch()" [attr.aria-label]="i18n.t('shell.searchAriaLabel')"></ui5-button>
+          <ui5-button icon="settings" slot="endContent" [attr.aria-label]="i18n.t('shell.settingsAriaLabel')"></ui5-button>
         </ui5-shellbar>
       </header>
 
       <div class="app-body">
-        <nav class="app-nav-island slideUp" role="navigation" aria-label="Main navigation">
+        <nav class="app-nav-island slideUp" role="navigation" [attr.aria-label]="i18n.t('shell.mainNavAriaLabel')">
           <div class="nav-group-stack">
             @for (group of navGroups; track group.id) {
               <button
@@ -87,9 +87,9 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
     </div>
 
     <!-- Spotlight Command Palette (WWDC Polish) -->
-    <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="'Spotlight Search'" (close)="showSearch.set(false)">
+    <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="i18n.t('shell.spotlightTitle')" (close)="showSearch.set(false)">
       <div class="spotlight-body">
-        <ui5-input #searchInput class="spotlight-input" placeholder="Jump to a hub, model, or task..." (input)="onSearchInput($event)">
+        <ui5-input #searchInput class="spotlight-input" [placeholder]="i18n.t('shell.spotlightPlaceholder')" (input)="onSearchInput($event)">
           <ui5-icon slot="icon" name="search"></ui5-icon>
         </ui5-input>
         
@@ -100,13 +100,13 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
             </ui5-li>
           }
           @if (filteredResults().length === 0) {
-            <div class="no-results">No matches found for your query.</div>
+            <div class="no-results">{{ i18n.t('shell.noMatches') }}</div>
           }
         </ui5-list>
       </div>
     </ui5-dialog>
 
-    <ui5-popover #profilePopover header-text="Account">
+    <ui5-popover #profilePopover [attr.header-text]="i18n.t('shell.account')">
       <div style="width: 200px; padding: 1rem;">
         <ui5-button icon="log" design="Negative" (click)="logout()">{{ i18n.t('app.signOut') }}</ui5-button>
       </div>

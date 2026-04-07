@@ -39,10 +39,10 @@ interface LogLine {
           <ui5-tag [design]="stateDesign()">{{ pipelineState().toUpperCase() }}</ui5-tag>
         </div>
         <div class="header-right">
-          @if (wsConnected()) { <span class="live-indicator">LIVE LINK</span> }
+          @if (wsConnected()) { <span class="live-indicator">{{ i18n.t('pipeline.liveLink') }}</span> }
           <ui5-button design="Emphasized" icon="play" (click)="startPipeline()" 
             [disabled]="pipelineState() === 'running' || starting()">
-            {{ pipelineState() === 'running' ? 'Processing Engine...' : 'Execute Pipeline' }}
+            {{ pipelineState() === 'running' ? i18n.t('pipeline.processingEngine') : i18n.t('pipeline.execute') }}
           </ui5-button>
         </div>
       </div>
@@ -57,8 +57,8 @@ interface LogLine {
           <!-- Zig Concurrency Matrix (True Leverage of Zig Backend) -->
           <section class="concurrency-section glass-panel slideUp" [style.--stagger]="'0.2s'">
             <div class="card-header">
-              <ui5-title level="H5">Zig Parallel Execution Matrix</ui5-title>
-              <span class="text-small opacity-6">Real-time memory buffer activity</span>
+              <ui5-title level="H5">{{ i18n.t('pipeline.zigMatrix') }}</ui5-title>
+              <span class="text-small opacity-6">{{ i18n.t('pipeline.zigMatrixDesc') }}</span>
             </div>
             <div class="thread-grid">
               @for (t of threads(); track $index) {
@@ -68,15 +68,15 @@ interface LogLine {
               }
             </div>
             <div class="concurrency-footer">
-              <div class="footer-stat"><span>SIMD Slots:</span> <strong>512-bit</strong></div>
-              <div class="footer-stat"><span>Throughput:</span> <strong>{{ throughput() }} GB/s</strong></div>
+              <div class="footer-stat"><span>{{ i18n.t('pipeline.simdSlots') }}</span> <strong>{{ i18n.t('pipeline.simd512') }}</strong></div>
+              <div class="footer-stat"><span>{{ i18n.t('pipeline.throughputLabel') }}</span> <strong>{{ i18n.t('pipeline.throughputValue', { value: throughput() }) }}</strong></div>
             </div>
           </section>
 
           <section class="terminal-container glass-panel slideUp" [style.--stagger]="'0.3s'">
             <div class="terminal-header">
               <ui5-icon name="command-line-interface"></ui5-icon>
-              <span>Binary Stream Logs</span>
+              <span>{{ i18n.t('pipeline.binaryStreamLogs') }}</span>
             </div>
             <div class="terminal-body" #terminalBody role="log" aria-live="polite" aria-label="Pipeline execution logs">
               @for (line of logLines(); track $index) {
@@ -92,21 +92,21 @@ interface LogLine {
         <!-- Side: Metadata & Constraints -->
         <aside class="side-stage">
           <ui5-card class="glass-panel slideUp" [style.--stagger]="'0.4s'">
-            <ui5-card-header slot="header" title-text="Pipeline Metrics"></ui5-card-header>
+            <ui5-card-header slot="header" [attr.title-text]="i18n.t('pipeline.pipelineMetrics')"></ui5-card-header>
             <div class="p-1 display-flex flex-column gap-1">
               <div class="mini-stat">
-                <span class="label">Completion</span>
+                <span class="label">{{ i18n.t('pipeline.completion') }}</span>
                 <ui5-progress-indicator [value]="progress()" design="Positive"></ui5-progress-indicator>
               </div>
               <div class="mini-stat">
-                <span class="label">Memory Allocator</span>
-                <ui5-tag design="Information">GPA (Zig High-Perf)</ui5-tag>
+                <span class="label">{{ i18n.t('pipeline.memoryAllocator') }}</span>
+                <ui5-tag design="Information">{{ i18n.t('pipeline.gpaZig') }}</ui5-tag>
               </div>
             </div>
           </ui5-card>
 
           <ui5-card class="glass-panel slideUp mt-1" [style.--stagger]="'0.5s'">
-            <ui5-card-header slot="header" title-text="Stage Status"></ui5-card-header>
+            <ui5-card-header slot="header" [attr.title-text]="i18n.t('pipeline.stageStatusCard')"></ui5-card-header>
             <div class="stages-mini-list">
               @for (s of stages(); track s.num) {
                 <div class="mini-stage-item" [class.done]="s.status === 'done'" [class.running]="s.status === 'running'">
