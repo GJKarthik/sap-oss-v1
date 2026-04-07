@@ -84,7 +84,8 @@ export class GlossaryManagerComponent implements OnInit {
         this.toast.success(this.i18n.t('glossary.deleted'));
         this.loadTM();
         this.glossary.loadOverrides();
-      }
+      },
+      error: () => this.toast.error(this.i18n.t('glossary.deleteFailed'))
     });
   }
 
@@ -94,7 +95,8 @@ export class GlossaryManagerComponent implements OnInit {
       next: () => {
         this.loadTM();
         this.glossary.loadOverrides();
-      }
+      },
+      error: () => this.toast.error(this.i18n.t('glossary.approveFailed'))
     });
   }
 

@@ -7,6 +7,7 @@ import { McpService } from '../../services/mcp.service';
 import { EmptyStateComponent } from '../../shared';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { ToastService } from '../../services/toast.service';
 
 interface GraphNode { id: string; label: string; type: string; x: number; y: number; }
 interface GraphEdge { source: string; target: string; label: string; }
@@ -141,6 +142,7 @@ export class LineageComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
 
   cypherQuery = 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25';
   queryResult: { rows: unknown[]; rowCount: number } | null = null;
@@ -211,7 +213,7 @@ export class LineageComponent implements OnInit {
           }
         }
       },
-      error: () => {},
+      error: () => { this.toast.error(this.i18n.t('lineage.operationFailed')); },
     });
   }
 

@@ -7,6 +7,7 @@ import { EmptyStateComponent } from '../../shared';
 import { McpService, PendingApproval, SchemaTable } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-data-quality',
@@ -226,6 +227,7 @@ export class DataQualityComponent implements OnInit {
   private readonly apiService = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
 
   tables: string[] = [];
   selectedTable = '';
@@ -297,12 +299,18 @@ export class DataQualityComponent implements OnInit {
 
   approveQuery(a: PendingApproval): void {
     this.mutating = true;
-    this.mcpService.approveQuery(a.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => { this.pendingApprovals = this.pendingApprovals.filter(x => x.id !== a.id); this.mutating = false; });
+    this.mcpService.approveQuery(a.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => { this.pendingApprovals = this.pendingApprovals.filter(x => x.id !== a.id); this.mutating = false; },
+      error: () => { this.toast.error(this.i18n.t('dataQuality.operationFailed')); this.mutating = false; }
+    });
   }
 
   rejectQuery(a: PendingApproval): void {
     this.mutating = true;
-    this.mcpService.rejectQuery(a.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => { this.pendingApprovals = this.pendingApprovals.filter(x => x.id !== a.id); this.mutating = false; });
+    this.mcpService.rejectQuery(a.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => { this.pendingApprovals = this.pendingApprovals.filter(x => x.id !== a.id); this.mutating = false; },
+      error: () => { this.toast.error(this.i18n.t('dataQuality.operationFailed')); this.mutating = false; }
+    });
   }
 
   requestMagicFix(tab: number): void {
@@ -314,13 +322,16 @@ export class DataQualityComponent implements OnInit {
       messages: [{ role: 'system', content: 'Suggest SQL fix for DQ issue.' }, { role: 'user', content: JSON.stringify(result) }]
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: r => { this.magicFixResult[tab] = r.choices?.[0]?.message?.content; this.magicFixLoading[tab] = false; },
-      error: () => { this.magicFixLoading[tab] = false; }
+      error: () => { this.toast.error(this.i18n.t('dataQuality.operationFailed')); this.magicFixLoading[tab] = false; }
     });
   }
 
   applyMagicFix(tab: number): void {
     const sql = this.magicFixResult[tab] || '';
-    this.mcpService.submitApproval({ tool: 'magic-fix', table_name: this.selectedTable, sql, estimated_rows: 0 }).subscribe(() => { this.dismissMagicFix(tab); this.loadApprovals(); });
+    this.mcpService.submitApproval({ tool: 'magic-fix', table_name: this.selectedTable, sql, estimated_rows: 0 }).subscribe({
+      next: () => { this.dismissMagicFix(tab); this.loadApprovals(); },
+      error: () => { this.toast.error(this.i18n.t('dataQuality.operationFailed')); }
+    });
   }
 
   dismissMagicFix(tab: number): void { this.magicFixResult[tab] = null; this.magicFixLoading[tab] = false; }

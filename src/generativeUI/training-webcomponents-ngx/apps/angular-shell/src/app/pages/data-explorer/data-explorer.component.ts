@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { I18nService } from '../../services/i18n.service';
+import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 
@@ -276,6 +277,7 @@ interface SqlPair {
 export class DataExplorerComponent implements OnInit {
   private readonly http = inject(HttpClient);
   readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
 
   searchTerm = '';
   filterCategory = '';
@@ -337,7 +339,7 @@ export class DataExplorerComponent implements OnInit {
         this.pairSource.set(res.source);
         this.pairsLoading.set(false);
       },
-      error: () => this.pairsLoading.set(false)
+      error: () => { this.toast.error(this.i18n.t('dataExplorer.loadPairsFailed')); this.pairsLoading.set(false); }
     });
   }
 

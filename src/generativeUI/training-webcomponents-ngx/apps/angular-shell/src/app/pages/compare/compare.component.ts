@@ -220,7 +220,8 @@ export class CompareComponent implements OnInit {
             model_name: j.config?.model_name ?? 'Unknown'
           }));
         this.deployedModels.set(deployed);
-      }
+      },
+      error: () => this.toast.error(this.i18n.t('compare.loadModelsFailed'))
     });
   }
 

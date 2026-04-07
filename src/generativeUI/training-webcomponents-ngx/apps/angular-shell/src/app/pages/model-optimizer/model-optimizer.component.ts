@@ -789,7 +789,8 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       // Don't poll REST if a row is actively WS streaming
       if (!this.expandedJobId() && !this.loading()) {
         this.api.get<JobResponse[]>('/jobs').pipe(takeUntil(this.destroy$)).subscribe({
-          next: (res) => this.jobs.set(res)
+          next: (res) => this.jobs.set(res),
+          error: () => { this.toast.error(this.i18n.t('modelOpt.operationFailed')); }
         });
       }
     }, 4000);

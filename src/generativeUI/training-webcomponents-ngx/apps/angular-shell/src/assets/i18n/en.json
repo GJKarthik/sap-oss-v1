@@ -922,5 +922,33 @@
   "hippocpp.archMojoGpuDesc": "SIMD page acceleration",
   "glossary.invalidFileFormat": "Invalid file format",
   "glossary.importedEntries": "Imported {count} entries",
-  "glossary.failedParseFile": "Failed to parse file"
+  "glossary.failedParseFile": "Failed to parse file",
+  "glossary.deleteFailed": "Failed to delete translation entry",
+  "glossary.approveFailed": "Failed to approve translation entry",
+
+  "governance.loadApprovalsFailed": "Failed to load approvals",
+  "governance.loadPoliciesFailed": "Failed to load team policies",
+  "governance.approveFailed": "Failed to approve request",
+  "governance.rejectFailed": "Failed to reject request",
+
+  "promptLibrary.loadFailed": "Failed to load prompts",
+  "promptLibrary.loadCategoriesFailed": "Failed to load categories",
+  "promptLibrary.createFailed": "Failed to create prompt",
+  "promptLibrary.deleteFailed": "Failed to delete prompt",
+
+  "vocabSearch.loadStatsFailed": "Failed to load vocabulary statistics",
+  "vocabSearch.loadVocabFailed": "Failed to load vocabularies",
+
+  "compare.loadModelsFailed": "Failed to load deployed models",
+
+  "dataExplorer.loadPairsFailed": "Failed to load training pairs",
+
+  "dataQuality.operationFailed": "Operation failed",
+  "dataQuality.approveFailed": "Failed to approve",
+  "dataQuality.rejectFailed": "Failed to reject",
+  "dataQuality.magicFixFailed": "Failed to apply AI fix",
+
+  "lineage.enrichFailed": "Failed to enrich with vocabulary data",
+  "lineage.operationFailed": "Lineage operation failed",
+  "modelOpt.operationFailed": "Operation failed"
 }

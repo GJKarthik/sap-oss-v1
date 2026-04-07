@@ -10,7 +10,6 @@ services:
       - sac-web
       - ui5-web
       - ui5-mcp
-      - cap-llm-plugin
     ports:
       - "${SUITE_GATEWAY_PORT:-8080}:80"
     environment:
@@ -31,7 +30,6 @@ services:
       SAC_WEB_HEALTH_URL: http://sac-web/health
       UI5_WEB_HEALTH_URL: http://ui5-web/health
       UI5_MCP_HEALTH_URL: http://ui5-mcp:9160/health
-      CAP_LLM_HEALTH_URL: http://cap-llm-plugin:8080/health
       AI_CORE_PAL_HEALTH_URL: ${AI_CORE_PAL_HEALTH_URL:-}
       UI5_HARNESS_REPORT_URL: http://ui5-web/health
     restart: unless-stopped
@@ -88,7 +86,6 @@ services:
       dockerfile: Dockerfile.suite-web
     depends_on:
       - ui5-mcp
-      - cap-llm-plugin
     restart: unless-stopped
 
   ui5-mcp:
@@ -98,21 +95,4 @@ services:
     environment:
       MCP_ALLOW_ALL_ORIGINS: "true"
       CORS_ALLOWED_ORIGINS: http://localhost:${SUITE_GATEWAY_PORT:-8080},http://127.0.0.1:${SUITE_GATEWAY_PORT:-8080}
-    restart: unless-stopped
-
-  cap-llm-plugin:
-    build:
-      context: ../data/cap-llm-plugin-main
-      dockerfile: deploy/aicore/Dockerfile
-    environment:
-      PORT: 8080
-      AICORE_CLIENT_ID: ${AICORE_CLIENT_ID:-}
-      AICORE_CLIENT_SECRET: ${AICORE_CLIENT_SECRET:-}
-      AICORE_AUTH_URL: ${AICORE_AUTH_URL:-}
-      AICORE_BASE_URL: ${AICORE_BASE_URL:-}
-      AICORE_RESOURCE_GROUP: ${AICORE_RESOURCE_GROUP:-default}
-      HANA_HOST: ${HANA_HOST:-}
-      HANA_PORT: ${HANA_PORT:-443}
-      HANA_USER: ${HANA_USER:-}
-      HANA_PASSWORD: ${HANA_PASSWORD:-}
     restart: unless-stopped

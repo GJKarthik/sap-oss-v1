@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EmptyStateComponent } from '../../shared';
 import { McpService, VocabTerm, VocabSearchResult, VocabStatistics } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-vocab-search',
@@ -130,6 +131,7 @@ export class VocabSearchComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
 
   searchQuery = '';
   searchMode = 'text';
@@ -152,14 +154,14 @@ export class VocabSearchComponent implements OnInit {
     this.loading = true;
     this.mcpService.getVocabStatistics().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: stats => { this.stats = stats; this.loading = false; },
-      error: () => { this.loading = false; },
+      error: () => { this.toast.error(this.i18n.t('vocabSearch.loadStatsFailed')); this.loading = false; },
     });
   }
 
   loadVocabularies(): void {
     this.mcpService.listVocabularies().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: result => this.vocabularies = result.vocabularies || [],
-      error: () => {},
+      error: () => this.toast.error(this.i18n.t('vocabSearch.loadVocabFailed')),
     });
   }
 
