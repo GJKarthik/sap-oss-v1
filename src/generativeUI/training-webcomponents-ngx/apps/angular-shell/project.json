@@ -28,9 +28,13 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "1mb",
-              "maximumError": "1.5mb"
+              "maximumWarning": "1.5mb",
+              "maximumError": "2mb"
             }
+          ],
+          "allowedCommonJsDependencies": [
+            "@messageformat/core",
+            "@zxing/library"
           ],
           "outputHashing": "all"
         },

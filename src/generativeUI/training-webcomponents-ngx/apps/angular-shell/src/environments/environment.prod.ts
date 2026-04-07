@@ -18,4 +18,6 @@ export const environment = {
   collabWsUrl: '/collab',
   collabUserId: '',
   collabDisplayName: '',
+  elasticsearchMcpUrl: '/mcp/elasticsearch',
+  palMcpUrl: '/mcp/pal',
 };
