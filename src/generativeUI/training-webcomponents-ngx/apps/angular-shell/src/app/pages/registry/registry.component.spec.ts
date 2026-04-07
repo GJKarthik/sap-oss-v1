@@ -236,7 +236,7 @@ describe('RegistryComponent', () => {
     );
     tick();
 
-    expect(toastSpy.error).toHaveBeenCalledWith('Model not ready', 'Error');
+    expect(toastSpy.error).toHaveBeenCalledWith('Model not ready', 'common.error');
   }));
 
   // ── deleteJob ─────────────────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ describe('RegistryComponent', () => {
     httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS.filter(j => j.id !== 'bbbb-2222'));
     tick();
 
-    expect(toastSpy.success).toHaveBeenCalledWith('Job removed from registry', 'Deleted');
+    expect(toastSpy.success).toHaveBeenCalledWith('registry.jobRemoved', 'common.delete');
     expect(component.models()).toHaveLength(2);
   }));
 

@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/pdf_processor.py
-# hypothesis_version: 6.151.10
-
-[b'%PDF-', b'/Encrypt', 300, 1200, 4096, 8192, 999999, '.pdf', '?', 'PDFDocument', 'PNG', 'Pages', 'dpi', 'first_page', 'fmt', 'ignore', 'last_page', 'latin-1', 'rb', 'userpw']

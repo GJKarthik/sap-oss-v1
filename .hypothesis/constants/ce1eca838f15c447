@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/server.py
-# hypothesis_version: 6.151.10
-
-[b'%PDF', 2.0, 200, 400, 413, 429, 500, 503, 1024, 8192, '*', ',', '.pdf', '/api/ocr/health', '/api/ocr/process', '/ocr/batch', '/ocr/health', '/ocr/image', '/ocr/metrics', '/ocr/pdf', '1.0.0', '2', '300', '4', 'Arabic OCR Service', 'File must be a PDF', 'OCR_CORS_ORIGINS', 'OCR_DPI', 'OCR_LANGUAGES', 'OCR_MAX_CONCURRENT', 'OCR_MAX_WORKERS', 'REQUIRED', 'ara+eng', 'arabic-ocr', 'arabic-ocr-api', 'batch_size', 'degraded', 'error', 'file', 'healthy', 'http', 'https', 'missing_optional', 'missing_required', 'ok', 'results', 'service', 'status', 'text/plain', 'unavailable_features', 'unhealthy']

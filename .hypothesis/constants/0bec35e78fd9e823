@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/exporters.py
-# hypothesis_version: 6.151.10
-
-[0.0, 1.0, 100.0, '\n--- Page {n} ---\n', '      </PrintSpace>', '      <PrintSpace>', '    </Page>', '  </Layout>', '  </div>', '  <Layout>', '.pdf', '0 0 0 0', '</alto>', '</body></html>', '<body>', 'Helvetica', 'OCRResult', 'RGB', 'RGBA', 'height', 'n_frames', 'setTextRenderMode', 'wb', 'width', 'x', 'y']

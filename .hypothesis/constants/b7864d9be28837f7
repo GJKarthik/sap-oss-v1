@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/__init__.py
-# hypothesis_version: 6.151.10
-
-['AnalyticsResult', 'ArabicOCRService', 'BBox', 'CellBBox', 'DependencyReport', 'DependencyStatus', 'DetectedTable', 'DiffReport', 'DiskCache', 'ExtractedPage', 'ExtractionResult', 'GridTable', 'ImagePreprocessor', 'JSONFormatter', 'LanguageDetector', 'MAX_DPI', 'MIN_DPI', 'OCRCache', 'OCRMetrics', 'OCRResult', 'PDFDocument', 'PDFProcessor', 'PageDiff', 'PageImage', 'PageResult', 'PostprocessingConfig', 'PreprocessingConfig', 'RequestContextFilter', 'TableCell', 'TableDetector', 'TesseractData', 'TextLayerExtractor', 'TextPostprocessor', 'TextRegion', 'check_dependencies', 'configure_logging', 'diff_results', 'get_metrics', 'load_config', 'service_from_config', 'to_alto_xml', 'to_hocr', 'to_plain_text', 'to_searchable_pdf']

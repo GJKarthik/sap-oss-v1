@@ -367,7 +367,7 @@ export class HippocppComponent implements OnInit, OnDestroy {
     { icon: 'folder', name: this.i18n.t('hippocpp.archStorage'), desc: this.i18n.t('hippocpp.archStorageDesc') },
     { icon: 'folder', name: this.i18n.t('hippocpp.archCatalog'), desc: this.i18n.t('hippocpp.archCatalogDesc') },
     { icon: 'machine', name: this.i18n.t('hippocpp.archMojoGpu'), desc: this.i18n.t('hippocpp.archMojoGpuDesc') },
-    { icon: 'document', name: 'Mangle', desc: 'Datalog invariants' },
+    { icon: 'document', name: this.i18n.t('hippocpp.archMangle'), desc: this.i18n.t('hippocpp.archMangleDesc') },
   ];
 
   readonly resultColumns = () => {

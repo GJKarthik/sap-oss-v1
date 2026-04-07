@@ -143,12 +143,12 @@ interface DataCleaningWorkflowEventsResponse {
     .toolbar { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; }
     .status-pill {
       border-radius: 999px; padding: .2rem .6rem; font-size: .75rem; font-weight: 600;
-      background: #ffebee; color: #b71c1c;
+      background: var(--sapErrorBackground, #ffebee); color: var(--sapNegativeColor, #b71c1c);
     }
-    .status-pill--ok { background: #e8f5e9; color: #2e7d32; }
+    .status-pill--ok { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #2e7d32); }
     .refresh-btn {
       border: 1px solid var(--sapField_BorderColor, #89919a);
-      background: #fff; border-radius: .25rem; padding: .3rem .65rem; cursor: pointer;
+      background: var(--sapTile_Background, #fff); border-radius: .25rem; padding: .3rem .65rem; cursor: pointer;
     }
     .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; }
     .panel {

@@ -950,5 +950,45 @@
 
   "lineage.enrichFailed": "Failed to enrich with vocabulary data",
   "lineage.operationFailed": "Lineage operation failed",
-  "modelOpt.operationFailed": "Operation failed"
+  "modelOpt.operationFailed": "Operation failed",
+
+  "glossary.export": "Export",
+  "glossary.import": "Import",
+  "glossary.searchPlaceholder": "Search terms\u2026",
+  "glossary.of": "of",
+  "glossary.overridesLabel": "overrides",
+  "glossary.termsLabel": "terms",
+  "glossary.sourceLang": "Source Language",
+  "glossary.langEnglish": "English",
+  "glossary.langArabic": "Arabic",
+  "glossary.sourceText": "Source Text",
+  "glossary.targetText": "Target Text",
+  "glossary.category": "Category",
+  "glossary.catFinancial": "Financial",
+  "glossary.catRegulatory": "Regulatory",
+  "glossary.catGeneral": "General",
+  "glossary.saveOverride": "Save Override",
+  "glossary.approve": "Approve",
+  "glossary.colSource": "Source (EN/AR)",
+  "glossary.colApprovedMapping": "Approved Mapping",
+  "glossary.colActions": "Actions",
+  "glossary.statusApproved": "Approved",
+  "glossary.statusPending": "Pending",
+  "glossary.colTermEnglish": "Technical Term (English)",
+  "glossary.colTranslationArabic": "Official Translation (Arabic)",
+  "glossary.colIfrsContext": "IFRS Context",
+  "glossary.placeholderSource": "Source term",
+  "glossary.placeholderTarget": "Target translation",
+
+  "registry.tagSaved": "Tag saved: \"{tag}\"",
+  "registry.modelDeployed": "Model {id} deployed",
+  "registry.deployFailed": "Deploy failed",
+  "registry.jobRemoved": "Job removed from registry",
+
+  "streaming.justNow": "just now",
+  "streaming.secondsAgo": "{seconds}s ago",
+  "streaming.minutesAgo": "{minutes}m ago",
+
+  "hippocpp.archMangle": "Mangle",
+  "hippocpp.archMangleDesc": "Datalog invariants"
 }

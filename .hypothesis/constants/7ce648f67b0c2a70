@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/config.py
-# hypothesis_version: 6.151.10
-
-['.toml', '.yaml', '.yml', 'ArabicOCRService', 'postprocessing', 'preprocessing', 'r', 'rb']

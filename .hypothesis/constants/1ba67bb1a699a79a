@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/text_extractor.py
-# hypothesis_version: 6.151.10
-
-['PyMuPDF', 'none', 'pdfminer.six', 'rb']

@@ -91,8 +91,8 @@ interface AnalyticsResponse {
               }
             </svg>
             <div class="chart-legend">
-              <span class="legend-item"><span class="legend-dot legend-dot--revenue"></span> Revenue</span>
-              <span class="legend-item"><span class="legend-dot legend-dot--profit"></span> Profit</span>
+              <span class="legend-item"><span class="legend-dot legend-dot--revenue"></span> {{ i18n.t('analytics.col.revenue') }}</span>
+              <span class="legend-item"><span class="legend-dot legend-dot--profit"></span> {{ i18n.t('analytics.col.profit') }}</span>
             </div>
           </div>
         </div>

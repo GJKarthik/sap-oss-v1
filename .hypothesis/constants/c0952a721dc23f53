@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/cache.py
-# hypothesis_version: 6.151.10
-
-[128, 256, 8192, 'Cache evicted: %s', 'Cache hit: %s', 'Disk cache hit: %s', 'rb', 'sha256', 'to_dict']

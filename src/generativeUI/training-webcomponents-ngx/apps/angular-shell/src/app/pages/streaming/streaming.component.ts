@@ -224,9 +224,9 @@ export class StreamingComponent implements OnInit, OnDestroy {
   getTimeSinceRefresh(): string {
     if (!this.lastRefreshed) return '';
     const seconds = Math.floor((Date.now() - this.lastRefreshed.getTime()) / 1000);
-    if (seconds < 5) return 'just now';
-    if (seconds < 60) return `${seconds}s ago`;
-    return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 5) return this.i18n.t('streaming.justNow');
+    if (seconds < 60) return this.i18n.t('streaming.secondsAgo', { seconds: String(seconds) });
+    return this.i18n.t('streaming.minutesAgo', { minutes: String(Math.floor(seconds / 60)) });
   }
 
   private startAutoRefresh(): void {

@@ -82,32 +82,6 @@ services:
       retries: 3
     networks: [platform-network]
 
-  # ── Tier 2 ─ SAP CAP : Custom AI App & Governance Control Tower ─────────
-
-  cap-llm-plugin:
-    build:
-      context: ./src/data/cap-llm-plugin-main
-      dockerfile: docker/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "4004:4004"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-    environment:
-      - PORT=4004
-      - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
-      - HANA_URL=${HANA_URL}
-    labels:
-      sap.ai.tier: "sap_cap"
-      sap.ai.service: "cap-llm-plugin"
-      sap.ai.data_security: "internal/confidential"
-    depends_on: [agent-router, vllm]
-    networks: [platform-network]
-
   # ── Tier 3 ─ AI Core ────────────────────────────────────────────────────
 
   vllm:

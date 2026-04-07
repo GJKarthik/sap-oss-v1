@@ -41,11 +41,11 @@ interface RegistryEntry {
           <div class="stat-label">{{ i18n.t('registry.totalJobs') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value" style="color: #4caf50;">{{ completedCount() }}</div>
+          <div class="stat-value" [style.color]="'var(--sapPositiveColor, #4caf50)'">{{ completedCount() }}</div>
           <div class="stat-label">{{ i18n.t('registry.completed') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value" style="color: #0854a0;">{{ deployedCount() }}</div>
+          <div class="stat-value" [style.color]="'var(--sapBrandColor, #0854a0)'">{{ deployedCount() }}</div>
           <div class="stat-label">{{ i18n.t('registry.deployed') }}</div>
         </div>
         <div class="stat-card">
@@ -114,7 +114,7 @@ interface RegistryEntry {
                   <td><code class="text-small">{{ m.config['quant_format'] ?? '—' }}</code></td>
                   <td class="text-small">
                     @if (m.evaluation) {
-                      <span style="color: #2e7d32; font-weight: 600;">PPL {{ m.evaluation.perplexity }}</span>
+                      <span class="eval-perplexity">PPL {{ m.evaluation.perplexity }}</span>
                     } @else { <span class="text-muted">—</span> }
                   </td>
                   <td class="text-small">
@@ -147,28 +147,28 @@ interface RegistryEntry {
     </div>
   `,
   styles: [`
-    .btn-refresh { padding: 0.375rem 0.875rem; background: var(--sapButton_Emphasized_Background, #0854a0); color: #fff; border: none;
+    .btn-refresh { padding: 0.375rem 0.875rem; background: var(--sapButton_Emphasized_Background, #0854a0); color: var(--sapButton_Emphasized_TextColor, #fff); border: none;
       border-radius: 0.25rem; cursor: pointer; font-size: 0.875rem;
       &:hover { background: var(--sapButton_Emphasized_Hover_Background, #063d75); } }
     .filter-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-    .filter-select { padding: 0.375rem 0.625rem; border: 1px solid #89919a; border-radius: 0.25rem;
-      font-size: 0.875rem; background: #fff; }
+    .filter-select { padding: 0.375rem 0.625rem; border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 0.25rem;
+      font-size: 0.875rem; background: var(--sapTile_Background, #fff); }
     .table-wrapper { overflow-x: auto; }
-    .data-table { width: 100%; border-collapse: collapse; background: #fff;
-      border: 1px solid #e4e4e4; border-radius: 0.5rem; overflow: hidden;
-      th { padding: 0.5rem 0.75rem; background: #f5f5f5; text-align: start; font-weight: 600;
-        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6a6d70;
-        border-bottom: 1px solid #e4e4e4; }
-      td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e4e4e4; vertical-align: middle; }
+    .data-table { width: 100%; border-collapse: collapse; background: var(--sapTile_Background, #fff);
+      border: 1px solid var(--sapList_BorderColor, #e4e4e4); border-radius: 0.5rem; overflow: hidden;
+      th { padding: 0.5rem 0.75rem; background: var(--sapList_HeaderBackground, #f5f5f5); text-align: start; font-weight: 600;
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sapContent_LabelColor, #6a6d70);
+        border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4); }
+      td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4); vertical-align: middle; }
       tr:last-child td { border-bottom: none; }
-      tr:hover td { background: #f5f5f5; }
+      tr:hover td { background: var(--sapList_HeaderBackground, #f5f5f5); }
     }
     .tag-cell { display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
-    .tag-badge { background: #e8eaf6; color: #283593; padding: 1px 6px; border-radius: 3px;
+    .tag-badge { background: var(--sapInformationBackground, #e8eaf6); color: var(--sapInformativeColor, #283593); padding: 1px 6px; border-radius: 3px;
       font-size: 0.7rem; font-weight: 600; align-self: flex-start; }
-    .tag-placeholder { color: #bbb; font-size: 0.7rem; font-style: italic; }
-    .id-code { font-size: 0.7rem; color: #6a6d70; }
-    .tag-input { padding: 2px 6px; font-size: 0.75rem; border: 1px solid #89919a;
+    .tag-placeholder { color: var(--sapContent_LabelColor, #bbb); font-size: 0.7rem; font-style: italic; }
+    .id-code { font-size: 0.7rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .tag-input { padding: 2px 6px; font-size: 0.75rem; border: 1px solid var(--sapField_BorderColor, #89919a);
       border-radius: 0.2rem; width: 90px; }
     .deployed-badge { font-size: 0.7rem; margin-inline-start: 4px; color: var(--sapPositiveColor, #2e7d32); font-weight: 600; }
     .status-badge { padding: 2px 8px; border-radius: 1rem; font-size: 0.7rem; font-weight: 600;
@@ -240,7 +240,7 @@ export class RegistryComponent implements OnInit {
     this.models.update(ms => ms.map(m => m.id === id ? { ...m, tag: this.tags[id] || undefined } : m));
     this.applyFilter();
     this.editingTag.set(null);
-    this.toast.success(`Tag saved: "${this.tags[id]}"`, 'Registry');
+    this.toast.success(this.i18n.t('registry.tagSaved', { tag: this.tags[id] }), this.i18n.t('registry.title'));
   }
 
   cancelTag() { this.editingTag.set(null); }
@@ -248,18 +248,18 @@ export class RegistryComponent implements OnInit {
   deploy(m: RegistryEntry) {
     this.http.post(`${environment.apiBaseUrl}/jobs/${m.id}/deploy`, {}).subscribe({
       next: () => {
-        this.toast.success(`Model ${m.id.slice(0, 8)} deployed`, 'Deployed');
+        this.toast.success(this.i18n.t('registry.modelDeployed', { id: m.id.slice(0, 8) }), this.i18n.t('registry.deployed'));
         this.load();
       },
       error: (e: { error?: { detail?: string } }) =>
-        this.toast.error(e?.error?.detail ?? 'Deploy failed', 'Error')
+        this.toast.error(e?.error?.detail ?? this.i18n.t('registry.deployFailed'), this.i18n.t('common.error'))
     });
   }
 
   deleteJob(id: string) {
     this.http.delete(`${environment.apiBaseUrl}/jobs/${id}`).subscribe({
       next: () => {
-        this.toast.success('Job removed from registry', 'Deleted');
+        this.toast.success(this.i18n.t('registry.jobRemoved'), this.i18n.t('common.delete'));
         this.load();
       }
     });

@@ -1,4 +1,0 @@
-# file: /Users/user/Documents/sap-oss/src/intelligence/ocr/postprocessing.py
-# hypothesis_version: 6.151.10
-
-['0', '1', 'O', '[ \\t]+', 'cl', 'd', 'l', 'm', 'rn', 'vv', 'w', '|', 'لآ', 'لأ', 'لإ', 'لا', 'ﻵ', 'ﻷ', 'ﻹ', 'ﻻ']
