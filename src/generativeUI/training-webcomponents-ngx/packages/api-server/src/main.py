@@ -663,8 +663,56 @@ async def collab_websocket(websocket: WebSocket, room: str = "default"):
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "healthy", "service": "training-webcomponents-ngx-api", "mode": "native-orchestrator"}
+async def health() -> dict:
+    """Detailed health check for production telemetry."""
+    import httpx
+    
+    # 1. Check SQLite/Local DB
+    db_status = "healthy"
+    try:
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+    except Exception:
+        db_status = "unhealthy"
+
+    # 2. Check HANA Vector Engine
+    hana_status = "unhealthy"
+    try:
+        # Avoid full connection if credentials missing
+        if rag.HANA_USER:
+            conn = rag._hana_connection()
+            conn.close()
+            hana_status = "healthy"
+        else:
+            hana_status = "unconfigured"
+    except Exception:
+        hana_status = "unhealthy"
+
+    # 3. Check vLLM TurboQuant
+    vllm_status = "unhealthy"
+    try:
+        vllm_url = os.getenv("VLLM_TURBOQUANT_URL", "http://localhost:8000")
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get(f"{vllm_url}/health")
+            if resp.status_code == 200:
+                vllm_status = "healthy"
+    except Exception:
+        vllm_status = "unhealthy"
+
+    overall = "healthy" if db_status == "healthy" and vllm_status == "healthy" else "degraded"
+    if db_status != "healthy": overall = "unavailable"
+
+    return {
+        "status": overall,
+        "service": "training-webcomponents-ngx-api",
+        "dependencies": {
+            "database": db_status,
+            "hana_vector": hana_status,
+            "vllm_turboquant": vllm_status
+        },
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
 
 
 @app.get("/gpu/status")

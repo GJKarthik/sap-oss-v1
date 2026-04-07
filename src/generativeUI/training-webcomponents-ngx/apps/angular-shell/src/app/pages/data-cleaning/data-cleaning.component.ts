@@ -153,13 +153,13 @@ interface DataCleaningWorkflowEventsResponse {
     .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; }
     .panel {
       border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: .5rem; background: #fff; padding: 1rem; min-height: 420px;
+      border-radius: .5rem; background: var(--sapTile_Background, #fff); padding: 1rem; min-height: 420px;
       display: flex; flex-direction: column; gap: .75rem;
     }
     .panel h2 { margin: 0; font-size: .95rem; }
     .chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: .6rem; }
-    .msg { border: 1px solid #e4e4e4; border-radius: .45rem; padding: .55rem .7rem; background: #fafafa; }
-    .msg--user { background: #e8f2ff; border-color: #bfd6f8; }
+    .msg { border: 1px solid var(--sapList_BorderColor, #e4e4e4); border-radius: .45rem; padding: .55rem .7rem; background: var(--sapField_Background, #fafafa); }
+    .msg--user { background: var(--sapInformationBackground, #e8f2ff); border-color: var(--sapInformativeBorderColor, #bfd6f8); }
     .msg-role { font-size: .68rem; font-weight: 700; text-transform: uppercase; opacity: .7; margin-bottom: .2rem; }
     .msg-content { font-size: .84rem; white-space: pre-wrap; word-break: break-word; }
     .chat-input-row { display: flex; gap: .5rem; align-items: flex-end; }
@@ -169,22 +169,27 @@ interface DataCleaningWorkflowEventsResponse {
     }
     .send-btn {
       border: none; border-radius: .35rem; background: var(--sapBrandColor, #0854a0);
-      color: #fff; padding: .45rem .85rem; cursor: pointer;
+      color: var(--sapButton_Emphasized_TextColor, #fff); padding: .45rem .85rem; cursor: pointer;
     }
     .send-btn:disabled { opacity: .6; cursor: default; }
     .workflow-cta { display: flex; flex-direction: column; gap: .4rem; margin-top: .5rem; }
     .run-btn {
-      border: none; border-radius: .35rem; background: #1b5e20;
-      color: #fff; padding: .45rem .85rem; cursor: pointer; width: fit-content;
+      border: none; border-radius: .35rem; background: var(--sapPositiveColor, #1b5e20);
+      color: var(--sapButton_Emphasized_TextColor, #fff); padding: .45rem .85rem; cursor: pointer; width: fit-content;
     }
     .run-btn:disabled { opacity: .6; cursor: default; }
     .checks-list { overflow-y: auto; display: flex; flex-direction: column; gap: .55rem; }
     .events-list { overflow-y: auto; display: flex; flex-direction: column; gap: .55rem; max-height: 220px; }
     .check-item {
-      margin: 0; background: #111827; color: #c7d2fe; border-radius: .4rem;
+      margin: 0; background: var(--sapShell_Background, #111827); color: var(--sapShell_TextColor, #c7d2fe); border-radius: .4rem;
       padding: .6rem .75rem; font-size: .74rem; white-space: pre-wrap;
     }
-    .empty { color: #6a6d70; font-size: .82rem; }
+    .empty { color: var(--sapContent_LabelColor, #6a6d70); font-size: .82rem; }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+      .panel { min-height: auto; }
+    }
   `],
 })
 export class DataCleaningComponent implements OnInit, OnDestroy {

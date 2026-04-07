@@ -10,6 +10,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { GlossaryService, CrossCheckFinding } from '../../services/glossary.service';
 import { LogService } from '../../services/log.service';
 import { TranslationMemoryService } from '../../services/translation-memory.service';
+import { CrossAppLinkComponent } from '../../shared';
 
 /** CrossCheckFinding enriched with UI-state for the inline override form. */
 interface AuditFinding extends CrossCheckFinding {
@@ -46,11 +47,19 @@ interface CompletionResponse {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocaleDatePipe],
+  imports: [CommonModule, FormsModule, LocaleDatePipe, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="chat-layout" [class.rtl]="i18n.isRtl()">
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/rag-studio"
+        targetLabel="RAG Studio"
+        icon="area-chart"
+        relationLabel="Related:">
+      </app-cross-app-link>
+
       <!-- Sidebar -->
       <div class="chat-sidebar">
         <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>

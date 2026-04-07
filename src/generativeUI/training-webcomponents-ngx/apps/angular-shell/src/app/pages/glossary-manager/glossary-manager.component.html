@@ -18,6 +18,12 @@
     </div>
   </div>
 
+  @if (isLoading()) {
+    <div style="display: flex; justify-content: center; padding: 2rem;" role="status" aria-live="polite">
+      <ui5-busy-indicator active size="M"></ui5-busy-indicator>
+    </div>
+  }
+
   <!-- Search/filter bar -->
   <div class="filter-bar">
     <input type="text" class="search-input" [placeholder]="i18n.t('glossary.searchPlaceholder')" [(ngModel)]="searchQuery" />

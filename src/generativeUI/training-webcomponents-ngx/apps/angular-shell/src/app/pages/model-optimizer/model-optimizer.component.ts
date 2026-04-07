@@ -11,6 +11,7 @@ import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
 import { LogService } from '../../services/log.service';
+import { CrossAppLinkComponent } from '../../shared';
 
 interface ModelInfo {
   name: string;
@@ -66,7 +67,7 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent],
+  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -75,6 +76,14 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
         <h1 class="page-title">{{ i18n.t('modelOpt.title') }}</h1>
         <ui5-button design="Emphasized" (click)="loadData()">{{ i18n.t('modelOpt.refresh') }}</ui5-button>
       </div>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/registry"
+        targetLabel="Model Registry"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <!-- Engine & Dataset -->
       <h2 class="section-title">{{ i18n.t('modelOpt.engineConfig') }}</h2>
@@ -460,8 +469,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
       color: var(--sapContent_LabelColor, #6a6d70);
 
       &.badge--quant {
-        background: #e3f2fd;
-        color: #1565c0;
+        background: var(--sapInformationBackground, #e3f2fd);
+        color: var(--sapInformativeColor, #1565c0);
       }
     }
 
@@ -561,12 +570,12 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     }
 
     .badge--best {
-      background: #e0f2f1;
-      color: #00695c;
+      background: var(--sapSuccessBackground, #e0f2f1);
+      color: var(--sapPositiveColor, #00695c);
     }
 
     .t4-warn {
-      color: #c62828;
+      color: var(--sapNegativeColor, #c62828);
     }
 
     .full-width {
@@ -574,8 +583,8 @@ import { JobDetailComponent } from '../../components/job-detail/job-detail.compo
     }
 
     .cost-estimate {
-      background: #e8f4fd;
-      color: #0d47a1;
+      background: var(--sapInformationBackground, #e8f4fd);
+      color: var(--sapInformativeColor, #0d47a1);
       padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       font-size: 0.8125rem;

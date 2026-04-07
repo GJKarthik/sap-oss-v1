@@ -39,6 +39,12 @@ interface PromptTemplate {
         </div>
       </header>
 
+      @if (loading()) {
+        <div style="display: flex; justify-content: center; padding: 2rem;" role="status" aria-live="polite">
+          <ui5-busy-indicator active size="M"></ui5-busy-indicator>
+        </div>
+      }
+
       <!-- Stats bar -->
       <div class="stats-bar">
         <div class="stat"><span class="stat-value">{{ prompts().length }}</span><span class="stat-label">{{ i18n.t('promptLibrary.templates') }}</span></div>

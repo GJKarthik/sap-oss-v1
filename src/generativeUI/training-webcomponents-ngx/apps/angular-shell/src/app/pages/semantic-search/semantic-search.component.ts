@@ -235,6 +235,11 @@ interface SearchResponse {
 
     .text-small { font-size: 0.75rem; }
     .text-muted { color: var(--sapContent_LabelColor, #6a6d70); }
+
+    @media (max-width: 768px) {
+      .search-input-row { flex-direction: column; }
+      .results-actions { flex-direction: column; }
+    }
   `],
 })
 export class SemanticSearchComponent implements OnDestroy {

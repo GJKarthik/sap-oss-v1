@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 import { McpService, AnalyticalResult } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
 
 @Component({
   selector: 'app-analytical-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">
@@ -20,6 +20,14 @@ import { I18nService } from '../../services/i18n.service';
           {{ loading ? i18n.t('common.loading') : i18n.t('common.refresh') }}
         </ui5-button>
       </ui5-bar>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/schema-browser"
+        targetLabel="Schema Browser"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <div class="ad-content" role="main" aria-label="Analytical Dashboard">
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="false" (close)="error = ''" role="alert">{{ error }}</ui5-message-strip>

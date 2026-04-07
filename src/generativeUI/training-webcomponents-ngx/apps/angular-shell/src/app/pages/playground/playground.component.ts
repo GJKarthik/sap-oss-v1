@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 import { MCPToolDefinition, McpService } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
@@ -21,11 +21,20 @@ interface InvocationEntry {
 @Component({
   selector: 'app-playground',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ 'playground.palWorkbench' | translate }}</ui5-title>
+
+        <app-cross-app-link
+          targetApp="training"
+          targetRoute="/analytical-dashboard"
+          targetLabel="Analytical Dashboard"
+          icon="chart-table-view"
+          relationLabel="Related:">
+        </app-cross-app-link>
+
         <ui5-button
           slot="endContent"
           icon="refresh"

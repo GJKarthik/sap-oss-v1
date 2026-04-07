@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 import { McpService, PendingApproval, SchemaTable } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
@@ -12,7 +12,7 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-data-quality',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid" class="dq-aura-bg">
@@ -22,6 +22,14 @@ import { ToastService } from '../../services/toast.service';
           <ui5-tag design="Information">{{ i18n.t('dataQuality.hanaTag') }}</ui5-tag>
         </div>
       </ui5-bar>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/schema-browser"
+        targetLabel="Schema Browser"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <div class="dq-studio-container" role="main">
         <!-- Hero Section -->

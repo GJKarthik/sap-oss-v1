@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
+import { CrossAppLinkComponent } from '../../shared';
 
 type PipelineState = 'idle' | 'running' | 'completed' | 'error';
 type StageStatus = 'idle' | 'running' | 'done' | 'error';
@@ -28,7 +29,7 @@ interface LogLine {
 @Component({
   selector: 'app-pipeline',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -37,6 +38,14 @@ interface LogLine {
         <h1 class="page-title">{{ i18n.t('pipeline.title') }}</h1>
         <span class="text-muted text-small">{{ i18n.t('pipeline.subtitle') }}</span>
       </div>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/registry"
+        targetLabel="Model Registry"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <!-- Control card -->
       <div class="control-card">
@@ -142,8 +151,8 @@ interface LogLine {
 
     .ws-badge {
       padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;
-      &.ws-connected { background: #e8f5e9; color: #2e7d32; }
-      &.ws-disconnected { background: #ffebee; color: #c62828; }
+      &.ws-connected { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #2e7d32); }
+      &.ws-disconnected { background: var(--sapErrorBackground, #ffebee); color: var(--sapNegativeColor, #c62828); }
     }
 
     .flow-diagram {

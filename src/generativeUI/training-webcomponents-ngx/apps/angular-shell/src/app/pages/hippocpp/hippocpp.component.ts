@@ -5,6 +5,7 @@ import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { ApiError, ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
+import { CrossAppLinkComponent } from '../../shared';
 
 interface GraphStats {
   available: boolean;
@@ -31,7 +32,7 @@ interface ArchLayer {
 @Component({
   selector: 'app-hippocpp',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -40,6 +41,14 @@ interface ArchLayer {
         <h1 class="page-title">{{ i18n.t('hippocpp.title') }}</h1>
         <ui5-button design="Default" (click)="loadStats()" aria-label="Refresh stats">{{ i18n.t('hippocpp.refresh') }}</ui5-button>
       </div>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/lineage"
+        targetLabel="Data Lineage"
+        icon="journey-change"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <!-- About -->
       <div class="about-card">
@@ -176,16 +185,16 @@ interface ArchLayer {
       font-size: 0.75rem;
       font-weight: 500;
 
-      &.pill--zig    { background: #fff3e0; color: #e65100; }
-      &.pill--mojo   { background: #fce4ec; color: #880e4f; }
-      &.pill--mangle { background: #e8f5e9; color: #1b5e20; }
-      &.pill--python { background: #e3f2fd; color: #0d47a1; }
+      &.pill--zig    { background: var(--sapWarningBackground, #fff3e0); color: var(--sapCriticalColor, #e65100); }
+      &.pill--mojo   { background: var(--sapErrorBackground, #fce4ec); color: var(--sapNegativeColor, #880e4f); }
+      &.pill--mangle { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #1b5e20); }
+      &.pill--python { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #0d47a1); }
     }
 
     .btn-refresh {
       padding: 0.375rem 0.875rem;
       background: var(--sapBrandColor, #0854a0);
-      color: #fff;
+      color: var(--sapButton_Emphasized_TextColor, #fff);
       border: none;
       border-radius: 0.25rem;
       cursor: pointer;
@@ -250,7 +259,7 @@ interface ArchLayer {
     .btn-primary {
       padding: 0.375rem 0.875rem;
       background: var(--sapBrandColor, #0854a0);
-      color: #fff;
+      color: var(--sapButton_Emphasized_TextColor, #fff);
       border: none;
       border-radius: 0.25rem;
       cursor: pointer;
@@ -314,8 +323,8 @@ interface ArchLayer {
 
     .error-banner {
       padding: 0.75rem 1rem;
-      background: #ffebee;
-      color: #c62828;
+      background: var(--sapErrorBackground, #ffebee);
+      color: var(--sapNegativeColor, #c62828);
       border-radius: 0.25rem;
       font-size: 0.875rem;
       margin-top: 0.5rem;
@@ -338,6 +347,10 @@ interface ArchLayer {
     .arch-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
     .arch-name { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
     .arch-desc { font-size: 0.75rem; }
+
+    @media (max-width: 768px) {
+      .arch-grid { grid-template-columns: 1fr; }
+    }
   `],
 })
 export class HippocppComponent implements OnInit, OnDestroy {

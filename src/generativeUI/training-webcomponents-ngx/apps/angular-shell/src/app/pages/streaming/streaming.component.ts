@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 import { HanaConnectionHealth, McpService, VectorStore } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
@@ -11,11 +11,20 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 @Component({
   selector: 'app-streaming',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
+  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ 'streaming.searchOperations' | translate }}</ui5-title>
+
+        <app-cross-app-link
+          targetApp="training"
+          targetRoute="/rag-studio"
+          targetLabel="RAG Studio"
+          icon="area-chart"
+          relationLabel="Related:">
+        </app-cross-app-link>
+
         <div slot="endContent" class="header-actions">
           <span class="last-refreshed" *ngIf="lastRefreshed">{{ 'common.updated' | translate }} {{ getTimeSinceRefresh() }}</span>
           <ui5-switch

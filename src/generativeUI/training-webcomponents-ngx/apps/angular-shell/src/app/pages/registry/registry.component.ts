@@ -54,6 +54,12 @@ interface RegistryEntry {
         </div>
       </div>
 
+      @if (loading) {
+        <div style="display: flex; justify-content: center; padding: 2rem;" role="status" aria-live="polite">
+          <ui5-busy-indicator active size="M"></ui5-busy-indicator>
+        </div>
+      }
+
       <!-- Filter bar -->
       <div class="filter-bar" role="search" aria-label="Filter models">
         <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()" aria-label="Filter by status">
@@ -172,20 +178,26 @@ interface RegistryEntry {
       border-radius: 0.2rem; width: 90px; }
     .deployed-badge { font-size: 0.7rem; margin-inline-start: 4px; color: var(--sapPositiveColor, #2e7d32); font-weight: 600; }
     .status-badge { padding: 2px 8px; border-radius: 1rem; font-size: 0.7rem; font-weight: 600;
-      &.status-completed { background: #e8f5e9; color: #2e7d32; }
-      &.status-running { background: #e3f2fd; color: #1565c0; }
-      &.status-failed { background: #ffebee; color: #c62828; }
-      &.status-pending { background: #fff8e1; color: #f57f17; } }
+      &.status-completed { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #2e7d32); }
+      &.status-running { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #1565c0); }
+      &.status-failed { background: var(--sapErrorBackground, #ffebee); color: var(--sapNegativeColor, #c62828); }
+      &.status-pending { background: var(--sapWarningBackground, #fff8e1); color: var(--sapCriticalColor, #f57f17); } }
     .actions { display: flex; gap: 0.3rem; flex-wrap: wrap; }
     .btn-xs { padding: 2px 8px; border-radius: 0.2rem; font-size: 0.7rem; cursor: pointer;
-      border: 1px solid transparent; background: #f5f5f5; color: #333;
-      &:hover { background: #e0e0e0; }
-      &.btn-save { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
-      &.btn-compare { background: #e3f2fd; color: #1565c0; text-decoration: none; display: inline-flex; align-items: center; }
-      &.btn-deploy { background: #e8f5e9; color: #2e7d32; }
-      &.btn-delete { background: #ffebee; color: #c62828; } }
-    .empty-state { background: #fff; border: 1px dashed #e4e4e4; border-radius: 0.5rem; padding: 2rem;
+      border: 1px solid transparent; background: var(--sapList_HeaderBackground, #f5f5f5); color: var(--sapTextColor, #32363a);
+      &:hover { background: var(--sapButton_Hover_Background, #e0e0e0); }
+      &.btn-save { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #2e7d32); border-color: var(--sapPositiveBorderColor, #a5d6a7); }
+      &.btn-compare { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #1565c0); text-decoration: none; display: inline-flex; align-items: center; }
+      &.btn-deploy { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #2e7d32); }
+      &.btn-delete { background: var(--sapErrorBackground, #ffebee); color: var(--sapNegativeColor, #c62828); } }
+    .empty-state { background: var(--sapTile_Background, #fff); border: 1px dashed var(--sapList_BorderColor, #e4e4e4); border-radius: 0.5rem; padding: 2rem;
       text-align: center; }
+    .eval-perplexity { color: var(--sapPositiveColor, #2e7d32); font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   `]
 })
 export class RegistryComponent implements OnInit {
@@ -208,17 +220,21 @@ export class RegistryComponent implements OnInit {
   readonly deployedCount = () => this.models().filter(m => m.deployed).length;
   readonly taggedCount = () => this.models().filter(m => m.tag).length;
 
+  loading = true;
+
   ngOnInit() { this.load(); }
 
   load() {
+    this.loading = true;
     this.http.get<RegistryEntry[]>(`${environment.apiBaseUrl}/jobs`).subscribe({
       next: (jobs) => {
         this.tags = JSON.parse(localStorage.getItem('model_tags') ?? '{}');
         const enriched = jobs.map(j => ({ ...j, tag: this.tags[j.id] }));
         this.models.set(enriched);
+        this.loading = false;
         this.applyFilter();
       },
-      error: () => this.toast.error(this.i18n.t('registry.loadFailed'), this.i18n.t('common.error'))
+      error: () => { this.loading = false; this.toast.error(this.i18n.t('registry.loadFailed'), this.i18n.t('common.error')); }
     });
   }
 

@@ -9,6 +9,7 @@ import { I18nService } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
+import { CrossAppLinkComponent } from '../../shared';
 
 interface AnalyticsRow {
   source: string;
@@ -27,7 +28,7 @@ interface AnalyticsResponse {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocaleNumberPipe],
+  imports: [CommonModule, FormsModule, LocaleNumberPipe, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -50,6 +51,14 @@ interface AnalyticsResponse {
           </div>
         </div>
       </header>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/data-explorer"
+        targetLabel="Data Explorer"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       @if (loading()) {
         <div class="loading-state">
@@ -228,6 +237,11 @@ interface AnalyticsResponse {
     .filter-row { display: flex; gap: 0.5rem; }
     .filter-input { padding: 0.375rem 0.5rem; border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 0.25rem; font-size: 0.8125rem; background: var(--sapField_Background, #fff); color: var(--sapTextColor); }
     .empty-cell { text-align: center; color: var(--sapContent_LabelColor); padding: 1.5rem; }
+
+    @media (max-width: 768px) {
+      .kpi-row { flex-direction: column; }
+      .chart-container { overflow-x: auto; }
+    }
   `],
 })
 export class AnalyticsComponent implements OnInit, OnDestroy {

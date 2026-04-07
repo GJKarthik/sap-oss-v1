@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService } from '../../services/mcp.service';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { ToastService } from '../../services/toast.service';
@@ -15,7 +15,7 @@ interface GraphEdge { source: string; target: string; label: string; }
 @Component({
   selector: 'app-lineage',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -24,6 +24,15 @@ interface GraphEdge { source: string; target: string; label: string; }
           {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
       </ui5-bar>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/schema-browser"
+        targetLabel="Schema Browser"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
+
       <div class="lineage-content" role="region" [attr.aria-label]="i18n.t('lineage.lineageExplorer')">
         <div class="loading-container" *ngIf="summaryLoading" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>

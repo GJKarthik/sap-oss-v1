@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
+import { CrossAppLinkComponent } from '../../shared';
 
 interface DeployedModel {
   id: string;
@@ -18,7 +19,7 @@ interface DeployedModel {
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -27,6 +28,14 @@ interface DeployedModel {
         <h1 class="page-title">{{ i18n.t('compare.title') }}</h1>
         <span class="text-muted text-small">{{ i18n.t('compare.subtitle') }}</span>
       </div>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/registry"
+        targetLabel="Model Registry"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <!-- Model selectors -->
       <div class="selector-row">
@@ -184,6 +193,12 @@ interface DeployedModel {
     .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
       pre { margin: 0; background: var(--sapList_Background, #f5f5f5); padding: 0.5rem; border-radius: 0.25rem;
         font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; } }
+
+    @media (max-width: 768px) {
+      .results-grid { grid-template-columns: 1fr; }
+      .metrics-bar { flex-wrap: wrap; }
+      .selector-row { flex-direction: column; }
+    }
   `]
 })
 export class CompareComponent implements OnInit {

@@ -990,5 +990,7 @@
   "streaming.minutesAgo": "{minutes}m ago",
 
   "hippocpp.archMangle": "Mangle",
-  "hippocpp.archMangleDesc": "Datalog invariants"
+  "hippocpp.archMangleDesc": "Datalog invariants",
+  "sparql.emptyTitle": "Run a SPARQL Query",
+  "sparql.emptyDesc": "Enter a query above and click Execute to see results."
 }

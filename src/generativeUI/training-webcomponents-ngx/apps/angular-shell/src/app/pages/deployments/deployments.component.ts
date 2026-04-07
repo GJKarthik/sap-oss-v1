@@ -10,7 +10,8 @@ import {
   ConfirmationDialogComponent,
   ConfirmationDialogData,
   EmptyStateComponent,
-  DateFormatPipe
+  DateFormatPipe,
+  CrossAppLinkComponent
 } from '../../shared';
 
 function readErrorMessage(error: unknown, fallback: string): string {
@@ -28,7 +29,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-deployments',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe, TranslatePipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -51,6 +52,14 @@ function readErrorMessage(error: unknown, fallback: string): string {
           {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
       </ui5-bar>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/registry"
+        targetLabel="Model Registry"
+        icon="database"
+        relationLabel="Related:">
+      </app-cross-app-link>
 
       <div class="deployments-content" role="region" [attr.aria-label]="i18n.t('deployments.deploymentsManagement')">
         <!-- Loading indicator -->

@@ -21,6 +21,7 @@ import '@ui5/webcomponents/dist/Icon.js';
 import '@ui5/webcomponents/dist/Dialog.js';
 import '@ui5/webcomponents/dist/TextArea.js';
 import '@ui5/webcomponents/dist/Label.js';
+import { CrossAppLinkComponent } from '../../shared';
 
 interface ApiApproval {
   id: string; title: string; description: string; risk_level: string;
@@ -36,14 +37,29 @@ interface ApiPolicy {
 @Component({
   selector: 'app-governance',
   standalone: true,
+  imports: [CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="governance-page">
+    <div class="governance-page" role="main" [attr.aria-label]="i18n.t('governance.title')">
       <header class="page-header">
         <h2>{{ i18n.t('governance.title') }}</h2>
         <p class="subtitle">{{ i18n.t('governance.subtitle') }}</p>
       </header>
+
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/deployments"
+        targetLabel="Deployments"
+        icon="inbox"
+        relationLabel="Related:">
+      </app-cross-app-link>
+
+      @if (loading) {
+        <div class="loading-container" role="status" aria-live="polite">
+          <ui5-busy-indicator active size="M"></ui5-busy-indicator>
+        </div>
+      }
 
       <!-- Pending Approvals -->
       <section class="section">
@@ -127,6 +143,8 @@ interface ApiPolicy {
     .policy-row { display: flex; justify-content: space-between; align-items: center; }
     .meta { font-size: 0.75rem; color: var(--sapContent_LabelColor); }
     .empty { padding: 2rem; text-align: center; color: var(--sapContent_LabelColor); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    .loading-container { display: flex; justify-content: center; padding: 3rem; }
+    @media (max-width: 768px) { .governance-page { padding: 0.75rem; } .action-row { flex-direction: column; } }
   `]
 })
 export class GovernanceComponent implements OnInit, OnDestroy {
@@ -142,6 +160,7 @@ export class GovernanceComponent implements OnInit, OnDestroy {
 
   apiApprovals: ApiApproval[] = [];
   apiPolicies: ApiPolicy[] = [];
+  loading = true;
   pendingApprovals: PendingApproval[] = [];
   policies: GovernancePolicyConfig[] = [];
 
@@ -163,7 +182,7 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   loadApprovals(): void {
     this.http.get<{ approvals: ApiApproval[] }>(`${this.apiUrl}/governance/approvals`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => { this.apiApprovals = r.approvals; this.cdr.markForCheck(); }, error: () => { this.toast.error(this.i18n.t('governance.loadApprovalsFailed')); this.cdr.markForCheck(); } });
+      .subscribe({ next: r => { this.apiApprovals = r.approvals; this.loading = false; this.cdr.markForCheck(); }, error: () => { this.loading = false; this.toast.error(this.i18n.t('governance.loadApprovalsFailed')); this.cdr.markForCheck(); } });
   }
 
   loadPolicies(): void {

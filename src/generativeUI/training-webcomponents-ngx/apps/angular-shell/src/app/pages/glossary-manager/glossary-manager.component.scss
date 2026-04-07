@@ -212,3 +212,9 @@ table {
   color: var(--sapContent_LabelColor, #999);
   font-style: italic;
 }
+
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .table-wrap { overflow-x: auto; }
+  .header-actions { flex-wrap: wrap; }
+}

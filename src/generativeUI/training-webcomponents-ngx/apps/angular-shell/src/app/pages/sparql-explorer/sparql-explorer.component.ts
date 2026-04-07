@@ -5,11 +5,13 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService, SparqlResult } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
+import { EmptyStateComponent } from '../../shared';
+import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 
 @Component({
   selector: 'app-sparql-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">
@@ -17,7 +19,15 @@ import { I18nService } from '../../services/i18n.service';
         <ui5-title slot="startContent" level="H3">{{ i18n.t('sparql.title') }}</ui5-title>
       </ui5-bar>
 
-      <div class="sparql-content" role="main" aria-label="SPARQL Explorer">
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/analytical-dashboard"
+        targetLabel="Analytical Dashboard"
+        icon="chart-table-view"
+        relationLabel="Related:">
+      </app-cross-app-link>
+
+      <div class="sparql-content" role="main" [attr.aria-label]="i18n.t('sparql.title')">
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="false" (close)="error = ''" role="alert">{{ error }}</ui5-message-strip>
 
         <ui5-card>
@@ -35,6 +45,12 @@ import { I18nService } from '../../services/i18n.service';
               <ui5-button design="Transparent" (click)="setPreset('classes')">{{ i18n.t('sparql.presetClasses') }}</ui5-button>
               <ui5-button design="Transparent" (click)="setPreset('properties')">{{ i18n.t('sparql.presetProperties') }}</ui5-button>
             </div>
+
+            @if (querying) {
+              <div class="loading-container" role="status" aria-live="polite">
+                <ui5-busy-indicator active size="M"></ui5-busy-indicator>
+              </div>
+            }
 
             @if (queryResult) {
               <div class="result-block">
@@ -60,6 +76,14 @@ import { I18nService } from '../../services/i18n.service';
               </div>
             }
           </div>
+
+          @if (!queryResult && !querying && !error) {
+            <app-empty-state
+              icon="syntax"
+              [title]="i18n.t('sparql.emptyTitle')"
+              [description]="i18n.t('sparql.emptyDesc')">
+            </app-empty-state>
+          }
         </ui5-card>
       </div>
     </ui5-page>
@@ -75,6 +99,11 @@ import { I18nService } from '../../services/i18n.service';
     .table-wrapper { overflow-x: auto; }
     pre { margin: 0; white-space: pre-wrap; word-break: break-word; background: var(--sapShell_Background); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--sapList_BorderColor); font-size: var(--sapFontSmallSize); }
     ui5-message-strip { margin-bottom: 0.25rem; }
+
+    .loading-container { display: flex; justify-content: center; padding: 2rem; }
+    @media (max-width: 768px) {
+      .sparql-content { padding: 0.75rem; }
+    }
   `],
 })
 export class SparqlExplorerComponent {
