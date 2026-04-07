@@ -50,12 +50,12 @@ interface LogLine {
       <div class="mission-layout">
         <!-- Center: Visual Flow & Concurrency -->
         <div class="center-stage">
-          <section class="flow-card glass-panel slideUp" style="animation-delay: 0.1s">
+          <section class="flow-card glass-panel slideUp" [style.--stagger]="'0.1s'">
             <app-pipeline-flow [stages]="stages()"></app-pipeline-flow>
           </section>
 
           <!-- Zig Concurrency Matrix (True Leverage of Zig Backend) -->
-          <section class="concurrency-section glass-panel slideUp" style="animation-delay: 0.2s">
+          <section class="concurrency-section glass-panel slideUp" [style.--stagger]="'0.2s'">
             <div class="card-header">
               <ui5-title level="H5">Zig Parallel Execution Matrix</ui5-title>
               <span class="text-small opacity-6">Real-time memory buffer activity</span>
@@ -73,12 +73,12 @@ interface LogLine {
             </div>
           </section>
 
-          <section class="terminal-container glass-panel slideUp" style="animation-delay: 0.3s">
+          <section class="terminal-container glass-panel slideUp" [style.--stagger]="'0.3s'">
             <div class="terminal-header">
               <ui5-icon name="command-line-interface"></ui5-icon>
               <span>Binary Stream Logs</span>
             </div>
-            <div class="terminal-body" #terminalBody>
+            <div class="terminal-body" #terminalBody role="log" aria-live="polite" aria-label="Pipeline execution logs">
               @for (line of logLines(); track $index) {
                 <div class="log-line log-line--{{ line.kind }}">
                   <span class="log-text">{{ line.text }}</span>
@@ -91,7 +91,7 @@ interface LogLine {
 
         <!-- Side: Metadata & Constraints -->
         <aside class="side-stage">
-          <ui5-card class="glass-panel slideUp" style="animation-delay: 0.4s">
+          <ui5-card class="glass-panel slideUp" [style.--stagger]="'0.4s'">
             <ui5-card-header slot="header" title-text="Pipeline Metrics"></ui5-card-header>
             <div class="p-1 display-flex flex-column gap-1">
               <div class="mini-stat">
@@ -105,7 +105,7 @@ interface LogLine {
             </div>
           </ui5-card>
 
-          <ui5-card class="glass-panel slideUp mt-1" style="animation-delay: 0.5s">
+          <ui5-card class="glass-panel slideUp mt-1" [style.--stagger]="'0.5s'">
             <ui5-card-header slot="header" title-text="Stage Status"></ui5-card-header>
             <div class="stages-mini-list">
               @for (s of stages(); track s.num) {
@@ -123,7 +123,8 @@ interface LogLine {
   styles: [`
     .mission-control { height: 100%; display: flex; flex-direction: column; overflow: hidden; padding: 1.5rem 2rem; gap: 1.5rem; }
     
-    .floating-header { padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 999px !important; }
+    .floating-header { padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 999px; }
+    .slideUp, .fadeIn { animation-delay: var(--stagger, 0s); }
     .header-left, .header-right { display: flex; align-items: center; gap: 1rem; }
     .live-indicator { font-size: 0.65rem; font-weight: 800; color: var(--sapPositiveColor); border: 1px solid currentColor; padding: 0.1rem 0.4rem; border-radius: 4px; }
 

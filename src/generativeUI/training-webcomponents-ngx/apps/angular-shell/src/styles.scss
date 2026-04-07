@@ -40,10 +40,10 @@ body {
 }
 
 /* Atmospheric State Overrides */
-.aura--weaving {
+.app-canvas.aura--weaving {
   --aura-primary: rgba(161, 31, 133, 0.15); /* Pulsing Violet */
   --aura-secondary: rgba(0, 143, 211, 0.1);
-  animation: auraBreath 3s ease-in-out infinite alternate !important;
+  animation: auraBreath 3s ease-in-out infinite alternate;
 }
 
 .aura--warning {

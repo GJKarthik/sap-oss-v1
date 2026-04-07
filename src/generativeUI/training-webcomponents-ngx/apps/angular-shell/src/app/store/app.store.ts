@@ -1,4 +1,4 @@
-import { computed, inject, effect } from '@angular/core';
+import { computed, inject } from '@angular/core';
 import {
   signalStore,
   withState,
@@ -8,7 +8,7 @@ import {
   withHooks,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, switchMap, tap, catchError, of, interval, take, forkJoin } from 'rxjs';
+import { pipe, switchMap, tap, catchError, of, interval, forkJoin, Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../services/api.service';
 
 export interface HealthStatus {
@@ -33,6 +33,18 @@ interface AppState {
   gpu: { data: GpuTelemetry | null; loading: boolean };
   pipelineState: 'idle' | 'running' | 'completed' | 'error';
   trainingPairCount: number;
+}
+
+function inferPipelineState(
+  health: HealthStatus | null,
+  current: AppState['pipelineState']
+): AppState['pipelineState'] {
+  if (!health) return current;
+  const deps = health.dependencies;
+  const allHealthy = deps.database === 'healthy' && deps.hana_vector === 'healthy' && deps.vllm_turboquant === 'healthy';
+  if (health.status === 'healthy' && allHealthy) return 'idle';
+  if (health.status !== 'healthy') return 'error';
+  return current;
 }
 
 export const AppStore = signalStore(
@@ -87,46 +99,25 @@ export const AppStore = signalStore(
           })
         ),
         tap((res) => {
-          // Infer pipeline state from health dependencies
-          let inferredPipeline: AppState['pipelineState'] = store.pipelineState();
-          if (res.health) {
-            const deps = res.health.dependencies;
-            const allHealthy = deps.database === 'healthy' && deps.hana_vector === 'healthy' && deps.vllm_turboquant === 'healthy';
-            if (res.health.status === 'healthy' && allHealthy) {
-              inferredPipeline = 'idle';
-            } else if (res.health.status !== 'healthy') {
-              inferredPipeline = 'error';
-            }
-          }
           patchState(store, {
             health: { data: res.health, loading: false },
             gpu: { data: res.gpu, loading: false },
-            pipelineState: inferredPipeline,
+            pipelineState: inferPipelineState(res.health, store.pipelineState()),
           });
         })
       )
     ),
     setPipelineState: (state: 'idle' | 'running' | 'completed' | 'error') => patchState(store, { pipelineState: state }),
-    forceRefresh: (type: string) => {
-      patchState(store, (s) => ({
-        health: { ...s.health, loading: true },
-        gpu: { ...s.gpu, loading: true },
-      }));
+    forceRefresh: () => {
+      patchState(store, (s) => ({ health: { ...s.health, loading: true }, gpu: { ...s.gpu, loading: true } }));
       forkJoin({
         health: api.get<HealthStatus>('/health').pipe(catchError(() => of(null))),
         gpu: api.get<GpuTelemetry>('/gpu/status').pipe(catchError(() => of(null))),
       }).subscribe((res) => {
-        let inferredPipeline: AppState['pipelineState'] = store.pipelineState();
-        if (res.health) {
-          const deps = res.health.dependencies;
-          const allHealthy = deps.database === 'healthy' && deps.hana_vector === 'healthy' && deps.vllm_turboquant === 'healthy';
-          if (res.health.status === 'healthy' && allHealthy) inferredPipeline = 'idle';
-          else if (res.health.status !== 'healthy') inferredPipeline = 'error';
-        }
         patchState(store, {
           health: { data: res.health, loading: false },
           gpu: { data: res.gpu, loading: false },
-          pipelineState: inferredPipeline,
+          pipelineState: inferPipelineState(res.health, store.pipelineState()),
         });
       });
     }
@@ -134,8 +125,17 @@ export const AppStore = signalStore(
   withHooks({
     onInit(store) {
       store.loadDashboardData();
-      // Periodically refresh telemetry
-      interval(10000).pipe(tap(() => store.loadDashboardData())).subscribe();
+      const destroy$ = new Subject<void>();
+      interval(10000).pipe(
+        takeUntil(destroy$),
+        tap(() => store.loadDashboardData())
+      ).subscribe();
+      // Store destroy$ for cleanup via a side-channel
+      (store as any).__destroy$ = destroy$;
+    },
+    onDestroy(store) {
+      (store as any).__destroy$?.next();
+      (store as any).__destroy$?.complete();
     }
   })
 );
