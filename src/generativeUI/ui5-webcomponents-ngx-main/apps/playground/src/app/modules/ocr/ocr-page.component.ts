@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
+import { WorkspaceHistoryService } from '../../core/workspace-history.service';
 import { environment } from '../../../environments/environment';
 
 interface OcrDocumentResponse {
@@ -44,6 +45,7 @@ export class OcrPageComponent implements OnInit {
   constructor(
     private readonly http: HttpClient,
     private readonly healthService: LiveDemoHealthService,
+    private readonly historyService: WorkspaceHistoryService,
   ) {}
 
   ngOnInit(): void {
@@ -78,6 +80,13 @@ export class OcrPageComponent implements OnInit {
         this.result = response.extraction || null;
         this.loading = false;
         this.loadRecentDocuments();
+        if (this.result) {
+          this.historyService.saveEntry('ocr', {
+            fileName: this.selectedFileName,
+            language: this.language,
+            extraction: this.result,
+          }).subscribe();
+        }
       },
       error: (error: { message?: string }) => {
         this.lastError = error?.message ?? 'Failed to process OCR document';
@@ -237,6 +246,10 @@ export class OcrPageComponent implements OnInit {
       reader.onerror = () => reject(reader.error || new Error('Failed to read file as text'));
       reader.readAsText(file);
     });
+  }
+
+  openCrossApp(): void {
+    window.location.href = '/training/document-ocr';
   }
 
   private getOcrRequestOptions(): { headers?: HttpHeaders } {

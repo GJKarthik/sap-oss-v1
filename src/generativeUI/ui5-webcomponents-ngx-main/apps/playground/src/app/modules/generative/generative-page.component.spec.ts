@@ -4,6 +4,7 @@ import { GenerativePageComponent } from './generative-page.component';
 import { GenerativeIntentService } from './generative-intent.service';
 import { GenerativeRuntimeService } from './generative-runtime.service';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
+import { WorkspaceHistoryService } from '../../core/workspace-history.service';
 
 function makeIntentService() {
   const intents$ = new Subject<{ action: string; payload?: unknown }>();
@@ -31,6 +32,13 @@ function makeCdr(): ChangeDetectorRef {
   return { detectChanges: jest.fn() } as unknown as ChangeDetectorRef;
 }
 
+function makeHistoryService() {
+  return {
+    saveEntry: jest.fn().mockReturnValue(of({})),
+    loadHistory: jest.fn().mockReturnValue(of([])),
+  } as unknown as WorkspaceHistoryService;
+}
+
 describe('GenerativePageComponent', () => {
   it('uses runtime service instead of simulation to produce schema', () => {
     const cdr = makeCdr();
@@ -39,7 +47,7 @@ describe('GenerativePageComponent', () => {
     const health = makeHealthService();
     (runtime.generateSchema as jest.Mock).mockReturnValue(of({ type: 'ui5-card' }));
 
-    const component = new GenerativePageComponent(cdr, intentService, runtime, health);
+    const component = new GenerativePageComponent(cdr, intentService, runtime, health, makeHistoryService());
     component.ngOnInit();
     component.generateUI('Build profile form');
 
@@ -57,7 +65,7 @@ describe('GenerativePageComponent', () => {
       throwError(() => new Error('backend down')),
     );
 
-    const component = new GenerativePageComponent(cdr, intentService, runtime, health);
+    const component = new GenerativePageComponent(cdr, intentService, runtime, health, makeHistoryService());
     component.ngOnInit();
     component.generateUI('Build profile form');
 

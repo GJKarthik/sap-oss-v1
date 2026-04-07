@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import {inject, NgModule} from '@angular/core';
+import {inject, NgModule, APP_INITIALIZER} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
 import {AppComponent} from './app.component';
@@ -23,6 +23,8 @@ import {
 } from '@angular/common/http';
 import { RequestTraceInterceptor } from './core/request-trace.interceptor';
 import { LiveHealthPanelComponent } from './shared/live-health-panel/live-health-panel.component';
+import { WorkspaceService } from './core/workspace.service';
+import { firstValueFrom } from 'rxjs';
 
 @NgModule({ declarations: [AppComponent, MainComponent, LiveHealthPanelComponent],
     bootstrap: [AppComponent], imports: [Ui5WebcomponentsModule,
@@ -90,6 +92,10 @@ import { LiveHealthPanelComponent } from './shared/live-health-panel/live-health
                 loadChildren: () => import('./modules/readiness/readiness.module').then(m => m.ReadinessModule)
             },
             {
+                path: 'workspace',
+                loadChildren: () => import('./modules/workspace/workspace.module').then(m => m.WorkspaceModule)
+            },
+            {
                 path: '**',
                 loadChildren: () => import('./modules/not-found/not-found.module').then(m => m.NotFoundModule)
             }
@@ -100,6 +106,12 @@ import { LiveHealthPanelComponent } from './shared/live-health-panel/live-health
         Ui5FundamentalThemingModule], providers: [
         provideHttpClient(withInterceptorsFromDi()),
         { provide: HTTP_INTERCEPTORS, useClass: RequestTraceInterceptor, multi: true },
+        {
+          provide: APP_INITIALIZER,
+          useFactory: (ws: WorkspaceService) => () => firstValueFrom(ws.initialize()),
+          deps: [WorkspaceService],
+          multi: true,
+        },
     ] })
 export class AppModule {
 }

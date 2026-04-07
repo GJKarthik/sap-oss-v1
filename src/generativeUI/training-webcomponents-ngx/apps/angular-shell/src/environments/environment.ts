@@ -14,5 +14,8 @@ export const environment = {
     enableGraphExplorer: true,
     enableModelOptimizer: true,
   },
-  version: '1.0.0-dev'
+  version: '1.0.0-dev',
+  collabWsUrl: `${typeof window !== 'undefined' ? window.location.protocol.replace('http', 'ws') : 'ws:'}//localhost:8200/collab`,
+  collabUserId: 'training-user-default',
+  collabDisplayName: 'Training User',
 };

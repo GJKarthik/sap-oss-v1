@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { EmptyStateComponent, ConfirmationDialogComponent, ConfirmationDialogData, DateFormatPipe } from '../../shared';
+import { TeamApprovalPanelComponent } from './team-approval-panel.component';
 
 interface GovernanceRule {
   id: string;
@@ -32,7 +33,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-governance',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, ConfirmationDialogComponent, DateFormatPipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, ConfirmationDialogComponent, DateFormatPipe, TeamApprovalPanelComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -82,6 +83,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
         <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true" role="note">
           Viewer mode: governance changes are disabled.
         </ui5-message-strip>
+
+        <!-- Team Approvals Panel -->
+        <app-team-approval-panel></app-team-approval-panel>
 
         <ui5-card *ngIf="showCreateForm && canManage" class="create-form-card">
           <ui5-card-header slot="header" title-text="Create Governance Rule" subtitle-text="Persist a new policy in the console"></ui5-card-header>

@@ -17,4 +17,7 @@ export const environment = {
   enableRag: true,
   enablePalWorkbench: true,
   enableKuzuGraph: true,
+  collabWsUrl: '/collab',
+  collabUserId: '',
+  collabDisplayName: '',
 };

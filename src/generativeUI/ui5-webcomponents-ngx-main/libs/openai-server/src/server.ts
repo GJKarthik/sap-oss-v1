@@ -283,6 +283,8 @@ const runs: Map<string, Record<string, unknown>> = new Map();
 const batches: Map<string, Record<string, unknown>> = new Map();
 const vectorTables: Map<string, Array<Record<string, unknown>>> = new Map();
 const ocrDocuments: Map<string, Record<string, unknown>> = new Map();
+const workspaceStore: Map<string, Record<string, unknown>> = new Map();
+const historyStore: Map<string, Array<Record<string, unknown>>> = new Map();
 
 // =============================================================================
 // Utility Functions
@@ -920,6 +922,89 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return sendJson(res, 200, { object: 'list', data: scores.map(s => ({ object: 'search_result', ...s })), model: deployment.id, source: 'memory' });
     }
 
+    // =========================================================================
+    // Workspace Settings
+    // =========================================================================
+
+    if (path === '/v1/workspace' && method === 'GET') {
+      const userId = url.searchParams.get('userId');
+      if (!userId) return sendError(res, 400, 'userId query parameter is required');
+      const ws = workspaceStore.get(userId);
+      if (!ws) return sendError(res, 404, 'No workspace found for this user');
+      return sendJson(res, 200, ws);
+    }
+
+    if (path === '/v1/workspace' && method === 'PUT') {
+      const body = await parseBody(req);
+      const userId = (body as Record<string, unknown>)?.['identity']
+        && ((body as Record<string, unknown>)['identity'] as Record<string, unknown>)?.['userId'];
+      if (!userId || typeof userId !== 'string') {
+        return sendError(res, 400, 'identity.userId is required');
+      }
+      (body as Record<string, unknown>)['updatedAt'] = new Date().toISOString();
+      workspaceStore.set(userId, body as Record<string, unknown>);
+
+      // Optional file persistence
+      const persistFile = process.env['WORKSPACE_PERSISTENCE_FILE'];
+      if (persistFile) {
+        try {
+          const allData = Object.fromEntries(workspaceStore.entries());
+          const fs = await import('fs');
+          fs.writeFileSync(persistFile, JSON.stringify(allData, null, 2));
+        } catch (e) {
+          console.warn('Failed to persist workspace to file:', e);
+        }
+      }
+      return sendJson(res, 200, { status: 'saved', userId });
+    }
+
+    // =========================================================================
+    // Workspace History
+    // =========================================================================
+
+    const historyMatch = path.match(/^\/v1\/workspace\/history\/([a-z]+)(?:\/([^/?]+))?$/);
+    if (historyMatch) {
+      const moduleName = historyMatch[1];
+      const entryId = historyMatch[2];
+
+      if (method === 'GET' && !entryId) {
+        const userId = url.searchParams.get('userId') || 'default';
+        const key = `${userId}:${moduleName}`;
+        const entries = historyStore.get(key) || [];
+        return sendJson(res, 200, { object: 'list', data: entries });
+      }
+
+      if (method === 'POST' && !entryId) {
+        const body = await parseBody(req) as Record<string, unknown>;
+        const userId = (body['userId'] as string) || 'default';
+        const key = `${userId}:${moduleName}`;
+        if (!historyStore.has(key)) historyStore.set(key, []);
+        const entry = {
+          id: `hist-${uuid()}`,
+          module: moduleName,
+          userId,
+          createdAt: new Date().toISOString(),
+          payload: body['payload'] || {},
+        };
+        historyStore.get(key)!.push(entry);
+        return sendJson(res, 201, entry);
+      }
+
+      if (method === 'DELETE' && entryId) {
+        const userId = url.searchParams.get('userId') || 'default';
+        const key = `${userId}:${moduleName}`;
+        const entries = historyStore.get(key);
+        if (entries) {
+          const idx = entries.findIndex(e => e['id'] === entryId);
+          if (idx >= 0) {
+            entries.splice(idx, 1);
+            return sendJson(res, 200, { status: 'deleted', id: entryId });
+          }
+        }
+        return sendError(res, 404, 'History entry not found');
+      }
+    }
+
     // Not found
     return sendError(res, 404, `Endpoint ${path} not found`);
   } catch (error) {
@@ -960,6 +1045,10 @@ Endpoints:
   POST /v1/ocr/documents    - OCR + invoice extraction
   GET  /v1/ocr/documents    - OCR document list
   GET  /v1/hana/tables      - Vector tables
+  GET  /v1/workspace         - Get workspace settings
+  PUT  /v1/workspace         - Save workspace settings
+  GET  /v1/workspace/history - Get session history
+  POST /v1/workspace/history - Save history entry
 `);
 });
 

@@ -9,6 +9,7 @@ import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { GlossaryService } from '../../services/glossary.service';
 import { takeUntil, Subject } from 'rxjs';
+import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 
 export interface SearchResult {
   id: string;
@@ -28,11 +29,19 @@ interface SearchResponse {
 @Component({
   selector: 'app-semantic-search',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-container" [class.rtl]="i18n.isRtl()">
+      <app-cross-app-link
+        targetApp="aifabric"
+        targetRoute="/rag"
+        targetLabel="Search Studio (RAG)"
+        icon="documents"
+        relationLabel="Related — full RAG engine with Elasticsearch:">
+      </app-cross-app-link>
+
       <header class="page-header">
         <h1 class="page-title">{{ i18n.t('semanticSearch.title') }}</h1>
         <p class="page-subtitle">{{ i18n.t('semanticSearch.subtitle') }}</p>

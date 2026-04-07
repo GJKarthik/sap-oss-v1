@@ -17,7 +17,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import settings
 from .database import close_database, init_database
-from .routes import auth, models, rag, deployments, datasources, lineage, governance, metrics, mcp_proxy, genui
+from .routes import auth, models, rag, deployments, datasources, lineage, governance, metrics, mcp_proxy, genui, collab, prompts
 from .seed import seed_store
 from .store import get_store
 
@@ -230,6 +230,8 @@ app.include_router(governance.router, prefix="/api/v1/governance", tags=["Govern
 app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["Metrics"])
 app.include_router(mcp_proxy.router, prefix="/api/v1/mcp", tags=["MCP Proxy"])
 app.include_router(genui.router, prefix="/api/v1/genui", tags=["Generative UI Sessions"])
+app.include_router(collab.router, tags=["Collaboration"])
+app.include_router(prompts.router, prefix="/api/v1/prompts", tags=["Prompt Templates"])
 
 
 # ---------------------------------------------------------------------------

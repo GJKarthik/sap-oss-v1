@@ -27,6 +27,9 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 // Services
 import { McpService } from './services/mcp.service';
 import { AuthService } from './services/auth.service';
+import { CollaborationService } from './services/collaboration.service';
+import { TeamConfigService } from './services/team-config.service';
+import { TeamGovernanceService } from './services/team-governance.service';
 
 @NgModule({
   declarations: [
@@ -50,6 +53,9 @@ import { AuthService } from './services/auth.service';
     },
     McpService,
     AuthService,
+    CollaborationService,
+    TeamConfigService,
+    TeamGovernanceService,
   ],
   bootstrap: [AppComponent]
 })

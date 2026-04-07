@@ -15,6 +15,8 @@ import { GovernanceService, PendingAction } from '@ui5/genui-governance';
 import { CollaborationService, Participant } from '@ui5/genui-collab';
 import { environment } from '../../../environments/environment';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
+import { WorkspaceService } from '../../core/workspace.service';
+import { WorkspaceHistoryService, HistoryEntry } from '../../core/workspace-history.service';
 
 @Component({
   selector: 'playground-joule-shell',
@@ -35,6 +37,7 @@ export class JouleShellComponent implements OnInit, OnDestroy {
   routeBlocked = false;
 
   readonly agUiEndpoint = environment.agUiEndpoint;
+  sessionHistory: HistoryEntry[] = [];
 
   constructor(
     private streamingUi: StreamingUiService,
@@ -42,6 +45,8 @@ export class JouleShellComponent implements OnInit, OnDestroy {
     private collab: CollaborationService,
     private liveHealthService: LiveDemoHealthService,
     private cdr: ChangeDetectorRef,
+    private workspaceService: WorkspaceService,
+    private historyService: WorkspaceHistoryService,
   ) {}
 
   ngOnInit(): void {
@@ -93,10 +98,36 @@ export class JouleShellComponent implements OnInit, OnDestroy {
         this.participants = participants;
         this.cdr.markForCheck();
       });
+
+    this.loadSessionHistory();
   }
 
   clearSession(): void {
+    if (this.schema) {
+      this.historyService.saveEntry('joule', {
+        schema: this.schema,
+        state: this.state,
+        savedAt: new Date().toISOString(),
+      }).pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.loadSessionHistory();
+      });
+    }
     this.streamingUi.clearSession();
+  }
+
+  loadSessionHistory(): void {
+    this.historyService.loadHistory('joule')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(entries => {
+        this.sessionHistory = entries;
+        this.cdr.markForCheck();
+      });
+  }
+
+  deleteHistoryEntry(entryId: string): void {
+    this.historyService.deleteEntry('joule', entryId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.loadSessionHistory());
   }
 
   dismissError(): void {

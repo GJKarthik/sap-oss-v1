@@ -56,6 +56,14 @@ const routes: Routes = [
         path: 'data-quality',
         loadComponent: () => import('./pages/data-quality/data-quality.component').then(m => m.DataQualityComponent),
       },
+      {
+        path: 'prompts',
+        loadComponent: () => import('./pages/prompt-library/prompt-library.component').then(m => m.PromptLibraryComponent),
+      },
+      {
+        path: 'workspace',
+        loadComponent: () => import('./pages/workspace/workspace.component').then(m => m.WorkspaceComponent),
+      },
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

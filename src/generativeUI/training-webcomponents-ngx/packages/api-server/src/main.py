@@ -450,6 +450,90 @@ async def job_ws_endpoint(websocket: WebSocket, job_id: str):
         JOB_WS_CONNECTIONS.get(job_id, set()).discard(websocket)
 
 
+# ---------------------------------------------------------------------------
+# Collaboration WebSocket — room-based presence & message fan-out
+# ---------------------------------------------------------------------------
+
+_collab_rooms: dict[str, dict[str, dict]] = {}  # room_id -> { user_id -> { ws, info } }
+_collab_lock = asyncio.Lock()
+
+
+async def _collab_broadcast(room_id: str, message: dict, exclude: str | None = None) -> None:
+    room = _collab_rooms.get(room_id, {})
+    payload = json.dumps(message)
+    stale = []
+    for uid, entry in room.items():
+        if uid == exclude:
+            continue
+        try:
+            await entry["ws"].send_text(payload)
+        except Exception:
+            stale.append(uid)
+    for uid in stale:
+        room.pop(uid, None)
+
+
+@app.websocket("/collab")
+async def collab_websocket(websocket: WebSocket, room: str = "default"):
+    """Room-based collaboration WebSocket for team presence."""
+    await websocket.accept()
+    user_id: str | None = None
+    room_id = room
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                msg = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            msg_type = msg.get("type")
+            if msg_type == "join":
+                user_id = msg.get("userId", "anonymous")
+                room_id = msg.get("roomId", room)
+                async with _collab_lock:
+                    if room_id not in _collab_rooms:
+                        _collab_rooms[room_id] = {}
+                    _collab_rooms[room_id][user_id] = {
+                        "ws": websocket,
+                        "displayName": msg.get("displayName", user_id),
+                        "avatarUrl": msg.get("avatarUrl"),
+                        "status": "active",
+                        "location": None,
+                        "joinedAt": datetime.utcnow().isoformat(),
+                    }
+                await _collab_broadcast(room_id, msg, exclude=user_id)
+                # Send sync
+                participants = [
+                    {"userId": uid, **{k: v for k, v in info.items() if k != "ws"}, "color": ""}
+                    for uid, info in _collab_rooms.get(room_id, {}).items()
+                ]
+                await websocket.send_text(json.dumps({"type": "sync", "participants": participants, "state": {}}))
+            elif msg_type == "leave":
+                uid = msg.get("userId", user_id)
+                async with _collab_lock:
+                    _collab_rooms.get(room_id, {}).pop(uid or "", None)
+                await _collab_broadcast(room_id, msg)
+            elif msg_type == "presence":
+                uid = msg.get("userId", user_id)
+                async with _collab_lock:
+                    entry = _collab_rooms.get(room_id, {}).get(uid or "")
+                    if entry:
+                        entry["status"] = msg.get("status", "active")
+                        entry["location"] = msg.get("location")
+                await _collab_broadcast(room_id, msg, exclude=uid)
+            else:
+                await _collab_broadcast(room_id, msg, exclude=msg.get("userId", user_id))
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        if user_id:
+            async with _collab_lock:
+                _collab_rooms.get(room_id, {}).pop(user_id, None)
+            await _collab_broadcast(room_id, {"type": "leave", "roomId": room_id, "userId": user_id})
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "healthy", "service": "training-webcomponents-ngx-api", "mode": "native-orchestrator"}
@@ -1266,6 +1350,85 @@ async def create_job(payload: JobCreatePayload) -> JSONResponse:
 
 
 # Proxy logic fully removed since we are now a native orchestration server.
+
+
+# ---------------------------------------------------------------------------
+# Shared Prompt Template Library
+# ---------------------------------------------------------------------------
+
+class PromptTemplateCreate(BaseModel):
+    name: str
+    content: str
+    category: str = "general"
+    description: str = ""
+    tags: list[str] = []
+
+class PromptTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    content: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+_prompt_templates: dict[str, dict] = {
+    "seed-1": {"id": "seed-1", "name": "Training Data Prep", "content": "Prepare the following dataset for model training:\n\n{{data}}\n\nClean, normalize, and split into train/val/test sets.", "category": "training", "description": "Dataset preparation prompt", "tags": ["data", "training"], "created_by": "system", "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(), "usage_count": 0, "version": 1},
+    "seed-2": {"id": "seed-2", "name": "Model Evaluation", "content": "Evaluate the model performance using:\n- Accuracy, Precision, Recall, F1\n- Confusion matrix analysis\n- Per-class performance breakdown\n\nModel: {{model_name}}\nDataset: {{dataset}}", "category": "evaluation", "description": "Comprehensive model evaluation", "tags": ["model", "evaluation", "metrics"], "created_by": "system", "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(), "usage_count": 0, "version": 1},
+}
+
+@app.get("/api/prompts")
+async def list_prompts(category: str | None = None, tag: str | None = None):
+    prompts = list(_prompt_templates.values())
+    if category:
+        prompts = [p for p in prompts if p.get("category") == category]
+    if tag:
+        prompts = [p for p in prompts if tag in p.get("tags", [])]
+    prompts.sort(key=lambda p: p.get("usage_count", 0), reverse=True)
+    return {"prompts": prompts, "total": len(prompts)}
+
+@app.get("/api/prompts/categories")
+async def list_prompt_categories():
+    cats = sorted({p.get("category", "general") for p in _prompt_templates.values()})
+    return {"categories": cats}
+
+@app.get("/api/prompts/{prompt_id}")
+async def get_prompt(prompt_id: str):
+    p = _prompt_templates.get(prompt_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return p
+
+@app.post("/api/prompts", status_code=201)
+async def create_prompt(body: PromptTemplateCreate):
+    pid = str(uuid.uuid4())
+    p = {"id": pid, "name": body.name, "content": body.content, "category": body.category, "description": body.description, "tags": body.tags, "created_by": "user", "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(), "usage_count": 0, "version": 1}
+    _prompt_templates[pid] = p
+    return p
+
+@app.patch("/api/prompts/{prompt_id}")
+async def update_prompt(prompt_id: str, body: PromptTemplateUpdate):
+    p = _prompt_templates.get(prompt_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    for key, value in body.model_dump(exclude_none=True).items():
+        p[key] = value
+    p["updated_at"] = datetime.utcnow().isoformat()
+    p["version"] = p.get("version", 1) + 1
+    return p
+
+@app.delete("/api/prompts/{prompt_id}")
+async def delete_prompt(prompt_id: str):
+    if prompt_id not in _prompt_templates:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    _prompt_templates.pop(prompt_id)
+    return {"ok": True, "id": prompt_id}
+
+@app.post("/api/prompts/{prompt_id}/use")
+async def record_prompt_usage(prompt_id: str):
+    p = _prompt_templates.get(prompt_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    p["usage_count"] = p.get("usage_count", 0) + 1
+    return {"id": prompt_id, "usage_count": p["usage_count"]}
 
 
 if __name__ == "__main__":

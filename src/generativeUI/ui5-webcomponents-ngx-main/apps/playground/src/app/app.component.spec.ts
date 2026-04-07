@@ -1,6 +1,7 @@
 import { Router } from '@angular/router';
 import { AppComponent } from './app.component';
 import { DemoTourService } from './core/demo-tour.service';
+import { WorkspaceService } from './core/workspace.service';
 
 jest.mock('@ui5/webcomponents-ngx/i18n', () => ({
   I18nService: class {
@@ -34,6 +35,15 @@ function makeI18nService(): { setLanguage: jest.Mock } {
   };
 }
 
+function makeWorkspaceService() {
+  return {
+    visibleNavLinks: () => [],
+    visibleHomeCards: () => [],
+    updateTheme: jest.fn(),
+    updateLanguage: jest.fn(),
+  } as unknown as WorkspaceService;
+}
+
 describe('AppComponent language switch', () => {
   beforeEach(() => {
     document.documentElement.setAttribute('dir', 'ltr');
@@ -46,6 +56,7 @@ describe('AppComponent language switch', () => {
       makeRouter(),
       makeDemoTour(),
       makeI18nService() as unknown as any,
+      makeWorkspaceService(),
     );
 
     component.onLanguageChange({
@@ -63,6 +74,7 @@ describe('AppComponent language switch', () => {
       makeRouter(),
       makeDemoTour(),
       makeI18nService() as unknown as any,
+      makeWorkspaceService(),
     );
 
     component.onLanguageChange({

@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
+import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 
 interface DataCleaningHealth {
   status: string;
@@ -39,11 +40,19 @@ interface DataCleaningWorkflowEventsResponse {
 @Component({
   selector: 'app-data-cleaning',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
+      <app-cross-app-link
+        targetApp="aifabric"
+        targetRoute="/data-quality"
+        targetLabel="Data Quality Studio"
+        icon="validate"
+        relationLabel="Related — validate production data:">
+      </app-cross-app-link>
+
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('dataCleaning.title') }}</h1>
         <p class="text-muted">{{ i18n.t('dataCleaning.subtitle') }}</p>
