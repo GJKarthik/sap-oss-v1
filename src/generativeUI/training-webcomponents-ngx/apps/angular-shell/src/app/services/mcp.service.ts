@@ -728,10 +728,6 @@ export class McpService {
   // Data Quality
   // ===========================================================================
 
-  fetchDataQualityTables(): Observable<string[]> {
-    return this.callTool<string[]>(this.elasticsearchUrl, 'list_indices', {});
-  }
-
   runDataQualityValidation(tableName: string): Observable<unknown> {
     return this.withRequestTimeout(
       this.http.post<unknown>(`${environment.apiBaseUrl}/data-quality/validate`, { table_name: tableName })

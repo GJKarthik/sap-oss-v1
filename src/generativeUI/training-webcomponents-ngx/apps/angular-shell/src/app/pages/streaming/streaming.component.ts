@@ -4,7 +4,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { EmptyStateComponent } from '../../shared';
-import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../services/mcp.service';
+import { HanaConnectionHealth, McpService, VectorStore } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
