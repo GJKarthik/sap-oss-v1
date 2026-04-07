@@ -46,7 +46,7 @@ interface PlatformComponent {
             <div class="hero-text slideUp">
               <span class="material-label">Production Intelligence</span>
               <ui5-title level="H1">{{ i18n.t('dashboard.welcome') }}</ui5-title>
-              <p class="text-secondary">{{ i18n.t('dashboard.heroDesc') }}</p>
+              <p class="narrative-text" role="status" aria-live="polite">{{ store.platformNarrative() }}</p>
             </div>
             
             <div class="telemetry-grid">
@@ -138,6 +138,7 @@ interface PlatformComponent {
 
     .material-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--sapBrandColor); letter-spacing: 0.1em; margin-bottom: 0.5rem; display: block; }
     .text-secondary { font-size: 1.125rem; line-height: 1.6; opacity: 0.7; max-width: 500px; }
+    .narrative-text { font-size: 1.125rem; line-height: 1.6; opacity: 0.8; max-width: 500px; transition: opacity 0.6s var(--spring-easing); }
 
     .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
     .slideUp, .fadeIn { animation-delay: var(--stagger, 0s); }
@@ -188,9 +189,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void { this.store.loadDashboardData(); }
 
   refresh(): void {
-    this.store.forceRefresh('health');
-    this.store.forceRefresh('gpu');
-    this.store.forceRefresh('graphStats');
+    this.store.forceRefresh('all');
     this.toast.info(this.i18n.t('dashboard.refreshMsg'));
   }
 
