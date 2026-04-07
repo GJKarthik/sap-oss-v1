@@ -11,6 +11,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { I18nService } from '../../services/i18n.service';
+import { ToastService } from '../../services/toast.service';
 import '@ui5/webcomponents/dist/Card.js';
 import '@ui5/webcomponents/dist/Tag.js';
 import '@ui5/webcomponents/dist/Button.js';
@@ -180,6 +181,7 @@ interface PromptTemplate {
 export class PromptLibraryComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
   private readonly apiUrl = `${environment.apiBaseUrl}/prompts`;
 
@@ -224,18 +226,18 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
   loadPrompts(): void {
     this.loading.set(true);
     this.http.get<{ prompts: PromptTemplate[] }>(this.apiUrl).pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => { this.prompts.set(r.prompts); this.loading.set(false); }, error: () => this.loading.set(false) });
+      .subscribe({ next: r => { this.prompts.set(r.prompts); this.loading.set(false); }, error: () => { this.toast.error(this.i18n.t('promptLibrary.loadFailed')); this.loading.set(false); } });
   }
 
   loadCategories(): void {
     this.http.get<{ categories: string[] }>(`${this.apiUrl}/categories`).pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => this.categories.set(r.categories), error: () => {} });
+      .subscribe({ next: r => this.categories.set(r.categories), error: () => this.toast.error(this.i18n.t('promptLibrary.loadCategoriesFailed')) });
   }
 
   createPrompt(): void {
     const body = { name: this.draftName.trim(), content: this.draftContent.trim(), category: this.draftCategory.trim() || 'general', description: this.draftDescription.trim(), tags: this.draftTags.split(',').map(t => t.trim()).filter(Boolean) };
     this.http.post(this.apiUrl, body).pipe(takeUntil(this.destroy$))
-      .subscribe({ next: () => { this.showCreate.set(false); this.draftName = ''; this.draftContent = ''; this.draftCategory = 'general'; this.draftDescription = ''; this.draftTags = ''; this.loadPrompts(); this.loadCategories(); } });
+      .subscribe({ next: () => { this.showCreate.set(false); this.draftName = ''; this.draftContent = ''; this.draftCategory = 'general'; this.draftDescription = ''; this.draftTags = ''; this.loadPrompts(); this.loadCategories(); }, error: () => this.toast.error(this.i18n.t('promptLibrary.createFailed')) });
   }
 
   selectForPreview(p: PromptTemplate): void { this.previewId.set(p.id); this.testValues = {}; this.renderedPreview.set(''); }
@@ -253,5 +255,5 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
   use(p: PromptTemplate): void { this.http.post(`${this.apiUrl}/${p.id}/use`, {}).pipe(takeUntil(this.destroy$)).subscribe(); navigator.clipboard?.writeText(p.content); }
   copy(p: PromptTemplate): void { navigator.clipboard?.writeText(p.content); }
   copyRendered(): void { navigator.clipboard?.writeText(this.renderedPreview()); }
-  remove(p: PromptTemplate): void { if (this.previewId() === p.id) this.previewId.set(null); this.http.delete(`${this.apiUrl}/${p.id}`).pipe(takeUntil(this.destroy$)).subscribe({ next: () => this.loadPrompts() }); }
+  remove(p: PromptTemplate): void { if (this.previewId() === p.id) this.previewId.set(null); this.http.delete(`${this.apiUrl}/${p.id}`).pipe(takeUntil(this.destroy$)).subscribe({ next: () => this.loadPrompts(), error: () => this.toast.error(this.i18n.t('promptLibrary.deleteFailed')) }); }
 }

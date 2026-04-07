@@ -12,6 +12,7 @@ import { TeamGovernanceService, PendingApproval } from '../../services/team-gove
 import { TeamConfigService, GovernancePolicyConfig } from '../../services/team-config.service';
 import { AuthService } from '../../services/auth.service';
 import { I18nService } from '../../services/i18n.service';
+import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 import '@ui5/webcomponents/dist/Card.js';
 import '@ui5/webcomponents/dist/Tag.js';
@@ -135,6 +136,7 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   private readonly teamConfig = inject(TeamConfigService);
   private readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
   private readonly apiUrl = environment.apiBaseUrl;
 
@@ -161,13 +163,13 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   loadApprovals(): void {
     this.http.get<{ approvals: ApiApproval[] }>(`${this.apiUrl}/governance/approvals`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => { this.apiApprovals = r.approvals; this.cdr.markForCheck(); }, error: () => {} });
+      .subscribe({ next: r => { this.apiApprovals = r.approvals; this.cdr.markForCheck(); }, error: () => { this.toast.error(this.i18n.t('governance.loadApprovalsFailed')); this.cdr.markForCheck(); } });
   }
 
   loadPolicies(): void {
     this.http.get<{ policies: ApiPolicy[] }>(`${this.apiUrl}/governance/policies`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => { this.apiPolicies = r.policies; this.cdr.markForCheck(); }, error: () => {} });
+      .subscribe({ next: r => { this.apiPolicies = r.policies; this.cdr.markForCheck(); }, error: () => { this.toast.error(this.i18n.t('governance.loadPoliciesFailed')); this.cdr.markForCheck(); } });
   }
 
   getRiskIcon(r: string): string { return r === 'critical' ? 'alert' : r === 'high' ? 'warning' : r === 'medium' ? 'information' : 'hint'; }
@@ -176,12 +178,12 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   approveApi(a: ApiApproval): void {
     this.http.post<ApiApproval>(`${this.apiUrl}/governance/approvals/${a.id}/decide`, { approver: 'training-user', action: 'approve' })
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: () => this.loadApprovals() });
+      .subscribe({ next: () => this.loadApprovals(), error: () => this.toast.error(this.i18n.t('governance.approveFailed')) });
   }
 
   rejectApi(a: ApiApproval): void {
     this.http.post<ApiApproval>(`${this.apiUrl}/governance/approvals/${a.id}/decide`, { approver: 'training-user', action: 'reject', comment: this.i18n.t('governance.rejectedByReviewer') })
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: () => this.loadApprovals() });
+      .subscribe({ next: () => this.loadApprovals(), error: () => this.toast.error(this.i18n.t('governance.rejectFailed')) });
   }
 }
