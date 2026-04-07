@@ -27,7 +27,7 @@ VALID_QUANTIZATIONS = ["Q4_K_M", "Q5_K_M", "Q8_0", "F16"]
 
 DEFAULT_OUTPUT_DIR = os.path.join(
     os.path.dirname(__file__),
-    "../../intelligence/vllm-main/models/gemma4-arabic-finance",
+    "../../intelligence/vllm-turboquant/models",
 )
 
 MODEL_CARD = {
@@ -116,7 +116,7 @@ def export_gguf(adapter_dir: str, output_dir: str, quantization: str) -> str:
     print(f"  Size:  {gguf_size_mb:.1f} MB")
     print(f"  Card:  {metadata_path}")
     print(f"\nTo serve:")
-    print(f"  bash scripts/start_arabic_server.sh")
+    print(f"  python start-turboquant.py")
 
     return gguf_path
 

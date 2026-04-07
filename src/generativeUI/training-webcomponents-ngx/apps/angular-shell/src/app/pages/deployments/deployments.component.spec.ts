@@ -100,7 +100,9 @@ describe('DeploymentsComponent', () => {
     component.toggleCreateForm();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Scenario ID');
-    expect(fixture.nativeElement.textContent).toContain('Configuration JSON');
+    const content = fixture.nativeElement.textContent;
+    // Accept either translated text or raw i18n key (depends on whether translations are loaded)
+    expect(content).toMatch(/Scenario ID|deployments\.scenarioId/);
+    expect(content).toMatch(/Configuration JSON|deployments\.configurationJson/);
   });
 });

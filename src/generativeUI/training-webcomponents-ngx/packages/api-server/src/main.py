@@ -207,6 +207,34 @@ structlog.configure(
 logger = structlog.get_logger("training-webcomponents-ngx")
 
 # ---------------------------------------------------------------------------
+# LLM Routing Strategy
+# ---------------------------------------------------------------------------
+
+class LLMRouter:
+    @staticmethod
+    def get_endpoint_and_model(messages: list[dict[str, str]], preferred_model: str = "default") -> tuple[str, str]:
+        """
+        Routes queries based on privacy and data type:
+        - Metadata/Public -> AI Core (Anthropic)
+        - Private/Non-Public -> vLLM TurboQuant (Gemma 4, Qwen 3.5, Nemotron 3)
+        """
+        latest_msg = next((m.get("content", "").lower() for m in reversed(messages) if m.get("role") == "user"), "")
+        
+        # Heuristic for private data detection
+        private_keywords = ["banking", "nfrp", "client", "customer", "transaction", "private", "confidential"]
+        is_private = any(k in latest_msg for k in private_keywords)
+        
+        if is_private or preferred_model in ["gemma4-arabic-finance", "qwen3.5-35b-turbo", "nemotron3-8b"]:
+            # Route to local vLLM TurboQuant
+            vllm_url = os.getenv("VLLM_TURBOQUANT_URL", "http://localhost:8000")
+            model = preferred_model if preferred_model != "default" else "Qwen/Qwen3.5-35B-A3B-FP8"
+            return f"{vllm_url}/v1/chat/completions", model
+        else:
+            # Route to AI Core (Anthropic)
+            aicore_url = os.getenv("AICORE_ANTHROPIC_URL", "http://localhost:8080") # Proxy to AI Core
+            return f"{aicore_url}/v1/chat/completions", "claude-3-5-sonnet-20240620"
+
+# ---------------------------------------------------------------------------
 # Native data cleaning state (lets training-webcomponents-ngx run standalone)
 # ---------------------------------------------------------------------------
 
@@ -875,22 +903,112 @@ async def openai_models():
 
 @app.post("/v1/chat/completions")
 async def openai_chat_completions(body: OpenAIChatRequest):
-    reply = _build_fallback_chat_reply(body.messages)
-    usage = {
-        "prompt_tokens": sum(max(1, len(message.get("content", "")) // 4) for message in body.messages),
-        "completion_tokens": max(1, len(reply) // 4),
-        "total_tokens": 0,
-    }
-    usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
+    # 1. Route based on content and model preference
+    endpoint, model = LLMRouter.get_endpoint_and_model(body.messages, body.model)
+    
+    reply = None
+    usage = None
+
+    # 2. Attempt real inference
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                endpoint,
+                json={
+                    "model": model,
+                    "messages": body.messages,
+                    "max_tokens": body.max_tokens,
+                    "temperature": body.temperature
+                }
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                reply = data["choices"][0]["message"]["content"]
+                usage = data.get("usage")
+    except Exception as e:
+        logger.warning("inference_routing_failed", endpoint=endpoint, error=str(e))
+
+    # 3. Fallback if real inference failed or skipped
+    if reply is None:
+        reply = _build_fallback_chat_reply(body.messages)
+        usage = {
+            "prompt_tokens": sum(max(1, len(m.get("content", "")) // 4) for m in body.messages),
+            "completion_tokens": max(1, len(reply) // 4),
+            "total_tokens": 0,
+        }
+        usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
+
+    # --- GENERATIVE UI DEMO LOGIC ---
+    ui_schema = None
+    user_msg = next((m.get("content", "").lower() for m in reversed(body.messages) if m.get("role") == "user"), "")
+    
+    if "schema" in user_msg or "nfrp" in user_msg:
+        ui_schema = {
+            "type": "ui5-card",
+            "props": {"style": "margin-top: 1rem; border-inline-start: 4px solid var(--sapBrandColor); background: linear-gradient(to bottom right, #ffffff, #f8faff);"},
+            "children": [
+                {
+                    "type": "ui5-card-header",
+                    "props": {
+                        "slot": "header",
+                        "title-text": "Analytical Synthesis: NFRP_Banking",
+                        "subtitle-text": "Real-time schema profiling"
+                    }
+                },
+                {
+                    "type": "div",
+                    "props": {"class": "gen-ui-grid"},
+                    "children": [
+                        {
+                            "type": "div",
+                            "props": {"class": "gen-ui-stat"},
+                            "children": [
+                                {"type": "ui5-radial-progress-indicator", "props": {"value": 82, "style": "width: 80px; height: 80px;"}},
+                                {"type": "span", "props": {"style": "font-size: 0.75rem; font-weight: bold; margin-top: 0.5rem;"}, "content": "Completeness"}
+                            ]
+                        },
+                        {
+                            "type": "div",
+                            "props": {"class": "gen-ui-stat"},
+                            "children": [
+                                {"type": "ui5-icon", "props": {"name": "table-view", "style": "font-size: 2rem; color: var(--sapBrandColor);"}},
+                                {"type": "span", "props": {"style": "font-size: 1.25rem; font-weight: 800;"}, "content": "14"},
+                                {"type": "span", "props": {"style": "font-size: 0.7rem;"}, "content": "Linked Tables"}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "div",
+                    "props": {"style": "padding: 0 1rem 1rem; display: flex; gap: 0.5rem;"},
+                    "children": [
+                        {
+                            "type": "ui5-button",
+                            "props": {"design": "Emphasized", "icon": "inspect"},
+                            "content": "Deep Dive Schema",
+                            "intent": {"action": "submit_prompt", "payload": {"value": "Give me a summary of NFRP_Account_AM table structure."}}
+                        },
+                        {
+                            "type": "ui5-button",
+                            "props": {"design": "Transparent", "icon": "download"},
+                            "content": "Export Spec",
+                            "intent": {"action": "toast", "payload": {"message": "Exporting technical specification..."}}
+                        }
+                    ]
+                }
+            ]
+        }
+
     return {
         "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
         "object": "chat.completion",
         "created": int(datetime.utcnow().timestamp()),
-        "model": body.model,
+        "model": model,
         "choices": [
             {
                 "index": 0,
-                "message": {"role": "assistant", "content": reply},
+                "message": {"role": "assistant", "content": reply, "ui_schema": ui_schema},
                 "finish_reason": "stop",
             }
         ],
@@ -924,7 +1042,7 @@ async def deploy_arabic_model(job_id: str):
 
     # Locate the GGUF file
     models_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../../../../intelligence/vllm-main/models/gemma4-arabic-finance")
+        os.path.join(os.path.dirname(__file__), "../../../../../intelligence/vllm-turboquant/models")
     )
     gguf_files = [f for f in os.listdir(models_dir) if f.endswith(".gguf")] if os.path.isdir(models_dir) else []
 
@@ -940,7 +1058,7 @@ async def deploy_arabic_model(job_id: str):
 
     # Start the llama.cpp server via the convenience script
     start_script = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../../../../intelligence/vllm-main/scripts/start_arabic_server.sh")
+        os.path.join(os.path.dirname(__file__), "../../../../../intelligence/vllm-turboquant/start-turboquant.py")
     )
     if os.path.exists(start_script):
         try:
@@ -1228,6 +1346,31 @@ async def validate_mangle_rules():
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- DATA EXPLORER PREVIEW ---
+
+@app.get("/data/assets")
+async def get_data_assets():
+    """List all data assets (Excel, CSV, etc.) from the training data directory."""
+    try:
+        import os
+        data_dir = os.path.join(os.path.dirname(__file__), "../../../../../training/data")
+        assets = []
+        if os.path.exists(data_dir):
+            for filename in os.listdir(data_dir):
+                if filename.startswith("."): continue
+                path = os.path.join(data_dir, filename)
+                if os.path.isfile(path):
+                    size = os.path.getsize(path)
+                    ext = filename.split(".")[-1].lower() if "." in filename else ""
+                    assets.append({
+                        "name": filename,
+                        "type": "xlsx" if ext == "xlsx" else "csv" if ext == "csv" else "template" if "template" in filename.lower() else "unknown",
+                        "size": f"{size // 1024} KB",
+                        "description": f"Training asset: {filename}",
+                        "category": "Pipeline Output" if filename.startswith(("1_", "2_", "3_")) else "Reference"
+                    })
+        return assets
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/data/preview")
 async def get_data_preview(limit: int = 50, offset: int = 0, difficulty: str = ""):
