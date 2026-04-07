@@ -220,10 +220,10 @@ export class McpService {
 
   // Reactive state
   private healthSubject = new BehaviorSubject<{
-    elasticsearch: ServiceHealth | null;
+    hana: ServiceHealth | null;
     pal: ServiceHealth | null;
     overall: 'healthy' | 'degraded' | 'error' | 'unknown';
-  }>({ elasticsearch: null, pal: null, overall: 'unknown' });
+  }>({ hana: null, pal: null, overall: 'unknown' });
 
   private deploymentsSubject = new BehaviorSubject<Deployment[]>([]);
   private vectorStoresSubject = new BehaviorSubject<VectorStore[]>([]);
@@ -257,7 +257,7 @@ export class McpService {
   private stopHealthPolling(): void {
     this.healthPollingSubscription?.unsubscribe();
     this.healthPollingSubscription = null;
-    this.healthSubject.next({ elasticsearch: null, pal: null, overall: 'unknown' });
+    this.healthSubject.next({ hana: null, pal: null, overall: 'unknown' });
   }
 
   checkAllHealth(): Observable<void> {
