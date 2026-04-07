@@ -15,14 +15,16 @@ import { BehaviorSubject, Subject } from 'rxjs';
 
 import { SAC_I18N_EN } from '../i18n/en';
 import { SAC_I18N_AR } from '../i18n/ar';
+import { SAC_I18N_FR } from '../i18n/fr';
 
-export type SacSupportedLocale = 'en' | 'ar';
+export type SacSupportedLocale = 'en' | 'ar' | 'fr';
 
 const RTL_LOCALES: ReadonlySet<string> = new Set(['ar', 'he', 'fa', 'ur']);
 
 const BUILT_IN_TRANSLATIONS: Record<SacSupportedLocale, Record<string, string>> = {
   en: SAC_I18N_EN,
   ar: SAC_I18N_AR,
+  fr: SAC_I18N_FR,
 };
 
 @Injectable({ providedIn: 'root' })
