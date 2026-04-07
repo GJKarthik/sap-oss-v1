@@ -81,8 +81,17 @@ interface SearchResponse {
         <div class="results-list" role="region" aria-label="Search results" aria-live="polite">
           <div class="results-header">
             <span>{{ i18n.t('semanticSearch.resultsCount', { count: totalResults() }) }}</span>
+            <div class="results-actions">
+              <select class="filter-select" [(ngModel)]="minScoreFilter" (ngModelChange)="applyFilter()">
+                <option value="0">All scores</option>
+                <option value="0.5">≥ 50%</option>
+                <option value="0.7">≥ 70%</option>
+                <option value="0.8">≥ 80%</option>
+              </select>
+              <ui5-button design="Transparent" icon="download" (click)="exportResults()" aria-label="Export results">Export</ui5-button>
+            </div>
           </div>
-          @for (r of results(); track r.id) {
+          @for (r of filteredResults(); track r.id) {
             <div class="result-card">
               <div class="result-meta">
                 <span class="result-source">{{ r.source }}</span>
@@ -99,6 +108,18 @@ interface SearchResponse {
               <div class="result-text"><bdi>{{ r.text }}</bdi></div>
             </div>
           }
+        </div>
+      }
+
+      <!-- Search History -->
+      @if (searchHistory.length > 0) {
+        <div class="search-history">
+          <h3 class="history-title">Recent Searches</h3>
+          <div class="history-chips">
+            @for (h of searchHistory; track h) {
+              <button class="history-chip" (click)="rerunSearch(h)">{{ h }}</button>
+            }
+          </div>
         </div>
       }
     </div>
@@ -198,6 +219,20 @@ interface SearchResponse {
       color: var(--sapTextColor, #32363a);
     }
 
+    .results-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    .search-history { margin-top: 1.5rem; }
+    .history-title { font-size: 0.8125rem; font-weight: 600; color: var(--sapContent_LabelColor); margin: 0 0 0.5rem; }
+    .history-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .history-chip {
+      padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; cursor: pointer;
+      border: 1px solid var(--sapField_BorderColor, #89919a); background: var(--sapField_Background, #fff);
+      color: var(--sapTextColor, #32363a);
+      &:hover { background: var(--sapList_Hover_Background, #f5f5f5); }
+    }
+
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+
     .text-small { font-size: 0.75rem; }
     .text-muted { color: var(--sapContent_LabelColor, #6a6d70); }
   `],
@@ -218,6 +253,15 @@ export class SemanticSearchComponent implements OnDestroy {
   query = '';
   selectedStore = 'default';
   stores = ['default', 'financial_reports', 'regulatory_docs'];
+  minScoreFilter = '0';
+  searchHistory: string[] = [];
+
+  filteredResults(): SearchResult[] {
+    const minScore = parseFloat(this.minScoreFilter) || 0;
+    return this.results().filter(r => r.score >= minScore);
+  }
+
+  applyFilter(): void { /* signal-based, filteredResults() recomputes automatically */ }
 
   search(): void {
     const q = this.query.trim();
@@ -225,6 +269,9 @@ export class SemanticSearchComponent implements OnDestroy {
 
     this.searching.set(true);
     this.hasSearched.set(true);
+    if (!this.searchHistory.includes(q)) {
+      this.searchHistory = [q, ...this.searchHistory.slice(0, 9)];
+    }
 
     this.api.post<SearchResponse>('/rag/search', {
       query: q,
@@ -245,6 +292,26 @@ export class SemanticSearchComponent implements OnDestroy {
         this.searching.set(false);
       },
     });
+  }
+
+  rerunSearch(q: string): void {
+    this.query = q;
+    this.search();
+  }
+
+  exportResults(): void {
+    const rows = [['ID', 'Source', 'Score', 'Language', 'Page', 'Text']];
+    this.filteredResults().forEach(r =>
+      rows.push([r.id, r.source, String(r.score), r.language, String(r.page ?? ''), r.text])
+    );
+    const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'semantic-search-results.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   ngOnDestroy(): void {

@@ -80,20 +80,44 @@ interface DeployedModel {
 
       <!-- Side-by-side results -->
       @if (resultA() !== null || resultB() !== null) {
+        <!-- Metrics comparison bar -->
+        <div class="metrics-bar" role="region" aria-label="Response metrics">
+          <div class="metric-chip">
+            <span class="metric-label">A latency</span>
+            <span class="metric-value">{{ latencyA() }}ms</span>
+          </div>
+          <div class="metric-chip">
+            <span class="metric-label">B latency</span>
+            <span class="metric-value">{{ latencyB() }}ms</span>
+          </div>
+          <div class="metric-chip">
+            <span class="metric-label">A tokens</span>
+            <span class="metric-value">~{{ tokenCount(resultA()) }}</span>
+          </div>
+          <div class="metric-chip">
+            <span class="metric-label">B tokens</span>
+            <span class="metric-value">~{{ tokenCount(resultB()) }}</span>
+          </div>
+          <div class="metric-chip" [class.metric-match]="similarityPct() >= 80" [class.metric-diff]="similarityPct() < 50">
+            <span class="metric-label">Similarity</span>
+            <span class="metric-value">{{ similarityPct() }}%</span>
+          </div>
+        </div>
+
         <div class="results-grid">
           <div class="result-card" [class.winner]="isWinner('A')">
             <div class="result-header">
               <span>{{ i18n.t('compare.modelA') }} · <bdi>{{ modelNameFor(modelA) }}</bdi></span>
               @if (isWinner('A')) { <span class="winner-badge">{{ i18n.t('compare.bestShorter') }}</span> }
             </div>
-            <pre class="result-sql"><bdi>{{ resultA() ?? i18n.t('compare.errorResponse') }}</bdi></pre>
+            <pre class="result-sql"><bdi [innerHTML]="highlightDiff(resultA(), resultB())"></bdi></pre>
           </div>
           <div class="result-card" [class.winner]="isWinner('B')">
             <div class="result-header">
               <span>{{ i18n.t('compare.modelB') }} · <bdi>{{ modelNameFor(modelB) }}</bdi></span>
               @if (isWinner('B')) { <span class="winner-badge">{{ i18n.t('compare.bestShorter') }}</span> }
             </div>
-            <pre class="result-sql"><bdi>{{ resultB() ?? i18n.t('compare.errorResponse') }}</bdi></pre>
+            <pre class="result-sql"><bdi [innerHTML]="highlightDiff(resultB(), resultA())"></bdi></pre>
           </div>
         </div>
 
@@ -144,6 +168,14 @@ interface DeployedModel {
     .result-sql { margin: 0; padding: 0.875rem; background: var(--sapShell_Background, #1e1e1e); color: var(--sapShell_TextColor, #9cdcfe);
       font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.8rem;
       white-space: pre-wrap; word-break: break-all; min-height: 80px; }
+    .metrics-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .metric-chip { display: flex; flex-direction: column; align-items: center; padding: 0.4rem 0.75rem; border-radius: 0.5rem;
+      background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); min-width: 60px; }
+    .metric-label { font-size: 0.6rem; font-weight: 600; color: var(--sapContent_LabelColor, #6a6d70); text-transform: uppercase; }
+    .metric-value { font-size: 0.875rem; font-weight: 700; color: var(--sapTextColor, #32363a); }
+    .metric-match { border-color: var(--sapPositiveColor, #4caf50); }
+    .metric-diff { border-color: var(--sapNegativeColor, #f44336); }
+    :host ::ng-deep .diff-add { background: rgba(76, 175, 80, 0.15); border-radius: 2px; }
     .history-section { margin-top: 0.5rem; }
     .section-title { font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem; color: var(--sapTextColor, #32363a); }
     .history-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem;
@@ -163,6 +195,8 @@ export class CompareComponent implements OnInit {
   readonly loading = signal(false);
   readonly resultA = signal<string | null>(null);
   readonly resultB = signal<string | null>(null);
+  readonly latencyA = signal(0);
+  readonly latencyB = signal(0);
   readonly history = signal<{ query: string; a: string; b: string }[]>([]);
 
   modelA = '';
@@ -199,6 +233,11 @@ export class CompareComponent implements OnInit {
     this.loading.set(true);
     this.resultA.set(null);
     this.resultB.set(null);
+    this.latencyA.set(0);
+    this.latencyB.set(0);
+
+    const startA = performance.now();
+    const startB = performance.now();
 
     const queryA = this.http.post<{ response: string }>(
       `${environment.apiBaseUrl}/inference/${this.modelA}/chat`,
@@ -213,22 +252,22 @@ export class CompareComponent implements OnInit {
     const check = () => { if (doneA && doneB) this.loading.set(false); };
 
     queryA.subscribe({
-      next: (r) => { this.resultA.set(r.response); doneA = true; check(); },
-      error: () => { this.resultA.set('[Error — model did not respond]'); doneA = true; check(); }
+      next: (r) => { this.resultA.set(r.response); this.latencyA.set(Math.round(performance.now() - startA)); doneA = true; check(); },
+      error: () => { this.resultA.set('[Error — model did not respond]'); this.latencyA.set(Math.round(performance.now() - startA)); doneA = true; check(); }
     });
     queryB.subscribe({
       next: (r) => {
         this.resultB.set(r.response);
+        this.latencyB.set(Math.round(performance.now() - startB));
         doneB = true;
         check();
-        // Add to history once both are done
         const ra = this.resultA();
         const rb = this.resultB();
         if (ra !== null && rb !== null) {
           this.history.update(h => [{ query: this.prompt, a: ra, b: rb }, ...h.slice(0, 9)]);
         }
       },
-      error: () => { this.resultB.set('[Error — model did not respond]'); doneB = true; check(); }
+      error: () => { this.resultB.set('[Error — model did not respond]'); this.latencyB.set(Math.round(performance.now() - startB)); doneB = true; check(); }
     });
   }
 
@@ -237,5 +276,32 @@ export class CompareComponent implements OnInit {
     const b = this.resultB();
     if (!a || !b) return false;
     return side === 'A' ? a.length <= b.length : b.length < a.length;
+  }
+
+  tokenCount(text: string | null): number {
+    if (!text) return 0;
+    return Math.ceil(text.length / 4); // rough estimate: ~4 chars per token
+  }
+
+  similarityPct(): number {
+    const a = this.resultA();
+    const b = this.resultB();
+    if (!a || !b) return 0;
+    const wordsA = new Set(a.toLowerCase().split(/\s+/));
+    const wordsB = new Set(b.toLowerCase().split(/\s+/));
+    const intersection = [...wordsA].filter(w => wordsB.has(w)).length;
+    const union = new Set([...wordsA, ...wordsB]).size;
+    return union === 0 ? 100 : Math.round((intersection / union) * 100);
+  }
+
+  highlightDiff(text: string | null, other: string | null): string {
+    if (!text) return '';
+    const escaped = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (!other) return escaped;
+    const otherWords = new Set(other.toLowerCase().split(/\s+/));
+    return escaped.replace(/\S+/g, word => {
+      const clean = word.replace(/&lt;|&gt;|&amp;/g, '').toLowerCase();
+      return otherWords.has(clean) ? word : `<span class="diff-add">${word}</span>`;
+    });
   }
 }

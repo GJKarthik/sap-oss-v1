@@ -228,15 +228,21 @@ function readErrorMessage(error: unknown, fallback: string): string {
               <div *ngIf="ragResult" class="result-area" role="region" [attr.aria-label]="'ragStudio.queryResults' | translate">
                 <div class="answer-section">
                   <h4>{{ 'ragStudio.searchSummary' | translate }}</h4>
-                  <p class="answer-text">{{ ragResult.answer }}</p>
+                  <p class="answer-text" [innerHTML]="highlightQuery(ragResult.answer, queryText)"></p>
                 </div>
                 <div class="context-section">
-                  <h4>{{ 'ragStudio.retrievedDocuments' | translate }}</h4>
-                  <ui5-list *ngIf="ragResult.context_docs.length > 0; else emptyContext" aria-label="Context documents">
-                    <ui5-li *ngFor="let doc of ragResult.context_docs; trackBy: trackByIndex">
-                      {{ formatContextDoc(doc) }}
-                    </ui5-li>
-                  </ui5-list>
+                  <h4>{{ 'ragStudio.retrievedDocuments' | translate }} ({{ ragResult.context_docs.length }})</h4>
+                  <div *ngIf="ragResult.context_docs.length > 0; else emptyContext" class="context-doc-list">
+                    <div *ngFor="let doc of ragResult.context_docs; let i = index; trackBy: trackByIndex" class="context-doc-card">
+                      <div class="context-doc-header">
+                        <span class="context-doc-rank">#{{ i + 1 }}</span>
+                        <span class="context-doc-score" [class.high]="getDocScore(doc) >= 0.8" [class.medium]="getDocScore(doc) >= 0.5 && getDocScore(doc) < 0.8">
+                          {{ (getDocScore(doc) * 100).toFixed(0) }}% relevance
+                        </span>
+                      </div>
+                      <div class="context-doc-text" [innerHTML]="highlightQuery(formatContextDoc(doc), queryText)"></div>
+                    </div>
+                  </div>
                   <ng-template #emptyContext>
                     <p class="no-context">{{ 'ragStudio.noContextDocs' | translate }}</p>
                   </ng-template>
@@ -387,6 +393,65 @@ function readErrorMessage(error: unknown, fallback: string): string {
       margin: 0;
       color: var(--sapContent_LabelColor);
       font-style: italic;
+    }
+
+    .context-doc-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .context-doc-card {
+      border: 1px solid var(--sapList_BorderColor);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .context-doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: var(--sapList_HeaderBackground, #f5f5f5);
+      border-bottom: 1px solid var(--sapList_BorderColor);
+      font-size: var(--sapFontSmallSize);
+    }
+
+    .context-doc-rank {
+      font-weight: 700;
+      color: var(--sapContent_LabelColor);
+    }
+
+    .context-doc-score {
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.7rem;
+      background: var(--sapNegativeBackground, #ffebee);
+      color: var(--sapNegativeColor, #b00);
+    }
+
+    .context-doc-score.high {
+      background: var(--sapSuccessBackground, #e6f4ea);
+      color: var(--sapPositiveColor, #107e3e);
+    }
+
+    .context-doc-score.medium {
+      background: var(--sapWarningBackground, #fef7e0);
+      color: var(--sapCriticalColor, #e76500);
+    }
+
+    .context-doc-text {
+      padding: 0.75rem;
+      font-size: var(--sapFontSize);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    :host ::ng-deep mark {
+      background: rgba(255, 213, 0, 0.35);
+      border-radius: 2px;
+      padding: 0 1px;
     }
 
     .full-width-card {
@@ -594,11 +659,27 @@ export class RagStudioComponent implements OnInit {
     if (typeof doc === 'string') {
       return doc;
     }
-
     if (doc && typeof doc === 'object') {
-      return JSON.stringify(doc);
+      const obj = doc as Record<string, unknown>;
+      return obj['text'] ? String(obj['text']) : JSON.stringify(doc);
     }
-
     return String(doc);
+  }
+
+  getDocScore(doc: unknown): number {
+    if (doc && typeof doc === 'object') {
+      const score = (doc as Record<string, unknown>)['score'];
+      if (typeof score === 'number') return score;
+    }
+    return 0.5; // default mid-range if no score
+  }
+
+  highlightQuery(text: string, query: string): string {
+    if (!query || !text) return text;
+    const words = query.trim().split(/\s+/).filter(w => w.length > 2);
+    if (words.length === 0) return text;
+    const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`(${escaped.join('|')})`, 'gi');
+    return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(regex, '<mark>$1</mark>');
   }
 }

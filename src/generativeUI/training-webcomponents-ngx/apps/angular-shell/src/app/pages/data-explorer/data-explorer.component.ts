@@ -47,6 +47,7 @@ interface SqlPair {
         <div class="tab-bar">
           <ui5-button [design]="activeTab() === 'assets' ? 'Emphasized' : 'Default'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</ui5-button>
           <ui5-button [design]="activeTab() === 'pairs' ? 'Emphasized' : 'Default'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</ui5-button>
+          <ui5-button design="Transparent" icon="download" (click)="exportCurrentTab()" aria-label="Export data">Export</ui5-button>
         </div>
       </div>
 
@@ -78,6 +79,20 @@ interface SqlPair {
           <div class="stat-card">
             <div class="stat-value">{{ templateCount() }}</div>
             <div class="stat-label">{{ i18n.t('dataExplorer.promptTemplates') }}</div>
+          </div>
+        </div>
+
+        <!-- Type distribution chart -->
+        <div class="type-chart" aria-label="Asset type distribution">
+          <svg viewBox="0 0 300 24" width="300" height="24" role="img">
+            <rect x="0" y="0" [attr.width]="300 * excelCount() / assets.length" height="24" rx="4" fill="var(--sapPositiveColor, #4caf50)" opacity="0.7"></rect>
+            <rect [attr.x]="300 * excelCount() / assets.length" y="0" [attr.width]="300 * csvCount() / assets.length" height="24" rx="0" fill="var(--sapInformativeColor, #1565c0)" opacity="0.7"></rect>
+            <rect [attr.x]="300 * (excelCount() + csvCount()) / assets.length" y="0" [attr.width]="300 * templateCount() / assets.length" height="24" rx="0" fill="var(--sapCriticalColor, #e65100)" opacity="0.7"></rect>
+          </svg>
+          <div class="type-legend">
+            <span class="legend-item"><span class="legend-dot" style="background: var(--sapPositiveColor, #4caf50)"></span>XLSX ({{ excelCount() }})</span>
+            <span class="legend-item"><span class="legend-dot" style="background: var(--sapInformativeColor, #1565c0)"></span>CSV ({{ csvCount() }})</span>
+            <span class="legend-item"><span class="legend-dot" style="background: var(--sapCriticalColor, #e65100)"></span>Template ({{ templateCount() }})</span>
           </div>
         </div>
 
@@ -240,6 +255,12 @@ interface SqlPair {
       }
       tr:last-child td { border-bottom: none; }
     }
+    /* Chart */
+    .type-chart { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .type-legend { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .legend-item { display: flex; align-items: center; gap: 0.25rem; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
     /* SQL Pairs */
     .pairs-list { display: flex; flex-direction: column; gap: 1rem; }
     .pair-card { background: var(--sapTile_Background, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem; overflow: hidden; }
@@ -342,5 +363,28 @@ export class DataExplorerComponent implements OnInit {
 
   clearSelection(): void {
     this.selected.set(null);
+  }
+
+  exportCurrentTab(): void {
+    if (this.activeTab() === 'assets') {
+      const rows = [['Name', 'Type', 'Size', 'Category', 'Description']];
+      this.filteredAssets().forEach(a => rows.push([a.name, a.type, a.size, a.category, a.description]));
+      this.downloadCsv(rows, 'data-assets.csv');
+    } else {
+      const rows = [['ID', 'Difficulty', 'DB', 'Question', 'Query']];
+      this.pairs().forEach(p => rows.push([p.id, p.difficulty, p.db_id, p.question, p.query]));
+      this.downloadCsv(rows, 'sql-pairs.csv');
+    }
+  }
+
+  private downloadCsv(rows: string[][], filename: string): void {
+    const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }
