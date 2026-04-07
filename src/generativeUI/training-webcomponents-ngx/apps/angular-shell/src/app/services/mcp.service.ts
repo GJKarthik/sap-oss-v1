@@ -261,12 +261,16 @@ export class McpService {
   }
 
   checkAllHealth(): Observable<void> {
-    const elasticsearchHealth$ = this.http.get<ServiceHealth>(
-      this.elasticsearchHealthUrl
-    ).pipe(
+    const hanaHealth$ = this.hanaListTables().pipe(
+      map((tables): ServiceHealth => ({
+        status: 'healthy',
+        service: 'hana-vector',
+        config_ready: true,
+        timestamp: new Date().toISOString(),
+      })),
       catchError(err => of<ServiceHealth>({
         status: 'error',
-        service: 'elasticsearch-mcp',
+        service: 'hana-vector',
         error: err.message || 'Connection failed'
       }))
     );
@@ -282,20 +286,20 @@ export class McpService {
     );
 
     return forkJoin({
-      elasticsearch: elasticsearchHealth$,
+      hana: hanaHealth$,
       pal: palHealth$
     }).pipe(
-      map(({ elasticsearch, pal }) => {
+      map(({ hana, pal }) => {
         let overall: 'healthy' | 'degraded' | 'error' | 'unknown' = 'unknown';
-        if (elasticsearch.status === 'healthy' && pal.status === 'healthy') {
+        if (hana.status === 'healthy' && pal.status === 'healthy') {
           overall = 'healthy';
-        } else if (elasticsearch.status === 'error' && pal.status === 'error') {
+        } else if (hana.status === 'error' && pal.status === 'error') {
           overall = 'error';
         } else {
           overall = 'degraded';
         }
 
-        this.healthSubject.next({ elasticsearch, pal, overall });
+        this.healthSubject.next({ hana, pal, overall });
       })
     );
   }
@@ -412,7 +416,7 @@ export class McpService {
   }
 
   // ===========================================================================
-  // PAL / Elasticsearch
+  // PAL / HANA
   // ===========================================================================
 
   fetchPalTools(): Observable<MCPToolDefinition[]> {
@@ -425,8 +429,17 @@ export class McpService {
     return this.callTool<T>(this.palUrl, toolName, args);
   }
 
-  getElasticsearchClusterHealth(): Observable<ElasticsearchClusterHealth> {
-    return this.callTool<ElasticsearchClusterHealth>(this.elasticsearchUrl, 'es_cluster_health', {});
+  getHanaConnectionHealth(): Observable<HanaConnectionHealth> {
+    return this.hanaListTables().pipe(
+      map((tables): HanaConnectionHealth => ({
+        status: 'healthy',
+        tables_count: tables?.length ?? 0,
+      })),
+      catchError(() => of<HanaConnectionHealth>({
+        status: 'error',
+        tables_count: 0,
+      }))
+    );
   }
 
   // ===========================================================================
@@ -558,7 +571,7 @@ export class McpService {
         const health = this.healthSubject.getValue();
 
         return {
-          servicesHealthy: (health.elasticsearch?.status === 'healthy' ? 1 : 0) +
+          servicesHealthy: (health.hana?.status === 'healthy' ? 1 : 0) +
             (health.pal?.status === 'healthy' ? 1 : 0),
           totalServices: 2,
           activeDeployments: dashboard.running_deployments,
