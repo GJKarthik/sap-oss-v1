@@ -8,6 +8,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { EmptyStateComponent, ConfirmationDialogComponent, ConfirmationDialogData, DateFormatPipe } from '../../shared';
 import { TeamApprovalPanelComponent } from './team-approval-panel.component';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 interface GovernanceRule {
   id: string;
@@ -33,134 +34,134 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-governance',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, ConfirmationDialogComponent, DateFormatPipe, TeamApprovalPanelComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, ConfirmationDialogComponent, DateFormatPipe, TeamApprovalPanelComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Governance Rules</ui5-title>
-        <ui5-button 
-          slot="endContent" 
-          icon="refresh" 
-          (click)="loadRules()" 
+        <ui5-title slot="startContent" level="H3">{{ 'governance.governanceRules' | translate }}</ui5-title>
+        <ui5-button
+          slot="endContent"
+          icon="refresh"
+          (click)="loadRules()"
           [disabled]="loading"
-          aria-label="Refresh governance rules"
+          [attr.aria-label]="i18n.t('governance.refreshRules')"
           class="hide-mobile">
-          {{ loading ? 'Loading...' : 'Refresh' }}
+          {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
-        <ui5-button 
-          *ngIf="canManage" 
-          slot="endContent" 
-          design="Emphasized" 
-          icon="add" 
+        <ui5-button
+          *ngIf="canManage"
+          slot="endContent"
+          design="Emphasized"
+          icon="add"
           (click)="toggleCreateForm()"
-          aria-label="Add new governance rule">
-          {{ showCreateForm ? 'Close Form' : 'Add Rule' }}
+          [attr.aria-label]="i18n.t('governance.addNewRule')">
+          {{ showCreateForm ? ('governance.closeForm' | translate) : ('governance.addRule' | translate) }}
         </ui5-button>
       </ui5-bar>
-      <div class="governance-content" role="region" aria-label="Governance rules management">
+      <div class="governance-content" role="region" [attr.aria-label]="i18n.t('governance.rulesManagement')">
         <!-- Loading indicator -->
         <div class="loading-container" *ngIf="loading" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-          <span class="loading-text">Loading governance rules...</span>
+          <span class="loading-text">{{ 'governance.loadingRules' | translate }}</span>
         </div>
 
-        <ui5-message-strip 
-          *ngIf="error" 
-          design="Negative" 
+        <ui5-message-strip
+          *ngIf="error"
+          design="Negative"
           [hideCloseButton]="false"
           (close)="error = ''"
           role="alert">
           {{ error }}
         </ui5-message-strip>
-        <ui5-message-strip 
-          *ngIf="success" 
-          design="Positive" 
+        <ui5-message-strip
+          *ngIf="success"
+          design="Positive"
           [hideCloseButton]="false"
           (close)="success = ''"
           role="status">
           {{ success }}
         </ui5-message-strip>
         <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true" role="note">
-          Viewer mode: governance changes are disabled.
+          {{ 'governance.viewerMode' | translate }}
         </ui5-message-strip>
 
         <!-- Team Approvals Panel -->
         <app-team-approval-panel></app-team-approval-panel>
 
         <ui5-card *ngIf="showCreateForm && canManage" class="create-form-card">
-          <ui5-card-header slot="header" title-text="Create Governance Rule" subtitle-text="Persist a new policy in the console"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('governance.createRule')" [attr.subtitle-text]="i18n.t('governance.persistPolicy')"></ui5-card-header>
           <form class="form-grid" (ngSubmit)="createRule()">
             <div class="field-group">
               <label for="rule-name-input" class="field-label">
-                Rule Name <span class="required">*</span>
+                {{ 'governance.ruleName' | translate }} <span class="required">*</span>
               </label>
-              <ui5-input 
+              <ui5-input
                 id="rule-name-input"
-                ngDefaultControl 
-                [(ngModel)]="draftRule.name" 
+                ngDefaultControl
+                [(ngModel)]="draftRule.name"
                 name="ruleName"
                 placeholder="PII Detection"
-                accessible-name="Rule name"
+                [attr.accessible-name]="i18n.t('governance.ruleName')"
                 required>
               </ui5-input>
             </div>
             <div class="field-group">
               <label for="rule-type-input" class="field-label">
-                Rule Type <span class="required">*</span>
+                {{ 'governance.ruleType' | translate }} <span class="required">*</span>
               </label>
-              <ui5-input 
+              <ui5-input
                 id="rule-type-input"
-                ngDefaultControl 
-                [(ngModel)]="draftRule.rule_type" 
+                ngDefaultControl
+                [(ngModel)]="draftRule.rule_type"
                 name="ruleType"
                 placeholder="content-filter"
-                accessible-name="Rule type"
+                [attr.accessible-name]="i18n.t('governance.ruleType')"
                 required>
               </ui5-input>
             </div>
             <div class="field-group">
-              <label for="rule-description-input" class="field-label">Description</label>
-              <ui5-textarea 
+              <label for="rule-description-input" class="field-label">{{ 'governance.description' | translate }}</label>
+              <ui5-textarea
                 id="rule-description-input"
-                ngDefaultControl 
-                [(ngModel)]="draftRule.description" 
+                ngDefaultControl
+                [(ngModel)]="draftRule.description"
                 name="description"
-                [rows]="4" 
-                growing 
+                [rows]="4"
+                growing
                 placeholder="Describe what this rule governs."
-                accessible-name="Rule description">
+                [attr.accessible-name]="i18n.t('governance.description')">
               </ui5-textarea>
             </div>
             <div class="form-actions">
-              <ui5-button 
-                design="Emphasized" 
+              <ui5-button
+                design="Emphasized"
                 type="Submit"
-                (click)="createRule()" 
+                (click)="createRule()"
                 [disabled]="mutating || !draftRule.name.trim() || !draftRule.rule_type.trim()">
-                {{ mutating ? 'Creating...' : 'Create Rule' }}
+                {{ mutating ? ('governance.creating' | translate) : ('governance.createRuleBtn' | translate) }}
               </ui5-button>
-              <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating">Cancel</ui5-button>
+              <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating">{{ 'common.cancel' | translate }}</ui5-button>
             </div>
           </form>
         </ui5-card>
 
         <ui5-card [class.card-loading]="loading">
-          <ui5-card-header 
-            slot="header" 
-            title-text="Active Rules" 
-            subtitle-text="Policy enforcement configuration"
+          <ui5-card-header
+            slot="header"
+            [attr.title-text]="i18n.t('governance.activeRules')"
+            [attr.subtitle-text]="i18n.t('governance.policyEnforcement')"
             [additionalText]="rules.length + ''">
           </ui5-card-header>
-          <ui5-table 
-            *ngIf="rules.length > 0" 
+          <ui5-table
+            *ngIf="rules.length > 0"
             aria-label="Governance rules table"
             [class.table-loading]="mutating">
-            <ui5-table-header-cell><span>Rule Name</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Type</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Description</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Updated</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Actions</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'governance.ruleName' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'governance.type' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'common.status' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'governance.description' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'governance.updated' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'common.actions' | translate }}</span></ui5-table-header-cell>
             <ui5-table-row *ngFor="let rule of rules; trackBy: trackByRuleId">
               <ui5-table-cell>
                 <strong>{{ rule.name }}</strong>
@@ -170,34 +171,34 @@ function readErrorMessage(error: unknown, fallback: string): string {
               </ui5-table-cell>
               <ui5-table-cell>
                 <ui5-tag [design]="rule.active ? 'Positive' : 'Negative'">
-                  {{ rule.active ? 'Active' : 'Inactive' }}
+                  {{ rule.active ? ('common.active' | translate) : ('common.inactive' | translate) }}
                 </ui5-tag>
               </ui5-table-cell>
               <ui5-table-cell>
-                <span class="description-text">{{ rule.description || 'No description' }}</span>
+                <span class="description-text">{{ rule.description || ('governance.noDescription' | translate) }}</span>
               </ui5-table-cell>
               <ui5-table-cell>{{ rule.updated_at | dateFormat:'medium' }}</ui5-table-cell>
               <ui5-table-cell>
                 <div class="row-actions" *ngIf="canManage; else readOnlyActions">
-                  <ui5-button 
-                    design="Transparent" 
-                    [icon]="rule.active ? 'decline' : 'accept'" 
-                    (click)="toggleRule(rule)" 
+                  <ui5-button
+                    design="Transparent"
+                    [icon]="rule.active ? 'decline' : 'accept'"
+                    (click)="toggleRule(rule)"
                     [disabled]="mutating"
-                    [attr.aria-label]="(rule.active ? 'Disable' : 'Enable') + ' rule ' + rule.name">
-                    {{ rule.active ? 'Disable' : 'Enable' }}
+                    [attr.aria-label]="(rule.active ? i18n.t('governance.disable') : i18n.t('governance.enable')) + ' rule ' + rule.name">
+                    {{ rule.active ? ('governance.disable' | translate) : ('governance.enable' | translate) }}
                   </ui5-button>
-                  <ui5-button 
-                    design="Negative" 
-                    icon="delete" 
-                    (click)="confirmDelete(rule)" 
+                  <ui5-button
+                    design="Negative"
+                    icon="delete"
+                    (click)="confirmDelete(rule)"
                     [disabled]="mutating"
-                    [attr.aria-label]="'Delete rule ' + rule.name">
-                    Delete
+                    [attr.aria-label]="i18n.t('common.delete') + ' rule ' + rule.name">
+                    {{ 'common.delete' | translate }}
                   </ui5-button>
                 </div>
                 <ng-template #readOnlyActions>
-                  <span class="read-only-label">Read only</span>
+                  <span class="read-only-label">{{ 'deployments.readOnly' | translate }}</span>
                 </ng-template>
               </ui5-table-cell>
             </ui5-table-row>
@@ -206,9 +207,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
           <app-empty-state
             *ngIf="!loading && rules.length === 0"
             icon="shield"
-            title="No Governance Rules"
-            description="No governance rules have been configured yet. Add rules to enforce policies on AI operations."
-            [actionText]="canManage ? 'Add Rule' : ''"
+            [title]="i18n.t('governance.noRules')"
+            [description]="i18n.t('governance.noRulesDesc')"
+            [actionText]="canManage ? i18n.t('governance.addRule') : ''"
             (action)="toggleCreateForm()">
           </app-empty-state>
         </ui5-card>
@@ -308,6 +309,7 @@ export class GovernanceComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  readonly i18n = inject(I18nService);
 
   rules: GovernanceRule[] = [];
   loading = false;
@@ -338,7 +340,7 @@ export class GovernanceComponent implements OnInit {
           this.loading = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to load governance rules.');
+          this.error = readErrorMessage(err, this.i18n.t('governance.loadFailed'));
           this.loading = false;
         }
       });
@@ -362,7 +364,7 @@ export class GovernanceComponent implements OnInit {
 
   createRule(): void {
     if (!this.draftRule.name.trim() || !this.draftRule.rule_type.trim()) {
-      this.error = 'Rule name and type are required.';
+      this.error = this.i18n.t('governance.ruleNameTypeRequired');
       return;
     }
 
@@ -379,12 +381,12 @@ export class GovernanceComponent implements OnInit {
       .subscribe({
         next: rule => {
           this.rules = [...this.rules, rule].sort((left, right) => left.name.localeCompare(right.name));
-          this.success = `Governance rule "${rule.name}" created.`;
+          this.success = this.i18n.t('governance.ruleCreated', { name: rule.name });
           this.mutating = false;
           this.resetCreateForm();
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to create governance rule.');
+          this.error = readErrorMessage(err, this.i18n.t('governance.createFailed'));
           this.mutating = false;
         }
       });
@@ -404,11 +406,11 @@ export class GovernanceComponent implements OnInit {
         next: res => {
           rule.active = res.active;
           rule.updated_at = new Date().toISOString();
-          this.success = `Rule "${rule.name}" updated.`;
+          this.success = this.i18n.t('governance.ruleUpdated', { name: rule.name });
           this.mutating = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, `Failed to toggle rule "${rule.name}".`);
+          this.error = readErrorMessage(err, this.i18n.t('governance.toggleFailed', { name: rule.name }));
           this.mutating = false;
         }
       });
@@ -417,10 +419,10 @@ export class GovernanceComponent implements OnInit {
   // Delete confirmation
   deleteDialogOpen = false;
   deleteDialogData: ConfirmationDialogData = {
-    title: 'Delete Governance Rule',
+    title: this.i18n.t('governance.deleteRule'),
     message: '',
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
+    confirmText: this.i18n.t('common.delete'),
+    cancelText: this.i18n.t('common.cancel'),
     confirmDesign: 'Negative'
   };
   private ruleToDelete: GovernanceRule | null = null;
@@ -429,7 +431,10 @@ export class GovernanceComponent implements OnInit {
     this.ruleToDelete = rule;
     this.deleteDialogData = {
       ...this.deleteDialogData,
-      message: `Are you sure you want to delete the rule "${rule.name}"? This action cannot be undone.`
+      title: this.i18n.t('governance.deleteRule'),
+      message: this.i18n.t('governance.deleteRuleConfirm', { name: rule.name }),
+      confirmText: this.i18n.t('common.delete'),
+      cancelText: this.i18n.t('common.cancel')
     };
     this.deleteDialogOpen = true;
   }
@@ -450,18 +455,18 @@ export class GovernanceComponent implements OnInit {
     this.mutating = true;
     this.error = '';
     this.success = '';
-    
+
     this.http.delete<void>(`${environment.apiBaseUrl}/governance/${rule.id}`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.rules = this.rules.filter(item => item.id !== rule.id);
-          this.success = `Rule "${rule.name}" deleted.`;
+          this.success = this.i18n.t('governance.ruleDeleted', { name: rule.name });
           this.mutating = false;
           this.ruleToDelete = null;
         },
         error: err => {
-          this.error = readErrorMessage(err, `Failed to delete rule "${rule.name}".`);
+          this.error = readErrorMessage(err, this.i18n.t('governance.deleteFailed', { name: rule.name }));
           this.mutating = false;
           this.ruleToDelete = null;
         }

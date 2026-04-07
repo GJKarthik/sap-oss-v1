@@ -7,10 +7,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { EmptyStateComponent, DateFormatPipe, ConfirmationDialogComponent, ConfirmationDialogData, CrossAppLinkComponent } from '../../shared';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 /**
  * Data Quality Component
- * 
+ *
  * Provides UI for data quality validation using the Data Cleaning Copilot MCP.
  * Features:
  * - Table selection and schema preview
@@ -124,10 +125,10 @@ interface DialogElement extends HTMLElement {
 @Component({
   selector: 'app-data-quality',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, DateFormatPipe, ConfirmationDialogComponent, CrossAppLinkComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, DateFormatPipe, ConfirmationDialogComponent, CrossAppLinkComponent, TranslatePipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <div class="data-quality-container" role="region" aria-label="Data Quality Dashboard">
+    <div class="data-quality-container" role="region" [attr.aria-label]="'dataQuality.title' | translate">
       <app-cross-app-link
         targetApp="training"
         targetRoute="/data-cleaning"
@@ -138,30 +139,27 @@ interface DialogElement extends HTMLElement {
 
       <!-- Header -->
       <div class="page-header">
-        <h1>Data Quality Studio</h1>
-        <p class="subtitle">AI-powered data validation using Data Cleaning Copilot</p>
+        <h1>{{ 'dataQuality.title' | translate }}</h1>
+        <p class="subtitle">{{ 'dataQuality.subtitle' | translate }}</p>
       </div>
 
-      <section class="studio-hero" aria-label="Data Quality core workflow">
+      <section class="studio-hero" [attr.aria-label]="'dataQuality.coreWorkflow' | translate">
         <div class="studio-hero__copy">
-          <span class="studio-hero__eyebrow">Core workflow</span>
-          <ui5-title level="H4">Validate tables, profile columns, and govern cleaning actions in one surface.</ui5-title>
-          <p>
-            Start with validation, move into profiling and anomaly review, then approve generated cleaning queries
-            only when a real data mutation needs human signoff.
-          </p>
+          <span class="studio-hero__eyebrow">{{ 'dataQuality.coreWorkflow' | translate }}</span>
+          <ui5-title level="H4">{{ 'dataQuality.heroTitle' | translate }}</ui5-title>
+          <p>{{ 'dataQuality.heroDescription' | translate }}</p>
         </div>
         <div class="studio-hero__metrics">
           <div class="studio-metric">
-            <span class="studio-metric__label">MCP</span>
-            <span class="studio-metric__value">{{ mcpHealthy ? 'Connected' : 'Unavailable' }}</span>
+            <span class="studio-metric__label">{{ 'dataQuality.metricMcp' | translate }}</span>
+            <span class="studio-metric__value">{{ mcpHealthy ? ('dataQuality.connected' | translate) : ('dataQuality.unavailable' | translate) }}</span>
           </div>
           <div class="studio-metric">
-            <span class="studio-metric__label">Tables</span>
+            <span class="studio-metric__label">{{ 'dataQuality.metricTables' | translate }}</span>
             <span class="studio-metric__value">{{ tables.length }}</span>
           </div>
           <div class="studio-metric">
-            <span class="studio-metric__label">Pending approvals</span>
+            <span class="studio-metric__label">{{ 'dataQuality.metricPendingApprovals' | translate }}</span>
             <span class="studio-metric__value">{{ pendingApprovals.length }}</span>
           </div>
         </div>
@@ -170,13 +168,13 @@ interface DialogElement extends HTMLElement {
       <!-- MCP Status Banner -->
       <ui5-card class="status-card" [class.status-healthy]="mcpHealthy" [class.status-unhealthy]="!mcpHealthy">
         <div class="status-banner">
-          <ui5-icon [name]="mcpHealthy ? 'sys-enter' : 'error'" 
+          <ui5-icon [name]="mcpHealthy ? 'sys-enter' : 'error'"
                     [class]="mcpHealthy ? 'icon-healthy' : 'icon-unhealthy'"></ui5-icon>
           <span class="status-text">
-            Data Cleaning Copilot MCP: {{ mcpHealthy ? 'Connected' : 'Unavailable' }}
+            {{ mcpStatusText }}
           </span>
           <ui5-button design="Transparent" icon="refresh" (click)="checkMcpHealth()" [disabled]="loading">
-            Refresh
+            {{ 'common.refresh' | translate }}
           </ui5-button>
         </div>
       </ui5-card>
@@ -195,36 +193,36 @@ interface DialogElement extends HTMLElement {
       <!-- Tab Container -->
       <ui5-tabcontainer class="main-tabs" collapsed fixed>
         <!-- Validation Tab -->
-        <ui5-tab text="Validation" icon="validate" selected>
+        <ui5-tab [text]="'dataQuality.tabValidation' | translate" icon="validate" selected>
           <div class="tab-content">
             <!-- Table Selection -->
             <ui5-card>
-              <ui5-card-header slot="header" title-text="Select Table" subtitle-text="Choose a table to validate">
+              <ui5-card-header slot="header" [titleText]="'dataQuality.selectTable' | translate" [subtitleText]="'dataQuality.chooseTable' | translate">
                 <ui5-icon slot="avatar" name="database"></ui5-icon>
               </ui5-card-header>
               <div class="form-row">
-                <ui5-select ngDefaultControl name="selectedTable" [(ngModel)]="selectedTable" (change)="onTableSelect()" accessible-name="Table selection">
+                <ui5-select ngDefaultControl name="selectedTable" [(ngModel)]="selectedTable" (change)="onTableSelect()" [attr.accessible-name]="'dataQuality.selectTable' | translate">
                   <ui5-option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</ui5-option>
                 </ui5-select>
-                <ui5-button design="Emphasized" icon="play" (click)="runValidation()" 
+                <ui5-button design="Emphasized" icon="play" (click)="runValidation()"
                             [disabled]="!selectedTable || loading || !mcpHealthy">
-                  Run Validation
+                  {{ 'dataQuality.runValidation' | translate }}
                 </ui5-button>
               </div>
 
               <!-- Schema Preview -->
               <div class="schema-preview" *ngIf="selectedTableSchema">
-                <h4>Schema: {{ selectedTableSchema.name }}</h4>
+                <h4>{{ i18n.t('dataQuality.schema', { name: selectedTableSchema.name }) }}</h4>
                 <ui5-table>
-                  <ui5-table-header-cell><span>Column</span></ui5-table-header-cell>
-                  <ui5-table-header-cell><span>Type</span></ui5-table-header-cell>
-                  <ui5-table-header-cell><span>Nullable</span></ui5-table-header-cell>
-                  <ui5-table-header-cell><span>Primary Key</span></ui5-table-header-cell>
+                  <ui5-table-header-cell><span>{{ 'dataQuality.columnHeader' | translate }}</span></ui5-table-header-cell>
+                  <ui5-table-header-cell><span>{{ 'dataQuality.typeHeader' | translate }}</span></ui5-table-header-cell>
+                  <ui5-table-header-cell><span>{{ 'dataQuality.nullableHeader' | translate }}</span></ui5-table-header-cell>
+                  <ui5-table-header-cell><span>{{ 'dataQuality.primaryKeyHeader' | translate }}</span></ui5-table-header-cell>
                   <ui5-table-row *ngFor="let col of selectedTableSchema.columns">
                     <ui5-table-cell><code>{{ col.name }}</code></ui5-table-cell>
                     <ui5-table-cell><ui5-tag design="Information">{{ col.type }}</ui5-tag></ui5-table-cell>
                     <ui5-table-cell>
-                      <ui5-icon [name]="col.nullable ? 'accept' : 'decline'" 
+                      <ui5-icon [name]="col.nullable ? 'accept' : 'decline'"
                                 [class]="col.nullable ? 'icon-yes' : 'icon-no'"></ui5-icon>
                     </ui5-table-cell>
                     <ui5-table-cell>
@@ -237,30 +235,30 @@ interface DialogElement extends HTMLElement {
 
             <!-- Validation Results -->
             <ui5-card *ngIf="checkResults.length > 0" class="results-card">
-              <ui5-card-header slot="header" title-text="Validation Results" 
-                              [subtitleText]="'Checks: ' + checkResults.length + ' | Violations: ' + totalViolations">
+              <ui5-card-header slot="header" [titleText]="'dataQuality.validationResults' | translate"
+                              [subtitleText]="i18n.t('dataQuality.validationSummary', { checks: checkResults.length, violations: totalViolations })">
                 <ui5-icon slot="avatar" name="checklist"></ui5-icon>
               </ui5-card-header>
               <div class="results-summary">
                 <div class="summary-stat passed">
                   <span class="stat-value">{{ passedChecks }}</span>
-                  <span class="stat-label">Passed</span>
+                  <span class="stat-label">{{ 'dataQuality.passed' | translate }}</span>
                 </div>
                 <div class="summary-stat failed">
                   <span class="stat-value">{{ failedChecks }}</span>
-                  <span class="stat-label">Failed</span>
+                  <span class="stat-label">{{ 'dataQuality.failed' | translate }}</span>
                 </div>
                 <div class="summary-stat warning">
                   <span class="stat-value">{{ warningChecks }}</span>
-                  <span class="stat-label">Warnings</span>
+                  <span class="stat-label">{{ 'dataQuality.warnings' | translate }}</span>
                 </div>
               </div>
-              <ui5-table aria-label="Validation results">
-                <ui5-table-header-cell><span>Check</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Violations</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Time</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Actions</span></ui5-table-header-cell>
+              <ui5-table [attr.aria-label]="'dataQuality.validationResults' | translate">
+                <ui5-table-header-cell><span>{{ 'dataQuality.checkHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.statusHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.violationsHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.timeHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.actionsHeader' | translate }}</span></ui5-table-header-cell>
                 <ui5-table-row *ngFor="let result of checkResults; trackBy: trackByCheckName">
                   <ui5-table-cell>
                     <div class="check-info">
@@ -281,8 +279,8 @@ interface DialogElement extends HTMLElement {
                   <ui5-table-cell>{{ result.execution_time_ms }}ms</ui5-table-cell>
                   <ui5-table-cell>
                     <ui5-button *ngIf="result.violations_count > 0" design="Transparent" icon="detail-view"
-                                (click)="showViolations(result)" aria-label="View violations">
-                      View
+                                (click)="showViolations(result)" [attr.aria-label]="'dataQuality.viewViolations' | translate">
+                      {{ 'common.view' | translate }}
                     </ui5-button>
                   </ui5-table-cell>
                 </ui5-table-row>
@@ -292,37 +290,37 @@ interface DialogElement extends HTMLElement {
         </ui5-tab>
 
         <!-- Profiling Tab -->
-        <ui5-tab text="Profiling" icon="analytics">
+        <ui5-tab [text]="'dataQuality.tabProfiling' | translate" icon="analytics">
           <div class="tab-content">
             <ui5-card>
-              <ui5-card-header slot="header" title-text="Data Profiling" 
-                              subtitle-text="Statistical analysis of table columns">
+              <ui5-card-header slot="header" [titleText]="'dataQuality.dataProfiling' | translate"
+                              [subtitleText]="'dataQuality.dataProfilingSubtitle' | translate">
                 <ui5-icon slot="avatar" name="pie-chart"></ui5-icon>
               </ui5-card-header>
               <div class="form-row">
-                <ui5-select ngDefaultControl name="profilingTable" [(ngModel)]="profilingTable" accessible-name="Table for profiling">
+                <ui5-select ngDefaultControl name="profilingTable" [(ngModel)]="profilingTable" [attr.accessible-name]="'dataQuality.dataProfiling' | translate">
                   <ui5-option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</ui5-option>
                 </ui5-select>
                 <ui5-input type="Number" ngDefaultControl name="sampleSize" [(ngModel)]="sampleSize" placeholder="Sample size (default: 1000)"
-                          accessible-name="Sample size"></ui5-input>
+                          [attr.accessible-name]="'dataQuality.sampleSize' | translate"></ui5-input>
                 <ui5-button design="Emphasized" icon="analytics" (click)="runProfiling()"
                             [disabled]="!profilingTable || loading || !mcpHealthy">
-                  Profile Data
+                  {{ 'dataQuality.profileData' | translate }}
                 </ui5-button>
               </div>
             </ui5-card>
 
             <ui5-card *ngIf="profileResults.length > 0" class="profile-results">
-              <ui5-card-header slot="header" title-text="Profile Results" 
+              <ui5-card-header slot="header" [titleText]="'dataQuality.profileResults' | translate"
                               [subtitleText]="profilingTable + ' (' + profileResults.length + ' columns)'">
               </ui5-card-header>
-              <ui5-table aria-label="Data profile results">
-                <ui5-table-header-cell><span>Column</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Type</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Nulls</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Unique</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Min/Max</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Mean/Std</span></ui5-table-header-cell>
+              <ui5-table [attr.aria-label]="'dataQuality.profileResults' | translate">
+                <ui5-table-header-cell><span>{{ 'dataQuality.columnHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.typeHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.nullsHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.uniqueHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.minMaxHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.meanStdHeader' | translate }}</span></ui5-table-header-cell>
                 <ui5-table-row *ngFor="let profile of profileResults">
                   <ui5-table-cell><code>{{ profile.column }}</code></ui5-table-cell>
                   <ui5-table-cell><ui5-tag design="Information">{{ profile.type }}</ui5-tag></ui5-table-cell>
@@ -347,61 +345,61 @@ interface DialogElement extends HTMLElement {
         </ui5-tab>
 
         <!-- Anomaly Detection Tab -->
-        <ui5-tab text="Anomalies" icon="alert">
+        <ui5-tab [text]="'dataQuality.tabAnomalies' | translate" icon="alert">
           <div class="tab-content">
             <ui5-card>
-              <ui5-card-header slot="header" title-text="Anomaly Detection" 
-                              subtitle-text="Identify outliers and unusual patterns">
+              <ui5-card-header slot="header" [titleText]="'dataQuality.anomalyDetection' | translate"
+                              [subtitleText]="'dataQuality.anomalyDetectionSubtitle' | translate">
                 <ui5-icon slot="avatar" name="warning"></ui5-icon>
               </ui5-card-header>
               <div class="form-row">
-                <ui5-select ngDefaultControl name="anomalyTable" [(ngModel)]="anomalyTable" accessible-name="Table for anomaly detection">
+                <ui5-select ngDefaultControl name="anomalyTable" [(ngModel)]="anomalyTable" [attr.accessible-name]="'dataQuality.anomalyDetection' | translate">
                   <ui5-option *ngFor="let table of tables" [value]="table.name">{{ table.name }}</ui5-option>
                 </ui5-select>
-                <ui5-input ngDefaultControl name="anomalyColumn" [(ngModel)]="anomalyColumn" placeholder="Column name"
-                          accessible-name="Column for anomaly detection"></ui5-input>
-                <ui5-select ngDefaultControl name="anomalyMethod" [(ngModel)]="anomalyMethod" accessible-name="Detection method">
+                <ui5-input ngDefaultControl name="anomalyColumn" [(ngModel)]="anomalyColumn" [placeholder]="'dataQuality.columnNamePlaceholder' | translate"
+                          [attr.accessible-name]="'dataQuality.anomalyColumn' | translate"></ui5-input>
+                <ui5-select ngDefaultControl name="anomalyMethod" [(ngModel)]="anomalyMethod" [attr.accessible-name]="'dataQuality.detectionMethod' | translate">
                   <ui5-option value="zscore">Z-Score</ui5-option>
                   <ui5-option value="iqr">IQR (Interquartile Range)</ui5-option>
                   <ui5-option value="isolation_forest">Isolation Forest</ui5-option>
                 </ui5-select>
                 <ui5-button design="Emphasized" icon="search" (click)="detectAnomalies()"
                             [disabled]="!anomalyTable || !anomalyColumn || loading || !mcpHealthy">
-                  Detect Anomalies
+                  {{ 'dataQuality.detectAnomalies' | translate }}
                 </ui5-button>
               </div>
             </ui5-card>
 
             <ui5-card *ngIf="anomalyResult" class="anomaly-results">
-              <ui5-card-header slot="header" 
-                              [titleText]="'Anomalies in ' + anomalyResult.column"
-                              [subtitleText]="anomalyResult.anomalies_count + ' anomalies found'">
+              <ui5-card-header slot="header"
+                              [titleText]="i18n.t('dataQuality.anomaliesInColumn', { column: anomalyResult.column })"
+                              [subtitleText]="i18n.t('dataQuality.anomaliesFound', { count: anomalyResult.anomalies_count })">
                 <ui5-icon slot="avatar" [name]="anomalyResult.anomalies_count > 0 ? 'warning' : 'sys-enter'"></ui5-icon>
               </ui5-card-header>
               <div class="anomaly-stats">
                 <div class="stat-box">
-                  <span class="stat-label">Method</span>
+                  <span class="stat-label">{{ 'dataQuality.method' | translate }}</span>
                   <span class="stat-value">{{ anomalyResult.method | uppercase }}</span>
                 </div>
                 <div class="stat-box">
-                  <span class="stat-label">Threshold</span>
+                  <span class="stat-label">{{ 'dataQuality.threshold' | translate }}</span>
                   <span class="stat-value">{{ anomalyResult.threshold }}</span>
                 </div>
                 <div class="stat-box">
-                  <span class="stat-label">Mean</span>
+                  <span class="stat-label">{{ 'dataQuality.mean' | translate }}</span>
                   <span class="stat-value">{{ anomalyResult.statistics.mean | number:'1.2-2' }}</span>
                 </div>
                 <div class="stat-box">
-                  <span class="stat-label">Std Dev</span>
+                  <span class="stat-label">{{ 'dataQuality.stdDev' | translate }}</span>
                   <span class="stat-value">{{ anomalyResult.statistics.std | number:'1.2-2' }}</span>
                 </div>
                 <div class="stat-box warning" *ngIf="anomalyResult.anomalies_count > 0">
-                  <span class="stat-label">Anomaly Range</span>
+                  <span class="stat-label">{{ 'dataQuality.anomalyRange' | translate }}</span>
                   <span class="stat-value">{{ anomalyResult.statistics.min_anomaly | number:'1.2-2' }} - {{ anomalyResult.statistics.max_anomaly | number:'1.2-2' }}</span>
                 </div>
               </div>
               <div *ngIf="anomalyResult.anomaly_indices.length > 0" class="anomaly-indices">
-                <h4>Anomaly Row Indices (first 50)</h4>
+                <h4>{{ 'dataQuality.anomalyRowIndices' | translate }}</h4>
                 <div class="index-chips">
                   <ui5-tag *ngFor="let idx of anomalyResult.anomaly_indices.slice(0, 50)" design="Negative">
                     {{ idx }}
@@ -413,16 +411,16 @@ interface DialogElement extends HTMLElement {
         </ui5-tab>
 
         <!-- Approvals Tab -->
-        <ui5-tab text="Approvals" icon="approvals" [additionalText]="pendingApprovals.length + ''">
+        <ui5-tab [text]="'dataQuality.tabApprovals' | translate" icon="approvals" [additionalText]="pendingApprovals.length + ''">
           <div class="tab-content">
             <ui5-card>
-              <ui5-card-header slot="header" title-text="Pending Approvals" 
-                              subtitle-text="Review and approve generated cleaning queries">
+              <ui5-card-header slot="header" [titleText]="'dataQuality.pendingApprovals' | translate"
+                              [subtitleText]="'dataQuality.pendingApprovalsSubtitle' | translate">
                 <ui5-icon slot="avatar" name="task"></ui5-icon>
               </ui5-card-header>
               <div class="batch-toolbar" *ngIf="pendingApprovals.length > 0">
                 <ui5-checkbox
-                  text="Select all"
+                  [text]="'dataQuality.selectAll' | translate"
                   [checked]="selectedApprovalIds.size === pendingApprovals.length && pendingApprovals.length > 0"
                   (change)="toggleSelectAll()">
                 </ui5-checkbox>
@@ -431,17 +429,17 @@ interface DialogElement extends HTMLElement {
                   icon="accept"
                   [disabled]="selectedApprovalIds.size === 0 || mutating || !canApprove"
                   (click)="batchApprove()">
-                  Approve selected ({{ selectedApprovalIds.size }})
+                  {{ i18n.t('dataQuality.approveSelected', { count: selectedApprovalIds.size }) }}
                 </ui5-button>
               </div>
-              <ui5-table *ngIf="pendingApprovals.length > 0" aria-label="Pending approvals">
+              <ui5-table *ngIf="pendingApprovals.length > 0" [attr.aria-label]="'dataQuality.pendingApprovals' | translate">
                 <ui5-table-header-cell><span></span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>ID</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Tool</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Table</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Est. Rows</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Requested</span></ui5-table-header-cell>
-                <ui5-table-header-cell><span>Actions</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.idHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.toolHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.tableHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.estRowsHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.requestedHeader' | translate }}</span></ui5-table-header-cell>
+                <ui5-table-header-cell><span>{{ 'dataQuality.actionsHeader' | translate }}</span></ui5-table-header-cell>
                 <ui5-table-row *ngFor="let approval of pendingApprovals">
                   <ui5-table-cell>
                     <ui5-checkbox [checked]="selectedApprovalIds.has(approval.id)" (change)="toggleApprovalSelection(approval.id)"></ui5-checkbox>
@@ -454,17 +452,17 @@ interface DialogElement extends HTMLElement {
                   </ui5-table-cell>
                   <ui5-table-cell>{{ approval.created_at | dateFormat:'short' }}</ui5-table-cell>
                   <ui5-table-cell>
-                    <ui5-button design="Transparent" icon="show" (click)="reviewApproval(approval)">Review</ui5-button>
-                    <ui5-button design="Positive" icon="accept" (click)="approveQuery(approval)" 
-                                [disabled]="mutating || !canApprove">Approve</ui5-button>
+                    <ui5-button design="Transparent" icon="show" (click)="reviewApproval(approval)">{{ 'dataQuality.review' | translate }}</ui5-button>
+                    <ui5-button design="Positive" icon="accept" (click)="approveQuery(approval)"
+                                [disabled]="mutating || !canApprove">{{ 'common.approve' | translate }}</ui5-button>
                     <ui5-button design="Negative" icon="decline" (click)="rejectQuery(approval)"
-                                [disabled]="mutating || !canApprove">Reject</ui5-button>
+                                [disabled]="mutating || !canApprove">{{ 'common.reject' | translate }}</ui5-button>
                   </ui5-table-cell>
                 </ui5-table-row>
               </ui5-table>
               <app-empty-state *ngIf="pendingApprovals.length === 0" icon="approvals"
-                              title="No Pending Approvals"
-                              description="All generated queries have been reviewed.">
+                              [title]="'dataQuality.noPendingApprovals' | translate"
+                              [description]="'dataQuality.noPendingApprovalsDesc' | translate">
               </app-empty-state>
             </ui5-card>
           </div>
@@ -472,16 +470,16 @@ interface DialogElement extends HTMLElement {
       </ui5-tabcontainer>
 
       <!-- Violations Dialog -->
-      <ui5-dialog #violationsDialog header-text="Violations Detail">
+      <ui5-dialog #violationsDialog [attr.header-text]="'dataQuality.violationsDetail' | translate">
         <div class="dialog-content" *ngIf="selectedCheck">
           <h3>{{ selectedCheck.check_name }}</h3>
           <p>{{ selectedCheck.description }}</p>
           <ui5-table *ngIf="selectedCheck.violations.length > 0">
-            <ui5-table-header-cell><span>Row</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Column</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Value</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Expected</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Message</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dataQuality.rowHeader' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dataQuality.columnHeader' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dataQuality.valueHeader' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dataQuality.expectedHeader' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dataQuality.messageHeader' | translate }}</span></ui5-table-header-cell>
             <ui5-table-row *ngFor="let v of selectedCheck.violations.slice(0, 100)">
               <ui5-table-cell>{{ v.row_index }}</ui5-table-cell>
               <ui5-table-cell><code>{{ v.column }}</code></ui5-table-cell>
@@ -491,32 +489,32 @@ interface DialogElement extends HTMLElement {
             </ui5-table-row>
           </ui5-table>
           <p *ngIf="selectedCheck.violations.length > 100" class="truncation-note">
-            Showing first 100 of {{ selectedCheck.violations.length }} violations
+            {{ i18n.t('dataQuality.showingViolations', { count: selectedCheck.violations.length }) }}
           </p>
         </div>
         <div slot="footer">
-          <ui5-button design="Emphasized" (click)="closeViolationsDialog()">Close</ui5-button>
+          <ui5-button design="Emphasized" (click)="closeViolationsDialog()">{{ 'common.close' | translate }}</ui5-button>
         </div>
       </ui5-dialog>
 
       <!-- Query Review Dialog -->
-      <ui5-dialog #queryDialog header-text="Review Generated Query">
+      <ui5-dialog #queryDialog [attr.header-text]="'dataQuality.reviewGeneratedQuery' | translate">
         <div class="dialog-content" *ngIf="selectedApproval">
           <ui5-message-strip design="Critical">
-            This query will modify data. Review carefully before approval.
+            {{ 'dataQuality.queryModifyWarning' | translate }}
           </ui5-message-strip>
           <div class="query-info">
-            <p><strong>Table:</strong> {{ selectedApproval.table_name }}</p>
-            <p><strong>Estimated Rows:</strong> {{ selectedApproval.estimated_rows }}</p>
-            <p><strong>Requested by:</strong> {{ selectedApproval.requested_by }}</p>
+            <p><strong>{{ 'dataQuality.tableLabel' | translate }}</strong> {{ selectedApproval.table_name }}</p>
+            <p><strong>{{ 'dataQuality.estimatedRowsLabel' | translate }}</strong> {{ selectedApproval.estimated_rows }}</p>
+            <p><strong>{{ 'dataQuality.requestedByLabel' | translate }}</strong> {{ selectedApproval.requested_by }}</p>
           </div>
-          <h4>SQL Query</h4>
+          <h4>{{ 'dataQuality.sqlQuery' | translate }}</h4>
           <pre class="sql-code">{{ selectedApproval.query }}</pre>
         </div>
         <div slot="footer">
-          <ui5-button design="Transparent" (click)="closeQueryDialog()">Cancel</ui5-button>
-          <ui5-button design="Negative" (click)="rejectSelectedApproval()" [disabled]="mutating || !canApprove || !selectedApproval">Reject</ui5-button>
-          <ui5-button design="Positive" (click)="approveSelectedApproval()" [disabled]="mutating || !canApprove || !selectedApproval">Approve</ui5-button>
+          <ui5-button design="Transparent" (click)="closeQueryDialog()">{{ 'common.cancel' | translate }}</ui5-button>
+          <ui5-button design="Negative" (click)="rejectSelectedApproval()" [disabled]="mutating || !canApprove || !selectedApproval">{{ 'common.reject' | translate }}</ui5-button>
+          <ui5-button design="Positive" (click)="approveSelectedApproval()" [disabled]="mutating || !canApprove || !selectedApproval">{{ 'common.approve' | translate }}</ui5-button>
         </div>
       </ui5-dialog>
 
@@ -838,6 +836,7 @@ export class DataQualityComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  readonly i18n = inject(I18nService);
 
   @ViewChild('violationsDialog') private violationsDialog?: ElementRef<DialogElement>;
   @ViewChild('queryDialog') private queryDialog?: ElementRef<DialogElement>;
@@ -873,6 +872,11 @@ export class DataQualityComponent implements OnInit {
   batchConfirmData: ConfirmationDialogData = { title: '', message: '' };
 
   readonly canApprove = this.authService.getUser()?.role === 'admin';
+
+  get mcpStatusText(): string {
+    const status = this.mcpHealthy ? this.i18n.t('dataQuality.connected') : this.i18n.t('dataQuality.unavailable');
+    return this.i18n.t('dataQuality.mcpStatus', { status });
+  }
 
   get totalViolations(): number {
     return this.checkResults.reduce((sum, r) => sum + r.violations_count, 0);
@@ -929,12 +933,12 @@ export class DataQualityComponent implements OnInit {
             this.tables = content.tables || [];
           } catch {
             this.tables = [];
-            this.error = 'Failed to load tables';
+            this.error = this.i18n.t('dataQuality.errors.failedLoadTables');
           }
         },
         error: () => {
           this.tables = [];
-          this.error = 'Failed to load tables';
+          this.error = this.i18n.t('dataQuality.errors.failedLoadTables');
         }
       });
   }
@@ -948,7 +952,7 @@ export class DataQualityComponent implements OnInit {
     if (!this.selectedTable) return;
 
     this.loading = true;
-    this.loadingMessage = 'Running validation checks...';
+    this.loadingMessage = this.i18n.t('dataQuality.loading.runningValidation');
     this.error = '';
 
     const request = {
@@ -972,16 +976,16 @@ export class DataQualityComponent implements OnInit {
               this.checkResults = content.checks || [];
             } catch {
               this.checkResults = [];
-              this.error = 'Invalid response format';
+              this.error = this.i18n.t('dataQuality.errors.invalidResponseFormat');
             }
           } else {
             this.checkResults = [];
-            this.error = 'No results returned';
+            this.error = this.i18n.t('dataQuality.errors.noResultsReturned');
           }
           this.loading = false;
         },
         error: err => {
-          this.error = 'Failed to run validation: ' + (err.message || 'Unknown error');
+          this.error = this.i18n.t('dataQuality.errors.failedValidation', { message: err.message || this.i18n.t('dataQuality.errors.unknownError') });
           this.loading = false;
         }
       });
@@ -991,7 +995,7 @@ export class DataQualityComponent implements OnInit {
     if (!this.profilingTable) return;
 
     this.loading = true;
-    this.loadingMessage = 'Profiling data...';
+    this.loadingMessage = this.i18n.t('dataQuality.loading.profilingData');
     this.error = '';
     this.profileResults = [];
 
@@ -1017,15 +1021,15 @@ export class DataQualityComponent implements OnInit {
             const content = JSON.parse(response.result?.content?.[0]?.text ?? '{}') as ProfileToolResponse;
             this.profileResults = this.mapProfileResults(content);
             if (this.profileResults.length === 0) {
-              this.error = 'No profiling results returned';
+              this.error = this.i18n.t('dataQuality.errors.noProfilingResults');
             }
           } catch {
-            this.error = 'Invalid profiling response format';
+            this.error = this.i18n.t('dataQuality.errors.invalidProfilingFormat');
           }
           this.loading = false;
         },
         error: err => {
-          this.error = 'Failed to run profiling: ' + (err.message || 'Unknown error');
+          this.error = this.i18n.t('dataQuality.errors.failedProfiling', { message: err.message || this.i18n.t('dataQuality.errors.unknownError') });
           this.loading = false;
         }
       });
@@ -1035,7 +1039,7 @@ export class DataQualityComponent implements OnInit {
     if (!this.anomalyTable || !this.anomalyColumn) return;
 
     this.loading = true;
-    this.loadingMessage = 'Detecting anomalies...';
+    this.loadingMessage = this.i18n.t('dataQuality.loading.detectingAnomalies');
     this.error = '';
     this.anomalyResult = null;
 
@@ -1061,12 +1065,12 @@ export class DataQualityComponent implements OnInit {
             const content = JSON.parse(response.result?.content?.[0]?.text ?? '{}') as AnomalyToolResponse;
             this.anomalyResult = this.mapAnomalyResult(content);
           } catch {
-            this.error = 'Invalid anomaly detection response format';
+            this.error = this.i18n.t('dataQuality.errors.invalidAnomalyFormat');
           }
           this.loading = false;
         },
         error: err => {
-          this.error = 'Failed to detect anomalies: ' + (err.message || 'Unknown error');
+          this.error = this.i18n.t('dataQuality.errors.failedAnomalies', { message: err.message || this.i18n.t('dataQuality.errors.unknownError') });
           this.loading = false;
         }
       });
@@ -1110,10 +1114,14 @@ export class DataQualityComponent implements OnInit {
     )];
 
     this.batchConfirmData = {
-      title: 'Approve Cleaning Queries',
-      message: `You are about to approve ${ids.length} cleaning quer${ids.length === 1 ? 'y' : 'ies'} affecting table${tableNames.length === 1 ? '' : 's'} ${tableNames.join(', ')}. This will modify data.`,
-      confirmText: 'Approve',
-      cancelText: 'Cancel',
+      title: this.i18n.t('dataQuality.batchConfirm.title'),
+      message: this.i18n.t('dataQuality.batchConfirm.message', {
+        count: ids.length,
+        queries: ids.length === 1 ? this.i18n.t('dataQuality.batchConfirm.querySingular') : this.i18n.t('dataQuality.batchConfirm.queryPlural'),
+        tables: tableNames.join(', '),
+      }),
+      confirmText: this.i18n.t('common.approve'),
+      cancelText: this.i18n.t('common.cancel'),
       confirmDesign: 'Positive',
       icon: 'alert',
     };
@@ -1161,7 +1169,7 @@ export class DataQualityComponent implements OnInit {
           this.mutating = false;
         },
         error: err => {
-          this.error = 'Failed to approve query: ' + (err.message || 'Unknown error');
+          this.error = this.i18n.t('dataQuality.errors.failedApprove', { message: err.message || this.i18n.t('dataQuality.errors.unknownError') });
           this.mutating = false;
         }
       });
@@ -1180,7 +1188,7 @@ export class DataQualityComponent implements OnInit {
           this.mutating = false;
         },
         error: err => {
-          this.error = 'Failed to reject query: ' + (err.message || 'Unknown error');
+          this.error = this.i18n.t('dataQuality.errors.failedReject', { message: err.message || this.i18n.t('dataQuality.errors.unknownError') });
           this.mutating = false;
         }
       });

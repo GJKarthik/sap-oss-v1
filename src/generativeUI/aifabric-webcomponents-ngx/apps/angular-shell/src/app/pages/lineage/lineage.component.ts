@@ -5,6 +5,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService } from '../../services/mcp.service';
 import { EmptyStateComponent } from '../../shared';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 interface GraphNode { id: string; label: string; type: string; x: number; y: number; }
 interface GraphEdge { source: string; target: string; label: string; }
@@ -12,19 +13,19 @@ interface GraphEdge { source: string; target: string; label: string; }
 @Component({
   selector: 'app-lineage',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Data Lineage</ui5-title>
-        <ui5-button slot="endContent" icon="refresh" (click)="refresh()" [disabled]="loading" aria-label="Refresh lineage data">
-          {{ loading ? 'Loading...' : 'Refresh' }}
+        <ui5-title slot="startContent" level="H3">{{ 'lineage.dataLineage' | translate }}</ui5-title>
+        <ui5-button slot="endContent" icon="refresh" (click)="refresh()" [disabled]="loading" [attr.aria-label]="i18n.t('lineage.refreshLineage')">
+          {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
       </ui5-bar>
-      <div class="lineage-content" role="region" aria-label="Data lineage explorer">
+      <div class="lineage-content" role="region" [attr.aria-label]="i18n.t('lineage.lineageExplorer')">
         <div class="loading-container" *ngIf="summaryLoading" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-          <span class="loading-text">Loading lineage graph...</span>
+          <span class="loading-text">{{ 'lineage.loadingGraph' | translate }}</span>
         </div>
 
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="false" (close)="error = ''" role="alert">{{ error }}</ui5-message-strip>
@@ -37,13 +38,13 @@ interface GraphEdge { source: string; target: string; label: string; }
             <ui5-tag [design]="summary.status === 'kuzu_unavailable' || summary.status === 'unavailable' ? 'Critical' : (summary.status === 'loading' ? 'Information' : 'Positive')">{{ summary.status }}</ui5-tag>
           </div>
           <div class="summary-spacer"></div>
-          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'graph' ? 'Emphasized' : 'Default'" (click)="viewMode = 'graph'">Graph</ui5-button>
-          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'table' ? 'Emphasized' : 'Default'" (click)="viewMode = 'table'">Table</ui5-button>
+          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'graph' ? 'Emphasized' : 'Default'" (click)="viewMode = 'graph'">{{ 'lineage.graph' | translate }}</ui5-button>
+          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'table' ? 'Emphasized' : 'Default'" (click)="viewMode = 'table'">{{ 'lineage.table' | translate }}</ui5-button>
         </div>
 
         <!-- Visual graph -->
         <ui5-card *ngIf="graphNodes.length && viewMode === 'graph'" class="graph-card">
-          <ui5-card-header slot="header" title-text="Lineage Graph" [subtitleText]="graphNodes.length + ' nodes · ' + graphEdges.length + ' edges'"></ui5-card-header>
+          <ui5-card-header slot="header" [titleText]="'lineage.lineageGraph' | translate" [subtitleText]="graphNodes.length + ' nodes \u00b7 ' + graphEdges.length + ' edges'"></ui5-card-header>
           <div class="graph-viewport" #graphViewport>
             <svg [attr.width]="svgWidth" [attr.height]="svgHeight" class="graph-svg">
               <defs>
@@ -69,30 +70,30 @@ interface GraphEdge { source: string; target: string; label: string; }
           <ui5-card-header slot="header" [titleText]="selectedNode.label" [subtitleText]="'Type: ' + selectedNode.type">
           </ui5-card-header>
           <div class="detail-body">
-            <div class="detail-row"><span class="detail-label">ID</span><span>{{ selectedNode.id }}</span></div>
-            <div class="detail-row"><span class="detail-label">Type</span><ui5-tag design="Information">{{ selectedNode.type }}</ui5-tag></div>
-            <div class="detail-row"><span class="detail-label">Connections</span><span>{{ getConnectionCount(selectedNode.id) }} edges</span></div>
-            <ui5-button design="Transparent" icon="decline" (click)="selectedNode = null">Close</ui5-button>
+            <div class="detail-row"><span class="detail-label">{{ 'lineage.id' | translate }}</span><span>{{ selectedNode.id }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ 'lineage.type' | translate }}</span><ui5-tag design="Information">{{ selectedNode.type }}</ui5-tag></div>
+            <div class="detail-row"><span class="detail-label">{{ 'lineage.connections' | translate }}</span><span>{{ getConnectionCount(selectedNode.id) }} {{ 'lineage.edges' | translate }}</span></div>
+            <ui5-button design="Transparent" icon="decline" (click)="selectedNode = null">{{ 'common.close' | translate }}</ui5-button>
           </div>
         </ui5-card>
 
         <!-- Table view -->
         <ui5-card *ngIf="graphNodes.length && viewMode === 'table'">
-          <ui5-card-header slot="header" title-text="Query Results" [subtitleText]="queryResult?.rowCount + ' rows'"></ui5-card-header>
+          <ui5-card-header slot="header" [titleText]="'lineage.queryResults' | translate" [subtitleText]="queryResult?.rowCount + ' rows'"></ui5-card-header>
           <div class="result-area"><pre>{{ queryResult?.rows | json }}</pre></div>
         </ui5-card>
 
         <!-- Query input -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="KùzuDB Graph Query" subtitle-text="Run Cypher queries against the lineage graph"></ui5-card-header>
+          <ui5-card-header slot="header" [titleText]="'lineage.graphQuery' | translate" [subtitleText]="'lineage.graphQuerySubtitle' | translate"></ui5-card-header>
           <div class="query-area">
             <div class="query-presets">
               <ui5-button *ngFor="let q of presetQueries" design="Default" (click)="cypherQuery = q.query; runQuery()">{{ q.label }}</ui5-button>
             </div>
             <ui5-textarea id="cypher-query" ngDefaultControl [(ngModel)]="cypherQuery" placeholder="MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25" [rows]="3" accessible-name="Cypher query input"></ui5-textarea>
-            <ui5-button design="Emphasized" icon="play" (click)="runQuery()" [disabled]="loading || !cypherQuery.trim()">{{ loading ? 'Running...' : 'Run Query' }}</ui5-button>
+            <ui5-button design="Emphasized" icon="play" (click)="runQuery()" [disabled]="loading || !cypherQuery.trim()">{{ loading ? ('lineage.running' | translate) : ('lineage.runQuery' | translate) }}</ui5-button>
           </div>
-          <app-empty-state *ngIf="!loading && !queryResult && !summaryLoading && !graphNodes.length" icon="explorer" title="Run a Query" description="Enter a Cypher query above or click a preset to explore the data lineage graph."></app-empty-state>
+          <app-empty-state *ngIf="!loading && !queryResult && !summaryLoading && !graphNodes.length" icon="explorer" [title]="'lineage.runQueryAction' | translate" [description]="'lineage.runQueryDesc' | translate"></app-empty-state>
         </ui5-card>
       </div>
     </ui5-page>
@@ -130,6 +131,7 @@ interface GraphEdge { source: string; target: string; label: string; }
 export class LineageComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly i18n = inject(I18nService);
 
   cypherQuery = 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25';
   queryResult: { rows: unknown[]; rowCount: number } | null = null;
@@ -145,12 +147,14 @@ export class LineageComponent implements OnInit {
   svgWidth = 900;
   svgHeight = 500;
 
-  presetQueries = [
-    { label: 'All Nodes', query: 'MATCH (n) RETURN n LIMIT 30' },
-    { label: 'All Relationships', query: 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25' },
-    { label: 'Source Tables', query: 'MATCH (n:Table) RETURN n LIMIT 20' },
-    { label: 'Full Lineage', query: 'MATCH p=(s)-[*]->(t) RETURN p LIMIT 15' },
-  ];
+  get presetQueries() {
+    return [
+      { label: this.i18n.t('lineage.allNodes'), query: 'MATCH (n) RETURN n LIMIT 30' },
+      { label: this.i18n.t('lineage.allRelationships'), query: 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25' },
+      { label: this.i18n.t('lineage.sourceTables'), query: 'MATCH (n:Table) RETURN n LIMIT 20' },
+      { label: this.i18n.t('lineage.fullLineage'), query: 'MATCH p=(s)-[*]->(t) RETURN p LIMIT 15' },
+    ];
+  }
 
   private readonly NODE_COLORS: Record<string, string> = {
     Table: '#0854a0', Column: '#107e3e', Pipeline: '#e9730c',
@@ -183,7 +187,7 @@ export class LineageComponent implements OnInit {
     this.error = '';
     this.mcpService.kuzuQuery(this.cypherQuery).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: r => { this.queryResult = r; this.buildGraph(r.rows); this.loading = false; },
-      error: () => { this.error = 'Graph query failed. Check your Cypher syntax.'; this.loading = false; }
+      error: () => { this.error = this.i18n.t('lineage.queryFailed'); this.loading = false; }
     });
   }
 

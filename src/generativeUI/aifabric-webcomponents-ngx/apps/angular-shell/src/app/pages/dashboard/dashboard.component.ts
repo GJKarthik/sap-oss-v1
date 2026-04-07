@@ -6,7 +6,7 @@
  * Enhanced with accessibility features and responsive design
  */
 
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
@@ -14,30 +14,40 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { McpService, DashboardStats, OperationsDashboard, ServiceHealth } from '../../services/mcp.service';
 import { EmptyStateComponent } from '../../shared';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
   template: `
     <!-- Page Header -->
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Dashboard</ui5-title>
-        <ui5-button 
-          slot="endContent" 
-          icon="refresh" 
-          (click)="refresh()"
-          [disabled]="loading"
-          aria-label="Refresh dashboard data">
-          {{ loading ? 'Loading...' : 'Refresh' }}
-        </ui5-button>
+        <ui5-title slot="startContent" level="H3">{{ 'dashboard.title' | translate }}</ui5-title>
+        <div slot="endContent" class="header-actions">
+          <span class="last-refreshed" *ngIf="lastRefreshed">{{ 'common.updated' | translate }} {{ getTimeSinceRefresh() }}</span>
+          <ui5-switch
+            [checked]="autoRefreshEnabled"
+            (change)="toggleAutoRefresh()"
+            [attr.aria-label]="i18n.t('dashboard.autoRefreshLabel')"
+            [attr.text-on]="'common.auto' | translate"
+            [attr.text-off]="'common.manual' | translate">
+          </ui5-switch>
+          <ui5-button
+            icon="refresh"
+            (click)="refresh()"
+            [disabled]="loading"
+            [attr.aria-label]="i18n.t('dashboard.refreshDashboard')">
+            {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
+          </ui5-button>
+        </div>
       </ui5-bar>
 
       <!-- Main Content -->
-      <div class="dashboard-content" role="region" aria-label="Dashboard overview">
+      <div class="dashboard-content" role="region" [attr.aria-label]="i18n.t('dashboard.dashboardOverview')">
         <!-- Skeleton Loading Cards -->
-        <div class="stats-grid" *ngIf="loading && !error" role="status" aria-live="polite" aria-label="Loading dashboard data">
+        <div class="stats-grid" *ngIf="loading && !error" role="status" aria-live="polite" [attr.aria-label]="i18n.t('dashboard.loadingDashboard')">
           <div class="skeleton-card" *ngFor="let i of [1,2,3,4]" aria-hidden="true" role="presentation">
             <div class="skeleton-card__header">
               <div class="skeleton-bar skeleton-bar--circle"></div>
@@ -50,7 +60,7 @@ import { EmptyStateComponent } from '../../shared';
             </div>
           </div>
         </div>
-        
+
         <ui5-message-strip
           *ngIf="error"
           design="Negative"
@@ -59,9 +69,9 @@ import { EmptyStateComponent } from '../../shared';
           role="alert">
           {{ error }}
         </ui5-message-strip>
-        
+
         <!-- Health Status Banner -->
-        <ui5-message-strip 
+        <ui5-message-strip
           *ngIf="health.overall !== 'healthy' && health.overall !== 'unknown'"
           [design]="health.overall === 'error' ? 'Negative' : 'Critical'"
           [hideCloseButton]="true"
@@ -71,60 +81,59 @@ import { EmptyStateComponent } from '../../shared';
 
         <section class="hero-panel" aria-label="AI Fabric mission and core workflows">
           <div class="hero-panel__copy">
-            <span class="hero-panel__eyebrow">AI ops and governance</span>
-            <ui5-title level="H2">Operate retrieval, validation, and governance from one console.</ui5-title>
+            <span class="hero-panel__eyebrow">{{ 'dashboard.eyebrow' | translate }}</span>
+            <ui5-title level="H2">{{ 'dashboard.missionTitle' | translate }}</ui5-title>
             <p>
-              Use this dashboard to confirm backend health, move into Search Studio or Data Quality,
-              and keep expert tooling available without letting it dominate the primary workflow.
+              {{ 'dashboard.missionDescription' | translate }}
             </p>
           </div>
           <div class="hero-panel__metrics">
             <div class="hero-metric">
-              <span class="hero-metric__label">Healthy services</span>
+              <span class="hero-metric__label">{{ 'dashboard.healthyServices' | translate }}</span>
               <span class="hero-metric__value">{{ stats.servicesHealthy }}/{{ stats.totalServices }}</span>
             </div>
             <div class="hero-metric">
-              <span class="hero-metric__label">Deployments</span>
+              <span class="hero-metric__label">{{ 'dashboard.deploymentCount' | translate }}</span>
               <span class="hero-metric__value">{{ stats.activeDeployments }}</span>
             </div>
             <div class="hero-metric">
-              <span class="hero-metric__label">Active alerts</span>
+              <span class="hero-metric__label">{{ 'dashboard.activeAlerts' | translate }}</span>
               <span class="hero-metric__value">{{ getActiveAlertCount() }}</span>
             </div>
           </div>
           <div class="hero-panel__actions">
-            <ui5-button design="Emphasized" icon="documents" (click)="goTo('/rag')">Search Studio</ui5-button>
-            <ui5-button design="Default" icon="validate" (click)="goTo('/data-quality')">Data Quality</ui5-button>
-            <ui5-button design="Default" icon="machine" (click)="goTo('/deployments')">Deployments</ui5-button>
-            <ui5-button design="Default" icon="shield" (click)="goTo('/governance')">Governance</ui5-button>
+            <ui5-button design="Emphasized" icon="documents" (click)="goTo('/rag')">{{ 'navigation.searchStudio' | translate }}</ui5-button>
+            <ui5-button design="Default" icon="validate" (click)="goTo('/data-quality')">{{ 'navigation.dataQuality' | translate }}</ui5-button>
+            <ui5-button design="Default" icon="machine" (click)="goTo('/deployments')">{{ 'navigation.deployments' | translate }}</ui5-button>
+            <ui5-button design="Default" icon="shield" (click)="goTo('/governance')">{{ 'navigation.governance' | translate }}</ui5-button>
           </div>
         </section>
 
         <!-- Stats Cards Row -->
         <div class="stats-grid" *ngIf="!loading">
-          
+
           <!-- Services Health Card -->
             <ui5-card class="stat-card">
-              <ui5-card-header 
-                slot="header" 
-                title-text="Services"
-                subtitle-text="Backend MCP Services"
+              <ui5-card-header
+                slot="header"
+                [titleText]="'dashboard.services' | translate"
+                [subtitleText]="'dashboard.backendServices' | translate"
               [additionalText]="stats.servicesHealthy + '/' + stats.totalServices">
               <ui5-icon slot="avatar" name="overview-chart"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
               <div class="service-item">
                 <ui5-icon [name]="health.elasticsearch?.status === 'healthy' ? 'status-positive' : 'status-negative'"></ui5-icon>
-                <span>Elasticsearch MCP</span>
+                <span>{{ 'dashboard.elasticsearchMcp' | translate }}</span>
                 <ui5-tag [design]="health.elasticsearch?.status === 'healthy' ? 'Positive' : 'Negative'">
-                  {{ health.elasticsearch?.status || 'Unknown' }}
+                  {{ health.elasticsearch?.status || ('dashboard.unknown' | translate) }}
                 </ui5-tag>
               </div>
               <div class="service-item">
                 <ui5-icon [name]="health.pal?.status === 'healthy' ? 'status-positive' : 'status-negative'"></ui5-icon>
-                <span>AI Core PAL</span>
+                <span>{{ 'dashboard.aiCorePal' | translate }}</span>
                 <ui5-tag [design]="health.pal?.status === 'healthy' ? 'Positive' : 'Negative'">
-                  {{ health.pal?.status || 'Unknown' }}
+                  {{ health.pal?.status || ('dashboard.unknown' | translate) }}
                 </ui5-tag>
               </div>
             </div>
@@ -134,14 +143,14 @@ import { EmptyStateComponent } from '../../shared';
           <ui5-card class="stat-card">
             <ui5-card-header
               slot="header"
-              title-text="Model Deployments"
-              subtitle-text="AI Core Deployments"
+              [titleText]="'dashboard.modelDeployments' | translate"
+              [subtitleText]="'dashboard.aiCoreDeployments' | translate"
               [additionalText]="stats.activeDeployments + '/' + stats.totalDeployments">
               <ui5-icon slot="avatar" name="machine"></ui5-icon>
             </ui5-card-header>
             <div class="card-content" *ngIf="stats.activeDeployments > 0">
               <div class="stat-value">{{ stats.activeDeployments }}</div>
-              <div class="stat-label">Active Models</div>
+              <div class="stat-label">{{ 'dashboard.activeModels' | translate }}</div>
               <ui5-progress-indicator
                 [value]="getDeploymentPercentage()"
                 valueState="Positive">
@@ -150,9 +159,9 @@ import { EmptyStateComponent } from '../../shared';
             <app-empty-state
               *ngIf="stats.activeDeployments === 0"
               icon="machine"
-              title="No Active Deployments"
-              description="Deploy your first model to get started."
-              actionText="Go to Deployments"
+              [title]="'dashboard.noActiveDeployments' | translate"
+              [description]="'dashboard.deployFirstModel' | translate"
+              [actionText]="'dashboard.goToDeployments' | translate"
               actionIcon="add"
               (actionClicked)="goTo('/deployments')">
             </app-empty-state>
@@ -160,33 +169,33 @@ import { EmptyStateComponent } from '../../shared';
 
           <!-- PAL Tools Card -->
           <ui5-card class="stat-card">
-            <ui5-card-header 
-              slot="header" 
-              title-text="PAL Tooling"
-              subtitle-text="Available analytics tools"
+            <ui5-card-header
+              slot="header"
+              [titleText]="'dashboard.palTooling' | translate"
+              [subtitleText]="'dashboard.availableTools' | translate"
               [additionalText]="stats.availablePalTools + ''">
               <ui5-icon slot="avatar" name="process"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
               <div class="stat-value">{{ stats.availablePalTools }}</div>
-              <div class="stat-label">Registered PAL tools</div>
-              <ui5-tag design="Neutral">PAL + HANA operations</ui5-tag>
+              <div class="stat-label">{{ 'dashboard.registeredPalTools' | translate }}</div>
+              <ui5-tag design="Neutral">{{ 'dashboard.palHanaOps' | translate }}</ui5-tag>
             </div>
           </ui5-card>
 
           <!-- Vector Stores Card -->
           <ui5-card class="stat-card">
-            <ui5-card-header 
-              slot="header" 
-              title-text="Knowledge Bases"
-              subtitle-text="Elasticsearch-backed search"
+            <ui5-card-header
+              slot="header"
+              [titleText]="'dashboard.knowledgeBases' | translate"
+              [subtitleText]="'dashboard.elasticsearchSearch' | translate"
               [additionalText]="stats.totalKnowledgeBases + ''">
               <ui5-icon slot="avatar" name="database"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
               <div class="stat-value">{{ stats.documentsIndexed | number }}</div>
-              <div class="stat-label">Documents Indexed</div>
-              <ui5-tag design="Neutral">{{ stats.totalKnowledgeBases }} bases</ui5-tag>
+              <div class="stat-label">{{ 'dashboard.documentsIndexed' | translate }}</div>
+              <ui5-tag design="Neutral">{{ stats.totalKnowledgeBases }} {{ 'dashboard.bases' | translate }}</ui5-tag>
             </div>
           </ui5-card>
 
@@ -194,30 +203,30 @@ import { EmptyStateComponent } from '../../shared';
           <ui5-card class="stat-card" *ngIf="operations">
             <ui5-card-header
               slot="header"
-              title-text="Operations"
-              subtitle-text="API, auth, and store health"
-              [additionalText]="getActiveAlertCount() + ' alerts'">
+              [titleText]="'dashboard.operations' | translate"
+              [subtitleText]="'dashboard.apiHealth' | translate"
+              [additionalText]="getActiveAlertCount() + ' ' + ('dashboard.alerts' | translate)">
               <ui5-icon slot="avatar" name="activity-items"></ui5-icon>
             </ui5-card-header>
             <div class="card-content">
               <div class="service-item">
-                <span>API Avg Latency</span>
+                <span>{{ 'dashboard.apiAvgLatency' | translate }}</span>
                 <ui5-tag design="Information">{{ operations.api.avg_latency_ms }} ms</ui5-tag>
               </div>
               <div class="service-item">
-                <span>API Error Rate</span>
+                <span>{{ 'dashboard.apiErrorRate' | translate }}</span>
                 <ui5-tag [design]="operations.api.error_rate > 0 ? 'Critical' : 'Positive'">
                   {{ operations.api.error_rate }}%
                 </ui5-tag>
               </div>
               <div class="service-item">
-                <span>Auth Failures ({{ operations.window_seconds }}s)</span>
+                <span>{{ i18n.t('dashboard.authFailures', { window: operations.window_seconds }) }}</span>
                 <ui5-tag [design]="operations.auth.recent_failures > 0 ? 'Critical' : 'Positive'">
                   {{ operations.auth.recent_failures }}
                 </ui5-tag>
               </div>
               <div class="service-item">
-                <span>Store Backend</span>
+                <span>{{ 'dashboard.storeBackend' | translate }}</span>
                 <ui5-tag [design]="operations.store.store === 'ok' ? 'Positive' : 'Negative'">
                   {{ operations.store.store_backend }}
                 </ui5-tag>
@@ -228,47 +237,47 @@ import { EmptyStateComponent } from '../../shared';
 
         <!-- Quick Actions Section -->
         <ui5-card class="actions-card">
-          <ui5-card-header 
-            slot="header" 
-            title-text="Expert Tools"
-            subtitle-text="Secondary and specialist surfaces"
+          <ui5-card-header
+            slot="header"
+            [titleText]="'dashboard.expertTools' | translate"
+            [subtitleText]="'dashboard.expertToolsSubtitle' | translate"
             interactive
             (click)="toggleActions()">
             <ui5-icon slot="action" [name]="showActions ? 'slim-arrow-up' : 'slim-arrow-down'"></ui5-icon>
           </ui5-card-header>
           <div class="quick-actions" *ngIf="showActions">
             <ui5-button design="Emphasized" icon="add" (click)="goTo('/playground')">
-              PAL Workbench
+              {{ 'dashboard.palWorkbench' | translate }}
             </ui5-button>
             <ui5-button design="Default" icon="search" (click)="goTo('/streaming')">
-              Search Ops
+              {{ 'dashboard.searchOps' | translate }}
             </ui5-button>
             <ui5-button design="Default" icon="database" (click)="goTo('/data')">
-              Data Explorer
+              {{ 'dashboard.dataExplorer' | translate }}
             </ui5-button>
             <ui5-button design="Default" icon="org-chart" (click)="goTo('/lineage')">
-              Lineage View
+              {{ 'dashboard.lineageView' | translate }}
             </ui5-button>
           </div>
         </ui5-card>
 
         <ui5-card class="activity-card" *ngIf="operations">
-          <ui5-card-header 
-            slot="header" 
-            title-text="Operational Alerts"
-            subtitle-text="Real-time platform state">
+          <ui5-card-header
+            slot="header"
+            [titleText]="'dashboard.operationalAlerts' | translate"
+            [subtitleText]="'dashboard.realTimeState' | translate">
           </ui5-card-header>
           <ui5-table *ngIf="operations.alerts.length > 0">
-            <ui5-table-header-cell><span>Alert</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Observed</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Threshold</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dashboard.alert' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'common.status' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dashboard.observed' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'dashboard.threshold' | translate }}</span></ui5-table-header-cell>
 
             <ui5-table-row *ngFor="let alert of operations.alerts">
               <ui5-table-cell>{{ alert.name }}</ui5-table-cell>
               <ui5-table-cell>
                 <ui5-tag [design]="alert.active ? 'Critical' : 'Positive'">
-                  {{ alert.active ? 'Active' : 'Normal' }}
+                  {{ alert.active ? ('common.active' | translate) : ('dashboard.normal' | translate) }}
                 </ui5-tag>
               </ui5-table-cell>
               <ui5-table-cell>{{ formatObserved(alert.observed) }}</ui5-table-cell>
@@ -276,7 +285,7 @@ import { EmptyStateComponent } from '../../shared';
             </ui5-table-row>
           </ui5-table>
           <div *ngIf="operations.alerts.length === 0" class="empty-state">
-            No operational alerts are active.
+            {{ 'dashboard.noAlerts' | translate }}
           </div>
         </ui5-card>
       </div>
@@ -365,7 +374,7 @@ import { EmptyStateComponent } from '../../shared';
       gap: 0.5rem;
       flex-wrap: wrap;
     }
-    
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -449,18 +458,18 @@ import { EmptyStateComponent } from '../../shared';
       .skeleton-bar { animation: none; }
       .stat-card, .skeleton-card { animation: none; }
     }
-    
+
     @media (min-width: 1200px) {
       .stats-grid {
         grid-template-columns: repeat(auto-fit, minmax(280px, 380px));
         justify-content: start;
       }
     }
-    
+
     .card-content {
       padding: 1rem;
     }
-    
+
     .service-item {
       display: flex;
       align-items: center;
@@ -468,38 +477,38 @@ import { EmptyStateComponent } from '../../shared';
       padding: 0.5rem 0;
       border-bottom: 1px solid var(--sapList_BorderColor);
     }
-    
+
     .service-item:last-child {
       border-bottom: none;
     }
-    
+
     .service-item span {
       flex: 1;
     }
-    
+
     .stat-value {
       font-size: 2.5rem;
       font-weight: bold;
       color: var(--sapBrandColor);
       line-height: 1;
     }
-    
+
     .stat-label {
       color: var(--sapContent_LabelColor);
       margin: 0.5rem 0;
     }
-    
+
     .quick-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
       padding: 1rem;
     }
-    
+
     .actions-card {
       max-width: 800px;
     }
-    
+
     .activity-card {
       margin-top: 1rem;
     }
@@ -509,11 +518,23 @@ import { EmptyStateComponent } from '../../shared';
       color: var(--sapContent_LabelColor);
       text-align: center;
     }
-    
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .last-refreshed {
+      font-size: var(--sapFontSmallSize);
+      color: var(--sapContent_LabelColor);
+      white-space: nowrap;
+    }
+
     ui5-message-strip {
       margin-bottom: 1rem;
     }
-    
+
     /* Responsive adjustments */
     @media (max-width: 600px) {
       .dashboard-content {
@@ -523,30 +544,35 @@ import { EmptyStateComponent } from '../../shared';
       .hero-panel {
         padding: 1rem;
       }
-      
+
       .stat-value {
         font-size: 2rem;
       }
-      
+
       .quick-actions {
         flex-direction: column;
       }
-      
+
       .quick-actions ui5-button {
         width: 100%;
       }
     }
   `]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  
+  readonly i18n = inject(I18nService);
+
   loading = true;
   showActions = false;
   error = '';
-  
+  autoRefreshEnabled = true;
+  lastRefreshed: Date | null = null;
+  private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly AUTO_REFRESH_INTERVAL = 30_000; // 30 seconds
+
   stats: DashboardStats = {
     servicesHealthy: 0,
     totalServices: 2,
@@ -557,7 +583,7 @@ export class DashboardComponent implements OnInit {
     documentsIndexed: 0,
     overallHealth: 'unknown'
   };
-  
+
   health: {
     elasticsearch: ServiceHealth | null;
     pal: ServiceHealth | null;
@@ -575,8 +601,13 @@ export class DashboardComponent implements OnInit {
       .subscribe(health => {
         this.health = health;
       });
-    
+
     this.refresh();
+    this.startAutoRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoRefresh();
   }
 
   refresh(): void {
@@ -592,12 +623,44 @@ export class DashboardComponent implements OnInit {
           this.stats = stats;
           this.operations = operations;
           this.loading = false;
+          this.lastRefreshed = new Date();
         },
         error: () => {
-          this.error = 'Failed to load dashboard data.';
+          this.error = this.i18n.t('dashboard.loadFailed');
           this.loading = false;
         }
       });
+  }
+
+  toggleAutoRefresh(): void {
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    if (this.autoRefreshEnabled) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+  }
+
+  getTimeSinceRefresh(): string {
+    if (!this.lastRefreshed) return '';
+    const seconds = Math.floor((Date.now() - this.lastRefreshed.getTime()) / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
+  }
+
+  private startAutoRefresh(): void {
+    this.stopAutoRefresh();
+    if (this.autoRefreshEnabled) {
+      this.autoRefreshTimer = setInterval(() => this.refresh(), this.AUTO_REFRESH_INTERVAL);
+    }
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.autoRefreshTimer) {
+      clearInterval(this.autoRefreshTimer);
+      this.autoRefreshTimer = null;
+    }
   }
 
   goTo(route: string): void {
@@ -606,7 +669,7 @@ export class DashboardComponent implements OnInit {
 
   getHealthMessage(): string {
     if (this.health.overall === 'error') {
-      return 'All backend services are unavailable. Please check the MCP servers.';
+      return this.i18n.t('dashboard.allBackendsUnavailable');
     }
     if (this.health.overall === 'degraded') {
       const issues = [];
@@ -616,7 +679,7 @@ export class DashboardComponent implements OnInit {
       if (this.health.pal?.status !== 'healthy') {
         issues.push('AI Core PAL');
       }
-      return `Some services are degraded: ${issues.join(', ')}`;
+      return this.i18n.t('dashboard.degradedServices', { services: issues.join(', ') });
     }
     return '';
   }

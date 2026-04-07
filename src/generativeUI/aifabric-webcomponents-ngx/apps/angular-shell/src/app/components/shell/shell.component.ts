@@ -1,6 +1,6 @@
 /**
  * Shell Component - Angular/UI5 Version
- * 
+ *
  * Main navigation shell using UI5 ShellBar following ui5-webcomponents-ngx standards
  * Enhanced with accessibility features and responsive mobile navigation
  */
@@ -15,6 +15,7 @@ import { CollaborationService, TeamMember, ConnectionState } from '../../service
 import { TeamConfigService } from '../../services/team-config.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import { UseCaseWorkspace, CrossAppFeature } from '../../services/workspace.types';
+import { I18nService, TranslatePipe } from '../../shared/services/i18n.service';
 import { environment } from '../../../environments/environment';
 import {
   AI_FABRIC_NAV_ITEMS,
@@ -44,20 +45,20 @@ type ProductSelectEvent = CustomEvent<{
   template: `
     <!-- Skip to main content link for accessibility -->
     <a href="#main-content" class="skip-link" (click)="skipToMain($event)">
-      Skip to main content
+      {{ 'navigation.skipToMain' | translate }}
     </a>
 
     <!-- UI5 Shell Bar -->
     <ui5-shellbar
-      primary-title="SAP AI Fabric Console"
-      secondary-title="Enterprise AI Platform"
+      [attr.primary-title]="i18n.t('shell.primaryTitle')"
+      [attr.secondary-title]="i18n.t('shell.secondaryTitle')"
       [showNotifications]="false"
       showProductSwitch="true"
       (logo-click)="navigateTo('/dashboard')"
       (product-switch-click)="openProducts($event)"
       (profile-click)="openProfile($event)"
       role="banner">
-      
+
       <!-- Menu Button for Mobile -->
       <ui5-button
         slot="startButton"
@@ -76,10 +77,10 @@ type ProductSelectEvent = CustomEvent<{
         design="Transparent"
         class="kbd-hint"
         (click)="toggleSearch()"
-        aria-label="Open search (Cmd+K)">
+        [attr.aria-label]="i18n.t('shell.openSearch')">
         ⌘K
       </ui5-button>
-      
+
       <!-- Workspace Switcher -->
       <ui5-button
         slot="startButton"
@@ -87,15 +88,15 @@ type ProductSelectEvent = CustomEvent<{
         class="ws-switcher-btn"
         [icon]="workspaceService.activeWorkspace() ? 'group' : 'add-folder'"
         (click)="openWorkspaceSwitcher($event)"
-        [attr.aria-label]="'Workspace: ' + (workspaceService.activeWorkspace()?.useCase || 'None')">
-        {{ workspaceService.activeWorkspace()?.useCase || 'Select Workspace' }}
+        [attr.aria-label]="i18n.t('shell.workspaceLabel', { name: workspaceService.activeWorkspace()?.useCase || 'None' })">
+        {{ workspaceService.activeWorkspace()?.useCase || ('shell.selectWorkspace' | translate) }}
       </ui5-button>
 
       <!-- Logo -->
       <img slot="logo" src="assets/sap-logo.svg" alt="SAP Logo" />
 
       <!-- Team Presence Indicators -->
-      <div slot="startButton" class="team-presence" *ngIf="teamMembers.length > 0" aria-label="Team members online">
+      <div slot="startButton" class="team-presence" *ngIf="teamMembers.length > 0" [attr.aria-label]="'shell.teamMembersOnline' | translate">
         <ng-container *ngFor="let member of teamMembers.slice(0, 5)">
           <ui5-avatar
             size="XS"
@@ -119,13 +120,13 @@ type ProductSelectEvent = CustomEvent<{
         slot="profile"
         [attr.initials]="getUserInitials()"
         color-scheme="Accent6"
-        [attr.aria-label]="'User profile: ' + getSessionLabel()"
+        [attr.aria-label]="i18n.t('accessibility.userProfile') + ': ' + getSessionLabel()"
         interactive>
       </ui5-avatar>
     </ui5-shellbar>
 
     <!-- Workspace Switcher Popover -->
-    <ui5-popover #workspacePopover header-text="Use-Case Workspaces" placement-type="Bottom" horizontal-align="Left" style="min-width: 380px;">
+    <ui5-popover #workspacePopover [attr.header-text]="i18n.t('shell.useCaseWorkspaces')" placement-type="Bottom" horizontal-align="Left" style="min-width: 380px;">
       <div class="ws-popover-content">
         <div class="ws-list">
           <div class="ws-item" *ngFor="let ws of workspaceService.getAllWorkspaces()"
@@ -142,14 +143,14 @@ type ProductSelectEvent = CustomEvent<{
           </div>
         </div>
         <div class="ws-popover-actions" *ngIf="workspaceService.activeWorkspace()">
-          <ui5-button design="Transparent" icon="cancel" (click)="switchWorkspace(null)">Leave workspace</ui5-button>
+          <ui5-button design="Transparent" icon="cancel" (click)="switchWorkspace(null)">{{ 'shell.leaveWorkspace' | translate }}</ui5-button>
         </div>
       </div>
     </ui5-popover>
 
     <!-- Cross-App Feature Bar (when workspace is active) -->
     <div class="cross-app-bar" *ngIf="workspaceService.crossAppFeatures().length > 0">
-      <span class="cross-app-label">Other apps:</span>
+      <span class="cross-app-label">{{ 'shell.otherApps' | translate }}</span>
       <ui5-button *ngFor="let f of workspaceService.crossAppFeatures()"
         design="Transparent"
         [icon]="f.icon"
@@ -159,7 +160,7 @@ type ProductSelectEvent = CustomEvent<{
       </ui5-button>
     </div>
 
-    <ui5-popover #productPopover header-text="Product Switcher" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+    <ui5-popover #productPopover [attr.header-text]="i18n.t('shell.productSwitcher')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
       <ui5-list (item-click)="onProductSelect($event)">
         <ui5-li icon="home" data-url="/aifabric/" selected>AI Fabric Console</ui5-li>
         <ui5-li icon="process" data-url="/training/">Training Console</ui5-li>
@@ -168,7 +169,7 @@ type ProductSelectEvent = CustomEvent<{
       </ui5-list>
     </ui5-popover>
 
-    <ui5-popover #profilePopover header-text="Workspace" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+    <ui5-popover #profilePopover [attr.header-text]="i18n.t('navigation.workspace')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
       <div class="profile-panel">
         <div class="profile-panel__section">
           <div class="profile-panel__title">Session</div>
@@ -181,7 +182,7 @@ type ProductSelectEvent = CustomEvent<{
             class="mode-select mode-select--block"
             [value]="currentLocale"
             (change)="onLocaleChange($event)"
-            aria-label="Select language">
+            [attr.aria-label]="i18n.t('shell.language')">
             <option value="en">English</option>
             <option value="ar">العربية (Arabic)</option>
             <option value="fr">Français</option>
@@ -224,26 +225,26 @@ type ProductSelectEvent = CustomEvent<{
 
     <!-- Side Navigation -->
     <div class="shell-layout">
-      <nav 
+      <nav
         id="side-navigation"
         class="side-nav-container"
         [class.collapsed]="sideNavCollapsed"
         [class.mobile-open]="mobileNavOpen"
-        [attr.aria-label]="'Main navigation'"
+        [attr.aria-label]="i18n.t('shell.mainNavigation')"
         role="navigation">
-        
+
         <!-- Mobile overlay backdrop -->
-        <div 
-          class="nav-backdrop" 
+        <div
+          class="nav-backdrop"
           *ngIf="mobileNavOpen && isMobile"
           (click)="closeMobileNav()"
           aria-hidden="true">
         </div>
-        
+
         <aside class="side-nav" [class.side-nav--compact]="isCompactNav()">
           <section class="side-nav__section" *ngFor="let section of navSections">
             <div class="side-nav__section-label" *ngIf="!isCompactNav()">
-              {{ section.label }}
+              {{ i18n.t(section.labelKey) }}
             </div>
             <button
               type="button"
@@ -251,11 +252,11 @@ type ProductSelectEvent = CustomEvent<{
               *ngFor="let item of getItemsForSection(section.id)"
               [class.side-nav__item--active]="isActive(item.route)"
               [attr.aria-current]="isActive(item.route) ? 'page' : null"
-              [attr.aria-label]="item.description"
-              [title]="isCompactNav() ? item.text : item.description"
+              [attr.aria-label]="i18n.t(item.descriptionKey)"
+              [title]="isCompactNav() ? i18n.t(item.textKey) : i18n.t(item.descriptionKey)"
               (click)="navigateTo(item.route); closeMobileNav()">
               <ui5-icon class="side-nav__item-icon" [name]="item.icon" [attr.aria-hidden]="true"></ui5-icon>
-              <span class="side-nav__item-text" *ngIf="!isCompactNav()">{{ item.text }}</span>
+              <span class="side-nav__item-text" *ngIf="!isCompactNav()">{{ i18n.t(item.textKey) }}</span>
             </button>
           </section>
         </aside>
@@ -274,20 +275,20 @@ type ProductSelectEvent = CustomEvent<{
 
     <!-- Search Overlay -->
     <div class="search-overlay" *ngIf="showSearch()" (click)="closeSearch()" (keydown.escape)="closeSearch()">
-      <div class="search-modal" (click)="$event.stopPropagation()" role="dialog" aria-label="Quick navigation search">
+      <div class="search-modal" (click)="$event.stopPropagation()" role="dialog" [attr.aria-label]="i18n.t('shell.searchLabel')">
         <div class="search-modal__input-row">
           <ui5-icon name="search" aria-hidden="true"></ui5-icon>
           <input
             #searchInput
             type="text"
             class="search-modal__input"
-            placeholder="Search pages..."
+            [placeholder]="i18n.t('shell.searchPlaceholder')"
             [value]="searchQuery()"
             (input)="searchQuery.set($any($event.target).value)"
             (keydown.enter)="selectFirstResult()"
             (keydown.escape)="closeSearch()"
             (keydown.tab)="trapSearchFocus($event)"
-            aria-label="Search navigation pages" />
+            [attr.aria-label]="i18n.t('shell.searchInputLabel')" />
           <kbd class="search-modal__kbd">esc</kbd>
         </div>
         <ul class="search-modal__results" role="listbox">
@@ -300,20 +301,20 @@ type ProductSelectEvent = CustomEvent<{
             (click)="navigateFromSearch(res.route)">
             <ui5-icon [name]="res.icon" aria-hidden="true"></ui5-icon>
             <div class="search-modal__result-text">
-              <span class="search-modal__result-title">{{ res.text }}</span>
-              <span class="search-modal__result-desc">{{ res.description }}</span>
+              <span class="search-modal__result-title">{{ i18n.t(res.textKey) }}</span>
+              <span class="search-modal__result-desc">{{ i18n.t(res.descriptionKey) }}</span>
             </div>
             <span class="search-modal__result-route">{{ res.route }}</span>
           </li>
         </ul>
         <div class="search-modal__footer" *ngIf="searchResults().length === 0 && searchQuery()">
-          No results for "{{ searchQuery() }}"
+          {{ i18n.t('common.noResults', { query: searchQuery() }) }}
         </div>
       </div>
     </div>
 
     <footer class="shell-footer">
-      <span>SAP AI Fabric Console v1.0.0</span>
+      <span>v1.0.0</span>
       <span class="shell-footer__status">{{ getStatusText() }}</span>
     </footer>
 
@@ -370,6 +371,7 @@ export class ShellComponent implements OnInit {
   private readonly collabService = inject(CollaborationService);
   private readonly teamConfigService = inject(TeamConfigService);
   readonly workspaceService = inject(WorkspaceService);
+  readonly i18n = inject(I18nService);
 
   sideNavCollapsed = false;
   mobileNavOpen = false;
@@ -389,8 +391,8 @@ export class ShellComponent implements OnInit {
     const query = this.searchQuery().toLowerCase().trim();
     if (!query) return this.navItems;
     return this.navItems.filter(item =>
-      item.text.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
+      this.i18n.t(item.textKey).toLowerCase().includes(query) ||
+      this.i18n.t(item.descriptionKey).toLowerCase().includes(query) ||
       item.route.toLowerCase().includes(query)
     );
   });
@@ -399,7 +401,7 @@ export class ShellComponent implements OnInit {
   @ViewChild('profilePopover') profilePopover!: ElementRef<PopoverElement>;
   @ViewChild('workspacePopover') workspacePopover!: ElementRef<PopoverElement>;
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
-  
+
   get navItems(): AiFabricNavItem[] {
     return this.workspaceService.visibleNavItems();
   }
@@ -555,7 +557,7 @@ export class ShellComponent implements OnInit {
 
   getSessionLabel(): string {
     if (!this.currentUser) {
-      return 'Guest session';
+      return this.i18n.t('shell.guestSession');
     }
 
     return `${this.currentUser.username} (${this.currentUser.role})`;
@@ -563,7 +565,7 @@ export class ShellComponent implements OnInit {
 
   getCurrentPageLabel(): string {
     const currentNav = this.navItems.find(item => this.isActive(item.route));
-    return currentNav ? currentNav.description : 'Main content area';
+    return currentNav ? this.i18n.t(currentNav.descriptionKey) : this.i18n.t('accessibility.mainContent');
   }
 
   isNavExpanded(): boolean {
@@ -571,7 +573,7 @@ export class ShellComponent implements OnInit {
   }
 
   getMenuButtonLabel(): string {
-    return this.isNavExpanded() ? 'Close navigation menu' : 'Open navigation menu';
+    return this.isNavExpanded() ? this.i18n.t('navigation.closeMenu') : this.i18n.t('navigation.openMenu');
   }
 
   showStatusBanner(): boolean {
@@ -601,13 +603,13 @@ export class ShellComponent implements OnInit {
   getStatusText(): string {
     switch (this.overallHealth) {
       case 'healthy':
-        return 'All systems operational';
+        return this.i18n.t('dashboard.allSystemsOperational');
       case 'degraded':
-        return 'Some services degraded';
+        return this.i18n.t('dashboard.someServicesDegraded');
       case 'error':
-        return 'Services unavailable';
+        return this.i18n.t('dashboard.servicesUnavailable');
       default:
-        return 'Checking status...';
+        return this.i18n.t('dashboard.checkingStatus');
     }
   }
 
@@ -627,8 +629,7 @@ export class ShellComponent implements OnInit {
   onLocaleChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.currentLocale = select.value;
-    document.documentElement.setAttribute('lang', this.currentLocale);
-    document.documentElement.setAttribute('dir', this.currentLocale === 'ar' ? 'rtl' : 'ltr');
+    void this.i18n.setLocale(this.currentLocale as any);
     this.workspaceService.updateLanguage(this.currentLocale);
     this.collabService.updateLanguage(this.currentLocale);
   }

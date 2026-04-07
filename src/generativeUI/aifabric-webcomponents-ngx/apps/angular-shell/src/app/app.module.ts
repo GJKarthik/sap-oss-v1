@@ -21,6 +21,9 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { ShellComponent } from './components/shell/shell.component';
 
+// i18n
+import { TranslatePipe } from './shared/services/i18n.service';
+
 // Interceptors
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
@@ -43,6 +46,7 @@ import { TeamGovernanceService } from './services/team-governance.service';
     ReactiveFormsModule,
     Ui5WebcomponentsModule,
     AppRoutingModule,
+    TranslatePipe,
   ],
   providers: [
     provideHttpClient(withInterceptorsFromDi()),

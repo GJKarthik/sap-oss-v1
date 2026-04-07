@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { environment } from '../../../environments/environment';
 import { EmptyStateComponent, DateFormatPipe } from '../../shared';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 interface PromptTemplate {
   id: string;
@@ -30,43 +31,43 @@ interface PromptTemplate {
 @Component({
   selector: 'app-prompt-library',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, DateFormatPipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, DateFormatPipe, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Prompt Library</ui5-title>
-        <ui5-input slot="endContent" placeholder="Search prompts..." [value]="searchQuery" (input)="onSearch($event)" style="min-width: 200px;"></ui5-input>
+        <ui5-title slot="startContent" level="H3">{{ 'promptLibrary.title' | translate }}</ui5-title>
+        <ui5-input slot="endContent" [attr.placeholder]="i18n.t('promptLibrary.searchPlaceholder')" [value]="searchQuery" (input)="onSearch($event)" style="min-width: 200px;"></ui5-input>
         <ui5-button slot="endContent" design="Emphasized" icon="add" (click)="showCreateForm = !showCreateForm">
-          {{ showCreateForm ? 'Cancel' : 'New Prompt' }}
+          {{ showCreateForm ? ('common.cancel' | translate) : ('promptLibrary.newPrompt' | translate) }}
         </ui5-button>
       </ui5-bar>
 
       <div class="library-content">
         <!-- Stats bar -->
         <div class="stats-bar">
-          <div class="stat"><span class="stat-value">{{ prompts.length }}</span><span class="stat-label">Templates</span></div>
-          <div class="stat"><span class="stat-value">{{ totalUsageCount }}</span><span class="stat-label">Total Uses</span></div>
-          <div class="stat"><span class="stat-value">{{ categories.length }}</span><span class="stat-label">Categories</span></div>
+          <div class="stat"><span class="stat-value">{{ prompts.length }}</span><span class="stat-label">{{ 'promptLibrary.templates' | translate }}</span></div>
+          <div class="stat"><span class="stat-value">{{ totalUsageCount }}</span><span class="stat-label">{{ 'promptLibrary.totalUses' | translate }}</span></div>
+          <div class="stat"><span class="stat-value">{{ categories.length }}</span><span class="stat-label">{{ 'promptLibrary.categories' | translate }}</span></div>
         </div>
 
         <!-- Category filter -->
         <div class="category-bar">
           <ui5-button *ngFor="let cat of categories" [design]="selectedCategory === cat ? 'Emphasized' : 'Default'" (click)="filterByCategory(cat)">{{ cat }}</ui5-button>
-          <ui5-button *ngIf="selectedCategory" design="Transparent" (click)="filterByCategory(null)">Clear filter</ui5-button>
+          <ui5-button *ngIf="selectedCategory" design="Transparent" (click)="filterByCategory(null)">{{ 'promptLibrary.clearFilter' | translate }}</ui5-button>
         </div>
 
         <!-- Create form -->
         <ui5-card *ngIf="showCreateForm" class="create-card">
-          <ui5-card-header slot="header" title-text="New Prompt Template"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('promptLibrary.newPromptTemplate')"></ui5-card-header>
           <div class="form-grid">
-            <ui5-input ngDefaultControl [(ngModel)]="draft.name" name="name" placeholder="Prompt name" required></ui5-input>
-            <ui5-input ngDefaultControl [(ngModel)]="draft.category" name="category" placeholder="Category"></ui5-input>
-            <ui5-input ngDefaultControl [(ngModel)]="draft.description" name="description" placeholder="Description"></ui5-input>
+            <ui5-input ngDefaultControl [(ngModel)]="draft.name" name="name" [attr.placeholder]="i18n.t('promptLibrary.promptNamePlaceholder')" required></ui5-input>
+            <ui5-input ngDefaultControl [(ngModel)]="draft.category" name="category" [attr.placeholder]="i18n.t('promptLibrary.categoryPlaceholder')"></ui5-input>
+            <ui5-input ngDefaultControl [(ngModel)]="draft.description" name="description" [attr.placeholder]="i18n.t('promptLibrary.descriptionPlaceholder')"></ui5-input>
             <ui5-textarea ngDefaultControl [(ngModel)]="draft.content" name="content" [placeholder]="'Prompt content (use {'+'{variable}'+'}  for placeholders)'" [rows]="5" growing></ui5-textarea>
-            <ui5-input ngDefaultControl [(ngModel)]="draft.tagsStr" name="tags" placeholder="Tags (comma-separated)"></ui5-input>
+            <ui5-input ngDefaultControl [(ngModel)]="draft.tagsStr" name="tags" [attr.placeholder]="i18n.t('promptLibrary.tagsPlaceholder')"></ui5-input>
             <div class="form-actions">
-              <ui5-button design="Emphasized" (click)="createPrompt()" [disabled]="!draft.name.trim() || !draft.content.trim()">Create</ui5-button>
-              <ui5-button design="Transparent" (click)="showCreateForm = false">Cancel</ui5-button>
+              <ui5-button design="Emphasized" (click)="createPrompt()" [disabled]="!draft.name.trim() || !draft.content.trim()">{{ 'common.create' | translate }}</ui5-button>
+              <ui5-button design="Transparent" (click)="showCreateForm = false">{{ 'common.cancel' | translate }}</ui5-button>
             </div>
           </div>
         </ui5-card>
@@ -78,21 +79,21 @@ interface PromptTemplate {
               <ui5-card-header slot="header" [titleText]="prompt.name" [subtitleText]="prompt.category">
               </ui5-card-header>
               <div class="prompt-body">
-                <p class="prompt-desc">{{ prompt.description || 'No description' }}</p>
+                <p class="prompt-desc">{{ prompt.description || ('promptLibrary.noDescription' | translate) }}</p>
                 <pre class="prompt-content">{{ prompt.content }}</pre>
                 <div class="prompt-tags">
                   <ui5-tag *ngFor="let tag of prompt.tags" design="Information">{{ tag }}</ui5-tag>
                 </div>
                 <div class="prompt-meta">
                   <span class="version-badge">v{{ prompt.version }}</span>
-                  <span class="usage-badge">{{ prompt.usage_count }} uses</span>
+                  <span class="usage-badge">{{ prompt.usage_count }} {{ 'promptLibrary.uses' | translate }}</span>
                   <span>by {{ prompt.created_by }}</span>
                   <span>{{ prompt.updated_at | dateFormat:'short' }}</span>
                 </div>
                 <div class="prompt-actions">
-                  <ui5-button design="Default" icon="copy" (click)="copyPrompt(prompt); $event.stopPropagation()">Copy</ui5-button>
-                  <ui5-button design="Positive" icon="accept" (click)="usePrompt(prompt); $event.stopPropagation()">Use</ui5-button>
-                  <ui5-button design="Negative" icon="delete" (click)="deletePrompt(prompt); $event.stopPropagation()">Delete</ui5-button>
+                  <ui5-button design="Default" icon="copy" (click)="copyPrompt(prompt); $event.stopPropagation()">{{ 'common.copy' | translate }}</ui5-button>
+                  <ui5-button design="Positive" icon="accept" (click)="usePrompt(prompt); $event.stopPropagation()">{{ 'common.use' | translate }}</ui5-button>
+                  <ui5-button design="Negative" icon="delete" (click)="deletePrompt(prompt); $event.stopPropagation()">{{ 'common.delete' | translate }}</ui5-button>
                 </div>
               </div>
             </ui5-card>
@@ -101,37 +102,37 @@ interface PromptTemplate {
           <!-- Preview / Test panel -->
           <div class="preview-panel" *ngIf="previewPrompt">
             <ui5-card>
-              <ui5-card-header slot="header" [titleText]="previewPrompt.name" subtitle-text="Preview & Test">
+              <ui5-card-header slot="header" [titleText]="previewPrompt.name" [attr.subtitle-text]="i18n.t('promptLibrary.previewAndTest')">
               </ui5-card-header>
               <div class="preview-body">
                 <div class="preview-meta-grid">
-                  <div class="pm-item"><span class="pm-label">Version</span><ui5-tag design="Information">v{{ previewPrompt.version }}</ui5-tag></div>
-                  <div class="pm-item"><span class="pm-label">Category</span><ui5-tag>{{ previewPrompt.category }}</ui5-tag></div>
-                  <div class="pm-item"><span class="pm-label">Uses</span><ui5-tag design="Positive">{{ previewPrompt.usage_count }}</ui5-tag></div>
-                  <div class="pm-item"><span class="pm-label">Author</span><span>{{ previewPrompt.created_by }}</span></div>
+                  <div class="pm-item"><span class="pm-label">{{ 'promptLibrary.version' | translate }}</span><ui5-tag design="Information">v{{ previewPrompt.version }}</ui5-tag></div>
+                  <div class="pm-item"><span class="pm-label">{{ 'promptLibrary.category' | translate }}</span><ui5-tag>{{ previewPrompt.category }}</ui5-tag></div>
+                  <div class="pm-item"><span class="pm-label">{{ 'promptLibrary.usesLabel' | translate }}</span><ui5-tag design="Positive">{{ previewPrompt.usage_count }}</ui5-tag></div>
+                  <div class="pm-item"><span class="pm-label">{{ 'promptLibrary.author' | translate }}</span><span>{{ previewPrompt.created_by }}</span></div>
                 </div>
-                <h5 class="section-title">Template Content</h5>
+                <h5 class="section-title">{{ 'promptLibrary.templateContent' | translate }}</h5>
                 <pre class="preview-content">{{ previewPrompt.content }}</pre>
                 <div *ngIf="templateVars.length" class="test-section">
-                  <h5 class="section-title">Test Variables</h5>
+                  <h5 class="section-title">{{ 'promptLibrary.testVariables' | translate }}</h5>
                   <div *ngFor="let v of templateVars" class="var-input">
                     <label>{{ v }}</label>
                     <ui5-input ngDefaultControl [(ngModel)]="testVarValues[v]" [placeholder]="'Enter ' + v + '...'" style="width: 100%;"></ui5-input>
                   </div>
-                  <ui5-button design="Emphasized" icon="play" (click)="renderPreview()">Render Preview</ui5-button>
+                  <ui5-button design="Emphasized" icon="play" (click)="renderPreview()">{{ 'promptLibrary.renderPreview' | translate }}</ui5-button>
                 </div>
                 <div *ngIf="renderedPreview" class="rendered-section">
-                  <h5 class="section-title">Rendered Output</h5>
+                  <h5 class="section-title">{{ 'promptLibrary.renderedOutput' | translate }}</h5>
                   <pre class="rendered-content">{{ renderedPreview }}</pre>
-                  <ui5-button design="Default" icon="copy" (click)="copyRendered()">Copy Rendered</ui5-button>
+                  <ui5-button design="Default" icon="copy" (click)="copyRendered()">{{ 'promptLibrary.copyRendered' | translate }}</ui5-button>
                 </div>
-                <ui5-button design="Transparent" icon="decline" (click)="previewPrompt = null; renderedPreview = ''">Close Preview</ui5-button>
+                <ui5-button design="Transparent" icon="decline" (click)="previewPrompt = null; renderedPreview = ''">{{ 'promptLibrary.closePreview' | translate }}</ui5-button>
               </div>
             </ui5-card>
           </div>
         </div>
 
-        <app-empty-state *ngIf="filteredPrompts.length === 0 && !loading" icon="document" title="No Prompts Found" description="Create your first shared prompt template for the team."></app-empty-state>
+        <app-empty-state *ngIf="filteredPrompts.length === 0 && !loading" icon="document" [title]="'promptLibrary.noPromptsFound' | translate" [description]="'promptLibrary.noPromptsDescription' | translate"></app-empty-state>
       </div>
     </ui5-page>
   `,
@@ -177,6 +178,7 @@ interface PromptTemplate {
 export class PromptLibraryComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  readonly i18n = inject(I18nService);
   private readonly apiUrl = `${environment.apiBaseUrl}/prompts`;
 
   prompts: PromptTemplate[] = [];

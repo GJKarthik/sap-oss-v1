@@ -5,11 +5,12 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { Deployment, McpService } from '../../services/mcp.service';
-import { 
-  ConfirmationDialogComponent, 
-  ConfirmationDialogData, 
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
+import {
+  ConfirmationDialogComponent,
+  ConfirmationDialogData,
   EmptyStateComponent,
-  DateFormatPipe 
+  DateFormatPipe
 } from '../../shared';
 
 function readErrorMessage(error: unknown, fallback: string): string {
@@ -27,48 +28,48 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-deployments',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Deployments</ui5-title>
+        <ui5-title slot="startContent" level="H3">{{ 'deployments.title' | translate }}</ui5-title>
         <ui5-button
           *ngIf="canManage"
           slot="endContent"
           design="Emphasized"
           icon="add"
           (click)="toggleCreateForm()"
-          aria-label="Create new deployment">
-          {{ showCreateForm ? 'Close Form' : 'New Deployment' }}
+          [attr.aria-label]="i18n.t('deployments.createNewDeployment')">
+          {{ showCreateForm ? ('deployments.closeForm' | translate) : ('deployments.newDeployment' | translate) }}
         </ui5-button>
-        <ui5-button 
-          slot="endContent" 
-          icon="refresh" 
-          (click)="refresh()" 
+        <ui5-button
+          slot="endContent"
+          icon="refresh"
+          (click)="refresh()"
           [disabled]="loading || mutating"
-          aria-label="Refresh deployments list">
-          {{ loading ? 'Loading...' : 'Refresh' }}
+          [attr.aria-label]="i18n.t('deployments.refreshDeployments')">
+          {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
       </ui5-bar>
 
-      <div class="deployments-content" role="region" aria-label="Deployments management">
+      <div class="deployments-content" role="region" [attr.aria-label]="i18n.t('deployments.deploymentsManagement')">
         <!-- Loading indicator -->
         <div class="loading-container" *ngIf="loading" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-          <span class="loading-text">Loading deployments...</span>
+          <span class="loading-text">{{ 'deployments.loadingDeployments' | translate }}</span>
         </div>
 
-        <ui5-message-strip 
-          *ngIf="error" 
-          design="Negative" 
+        <ui5-message-strip
+          *ngIf="error"
+          design="Negative"
           [hideCloseButton]="false"
           (close)="error = ''"
           role="alert">
           {{ error }}
         </ui5-message-strip>
-        <ui5-message-strip 
-          *ngIf="success" 
-          design="Positive" 
+        <ui5-message-strip
+          *ngIf="success"
+          design="Positive"
           [hideCloseButton]="false"
           (close)="success = ''"
           role="status">
@@ -78,13 +79,13 @@ function readErrorMessage(error: unknown, fallback: string): string {
         <ui5-card *ngIf="showCreateForm && canManage" class="create-card">
           <ui5-card-header
             slot="header"
-            title-text="Create Deployment"
-            subtitle-text="Track an AI Core scenario inside the console">
+            [titleText]="'deployments.createDeployment' | translate"
+            [subtitleText]="'deployments.trackAiCoreScenario' | translate">
           </ui5-card-header>
           <form class="form-grid" (ngSubmit)="createDeployment()">
             <div class="field-group">
               <label for="scenario-id" class="field-label">
-                Scenario ID <span class="required" aria-hidden="true">*</span>
+                {{ 'deployments.scenarioId' | translate }} <span class="required" aria-hidden="true">*</span>
               </label>
               <ui5-input
                 id="scenario-id"
@@ -92,13 +93,13 @@ function readErrorMessage(error: unknown, fallback: string): string {
                 [(ngModel)]="draftScenarioId"
                 name="scenarioId"
                 placeholder="foundation-model-scenario"
-                accessible-name="Scenario ID"
+                [accessibleName]="'deployments.scenarioId' | translate"
                 required>
               </ui5-input>
             </div>
             <div class="field-group">
               <label for="config-json" class="field-label">
-                Configuration JSON
+                {{ 'deployments.configurationJson' | translate }}
               </label>
               <ui5-textarea
                 id="config-json"
@@ -108,16 +109,16 @@ function readErrorMessage(error: unknown, fallback: string): string {
                 [rows]="6"
                 growing
                 placeholder='{"resourceGroup":"default"}'
-                accessible-name="Configuration JSON">
+                [accessibleName]="'deployments.configurationJson' | translate">
               </ui5-textarea>
             </div>
             <div class="form-actions">
               <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating" type="Button">
-                Cancel
+                {{ 'common.cancel' | translate }}
               </ui5-button>
               <ui5-button design="Emphasized" (click)="createDeployment()" [disabled]="mutating || !draftScenarioId.trim()" type="Submit">
                 <ui5-busy-indicator *ngIf="mutating" active size="S" style="margin-right: 0.5rem;"></ui5-busy-indicator>
-                {{ mutating ? 'Creating...' : 'Create' }}
+                {{ mutating ? ('deployments.creating' | translate) : ('deployments.create' | translate) }}
               </ui5-button>
             </div>
           </form>
@@ -126,22 +127,22 @@ function readErrorMessage(error: unknown, fallback: string): string {
         <ui5-card [class.loading]="loading">
           <ui5-card-header
             slot="header"
-            title-text="Tracked Deployments"
-            subtitle-text="Console-managed deployment inventory"
+            [titleText]="'deployments.trackedDeployments' | translate"
+            [subtitleText]="'deployments.consoleManagedInventory' | translate"
             [additionalText]="deployments.length + ''">
           </ui5-card-header>
 
-          <ui5-table 
-            *ngIf="deployments.length > 0" 
-            aria-label="Deployments table"
+          <ui5-table
+            *ngIf="deployments.length > 0"
+            [attr.aria-label]="'deployments.deploymentsTable' | translate"
             [class.table-loading]="mutating">
-            <ui5-table-header-cell><span>Deployment</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Target</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Scenario</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Details</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Created</span></ui5-table-header-cell>
-            <ui5-table-header-cell><span>Actions</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnDeployment' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnStatus' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnTarget' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnScenario' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnDetails' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnCreated' | translate }}</span></ui5-table-header-cell>
+            <ui5-table-header-cell><span>{{ 'deployments.columnActions' | translate }}</span></ui5-table-header-cell>
 
             <ui5-table-row *ngFor="let deployment of deployments; trackBy: trackByDeploymentId">
               <ui5-table-cell>
@@ -160,20 +161,20 @@ function readErrorMessage(error: unknown, fallback: string): string {
                     design="Transparent"
                     (click)="setTargetStatus(deployment, nextTargetStatus(deployment))"
                     [disabled]="mutating"
-                    [attr.aria-label]="'Set deployment ' + deployment.id + ' to ' + nextTargetStatus(deployment)">
-                    Set {{ nextTargetStatus(deployment) }}
+                    [attr.aria-label]="i18n.t('deployments.setDeploymentStatus', { id: deployment.id, status: nextTargetStatus(deployment) })">
+                    {{ 'deployments.setStatus' | translate:{ status: nextTargetStatus(deployment) } }}
                   </ui5-button>
                   <ui5-button
                     design="Negative"
                     icon="delete"
                     (click)="confirmDelete(deployment)"
                     [disabled]="mutating"
-                    [attr.aria-label]="'Delete deployment ' + deployment.id">
-                    Delete
+                    [attr.aria-label]="i18n.t('deployments.deleteDeploymentLabel', { id: deployment.id })">
+                    {{ 'common.delete' | translate }}
                   </ui5-button>
                 </div>
                 <ng-template #readOnlyActions>
-                  <span class="read-only-label">Read only</span>
+                  <span class="read-only-label">{{ 'deployments.readOnly' | translate }}</span>
                 </ng-template>
               </ui5-table-cell>
             </ui5-table-row>
@@ -182,9 +183,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
           <app-empty-state
             *ngIf="!loading && deployments.length === 0"
             icon="machine"
-            title="No Deployments"
-            [description]="canManage ? 'No deployments are tracked in the console yet. Create your first deployment to get started.' : 'No deployments are tracked in the console yet.'"
-            [actionText]="canManage ? 'New Deployment' : ''"
+            [title]="'deployments.noDeployments' | translate"
+            [description]="canManage ? ('deployments.noDeploymentsDescriptionManage' | translate) : ('deployments.noDeploymentsDescription' | translate)"
+            [actionText]="canManage ? ('deployments.newDeployment' | translate) : ''"
             actionIcon="add"
             (actionClicked)="toggleCreateForm()">
           </app-empty-state>
@@ -230,7 +231,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
     ui5-card {
       width: 100%;
     }
-    
+
     ui5-card.loading {
       opacity: 0.6;
       pointer-events: none;
@@ -303,10 +304,11 @@ function readErrorMessage(error: unknown, fallback: string): string {
 })
 export class DeploymentsComponent implements OnInit {
   @ViewChild('deleteDialog') deleteDialog!: ConfirmationDialogComponent;
-  
+
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  readonly i18n = inject(I18nService);
 
   deployments: Deployment[] = [];
   loading = false;
@@ -320,10 +322,10 @@ export class DeploymentsComponent implements OnInit {
 
   // Delete confirmation dialog state
   deleteDialogData: ConfirmationDialogData = {
-    title: 'Delete Deployment',
-    message: 'Are you sure you want to delete this deployment? This action cannot be undone.',
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
+    title: this.i18n.t('deployments.deleteDeploymentTitle'),
+    message: this.i18n.t('deployments.deleteDeploymentMessage'),
+    confirmText: this.i18n.t('common.delete'),
+    cancelText: this.i18n.t('common.cancel'),
     confirmDesign: 'Negative',
     icon: 'warning'
   };
@@ -346,7 +348,7 @@ export class DeploymentsComponent implements OnInit {
           this.loading = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to load deployment data.');
+          this.error = readErrorMessage(err, this.i18n.t('deployments.failedToLoadDeployments'));
           this.loading = false;
         }
       });
@@ -368,7 +370,7 @@ export class DeploymentsComponent implements OnInit {
   createDeployment(): void {
     const scenarioId = this.draftScenarioId.trim();
     if (!scenarioId) {
-      this.error = 'Scenario ID is required.';
+      this.error = this.i18n.t('deployments.scenarioIdRequired');
       return;
     }
 
@@ -378,7 +380,7 @@ export class DeploymentsComponent implements OnInit {
         ? JSON.parse(this.draftConfigurationJson) as Record<string, unknown>
         : {};
     } catch {
-      this.error = 'Configuration JSON is invalid.';
+      this.error = this.i18n.t('deployments.configJsonInvalid');
       return;
     }
 
@@ -390,12 +392,12 @@ export class DeploymentsComponent implements OnInit {
       .subscribe({
         next: deployment => {
           this.deployments = [deployment, ...this.deployments];
-          this.success = `Deployment "${deployment.id}" created.`;
+          this.success = this.i18n.t('deployments.deploymentCreated', { id: deployment.id });
           this.mutating = false;
           this.resetCreateForm();
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to create deployment.');
+          this.error = readErrorMessage(err, this.i18n.t('deployments.failedToCreateDeployment'));
           this.mutating = false;
         }
       });
@@ -410,11 +412,11 @@ export class DeploymentsComponent implements OnInit {
       .subscribe({
         next: response => {
           deployment.targetStatus = response.target_status;
-          this.success = `Deployment "${deployment.id}" target set to ${response.target_status}.`;
+          this.success = this.i18n.t('deployments.deploymentTargetSet', { id: deployment.id, status: response.target_status });
           this.mutating = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, `Failed to update deployment "${deployment.id}".`);
+          this.error = readErrorMessage(err, this.i18n.t('deployments.failedToUpdateDeployment', { id: deployment.id }));
           this.mutating = false;
         }
       });
@@ -429,11 +431,11 @@ export class DeploymentsComponent implements OnInit {
       .subscribe({
         next: () => {
           this.deployments = this.deployments.filter(item => item.id !== deployment.id);
-          this.success = `Deployment "${deployment.id}" deleted.`;
+          this.success = this.i18n.t('deployments.deploymentDeleted', { id: deployment.id });
           this.mutating = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, `Failed to delete deployment "${deployment.id}".`);
+          this.error = readErrorMessage(err, this.i18n.t('deployments.failedToDeleteDeployment', { id: deployment.id }));
           this.mutating = false;
         }
       });
@@ -484,6 +486,10 @@ export class DeploymentsComponent implements OnInit {
     this.deploymentToDelete = deployment;
     this.deleteDialogData = {
       ...this.deleteDialogData,
+      title: this.i18n.t('deployments.deleteDeploymentTitle'),
+      message: this.i18n.t('deployments.deleteDeploymentMessage'),
+      confirmText: this.i18n.t('common.delete'),
+      cancelText: this.i18n.t('common.cancel'),
       itemName: deployment.id
     };
     this.deleteDialog.show();
