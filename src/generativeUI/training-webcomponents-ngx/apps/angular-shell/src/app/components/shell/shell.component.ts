@@ -42,6 +42,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
           (profile-click)="onProfileClick($event)">
           <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
           <ui5-button icon="search" slot="endContent" (click)="toggleSearch()" [attr.aria-label]="i18n.t('shell.searchAriaLabel')"></ui5-button>
+          <ui5-button icon="globe" slot="endContent" (click)="i18n.nextLanguage()" [attr.aria-label]="i18n.t('shell.langAriaLabel')">{{ i18n.languageLabel() }}</ui5-button>
           <ui5-button icon="settings" slot="endContent" [attr.aria-label]="i18n.t('shell.settingsAriaLabel')"></ui5-button>
         </ui5-shellbar>
       </header>

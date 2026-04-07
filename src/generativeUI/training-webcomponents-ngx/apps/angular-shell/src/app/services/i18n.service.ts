@@ -4,6 +4,18 @@ import MessageFormat from '@messageformat/core';
 
 export type Language = 'en' | 'ar' | 'fr' | 'de' | 'ko' | 'zh' | 'id';
 
+const RTL_LANGS: ReadonlySet<Language> = new Set(['ar']);
+
+const LANGUAGE_LABELS: Record<Language, string> = {
+  en: 'English',
+  ar: 'العربية',
+  de: 'Deutsch',
+  fr: 'Français',
+  id: 'Bahasa',
+  ko: '한국어',
+  zh: '中文',
+};
+
 interface TranslationMap {
   [key: string]: string;
 }
@@ -15,7 +27,8 @@ export class I18nService {
   private readonly document = inject(DOCUMENT);
 
   readonly currentLang = signal<Language>(this.loadSavedLang());
-  readonly isRtl = computed(() => this.currentLang() === 'ar');
+  readonly isRtl = computed(() => RTL_LANGS.has(this.currentLang()));
+  readonly languageLabel = computed(() => LANGUAGE_LABELS[this.currentLang()]);
   readonly dir = computed(() => this.isRtl() ? 'rtl' : 'ltr');
 
   /** Flips to true once translation JSON files have been loaded. */
@@ -63,7 +76,13 @@ export class I18nService {
   }
 
   toggleLanguage(): void {
-    const next: Language = this.currentLang() === 'en' ? 'ar' : 'en';
+    this.nextLanguage();
+  }
+
+  nextLanguage(): void {
+    const langs = I18nService.ALL_LANGS;
+    const idx = langs.indexOf(this.currentLang());
+    const next = langs[(idx + 1) % langs.length];
     this.setLanguage(next);
   }
 

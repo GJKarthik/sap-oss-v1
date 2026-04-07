@@ -538,40 +538,23 @@ export class ChatComponent implements OnDestroy, OnInit {
   readonly lastUsage = signal<{ total_tokens: number } | null>(null);
   readonly availableModels = signal<string[]>([]);
 
-  private static readonly EN_SYSTEM_PROMPT = 'You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.';
-  private static readonly AR_SYSTEM_PROMPT = 'أنت مساعد ذكي متخصص في تحويل الأسئلة المالية باللغة العربية إلى استعلامات SQL لقواعد بيانات SAP HANA Cloud المصرفية.';
-
-  private static readonly EN_SUGGESTIONS = [
-    'Write a SQL query to get total revenue by region',
-    'Explain the NFRP schema hierarchy',
-    'What are the Text-to-SQL training pair formats?',
-  ];
-
-  private static readonly AR_SUGGESTIONS = [
-    'اكتب استعلام SQL لعرض إجمالي الإيرادات حسب المنطقة',
-    'اشرح هيكل مخطط NFRP',
-    'ما هي صيغ أزواج التدريب لتحويل النص إلى SQL؟',
-  ];
 
   userInput = '';
   model = 'Qwen/Qwen3.5-0.6B';
-  systemPrompt = ChatComponent.EN_SYSTEM_PROMPT;
+  systemPrompt = '';
   maxTokens = 1024;
   temperature = 0.7;
 
-  readonly suggestions = computed(() =>
-    this.i18n.currentLang() === 'ar' ? ChatComponent.AR_SUGGESTIONS : ChatComponent.EN_SUGGESTIONS
-  );
+  readonly suggestions = computed(() => [
+    this.i18n.t('chat.suggestion1'),
+    this.i18n.t('chat.suggestion2'),
+    this.i18n.t('chat.suggestion3'),
+  ]);
 
   private readonly localeEffect = effect(() => {
-    const lang = this.i18n.currentLang();
-    if (lang === 'ar') {
-      this.systemPrompt = ChatComponent.AR_SYSTEM_PROMPT;
-      this.model = 'gemma4-arabic-finance';
-    } else {
-      this.systemPrompt = ChatComponent.EN_SYSTEM_PROMPT;
-      this.model = 'Qwen/Qwen3.5-0.6B';
-    }
+    this.i18n.currentLang();
+    this.systemPrompt = this.i18n.t('chat.defaultSystemPrompt');
+    this.model = this.i18n.t('chat.defaultModel');
   });
 
   ngOnInit(): void {

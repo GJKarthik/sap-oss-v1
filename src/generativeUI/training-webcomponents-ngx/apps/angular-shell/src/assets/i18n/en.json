@@ -1035,5 +1035,12 @@
   "narrative.initializing": "Platform initializing…",
   "narrative.healthy": "Your AI ecosystem is fully synchronized and ready for production inference.",
   "narrative.hanaOffline": "HANA Vector Engine is offline. Knowledge retrieval is currently limited.",
-  "narrative.degraded": "The platform is operating in a degraded state. Check system telemetry."
+  "narrative.degraded": "The platform is operating in a degraded state. Check system telemetry.",
+
+  "chat.defaultSystemPrompt": "You are a helpful Text-to-SQL assistant for SAP HANA Cloud banking schemas.",
+  "chat.suggestion1": "Write a SQL query to get total revenue by region",
+  "chat.suggestion2": "Explain the NFRP schema hierarchy",
+  "chat.suggestion3": "What are the Text-to-SQL training pair formats?",
+  "chat.defaultModel": "Qwen/Qwen3.5-0.6B",
+  "shell.langAriaLabel": "Switch language"
 }
