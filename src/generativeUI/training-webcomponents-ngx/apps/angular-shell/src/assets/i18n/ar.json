@@ -560,5 +560,37 @@
 
   "form.errorsTitle": "يرجى تصحيح الأخطاء التالية:",
   "modelOpt.errorModelRequired": "اسم النموذج مطلوب.",
-  "modelOpt.errorQuantRequired": "صيغة التكميم مطلوبة."
+  "modelOpt.errorQuantRequired": "صيغة التكميم مطلوبة.",
+
+  "nav.governance": "الحوكمة",
+  "nav.workspace": "مساحة العمل",
+  "nav.prompts": "القوالب",
+
+  "common.cancel": "إلغاء",
+
+  "workspace.title": "إعدادات مساحة العمل",
+  "workspace.subtitle": "قم بتكوين بيئتك واتصالاتك وتفضيلاتك.",
+  "workspace.identity": "الهوية",
+  "workspace.displayName": "الاسم المعروض",
+  "workspace.teamName": "اسم الفريق",
+  "workspace.userId": "معرف المستخدم",
+  "workspace.backend": "تكوين الخلفية",
+  "workspace.apiBaseUrl": "عنوان API الأساسي",
+  "workspace.collabWs": "عنوان WebSocket للتعاون",
+  "workspace.testConnection": "اختبار الاتصال",
+  "workspace.connected": "متصل",
+  "workspace.unreachable": "غير متاح",
+  "workspace.navigation": "التنقل",
+  "workspace.defaultPage": "الصفحة الافتراضية",
+  "workspace.visible": "مرئي",
+  "workspace.modelPrefs": "تفضيلات النموذج",
+  "workspace.defaultModel": "النموذج الافتراضي",
+  "workspace.temperature": "درجة الحرارة",
+  "workspace.systemPrompt": "رسالة النظام",
+  "workspace.dataManagement": "إدارة البيانات",
+  "workspace.export": "تصدير الإعدادات",
+  "workspace.import": "استيراد الإعدادات",
+  "workspace.reset": "إعادة التعيين إلى الافتراضي",
+  "workspace.resetConfirm": "هل تريد إعادة تعيين جميع الإعدادات إلى الافتراضي؟ لا يمكن التراجع عن هذا الإجراء.",
+  "workspace.saved": "تم حفظ الإعدادات"
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
+import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 
 type AssetType = 'xlsx' | 'csv' | 'template';
 type TabId = 'assets' | 'pairs';
@@ -28,11 +29,19 @@ interface SqlPair {
 @Component({
   selector: 'app-data-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
+      <app-cross-app-link
+        targetApp="aifabric"
+        targetRoute="/data"
+        targetLabel="Vector Store Explorer"
+        icon="database"
+        relationLabel="Related — explore HANA vector stores:">
+      </app-cross-app-link>
+
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('dataExplorer.title') }}</h1>
         <div class="tab-bar">

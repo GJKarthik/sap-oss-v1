@@ -23,6 +23,20 @@ interface TokenClaims {
   exp?: number;
 }
 
+/**
+ * Runtime configuration interface for the AI Fabric Console.
+ * These values are injected via window.__AIFABRIC_CONFIG__ at runtime.
+ */
+interface AiFabricConfig {
+  requireAuth?: boolean;
+}
+
+declare global {
+  interface Window {
+    __AIFABRIC_CONFIG__?: AiFabricConfig;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -30,7 +44,17 @@ export class AuthService {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   private refreshRequest$: Observable<AuthTokens> | null = null;
 
+  /** Whether auth is required based on runtime config. */
+  private get requireAuth(): boolean {
+    return !!window.__AIFABRIC_CONFIG__?.requireAuth;
+  }
+
   private restoreSession(): boolean {
+    if (!this.requireAuth) {
+      this.ensureDefaultUser();
+      return true;
+    }
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
       return false;
@@ -42,6 +66,16 @@ export class AuthService {
     }
 
     return true;
+  }
+
+  private ensureDefaultUser(): void {
+    if (!localStorage.getItem('user')) {
+      localStorage.setItem('user', JSON.stringify({
+        username: 'dev-user',
+        role: 'admin',
+        email: 'dev@aifabric.local',
+      } satisfies UserInfo));
+    }
   }
 
   private decodeTokenClaims(token: string): TokenClaims | null {
@@ -127,6 +161,12 @@ export class AuthService {
   }
 
   ensureAuthenticated(): Observable<boolean> {
+    if (!this.requireAuth) {
+      this.ensureDefaultUser();
+      this.isAuthenticatedSubject.next(true);
+      return of(true);
+    }
+
     if (this.getToken()) {
       this.isAuthenticatedSubject.next(true);
       return of(true);

@@ -65,18 +65,38 @@ function makeHealthService() {
   };
 }
 
+function makeWorkspaceService() {
+  return {
+    identity: () => ({ userId: 'test-user', displayName: 'Test', teamName: '' }),
+    effectiveOpenAiBaseUrl: () => 'http://localhost:8400',
+    modelPreferences: () => ({ defaultModel: '', temperature: 0.7, systemPrompt: '' }),
+  };
+}
+
+function makeHistoryService() {
+  return {
+    loadHistory: jest.fn().mockReturnValue(new BehaviorSubject([]).asObservable()),
+    saveEntry: jest.fn().mockReturnValue(new BehaviorSubject({}).asObservable()),
+    deleteEntry: jest.fn().mockReturnValue(new BehaviorSubject(undefined).asObservable()),
+  };
+}
+
 function createComponent() {
   const streaming = makeStreamingService();
   const governance = makeGovernanceService();
   const collab = makeCollabService();
   const cdr = makeCdr();
   const health = makeHealthService();
+  const workspace = makeWorkspaceService();
+  const history = makeHistoryService();
   const component = new JouleShellComponent(
     streaming as never,
     governance as never,
     collab as never,
     health as never,
     cdr,
+    workspace as never,
+    history as never,
   );
   return { component, streaming, governance, collab, cdr, health };
 }

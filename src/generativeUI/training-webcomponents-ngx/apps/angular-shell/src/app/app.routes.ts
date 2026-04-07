@@ -98,6 +98,27 @@ export const routes: Routes = [
             (m) => m.ArabicWizardComponent
           ),
       },
+      {
+        path: 'governance',
+        loadComponent: () =>
+          import('./pages/governance/governance.component').then(
+            (m) => m.GovernanceComponent
+          ),
+      },
+      {
+        path: 'prompts',
+        loadComponent: () =>
+          import('./pages/prompt-library/prompt-library.component').then(
+            (m) => m.PromptLibraryComponent
+          ),
+      },
+      {
+        path: 'workspace',
+        loadComponent: () =>
+          import('./pages/workspace/workspace.component').then(
+            (m) => m.WorkspaceComponent
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

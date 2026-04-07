@@ -17,4 +17,7 @@ export const environment = {
   enableRag: true,
   enablePalWorkbench: true,
   enableKuzuGraph: true,
+  collabWsUrl: `${typeof window !== 'undefined' ? window.location.protocol.replace('http', 'ws') : 'ws:'}//localhost:8200/collab`,
+  collabUserId: 'aifabric-user-default',
+  collabDisplayName: 'AI Fabric User',
 };

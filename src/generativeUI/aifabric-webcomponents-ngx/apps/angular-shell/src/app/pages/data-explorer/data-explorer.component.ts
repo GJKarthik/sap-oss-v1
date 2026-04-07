@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService, VectorStore } from '../../services/mcp.service';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 
 @Component({
   selector: 'app-data-explorer',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
@@ -22,6 +22,14 @@ import { EmptyStateComponent } from '../../shared';
           {{ loading ? 'Loading...' : 'Refresh' }}
         </ui5-button>
       </ui5-bar>
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/data-explorer"
+        targetLabel="Training Data Explorer"
+        icon="database"
+        relationLabel="Related — browse training datasets:">
+      </app-cross-app-link>
+
       <div class="data-content" role="region" aria-label="Vector stores explorer">
         <!-- Loading indicator -->
         <div class="loading-container" *ngIf="loading" role="status" aria-live="polite">

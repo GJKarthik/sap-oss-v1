@@ -1,4 +1,12 @@
 <div class="ocr-page" [class.rtl]="i18n.isRtl()" [dir]="i18n.dir()">
+  <app-cross-app-link
+    targetApp="joule"
+    targetRoute="/ocr"
+    targetLabel="OCR Playground"
+    icon="lab"
+    relationLabel="Prototype — test OCR in dev playground:">
+  </app-cross-app-link>
+
   <header class="ocr-header">
     <h1>{{ i18n.t('ocr.title') }}</h1>
     <p class="ocr-subtitle">{{ i18n.t('ocr.subtitle') }}</p>

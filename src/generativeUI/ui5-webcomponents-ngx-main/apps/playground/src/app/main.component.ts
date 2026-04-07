@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2023 SAP SE
 import { Component } from "@angular/core";
 import { Router } from "@angular/router";
+import { WorkspaceService } from "./core/workspace.service";
+import { NavLinkDatum } from "./core/workspace.types";
 
 @Component({
     templateUrl: './main.component.html',
@@ -9,14 +11,20 @@ import { Router } from "@angular/router";
     standalone: false
 })
 export class MainComponent {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private workspaceService: WorkspaceService,
+  ) {}
 
-  navigateForms(): void { this.router.navigate(['/forms']); }
-  navigateJoule(): void { this.router.navigate(['/joule']); }
-  navigateCollab(): void { this.router.navigate(['/collab']); }
-  navigateGenerative(): void { this.router.navigate(['/generative']); }
-  navigateComponents(): void { this.router.navigate(['/components']); }
-  navigateMcp(): void { this.router.navigate(['/mcp']); }
-  navigateOcr(): void { this.router.navigate(['/ocr']); }
-  navigateReadiness(): void { this.router.navigate(['/readiness']); }
+  get homeCards(): NavLinkDatum[] {
+    return this.workspaceService.visibleHomeCards();
+  }
+
+  navigateTo(path: string): void {
+    this.router.navigate([path]);
+  }
+
+  trackByPath(_index: number, card: NavLinkDatum): string {
+    return card.path;
+  }
 }

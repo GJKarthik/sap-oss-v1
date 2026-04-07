@@ -1,4 +1,14 @@
 <section class="ocr-page">
+  <!-- Cross-app link to production OCR in Training Console -->
+  <div class="cross-app-banner" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1rem;background:var(--sapInformationBackground,#e8f2ff);border:1px solid var(--sapInformativeBorderColor,#5b9bd5);border-radius:0.5rem;margin-bottom:1rem;">
+    <ui5-icon name="document" style="font-size:1.25rem;color:var(--sapInformativeColor,#0854a0);"></ui5-icon>
+    <div style="flex:1;display:flex;flex-direction:column;gap:0.125rem;">
+      <span style="font-size:0.75rem;color:var(--sapContent_LabelColor);">Production OCR pipeline:</span>
+      <span style="font-size:0.875rem;"><strong>Document OCR</strong> in Training Console</span>
+    </div>
+    <ui5-button design="Transparent" icon="action" (click)="openCrossApp()">Open</ui5-button>
+  </div>
+
   <ui5-title level="H3">{{ 'OCR_PAGE_TITLE' | ui5I18n }}</ui5-title>
 
   <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>

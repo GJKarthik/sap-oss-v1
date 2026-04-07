@@ -9,6 +9,10 @@ import { DiagnosticsService } from '../../services/diagnostics.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
+import { CollaborationService, TeamMember, ConnectionState } from '../../services/collaboration.service';
+import { TeamConfigService } from '../../services/team-config.service';
+import { WorkspaceService } from '../../services/workspace.service';
+import { environment } from '../../../environments/environment';
 import '@ui5/webcomponents-fiori/dist/ShellBar.js';
 import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
 import '@ui5/webcomponents/dist/Avatar.js';
@@ -119,6 +123,8 @@ type ProductSelectEvent = Event & {
         </ui5-list>
       </ui5-popover>
 
+
+
       <nav class="app-nav" role="navigation" aria-label="Training navigation">
         @for (item of navItems(); track item.route) {
           <ui5-button
@@ -131,6 +137,28 @@ type ProductSelectEvent = Event & {
         }
 
         <div class="app-nav__spacer"></div>
+
+        <!-- Team Presence -->
+        @if (teamMembers.length > 0) {
+          <div class="team-presence" aria-label="Team members online">
+            @for (member of teamMembers.slice(0, 5); track member.userId) {
+              <ui5-avatar
+                size="XS"
+                [attr.initials]="getMemberInitials(member)"
+                [attr.aria-label]="member.displayName + ' (' + member.status + ')'"
+                [style.border]="'2px solid ' + member.color"
+                [class.member-idle]="member.status === 'idle'"
+                [class.member-away]="member.status === 'away'">
+              </ui5-avatar>
+            }
+            @if (teamMembers.length > 5) {
+              <span class="team-overflow">+{{ teamMembers.length - 5 }}</span>
+            }
+            <span class="collab-indicator" [class.collab-connected]="collabState === 'connected'" [class.collab-reconnecting]="collabState === 'reconnecting'">
+              {{ collabState === 'connected' ? '●' : collabState === 'reconnecting' ? '◌' : '' }}
+            </span>
+          </div>
+        }
 
         @if (store.wsState() !== 'offline') {
           <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
@@ -411,6 +439,30 @@ type ProductSelectEvent = Event & {
       .rtl .app-nav__spacer ~ * {
         direction: rtl;
       }
+
+      .team-presence {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      .team-presence .member-idle { opacity: 0.6; }
+      .team-presence .member-away { opacity: 0.4; }
+      .team-overflow {
+        font-size: 0.75rem;
+        color: var(--sapContent_LabelColor, #6a6d70);
+        padding: 0 0.25rem;
+      }
+      .collab-indicator { font-size: 0.5rem; margin-inline-start: 0.25rem; }
+      .collab-connected { color: var(--sapPositiveColor, #107e3e); }
+      .collab-reconnecting { color: var(--sapCriticalColor, #e9730c); }
+
+      .ws-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 1rem; background: var(--sapList_SelectionBackgroundColor, #e8f2ff); border-bottom: 1px solid var(--sapGroup_TitleBorderColor); font-size: 0.8125rem; flex-wrap: wrap; }
+      .ws-cross-label { font-size: 0.75rem; color: var(--sapContent_LabelColor); font-weight: 500; margin-inline-start: 0.5rem; }
+      .ws-picker-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 999; display: flex; justify-content: center; align-items: flex-start; padding-top: 5rem; }
+      .ws-picker { background: var(--sapBaseColor, #fff); border-radius: 0.5rem; padding: 1rem; min-width: 380px; max-width: 500px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+      .ws-picker-item { border: 1px solid var(--sapTile_BorderColor); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; }
+      .ws-picker-item:hover { background: var(--sapList_Hover_Background, #f5f5f5); }
+      .ws-picker-item--active { border-color: var(--sapBrandColor); background: var(--sapList_SelectionBackgroundColor, #e8f2ff); }
     `,
   ],
 })
@@ -423,8 +475,15 @@ export class ShellComponent implements OnInit, OnDestroy {
   readonly userSettings = inject(UserSettingsService);
   readonly store = inject(AppStore);
   readonly i18n = inject(I18nService);
+  private readonly collabService = inject(CollaborationService);
+  private readonly teamConfigService = inject(TeamConfigService);
+  private readonly workspaceService = inject(WorkspaceService);
   private readonly destroy$ = new Subject<void>();
   readonly arabicModelOnline = signal(false);
+
+  // Team collaboration state
+  teamMembers: TeamMember[] = [];
+  collabState: ConnectionState = 'disconnected';
 
   /**
    * Computed signal so the nav labels reactively update when
@@ -438,34 +497,66 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.i18n.translationsReady();
     this.i18n.currentLang();
 
-    return [
-      { label: this.i18n.t('nav.dashboard'), icon: 'home', route: '/dashboard' },
-      { label: this.i18n.t('nav.pipeline'), icon: 'process', route: '/pipeline' },
-      { label: this.i18n.t('nav.dataExplorer'), icon: 'folder', route: '/data-explorer' },
-      { label: this.i18n.t('nav.dataCleaning'), icon: 'edit', route: '/data-cleaning' },
-      { label: this.i18n.t('nav.modelOptimizer'), icon: 'machine', route: '/model-optimizer' },
-      { label: this.i18n.t('nav.registry'), icon: 'tags', route: '/registry' },
-      { label: this.i18n.t('nav.hippocpp'), icon: 'chain-link', route: '/hippocpp' },
-      { label: this.i18n.t('nav.chat'), icon: 'discussion-2', route: '/chat' },
-      { label: this.i18n.t('nav.compare'), icon: 'compare', route: '/compare' },
-      { label: this.i18n.t('nav.documentOcr'), icon: 'document', route: '/document-ocr' },
-      { label: this.i18n.t('nav.semanticSearch'), icon: 'search', route: '/semantic-search' },
-      { label: this.i18n.t('nav.analytics'), icon: 'lead', route: '/analytics' },
-      { label: this.i18n.t('nav.glossaryManager'), icon: 'activity-items', route: '/glossary-manager' },
-      { label: this.i18n.t('nav.arabicWizard'), icon: 'learning-assistant', route: '/arabic-wizard' },
-    ];
+    // Use workspace-driven nav (filters hidden items, respects order)
+    return this.workspaceService.visibleNavLinks().map(link => ({
+      label: this.i18n.t(link.labelKey),
+      icon: link.icon,
+      route: link.route,
+    }));
   });
 
   readonly version = '1.0.0';
   apiKeyDraft = this.auth.token() ?? '';
 
   ngOnInit(): void {
+    this.workspaceService.initialize();
     this.checkArabicModelStatus();
+    this.initCollaboration();
+    this.teamConfigService.loadTeamConfig();
   }
 
   ngOnDestroy(): void {
+    this.collabService.leaveRoom();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private initCollaboration(): void {
+    const userId = this.auth.token() ? 'training-user' : environment.collabUserId;
+    const displayName = environment.collabDisplayName;
+
+    this.collabService.configure({
+      websocketUrl: environment.collabWsUrl,
+      userId,
+      displayName,
+    });
+
+    this.collabService.connectionState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => this.collabState = state);
+
+    this.collabService.members$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(members => this.teamMembers = members);
+
+    this.collabService.joinRoom('training-workspace-default').catch(() => {});
+
+    // Track page location for presence
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        if ('urlAfterRedirects' in event) {
+          this.collabService.updatePresence('active', (event as any).urlAfterRedirects);
+        }
+      });
+  }
+
+  getMemberInitials(member: TeamMember): string {
+    const name = member.displayName?.trim();
+    if (!name) return '??';
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   }
 
   private checkArabicModelStatus(): void {
@@ -621,6 +712,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     const value = selectedOption?.getAttribute('value') ?? selectedOption?.value;
     if (value) {
       this.i18n.setLanguage(value);
+      this.workspaceService.updateLanguage(value);
     }
   }
 

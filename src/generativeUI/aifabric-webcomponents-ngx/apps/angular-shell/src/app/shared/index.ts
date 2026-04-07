@@ -11,6 +11,7 @@ export { PaginationComponent, PaginationState } from './components/pagination/pa
 export { ErrorBoundaryComponent, ErrorInfo, GlobalErrorHandler } from './components/error-boundary/error-boundary.component';
 export { KeyboardShortcutsDialogComponent } from './components/keyboard-shortcuts-dialog/keyboard-shortcuts-dialog.component';
 export { ThemeSwitcherComponent } from './components/theme-switcher/theme-switcher.component';
+export { CrossAppLinkComponent } from './cross-app-link.component';
 
 // Pipes
 export { DateFormatPipe, DateFormatStyle } from './pipes/date-format.pipe';

@@ -11,7 +11,7 @@
     (logoClick)="navigateTo('/')"
     (product-switch-click)="openProducts($event)">
 
-    <!-- Nav items (ui5-shellbar-item uses default slot in v2) -->
+    <!-- Nav items (driven by workspace config) -->
     <ui5-shellbar-item
       icon="home"
       [text]="'NAV_HOME' | ui5I18n"
@@ -19,45 +19,10 @@
     </ui5-shellbar-item>
 
     <ui5-shellbar-item
-      icon="form"
-      [text]="'NAV_FORMS' | ui5I18n"
-      (item-click)="navigateTo('/forms')">
-    </ui5-shellbar-item>
-
-    <ui5-shellbar-item
-      icon="ai"
-      [text]="'NAV_JOULE' | ui5I18n"
-      (item-click)="navigateTo('/joule')">
-    </ui5-shellbar-item>
-
-    <ui5-shellbar-item
-      icon="collaborate"
-      [text]="'NAV_COLLAB' | ui5I18n"
-      (item-click)="navigateTo('/collab')">
-    </ui5-shellbar-item>
-
-    <ui5-shellbar-item
-      icon="palette"
-      [text]="'NAV_COMPONENTS' | ui5I18n"
-      (item-click)="navigateTo('/components')">
-    </ui5-shellbar-item>
-
-    <ui5-shellbar-item
-      icon="chain-link"
-      [text]="'NAV_MCP' | ui5I18n"
-      (item-click)="navigateTo('/mcp')">
-    </ui5-shellbar-item>
-
-    <ui5-shellbar-item
-      icon="doc-attachment"
-      [text]="'NAV_OCR' | ui5I18n"
-      (item-click)="navigateTo('/ocr')">
-    </ui5-shellbar-item>
-
-    <ui5-shellbar-item
-      icon="checklist"
-      [text]="'NAV_READINESS' | ui5I18n"
-      (item-click)="navigateTo('/readiness')">
+      *ngFor="let link of shellbarLinks; trackBy: trackByPath"
+      [icon]="link.icon"
+      [text]="link.labelKey | ui5I18n"
+      (item-click)="navigateTo(link.path)">
     </ui5-shellbar-item>
 
     <!-- Theme switcher in profile slot -->
@@ -80,60 +45,12 @@
       {{ 'NAV_HOME' | ui5I18n }}
     </button>
     <button
+      *ngFor="let link of navLinks; trackBy: trackByPath"
       class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/forms')"
-      [attr.aria-current]="isActive('/forms') ? 'page' : null"
-      (click)="navigateTo('/forms')">
-      {{ 'NAV_FORMS' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/joule')"
-      [attr.aria-current]="isActive('/joule') ? 'page' : null"
-      (click)="navigateTo('/joule')">
-      {{ 'NAV_JOULE' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/collab')"
-      [attr.aria-current]="isActive('/collab') ? 'page' : null"
-      (click)="navigateTo('/collab')">
-      {{ 'NAV_COLLAB' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/generative')"
-      [attr.aria-current]="isActive('/generative') ? 'page' : null"
-      (click)="navigateTo('/generative')">
-      {{ 'NAV_GENERATIVE' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/components')"
-      [attr.aria-current]="isActive('/components') ? 'page' : null"
-      (click)="navigateTo('/components')">
-      {{ 'NAV_COMPONENTS' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/mcp')"
-      [attr.aria-current]="isActive('/mcp') ? 'page' : null"
-      (click)="navigateTo('/mcp')">
-      {{ 'NAV_MCP' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/ocr')"
-      [attr.aria-current]="isActive('/ocr') ? 'page' : null"
-      (click)="navigateTo('/ocr')">
-      {{ 'NAV_OCR' | ui5I18n }}
-    </button>
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/readiness')"
-      [attr.aria-current]="isActive('/readiness') ? 'page' : null"
-      (click)="navigateTo('/readiness')">
-      {{ 'NAV_READINESS' | ui5I18n }}
+      [class.app-nav__item--active]="isActive(link.path)"
+      [attr.aria-current]="isActive(link.path) ? 'page' : null"
+      (click)="navigateTo(link.path)">
+      {{ link.labelKey | ui5I18n }}
     </button>
 
     <div class="app-nav__spacer"></div>

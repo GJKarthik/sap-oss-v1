@@ -1,0 +1,113 @@
+.workspace-page {
+  display: grid;
+  gap: 1.5rem;
+  padding: 2rem;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--sapBrandColor, #0854a0) 10%, transparent), transparent 32%),
+    var(--sapBackgroundColor, #f5f5f5);
+}
+
+.workspace-hero {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(232, 244, 253, 0.7));
+  border: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
+  box-shadow: var(--sapContent_Shadow1, 0 2px 8px rgba(0, 0, 0, 0.12));
+}
+
+.workspace-hero__subtitle {
+  margin: 0;
+  color: var(--sapContent_LabelColor, #6a6d70);
+  max-width: 48rem;
+  line-height: 1.5;
+}
+
+.workspace-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  align-items: start;
+}
+
+.workspace-card {
+  overflow: hidden;
+}
+
+.workspace-card--wide {
+  grid-column: 1 / -1;
+}
+
+.workspace-card__body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.workspace-card__body--actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.workspace-field {
+  display: grid;
+  gap: 0.35rem;
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sapContent_LabelColor, #6a6d70);
+  }
+}
+
+.workspace-field--row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+
+  label {
+    min-width: 140px;
+  }
+}
+
+.workspace-field__input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.workspace-nav-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.workspace-nav-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--sapList_Background, #fff);
+  border: 1px solid var(--sapList_BorderColor, #e5e5e5);
+
+  span {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .workspace-page {
+    padding: 1rem;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-card--wide {
+    grid-column: auto;
+  }
+}

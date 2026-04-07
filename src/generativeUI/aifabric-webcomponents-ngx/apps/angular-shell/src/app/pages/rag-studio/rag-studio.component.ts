@@ -5,7 +5,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
-import { EmptyStateComponent } from '../../shared';
+import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 
 function readErrorMessage(error: unknown, fallback: string): string {
   const detail = (error as { error?: { detail?: string } | string; message?: string })?.error;
@@ -22,9 +22,17 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-rag-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
+      <app-cross-app-link
+        targetApp="training"
+        targetRoute="/semantic-search"
+        targetLabel="Semantic Search"
+        icon="search"
+        relationLabel="Related — search training corpora:">
+      </app-cross-app-link>
+
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">Search Studio</ui5-title>
         <ui5-button 

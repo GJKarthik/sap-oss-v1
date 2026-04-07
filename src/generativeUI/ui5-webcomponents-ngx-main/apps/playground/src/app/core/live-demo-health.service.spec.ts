@@ -8,6 +8,7 @@ import {
   validateLiveDemoConfig,
   type LiveDemoConfig,
 } from './live-demo-config';
+import { WorkspaceService } from './workspace.service';
 
 function makeConfig(overrides: Partial<LiveDemoConfig> = {}): LiveDemoConfig {
   return {
@@ -23,6 +24,14 @@ function makeHttpClient() {
   return {
     get: jest.fn(),
   } as unknown as HttpClient;
+}
+
+function makeWorkspaceService() {
+  return {
+    effectiveOpenAiBaseUrl: () => 'http://localhost:8400',
+    effectiveMcpBaseUrl: () => 'http://localhost:9160/mcp',
+    effectiveAgUiEndpoint: () => '/ag-ui/run',
+  } as unknown as WorkspaceService;
 }
 
 describe('validateLiveDemoConfig', () => {
@@ -47,7 +56,7 @@ describe('LiveDemoHealthService', () => {
       }
       return of({ ok: true });
     });
-    const service = new LiveDemoHealthService(http);
+    const service = new LiveDemoHealthService(http, makeWorkspaceService());
 
     const readiness = await firstValueFrom(
       service.checkRouteReadiness('generative'),
@@ -63,7 +72,7 @@ describe('LiveDemoHealthService', () => {
     async (route) => {
       const http = makeHttpClient();
       (http.get as jest.Mock).mockReturnValue(of({ status: 200 }));
-      const service = new LiveDemoHealthService(http);
+      const service = new LiveDemoHealthService(http, makeWorkspaceService());
 
       const readiness = await firstValueFrom(service.checkRouteReadiness(route));
 

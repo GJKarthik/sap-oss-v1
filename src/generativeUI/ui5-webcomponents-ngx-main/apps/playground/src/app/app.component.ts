@@ -5,6 +5,8 @@ import { Router, NavigationEnd } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { DemoTourService } from './core/demo-tour.service';
 import { I18nService } from '@ui5/webcomponents-ngx/i18n';
+import { WorkspaceService } from './core/workspace.service';
+import { NavLinkDatum, NAV_LINK_DATA } from './core/workspace.types';
 
 @Component({
     selector: 'ui-angular-root',
@@ -31,7 +33,20 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private demoTour: DemoTourService,
     private i18nService: I18nService,
+    private workspaceService: WorkspaceService,
   ) {}
+
+  get navLinks(): NavLinkDatum[] {
+    return this.workspaceService.visibleNavLinks();
+  }
+
+  get shellbarLinks(): NavLinkDatum[] {
+    return this.navLinks.filter(l => l.showInShellbar);
+  }
+
+  trackByPath(_index: number, link: NavLinkDatum): string {
+    return link.path;
+  }
 
   ngOnInit(): void {
     const saved = localStorage.getItem('ui5-theme');
@@ -102,6 +117,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.currentTheme = theme;
       this.applyTheme(theme);
       localStorage.setItem('ui5-theme', theme);
+      this.workspaceService.updateTheme(theme);
     }
   }
 
@@ -111,6 +127,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.currentLanguage = language;
       this.applyLanguage(language);
       localStorage.setItem('ui5-language', language);
+      this.workspaceService.updateLanguage(language);
     }
   }
 

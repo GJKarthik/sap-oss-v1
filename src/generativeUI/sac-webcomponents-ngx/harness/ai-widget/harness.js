@@ -283,12 +283,17 @@
         payload,
       });
 
+      const shell = global.document.querySelector('.harness-shell');
+      if (shell) shell.classList.add('harness-loading');
+
       const message = payload.messages?.[0]?.content;
-      return buildSseResponse(
+      const response = buildSseResponse(
         message === '__state_sync__'
           ? buildStateSyncEvents(payload, url.pathname)
           : buildChatEvents(payload, url.pathname),
       );
+
+      return response;
     }
 
     if (/\/mock-cap(?:-v2)?\/ag-ui\/tool-result$/.test(url.pathname)) {
@@ -317,4 +322,103 @@
   };
 
   state.lifecycle.push({ step: 'ready', timestamp: now() });
+
+  // ---------------------------------------------------------------------------
+  // Harness controls wiring
+  // ---------------------------------------------------------------------------
+
+  const statusDot = global.document.getElementById('connectionStatus');
+  let activityTimer = null;
+
+  function flashActivity() {
+    if (statusDot) {
+      statusDot.classList.add('active');
+      statusDot.title = 'Mock API active';
+      clearTimeout(activityTimer);
+      activityTimer = setTimeout(() => {
+        statusDot.classList.remove('active');
+        statusDot.title = 'Mock API idle';
+      }, 1500);
+    }
+  }
+
+  // Patch state tracking to flash status on activity
+  const origPush = state.runRequests.push.bind(state.runRequests);
+  state.runRequests.push = function () {
+    flashActivity();
+    return origPush.apply(this, arguments);
+  };
+
+  // Debounce-remove loading when tool results arrive (signals stream completion)
+  let toolResultTimer = null;
+  const origToolResultPush = state.toolResults.push.bind(state.toolResults);
+  state.toolResults.push = function () {
+    const result = origToolResultPush.apply(this, arguments);
+    clearTimeout(toolResultTimer);
+    toolResultTimer = setTimeout(() => {
+      const shell = global.document.querySelector('.harness-shell');
+      if (shell) shell.classList.remove('harness-loading');
+    }, 150);
+    return result;
+  };
+
+  // Scenario selector
+  const scenarioSelect = global.document.getElementById('scenarioSelect');
+  if (scenarioSelect) {
+    scenarioSelect.addEventListener('change', () => {
+      const widget = global.document.getElementById('widget');
+      const value = scenarioSelect.value;
+      if (!widget || !value) return;
+
+      const prompt = value === 'apj' ? 'Show APJ revenue'
+        : value === 'amer' ? 'Show AMER revenue'
+        : value === 'bar' ? 'Show revenue as bar chart'
+        : value === 'column' ? 'Show revenue as column chart'
+        : '';
+
+      if (prompt && typeof widget.dispatchEvent === 'function') {
+        widget.dispatchEvent(new CustomEvent('harness-prompt', { detail: { prompt } }));
+      }
+    });
+  }
+
+  // Reset button
+  const resetBtn = global.document.getElementById('resetBtn');
+  function resetHarness() {
+    state.errors.length = 0;
+    state.runRequests.length = 0;
+    state.toolResults.length = 0;
+    state.dataRequests.length = 0;
+    if (scenarioSelect) scenarioSelect.value = '';
+    const shell = global.document.querySelector('.harness-shell');
+    if (shell) shell.classList.remove('harness-loading');
+    clearTimeout(toolResultTimer);
+    state.lifecycle.push({ step: 'reset', timestamp: now() });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', resetHarness);
+  }
+
+  // Keyboard shortcuts: 1-5 select scenarios, R resets
+  const scenarioKeys = ['1', '2', '3', '4', '5'];
+  global.document.addEventListener('keydown', (event) => {
+    const tag = (event.target && event.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+    if (event.key.toLowerCase() === 'r' && !event.metaKey && !event.ctrlKey) {
+      event.preventDefault();
+      resetHarness();
+      return;
+    }
+
+    const idx = scenarioKeys.indexOf(event.key);
+    if (idx !== -1 && scenarioSelect) {
+      const options = scenarioSelect.options;
+      if (idx < options.length) {
+        scenarioSelect.value = options[idx].value;
+        scenarioSelect.dispatchEvent(new Event('change'));
+      }
+    }
+  });
 })(globalThis);

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, forkJoin, map, Observable, of } from 'rxjs';
 import { LiveDemoConfig, validateLiveDemoConfig } from './live-demo-config';
 import { environment } from '../../environments/environment';
+import { WorkspaceService } from './workspace.service';
 
 export type LiveDemoRoute = 'generative' | 'joule' | 'components' | 'mcp' | 'ocr';
 type ServiceName = 'AG-UI' | 'OpenAI' | 'MCP';
@@ -33,7 +34,10 @@ const ROUTE_DEPENDENCIES: Record<LiveDemoRoute, ServiceName[]> = {
 export class LiveDemoHealthService {
   private readonly config: LiveDemoConfig;
 
-  constructor(private readonly http: HttpClient) {
+  constructor(
+    private readonly http: HttpClient,
+    private readonly workspaceService: WorkspaceService,
+  ) {
     this.config = validateLiveDemoConfig(environment as LiveDemoConfig);
   }
 
@@ -80,13 +84,15 @@ export class LiveDemoHealthService {
   }
 
   private getServiceUrl(name: ServiceName): string {
+    const openAiBase = this.workspaceService.effectiveOpenAiBaseUrl();
+    const mcpBase = this.workspaceService.effectiveMcpBaseUrl();
     switch (name) {
       case 'AG-UI':
-        return this.config.mcpBaseUrl.replace(/\/mcp$/, '/health');
+        return mcpBase.replace(/\/mcp$/, '/health');
       case 'OpenAI':
-        return this.config.openAiBaseUrl.replace(/\/$/, '') + '/health';
+        return openAiBase.replace(/\/$/, '') + '/health';
       case 'MCP':
-        return this.config.mcpBaseUrl.replace(/\/mcp$/, '/health');
+        return mcpBase.replace(/\/mcp$/, '/health');
     }
   }
 }

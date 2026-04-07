@@ -12,6 +12,7 @@ import { ToastService } from '../../services/toast.service';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { DocumentContextService } from '../../services/document-context.service';
+import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 
 export interface OcrCurationState {
   /** The raw PDF File object uploaded by the user. */
@@ -45,7 +46,7 @@ export interface OcrCurationState {
 @Component({
   selector: 'app-document-ocr',
   standalone: true,
-  imports: [CommonModule, LocaleNumberPipe],
+  imports: [CommonModule, LocaleNumberPipe, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './document-ocr.component.html',

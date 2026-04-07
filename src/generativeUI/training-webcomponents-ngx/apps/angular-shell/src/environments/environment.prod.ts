@@ -14,5 +14,8 @@ export const environment = {
     enableGraphExplorer: true,
     enableModelOptimizer: true,
   },
-  version: '1.0.0'
+  version: '1.0.0',
+  collabWsUrl: '/collab',
+  collabUserId: '',
+  collabDisplayName: '',
 };

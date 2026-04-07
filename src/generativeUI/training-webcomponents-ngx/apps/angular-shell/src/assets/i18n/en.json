@@ -560,5 +560,37 @@
 
   "form.errorsTitle": "Please fix the following errors:",
   "modelOpt.errorModelRequired": "Model name is required.",
-  "modelOpt.errorQuantRequired": "Quantization format is required."
+  "modelOpt.errorQuantRequired": "Quantization format is required.",
+
+  "nav.governance": "Governance",
+  "nav.workspace": "Workspace",
+  "nav.prompts": "Prompts",
+
+  "common.cancel": "Cancel",
+
+  "workspace.title": "Workspace Settings",
+  "workspace.subtitle": "Configure your environment, connections, and preferences.",
+  "workspace.identity": "Identity",
+  "workspace.displayName": "Display Name",
+  "workspace.teamName": "Team Name",
+  "workspace.userId": "User ID",
+  "workspace.backend": "Backend Configuration",
+  "workspace.apiBaseUrl": "API Base URL",
+  "workspace.collabWs": "Collab WebSocket",
+  "workspace.testConnection": "Test Connection",
+  "workspace.connected": "Connected",
+  "workspace.unreachable": "Unreachable",
+  "workspace.navigation": "Navigation",
+  "workspace.defaultPage": "Default Landing Page",
+  "workspace.visible": "Visible",
+  "workspace.modelPrefs": "Model Preferences",
+  "workspace.defaultModel": "Default Model",
+  "workspace.temperature": "Temperature",
+  "workspace.systemPrompt": "System Prompt",
+  "workspace.dataManagement": "Data Management",
+  "workspace.export": "Export Settings",
+  "workspace.import": "Import Settings",
+  "workspace.reset": "Reset to Defaults",
+  "workspace.resetConfirm": "Reset all settings to defaults? This cannot be undone.",
+  "workspace.saved": "Settings saved"
 }
