@@ -5,7 +5,6 @@ import { ModelOptimizerComponent } from './model-optimizer.component';
 import { UserSettingsService, UserMode } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
-import { I18nService } from '../../services/i18n.service';
 import { signal } from '@angular/core';
 
 describe('ModelOptimizerComponent', () => {
@@ -50,32 +49,17 @@ describe('ModelOptimizerComponent', () => {
     fixture = TestBed.createComponent(ModelOptimizerComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-
-    // Inject real translations so i18n.t() returns translated strings
-    const i18n = TestBed.inject(I18nService);
-    (i18n as any).translations = {
-      en: {
-        'modelOpt.switchMode': 'Switch to Intermediate mode to select a model manually.',
-        'modelOpt.catalogFailed': 'Failed to load model catalog',
-        'modelOpt.modelsTitle': 'Models',
-        'modelOpt.jobsFailed': 'Failed to load jobs',
-        'modelOpt.jobsTitle': 'Jobs',
-        'modelOpt.loadFailed': 'Load failed',
-        'common.error': 'Error',
-      },
-      ar: {},
-    };
-    (i18n as any).loaded = true;
-    (i18n as any).mfCache.clear();
-
     mockMode.set('novice'); // Default behavior
     Object.values(mockToast).forEach(spy => spy.mockClear());
     fixture.detectChanges();
+    httpMock.expectOne('/api/models/catalog').flush([
+      { name: 'TestModel', size_gb: 4, parameters: '1B', recommended_quant: 'int8', t4_compatible: true },
+    ]);
+    httpMock.expectOne('/api/jobs').flush([]);
   });
 
   afterEach(() => {
-    // Flush any pending init requests from ngOnInit → loadData()
-    httpMock.match(() => true).forEach(r => r.flush([]));
+    component.ngOnDestroy();
     httpMock.verify();
   });
 
@@ -86,7 +70,7 @@ describe('ModelOptimizerComponent', () => {
   it('shows toast when a model is clicked in novice mode', () => {
     component.selectModel({ name: 'Model A', recommended_quant: 'int4', t4_compatible: true, size_gb: 4, parameters: '1B' });
     
-    expect(mockToast.info).toHaveBeenCalledWith('Switch to Intermediate mode to select a model manually.');
+    expect(mockToast.info).toHaveBeenCalledWith('modelOpt.switchMode');
     expect(component.jobForm.value.model_name).not.toBe('Model A');
   });
 
@@ -113,7 +97,8 @@ describe('ModelOptimizerComponent', () => {
 
     component.createJob();
 
-    const req = httpMock.expectOne(r => r.url === '/api/jobs' && r.method === 'POST');
+    const req = httpMock.expectOne('/api/jobs');
+    expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
       config: {
         model_name: 'test-model',
@@ -126,8 +111,16 @@ describe('ModelOptimizerComponent', () => {
       },
     });
 
-    req.flush({ id: 'job-1234', name: 'test', status: 'pending', config: { model_name: 'test-model', quant_format: 'int8', export_format: 'vllm' }, created_at: new Date().toISOString(), progress: 0 });
+    req.flush({
+      id: 'job-1234',
+      name: 'Optimizing test-model',
+      status: 'pending',
+      progress: 0,
+      created_at: '2026-04-06T00:00:00Z',
+      config: req.request.body.config,
+    });
 
-    expect(mockToast.success).toHaveBeenCalled();
+    expect(component.jobs()[0]?.id).toBe('job-1234');
+    expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('modelOpt.jobCreatedMsg'), 'modelOpt.jobCreatedTitle');
   });
 });
