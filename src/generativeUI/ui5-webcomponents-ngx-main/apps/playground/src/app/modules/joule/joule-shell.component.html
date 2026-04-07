@@ -33,7 +33,7 @@
   <!-- Right: live-rendered GenUI output -->
   <section class="joule-output-panel">
 
-    <!-- Connection error banner -->
+    <!-- Connection error banner with recovery -->
     @if (connectionError) {
       <div class="error-banner" role="alert">
         <ui5-message-strip
@@ -41,6 +41,14 @@
           (close)="dismissError()">
           {{ connectionError }}
         </ui5-message-strip>
+        <div class="error-recovery">
+          <ui5-button design="Emphasized" icon="refresh" (click)="retryConnection()">
+            {{ 'JOULE_RETRY' | ui5I18n }}
+          </ui5-button>
+          <ui5-button design="Transparent" icon="reset" (click)="clearSession()">
+            {{ 'JOULE_RESET_SESSION' | ui5I18n }}
+          </ui5-button>
+        </div>
       </div>
     }
 
@@ -63,6 +71,10 @@
           {{ 'JOULE_CLEAR' | ui5I18n }}
         </ui5-button>
       }
+
+      <ui5-button design="Transparent" icon="download" (click)="exportSession()" [disabled]="!schema && sessionHistory.length === 0">
+        {{ 'JOULE_EXPORT' | ui5I18n }}
+      </ui5-button>
     </div>
 
     <!-- Governance Review Panel -->

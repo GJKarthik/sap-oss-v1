@@ -5,6 +5,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EmptyStateComponent } from '../../shared';
 import { MCPToolDefinition, McpService } from '../../services/mcp.service';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 type InvocationState = 'success' | 'error';
 
@@ -19,18 +20,18 @@ interface InvocationEntry {
 @Component({
   selector: 'app-playground',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">PAL Workbench</ui5-title>
+        <ui5-title slot="startContent" level="H3">{{ 'playground.palWorkbench' | translate }}</ui5-title>
         <ui5-button
           slot="endContent"
           icon="refresh"
           design="Transparent"
           (click)="loadTools()"
           [disabled]="loading">
-          {{ loading ? 'Loading...' : 'Refresh Tools' }}
+          {{ loading ? ('common.loading' | translate) : ('playground.refreshTools' | translate) }}
         </ui5-button>
       </ui5-bar>
 
@@ -54,13 +55,13 @@ interface InvocationEntry {
           <ui5-card class="tool-card">
             <ui5-card-header
               slot="header"
-              title-text="Tool Invocation"
-              subtitle-text="Execute PAL analytics tools through the backend proxy">
+              [titleText]="'playground.toolInvocation' | translate"
+              [subtitleText]="'playground.toolInvocationSubtitle' | translate">
             </ui5-card-header>
 
             <div class="card-content">
               <div class="field-group">
-                <label for="pal-tool-select" class="field-label">Tool</label>
+                <label for="pal-tool-select" class="field-label">{{ 'playground.tool' | translate }}</label>
                 <ui5-select
                   id="pal-tool-select"
                   ngDefaultControl
@@ -76,11 +77,11 @@ interface InvocationEntry {
 
               <div class="tool-description" *ngIf="selectedTool">
                 <strong>{{ selectedTool.name }}</strong>
-                <span>{{ selectedTool.description || 'No description provided.' }}</span>
+                <span>{{ selectedTool.description || ('playground.noDescription' | translate) }}</span>
               </div>
 
               <div class="field-group">
-                <label for="pal-tool-args" class="field-label">Arguments (JSON)</label>
+                <label for="pal-tool-args" class="field-label">{{ 'playground.argumentsJson' | translate }}</label>
                 <ui5-textarea
                   id="pal-tool-args"
                   ngDefaultControl
@@ -98,21 +99,21 @@ interface InvocationEntry {
                   icon="play"
                   (click)="runTool()"
                   [disabled]="running || !selectedToolName">
-                  {{ running ? 'Running...' : 'Run Tool' }}
+                  {{ running ? ('playground.running' | translate) : ('playground.runTool' | translate) }}
                 </ui5-button>
                 <ui5-button
                   design="Transparent"
                   icon="write-new-document"
                   (click)="applyToolTemplate()"
                   [disabled]="!selectedTool">
-                  Load Template
+                  {{ 'playground.loadTemplate' | translate }}
                 </ui5-button>
                 <ui5-button
                   design="Transparent"
                   icon="clear-all"
                   (click)="clearResults()"
                   [disabled]="invocations.length === 0">
-                  Clear Results
+                  {{ 'playground.clearResults' | translate }}
                 </ui5-button>
               </div>
             </div>
@@ -121,8 +122,8 @@ interface InvocationEntry {
           <ui5-card class="result-card">
             <ui5-card-header
               slot="header"
-              title-text="Invocation History"
-              subtitle-text="Latest PAL execution output">
+              [titleText]="'playground.invocationHistory' | translate"
+              [subtitleText]="'playground.latestOutput' | translate">
             </ui5-card-header>
 
             <div *ngIf="invocations.length > 0; else emptyState" class="history-list">
@@ -137,11 +138,11 @@ interface InvocationEntry {
                   </ui5-tag>
                 </div>
                 <div class="history-block">
-                  <div class="history-label">Arguments</div>
+                  <div class="history-label">{{ 'playground.arguments' | translate }}</div>
                   <pre>{{ invocation.args }}</pre>
                 </div>
                 <div class="history-block">
-                  <div class="history-label">Result</div>
+                  <div class="history-label">{{ 'playground.result' | translate }}</div>
                   <pre>{{ invocation.result }}</pre>
                 </div>
               </div>
@@ -150,8 +151,8 @@ interface InvocationEntry {
             <ng-template #emptyState>
               <app-empty-state
                 icon="lab"
-                title="No PAL executions yet"
-                description="Select a tool, provide JSON arguments, and run it from the workbench.">
+                [title]="'playground.noExecutions' | translate"
+                [description]="'playground.noExecutionsDesc' | translate">
               </app-empty-state>
             </ng-template>
           </ui5-card>
@@ -274,6 +275,7 @@ interface InvocationEntry {
 export class PlaygroundComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly i18n = inject(I18nService);
 
   palTools: MCPToolDefinition[] = [];
   selectedToolName = '';
@@ -307,7 +309,7 @@ export class PlaygroundComponent implements OnInit {
           this.loading = false;
         },
         error: () => {
-          this.error = 'Failed to load PAL tools.';
+          this.error = this.i18n.t('playground.loadFailed');
           this.loading = false;
         },
       });
@@ -336,7 +338,7 @@ export class PlaygroundComponent implements OnInit {
     try {
       parsedArguments = JSON.parse(this.argumentsText || '{}') as Record<string, unknown>;
     } catch {
-      this.error = 'Arguments must be valid JSON.';
+      this.error = this.i18n.t('playground.invalidJson');
       return;
     }
 
@@ -357,7 +359,7 @@ export class PlaygroundComponent implements OnInit {
             },
             ...this.invocations,
           ];
-          this.success = `Executed ${this.selectedToolName}.`;
+          this.success = this.i18n.t('playground.executed', { name: this.selectedToolName });
           this.running = false;
         },
         error: err => {
@@ -371,7 +373,7 @@ export class PlaygroundComponent implements OnInit {
             },
             ...this.invocations,
           ];
-          this.error = `Failed to execute ${this.selectedToolName}.`;
+          this.error = this.i18n.t('playground.executeFailed', { name: this.selectedToolName });
           this.running = false;
         },
       });

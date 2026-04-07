@@ -135,6 +135,42 @@ export class JouleShellComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  retryConnection(): void {
+    this.connectionError = null;
+    this.streamingUi.clearSession();
+    this.cdr.markForCheck();
+    // Re-check health which will trigger reconnect
+    this.liveHealthService
+      .checkRouteReadiness('joule')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((readiness) => {
+        this.routeBlocked = readiness.blocking;
+        if (!readiness.blocking) {
+          this.connectionError = null;
+        } else {
+          const failed = readiness.checks.find((check) => !check.ok);
+          this.connectionError = `Retry failed — AG-UI endpoint still unavailable (${failed?.status ?? 'unknown'})`;
+        }
+        this.cdr.markForCheck();
+      });
+  }
+
+  exportSession(): void {
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      currentSchema: this.schema,
+      state: this.state,
+      history: this.sessionHistory,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `joule-session-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   toggleGovernancePanel(): void {
     this.showGovernancePanel = !this.showGovernancePanel;
   }

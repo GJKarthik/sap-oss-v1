@@ -91,9 +91,25 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
 
         <div class="generative-render">
           <div class="generative-render__header">
-            <ui5-title level="H4">{{ 'GENERATIVE_RENDER_TITLE' | ui5I18n }}</ui5-title>
-            <p>{{ 'GENERATIVE_RENDER_SUBTITLE' | ui5I18n }}</p>
+            <div class="generative-render__title-row">
+              <div>
+                <ui5-title level="H4">{{ 'GENERATIVE_RENDER_TITLE' | ui5I18n }}</ui5-title>
+                <p>{{ 'GENERATIVE_RENDER_SUBTITLE' | ui5I18n }}</p>
+              </div>
+              <div class="generative-render__actions" *ngIf="uiSchema">
+                <ui5-button design="Transparent" icon="save" (click)="saveTemplate()">
+                  {{ 'GENERATIVE_SAVE_TEMPLATE' | ui5I18n }}
+                </ui5-button>
+                <ui5-button design="Transparent" icon="share" (click)="shareSchema()">
+                  {{ 'GENERATIVE_SHARE' | ui5I18n }}
+                </ui5-button>
+              </div>
+            </div>
           </div>
+
+          <ui5-message-strip *ngIf="saveMessage" [design]="saveMessageDesign" (close)="saveMessage = ''">
+            {{ saveMessage }}
+          </ui5-message-strip>
 
           <div class="generative-render__stage">
             <app-generative-renderer *ngIf="uiSchema" [node]="uiSchema"></app-generative-renderer>
@@ -273,6 +289,19 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
       gap: 0.35rem;
     }
 
+    .generative-render__title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .generative-render__actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
     .generative-render__header ui5-title,
     .generative-render__header p {
       margin: 0;
@@ -323,6 +352,8 @@ export class GenerativePageComponent implements OnInit, OnDestroy {
   routeBlocked = false;
   blockingReason = '';
   prompt = '';
+  saveMessage = '';
+  saveMessageDesign: 'Positive' | 'Negative' = 'Positive';
   readonly starterPrompts = [
     'Design an interactive employee profile form with approval controls',
     'Create a procurement review dashboard with alerts and actions',
@@ -369,6 +400,43 @@ export class GenerativePageComponent implements OnInit, OnDestroy {
 
   prettyPrint(value: unknown): string {
     return JSON.stringify(value ?? {}, null, 2);
+  }
+
+  saveTemplate(): void {
+    if (!this.uiSchema) return;
+    const template = {
+      prompt: this.prompt,
+      schema: this.uiSchema,
+      savedAt: new Date().toISOString(),
+    };
+    this.historyService.saveEntry('generative-template', template).subscribe({
+      next: () => {
+        this.saveMessage = 'Template saved to workspace history.';
+        this.saveMessageDesign = 'Positive';
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.saveMessage = 'Failed to save template.';
+        this.saveMessageDesign = 'Negative';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  shareSchema(): void {
+    if (!this.uiSchema) return;
+    const exportData = {
+      prompt: this.prompt,
+      schema: this.uiSchema,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `generative-ui-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   generateUI(prompt: string): void {

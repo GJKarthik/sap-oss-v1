@@ -1,26 +1,34 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { EmptyStateComponent } from '../../shared';
 import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../services/mcp.service';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-streaming',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent],
+  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Search Operations</ui5-title>
-        <ui5-button
-          slot="endContent"
-          icon="refresh"
-          (click)="refresh()"
-          [disabled]="loading">
-          {{ loading ? 'Loading...' : 'Refresh' }}
-        </ui5-button>
+        <ui5-title slot="startContent" level="H3">{{ 'streaming.searchOperations' | translate }}</ui5-title>
+        <div slot="endContent" class="header-actions">
+          <span class="last-refreshed" *ngIf="lastRefreshed">{{ 'common.updated' | translate }} {{ getTimeSinceRefresh() }}</span>
+          <ui5-switch
+            [checked]="autoRefreshEnabled"
+            (change)="toggleAutoRefresh()"
+            [attr.aria-label]="'streaming.autoRefreshLabel' | translate">
+          </ui5-switch>
+          <ui5-button
+            icon="refresh"
+            (click)="refresh()"
+            [disabled]="loading">
+            {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
+          </ui5-button>
+        </div>
       </ui5-bar>
 
       <div class="operations-content">
@@ -36,34 +44,50 @@ import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../servi
           <ui5-card>
             <ui5-card-header
               slot="header"
-              title-text="Elasticsearch Cluster"
-              subtitle-text="Live cluster health and shard state">
+              [titleText]="'streaming.clusterHealth' | translate"
+              [subtitleText]="'streaming.clusterHealthSubtitle' | translate">
             </ui5-card-header>
             <div class="card-content" *ngIf="clusterHealth; else clusterEmpty">
               <div class="metric-row">
-                <span>Status</span>
+                <span>{{ 'common.status' | translate }}</span>
                 <ui5-tag [design]="clusterTagDesign(clusterHealth.status)">
                   {{ clusterHealth.status || 'unknown' }}
                 </ui5-tag>
               </div>
               <div class="metric-row">
-                <span>Cluster Name</span>
+                <span>{{ 'streaming.clusterName' | translate }}</span>
                 <strong>{{ clusterHealth.cluster_name || 'n/a' }}</strong>
               </div>
               <div class="metric-row">
-                <span>Nodes</span>
+                <span>{{ 'streaming.nodes' | translate }}</span>
                 <strong>{{ clusterHealth.number_of_nodes ?? 'n/a' }}</strong>
               </div>
               <div class="metric-row">
-                <span>Active Shards</span>
+                <span>{{ 'streaming.activeShards' | translate }}</span>
                 <strong>{{ clusterHealth.active_shards ?? 'n/a' }}</strong>
+              </div>
+              <div class="metric-row" *ngIf="clusterHealth.relocating_shards !== undefined">
+                <span>{{ 'streaming.relocatingShards' | translate }}</span>
+                <ui5-tag [design]="$any(clusterHealth.relocating_shards) > 0 ? 'Critical' : 'Positive'">{{ clusterHealth.relocating_shards }}</ui5-tag>
+              </div>
+              <div class="metric-row" *ngIf="clusterHealth.unassigned_shards !== undefined">
+                <span>{{ 'streaming.unassignedShards' | translate }}</span>
+                <ui5-tag [design]="$any(clusterHealth.unassigned_shards) > 0 ? 'Negative' : 'Positive'">{{ clusterHealth.unassigned_shards }}</ui5-tag>
+              </div>
+              <div class="metric-row" *ngIf="clusterHealth.number_of_pending_tasks !== undefined">
+                <span>{{ 'streaming.pendingTasks' | translate }}</span>
+                <ui5-tag [design]="$any(clusterHealth.number_of_pending_tasks) > 0 ? 'Critical' : 'Neutral'">{{ clusterHealth.number_of_pending_tasks }}</ui5-tag>
+              </div>
+              <div class="metric-row" *ngIf="clusterHealth.active_primary_shards !== undefined">
+                <span>{{ 'streaming.primaryShards' | translate }}</span>
+                <strong>{{ clusterHealth.active_primary_shards }}</strong>
               </div>
             </div>
             <ng-template #clusterEmpty>
               <app-empty-state
                 icon="search"
-                title="Cluster state unavailable"
-                description="Refresh the page after the Elasticsearch MCP service becomes reachable.">
+                [title]="'streaming.clusterUnavailable' | translate"
+                [description]="'streaming.clusterUnavailableDesc' | translate">
               </app-empty-state>
             </ng-template>
           </ui5-card>
@@ -71,15 +95,15 @@ import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../servi
           <ui5-card>
             <ui5-card-header
               slot="header"
-              title-text="Registered Knowledge Bases"
-              subtitle-text="Search indices tracked by the console"
+              [titleText]="'streaming.registeredKnowledgeBases' | translate"
+              [subtitleText]="'streaming.searchIndices' | translate"
               [additionalText]="vectorStores.length + ''">
             </ui5-card-header>
             <ui5-table *ngIf="vectorStores.length > 0; else emptyStores">
-              <ui5-table-header-cell><span>Knowledge Base</span></ui5-table-header-cell>
-              <ui5-table-header-cell><span>Embedding Model</span></ui5-table-header-cell>
-              <ui5-table-header-cell><span>Documents</span></ui5-table-header-cell>
-              <ui5-table-header-cell><span>Status</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>{{ 'streaming.knowledgeBase' | translate }}</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>{{ 'streaming.embeddingModel' | translate }}</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>{{ 'streaming.documents' | translate }}</span></ui5-table-header-cell>
+              <ui5-table-header-cell><span>{{ 'common.status' | translate }}</span></ui5-table-header-cell>
 
               <ui5-table-row *ngFor="let store of vectorStores; trackBy: trackByStore">
                 <ui5-table-cell>{{ store.table_name }}</ui5-table-cell>
@@ -96,8 +120,8 @@ import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../servi
             <ng-template #emptyStores>
               <app-empty-state
                 icon="database"
-                title="No knowledge bases registered"
-                description="Create a knowledge base in Search Studio to begin indexing documents.">
+                [title]="'streaming.noKnowledgeBases' | translate"
+                [description]="'streaming.noKnowledgeBasesDesc' | translate">
               </app-empty-state>
             </ng-template>
           </ui5-card>
@@ -141,6 +165,18 @@ import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../servi
       padding-bottom: 0;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .last-refreshed {
+      font-size: var(--sapFontSmallSize);
+      color: var(--sapContent_LabelColor);
+      white-space: nowrap;
+    }
+
     ui5-message-strip {
       margin-bottom: 0.25rem;
     }
@@ -152,17 +188,26 @@ import { ElasticsearchClusterHealth, McpService, VectorStore } from '../../servi
     }
   `],
 })
-export class StreamingComponent implements OnInit {
+export class StreamingComponent implements OnInit, OnDestroy {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly i18n = inject(I18nService);
 
   vectorStores: VectorStore[] = [];
   clusterHealth: ElasticsearchClusterHealth | null = null;
   loading = false;
   error = '';
+  autoRefreshEnabled = true;
+  lastRefreshed: Date | null = null;
+  private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     this.refresh();
+    this.startAutoRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoRefresh();
   }
 
   refresh(): void {
@@ -178,12 +223,38 @@ export class StreamingComponent implements OnInit {
           this.clusterHealth = clusterHealth;
           this.vectorStores = vectorStores;
           this.loading = false;
+          this.lastRefreshed = new Date();
         },
         error: () => {
-          this.error = 'Failed to load search operations data.';
+          this.error = this.i18n.t('streaming.loadFailed');
           this.loading = false;
         },
       });
+  }
+
+  toggleAutoRefresh(): void {
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    if (this.autoRefreshEnabled) this.startAutoRefresh();
+    else this.stopAutoRefresh();
+  }
+
+  getTimeSinceRefresh(): string {
+    if (!this.lastRefreshed) return '';
+    const seconds = Math.floor((Date.now() - this.lastRefreshed.getTime()) / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
+  }
+
+  private startAutoRefresh(): void {
+    this.stopAutoRefresh();
+    if (this.autoRefreshEnabled) {
+      this.autoRefreshTimer = setInterval(() => this.refresh(), 15_000);
+    }
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.autoRefreshTimer) { clearInterval(this.autoRefreshTimer); this.autoRefreshTimer = null; }
   }
 
   trackByStore(index: number, store: VectorStore): string {

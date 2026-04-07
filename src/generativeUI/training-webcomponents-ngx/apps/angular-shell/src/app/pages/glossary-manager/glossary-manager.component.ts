@@ -25,6 +25,7 @@ export class GlossaryManagerComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly showAddForm = signal(false);
   readonly tmBackend = signal<TMBackendMeta['backend']>('sqlite');
+  searchQuery = '';
 
   newEntry: TMEntry = {
     source_text: '',
@@ -112,5 +113,44 @@ export class GlossaryManagerComponent implements OnInit {
     return this.tmBackend() === 'hana'
       ? this.i18n.t('glossary.backend.hana')
       : this.i18n.t('glossary.backend.sqlite');
+  }
+
+  filteredTmEntries(): TMEntry[] {
+    if (!this.searchQuery) return this.tmEntries();
+    const q = this.searchQuery.toLowerCase();
+    return this.tmEntries().filter(e =>
+      e.source_text.toLowerCase().includes(q) ||
+      e.target_text.toLowerCase().includes(q) ||
+      (e.category?.toLowerCase().includes(q))
+    );
+  }
+
+  exportJson(): void {
+    const data = this.tmEntries();
+    if (data.length === 0) return;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'glossary-overrides.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  onImport(event: Event): void {
+    const file = (event.target as HTMLInputElement)?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const entries: TMEntry[] = JSON.parse(reader.result as string);
+        if (!Array.isArray(entries)) { this.toast.error('Invalid file format'); return; }
+        let saved = 0;
+        entries.forEach(entry => {
+          if (entry.source_text && entry.target_text) {
+            this.tm.save(entry).subscribe({ next: () => { saved++; if (saved === entries.length) { this.loadTM(); this.glossary.loadOverrides(); this.toast.success(`Imported ${saved} entries`); } } });
+          }
+        });
+      } catch { this.toast.error('Failed to parse file'); }
+    };
+    reader.readAsText(file);
+    (event.target as HTMLInputElement).value = '';
   }
 }

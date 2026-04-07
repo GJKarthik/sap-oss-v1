@@ -74,25 +74,56 @@ interface AnalyticsResponse {
           </div>
         </div>
 
+        <!-- Bar Chart -->
+        <div class="chart-section">
+          <div class="chart-header">
+            <h2 class="section-title">{{ i18n.t('analytics.trendsTitle') }}</h2>
+            <ui5-button design="Transparent" icon="download" (click)="exportCsv()">CSV</ui5-button>
+          </div>
+          <div class="chart-container">
+            <svg class="bar-chart" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet">
+              @for (bar of chartBars(); track bar.label; let i = $index) {
+                <g [attr.transform]="'translate(' + (i * barWidth()) + ', 0)'">
+                  <rect class="bar bar--revenue" [attr.x]="2" [attr.y]="200 - bar.revenueH" [attr.width]="barWidth() / 2 - 3" [attr.height]="bar.revenueH" rx="2"></rect>
+                  <rect class="bar bar--profit" [attr.x]="barWidth() / 2 + 1" [attr.y]="200 - bar.profitH" [attr.width]="barWidth() / 2 - 3" [attr.height]="bar.profitH" rx="2"></rect>
+                  <text class="bar-label" [attr.x]="barWidth() / 2" y="198" text-anchor="middle">{{ bar.label }}</text>
+                </g>
+              }
+            </svg>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot legend-dot--revenue"></span> Revenue</span>
+              <span class="legend-item"><span class="legend-dot legend-dot--profit"></span> Profit</span>
+            </div>
+          </div>
+        </div>
+
         <div class="table-section">
-          <h2 class="section-title">{{ i18n.t('analytics.trendsTitle') }}</h2>
+          <div class="chart-header">
+            <h2 class="section-title">{{ i18n.t('analytics.trendsTitle') }}</h2>
+            <div class="filter-row">
+              <input type="text" class="filter-input" placeholder="Filter by source..." [(ngModel)]="sourceFilter" />
+            </div>
+          </div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ i18n.t('analytics.col.source') }}</th>
-                <th>{{ i18n.t('analytics.col.date') }}</th>
-                <th>{{ i18n.t('analytics.col.revenue') }}</th>
-                <th>{{ i18n.t('analytics.col.profit') }}</th>
+                <th class="sortable" (click)="toggleSort('source')">{{ i18n.t('analytics.col.source') }} {{ sortIcon('source') }}</th>
+                <th class="sortable" (click)="toggleSort('date')">{{ i18n.t('analytics.col.date') }} {{ sortIcon('date') }}</th>
+                <th class="sortable" (click)="toggleSort('revenue')">{{ i18n.t('analytics.col.revenue') }} {{ sortIcon('revenue') }}</th>
+                <th class="sortable" (click)="toggleSort('profit')">{{ i18n.t('analytics.col.profit') }} {{ sortIcon('profit') }}</th>
               </tr>
             </thead>
             <tbody>
-              @for (row of data()!.rows; track row.source) {
+              @for (row of filteredRows(); track row.source + row.date) {
                 <tr>
                   <td>{{ row.source }}</td>
                   <td>{{ row.date }}</td>
                   <td>{{ row.revenue | localeNumber:'1.0-0' }}</td>
                   <td>{{ row.profit | localeNumber:'1.0-0' }}</td>
                 </tr>
+              }
+              @if (filteredRows().length === 0) {
+                <tr><td colspan="4" class="empty-cell">No data matching filter.</td></tr>
               }
             </tbody>
           </table>
@@ -179,6 +210,24 @@ interface AnalyticsResponse {
     .data-table tbody tr:hover {
       background: var(--sapList_Hover_Background, #f5f5f5);
     }
+
+    .chart-section { margin-bottom: 1.5rem; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .chart-container { background: var(--sapBaseColor, #fff); border: 1px solid var(--sapTile_BorderColor, #e4e4e4); border-radius: 0.5rem; padding: 1rem; }
+    .bar-chart { width: 100%; height: auto; max-height: 220px; }
+    .bar--revenue { fill: var(--sapBrandColor, #0854a0); opacity: 0.85; }
+    .bar--profit { fill: var(--sapPositiveColor, #107e3e); opacity: 0.85; }
+    .bar-label { font-size: 8px; fill: var(--sapContent_LabelColor, #6a6d70); }
+    .chart-legend { display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--sapContent_LabelColor); }
+    .legend-item { display: flex; align-items: center; gap: 0.25rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .legend-dot--revenue { background: var(--sapBrandColor, #0854a0); }
+    .legend-dot--profit { background: var(--sapPositiveColor, #107e3e); }
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable:hover { color: var(--sapBrandColor); }
+    .filter-row { display: flex; gap: 0.5rem; }
+    .filter-input { padding: 0.375rem 0.5rem; border: 1px solid var(--sapField_BorderColor, #89919a); border-radius: 0.25rem; font-size: 0.8125rem; background: var(--sapField_Background, #fff); color: var(--sapTextColor); }
+    .empty-cell { text-align: center; color: var(--sapContent_LabelColor); padding: 1.5rem; }
   `],
 })
 export class AnalyticsComponent implements OnInit, OnDestroy {
@@ -192,6 +241,9 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
 
   selectedStore = 'default';
   stores = ['default', 'financial_reports', 'regulatory_docs'];
+  sourceFilter = '';
+  sortCol: keyof AnalyticsRow = 'date';
+  sortDir: 'asc' | 'desc' = 'asc';
 
   ngOnInit(): void {
     this.loadData();
@@ -216,5 +268,58 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
           this.loading.set(false);
         },
       });
+  }
+
+  filteredRows(): AnalyticsRow[] {
+    const rows = this.data()?.rows ?? [];
+    let result = rows;
+    if (this.sourceFilter) {
+      const q = this.sourceFilter.toLowerCase();
+      result = result.filter(r => r.source.toLowerCase().includes(q));
+    }
+    const col = this.sortCol;
+    const dir = this.sortDir === 'asc' ? 1 : -1;
+    return [...result].sort((a, b) => {
+      const va = a[col]; const vb = b[col];
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+      return String(va).localeCompare(String(vb)) * dir;
+    });
+  }
+
+  chartBars(): { label: string; revenueH: number; profitH: number }[] {
+    const rows = this.data()?.rows ?? [];
+    if (rows.length === 0) return [];
+    const maxVal = Math.max(...rows.map(r => Math.max(r.revenue, r.profit)), 1);
+    return rows.map(r => ({
+      label: r.source.substring(0, 8),
+      revenueH: (r.revenue / maxVal) * 180,
+      profitH: (r.profit / maxVal) * 180,
+    }));
+  }
+
+  barWidth(): number {
+    const bars = this.data()?.rows?.length || 1;
+    return Math.min(600 / bars, 120);
+  }
+
+  toggleSort(col: keyof AnalyticsRow): void {
+    if (this.sortCol === col) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    else { this.sortCol = col; this.sortDir = 'asc'; }
+  }
+
+  sortIcon(col: string): string {
+    if (this.sortCol !== col) return '';
+    return this.sortDir === 'asc' ? '↑' : '↓';
+  }
+
+  exportCsv(): void {
+    const rows = this.filteredRows();
+    if (rows.length === 0) return;
+    const header = 'Source,Date,Revenue,Profit\n';
+    const body = rows.map(r => `${r.source},${r.date},${r.revenue},${r.profit}`).join('\n');
+    const blob = new Blob([header + body], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'analytics.csv'; a.click();
+    URL.revokeObjectURL(url);
   }
 }

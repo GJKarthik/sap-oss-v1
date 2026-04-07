@@ -76,6 +76,12 @@
   }
 }
 
+.error-recovery {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
 .governance-panel-wrapper {
   border: 1px solid var(--sapWarningBorderColor, #e9730c);
   border-radius: 0.5rem;

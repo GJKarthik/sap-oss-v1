@@ -3,8 +3,14 @@ import { Component, OnInit } from '@angular/core';
 import { LiveDemoHealthService } from '../../core/live-demo-health.service';
 import { environment } from '../../../environments/environment';
 
+interface McpToolInfo {
+  name?: string;
+  description?: string;
+  inputSchema?: unknown;
+}
+
 interface McpListToolsResponse {
-  result?: { tools?: Array<{ name?: string }> };
+  result?: { tools?: McpToolInfo[] };
 }
 
 interface McpCallToolResponse {
@@ -19,7 +25,11 @@ interface McpCallToolResponse {
 })
 export class McpPageComponent implements OnInit {
   tools: string[] = [];
+  toolMeta: McpToolInfo[] = [];
   selectedTool = '';
+  selectedToolMeta: McpToolInfo | null = null;
+  toolArgs = '{}';
+  argsError = '';
   loading = false;
   invoking = false;
   routeBlocked = false;
@@ -58,31 +68,50 @@ export class McpPageComponent implements OnInit {
         const rawTools = response?.result?.tools;
         if (!Array.isArray(rawTools)) {
           this.tools = [];
+          this.toolMeta = [];
           this.selectedTool = '';
           this.lastError = 'Invalid MCP tools/list contract';
           this.loading = false;
           return;
         }
 
-        this.tools = rawTools
-          .map((tool) => tool.name?.trim())
-          .filter((name): name is string => Boolean(name));
+        this.toolMeta = rawTools.filter(t => t.name?.trim());
+        this.tools = this.toolMeta.map(t => t.name!.trim());
         this.lastError = null;
         if (this.tools.length > 0 && !this.selectedTool) {
           this.selectedTool = this.tools[0];
+          this.selectedToolMeta = this.toolMeta[0] || null;
         }
         this.loading = false;
       },
       error: (error: { message?: string }) => {
         this.tools = [];
+        this.toolMeta = [];
         this.lastError = error?.message ?? 'Failed to load MCP tools';
         this.loading = false;
       },
     });
   }
 
+  onToolSelect(event: Event): void {
+    this.selectedTool = (event as any)?.detail?.selectedOption?.value ?? '';
+    this.selectedToolMeta = this.toolMeta.find(t => t.name === this.selectedTool) || null;
+    this.toolArgs = '{}';
+    this.argsError = '';
+    this.lastCallResult = '';
+  }
+
   invokeSelectedTool(): void {
     if (!this.selectedTool || this.routeBlocked) {
+      return;
+    }
+    // Parse arguments
+    let parsedArgs: Record<string, unknown> = {};
+    try {
+      parsedArgs = JSON.parse(this.toolArgs || '{}');
+      this.argsError = '';
+    } catch {
+      this.argsError = 'Invalid JSON in arguments editor.';
       return;
     }
     this.invoking = true;
@@ -93,7 +122,7 @@ export class McpPageComponent implements OnInit {
       method: 'tools/call',
       params: {
         name: this.selectedTool,
-        arguments: {},
+        arguments: parsedArgs,
       },
     };
     this.http.post<McpCallToolResponse>(environment.mcpBaseUrl, body).subscribe({

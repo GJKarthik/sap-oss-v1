@@ -5,35 +5,36 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { catchError, of } from 'rxjs';
 import { WorkspaceService } from '../../services/workspace.service';
 import { AI_FABRIC_NAV_ITEMS } from '../../app.navigation';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, Ui5WebcomponentsModule, TranslatePipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="workspace-page">
       <div class="workspace-hero">
-        <ui5-title level="H2">Workspace Settings</ui5-title>
-        <p class="workspace-hero__subtitle">Configure your environment, connections, and preferences.</p>
+        <ui5-title level="H2">{{ 'workspace.title' | translate }}</ui5-title>
+        <p class="workspace-hero__subtitle">{{ 'workspace.subtitle' | translate }}</p>
       </div>
 
       <div class="workspace-grid">
         <!-- Identity -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="Identity" [subtitle-text]="ws.identity().userId"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.identity')" [subtitle-text]="ws.identity().userId"></ui5-card-header>
           <div class="card-body">
             <div class="field">
-              <label>Display Name</label>
+              <label>{{ 'workspace.displayName' | translate }}</label>
               <ui5-input [value]="ws.identity().displayName" (change)="onField('identity', 'displayName', $event)"></ui5-input>
             </div>
             <div class="field">
-              <label>Team Name</label>
+              <label>{{ 'workspace.teamName' | translate }}</label>
               <ui5-input [value]="ws.identity().teamName" (change)="onField('identity', 'teamName', $event)"></ui5-input>
             </div>
             <div class="field">
-              <label>User ID</label>
+              <label>{{ 'workspace.userId' | translate }}</label>
               <ui5-tag design="Set2" color-scheme="6">{{ ws.identity().userId }}</ui5-tag>
             </div>
           </div>
@@ -41,28 +42,28 @@ import { AI_FABRIC_NAV_ITEMS } from '../../app.navigation';
 
         <!-- Backend -->
         <ui5-card class="card-wide">
-          <ui5-card-header slot="header" title-text="Backend Configuration"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.backend')"></ui5-card-header>
           <div class="card-body">
             <div class="field field--row">
-              <label>API Base URL</label>
+              <label>{{ 'workspace.apiBaseUrl' | translate }}</label>
               <ui5-input class="field__input" [value]="ws.backendConfig().apiBaseUrl" (change)="onBackend('apiBaseUrl', $event)"></ui5-input>
-              <ui5-button design="Transparent" (click)="testUrl(ws.backendConfig().apiBaseUrl, 'api')">Test</ui5-button>
-              <ui5-tag *ngIf="connStatus['api'] === 'ok'" design="Set2" color-scheme="8">Connected</ui5-tag>
-              <ui5-tag *ngIf="connStatus['api'] === 'error'" design="Set2" color-scheme="1">Unreachable</ui5-tag>
+              <ui5-button design="Transparent" (click)="testUrl(ws.backendConfig().apiBaseUrl, 'api')">{{ 'workspace.test' | translate }}</ui5-button>
+              <ui5-tag *ngIf="connStatus['api'] === 'ok'" design="Set2" color-scheme="8">{{ 'workspace.connected' | translate }}</ui5-tag>
+              <ui5-tag *ngIf="connStatus['api'] === 'error'" design="Set2" color-scheme="1">{{ 'workspace.unreachable' | translate }}</ui5-tag>
             </div>
             <div class="field field--row">
-              <label>Elasticsearch MCP</label>
+              <label>{{ 'workspace.elasticsearchMcp' | translate }}</label>
               <ui5-input class="field__input" [value]="ws.backendConfig().elasticsearchMcpUrl" (change)="onBackend('elasticsearchMcpUrl', $event)"></ui5-input>
-              <ui5-button design="Transparent" (click)="testUrl(ws.backendConfig().elasticsearchMcpUrl, 'es')">Test</ui5-button>
-              <ui5-tag *ngIf="connStatus['es'] === 'ok'" design="Set2" color-scheme="8">Connected</ui5-tag>
-              <ui5-tag *ngIf="connStatus['es'] === 'error'" design="Set2" color-scheme="1">Unreachable</ui5-tag>
+              <ui5-button design="Transparent" (click)="testUrl(ws.backendConfig().elasticsearchMcpUrl, 'es')">{{ 'workspace.test' | translate }}</ui5-button>
+              <ui5-tag *ngIf="connStatus['es'] === 'ok'" design="Set2" color-scheme="8">{{ 'workspace.connected' | translate }}</ui5-tag>
+              <ui5-tag *ngIf="connStatus['es'] === 'error'" design="Set2" color-scheme="1">{{ 'workspace.unreachable' | translate }}</ui5-tag>
             </div>
             <div class="field field--row">
-              <label>PAL MCP URL</label>
+              <label>{{ 'workspace.palMcp' | translate }}</label>
               <ui5-input class="field__input" [value]="ws.backendConfig().palMcpUrl" (change)="onBackend('palMcpUrl', $event)"></ui5-input>
             </div>
             <div class="field field--row">
-              <label>Collab WebSocket</label>
+              <label>{{ 'workspace.collabWs' | translate }}</label>
               <ui5-input class="field__input" [value]="ws.backendConfig().collabWsUrl" (change)="onBackend('collabWsUrl', $event)"></ui5-input>
             </div>
           </div>
@@ -70,7 +71,7 @@ import { AI_FABRIC_NAV_ITEMS } from '../../app.navigation';
 
         <!-- Navigation -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="Navigation"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.navigation')"></ui5-card-header>
           <div class="card-body">
             <div class="nav-list">
               <div class="nav-item" *ngFor="let item of allNavItems">
@@ -83,18 +84,18 @@ import { AI_FABRIC_NAV_ITEMS } from '../../app.navigation';
 
         <!-- Model Preferences -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="Model Preferences"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.modelPrefs')"></ui5-card-header>
           <div class="card-body">
             <div class="field">
-              <label>Default Model</label>
+              <label>{{ 'workspace.defaultModel' | translate }}</label>
               <ui5-input [value]="ws.modelPreferences().defaultModel" placeholder="gpt-4o, gemma-4, etc." (change)="onModel('defaultModel', $event)"></ui5-input>
             </div>
             <div class="field">
-              <label>Temperature</label>
+              <label>{{ 'workspace.temperature' | translate }}</label>
               <ui5-step-input [value]="ws.modelPreferences().temperature" [min]="0" [max]="2" [step]="0.1" (change)="onTemperature($event)"></ui5-step-input>
             </div>
             <div class="field">
-              <label>System Prompt</label>
+              <label>{{ 'workspace.systemPrompt' | translate }}</label>
               <ui5-textarea [value]="ws.modelPreferences().systemPrompt" [rows]="4" growing (change)="onModel('systemPrompt', $event)"></ui5-textarea>
             </div>
           </div>
@@ -102,22 +103,22 @@ import { AI_FABRIC_NAV_ITEMS } from '../../app.navigation';
 
         <!-- Data Management -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="Data Management"></ui5-card-header>
+          <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.dataManagement')"></ui5-card-header>
           <div class="card-body card-body--actions">
-            <ui5-button design="Default" icon="download" (click)="exportSettings()">Export</ui5-button>
-            <ui5-button design="Default" icon="upload" (click)="fileInput.click()">Import</ui5-button>
+            <ui5-button design="Default" icon="download" (click)="exportSettings()">{{ 'workspace.exportBtn' | translate }}</ui5-button>
+            <ui5-button design="Default" icon="upload" (click)="fileInput.click()">{{ 'workspace.importBtn' | translate }}</ui5-button>
             <input #fileInput type="file" accept=".json" style="display:none" (change)="onImport($event)">
-            <ui5-button design="Negative" icon="delete" (click)="openResetDialog()">Reset</ui5-button>
+            <ui5-button design="Negative" icon="delete" (click)="openResetDialog()">{{ 'workspace.resetBtn' | translate }}</ui5-button>
           </div>
         </ui5-card>
       </div>
     </div>
 
-    <ui5-dialog #resetDialog header-text="Reset to Defaults">
-      <p style="padding:1rem;">Reset all settings to defaults? This cannot be undone.</p>
+    <ui5-dialog #resetDialog [attr.header-text]="i18n.t('workspace.resetDialog')">
+      <p style="padding:1rem;">{{ 'workspace.resetConfirm' | translate }}</p>
       <div slot="footer" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.5rem;">
-        <ui5-button design="Transparent" (click)="closeResetDialog()">Cancel</ui5-button>
-        <ui5-button design="Negative" (click)="confirmReset()">Reset</ui5-button>
+        <ui5-button design="Transparent" (click)="closeResetDialog()">{{ 'common.cancel' | translate }}</ui5-button>
+        <ui5-button design="Negative" (click)="confirmReset()">{{ 'workspace.resetBtn' | translate }}</ui5-button>
       </div>
     </ui5-dialog>
   `,
@@ -147,6 +148,7 @@ import { AI_FABRIC_NAV_ITEMS } from '../../app.navigation';
 })
 export class WorkspaceComponent {
   readonly ws = inject(WorkspaceService);
+  readonly i18n = inject(I18nService);
   private readonly http = inject(HttpClient);
   readonly allNavItems = AI_FABRIC_NAV_ITEMS;
   connStatus: Record<string, string> = {};

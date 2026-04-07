@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
 import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 function readErrorMessage(error: unknown, fallback: string): string {
   const detail = (error as { error?: { detail?: string } | string; message?: string })?.error;
@@ -22,7 +23,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-rag-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <app-cross-app-link
@@ -34,65 +35,65 @@ function readErrorMessage(error: unknown, fallback: string): string {
       </app-cross-app-link>
 
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">Search Studio</ui5-title>
-        <ui5-button 
-          slot="endContent" 
-          icon="refresh" 
-          (click)="refreshStores()" 
+        <ui5-title slot="startContent" level="H3">{{ 'ragStudio.searchStudio' | translate }}</ui5-title>
+        <ui5-button
+          slot="endContent"
+          icon="refresh"
+          (click)="refreshStores()"
           [disabled]="storesLoading"
-          aria-label="Refresh knowledge bases"
+          [attr.aria-label]="i18n.t('ragStudio.refreshKnowledgeBases')"
           class="hide-mobile">
-          {{ storesLoading ? 'Loading...' : 'Refresh' }}
+          {{ storesLoading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
-        <ui5-button 
-          *ngIf="canManage" 
-          slot="endContent" 
-          design="Emphasized" 
-          icon="add" 
+        <ui5-button
+          *ngIf="canManage"
+          slot="endContent"
+          design="Emphasized"
+          icon="add"
           (click)="toggleCreateForm()"
-          aria-label="Create new knowledge base">
-          {{ showCreateForm ? 'Close Form' : 'New Knowledge Base' }}
+          [attr.aria-label]="i18n.t('ragStudio.createNew')">
+          {{ showCreateForm ? ('ragStudio.closeForm' | translate) : ('ragStudio.newKnowledgeBase' | translate) }}
         </ui5-button>
       </ui5-bar>
 
-      <div class="rag-container" role="region" aria-label="Search Studio workspace">
+      <div class="rag-container" role="region" [attr.aria-label]="i18n.t('ragStudio.searchStudioWorkspace')">
         <!-- Loading indicator -->
         <div class="loading-container" *ngIf="storesLoading && vectorStores.length === 0" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-          <span class="loading-text">Loading knowledge bases...</span>
+          <span class="loading-text">{{ 'ragStudio.loadingKnowledgeBases' | translate }}</span>
         </div>
 
-        <ui5-message-strip 
-          *ngIf="error" 
-          design="Negative" 
+        <ui5-message-strip
+          *ngIf="error"
+          design="Negative"
           [hideCloseButton]="false"
           (close)="error = ''"
           role="alert">
           {{ error }}
         </ui5-message-strip>
-        <ui5-message-strip 
-          *ngIf="success" 
-          design="Positive" 
+        <ui5-message-strip
+          *ngIf="success"
+          design="Positive"
           [hideCloseButton]="false"
           (close)="success = ''"
           role="status">
           {{ success }}
         </ui5-message-strip>
         <ui5-message-strip *ngIf="!canManage" design="Information" [hideCloseButton]="true" role="note">
-          Viewer mode: knowledge base management is disabled.
+          {{ 'ragStudio.viewerMode' | translate }}
         </ui5-message-strip>
 
         <ui5-card *ngIf="showCreateForm && canManage" class="create-form-card">
-          <ui5-card-header slot="header" title-text="Create Knowledge Base" subtitle-text="Register an Elasticsearch-backed knowledge base"></ui5-card-header>
+          <ui5-card-header slot="header" [titleText]="'ragStudio.createKnowledgeBase' | translate" [subtitleText]="'ragStudio.registerKnowledgeBase' | translate"></ui5-card-header>
           <form class="form-grid" (ngSubmit)="createStore()">
             <div class="field-group">
               <label for="table-name-input" class="field-label">
-                Table Name <span class="required">*</span>
+                {{ 'ragStudio.tableName' | translate }} <span class="required">*</span>
               </label>
-              <ui5-input 
+              <ui5-input
                 id="table-name-input"
-                ngDefaultControl 
-                [(ngModel)]="draftStore.table_name" 
+                ngDefaultControl
+                [(ngModel)]="draftStore.table_name"
                 name="tableName"
                 placeholder="KB_CUSTOMER_SUPPORT"
                 accessible-name="Knowledge base table name"
@@ -100,25 +101,25 @@ function readErrorMessage(error: unknown, fallback: string): string {
               </ui5-input>
             </div>
             <div class="field-group">
-              <label for="embedding-model-input" class="field-label">Embedding Model</label>
-              <ui5-input 
+              <label for="embedding-model-input" class="field-label">{{ 'ragStudio.embeddingModel' | translate }}</label>
+              <ui5-input
                 id="embedding-model-input"
-                ngDefaultControl 
-                [(ngModel)]="draftStore.embedding_model" 
+                ngDefaultControl
+                [(ngModel)]="draftStore.embedding_model"
                 name="embeddingModel"
                 placeholder="default"
                 accessible-name="Embedding model name">
               </ui5-input>
             </div>
             <div class="form-actions">
-              <ui5-button 
-                design="Emphasized" 
+              <ui5-button
+                design="Emphasized"
                 type="Submit"
-                (click)="createStore()" 
+                (click)="createStore()"
                 [disabled]="mutating || !draftStore.table_name.trim()">
-                {{ mutating ? 'Creating...' : 'Create' }}
+                {{ mutating ? ('ragStudio.creating' | translate) : ('common.create' | translate) }}
               </ui5-button>
-              <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating">Cancel</ui5-button>
+              <ui5-button design="Transparent" (click)="resetCreateForm()" [disabled]="mutating">{{ 'common.cancel' | translate }}</ui5-button>
             </div>
           </form>
         </ui5-card>
@@ -126,16 +127,16 @@ function readErrorMessage(error: unknown, fallback: string): string {
         <div class="columns">
           <div class="left-panel">
             <ui5-card [class.card-loading]="storesLoading">
-              <ui5-card-header 
-                slot="header" 
-                title-text="Knowledge Bases" 
-                subtitle-text="Elasticsearch-backed search indices"
+              <ui5-card-header
+                slot="header"
+                [titleText]="'ragStudio.knowledgeBases' | translate"
+                [subtitleText]="'ragStudio.searchIndices' | translate"
                 [additionalText]="vectorStores.length + ''">
               </ui5-card-header>
-              <ui5-list 
-                mode="SingleSelect" 
+              <ui5-list
+                mode="SingleSelect"
                 (item-click)="selectStore($event)"
-                aria-label="Select a knowledge base">
+                [attr.aria-label]="'ragStudio.selectKnowledgeBase' | translate">
                 <ui5-li
                   *ngFor="let store of vectorStores; let i = index; trackBy: trackByTableName"
                   [attr.data-index]="i"
@@ -144,40 +145,40 @@ function readErrorMessage(error: unknown, fallback: string): string {
                   {{ store.table_name }}
                 </ui5-li>
               </ui5-list>
-              
+
               <app-empty-state
                 *ngIf="!storesLoading && vectorStores.length === 0"
                 icon="database"
-                title="No Knowledge Bases"
-                description="Create a knowledge base to start indexing documents for RAG queries."
-                [actionText]="canManage ? 'Create Knowledge Base' : ''"
+                [title]="'ragStudio.noKnowledgeBases' | translate"
+                [description]="'ragStudio.createKnowledgeBaseDesc' | translate"
+                [actionText]="canManage ? ('ragStudio.createKnowledgeBase' | translate) : ''"
                 (action)="toggleCreateForm()">
               </app-empty-state>
             </ui5-card>
           </div>
 
           <div class="right-panel">
-            <ui5-card *ngIf="selectedStore" role="region" [attr.aria-label]="'Knowledge base: ' + selectedStore.table_name">
+            <ui5-card *ngIf="selectedStore" role="region" [attr.aria-label]="i18n.t('ragStudio.knowledgeBaseLabel', { name: selectedStore.table_name })">
               <ui5-card-header
                 slot="header"
-                [titleText]="'Knowledge Base: ' + selectedStore.table_name"
-                [subtitleText]="selectedStore.documents_added + ' indexed documents'">
+                [titleText]="i18n.t('ragStudio.knowledgeBaseLabel', { name: selectedStore.table_name })"
+                [subtitleText]="i18n.t('ragStudio.indexedDocuments', { count: selectedStore.documents_added })">
               </ui5-card-header>
 
               <div class="store-actions" *ngIf="canManage">
-                <ui5-button 
-                  design="Transparent" 
-                  icon="upload" 
+                <ui5-button
+                  design="Transparent"
+                  icon="upload"
                   (click)="toggleDocumentForm()"
                   aria-label="Add documents to knowledge base">
-                  {{ showDocumentForm ? 'Close Document Form' : 'Add Documents' }}
+                  {{ showDocumentForm ? ('ragStudio.closeDocumentForm' | translate) : ('ragStudio.addDocuments' | translate) }}
                 </ui5-button>
               </div>
 
               <div *ngIf="showDocumentForm && canManage" class="form-grid bordered-section">
                 <div class="field-group">
                   <label for="documents-input" class="field-label">
-                    Documents <span class="required">*</span>
+                    {{ 'ragStudio.documentsLabel' | translate }} <span class="required">*</span>
                   </label>
                   <ui5-textarea
                     id="documents-input"
@@ -189,55 +190,55 @@ function readErrorMessage(error: unknown, fallback: string): string {
                     placeholder="Enter one document per line."
                     accessible-name="Documents to index">
                   </ui5-textarea>
-                  <span class="field-hint">Enter each document on a separate line</span>
+                  <span class="field-hint">{{ 'ragStudio.enterDocPerLine' | translate }}</span>
                 </div>
                 <div class="form-actions">
-                  <ui5-button 
-                    design="Emphasized" 
-                    (click)="addDocumentsToStore()" 
+                  <ui5-button
+                    design="Emphasized"
+                    (click)="addDocumentsToStore()"
                     [disabled]="mutating || !documentDraft.trim()">
-                    {{ mutating ? 'Indexing...' : 'Index Documents' }}
+                    {{ mutating ? ('ragStudio.indexing' | translate) : ('ragStudio.indexDocuments' | translate) }}
                   </ui5-button>
                 </div>
               </div>
 
               <div class="query-area">
                 <div class="field-group">
-                  <label for="query-input" class="field-label">Search Query</label>
-                  <ui5-textarea 
+                  <label for="query-input" class="field-label">{{ 'ragStudio.searchQuery' | translate }}</label>
+                  <ui5-textarea
                     id="query-input"
-                    ngDefaultControl 
-                    [(ngModel)]="queryText" 
+                    ngDefaultControl
+                    [(ngModel)]="queryText"
                     name="query"
-                    placeholder="Enter a search question..." 
+                    placeholder="Enter a search question..."
                     [rows]="3"
                     accessible-name="RAG query input">
                   </ui5-textarea>
                 </div>
-                <ui5-button 
-                  design="Emphasized" 
+                <ui5-button
+                  design="Emphasized"
                   icon="search"
-                  (click)="runQuery()" 
+                  (click)="runQuery()"
                   [disabled]="queryLoading || !queryText.trim()"
                   aria-label="Search knowledge base">
-                  {{ queryLoading ? 'Searching...' : 'Search' }}
+                  {{ queryLoading ? ('ragStudio.searching' | translate) : ('common.search' | translate) }}
                 </ui5-button>
               </div>
 
-              <div *ngIf="ragResult" class="result-area" role="region" aria-label="Query results">
+              <div *ngIf="ragResult" class="result-area" role="region" [attr.aria-label]="'ragStudio.queryResults' | translate">
                 <div class="answer-section">
-                  <h4>Search Summary</h4>
+                  <h4>{{ 'ragStudio.searchSummary' | translate }}</h4>
                   <p class="answer-text">{{ ragResult.answer }}</p>
                 </div>
                 <div class="context-section">
-                  <h4>Retrieved Documents</h4>
+                  <h4>{{ 'ragStudio.retrievedDocuments' | translate }}</h4>
                   <ui5-list *ngIf="ragResult.context_docs.length > 0; else emptyContext" aria-label="Context documents">
                     <ui5-li *ngFor="let doc of ragResult.context_docs; trackBy: trackByIndex">
                       {{ formatContextDoc(doc) }}
                     </ui5-li>
                   </ui5-list>
                   <ng-template #emptyContext>
-                    <p class="no-context">No context documents were returned for this query.</p>
+                    <p class="no-context">{{ 'ragStudio.noContextDocs' | translate }}</p>
                   </ng-template>
                 </div>
               </div>
@@ -246,8 +247,8 @@ function readErrorMessage(error: unknown, fallback: string): string {
             <ui5-card *ngIf="!selectedStore" class="full-width-card">
               <app-empty-state
                 icon="hint"
-                title="Select a Knowledge Base"
-                description="Choose a knowledge base from the left panel to search or add documents.">
+                [title]="'ragStudio.selectKnowledgeBase' | translate"
+                [description]="'ragStudio.selectKnowledgeBaseDesc' | translate">
               </app-empty-state>
             </ui5-card>
           </div>
@@ -407,6 +408,7 @@ export class RagStudioComponent implements OnInit {
   private readonly mcpService = inject(McpService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  readonly i18n = inject(I18nService);
 
   vectorStores: VectorStore[] = [];
   selectedStore: VectorStore | null = null;
@@ -445,7 +447,7 @@ export class RagStudioComponent implements OnInit {
           this.storesLoading = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to load knowledge bases.');
+          this.error = readErrorMessage(err, this.i18n.t('ragStudio.loadFailed'));
           this.storesLoading = false;
         }
       });
@@ -470,7 +472,7 @@ export class RagStudioComponent implements OnInit {
     const tableName = this.draftStore.table_name.trim();
     const embeddingModel = this.draftStore.embedding_model.trim() || 'default';
     if (!tableName) {
-      this.error = 'Table name is required.';
+      this.error = this.i18n.t('ragStudio.tableNameRequired');
       return;
     }
 
@@ -483,12 +485,12 @@ export class RagStudioComponent implements OnInit {
         next: store => {
           this.vectorStores = [...this.vectorStores, store].sort((left, right) => left.table_name.localeCompare(right.table_name));
           this.selectedStore = store;
-          this.success = `Knowledge base "${store.table_name}" created.`;
+          this.success = this.i18n.t('ragStudio.knowledgeBaseCreated', { name: store.table_name });
           this.mutating = false;
           this.resetCreateForm();
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to create knowledge base.');
+          this.error = readErrorMessage(err, this.i18n.t('ragStudio.createFailed'));
           this.mutating = false;
         }
       });
@@ -503,7 +505,7 @@ export class RagStudioComponent implements OnInit {
 
   addDocumentsToStore(): void {
     if (!this.selectedStore) {
-      this.error = 'Select a knowledge base first.';
+      this.error = this.i18n.t('ragStudio.selectKnowledgeBaseFirst');
       return;
     }
 
@@ -512,7 +514,7 @@ export class RagStudioComponent implements OnInit {
       .map(document => document.trim())
       .filter(Boolean);
     if (documents.length === 0) {
-      this.error = 'Enter at least one document.';
+      this.error = this.i18n.t('ragStudio.enterAtLeastOneDoc');
       return;
     }
 
@@ -529,13 +531,13 @@ export class RagStudioComponent implements OnInit {
               store.table_name === this.selectedStore?.table_name ? this.selectedStore! : store
             );
           }
-          this.success = `${response.documents_added} document(s) indexed into "${this.selectedStore?.table_name}".`;
+          this.success = this.i18n.t('ragStudio.documentsIndexed', { count: response.documents_added, name: this.selectedStore?.table_name ?? '' });
           this.documentDraft = '';
           this.showDocumentForm = false;
           this.mutating = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Failed to add documents.');
+          this.error = readErrorMessage(err, this.i18n.t('ragStudio.addDocsFailed'));
           this.mutating = false;
         }
       });
@@ -574,7 +576,7 @@ export class RagStudioComponent implements OnInit {
           this.queryLoading = false;
         },
         error: err => {
-          this.error = readErrorMessage(err, 'Search query failed.');
+          this.error = readErrorMessage(err, this.i18n.t('ragStudio.queryFailed'));
           this.queryLoading = false;
         }
       });

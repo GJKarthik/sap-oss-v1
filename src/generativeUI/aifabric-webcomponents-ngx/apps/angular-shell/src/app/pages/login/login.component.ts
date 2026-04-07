@@ -5,33 +5,34 @@ import { Router } from '@angular/router';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
+import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, TranslatePipe],
   template: `
     <div class="login-container" role="main" aria-labelledby="login-title">
       <ui5-card class="login-card">
-        <ui5-card-header 
-          slot="header" 
-          title-text="SAP AI Fabric Console" 
-          subtitle-text="Sign in to continue"
+        <ui5-card-header
+          slot="header"
+          [attr.title-text]="i18n.t('auth.title')"
+          [attr.subtitle-text]="i18n.t('auth.subtitle')"
           id="login-title">
         </ui5-card-header>
         <form class="login-form" (ngSubmit)="login()" #loginForm="ngForm">
           <div class="form-field">
             <label for="username-input" class="field-label">
-              Username <span class="required" aria-hidden="true">*</span>
+              {{ 'auth.username' | translate }} <span class="required" aria-hidden="true">*</span>
             </label>
-            <ui5-input 
+            <ui5-input
               id="username-input"
-              ngDefaultControl 
-              [(ngModel)]="username" 
+              ngDefaultControl
+              [(ngModel)]="username"
               name="username"
-              placeholder="Enter your username" 
+              [attr.placeholder]="i18n.t('auth.enterUsername')"
               type="Text"
-              accessible-name="Username"
+              [attr.accessible-name]="i18n.t('auth.username')"
               [attr.value-state]="usernameError ? 'Negative' : 'None'"
               [attr.value-state-message]="usernameError"
               required
@@ -39,29 +40,29 @@ import { AuthService } from '../../services/auth.service';
             </ui5-input>
             <span *ngIf="usernameError" class="error-text" role="alert">{{ usernameError }}</span>
           </div>
-          
+
           <div class="form-field">
             <label for="password-input" class="field-label">
-              Password <span class="required" aria-hidden="true">*</span>
+              {{ 'auth.password' | translate }} <span class="required" aria-hidden="true">*</span>
             </label>
             <div class="password-wrapper">
-              <ui5-input 
+              <ui5-input
                 id="password-input"
-                ngDefaultControl 
+                ngDefaultControl
                 [(ngModel)]="password"
-                name="password" 
-                placeholder="Enter your password" 
+                name="password"
+                [attr.placeholder]="i18n.t('auth.enterPassword')"
                 [type]="showPassword ? 'Text' : 'Password'"
-                accessible-name="Password"
+                [attr.accessible-name]="i18n.t('auth.password')"
                 [attr.value-state]="passwordError ? 'Negative' : 'None'"
                 required
                 (input)="clearFieldError('password')">
               </ui5-input>
-              <ui5-button 
-                design="Transparent" 
+              <ui5-button
+                design="Transparent"
                 [icon]="showPassword ? 'hide' : 'show'"
                 (click)="togglePasswordVisibility()"
-                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                [attr.aria-label]="i18n.t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')"
                 [attr.aria-pressed]="showPassword"
                 type="Button"
                 class="password-toggle">
@@ -69,24 +70,24 @@ import { AuthService } from '../../services/auth.service';
             </div>
             <span *ngIf="passwordError" class="error-text" role="alert">{{ passwordError }}</span>
           </div>
-          
-          <ui5-button 
-            design="Emphasized" 
-            (click)="login()" 
+
+          <ui5-button
+            design="Emphasized"
+            (click)="login()"
             [disabled]="loading"
             aria-describedby="login-status"
             type="Submit">
             <ui5-busy-indicator *ngIf="loading" size="S" active style="margin-right: 0.5rem;"></ui5-busy-indicator>
-            {{ loading ? 'Signing in...' : 'Sign In' }}
+            {{ loading ? ('auth.signingIn' | translate) : ('auth.signIn' | translate) }}
           </ui5-button>
-          
+
           <div id="login-status" class="visually-hidden" aria-live="polite">
-            {{ loading ? 'Signing in, please wait...' : '' }}
+            {{ loading ? ('auth.signingInWait' | translate) : '' }}
           </div>
-          
-          <ui5-message-strip 
-            *ngIf="error" 
-            design="Negative" 
+
+          <ui5-message-strip
+            *ngIf="error"
+            design="Negative"
             [hideCloseButton]="false"
             (close)="error = ''"
             role="alert">
@@ -97,66 +98,66 @@ import { AuthService } from '../../services/auth.service';
     </div>
   `,
   styles: [`
-    .login-container { 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      min-height: 100vh; 
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
       padding: 1rem;
-      background: var(--sapBackgroundColor); 
+      background: var(--sapBackgroundColor);
     }
-    
-    .login-card { 
+
+    .login-card {
       width: 100%;
-      max-width: 400px; 
+      max-width: 400px;
     }
-    
-    .login-form { 
-      padding: 1.5rem; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 1.25rem; 
+
+    .login-form {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
     }
-    
+
     .form-field {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
-    
+
     .field-label {
       font-size: var(--sapFontSize);
       color: var(--sapContent_LabelColor);
       font-weight: 500;
     }
-    
+
     .required {
       color: var(--sapNegativeColor, #b00);
     }
-    
+
     .password-wrapper {
       display: flex;
       gap: 0.25rem;
       align-items: center;
     }
-    
+
     .password-wrapper ui5-input {
       flex: 1;
     }
-    
+
     .password-toggle {
       flex-shrink: 0;
     }
-    
-    .login-form ui5-input { 
-      width: 100%; 
+
+    .login-form ui5-input {
+      width: 100%;
     }
-    
+
     .error-text {
       font-size: var(--sapFontSmallSize);
       color: var(--sapNegativeColor, #b00);
     }
-    
+
     .visually-hidden {
       position: absolute;
       width: 1px;
@@ -174,6 +175,7 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  readonly i18n = inject(I18nService);
 
   username = '';
   password = '';
@@ -201,15 +203,15 @@ export class LoginComponent {
     this.passwordError = '';
 
     if (!this.username.trim()) {
-      this.usernameError = 'Username is required';
+      this.usernameError = this.i18n.t('auth.usernameRequired');
       isValid = false;
     }
 
     if (!this.password) {
-      this.passwordError = 'Password is required';
+      this.passwordError = this.i18n.t('auth.passwordRequired');
       isValid = false;
     } else if (this.password.length < 3) {
-      this.passwordError = 'Password must be at least 3 characters';
+      this.passwordError = this.i18n.t('auth.passwordMinLength', { length: '3' });
       isValid = false;
     }
 
@@ -226,12 +228,12 @@ export class LoginComponent {
     this.authService.login(this.username, this.password)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => { 
-          void this.router.navigate(['/dashboard']); 
+        next: () => {
+          void this.router.navigate(['/dashboard']);
         },
-        error: (err) => { 
-          this.error = err.message || 'Invalid credentials'; 
-          this.loading = false; 
+        error: (err) => {
+          this.error = err.message || this.i18n.t('auth.invalidCredentials');
+          this.loading = false;
         }
       });
   }

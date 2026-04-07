@@ -10,7 +10,18 @@
         </span>
       </div>
     </div>
-    <ui5-button design="Emphasized" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</ui5-button>
+    <div class="header-actions">
+      <ui5-button design="Default" icon="download" (click)="exportJson()">Export</ui5-button>
+      <ui5-button design="Default" icon="upload" (click)="importFileInput.click()">Import</ui5-button>
+      <input #importFileInput type="file" accept=".json,.csv" style="display:none" (change)="onImport($event)" />
+      <ui5-button design="Emphasized" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</ui5-button>
+    </div>
+  </div>
+
+  <!-- Search/filter bar -->
+  <div class="filter-bar">
+    <input type="text" class="search-input" placeholder="Search terms..." [(ngModel)]="searchQuery" />
+    <span class="result-count">{{ filteredTmEntries().length }} of {{ tmEntries().length }} overrides</span>
   </div>
 
   @if (showAddForm()) {
@@ -52,7 +63,7 @@
   <section class="section">
     <div class="section-header">
       <h2>{{ i18n.t('glossary.tmSection') }}</h2>
-      <span class="badge">{{ tmEntries().length }} overrides</span>
+      <span class="badge">{{ filteredTmEntries().length }} overrides</span>
     </div>
     <div class="card table-wrap">
       <table>
@@ -66,7 +77,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (e of tmEntries(); track e.id) {
+          @for (e of filteredTmEntries(); track e.id) {
             <tr>
               <td><bdi>{{ e.source_text }}</bdi> <span class="lang-tag">{{ e.source_lang }}</span></td>
               <td><bdi>{{ e.target_text }}</bdi> <span class="lang-tag">{{ e.target_lang }}</span></td>
