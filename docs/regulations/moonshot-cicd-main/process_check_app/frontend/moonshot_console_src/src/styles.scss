@@ -1,0 +1,16 @@
+:root {
+  --moonshot-bg: radial-gradient(circle at 15% 15%, #eef6ff 0%, #f8fbff 42%, #f5f3ec 100%);
+  --moonshot-panel: rgba(255, 255, 255, 0.82);
+  --moonshot-border: rgba(16, 63, 106, 0.15);
+  --moonshot-shadow: 0 14px 40px rgba(18, 36, 52, 0.08);
+  --moonshot-accent: #0a6ed1;
+  --moonshot-accent-2: #0f8f7e;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: '72', 'Segoe UI', sans-serif;
+  background: var(--moonshot-bg);
+}

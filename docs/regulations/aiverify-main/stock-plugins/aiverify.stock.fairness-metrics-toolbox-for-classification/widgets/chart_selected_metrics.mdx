@@ -1,0 +1,78 @@
+import { useEffect, useState } from 'react';
+export const cid = "fairness_metrics_toolbox_for_classification"
+export const ib_cid = "fairness_tree"
+import { MetricBarChart } from './metricbarchart.mdx';
+import { MetricBarChart2 } from './metricbarchart2.mdx';
+
+
+export const MetricsChart = ({ id, data, results, width, height }) => {
+
+  let metrics_map = {
+    'False Negative Rate Parity': "False Negative Rate",
+    "False Positive Rate Parity": "False Positive Rate",
+    "False Discovery Rate Parity": "False Discovery Rate",
+    "False Omission Rate Parity": "False Omission Rate",
+    "True Positive Rate Parity / Equal Opportunity": "True Positive Rate",
+    "True Negative Rate Parity": "True Negative Rate",
+    "Positive Predictive Value Parity": "Positive Predictive Value Parity",
+    "Negative Predictive Value Parity": "Negative Predictive Value Parity",
+    "Equal Parity": "Equal Selection Parity",
+    "Disparate Impact": "Disparate Impact",
+  };
+
+  // Defensive check to ensure data and data.metrics exist
+  if (!data || !data.metrics || !Array.isArray(data.metrics)) {
+    return <div>No metrics data available</div>;
+  }
+
+  return (
+      data.metrics.map(metric => 
+        metric == "Equal Parity" || metric == "Disparate Impact" ?
+          <MetricBarChart2
+            key={`${id}-${metric}`}
+            metric={metrics_map[metric]}
+            width={width}
+            height={height / data.metrics.length}
+            data={results}
+          /> : <MetricBarChart
+            key={`${id}-${metric}`}
+            metric={metrics_map[metric]}
+            width={width}
+            height={height / data.metrics.length}
+            data={results}
+          />
+      )
+  )
+}
+
+{props.getResults(cid) && props.getIBData(ib_cid) ? (
+<MetricsChart
+  id={props.id}
+  data={props.getIBData(ib_cid)}
+  results={props.getResults(cid)}
+  width={props.width}
+  height={props.height}
+/>
+) : (
+  <div style={{ 
+    width: props.width, 
+    height: props.height, 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    flexDirection: 'column',
+    background: '#f8f9fa',
+    border: '1px dashed #dee2e6',
+    borderRadius: '4px',
+    padding: '20px',
+    textAlign: 'center' 
+  }}>
+    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#dc3545', marginBottom: '10px' }}>
+      Report is incomplete
+    </div>
+    <div style={{ color: '#6c757d' }}>
+      No Test Result or User Input is selected for Fairness Metrics Toolbox for Classification. 
+      Please select appropriate test results or user inputs in the Data Selection page.
+    </div>
+  </div>
+)}

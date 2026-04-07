@@ -141,14 +141,14 @@ export class GlossaryManagerComponent implements OnInit {
     reader.onload = () => {
       try {
         const entries: TMEntry[] = JSON.parse(reader.result as string);
-        if (!Array.isArray(entries)) { this.toast.error('Invalid file format'); return; }
+        if (!Array.isArray(entries)) { this.toast.error(this.i18n.t('glossary.invalidFileFormat')); return; }
         let saved = 0;
         entries.forEach(entry => {
           if (entry.source_text && entry.target_text) {
-            this.tm.save(entry).subscribe({ next: () => { saved++; if (saved === entries.length) { this.loadTM(); this.glossary.loadOverrides(); this.toast.success(`Imported ${saved} entries`); } } });
+            this.tm.save(entry).subscribe({ next: () => { saved++; if (saved === entries.length) { this.loadTM(); this.glossary.loadOverrides(); this.toast.success(this.i18n.t('glossary.importedEntries', { count: String(saved) })); } } });
           }
         });
-      } catch { this.toast.error('Failed to parse file'); }
+      } catch { this.toast.error(this.i18n.t('glossary.failedParseFile')); }
     };
     reader.readAsText(file);
     (event.target as HTMLInputElement).value = '';

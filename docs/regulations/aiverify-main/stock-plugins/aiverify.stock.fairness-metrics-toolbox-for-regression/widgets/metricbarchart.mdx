@@ -1,0 +1,66 @@
+import React, { useEffect, useState } from 'react';
+import { BarChart } from 'aiverify-shared-library/charts'
+
+export const MetricBarChart = ({ metric, metric_name, data, width, height }) => {
+  const [ mydata, setmydata ] = useState({
+    data: [],
+    bars: [],
+  });
+
+  const wrapperStyle = {
+    fontSize: "12px"
+  }
+
+  let error = "";
+  
+  useEffect(() => {
+    if (!data || !data.results || !data.sensitive_feature)
+      return;
+
+    const sensitiveFeatures = data.sensitive_feature;
+
+    let ar = [];
+    let groups = {};
+  
+    error = metric
+
+    let obj = {}
+
+    for (let row of data.results) {
+      const result = row
+      let group = sensitiveFeatures.map( (f, idx) => `${f}:${row.subgroup.split(",")[idx]}`)
+      groups[group] = 1;
+      obj[group] = result[metric]
+    }
+    ar.push(obj)
+    
+    setmydata({
+      data: ar,
+      bars: Object.keys(groups).map(grp => ({ dataKey: grp })),
+    })
+  }, [metric, data])
+  
+  if(mydata.data.length == 0){
+    return(
+      <div>
+        <h1> No my data</h1>
+      </div>
+    )
+  }
+
+  return (
+    <div className="chart-container chart-bar" style={{ width, height }}>
+      <h4 style={{ padding:5, margin:0, textAlign:"center" }}>{metric_name}</h4>
+      <div style={{ height: "calc(100% - 40px)" }}>
+        <BarChart
+          data={mydata.data}
+          xAxisDataKey="mae"
+          bars={mydata.bars}
+          chartProps={{ layout:"vertical" }}
+          legendProps={{ wrapperStyle }}
+          yAxisProps={{ width:5 }}
+        />
+      </div>
+    </div>
+  )
+}

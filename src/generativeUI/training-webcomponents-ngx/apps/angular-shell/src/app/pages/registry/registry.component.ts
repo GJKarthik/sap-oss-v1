@@ -59,8 +59,8 @@ interface RegistryEntry {
         <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()" aria-label="Filter by status">
           <option value="">{{ i18n.t('registry.allStatus') }}</option>
           <option value="completed">{{ i18n.t('registry.completed') }}</option>
-          <option value="running">Running</option>
-          <option value="failed">Failed</option>
+          <option value="running">{{ i18n.t('registry.running') }}</option>
+          <option value="failed">{{ i18n.t('registry.failed') }}</option>
         </select>
         <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem;">
           <input type="checkbox" [(ngModel)]="showDeployedOnly" (ngModelChange)="applyFilter()" />
@@ -218,7 +218,7 @@ export class RegistryComponent implements OnInit {
         this.models.set(enriched);
         this.applyFilter();
       },
-      error: () => this.toast.error('Failed to load model registry', 'Error')
+      error: () => this.toast.error(this.i18n.t('registry.loadFailed'), this.i18n.t('common.error'))
     });
   }
 

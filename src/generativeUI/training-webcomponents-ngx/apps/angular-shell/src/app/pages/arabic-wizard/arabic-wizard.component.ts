@@ -302,7 +302,7 @@ export class ArabicWizardComponent implements OnDestroy {
         error: (error: HttpErrorResponse) => {
           void error;
           this.chatSending.set(false);
-          this.toast.error('Chat request failed — is the backend running?');
+          this.toast.error(this.i18n.t('wizard.chatRequestFailed'));
         },
       });
   }

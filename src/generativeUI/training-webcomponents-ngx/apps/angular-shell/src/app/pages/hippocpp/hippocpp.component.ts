@@ -354,19 +354,19 @@ export class HippocppComponent implements OnInit, OnDestroy {
   cypher = 'MATCH (n) RETURN n LIMIT 10';
 
   readonly presets: QueryPreset[] = [
-    { label: 'All nodes', cypher: 'MATCH (n) RETURN n LIMIT 10' },
-    { label: 'Training pairs', cypher: 'MATCH (p:TrainingPair) RETURN p LIMIT 20' },
-    { label: 'Count pairs', cypher: 'MATCH (p:TrainingPair) RETURN count(p) AS total' },
+    { label: this.i18n.t('hippocpp.presetAllNodes'), cypher: 'MATCH (n) RETURN n LIMIT 10' },
+    { label: this.i18n.t('hippocpp.presetTrainingPairs'), cypher: 'MATCH (p:TrainingPair) RETURN p LIMIT 20' },
+    { label: this.i18n.t('hippocpp.presetCountPairs'), cypher: 'MATCH (p:TrainingPair) RETURN count(p) AS total' },
   ];
 
   readonly archLayers: ArchLayer[] = [
-    { icon: 'edit', name: 'Parser', desc: 'Cypher query parser (Zig)' },
-    { icon: 'compare', name: 'Planner', desc: 'Query plan generation' },
-    { icon: 'process', name: 'Optimizer', desc: 'Cost-based optimiser' },
-    { icon: 'tags', name: 'Processor', desc: 'Execution engine' },
-    { icon: 'folder', name: 'Storage', desc: 'WAL + MVCC buffer mgr' },
-    { icon: 'folder', name: 'Catalog', desc: 'Schema & type catalog' },
-    { icon: 'machine', name: 'Mojo GPU', desc: 'SIMD page acceleration' },
+    { icon: 'edit', name: this.i18n.t('hippocpp.archParser'), desc: this.i18n.t('hippocpp.archParserDesc') },
+    { icon: 'compare', name: this.i18n.t('hippocpp.archPlanner'), desc: this.i18n.t('hippocpp.archPlannerDesc') },
+    { icon: 'process', name: this.i18n.t('hippocpp.archOptimizer'), desc: this.i18n.t('hippocpp.archOptimizerDesc') },
+    { icon: 'tags', name: this.i18n.t('hippocpp.archProcessor'), desc: this.i18n.t('hippocpp.archProcessorDesc') },
+    { icon: 'folder', name: this.i18n.t('hippocpp.archStorage'), desc: this.i18n.t('hippocpp.archStorageDesc') },
+    { icon: 'folder', name: this.i18n.t('hippocpp.archCatalog'), desc: this.i18n.t('hippocpp.archCatalogDesc') },
+    { icon: 'machine', name: this.i18n.t('hippocpp.archMojoGpu'), desc: this.i18n.t('hippocpp.archMojoGpuDesc') },
     { icon: 'document', name: 'Mangle', desc: 'Datalog invariants' },
   ];
 

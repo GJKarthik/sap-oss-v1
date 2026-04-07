@@ -1,0 +1,89 @@
+name: Zig Mojo Bridge Parity
+
+on:
+  pull_request:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AIVERIFY_QUEUE_BACKEND: ${{ vars.AIVERIFY_QUEUE_BACKEND || 'valkey' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.15.1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          run-install: false
+
+      - name: Install Mojo CLI
+        run: |
+          pixi global install -c https://conda.modular.com/max-nightly/ -c conda-forge mojo
+          echo "$HOME/.pixi/bin" >> "$GITHUB_PATH"
+          "$HOME/.pixi/bin/mojo" --version
+
+      - name: Install Redis (Valkey Queue Backend)
+        if: ${{ env.AIVERIFY_QUEUE_BACKEND == 'valkey' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+
+      - name: Run Zig Build and Unit Tests
+        run: |
+          cd zig
+          zig build
+          zig build test
+
+      - name: Run Parity Smoke Suite
+        run: |
+          ./scripts/parity_smoke.sh test-engine-version
+          ./scripts/parity_smoke.sh test-engine-version-flag
+          ./scripts/parity_smoke.sh apigw-config
+          ./scripts/parity_smoke.sh apigw-config-hana
+          ./scripts/parity_smoke.sh apigw-validate-gid-cid
+          ./scripts/parity_smoke.sh apigw-check-valid-filename
+          ./scripts/parity_smoke.sh apigw-sanitize-filename
+          ./scripts/parity_smoke.sh apigw-check-relative-to-base
+          ./scripts/parity_smoke.sh apigw-file-utils
+          ./scripts/parity_smoke.sh apigw-plugin-storage-layout
+          ./scripts/parity_smoke.sh apigw-data-storage-layout
+          ./scripts/parity_smoke.sh apigw-artifact-io-local
+          ./scripts/parity_smoke.sh apigw-model-dataset-io-local
+          ./scripts/parity_smoke.sh apigw-plugin-archive-io-local
+          ./scripts/parity_smoke.sh apigw-plugin-archive-io-local-hana
+          ./scripts/parity_smoke.sh apigw-plugin-mdx-bundle-io-local
+          ./scripts/parity_smoke.sh apigw-plugin-backup-local
+          ./scripts/parity_smoke.sh worker-config
+          ./scripts/parity_smoke.sh worker-once-reclaim
+          ./scripts/parity_smoke.sh worker-once-reclaim-ack
+          ./scripts/parity_smoke.sh worker-once-reclaim-empty
+          ./scripts/parity_smoke.sh worker-once-reclaim-invalid-start
+          ./scripts/parity_smoke.sh metrics-gap
+          ./scripts/parity_smoke.sh normalize-plugin-gid
+
+      - name: Build Mojo FFI Shared Library
+        id: build_mojo
+        run: |
+          ./scripts/build_mojo_ffi.sh
+
+      - name: Run Mojo FFI Smoke
+        env:
+          AIVERIFY_MOJO_FFI_LIB: ${{ steps.build_mojo.outputs.mojo_ffi_lib }}
+        run: |
+          ./scripts/mojo_ffi_smoke.sh

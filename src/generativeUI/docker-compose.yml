@@ -15,8 +15,6 @@ services:
       - "${SUITE_GATEWAY_PORT:-8080}:80"
     environment:
       AI_CORE_PAL_UPSTREAM: ${AI_CORE_PAL_UPSTREAM:-http://ui5-mcp:9160}
-      ES_MCP_UPSTREAM: ${ES_MCP_UPSTREAM:-http://ui5-mcp:9160}
-      ES_MCP_API_KEY: ${ES_MCP_API_KEY:-}
     volumes:
       - ./gateway/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
     restart: unless-stopped
@@ -26,7 +24,7 @@ services:
       context: ./gateway/health
       dockerfile: Dockerfile
     environment:
-      AIFABRIC_WEB_HEALTH_URL: http://aifabric-web/health
+      AIFABRIC_WEB_HEALTH_URL: http://aifabric-web/
       AIFABRIC_API_HEALTH_URL: http://aifabric-api:8000/health
       TRAINING_WEB_HEALTH_URL: http://training-web/
       TRAINING_API_HEALTH_URL: http://training-api:8000/health
@@ -35,31 +33,28 @@ services:
       UI5_MCP_HEALTH_URL: http://ui5-mcp:9160/health
       CAP_LLM_HEALTH_URL: http://cap-llm-plugin:8080/health
       AI_CORE_PAL_HEALTH_URL: ${AI_CORE_PAL_HEALTH_URL:-}
-      ES_MCP_HEALTH_URL: ${ES_MCP_HEALTH_URL:-}
       UI5_HARNESS_REPORT_URL: http://ui5-web/health
     restart: unless-stopped
 
+  # aifabric-webcomponents-ngx was migrated into training-webcomponents-ngx.
+  # The aifabric-web/api services now build from the training console.
   aifabric-api:
     build:
-      context: ./aifabric-webcomponents-ngx
-      dockerfile: packages/api-server/Dockerfile
+      context: ./training-webcomponents-ngx/packages/api-server
+      dockerfile: Dockerfile.suite
     environment:
-      ENVIRONMENT: development
-      JWT_SECRET_KEY: suite-dev-secret
-      STORE_BACKEND: sqlite
-      STORE_DATABASE_PATH: /tmp/aifabric-suite.sqlite3
-      REQUIRE_MCP_DEPENDENCIES: "false"
+      ALLOWED_ORIGINS: http://localhost:${SUITE_GATEWAY_PORT:-8080},http://127.0.0.1:${SUITE_GATEWAY_PORT:-8080}
+      PORT: 8000
     restart: unless-stopped
 
   aifabric-web:
     build:
-      context: ./aifabric-webcomponents-ngx
+      context: ./training-webcomponents-ngx
       dockerfile: apps/angular-shell/Dockerfile
     depends_on:
       - aifabric-api
     environment:
-      SAP_API_BASE_URL: /api/v1
-      SAP_API_UPSTREAM: http://aifabric-api:8000
+      SAP_API_BASE_URL: http://aifabric-api:8000
     restart: unless-stopped
 
   training-api:

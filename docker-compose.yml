@@ -250,32 +250,7 @@ services:
     depends_on: [agent-router, vllm]
     networks: [platform-network]
 
-  ai-shared-fabric:
-    build:
-      context: ./src/data/ai-core-streaming
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8030:8030"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-    environment:
-      - PORT=8030
-      - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
-      - HANA_URL=${HANA_URL}
-      - XSUAA_URL=${XSUAA_URL}
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "ai-shared-fabric"
-      sap.ai.data_security: "public/internal"
-    depends_on: [agent-router, vllm]
-    networks: [platform-network]
-
-  ai-prompt-agent:
+  # ── Tier 3 ─ AI Core ────────────────────────────────────────────────────
     build:
       context: ./src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
       dockerfile: Dockerfile

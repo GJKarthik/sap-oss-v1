@@ -101,7 +101,7 @@ interface AnalyticsResponse {
           <div class="chart-header">
             <h2 class="section-title">{{ i18n.t('analytics.trendsTitle') }}</h2>
             <div class="filter-row">
-              <input type="text" class="filter-input" placeholder="Filter by source..." [(ngModel)]="sourceFilter" />
+              <input type="text" class="filter-input" [placeholder]="i18n.t('analytics.filterBySource')" [(ngModel)]="sourceFilter" />
             </div>
           </div>
           <table class="data-table">
@@ -123,7 +123,7 @@ interface AnalyticsResponse {
                 </tr>
               }
               @if (filteredRows().length === 0) {
-                <tr><td colspan="4" class="empty-cell">No data matching filter.</td></tr>
+                <tr><td colspan="4" class="empty-cell">{{ i18n.t('analytics.noDataMatchingFilter') }}</td></tr>
               }
             </tbody>
           </table>

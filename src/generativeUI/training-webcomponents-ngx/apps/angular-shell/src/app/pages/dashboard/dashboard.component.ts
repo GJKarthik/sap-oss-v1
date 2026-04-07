@@ -210,10 +210,10 @@ export class DashboardComponent implements OnInit {
 
   get components(): PlatformComponent[] {
     return [
-      { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), status: 'Active', badge: 'status-success' },
-      { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), status: 'Active', badge: 'status-success' },
-      { icon: 'chain-link', name: this.i18n.t('dashboard.comp.hippocpp'), desc: this.i18n.t('dashboard.comp.hippocppDesc'), status: 'Active', badge: 'status-success' },
-      { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), status: 'Ready', badge: 'status-info' },
+      { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), status: this.i18n.t('dashboard.statusActive'), badge: 'status-success' },
+      { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), status: this.i18n.t('dashboard.statusActive'), badge: 'status-success' },
+      { icon: 'chain-link', name: this.i18n.t('dashboard.comp.hippocpp'), desc: this.i18n.t('dashboard.comp.hippocppDesc'), status: this.i18n.t('dashboard.statusActive'), badge: 'status-success' },
+      { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), status: this.i18n.t('dashboard.statusReady'), badge: 'status-info' },
     ];
   }
 

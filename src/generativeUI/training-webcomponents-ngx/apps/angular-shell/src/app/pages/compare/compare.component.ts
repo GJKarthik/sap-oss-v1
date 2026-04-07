@@ -83,23 +83,23 @@ interface DeployedModel {
         <!-- Metrics comparison bar -->
         <div class="metrics-bar" role="region" aria-label="Response metrics">
           <div class="metric-chip">
-            <span class="metric-label">A latency</span>
+            <span class="metric-label">{{ i18n.t('compare.aLatency') }}</span>
             <span class="metric-value">{{ latencyA() }}ms</span>
           </div>
           <div class="metric-chip">
-            <span class="metric-label">B latency</span>
+            <span class="metric-label">{{ i18n.t('compare.bLatency') }}</span>
             <span class="metric-value">{{ latencyB() }}ms</span>
           </div>
           <div class="metric-chip">
-            <span class="metric-label">A tokens</span>
+            <span class="metric-label">{{ i18n.t('compare.aTokens') }}</span>
             <span class="metric-value">~{{ tokenCount(resultA()) }}</span>
           </div>
           <div class="metric-chip">
-            <span class="metric-label">B tokens</span>
+            <span class="metric-label">{{ i18n.t('compare.bTokens') }}</span>
             <span class="metric-value">~{{ tokenCount(resultB()) }}</span>
           </div>
           <div class="metric-chip" [class.metric-match]="similarityPct() >= 80" [class.metric-diff]="similarityPct() < 50">
-            <span class="metric-label">Similarity</span>
+            <span class="metric-label">{{ i18n.t('compare.similarity') }}</span>
             <span class="metric-value">{{ similarityPct() }}%</span>
           </div>
         </div>

@@ -45,7 +45,7 @@ export interface TeamSettings {
 export interface DataSourceConfig {
   id: string;
   name: string;
-  type: 'hana' | 'elasticsearch' | 'pal' | 'custom';
+  type: 'hana' | 'pal' | 'custom';
   connectionString: string;
   enabled: boolean;
 }

@@ -33,9 +33,9 @@ interface GraphEdge { source: string; target: string; label: string; }
 
         <!-- Summary bar -->
         <div class="summary-bar">
-          <div class="summary-item"><span>Nodes</span><ui5-tag design="Information">{{ summary.node_count }}</ui5-tag></div>
-          <div class="summary-item"><span>Edges</span><ui5-tag design="Information">{{ summary.edge_count }}</ui5-tag></div>
-          <div class="summary-item" *ngIf="summary.status"><span>Status</span>
+          <div class="summary-item"><span>{{ 'lineage.nodes' | translate }}</span><ui5-tag design="Information">{{ summary.node_count }}</ui5-tag></div>
+          <div class="summary-item"><span>{{ 'lineage.edgesLabel' | translate }}</span><ui5-tag design="Information">{{ summary.edge_count }}</ui5-tag></div>
+          <div class="summary-item" *ngIf="summary.status"><span>{{ 'lineage.statusLabel' | translate }}</span>
             <ui5-tag [design]="summary.status === 'kuzu_unavailable' || summary.status === 'unavailable' ? 'Critical' : (summary.status === 'loading' ? 'Information' : 'Positive')">{{ summary.status }}</ui5-tag>
           </div>
           <div class="summary-spacer"></div>
@@ -45,7 +45,7 @@ interface GraphEdge { source: string; target: string; label: string; }
 
         <!-- Visual graph -->
         <ui5-card *ngIf="graphNodes.length && viewMode === 'graph'" class="graph-card">
-          <ui5-card-header slot="header" [titleText]="'lineage.lineageGraph' | translate" [subtitleText]="graphNodes.length + ' nodes \u00b7 ' + graphEdges.length + ' edges'"></ui5-card-header>
+          <ui5-card-header slot="header" [titleText]="'lineage.lineageGraph' | translate" [subtitleText]="graphNodes.length + ' ' + i18n.t('lineage.nodes') + ' \u00b7 ' + graphEdges.length + ' ' + i18n.t('lineage.edgesLabel')"></ui5-card-header>
           <div class="graph-viewport" #graphViewport>
             <svg [attr.width]="svgWidth" [attr.height]="svgHeight" class="graph-svg">
               <defs>

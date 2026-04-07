@@ -31,18 +31,18 @@ interface PromptTemplate {
   template: `
     <div class="prompt-page">
       <header class="page-header">
-        <h2>Prompt Library</h2>
+        <h2>{{ i18n.t('promptLibrary.title') }}</h2>
         <div class="header-actions">
-          <ui5-input placeholder="Search prompts..." [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" style="min-width: 200px;"></ui5-input>
-          <ui5-button design="Emphasized" icon="add" (click)="showCreate.set(!showCreate())">{{ showCreate() ? 'Cancel' : 'New Prompt' }}</ui5-button>
+          <ui5-input [placeholder]="i18n.t('promptLibrary.searchPlaceholder')" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" style="min-width: 200px;"></ui5-input>
+          <ui5-button design="Emphasized" icon="add" (click)="showCreate.set(!showCreate())">{{ showCreate() ? i18n.t('common.cancel') : i18n.t('promptLibrary.newPrompt') }}</ui5-button>
         </div>
       </header>
 
       <!-- Stats bar -->
       <div class="stats-bar">
-        <div class="stat"><span class="stat-value">{{ prompts().length }}</span><span class="stat-label">Templates</span></div>
-        <div class="stat"><span class="stat-value">{{ totalUsage() }}</span><span class="stat-label">Total Uses</span></div>
-        <div class="stat"><span class="stat-value">{{ categories().length }}</span><span class="stat-label">Categories</span></div>
+        <div class="stat"><span class="stat-value">{{ prompts().length }}</span><span class="stat-label">{{ i18n.t('promptLibrary.templates') }}</span></div>
+        <div class="stat"><span class="stat-value">{{ totalUsage() }}</span><span class="stat-label">{{ i18n.t('promptLibrary.totalUses') }}</span></div>
+        <div class="stat"><span class="stat-value">{{ categories().length }}</span><span class="stat-label">{{ i18n.t('promptLibrary.categories') }}</span></div>
       </div>
 
       <!-- Category filter -->
@@ -51,22 +51,22 @@ interface PromptTemplate {
           <ui5-button [attr.design]="selectedCategory() === cat ? 'Emphasized' : 'Default'" (click)="selectedCategory.set(cat)">{{ cat }}</ui5-button>
         }
         @if (selectedCategory()) {
-          <ui5-button design="Transparent" (click)="selectedCategory.set(null); loadPrompts()">Clear</ui5-button>
+          <ui5-button design="Transparent" (click)="selectedCategory.set(null); loadPrompts()">{{ i18n.t('promptLibrary.clear') }}</ui5-button>
         }
       </div>
 
       <!-- Create form -->
       @if (showCreate()) {
         <div class="create-form">
-          <h3>New Prompt Template</h3>
-          <ui5-input ngDefaultControl [(ngModel)]="draftName" name="name" placeholder="Prompt name" style="width: 100%;"></ui5-input>
-          <ui5-input ngDefaultControl [(ngModel)]="draftCategory" name="category" placeholder="Category" style="width: 100%;"></ui5-input>
-          <ui5-input ngDefaultControl [(ngModel)]="draftDescription" name="desc" placeholder="Description" style="width: 100%;"></ui5-input>
-          <ui5-textarea ngDefaultControl [(ngModel)]="draftContent" name="content" placeholder="Prompt content..." [rows]="5" growing style="width: 100%;"></ui5-textarea>
-          <ui5-input ngDefaultControl [(ngModel)]="draftTags" name="tags" placeholder="Tags (comma-separated)" style="width: 100%;"></ui5-input>
+          <h3>{{ i18n.t('promptLibrary.newPromptTemplate') }}</h3>
+          <ui5-input ngDefaultControl [(ngModel)]="draftName" name="name" [placeholder]="i18n.t('promptLibrary.promptName')" style="width: 100%;"></ui5-input>
+          <ui5-input ngDefaultControl [(ngModel)]="draftCategory" name="category" [placeholder]="i18n.t('promptLibrary.category')" style="width: 100%;"></ui5-input>
+          <ui5-input ngDefaultControl [(ngModel)]="draftDescription" name="desc" [placeholder]="i18n.t('promptLibrary.description')" style="width: 100%;"></ui5-input>
+          <ui5-textarea ngDefaultControl [(ngModel)]="draftContent" name="content" [placeholder]="i18n.t('promptLibrary.promptContent')" [rows]="5" growing style="width: 100%;"></ui5-textarea>
+          <ui5-input ngDefaultControl [(ngModel)]="draftTags" name="tags" [placeholder]="i18n.t('promptLibrary.tagsPlaceholder')" style="width: 100%;"></ui5-input>
           <div class="form-actions">
-            <ui5-button design="Emphasized" (click)="createPrompt()">Create</ui5-button>
-            <ui5-button design="Transparent" (click)="showCreate.set(false)">Cancel</ui5-button>
+            <ui5-button design="Emphasized" (click)="createPrompt()">{{ i18n.t('common.create') }}</ui5-button>
+            <ui5-button design="Transparent" (click)="showCreate.set(false)">{{ i18n.t('common.cancel') }}</ui5-button>
           </div>
         </div>
       }
@@ -80,20 +80,20 @@ interface PromptTemplate {
                 <strong>{{ p.name }}</strong>
                 <ui5-tag design="Information">{{ p.category }}</ui5-tag>
               </div>
-              <p class="desc">{{ p.description || 'No description' }}</p>
+              <p class="desc">{{ p.description || i18n.t('promptLibrary.noDescription') }}</p>
               <pre class="content-preview">{{ p.content }}</pre>
               <div class="tag-row">
                 @for (tag of p.tags; track tag) { <ui5-tag>{{ tag }}</ui5-tag> }
               </div>
               <div class="meta-row">
                 <span class="version-badge">v{{ p.version }}</span>
-                <span class="usage-badge">{{ p.usage_count }} uses</span>
-                <span>by {{ p.created_by }}</span>
+                <span class="usage-badge">{{ p.usage_count }} {{ i18n.t('promptLibrary.uses') }}</span>
+                <span>{{ i18n.t('promptLibrary.by') }} {{ p.created_by }}</span>
               </div>
               <div class="action-row">
-                <ui5-button design="Default" icon="copy" (click)="copy(p); $event.stopPropagation()">Copy</ui5-button>
-                <ui5-button design="Positive" icon="accept" (click)="use(p); $event.stopPropagation()">Use</ui5-button>
-                <ui5-button design="Negative" icon="delete" (click)="remove(p); $event.stopPropagation()">Delete</ui5-button>
+                <ui5-button design="Default" icon="copy" (click)="copy(p); $event.stopPropagation()">{{ i18n.t('promptLibrary.copy') }}</ui5-button>
+                <ui5-button design="Positive" icon="accept" (click)="use(p); $event.stopPropagation()">{{ i18n.t('promptLibrary.use') }}</ui5-button>
+                <ui5-button design="Negative" icon="delete" (click)="remove(p); $event.stopPropagation()">{{ i18n.t('common.delete') }}</ui5-button>
               </div>
             </div>
           }
@@ -104,36 +104,36 @@ interface PromptTemplate {
           <div class="preview-panel">
             <h4>{{ previewPrompt()!.name }}</h4>
             <div class="preview-meta">
-              <div class="pm-item"><span class="pm-label">Version</span><ui5-tag design="Information">v{{ previewPrompt()!.version }}</ui5-tag></div>
-              <div class="pm-item"><span class="pm-label">Uses</span><ui5-tag design="Positive">{{ previewPrompt()!.usage_count }}</ui5-tag></div>
-              <div class="pm-item"><span class="pm-label">Category</span><ui5-tag>{{ previewPrompt()!.category }}</ui5-tag></div>
-              <div class="pm-item"><span class="pm-label">Author</span><span>{{ previewPrompt()!.created_by }}</span></div>
+              <div class="pm-item"><span class="pm-label">{{ i18n.t('promptLibrary.version') }}</span><ui5-tag design="Information">v{{ previewPrompt()!.version }}</ui5-tag></div>
+              <div class="pm-item"><span class="pm-label">{{ i18n.t('promptLibrary.uses') }}</span><ui5-tag design="Positive">{{ previewPrompt()!.usage_count }}</ui5-tag></div>
+              <div class="pm-item"><span class="pm-label">{{ i18n.t('promptLibrary.category') }}</span><ui5-tag>{{ previewPrompt()!.category }}</ui5-tag></div>
+              <div class="pm-item"><span class="pm-label">{{ i18n.t('promptLibrary.author') }}</span><span>{{ previewPrompt()!.created_by }}</span></div>
             </div>
-            <h5>Template Content</h5>
+            <h5>{{ i18n.t('promptLibrary.templateContent') }}</h5>
             <pre class="preview-content">{{ previewPrompt()!.content }}</pre>
             @if (templateVars().length) {
-              <h5>Test Variables</h5>
+              <h5>{{ i18n.t('promptLibrary.testVariables') }}</h5>
               @for (v of templateVars(); track v) {
                 <div class="var-input">
                   <label>{{ v }}</label>
                   <ui5-input ngDefaultControl [(ngModel)]="testValues[v]" [placeholder]="'Enter ' + v + '...'" style="width: 100%;"></ui5-input>
                 </div>
               }
-              <ui5-button design="Emphasized" icon="play" (click)="renderPreview()">Render Preview</ui5-button>
+              <ui5-button design="Emphasized" icon="play" (click)="renderPreview()">{{ i18n.t('promptLibrary.renderPreview') }}</ui5-button>
             }
             @if (renderedPreview()) {
-              <h5>Rendered Output</h5>
+              <h5>{{ i18n.t('promptLibrary.renderedOutput') }}</h5>
               <pre class="rendered-content">{{ renderedPreview() }}</pre>
-              <ui5-button design="Default" icon="copy" (click)="copyRendered()">Copy Rendered</ui5-button>
+              <ui5-button design="Default" icon="copy" (click)="copyRendered()">{{ i18n.t('promptLibrary.copyRendered') }}</ui5-button>
             }
-            <ui5-button design="Transparent" icon="decline" (click)="previewId.set(null)">Close</ui5-button>
+            <ui5-button design="Transparent" icon="decline" (click)="previewId.set(null)">{{ i18n.t('common.close') }}</ui5-button>
           </div>
         }
       </div>
 
       @if (filtered().length === 0 && !loading()) {
         <div class="empty-state">
-          <p>No prompts found. Create your first shared prompt template for the team.</p>
+          <p>{{ i18n.t('promptLibrary.emptyState') }}</p>
         </div>
       }
     </div>
@@ -179,6 +179,7 @@ interface PromptTemplate {
 })
 export class PromptLibraryComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
+  readonly i18n = inject(I18nService);
   private readonly destroy$ = new Subject<void>();
   private readonly apiUrl = `${environment.apiBaseUrl}/prompts`;
 

@@ -1,0 +1,80 @@
+import React, { useEffect, useState } from 'react';
+import { LineChart } from 'aiverify-shared-library/charts'
+
+export const MultipleLineChart = ({ id, feature_names, results, height}) => {
+    const [ mydata, setmydata ] = useState({
+      data: [],
+    });
+
+    useEffect(() => {
+      let feature_ar = []
+
+      for(let i = 0; i < results.length; i++){
+        each_feature_result = results[i]
+
+        let feature_obj = {}
+
+        ale_values = each_feature_result["ale"]
+        feature_values = each_feature_result["indices"]
+
+        if(ale_values.length != feature_values.length){
+          continue;
+        }
+        else{
+          let ar = [];
+          for(let j = 0; j < ale_values.length; j++){
+            let obj = {}
+            obj = {
+              "feature_value": feature_values[j],
+              "ale": ale_values[j]
+            }
+            ar.push(obj)
+          }
+          feature_obj[feature_names[i]] = ar;
+          feature_ar.push(feature_obj)
+        }
+      }
+
+      setmydata({
+        data: feature_ar,
+      });
+    }, [feature_names, results])
+
+    if(mydata.data.length == 0){
+      return (
+        <div>
+          No data
+        </div>
+      )
+    }
+
+    return (
+      <div className="chart-container" style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: "20px",
+        height: height }}>
+          {mydata.data.map((each_feature, index) => {
+            return (
+              <div key={`${id}-${index}`}>
+                {Object.entries(each_feature).map(function ([key, value]) {
+                  return (
+                    <div key={`${id}-${key}`} style={{ height:"calc(100% - 40px)" }}>
+                      <h5 style={{ textAlign: "center" }}>{key}</h5>
+                      <LineChart data={value}
+                        xAxisDataKey="feature_value"
+                        xAxisProps={{ width:"100%", fontSize:8}}
+                        yAxisProps={{ fontSize:8}}
+                        lines={[{ dataKey:"ale"}]}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })
+        }
+      </div>
+    )
+    
+}

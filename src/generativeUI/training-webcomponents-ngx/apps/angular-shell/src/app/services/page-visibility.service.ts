@@ -2,23 +2,23 @@ import { Injectable, computed, inject } from '@angular/core';
 import { UserSettingsService, Persona } from './user-settings.service';
 import { TRAINING_ROUTE_LINKS, TrainingRouteLink } from '../app.navigation';
 
-const CORE_ROUTES = new Set(['/overview', '/assistant', '/knowledge']);
+const CORE_ROUTES = new Set(['/dashboard', '/chat', '/rag-studio']);
 
 const PERSONA_ROUTES: Record<Persona, Set<string>> = {
   'analyst': new Set([
     ...CORE_ROUTES,
-    '/assets', '/schema', '/quality', '/search',
-    '/capture', '/analytics', '/insights',
+    '/data-explorer', '/schema-browser', '/data-quality', '/semantic-search',
+    '/analytical-dashboard', '/analytics',
   ]),
   'data-engineer': new Set([
     ...CORE_ROUTES,
-    '/assets', '/schema', '/prep', '/quality', '/lineage',
-    '/indexing', '/vocabulary', '/pipeline', '/graph',
+    '/data-explorer', '/schema-browser', '/data-cleaning', '/data-quality', '/lineage',
+    '/vocab-search', '/pipeline', '/streaming',
   ]),
   'ml-engineer': new Set([
     ...CORE_ROUTES,
-    '/training', '/compare', '/models', '/glossary', '/documents',
-    '/search', '/pipeline', '/deployments', '/governance',
+    '/model-optimizer', '/compare', '/registry', '/glossary-manager', '/document-ocr',
+    '/semantic-search', '/pipeline', '/deployments', '/governance',
   ]),
   'developer': new Set(TRAINING_ROUTE_LINKS.map((r) => r.path)),
 };

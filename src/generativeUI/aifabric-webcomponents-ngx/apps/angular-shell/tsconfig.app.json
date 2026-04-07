@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../dist/out-tsc/angular-shell"
-  },
-  "files": ["src/main.ts"],
-  "include": ["src/**/*.d.ts"]
-}

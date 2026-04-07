@@ -46,22 +46,36 @@ export interface TrainingNavLink {
 }
 
 export const TRAINING_NAV_LINKS: TrainingNavLink[] = [
+  // Home
   { route: '/dashboard', labelKey: 'nav.dashboard', icon: 'home' },
-  { route: '/pipeline', labelKey: 'nav.pipeline', icon: 'process' },
+  // Data Factory
   { route: '/data-explorer', labelKey: 'nav.dataExplorer', icon: 'folder' },
   { route: '/data-cleaning', labelKey: 'nav.dataCleaning', icon: 'edit' },
+  { route: '/schema-browser', labelKey: 'nav.schemaBrowser', icon: 'table-view' },
+  { route: '/data-quality', labelKey: 'nav.dataQuality', icon: 'validate' },
+  { route: '/lineage', labelKey: 'nav.lineage', icon: 'org-chart' },
+  { route: '/vocab-search', labelKey: 'nav.vocabSearch', icon: 'grid' },
+  // AI Lab
+  { route: '/chat', labelKey: 'nav.chat', icon: 'discussion-2' },
+  { route: '/rag-studio', labelKey: 'nav.ragStudio', icon: 'database' },
+  { route: '/semantic-search', labelKey: 'nav.semanticSearch', icon: 'search' },
+  { route: '/document-ocr', labelKey: 'nav.documentOcr', icon: 'document' },
+  { route: '/playground', labelKey: 'nav.playground', icon: 'lab' },
+  { route: '/sparql-explorer', labelKey: 'nav.sparqlExplorer', icon: 'syntax' },
+  { route: '/analytical-dashboard', labelKey: 'nav.analyticalDashboard', icon: 'chart-table-view' },
+  { route: '/streaming', labelKey: 'nav.streaming', icon: 'monitor-payments' },
+  // MLOps
+  { route: '/pipeline', labelKey: 'nav.pipeline', icon: 'process' },
+  { route: '/deployments', labelKey: 'nav.deployments', icon: 'shipping-status' },
   { route: '/model-optimizer', labelKey: 'nav.modelOptimizer', icon: 'machine' },
   { route: '/registry', labelKey: 'nav.registry', icon: 'tags' },
   { route: '/hippocpp', labelKey: 'nav.hippocpp', icon: 'chain-link' },
-  { route: '/chat', labelKey: 'nav.chat', icon: 'discussion-2' },
   { route: '/compare', labelKey: 'nav.compare', icon: 'compare' },
-  { route: '/document-ocr', labelKey: 'nav.documentOcr', icon: 'document' },
-  { route: '/semantic-search', labelKey: 'nav.semanticSearch', icon: 'search' },
+  { route: '/governance', labelKey: 'nav.governance', icon: 'shield' },
   { route: '/analytics', labelKey: 'nav.analytics', icon: 'lead' },
   { route: '/glossary-manager', labelKey: 'nav.glossaryManager', icon: 'activity-items' },
   { route: '/arabic-wizard', labelKey: 'nav.arabicWizard', icon: 'learning-assistant' },
-  { route: '/governance', labelKey: 'nav.governance', icon: 'shield' },
-  { route: '/prompt-library', labelKey: 'nav.promptLibrary', icon: 'document-text' },
+  { route: '/prompts', labelKey: 'nav.promptLibrary', icon: 'document-text' },
   { route: '/workspace', labelKey: 'nav.workspace', icon: 'action-settings' },
 ];
 

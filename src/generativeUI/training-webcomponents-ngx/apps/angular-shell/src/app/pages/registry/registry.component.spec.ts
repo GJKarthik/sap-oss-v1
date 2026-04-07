@@ -261,6 +261,6 @@ describe('RegistryComponent', () => {
   it('should show error toast when load() fails', fakeAsync(() => {
     httpMock.expectOne(`${API}/jobs`).flush('error', { status: 503, statusText: 'Unavailable' });
     tick();
-    expect(toastSpy.error).toHaveBeenCalledWith('Failed to load model registry', 'Error');
+    expect(toastSpy.error).toHaveBeenCalledWith('registry.loadFailed', 'common.error');
   }));
 });

@@ -160,46 +160,6 @@ services:
     restart: unless-stopped
 
   # ─────────────────────────────────────────────────────────────────────────
-  # AI Shared Fabric (Streaming Service)
-  # Real-time AI streaming and event processing
-  # ─────────────────────────────────────────────────────────────────────────
-  ai-shared-fabric:
-    build:
-      context: ../src/data/ai-core-streaming
-      dockerfile: Dockerfile
-    container_name: sap-ai-shared-fabric
-    ports:
-      - "${AI_SHARED_FABRIC_PORT:-8030}:8030"
-    environment:
-      - PORT=8030
-      - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
-      - HANA_URL=${HANA_URL}
-      - XSUAA_URL=${XSUAA_URL:-}
-      # AI Core credentials
-      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
-      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
-      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
-      - AICORE_BASE_URL=${AICORE_BASE_URL}
-      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    labels:
-      sap.ai.tier: "tier2-intelligence"
-      sap.ai.service: "ai-shared-fabric"
-      sap.ai.data_security: "public/internal"
-    depends_on:
-      vllm:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8030/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - sap-ai-fabric-network
-    restart: unless-stopped
-
-  # ─────────────────────────────────────────────────────────────────────────
   # MCP-PAL Deep Learning Service
   # PAL-based ML operations with MCP interface
   # ─────────────────────────────────────────────────────────────────────────

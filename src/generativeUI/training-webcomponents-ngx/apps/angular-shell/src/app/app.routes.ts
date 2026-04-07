@@ -119,6 +119,76 @@ export const routes: Routes = [
             (m) => m.WorkspaceComponent
           ),
       },
+      {
+        path: 'streaming',
+        loadComponent: () =>
+          import('./pages/streaming/streaming.component').then(
+            (m) => m.StreamingComponent
+          ),
+      },
+      {
+        path: 'data-quality',
+        loadComponent: () =>
+          import('./pages/data-quality/data-quality.component').then(
+            (m) => m.DataQualityComponent
+          ),
+      },
+      {
+        path: 'vocab-search',
+        loadComponent: () =>
+          import('./pages/vocab-search/vocab-search.component').then(
+            (m) => m.VocabSearchComponent
+          ),
+      },
+      {
+        path: 'schema-browser',
+        loadComponent: () =>
+          import('./pages/schema-browser/schema-browser.component').then(
+            (m) => m.SchemaBrowserComponent
+          ),
+      },
+      {
+        path: 'analytical-dashboard',
+        loadComponent: () =>
+          import('./pages/analytical-dashboard/analytical-dashboard.component').then(
+            (m) => m.AnalyticalDashboardComponent
+          ),
+      },
+      {
+        path: 'rag-studio',
+        loadComponent: () =>
+          import('./pages/rag-studio/rag-studio.component').then(
+            (m) => m.RagStudioComponent
+          ),
+      },
+      {
+        path: 'lineage',
+        loadComponent: () =>
+          import('./pages/lineage/lineage.component').then(
+            (m) => m.LineageComponent
+          ),
+      },
+      {
+        path: 'playground',
+        loadComponent: () =>
+          import('./pages/playground/playground.component').then(
+            (m) => m.PlaygroundComponent
+          ),
+      },
+      {
+        path: 'sparql-explorer',
+        loadComponent: () =>
+          import('./pages/sparql-explorer/sparql-explorer.component').then(
+            (m) => m.SparqlExplorerComponent
+          ),
+      },
+      {
+        path: 'deployments',
+        loadComponent: () =>
+          import('./pages/deployments/deployments.component').then(
+            (m) => m.DeploymentsComponent
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

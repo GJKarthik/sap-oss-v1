@@ -47,7 +47,7 @@ interface SqlPair {
         <div class="tab-bar">
           <ui5-button [design]="activeTab() === 'assets' ? 'Emphasized' : 'Default'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</ui5-button>
           <ui5-button [design]="activeTab() === 'pairs' ? 'Emphasized' : 'Default'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</ui5-button>
-          <ui5-button design="Transparent" icon="download" (click)="exportCurrentTab()" aria-label="Export data">Export</ui5-button>
+          <ui5-button design="Transparent" icon="download" (click)="exportCurrentTab()" [attr.aria-label]="i18n.t('dataExplorer.export')">{{ i18n.t('dataExplorer.export') }}</ui5-button>
         </div>
       </div>
 

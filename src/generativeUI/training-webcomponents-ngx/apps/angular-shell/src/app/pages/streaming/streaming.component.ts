@@ -47,10 +47,10 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
           <ui5-card>
             <ui5-card-header
               slot="header"
-              [titleText]="'streaming.clusterHealth' | translate"
-              [subtitleText]="'streaming.clusterHealthSubtitle' | translate">
+              [titleText]="'streaming.hanaConnection' | translate"
+              [subtitleText]="'streaming.hanaConnectionSubtitle' | translate">
             </ui5-card-header>
-            <div class="card-content" *ngIf="clusterHealth; else clusterEmpty" role="region" aria-label="Cluster health metrics">
+            <div class="card-content" *ngIf="clusterHealth; else clusterEmpty" role="region" aria-label="HANA connection health">
               <div class="metric-row">
                 <span>{{ 'common.status' | translate }}</span>
                 <ui5-tag [design]="clusterTagDesign(clusterHealth.status)">
@@ -58,39 +58,19 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
                 </ui5-tag>
               </div>
               <div class="metric-row">
-                <span>{{ 'streaming.clusterName' | translate }}</span>
-                <strong>{{ clusterHealth.cluster_name || 'n/a' }}</strong>
+                <span>{{ 'streaming.tablesCount' | translate }}</span>
+                <strong>{{ clusterHealth.tables_count ?? 'n/a' }}</strong>
               </div>
-              <div class="metric-row">
-                <span>{{ 'streaming.nodes' | translate }}</span>
-                <strong>{{ clusterHealth.number_of_nodes ?? 'n/a' }}</strong>
-              </div>
-              <div class="metric-row">
-                <span>{{ 'streaming.activeShards' | translate }}</span>
-                <strong>{{ clusterHealth.active_shards ?? 'n/a' }}</strong>
-              </div>
-              <div class="metric-row" *ngIf="clusterHealth.relocating_shards !== undefined">
-                <span>{{ 'streaming.relocatingShards' | translate }}</span>
-                <ui5-tag [design]="$any(clusterHealth.relocating_shards) > 0 ? 'Critical' : 'Positive'">{{ clusterHealth.relocating_shards }}</ui5-tag>
-              </div>
-              <div class="metric-row" *ngIf="clusterHealth.unassigned_shards !== undefined">
-                <span>{{ 'streaming.unassignedShards' | translate }}</span>
-                <ui5-tag [design]="$any(clusterHealth.unassigned_shards) > 0 ? 'Negative' : 'Positive'">{{ clusterHealth.unassigned_shards }}</ui5-tag>
-              </div>
-              <div class="metric-row" *ngIf="clusterHealth.number_of_pending_tasks !== undefined">
-                <span>{{ 'streaming.pendingTasks' | translate }}</span>
-                <ui5-tag [design]="$any(clusterHealth.number_of_pending_tasks) > 0 ? 'Critical' : 'Neutral'">{{ clusterHealth.number_of_pending_tasks }}</ui5-tag>
-              </div>
-              <div class="metric-row" *ngIf="clusterHealth.active_primary_shards !== undefined">
-                <span>{{ 'streaming.primaryShards' | translate }}</span>
-                <strong>{{ clusterHealth.active_primary_shards }}</strong>
+              <div class="metric-row" *ngIf="clusterHealth.version">
+                <span>{{ 'streaming.version' | translate }}</span>
+                <strong>{{ clusterHealth.version }}</strong>
               </div>
             </div>
             <ng-template #clusterEmpty>
               <app-empty-state
-                icon="search"
-                [title]="'streaming.clusterUnavailable' | translate"
-                [description]="'streaming.clusterUnavailableDesc' | translate">
+                icon="database"
+                [title]="'streaming.hanaUnavailable' | translate"
+                [description]="'streaming.hanaUnavailableDesc' | translate">
               </app-empty-state>
             </ng-template>
           </ui5-card>
@@ -197,7 +177,7 @@ export class StreamingComponent implements OnInit, OnDestroy {
   readonly i18n = inject(I18nService);
 
   vectorStores: VectorStore[] = [];
-  clusterHealth: ElasticsearchClusterHealth | null = null;
+  clusterHealth: HanaConnectionHealth | null = null;
   loading = false;
   error = '';
   autoRefreshEnabled = true;
@@ -217,7 +197,7 @@ export class StreamingComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
     forkJoin({
-      clusterHealth: this.mcpService.getElasticsearchClusterHealth(),
+      clusterHealth: this.mcpService.getHanaConnectionHealth(),
       vectorStores: this.mcpService.fetchVectorStores(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))

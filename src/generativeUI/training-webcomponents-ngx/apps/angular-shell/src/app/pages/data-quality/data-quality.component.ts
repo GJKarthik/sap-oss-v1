@@ -261,7 +261,7 @@ export class DataQualityComponent implements OnInit {
   loadTables(): void {
     this.mcpService.hanaListTables().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ts => { this.tables = ts || []; if (ts.length > 0 && !this.selectedTable) { this.selectedTable = ts[0]; this.loadSchemaPreview(ts[0]); } },
-      error: () => { this.mcpService.fetchDataQualityTables().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(ts => { this.tables = ts; if (ts.length > 0) this.selectedTable = ts[0]; }); }
+      error: () => { this.error = this.i18n.t('dataQuality.failedLoadTables'); }
     });
   }
 

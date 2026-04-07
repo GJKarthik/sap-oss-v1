@@ -40,13 +40,13 @@ interface ApiPolicy {
   template: `
     <div class="governance-page">
       <header class="page-header">
-        <h2>Team Governance</h2>
-        <p class="subtitle">Multi-approver action review &amp; team policies</p>
+        <h2>{{ i18n.t('governance.title') }}</h2>
+        <p class="subtitle">{{ i18n.t('governance.subtitle') }}</p>
       </header>
 
       <!-- Pending Approvals -->
       <section class="section">
-        <h3>Pending Approvals <ui5-tag>{{ apiApprovals.length }}</ui5-tag></h3>
+        <h3>{{ i18n.t('governance.pendingApprovals') }} <ui5-tag>{{ apiApprovals.length }}</ui5-tag></h3>
         @if (apiApprovals.length > 0) {
           @for (approval of apiApprovals; track approval.id) {
             <div class="approval-card">
@@ -56,11 +56,11 @@ interface ApiPolicy {
                   <strong>{{ approval.title }}</strong>
                   <ui5-tag [attr.design]="getRiskDesign(approval.risk_level)">{{ approval.risk_level }}</ui5-tag>
                 </div>
-                <span class="meta">by {{ approval.requested_by }}</span>
+                <span class="meta">{{ i18n.t('governance.by') }} {{ approval.requested_by }}</span>
               </div>
               <p class="approval-desc">{{ approval.description }}</p>
               <div class="progress-row">
-                <span class="meta">{{ approval.decisions.length }} / {{ approval.approvers.length }} approvals</span>
+                <span class="meta">{{ approval.decisions.length }} / {{ approval.approvers.length }} {{ i18n.t('governance.approvals') }}</span>
                 <div class="progress-bar"><div class="progress-fill" [style.width.%]="(approval.decisions.length / Math.max(approval.approvers.length, 1)) * 100"></div></div>
               </div>
               @for (decision of approval.decisions; track decision.approver) {
@@ -72,8 +72,8 @@ interface ApiPolicy {
               }
               @if (approval.status === 'pending') {
                 <div class="action-row">
-                  <ui5-button design="Positive" icon="accept" (click)="approveApi(approval)">Approve</ui5-button>
-                  <ui5-button design="Negative" icon="decline" (click)="rejectApi(approval)">Reject</ui5-button>
+                  <ui5-button design="Positive" icon="accept" (click)="approveApi(approval)">{{ i18n.t('governance.approve') }}</ui5-button>
+                  <ui5-button design="Negative" icon="decline" (click)="rejectApi(approval)">{{ i18n.t('governance.reject') }}</ui5-button>
                 </div>
               } @else {
                 <ui5-tag [attr.design]="approval.status === 'approved' ? 'Positive' : 'Negative'">{{ approval.status }}</ui5-tag>
@@ -83,26 +83,26 @@ interface ApiPolicy {
         } @else {
           <div class="empty">
             <ui5-icon name="approvals" style="font-size: 2rem;"></ui5-icon>
-            <p>No pending approvals</p>
+            <p>{{ i18n.t('governance.noPendingApprovals') }}</p>
           </div>
         }
       </section>
 
       <!-- Team Policies -->
       <section class="section">
-        <h3>Team Policies</h3>
+        <h3>{{ i18n.t('governance.teamPolicies') }}</h3>
         @if (apiPolicies.length > 0) {
           @for (policy of apiPolicies; track policy.id) {
             <div class="policy-card">
               <div class="policy-row">
                 <strong>{{ policy.name }}</strong>
-                <ui5-tag [attr.design]="policy.enabled ? 'Positive' : 'Negative'">{{ policy.enabled ? 'Active' : 'Inactive' }}</ui5-tag>
+                <ui5-tag [attr.design]="policy.enabled ? 'Positive' : 'Negative'">{{ policy.enabled ? i18n.t('governance.active') : i18n.t('governance.inactive') }}</ui5-tag>
               </div>
               <span class="meta">{{ policy.description }}</span>
             </div>
           }
         } @else {
-          <div class="empty"><p>No team policies configured.</p></div>
+          <div class="empty"><p>{{ i18n.t('governance.noPolicies') }}</p></div>
         }
       </section>
     </div>
@@ -134,6 +134,7 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   private readonly governance = inject(TeamGovernanceService);
   private readonly teamConfig = inject(TeamConfigService);
   private readonly auth = inject(AuthService);
+  readonly i18n = inject(I18nService);
   private readonly destroy$ = new Subject<void>();
   private readonly apiUrl = environment.apiBaseUrl;
 
@@ -179,7 +180,7 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   }
 
   rejectApi(a: ApiApproval): void {
-    this.http.post<ApiApproval>(`${this.apiUrl}/governance/approvals/${a.id}/decide`, { approver: 'training-user', action: 'reject', comment: 'Rejected by reviewer' })
+    this.http.post<ApiApproval>(`${this.apiUrl}/governance/approvals/${a.id}/decide`, { approver: 'training-user', action: 'reject', comment: this.i18n.t('governance.rejectedByReviewer') })
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: () => this.loadApprovals() });
   }

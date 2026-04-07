@@ -1,0 +1,114 @@
+{
+    "results": [
+        {
+            "corruption_group": "Digital",
+            "corruption_function": "Contrast_Down",
+            "parameter": {
+                "severity0": {
+                    "factor": null
+                },
+                "severity1": {
+                    "factor": 0.2
+                },
+                "severity2": {
+                    "factor": 0.3
+                },
+                "severity3": {
+                    "factor": 0.5
+                },
+                "severity4": {
+                    "factor": 0.7
+                },
+                "severity5": {
+                    "factor": 0.9
+                }
+            },
+            "accuracy": {
+                "severity0": 0.0,
+                "severity1": 0.2,
+                "severity2": 0.1,
+                "severity3": 0.0,
+                "severity4": 0.0,
+                "severity5": 0.1
+            },
+            "display_info": {
+                "severity0": [
+                    "images/Contrast_Down/severity0/9.png",
+                    9,
+                    1
+                ],
+                "severity1": [
+                    "images/Contrast_Down/severity1/9.png",
+                    9,
+                    9
+                ],
+                "severity2": [
+                    "images/Contrast_Down/severity2/9.png",
+                    9,
+                    1
+                ],
+                "severity3": [
+                    "images/Contrast_Down/severity3/9.png",
+                    9,
+                    1
+                ],
+                "severity4": [
+                    "images/Contrast_Down/severity4/9.png",
+                    9,
+                    1
+                ],
+                "severity5": [
+                    "images/Contrast_Down/severity5/9.png",
+                    9,
+                    1
+                ]
+            }
+        },
+        {
+            "corruption_group": "Digital",
+            "corruption_function": "Random_Perspective",
+            "parameter": {
+                "severity0": {
+                    "sigma": null
+                },
+                "severity1": {
+                    "sigma": 1.0
+                },
+                "severity2": {
+                    "sigma": 1.5
+                },
+                "severity3": {
+                    "sigma": 2.0
+                }
+            },
+            "accuracy": {
+                "severity0": 0.0,
+                "severity1": 0.0,
+                "severity2": 0.1,
+                "severity3": 0.2
+            },
+            "display_info": {
+                "severity0": [
+                    "images/Random_Perspective/severity0/9.png",
+                    9,
+                    1
+                ],
+                "severity1": [
+                    "images/Random_Perspective/severity1/9.png",
+                    9,
+                    1
+                ],
+                "severity2": [
+                    "images/Random_Perspective/severity2/9.png",
+                    9,
+                    5
+                ],
+                "severity3": [
+                    "images/Random_Perspective/severity3/9.png",
+                    9,
+                    4
+                ]
+            }
+        }
+    ]
+}

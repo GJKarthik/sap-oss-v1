@@ -1,0 +1,28 @@
+# Static Process Check UI container (Angular/UI5 bundle, no Streamlit runtime)
+
+FROM python:3.12-slim AS build
+
+RUN apt-get update && apt-get -y upgrade && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy only the static app payload
+COPY process_check_app/ ./
+
+FROM gcr.io/distroless/base-debian12
+
+WORKDIR /app
+
+# Copy Python runtime for standard-library static hosting
+COPY --from=build /usr/local/bin/python3.12 /usr/local/bin/python3.12
+COPY --from=build /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=build /usr/local/lib/libpython3.12.so* /usr/local/lib/
+COPY --from=build /lib/* /lib/
+
+# Copy static Process Check UI assets
+COPY --from=build /app /app
+
+EXPOSE 8000
+
+CMD ["python3.12", "-m", "http.server", "8000", "--directory", "/app"]

@@ -14,8 +14,8 @@ def env(name: str, default: str) -> str:
 
 
 CHECKS: list[tuple[str, str, bool]] = [
-    ("aifabric_web", env("AIFABRIC_WEB_HEALTH_URL", "http://aifabric-web/health"), True),
-    ("aifabric_api", env("AIFABRIC_API_HEALTH_URL", "http://aifabric-api/health"), True),
+    ("aifabric_web", env("AIFABRIC_WEB_HEALTH_URL", "http://aifabric-web/"), True),
+    ("aifabric_api", env("AIFABRIC_API_HEALTH_URL", "http://aifabric-api:8000/health"), True),
     ("training_web", env("TRAINING_WEB_HEALTH_URL", "http://training-web/"), True),
     ("training_api", env("TRAINING_API_HEALTH_URL", "http://training-api/health"), True),
     ("sac_web", env("SAC_WEB_HEALTH_URL", "http://sac-web/health"), False),
@@ -26,12 +26,9 @@ CHECKS: list[tuple[str, str, bool]] = [
 ]
 
 optional_external_pal = env("AI_CORE_PAL_HEALTH_URL", "")
-optional_external_es_mcp = env("ES_MCP_HEALTH_URL", "")
 
 if optional_external_pal:
     CHECKS.append(("ai_core_pal", optional_external_pal, False))
-if optional_external_es_mcp:
-    CHECKS.append(("es_mcp", optional_external_es_mcp, False))
 
 
 async def probe(client: httpx.AsyncClient, name: str, url: str, required: bool) -> dict[str, Any]:

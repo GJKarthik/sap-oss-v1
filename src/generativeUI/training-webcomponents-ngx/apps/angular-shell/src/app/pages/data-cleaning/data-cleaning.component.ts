@@ -241,7 +241,7 @@ export class DataCleaningComponent implements OnInit, OnDestroy {
         this.loadChecks();
       },
       error: (error: HttpErrorResponse) => {
-        this.toast.error(this.extractDetail(error), 'Data Cleaning Error');
+        this.toast.error(this.extractDetail(error), this.i18n.t('dataCleaning.errorTitle'));
         this.sending.set(false);
       },
     });
@@ -263,7 +263,7 @@ export class DataCleaningComponent implements OnInit, OnDestroy {
         this.startWorkflowPolling(runId);
       },
       error: (error: HttpErrorResponse) => {
-        this.toast.error(this.extractDetail(error), 'Workflow Error');
+        this.toast.error(this.extractDetail(error), this.i18n.t('dataCleaning.workflowError'));
         this.workflowRunning.set(false);
       },
     });
@@ -282,7 +282,7 @@ export class DataCleaningComponent implements OnInit, OnDestroy {
         this.toast.info(this.i18n.t('dataCleaning.sessionCleared'));
       },
       error: (error: HttpErrorResponse) => {
-        this.toast.warning(this.extractDetail(error), 'Data Cleaning Session');
+        this.toast.warning(this.extractDetail(error), this.i18n.t('dataCleaning.sessionTitle'));
       },
     });
   }

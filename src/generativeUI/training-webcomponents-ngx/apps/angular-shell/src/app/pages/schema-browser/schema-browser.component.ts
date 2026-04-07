@@ -65,7 +65,7 @@ import { I18nService } from '../../services/i18n.service';
                       <ui5-table-row>
                         <ui5-table-cell><strong>{{ col.name }}</strong></ui5-table-cell>
                         <ui5-table-cell><code>{{ col.sql_type }}</code></ui5-table-cell>
-                        <ui5-table-cell>{{ col.nullable ? 'Yes' : 'No' }}</ui5-table-cell>
+                        <ui5-table-cell>{{ col.nullable ? i18n.t('schemaBrowser.yes') : i18n.t('schemaBrowser.no') }}</ui5-table-cell>
                         <ui5-table-cell>
                           <div class="badge-row">
                             @if (hasAnnotation(col, 'Analytics.Dimension')) {

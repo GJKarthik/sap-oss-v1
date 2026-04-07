@@ -1,0 +1,100 @@
+export const cid = "fairness_metrics_toolbox_for_classification";
+export const ib_cid = "fairness_tree";
+
+import { TechnicalInterpretationChart } from "./technical_interpretationtype.mdx";
+import { TechnicalInterpretationChart2 } from "./technical_interpretationtype2.mdx";
+
+export const GetAllMetrics = ({ id, results, width, height }) => {
+  let metrics_map = {
+    "False Negative Rate Parity": "False Negative Rate",
+    "False Positive Rate Parity": "False Positive Rate",
+    "False Discovery Rate Parity": "False Discovery Rate",
+    "False Omission Rate Parity": "False Omission Rate",
+    "True Positive Rate Parity / Equal Opportunity": "True Positive Rate",
+    "True Negative Rate Parity": "True Negative Rate",
+    "Positive Predictive Value Parity": "Positive Predictive Value Parity",
+    "Negative Predictive Value Parity": "Negative Predictive Value Parity",
+    "Equal Parity": "Equal Selection Parity",
+    "Disparate Impact": "Disparate Impact",
+  };
+  let metrics = Object.values(metrics_map);
+
+  return (
+    <div
+      className="chart-container"
+      style={{
+        display: "grid", // Creates a CSS grid layout
+        gridTemplateColumns: "repeat(3, 1fr)", // Creates 3 equal-width columns
+        gap: "5px", // Adds 5px spacing between grid items
+      }}
+    >
+      {metrics.map((metric, idx) =>
+        metric == "Equal Selection Parity" || metric == "Disparate Impact" ? (
+          <TechnicalInterpretationChart2
+            id={`${id}-${metric}-${idx}`}
+            key={`${id}-${metric}-${idx}`}
+            metric={metric}
+            data={results}
+          />
+        ) : (
+          <TechnicalInterpretationChart
+            id={`${id}-${metric}-${idx}`}
+            key={`${id}-${metric}-${idx}`}
+            metric={metric}
+            data={results}
+          />
+        )
+      )}
+    </div>
+  );
+};
+
+<div className="widget-wrapper" style={{ height: 'auto' }}>
+  ### Fairness Metrics
+
+  ## The displayed metric(s) demonstrate the equity between two subgroups. In cases where the selected feature consists of more than two subgroups (such as race with multiple subgroups), the parity value is determined by comparing the subgroup with the smallest value to the subgroup with the largest value.
+
+  <ul>
+    <li>
+      <i>Disparate Impact</i>: The closer the value is to 1, the better it is.
+    </li>
+    <li>
+      <i>Equal Selection Parity</i>: The smaller the value, the better it is.
+    </li>
+    <li>Other fairness metrics: The smaller the value, the better it is</li>
+  </ul>
+  <br />
+
+  {props.getResults(cid) ? (
+  <GetAllMetrics
+    id={props.id}
+    results={props.getResults(cid)}
+    width={props.width}
+    height={props.height}
+  />
+  ) : (
+  <div style={{ 
+    width: props.width, 
+    height: 'auto', 
+    minHeight: '200px',
+    maxHeight: 1076, /* fixed pixel height */
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    flexDirection: 'column',
+    background: '#f8f9fa',
+    border: '1px dashed #dee2e6',
+    borderRadius: '4px',
+    padding: '20px',
+    textAlign: 'center' 
+  }}>
+    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#dc3545', marginBottom: '10px' }}>
+      Report is incomplete
+    </div>
+    <div style={{ color: '#6c757d' }}>
+      No Test Result is selected for Fairness Metrics Toolbox for Classification algorithm. 
+      Please select appropriate test results in the Data Selection page.
+    </div>
+  </div>
+)}
+</div>

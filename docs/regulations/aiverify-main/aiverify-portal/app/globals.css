@@ -1,0 +1,199 @@
+@import '@fontsource-variable/inter';
+@import '@/lib/theme/colors.css';
+@import '@/lib/theme/standardReport.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter Variable', sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+  }
+}
+
+@layer base {
+  * {
+  }
+  body {
+  }
+}
+
+.custom-scrollbar {
+  @apply overflow-y-auto;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  @apply w-2;
+  background-color: black;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: black;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply rounded-full border-2 border-transparent bg-clip-padding;
+  background-color: rgba(120, 120, 120, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(126, 126, 126, 0.3);
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(126, 126, 126, 0.3) transparent;
+}
+
+/* Print styles to ensure proper widget rendering */
+@media print {
+  /* Global print styles */
+  @page {
+    margin: 15px;
+    size: auto;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure all content is visible but allow page breaks */
+  .react-grid-layout,
+  .react-grid-item,
+  .grid-comp-wrapper {
+    overflow: visible !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Text handling for widgets */
+  .react-grid-item p,
+  .react-grid-item div,
+  .react-grid-item span,
+  .react-grid-item h1,
+  .react-grid-item h2,
+  .react-grid-item h3,
+  .react-grid-item h4,
+  .react-grid-item h5,
+  .react-grid-item h6 {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+  }
+
+  /* Ensure headings don't break */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Keep at least 2 lines of text together when breaking */
+  p {
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Ensure standard report pages display properly */
+  .standard-report-page {
+    margin: 15px !important;
+    page-break-after: always !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  .standard-report-page:last-child {
+    page-break-after: auto !important;
+  }
+}
+
+/* Loading animation ring*/
+
+@keyframes animateC {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes animate {
+  0% {
+    transform: rotate(45deg);
+  }
+  100% {
+    transform: rotate(405deg);
+  }
+}
+
+.ring {
+  @apply text-white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background: transparent;
+  border: 3px solid #3c3c3c;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 80px;
+  font-family: sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.ring:before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 80px;
+  height: 80px;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  animation: animateC 2s linear infinite;
+  @apply border-r-primary-50 border-t-primary-50;
+}
+
+.ring span {
+  display: block;
+  position: absolute;
+  top: calc(50% - 2px);
+  left: 50%;
+  width: 50%;
+  height: 4px;
+  background: transparent;
+  transform-origin: left;
+  animation: animate 2s linear infinite;
+}
+
+.ring span:before {
+  @apply bg-primary-50;
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  top: -6px;
+  right: -8px;
+}

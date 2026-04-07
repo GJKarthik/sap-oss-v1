@@ -765,14 +765,14 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   }
 
   calculateETA(j: JobResponse): string {
-    if (j.status === 'completed' || j.progress >= 1.0) return 'Done';
+    if (j.status === 'completed' || j.progress >= 1.0) return this.i18n.t('modelOpt.etaDone');
     if (j.status === 'failed' || j.status === 'cancelled') return '';
-    if (j.progress < 0.05) return 'Calculating...';
+    if (j.progress < 0.05) return this.i18n.t('modelOpt.etaCalculating');
 
     const created = new Date(j.created_at).getTime();
     const now = Date.now();
     const elapsedMs = now - created;
-    if (elapsedMs < 0) return 'Calculating...';
+    if (elapsedMs < 0) return this.i18n.t('modelOpt.etaCalculating');
 
     const totalExpectedMs = elapsedMs / j.progress;
     const remainingMs = totalExpectedMs - elapsedMs;
@@ -781,7 +781,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     
-    return `ETA: ${mins}m ${secs}s`;
+    return this.i18n.t('modelOpt.eta', { mins: String(mins), secs: String(secs) });
   }
 
   ngOnInit(): void {

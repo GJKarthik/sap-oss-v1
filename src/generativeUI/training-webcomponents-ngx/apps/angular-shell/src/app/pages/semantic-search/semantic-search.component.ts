@@ -39,7 +39,7 @@ interface SearchResponse {
         targetRoute="/rag"
         targetLabel="Search Studio (RAG)"
         icon="documents"
-        relationLabel="Related — full RAG engine with Elasticsearch:">
+        relationLabel="Related — full RAG engine with HANA Vector Search:">
       </app-cross-app-link>
 
       <header class="page-header">
@@ -83,12 +83,12 @@ interface SearchResponse {
             <span>{{ i18n.t('semanticSearch.resultsCount', { count: totalResults() }) }}</span>
             <div class="results-actions">
               <select class="filter-select" [(ngModel)]="minScoreFilter" (ngModelChange)="applyFilter()">
-                <option value="0">All scores</option>
+                <option value="0">{{ i18n.t('semanticSearch.allScores') }}</option>
                 <option value="0.5">≥ 50%</option>
                 <option value="0.7">≥ 70%</option>
                 <option value="0.8">≥ 80%</option>
               </select>
-              <ui5-button design="Transparent" icon="download" (click)="exportResults()" aria-label="Export results">Export</ui5-button>
+              <ui5-button design="Transparent" icon="download" (click)="exportResults()" [attr.aria-label]="i18n.t('semanticSearch.export')">{{ i18n.t('semanticSearch.export') }}</ui5-button>
             </div>
           </div>
           @for (r of filteredResults(); track r.id) {
@@ -114,7 +114,7 @@ interface SearchResponse {
       <!-- Search History -->
       @if (searchHistory.length > 0) {
         <div class="search-history">
-          <h3 class="history-title">Recent Searches</h3>
+          <h3 class="history-title">{{ i18n.t('semanticSearch.recentSearches') }}</h3>
           <div class="history-chips">
             @for (h of searchHistory; track h) {
               <button class="history-chip" (click)="rerunSearch(h)">{{ h }}</button>

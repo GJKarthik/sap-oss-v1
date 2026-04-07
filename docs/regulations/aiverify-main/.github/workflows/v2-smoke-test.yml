@@ -1,0 +1,130 @@
+# Smoke Test
+
+name: v2 Smoke Test
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+on:
+  # Runs when a pull request review is being submitted
+  pull_request:
+    types: [assigned, synchronize]
+    branches:
+      - "main"
+
+  # Run this workflow manually from Actions tab
+  workflow_dispatch:
+    inputs:
+      branch_to_test:
+        description: "Branch or tag to run test"
+        required: true
+        default: "main"
+        type: string
+
+# Allow concurrent runs of the same workflow (currently ubuntu-latest-m configured to allow 10 concurrent runs)
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  smoke-test:
+    #  Run only when PR is approved
+    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
+    runs-on: ubuntu-latest-m
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    timeout-minutes: 60
+
+    steps:
+      
+      # Change Existing File Permissions For Later Removal During Checkout of AI Verify
+      - name: Change Existing File Permissions From Previous Runs
+        run: |
+          sudo chmod -R 777 .
+
+      # Checkout Code (Workflow Dispatch)
+      - name: Checkout Code (Workflow Dispatch)
+        if: (github.event_name == 'workflow_dispatch')
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_to_test }}
+          repository: aiverify-foundation/aiverify
+
+      # Checkout Code (Pull Request)
+      - name: Checkout Code
+        if: (github.event_name == 'pull_request')
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          repository: aiverify-foundation/aiverify
+
+      # Checkout Smoke Test Code
+      - name: Checkout Smoke Test Code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          repository: aiverify-foundation/aivt-integration-testing
+          path: integration-testing
+
+      # Set Python Version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.12'
+
+      # Log in to GitHub Container Registry (ghcr.io), needed by Github Actions to access ghcr.io
+      - name: Login to GHCR
+        run: |
+          echo "${{ env.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+      # Clean slate to force rebuild all images
+      - name: Delete all local Docker images
+        run: |
+          docker ps -q | xargs -r docker stop
+          docker images -q | xargs -r docker rmi -f
+          docker system prune -a -f
+          docker volume prune --all -f
+          docker builder prune -a -f
+
+      # Build and Launch Docker Containers
+      - name: Build and Launch Docker Containers
+        run: |
+          cd aiverify-apigw
+          rm Dockerfile
+          mv Dockerfile.ci Dockerfile
+
+          cd ../aiverify-test-engine-worker
+          rm Dockerfile
+          mv Dockerfile.ci Dockerfile
+          cd ../
+
+          cd deployment/docker-compose-dev
+          COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker compose --profile automated-tests-venv --profile portal up -d
+          echo "Initialising AI Verify Plugins"
+          sleep 5m
+
+      # Prepare Smoke Test Data
+      - name: Prepare Smoke Test Data
+        run: |
+          cd stock-plugins/user_defined_files/veritas_data
+          mkdir cs_model
+          mv cs_model.pkl cs_model
+
+      # Run Smoke Test
+      - name: Run Smoke Test
+        run: |
+          cd integration-testing
+          npm install
+          npx playwright install --with-deps
+          URL=http://127.0.0.1 PORT_NUMBER=3000 ROOT_PATH=$GITHUB_WORKSPACE/stock-plugins/user_defined_files npx playwright test tests/portal/01-workflows.spec.js
+
+      # Upload Playwright Traces
+      - name: Upload Playwright Traces
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace-v2.0-smoke-testing-${{ github.run_id }}
+          path: |
+            ${{ github.workspace }}/integration-testing/test-results/

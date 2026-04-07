@@ -1,0 +1,7 @@
+{
+  "name": "moonshot-console",
+  "version": "1.0.0",
+  "description": "Moonshot Console - UI5 Angular frontend for Moonshot Zig runtime",
+  "license": "Apache-2.0",
+  "private": true
+}

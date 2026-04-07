@@ -3,7 +3,7 @@
 Full-platform UI for the SAP AI Training stack — covering all four `training-main` components: **Pipeline**, **Model Optimizer**, **HippoCPP**, and **Data Explorer**.
 Includes integrated **Data Cleaning** workflows for preparing model training data inside the same app.
 
-Built with **Angular 20** + **SAP UI5 Web Components**, mirroring the architecture of `aifabric-webcomponents-ngx`.
+Built with **Angular 20** + **SAP UI5 Web Components**.
 
 ---
 
