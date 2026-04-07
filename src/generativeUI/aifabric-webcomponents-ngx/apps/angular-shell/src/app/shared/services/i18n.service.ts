@@ -11,7 +11,7 @@ import { catchError, shareReplay } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
-export type SupportedLocale = 'en' | 'ar' | 'de' | 'fr' | 'es' | 'ja' | 'zh';
+export type SupportedLocale = 'en' | 'ar' | 'de' | 'fr' | 'ko' | 'zh' | 'id';
 
 export interface TranslationDictionary {
   [key: string]: string | TranslationDictionary;
@@ -31,7 +31,7 @@ export class I18nService implements OnDestroy {
   private readonly config: I18nConfig = {
     defaultLocale: 'en',
     fallbackLocale: 'en',
-    supportedLocales: ['en', 'ar', 'de', 'fr', 'es', 'ja', 'zh'],
+    supportedLocales: ['en', 'ar', 'de', 'fr', 'ko', 'zh', 'id'],
     translationsPath: 'assets/i18n'
   };
 
@@ -140,9 +140,9 @@ export class I18nService implements OnDestroy {
       ar: { name: 'Arabic', nativeName: 'العربية' },
       de: { name: 'German', nativeName: 'Deutsch' },
       fr: { name: 'French', nativeName: 'Français' },
-      es: { name: 'Spanish', nativeName: 'Español' },
-      ja: { name: 'Japanese', nativeName: '日本語' },
-      zh: { name: 'Chinese', nativeName: '中文' }
+      ko: { name: 'Korean', nativeName: '한국어' },
+      zh: { name: 'Chinese', nativeName: '中文' },
+      id: { name: 'Indonesian', nativeName: 'Bahasa Indonesia' }
     };
 
     return this.config.supportedLocales.map(code => ({

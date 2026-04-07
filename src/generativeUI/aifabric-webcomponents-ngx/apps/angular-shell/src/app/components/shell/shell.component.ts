@@ -96,16 +96,18 @@ type ProductSelectEvent = CustomEvent<{
 
       <!-- Team Presence Indicators -->
       <div slot="startButton" class="team-presence" *ngIf="teamMembers.length > 0" aria-label="Team members online">
-        <ui5-avatar
-          *ngFor="let member of teamMembers.slice(0, 5)"
-          size="XS"
-          [attr.initials]="getMemberInitials(member)"
-          [attr.aria-label]="member.displayName + ' (' + member.status + ')'"
-          [style.border]="'2px solid ' + member.color"
-          [class.member-idle]="member.status === 'idle'"
-          [class.member-away]="member.status === 'away'"
-          interactive>
-        </ui5-avatar>
+        <ng-container *ngFor="let member of teamMembers.slice(0, 5)">
+          <ui5-avatar
+            size="XS"
+            [attr.initials]="getMemberInitials(member)"
+            [attr.aria-label]="member.displayName + ' (' + member.status + ')'"
+            [style.border]="'2px solid ' + member.color"
+            [class.member-idle]="member.status === 'idle'"
+            [class.member-away]="member.status === 'away'"
+            interactive>
+          </ui5-avatar>
+          <span *ngIf="member.language" class="member-lang-badge" [title]="getLanguageName(member.language)">{{ member.language?.toUpperCase() }}</span>
+        </ng-container>
         <span *ngIf="teamMembers.length > 5" class="team-overflow">+{{ teamMembers.length - 5 }}</span>
         <span class="collab-status" [class.collab-connected]="collabState === 'connected'" [class.collab-reconnecting]="collabState === 'reconnecting'">
           {{ collabState === 'connected' ? '●' : collabState === 'reconnecting' ? '◌' : '' }}
@@ -182,6 +184,11 @@ type ProductSelectEvent = CustomEvent<{
             aria-label="Select language">
             <option value="en">English</option>
             <option value="ar">العربية (Arabic)</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
+            <option value="id">Bahasa Indonesia</option>
           </select>
         </div>
         <div class="profile-panel__section">
@@ -344,6 +351,15 @@ type ProductSelectEvent = CustomEvent<{
     }
     .collab-connected { color: var(--sapPositiveColor, #107e3e); }
     .collab-reconnecting { color: var(--sapCriticalColor, #e9730c); }
+    .member-lang-badge {
+      font-size: 0.625rem;
+      font-weight: 600;
+      background: var(--sapInformationBackground, #e8f2ff);
+      color: var(--sapInformativeColor, #0a6ed1);
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.25rem;
+      line-height: 1;
+    }
   `]
 })
 export class ShellComponent implements OnInit {
@@ -442,6 +458,7 @@ export class ShellComponent implements OnInit {
       websocketUrl: environment.collabWsUrl,
       userId,
       displayName,
+      language: this.currentLocale,
     });
 
     this.collabService.connectionState$
@@ -613,6 +630,16 @@ export class ShellComponent implements OnInit {
     document.documentElement.setAttribute('lang', this.currentLocale);
     document.documentElement.setAttribute('dir', this.currentLocale === 'ar' ? 'rtl' : 'ltr');
     this.workspaceService.updateLanguage(this.currentLocale);
+    this.collabService.updateLanguage(this.currentLocale);
+  }
+
+  private static readonly LANG_NAMES: Record<string, string> = {
+    en: 'English', ar: 'العربية', fr: 'Français', de: 'Deutsch',
+    ko: '한국어', zh: '中文', id: 'Bahasa Indonesia',
+  };
+
+  getLanguageName(code: string): string {
+    return ShellComponent.LANG_NAMES[code] || code.toUpperCase();
   }
 
   toggleSideNav(): void {

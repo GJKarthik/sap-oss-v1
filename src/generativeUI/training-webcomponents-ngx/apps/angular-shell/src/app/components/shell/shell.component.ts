@@ -150,6 +150,9 @@ type ProductSelectEvent = Event & {
                 [class.member-idle]="member.status === 'idle'"
                 [class.member-away]="member.status === 'away'">
               </ui5-avatar>
+              @if (member.language) {
+                <span class="member-lang-badge" [title]="getLanguageName(member.language)">{{ member.language.toUpperCase() }}</span>
+              }
             }
             @if (teamMembers.length > 5) {
               <span class="team-overflow">+{{ teamMembers.length - 5 }}</span>
@@ -171,6 +174,11 @@ type ProductSelectEvent = Event & {
           <ui5-select (change)="onLangChange($event)">
             <ui5-option value="en" [attr.selected]="i18n.currentLang() === 'en' ? '' : null">English</ui5-option>
             <ui5-option value="ar" [attr.selected]="i18n.currentLang() === 'ar' ? '' : null">العربية (Arabic)</ui5-option>
+            <ui5-option value="fr" [attr.selected]="i18n.currentLang() === 'fr' ? '' : null">Français</ui5-option>
+            <ui5-option value="de" [attr.selected]="i18n.currentLang() === 'de' ? '' : null">Deutsch</ui5-option>
+            <ui5-option value="ko" [attr.selected]="i18n.currentLang() === 'ko' ? '' : null">한국어</ui5-option>
+            <ui5-option value="zh" [attr.selected]="i18n.currentLang() === 'zh' ? '' : null">中文</ui5-option>
+            <ui5-option value="id" [attr.selected]="i18n.currentLang() === 'id' ? '' : null">Bahasa Indonesia</ui5-option>
           </ui5-select>
         }
         
@@ -455,6 +463,15 @@ type ProductSelectEvent = Event & {
       .collab-indicator { font-size: 0.5rem; margin-inline-start: 0.25rem; }
       .collab-connected { color: var(--sapPositiveColor, #107e3e); }
       .collab-reconnecting { color: var(--sapCriticalColor, #e9730c); }
+      .member-lang-badge {
+        font-size: 0.625rem;
+        font-weight: 600;
+        background: var(--sapInformationBackground, #e8f2ff);
+        color: var(--sapInformativeColor, #0a6ed1);
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+        line-height: 1;
+      }
 
       .ws-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 1rem; background: var(--sapList_SelectionBackgroundColor, #e8f2ff); border-bottom: 1px solid var(--sapGroup_TitleBorderColor); font-size: 0.8125rem; flex-wrap: wrap; }
       .ws-cross-label { font-size: 0.75rem; color: var(--sapContent_LabelColor); font-weight: 500; margin-inline-start: 0.5rem; }
@@ -529,6 +546,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       websocketUrl: environment.collabWsUrl,
       userId,
       displayName,
+      language: this.i18n.currentLang(),
     });
 
     this.collabService.connectionState$
@@ -557,6 +575,15 @@ export class ShellComponent implements OnInit, OnDestroy {
     const parts = name.split(/\s+/);
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
     return name.slice(0, 2).toUpperCase();
+  }
+
+  private static readonly LANG_NAMES: Record<string, string> = {
+    en: 'English', ar: 'العربية', fr: 'Français', de: 'Deutsch',
+    ko: '한국어', zh: '中文', id: 'Bahasa Indonesia',
+  };
+
+  getLanguageName(code: string): string {
+    return ShellComponent.LANG_NAMES[code] || code.toUpperCase();
   }
 
   private checkArabicModelStatus(): void {
@@ -713,6 +740,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (value) {
       this.i18n.setLanguage(value);
       this.workspaceService.updateLanguage(value);
+      this.collabService.updateLanguage(value);
     }
   }
 
