@@ -9,7 +9,7 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
 @Component({
   selector: 'app-generative-page',
   template: `
-    <section class="generative-page">
+    <section class="generative-page" role="main" aria-label="Generative UI workspace">
       <div class="generative-hero">
         <span class="generative-hero__eyebrow">{{ 'HOME_CARD_FEATURED' | ui5I18n }}</span>
         <ui5-title level="H2">{{ 'GENERATIVE_PAGE_TITLE' | ui5I18n }}</ui5-title>
@@ -52,7 +52,7 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
             {{ 'GENERATIVE_LIVE_ROUTE' | ui5I18n }}: {{ blockingReason }}
           </ui5-message-strip>
 
-          <div *ngIf="loading" class="generative-loading">
+          <div *ngIf="loading" class="generative-loading" role="status" aria-label="Generating UI">
             <div class="generative-skeleton-card">
               <div class="generative-skeleton-card__header">
                 <div class="generative-skeleton__bar generative-skeleton--header"></div>

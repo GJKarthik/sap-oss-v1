@@ -1,16 +1,16 @@
-<section class="mcp-page">
+<section class="mcp-page" role="main" aria-label="MCP tool explorer">
   <ui5-title level="H3">{{ 'MCP_PAGE_TITLE' | ui5I18n }}</ui5-title>
 
-  <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
+  <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button role="alert">
     {{ blockingReason }}
   </ui5-message-strip>
 
-  <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button>
+  <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button role="alert">
     {{ lastError }}
   </ui5-message-strip>
 
-  <div class="mcp-page__controls">
-    <ui5-select [disabled]="loading || routeBlocked" (change)="onToolSelect($event)">
+  <div class="mcp-page__controls" role="toolbar" aria-label="Tool selection and actions">
+    <ui5-select [disabled]="loading || routeBlocked" (change)="onToolSelect($event)" accessible-name="Select MCP tool">
       <ui5-option *ngFor="let tool of tools" [value]="tool" [attr.selected]="tool === selectedTool ? true : null">
         {{ tool }}
       </ui5-option>
@@ -42,7 +42,8 @@
       [(ngModel)]="toolArgs"
       rows="6"
       spellcheck="false"
-      placeholder='{ "key": "value" }'></textarea>
+      placeholder='{ "key": "value" }'
+      aria-label="Tool arguments JSON editor"></textarea>
     <ui5-message-strip *ngIf="argsError" design="Negative" hide-close-button>
       {{ argsError }}
     </ui5-message-strip>
@@ -50,5 +51,5 @@
 
   <ui5-busy-indicator *ngIf="loading || invoking" active size="M" [text]="'LOADING' | ui5I18n"></ui5-busy-indicator>
 
-  <pre *ngIf="lastCallResult" class="mcp-page__result"><bdi>{{ lastCallResult }}</bdi></pre>
+  <pre *ngIf="lastCallResult" class="mcp-page__result" role="region" aria-label="Tool invocation result" aria-live="polite"><bdi>{{ lastCallResult }}</bdi></pre>
 </section>

@@ -33,7 +33,7 @@ interface SearchResponse {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-container" [class.rtl]="i18n.isRtl()">
+    <div class="page-container" [class.rtl]="i18n.isRtl()" role="main" aria-label="Semantic search">
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/rag"
@@ -47,15 +47,16 @@ interface SearchResponse {
         <p class="page-subtitle">{{ i18n.t('semanticSearch.subtitle') }}</p>
       </header>
 
-      <div class="search-bar">
+      <div class="search-bar" role="search" aria-label="Semantic search query">
         <div class="search-input-row">
           <input
             class="search-input"
             [(ngModel)]="query"
             [placeholder]="i18n.t('semanticSearch.placeholder')"
             (keydown.enter)="search()"
+            aria-label="Search query"
           />
-          <select class="store-select" [(ngModel)]="selectedStore">
+          <select class="store-select" [(ngModel)]="selectedStore" aria-label="Vector store">
             @for (s of stores; track s) {
               <option [value]="s">{{ s }}</option>
             }
@@ -77,7 +78,7 @@ interface SearchResponse {
       }
 
       @if (results().length) {
-        <div class="results-list">
+        <div class="results-list" role="region" aria-label="Search results" aria-live="polite">
           <div class="results-header">
             <span>{{ i18n.t('semanticSearch.resultsCount', { count: totalResults() }) }}</span>
           </div>

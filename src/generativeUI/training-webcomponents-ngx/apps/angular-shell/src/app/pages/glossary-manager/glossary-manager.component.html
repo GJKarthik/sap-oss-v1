@@ -1,4 +1,4 @@
-<div class="glossary-page" [dir]="i18n.dir()">
+<div class="glossary-page" [dir]="i18n.dir()" role="main" aria-label="Glossary manager">
   <div class="page-header">
     <div>
       <h1>{{ i18n.t('glossary.title') }}</h1>
@@ -66,7 +66,7 @@
       <span class="badge">{{ filteredTmEntries().length }} overrides</span>
     </div>
     <div class="card table-wrap">
-      <table>
+      <table aria-label="Translation memory entries">
         <thead>
           <tr>
             <th>Source (EN/AR)</th>
@@ -111,7 +111,7 @@
       <span class="badge">{{ glossary.entries().length }} terms</span>
     </div>
     <div class="card table-wrap">
-      <table>
+      <table aria-label="Official static glossary">
         <thead>
           <tr>
             <th>Technical Term (English)</th>

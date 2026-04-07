@@ -35,10 +35,10 @@ interface ArchLayer {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
+    <div class="page-content" role="main" aria-label="HIPPO CPP inference">
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('hippocpp.title') }}</h1>
-        <ui5-button design="Default" (click)="loadStats()">{{ i18n.t('hippocpp.refresh') }}</ui5-button>
+        <ui5-button design="Default" (click)="loadStats()" aria-label="Refresh stats">{{ i18n.t('hippocpp.refresh') }}</ui5-button>
       </div>
 
       <!-- About -->
@@ -53,7 +53,7 @@ interface ArchLayer {
       </div>
 
       <!-- Stats -->
-      <div class="stats-grid" style="margin-bottom: 1.5rem;">
+      <div class="stats-grid" style="margin-bottom: 1.5rem;" role="region" aria-label="HIPPO CPP statistics">
         <div class="stat-card">
           <div class="stat-value">
             <span class="status-badge {{ stats()?.available ? 'status-success' : 'status-error' }}">
@@ -86,6 +86,7 @@ interface ArchLayer {
             class="query-editor"
             [(ngModel)]="cypher"
             name="cypher"
+            aria-label="Cypher query editor"
             rows="4"
             placeholder="MATCH (n) RETURN n LIMIT 10"
           ></textarea>

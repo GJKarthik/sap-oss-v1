@@ -28,14 +28,14 @@ interface RegistryEntry {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
+    <div class="page-content" role="main" aria-label="Model registry">
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('registry.title') }}</h1>
-        <ui5-button design="Default" (click)="load()">{{ i18n.t('registry.refresh') }}</ui5-button>
+        <ui5-button design="Default" (click)="load()" aria-label="Refresh registry">{{ i18n.t('registry.refresh') }}</ui5-button>
       </div>
 
       <!-- Stats -->
-      <div class="stats-grid" style="margin-bottom: 1.5rem;">
+      <div class="stats-grid" style="margin-bottom: 1.5rem;" role="region" aria-label="Registry statistics">
         <div class="stat-card">
           <div class="stat-value">{{ models().length }}</div>
           <div class="stat-label">{{ i18n.t('registry.totalJobs') }}</div>
@@ -55,8 +55,8 @@ interface RegistryEntry {
       </div>
 
       <!-- Filter bar -->
-      <div class="filter-bar">
-        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
+      <div class="filter-bar" role="search" aria-label="Filter models">
+        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()" aria-label="Filter by status">
           <option value="">{{ i18n.t('registry.allStatus') }}</option>
           <option value="completed">{{ i18n.t('registry.completed') }}</option>
           <option value="running">Running</option>
@@ -71,7 +71,7 @@ interface RegistryEntry {
       <!-- Registry Table -->
       @if (filtered().length) {
         <div class="table-wrapper">
-          <table class="data-table">
+          <table class="data-table" aria-label="Registered models">
             <thead>
               <tr>
                 <th>{{ i18n.t('registry.tagId') }}</th>

@@ -35,7 +35,7 @@ interface InvocationEntry {
         </ui5-button>
       </ui5-bar>
 
-      <div class="workbench-container">
+      <div class="workbench-container" role="main" aria-label="PAL Workbench">
         <ui5-message-strip
           *ngIf="error"
           design="Negative"
@@ -126,7 +126,7 @@ interface InvocationEntry {
               [subtitleText]="'playground.latestOutput' | translate">
             </ui5-card-header>
 
-            <div *ngIf="invocations.length > 0; else emptyState" class="history-list">
+            <div *ngIf="invocations.length > 0; else emptyState" class="history-list" role="log" aria-label="Tool invocation history" aria-live="polite">
               <div *ngFor="let invocation of invocations; trackBy: trackByInvocation" class="history-entry">
                 <div class="history-header">
                   <div>
