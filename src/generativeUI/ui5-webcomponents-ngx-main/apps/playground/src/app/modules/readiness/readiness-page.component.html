@@ -1,4 +1,4 @@
-<section class="readiness-page">
+<section class="readiness-page" role="main" aria-label="Demo readiness checker">
   <div class="readiness-page__header">
     <div>
       <ui5-title level="H3">{{ 'READINESS_PAGE_TITLE' | ui5I18n }}</ui5-title>
@@ -24,7 +24,7 @@
     {{ 'READINESS_ALL_GO' | ui5I18n }}
   </ui5-message-strip>
 
-  <div class="readiness-page__cards">
+  <div class="readiness-page__cards" role="list" aria-label="Route readiness status">
     <ui5-card *ngFor="let route of routeStatuses" class="readiness-page__card">
       <ui5-card-header slot="header" [attr.title-text]="route.label" [attr.subtitle-text]="route.route"></ui5-card-header>
       <div class="readiness-page__card-body">

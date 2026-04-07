@@ -11,15 +11,15 @@ import { I18nService } from '../../services/i18n.service';
   imports: [CommonModule, FormsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <div class="login-page">
-      <div class="login-card">
+    <div class="login-page" role="main" aria-label="Login">
+      <div class="login-card" role="region" aria-label="Authentication">
         <div class="login-brand">
           <span class="login-icon"><ui5-icon name="machine"></ui5-icon></span>
           <h1 class="login-title">{{ i18n.t('login.title') }}</h1>
           <p class="login-subtitle">{{ i18n.t('login.subtitle') }}</p>
         </div>
 
-        <form class="login-form" (ngSubmit)="submit()">
+        <form class="login-form" (ngSubmit)="submit()" aria-label="Login form">
           <div class="field-group">
             <label class="field-label" for="apiKey">{{ i18n.t('login.apiKey') }} <span class="text-muted">{{ i18n.t('login.optional') }}</span></label>
             <input

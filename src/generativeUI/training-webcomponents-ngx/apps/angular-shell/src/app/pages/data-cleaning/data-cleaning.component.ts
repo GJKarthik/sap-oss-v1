@@ -44,7 +44,7 @@ interface DataCleaningWorkflowEventsResponse {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
+    <div class="page-content" role="main" aria-label="Data cleaning workspace">
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/data-quality"
@@ -78,7 +78,7 @@ interface DataCleaningWorkflowEventsResponse {
       <div class="grid">
         <section class="panel">
           <h2>{{ i18n.t('dataCleaning.copilotChat') }}</h2>
-          <div class="chat-log">
+          <div class="chat-log" role="log" aria-label="Copilot conversation" aria-live="polite">
             @if (!messages().length) {
               <div class="empty">{{ i18n.t('dataCleaning.emptyChat') }}</div>
             }
@@ -89,13 +89,14 @@ interface DataCleaningWorkflowEventsResponse {
               </div>
             }
           </div>
-          <form class="chat-input-row" (ngSubmit)="sendMessage()">
+          <form class="chat-input-row" (ngSubmit)="sendMessage()" role="form" aria-label="Chat input">
             <textarea
               class="chat-input"
               name="prompt"
               [(ngModel)]="prompt"
               rows="2"
               [placeholder]="i18n.t('dataCleaning.placeholder')"
+              aria-label="Message to copilot"
             ></textarea>
             <ui5-button design="Emphasized" (click)="sendMessage()" [disabled]="sending() || !prompt.trim()">
               {{ sending() ? '...' : i18n.t('dataCleaning.send') }}

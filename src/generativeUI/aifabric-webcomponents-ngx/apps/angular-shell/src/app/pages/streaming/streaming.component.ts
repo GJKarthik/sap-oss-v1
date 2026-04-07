@@ -25,18 +25,20 @@ import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
           <ui5-button
             icon="refresh"
             (click)="refresh()"
-            [disabled]="loading">
+            [disabled]="loading"
+            aria-label="Refresh search operations data">
             {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
           </ui5-button>
         </div>
       </ui5-bar>
 
-      <div class="operations-content">
+      <div class="operations-content" role="main" aria-label="Search operations dashboard">
         <ui5-message-strip
           *ngIf="error"
           design="Negative"
           [hideCloseButton]="false"
-          (close)="error = ''">
+          (close)="error = ''"
+          role="alert">
           {{ error }}
         </ui5-message-strip>
 
@@ -47,7 +49,7 @@ import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
               [titleText]="'streaming.clusterHealth' | translate"
               [subtitleText]="'streaming.clusterHealthSubtitle' | translate">
             </ui5-card-header>
-            <div class="card-content" *ngIf="clusterHealth; else clusterEmpty">
+            <div class="card-content" *ngIf="clusterHealth; else clusterEmpty" role="region" aria-label="Cluster health metrics">
               <div class="metric-row">
                 <span>{{ 'common.status' | translate }}</span>
                 <ui5-tag [design]="clusterTagDesign(clusterHealth.status)">
@@ -99,7 +101,7 @@ import { TranslatePipe, I18nService } from '../../shared/services/i18n.service';
               [subtitleText]="'streaming.searchIndices' | translate"
               [additionalText]="vectorStores.length + ''">
             </ui5-card-header>
-            <ui5-table *ngIf="vectorStores.length > 0; else emptyStores">
+            <ui5-table *ngIf="vectorStores.length > 0; else emptyStores" aria-label="Registered knowledge bases">
               <ui5-table-header-cell><span>{{ 'streaming.knowledgeBase' | translate }}</span></ui5-table-header-cell>
               <ui5-table-header-cell><span>{{ 'streaming.embeddingModel' | translate }}</span></ui5-table-header-cell>
               <ui5-table-header-cell><span>{{ 'streaming.documents' | translate }}</span></ui5-table-header-cell>
