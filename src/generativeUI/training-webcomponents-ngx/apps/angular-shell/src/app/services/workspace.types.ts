@@ -61,6 +61,7 @@ export const TRAINING_NAV_LINKS: TrainingNavLink[] = [
   { route: '/glossary-manager', labelKey: 'nav.glossaryManager', icon: 'activity-items' },
   { route: '/arabic-wizard', labelKey: 'nav.arabicWizard', icon: 'learning-assistant' },
   { route: '/governance', labelKey: 'nav.governance', icon: 'shield' },
+  { route: '/prompt-library', labelKey: 'nav.promptLibrary', icon: 'document-text' },
   { route: '/workspace', labelKey: 'nav.workspace', icon: 'action-settings' },
 ];
 

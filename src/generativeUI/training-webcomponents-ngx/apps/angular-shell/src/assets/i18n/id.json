@@ -14,7 +14,6 @@
   "app.search.esc": "ESC",
   "app.profile": "Pengaturan Profil",
   "app.showLanguageOptions": "Aktifkan Pilihan Bahasa",
-
   "nav.dashboard": "Dasbor",
   "nav.pipeline": "Pipeline",
   "nav.dataExplorer": "Penjelajah Data",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "Pencarian Semantik",
   "nav.analytics": "Analisis Keuangan",
   "nav.glossaryManager": "Manajer Glosarium",
-
   "mode.novice": "Pemula",
   "mode.intermediate": "Menengah",
   "mode.expert": "Ahli",
-
   "product.aiFabric": "Konsol AI Fabric",
   "product.training": "Konsol Pelatihan",
   "product.sac": "Integrasi SAC AI",
   "product.joule": "Joule AI Playground",
   "product.switcher": "Pengalih Produk",
-
   "diagnostics.title": "Diagnostik teknis",
   "diagnostics.close": "Tutup",
   "diagnostics.latency": "Latensi",
   "diagnostics.correlation": "Korelasi",
   "diagnostics.error": "Kesalahan",
   "diagnostics.noRequests": "Belum ada diagnostik permintaan.",
-
   "login.title": "Konsol Pelatihan",
   "login.subtitle": "Platform Pelatihan SAP AI",
   "login.apiKey": "Kunci API",
   "login.optional": "(opsional)",
   "login.placeholder": "Masukkan kunci API atau biarkan kosong",
   "login.submit": "Masuk ke Konsol",
-
   "dashboard.title": "Dasbor",
   "dashboard.refresh": "Segarkan",
   "dashboard.refreshing": "Menyegarkan…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "Memuat…",
   "dashboard.platformComponents": "Komponen Platform",
   "dashboard.refreshMsg": "Menyegarkan data dasbor…",
-
   "pipeline.title": "Pipeline",
   "pipeline.subtitle": "Pembuatan data teks-ke-SQL 7 tahap — Stream WebSocket Langsung",
   "pipeline.description": "Mengonversi skema Excel perbankan menjadi pasangan pelatihan format Spider/BIRD melalui biner Zig native.",
@@ -112,7 +105,6 @@
   "pipeline.cmd.preconvert": "Langkah 1 — Konversi awal Excel → CSV",
   "pipeline.cmd.build": "Langkah 2 — Build biner Zig",
   "pipeline.cmd.test": "Jalankan tes pipeline Zig",
-
   "chat.settings": "Pengaturan Chat",
   "chat.model": "Model",
   "chat.systemPrompt": "Prompt Sistem",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "Terjemahan yang diperbaiki…",
   "chat.tmSaved": "Penimpaan terjemahan disimpan dan diaktifkan.",
   "chat.tmError": "Gagal menyimpan penimpaan terjemahan.",
-
   "modelOpt.title": "Pengoptimal Model",
   "modelOpt.refresh": "Segarkan",
   "modelOpt.engineConfig": "Konfigurasi Mesin",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "Playground",
   "modelOpt.computing": "Model sedang menghitung tensor...",
   "modelOpt.promptModel": "Prompt model yang sudah di-finetune...",
-
   "dataExplorer.title": "Penjelajah Data",
   "dataExplorer.dataAssets": "Aset Data",
   "dataExplorer.sqlPairs": "Pasangan Pelatihan SQL",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "Memuat pasangan SQL dari pipeline…",
   "dataExplorer.noPairs": "Tidak ditemukan pasangan pelatihan. Jalankan Pipeline terlebih dahulu.",
   "dataExplorer.closeDetail": "Tutup panel detail",
-
   "dataCleaning.title": "Copilot Pembersihan Data",
   "dataCleaning.subtitle": "Siapkan dan validasi kualitas data pelatihan langsung dalam alur kerja model.",
   "dataCleaning.backend": "Backend",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "Peristiwa Alur Kerja",
   "dataCleaning.noEvents": "Belum ada peristiwa alur kerja. Jalankan alur kerja setelah menghasilkan pemeriksaan.",
   "dataCleaning.sessionCleared": "Sesi pembersihan data dibersihkan",
-
   "registry.title": "Registri Model",
   "registry.refresh": "Segarkan",
   "registry.totalJobs": "Total Tugas",
@@ -291,7 +279,6 @@
   "registry.delete": "Hapus",
   "registry.noMatch": "Tidak ada tugas pelatihan yang cocok dengan filter saat ini.",
   "registry.live": "Aktif",
-
   "hippocpp.title": "Mesin Graf HippoCPP",
   "hippocpp.refresh": "Segarkan",
   "hippocpp.about": "HippoCPP adalah port multi-bahasa dari basis data graf tertanam Kuzu, diimplementasikan dalam Zig (1.251 file sumber) dengan akselerasi GPU melalui Mojo dan invarian deklaratif dalam Mangle.",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "Tidak ada baris yang dikembalikan.",
   "hippocpp.row": "baris",
   "hippocpp.architecture": "Arsitektur",
-
   "compare.title": "Perbandingan Model A/B",
   "compare.subtitle": "Uji prompt yang sama terhadap dua model yang dideploy secara berdampingan",
   "compare.modelA": "Model A",
@@ -324,7 +310,6 @@
   "compare.history": "Riwayat Perbandingan",
   "compare.loadingResults": "Membandingkan model, harap tunggu…",
   "compare.resultsReady": "Hasil perbandingan siap",
-
   "relative.justNow": "Baru saja",
   "relative.minutesAgo": "{count, plural, other {{count} menit yang lalu}}",
   "relative.hoursAgo": "{count, plural, other {{count} jam yang lalu}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, other {{count} minggu yang lalu}}",
   "relative.monthsAgo": "{count, plural, other {{count} bulan yang lalu}}",
   "relative.yearsAgo": "{count, plural, other {{count} tahun yang lalu}}",
-
   "nav.documentOcr": "OCR Dokumen",
-
   "ocr.title": "OCR Dokumen",
   "ocr.subtitle": "Unggah dokumen PDF Arab untuk ekstraksi teks OCR dan analisis",
   "ocr.upload.title": "Seret & lepas file PDF di sini",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "Silakan pilih file PDF.",
   "ocr.error.tooLarge": "File melebihi ukuran maksimum 50 MB.",
   "ocr.error.processing": "Pemrosesan OCR gagal. Silakan coba lagi.",
-
   "ocr.health.healthy": "Layanan OCR sehat",
   "ocr.health.degraded": "Layanan OCR terdegradasi",
   "ocr.health.unavailable": "Layanan OCR tidak tersedia",
   "ocr.health.checking": "Memeriksa layanan OCR…",
-
   "ocr.mode.novice": "Pemula",
   "ocr.mode.expert": "Ahli",
   "ocr.switchToExpert": "Beralih ke Mode Ahli",
   "ocr.switchToNovice": "Beralih ke Mode Pemula",
-
   "ocr.curation.title": "Kurasi",
   "ocr.curation.corrections": "Koreksi",
   "ocr.curation.approve": "Setujui",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "Perbesar",
   "ocr.curation.zoomOut": "Perkecil",
   "ocr.curation.resetZoom": "Reset zoom",
-
   "ocr.flagged": "Ditandai untuk peninjauan",
   "ocr.approved": "Disetujui",
   "ocr.rejected": "Ditolak",
   "ocr.page.of": "dari",
   "ocr.prevPage": "Halaman sebelumnya",
   "ocr.nextPage": "Halaman berikutnya",
-
   "ocr.analyzeDocument": "Analisis Dokumen",
   "ocr.ai.summaryTitle": "Ekstraksi AI & Kepatuhan",
   "ocr.ai.translatedTitle": "Terjemahan Bahasa Inggris",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "Jalankan Ekstraksi AI & Pemeriksaan Kepatuhan",
   "ocr.ai.success": "Ekstraksi AI dan pemeriksaan kepatuhan selesai",
   "ocr.ai.error": "Ekstraksi AI gagal",
-
   "nav.arabicWizard": "Asisten Dokumen Arab",
-
   "wizard.title": "Asisten Dokumen Arab",
   "wizard.subtitle": "Unggah, ekstrak, analisis, dan ekspor dokumen Arab secara end-to-end",
   "wizard.step.upload": "Unggah",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "Sebelumnya",
   "wizard.nav.finish": "Selesai",
   "wizard.nav.startOver": "Mulai Ulang",
-
   "ocr.export.pipelineSent": "Dataset berhasil dikirim ke pipeline pelatihan.",
   "ocr.export.pipelineError": "Pipeline tidak tersedia — dataset diunduh secara lokal.",
   "ocr.export.noPagesApproved": "Tidak ada halaman yang disetujui untuk diekspor. Setujui setidaknya satu halaman terlebih dahulu.",
-
   "search.title": "Pencarian Semantik",
   "search.subtitle": "Cari di seluruh dokumen Arab dan Inggris yang terindeks menggunakan bahasa alami",
   "search.selectStore": "Pilih Basis Pengetahuan",
@@ -483,7 +457,6 @@
   "search.noResults": "Tidak ditemukan dokumen yang cocok di basis pengetahuan ini.",
   "search.error.loadStores": "Gagal memuat basis pengetahuan",
   "search.error.queryFailed": "Kueri pencarian gagal",
-
   "semanticSearch.title": "Pencarian Semantik",
   "semanticSearch.subtitle": "Cari di seluruh dokumen keuangan Arab dan Inggris yang terindeks menggunakan kesamaan vektor",
   "semanticSearch.placeholder": "Cari dokumen keuangan…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "Kueri: {ms}ms",
   "semanticSearch.page": "Halaman",
   "semanticSearch.error": "Pencarian gagal. Apakah backend RAG sedang berjalan?",
-
   "analytics.title": "Analisis Keuangan",
   "analytics.subtitle": "Analisis tren dwibahasa di seluruh perpustakaan dokumen terindeks",
   "analytics.selectStore": "Pilih Basis Pengetahuan",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "Laba Bersih",
   "analytics.loading": "Mengagregasi data keuangan dari HANA...",
   "analytics.error.loadFailed": "Gagal mengagregasi data analitik",
-
   "glossary.title": "Glosarium Teknis & TM",
   "glossary.subtitle": "Kelola istilah teknis IFRS resmi dan penimpaan terjemahan yang disetujui manusia",
   "glossary.addTerm": "Tambah Penimpaan",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "Tidak ditemukan penimpaan terjemahan. Terapkan dari audit chat atau tambahkan secara manual.",
   "glossary.deleted": "Penimpaan terjemahan dihapus",
   "glossary.error.loadFailed": "Gagal memuat memori terjemahan",
-
   "common.loading": "Memuat…",
   "common.error": "Kesalahan",
-
   "chat.assistantTyping": "Asisten sedang mengetik",
   "chat.modelRole": "Model",
-
   "modelOpt.closeModal": "Tutup playground chat",
   "modelOpt.manglePassed": "Batasan skema Datalog berhasil diverifikasi.",
   "modelOpt.manglePassedTitle": "Mangle Lolos",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "Deploy gagal: {detail}",
   "modelOpt.deployErrorTitle": "Kesalahan Deployment",
   "modelOpt.inferenceFailed": "Inferensi gagal: {detail}",
-
   "status.online": "Online",
   "status.offline": "Offline",
   "chat.clearConfirm": "Apakah Anda yakin ingin menghapus riwayat chat?",
-
   "form.errorsTitle": "Silakan perbaiki kesalahan berikut:",
   "modelOpt.errorModelRequired": "Nama model wajib diisi.",
   "modelOpt.errorQuantRequired": "Format kuantisasi wajib diisi.",
-
   "nav.governance": "Tata Kelola",
   "nav.workspace": "Ruang Kerja",
   "nav.prompts": "Prompt",
-
   "common.cancel": "Batal",
-
   "workspace.title": "Pengaturan Ruang Kerja",
   "workspace.subtitle": "Konfigurasikan lingkungan, koneksi, dan preferensi Anda.",
   "workspace.identity": "Identitas",
@@ -592,5 +555,6 @@
   "workspace.import": "Impor Pengaturan",
   "workspace.reset": "Reset ke Default",
   "workspace.resetConfirm": "Reset semua pengaturan ke default? Ini tidak dapat dibatalkan.",
-  "workspace.saved": "Pengaturan disimpan"
+  "workspace.saved": "Pengaturan disimpan",
+  "nav.promptLibrary": "Perpustakaan Prompt"
 }

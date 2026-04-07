@@ -14,7 +14,6 @@
   "app.search.esc": "خروج",
   "app.profile": "إعدادات الملف الشخصي",
   "app.showLanguageOptions": "إظهار خيارات اللغة",
-
   "nav.dashboard": "لوحة التحكم",
   "nav.pipeline": "خط الأنابيب",
   "nav.dataExplorer": "مستكشف البيانات",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "البحث الدلالي",
   "nav.analytics": "التحليلات المالية",
   "nav.glossaryManager": "إدارة المصطلحات",
-
   "mode.novice": "مبتدئ",
   "mode.intermediate": "متوسط",
   "mode.expert": "خبير",
-
   "product.aiFabric": "وحدة AI Fabric",
   "product.training": "وحدة التدريب",
   "product.sac": "تكامل SAC AI",
   "product.joule": "ملعب Joule AI",
   "product.switcher": "محوّل المنتجات",
-
   "diagnostics.title": "التشخيصات التقنية",
   "diagnostics.close": "إغلاق",
   "diagnostics.latency": "زمن الاستجابة",
   "diagnostics.correlation": "معرّف الارتباط",
   "diagnostics.error": "خطأ",
   "diagnostics.noRequests": "لا توجد تشخيصات طلبات بعد.",
-
   "login.title": "وحدة التدريب",
   "login.subtitle": "منصة تدريب الذكاء الاصطناعي من SAP",
   "login.apiKey": "مفتاح API",
   "login.optional": "(اختياري)",
   "login.placeholder": "أدخل مفتاح API أو اتركه فارغاً",
   "login.submit": "دخول الوحدة",
-
   "dashboard.title": "لوحة التحكم",
   "dashboard.refresh": "تحديث",
   "dashboard.refreshing": "جارٍ التحديث…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "جارٍ التحميل…",
   "dashboard.platformComponents": "مكونات المنصة",
   "dashboard.refreshMsg": "جارٍ تحديث بيانات لوحة التحكم…",
-
   "pipeline.title": "خط الأنابيب",
   "pipeline.subtitle": "توليد بيانات Text-to-SQL من 7 مراحل — بث مباشر عبر WebSocket",
   "pipeline.description": "يحوّل مخططات Excel المصرفية إلى أزواج تدريب بتنسيق Spider/BIRD عبر ملف Zig الثنائي.",
@@ -112,7 +105,6 @@
   "pipeline.cmd.preconvert": "الخطوة 1 — تحويل Excel إلى CSV",
   "pipeline.cmd.build": "الخطوة 2 — بناء ملف Zig الثنائي",
   "pipeline.cmd.test": "تشغيل اختبارات خط أنابيب Zig",
-
   "chat.settings": "إعدادات المحادثة",
   "chat.model": "النموذج",
   "chat.systemPrompt": "موجه النظام",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "الترجمة المصححة…",
   "chat.tmSaved": "تم حفظ تصحيح الترجمة وتفعيله.",
   "chat.tmError": "فشل حفظ تصحيح الترجمة.",
-
   "modelOpt.title": "مُحسّن النموذج",
   "modelOpt.refresh": "تحديث",
   "modelOpt.engineConfig": "تكوين المحرك",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "الملعب",
   "modelOpt.computing": "النموذج يحسب الموتّرات...",
   "modelOpt.promptModel": "أدخل سؤالاً لنموذجك المضبوط...",
-
   "dataExplorer.title": "مستكشف البيانات",
   "dataExplorer.dataAssets": "أصول البيانات",
   "dataExplorer.sqlPairs": "أزواج تدريب SQL",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "جارٍ تحميل أزواج SQL من خط الأنابيب…",
   "dataExplorer.noPairs": "لم يتم العثور على أزواج تدريب. شغّل خط الأنابيب أولاً.",
   "dataExplorer.closeDetail": "إغلاق لوحة التفاصيل",
-
   "dataCleaning.title": "مساعد تنظيف البيانات",
   "dataCleaning.subtitle": "إعداد والتحقق من جودة بيانات التدريب مباشرة في سير عمل النماذج.",
   "dataCleaning.backend": "الخادم الخلفي",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "أحداث سير العمل",
   "dataCleaning.noEvents": "لا توجد أحداث سير عمل بعد. شغّل سير العمل بعد إنشاء الفحوصات.",
   "dataCleaning.sessionCleared": "تم مسح جلسة تنظيف البيانات",
-
   "registry.title": "سجل النماذج",
   "registry.refresh": "تحديث",
   "registry.totalJobs": "إجمالي المهام",
@@ -291,7 +279,6 @@
   "registry.delete": "حذف",
   "registry.noMatch": "لا توجد مهام تدريب تطابق التصفية الحالية.",
   "registry.live": "مباشر",
-
   "hippocpp.title": "محرك الرسم البياني HippoCPP",
   "hippocpp.refresh": "تحديث",
   "hippocpp.about": "HippoCPP هو نقل متعدد اللغات لقاعدة بيانات الرسم البياني المدمجة Kuzu، مُنفَّذ بلغة Zig (1,251 ملف مصدر) مع تسريع GPU عبر Mojo وثوابت تعريفية في Mangle.",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "لا توجد صفوف.",
   "hippocpp.row": "صف/صفوف",
   "hippocpp.architecture": "الهيكل",
-
   "compare.title": "مقارنة النماذج أ/ب",
   "compare.subtitle": "اختبر نفس الموجه ضد نموذجين منشورين جنباً إلى جنب",
   "compare.modelA": "النموذج أ",
@@ -324,7 +310,6 @@
   "compare.history": "سجل المقارنات",
   "compare.loadingResults": "جارٍ مقارنة النماذج، يرجى الانتظار…",
   "compare.resultsReady": "نتائج المقارنة جاهزة",
-
   "relative.justNow": "الآن",
   "relative.minutesAgo": "{count, plural, zero {منذ ٠ دقائق} one {منذ دقيقة} two {منذ دقيقتين} few {منذ {count} دقائق} many {منذ {count} دقيقة} other {منذ {count} دقيقة}}",
   "relative.hoursAgo": "{count, plural, zero {منذ ٠ ساعات} one {منذ ساعة} two {منذ ساعتين} few {منذ {count} ساعات} many {منذ {count} ساعة} other {منذ {count} ساعة}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, zero {منذ ٠ أسابيع} one {منذ أسبوع} two {منذ أسبوعين} few {منذ {count} أسابيع} many {منذ {count} أسبوعًا} other {منذ {count} أسبوع}}",
   "relative.monthsAgo": "{count, plural, zero {منذ ٠ أشهر} one {منذ شهر} two {منذ شهرين} few {منذ {count} أشهر} many {منذ {count} شهرًا} other {منذ {count} شهر}}",
   "relative.yearsAgo": "{count, plural, zero {منذ ٠ سنوات} one {منذ سنة} two {منذ سنتين} few {منذ {count} سنوات} many {منذ {count} سنة} other {منذ {count} سنة}}",
-
   "nav.documentOcr": "مسح المستندات",
-
   "ocr.title": "مسح المستندات",
   "ocr.subtitle": "رفع مستندات PDF العربية لاستخراج النصوص والتحليل بالتعرف الضوئي",
   "ocr.upload.title": "اسحب وأفلت ملف PDF هنا",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "يرجى اختيار ملف PDF.",
   "ocr.error.tooLarge": "حجم الملف يتجاوز الحد الأقصى 50 ميجابايت.",
   "ocr.error.processing": "فشلت معالجة OCR. يرجى المحاولة مرة أخرى.",
-
   "ocr.health.healthy": "خدمة OCR سليمة",
   "ocr.health.degraded": "خدمة OCR متدهورة",
   "ocr.health.unavailable": "خدمة OCR غير متاحة",
   "ocr.health.checking": "جارٍ التحقق من خدمة OCR…",
-
   "ocr.mode.novice": "مبتدئ",
   "ocr.mode.expert": "خبير",
   "ocr.switchToExpert": "التبديل إلى وضع الخبير",
   "ocr.switchToNovice": "التبديل إلى وضع المبتدئ",
-
   "ocr.curation.title": "التنسيق",
   "ocr.curation.corrections": "التصحيحات",
   "ocr.curation.approve": "موافقة",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "تكبير",
   "ocr.curation.zoomOut": "تصغير",
   "ocr.curation.resetZoom": "إعادة ضبط التكبير",
-
   "ocr.flagged": "مُعلَّم للمراجعة",
   "ocr.approved": "موافق عليه",
   "ocr.rejected": "مرفوض",
   "ocr.page.of": "من",
   "ocr.prevPage": "الصفحة السابقة",
   "ocr.nextPage": "الصفحة التالية",
-
   "ocr.analyzeDocument": "تحليل المستند",
   "ocr.ai.summaryTitle": "الاستخراج بالذكاء الاصطناعي والامتثال",
   "ocr.ai.translatedTitle": "الترجمة الإنجليزية",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "تشغيل الاستخراج وفحوصات الامتثال",
   "ocr.ai.success": "اكتمل الاستخراج وفحوصات الامتثال",
   "ocr.ai.error": "فشل الاستخراج بالذكاء الاصطناعي",
-
   "nav.arabicWizard": "مساعد المستندات العربية",
-
   "wizard.title": "مساعد المستندات العربية",
   "wizard.subtitle": "رفع واستخراج وتحليل وتصدير المستندات العربية من البداية إلى النهاية",
   "wizard.step.upload": "تحميل",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "السابق",
   "wizard.nav.finish": "إنهاء",
   "wizard.nav.startOver": "البدء من جديد",
-
   "ocr.export.pipelineSent": "تم إرسال مجموعة البيانات إلى خط أنابيب التدريب بنجاح.",
   "ocr.export.pipelineError": "خط الأنابيب غير متاح — تم تنزيل مجموعة البيانات محليًا بدلاً من ذلك.",
   "ocr.export.noPagesApproved": "لا توجد صفحات معتمدة للتصدير. يرجى اعتماد صفحة واحدة على الأقل أولاً.",
-
   "search.title": "البحث الدلالي",
   "search.subtitle": "ابحث عبر المستندات العربية والإنجليزية المفهرسة باستخدام اللغة الطبيعية",
   "search.selectStore": "اختر قاعدة المعرفة",
@@ -483,7 +457,6 @@
   "search.noResults": "لم يتم العثور على مستندات مطابقة في قاعدة المعرفة هذه.",
   "search.error.loadStores": "فشل تحميل قواعد المعرفة",
   "search.error.queryFailed": "فشل استعلام البحث",
-
   "semanticSearch.title": "البحث الدلالي",
   "semanticSearch.subtitle": "البحث عبر المستندات المالية العربية والإنجليزية المفهرسة باستخدام التشابه المتجهي",
   "semanticSearch.placeholder": "البحث في المستندات المالية…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "الاستعلام: {ms} مللي ثانية",
   "semanticSearch.page": "صفحة",
   "semanticSearch.error": "فشل البحث. هل خادم RAG يعمل؟",
-
   "analytics.title": "التحليلات المالية",
   "analytics.subtitle": "تحليل الاتجاهات ثنائي اللغة عبر مكتبة المستندات المفهرسة",
   "analytics.selectStore": "اختر قاعدة المعرفة",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "صافي الربح",
   "analytics.loading": "تجميع البيانات المالية من HANA...",
   "analytics.error.loadFailed": "فشل تجميع بيانات التحليلات",
-
   "glossary.title": "المعجم التقني وذاكرة الترجمة",
   "glossary.subtitle": "إدارة المصطلحات التقنية الرسمية لـ IFRS وتجاوزات الترجمة المعتمدة",
   "glossary.addTerm": "إضافة تجاوز",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "لم يتم العثور على تجاوزات ترجمة. قم بتطبيقها من تدقيق المحادثة أو أضفها يدوياً.",
   "glossary.deleted": "تم حذف تجاوز الترجمة",
   "glossary.error.loadFailed": "فشل تحميل ذاكرة الترجمة",
-
   "common.loading": "جارٍ التحميل…",
   "common.error": "خطأ",
-
   "chat.assistantTyping": "المساعد يكتب",
   "chat.modelRole": "النموذج",
-
   "modelOpt.closeModal": "إغلاق ملعب المحادثة",
   "modelOpt.manglePassed": "تم التحقق من قيود مخطط Datalog بنجاح.",
   "modelOpt.manglePassedTitle": "نجح Mangle",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "فشل النشر: {detail}",
   "modelOpt.deployErrorTitle": "خطأ في النشر",
   "modelOpt.inferenceFailed": "فشل الاستدلال: {detail}",
-
   "status.online": "متصل",
   "status.offline": "غير متصل",
   "chat.clearConfirm": "هل أنت متأكد من مسح سجل المحادثة؟",
-
   "form.errorsTitle": "يرجى تصحيح الأخطاء التالية:",
   "modelOpt.errorModelRequired": "اسم النموذج مطلوب.",
   "modelOpt.errorQuantRequired": "صيغة التكميم مطلوبة.",
-
   "nav.governance": "الحوكمة",
   "nav.workspace": "مساحة العمل",
   "nav.prompts": "القوالب",
-
   "common.cancel": "إلغاء",
-
   "workspace.title": "إعدادات مساحة العمل",
   "workspace.subtitle": "قم بتكوين بيئتك واتصالاتك وتفضيلاتك.",
   "workspace.identity": "الهوية",
@@ -592,5 +555,6 @@
   "workspace.import": "استيراد الإعدادات",
   "workspace.reset": "إعادة التعيين إلى الافتراضي",
   "workspace.resetConfirm": "هل تريد إعادة تعيين جميع الإعدادات إلى الافتراضي؟ لا يمكن التراجع عن هذا الإجراء.",
-  "workspace.saved": "تم حفظ الإعدادات"
+  "workspace.saved": "تم حفظ الإعدادات",
+  "nav.promptLibrary": "مكتبة القوالب"
 }

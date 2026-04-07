@@ -14,7 +14,6 @@
   "app.search.esc": "ESC",
   "app.profile": "프로필 설정",
   "app.showLanguageOptions": "언어 선택 활성화",
-
   "nav.dashboard": "대시보드",
   "nav.pipeline": "파이프라인",
   "nav.dataExplorer": "데이터 탐색기",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "시맨틱 검색",
   "nav.analytics": "재무 분석",
   "nav.glossaryManager": "용어집 관리자",
-
   "mode.novice": "초급",
   "mode.intermediate": "중급",
   "mode.expert": "전문가",
-
   "product.aiFabric": "AI Fabric 콘솔",
   "product.training": "트레이닝 콘솔",
   "product.sac": "SAC AI 통합",
   "product.joule": "Joule AI 플레이그라운드",
   "product.switcher": "제품 전환기",
-
   "diagnostics.title": "기술 진단",
   "diagnostics.close": "닫기",
   "diagnostics.latency": "지연 시간",
   "diagnostics.correlation": "상관관계",
   "diagnostics.error": "오류",
   "diagnostics.noRequests": "아직 요청 진단 정보가 없습니다.",
-
   "login.title": "트레이닝 콘솔",
   "login.subtitle": "SAP AI 트레이닝 플랫폼",
   "login.apiKey": "API 키",
   "login.optional": "(선택 사항)",
   "login.placeholder": "API 키를 입력하거나 비워 두세요",
   "login.submit": "콘솔 시작",
-
   "dashboard.title": "대시보드",
   "dashboard.refresh": "새로고침",
   "dashboard.refreshing": "새로고침 중…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "로딩 중…",
   "dashboard.platformComponents": "플랫폼 구성요소",
   "dashboard.refreshMsg": "대시보드 데이터 새로고침 중…",
-
   "pipeline.title": "파이프라인",
   "pipeline.subtitle": "7단계 텍스트-투-SQL 데이터 생성 — 라이브 WebSocket 스트림",
   "pipeline.description": "네이티브 Zig 바이너리를 통해 은행 Excel 스키마를 Spider/BIRD 형식 트레이닝 쌍으로 변환합니다.",
@@ -112,7 +105,6 @@
   "pipeline.cmd.preconvert": "1단계 — Excel → CSV 사전 변환",
   "pipeline.cmd.build": "2단계 — Zig 바이너리 빌드",
   "pipeline.cmd.test": "Zig 파이프라인 테스트 실행",
-
   "chat.settings": "채팅 설정",
   "chat.model": "모델",
   "chat.systemPrompt": "시스템 프롬프트",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "수정된 번역…",
   "chat.tmSaved": "번역 재정의가 저장 및 활성화되었습니다.",
   "chat.tmError": "번역 재정의 저장에 실패했습니다.",
-
   "modelOpt.title": "모델 최적화",
   "modelOpt.refresh": "새로고침",
   "modelOpt.engineConfig": "엔진 구성",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "플레이그라운드",
   "modelOpt.computing": "모델이 텐서를 계산하고 있습니다...",
   "modelOpt.promptModel": "미세 조정된 모델에 프롬프트를 입력하세요...",
-
   "dataExplorer.title": "데이터 탐색기",
   "dataExplorer.dataAssets": "데이터 자산",
   "dataExplorer.sqlPairs": "SQL 트레이닝 쌍",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "파이프라인에서 SQL 쌍 로딩 중…",
   "dataExplorer.noPairs": "트레이닝 쌍을 찾을 수 없습니다. 먼저 파이프라인을 실행하세요.",
   "dataExplorer.closeDetail": "상세 패널 닫기",
-
   "dataCleaning.title": "데이터 정제 코파일럿",
   "dataCleaning.subtitle": "모델 워크플로에서 직접 트레이닝 데이터 품질을 준비하고 검증합니다.",
   "dataCleaning.backend": "백엔드",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "워크플로 이벤트",
   "dataCleaning.noEvents": "아직 워크플로 이벤트가 없습니다. 검사를 생성한 후 워크플로를 실행하세요.",
   "dataCleaning.sessionCleared": "데이터 정제 세션이 지워졌습니다",
-
   "registry.title": "모델 레지스트리",
   "registry.refresh": "새로고침",
   "registry.totalJobs": "총 작업",
@@ -291,7 +279,6 @@
   "registry.delete": "삭제",
   "registry.noMatch": "현재 필터에 일치하는 트레이닝 작업이 없습니다.",
   "registry.live": "라이브",
-
   "hippocpp.title": "HippoCPP 그래프 엔진",
   "hippocpp.refresh": "새로고침",
   "hippocpp.about": "HippoCPP는 Kuzu 임베디드 그래프 데이터베이스의 다국어 포트로, Zig(1,251개 소스 파일)로 구현되었으며 Mojo를 통한 GPU 가속과 Mangle의 선언적 불변식을 사용합니다.",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "반환된 행이 없습니다.",
   "hippocpp.row": "행",
   "hippocpp.architecture": "아키텍처",
-
   "compare.title": "A/B 모델 비교",
   "compare.subtitle": "동일한 프롬프트를 두 개의 배포된 모델에 나란히 테스트합니다",
   "compare.modelA": "모델 A",
@@ -324,7 +310,6 @@
   "compare.history": "비교 기록",
   "compare.loadingResults": "모델 비교 중, 잠시 기다려 주세요…",
   "compare.resultsReady": "비교 결과 준비 완료",
-
   "relative.justNow": "방금 전",
   "relative.minutesAgo": "{count, plural, other {{count}분 전}}",
   "relative.hoursAgo": "{count, plural, other {{count}시간 전}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, other {{count}주 전}}",
   "relative.monthsAgo": "{count, plural, other {{count}개월 전}}",
   "relative.yearsAgo": "{count, plural, other {{count}년 전}}",
-
   "nav.documentOcr": "문서 OCR",
-
   "ocr.title": "문서 OCR",
   "ocr.subtitle": "아랍어 PDF 문서를 업로드하여 OCR 텍스트 추출 및 분석을 수행합니다",
   "ocr.upload.title": "PDF 파일을 여기에 끌어다 놓으세요",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "PDF 파일을 선택하세요.",
   "ocr.error.tooLarge": "파일이 최대 크기 50 MB를 초과합니다.",
   "ocr.error.processing": "OCR 처리에 실패했습니다. 다시 시도하세요.",
-
   "ocr.health.healthy": "OCR 서비스 정상",
   "ocr.health.degraded": "OCR 서비스 저하",
   "ocr.health.unavailable": "OCR 서비스 사용 불가",
   "ocr.health.checking": "OCR 서비스 확인 중…",
-
   "ocr.mode.novice": "초급",
   "ocr.mode.expert": "전문가",
   "ocr.switchToExpert": "전문가 모드로 전환",
   "ocr.switchToNovice": "초급 모드로 전환",
-
   "ocr.curation.title": "큐레이션",
   "ocr.curation.corrections": "수정 사항",
   "ocr.curation.approve": "승인",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "확대",
   "ocr.curation.zoomOut": "축소",
   "ocr.curation.resetZoom": "줌 초기화",
-
   "ocr.flagged": "검토 대상으로 표시됨",
   "ocr.approved": "승인됨",
   "ocr.rejected": "거부됨",
   "ocr.page.of": "/",
   "ocr.prevPage": "이전 페이지",
   "ocr.nextPage": "다음 페이지",
-
   "ocr.analyzeDocument": "문서 분석",
   "ocr.ai.summaryTitle": "AI 추출 및 규정 준수",
   "ocr.ai.translatedTitle": "영어 번역",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "AI 추출 및 규정 준수 검사 실행",
   "ocr.ai.success": "AI 추출 및 규정 준수 검사 완료",
   "ocr.ai.error": "AI 추출 실패",
-
   "nav.arabicWizard": "아랍어 문서 어시스턴트",
-
   "wizard.title": "아랍어 문서 어시스턴트",
   "wizard.subtitle": "아랍어 문서를 업로드, 추출, 분석 및 내보내기합니다",
   "wizard.step.upload": "업로드",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "이전",
   "wizard.nav.finish": "완료",
   "wizard.nav.startOver": "처음부터 시작",
-
   "ocr.export.pipelineSent": "데이터셋이 트레이닝 파이프라인으로 성공적으로 전송되었습니다.",
   "ocr.export.pipelineError": "파이프라인을 사용할 수 없습니다 — 데이터셋이 로컬로 다운로드되었습니다.",
   "ocr.export.noPagesApproved": "내보낼 승인된 페이지가 없습니다. 먼저 최소 한 페이지를 승인하세요.",
-
   "search.title": "시맨틱 검색",
   "search.subtitle": "자연어를 사용하여 인덱싱된 아랍어 및 영어 문서를 검색합니다",
   "search.selectStore": "지식 베이스 선택",
@@ -483,7 +457,6 @@
   "search.noResults": "이 지식 베이스에서 일치하는 문서를 찾을 수 없습니다.",
   "search.error.loadStores": "지식 베이스 로드 실패",
   "search.error.queryFailed": "검색 쿼리 실패",
-
   "semanticSearch.title": "시맨틱 검색",
   "semanticSearch.subtitle": "벡터 유사성을 사용하여 인덱싱된 아랍어 및 영어 재무 문서를 검색합니다",
   "semanticSearch.placeholder": "재무 문서 검색…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "쿼리: {ms}ms",
   "semanticSearch.page": "페이지",
   "semanticSearch.error": "검색에 실패했습니다. RAG 백엔드가 실행 중인가요?",
-
   "analytics.title": "재무 분석",
   "analytics.subtitle": "인덱싱된 문서 라이브러리에서의 이중 언어 추세 분석",
   "analytics.selectStore": "지식 베이스 선택",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "순이익",
   "analytics.loading": "HANA에서 재무 데이터 집계 중...",
   "analytics.error.loadFailed": "분석 데이터 집계 실패",
-
   "glossary.title": "기술 용어집 및 TM",
   "glossary.subtitle": "공식 IFRS 기술 용어와 인간이 승인한 번역 재정의를 관리합니다",
   "glossary.addTerm": "재정의 추가",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "번역 재정의를 찾을 수 없습니다. 채팅 감사에서 적용하거나 수동으로 추가하세요.",
   "glossary.deleted": "번역 재정의가 삭제되었습니다",
   "glossary.error.loadFailed": "번역 메모리 로드 실패",
-
   "common.loading": "로딩 중…",
   "common.error": "오류",
-
   "chat.assistantTyping": "어시스턴트가 입력 중입니다",
   "chat.modelRole": "모델",
-
   "modelOpt.closeModal": "채팅 플레이그라운드 닫기",
   "modelOpt.manglePassed": "Datalog 스키마 제약 조건이 성공적으로 확인되었습니다.",
   "modelOpt.manglePassedTitle": "Mangle 통과",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "배포 실패: {detail}",
   "modelOpt.deployErrorTitle": "배포 오류",
   "modelOpt.inferenceFailed": "추론 실패: {detail}",
-
   "status.online": "온라인",
   "status.offline": "오프라인",
   "chat.clearConfirm": "채팅 기록을 지우시겠습니까?",
-
   "form.errorsTitle": "다음 오류를 수정하세요:",
   "modelOpt.errorModelRequired": "모델 이름은 필수입니다.",
   "modelOpt.errorQuantRequired": "양자화 형식은 필수입니다.",
-
   "nav.governance": "거버넌스",
   "nav.workspace": "워크스페이스",
   "nav.prompts": "프롬프트",
-
   "common.cancel": "취소",
-
   "workspace.title": "워크스페이스 설정",
   "workspace.subtitle": "환경, 연결 및 기본 설정을 구성합니다.",
   "workspace.identity": "ID",
@@ -592,5 +555,6 @@
   "workspace.import": "설정 가져오기",
   "workspace.reset": "기본값으로 초기화",
   "workspace.resetConfirm": "모든 설정을 기본값으로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
-  "workspace.saved": "설정이 저장되었습니다"
+  "workspace.saved": "설정이 저장되었습니다",
+  "nav.promptLibrary": "프롬프트 라이브러리"
 }

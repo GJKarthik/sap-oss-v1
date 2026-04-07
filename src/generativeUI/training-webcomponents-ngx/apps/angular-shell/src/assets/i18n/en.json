@@ -14,7 +14,6 @@
   "app.search.esc": "ESC",
   "app.profile": "Profile Settings",
   "app.showLanguageOptions": "Enable Language Selection",
-
   "nav.dashboard": "Dashboard",
   "nav.pipeline": "Pipeline",
   "nav.dataExplorer": "Data Explorer",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "Semantic Search",
   "nav.analytics": "Financial Analytics",
   "nav.glossaryManager": "Glossary Manager",
-
   "mode.novice": "Novice",
   "mode.intermediate": "Intermediate",
   "mode.expert": "Expert",
-
   "product.aiFabric": "AI Fabric Console",
   "product.training": "Training Console",
   "product.sac": "SAC AI Integration",
   "product.joule": "Joule AI Playground",
   "product.switcher": "Product Switcher",
-
   "diagnostics.title": "Technical diagnostics",
   "diagnostics.close": "Close",
   "diagnostics.latency": "Latency",
   "diagnostics.correlation": "Correlation",
   "diagnostics.error": "Error",
   "diagnostics.noRequests": "No request diagnostics yet.",
-
   "login.title": "Training Console",
   "login.subtitle": "SAP AI Training Platform",
   "login.apiKey": "API Key",
   "login.optional": "(optional)",
   "login.placeholder": "Enter API key or leave blank",
   "login.submit": "Enter Console",
-
   "dashboard.title": "Dashboard",
   "dashboard.refresh": "Refresh",
   "dashboard.refreshing": "Refreshing…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "Loading…",
   "dashboard.platformComponents": "Platform Components",
   "dashboard.refreshMsg": "Refreshing dashboard data…",
-
   "pipeline.title": "Pipeline",
   "pipeline.subtitle": "7-stage Text-to-SQL data generation — Live WebSocket Stream",
   "pipeline.description": "Converts banking Excel schemas into Spider/BIRD-format training pairs via a native Zig binary.",
@@ -109,10 +102,9 @@
   "pipeline.startedTitle": "Started",
   "pipeline.startFailed": "Failed to start pipeline",
   "pipeline.cmd.all": "Full pipeline (all 7 stages)",
-  "pipeline.cmd.preconvert": "Step 1 \u2014 Preconvert Excel \u2192 CSV",
-  "pipeline.cmd.build": "Step 2 \u2014 Build Zig binary",
+  "pipeline.cmd.preconvert": "Step 1 — Preconvert Excel → CSV",
+  "pipeline.cmd.build": "Step 2 — Build Zig binary",
   "pipeline.cmd.test": "Run Zig pipeline tests",
-
   "chat.settings": "Chat Settings",
   "chat.model": "Model",
   "chat.systemPrompt": "System Prompt",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "Corrected translation…",
   "chat.tmSaved": "Translation override saved and activated.",
   "chat.tmError": "Failed to save translation override.",
-
   "modelOpt.title": "Model Optimizer",
   "modelOpt.refresh": "Refresh",
   "modelOpt.engineConfig": "Engine Configuration",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "Playground",
   "modelOpt.computing": "Model is computing tensors...",
   "modelOpt.promptModel": "Prompt your finetuned model...",
-
   "dataExplorer.title": "Data Explorer",
   "dataExplorer.dataAssets": "Data Assets",
   "dataExplorer.sqlPairs": "SQL Training Pairs",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "Loading SQL pairs from the pipeline…",
   "dataExplorer.noPairs": "No training pairs found. Run the Pipeline first.",
   "dataExplorer.closeDetail": "Close detail panel",
-
   "dataCleaning.title": "Data Cleaning Copilot",
   "dataCleaning.subtitle": "Prepare and validate training data quality directly in model workflows.",
   "dataCleaning.backend": "Backend",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "Workflow Events",
   "dataCleaning.noEvents": "No workflow events yet. Run workflow after generating checks.",
   "dataCleaning.sessionCleared": "Data cleaning session cleared",
-
   "registry.title": "Model Registry",
   "registry.refresh": "Refresh",
   "registry.totalJobs": "Total Jobs",
@@ -291,7 +279,6 @@
   "registry.delete": "Delete",
   "registry.noMatch": "No training jobs match the current filter.",
   "registry.live": "Live",
-
   "hippocpp.title": "HippoCPP Graph Engine",
   "hippocpp.refresh": "Refresh",
   "hippocpp.about": "HippoCPP is a multi-language port of the Kuzu embedded graph database, implemented in Zig (1,251 source files) with GPU acceleration via Mojo and declarative invariants in Mangle.",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "No rows returned.",
   "hippocpp.row": "row(s)",
   "hippocpp.architecture": "Architecture",
-
   "compare.title": "A/B Model Comparison",
   "compare.subtitle": "Test the same prompt against two deployed models side-by-side",
   "compare.modelA": "Model A",
@@ -322,9 +308,8 @@
   "compare.bestShorter": "Best (shorter SQL)",
   "compare.errorResponse": "Error or no response",
   "compare.history": "Comparison History",
-  "compare.loadingResults": "Comparing models, please wait\u2026",
+  "compare.loadingResults": "Comparing models, please wait…",
   "compare.resultsReady": "Comparison results ready",
-
   "relative.justNow": "Just now",
   "relative.minutesAgo": "{count, plural, one {1 minute ago} other {{count} minutes ago}}",
   "relative.hoursAgo": "{count, plural, one {1 hour ago} other {{count} hours ago}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, one {1 week ago} other {{count} weeks ago}}",
   "relative.monthsAgo": "{count, plural, one {1 month ago} other {{count} months ago}}",
   "relative.yearsAgo": "{count, plural, one {1 year ago} other {{count} years ago}}",
-
   "nav.documentOcr": "Document OCR",
-
   "ocr.title": "Document OCR",
   "ocr.subtitle": "Upload Arabic PDF documents for OCR text extraction and analysis",
   "ocr.upload.title": "Drag & drop a PDF file here",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "Please select a PDF file.",
   "ocr.error.tooLarge": "File exceeds maximum size of 50 MB.",
   "ocr.error.processing": "OCR processing failed. Please try again.",
-
   "ocr.health.healthy": "OCR service healthy",
   "ocr.health.degraded": "OCR service degraded",
   "ocr.health.unavailable": "OCR service unavailable",
   "ocr.health.checking": "Checking OCR service…",
-
   "ocr.mode.novice": "Novice",
   "ocr.mode.expert": "Expert",
   "ocr.switchToExpert": "Switch to Expert Mode",
   "ocr.switchToNovice": "Switch to Novice Mode",
-
   "ocr.curation.title": "Curation",
   "ocr.curation.corrections": "Corrections",
   "ocr.curation.approve": "Approve",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "Zoom in",
   "ocr.curation.zoomOut": "Zoom out",
   "ocr.curation.resetZoom": "Reset zoom",
-
   "ocr.flagged": "Flagged for review",
   "ocr.approved": "Approved",
   "ocr.rejected": "Rejected",
   "ocr.page.of": "of",
   "ocr.prevPage": "Previous page",
   "ocr.nextPage": "Next page",
-
   "ocr.analyzeDocument": "Analyze Document",
   "ocr.ai.summaryTitle": "AI Extraction & Compliance",
   "ocr.ai.translatedTitle": "English Translation",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "Run AI Extraction & Compliance Checks",
   "ocr.ai.success": "AI extraction and compliance checks complete",
   "ocr.ai.error": "AI extraction failed",
-
   "nav.arabicWizard": "Arabic Document Assistant",
-
   "wizard.title": "Arabic Document Assistant",
   "wizard.subtitle": "Upload, extract, analyze, and export Arabic documents end-to-end",
   "wizard.step.upload": "Upload",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "Previous",
   "wizard.nav.finish": "Finish",
   "wizard.nav.startOver": "Start Over",
-
   "ocr.export.pipelineSent": "Dataset sent to training pipeline successfully.",
   "ocr.export.pipelineError": "Pipeline unavailable — dataset downloaded locally instead.",
   "ocr.export.noPagesApproved": "No approved pages to export. Approve at least one page first.",
-
   "search.title": "Semantic Search",
   "search.subtitle": "Search across indexed Arabic and English documents using natural language",
   "search.selectStore": "Select Knowledge Base",
@@ -483,7 +457,6 @@
   "search.noResults": "No matching documents found in this knowledge base.",
   "search.error.loadStores": "Failed to load knowledge bases",
   "search.error.queryFailed": "Search query failed",
-
   "semanticSearch.title": "Semantic Search",
   "semanticSearch.subtitle": "Search across indexed Arabic and English financial documents using vector similarity",
   "semanticSearch.placeholder": "Search financial documents…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "Query: {ms}ms",
   "semanticSearch.page": "Page",
   "semanticSearch.error": "Search failed. Is the RAG backend running?",
-
   "analytics.title": "Financial Analytics",
   "analytics.subtitle": "Bilingual trend analysis across indexed document library",
   "analytics.selectStore": "Select Knowledge Base",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "Net Profit",
   "analytics.loading": "Aggregating financial data from HANA...",
   "analytics.error.loadFailed": "Failed to aggregate analytics data",
-
   "glossary.title": "Technical Glossary & TM",
   "glossary.subtitle": "Manage official IFRS technical terms and human-approved translation overrides",
   "glossary.addTerm": "Add Override",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "No translation overrides found. Apply them from the chat audit or add manually.",
   "glossary.deleted": "Translation override deleted",
   "glossary.error.loadFailed": "Failed to load translation memory",
-
   "common.loading": "Loading…",
   "common.error": "Error",
-
   "chat.assistantTyping": "Assistant is typing",
   "chat.modelRole": "Model",
-
   "modelOpt.closeModal": "Close chat playground",
   "modelOpt.manglePassed": "Datalog schema constraints successfully verified.",
   "modelOpt.manglePassedTitle": "Mangle Passed",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "Deploy failed: {detail}",
   "modelOpt.deployErrorTitle": "Deployment Error",
   "modelOpt.inferenceFailed": "Inference failed: {detail}",
-
   "status.online": "Online",
   "status.offline": "Offline",
   "chat.clearConfirm": "Are you sure you want to clear the chat history?",
-
   "form.errorsTitle": "Please fix the following errors:",
   "modelOpt.errorModelRequired": "Model name is required.",
   "modelOpt.errorQuantRequired": "Quantization format is required.",
-
   "nav.governance": "Governance",
   "nav.workspace": "Workspace",
   "nav.prompts": "Prompts",
-
   "common.cancel": "Cancel",
-
   "workspace.title": "Workspace Settings",
   "workspace.subtitle": "Configure your environment, connections, and preferences.",
   "workspace.identity": "Identity",
@@ -592,5 +555,6 @@
   "workspace.import": "Import Settings",
   "workspace.reset": "Reset to Defaults",
   "workspace.resetConfirm": "Reset all settings to defaults? This cannot be undone.",
-  "workspace.saved": "Settings saved"
+  "workspace.saved": "Settings saved",
+  "nav.promptLibrary": "Prompt Library"
 }

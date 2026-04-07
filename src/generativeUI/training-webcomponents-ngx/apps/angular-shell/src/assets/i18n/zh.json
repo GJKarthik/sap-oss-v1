@@ -14,7 +14,6 @@
   "app.search.esc": "ESC",
   "app.profile": "个人资料设置",
   "app.showLanguageOptions": "启用语言选择",
-
   "nav.dashboard": "仪表盘",
   "nav.pipeline": "流水线",
   "nav.dataExplorer": "数据浏览器",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "语义搜索",
   "nav.analytics": "财务分析",
   "nav.glossaryManager": "术语表管理器",
-
   "mode.novice": "初级",
   "mode.intermediate": "中级",
   "mode.expert": "专家",
-
   "product.aiFabric": "AI Fabric 控制台",
   "product.training": "训练控制台",
   "product.sac": "SAC AI 集成",
   "product.joule": "Joule AI 演练场",
   "product.switcher": "产品切换器",
-
   "diagnostics.title": "技术诊断",
   "diagnostics.close": "关闭",
   "diagnostics.latency": "延迟",
   "diagnostics.correlation": "关联",
   "diagnostics.error": "错误",
   "diagnostics.noRequests": "暂无请求诊断信息。",
-
   "login.title": "训练控制台",
   "login.subtitle": "SAP AI 训练平台",
   "login.apiKey": "API 密钥",
   "login.optional": "（可选）",
   "login.placeholder": "输入 API 密钥或留空",
   "login.submit": "进入控制台",
-
   "dashboard.title": "仪表盘",
   "dashboard.refresh": "刷新",
   "dashboard.refreshing": "正在刷新…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "正在加载…",
   "dashboard.platformComponents": "平台组件",
   "dashboard.refreshMsg": "正在刷新仪表盘数据…",
-
   "pipeline.title": "流水线",
   "pipeline.subtitle": "7 阶段文本转 SQL 数据生成 — 实时 WebSocket 流",
   "pipeline.description": "通过原生 Zig 二进制文件将银行 Excel 模式转换为 Spider/BIRD 格式的训练对。",
@@ -112,7 +105,6 @@
   "pipeline.cmd.preconvert": "步骤 1 — 预转换 Excel → CSV",
   "pipeline.cmd.build": "步骤 2 — 构建 Zig 二进制文件",
   "pipeline.cmd.test": "运行 Zig 流水线测试",
-
   "chat.settings": "聊天设置",
   "chat.model": "模型",
   "chat.systemPrompt": "系统提示",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "已修正的翻译…",
   "chat.tmSaved": "翻译覆盖已保存并激活。",
   "chat.tmError": "保存翻译覆盖失败。",
-
   "modelOpt.title": "模型优化器",
   "modelOpt.refresh": "刷新",
   "modelOpt.engineConfig": "引擎配置",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "演练场",
   "modelOpt.computing": "模型正在计算张量...",
   "modelOpt.promptModel": "向您的微调模型提问...",
-
   "dataExplorer.title": "数据浏览器",
   "dataExplorer.dataAssets": "数据资产",
   "dataExplorer.sqlPairs": "SQL 训练对",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "正在从流水线加载 SQL 对…",
   "dataExplorer.noPairs": "未找到训练对。请先运行流水线。",
   "dataExplorer.closeDetail": "关闭详情面板",
-
   "dataCleaning.title": "数据清理助手",
   "dataCleaning.subtitle": "在模型工作流中直接准备和验证训练数据质量。",
   "dataCleaning.backend": "后端",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "工作流事件",
   "dataCleaning.noEvents": "暂无工作流事件。生成检查后运行工作流。",
   "dataCleaning.sessionCleared": "数据清理会话已清除",
-
   "registry.title": "模型注册表",
   "registry.refresh": "刷新",
   "registry.totalJobs": "总任务数",
@@ -291,7 +279,6 @@
   "registry.delete": "删除",
   "registry.noMatch": "没有训练任务匹配当前筛选条件。",
   "registry.live": "在线",
-
   "hippocpp.title": "HippoCPP 图引擎",
   "hippocpp.refresh": "刷新",
   "hippocpp.about": "HippoCPP 是 Kuzu 嵌入式图数据库的多语言移植版本，用 Zig 实现（1,251 个源文件），通过 Mojo 进行 GPU 加速，并在 Mangle 中定义声明式不变量。",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "未返回任何行。",
   "hippocpp.row": "行",
   "hippocpp.architecture": "架构",
-
   "compare.title": "A/B 模型对比",
   "compare.subtitle": "使用相同提示同时测试两个已部署的模型",
   "compare.modelA": "模型 A",
@@ -324,7 +310,6 @@
   "compare.history": "比较历史",
   "compare.loadingResults": "正在比较模型，请稍候…",
   "compare.resultsReady": "比较结果已就绪",
-
   "relative.justNow": "刚刚",
   "relative.minutesAgo": "{count, plural, other {{count} 分钟前}}",
   "relative.hoursAgo": "{count, plural, other {{count} 小时前}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, other {{count} 周前}}",
   "relative.monthsAgo": "{count, plural, other {{count} 个月前}}",
   "relative.yearsAgo": "{count, plural, other {{count} 年前}}",
-
   "nav.documentOcr": "文档 OCR",
-
   "ocr.title": "文档 OCR",
   "ocr.subtitle": "上传阿拉伯语 PDF 文档进行 OCR 文本提取和分析",
   "ocr.upload.title": "将 PDF 文件拖放到此处",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "请选择 PDF 文件。",
   "ocr.error.tooLarge": "文件超过 50 MB 的最大限制。",
   "ocr.error.processing": "OCR 处理失败。请重试。",
-
   "ocr.health.healthy": "OCR 服务正常",
   "ocr.health.degraded": "OCR 服务降级",
   "ocr.health.unavailable": "OCR 服务不可用",
   "ocr.health.checking": "正在检查 OCR 服务…",
-
   "ocr.mode.novice": "初级",
   "ocr.mode.expert": "专家",
   "ocr.switchToExpert": "切换到专家模式",
   "ocr.switchToNovice": "切换到初级模式",
-
   "ocr.curation.title": "策展",
   "ocr.curation.corrections": "修正",
   "ocr.curation.approve": "批准",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "放大",
   "ocr.curation.zoomOut": "缩小",
   "ocr.curation.resetZoom": "重置缩放",
-
   "ocr.flagged": "已标记待审",
   "ocr.approved": "已批准",
   "ocr.rejected": "已拒绝",
   "ocr.page.of": "/",
   "ocr.prevPage": "上一页",
   "ocr.nextPage": "下一页",
-
   "ocr.analyzeDocument": "分析文档",
   "ocr.ai.summaryTitle": "AI 提取与合规",
   "ocr.ai.translatedTitle": "英语翻译",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "运行 AI 提取和合规检查",
   "ocr.ai.success": "AI 提取和合规检查完成",
   "ocr.ai.error": "AI 提取失败",
-
   "nav.arabicWizard": "阿拉伯语文档助手",
-
   "wizard.title": "阿拉伯语文档助手",
   "wizard.subtitle": "端到端上传、提取、分析和导出阿拉伯语文档",
   "wizard.step.upload": "上传",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "上一步",
   "wizard.nav.finish": "完成",
   "wizard.nav.startOver": "重新开始",
-
   "ocr.export.pipelineSent": "数据集已成功发送到训练流水线。",
   "ocr.export.pipelineError": "流水线不可用 — 数据集已下载到本地。",
   "ocr.export.noPagesApproved": "没有已批准的页面可导出。请先批准至少一个页面。",
-
   "search.title": "语义搜索",
   "search.subtitle": "使用自然语言搜索索引的阿拉伯语和英语文档",
   "search.selectStore": "选择知识库",
@@ -483,7 +457,6 @@
   "search.noResults": "在此知识库中未找到匹配的文档。",
   "search.error.loadStores": "加载知识库失败",
   "search.error.queryFailed": "搜索查询失败",
-
   "semanticSearch.title": "语义搜索",
   "semanticSearch.subtitle": "使用向量相似度搜索索引的阿拉伯语和英语财务文档",
   "semanticSearch.placeholder": "搜索财务文档…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "查询：{ms}ms",
   "semanticSearch.page": "页面",
   "semanticSearch.error": "搜索失败。RAG 后端是否正在运行？",
-
   "analytics.title": "财务分析",
   "analytics.subtitle": "索引文档库中的双语趋势分析",
   "analytics.selectStore": "选择知识库",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "净利润",
   "analytics.loading": "正在从 HANA 聚合财务数据...",
   "analytics.error.loadFailed": "聚合分析数据失败",
-
   "glossary.title": "技术术语表和翻译记忆",
   "glossary.subtitle": "管理官方 IFRS 技术术语和人工批准的翻译覆盖",
   "glossary.addTerm": "添加覆盖",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "未找到翻译覆盖。从聊天审计中应用或手动添加。",
   "glossary.deleted": "翻译覆盖已删除",
   "glossary.error.loadFailed": "加载翻译记忆失败",
-
   "common.loading": "正在加载…",
   "common.error": "错误",
-
   "chat.assistantTyping": "助手正在输入",
   "chat.modelRole": "模型",
-
   "modelOpt.closeModal": "关闭聊天演练场",
   "modelOpt.manglePassed": "Datalog 模式约束验证成功。",
   "modelOpt.manglePassedTitle": "Mangle 通过",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "部署失败：{detail}",
   "modelOpt.deployErrorTitle": "部署错误",
   "modelOpt.inferenceFailed": "推理失败：{detail}",
-
   "status.online": "在线",
   "status.offline": "离线",
   "chat.clearConfirm": "确定要清除聊天记录吗？",
-
   "form.errorsTitle": "请修复以下错误：",
   "modelOpt.errorModelRequired": "模型名称为必填项。",
   "modelOpt.errorQuantRequired": "量化格式为必填项。",
-
   "nav.governance": "治理",
   "nav.workspace": "工作区",
   "nav.prompts": "提示",
-
   "common.cancel": "取消",
-
   "workspace.title": "工作区设置",
   "workspace.subtitle": "配置您的环境、连接和偏好设置。",
   "workspace.identity": "身份",
@@ -592,5 +555,6 @@
   "workspace.import": "导入设置",
   "workspace.reset": "恢复默认值",
   "workspace.resetConfirm": "将所有设置恢复为默认值？此操作无法撤销。",
-  "workspace.saved": "设置已保存"
+  "workspace.saved": "设置已保存",
+  "nav.promptLibrary": "提示库"
 }
