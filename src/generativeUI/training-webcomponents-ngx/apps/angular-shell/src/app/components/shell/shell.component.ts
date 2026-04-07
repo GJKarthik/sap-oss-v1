@@ -57,6 +57,7 @@ type ProductSelectEvent = Event & {
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
+    <a href="#main-content" class="skip-link" (click)="skipToMain($event)">Skip to main content</a>
     <div class="shell-layout" [class.rtl]="i18n.isRtl()">
       @if (showSearch()) {
         <div class="search-overlay" (click)="closeSearch()">
@@ -224,6 +225,9 @@ type ProductSelectEvent = Event & {
   `,
   styles: [
     `
+      .skip-link { position: absolute; top: -40px; left: 0; padding: 0.5rem 1rem; background: var(--sapBrandColor); color: #fff; z-index: 10000; text-decoration: none; font-weight: 600; }
+      .skip-link:focus { top: 0; }
+
       .shell-layout {
         display: flex;
         flex-direction: column;
@@ -657,6 +661,12 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   navigateTo(route: string): void {
     this.router.navigate([route]);
+  }
+
+  skipToMain(event: Event): void {
+    event.preventDefault();
+    const main = document.getElementById('main-content');
+    if (main) { main.focus(); main.scrollIntoView(); }
   }
 
   wsLabel(): string {

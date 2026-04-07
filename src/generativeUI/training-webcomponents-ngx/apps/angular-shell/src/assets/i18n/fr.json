@@ -14,7 +14,6 @@
   "app.search.esc": "ÉCHAP",
   "app.profile": "Paramètres du profil",
   "app.showLanguageOptions": "Activer la sélection de langue",
-
   "nav.dashboard": "Tableau de bord",
   "nav.pipeline": "Pipeline",
   "nav.dataExplorer": "Explorateur de données",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "Recherche sémantique",
   "nav.analytics": "Analytique financière",
   "nav.glossaryManager": "Gestionnaire de glossaire",
-
   "mode.novice": "Débutant",
   "mode.intermediate": "Intermédiaire",
   "mode.expert": "Expert",
-
   "product.aiFabric": "Console AI Fabric",
   "product.training": "Console de Formation",
   "product.sac": "Intégration SAC AI",
   "product.joule": "Joule AI Playground",
   "product.switcher": "Sélecteur de produit",
-
   "diagnostics.title": "Diagnostics techniques",
   "diagnostics.close": "Fermer",
   "diagnostics.latency": "Latence",
   "diagnostics.correlation": "Corrélation",
   "diagnostics.error": "Erreur",
   "diagnostics.noRequests": "Aucun diagnostic de requête disponible.",
-
   "login.title": "Console de Formation",
   "login.subtitle": "Plateforme de formation SAP AI",
   "login.apiKey": "Clé API",
   "login.optional": "(facultatif)",
   "login.placeholder": "Entrez la clé API ou laissez vide",
   "login.submit": "Accéder à la console",
-
   "dashboard.title": "Tableau de bord",
   "dashboard.refresh": "Actualiser",
   "dashboard.refreshing": "Actualisation…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "Chargement…",
   "dashboard.platformComponents": "Composants de la plateforme",
   "dashboard.refreshMsg": "Actualisation des données du tableau de bord…",
-
   "pipeline.title": "Pipeline",
   "pipeline.subtitle": "Génération de données texte-vers-SQL en 7 étapes — Flux WebSocket en direct",
   "pipeline.description": "Convertit les schémas Excel bancaires en paires d'entraînement au format Spider/BIRD via un binaire Zig natif.",
@@ -112,7 +105,6 @@
   "pipeline.cmd.preconvert": "Étape 1 — Préconversion Excel → CSV",
   "pipeline.cmd.build": "Étape 2 — Compilation du binaire Zig",
   "pipeline.cmd.test": "Exécuter les tests du pipeline Zig",
-
   "chat.settings": "Paramètres du chat",
   "chat.model": "Modèle",
   "chat.systemPrompt": "Invite système",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "Traduction corrigée…",
   "chat.tmSaved": "Remplacement de traduction enregistré et activé.",
   "chat.tmError": "Échec de l'enregistrement du remplacement de traduction.",
-
   "modelOpt.title": "Optimiseur de modèle",
   "modelOpt.refresh": "Actualiser",
   "modelOpt.engineConfig": "Configuration du moteur",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "Espace de test",
   "modelOpt.computing": "Le modèle calcule les tenseurs...",
   "modelOpt.promptModel": "Interrogez votre modèle fine-tuné...",
-
   "dataExplorer.title": "Explorateur de données",
   "dataExplorer.dataAssets": "Actifs de données",
   "dataExplorer.sqlPairs": "Paires d'entraînement SQL",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "Chargement des paires SQL depuis le pipeline…",
   "dataExplorer.noPairs": "Aucune paire d'entraînement trouvée. Exécutez d'abord le pipeline.",
   "dataExplorer.closeDetail": "Fermer le panneau de détails",
-
   "dataCleaning.title": "Copilote de nettoyage de données",
   "dataCleaning.subtitle": "Préparez et validez la qualité des données d'entraînement directement dans les flux de modèles.",
   "dataCleaning.backend": "Backend",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "Événements du flux de travail",
   "dataCleaning.noEvents": "Aucun événement de flux. Exécutez le flux après avoir généré les vérifications.",
   "dataCleaning.sessionCleared": "Session de nettoyage de données effacée",
-
   "registry.title": "Registre des modèles",
   "registry.refresh": "Actualiser",
   "registry.totalJobs": "Total des tâches",
@@ -291,7 +279,6 @@
   "registry.delete": "Supprimer",
   "registry.noMatch": "Aucune tâche d'entraînement ne correspond au filtre actuel.",
   "registry.live": "En direct",
-
   "hippocpp.title": "Moteur graphe HippoCPP",
   "hippocpp.refresh": "Actualiser",
   "hippocpp.about": "HippoCPP est un portage multilangage de la base de données graphe embarquée Kuzu, implémenté en Zig (1 251 fichiers source) avec accélération GPU via Mojo et invariants déclaratifs en Mangle.",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "Aucune ligne retournée.",
   "hippocpp.row": "ligne(s)",
   "hippocpp.architecture": "Architecture",
-
   "compare.title": "Comparaison A/B de modèles",
   "compare.subtitle": "Testez la même invite sur deux modèles déployés côte à côte",
   "compare.modelA": "Modèle A",
@@ -324,7 +310,6 @@
   "compare.history": "Historique des comparaisons",
   "compare.loadingResults": "Comparaison des modèles, veuillez patienter…",
   "compare.resultsReady": "Résultats de comparaison prêts",
-
   "relative.justNow": "À l'instant",
   "relative.minutesAgo": "{count, plural, one {il y a 1 minute} other {il y a {count} minutes}}",
   "relative.hoursAgo": "{count, plural, one {il y a 1 heure} other {il y a {count} heures}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, one {il y a 1 semaine} other {il y a {count} semaines}}",
   "relative.monthsAgo": "{count, plural, one {il y a 1 mois} other {il y a {count} mois}}",
   "relative.yearsAgo": "{count, plural, one {il y a 1 an} other {il y a {count} ans}}",
-
   "nav.documentOcr": "OCR de documents",
-
   "ocr.title": "OCR de documents",
   "ocr.subtitle": "Téléchargez des documents PDF arabes pour l'extraction et l'analyse OCR de texte",
   "ocr.upload.title": "Glissez-déposez un fichier PDF ici",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "Veuillez sélectionner un fichier PDF.",
   "ocr.error.tooLarge": "Le fichier dépasse la taille maximale de 50 Mo.",
   "ocr.error.processing": "Le traitement OCR a échoué. Veuillez réessayer.",
-
   "ocr.health.healthy": "Service OCR opérationnel",
   "ocr.health.degraded": "Service OCR dégradé",
   "ocr.health.unavailable": "Service OCR indisponible",
   "ocr.health.checking": "Vérification du service OCR…",
-
   "ocr.mode.novice": "Débutant",
   "ocr.mode.expert": "Expert",
   "ocr.switchToExpert": "Passer en mode expert",
   "ocr.switchToNovice": "Passer en mode débutant",
-
   "ocr.curation.title": "Curation",
   "ocr.curation.corrections": "Corrections",
   "ocr.curation.approve": "Approuver",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "Zoom avant",
   "ocr.curation.zoomOut": "Zoom arrière",
   "ocr.curation.resetZoom": "Réinitialiser le zoom",
-
   "ocr.flagged": "Signalé pour révision",
   "ocr.approved": "Approuvé",
   "ocr.rejected": "Rejeté",
   "ocr.page.of": "sur",
   "ocr.prevPage": "Page précédente",
   "ocr.nextPage": "Page suivante",
-
   "ocr.analyzeDocument": "Analyser le document",
   "ocr.ai.summaryTitle": "Extraction IA et conformité",
   "ocr.ai.translatedTitle": "Traduction en anglais",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "Exécuter l'extraction IA et les vérifications de conformité",
   "ocr.ai.success": "Extraction IA et vérifications de conformité terminées",
   "ocr.ai.error": "L'extraction IA a échoué",
-
   "nav.arabicWizard": "Assistant de documents arabes",
-
   "wizard.title": "Assistant de documents arabes",
   "wizard.subtitle": "Téléchargez, extrayez, analysez et exportez des documents arabes de bout en bout",
   "wizard.step.upload": "Télécharger",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "Précédent",
   "wizard.nav.finish": "Terminer",
   "wizard.nav.startOver": "Recommencer",
-
   "ocr.export.pipelineSent": "Jeu de données envoyé au pipeline d'entraînement avec succès.",
   "ocr.export.pipelineError": "Pipeline indisponible — jeu de données téléchargé localement à la place.",
   "ocr.export.noPagesApproved": "Aucune page approuvée à exporter. Approuvez au moins une page d'abord.",
-
   "search.title": "Recherche sémantique",
   "search.subtitle": "Recherchez dans les documents arabes et anglais indexés en langage naturel",
   "search.selectStore": "Sélectionner la base de connaissances",
@@ -483,7 +457,6 @@
   "search.noResults": "Aucun document correspondant trouvé dans cette base de connaissances.",
   "search.error.loadStores": "Échec du chargement des bases de connaissances",
   "search.error.queryFailed": "La requête de recherche a échoué",
-
   "semanticSearch.title": "Recherche sémantique",
   "semanticSearch.subtitle": "Recherchez dans les documents financiers arabes et anglais indexés par similarité vectorielle",
   "semanticSearch.placeholder": "Rechercher dans les documents financiers…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "Requête : {ms} ms",
   "semanticSearch.page": "Page",
   "semanticSearch.error": "La recherche a échoué. Le backend RAG est-il en cours d'exécution ?",
-
   "analytics.title": "Analytique financière",
   "analytics.subtitle": "Analyse de tendances bilingue dans la bibliothèque de documents indexés",
   "analytics.selectStore": "Sélectionner la base de connaissances",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "Bénéfice net",
   "analytics.loading": "Agrégation des données financières depuis HANA...",
   "analytics.error.loadFailed": "Échec de l'agrégation des données analytiques",
-
   "glossary.title": "Glossaire technique et MT",
   "glossary.subtitle": "Gérez les termes techniques IFRS officiels et les remplacements de traduction approuvés par des humains",
   "glossary.addTerm": "Ajouter un remplacement",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "Aucun remplacement de traduction trouvé. Appliquez-les depuis l'audit du chat ou ajoutez-les manuellement.",
   "glossary.deleted": "Remplacement de traduction supprimé",
   "glossary.error.loadFailed": "Échec du chargement de la mémoire de traduction",
-
   "common.loading": "Chargement…",
   "common.error": "Erreur",
-
   "chat.assistantTyping": "L'assistant est en train d'écrire",
   "chat.modelRole": "Modèle",
-
   "modelOpt.closeModal": "Fermer l'espace de test chat",
   "modelOpt.manglePassed": "Contraintes du schéma Datalog vérifiées avec succès.",
   "modelOpt.manglePassedTitle": "Mangle validé",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "Échec du déploiement : {detail}",
   "modelOpt.deployErrorTitle": "Erreur de déploiement",
   "modelOpt.inferenceFailed": "Échec de l'inférence : {detail}",
-
   "status.online": "En ligne",
   "status.offline": "Hors ligne",
   "chat.clearConfirm": "Êtes-vous sûr de vouloir effacer l'historique du chat ?",
-
   "form.errorsTitle": "Veuillez corriger les erreurs suivantes :",
   "modelOpt.errorModelRequired": "Le nom du modèle est requis.",
   "modelOpt.errorQuantRequired": "Le format de quantification est requis.",
-
   "nav.governance": "Gouvernance",
   "nav.workspace": "Espace de travail",
   "nav.prompts": "Invites",
-
   "common.cancel": "Annuler",
-
   "workspace.title": "Paramètres de l'espace de travail",
   "workspace.subtitle": "Configurez votre environnement, vos connexions et vos préférences.",
   "workspace.identity": "Identité",
@@ -592,5 +555,6 @@
   "workspace.import": "Importer les paramètres",
   "workspace.reset": "Réinitialiser par défaut",
   "workspace.resetConfirm": "Réinitialiser tous les paramètres par défaut ? Cette action est irréversible.",
-  "workspace.saved": "Paramètres enregistrés"
+  "workspace.saved": "Paramètres enregistrés",
+  "nav.promptLibrary": "Bibliothèque de prompts"
 }

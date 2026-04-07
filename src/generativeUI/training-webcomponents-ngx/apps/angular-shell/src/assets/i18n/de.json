@@ -14,7 +14,6 @@
   "app.search.esc": "ESC",
   "app.profile": "Profileinstellungen",
   "app.showLanguageOptions": "Sprachauswahl aktivieren",
-
   "nav.dashboard": "Dashboard",
   "nav.pipeline": "Pipeline",
   "nav.dataExplorer": "Daten-Explorer",
@@ -27,31 +26,26 @@
   "nav.semanticSearch": "Semantische Suche",
   "nav.analytics": "Finanzanalyse",
   "nav.glossaryManager": "Glossar-Manager",
-
   "mode.novice": "Anfänger",
   "mode.intermediate": "Fortgeschritten",
   "mode.expert": "Experte",
-
   "product.aiFabric": "AI Fabric Konsole",
   "product.training": "Trainingskonsole",
   "product.sac": "SAC AI-Integration",
   "product.joule": "Joule AI Playground",
   "product.switcher": "Produktumschalter",
-
   "diagnostics.title": "Technische Diagnose",
   "diagnostics.close": "Schließen",
   "diagnostics.latency": "Latenz",
   "diagnostics.correlation": "Korrelation",
   "diagnostics.error": "Fehler",
   "diagnostics.noRequests": "Noch keine Anfragediagnosen vorhanden.",
-
   "login.title": "Trainingskonsole",
   "login.subtitle": "SAP AI-Trainingsplattform",
   "login.apiKey": "API-Schlüssel",
   "login.optional": "(optional)",
   "login.placeholder": "API-Schlüssel eingeben oder leer lassen",
   "login.submit": "Konsole betreten",
-
   "dashboard.title": "Dashboard",
   "dashboard.refresh": "Aktualisieren",
   "dashboard.refreshing": "Wird aktualisiert…",
@@ -81,7 +75,6 @@
   "dashboard.loading": "Wird geladen…",
   "dashboard.platformComponents": "Plattformkomponenten",
   "dashboard.refreshMsg": "Dashboard-Daten werden aktualisiert…",
-
   "pipeline.title": "Pipeline",
   "pipeline.subtitle": "7-stufige Text-zu-SQL-Datengenerierung — Live-WebSocket-Stream",
   "pipeline.description": "Konvertiert Excel-Bankschemata in Trainingspaare im Spider/BIRD-Format über eine native Zig-Binärdatei.",
@@ -112,7 +105,6 @@
   "pipeline.cmd.preconvert": "Schritt 1 — Excel → CSV konvertieren",
   "pipeline.cmd.build": "Schritt 2 — Zig-Binärdatei erstellen",
   "pipeline.cmd.test": "Zig-Pipeline-Tests ausführen",
-
   "chat.settings": "Chat-Einstellungen",
   "chat.model": "Modell",
   "chat.systemPrompt": "System-Prompt",
@@ -150,7 +142,6 @@
   "chat.overridePlaceholder": "Korrigierte Übersetzung…",
   "chat.tmSaved": "Übersetzungsüberschreibung gespeichert und aktiviert.",
   "chat.tmError": "Fehler beim Speichern der Übersetzungsüberschreibung.",
-
   "modelOpt.title": "Modelloptimierung",
   "modelOpt.refresh": "Aktualisieren",
   "modelOpt.engineConfig": "Engine-Konfiguration",
@@ -220,7 +211,6 @@
   "modelOpt.playground": "Spielplatz",
   "modelOpt.computing": "Modell berechnet Tensoren...",
   "modelOpt.promptModel": "Stellen Sie eine Frage an Ihr feinabgestimmtes Modell...",
-
   "dataExplorer.title": "Daten-Explorer",
   "dataExplorer.dataAssets": "Datenbestände",
   "dataExplorer.sqlPairs": "SQL-Trainingspaare",
@@ -246,7 +236,6 @@
   "dataExplorer.loadingPairs": "SQL-Paare werden aus der Pipeline geladen…",
   "dataExplorer.noPairs": "Keine Trainingspaare gefunden. Führen Sie zuerst die Pipeline aus.",
   "dataExplorer.closeDetail": "Detailpanel schließen",
-
   "dataCleaning.title": "Datenbereinigungs-Copilot",
   "dataCleaning.subtitle": "Bereiten Sie Trainingsdatenqualität direkt in Modell-Workflows vor und validieren Sie diese.",
   "dataCleaning.backend": "Backend",
@@ -268,7 +257,6 @@
   "dataCleaning.workflowEvents": "Workflow-Ereignisse",
   "dataCleaning.noEvents": "Noch keine Workflow-Ereignisse. Führen Sie den Workflow nach dem Generieren der Prüfungen aus.",
   "dataCleaning.sessionCleared": "Datenbereinigungs-Sitzung gelöscht",
-
   "registry.title": "Modellregistrierung",
   "registry.refresh": "Aktualisieren",
   "registry.totalJobs": "Aufträge gesamt",
@@ -291,7 +279,6 @@
   "registry.delete": "Löschen",
   "registry.noMatch": "Keine Trainingsaufträge entsprechen dem aktuellen Filter.",
   "registry.live": "Live",
-
   "hippocpp.title": "HippoCPP Graph-Engine",
   "hippocpp.refresh": "Aktualisieren",
   "hippocpp.about": "HippoCPP ist eine mehrsprachige Portierung der eingebetteten Graphdatenbank Kuzu, implementiert in Zig (1.251 Quelldateien) mit GPU-Beschleunigung über Mojo und deklarativen Invarianten in Mangle.",
@@ -308,7 +295,6 @@
   "hippocpp.noRows": "Keine Zeilen zurückgegeben.",
   "hippocpp.row": "Zeile(n)",
   "hippocpp.architecture": "Architektur",
-
   "compare.title": "A/B-Modellvergleich",
   "compare.subtitle": "Testen Sie denselben Prompt gegen zwei bereitgestellte Modelle nebeneinander",
   "compare.modelA": "Modell A",
@@ -324,7 +310,6 @@
   "compare.history": "Vergleichshistorie",
   "compare.loadingResults": "Modelle werden verglichen, bitte warten…",
   "compare.resultsReady": "Vergleichsergebnisse bereit",
-
   "relative.justNow": "Gerade eben",
   "relative.minutesAgo": "{count, plural, one {vor 1 Minute} other {vor {count} Minuten}}",
   "relative.hoursAgo": "{count, plural, one {vor 1 Stunde} other {vor {count} Stunden}}",
@@ -333,9 +318,7 @@
   "relative.weeksAgo": "{count, plural, one {vor 1 Woche} other {vor {count} Wochen}}",
   "relative.monthsAgo": "{count, plural, one {vor 1 Monat} other {vor {count} Monaten}}",
   "relative.yearsAgo": "{count, plural, one {vor 1 Jahr} other {vor {count} Jahren}}",
-
   "nav.documentOcr": "Dokument-OCR",
-
   "ocr.title": "Dokument-OCR",
   "ocr.subtitle": "Laden Sie arabische PDF-Dokumente für OCR-Textextraktion und -analyse hoch",
   "ocr.upload.title": "PDF-Datei hier ablegen",
@@ -364,17 +347,14 @@
   "ocr.error.notPdf": "Bitte wählen Sie eine PDF-Datei aus.",
   "ocr.error.tooLarge": "Datei überschreitet die maximale Größe von 50 MB.",
   "ocr.error.processing": "OCR-Verarbeitung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-
   "ocr.health.healthy": "OCR-Dienst betriebsbereit",
   "ocr.health.degraded": "OCR-Dienst eingeschränkt",
   "ocr.health.unavailable": "OCR-Dienst nicht verfügbar",
   "ocr.health.checking": "OCR-Dienst wird überprüft…",
-
   "ocr.mode.novice": "Anfänger",
   "ocr.mode.expert": "Experte",
   "ocr.switchToExpert": "Zum Expertenmodus wechseln",
   "ocr.switchToNovice": "Zum Anfängermodus wechseln",
-
   "ocr.curation.title": "Kuratierung",
   "ocr.curation.corrections": "Korrekturen",
   "ocr.curation.approve": "Genehmigen",
@@ -387,14 +367,12 @@
   "ocr.curation.zoomIn": "Vergrößern",
   "ocr.curation.zoomOut": "Verkleinern",
   "ocr.curation.resetZoom": "Zoom zurücksetzen",
-
   "ocr.flagged": "Zur Überprüfung markiert",
   "ocr.approved": "Genehmigt",
   "ocr.rejected": "Abgelehnt",
   "ocr.page.of": "von",
   "ocr.prevPage": "Vorherige Seite",
   "ocr.nextPage": "Nächste Seite",
-
   "ocr.analyzeDocument": "Dokument analysieren",
   "ocr.ai.summaryTitle": "KI-Extraktion und Compliance",
   "ocr.ai.translatedTitle": "Englische Übersetzung",
@@ -402,9 +380,7 @@
   "ocr.ai.runAction": "KI-Extraktion und Compliance-Prüfungen ausführen",
   "ocr.ai.success": "KI-Extraktion und Compliance-Prüfungen abgeschlossen",
   "ocr.ai.error": "KI-Extraktion fehlgeschlagen",
-
   "nav.arabicWizard": "Arabischer Dokumentenassistent",
-
   "wizard.title": "Arabischer Dokumentenassistent",
   "wizard.subtitle": "Laden Sie arabische Dokumente hoch, extrahieren, analysieren und exportieren Sie sie End-to-End",
   "wizard.step.upload": "Hochladen",
@@ -464,11 +440,9 @@
   "wizard.nav.previous": "Zurück",
   "wizard.nav.finish": "Fertigstellen",
   "wizard.nav.startOver": "Neu beginnen",
-
   "ocr.export.pipelineSent": "Datensatz erfolgreich an die Trainingspipeline gesendet.",
   "ocr.export.pipelineError": "Pipeline nicht verfügbar — Datensatz stattdessen lokal heruntergeladen.",
   "ocr.export.noPagesApproved": "Keine genehmigten Seiten zum Exportieren. Genehmigen Sie zuerst mindestens eine Seite.",
-
   "search.title": "Semantische Suche",
   "search.subtitle": "Suchen Sie in indexierten arabischen und englischen Dokumenten in natürlicher Sprache",
   "search.selectStore": "Wissensdatenbank auswählen",
@@ -483,7 +457,6 @@
   "search.noResults": "Keine passenden Dokumente in dieser Wissensdatenbank gefunden.",
   "search.error.loadStores": "Fehler beim Laden der Wissensdatenbanken",
   "search.error.queryFailed": "Suchabfrage fehlgeschlagen",
-
   "semanticSearch.title": "Semantische Suche",
   "semanticSearch.subtitle": "Suchen Sie in indexierten arabischen und englischen Finanzdokumenten mittels Vektorähnlichkeit",
   "semanticSearch.placeholder": "Finanzdokumente durchsuchen…",
@@ -494,7 +467,6 @@
   "semanticSearch.queryTime": "Abfrage: {ms} ms",
   "semanticSearch.page": "Seite",
   "semanticSearch.error": "Suche fehlgeschlagen. Läuft das RAG-Backend?",
-
   "analytics.title": "Finanzanalyse",
   "analytics.subtitle": "Zweisprachige Trendanalyse in der indexierten Dokumentenbibliothek",
   "analytics.selectStore": "Wissensdatenbank auswählen",
@@ -509,7 +481,6 @@
   "analytics.col.profit": "Nettogewinn",
   "analytics.loading": "Finanzdaten aus HANA werden aggregiert...",
   "analytics.error.loadFailed": "Fehler beim Aggregieren der Analysedaten",
-
   "glossary.title": "Technisches Glossar und TM",
   "glossary.subtitle": "Verwalten Sie offizielle technische IFRS-Begriffe und menschlich genehmigte Übersetzungsüberschreibungen",
   "glossary.addTerm": "Überschreibung hinzufügen",
@@ -522,13 +493,10 @@
   "glossary.noOverrides": "Keine Übersetzungsüberschreibungen gefunden. Wenden Sie diese aus der Chat-Prüfung an oder fügen Sie sie manuell hinzu.",
   "glossary.deleted": "Übersetzungsüberschreibung gelöscht",
   "glossary.error.loadFailed": "Fehler beim Laden des Übersetzungsspeichers",
-
   "common.loading": "Wird geladen…",
   "common.error": "Fehler",
-
   "chat.assistantTyping": "Assistent tippt",
   "chat.modelRole": "Modell",
-
   "modelOpt.closeModal": "Chat-Spielplatz schließen",
   "modelOpt.manglePassed": "Datalog-Schema-Einschränkungen erfolgreich verifiziert.",
   "modelOpt.manglePassedTitle": "Mangle bestanden",
@@ -553,21 +521,16 @@
   "modelOpt.deployFailed": "Bereitstellung fehlgeschlagen: {detail}",
   "modelOpt.deployErrorTitle": "Bereitstellungsfehler",
   "modelOpt.inferenceFailed": "Inferenz fehlgeschlagen: {detail}",
-
   "status.online": "Online",
   "status.offline": "Offline",
   "chat.clearConfirm": "Sind Sie sicher, dass Sie den Chatverlauf löschen möchten?",
-
   "form.errorsTitle": "Bitte beheben Sie die folgenden Fehler:",
   "modelOpt.errorModelRequired": "Modellname ist erforderlich.",
   "modelOpt.errorQuantRequired": "Quantisierungsformat ist erforderlich.",
-
   "nav.governance": "Governance",
   "nav.workspace": "Arbeitsbereich",
   "nav.prompts": "Prompts",
-
   "common.cancel": "Abbrechen",
-
   "workspace.title": "Arbeitsbereich-Einstellungen",
   "workspace.subtitle": "Konfigurieren Sie Ihre Umgebung, Verbindungen und Einstellungen.",
   "workspace.identity": "Identität",
@@ -592,5 +555,6 @@
   "workspace.import": "Einstellungen importieren",
   "workspace.reset": "Auf Standard zurücksetzen",
   "workspace.resetConfirm": "Alle Einstellungen auf Standard zurücksetzen? Dies kann nicht rückgängig gemacht werden.",
-  "workspace.saved": "Einstellungen gespeichert"
+  "workspace.saved": "Einstellungen gespeichert",
+  "nav.promptLibrary": "Prompt-Bibliothek"
 }
