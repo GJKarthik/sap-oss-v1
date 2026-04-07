@@ -14,6 +14,11 @@ export type NumberFormatStyle = 'decimal' | 'percent' | 'compact';
 const LOCALE_MAP: Record<Language, string> = {
   en: 'en-US',
   ar: 'ar-SA-u-nu-latn',  // Western numerals with Arabic separators
+  fr: 'fr-FR',
+  de: 'de-DE',
+  ko: 'ko-KR',
+  zh: 'zh-CN',
+  id: 'id-ID',
 };
 
 @Pipe({

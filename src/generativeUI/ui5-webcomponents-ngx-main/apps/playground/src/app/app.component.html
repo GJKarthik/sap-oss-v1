@@ -70,6 +70,11 @@
       <ui5-select style="min-width:120px" [attr.accessible-name]="'LANGUAGE_LABEL' | ui5I18n" (change)="onLanguageChange($event)">
         <ui5-option value="en" [attr.selected]="currentLanguage === 'en' ? true : null">{{ 'LANGUAGE_EN' | ui5I18n }}</ui5-option>
         <ui5-option value="ar" [attr.selected]="currentLanguage === 'ar' ? true : null">{{ 'LANGUAGE_AR' | ui5I18n }}</ui5-option>
+        <ui5-option value="fr" [attr.selected]="currentLanguage === 'fr' ? true : null">{{ 'LANGUAGE_FR' | ui5I18n }}</ui5-option>
+        <ui5-option value="de" [attr.selected]="currentLanguage === 'de' ? true : null">{{ 'LANGUAGE_DE' | ui5I18n }}</ui5-option>
+        <ui5-option value="ko" [attr.selected]="currentLanguage === 'ko' ? true : null">{{ 'LANGUAGE_KO' | ui5I18n }}</ui5-option>
+        <ui5-option value="zh" [attr.selected]="currentLanguage === 'zh' ? true : null">{{ 'LANGUAGE_ZH' | ui5I18n }}</ui5-option>
+        <ui5-option value="id" [attr.selected]="currentLanguage === 'id' ? true : null">{{ 'LANGUAGE_ID' | ui5I18n }}</ui5-option>
       </ui5-select>
     </div>
   </nav>

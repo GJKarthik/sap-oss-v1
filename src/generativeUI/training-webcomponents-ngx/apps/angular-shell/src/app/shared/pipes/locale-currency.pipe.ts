@@ -12,11 +12,21 @@ import { I18nService, Language } from '../../services/i18n.service';
 const LOCALE_MAP: Record<Language, string> = {
   en: 'en-US',
   ar: 'ar-SA-u-nu-latn',
+  fr: 'fr-FR',
+  de: 'de-DE',
+  ko: 'ko-KR',
+  zh: 'zh-CN',
+  id: 'id-ID',
 };
 
 const DEFAULT_CURRENCY: Record<Language, string> = {
   en: 'USD',
   ar: 'SAR',
+  fr: 'EUR',
+  de: 'EUR',
+  ko: 'KRW',
+  zh: 'CNY',
+  id: 'IDR',
 };
 
 @Pipe({

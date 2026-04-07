@@ -16,6 +16,7 @@ export interface TeamMember {
   color: string;
   status: 'active' | 'idle' | 'away';
   location?: string;
+  language?: string;
   joinedAt: Date;
   lastSeenAt: Date;
 }
@@ -27,15 +28,16 @@ export interface CollabConfig {
   userId: string;
   displayName: string;
   avatarUrl?: string;
+  language?: string;
   presenceIntervalMs?: number;
   reconnectDelayMs?: number;
   maxReconnectAttempts?: number;
 }
 
 type CollabMessage =
-  | { type: 'join'; roomId: string; userId: string; displayName: string; avatarUrl?: string }
+  | { type: 'join'; roomId: string; userId: string; displayName: string; avatarUrl?: string; language?: string }
   | { type: 'leave'; roomId: string; userId: string }
-  | { type: 'presence'; userId: string; status: TeamMember['status']; location?: string }
+  | { type: 'presence'; userId: string; status: TeamMember['status']; location?: string; language?: string }
   | { type: 'sync'; participants: TeamMember[] };
 
 @Injectable({ providedIn: 'root' })
@@ -81,7 +83,7 @@ export class CollaborationService implements OnDestroy {
         this.ws.onopen = () => {
           this.connectionStateSubject.next('connected');
           this.reconnectAttempts = 0;
-          this.send({ type: 'join', roomId, userId: this.config!.userId, displayName: this.config!.displayName, avatarUrl: this.config!.avatarUrl });
+          this.send({ type: 'join', roomId, userId: this.config!.userId, displayName: this.config!.displayName, avatarUrl: this.config!.avatarUrl, language: this.config!.language });
           this.startHeartbeat();
           resolve();
         };
@@ -106,7 +108,14 @@ export class CollaborationService implements OnDestroy {
 
   updatePresence(status: TeamMember['status'], location?: string): void {
     if (!this.ws || !this.config) return;
-    this.send({ type: 'presence', userId: this.config.userId, status, location });
+    this.send({ type: 'presence', userId: this.config.userId, status, location, language: this.config.language });
+  }
+
+  updateLanguage(language: string): void {
+    if (this.config) {
+      this.config.language = language;
+      this.updatePresence('active');
+    }
   }
 
   getMembers(): TeamMember[] {
@@ -123,7 +132,7 @@ export class CollaborationService implements OnDestroy {
         if (msg.userId !== this.config?.userId) {
           this.membersMap.set(msg.userId, {
             userId: msg.userId, displayName: msg.displayName, avatarUrl: msg.avatarUrl,
-            color: this.getNextColor(), status: 'active', joinedAt: new Date(), lastSeenAt: new Date(),
+            color: this.getNextColor(), status: 'active', language: msg.language, joinedAt: new Date(), lastSeenAt: new Date(),
           });
           this.membersSubject.next(this.getMembers());
         }
@@ -134,7 +143,7 @@ export class CollaborationService implements OnDestroy {
         break;
       case 'presence': {
         const member = this.membersMap.get(msg.userId);
-        if (member) { member.status = msg.status; member.location = msg.location; member.lastSeenAt = new Date(); this.membersSubject.next(this.getMembers()); }
+        if (member) { member.status = msg.status; member.location = msg.location; if (msg.language) member.language = msg.language; member.lastSeenAt = new Date(); this.membersSubject.next(this.getMembers()); }
         break;
       }
       case 'sync':

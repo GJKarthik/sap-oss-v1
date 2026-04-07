@@ -13,11 +13,12 @@ export type DateFormatStyle = 'short' | 'medium' | 'long' | 'full' | 'relative' 
 
 const LOCALE_MAP: Partial<Record<SupportedLocale, string>> & { default: string } = {
   en: 'en-US',
+  ar: 'ar-SA-u-nu-latn',
   de: 'de-DE',
   fr: 'fr-FR',
-  es: 'es-ES',
-  ja: 'ja-JP',
+  ko: 'ko-KR',
   zh: 'zh-CN',
+  id: 'id-ID',
   default: 'en-US',
 };
 

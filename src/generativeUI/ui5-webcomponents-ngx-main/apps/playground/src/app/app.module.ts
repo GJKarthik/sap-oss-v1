@@ -45,6 +45,11 @@ import { firstValueFrom } from 'rxjs';
                         return {
                             en: http.get('assets/i18n/messages_en', { responseType: 'text' }),
                             ar: http.get('assets/i18n/messages_ar', { responseType: 'text' }),
+                            fr: http.get('assets/i18n/messages_fr', { responseType: 'text' }),
+                            de: http.get('assets/i18n/messages_de', { responseType: 'text' }),
+                            ko: http.get('assets/i18n/messages_ko', { responseType: 'text' }),
+                            zh: http.get('assets/i18n/messages_zh', { responseType: 'text' }),
+                            id: http.get('assets/i18n/messages_id', { responseType: 'text' }),
                         };
                     }
                 }

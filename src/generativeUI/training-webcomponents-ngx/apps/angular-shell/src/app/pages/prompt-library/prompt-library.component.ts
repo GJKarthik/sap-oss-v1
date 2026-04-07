@@ -38,6 +38,13 @@ interface PromptTemplate {
         </div>
       </header>
 
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-value">{{ prompts().length }}</span><span class="stat-label">Templates</span></div>
+        <div class="stat"><span class="stat-value">{{ totalUsage() }}</span><span class="stat-label">Total Uses</span></div>
+        <div class="stat"><span class="stat-value">{{ categories().length }}</span><span class="stat-label">Categories</span></div>
+      </div>
+
       <!-- Category filter -->
       <div class="category-bar">
         @for (cat of categories(); track cat) {
@@ -64,27 +71,62 @@ interface PromptTemplate {
         </div>
       }
 
-      <!-- Prompt grid -->
-      <div class="prompt-grid">
-        @for (p of filtered(); track p.id) {
-          <div class="prompt-card">
-            <div class="card-header">
-              <strong>{{ p.name }}</strong>
-              <ui5-tag design="Information">{{ p.category }}</ui5-tag>
+      <div class="main-layout">
+        <!-- Prompt grid -->
+        <div class="prompt-grid">
+          @for (p of filtered(); track p.id) {
+            <div class="prompt-card" [class.selected]="previewId() === p.id" (click)="selectForPreview(p)">
+              <div class="card-header">
+                <strong>{{ p.name }}</strong>
+                <ui5-tag design="Information">{{ p.category }}</ui5-tag>
+              </div>
+              <p class="desc">{{ p.description || 'No description' }}</p>
+              <pre class="content-preview">{{ p.content }}</pre>
+              <div class="tag-row">
+                @for (tag of p.tags; track tag) { <ui5-tag>{{ tag }}</ui5-tag> }
+              </div>
+              <div class="meta-row">
+                <span class="version-badge">v{{ p.version }}</span>
+                <span class="usage-badge">{{ p.usage_count }} uses</span>
+                <span>by {{ p.created_by }}</span>
+              </div>
+              <div class="action-row">
+                <ui5-button design="Default" icon="copy" (click)="copy(p); $event.stopPropagation()">Copy</ui5-button>
+                <ui5-button design="Positive" icon="accept" (click)="use(p); $event.stopPropagation()">Use</ui5-button>
+                <ui5-button design="Negative" icon="delete" (click)="remove(p); $event.stopPropagation()">Delete</ui5-button>
+              </div>
             </div>
-            <p class="desc">{{ p.description || 'No description' }}</p>
-            <pre class="content-preview">{{ p.content }}</pre>
-            <div class="tag-row">
-              @for (tag of p.tags; track tag) { <ui5-tag>{{ tag }}</ui5-tag> }
+          }
+        </div>
+
+        <!-- Preview panel -->
+        @if (previewPrompt()) {
+          <div class="preview-panel">
+            <h4>{{ previewPrompt()!.name }}</h4>
+            <div class="preview-meta">
+              <div class="pm-item"><span class="pm-label">Version</span><ui5-tag design="Information">v{{ previewPrompt()!.version }}</ui5-tag></div>
+              <div class="pm-item"><span class="pm-label">Uses</span><ui5-tag design="Positive">{{ previewPrompt()!.usage_count }}</ui5-tag></div>
+              <div class="pm-item"><span class="pm-label">Category</span><ui5-tag>{{ previewPrompt()!.category }}</ui5-tag></div>
+              <div class="pm-item"><span class="pm-label">Author</span><span>{{ previewPrompt()!.created_by }}</span></div>
             </div>
-            <div class="meta-row">
-              <span>v{{ p.version }} · {{ p.usage_count }} uses · by {{ p.created_by }}</span>
-            </div>
-            <div class="action-row">
-              <ui5-button design="Default" icon="copy" (click)="copy(p)">Copy</ui5-button>
-              <ui5-button design="Positive" icon="accept" (click)="use(p)">Use</ui5-button>
-              <ui5-button design="Negative" icon="delete" (click)="remove(p)">Delete</ui5-button>
-            </div>
+            <h5>Template Content</h5>
+            <pre class="preview-content">{{ previewPrompt()!.content }}</pre>
+            @if (templateVars().length) {
+              <h5>Test Variables</h5>
+              @for (v of templateVars(); track v) {
+                <div class="var-input">
+                  <label>{{ v }}</label>
+                  <ui5-input ngDefaultControl [(ngModel)]="testValues[v]" [placeholder]="'Enter ' + v + '...'" style="width: 100%;"></ui5-input>
+                </div>
+              }
+              <ui5-button design="Emphasized" icon="play" (click)="renderPreview()">Render Preview</ui5-button>
+            }
+            @if (renderedPreview()) {
+              <h5>Rendered Output</h5>
+              <pre class="rendered-content">{{ renderedPreview() }}</pre>
+              <ui5-button design="Default" icon="copy" (click)="copyRendered()">Copy Rendered</ui5-button>
+            }
+            <ui5-button design="Transparent" icon="decline" (click)="previewId.set(null)">Close</ui5-button>
           </div>
         }
       </div>
@@ -97,22 +139,42 @@ interface PromptTemplate {
     </div>
   `,
   styles: [`
-    .prompt-page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+    .prompt-page { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
     .page-header h2 { margin: 0; }
     .header-actions { display: flex; gap: 0.5rem; }
+    .stats-bar { display: flex; gap: 2rem; padding: 0.75rem 1rem; background: var(--sapShell_Background, #f5f6f7); border-radius: 0.5rem; margin-bottom: 1rem; }
+    .stat { display: flex; flex-direction: column; align-items: center; }
+    .stat-value { font-size: 1.25rem; font-weight: 700; }
+    .stat-label { font-size: 0.75rem; color: var(--sapContent_LabelColor); }
     .category-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .create-form { border: 1px solid var(--sapTile_BorderColor); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; display: grid; gap: 0.75rem; max-width: 600px; }
     .form-actions { display: flex; gap: 0.5rem; }
-    .prompt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
-    .prompt-card { border: 1px solid var(--sapTile_BorderColor); border-radius: 0.5rem; padding: 1rem; }
+    .main-layout { display: flex; gap: 1rem; align-items: flex-start; }
+    .prompt-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+    .prompt-card { border: 1px solid var(--sapTile_BorderColor); border-radius: 0.5rem; padding: 1rem; cursor: pointer; transition: box-shadow 0.15s; }
+    .prompt-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .prompt-card.selected { outline: 2px solid var(--sapSelectedColor, #0854a0); }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
     .desc { font-size: 0.875rem; margin: 0 0 0.5rem; }
     .content-preview { background: var(--sapShell_Background, #f5f6f7); padding: 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; max-height: 100px; overflow: auto; white-space: pre-wrap; margin: 0 0 0.5rem; }
     .tag-row { display: flex; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
-    .meta-row { font-size: 0.75rem; color: var(--sapContent_LabelColor); margin-bottom: 0.5rem; }
+    .meta-row { display: flex; gap: 0.75rem; font-size: 0.75rem; color: var(--sapContent_LabelColor); margin-bottom: 0.5rem; align-items: center; }
+    .version-badge { background: var(--sapInformationBackground, #e5f0fa); color: var(--sapInformativeColor, #0a6ed1); padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 600; }
+    .usage-badge { font-weight: 600; }
     .action-row { display: flex; gap: 0.5rem; }
+    .preview-panel { width: 360px; min-width: 300px; border: 1px solid var(--sapTile_BorderColor); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; position: sticky; top: 1rem; }
+    .preview-panel h4 { margin: 0; }
+    .preview-panel h5 { margin: 0; font-size: 0.875rem; }
+    .preview-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .pm-item { display: flex; flex-direction: column; gap: 0.25rem; }
+    .pm-label { font-size: 0.75rem; color: var(--sapContent_LabelColor); font-weight: 600; }
+    .preview-content { background: var(--sapShell_Background, #f5f6f7); padding: 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; margin: 0; }
+    .var-input { display: flex; flex-direction: column; gap: 0.25rem; }
+    .var-input label { font-size: 0.75rem; font-weight: 600; color: var(--sapContent_LabelColor); }
+    .rendered-content { background: var(--sapPositiveBackground, #f1fdf5); padding: 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; margin: 0; border: 1px solid var(--sapPositiveBorderColor, #36a41d); }
     .empty-state { text-align: center; padding: 3rem; color: var(--sapContent_LabelColor); }
+    @media (max-width: 960px) { .main-layout { flex-direction: column; } .preview-panel { width: 100%; position: static; } }
   `]
 })
 export class PromptLibraryComponent implements OnInit, OnDestroy {
@@ -126,8 +188,13 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
   readonly searchQuery = signal('');
   readonly showCreate = signal(false);
   readonly loading = signal(false);
+  readonly previewId = signal<string | null>(null);
+  readonly renderedPreview = signal('');
 
   draftName = ''; draftContent = ''; draftCategory = 'general'; draftDescription = ''; draftTags = '';
+  testValues: Record<string, string> = {};
+
+  readonly totalUsage = computed(() => this.prompts().reduce((s, p) => s + p.usage_count, 0));
 
   readonly filtered = computed(() => {
     let list = this.prompts();
@@ -138,6 +205,18 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
     return list;
   });
 
+  readonly previewPrompt = computed(() => {
+    const id = this.previewId();
+    return id ? this.prompts().find(p => p.id === id) ?? null : null;
+  });
+
+  readonly templateVars = computed(() => {
+    const p = this.previewPrompt();
+    if (!p) return [];
+    const matches = p.content.match(/\{\{(\w+)\}\}/g) || [];
+    return [...new Set(matches.map(m => m.replace(/\{|\}/g, '')))];
+  });
+
   ngOnInit(): void { this.loadPrompts(); this.loadCategories(); }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
@@ -146,7 +225,6 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
     this.http.get<{ prompts: PromptTemplate[] }>(this.apiUrl).pipe(takeUntil(this.destroy$))
       .subscribe({ next: r => { this.prompts.set(r.prompts); this.loading.set(false); }, error: () => this.loading.set(false) });
   }
-
 
   loadCategories(): void {
     this.http.get<{ categories: string[] }>(`${this.apiUrl}/categories`).pipe(takeUntil(this.destroy$))
@@ -159,7 +237,20 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
       .subscribe({ next: () => { this.showCreate.set(false); this.draftName = ''; this.draftContent = ''; this.draftCategory = 'general'; this.draftDescription = ''; this.draftTags = ''; this.loadPrompts(); this.loadCategories(); } });
   }
 
+  selectForPreview(p: PromptTemplate): void { this.previewId.set(p.id); this.testValues = {}; this.renderedPreview.set(''); }
+
+  renderPreview(): void {
+    const p = this.previewPrompt();
+    if (!p) return;
+    let rendered = p.content;
+    for (const [key, val] of Object.entries(this.testValues)) {
+      rendered = rendered.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), val || `[${key}]`);
+    }
+    this.renderedPreview.set(rendered);
+  }
+
   use(p: PromptTemplate): void { this.http.post(`${this.apiUrl}/${p.id}/use`, {}).pipe(takeUntil(this.destroy$)).subscribe(); navigator.clipboard?.writeText(p.content); }
   copy(p: PromptTemplate): void { navigator.clipboard?.writeText(p.content); }
-  remove(p: PromptTemplate): void { this.http.delete(`${this.apiUrl}/${p.id}`).pipe(takeUntil(this.destroy$)).subscribe({ next: () => this.loadPrompts() }); }
+  copyRendered(): void { navigator.clipboard?.writeText(this.renderedPreview()); }
+  remove(p: PromptTemplate): void { if (this.previewId() === p.id) this.previewId.set(null); this.http.delete(`${this.apiUrl}/${p.id}`).pipe(takeUntil(this.destroy$)).subscribe({ next: () => this.loadPrompts() }); }
 }

@@ -451,6 +451,106 @@ async def job_ws_endpoint(websocket: WebSocket, job_id: str):
 
 
 # ---------------------------------------------------------------------------
+# Team Governance API — approvals, policies
+# ---------------------------------------------------------------------------
+
+class ApprovalRequest(BaseModel):
+    title: str
+    description: str = ""
+    risk_level: str = "medium"  # low, medium, high, critical
+    requested_by: str = "system"
+    approvers: list[str] = []
+
+_governance_approvals: dict[str, dict] = {}
+_governance_policies: list[dict] = [
+    {"id": "pol-1", "name": "Model Deployment Review", "description": "All model deployments require team lead approval", "enabled": True},
+    {"id": "pol-2", "name": "Data Export Policy", "description": "Data exports over 10k rows require governance review", "enabled": True},
+    {"id": "pol-3", "name": "Training Budget Gate", "description": "Training jobs exceeding $100 estimated cost need approval", "enabled": True},
+]
+
+# Seed some sample approvals
+for i, seed in enumerate([
+    {"title": "Deploy arabic-nlp-v3 to production", "risk_level": "high", "requested_by": "ahmed"},
+    {"title": "Export trial-balance dataset (50k rows)", "risk_level": "medium", "requested_by": "sarah"},
+]):
+    aid = f"appr-seed-{i+1}"
+    _governance_approvals[aid] = {
+        "id": aid, **seed, "description": seed.get("description", ""),
+        "status": "pending", "approvers": ["team-lead", "data-owner"],
+        "decisions": [], "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/governance/approvals")
+async def list_approvals(status: str | None = None):
+    approvals = list(_governance_approvals.values())
+    if status:
+        approvals = [a for a in approvals if a["status"] == status]
+    return {"approvals": approvals, "total": len(approvals)}
+
+
+@app.get("/governance/approvals/{approval_id}")
+async def get_approval(approval_id: str):
+    a = _governance_approvals.get(approval_id)
+    if not a:
+        raise HTTPException(404, "Approval not found")
+    return a
+
+
+@app.post("/governance/approvals", status_code=201)
+async def create_approval(body: ApprovalRequest):
+    aid = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    approval = {
+        "id": aid, "title": body.title, "description": body.description,
+        "risk_level": body.risk_level, "requested_by": body.requested_by,
+        "approvers": body.approvers or ["team-lead"],
+        "status": "pending", "decisions": [],
+        "created_at": now, "updated_at": now,
+    }
+    _governance_approvals[aid] = approval
+    return approval
+
+
+@app.post("/governance/approvals/{approval_id}/decide")
+async def decide_approval(approval_id: str, decision: dict):
+    a = _governance_approvals.get(approval_id)
+    if not a:
+        raise HTTPException(404, "Approval not found")
+    d = {
+        "approver": decision.get("approver", "unknown"),
+        "action": decision.get("action", "approve"),  # approve | reject
+        "comment": decision.get("comment", ""),
+        "decided_at": datetime.utcnow().isoformat(),
+    }
+    a["decisions"].append(d)
+    a["updated_at"] = d["decided_at"]
+    # Auto-resolve: if all approvers have decided, set final status
+    decided_by = {dec["approver"] for dec in a["decisions"]}
+    if decided_by >= set(a["approvers"]):
+        rejected = any(dec["action"] == "reject" for dec in a["decisions"])
+        a["status"] = "rejected" if rejected else "approved"
+    return a
+
+
+@app.get("/governance/policies")
+async def list_policies():
+    return {"policies": _governance_policies}
+
+
+@app.patch("/governance/policies/{policy_id}")
+async def update_policy(policy_id: str, body: dict):
+    for p in _governance_policies:
+        if p["id"] == policy_id:
+            if "enabled" in body:
+                p["enabled"] = body["enabled"]
+            if "description" in body:
+                p["description"] = body["description"]
+            return p
+    raise HTTPException(404, "Policy not found")
+
+
+# ---------------------------------------------------------------------------
 # Collaboration WebSocket — room-based presence & message fan-out
 # ---------------------------------------------------------------------------
 

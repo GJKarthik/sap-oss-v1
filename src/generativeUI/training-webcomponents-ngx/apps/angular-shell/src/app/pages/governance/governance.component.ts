@@ -5,12 +5,14 @@
  * Uses Angular 20 standalone + @if/@for control flow.
  */
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, inject, OnInit, OnDestroy } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { TeamGovernanceService, PendingApproval } from '../../services/team-governance.service';
 import { TeamConfigService, GovernancePolicyConfig } from '../../services/team-config.service';
 import { AuthService } from '../../services/auth.service';
 import { I18nService } from '../../services/i18n.service';
+import { environment } from '../../../environments/environment';
 import '@ui5/webcomponents/dist/Card.js';
 import '@ui5/webcomponents/dist/Tag.js';
 import '@ui5/webcomponents/dist/Button.js';
@@ -18,6 +20,17 @@ import '@ui5/webcomponents/dist/Icon.js';
 import '@ui5/webcomponents/dist/Dialog.js';
 import '@ui5/webcomponents/dist/TextArea.js';
 import '@ui5/webcomponents/dist/Label.js';
+
+interface ApiApproval {
+  id: string; title: string; description: string; risk_level: string;
+  requested_by: string; approvers: string[]; status: string;
+  decisions: { approver: string; action: string; comment: string; decided_at: string }[];
+  created_at: string; updated_at: string;
+}
+
+interface ApiPolicy {
+  id: string; name: string; description: string; enabled: boolean;
+}
 
 @Component({
   selector: 'app-governance',
@@ -33,37 +46,37 @@ import '@ui5/webcomponents/dist/Label.js';
 
       <!-- Pending Approvals -->
       <section class="section">
-        <h3>Pending Approvals <ui5-tag>{{ pendingApprovals.length }}</ui5-tag></h3>
-        @if (pendingApprovals.length > 0) {
-          @for (approval of pendingApprovals; track approval.id) {
+        <h3>Pending Approvals <ui5-tag>{{ apiApprovals.length }}</ui5-tag></h3>
+        @if (apiApprovals.length > 0) {
+          @for (approval of apiApprovals; track approval.id) {
             <div class="approval-card">
               <div class="approval-header">
                 <div class="approval-title">
-                  <ui5-icon [attr.name]="getRiskIcon(approval.riskLevel)"></ui5-icon>
-                  <strong>{{ approval.actionName }}</strong>
-                  <ui5-tag [attr.design]="getRiskDesign(approval.riskLevel)">{{ approval.riskLevel }}</ui5-tag>
+                  <ui5-icon [attr.name]="getRiskIcon(approval.risk_level)"></ui5-icon>
+                  <strong>{{ approval.title }}</strong>
+                  <ui5-tag [attr.design]="getRiskDesign(approval.risk_level)">{{ approval.risk_level }}</ui5-tag>
                 </div>
-                <span class="meta">by {{ approval.requestedBy }}</span>
+                <span class="meta">by {{ approval.requested_by }}</span>
               </div>
               <p class="approval-desc">{{ approval.description }}</p>
               <div class="progress-row">
-                <span class="meta">{{ approval.currentApprovals.length }} / {{ approval.requiredApprovals }} approvals</span>
-                <div class="progress-bar"><div class="progress-fill" [style.width.%]="(approval.currentApprovals.length / approval.requiredApprovals) * 100"></div></div>
+                <span class="meta">{{ approval.decisions.length }} / {{ approval.approvers.length }} approvals</span>
+                <div class="progress-bar"><div class="progress-fill" [style.width.%]="(approval.decisions.length / Math.max(approval.approvers.length, 1)) * 100"></div></div>
               </div>
-              @for (decision of approval.currentApprovals; track decision.userId) {
+              @for (decision of approval.decisions; track decision.approver) {
                 <div class="decision-row">
-                  <ui5-icon [attr.name]="decision.decision === 'approve' ? 'accept' : 'decline'"></ui5-icon>
-                  {{ decision.displayName }} ({{ decision.role }})
-                  @if (decision.reason) { <span class="meta"> — {{ decision.reason }}</span> }
+                  <ui5-icon [attr.name]="decision.action === 'approve' ? 'accept' : 'decline'"></ui5-icon>
+                  {{ decision.approver }}
+                  @if (decision.comment) { <span class="meta"> — {{ decision.comment }}</span> }
                 </div>
               }
-              @if (canApprove(approval)) {
+              @if (approval.status === 'pending') {
                 <div class="action-row">
-                  <ui5-button design="Positive" icon="accept" (click)="approve(approval)">Approve</ui5-button>
-                  <ui5-button design="Negative" icon="decline" (click)="reject(approval)">Reject</ui5-button>
+                  <ui5-button design="Positive" icon="accept" (click)="approveApi(approval)">Approve</ui5-button>
+                  <ui5-button design="Negative" icon="decline" (click)="rejectApi(approval)">Reject</ui5-button>
                 </div>
               } @else {
-                <ui5-tag design="Information">Awaiting other approvers</ui5-tag>
+                <ui5-tag [attr.design]="approval.status === 'approved' ? 'Positive' : 'Negative'">{{ approval.status }}</ui5-tag>
               }
             </div>
           }
@@ -78,18 +91,18 @@ import '@ui5/webcomponents/dist/Label.js';
       <!-- Team Policies -->
       <section class="section">
         <h3>Team Policies</h3>
-        @if (policies.length > 0) {
-          @for (policy of policies; track policy.id) {
+        @if (apiPolicies.length > 0) {
+          @for (policy of apiPolicies; track policy.id) {
             <div class="policy-card">
               <div class="policy-row">
                 <strong>{{ policy.name }}</strong>
-                <ui5-tag [attr.design]="policy.active ? 'Positive' : 'Negative'">{{ policy.active ? 'Active' : 'Inactive' }}</ui5-tag>
+                <ui5-tag [attr.design]="policy.enabled ? 'Positive' : 'Negative'">{{ policy.enabled ? 'Active' : 'Inactive' }}</ui5-tag>
               </div>
-              <span class="meta">Type: {{ policy.ruleType }} · Requires {{ policy.requireApprovalCount }} approval(s) · Roles: {{ policy.approverRoles.join(', ') }}</span>
+              <span class="meta">{{ policy.description }}</span>
             </div>
           }
         } @else {
-          <div class="empty"><p>No team policies configured. Configure via Team Settings.</p></div>
+          <div class="empty"><p>No team policies configured.</p></div>
         }
       </section>
     </div>
@@ -116,15 +129,26 @@ import '@ui5/webcomponents/dist/Label.js';
   `]
 })
 export class GovernanceComponent implements OnInit, OnDestroy {
+  private readonly http = inject(HttpClient);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly governance = inject(TeamGovernanceService);
   private readonly teamConfig = inject(TeamConfigService);
   private readonly auth = inject(AuthService);
   private readonly destroy$ = new Subject<void>();
+  private readonly apiUrl = environment.apiBaseUrl;
 
+  apiApprovals: ApiApproval[] = [];
+  apiPolicies: ApiPolicy[] = [];
   pendingApprovals: PendingApproval[] = [];
   policies: GovernancePolicyConfig[] = [];
 
+  /** Expose Math to the template. */
+  readonly Math = Math;
+
   ngOnInit(): void {
+    this.loadApprovals();
+    this.loadPolicies();
+    // Also keep the client-side service connected for backward compat
     this.governance.pendingApprovals$.pipe(takeUntil(this.destroy$))
       .subscribe(a => this.pendingApprovals = a.filter(x => x.status === 'pending'));
     this.teamConfig.teamConfig$.pipe(takeUntil(this.destroy$))
@@ -133,14 +157,30 @@ export class GovernanceComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
+  loadApprovals(): void {
+    this.http.get<{ approvals: ApiApproval[] }>(`${this.apiUrl}/governance/approvals`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: r => { this.apiApprovals = r.approvals; this.cdr.markForCheck(); }, error: () => {} });
+  }
+
+  loadPolicies(): void {
+    this.http.get<{ policies: ApiPolicy[] }>(`${this.apiUrl}/governance/policies`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: r => { this.apiPolicies = r.policies; this.cdr.markForCheck(); }, error: () => {} });
+  }
+
   getRiskIcon(r: string): string { return r === 'critical' ? 'alert' : r === 'high' ? 'warning' : r === 'medium' ? 'information' : 'hint'; }
   getRiskDesign(r: string): string { return r === 'critical' ? 'Negative' : r === 'high' ? 'Critical' : r === 'medium' ? 'Information' : 'Positive'; }
 
-  canApprove(a: PendingApproval): boolean {
-    const u = this.auth.token() ? 'training-user' : '';
-    return u !== a.requestedBy && !a.currentApprovals.some(d => d.userId === u) && this.governance.canApprove(u, a.actionName);
+  approveApi(a: ApiApproval): void {
+    this.http.post<ApiApproval>(`${this.apiUrl}/governance/approvals/${a.id}/decide`, { approver: 'training-user', action: 'approve' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: () => this.loadApprovals() });
   }
 
-  approve(a: PendingApproval): void { this.governance.submitDecision(a.id, 'training-user', 'Training User', 'editor', 'approve'); }
-  reject(a: PendingApproval): void { this.governance.submitDecision(a.id, 'training-user', 'Training User', 'editor', 'reject'); }
+  rejectApi(a: ApiApproval): void {
+    this.http.post<ApiApproval>(`${this.apiUrl}/governance/approvals/${a.id}/decide`, { approver: 'training-user', action: 'reject', comment: 'Rejected by reviewer' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: () => this.loadApprovals() });
+  }
 }

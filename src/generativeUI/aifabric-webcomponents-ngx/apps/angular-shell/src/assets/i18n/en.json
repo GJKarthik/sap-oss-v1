@@ -244,6 +244,11 @@
     "import": "Import Settings",
     "reset": "Reset to Defaults",
     "resetConfirm": "Reset all settings to defaults? This cannot be undone.",
-    "saved": "Settings saved"
+    "saved": "Settings saved",
+    "languageFr": "French / Français",
+    "languageDe": "German / Deutsch",
+    "languageKo": "Korean / 한국어",
+    "languageZh": "Chinese / 中文",
+    "languageId": "Indonesian / Bahasa Indonesia"
   }
 }

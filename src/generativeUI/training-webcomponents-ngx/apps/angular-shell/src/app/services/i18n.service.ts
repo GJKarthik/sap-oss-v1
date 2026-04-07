@@ -2,13 +2,13 @@ import { Injectable, signal, computed, DOCUMENT, isDevMode } from '@angular/core
 import { inject } from '@angular/core';
 import MessageFormat from '@messageformat/core';
 
-export type Language = 'en' | 'ar';
+export type Language = 'en' | 'ar' | 'fr' | 'de' | 'ko' | 'zh' | 'id';
 
 interface TranslationMap {
   [key: string]: string;
 }
 
-const LOCALE_MAP: Record<Language, string> = { en: 'en', ar: 'ar' };
+const LOCALE_MAP: Record<Language, string> = { en: 'en', ar: 'ar', fr: 'fr', de: 'de', ko: 'ko', zh: 'zh', id: 'id' };
 
 @Injectable({ providedIn: 'root' })
 export class I18nService {
@@ -21,7 +21,7 @@ export class I18nService {
   /** Flips to true once translation JSON files have been loaded. */
   readonly translationsReady = signal(false);
 
-  private translations: Record<Language, TranslationMap> = { en: {}, ar: {} };
+  private translations: Record<Language, TranslationMap> = { en: {}, ar: {}, fr: {}, de: {}, ko: {}, zh: {}, id: {} };
   private loaded = false;
   private mfCache = new Map<string, (params: Record<string, unknown>) => string>();
 
@@ -30,9 +30,11 @@ export class I18nService {
     // so translations are ready before any component renders.
   }
 
+  private static readonly ALL_LANGS: Language[] = ['en', 'ar', 'fr', 'de', 'ko', 'zh', 'id'];
+
   private loadSavedLang(): Language {
     const saved = localStorage.getItem('app_lang');
-    return (saved === 'ar' || saved === 'en') ? saved : 'en';
+    return I18nService.ALL_LANGS.includes(saved as Language) ? (saved as Language) : 'en';
   }
 
   async loadTranslations(): Promise<void> {
@@ -43,12 +45,12 @@ export class I18nService {
     }
 
     try {
-      const [enResp, arResp] = await Promise.all([
-        fetch('assets/i18n/en.json'),
-        fetch('assets/i18n/ar.json'),
-      ]);
-      this.translations.en = await enResp.json();
-      this.translations.ar = await arResp.json();
+      const responses = await Promise.all(
+        I18nService.ALL_LANGS.map(lang => fetch(`assets/i18n/${lang}.json`))
+      );
+      for (let i = 0; i < I18nService.ALL_LANGS.length; i++) {
+        this.translations[I18nService.ALL_LANGS[i]] = await responses[i].json();
+      }
       this.loaded = true;
       this.translationsReady.set(true);
     } catch (e) {

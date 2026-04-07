@@ -57,7 +57,8 @@ export class AppComponent implements OnInit, OnDestroy {
     this.demoTourDismissed = localStorage.getItem('demo-tour-dismissed') === 'true';
 
     const savedLanguage = localStorage.getItem('ui5-language');
-    const language = savedLanguage === 'ar' ? 'ar' : 'en';
+    const SUPPORTED_LANGS = ['en', 'ar', 'fr', 'de', 'ko', 'zh', 'id'];
+    const language = savedLanguage && SUPPORTED_LANGS.includes(savedLanguage) ? savedLanguage : 'en';
     this.currentLanguage = language;
     this.applyLanguage(language);
 
@@ -121,9 +122,11 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  private readonly SUPPORTED_LANGS = ['en', 'ar', 'fr', 'de', 'ko', 'zh', 'id'];
+
   onLanguageChange(event: Event): void {
     const language = (event as CustomEvent).detail?.selectedOption?.value;
-    if (language === 'en' || language === 'ar') {
+    if (language && this.SUPPORTED_LANGS.includes(language)) {
       this.currentLanguage = language;
       this.applyLanguage(language);
       localStorage.setItem('ui5-language', language);
