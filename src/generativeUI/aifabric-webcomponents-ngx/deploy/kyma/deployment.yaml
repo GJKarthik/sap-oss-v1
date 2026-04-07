@@ -1,0 +1,448 @@
+# SAP AI Fabric Console — Kyma Deployment
+# Namespace: sap-ai-services | API port: 8000 | Web port: 8080
+#
+# Architecture:
+#   aifabric-api  (FastAPI backend, port 8000) ← proxies MCP calls to PAL + ES
+#   aifabric-web  (Angular + nginx-unprivileged, port 8080) ← proxies /api/* to aifabric-api
+#
+# Reuses existing cluster secrets / ConfigMaps:
+#   sap-elasticsearch-aicore-secrets  → AICORE_CLIENT_ID, AICORE_CLIENT_SECRET
+#   sap-elasticsearch-config (CM)     → AICORE_AUTH_URL, AICORE_BASE_URL
+#   hana-credentials                  → HANA_HOST/PORT/USER/PASSWORD/SCHEMA
+#   es-mcp-auth                       → MCP_API_KEY  (ES MCP bearer token)
+#
+# NEW secret required before first deploy:
+#   kubectl create secret generic aifabric-secrets -n sap-ai-services \
+#     --from-literal=JWT_SECRET_KEY='<min-32-char-random-string>' \
+#     --from-literal=BOOTSTRAP_ADMIN_USERNAME='admin' \
+#     --from-literal=BOOTSTRAP_ADMIN_PASSWORD='<min-12-char-password>'
+#
+# Build & push images first:
+#   docker build -f packages/api-server/Dockerfile  -t plturrell/aifabric-api:1.0.0 .
+#   docker build -f apps/angular-shell/Dockerfile   -t plturrell/aifabric-web:1.0.1 .
+#   docker push plturrell/aifabric-api:1.0.0
+#   docker push plturrell/aifabric-web:1.0.1
+#
+# Deploy:
+#   kubectl apply -f deploy/kyma/deployment.yaml
+
+---
+# ---------------------------------------------------------------------------
+# ConfigMap — non-sensitive config shared by both containers
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aifabric-config
+  namespace: sap-ai-services
+  labels:
+    app.kubernetes.io/name: aifabric
+    app.kubernetes.io/part-of: btp-ai-suite
+data:
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  STORE_BACKEND: "hana"
+  HANA_STORE_TABLE_PREFIX: "SAP_AIFABRIC"
+  HANA_ENCRYPT: "true"
+  AICORE_RESOURCE_GROUP: "default"
+  EXPOSE_API_DOCS: "false"
+  SEED_REFERENCE_DATA: "false"
+  REQUIRE_MCP_DEPENDENCIES: "true"
+  MCP_HEALTHCHECK_TIMEOUT_SECONDS: "5"
+  # In-cluster MCP endpoints — PAL (8084) and ES MCP (9120)
+  PAL_MCP_URL: "http://ai-core-pal-service.sap-ai-services.svc.cluster.local:8084/mcp"
+  ELASTICSEARCH_MCP_URL: "http://es-mcp-service.sap-ai-services.svc.cluster.local:9120/mcp"
+  DATA_CLEANING_MCP_URL: "http://data-cleaning-mcp-service.sap-ai-services.svc.cluster.local:9110/mcp"  # not yet deployed
+  # Rate limits
+  AUTH_RATE_LIMIT_PER_MINUTE: "10"
+  MCP_RATE_LIMIT_PER_MINUTE: "120"
+  RATE_LIMIT_WINDOW_SECONDS: "60"
+  ALERT_WINDOW_SECONDS: "300"
+  AUTH_FAILURE_ALERT_THRESHOLD: "5"
+  MCP_FAILURE_ALERT_THRESHOLD: "3"
+  READINESS_FAILURE_ALERT_THRESHOLD: "1"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+
+---
+# ---------------------------------------------------------------------------
+# NetworkPolicy — API backend
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aifabric-api-network-policy
+  namespace: sap-ai-services
+  labels:
+    app.kubernetes.io/name: aifabric-api
+spec:
+  podSelector:
+    matchLabels:
+      app: aifabric-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Web container (nginx) → API (port 8000)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: aifabric-web
+      ports:
+        - port: 8000
+          protocol: TCP
+    # Same namespace + istio-system
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sap-ai-services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    # In-cluster services (PAL, ES MCP)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sap-ai-services
+    # External HTTPS (HANA Cloud, AI Core)
+    - ports:
+        - port: 443
+          protocol: TCP
+    # DNS
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector: {}
+    # Istio control plane
+    - ports:
+        - port: 15012
+          protocol: TCP
+        - port: 15010
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+
+---
+# ---------------------------------------------------------------------------
+# NetworkPolicy — Web frontend
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aifabric-web-network-policy
+  namespace: sap-ai-services
+  labels:
+    app.kubernetes.io/name: aifabric-web
+spec:
+  podSelector:
+    matchLabels:
+      app: aifabric-web
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sap-ai-services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sap-ai-services
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector: {}
+    - ports:
+        - port: 15012
+          protocol: TCP
+        - port: 15010
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+
+---
+# ---------------------------------------------------------------------------
+# Deployment — FastAPI API backend
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aifabric-api
+  namespace: sap-ai-services
+  labels:
+    app: aifabric-api
+    app.kubernetes.io/name: aifabric-api
+    app.kubernetes.io/part-of: btp-ai-suite
+    version: "1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aifabric-api
+  template:
+    metadata:
+      labels:
+        app: aifabric-api
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: aifabric-api
+          image: docker.io/plturrell/aifabric-api:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+          envFrom:
+            # Shared config: AICORE_AUTH_URL, AICORE_BASE_URL
+            - configMapRef:
+                name: sap-elasticsearch-config
+            # Service-specific config
+            - configMapRef:
+                name: aifabric-config
+
+          env:
+            # AI Core credentials
+            - name: AICORE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sap-elasticsearch-aicore-secrets
+                  key: AICORE_CLIENT_ID
+            - name: AICORE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sap-elasticsearch-aicore-secrets
+                  key: AICORE_CLIENT_SECRET
+            # HANA Cloud credentials
+            - name: HANA_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_HOST
+            - name: HANA_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_PORT
+            - name: HANA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_USER
+            - name: HANA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_PASSWORD
+            - name: HANA_STORE_SCHEMA
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_SCHEMA
+            # ES MCP API key (bearer token for calling es-mcp-service)
+            - name: ELASTICSEARCH_MCP_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: es-mcp-auth
+                  key: MCP_API_KEY
+            # Application secrets — JWT + admin bootstrap
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aifabric-secrets
+                  key: JWT_SECRET_KEY
+            - name: BOOTSTRAP_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: aifabric-secrets
+                  key: BOOTSTRAP_ADMIN_USERNAME
+            - name: BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aifabric-secrets
+                  key: BOOTSTRAP_ADMIN_PASSWORD
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # FastAPI writes temp files
+            capabilities:
+              drop: ["ALL"]
+      imagePullSecrets:
+        - name: dockerhub-plturrell
+      restartPolicy: Always
+      automountServiceAccountToken: false
+
+---
+# ---------------------------------------------------------------------------
+# Deployment — Angular + nginx-unprivileged web frontend (port 8080)
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aifabric-web
+  namespace: sap-ai-services
+  labels:
+    app: aifabric-web
+    app.kubernetes.io/name: aifabric-web
+    app.kubernetes.io/part-of: btp-ai-suite
+    version: "1.0.3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aifabric-web
+  template:
+    metadata:
+      labels:
+        app: aifabric-web
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: aifabric-web
+          image: docker.io/plturrell/aifabric-web:1.0.3
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SAP_API_BASE_URL
+              value: "/api/v1"
+            # Proxy /api/* to the API service (in-cluster)
+            - name: SAP_API_UPSTREAM
+              value: "http://aifabric-api-service.sap-ai-services.svc.cluster.local:8000"
+            # Pass-through for Angular environment injection (optional — used by nginx envsubst)
+            - name: SAP_ELASTICSEARCH_MCP_URL
+              value: ""
+            - name: SAP_PAL_MCP_URL
+              value: ""
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+      imagePullSecrets:
+        - name: dockerhub-plturrell
+      restartPolicy: Always
+      automountServiceAccountToken: false
+
+---
+# ---------------------------------------------------------------------------
+# Service — API backend (ClusterIP, internal only)
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: aifabric-api-service
+  namespace: sap-ai-services
+  labels:
+    app: aifabric-api
+    app.kubernetes.io/part-of: btp-ai-suite
+spec:
+  selector:
+    app: aifabric-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
+
+---
+# ---------------------------------------------------------------------------
+# Service — Web frontend (exposed via APIRule)
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: aifabric-web-service
+  namespace: sap-ai-services
+  labels:
+    app: aifabric-web
+    app.kubernetes.io/part-of: btp-ai-suite
+spec:
+  selector:
+    app: aifabric-web
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP

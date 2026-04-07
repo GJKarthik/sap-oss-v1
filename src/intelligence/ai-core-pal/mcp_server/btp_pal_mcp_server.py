@@ -16,10 +16,12 @@ Run: uvicorn mcp_server.btp_pal_mcp_server:app --host 0.0.0.0 --port 8084
 """
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 import os
 import sys
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 # Add parent directory to path for imports
@@ -31,6 +33,26 @@ load_dotenv()
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Custom JSON encoder — handles HANA result types (date, datetime, Decimal)
+# ---------------------------------------------------------------------------
+class _HanaEncoder(json.JSONEncoder):
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, bytes):
+            return obj.decode("utf-8", errors="replace")
+        return super().default(obj)
+
+
+def _json_dumps(obj: Any, **kwargs: Any) -> str:
+    """json.dumps with HANA-safe encoder."""
+    kwargs.setdefault("indent", 2)
+    return json.dumps(obj, cls=_HanaEncoder, **kwargs)
 
 # ---------------------------------------------------------------------------
 # FastMCP / MCP imports
@@ -106,7 +128,7 @@ if mcp:
             JSON with forecast values and model parameters
         """
         result = _pal_forecast_impl(table_name, value_column, date_column, horizon, alpha)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # MCP Tool: pal_anomaly
@@ -145,7 +167,7 @@ if mcp:
             JSON with detected anomalies and IQR statistics
         """
         result = _pal_anomaly_impl(table_name, value_column, multiplier)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # MCP Tool: pal_clustering
@@ -185,7 +207,7 @@ if mcp:
         """
         cols = [c.strip() for c in feature_columns.split(",")]
         result = _pal_clustering_impl(table_name, cols, n_clusters)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # MCP Tool: pal_classification
@@ -229,7 +251,7 @@ if mcp:
         """
         cols = [c.strip() for c in feature_columns.split(",")]
         result = _pal_classification_impl(table_name, cols, label_column, n_estimators)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # MCP Tool: pal_regression
@@ -269,7 +291,7 @@ if mcp:
         """
         cols = [c.strip() for c in feature_columns.split(",")]
         result = _pal_regression_impl(table_name, cols, target_column)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # MCP Tool: hana_tables
@@ -294,7 +316,7 @@ if mcp:
             JSON with table list, columns, and PAL suitability
         """
         result = _hana_tables_impl(schema)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # MCP Tool: execute_sql
@@ -319,7 +341,7 @@ if mcp:
             JSON with results or affected rows
         """
         result = _execute_sql_impl(sql)
-        return json.dumps(result, indent=2)
+        return _json_dumps(result)
 
 # ---------------------------------------------------------------------------
 # Health endpoint
@@ -377,13 +399,96 @@ def create_fallback_app():
             elif method == "tools/list":
                 result = {
                     "tools": [
-                        {"name": "pal_forecast", "description": "Time series forecasting"},
-                        {"name": "pal_anomaly", "description": "Anomaly detection"},
-                        {"name": "pal_clustering", "description": "K-Means clustering"},
-                        {"name": "pal_classification", "description": "Random Forest classification"},
-                        {"name": "pal_regression", "description": "Linear regression"},
-                        {"name": "hana_tables", "description": "Discover PAL tables"},
-                        {"name": "execute_sql", "description": "Execute SQL on HANA Cloud"},
+                        {
+                            "name": "pal_forecast",
+                            "description": "Time series forecasting",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "table_name": {"type": "string", "description": "Full table name e.g. \"AINUCLEUS.PAL_TIMESERIES_DATA\""},
+                                    "value_column": {"type": "string", "description": "Numeric column to forecast"},
+                                    "date_column": {"type": "string", "description": "Optional date column for ordering"},
+                                    "horizon": {"type": "integer", "description": "Periods to forecast (default 12)"},
+                                    "alpha": {"type": "number", "description": "Smoothing parameter 0-1 (default 0.3)"}
+                                },
+                                "required": ["table_name", "value_column"]
+                            }
+                        },
+                        {
+                            "name": "pal_anomaly",
+                            "description": "Anomaly detection",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "table_name": {"type": "string", "description": "Full table name e.g. \"AINUCLEUS.PAL_ANOMALY_DATA\""},
+                                    "value_column": {"type": "string", "description": "Numeric column to analyze"},
+                                    "multiplier": {"type": "number", "description": "IQR multiplier for bounds (default 1.5)"}
+                                },
+                                "required": ["table_name", "value_column"]
+                            }
+                        },
+                        {
+                            "name": "pal_clustering",
+                            "description": "K-Means clustering",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "table_name": {"type": "string", "description": "Full table name e.g. \"AINUCLEUS.PAL_CLUSTERING_DATA\""},
+                                    "feature_columns": {"type": "string", "description": "Comma-separated numeric columns e.g. \"AGE,INCOME,SPEND_SCORE\""},
+                                    "n_clusters": {"type": "integer", "description": "Number of clusters (default 3)"}
+                                },
+                                "required": ["table_name", "feature_columns"]
+                            }
+                        },
+                        {
+                            "name": "pal_classification",
+                            "description": "Random Forest classification",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "table_name": {"type": "string", "description": "Full table name e.g. \"AINUCLEUS.PAL_CLASSIFICATION_DATA\""},
+                                    "feature_columns": {"type": "string", "description": "Comma-separated feature columns e.g. \"FEATURE_1,FEATURE_2,FEATURE_3\""},
+                                    "label_column": {"type": "string", "description": "Label column name e.g. \"LABEL\""},
+                                    "n_estimators": {"type": "integer", "description": "Number of trees (default 100)"}
+                                },
+                                "required": ["table_name", "feature_columns", "label_column"]
+                            }
+                        },
+                        {
+                            "name": "pal_regression",
+                            "description": "Linear regression",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "table_name": {"type": "string", "description": "Full table name e.g. \"AINUCLEUS.PAL_REGRESSION_DATA\""},
+                                    "feature_columns": {"type": "string", "description": "Comma-separated feature columns e.g. \"X1,X2,X3\""},
+                                    "target_column": {"type": "string", "description": "Target column name e.g. \"Y_TARGET\""}
+                                },
+                                "required": ["table_name", "feature_columns", "target_column"]
+                            }
+                        },
+                        {
+                            "name": "hana_tables",
+                            "description": "Discover PAL tables",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "schema": {"type": "string", "description": "Schema name (default from HANA_SCHEMA env var)"}
+                                },
+                                "required": []
+                            }
+                        },
+                        {
+                            "name": "execute_sql",
+                            "description": "Execute SQL on HANA Cloud",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "sql": {"type": "string", "description": "SQL statement (SELECT, CREATE, INSERT, etc.)"}
+                                },
+                                "required": ["sql"]
+                            }
+                        },
                     ]
                 }
             elif method == "tools/call":
@@ -423,7 +528,7 @@ def create_fallback_app():
                 else:
                     result = {"error": f"Unknown tool: {tool_name}"}
                 
-                result = {"content": [{"type": "text", "text": json.dumps(result)}]}
+                result = {"content": [{"type": "text", "text": _json_dumps(result)}]}
             else:
                 result = {"error": f"Unknown method: {method}"}
             
