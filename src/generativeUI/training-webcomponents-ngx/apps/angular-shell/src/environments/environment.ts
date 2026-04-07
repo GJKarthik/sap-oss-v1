@@ -18,6 +18,5 @@ export const environment = {
   collabWsUrl: `${typeof window !== 'undefined' ? window.location.protocol.replace('http', 'ws') : 'ws:'}//localhost:8200/collab`,
   collabUserId: 'training-user-default',
   collabDisplayName: 'Training User',
-  elasticsearchMcpUrl: 'http://localhost:3001',
   palMcpUrl: 'http://localhost:3002',
 };
