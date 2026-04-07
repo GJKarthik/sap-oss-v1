@@ -1,774 +1,252 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, HostListener, signal, computed, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import {
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ChangeDetectionStrategy,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterOutlet, NavigationEnd, Event } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
+import { ApiService } from '../../services/api.service';
+import { DiagnosticsService } from '../../services/diagnostics.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
-import { DiagnosticsService } from '../../services/diagnostics.service';
-import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { ApiService } from '../../services/api.service';
-import { CollaborationService, TeamMember, ConnectionState } from '../../services/collaboration.service';
-import { TeamConfigService } from '../../services/team-config.service';
-import { WorkspaceService } from '../../services/workspace.service';
-import { environment } from '../../../environments/environment';
-import '@ui5/webcomponents-fiori/dist/ShellBar.js';
-import '@ui5/webcomponents-fiori/dist/ShellBarItem.js';
-import '@ui5/webcomponents/dist/Avatar.js';
-import '@ui5/webcomponents/dist/Switch.js';
-import '@ui5/webcomponents/dist/Tag.js';
-import '@ui5/webcomponents/dist/Popover.js';
-import '@ui5/webcomponents/dist/List.js';
-import '@ui5/webcomponents/dist/ListItemStandard.js';
-import '@ui5/webcomponents/dist/Button.js';
-import '@ui5/webcomponents/dist/Select.js';
-import '@ui5/webcomponents/dist/Option.js';
-import '@ui5/webcomponents/dist/Tag.js';
-
-interface NavItem {
-  label: string;
-  icon: string;
-  route: string;
-}
-
-type Ui5PopoverElement = HTMLElement & {
-  showAt?: (target: HTMLElement) => void;
-  opener?: HTMLElement;
-  open?: boolean;
-};
-
-type ShellbarClickEvent = Event & {
-  detail?: {
-    targetRef?: HTMLElement | null;
-  };
-};
-
-type ProductSelectEvent = Event & {
-  detail?: {
-    item?: Element | null;
-  };
-};
+import {
+  TRAINING_NAV_GROUPS,
+  TRAINING_ROUTE_LINKS,
+  TrainingNavGroup,
+  TrainingRouteLink,
+  resolveTrainingGroup,
+} from '../../app.navigation';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, FormsModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, RouterOutlet, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <a href="#main-content" class="skip-link" (click)="skipToMain($event)">Skip to main content</a>
-    <div class="shell-layout" [class.rtl]="i18n.isRtl()">
-      @if (showSearch()) {
-        <div class="search-overlay" (click)="closeSearch()">
-          <div class="search-modal" (click)="$event.stopPropagation()">
-            <div class="search-header-container">
-              <ui5-icon class="search-icon" name="search"></ui5-icon>
-              <input #searchInput type="text" class="search-input" name="searchQuery" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" [placeholder]="i18n.t('app.search.placeholder')" (keydown.enter)="selectFirstResult()" (keydown.escape)="closeSearch()" />
-              <ui5-button design="Transparent" (click)="closeSearch()">{{ i18n.t('app.search.esc') }}</ui5-button>
-            </div>
-            <div class="search-results-list">
-              @for (res of searchResults(); track res.route) {
-                <div class="search-item" (click)="navigateFromSearch(res.route)">
-                  <span class="nav-icon" aria-hidden="true">{{ res.icon }}</span>
-                  <span class="nav-label">{{ res.label }}</span>
-                  <span class="search-shortcut">{{ i18n.t('app.search.enter') }}</span>
-                </div>
-              }
-              @if (searchResults().length === 0) {
-                <div class="search-empty">{{ i18n.t('app.search.noResults') }} "{{searchQuery()}}"</div>
-              }
-            </div>
-          </div>
-        </div>
-      }
+    <!-- Global breathing canvas (Unibody background) -->
+    <div class="app-canvas"></div>
 
-      <ui5-shellbar
-        [attr.primary-title]="i18n.t('app.title')"
-        [attr.secondary-title]="i18n.t('app.subtitle')"
-        show-notifications
-        notifications-count="0"
-        show-product-switch
-        (logo-click)="navigateTo('/dashboard')"
-        (notifications-click)="openNotifications()"
-        (product-switch-click)="openProducts($event)"
-        (profile-click)="openProfile($event)"
-      >
-        <ui5-avatar slot="profile" icon="employee"></ui5-avatar>
-        @for (item of navItems(); track item.route) {
-          <ui5-shellbar-item
-            [attr.icon]="item.icon"
-            [attr.text]="item.label"
-            count=""
-            (item-click)="navigateTo(item.route)"
-          ></ui5-shellbar-item>
-        }
-      </ui5-shellbar>
+    <div class="app-shell" [class.rtl]="i18n.isRtl()">
+      <!-- Unified Header -->
+      <header class="app-header">
+        <ui5-shellbar
+          [primaryTitle]="i18n.t('app.title')"
+          [secondaryTitle]="i18n.t('app.subtitle')"
+          (profile-click)="onProfileClick($event)">
+          <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
+          <ui5-button icon="settings" slot="endContent" (click)="toggleSettings()"></ui5-button>
+        </ui5-shellbar>
+      </header>
 
-      <ui5-popover #profilePopover [attr.header-text]="i18n.t('app.profile')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
-        <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem; min-width: 250px;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label style="font-size: 0.875rem; color: var(--sapTextColor);">{{ i18n.t('app.showLanguageOptions') }}</label>
-            <ui5-switch [checked]="userSettings.showLanguageOptions()" (change)="toggleLanguageOptions($event)"></ui5-switch>
-          </div>
-          <ui5-button design="Transparent" icon="log" (click)="logout()" style="width: 100%;">{{ i18n.t('app.signOut') }}</ui5-button>
-        </div>
-      </ui5-popover>
-
-      <ui5-popover #productPopover [attr.header-text]="i18n.t('product.switcher')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
-        <ui5-list (item-click)="onProductSelect($event)">
-          <ui5-li icon="home" data-url="/aifabric/">{{ i18n.t('product.aiFabric') }}</ui5-li>
-          <ui5-li icon="process" data-url="/training/" selected>{{ i18n.t('product.training') }}</ui5-li>
-          <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">{{ i18n.t('product.sac') }}</ui5-li>
-          <ui5-li icon="grid" data-url="/ui5/">{{ i18n.t('product.joule') }}</ui5-li>
-        </ui5-list>
-      </ui5-popover>
-
-
-
-      <nav class="app-nav" role="navigation" aria-label="Training navigation">
-        @for (item of navItems(); track item.route) {
-          <ui5-button
-            design="Transparent"
-            class="app-nav__item"
-            [class.app-nav__item--active]="isActive(item.route)"
-            (click)="navigateTo(item.route)">
-            {{ item.label }}
-          </ui5-button>
-        }
-
-        <div class="app-nav__spacer"></div>
-
-        <!-- Team Presence -->
-        @if (teamMembers.length > 0) {
-          <div class="team-presence" aria-label="Team members online">
-            @for (member of teamMembers.slice(0, 5); track member.userId) {
-              <ui5-avatar
-                size="XS"
-                [attr.initials]="getMemberInitials(member)"
-                [attr.aria-label]="member.displayName + ' (' + member.status + ')'"
-                [style.border]="'2px solid ' + member.color"
-                [class.member-idle]="member.status === 'idle'"
-                [class.member-away]="member.status === 'away'">
-              </ui5-avatar>
-              @if (member.language) {
-                <span class="member-lang-badge" [title]="getLanguageName(member.language)">{{ member.language.toUpperCase() }}</span>
-              }
+      <div class="app-body">
+        <!-- Floating Navigation Islands -->
+        <nav class="app-nav-island"
+             [class.app-nav-island--expanded]="navExpanded()"
+             role="navigation"
+             [attr.aria-label]="i18n.t('app.mainNav')">
+          <button class="nav-toggle"
+                  (click)="navExpanded.set(!navExpanded())"
+                  [attr.aria-expanded]="navExpanded()"
+                  [attr.aria-label]="navExpanded() ? 'Collapse navigation' : 'Expand navigation'">
+            <ui5-icon [name]="navExpanded() ? 'navigation-left-arrow' : 'menu2'"></ui5-icon>
+          </button>
+          <div class="nav-group-stack" role="list">
+            @for (group of navGroups; track group.id) {
+              <button
+                class="nav-island-item"
+                role="listitem"
+                [class.active]="activeGroupId() === group.id"
+                [attr.aria-current]="activeGroupId() === group.id ? 'page' : null"
+                (click)="navigateTo(group.defaultPath)"
+                [attr.aria-label]="i18n.t(group.labelKey)">
+                <ui5-icon [name]="groupIcon(group.id)"></ui5-icon>
+                <span class="nav-label">{{ i18n.t(group.labelKey) }}</span>
+              </button>
             }
-            @if (teamMembers.length > 5) {
-              <span class="team-overflow">+{{ teamMembers.length - 5 }}</span>
-            }
-            <span class="collab-indicator" [class.collab-connected]="collabState === 'connected'" [class.collab-reconnecting]="collabState === 'reconnecting'">
-              {{ collabState === 'connected' ? '●' : collabState === 'reconnecting' ? '◌' : '' }}
-            </span>
           </div>
-        }
+        </nav>
 
-        @if (store.wsState() !== 'offline') {
-          <ui5-tag [design]="wsTagDesign()">{{ wsLabel() }}</ui5-tag>
-        }
-        @if (arabicModelOnline()) {
-          <ui5-tag design="Positive" [attr.aria-label]="i18n.t('chat.modelOnline')">{{ i18n.t('chat.arabicFinanceModel') }}: {{ i18n.t('status.online') }}</ui5-tag>
-        }
-        
-        @if (userSettings.showLanguageOptions()) {
-          <ui5-select (change)="onLangChange($event)">
-            <ui5-option value="en" [attr.selected]="i18n.currentLang() === 'en' ? '' : null">English</ui5-option>
-            <ui5-option value="ar" [attr.selected]="i18n.currentLang() === 'ar' ? '' : null">العربية (Arabic)</ui5-option>
-            <ui5-option value="fr" [attr.selected]="i18n.currentLang() === 'fr' ? '' : null">Français</ui5-option>
-            <ui5-option value="de" [attr.selected]="i18n.currentLang() === 'de' ? '' : null">Deutsch</ui5-option>
-            <ui5-option value="ko" [attr.selected]="i18n.currentLang() === 'ko' ? '' : null">한국어</ui5-option>
-            <ui5-option value="zh" [attr.selected]="i18n.currentLang() === 'zh' ? '' : null">中文</ui5-option>
-            <ui5-option value="id" [attr.selected]="i18n.currentLang() === 'id' ? '' : null">Bahasa Indonesia</ui5-option>
-          </ui5-select>
-        }
-        
-        <ui5-button design="Transparent" (click)="showDiagnostics.set(!showDiagnostics())" [attr.title]="i18n.t('app.diagnostics')">
-          {{ i18n.t('app.diagnostics') }}
-        </ui5-button>
-        <ui5-select (change)="onModeChange($event)">
-          <ui5-option value="novice" [attr.selected]="userSettings.mode() === 'novice' ? '' : null">{{ i18n.t('mode.novice') }}</ui5-option>
-          <ui5-option value="intermediate" [attr.selected]="userSettings.mode() === 'intermediate' ? '' : null">{{ i18n.t('mode.intermediate') }}</ui5-option>
-          <ui5-option value="expert" [attr.selected]="userSettings.mode() === 'expert' ? '' : null">{{ i18n.t('mode.expert') }}</ui5-option>
-        </ui5-select>
-      </nav>
-
-      @if (showDiagnostics()) {
-        <aside class="diagnostics-drawer" [attr.aria-label]="i18n.t('diagnostics.title')">
-          <div class="diagnostics-header">
-            <strong>{{ i18n.t('diagnostics.title') }}</strong>
-            <ui5-button design="Transparent" (click)="showDiagnostics.set(false)">{{ i18n.t('diagnostics.close') }}</ui5-button>
-          </div>
-          <div class="diagnostics-list">
-            @for (entry of diagnostics.entries(); track entry.route) {
-              <div class="diagnostics-row">
-                <div class="route">{{ entry.route }}</div>
-                <div class="meta">{{ entry.method }} · {{ entry.status }}</div>
-                <div class="meta">{{ i18n.t('diagnostics.latency') }}: {{ entry.latencyMs }}ms</div>
-                <div class="meta">{{ i18n.t('diagnostics.correlation') }}: {{ entry.correlationId }}</div>
-                @if (entry.lastError !== '-') {
-                  <div class="error">{{ i18n.t('diagnostics.error') }}: {{ entry.lastError }}</div>
+        <!-- Main Viewing Area -->
+        <main class="app-viewport">
+          <!-- Floating Context Bar (Pill Navigation) -->
+          @if (activeGroupRoutes().length > 1) {
+            <div class="context-pill-bar slideUp">
+              <div class="pill-track">
+                @for (route of activeGroupRoutes(); track route.path) {
+                  <button
+                    class="pill-item"
+                    [class.pill-item--active]="isRouteActive(route.path)"
+                    (click)="navigateTo(route.path)">
+                    {{ i18n.t(route.labelKey) }}
+                  </button>
                 }
               </div>
-            }
-            @if (!diagnostics.entries().length) {
-              <div class="search-empty">{{ i18n.t('diagnostics.noRequests') }}</div>
-            }
+            </div>
+          }
+
+          <div class="content-container" [class.content-container--with-pills]="activeGroupRoutes().length > 1">
+            <router-outlet></router-outlet>
           </div>
-        </aside>
-      }
-
-      <main class="shell-content" id="main-content">
-        <router-outlet />
-      </main>
+        </main>
+      </div>
     </div>
+
+    <!-- Hidden popovers & settings drawers -->
+    <ui5-popover #profilePopover header-text="Account">
+      <div style="width: 200px; padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+        <ui5-button icon="log" design="Negative" (click)="logout()">{{ i18n.t('app.signOut') }}</ui5-button>
+      </div>
+    </ui5-popover>
   `,
-  styles: [
-    `
-      .skip-link { position: absolute; top: -40px; left: 0; padding: 0.5rem 1rem; background: var(--sapBrandColor); color: #fff; z-index: 10000; text-decoration: none; font-weight: 600; }
-      .skip-link:focus { top: 0; }
+  styles: [`
+    .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100vw; position: relative; z-index: 1; }
+    .app-header { flex-shrink: 0; }
+    
+    .app-body { flex: 1; display: flex; padding: 1.5rem; gap: 1.5rem; overflow: hidden; }
+    
+    /* ── Nav Island (Jobs/Ive refinement) ──────────────────────────────── */
+    .app-nav-island {
+      width: 80px;
+      display: flex;
+      flex-direction: column;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 2rem;
+      box-shadow: var(--shadow-ambient);
+      padding: 1rem 0;
+      transition: width 0.3s var(--spring-easing);
+      overflow: hidden;
+    }
+    .app-nav-island:hover,
+    .app-nav-island:focus-within,
+    .app-nav-island--expanded { width: 200px; }
+    .app-nav-island:hover .nav-label,
+    .app-nav-island:focus-within .nav-label,
+    .app-nav-island--expanded .nav-label { opacity: 1; }
 
-      .shell-layout {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-        background: var(--sapBackgroundColor, #f5f6f7);
-      }
+    .nav-toggle {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; border: none; background: transparent;
+      padding: 0.5rem; cursor: pointer; color: var(--sapContent_LabelColor);
+      transition: color 0.2s;
+    }
+    .nav-toggle:hover { color: var(--sapBrandColor); }
 
-      .search-overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(2px);
-        z-index: 1000;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding-top: 10vh;
-      }
-      .search-modal {
-        width: 100%;
-        max-width: 600px;
-        background: var(--sapBaseColor, #fff);
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      .search-header-container {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1.25rem;
-        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-      }
-      .search-icon { font-size: 1.2rem; margin-inline-end: 0.75rem; }
-      .search-input {
-        flex: 1;
-        border: none;
-        outline: none;
-        font-size: 1.125rem;
-        background: transparent;
-        color: var(--sapTextColor, #32363a);
-      }
-      .search-close-btn {
-        background: var(--sapGroup_TitleBorderColor, #d9d9d9); 
-        border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem;
-        font-size: 0.75rem; color: var(--sapTextColor, #32363a); cursor: pointer; font-weight: 600;
-      }
-      .search-results-list {
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 0.5rem 0;
-      }
-      .search-item {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1.25rem;
-        cursor: pointer;
-        transition: background 0.1s;
-      }
-      .search-item:hover, .search-item.active {
-        background: var(--sapList_Hover_Background, #f5f5f5);
-      }
-      .search-item .nav-icon { margin-inline-end: 0.75rem; }
-      .search-shortcut {
-        margin-inline-start: auto;
-        color: var(--sapGroup_TitleBorderColor, #d9d9d9);
-        font-size: 1.1rem;
-        opacity: 0;
-      }
-      .search-item:hover .search-shortcut { opacity: 1; }
-      .search-empty {
-        padding: 1.5rem;
-        text-align: center;
-        color: var(--sapField_BorderColor, #89919a);
-      }
+    .nav-group-stack { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+    .nav-island-item {
+      display: flex; align-items: center; gap: 1.25rem;
+      width: 100%; border: none; background: transparent;
+      padding: 1rem 1.75rem; cursor: pointer; color: var(--sapContent_LabelColor);
+      transition: all 0.2s; position: relative;
+    }
+    .nav-island-item:hover { background: rgba(0, 0, 0, 0.03); }
+    .nav-island-item ui5-icon { font-size: 1.25rem; flex-shrink: 0; }
+    .nav-label { font-size: 0.875rem; font-weight: 600; white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
 
-      .header-btn {
-        background: #fff;
-        border: 1px solid var(--sapField_BorderColor, #89919a);
-        color: var(--sapTextColor, #32363a);
-        padding: 0.25rem 0.75rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        font-size: 0.8125rem;
-        transition: background 0.15s;
+    .nav-island-item.active { color: var(--sapBrandColor); }
+    .nav-island-item.active::before {
+      content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+      width: 4px; background: var(--sapBrandColor); border-radius: 0 4px 4px 0;
+    }
 
-        &:hover {
-          background: var(--sapList_Hover_Background, #f5f5f5);
-        }
-      }
+    /* ── Main Viewport ───────────────────────────────────────────────────── */
+    .app-viewport { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    
+    .context-pill-bar {
+      position: absolute; top: 0; left: 0; right: 0; height: 60px;
+      display: flex; align-items: center; justify-content: center; z-index: 10;
+    }
+    .pill-track {
+      background: var(--glass-bg); backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border); border-radius: 999px;
+      padding: 0.25rem; display: flex; gap: 0.25rem; box-shadow: var(--shadow-ambient);
+    }
+    .pill-item {
+      border: none; background: transparent; padding: 0.5rem 1.25rem;
+      border-radius: 999px; font-size: 0.8125rem; font-weight: 600;
+      color: var(--sapContent_LabelColor); cursor: pointer; transition: all 0.3s;
+    }
+    .pill-item--active { background: var(--sapBrandColor); color: #fff; }
 
-      .app-nav {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: #fff;
-        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-      }
+    .content-container { flex: 1; overflow-y: auto; padding-top: 0; }
+    .content-container--with-pills { padding-top: 75px; }
 
-      .app-nav__item {
-        border: none;
-        background: transparent;
-        color: var(--sapTextColor, #32363a);
-        padding: 0.375rem 0.625rem;
-        border-radius: 0.375rem;
-        font-size: 0.8125rem;
-        cursor: pointer;
-      }
+    /* RTL */
+    .rtl .nav-island-item.active::before { left: auto; right: 0; border-radius: 4px 0 0 4px; }
 
-      .app-nav__item:hover {
-        background: var(--sapList_Hover_Background, #f5f5f5);
-      }
-
-      .app-nav__item--active {
-        background: var(--sapList_SelectionBackgroundColor, #e8f2ff);
-        color: var(--sapBrandColor, #0854a0);
-        font-weight: 600;
-      }
-
-      .app-nav__spacer {
-        flex: 1;
-      }
-
-      .mode-select {
-        background: #fff;
-        color: var(--sapTextColor, #32363a);
-        border: 1px solid var(--sapField_BorderColor, #89919a);
-        border-radius: 0.25rem;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.8125rem;
-        outline: none;
-        cursor: pointer;
-
-        option {
-          background: #fff;
-          color: var(--sapTextColor, #32363a);
-        }
-      }
-
-      .shell-content {
-        flex: 1;
-        overflow-y: auto;
-      }
-
-      .diagnostics-drawer {
-        border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-        background: #fff;
-        padding: 0.75rem 1rem;
-      }
-
-      .diagnostics-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-      }
-
-      .diagnostics-list {
-        max-height: 180px;
-        overflow-y: auto;
-        display: grid;
-        gap: 0.5rem;
-      }
-
-      .diagnostics-row {
-        border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-        border-radius: 0.375rem;
-        padding: 0.5rem 0.625rem;
-        background: var(--sapTile_Background, #fff);
-      }
-
-      .route {
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: var(--sapTextColor, #32363a);
-      }
-
-      .meta {
-        font-size: 0.75rem;
-        color: var(--sapContent_LabelColor, #6a6d70);
-      }
-
-      .error {
-        margin-top: 0.2rem;
-        font-size: 0.75rem;
-        color: var(--sapNegativeColor, #b00);
-      }
-
-      .model-status-indicator {
-        font-size: 0.75rem;
-        font-weight: 500;
-        padding: 0.2rem 0.5rem;
-        border-radius: 0.25rem;
-        white-space: nowrap;
-      }
-
-      .model-online {
-        color: var(--sapPositiveColor, #107e3e);
-      }
-
-      .model-offline {
-        color: var(--sapNegativeColor, #b00);
-        opacity: 0.8;
-      }
-
-      .lang-toggle {
-        font-weight: 600;
-        min-width: 5rem;
-        text-align: center;
-      }
-
-      :host-context([dir='rtl']) .app-nav,
-      .rtl .app-nav {
-        flex-direction: row-reverse;
-      }
-
-      :host-context([dir='rtl']) .app-nav__spacer ~ *,
-      .rtl .app-nav__spacer ~ * {
-        direction: rtl;
-      }
-
-      .team-presence {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-      }
-      .team-presence .member-idle { opacity: 0.6; }
-      .team-presence .member-away { opacity: 0.4; }
-      .team-overflow {
-        font-size: 0.75rem;
-        color: var(--sapContent_LabelColor, #6a6d70);
-        padding: 0 0.25rem;
-      }
-      .collab-indicator { font-size: 0.5rem; margin-inline-start: 0.25rem; }
-      .collab-connected { color: var(--sapPositiveColor, #107e3e); }
-      .collab-reconnecting { color: var(--sapCriticalColor, #e9730c); }
-      .member-lang-badge {
-        font-size: 0.625rem;
-        font-weight: 600;
-        background: var(--sapInformationBackground, #e8f2ff);
-        color: var(--sapInformativeColor, #0a6ed1);
-        padding: 0.1rem 0.3rem;
-        border-radius: 0.25rem;
-        line-height: 1;
-      }
-
-      .ws-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 1rem; background: var(--sapList_SelectionBackgroundColor, #e8f2ff); border-bottom: 1px solid var(--sapGroup_TitleBorderColor); font-size: 0.8125rem; flex-wrap: wrap; }
-      .ws-cross-label { font-size: 0.75rem; color: var(--sapContent_LabelColor); font-weight: 500; margin-inline-start: 0.5rem; }
-      .ws-picker-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 999; display: flex; justify-content: center; align-items: flex-start; padding-top: 5rem; }
-      .ws-picker { background: var(--sapBaseColor, #fff); border-radius: 0.5rem; padding: 1rem; min-width: 380px; max-width: 500px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-      .ws-picker-item { border: 1px solid var(--sapTile_BorderColor); border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; }
-      .ws-picker-item:hover { background: var(--sapList_Hover_Background, #f5f5f5); }
-      .ws-picker-item--active { border-color: var(--sapBrandColor); background: var(--sapList_SelectionBackgroundColor, #e8f2ff); }
-    `,
-  ],
+    /* Touch / Mobile */
+    @media (max-width: 768px) {
+      .app-nav-island { width: 60px; border-radius: 1.5rem; padding: 0.5rem 0; }
+      .app-nav-island:hover,
+      .app-nav-island:focus-within { width: 60px; }
+      .app-nav-island--expanded { width: 200px; }
+      .app-nav-island:hover .nav-label,
+      .app-nav-island:focus-within .nav-label { opacity: 0; }
+      .app-nav-island--expanded .nav-label { opacity: 1; }
+      .nav-island-item { padding: 0.75rem 1.25rem; }
+    }
+  `],
 })
 export class ShellComponent implements OnInit, OnDestroy {
-  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
-  private readonly api = inject(ApiService);
-  readonly diagnostics = inject(DiagnosticsService);
-  readonly userSettings = inject(UserSettingsService);
-  readonly store = inject(AppStore);
-  readonly i18n = inject(I18nService);
-  private readonly collabService = inject(CollaborationService);
-  private readonly teamConfigService = inject(TeamConfigService);
-  private readonly workspaceService = inject(WorkspaceService);
-  private readonly destroy$ = new Subject<void>();
-  readonly arabicModelOnline = signal(false);
-
-  // Team collaboration state
-  teamMembers: TeamMember[] = [];
-  collabState: ConnectionState = 'disconnected';
-
-  /**
-   * Computed signal so the nav labels reactively update when
-   * translations finish loading or the language changes.
-   * Reading `translationsReady` and `currentLang` inside the
-   * computed guarantees Angular re-evaluates after the async
-   * fetch completes (fixes the SPA-navigation i18n regression).
-   */
-  readonly navItems = computed(() => {
-    // Subscribe to reactive signals so Angular knows to re-render
-    this.i18n.translationsReady();
-    this.i18n.currentLang();
-
-    // Use workspace-driven nav (filters hidden items, respects order)
-    return this.workspaceService.visibleNavLinks().map(link => ({
-      label: this.i18n.t(link.labelKey),
-      icon: link.icon,
-      route: link.route,
-    }));
-  });
-
-  readonly version = '1.0.0';
-  apiKeyDraft = this.auth.token() ?? '';
-
-  ngOnInit(): void {
-    this.workspaceService.initialize();
-    this.checkArabicModelStatus();
-    this.initCollaboration();
-    this.teamConfigService.loadTeamConfig();
-  }
-
-  ngOnDestroy(): void {
-    this.collabService.leaveRoom();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  private initCollaboration(): void {
-    const userId = this.auth.token() ? 'training-user' : environment.collabUserId;
-    const displayName = environment.collabDisplayName;
-
-    this.collabService.configure({
-      websocketUrl: environment.collabWsUrl,
-      userId,
-      displayName,
-      language: this.i18n.currentLang(),
-    });
-
-    this.collabService.connectionState$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(state => this.collabState = state);
-
-    this.collabService.members$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(members => this.teamMembers = members);
-
-    this.collabService.joinRoom('training-workspace-default').catch(() => {});
-
-    // Track page location for presence
-    this.router.events
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
-        if ('urlAfterRedirects' in event) {
-          this.collabService.updatePresence('active', (event as any).urlAfterRedirects);
-        }
-      });
-  }
-
-  getMemberInitials(member: TeamMember): string {
-    const name = member.displayName?.trim();
-    if (!name) return '??';
-    const parts = name.split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return name.slice(0, 2).toUpperCase();
-  }
-
-  private static readonly LANG_NAMES: Record<string, string> = {
-    en: 'English', ar: 'العربية', fr: 'Français', de: 'Deutsch',
-    ko: '한국어', zh: '中文', id: 'Bahasa Indonesia',
-  };
-
-  getLanguageName(code: string): string {
-    return ShellComponent.LANG_NAMES[code] || code.toUpperCase();
-  }
-
-  private checkArabicModelStatus(): void {
-    this.api.getModelStatus()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp) => this.arabicModelOnline.set(resp.status === 'ready' || resp.status === 'online'),
-        error: () => this.arabicModelOnline.set(false),
-      });
-  }
-
-  // --- Search State & Logic ---
-  showSearch = signal(false);
-  showDiagnostics = signal(false);
-  searchQuery = signal('');
+  private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
   
-  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('productPopover') productPopover!: ElementRef<Ui5PopoverElement>;
-  @ViewChild('profilePopover') profilePopover!: ElementRef<Ui5PopoverElement>;
+  @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
 
-  searchResults = computed(() => {
-    const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.navItems();
-    return this.navItems().filter(i =>
-      i.label.toLowerCase().includes(q) || 
-      i.route.toLowerCase().includes(q)
-    );
+  readonly navGroups = TRAINING_NAV_GROUPS;
+  readonly activeGroupId = signal('home');
+  readonly navExpanded = signal(false);
+  private routerSub?: Subscription;
+
+  readonly activeGroupRoutes = computed(() => {
+    const groupId = this.activeGroupId();
+    return TRAINING_ROUTE_LINKS.filter(link => link.group === groupId);
   });
 
-  @HostListener('window:keydown', ['$event'])
-  handleKeyboardEvent(event: KeyboardEvent) {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-      event.preventDefault();
-      this.toggleSearch();
-    } else if (event.key === 'Escape' && this.showSearch()) {
-      this.closeSearch();
-    }
+  ngOnInit() {
+    this.updateActiveGroup(this.router.url);
+    this.routerSub = this.router.events.pipe(
+      filter((e: Event): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(e => this.updateActiveGroup(e.url));
   }
 
-  toggleSearch() {
-    this.showSearch.set(!this.showSearch());
-    if (this.showSearch()) {
-      setTimeout(() => this.searchInput?.nativeElement?.focus(), 50);
-    } else {
-      this.searchQuery.set('');
-    }
+  ngOnDestroy() { this.routerSub?.unsubscribe(); }
+
+  private updateActiveGroup(url: string) {
+    this.activeGroupId.set(resolveTrainingGroup(url));
   }
 
-  closeSearch() {
-    this.showSearch.set(false);
-    this.searchQuery.set('');
+  groupIcon(id: string): string {
+    const icons: Record<string, string> = { home: 'home', 'data-factory': 'folder', 'ai-lab': 'discussion-2', mlops: 'process' };
+    return icons[id] || 'grid';
   }
 
-  navigateFromSearch(route: string) {
-    this.router.navigate([route]);
-    this.closeSearch();
+  isRouteActive(path: string): boolean { return this.router.url.startsWith(path); }
+  navigateTo(path: string) { this.router.navigate([path]); }
+  
+  onProfileClick(event: any) {
+    const popover = this.profilePopover.nativeElement;
+    popover.opener = event.detail.targetRef;
+    popover.open = true;
   }
 
-  selectFirstResult() {
-    const results = this.searchResults();
-    if (results.length > 0) {
-      this.navigateFromSearch(results[0].route);
-    }
-  }
-  // -------------------------
-
-  isActive(route: string): boolean {
-    const url = this.router.url.split('?')[0];
-    return url.startsWith(route);
-  }
-
-  navigateTo(route: string): void {
-    this.router.navigate([route]);
-  }
-
-  skipToMain(event: Event): void {
-    event.preventDefault();
-    const main = document.getElementById('main-content');
-    if (main) { main.focus(); main.scrollIntoView(); }
-  }
-
-  wsLabel(): string {
-    switch (this.store.wsState()) {
-      case 'connected':
-        return this.i18n.t('app.live');
-      case 'reconnecting':
-      case 'connecting':
-        return this.i18n.t('app.reconnecting');
-      default:
-        return this.i18n.t('app.offline');
-    }
-  }
-
-  wsTagDesign(): 'Positive' | 'Critical' | 'Negative' {
-    switch (this.store.wsState()) {
-      case 'connected':
-        return 'Positive';
-      case 'reconnecting':
-      case 'connecting':
-        return 'Critical';
-      default:
-        return 'Negative';
-    }
-  }
-
-  saveApiKey(): void {
-    if (this.apiKeyDraft.trim()) {
-      this.auth.setToken(this.apiKeyDraft.trim());
-    } else {
-      this.auth.clearToken();
-    }
-  }
-
-  logout(): void {
-    this.auth.clearToken();
-    this.router.navigate(['/login']);
-  }
-
-  openNotifications(): void {
-    this.toast.info(this.i18n.t('app.noNotifications'));
-  }
-
-  openProducts(event: ShellbarClickEvent): void {
-    const popover = this.productPopover?.nativeElement;
-    const target = event?.detail?.targetRef;
-    if (popover && target) {
-      if (typeof popover.showAt === 'function') {
-        popover.showAt(target);
-      } else {
-        popover.opener = target;
-        popover.open = true;
-      }
-    }
-  }
-
-  onProductSelect(event: ProductSelectEvent): void {
-    const url = event.detail?.item?.getAttribute('data-url');
-    if (url) {
-      window.location.href = url;
-    }
-  }
-
-  openProfile(event: ShellbarClickEvent): void {
-    const popover = this.profilePopover?.nativeElement;
-    const target = event?.detail?.targetRef;
-    if (popover && target) {
-      if (typeof popover.showAt === 'function') {
-        popover.showAt(target);
-      } else {
-        popover.opener = target;
-        popover.open = true;
-      }
-    }
-  }
-
-  onLangChange(event: Event): void {
-    const detail = (event as CustomEvent).detail;
-    const selectedOption = detail?.selectedOption;
-    const value = selectedOption?.getAttribute('value') ?? selectedOption?.value;
-    if (value) {
-      this.i18n.setLanguage(value);
-      this.workspaceService.updateLanguage(value);
-      this.collabService.updateLanguage(value);
-    }
-  }
-
-  onModeChange(event: Event): void {
-    const detail = (event as CustomEvent).detail;
-    const selectedOption = detail?.selectedOption;
-    const value = selectedOption?.getAttribute('value') ?? selectedOption?.value;
-    if (value) {
-      this.userSettings.setMode(value);
-    }
-  }
-
-  toggleLanguageOptions(event: Event): void {
-    const target = event.target as (EventTarget & { checked?: boolean }) | null;
-    const checked = Boolean(target?.checked);
-    this.userSettings.setShowLanguageOptions(checked);
-    if (!checked && this.i18n.currentLang() !== 'en') {
-      this.i18n.setLanguage('en');
-    }
-  }
+  toggleSettings() { /* Logic for global settings drawer */ }
+  logout() { this.auth.clearToken(); this.router.navigate(['/login']); }
 }

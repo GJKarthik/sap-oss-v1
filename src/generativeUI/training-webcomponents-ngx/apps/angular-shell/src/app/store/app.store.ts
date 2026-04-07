@@ -33,7 +33,9 @@ export interface GpuStatus {
 export interface HealthStatus {
   status: string;
   service: string;
-  version: string;
+  version?: string;
+  dependencies?: Record<string, string>;
+  timestamp?: string;
 }
 
 export interface GraphStats {
