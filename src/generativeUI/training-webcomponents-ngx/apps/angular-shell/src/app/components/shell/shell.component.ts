@@ -42,7 +42,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
           (profile-click)="onProfileClick($event)">
           <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
           <ui5-button icon="search" slot="endContent" (click)="toggleSearch()" aria-label="Search (⌘K)"></ui5-button>
-          <ui5-button icon="settings" slot="endContent"></ui5-button>
+          <ui5-button icon="settings" slot="endContent" aria-label="Settings"></ui5-button>
         </ui5-shellbar>
       </header>
 
@@ -62,7 +62,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
           </div>
         </nav>
 
-        <main id="main-content" class="app-viewport">
+        <main id="main-content" class="app-viewport" tabindex="-1">
           @if (activeGroupRoutes().length > 1) {
             <div class="context-pill-bar slideUp">
               <div class="pill-track">
@@ -70,6 +70,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
                   <button
                     class="pill-item"
                     [class.pill-item--active]="isRouteActive(route.path)"
+                    [attr.aria-current]="isRouteActive(route.path) ? 'page' : null"
                     (click)="navigateTo(route.path)">
                     {{ i18n.t(route.labelKey) }}
                   </button>

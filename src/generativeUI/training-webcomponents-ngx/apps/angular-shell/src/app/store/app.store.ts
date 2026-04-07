@@ -122,20 +122,20 @@ export const AppStore = signalStore(
       });
     }
   })),
-  withHooks({
-    onInit(store) {
-      store.loadDashboardData();
-      const destroy$ = new Subject<void>();
-      interval(10000).pipe(
-        takeUntil(destroy$),
-        tap(() => store.loadDashboardData())
-      ).subscribe();
-      // Store destroy$ for cleanup via a side-channel
-      (store as any).__destroy$ = destroy$;
-    },
-    onDestroy(store) {
-      (store as any).__destroy$?.next();
-      (store as any).__destroy$?.complete();
-    }
+  withHooks((store) => {
+    const destroy$ = new Subject<void>();
+    return {
+      onInit() {
+        store.loadDashboardData();
+        interval(10000).pipe(
+          takeUntil(destroy$),
+          tap(() => store.loadDashboardData())
+        ).subscribe();
+      },
+      onDestroy() {
+        destroy$.next();
+        destroy$.complete();
+      }
+    };
   })
 );

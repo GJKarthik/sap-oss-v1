@@ -187,7 +187,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
 
-  readonly pipelineState = signal<PipelineState>('idle');
+  readonly pipelineState = computed<PipelineState>(() => this.appStore.pipelineState());
   readonly logLines = signal<LogLine[]>([]);
   readonly starting = signal(false);
   readonly wsConnected = signal(false);
@@ -256,7 +256,6 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   private handleMessage(msg: any) {
     if (msg.type === 'init') {
       const s = msg.state || 'idle';
-      this.pipelineState.set(s);
       this.appStore.setPipelineState(s);
       this.logLines.set((msg.logs || []).map((t: string) => this.parseLine(t)));
       this.updateStagesFromState(s);
@@ -264,7 +263,6 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.appendLine(msg.text || '');
     } else if (msg.type === 'done') {
       const s = msg.state || 'completed';
-      this.pipelineState.set(s);
       this.appStore.setPipelineState(s);
       this.appendLine(msg.text || '');
       this.updateStagesFromState(s);
@@ -298,7 +296,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   startPipeline() {
     this.starting.set(true);
     this.http.post(`${environment.apiBaseUrl}/pipeline/start`, {}).subscribe({
-      next: () => { this.pipelineState.set('running'); this.appStore.setPipelineState('running'); this.starting.set(false); },
+      next: () => { this.appStore.setPipelineState('running'); this.starting.set(false); },
       error: () => this.starting.set(false)
     });
   }

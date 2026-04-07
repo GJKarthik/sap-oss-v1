@@ -4,12 +4,14 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   inject,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Router } from '@angular/router';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
 interface PlatformComponent {
@@ -27,7 +29,7 @@ interface PlatformComponent {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="dashboard-viewport fadeIn">
+    <div class="dashboard-viewport fadeIn" [attr.aria-busy]="store.isDashboardLoading()">
       <!-- Floating Header -->
       <div class="glass-panel floating-header slideUp">
         <div class="header-left">
@@ -85,7 +87,7 @@ interface PlatformComponent {
           <section class="materials-section">
             <ui5-title level="H4" class="section-title">System Ecosystem</ui5-title>
             <div class="materials-grid">
-              @for (comp of components; track comp.name; let i = $index) {
+              @for (comp of components(); track comp.name; let i = $index) {
                 <div class="glass-panel material-card slideUp" 
                      [style.--stagger]="(0.3 + (i * 0.05)) + 's'"
                      (click)="navigateTo(comp)">
@@ -175,21 +177,20 @@ interface PlatformComponent {
 export class DashboardComponent implements OnInit {
   readonly store = inject(AppStore);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
   readonly i18n = inject(I18nService);
 
-  get components(): PlatformComponent[] {
-    return [
-      { icon: 'process', name: this.i18n.t('nav.pipeline'), desc: 'Automated Text-to-SQL generation pipeline', status: 'Production', badge: 'status-success' },
-      { icon: 'machine', name: this.i18n.t('nav.training'), desc: 'Model optimization and quantization', status: 'Active', badge: 'status-success' },
-      { icon: 'chain-link', name: 'HippoCPP Engine', desc: 'High-performance graph database', status: 'Ready', badge: 'status-info' },
-      { icon: 'folder', name: this.i18n.t('nav.assets'), desc: 'Training data and schema registry', status: 'Ready', badge: 'status-info' },
-    ];
-  }
+  readonly components = computed<PlatformComponent[]>(() => [
+    { icon: 'process', name: this.i18n.t('nav.pipeline'), desc: 'Automated Text-to-SQL generation pipeline', status: 'Production', badge: 'status-success' },
+    { icon: 'machine', name: this.i18n.t('nav.training'), desc: 'Model optimization and quantization', status: 'Active', badge: 'status-success' },
+    { icon: 'chain-link', name: 'HippoCPP Engine', desc: 'High-performance graph database', status: 'Ready', badge: 'status-info' },
+    { icon: 'folder', name: this.i18n.t('nav.assets'), desc: 'Training data and schema registry', status: 'Ready', badge: 'status-info' },
+  ]);
 
   ngOnInit(): void { this.store.loadDashboardData(); }
 
   refresh(): void {
-    this.store.forceRefresh('all');
+    this.store.forceRefresh();
     this.toast.info(this.i18n.t('dashboard.refreshMsg'));
   }
 
@@ -201,6 +202,6 @@ export class DashboardComponent implements OnInit {
   navigateTo(comp: PlatformComponent): void {
     const paths: Record<string, string> = { 'process': '/pipeline', 'machine': '/training', 'folder': '/assets' };
     const path = paths[comp.icon];
-    if (path) window.location.href = '/training' + path;
+    if (path) this.router.navigate([path]);
   }
 }
