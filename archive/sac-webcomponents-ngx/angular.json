@@ -1,0 +1,117 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "libs",
+  "projects": {
+    "sac-core": {
+      "projectType": "library",
+      "root": "libs/sac-core",
+      "sourceRoot": "libs/sac-core/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-core/ng-package.json" }
+        }
+      }
+    },
+    "sac-chart": {
+      "projectType": "library",
+      "root": "libs/sac-chart",
+      "sourceRoot": "libs/sac-chart/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-chart/ng-package.json" }
+        }
+      }
+    },
+    "sac-table": {
+      "projectType": "library",
+      "root": "libs/sac-table",
+      "sourceRoot": "libs/sac-table/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-table/ng-package.json" }
+        }
+      }
+    },
+    "sac-input": {
+      "projectType": "library",
+      "root": "libs/sac-input",
+      "sourceRoot": "libs/sac-input/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-input/ng-package.json" }
+        }
+      }
+    },
+    "sac-planning": {
+      "projectType": "library",
+      "root": "libs/sac-planning",
+      "sourceRoot": "libs/sac-planning/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-planning/ng-package.json" }
+        }
+      }
+    },
+    "sac-datasource": {
+      "projectType": "library",
+      "root": "libs/sac-datasource",
+      "sourceRoot": "libs/sac-datasource/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-datasource/ng-package.json" }
+        }
+      }
+    },
+    "sac-widgets": {
+      "projectType": "library",
+      "root": "libs/sac-widgets",
+      "sourceRoot": "libs/sac-widgets/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-widgets/ng-package.json" }
+        }
+      }
+    },
+    "sac-advanced": {
+      "projectType": "library",
+      "root": "libs/sac-advanced",
+      "sourceRoot": "libs/sac-advanced/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-advanced/ng-package.json" }
+        }
+      }
+    },
+    "sac-builtins": {
+      "projectType": "library",
+      "root": "libs/sac-builtins",
+      "sourceRoot": "libs/sac-builtins/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-builtins/ng-package.json" }
+        }
+      }
+    },
+    "sac-calendar": {
+      "projectType": "library",
+      "root": "libs/sac-calendar",
+      "sourceRoot": "libs/sac-calendar/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": { "project": "libs/sac-calendar/ng-package.json" }
+        }
+      }
+    }
+  }
+}

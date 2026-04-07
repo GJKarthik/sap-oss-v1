@@ -1,0 +1,45 @@
+{
+  "id": "sap-oss.sac-ai-widget",
+  "version": "1.0.0",
+  "name": "SAC AI Widget",
+  "description": "Natural language analytics powered by CAP LLM Plugin + AG-UI",
+  "newInstancePrefix": "SacAI",
+  "icon": "",
+  "webcomponents": [
+    {
+      "kind": "main",
+      "tag": "sac-ai-widget",
+      "url": "widget.js",
+      "integrity": ""
+    }
+  ],
+  "properties": {
+    "capBackendUrl": {
+      "type": "string",
+      "description": "CAP LLM Plugin backend URL (BTP CF app URL)",
+      "default": ""
+    },
+    "tenantUrl": {
+      "type": "string",
+      "description": "SAC tenant URL (e.g. https://my-tenant.sapanalytics.cloud)",
+      "default": ""
+    },
+    "modelId": {
+      "type": "string",
+      "description": "Default SAC datasource model ID",
+      "default": ""
+    },
+    "widgetType": {
+      "type": "string",
+      "description": "Initial widget type: chart | table | kpi",
+      "default": "chart"
+    },
+    "sacBearerToken": {
+      "type": "string",
+      "description": "SAC session bearer token (injected at runtime by SAC)",
+      "default": ""
+    }
+  },
+  "methods": {},
+  "events": {}
+}

@@ -1,0 +1,47 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "useDefineForClassFields": false,
+    "paths": {
+      "@sap-oss/sac-sdk": ["libs/sac-sdk/index.ts"],
+      "@sap-oss/sac-ngx/core": ["libs/sac-core/src/index.ts"],
+      "@sap-oss/sac-ngx-core": ["libs/sac-core/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/sdk": ["dist/sac-sdk/index.d.mts"],
+      "@sap-oss/sac-webcomponents-ngx/core": ["libs/sac-core/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/chart": ["libs/sac-chart/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/table": ["libs/sac-table/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/input": ["libs/sac-input/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/planning": ["libs/sac-planning/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/datasource": ["libs/sac-datasource/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/widgets": ["libs/sac-widgets/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/advanced": ["libs/sac-advanced/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/builtins": ["libs/sac-builtins/src/index.ts"],
+      "@sap-oss/sac-webcomponents-ngx/calendar": ["libs/sac-calendar/src/index.ts"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}
