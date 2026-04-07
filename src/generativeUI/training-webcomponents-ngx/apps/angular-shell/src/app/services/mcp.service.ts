@@ -104,12 +104,10 @@ export interface DashboardStats {
   overallHealth: 'healthy' | 'degraded' | 'error' | 'unknown';
 }
 
-export interface ElasticsearchClusterHealth {
-  cluster_name?: string;
+export interface HanaConnectionHealth {
   status?: string;
-  number_of_nodes?: number;
-  active_shards?: number;
-  [key: string]: unknown;
+  tables_count?: number;
+  version?: string;
 }
 
 export interface VocabTerm { name: string; vocabulary: string; type: string; description?: string; applies_to?: string[]; experimental?: boolean; deprecated?: boolean; score?: number; }
@@ -214,9 +212,7 @@ export class McpService {
 
   private requestId = 0;
   private correlationCounter = 0;
-  private readonly elasticsearchUrl = environment.elasticsearchMcpUrl;
   private readonly palUrl = environment.palMcpUrl;
-  private readonly elasticsearchHealthUrl = `${environment.elasticsearchMcpUrl}/health`;
   private readonly palHealthUrl = `${environment.palMcpUrl}/health`;
   private readonly vocabUrl = '/api/mcp/vocab';
   private readonly hanaUrl = '/api/mcp/hana';
