@@ -78,6 +78,12 @@ interface InvocationEntry {
               <div class="tool-description" *ngIf="selectedTool">
                 <strong>{{ selectedTool.name }}</strong>
                 <span>{{ selectedTool.description || ('playground.noDescription' | translate) }}</span>
+                <div class="tool-schema-hint" *ngIf="selectedToolFields.length > 0">
+                  <span class="tool-schema-label">Schema:</span>
+                  <span *ngFor="let f of selectedToolFields" class="tool-field-chip" [class.required]="f.required" [title]="f.name + ' (' + f.type + ')' + (f.required ? ' — required' : '')">
+                    {{ f.name }}<span class="tool-field-type">{{ f.type }}</span>
+                  </span>
+                </div>
               </div>
 
               <div class="field-group">
@@ -86,11 +92,16 @@ interface InvocationEntry {
                   id="pal-tool-args"
                   ngDefaultControl
                   [(ngModel)]="argumentsText"
+                  (input)="validateArgs()"
                   [rows]="12"
                   growing
                   placeholder='{"table_name":"SALES_HISTORY","value_column":"REVENUE"}'
-                  accessible-name="PAL tool arguments JSON">
+                  accessible-name="PAL tool arguments JSON"
+                  [attr.value-state]="argsValidationState">
                 </ui5-textarea>
+                <span class="validation-hint" *ngIf="argsValidationMessage" [class.valid]="argsValid" [class.invalid]="!argsValid">
+                  {{ argsValidationMessage }}
+                </span>
               </div>
 
               <div class="actions">
@@ -194,11 +205,64 @@ interface InvocationEntry {
 
     .tool-description {
       display: grid;
-      gap: 0.25rem;
+      gap: 0.35rem;
       padding: 0.75rem;
       border-radius: 0.75rem;
       background: var(--sapList_Background);
       border: 1px solid var(--sapList_BorderColor);
+    }
+
+    .tool-schema-hint {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+      margin-top: 0.25rem;
+    }
+
+    .tool-schema-label {
+      font-size: var(--sapFontSmallSize);
+      color: var(--sapContent_LabelColor);
+      font-weight: 600;
+    }
+
+    .tool-field-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--sapList_Background, #f5f5f5);
+      border: 1px solid var(--sapList_BorderColor);
+      color: var(--sapTextColor);
+      cursor: help;
+    }
+
+    .tool-field-chip.required {
+      border-color: var(--sapBrandColor, #0854a0);
+      background: color-mix(in srgb, var(--sapBrandColor) 8%, white);
+    }
+
+    .tool-field-type {
+      color: var(--sapContent_LabelColor);
+      font-weight: 400;
+      font-size: 0.6rem;
+      margin-left: 0.15rem;
+    }
+
+    .validation-hint {
+      font-size: var(--sapFontSmallSize);
+      font-weight: 600;
+    }
+
+    .validation-hint.valid {
+      color: var(--sapPositiveColor, #107e3e);
+    }
+
+    .validation-hint.invalid {
+      color: var(--sapNegativeColor, #b00);
     }
 
     .actions {
@@ -285,9 +349,25 @@ export class PlaygroundComponent implements OnInit {
   running = false;
   error = '';
   success = '';
+  argsValid = true;
+  argsValidationMessage = '';
+  argsValidationState: 'None' | 'Positive' | 'Negative' = 'None';
 
   get selectedTool(): MCPToolDefinition | undefined {
     return this.palTools.find(tool => tool.name === this.selectedToolName);
+  }
+
+  get selectedToolFields(): { name: string; type: string; required: boolean }[] {
+    const properties = this.selectedTool?.inputSchema?.['properties'];
+    const required = Array.isArray(this.selectedTool?.inputSchema?.['required'])
+      ? (this.selectedTool?.inputSchema?.['required'] as string[])
+      : [];
+    if (!properties || typeof properties !== 'object') return [];
+    return Object.entries(properties as Record<string, Record<string, unknown>>).map(([name, def]) => ({
+      name,
+      type: typeof def?.type === 'string' ? def.type : 'unknown',
+      required: required.includes(name),
+    }));
   }
 
   ngOnInit(): void {
@@ -377,6 +457,26 @@ export class PlaygroundComponent implements OnInit {
           this.running = false;
         },
       });
+  }
+
+  validateArgs(): void {
+    const text = this.argumentsText.trim();
+    if (!text || text === '{}') {
+      this.argsValid = true;
+      this.argsValidationMessage = '';
+      this.argsValidationState = 'None';
+      return;
+    }
+    try {
+      JSON.parse(text);
+      this.argsValid = true;
+      this.argsValidationMessage = '✓ Valid JSON';
+      this.argsValidationState = 'Positive';
+    } catch {
+      this.argsValid = false;
+      this.argsValidationMessage = '✗ Invalid JSON';
+      this.argsValidationState = 'Negative';
+    }
   }
 
   clearResults(): void {

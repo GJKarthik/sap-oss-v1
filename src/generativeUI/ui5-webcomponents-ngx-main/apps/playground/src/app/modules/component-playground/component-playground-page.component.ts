@@ -20,6 +20,7 @@ export class ComponentPlaygroundPageComponent implements OnInit {
   lastError: string | null = null;
   routeBlocked = false;
   blockingReason = '';
+  copySuccess = '';
 
   constructor(
     private readonly http: HttpClient,
@@ -69,6 +70,28 @@ export class ComponentPlaygroundPageComponent implements OnInit {
 
   isArabicPrimaryModel(modelId: string): boolean {
     return modelId === this.arabicPrimaryModelId;
+  }
+
+  get curlSnippet(): string {
+    const model = this.models[0] || 'MODEL_ID';
+    return `curl ${environment.openAiBaseUrl}v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -d '{"model":"${model}","messages":[{"role":"user","content":"Hello"}]}'`;
+  }
+
+  get pythonSnippet(): string {
+    const model = this.models[0] || 'MODEL_ID';
+    return `from openai import OpenAI\nclient = OpenAI(base_url="${environment.openAiBaseUrl}v1")\nresponse = client.chat.completions.create(\n    model="${model}",\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(response.choices[0].message.content)`;
+  }
+
+  get tsSnippet(): string {
+    const model = this.models[0] || 'MODEL_ID';
+    return `const resp = await fetch("${environment.openAiBaseUrl}v1/chat/completions", {\n  method: "POST",\n  headers: { "Content-Type": "application/json" },\n  body: JSON.stringify({\n    model: "${model}",\n    messages: [{ role: "user", content: "Hello" }]\n  })\n});\nconst data = await resp.json();\nconsole.log(data.choices[0].message.content);`;
+  }
+
+  copyToClipboard(text: string): void {
+    navigator.clipboard.writeText(text).then(() => {
+      this.copySuccess = 'Copied to clipboard!';
+      setTimeout(() => this.copySuccess = '', 2000);
+    });
   }
 
   private sortModels(a: string, b: string): number {
