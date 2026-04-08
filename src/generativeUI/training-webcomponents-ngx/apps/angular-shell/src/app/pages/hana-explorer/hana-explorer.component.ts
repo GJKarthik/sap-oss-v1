@@ -355,7 +355,7 @@ export class HanaExplorerComponent implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.destroy$),
         catchError(() => {
-          this.toast.warning('HANA stats unavailable', 'HANA Cloud');
+          this.toast.warning(this.i18n.t('hanaExplorer.statsUnavailable'), 'HANA Cloud');
           return of(null);
         })
       )

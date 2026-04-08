@@ -16,7 +16,7 @@ import { Router, RouterOutlet, NavigationEnd, Event } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AppStore } from '../../store/app.store';
-import { I18nService } from '../../services/i18n.service';
+import { I18nService, Language } from '../../services/i18n.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import {
   TRAINING_NAV_GROUPS,
@@ -49,11 +49,12 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
         <ui5-shellbar
           [primaryTitle]="i18n.t('app.title')"
           [secondaryTitle]="i18n.t('app.subtitle')"
-          (profile-click)="onProfileClick($event)">
+          (profile-click)="onProfileClick($event)"
+          (custom-item-click)="onCustomItemClick($event)">
           <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
-          <ui5-shellbar-item icon="search" [text]="i18n.t('shell.searchAriaLabel')" (ui5Click)="toggleSearch()"></ui5-shellbar-item>
-          <ui5-shellbar-item icon="globe" [text]="i18n.t('shell.langAriaLabel')" (ui5Click)="toggleLanguageMenu($event)"></ui5-shellbar-item>
-          <ui5-shellbar-item icon="settings" [text]="i18n.t('shell.settingsAriaLabel')" (ui5Click)="navigateTo('/workspace')"></ui5-shellbar-item>
+          <ui5-shellbar-item id="action-search" icon="search" [text]="i18n.t('shell.searchAriaLabel')"></ui5-shellbar-item>
+          <ui5-shellbar-item id="action-lang" icon="globe" [text]="i18n.t('shell.langAriaLabel')"></ui5-shellbar-item>
+          <ui5-shellbar-item id="action-settings" icon="settings" [text]="i18n.t('shell.settingsAriaLabel')"></ui5-shellbar-item>
         </ui5-shellbar>
 
       </header>
@@ -307,7 +308,10 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  onSearchInput(e: any) { this.searchQuery.set(e.target.value); }
+  onSearchInput(e: globalThis.Event) {
+    const input = e.target as HTMLInputElement | null;
+    this.searchQuery.set(input?.value ?? '');
+  }
   jumpTo(path: string) { this.searchDialog.nativeElement.close(); this.navigateTo(path); }
 
   onMouseMove(e: MouseEvent) {
@@ -329,18 +333,32 @@ export class ShellComponent implements OnInit, OnDestroy {
     main?.scrollIntoView({ block: 'start' });
   }
 
-  onProfileClick(event: any) { this.profilePopover.nativeElement.opener = event.detail.targetRef; this.profilePopover.nativeElement.open = true; }
+  onProfileClick(event: CustomEvent) { this.profilePopover.nativeElement.opener = event.detail.targetRef; this.profilePopover.nativeElement.open = true; }
   
-  toggleLanguageMenu(event: any) {
+  onCustomItemClick(event: any) {
+    const item = event.detail.item;
+    const itemId = item.getAttribute('id');
+    
+    if (itemId === 'action-search') {
+      this.toggleSearch();
+    } else if (itemId === 'action-lang') {
+      this.toggleLanguageMenu(event);
+    } else if (itemId === 'action-settings') {
+      this.navigateTo('/workspace');
+    }
+  }
+
+  toggleLanguageMenu(event: CustomEvent) {
     const menu = this.langMenu.nativeElement;
-    menu.opener = event.detail.targetRef;
+    // Fallback to event.target if targetRef is not available (some UI5 versions)
+    menu.opener = event.detail?.targetRef || event.target;
     menu.open = true;
   }
 
-  onLanguageClick(event: any) {
-    const langId = event.detail.item.id;
+  onLanguageClick(event: CustomEvent) {
+    const langId = event.detail.item.id as Language | undefined;
     if (langId) {
-      this.i18n.setLanguage(langId as any);
+      this.i18n.setLanguage(langId);
     }
   }
 

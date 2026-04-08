@@ -1,0 +1,19 @@
+// Load only the icons this app renders so we don't ship the full SAP icon catalog.
+import '@ui5/webcomponents-icons/dist/action-settings.js';
+import '@ui5/webcomponents-icons/dist/action.js';
+import '@ui5/webcomponents-icons/dist/ai.js';
+import '@ui5/webcomponents-icons/dist/chart-table-view.js';
+import '@ui5/webcomponents-icons/dist/copy.js';
+import '@ui5/webcomponents-icons/dist/decline.js';
+import '@ui5/webcomponents-icons/dist/delete.js';
+import '@ui5/webcomponents-icons/dist/document.js';
+import '@ui5/webcomponents-icons/dist/download.js';
+import '@ui5/webcomponents-icons/dist/form.js';
+import '@ui5/webcomponents-icons/dist/grid.js';
+import '@ui5/webcomponents-icons/dist/home.js';
+import '@ui5/webcomponents-icons/dist/navigation-right-arrow.js';
+import '@ui5/webcomponents-icons/dist/process.js';
+import '@ui5/webcomponents-icons/dist/refresh.js';
+import '@ui5/webcomponents-icons/dist/reset.js';
+import '@ui5/webcomponents-icons/dist/upload.js';
+import '@ui5/webcomponents-icons/dist/warning.js';

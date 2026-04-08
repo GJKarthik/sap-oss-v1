@@ -164,12 +164,12 @@ export class WorkspaceComponent {
   }
 
   onModel(field: string, event: Event): void {
-    const value = (event.target as any)?.value ?? '';
+    const value = (event.target as HTMLInputElement)?.value ?? '';
     this.ws.updateModel({ [field]: value });
   }
 
   onTemperature(event: Event): void {
-    const value = parseFloat((event.target as any)?.value);
+    const value = parseFloat((event.target as HTMLInputElement)?.value);
     if (!isNaN(value)) this.ws.updateModel({ temperature: Math.min(2, Math.max(0, value)) });
   }
 
@@ -189,7 +189,7 @@ export class WorkspaceComponent {
   }
 
   onNavToggle(route: string, event: Event): void {
-    const checked = (event.target as any)?.checked ?? true;
+    const checked = (event.target as HTMLInputElement)?.checked ?? true;
     const items = [...this.ws.navConfig().items];
     const idx = items.findIndex(i => i.route === route);
     if (idx >= 0) items[idx] = { ...items[idx], visible: checked };

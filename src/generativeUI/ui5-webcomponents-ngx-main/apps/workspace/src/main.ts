@@ -10,18 +10,21 @@ if (typeof (globalThis as any).process === 'undefined') {
 
 import {enableProdMode} from '@angular/core';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
-import '@ui5/webcomponents/dist/Assets.js';
-import '@ui5/webcomponents-fiori/dist/Assets.js';
-import '@ui5/webcomponents-ai/dist/Assets.js';
-import '@ui5/webcomponents-localization/dist/Assets.js';
+import '@ui5/webcomponents-base/dist/Assets.js';
+import '@ui5/webcomponents-theming/dist/Assets.js';
 import '@ui5/webcomponents-icons/dist/Assets.js';
-import '@ui5/webcomponents-icons-tnt/dist/Assets.js';
-import '@ui5/webcomponents-icons-business-suite/dist/Assets.js';
-import '@ui5/webcomponents-icons-business-suite/dist/AllIcons.js';
+import '@ui5/webcomponents/dist/generated/json-imports/Themes.js';
+import '@ui5/webcomponents/dist/generated/json-imports/i18n.js';
+import '@ui5/webcomponents-fiori/dist/generated/json-imports/Themes.js';
+import '@ui5/webcomponents-fiori/dist/generated/json-imports/i18n.js';
+import '@ui5/webcomponents-ai/dist/generated/json-imports/Themes.js';
+import '@ui5/webcomponents-ai/dist/generated/json-imports/i18n.js';
 import { registerI18nLoader } from '@ui5/webcomponents-base/dist/asset-registries/i18n.js';
 
 import {AppModule} from './app/app.module';
 import {environment} from './environments/environment';
+import './ui5-icons';
+import './ui5-locales';
 
 const fallbackIconTexts = {
   ICON_ERROR: 'Error',

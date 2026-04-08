@@ -1128,5 +1128,11 @@
   "dpm.defaultFilters": "Default Filters",
   "dpm.loadFailed": "Failed to load data products",
   "dpm.detailFailed": "Failed to load product details",
-  "dpm.promptFailed": "Failed to load prompt preview"
+  "dpm.promptFailed": "Failed to load prompt preview",
+  "pipeline.started": "Pipeline started",
+  "pipeline.finished": "Pipeline finished",
+  "pipeline.failed": "Pipeline failed",
+  "modelOptimizer.jobCreated": "Optimization job initialized",
+  "modelOptimizer.jobFailed": "Failed to create job",
+  "hanaExplorer.statsUnavailable": "HANA stats unavailable"
 }

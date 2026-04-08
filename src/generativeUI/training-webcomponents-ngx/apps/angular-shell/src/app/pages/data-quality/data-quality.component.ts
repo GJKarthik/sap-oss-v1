@@ -39,7 +39,7 @@ import { ToastService } from '../../services/toast.service';
             <p class="text-muted">{{ i18n.t('dataQuality.heroDescription') }}</p>
           </div>
           <div class="hero-visual">
-            <ui5-icon name="BusinessSuite/quality-issue" class="hero-glow-icon"></ui5-icon>
+            <ui5-icon name="quality-issue" class="hero-glow-icon"></ui5-icon>
           </div>
         </section>
 
@@ -259,7 +259,7 @@ export class DataQualityComponent implements OnInit {
 
   ngOnInit(): void { this.loadTables(); }
 
-  onTabSelect(event: any): void {
+  onTabSelect(event: CustomEvent): void {
     const tabs = ['validation', 'profiling', 'anomalies', 'approvals'];
     const text = event.detail?.tab?.getAttribute('text')?.toLowerCase() ?? '';
     const idx = tabs.findIndex(t => text.includes(t));

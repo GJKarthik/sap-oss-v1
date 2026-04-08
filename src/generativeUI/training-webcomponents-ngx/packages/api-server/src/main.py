@@ -47,12 +47,14 @@ from . import rag
 from . import pal
 from . import data_products
 
+from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD
+
 pal_catalog = pal.PALCatalog()
 hana_pal = pal.HanaPALClient(
-    host=os.getenv("HANA_HOST", "localhost"),
-    port=int(os.getenv("HANA_PORT", "443")),
-    user=os.getenv("HANA_USER", ""),
-    password=os.getenv("HANA_PASSWORD", "")
+    host=HANA_HOST,
+    port=HANA_PORT,
+    user=HANA_USER,
+    password=HANA_PASSWORD,
 )
 
 def save_job(job_data: dict):
@@ -1691,7 +1693,7 @@ async def get_data_preview(limit: int = 50, offset: int = 0, difficulty: str = "
                         if line:
                             try:
                                 real_pairs.append(json.loads(line))
-                            except:
+                            except json.JSONDecodeError:
                                 pass
                 break
         

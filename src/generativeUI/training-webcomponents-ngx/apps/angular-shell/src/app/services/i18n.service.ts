@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, DOCUMENT, isDevMode } from '@angular/core';
 import { inject } from '@angular/core';
 import MessageFormat from '@messageformat/core';
+import { setLanguage as setUi5Language } from '@ui5/webcomponents-base/dist/config/Language.js';
 
 export type Language = 'en' | 'ar' | 'fr' | 'de' | 'ko' | 'zh' | 'id';
 
@@ -21,6 +22,7 @@ interface TranslationMap {
 }
 
 const LOCALE_MAP: Record<Language, string> = { en: 'en', ar: 'ar', fr: 'fr', de: 'de', ko: 'ko', zh: 'zh', id: 'id' };
+const UI5_LOCALE_MAP: Record<Language, string> = { en: 'en', ar: 'ar', fr: 'fr', de: 'de', ko: 'ko', zh: 'zh_CN', id: 'id' };
 
 @Injectable({ providedIn: 'root' })
 export class I18nService {
@@ -74,6 +76,7 @@ export class I18nService {
       }
     }
     this.mfCache.clear();
+    await setUi5Language(UI5_LOCALE_MAP[this.currentLang()]);
     this.applyDirection();
   }
 
@@ -92,6 +95,7 @@ export class I18nService {
     this.currentLang.set(lang);
     localStorage.setItem('app_lang', lang);
     this.mfCache.clear();
+    void setUi5Language(UI5_LOCALE_MAP[lang]);
     this.applyDirection();
   }
 

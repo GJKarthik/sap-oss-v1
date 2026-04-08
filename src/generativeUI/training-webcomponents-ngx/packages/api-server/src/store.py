@@ -10,11 +10,8 @@ from .database import Base, SessionLocal
 StoreCollection = Literal["jobs", "vector_stores", "translation_memory"]
 TranslationMemoryBackend = Literal["sqlite", "hana"]
 
-HANA_HOST = os.getenv("HANA_HOST", "localhost")
-HANA_PORT = int(os.getenv("HANA_PORT", "443"))
-HANA_USER = os.getenv("HANA_USER", "")
-HANA_PASSWORD = os.getenv("HANA_PASSWORD", "")
-HANA_ENCRYPT = os.getenv("HANA_ENCRYPT", "true").lower() == "true"
+from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD, HANA_ENCRYPT
+
 HANA_TM_TABLE = "TRANSLATION_MEMORY"
 
 

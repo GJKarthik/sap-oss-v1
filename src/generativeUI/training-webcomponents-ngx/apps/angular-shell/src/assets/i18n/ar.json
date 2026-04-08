@@ -1128,5 +1128,11 @@
   "dpm.defaultFilters": "المرشحات الافتراضية",
   "dpm.loadFailed": "فشل تحميل منتجات البيانات",
   "dpm.detailFailed": "فشل تحميل تفاصيل المنتج",
-  "dpm.promptFailed": "فشل تحميل معاينة الإرشاد"
+  "dpm.promptFailed": "فشل تحميل معاينة الإرشاد",
+  "pipeline.started": "بدأ خط الإنتاج",
+  "pipeline.finished": "اكتمل خط الإنتاج",
+  "pipeline.failed": "فشل خط الإنتاج",
+  "modelOptimizer.jobCreated": "تم إنشاء مهمة التحسين",
+  "modelOptimizer.jobFailed": "فشل إنشاء المهمة",
+  "hanaExplorer.statsUnavailable": "إحصائيات HANA غير متاحة"
 }

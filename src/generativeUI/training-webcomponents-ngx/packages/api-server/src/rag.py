@@ -21,16 +21,10 @@ router = APIRouter()
 logger = structlog.get_logger("training-webcomponents-ngx.rag")
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration (shared across api-server modules)
 # ---------------------------------------------------------------------------
 
-HANA_HOST = os.getenv("HANA_HOST", "localhost")
-HANA_PORT = int(os.getenv("HANA_PORT", "443"))
-HANA_USER = os.getenv("HANA_USER", "")
-HANA_PASSWORD = os.getenv("HANA_PASSWORD", "")
-HANA_ENCRYPT = os.getenv("HANA_ENCRYPT", "true").lower() == "true"
-
-VLLM_URL = os.getenv("VLLM_URL", "http://vllm:8080")
+from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD, HANA_ENCRYPT, VLLM_URL
 
 # ---------------------------------------------------------------------------
 # Embedding Logic

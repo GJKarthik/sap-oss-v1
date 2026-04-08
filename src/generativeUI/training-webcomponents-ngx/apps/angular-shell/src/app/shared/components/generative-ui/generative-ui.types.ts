@@ -1,6 +1,6 @@
 export interface UIIntent {
   action: string;
-  payload?: any;
+  payload?: Record<string, unknown>;
   sourceType?: string;
 }
 
@@ -8,7 +8,7 @@ export interface GenerativeNode {
   /** HTML tag or UI5 component name (e.g., 'ui5-button', 'div', 'ui5-card') */
   type: string;
   /** Properties/Attributes to apply to the element */
-  props?: Record<string, any>;
+  props?: Record<string, string | number | boolean>;
   /** Direct text content for the element */
   content?: string;
   /** Children nodes */

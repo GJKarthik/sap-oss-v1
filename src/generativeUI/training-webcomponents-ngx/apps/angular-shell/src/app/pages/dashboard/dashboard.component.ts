@@ -199,7 +199,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getDepStatus(key: string): string {
-    const deps: any = this.store.health().data?.dependencies;
+    const deps = this.store.health().data?.dependencies as Record<string, string> | undefined;
     return deps ? deps[key] || '—' : '—';
   }
 

@@ -202,7 +202,7 @@ export class GenerativeUiRendererComponent implements OnChanges {
     }
   }
 
-  private createElement(node: GenerativeNode): any {
+  private createElement(node: GenerativeNode): HTMLElement | Text {
     if (node.type === 'text') {
       return this.renderer.createText(node.content || '');
     }
@@ -244,10 +244,10 @@ export class GenerativeUiRendererComponent implements OnChanges {
 
     if (node.intent) {
       const eventName = node.type.startsWith('ui5-input') ? 'input' : 'click';
-      this.renderer.listen(el, eventName, (event: any) => {
-        const payload = { ...node.intent?.payload };
+      this.renderer.listen(el, eventName, (event: Event) => {
+        const payload: Record<string, unknown> = { ...node.intent?.payload };
         if (eventName === 'input') {
-          payload.value = event.target.value;
+          payload.value = (event.target as HTMLInputElement).value;
         }
         this.intent.emit({
           action: node.intent!.action,
@@ -337,7 +337,7 @@ export class GenerativeUiRendererComponent implements OnChanges {
    * Props: values (number[]), maxHeight (px, default 40), color (CSS color)
    */
   private createBarChart(node: GenerativeNode): HTMLElement {
-    const values: number[] = node.props?.['values'] ?? [];
+    const values: number[] = (node.props?.['values'] as unknown as number[]) ?? [];
     const maxHeight = Number(node.props?.['maxHeight'] ?? 40);
     const color = node.props?.['color'] ? String(node.props['color']) : undefined;
 

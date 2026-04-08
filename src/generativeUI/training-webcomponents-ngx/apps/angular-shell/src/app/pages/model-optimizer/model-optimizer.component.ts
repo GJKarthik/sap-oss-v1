@@ -381,13 +381,13 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     if (this.jobForm.invalid) return;
     this.submitting.set(true);
     this.api.post<JobResponse>('/jobs', { config: this.jobForm.getRawValue() }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (j) => { this.jobs.update(js => [j, ...js]); this.submitting.set(false); this.toast.success('Optimization job initialized'); },
-      error: () => { this.submitting.set(false); this.toast.error('Failed to create job'); }
+      next: (j) => { this.jobs.update(js => [j, ...js]); this.submitting.set(false); this.toast.success(this.i18n.t('modelOptimizer.jobCreated')); },
+      error: () => { this.submitting.set(false); this.toast.error(this.i18n.t('modelOptimizer.jobFailed')); }
     });
   }
 
   jobBadgeDesign(status: string): 'Neutral' | 'Positive' | 'Critical' | 'Negative' | 'Information' {
-    const map: Record<string, any> = { pending: 'Neutral', running: 'Information', completed: 'Positive', failed: 'Negative' };
+    const map: Record<string, 'Neutral' | 'Positive' | 'Critical' | 'Negative' | 'Information'> = { pending: 'Neutral', running: 'Information', completed: 'Positive', failed: 'Negative' };
     return map[status] ?? 'Information';
   }
 

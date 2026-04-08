@@ -144,6 +144,15 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private readonly SUPPORTED_LANGS = ['en', 'ar', 'fr', 'de', 'ko', 'zh', 'id'];
+  private readonly UI5_LANGUAGE_MAP: Record<string, string> = {
+    ar: 'ar',
+    de: 'de',
+    en: 'en',
+    fr: 'fr',
+    id: 'id',
+    ko: 'ko',
+    zh: 'zh_CN',
+  };
 
   onLanguageChange(event: Event): void {
     const language = (event as CustomEvent).detail?.selectedOption?.value;
@@ -184,8 +193,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private applyLanguage(language: string): void {
     this.currentLanguage = language;
-    this.i18nService.setLanguage(language);
-    document.documentElement.setAttribute('lang', language);
+    const ui5Language = this.UI5_LANGUAGE_MAP[language] || 'en';
+    this.i18nService.setLanguage(ui5Language);
+    document.documentElement.setAttribute('lang', ui5Language.replace('_', '-'));
     document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
   }
 

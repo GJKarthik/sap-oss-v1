@@ -91,20 +91,20 @@ class PALCatalog:
         return next((a for a in self.algorithms if a.id == algo_id), None)
 
 class HanaPALClient:
-    def __init__(self, host, port, user, password, use_ssl=True):
+    def __init__(self, host: str, port: int, user: str, password: str, use_ssl: bool = True) -> None:
         self.host = host
         self.port = port
         self.user = user
         self.password = password
         self.use_ssl = use_ssl
 
-    async def execute_pal_call(self, procedure_name: str, params: Dict[str, Any]):
+    async def execute_pal_call(self, procedure_name: str, params: Dict[str, Any]) -> Dict[str, str]:
         # Implementation of PAL CALL generation and execution
         # In a real scenario, this would use hdbcli or similar
         logger.info(f"Executing PAL procedure: {procedure_name} with params: {params}")
         return {"status": "success", "procedure": procedure_name, "message": "Simulated execution on SAP HANA"}
 
-    async def discover_schema(self, table_name: str):
+    async def discover_schema(self, table_name: str) -> Dict[str, Any]:
         # Ported from Zig hana/hana_client.zig
         logger.info(f"Discovering schema for table: {table_name}")
         return {

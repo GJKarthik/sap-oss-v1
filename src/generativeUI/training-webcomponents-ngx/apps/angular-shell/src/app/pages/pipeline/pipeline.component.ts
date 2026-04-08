@@ -195,7 +195,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   // High-perf thread simulation
   readonly threads = signal(Array.from({length: 64}, () => ({ active: false, load: 0 })));
   readonly throughput = signal('0.00');
-  private threadInterval?: any;
+  private threadInterval?: ReturnType<typeof setInterval>;
 
   readonly stages = signal<PipelineStage[]>([
     { num: 1, name: 'Preconvert', tool: 'Python', input: 'data/*.xlsx', output: 'staging/*.csv', status: 'idle' },
@@ -252,23 +252,23 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.ws.onclose = () => { this.zone.run(() => this.wsConnected.set(false)); setTimeout(() => this.connectWebSocket(), 3000); };
   }
 
-  private handleMessage(msg: any) {
-    if (msg.type === 'init') {
-      const s = msg.state || 'idle';
+  private handleMessage(msg: Record<string, unknown>) {
+    if (msg['type'] === 'init') {
+      const s = (msg['state'] as PipelineState) || 'idle';
       this.appStore.setPipelineState(s);
-      this.logLines.set((msg.logs || []).map((t: string) => this.parseLine(t)));
+      this.logLines.set(((msg['logs'] as string[]) || []).map((t: string) => this.parseLine(t)));
       this.updateStagesFromState(s);
-    } else if (msg.type === 'log') {
-      this.appendLine(msg.text || '');
-    } else if (msg.type === 'done') {
-      const s = msg.state || 'completed';
+    } else if (msg['type'] === 'log') {
+      this.appendLine((msg['text'] as string) || '');
+    } else if (msg['type'] === 'done') {
+      const s = (msg['state'] as PipelineState) || 'completed';
       this.appStore.setPipelineState(s);
-      this.appendLine(msg.text || '');
+      this.appendLine((msg['text'] as string) || '');
       this.updateStagesFromState(s);
       if (s === 'completed') {
-        this.toast.success(msg.text || 'Pipeline finished');
+        this.toast.success((msg['text'] as string) || this.i18n.t('pipeline.finished'));
       } else if (s === 'error') {
-        this.toast.error(msg.text || 'Pipeline failed');
+        this.toast.error((msg['text'] as string) || this.i18n.t('pipeline.failed'));
       }
     }
   }
@@ -323,22 +323,22 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.appStore.setPipelineState('running');
         this.updateStagesFromState('running');
         this.starting.set(false);
-        this.toast.success('Pipeline started');
+        this.toast.success(this.i18n.t('pipeline.started'));
       },
       error: () => {
         this.starting.set(false);
-        this.toast.error('Failed to start pipeline');
+        this.toast.error(this.i18n.t('pipeline.startFailed'));
       }
     });
   }
 
   stateDesign(): 'Neutral' | 'Positive' | 'Information' | 'Negative' {
-    const map: any = { idle: 'Neutral', running: 'Information', completed: 'Positive', error: 'Negative' };
-    return map[this.pipelineState()];
+    const map: Record<string, 'Neutral' | 'Positive' | 'Information' | 'Negative'> = { idle: 'Neutral', running: 'Information', completed: 'Positive', error: 'Negative' };
+    return map[this.pipelineState()] ?? 'Neutral';
   }
 
   statusIcon(status: StageStatus): string {
-    const map: any = { idle: 'circle-task', running: 'synchronize', done: 'status-completed', error: 'status-error' };
+    const map: Record<StageStatus, string> = { idle: 'circle-task', running: 'synchronize', done: 'status-completed', error: 'status-error' };
     return map[status];
   }
 

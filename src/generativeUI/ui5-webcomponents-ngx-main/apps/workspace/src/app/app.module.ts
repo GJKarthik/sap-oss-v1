@@ -7,7 +7,6 @@ import {AppComponent} from './app.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Ui5ThemingModule} from '@ui5/theming-ngx';
 import {Ui5WebcomponentsThemingModule} from "@ui5/webcomponents-ngx/theming";
-import {Ui5WebcomponentsIconsModule} from "@ui5/webcomponents-ngx/icons";
 import {Ui5WebcomponentsModule} from '@ui5/webcomponents-ngx';
 import {Ui5WebcomponentsConfigModule} from '@ui5/webcomponents-ngx/config';
 import {Ui5I18nModule} from "@ui5/webcomponents-ngx/i18n";
@@ -30,7 +29,6 @@ import { firstValueFrom } from 'rxjs';
         FormsModule,
         ReactiveFormsModule,
         Ui5ThemingModule.forRoot({ defaultTheme: 'sap_horizon' }),
-        Ui5WebcomponentsIconsModule.forRoot(['sap-icons', 'tnt-icons', "business-suite-icons"]),
         Ui5WebcomponentsConfigModule.forRoot({}),
         Ui5I18nModule.forRoot({
             language: 'en',
@@ -47,6 +45,7 @@ import { firstValueFrom } from 'rxjs';
                             de: http.get('assets/i18n/messages_de', { responseType: 'text' }),
                             ko: http.get('assets/i18n/messages_ko', { responseType: 'text' }),
                             zh: http.get('assets/i18n/messages_zh', { responseType: 'text' }),
+                            zh_CN: http.get('assets/i18n/messages_zh', { responseType: 'text' }),
                             id: http.get('assets/i18n/messages_id', { responseType: 'text' }),
                         };
                     }
