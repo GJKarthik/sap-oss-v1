@@ -10,6 +10,7 @@
  *   npx ts-node libs/openai-server/src/server.ts --port 8400
  */
 
+import * as crypto from 'crypto';
 import * as http from 'http';
 import * as https from 'https';
 import { URL } from 'url';
@@ -134,7 +135,9 @@ interface Deployment {
   isAnthropic: boolean;
 }
 
+const DEPLOYMENT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 let cachedDeployments: Deployment[] = [];
+let deploymentsCachedAt = 0;
 
 async function aicoreRequest(config: AICoreConfig, method: string, path: string, body?: unknown): Promise<unknown> {
   const token = await getAccessToken(config);
@@ -172,7 +175,9 @@ async function aicoreRequest(config: AICoreConfig, method: string, path: string,
 }
 
 async function getDeployments(config: AICoreConfig): Promise<Deployment[]> {
-  if (cachedDeployments.length > 0) return cachedDeployments;
+  if (cachedDeployments.length > 0 && (Date.now() - deploymentsCachedAt) < DEPLOYMENT_CACHE_TTL_MS) {
+    return cachedDeployments;
+  }
   
   const result = await aicoreRequest(config, 'GET', '/v2/lm/deployments') as { resources?: Array<{ id: string; status?: string; details?: { resources?: { backend_details?: { model?: { name?: string } } } } }> };
   cachedDeployments = (result.resources || []).map(d => ({
@@ -181,6 +186,7 @@ async function getDeployments(config: AICoreConfig): Promise<Deployment[]> {
     status: d.status || 'unknown',
     isAnthropic: (d.details?.resources?.backend_details?.model?.name || '').toLowerCase().includes('anthropic'),
   }));
+  deploymentsCachedAt = Date.now();
   
   return cachedDeployments;
 }
@@ -291,10 +297,7 @@ const historyStore: Map<string, Array<Record<string, unknown>>> = new Map();
 // =============================================================================
 
 function uuid(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
+  return crypto.randomUUID();
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
@@ -312,10 +315,21 @@ function cosineSimilarity(a: number[], b: number[]): number {
 // Request Handler
 // =============================================================================
 
+const MAX_BODY_BYTES = 10 * 1024 * 1024; // 10 MB
+
 async function parseBody(req: http.IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
     let data = '';
-    req.on('data', (chunk: string) => data += chunk);
+    let bytes = 0;
+    req.on('data', (chunk: Buffer | string) => {
+      bytes += typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length;
+      if (bytes > MAX_BODY_BYTES) {
+        req.destroy();
+        resolve({});
+        return;
+      }
+      data += chunk;
+    });
     req.on('end', () => {
       try {
         resolve(JSON.parse(data));
@@ -650,8 +664,11 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return sendJson(res, 200, { id: fileId, object: 'file', deleted: true });
     }
 
-    // Moderations
+    // Moderations — STUB: always returns flagged=false.
+    // WARNING: Do NOT rely on this endpoint for real content safety decisions.
+    // Replace with a live moderation backend before production use.
     if (path === '/v1/moderations' && method === 'POST') {
+      console.warn('WARNING: /v1/moderations is a no-op stub — all inputs marked safe. Do not use for real content moderation.');
       const body = await parseBody(req);
       const inputs = Array.isArray(body['input']) ? body['input'] : [body['input']];
       return sendJson(res, 200, {
@@ -944,15 +961,23 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       (body as Record<string, unknown>)['updatedAt'] = new Date().toISOString();
       workspaceStore.set(userId, body as Record<string, unknown>);
 
-      // Optional file persistence
+      // Optional file persistence — path is validated at startup to prevent
+      // directory-traversal writes when the env var is attacker-influenced.
       const persistFile = process.env['WORKSPACE_PERSISTENCE_FILE'];
       if (persistFile) {
-        try {
-          const allData = Object.fromEntries(workspaceStore.entries());
-          const fs = await import('fs');
-          fs.writeFileSync(persistFile, JSON.stringify(allData, null, 2));
-        } catch (e) {
-          console.warn('Failed to persist workspace to file:', e);
+        const path_ = await import('path');
+        const resolved = path_.resolve(persistFile);
+        const allowedDir = path_.resolve(process.cwd());
+        if (!resolved.startsWith(allowedDir + path_.sep) && resolved !== allowedDir) {
+          console.warn(`WORKSPACE_PERSISTENCE_FILE resolved outside cwd (${resolved}). Write blocked.`);
+        } else {
+          try {
+            const allData = Object.fromEntries(workspaceStore.entries());
+            const fs = await import('fs');
+            fs.writeFileSync(resolved, JSON.stringify(allData, null, 2));
+          } catch (e) {
+            console.warn('Failed to persist workspace to file:', e);
+          }
         }
       }
       return sendJson(res, 200, { status: 'saved', userId });

@@ -10,7 +10,7 @@ import {
   switchMap,
   takeUntil,
   tap,
-  of, delay,
+  of, filter,
 } from 'rxjs';
 import {
   ThemingConfig,
@@ -36,9 +36,10 @@ export class Ui5ThemingService implements Ui5ThemingConsumer, OnDestroy {
   ) {
     combineLatest([
       this._providers$,
-      this._currentTheme$.pipe(delay(100)) // Delay so that the providers are registered. @todo: Find a better solution
+      this._currentTheme$,
     ])
       .pipe(
+        filter(([providers]) => providers.length > 0),
         switchMap(([providers, [previousTheme, newTheme]]) => {
           return combineLatest(
             providers.map(

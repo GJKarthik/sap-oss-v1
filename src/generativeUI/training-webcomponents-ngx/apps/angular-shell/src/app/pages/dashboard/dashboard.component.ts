@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { Router } from '@angular/router';
 import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
@@ -24,7 +24,7 @@ interface PlatformComponent {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, LocaleNumberPipe],
+  imports: [CommonModule, Ui5TrainingComponentsModule, LocaleNumberPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

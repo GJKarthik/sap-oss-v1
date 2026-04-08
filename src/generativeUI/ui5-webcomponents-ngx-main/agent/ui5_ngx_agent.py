@@ -191,7 +191,7 @@ class MangleEngine:
         self.facts["agent_config"] = {
             ("ui5-ngx-agent", "autonomy_level"): "L3",
             ("ui5-ngx-agent", "service_name"): "ui5-webcomponents-ngx",
-            ("ui5-ngx-agent", "mcp_endpoint"): "http://localhost:9140/mcp",
+            ("ui5-ngx-agent", "mcp_endpoint"): "http://localhost:9160/mcp",
             ("ui5-ngx-agent", "default_backend"): "aicore",
         }
         
@@ -347,7 +347,7 @@ class UI5NgxAgent:
             "mangle/domain/agents.mg",
             "../regulations/mangle/rules.mg"
         ])
-        self.mcp_endpoint = "http://localhost:9140/mcp"
+        self.mcp_endpoint = "http://localhost:9160/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.audit_log: List[Dict] = []
 

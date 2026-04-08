@@ -1,7 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
 import { McpService, PendingApproval, SchemaTable } from '../../services/mcp.service';
@@ -12,7 +12,7 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-data-quality',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
+  imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid" class="dq-aura-bg">

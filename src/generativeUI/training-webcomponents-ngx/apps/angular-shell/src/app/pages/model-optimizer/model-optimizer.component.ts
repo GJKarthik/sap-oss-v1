@@ -9,7 +9,7 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { JobDetailComponent } from '../../components/job-detail/job-detail.component';
 
 interface ModelInfo {
@@ -52,7 +52,7 @@ interface JobResponse {
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, Ui5WebcomponentsModule],
+  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, Ui5TrainingComponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

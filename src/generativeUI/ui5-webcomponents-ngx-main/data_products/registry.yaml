@@ -24,7 +24,7 @@ globalPolicies:
 # LLM Backend Configuration
 llmBackends:
   aicore:
-    endpoint: "http://localhost:9140/mcp"
+    endpoint: "http://localhost:9160/mcp"
     models:
       - "anthropic-claude"
     forSecurityClass: ["public", "internal"]

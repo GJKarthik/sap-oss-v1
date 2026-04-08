@@ -7,7 +7,6 @@ import {AppComponent} from './app.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Ui5ThemingModule} from '@ui5/theming-ngx';
 import {Ui5WebcomponentsThemingModule} from "@ui5/webcomponents-ngx/theming";
-import {Ui5WebcomponentsModule} from '@ui5/webcomponents-ngx';
 import {Ui5WebcomponentsConfigModule} from '@ui5/webcomponents-ngx/config';
 import {Ui5I18nModule} from "@ui5/webcomponents-ngx/i18n";
 import {RouterModule} from "@angular/router";
@@ -22,9 +21,10 @@ import { RequestTraceInterceptor } from './core/request-trace.interceptor';
 import { ServiceHealthPanelComponent } from './shared/service-health-panel/service-health-panel.component';
 import { WorkspaceService } from './core/workspace.service';
 import { firstValueFrom } from 'rxjs';
+import { Ui5WorkspaceComponentsModule } from './shared/ui5-workspace-components.module';
 
 @NgModule({ declarations: [AppComponent, MainComponent, ServiceHealthPanelComponent],
-    bootstrap: [AppComponent], imports: [Ui5WebcomponentsModule,
+    bootstrap: [AppComponent], imports: [Ui5WorkspaceComponentsModule,
         BrowserModule,
         FormsModule,
         ReactiveFormsModule,

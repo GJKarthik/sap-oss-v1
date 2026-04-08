@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService, VectorStore, RAGResult } from '../../services/mcp.service';
 import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
@@ -23,7 +23,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-rag-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
       <app-cross-app-link

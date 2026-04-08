@@ -1,7 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService, SparqlResult } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
@@ -11,7 +11,7 @@ import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
 @Component({
   selector: 'app-sparql-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, CrossAppLinkComponent],
+  imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">

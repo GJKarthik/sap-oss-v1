@@ -3,14 +3,14 @@
 import {NgModule} from "@angular/core";
 import {ChildComponent} from "./child.component";
 import {CommonModule} from "@angular/common";
-import {Ui5MainModule} from "@ui5/webcomponents-ngx";
 import {RouterModule} from "@angular/router";
 import {Ui5I18nModule} from "@ui5/webcomponents-ngx/i18n";
 import { provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
+import { Ui5WorkspaceComponentsModule } from "../../shared/ui5-workspace-components.module";
 
 @NgModule({ declarations: [ChildComponent],
     exports: [RouterModule], imports: [CommonModule,
-        Ui5MainModule,
+        Ui5WorkspaceComponentsModule,
         Ui5I18nModule.forChild({
             name: 'i18n_child',
             translations: {

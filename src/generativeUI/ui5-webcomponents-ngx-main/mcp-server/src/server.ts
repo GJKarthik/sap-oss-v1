@@ -573,6 +573,12 @@ class MCPServer {
         if (uri === "ui5://components") {
           return { jsonrpc: "2.0", id, result: { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(this.components, null, 2) }] } };
         }
+        if (uri === "ui5://modules") {
+          const modules = Object.fromEntries(
+            Object.entries(this.components).map(([tag, comp]) => [tag, { module: comp.module, angular: comp.angular }])
+          );
+          return { jsonrpc: "2.0", id, result: { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(modules, null, 2) }] } };
+        }
         if (uri === "mangle://facts") {
           return { jsonrpc: "2.0", id, result: { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(this.facts, null, 2) }] } };
         }

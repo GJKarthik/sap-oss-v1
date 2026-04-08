@@ -24,12 +24,12 @@ import {
   TrainingRouteGroupId,
   resolveTrainingGroup,
 } from '../../app.navigation';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, Ui5WebcomponentsModule],
+  imports: [CommonModule, RouterOutlet, Ui5TrainingComponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -337,21 +337,21 @@ export class ShellComponent implements OnInit, OnDestroy {
   
   onCustomItemClick(event: any) {
     const item = event.detail.item;
-    const itemId = item.getAttribute('id');
+    const icon = item.icon;
     
-    if (itemId === 'action-search') {
+    if (icon === 'search') {
       this.toggleSearch();
-    } else if (itemId === 'action-lang') {
+    } else if (icon === 'globe') {
       this.toggleLanguageMenu(event);
-    } else if (itemId === 'action-settings') {
+    } else if (icon === 'settings') {
       this.navigateTo('/workspace');
     }
   }
 
-  toggleLanguageMenu(event: CustomEvent) {
+  toggleLanguageMenu(event: any) {
     const menu = this.langMenu.nativeElement;
-    // Fallback to event.target if targetRef is not available (some UI5 versions)
-    menu.opener = event.detail?.targetRef || event.target;
+    // custom-item-click event detail contains targetRef
+    menu.opener = event.detail.targetRef;
     menu.open = true;
   }
 

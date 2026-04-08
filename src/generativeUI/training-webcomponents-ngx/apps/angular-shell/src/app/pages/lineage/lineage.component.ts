@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, inject, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { McpService } from '../../services/mcp.service';
 import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
@@ -15,7 +15,7 @@ interface GraphEdge { source: string; target: string; label: string; }
 @Component({
   selector: 'app-lineage',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
+  imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">

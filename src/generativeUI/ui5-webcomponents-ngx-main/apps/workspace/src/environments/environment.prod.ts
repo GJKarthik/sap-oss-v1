@@ -3,9 +3,9 @@
 export const environment = {
   production: true,
   agUiEndpoint: '/ag-ui/run',
-  openAiBaseUrl: 'http://localhost:8400',
+  openAiBaseUrl: '/api/openai',
   ocrInternalToken: '',
-  mcpBaseUrl: 'http://localhost:9160/mcp',
+  mcpBaseUrl: '/api/mcp',
   requireRealBackends: true as const,
   collabWsUrl: '/collab',
   collabUserId: 'sap-ai-user-default',

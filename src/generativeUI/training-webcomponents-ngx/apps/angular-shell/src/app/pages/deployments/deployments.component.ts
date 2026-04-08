@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Deployment, McpService } from '../../services/mcp.service';
 import { I18nService } from '../../services/i18n.service';
@@ -29,7 +29,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 @Component({
   selector: 'app-deployments',
   standalone: true,
-  imports: [CommonModule, FormsModule, Ui5WebcomponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe, TranslatePipe, CrossAppLinkComponent],
+  imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
@@ -11,7 +11,7 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 @Component({
   selector: 'app-streaming',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
+  imports: [CommonModule, Ui5TrainingComponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">

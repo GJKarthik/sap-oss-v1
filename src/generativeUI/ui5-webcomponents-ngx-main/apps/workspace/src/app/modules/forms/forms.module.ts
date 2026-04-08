@@ -5,15 +5,15 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { FormsPageComponent } from './forms-page.component';
-import { Ui5MainModule } from '@ui5/webcomponents-ngx';
 import { Ui5I18nModule } from '@ui5/webcomponents-ngx/i18n';
+import { Ui5WorkspaceComponentsModule } from '../../shared/ui5-workspace-components.module';
 
 @NgModule({
   declarations: [FormsPageComponent],
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    Ui5MainModule,
+    Ui5WorkspaceComponentsModule,
     Ui5I18nModule,
     RouterModule.forChild([{ path: '', component: FormsPageComponent }]),
   ],

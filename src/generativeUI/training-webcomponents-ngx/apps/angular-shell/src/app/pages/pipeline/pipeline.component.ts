@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { AppStore } from '../../store/app.store';
 import { PipelineFlowComponent, FlowStage } from '../../shared/components/pipeline-flow/pipeline-flow.component';
 
@@ -28,7 +28,7 @@ interface LogLine {
 @Component({
   selector: 'app-pipeline',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule, PipelineFlowComponent],
+  imports: [CommonModule, Ui5TrainingComponentsModule, PipelineFlowComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
