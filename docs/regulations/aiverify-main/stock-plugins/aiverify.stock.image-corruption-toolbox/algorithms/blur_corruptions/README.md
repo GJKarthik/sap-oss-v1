@@ -81,7 +81,7 @@ python -m aiverify_blur_corruptions \
 
 ## Customizing Parameters
 
-To fine-tune the corruption parameters, use the [Blur Corruption Playground Notebook](./playground.ipynb). This notebook allows you to:
+To fine-tune the corruption parameters, use the [Blur Corruption Tuning Workbook](./tuning-workbook.ipynb). This notebook allows you to:
 
 ✅ Visualize the effects of different corruption functions.
 

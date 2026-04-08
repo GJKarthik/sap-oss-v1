@@ -54,9 +54,9 @@
 **Issue:** The job creation form spans many fields across three mode layouts (novice/intermediate/expert). When validation fails, there is no error summary announced. The submit button disables but the user receives no feedback about what failed. No `aria-invalid` or `aria-describedby` is set on invalid fields.
 **Fix:** Add an error summary region with `role="alert"` above the submit button that lists validation errors when the form is submitted invalid. Add `aria-invalid` and `aria-describedby` to each form control.
 
-### A-07 🔴 Model Optimizer: Chat modal lacks focus trap — ✅ FIXED
+### A-07 🔴 Model Optimizer: Chat workspace dialog lacks focus trap — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` lines 374–398
-**Issue:** The chat playground modal lacks `role="dialog"`, `aria-modal`, escape key handler, and close button `aria-label`.
+**Issue:** The chat workspace dialog lacks `role="dialog"`, `aria-modal`, escape key handler, and close button `aria-label`.
 **Fix:** Added `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `(keydown.escape)`, and `aria-label` on close button.
 **Status:** Fixed.
 
@@ -106,9 +106,9 @@
 **Fix:** Replaced all hardcoded colors with `var(--sap*)` tokens with fallbacks.
 **Status:** Fixed — All colors now use SAP Fiori design tokens.
 
-### B-02 🟡 Model Optimizer: Mostly uses tokens but chat modal is hardcoded — ✅ FIXED
+### B-02 🟡 Model Optimizer: Mostly uses tokens but chat workspace dialog is hardcoded — ✅ FIXED
 **File:** `pages/model-optimizer/model-optimizer.component.ts` styles lines 629–651
-**Issue:** The chat playground modal used hardcoded colors.
+**Issue:** The chat workspace dialog used hardcoded colors.
 **Fix:** Replaced all hardcoded colors in modal with SAP tokens.
 **Status:** Fixed.
 
@@ -259,7 +259,7 @@ This covers all components. **No action needed.**
 - `<ui5-button>` for actions
 - `<ui5-table>` for data tables (pipeline stages, model catalog, jobs)
 - `<ui5-input>` / `<ui5-textarea>` for form fields
-- `<ui5-dialog>` for modals (chat playground)
+- `<ui5-dialog>` for modals (chat workspace)
 - `<ui5-message-strip>` for status messages
 - `<ui5-busy-indicator>` for loading states
 

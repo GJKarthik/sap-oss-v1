@@ -1,7 +1,7 @@
-# Playground app - CI: lint, test, build
+# Workspace app - CI: lint, test, build
 # Runs on changes under src/generativeUI/ui5-webcomponents-ngx-main/
 
-name: CI (Playground)
+name: CI (Workspace)
 
 on:
   push:
@@ -38,20 +38,20 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Lint
-        run: yarn nx lint playground || true
+        run: yarn nx lint workspace || true
 
       - name: Test
-        run: yarn nx test playground --passWithNoTests --coverage
+        run: yarn nx test workspace --passWithNoTests --coverage
         env:
           CI: true
 
       - name: Build
-        run: yarn nx build playground
+        run: yarn nx build workspace
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-playground
-          path: src/generativeUI/ui5-webcomponents-ngx-main/coverage/apps/playground
+          name: coverage-workspace
+          path: src/generativeUI/ui5-webcomponents-ngx-main/coverage/apps/workspace
           retention-days: 14
         if: always()

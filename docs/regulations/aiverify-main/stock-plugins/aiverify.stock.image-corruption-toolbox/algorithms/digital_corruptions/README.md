@@ -83,7 +83,7 @@ python -m aiverify_digital_corruptions \
 
 ## Customizing Parameters
 
-To fine-tune the corruption parameters, use the [Digital Corruption Playground Notebook](./playground.ipynb). This notebook allows you to:
+To fine-tune the corruption parameters, use the [Digital Corruption Tuning Workbook](./tuning-workbook.ipynb). This notebook allows you to:
 
 ✅ Visualize the effects of different corruption functions.
 

@@ -7311,13 +7311,13 @@
             "location": "apps/documentation/src/app/stories/fiori/barcodescannerdialog.stories.ts#5"
           },
           {
-            "location": "apps/playground/src/app/modules/child/child.module.ts#3"
+            "location": "apps/workspace/src/app/modules/child/child.module.ts#3"
           },
           {
-            "location": "apps/playground/src/app/app.module.ts#16"
+            "location": "apps/workspace/src/app/app.module.ts#16"
           },
           {
-            "location": "apps/playground/src/app/modules/child/child.module.ts#7"
+            "location": "apps/workspace/src/app/modules/child/child.module.ts#7"
           }
         ]
       },
@@ -7470,22 +7470,22 @@
             "location": "apps/documentation/src/app/stories/ai/ai-button.component.ts#1"
           },
           {
-            "location": "apps/playground/src/app/app.component.ts#1"
+            "location": "apps/workspace/src/app/app.component.ts#1"
           },
           {
-            "location": "apps/playground/src/app/app.module.ts#1"
+            "location": "apps/workspace/src/app/app.module.ts#1"
           },
           {
-            "location": "apps/playground/src/app/main.component.ts#1"
+            "location": "apps/workspace/src/app/main.component.ts#1"
           },
           {
-            "location": "apps/playground/src/app/modules/child/child.component.ts#1"
+            "location": "apps/workspace/src/app/modules/child/child.component.ts#1"
           },
           {
-            "location": "apps/playground/src/app/modules/child/child.module.ts#1"
+            "location": "apps/workspace/src/app/modules/child/child.module.ts#1"
           },
           {
-            "location": "apps/playground/src/main.ts#1"
+            "location": "apps/workspace/src/main.ts#1"
           },
           {
             "location": "libs/fundamental-styles/theming/theming.module.ts#1"
@@ -7577,10 +7577,10 @@
         },
         "occurrences": [
           {
-            "location": "apps/playground/src/app/app.component.ts#2"
+            "location": "apps/workspace/src/app/app.component.ts#2"
           },
           {
-            "location": "apps/playground/src/app/app.module.ts#5"
+            "location": "apps/workspace/src/app/app.module.ts#5"
           }
         ]
       },
@@ -7680,7 +7680,7 @@
             "location": "apps/documentation/src/main.ts#1"
           },
           {
-            "location": "apps/playground/src/main.ts#2"
+            "location": "apps/workspace/src/main.ts#2"
           }
         ]
       },
@@ -7736,7 +7736,7 @@
             "location": "apps/documentation/src/app/app.module.ts#2"
           },
           {
-            "location": "apps/playground/src/app/app.module.ts#2"
+            "location": "apps/workspace/src/app/app.module.ts#2"
           }
         ]
       },
@@ -7789,10 +7789,10 @@
         },
         "occurrences": [
           {
-            "location": "apps/playground/src/app/app.module.ts#14"
+            "location": "apps/workspace/src/app/app.module.ts#14"
           },
           {
-            "location": "apps/playground/src/app/modules/child/child.module.ts#5"
+            "location": "apps/workspace/src/app/modules/child/child.module.ts#5"
           }
         ]
       },
@@ -78979,10 +78979,10 @@
         },
         "occurrences": [
           {
-            "location": "apps/playground/src/test-setup.ts#1"
+            "location": "apps/workspace/src/test-setup.ts#1"
           },
           {
-            "location": "apps/playground/src/test-setup.ts#1"
+            "location": "apps/workspace/src/test-setup.ts#1"
           }
         ]
       },
@@ -121968,7 +121968,7 @@
         },
         "occurrences": [
           {
-            "location": "apps/playground/src/polyfills.ts#48"
+            "location": "apps/workspace/src/polyfills.ts#48"
           }
         ]
       },

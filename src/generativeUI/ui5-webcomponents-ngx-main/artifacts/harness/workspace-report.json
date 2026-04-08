@@ -1,7 +1,7 @@
 {
   "runId": "e1071074-c68c-4d63-8bbe-15de00d3a17d",
   "timestamp": "2026-04-02T00:21:46.779Z",
-  "mode": "demo-safe",
+  "mode": "workspace-safe",
   "profile": "local-live",
   "services": [
     {

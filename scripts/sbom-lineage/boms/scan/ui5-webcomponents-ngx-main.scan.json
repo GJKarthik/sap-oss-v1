@@ -162,7 +162,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/jest.config.ts",
+      "path": "apps/workspace/jest.config.ts",
       "sha256": "6cf6eeafb6ef010778e96dac5f99cea50cfa68d8f4f98216cd3d8d72db0b64a7",
       "spdx_ids": [
         "Apache-2.0"
@@ -170,7 +170,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/main.ts",
+      "path": "apps/workspace/src/main.ts",
       "sha256": "ba51fb34e4a8de6039a9de5cd67c544c25876ebb4592d9015f6b9d31a8ea939e",
       "spdx_ids": [
         "Apache-2.0"
@@ -178,7 +178,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/test-setup.ts",
+      "path": "apps/workspace/src/test-setup.ts",
       "sha256": "1a315ede26085b35288047391c74d8cf6d837a794dd39ba2e9a229ad58319796",
       "spdx_ids": [
         "Apache-2.0"
@@ -186,7 +186,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/polyfills.ts",
+      "path": "apps/workspace/src/polyfills.ts",
       "sha256": "701c59f1ee37f9d4dd603d4670737a367fd0a99f6dca33cefda946a74dfeb628",
       "spdx_ids": [
         "Apache-2.0"
@@ -194,7 +194,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/app/app.module.ts",
+      "path": "apps/workspace/src/app/app.module.ts",
       "sha256": "38d93fa305419fb086c9db2b882ea98a90547fa8eaa0b59dea747a9df6788c80",
       "spdx_ids": [
         "Apache-2.0"
@@ -202,7 +202,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/app/app.component.ts",
+      "path": "apps/workspace/src/app/app.component.ts",
       "sha256": "2bc64d9bcab358fbc50c717be5b7c4547488fdba7102837645bdaef6c7a0d19e",
       "spdx_ids": [
         "Apache-2.0"
@@ -210,7 +210,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/app/main.component.ts",
+      "path": "apps/workspace/src/app/main.component.ts",
       "sha256": "e05d2fa5e9c04cf89840ee5e1fe1292524fd6f75609d798b17c78ea477ee3603",
       "spdx_ids": [
         "Apache-2.0"
@@ -218,7 +218,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/environments/environment.prod.ts",
+      "path": "apps/workspace/src/environments/environment.prod.ts",
       "sha256": "6e9acae4f9d27536afa143b9a7c1f27ce600e75a28b514148e78c73a3909fb9e",
       "spdx_ids": [
         "Apache-2.0"
@@ -226,7 +226,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/environments/environment.ts",
+      "path": "apps/workspace/src/environments/environment.ts",
       "sha256": "1dbb260c15f2e1393cf059095c2aa8b75ad6a5876cbb9640d668c739e8937d37",
       "spdx_ids": [
         "Apache-2.0"
@@ -234,7 +234,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/app/modules/child/child.module.ts",
+      "path": "apps/workspace/src/app/modules/child/child.module.ts",
       "sha256": "7c16020b96ead16db96cb4c35da1249b50ad1c3ba50dcac33fabe5b54e95895f",
       "spdx_ids": [
         "Apache-2.0"
@@ -242,7 +242,7 @@
       "copyrights": []
     },
     {
-      "path": "apps/playground/src/app/modules/child/child.component.ts",
+      "path": "apps/workspace/src/app/modules/child/child.component.ts",
       "sha256": "ff6c754195af9ce99a3fafad773884611867f8f6aca4e2edaccbce210795e76f",
       "spdx_ids": [
         "Apache-2.0"

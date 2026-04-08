@@ -1,4 +1,4 @@
-# UI5 Live Demo Design
+# UI5 Workspace Experience Design
 
 **Date:** 2026-04-01  
 **Target:** `src/generativeUI/ui5-webcomponents-ngx-main`  
@@ -6,11 +6,11 @@
 
 ## Goal
 
-Deliver a real live working demo centered on `ui5-webcomponents-ngx-main`, covering:
+Deliver a real working workspace experience centered on `ui5-webcomponents-ngx-main`, covering:
 
 1. Generative UI renderer
 2. Joule-style chat UI
-3. Component playground
+3. Model catalog
 4. MCP-integrated flow
 
 The work proceeds feature-by-feature for depth and production-like quality.
@@ -21,18 +21,18 @@ The selected approach is **Feature-by-Feature Deep Build**:
 
 - Fully complete one feature stream before starting the next.
 - Keep all integrations real from day one.
-- Converge all streams into one demo shell by the end.
+- Converge all streams into one workspace shell by the end.
 
 Build order:
 
 1. Renderer
 2. Joule chat
-3. Component playground
+3. Model catalog
 4. MCP flow
 
 ## Architecture
 
-Create one demo host app experience with four first-class routes in `ui5-webcomponents-ngx-main`, executed sequentially in implementation order.
+Create one workspace app experience with four first-class routes in `ui5-webcomponents-ngx-main`, executed sequentially in implementation order.
 
 Each route includes:
 
@@ -45,12 +45,12 @@ Shared platform concerns:
 - Shared auth/token configuration
 - Shared API client primitives (timeouts, retries, error mapping)
 - Shared telemetry hooks (live request status)
-- Shared demo health panel for upstream dependency checks
+- Shared service health panel for upstream dependency checks
 
 ## Real Data Flow Rules (No Fake Paths)
 
 1. Every user action must call a real backend or real MCP endpoint.
-2. No mocked adapters or in-memory demo fixtures in demo routes.
+2. No mocked adapters or in-memory fallback fixtures in workspace routes.
 3. If dependencies are unavailable, show blocking diagnostics, not placeholder content.
 4. Validate responses at runtime and fail visibly on schema mismatch.
 5. Stamp each request with correlation IDs and surface them in UI.
@@ -71,17 +71,16 @@ Each stream must pass all gates before moving to the next stream:
 2. **Runtime proof gate:** real trace data appears in UI (status, latency, correlation ID).
 3. **Failure-proof gate:** deterministic, actionable error states for upstream failures.
 4. **E2E gate:** real browser test flow for the stream passes.
-5. **Demo readiness gate:** preflight script validates env vars, endpoint health, and auth viability.
+5. **Workspace readiness gate:** preflight script validates env vars, endpoint health, and auth viability.
 
 Global done criteria:
 
 - All four streams pass real E2E flows in sequence.
 - Unified shell navigation is stable.
-- No mocked data paths remain in production/demo route code.
+- No mocked data paths remain in production/workspace route code.
 
 ## Out of Scope
 
-- Mock/fake backend fallback modes for demo routes
+- Mock/fake backend fallback modes for workspace routes
 - Cosmetic-only UI changes not tied to live behavior
 - Cross-repo expansion outside selected target unless required for integration
-

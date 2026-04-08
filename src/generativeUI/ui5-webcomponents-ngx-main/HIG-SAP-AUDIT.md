@@ -125,15 +125,15 @@
 **Issue:** "Leave Room" action executes immediately without confirmation. Users may accidentally disconnect from collaboration.
 **Fix:** Add `ui5-dialog` confirmation before executing `leaveRoom()`.
 
-### D-03 🟡 Demo tour banner lacks dismiss persistence
+### D-03 🟡 Learn path banner lacks dismiss persistence
 **File:** `app.component.html` lines 166–183
-**Issue:** The demo tour banner can be ended but has no "Don't show again" option. It reappears on navigation changes while active, with no way to minimize it.
+**Issue:** The learn path banner can be ended but has no "Don't show again" option. It reappears on navigation changes while active, with no way to minimize it.
 **Fix:** Add a dismiss/minimize option that persists to `localStorage`.
 
 ### D-04 🔵 No empty state on readiness page when all healthy
 **File:** `readiness-page.component.html`
 **Issue:** When all routes are healthy, the page shows all green cards but no summary message like "All systems go." Apple HIG recommends confirming positive states explicitly.
-**Fix:** Add a success message strip when `!demoBlocked`.
+**Fix:** Add a success message strip when `workspaceReady` is true.
 
 ---
 

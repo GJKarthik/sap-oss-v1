@@ -1,7 +1,7 @@
 # UI5 Harness Report
 
 - Verdict: **READY**
-- Mode: `demo-safe`
+- Mode: `workspace-safe`
 - Profile: `local-live`
 - Timestamp: `2026-04-02T00:21:46.779Z`
 

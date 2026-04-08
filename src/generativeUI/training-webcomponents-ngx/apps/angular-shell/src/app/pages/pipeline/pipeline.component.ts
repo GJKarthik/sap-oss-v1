@@ -54,11 +54,11 @@ interface LogLine {
             <app-pipeline-flow [stages]="stages()"></app-pipeline-flow>
           </section>
 
-          <!-- Zig Concurrency Matrix (True Leverage of Zig Backend) -->
+          <!-- Pipeline Execution Monitor -->
           <section class="concurrency-section glass-panel slideUp" [style.--stagger]="'0.2s'">
             <div class="card-header">
-              <ui5-title level="H5">{{ i18n.t('pipeline.zigMatrix') }}</ui5-title>
-              <span class="text-small opacity-6">{{ i18n.t('pipeline.zigMatrixDesc') }}</span>
+              <ui5-title level="H5">{{ i18n.t('pipeline.execMatrix') }}</ui5-title>
+              <span class="text-small opacity-6">{{ i18n.t('pipeline.execMatrixDesc') }}</span>
             </div>
             <div class="thread-grid">
               @for (t of threads(); track $index) {
@@ -68,7 +68,7 @@ interface LogLine {
               }
             </div>
             <div class="concurrency-footer">
-              <div class="footer-stat"><span>{{ i18n.t('pipeline.simdSlots') }}</span> <strong>{{ i18n.t('pipeline.simd512') }}</strong></div>
+              <div class="footer-stat"><span>{{ i18n.t('pipeline.workers') }}</span> <strong>{{ i18n.t('pipeline.workerCount') }}</strong></div>
               <div class="footer-stat"><span>{{ i18n.t('pipeline.throughputLabel') }}</span> <strong>{{ i18n.t('pipeline.throughputValue', { value: throughput() }) }}</strong></div>
             </div>
           </section>
@@ -100,7 +100,7 @@ interface LogLine {
               </div>
               <div class="mini-stat">
                 <span class="label">{{ i18n.t('pipeline.memoryAllocator') }}</span>
-                <ui5-tag design="Information">{{ i18n.t('pipeline.gpaZig') }}</ui5-tag>
+                <ui5-tag design="Information">{{ i18n.t('pipeline.pythonRuntime') }}</ui5-tag>
               </div>
             </div>
           </ui5-card>
@@ -199,12 +199,11 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   readonly stages = signal<PipelineStage[]>([
     { num: 1, name: 'Preconvert', tool: 'Python', input: 'data/*.xlsx', output: 'staging/*.csv', status: 'idle' },
-    { num: 2, name: 'Build', tool: 'Zig', input: 'Source', output: 'Binary', status: 'idle' },
-    { num: 3, name: 'Extract Schema', tool: 'Zig', input: 'CSV', output: 'Registry', status: 'idle' },
-    { num: 4, name: 'Parse Templates', tool: 'Zig', input: 'CSV', output: 'JSON', status: 'idle' },
-    { num: 5, name: 'Expand', tool: 'Zig', input: 'Tpl', output: 'Pairs', status: 'idle' },
-    { num: 6, name: 'Validate', tool: 'Mangle', input: 'Rules', output: 'Valid', status: 'idle' },
-    { num: 7, name: 'Format', tool: 'Zig', input: 'JSON', output: 'JSONL', status: 'idle' },
+    { num: 2, name: 'Extract Schema', tool: 'Python', input: 'CSV', output: 'Registry', status: 'idle' },
+    { num: 3, name: 'Parse Templates', tool: 'Python', input: 'CSV', output: 'JSON', status: 'idle' },
+    { num: 4, name: 'Expand', tool: 'Python', input: 'Tpl', output: 'Pairs', status: 'idle' },
+    { num: 5, name: 'Build SQL', tool: 'Python', input: 'Pairs', output: 'HANA SQL', status: 'idle' },
+    { num: 6, name: 'Format', tool: 'Python', input: 'JSON', output: 'JSONL', status: 'idle' },
   ]);
 
   readonly progress = computed(() => {

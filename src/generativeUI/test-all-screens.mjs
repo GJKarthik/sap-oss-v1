@@ -19,7 +19,7 @@ const AIFABRIC_BASE = 'http://localhost:4203';
 
 const AIFABRIC_ROUTES = [
   '/dashboard', '/streaming', '/deployments', '/rag',
-  '/governance', '/data', '/playground', '/lineage', '/data-quality',
+  '/governance', '/data', '/workspace', '/lineage', '/data-quality',
 ];
 
 const UI5_ROUTES = ['/'];
