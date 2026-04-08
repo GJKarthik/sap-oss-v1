@@ -50,7 +50,7 @@ jobs:
         run: pnpm audit --audit-level=high || true
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-ai-sdk-js
           path: ai-sdk-js-main/coverage/

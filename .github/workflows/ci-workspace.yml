@@ -49,7 +49,7 @@ jobs:
         run: yarn nx build workspace
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-workspace
           path: src/generativeUI/ui5-webcomponents-ngx-main/coverage/apps/workspace

@@ -56,14 +56,14 @@ jobs:
         run: npm run package
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sac-ngx-dist
           path: src/generativeUI/sac-webcomponents-ngx/dist/
           retention-days: 7
 
       - name: Upload widget.zip artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sac-ai-widget
           path: src/generativeUI/sac-webcomponents-ngx/dist/releases/widget.zip
