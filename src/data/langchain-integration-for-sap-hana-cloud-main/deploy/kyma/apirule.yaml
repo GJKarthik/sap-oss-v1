@@ -1,0 +1,32 @@
+# LangChain HANA MCP — Kyma APIRule v2
+# Exposes the MCP server externally via the Kyma ingress gateway.
+# Host: langchain-hana-mcp.c-054c570.kyma.ondemand.com
+
+apiVersion: gateway.kyma-project.io/v2
+kind: APIRule
+metadata:
+  name: langchain-hana-mcp
+  namespace: sap-ai-services
+  labels:
+    app: langchain-hana-mcp
+    component: mcp-server
+spec:
+  gateway: kyma-system/kyma-gateway
+  hosts:
+    - langchain-hana-mcp.c-054c570.kyma.ondemand.com
+  service:
+    name: langchain-hana-mcp-service
+    port: 9140
+  rules:
+    # Health check — no auth
+    - path: /health
+      methods: ["GET"]
+      noAuth: true
+    # MCP endpoint — no auth (HANA Cloud is the security boundary)
+    - path: /mcp
+      methods: ["POST"]
+      noAuth: true
+    # Catch-all
+    - path: /*
+      methods: ["GET", "POST", "OPTIONS"]
+      noAuth: true

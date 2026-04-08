@@ -1,0 +1,140 @@
+# LangChain HANA MCP Server - Kyma Deployment
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: langchain-hana-mcp-config
+  namespace: sap-ai-services
+data:
+  MCP_PORT: "9140"
+  AICORE_RESOURCE_GROUP: "default"
+  AICORE_EMBEDDING_DEPLOYMENT_ID: "dc9b452a67bfcaa5"
+  AICORE_CHAT_DEPLOYMENT_ID: "d6fd50a84809976a"
+  MCP_MAX_TOP_K: "50"
+  MCP_MAX_DOCS_PER_CALL: "500"
+  KUZU_DB_PATH: "/app/kuzu_data"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langchain-hana-mcp
+  namespace: sap-ai-services
+  labels:
+    app: langchain-hana-mcp
+    version: "1.0.1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langchain-hana-mcp
+  template:
+    metadata:
+      labels:
+        app: langchain-hana-mcp
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: langchain-hana-mcp
+          image: docker.io/plturrell/langchain-hana-mcp:1.0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9140
+          envFrom:
+            - configMapRef:
+                name: sap-elasticsearch-config
+            - configMapRef:
+                name: langchain-hana-mcp-config
+          env:
+            - name: AICORE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sap-elasticsearch-aicore-secrets
+                  key: AICORE_CLIENT_ID
+            - name: AICORE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sap-elasticsearch-aicore-secrets
+                  key: AICORE_CLIENT_SECRET
+            - name: HANA_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_HOST
+            - name: HANA_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_PORT
+            - name: HANA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_USER
+            - name: HANA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_PASSWORD
+            - name: HANA_SCHEMA
+              valueFrom:
+                secretKeyRef:
+                  name: hana-credentials
+                  key: HANA_SCHEMA
+          volumeMounts:
+            - name: tmp-dir
+              mountPath: /tmp
+            - name: cache-dir
+              mountPath: /home/mcp/.cache
+            - name: kuzu-data
+              mountPath: /app/kuzu_data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9140
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9140
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: tmp-dir
+          emptyDir: {}
+        - name: cache-dir
+          emptyDir:
+            sizeLimit: "1Gi"
+        - name: kuzu-data
+          emptyDir:
+            sizeLimit: "2Gi"
+      imagePullSecrets:
+        - name: dockerhub-plturrell
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: langchain-hana-mcp-service
+  namespace: sap-ai-services
+spec:
+  selector:
+    app: langchain-hana-mcp
+  ports:
+    - port: 9140
+      targetPort: 9140
+  type: ClusterIP

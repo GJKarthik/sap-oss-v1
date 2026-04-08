@@ -80,3 +80,10 @@ src/training/data/massive_semantic/training_data.json
 # Temp directories
 tmp/
 **/apps/angular-shell/src/assets/pdf.worker.min.mjs
+
+# Sensitive credentials — never commit
+docs/CREDENTIALS.md
+
+# Local binary/archive files — not for version control
+e_curl
+modular.tar.gz

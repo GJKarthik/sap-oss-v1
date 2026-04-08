@@ -1,0 +1,34 @@
+# OData Vocabularies MCP Server - APIRule v2 for Kyma
+# External access via API Gateway
+---
+apiVersion: gateway.kyma-project.io/v2
+kind: APIRule
+metadata:
+  name: odata-vocab-api
+  namespace: kube-scb
+  labels:
+    app: odata-vocab
+spec:
+  gateway: kyma-system/kyma-gateway
+  hosts:
+    - odata-vocab.c-9323c0b.kyma.ondemand.com
+  service:
+    name: odata-vocab-service
+    port: 9150
+  rules:
+    # Health endpoint - public access
+    - path: /health
+      methods: ["GET"]
+      noAuth: true
+    # Stats endpoint - public access  
+    - path: /stats
+      methods: ["GET"]
+      noAuth: true
+    # MCP endpoint - no auth for testing (update to jwt for production)
+    - path: /mcp
+      methods: ["POST", "OPTIONS"]
+      noAuth: true
+    # MCP tools endpoint (wildcard)
+    - path: /mcp/{**}
+      methods: ["POST", "GET", "OPTIONS"]
+      noAuth: true

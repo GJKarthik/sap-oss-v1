@@ -670,37 +670,27 @@ class MCPServer:
     # Tool Handlers
     def _handle_langchain_chat(self, args: dict) -> dict:
         config = get_config()
+        if not config_ready(config):
+            return {"error": "AI Core not configured"}
         messages = parse_json_arg(args.get("messages", "[]"), [])
         if not isinstance(messages, list) or len(messages) == 0:
             return {"error": "messages must be a non-empty JSON array"}
         max_tokens = clamp_int(args.get("max_tokens", 1024), 1024, 1, MAX_TOOL_TOKENS)
-        deployments = aicore_request(config, "GET", "/v2/lm/deployments")
-        resources = deployments.get("resources", [])
-        if not resources:
-            return {"error": "No deployment available"}
-        deployment = resources[0]
-        is_anthropic = "anthropic" in str(deployment.get("details", {})).lower()
-        self.facts["tool_invocation"].append({"tool": "langchain_chat", "deployment": deployment["id"], "timestamp": __import__("time").time()})
-        if is_anthropic:
-            result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/invoke", {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": max_tokens,
-                "messages": messages,
-            })
-            return {"content": result.get("content", [{}])[0].get("text", ""), "model": deployment["id"]}
-        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/chat/completions", {"messages": messages, "max_tokens": max_tokens})
+        deployment_id = os.environ.get("AICORE_CHAT_DEPLOYMENT_ID", "").strip()
+        if not deployment_id:
+            return {"error": "AICORE_CHAT_DEPLOYMENT_ID is not configured"}
+        self.facts["tool_invocation"].append({"tool": "langchain_chat", "deployment": deployment_id, "timestamp": __import__("time").time()})
+        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment_id}/chat/completions", {"messages": messages, "max_tokens": max_tokens})
 
     def _embed_texts(self, texts: list) -> list | None:
         """Embed texts via AI Core. Returns list of float vectors, or None on failure."""
         config = get_config()
         if not config_ready(config):
             return None
-        deployments = aicore_request(config, "GET", "/v2/lm/deployments")
-        resources = deployments.get("resources", [])
-        deployment = next((d for d in resources if "embed" in str(d.get("details", {})).lower()), resources[0] if resources else None)
-        if not deployment:
+        deployment_id = os.environ.get("AICORE_EMBEDDING_DEPLOYMENT_ID", "").strip()
+        if not deployment_id:
             return None
-        result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/embeddings", {"input": texts})
+        result = aicore_request(config, "POST", f"/v2/inference/deployments/{deployment_id}/embeddings", {"input": texts})
         data = result.get("data")
         if not isinstance(data, list):
             return None
@@ -983,17 +973,17 @@ class MCPServer:
 
     def _handle_langchain_embeddings(self, args: dict) -> dict:
         config = get_config()
+        if not config_ready(config):
+            return {"error": "AI Core not configured"}
         texts = parse_json_arg(args.get("texts", "[]"), [])
         if not isinstance(texts, list):
             return {"error": "texts must be a JSON array"}
         if len(texts) > MAX_DOCS_PER_CALL:
             texts = texts[:MAX_DOCS_PER_CALL]
-        deployments = aicore_request(config, "GET", "/v2/lm/deployments")
-        resources = deployments.get("resources", [])
-        deployment = next((d for d in resources if "embed" in str(d.get("details", {})).lower()), resources[0] if resources else None)
-        if not deployment:
-            return {"error": "No embedding deployment"}
-        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment['id']}/embeddings", {"input": texts})
+        deployment_id = os.environ.get("AICORE_EMBEDDING_DEPLOYMENT_ID", "").strip()
+        if not deployment_id:
+            return {"error": "AICORE_EMBEDDING_DEPLOYMENT_ID is not configured"}
+        return aicore_request(config, "POST", f"/v2/inference/deployments/{deployment_id}/embeddings", {"input": texts})
 
     def _handle_langchain_load_documents(self, args: dict) -> dict:
         source = str(args.get("source", "") or "").strip()
