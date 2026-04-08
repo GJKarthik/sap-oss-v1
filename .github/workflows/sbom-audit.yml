@@ -79,7 +79,7 @@ jobs:
       # A cache hit skips the ~45 s go build step entirely.
       - name: Cache mg binary
         id: cache-mg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: scripts/sbom-lineage/bin/mg
           key: mg-${{ runner.os }}-${{ hashFiles('mangle-main/**/*.go', 'mangle-main/go.sum') }}
