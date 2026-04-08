@@ -272,8 +272,6 @@ services:
       # Observability
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    volumes:
-      - kuzu-data:/app/.kuzu-data
     labels:
       sap.ai.tier: "tier2-intelligence"
       sap.ai.service: "data-cleaning-copilot"
@@ -302,12 +300,6 @@ volumes:
       type: none
       o: bind
       device: ${MODEL_CACHE_PATH:-./volumes/model-cache}
-  kuzu-data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${KUZU_DATA_PATH:-./volumes/kuzu-data}
 
 networks:
   sap-ai-fabric-network:

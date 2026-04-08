@@ -199,7 +199,7 @@ rollback_tier0() {
     log_info "═══════════════════════════════════════════════════════════════"
     
     if [[ "$REMOVE_VOLUMES" == "true" ]]; then
-        confirm_action "WARNING: This will delete Elasticsearch and Redis data!"
+        confirm_action "WARNING: This will delete Redis data!"
     fi
     
     rollback_compose "docker-compose.tier0.yml" "Tier 0 (Infrastructure)"

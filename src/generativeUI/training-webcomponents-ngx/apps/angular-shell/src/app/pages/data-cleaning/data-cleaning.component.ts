@@ -48,9 +48,8 @@ interface DataCleaningWorkflowEventsResponse {
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/data-quality"
-        targetLabel="Data Quality Studio"
-        icon="validate"
-        relationLabel="Related — validate production data:">
+        targetLabelKey="crossApp.target.aifabricDataQuality"
+        icon="validate">
       </app-cross-app-link>
 
       <div class="page-header">
@@ -371,4 +370,3 @@ export class DataCleaningComponent implements OnInit, OnDestroy {
     return (error.error as { detail?: string })?.detail ?? error.message ?? 'Request failed';
   }
 }
-

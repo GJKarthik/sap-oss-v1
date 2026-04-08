@@ -33,7 +33,7 @@ export const routes: Routes = [
       {
         path: 'hana-explorer',
         loadComponent: () =>
-          import('./pages/hippocpp/hippocpp.component').then((m) => m.HippocppComponent),
+          import('./pages/hana-explorer/hana-explorer.component').then((m) => m.HanaExplorerComponent),
       },
       {
         path: 'data-explorer',
@@ -194,6 +194,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/deployments/deployments.component').then(
             (m) => m.DeploymentsComponent
+          ),
+      },
+      {
+        path: 'data-products',
+        loadComponent: () =>
+          import('./pages/data-product-manager/data-product-manager.component').then(
+            (m) => m.DataProductManagerComponent
           ),
       },
     ],

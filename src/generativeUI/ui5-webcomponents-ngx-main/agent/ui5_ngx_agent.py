@@ -197,8 +197,7 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "generate_component", "complete_code", "lookup_documentation",
-            "list_components", "generate_template", "mangle_query",
-            "kuzu_index", "kuzu_query"
+            "list_components", "generate_template", "mangle_query"
         }
         
         # No approval required for public code tools

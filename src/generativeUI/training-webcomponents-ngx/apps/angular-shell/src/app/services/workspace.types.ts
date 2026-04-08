@@ -18,7 +18,6 @@ export interface WorkspaceNavItem {
 }
 
 export interface WorkspaceNavConfig {
-  defaultLandingPath: string;
   items: WorkspaceNavItem[];
 }
 
@@ -48,14 +47,15 @@ export interface TrainingNavLink {
 export const TRAINING_NAV_LINKS: TrainingNavLink[] = [
   // Home
   { route: '/dashboard', labelKey: 'nav.dashboard', icon: 'home' },
-  // Data Factory
+  // Data Work
   { route: '/data-explorer', labelKey: 'nav.dataExplorer', icon: 'folder' },
   { route: '/data-cleaning', labelKey: 'nav.dataCleaning', icon: 'edit' },
   { route: '/schema-browser', labelKey: 'nav.schemaBrowser', icon: 'table-view' },
+  { route: '/data-products', labelKey: 'nav.dataProducts', icon: 'product' },
   { route: '/data-quality', labelKey: 'nav.dataQuality', icon: 'validate' },
   { route: '/lineage', labelKey: 'nav.lineage', icon: 'org-chart' },
   { route: '/vocab-search', labelKey: 'nav.vocabSearch', icon: 'grid' },
-  // AI Lab
+  // AI Assistance
   { route: '/chat', labelKey: 'nav.chat', icon: 'discussion-2' },
   { route: '/rag-studio', labelKey: 'nav.ragStudio', icon: 'database' },
   { route: '/semantic-search', labelKey: 'nav.semanticSearch', icon: 'search' },
@@ -64,7 +64,7 @@ export const TRAINING_NAV_LINKS: TrainingNavLink[] = [
   { route: '/sparql-explorer', labelKey: 'nav.sparqlExplorer', icon: 'syntax' },
   { route: '/analytical-dashboard', labelKey: 'nav.analyticalDashboard', icon: 'chart-table-view' },
   { route: '/streaming', labelKey: 'nav.streaming', icon: 'monitor-payments' },
-  // MLOps
+  // Operations
   { route: '/pipeline', labelKey: 'nav.pipeline', icon: 'process' },
   { route: '/deployments', labelKey: 'nav.deployments', icon: 'shipping-status' },
   { route: '/model-optimizer', labelKey: 'nav.modelOptimizer', icon: 'machine' },
@@ -107,7 +107,6 @@ export function createDefaultWorkspaceSettings(): WorkspaceSettings {
       collabWsUrl: environment.collabWsUrl,
     },
     nav: {
-      defaultLandingPath: '/dashboard',
       items: TRAINING_NAV_LINKS.map((link, i) => ({
         route: link.route,
         visible: true,

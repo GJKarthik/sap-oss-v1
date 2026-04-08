@@ -1,31 +1,41 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { DashboardComponent } from './dashboard.component';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../services/i18n.service';
 
 const MOCK_STORE = {
-  health: signal({ data: { status: 'healthy', service: 'tc', version: '1.0' }, state: 'loaded' as const, lastFetched: Date.now(), error: null }),
-  gpu: signal({ data: { gpu_name: 'NVIDIA T4', total_memory_gb: 16, used_memory_gb: 4, free_memory_gb: 12, utilization_percent: 25, temperature_c: 45, driver_version: '535', cuda_version: '12.2' }, state: 'loaded' as const, lastFetched: Date.now(), error: null }),
-  graphStats: signal({ data: { available: true, pair_count: 1200 }, state: 'loaded' as const, lastFetched: Date.now(), error: null }),
-  jobs: signal({ data: [], state: 'idle' as const, lastFetched: null, error: null }),
-  models: signal({ data: [], state: 'idle' as const, lastFetched: null, error: null }),
+  health: signal({
+    data: {
+      status: 'healthy',
+      dependencies: {
+        database: 'healthy',
+        hana_vector: 'healthy',
+        vllm_turboquant: 'healthy',
+      },
+    },
+    loading: false,
+  }),
+  gpu: signal({
+    data: {
+      gpu_name: 'NVIDIA T4',
+      memory_total: 16,
+      memory_used: 4,
+      utilization: 25,
+      cuda_version: '12.2',
+    },
+    loading: false,
+  }),
   isDashboardLoading: signal(false),
   isHealthy: signal(true),
-  healthBadge: signal('status-success'),
-  gpuMemoryUsed: signal('4.0'),
-  gpuMemoryTotal: signal('16.0'),
+  healthBadge: signal('Positive'),
   gpuUtilization: signal(25),
   trainingPairCount: signal(1200),
-  isGraphAvailable: signal(true),
-  pendingJobs: signal([]),
-  completedJobs: signal([]),
-  sidebarCollapsed: signal(false),
+  platformNarrative: signal('narrative.healthy'),
   loadDashboardData: jest.fn(),
   forceRefresh: jest.fn(),
-  loadHealth: jest.fn(),
-  loadGpu: jest.fn(),
-  loadGraphStats: jest.fn(),
 };
 
 const MOCK_TOAST = {
@@ -35,6 +45,15 @@ const MOCK_TOAST = {
   info: jest.fn(),
 };
 
+const MOCK_ROUTER = {
+  navigate: jest.fn(),
+};
+
+const MOCK_I18N = {
+  t: (key: string) => key,
+  currentLang: () => 'en',
+};
+
 describe('DashboardComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -42,11 +61,15 @@ describe('DashboardComponent', () => {
       providers: [
         { provide: AppStore, useValue: MOCK_STORE },
         { provide: ToastService, useValue: MOCK_TOAST },
+        { provide: Router, useValue: MOCK_ROUTER },
+        { provide: I18nService, useValue: MOCK_I18N },
       ],
     }).compileComponents();
 
     MOCK_STORE.loadDashboardData.mockClear();
     MOCK_STORE.forceRefresh.mockClear();
+    MOCK_ROUTER.navigate.mockClear();
+    MOCK_TOAST.info.mockClear();
   });
 
   it('should create', () => {
@@ -67,11 +90,25 @@ describe('DashboardComponent', () => {
     expect(el.textContent).toContain('25%');
   });
 
-  it('calls forceRefresh on all three keys when refresh() is invoked', () => {
+  it('calls forceRefresh and shows refresh feedback', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
     fixture.componentInstance.refresh();
-    expect(MOCK_STORE.forceRefresh).toHaveBeenCalledWith('health');
-    expect(MOCK_STORE.forceRefresh).toHaveBeenCalledWith('gpu');
-    expect(MOCK_STORE.forceRefresh).toHaveBeenCalledWith('graphStats');
+    expect(MOCK_STORE.forceRefresh).toHaveBeenCalledTimes(1);
+    expect(MOCK_TOAST.info).toHaveBeenCalledWith('dashboard.refreshMsg');
+  });
+
+  it('routes each overview card to a live product page', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const cards = fixture.componentInstance.components();
+
+    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'process')!);
+    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'machine')!);
+    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'database')!);
+    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'folder')!);
+
+    expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(1, ['/pipeline']);
+    expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(2, ['/model-optimizer']);
+    expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(3, ['/hana-explorer']);
+    expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(4, ['/data-explorer']);
   });
 });

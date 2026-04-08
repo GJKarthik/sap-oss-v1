@@ -29,9 +29,8 @@ function readErrorMessage(error: unknown, fallback: string): string {
       <app-cross-app-link
         targetApp="training"
         targetRoute="/semantic-search"
-        targetLabel="Semantic Search"
-        icon="search"
-        relationLabel="Related — search training corpora:">
+        targetLabelKey="nav.semanticSearch"
+        icon="search">
       </app-cross-app-link>
 
       <ui5-bar slot="header" design="Header">

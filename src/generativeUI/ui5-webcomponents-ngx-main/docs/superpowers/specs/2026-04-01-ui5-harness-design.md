@@ -10,7 +10,7 @@ The harness is a workflow layer over existing scripts and services, not a replac
 
 In scope:
 - Orchestrate existing commands (`start:*`, `live:preflight`, `readiness:verify`, route checks).
-- Provide one command for presenters/operators.
+- Provide one command for operators.
 - Emit structured status reports for humans and automation.
 - Enforce mode-based safety policies (workspace-safe vs dev-flex).
 

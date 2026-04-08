@@ -31,7 +31,7 @@ flowchart TB
         Stream["Streaming Core"]
         VLLM["vLLM Engine"]
         Mangle["Mangle Query"]
-        ES["Elasticsearch"]
+        HVS["HANA Vector Store"]
     end
     
     subgraph Governance["👁 GOVERNANCE"]
@@ -53,7 +53,7 @@ flowchart TB
 | **Interaction** | UI5 Web Components, OData Vocabularies | User interface, semantic standards |
 | **Orchestration** | AI SDK, CAP LLM Plugin, LangChain | Model routing, RAG, privacy |
 | **Intelligence** | MCP PAL, Data Copilot, GenAI Toolkit | Forecasting, data quality, ML |
-| **Foundation** | Streaming Core, vLLM, Mangle, Elasticsearch | Performance, search, transformation |
+| **Foundation** | Streaming Core, vLLM, Mangle, HANA Vector Store | Performance, search, transformation |
 | **Governance** | World Monitor | Observability, tracing, audit |
 
 ---
@@ -81,7 +81,7 @@ flowchart TD
 
     subgraph DataLayer["Data & Knowledge Base"]
         HANA["SAP HANA Cloud"]
-        ES["Elasticsearch (7)"]
+        HVS["HANA Vector Store (7)"]
         MANGLE["Mangle Query (10)"]
     end
 
@@ -219,7 +219,7 @@ flowchart TB
 | 4 | Streaming Core | Foundation | Custom (Zig) | Real-time delivery |
 | 5 | MCP PAL | Intelligence | Custom | Sales forecast |
 | 6 | Data Cleaning Copilot | Intelligence | Custom | Data quality audit |
-| 7 | Elasticsearch | Foundation | Elastic/ES | Knowledge search |
+| 7 | HANA Vector Store | Foundation | SAP HANA Cloud | Knowledge search |
 | 8 | GenAI Toolkit | Intelligence | `SAP/generative-ai-toolkit-for-sap-hana-cloud` | Custom ML |
 | 9 | LangChain Integration | Orchestration | `SAP/langchain-integration-for-sap-hana-cloud` | Vector store |
 | 10 | Mangle Query | Foundation | Custom | Log transformation |

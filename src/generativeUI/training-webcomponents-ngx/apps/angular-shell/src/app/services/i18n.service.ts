@@ -43,7 +43,9 @@ export class I18nService {
     // so translations are ready before any component renders.
   }
 
-  private static readonly ALL_LANGS: Language[] = ['en', 'ar', 'fr', 'de', 'ko', 'zh', 'id'];
+  static readonly ALL_LANGS: Language[] = ['en', 'ar', 'fr', 'de', 'ko', 'zh', 'id'];
+  readonly supportedLangs = I18nService.ALL_LANGS;
+  readonly langLabels = LANGUAGE_LABELS;
 
   private loadSavedLang(): Language {
     const saved = localStorage.getItem('app_lang');

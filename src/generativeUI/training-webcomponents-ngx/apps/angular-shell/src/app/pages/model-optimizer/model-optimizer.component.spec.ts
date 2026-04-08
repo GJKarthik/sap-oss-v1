@@ -1,29 +1,18 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ModelOptimizerComponent } from './model-optimizer.component';
-import { UserSettingsService, UserMode } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { signal } from '@angular/core';
 
 describe('ModelOptimizerComponent', () => {
   let component: ModelOptimizerComponent;
-  let fixture: ComponentFixture<ModelOptimizerComponent>;
   let httpMock: HttpTestingController;
 
-  const mockMode = signal<UserMode>('novice');
-
-  const mockUserSettings = {
-    mode: mockMode,
-    setMode: jest.fn(),
-  };
-
   const mockAppStore = {
-    addJob: jest.fn(),
-    models: signal({ data: [{ name: 'TestModel', recommended_quant: 'int8', t4_compatible: true }] }),
-    loadModels: jest.fn(),
+    gpuMemoryTotal: signal(40),
   };
 
   const mockToast = {
@@ -33,49 +22,41 @@ describe('ModelOptimizerComponent', () => {
     info: jest.fn(),
   };
 
+  const mockI18n = {
+    t: (key: string) => key,
+  };
+
+  function flushInitialLoad(): void {
+    httpMock.expectOne('/api/models/catalog').flush([
+      { name: 'Model A', recommended_quant: 'int8', t4_compatible: true, size_gb: 4, parameters: '1B' },
+      { name: 'Model B', recommended_quant: 'fp8', t4_compatible: true, size_gb: 8, parameters: '1B' },
+    ]);
+    httpMock.expectOne('/api/jobs').flush([]);
+  }
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ModelOptimizerComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: UserSettingsService, useValue: mockUserSettings },
         { provide: AppStore, useValue: mockAppStore },
         { provide: ToastService, useValue: mockToast },
+        { provide: I18nService, useValue: mockI18n },
       ],
     }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ModelOptimizerComponent);
-    component = fixture.componentInstance;
+    component = TestBed.runInInjectionContext(() => new ModelOptimizerComponent());
     httpMock = TestBed.inject(HttpTestingController);
-
-    // Inject real translations so i18n.t() returns translated strings
-    const i18n = TestBed.inject(I18nService);
-    (i18n as any).translations = {
-      en: {
-        'modelOpt.switchMode': 'Switch to Intermediate mode to select a model manually.',
-        'modelOpt.catalogFailed': 'Failed to load model catalog',
-        'modelOpt.modelsTitle': 'Models',
-        'modelOpt.jobsFailed': 'Failed to load jobs',
-        'modelOpt.jobsTitle': 'Jobs',
-        'modelOpt.loadFailed': 'Load failed',
-        'common.error': 'Error',
-      },
-      ar: {},
-    };
-    (i18n as any).loaded = true;
-    (i18n as any).mfCache.clear();
-
-    mockMode.set('novice'); // Default behavior
     Object.values(mockToast).forEach(spy => spy.mockClear());
-    fixture.detectChanges();
+    component.ngOnInit();
+    flushInitialLoad();
   });
 
   afterEach(() => {
-    // Flush any pending init requests from ngOnInit → loadData()
-    httpMock.match(() => true).forEach(r => r.flush([]));
+    component.ngOnDestroy();
     httpMock.verify();
   });
 
@@ -83,32 +64,18 @@ describe('ModelOptimizerComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('shows toast when a model is clicked in novice mode', () => {
+  it('selectModel() applies the chosen model and recommended quantization', () => {
     component.selectModel({ name: 'Model A', recommended_quant: 'int4', t4_compatible: true, size_gb: 4, parameters: '1B' });
-    
-    expect(mockToast.info).toHaveBeenCalledWith('Switch to Intermediate mode to select a model manually.');
-    expect(component.jobForm.value.model_name).not.toBe('Model A');
-  });
 
-  it('allows model selection in intermediate mode', () => {
-    mockMode.set('intermediate');
-    fixture.detectChanges();
-
-    component.selectModel({ name: 'Model B', recommended_quant: 'fp8', t4_compatible: true, size_gb: 8, parameters: '1B' });
-    
-    expect(mockToast.info).not.toHaveBeenCalled();
-    expect(component.jobForm.value.model_name).toBe('Model B');
-    expect(component.jobForm.value.quant_format).toBe('fp8');
+    expect(component.jobForm.value.model_name).toBe('Model A');
+    expect(component.jobForm.value.quant_format).toBe('int4');
   });
 
   it('createJob() posts the correct typed payload', () => {
     component.jobForm.patchValue({
       model_name: 'test-model',
       quant_format: 'int8',
-      calib_samples: 256,
-      calib_seq_len: 2048,
       export_format: 'vllm',
-      enable_pruning: false,
     });
 
     component.createJob();
@@ -118,11 +85,7 @@ describe('ModelOptimizerComponent', () => {
       config: {
         model_name: 'test-model',
         quant_format: 'int8',
-        calib_samples: 256,
-        calib_seq_len: 2048,
         export_format: 'vllm',
-        enable_pruning: false,
-        pruning_sparsity: 0.2,
       },
     });
 

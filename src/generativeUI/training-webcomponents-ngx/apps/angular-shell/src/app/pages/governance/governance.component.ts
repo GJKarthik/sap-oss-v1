@@ -50,9 +50,8 @@ interface ApiPolicy {
       <app-cross-app-link
         targetApp="training"
         targetRoute="/deployments"
-        targetLabel="Deployments"
-        icon="inbox"
-        relationLabel="Related:">
+        targetLabelKey="nav.deployments"
+        icon="inbox">
       </app-cross-app-link>
 
       @if (loading) {

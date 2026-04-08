@@ -9,6 +9,7 @@ import { errorInterceptor } from './interceptors/error.interceptor';
 import { timeoutInterceptor } from './interceptors/timeout.interceptor';
 import { GlobalErrorHandler } from './core/global-error-handler';
 import { I18nService } from './services/i18n.service';
+import { WorkspaceService } from './services/workspace.service';
 
 /**
  * Application configuration with providers for routing, HTTP client,
@@ -19,6 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideAppInitializer(() => inject(I18nService).loadTranslations()),
+    provideAppInitializer(() => inject(WorkspaceService).initialize()),
     provideRouter(
       routes,
       withComponentInputBinding(),

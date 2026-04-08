@@ -1,0 +1,134 @@
+# =============================================================================
+# Team Seed Data — 8 countries × 3 domains
+# Used to bootstrap TEAM_CONFIG and TEAM_PRODUCT_ACCESS tables
+# =============================================================================
+
+countries:
+  - code: CN
+    name: China
+    locale: en
+    filter_value: CHINA
+  - code: HK
+    name: Hong Kong
+    locale: en
+    filter_value: HONG KONG
+  - code: IN
+    name: India
+    locale: en
+    filter_value: INDIA
+  - code: SG
+    name: Singapore
+    locale: en
+    filter_value: SINGAPORE
+  - code: TW
+    name: Taiwan
+    locale: en
+    filter_value: TAIWAN
+  - code: AE
+    name: United Arab Emirates
+    locale: ar
+    filter_value: UNITED ARAB EMIRATES
+  - code: GB
+    name: United Kingdom
+    locale: en
+    filter_value: UNITED KINGDOM
+  - code: US
+    name: United States of America
+    locale: en
+    filter_value: UNITED STATES OF AMERICA
+
+domains:
+  - id: treasury
+    name: Treasury & Capital Markets
+    products:
+      - treasury-capital-markets-v1
+      - staging-schema-v1
+  - id: esg
+    name: ESG & Sustainability
+    products:
+      - esg-sustainability-v1
+      - staging-schema-v1
+  - id: performance
+    name: Performance Analytics
+    products:
+      - performance-bpc-v1
+      - staging-schema-v1
+
+# Per-country prompt appendices (injected into LLM system prompts)
+country_prompt_overrides:
+  AE:
+    system_prompt_append: |
+      This user is in the UAE office. Default to UAE positions.
+      Use SAMA/CBUAE regulatory terminology where applicable.
+      Support bilingual Arabic/English responses.
+    enable_bilingual: true
+  GB:
+    system_prompt_append: |
+      This user is in the UK office. Default to UK positions.
+      Use PRA/FCA regulatory terminology where applicable.
+  US:
+    system_prompt_append: |
+      This user is in the US office. Default to US positions.
+      Use SEC/OCC regulatory terminology where applicable.
+  SG:
+    system_prompt_append: |
+      This user is in the Singapore office. Default to SG positions.
+      Use MAS regulatory terminology where applicable.
+  HK:
+    system_prompt_append: |
+      This user is in the Hong Kong office. Default to HK positions.
+      Use HKMA regulatory terminology where applicable.
+  CN:
+    system_prompt_append: |
+      This user is in the China office. Default to China positions.
+      Use PBOC/CBIRC regulatory terminology where applicable.
+  IN:
+    system_prompt_append: |
+      This user is in the India office. Default to India positions.
+      Use RBI regulatory terminology where applicable.
+  TW:
+    system_prompt_append: |
+      This user is in the Taiwan office. Default to Taiwan positions.
+      Use FSC regulatory terminology where applicable.
+
+# Country-specific glossary seeds (scope_level: country)
+country_glossary_seeds:
+  AE:
+    - source_text: "Risk-Weighted Assets"
+      target_text: "الأصول المرجحة بالمخاطر"
+      source_lang: en
+      target_lang: ar
+      category: regulatory
+    - source_text: "Capital Adequacy Ratio"
+      target_text: "نسبة كفاية رأس المال"
+      source_lang: en
+      target_lang: ar
+      category: regulatory
+    - source_text: "Central Bank"
+      target_text: "مصرف الإمارات المركزي"
+      source_lang: en
+      target_lang: ar
+      category: regulatory
+  GB:
+    - source_text: "Capital Adequacy Ratio"
+      target_text: "CET1 Ratio (PRA)"
+      source_lang: en
+      target_lang: en
+      category: regulatory
+    - source_text: "Regulator"
+      target_text: "PRA / FCA"
+      source_lang: en
+      target_lang: en
+      category: regulatory
+  US:
+    - source_text: "Capital Adequacy Ratio"
+      target_text: "Tier 1 Capital Ratio (OCC)"
+      source_lang: en
+      target_lang: en
+      category: regulatory
+  SG:
+    - source_text: "Capital Adequacy Ratio"
+      target_text: "CAR (MAS Notice 637)"
+      source_lang: en
+      target_lang: en
+      category: regulatory

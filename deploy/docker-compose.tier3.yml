@@ -135,32 +135,6 @@ services:
       - sap-ai-fabric-network
     restart: unless-stopped
 
-  # ─────────────────────────────────────────────────────────────────────────
-  # KuzuDB Graph Database (for lineage tracking)
-  # Tracks model lineage and training metadata
-  # ─────────────────────────────────────────────────────────────────────────
-  kuzu:
-    image: kuzudb/kuzu:latest
-    container_name: sap-ai-kuzu
-    ports:
-      - "7687:7687"
-    volumes:
-      - kuzu-data:/data
-    environment:
-      - KUZU_DATA_DIR=/data
-    labels:
-      sap.ai.tier: "tier3-training"
-      sap.ai.service: "kuzu-graph"
-      sap.ai.data_security: "internal"
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "7687"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - sap-ai-fabric-network
-    restart: unless-stopped
-
 volumes:
   model-cache:
     external: true
@@ -174,8 +148,6 @@ volumes:
   modelopt-cache:
     driver: local
   training-data:
-    driver: local
-  kuzu-data:
     driver: local
 
 networks:

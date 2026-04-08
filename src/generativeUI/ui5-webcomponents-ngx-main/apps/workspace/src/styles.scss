@@ -1,9 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 
 // ---------------------------------------------------------------------------
-// Arabic web fonts (async, non-blocking via font-display: swap)
-// ---------------------------------------------------------------------------
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap');
+// SAP and system fonts only. Avoid external font fetches in production.
 
 // ---------------------------------------------------------------------------
 // Reset / base
@@ -146,12 +144,12 @@ ui5-page {
 [dir="rtl"] {
   body {
     text-align: right;
-    font-family: 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Segoe UI', Tahoma, sans-serif;
+    font-family: var(--sapFontFamily, "72 Arabic", "72", "72full", Arial, Helvetica, sans-serif);
   }
 
   ui-angular-root {
     direction: rtl;
-    font-family: 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Segoe UI', Tahoma, sans-serif;
+    font-family: var(--sapFontFamily, "72 Arabic", "72", "72full", Arial, Helvetica, sans-serif);
   }
 
   // BiDi isolation for code and technical content mixed with Arabic
@@ -181,16 +179,5 @@ ui5-page {
     // Ensure Western numerals by using a LTR numeral font first in the stack
     direction: ltr;
     unicode-bidi: isolate;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Reduced motion: respect prefers-reduced-motion
-// ---------------------------------------------------------------------------
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
   }
 }

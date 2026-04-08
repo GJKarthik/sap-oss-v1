@@ -35,6 +35,4 @@ numpy>=1.24.0                   # Numerical computing
 python-dotenv>=1.0.0            # Environment file loading
 
 # ============================================================================
-# Graph Database (optional - fallback for KùzuDB)
-# ============================================================================
-# kuzu>=0.4.0                   # KùzuDB Python bindings (optional fallback)
+# Relationship context is served from HANA-backed services only.

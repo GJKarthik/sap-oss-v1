@@ -1,6 +1,6 @@
 # Training Console
 
-Full-platform UI for the SAP AI Training stack — covering all four `training-main` components: **Pipeline**, **Model Optimizer**, **HippoCPP**, and **Data Explorer**.
+Full-platform UI for the SAP AI Training stack — covering all four `training-main` components: **Pipeline**, **Model Optimizer**, **HANA Explorer**, and **Data Explorer**.
 Includes integrated **Data Cleaning** workflows for preparing model training data inside the same app.
 
 Built with **Angular 20** + **SAP UI5 Web Components**.
@@ -22,7 +22,7 @@ training-webcomponents-ngx/
 │       │   │   │   ├── dashboard/      # System health, GPU status, graph stats
 │       │   │   │   ├── pipeline/       # 7-stage Text-to-SQL pipeline
 │       │   │   │   ├── model-optimizer/# Model catalog + job management
-│       │   │   │   ├── hippocpp/       # Graph DB engine + Cypher sandbox
+│       │   │   │   ├── hana-explorer/  # HANA Cloud explorer + SQL workspace
 │       │   │   │   ├── data-explorer/  # Banking Excel/CSV asset browser
 │       │   │   │   └── chat/           # LLM chat (OpenAI-compatible API)
 │       │   │   └── services/           # ApiService, AuthService
@@ -123,7 +123,7 @@ The FastAPI proxy uses the following environment variables. They can be set in a
 | `/dashboard` | System health, GPU utilisation, graph store stats |
 | `/pipeline` | 7-stage Text-to-SQL data generation pipeline |
 | `/model-optimizer` | Model catalog browser + quantisation job management |
-| `/hippocpp` | HippoCPP graph engine stats + Cypher query sandbox |
+| `/hana-explorer` | HANA Cloud explorer with live SQL workspace |
 | `/data-explorer` | Banking Excel/CSV training data asset browser |
 | `/data-cleaning` | Native data cleaning copilot + workflow execution |
 | `/chat` | OpenAI-compatible LLM chat (proxied to ModelOpt backend) |
@@ -137,8 +137,8 @@ The FastAPI proxy uses the following environment variables. They can be set in a
 | `GET /models/catalog` | Available models |
 | `GET /jobs` | List optimisation jobs |
 | `POST /jobs` | Create optimisation job |
-| `GET /graph/stats` | HippoCPP graph statistics |
-| `POST /graph/query` | Execute Cypher query |
+| `GET /hana/stats` | HANA Cloud connection status |
+| `POST /hana/query` | Execute read-only HANA SQL |
 | `POST /v1/chat/completions` | OpenAI-compatible chat |
 
 ## Quality Gates

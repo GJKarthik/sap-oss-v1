@@ -56,9 +56,8 @@ function readErrorMessage(error: unknown, fallback: string): string {
       <app-cross-app-link
         targetApp="training"
         targetRoute="/registry"
-        targetLabel="Model Registry"
-        icon="database"
-        relationLabel="Related:">
+        targetLabelKey="nav.registry"
+        icon="database">
       </app-cross-app-link>
 
       <div class="deployments-content" role="region" [attr.aria-label]="i18n.t('deployments.deploymentsManagement')">

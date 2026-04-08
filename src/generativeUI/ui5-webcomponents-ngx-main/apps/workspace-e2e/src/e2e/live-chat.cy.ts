@@ -7,7 +7,7 @@ const describeLive = liveOnly ? describe : describe.skip;
 describeLive('Live workspace — Joule chat', () => {
   it('loads Joule route and keeps connection healthy', () => {
     cy.visit('/');
-    cy.contains('button', 'Joule AI').click();
+    cy.get('[data-testid="home-open-joule"]').click();
     cy.contains('Live service required').should('not.exist');
     cy.get('joule-chat').should('exist');
     cy.get('.error-banner').should('not.exist');

@@ -53,13 +53,13 @@ flowchart TB
     
     subgraph Providers["All Expose /v1/chat/completions"]
         VLLM["vLLM"]
-        ES["Elasticsearch"]
+        HVS["HANA Vector Store"]
         Azure["Azure OpenAI"]
     end
     
     App["Application"] --> SDK
     Router --> VLLM
-    Router --> ES
+    Router --> HVS
     Router --> Azure
 ```
 
@@ -68,8 +68,8 @@ flowchart TB
 // ❌ Provider-specific code
 if (provider === 'vllm') {
   response = await axios.post(`${vllmUrl}/generate`);
-} else if (provider === 'elasticsearch') {
-  response = await esClient.search({ ... });
+} else if (provider === 'hana') {
+  response = await hanaVectorClient.search({ ... });
 } else if (provider === 'openai') {
   response = await openai.chat.completions.create({ ... });
 }
@@ -79,7 +79,7 @@ if (provider === 'vllm') {
 ```typescript
 // ✅ Single interface for all
 const response = await sdk.chatCompletion({
-  model: config.model,  // vllm, elasticsearch, gpt-4
+  model: config.model,  // vllm, hana-vector, gpt-4
   messages: [{ role: 'user', content: message }]
 });
 ```

@@ -8,20 +8,28 @@ This script:
 3. Creates stratified train/val/test splits by domain × type
 4. Exports in formats ready for nvidia-modelopt training configs
 5. Updates config files with correct paths and batch sizes
+6. Optionally scopes data to a team context (Country × Domain)
 
 Usage:
-    python prepare_training_data.py [--output-dir OUTPUT_DIR]
+    python prepare_training_data.py [--output-dir OUTPUT_DIR] [--team AE:treasury]
 """
 
 import json
 import random
 import os
 import argparse
+import logging
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 from collections import defaultdict
 import hashlib
 from dataclasses import dataclass
+
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from pipeline.team_context import TeamContext, GLOBAL_CONTEXT
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -37,9 +45,10 @@ class SplitConfig:
 class TrainingDataPreparer:
     """Prepares training data with stratified splits."""
     
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, team_context: Optional[TeamContext] = None):
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.team_context = team_context or GLOBAL_CONTEXT
         
         self.all_examples: List[Dict] = []
         self.seen_hashes: Set[str] = set()
@@ -293,10 +302,85 @@ class TrainingDataPreparer:
             except Exception as e:
                 print(f"Error updating {config_name}: {e}")
     
+    def _apply_team_filter(self) -> None:
+        """Filter loaded examples by team context (country/domain)."""
+        if self.team_context.is_global:
+            return
+
+        before = len(self.all_examples)
+        filtered: List[Dict] = []
+
+        for ex in self.all_examples:
+            # Domain filter
+            if self.team_context.domain:
+                ex_domain = (ex.get("domain") or "").lower()
+                if ex_domain and ex_domain != "unknown" and ex_domain != self.team_context.domain:
+                    continue
+
+            # Country filter — check if country value appears in input/output text
+            if self.team_context.country:
+                country_val = self.team_context.country_filter_value
+                text = (ex.get("input", "") + " " + ex.get("output", "")).upper()
+                # Keep examples that mention this country OR are country-agnostic
+                has_any_country = any(
+                    cv in text for cv in [
+                        "CHINA", "HONG KONG", "INDIA", "SINGAPORE",
+                        "TAIWAN", "UNITED ARAB EMIRATES", "UNITED KINGDOM",
+                        "UNITED STATES OF AMERICA"
+                    ]
+                )
+                if has_any_country and country_val not in text:
+                    continue
+
+            filtered.append(ex)
+
+        self.all_examples = filtered
+        print(f"Team filter [{self.team_context.team_id}]: {before} -> {len(filtered)} examples")
+
+    def _load_bilingual_terms(self) -> int:
+        """Load Arabic bilingual training pairs when team has Arabic locale."""
+        if not self.team_context.has_arabic_locale:
+            return 0
+
+        terms_path = Path(__file__).parent.parent / "data" / "arabic_financial_terms.json"
+        if not terms_path.exists():
+            print(f"Warning: bilingual terms file not found at {terms_path}")
+            return 0
+
+        count = 0
+        try:
+            with open(terms_path) as f:
+                data = json.load(f)
+            domain_filter = self.team_context.domain
+            for domain_key, terms in data.get("terms", {}).items():
+                if domain_filter and domain_key != domain_filter:
+                    continue
+                for term in terms:
+                    ar = term.get("arabic", "")
+                    en = term.get("english", "")
+                    if ar and en:
+                        self.all_examples.append({
+                            "instruction": "Translate the following Arabic financial term to its English technical equivalent:",
+                            "input": ar,
+                            "output": en,
+                            "domain": domain_key,
+                            "type": "bilingual_term",
+                            "source": "arabic_financial_terms"
+                        })
+                        count += 1
+        except Exception as e:
+            print(f"Error loading bilingual terms: {e}")
+
+        print(f"Loaded {count} bilingual term pairs for Arabic locale")
+        self.stats["bilingual_terms"] = count
+        return count
+
     def run(self) -> Dict:
         """Run the full data preparation pipeline."""
         print("="*60)
         print("TRAINING DATA PREPARATION PIPELINE")
+        if not self.team_context.is_global:
+            print(f"Team context: {self.team_context.team_id}")
         print("="*60)
         
         # Define paths
@@ -327,6 +411,13 @@ class TrainingDataPreparer:
                 self.load_existing_alpaca_data(ap)
         
         print(f"\nTotal loaded: {len(self.all_examples)} examples")
+        
+        # Apply team filter
+        print("\n=== Applying Team Filter ===")
+        self._apply_team_filter()
+        
+        # Load bilingual terms for Arabic-locale teams
+        self._load_bilingual_terms()
         
         # Validate
         print("\n=== Validating Data ===")
@@ -394,15 +485,28 @@ def main():
         default=None,
         help="Output directory for prepared data"
     )
+    parser.add_argument(
+        "--team",
+        type=str,
+        default="",
+        help="Team context (e.g. 'AE:treasury', 'treasury', 'AE')"
+    )
     args = parser.parse_args()
     
-    # Default output directory
+    # Parse team context
+    team_context = TeamContext.from_cli(args.team) if args.team else GLOBAL_CONTEXT
+    
+    # Default output directory — append team_id for team-scoped runs
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        output_dir = Path(__file__).parent.parent / "schema_pipeline" / "output" / "prepared"
+        base = Path(__file__).parent.parent / "schema_pipeline" / "output" / "prepared"
+        if not team_context.is_global:
+            output_dir = base / team_context.team_id.replace(":", "_")
+        else:
+            output_dir = base
     
-    preparer = TrainingDataPreparer(output_dir)
+    preparer = TrainingDataPreparer(output_dir, team_context=team_context)
     stats = preparer.run()
     
     return stats

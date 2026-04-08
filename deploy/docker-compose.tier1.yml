@@ -42,52 +42,6 @@ services:
     restart: unless-stopped
 
   # ─────────────────────────────────────────────────────────────────────────
-  # Elasticsearch MCP Server
-  # Provides vector search and semantic retrieval
-  # Depends on: Elasticsearch (Tier 0), AI Core (for embeddings)
-  # ─────────────────────────────────────────────────────────────────────────
-  elasticsearch-mcp:
-    build:
-      context: ../src/intelligence/elasticsearch-main
-      dockerfile: mcp_server/Dockerfile
-    container_name: sap-ai-es-mcp
-    ports:
-      - "${ES_MCP_PORT:-9120}:9120"
-    environment:
-      - PORT=9120
-      - HOST=${ES_MCP_HOST:-0.0.0.0}
-      - ES_HOST=${ES_HOST:-elasticsearch}
-      - ES_PORT=${ES_PORT:-9200}
-      - ES_USERNAME=${ES_USERNAME:-}
-      - ES_PASSWORD=${ES_PASSWORD:-}
-      - ES_SCHEME=${ES_SCHEME:-http}
-      - ES_INDEX_PREFIX=${ES_MCP_INDEX_PREFIX:-sap-ai-}
-      # AI Core for embeddings
-      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
-      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
-      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
-      - AICORE_BASE_URL=${AICORE_BASE_URL}
-      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    labels:
-      sap.ai.tier: "tier1-mcp-servers"
-      sap.ai.service: "elasticsearch-mcp"
-      sap.ai.data_security: "index-based"
-      sap.ai.mcp.protocol: "stdio"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:9120/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - sap-ai-fabric-network
-    restart: unless-stopped
-
-  # ─────────────────────────────────────────────────────────────────────────
   # LangChain HANA MCP Server
   # Provides vector store operations with SAP HANA Cloud
   # Depends on: HANA Cloud (external), AI Core (for embeddings)

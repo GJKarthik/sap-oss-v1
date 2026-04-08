@@ -25,6 +25,11 @@ dataProduct:
     defaultBackend: "vllm"
     auditLevel: "full"
 
+  x-team-access:
+    defaultAccess: "read"
+    countryRestrictions: []          # empty = all countries
+    domainRestrictions: ["esg"]
+
   x-prompting-policy:
     systemPrompt: |
       You are an ESG analytics assistant for HANA. You help users query

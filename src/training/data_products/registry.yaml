@@ -39,6 +39,17 @@ llmBackends:
     forSecurityClass: ["internal", "confidential", "restricted"]
 
 # =============================================================================
+# Team Context Resolution — Country × Domain scoping
+# =============================================================================
+teamResolution:
+  enabled: true
+  source: "hana"                    # team configs stored in FINSIGHT_CORE.TEAM_CONFIG
+  cacheMinutes: 5
+  fallback: "global"                # if team context missing, show all products
+  scopeLevels: ["global", "domain", "country", "team"]
+  mergeStrategy: "last-wins"        # later scopes override earlier for same key
+
+# =============================================================================
 # Upstream Dependencies
 # =============================================================================
 dependencies:

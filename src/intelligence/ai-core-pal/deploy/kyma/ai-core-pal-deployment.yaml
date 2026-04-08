@@ -46,7 +46,7 @@ stringData:
   HANA_SSL_VALIDATE_CERTIFICATE: "false"
 ---
 # ============================================================================
-# StatefulSet - MCP Server with persistent storage for KùzuDB
+# StatefulSet - MCP Server for HANA-native PAL operations
 # ============================================================================
 apiVersion: apps/v1
 kind: StatefulSet
@@ -94,8 +94,6 @@ spec:
           value: "8084"
         - name: LOG_LEVEL
           value: "INFO"
-        - name: KUZU_DB_PATH
-          value: "/data/kuzu"
         resources:
           requests:
             memory: "512Mi"
@@ -119,17 +117,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
-        volumeMounts:
-        - name: kuzu-data
-          mountPath: /data/kuzu
-  volumeClaimTemplates:
-  - metadata:
-      name: kuzu-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 1Gi
 ---
 # ============================================================================
 # Service - Internal cluster access

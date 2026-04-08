@@ -26,9 +26,8 @@ import { ToastService } from '../../services/toast.service';
       <app-cross-app-link
         targetApp="training"
         targetRoute="/schema-browser"
-        targetLabel="Schema Browser"
-        icon="database"
-        relationLabel="Related:">
+        targetLabelKey="nav.schemaBrowser"
+        icon="database">
       </app-cross-app-link>
 
       <div class="dq-studio-container" role="main">

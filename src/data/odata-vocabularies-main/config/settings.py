@@ -23,6 +23,9 @@ class HANAConfig:
     ssl_validate_certificate: bool = True
     schema: str = ""
     connection_timeout: int = 30
+    vector_schema: str = ""
+    vector_table_prefix: str = "ODATA"
+    vector_embedding_dimensions: int = 1536
     
     @classmethod
     def from_env(cls) -> "HANAConfig":
@@ -35,46 +38,28 @@ class HANAConfig:
             encrypt=os.getenv("HANA_ENCRYPT", "true").lower() == "true",
             ssl_validate_certificate=os.getenv("HANA_SSL_VALIDATE", "true").lower() == "true",
             schema=os.getenv("HANA_SCHEMA", ""),
-            connection_timeout=int(os.getenv("HANA_TIMEOUT", "30"))
+            connection_timeout=int(os.getenv("HANA_TIMEOUT", "30")),
+            vector_schema=os.getenv("HANA_VECTOR_SCHEMA", os.getenv("HANA_SCHEMA", "")),
+            vector_table_prefix=os.getenv("HANA_VECTOR_TABLE_PREFIX", "ODATA"),
+            vector_embedding_dimensions=int(
+                os.getenv(
+                    "HANA_VECTOR_EMBEDDING_DIM",
+                    os.getenv("OPENAI_EMBEDDING_DIM", "1536"),
+                )
+            ),
         )
     
     def is_configured(self) -> bool:
         """Check if HANA is properly configured"""
         return bool(self.host and self.user and self.password)
 
+    def get_vector_schema(self) -> str:
+        """Return the effective schema for vector-store tables."""
+        return self.vector_schema or self.schema
 
-@dataclass
-class ElasticsearchConfig:
-    """Elasticsearch Configuration"""
-    hosts: List[str] = field(default_factory=lambda: ["http://localhost:9200"])
-    username: str = ""
-    password: str = ""
-    api_key: str = ""
-    cloud_id: str = ""
-    index_prefix: str = "odata"
-    verify_certs: bool = True
-    ca_certs: str = ""
-    request_timeout: int = 30
-    
-    @classmethod
-    def from_env(cls) -> "ElasticsearchConfig":
-        """Load ES config from environment variables"""
-        hosts = os.getenv("ES_HOSTS", "http://localhost:9200")
-        return cls(
-            hosts=hosts.split(","),
-            username=os.getenv("ES_USERNAME", ""),
-            password=os.getenv("ES_PASSWORD", ""),
-            api_key=os.getenv("ES_API_KEY", ""),
-            cloud_id=os.getenv("ES_CLOUD_ID", ""),
-            index_prefix=os.getenv("ES_INDEX_PREFIX", "odata"),
-            verify_certs=os.getenv("ES_VERIFY_CERTS", "true").lower() == "true",
-            ca_certs=os.getenv("ES_CA_CERTS", ""),
-            request_timeout=int(os.getenv("ES_TIMEOUT", "30"))
-        )
-    
-    def is_configured(self) -> bool:
-        """Check if ES is properly configured"""
-        return bool(self.hosts and (self.api_key or (self.username and self.password) or self.cloud_id))
+    def is_vector_configured(self) -> bool:
+        """Check if the HANA vector store is properly configured."""
+        return self.is_configured() and bool(self.get_vector_schema())
 
 
 @dataclass
@@ -155,8 +140,8 @@ class AuditConfig:
     syslog_host: str = ""
     syslog_port: int = 514
     syslog_facility: str = "local0"
-    elasticsearch_enabled: bool = False
-    elasticsearch_index: str = "odata-audit"
+    hana_enabled: bool = False
+    hana_table: str = "ODATA_AUDIT"
     retention_days: int = 90
     
     @classmethod
@@ -171,8 +156,8 @@ class AuditConfig:
             syslog_host=os.getenv("AUDIT_SYSLOG_HOST", ""),
             syslog_port=int(os.getenv("AUDIT_SYSLOG_PORT", "514")),
             syslog_facility=os.getenv("AUDIT_SYSLOG_FACILITY", "local0"),
-            elasticsearch_enabled=os.getenv("AUDIT_ES_ENABLED", "false").lower() == "true",
-            elasticsearch_index=os.getenv("AUDIT_ES_INDEX", "odata-audit"),
+            hana_enabled=os.getenv("AUDIT_HANA_ENABLED", "false").lower() == "true",
+            hana_table=os.getenv("AUDIT_HANA_TABLE", "ODATA_AUDIT"),
             retention_days=int(os.getenv("AUDIT_RETENTION_DAYS", "90"))
         )
 
@@ -213,7 +198,6 @@ class ServerConfig:
 class Settings:
     """Complete Application Settings"""
     hana: HANAConfig = field(default_factory=HANAConfig)
-    elasticsearch: ElasticsearchConfig = field(default_factory=ElasticsearchConfig)
     openai: OpenAIConfig = field(default_factory=OpenAIConfig)
     auth: AuthConfig = field(default_factory=AuthConfig)
     audit: AuditConfig = field(default_factory=AuditConfig)
@@ -230,7 +214,6 @@ class Settings:
         base_dir = Path(__file__).parent.parent
         return cls(
             hana=HANAConfig.from_env(),
-            elasticsearch=ElasticsearchConfig.from_env(),
             openai=OpenAIConfig.from_env(),
             auth=AuthConfig.from_env(),
             audit=AuditConfig.from_env(),
@@ -253,11 +236,18 @@ class Settings:
             for key, value in data["hana"].items():
                 if hasattr(settings.hana, key):
                     setattr(settings.hana, key, value)
-        
-        if "elasticsearch" in data:
-            for key, value in data["elasticsearch"].items():
-                if hasattr(settings.elasticsearch, key):
-                    setattr(settings.elasticsearch, key, value)
+
+        # Backward-compatible migration path for older config files.
+        if "hana_vector" in data:
+            vector_mapping = {
+                "schema": "vector_schema",
+                "table_prefix": "vector_table_prefix",
+                "embedding_dimensions": "vector_embedding_dimensions",
+            }
+            for key, value in data["hana_vector"].items():
+                mapped_key = vector_mapping.get(key)
+                if mapped_key and hasattr(settings.hana, mapped_key):
+                    setattr(settings.hana, mapped_key, value)
         
         if "openai" in data:
             for key, value in data["openai"].items():
@@ -290,13 +280,13 @@ class Settings:
                 "user": self.hana.user,
                 "password": "***" if self.hana.password else "",
                 "schema": self.hana.schema,
-                "configured": self.hana.is_configured()
-            },
-            "elasticsearch": {
-                "hosts": self.elasticsearch.hosts,
-                "username": self.elasticsearch.username,
-                "index_prefix": self.elasticsearch.index_prefix,
-                "configured": self.elasticsearch.is_configured()
+                "configured": self.hana.is_configured(),
+                "vector_store": {
+                    "schema": self.hana.get_vector_schema(),
+                    "table_prefix": self.hana.vector_table_prefix,
+                    "embedding_dimensions": self.hana.vector_embedding_dimensions,
+                    "configured": self.hana.is_vector_configured(),
+                },
             },
             "openai": {
                 "model": self.openai.model,
@@ -312,7 +302,8 @@ class Settings:
                 "enabled": self.audit.enabled,
                 "log_dir": self.audit.log_dir,
                 "syslog_enabled": self.audit.syslog_enabled,
-                "elasticsearch_enabled": self.audit.elasticsearch_enabled
+                "hana_enabled": self.audit.hana_enabled,
+                "hana_table": self.audit.hana_table,
             },
             "server": {
                 "port": self.server.port,
@@ -330,9 +321,9 @@ class Settings:
         if not self.hana.is_configured():
             issues["warnings"].append("HANA not configured - HANA integration disabled")
         
-        # Check Elasticsearch
-        if not self.elasticsearch.is_configured():
-            issues["warnings"].append("Elasticsearch not configured - ES features disabled")
+        # Check HANA Vector Store
+        if not self.hana.is_vector_configured():
+            issues["warnings"].append("HANA vector store not configured - vector search disabled")
         
         # Check OpenAI
         if not self.openai.is_configured():

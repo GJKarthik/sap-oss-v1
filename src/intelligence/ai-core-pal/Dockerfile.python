@@ -35,14 +35,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY agent/ ./agent/
 COPY mcp_server/ ./mcp_server/
 
-# Create data directory for KùzuDB
-RUN mkdir -p /data/kuzu && chown -R mcppal:mcppal /data/kuzu
-
 # Set environment
 ENV PYTHONUNBUFFERED=1
 ENV MCP_HOST=0.0.0.0
 ENV MCP_PORT=8084
-ENV KUZU_DB_PATH=/data/kuzu
 
 # Switch to non-root user
 USER mcppal

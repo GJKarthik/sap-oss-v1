@@ -19,6 +19,7 @@ import {
 
 const STORAGE_KEY = 'sap-ai-experience.workspace.v1';
 const SAVE_DEBOUNCE_MS = 1000;
+const USER_ID_STORAGE_KEY = 'sap-ai-experience.workspace.userId';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
@@ -51,7 +52,14 @@ export class WorkspaceService {
   });
 
   readonly visibleHomeCards = computed(() =>
-    this.visibleNavLinks().filter(l => l.showOnHome && l.path !== '/' && l.path !== '/workspace'),
+    NAV_LINK_DATA
+      .filter((link) => link.showOnHome && link.path !== '/' && link.path !== '/workspace')
+      .sort((a, b) => {
+        const itemMap = new Map(this._settings().nav.items.map((item) => [item.path, item]));
+        const oa = itemMap.get(a.path)?.order ?? 999;
+        const ob = itemMap.get(b.path)?.order ?? 999;
+        return oa - ob;
+      }),
   );
 
   readonly effectiveOpenAiBaseUrl = computed(() =>
@@ -66,6 +74,11 @@ export class WorkspaceService {
     this._settings().backend.agUiEndpoint || environment.agUiEndpoint,
   );
 
+  activeWorkspace(): { id: string } | null {
+    const id = this._settings().identity.userId.trim();
+    return id ? { id } : null;
+  }
+
   constructor(private readonly http: HttpClient) {
     this.saveSubject.pipe(
       debounceTime(SAVE_DEBOUNCE_MS),
@@ -77,6 +90,23 @@ export class WorkspaceService {
   // --------------- Initialization ---------------
 
   initialize(): Observable<void> {
+    const localRaw = this.loadFromLocalStorage();
+    if (localRaw) {
+      this._settings.set(localRaw);
+    }
+
+    const externalWorkspaceId = this.workspaceIdFromUrl();
+    if (externalWorkspaceId && externalWorkspaceId !== this._settings().identity.userId) {
+      const updated = {
+        ...this._settings(),
+        identity: { ...this._settings().identity, userId: externalWorkspaceId },
+        updatedAt: new Date().toISOString(),
+      };
+      this._settings.set(updated);
+      this.saveToLocalStorage(updated);
+    }
+    this.syncStoredUserId(this._settings().identity.userId);
+
     const userId = this._settings().identity.userId;
     const url = `${environment.openAiBaseUrl.replace(/\/$/, '')}/v1/workspace?userId=${encodeURIComponent(userId)}`;
 
@@ -94,12 +124,7 @@ export class WorkspaceService {
           this.saveToLocalStorage(serverSettings);
           return;
         }
-        const localRaw = this.loadFromLocalStorage();
-        if (localRaw) {
-          this._settings.set(localRaw);
-          return;
-        }
-        // defaults already set via signal init
+        // local or default settings already loaded before the network request
       }),
     );
   }
@@ -157,6 +182,7 @@ export class WorkspaceService {
     defaults.updatedAt = new Date().toISOString();
     this._settings.set(defaults);
     this.saveToLocalStorage(defaults);
+    this.syncStoredUserId(userId);
     this.saveSubject.next();
   }
 
@@ -173,6 +199,7 @@ export class WorkspaceService {
   private saveToLocalStorage(settings: WorkspaceSettings): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      this.syncStoredUserId(settings.identity.userId);
     } catch {
       // storage full or unavailable
     }
@@ -186,6 +213,25 @@ export class WorkspaceService {
       return parsed.version === 1 ? parsed : null;
     } catch {
       return null;
+    }
+  }
+
+  private workspaceIdFromUrl(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const workspaceId = new URLSearchParams(window.location.search).get('workspace')?.trim();
+    return workspaceId || null;
+  }
+
+  private syncStoredUserId(userId: string): void {
+    try {
+      if (typeof localStorage !== 'undefined' && userId) {
+        localStorage.setItem(USER_ID_STORAGE_KEY, userId);
+      }
+    } catch {
+      // storage unavailable
     }
   }
 

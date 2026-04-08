@@ -9,7 +9,7 @@ Complete guide for integrating the OData Vocabularies Universal Dictionary into 
 3. [JavaScript/TypeScript Integration](#javascripttypescript-integration)
 4. [SAP CAP Integration](#sap-cap-integration)
 5. [HANA Cloud Integration](#hana-cloud-integration)
-6. [Elasticsearch Integration](#elasticsearch-integration)
+6. [HANA Vector Store Integration](#hana-vector-store-integration)
 7. [AI/LLM Integration](#aillm-integration)
 8. [Authentication](#authentication)
 9. [Error Handling](#error-handling)
@@ -37,8 +37,8 @@ Complete guide for integrating the OData Vocabularies Universal Dictionary into 
 │  │   Search    │   │   Search    │   │  (CDS/GraphQL/SQL)  │   │
 │  └─────────────┘   └─────────────┘   └─────────────────────┘   │
 │  ┌─────────────┐   ┌─────────────┐   ┌─────────────────────┐   │
-│  │    GDPR     │   │    HANA     │   │   Elasticsearch     │   │
-│  │ Compliance  │   │  Connector  │   │      Client         │   │
+│  │    GDPR     │   │    HANA     │   │   HANA Vector       │   │
+│  │ Compliance  │   │  Connector  │   │   Store Client      │   │
 │  └─────────────┘   └─────────────┘   └─────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -386,35 +386,36 @@ asyncio.run(annotate_hana_tables())
 
 ---
 
-## Elasticsearch Integration
+## HANA Vector Store Integration
 
 ### Index Vocabularies
 
 ```python
-async def index_vocabularies_to_es():
+from connectors.hana_vector import get_hana_vector_client
+
+async def index_vocabularies_to_hana():
+    vector_client = get_hana_vector_client()
+    vector_client.connect()
+    vector_client.create_vocabulary_table()
+
     async with ODataVocabClient() as client:
         # Get all vocabularies
         vocabs = await client._request("/mcp/tools/list_vocabularies", {})
-        
+
         for vocab in vocabs["vocabularies"]:
-            # Get full vocabulary
             full_vocab = await client._request(
                 "/mcp/tools/get_vocabulary",
                 {"vocabulary": vocab["alias"]}
             )
-            
-            # Index to Elasticsearch
+
+            # Upsert to HANA vector store
             for term in full_vocab.get("terms", []):
-                await es_client.index(
-                    index="odata_vocabulary",
-                    document={
-                        "term_name": term["name"],
-                        "vocabulary": vocab["alias"],
-                        "qualified_name": term["qualified_name"],
-                        "description": term.get("description"),
-                        "type": term.get("type"),
-                    }
-                )
+                vector_client.index_vocabulary_term({
+                    "term_name": term["name"],
+                    "vocabulary": vocab["alias"],
+                    "qualified_name": term["qualified_name"],
+                    "description": term.get("description"),
+                })
 ```
 
 ---

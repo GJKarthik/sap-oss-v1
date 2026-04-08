@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { OcrPageComponent } from './ocr-page.component';
 import { ExperienceHealthService } from '../../core/experience-health.service';
+import { ProductNavigationService } from '../../core/product-navigation.service';
 import { WorkspaceHistoryService } from '../../core/workspace-history.service';
 import { environment } from '../../../environments/environment';
 
@@ -28,6 +29,12 @@ function makeHistoryService() {
   } as unknown as WorkspaceHistoryService;
 }
 
+function makeProductNavigationService() {
+  return {
+    navigateToApp: jest.fn(),
+  } as unknown as ProductNavigationService;
+}
+
 describe('OcrPageComponent', () => {
   beforeEach(() => {
     environment.ocrInternalToken = '';
@@ -47,7 +54,7 @@ describe('OcrPageComponent', () => {
       }),
     );
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     component.ngOnInit();
     component.documentText = 'إجمالي الفاتورة ١٠٠';
 
@@ -65,7 +72,7 @@ describe('OcrPageComponent', () => {
       }),
     );
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
 
     component.ngOnInit();
 
@@ -84,7 +91,7 @@ describe('OcrPageComponent', () => {
         checks: [{ name: 'OpenAI', ok: false, status: 503, url: '/health' }],
       }),
     );
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     component.ngOnInit();
 
     component.processDocument();
@@ -100,7 +107,7 @@ describe('OcrPageComponent', () => {
       throwError(() => new Error('ocr unavailable')),
     );
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     component.ngOnInit();
 
     component.processDocument();
@@ -113,7 +120,7 @@ describe('OcrPageComponent', () => {
     (http.get as jest.Mock).mockReturnValue(of({ data: [] }));
     (http.post as jest.Mock).mockReturnValue(of({ extraction: {} }));
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     component.ngOnInit();
     component.selectedFileName = 'invoice.png';
     component.selectedFileMimeType = 'image/png';
@@ -135,7 +142,7 @@ describe('OcrPageComponent', () => {
   it('toggles drag-over state for dropzone interactions', () => {
     const http = makeHttp();
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
 
     component.onDragOver({ preventDefault: jest.fn() } as unknown as DragEvent);
     expect(component.isDragOver).toBe(true);
@@ -147,7 +154,7 @@ describe('OcrPageComponent', () => {
   it('processes dropped text file and updates preview/text', async () => {
     const http = makeHttp();
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     const file = new File(['invoice 123'], 'invoice.txt', { type: 'text/plain' });
     const event = {
       preventDefault: jest.fn(),
@@ -164,7 +171,7 @@ describe('OcrPageComponent', () => {
   it('clears selected file and preview state', () => {
     const http = makeHttp();
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     component.selectedFileName = 'invoice.pdf';
     component.selectedFileMimeType = 'application/pdf';
     component.selectedFileBase64 = 'ZmFrZQ==';
@@ -188,7 +195,7 @@ describe('OcrPageComponent', () => {
     (http.get as jest.Mock).mockReturnValue(of({ data: [] }));
     (http.post as jest.Mock).mockReturnValue(of({ extraction: {} }));
     const health = makeHealthService();
-    const component = new OcrPageComponent(http, health, makeHistoryService());
+    const component = new OcrPageComponent(http, health, makeProductNavigationService(), makeHistoryService());
     component.ngOnInit();
 
     component.processDocument();
@@ -200,5 +207,19 @@ describe('OcrPageComponent', () => {
         headers: expect.any(Object),
       }),
     );
+  });
+
+  it('uses product navigation for the training handoff', () => {
+    const productNavigation = makeProductNavigationService();
+    const component = new OcrPageComponent(
+      makeHttp(),
+      makeHealthService(),
+      productNavigation,
+      makeHistoryService(),
+    );
+
+    component.openCrossApp();
+
+    expect(productNavigation.navigateToApp).toHaveBeenCalledWith('training', '/document-ocr');
   });
 });

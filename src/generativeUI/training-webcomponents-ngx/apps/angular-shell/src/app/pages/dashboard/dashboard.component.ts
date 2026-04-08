@@ -18,8 +18,7 @@ interface PlatformComponent {
   icon: string;
   name: string;
   desc: string;
-  status: string;
-  badge: string;
+  route: string;
 }
 
 @Component({
@@ -54,7 +53,7 @@ interface PlatformComponent {
             <div class="telemetry-grid">
               <div class="glass-panel stat-material slideUp" [style.--stagger]="'0.1s'">
                 <div class="stat-header">
-                  <ui5-icon name="electro-cardiac"></ui5-icon>
+                  <ui5-icon name="heart-2"></ui5-icon>
                   <span>{{ i18n.t('dashboard.platformHealth') }}</span>
                 </div>
                 <div class="stat-main">
@@ -84,12 +83,15 @@ interface PlatformComponent {
           </section>
 
           <!-- Core Materials -->
-          <section class="materials-section">
-            <ui5-title level="H4" class="section-title">{{ i18n.t('dashboard.systemEcosystem') }}</ui5-title>
-            <div class="materials-grid">
+          <section class="materials-section" aria-labelledby="dashboard-ecosystem-title">
+            <ui5-title id="dashboard-ecosystem-title" level="H4" class="section-title">{{ i18n.t('dashboard.systemEcosystem') }}</ui5-title>
+            <div class="materials-grid" role="list">
               @for (comp of components(); track comp.name; let i = $index) {
-                <div class="glass-panel material-card slideUp" 
+                <button
+                     type="button"
+                     class="glass-panel material-card slideUp"
                      [style.--stagger]="(0.3 + (i * 0.05)) + 's'"
+                     [attr.aria-label]="comp.name + '. ' + comp.desc"
                      (click)="navigateTo(comp)">
                   <div class="material-icon-wrap">
                     <ui5-icon [name]="comp.icon"></ui5-icon>
@@ -101,7 +103,7 @@ interface PlatformComponent {
                   <div class="material-chevron">
                     <ui5-icon name="navigation-right-arrow"></ui5-icon>
                   </div>
-                </div>
+                </button>
               }
             </div>
           </section>
@@ -159,8 +161,10 @@ interface PlatformComponent {
     .section-title { margin-bottom: 1.5rem; opacity: 0.8; }
     .materials-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
     .material-card { 
-      padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; cursor: pointer;
+      width: 100%; padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; cursor: pointer;
+      border: none; color: inherit; text-align: left;
       &:hover { transform: scale(1.02) translateY(-5px); background: rgba(255, 255, 255, 0.95); }
+      &:focus-visible { outline: 2px solid var(--sapBrandColor); outline-offset: 3px; }
     }
     .material-icon-wrap { width: 48px; height: 48px; border-radius: 12px; background: color-mix(in srgb, var(--sapBrandColor) 10%, transparent); display: flex; align-items: center; justify-content: center; color: var(--sapBrandColor); font-size: 1.5rem; }
     .material-content { flex: 1; }
@@ -181,10 +185,10 @@ export class DashboardComponent implements OnInit {
   readonly i18n = inject(I18nService);
 
   readonly components = computed<PlatformComponent[]>(() => [
-    { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), status: 'Production', badge: 'status-success' },
-    { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), status: 'Active', badge: 'status-success' },
-    { icon: 'database', name: this.i18n.t('dashboard.comp.hanaCloud'), desc: this.i18n.t('dashboard.comp.hanaCloudDesc'), status: 'Ready', badge: 'status-info' },
-    { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), status: 'Ready', badge: 'status-info' },
+    { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), route: '/pipeline' },
+    { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), route: '/model-optimizer' },
+    { icon: 'database', name: this.i18n.t('dashboard.comp.hanaCloud'), desc: this.i18n.t('dashboard.comp.hanaCloudDesc'), route: '/hana-explorer' },
+    { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), route: '/data-explorer' },
   ]);
 
   ngOnInit(): void { this.store.loadDashboardData(); }
@@ -200,8 +204,6 @@ export class DashboardComponent implements OnInit {
   }
 
   navigateTo(comp: PlatformComponent): void {
-    const paths: Record<string, string> = { 'process': '/pipeline', 'machine': '/training', 'folder': '/assets' };
-    const path = paths[comp.icon];
-    if (path) this.router.navigate([path]);
+    this.router.navigate([comp.route]);
   }
 }

@@ -32,9 +32,8 @@ interface DeployedModel {
       <app-cross-app-link
         targetApp="training"
         targetRoute="/registry"
-        targetLabel="Model Registry"
-        icon="database"
-        relationLabel="Related:">
+        targetLabelKey="nav.registry"
+        icon="database">
       </app-cross-app-link>
 
       <!-- Model selectors -->

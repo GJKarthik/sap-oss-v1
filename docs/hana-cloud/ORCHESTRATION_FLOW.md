@@ -58,8 +58,7 @@
 │  │  • LangChain HANA (9160) → RAG + HANA vector store                   │ │
 │  │  • AI-Core-PAL (9881)    → PAL ML algorithms only                     │ │
 │  │  • vLLM (8080)           → LLM inference                              │ │
-│  │  • Elasticsearch (9885)  → search                                     │ │
-│  │  • KùzuDB (embedded)     → graph-RAG queries                          │ │
+│  │  • HANA lineage context   → relationship and lineage queries          │ │
 │  └───────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -76,8 +75,7 @@
 | LangChain HANA MCP | 9160 | HANA vector store, RAG chains, similarity search |
 | **AI-Core-PAL** | 9881 | **PAL algorithms ONLY** - classification, clustering, forecasting |
 | vLLM | 8080 | LLM inference (entity extraction, SQL gen, synthesis) |
-| Elasticsearch | 9885 | Hybrid search, keyword + vector |
-| KùzuDB | Embedded | Graph-RAG (replaces Neo4j) - local graph store |
+| HANA lineage context | Embedded in HANA services | Relationship and lineage context |
 | HANA Cloud | 443 | Database - SQL execution, vector store |
 
 ---
@@ -246,17 +244,17 @@ USER QUERY: "Forecast next 12 months of sales data"
          │              │              │              │              │
          │              │              │              │              │
          ▼              ▼              ▼              ▼              ▼
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│ OData Vocab │ │ LangChain   │ │AI-Core-PAL  │ │    vLLM     │ │Elasticsearch│
-│    MCP      │ │  HANA MCP   │ │             │ │             │ │             │
-│  (9150)     │ │  (9160)     │ │  (9881)     │ │  (8080)     │ │  (9885)     │
-│             │ │             │ │             │ │             │ │             │
-│ Vocabulary  │ │ HANA Vector │ │ PAL ONLY:   │ │ LLM Tasks:  │ │ Hybrid      │
-│ Semantic    │ │ Store, RAG  │ │ Clustering  │ │ Entity Ext  │ │ Search      │
-│ Lookup      │ │ SQL Exec    │ │ Forecast    │ │ SQL Gen     │ │             │
-│             │ │ Similarity  │ │ Anomaly     │ │ Synthesis   │ │             │
-│             │ │ Search      │ │ Regression  │ │             │ │             │
-└─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│ OData Vocab │ │ LangChain   │ │AI-Core-PAL  │ │    vLLM     │
+│    MCP      │ │  HANA MCP   │ │             │ │             │
+│  (9150)     │ │  (9160)     │ │  (9881)     │ │  (8080)     │
+│             │ │             │ │             │ │             │
+│ Vocabulary  │ │ HANA Vector │ │ PAL ONLY:   │ │ LLM Tasks:  │
+│ Semantic    │ │ Store, RAG  │ │ Clustering  │ │ Entity Ext  │
+│ Lookup      │ │ SQL Exec    │ │ Forecast    │ │ SQL Gen     │
+│             │ │ Similarity  │ │ Anomaly     │ │ Synthesis   │
+│             │ │ Search      │ │ Regression  │ │             │
+└─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
                        │               │
                        │               │
                        ▼               ▼
@@ -282,8 +280,7 @@ USER QUERY: "Forecast next 12 months of sales data"
 | LangChain HANA MCP | 9160 | HANA vector store, RAG chains, SQL execution | MeshCoordinator |
 | **AI-Core-PAL** | 9881 | **PAL algorithms ONLY** (clustering, forecast, etc.) | MeshCoordinator |
 | vLLM | 8080 | LLM inference | MeshCoordinator |
-| Elasticsearch | 9885 | Hybrid search | MeshCoordinator |
-| KùzuDB | Embedded | Graph-RAG (local, no separate port) | Each MCP server |
+| HANA lineage context | Embedded in HANA services | Relationship context for each MCP server |
 | HANA Cloud | 443 | Database + PAL procedures | LangChain HANA, AI-Core-PAL |
 
 **Key Correction:**

@@ -262,7 +262,7 @@ curl -X POST https://odata-vocab.c-9323c0b.kyma.ondemand.com/mcp \
 |------|--------|-------------|
 | `semantic_search` | ⚠️ | Needs AI Core embedding service |
 | `get_rag_context` | ⚠️ | Needs vector embeddings |
-| `kuzu_index` | ⚠️ | Needs Kuzu graph database |
+| `hana_query` | ⚠️ | Needs SAP HANA connection |
 
 ---
 

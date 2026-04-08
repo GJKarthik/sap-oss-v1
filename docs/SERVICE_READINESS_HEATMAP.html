@@ -436,11 +436,11 @@
         <td class="criteria-cell col-group-prod"><div class="dot dot-no"></div></td>
       </tr>
 
-      <!-- elasticsearch-main -->
-      <tr>
+      <!-- elasticsearch-main (RETIRED Apr 2026 — replaced by HANA Vector Store) -->
+      <tr style="opacity:0.5">
         <td>
-          <span class="svc-name">elasticsearch-main</span>
-          <span class="svc-sub">Search Engine · Java · 450K LOC</span>
+          <span class="svc-name">elasticsearch-main <em>(RETIRED)</em></span>
+          <span class="svc-sub">Search Engine · Java · 450K LOC · Replaced by HANA Vector Store</span>
           <div class="svc-tags">
             <span class="tag tag-kyma">KYMA</span>
             <span class="tag tag-sbom">SBOM</span>
@@ -477,11 +477,11 @@
         <td class="criteria-cell col-group-prod"><div class="dot dot-yes"></div></td>
       </tr>
 
-      <!-- es-mcp -->
-      <tr>
+      <!-- es-mcp (RETIRED Apr 2026 — replaced by LangChain HANA MCP) -->
+      <tr style="opacity:0.5">
         <td>
-          <span class="svc-name">es-mcp</span>
-          <span class="svc-sub">Elasticsearch MCP Proxy · Python</span>
+          <span class="svc-name">es-mcp <em>(RETIRED)</em></span>
+          <span class="svc-sub">Elasticsearch MCP Proxy · Python · Replaced by LangChain HANA MCP</span>
           <div class="svc-tags">
             <span class="tag tag-mcp">MCP</span>
             <span class="tag tag-kyma">KYMA</span>
@@ -1220,7 +1220,7 @@
     <strong>Key Gaps Identified:</strong>
     (1) <strong>TEST stage is the weakest</strong> across most services — only <em>sac-webcomponents-ngx</em> and <em>odata-vocabularies</em> have strong test coverage.
     (2) <strong>PROD deployment manifests</strong> are missing for ai-core-pal, all UI components except aifabric, and all training services.
-    (3) <strong>NetworkPolicy / mTLS</strong> (PeerAuthentication) is only present in <em>es-mcp</em> and <em>elasticsearch-main</em>, posing a security gap for other services.
+    (3) <strong>NetworkPolicy / mTLS</strong> (PeerAuthentication) needs to be added for active services — <em>es-mcp</em> and <em>elasticsearch-main</em> are now RETIRED (replaced by HANA Vector Store / LangChain HANA MCP).
     <br><br>
     <strong>Recommended next actions:</strong>
     Add Kyma deployment manifests for <em>ai-core-pal</em> · Add CycloneDX SBOMs for <em>es-mcp</em>, <em>aifabric-webcomponents-ngx</em>, <em>ocr</em>, <em>gateway</em> · Add unit tests for all Python MCP servers · Add NetworkPolicy for <em>langchain-hana</em> and <em>aifabric-webcomponents-ngx</em>.

@@ -118,7 +118,7 @@ Start with **[00-glossary.md](00-glossary.md)** to learn the terminology, then d
 | **Interaction** | UI5 Web Components, OData Vocabularies | User interface, semantic standards |
 | **Orchestration** | AI SDK, CAP LLM Plugin, LangChain | Model routing, RAG, privacy |
 | **Intelligence** | MCP PAL, Data Copilot, GenAI Toolkit | Forecasting, data quality, ML |
-| **Foundation** | Streaming Core, vLLM, Mangle, Elasticsearch | Performance, search, transformation |
+| **Foundation** | Streaming Core, vLLM, Mangle, HANA Vector Store | Performance, search, transformation |
 | **Governance** | World Monitor | Observability, tracing, audit |
 
 ### The Four Architectural Patterns

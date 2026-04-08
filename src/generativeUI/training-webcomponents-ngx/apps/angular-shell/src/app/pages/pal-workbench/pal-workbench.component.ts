@@ -30,9 +30,8 @@ interface InvocationEntry {
         <app-cross-app-link
           targetApp="training"
           targetRoute="/analytical-dashboard"
-          targetLabel="Analytical Dashboard"
-          icon="chart-table-view"
-          relationLabel="Related:">
+          targetLabelKey="nav.analyticalDashboard"
+          icon="chart-table-view">
         </app-cross-app-link>
 
         <ui5-button

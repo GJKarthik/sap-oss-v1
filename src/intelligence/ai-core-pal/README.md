@@ -4,7 +4,7 @@ MCP Server for SAP HANA PAL (Predictive Analysis Library) algorithms with SAP BT
 
 ## Features
 
-- **8 MCP Tools** for PAL algorithms
+- **7 MCP Tools** for PAL algorithms
 - **SAP HANA Cloud** connectivity via hdbcli/hana-ml
 - **Kyma StatefulSet** deployment with persistent storage
 - **Health endpoint** for Kubernetes probes
@@ -19,7 +19,6 @@ MCP Server for SAP HANA PAL (Predictive Analysis Library) algorithms with SAP BT
 | `pal_classification` | Classification | Random Forest |
 | `pal_regression` | Linear regression | Linear Regression |
 | `hana_tables` | Discover PAL-suitable tables | - |
-| `kuzu_query` | Graph database queries | - |
 | `mangle_query` | Datalog inference | - |
 
 ## Quick Start
@@ -182,7 +181,6 @@ src/intelligence/ai-core-pal/
 ├── mcp_server/
 │   ├── __init__.py
 │   ├── btp_pal_mcp_server.py    # MCP server (NEW)
-│   └── kuzu_store.py            # Graph store
 ├── scripts/
 │   ├── create_tables.sql        # DDL scripts (NEW)
 │   └── populate_data.sql        # Sample data (NEW)

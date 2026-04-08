@@ -16,8 +16,8 @@ export class LearnPathService {
   readonly steps: LearnPathStep[] = [
     { route: '/generative', label: 'UI Composer' },
     { route: '/joule', label: 'Joule' },
-    { route: '/components', label: 'Model Catalog' },
-    { route: '/mcp', label: 'Tooling' },
+    { route: '/components', label: 'Models' },
+    { route: '/mcp', label: 'Connected Tools' },
   ];
 
   private readonly state$ = new BehaviorSubject<LearnPathState>({

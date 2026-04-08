@@ -192,7 +192,6 @@ src/intelligence/ai-core-pal/
 ├── mcp_server/
 │   ├── __init__.py
 │   ├── btp_pal_mcp_server.py    # NEW - Main MCP server
-│   └── kuzu_store.py            # EXISTING
 ├── agent/
 │   ├── __init__.py
 │   ├── aicore_pal_agent.py      # EXISTING - needs HANA methods
@@ -211,7 +210,6 @@ src/intelligence/ai-core-pal/
 | `pal_clustering` | K-Means clustering | PAL_KMEANS |
 | `pal_classification` | Random Forest classifier | PAL_RANDOMFOREST |
 | `pal_regression` | Linear regression | PAL_LASSO |
-| `kuzu_query` | Graph queries | KùzuDB local |
 | `mangle_query` | Datalog inference | Mangle engine |
 
 ---

@@ -12,7 +12,6 @@ data:
   AICORE_CHAT_DEPLOYMENT_ID: "d6fd50a84809976a"
   MCP_MAX_TOP_K: "50"
   MCP_MAX_DOCS_PER_CALL: "500"
-  KUZU_DB_PATH: "/app/kuzu_data"
 
 ---
 apiVersion: apps/v1
@@ -43,19 +42,17 @@ spec:
             - containerPort: 9140
           envFrom:
             - configMapRef:
-                name: sap-elasticsearch-config
-            - configMapRef:
                 name: langchain-hana-mcp-config
           env:
             - name: AICORE_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: sap-elasticsearch-aicore-secrets
+                  name: sap-aicore-secrets
                   key: AICORE_CLIENT_ID
             - name: AICORE_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: sap-elasticsearch-aicore-secrets
+                  name: sap-aicore-secrets
                   key: AICORE_CLIENT_SECRET
             - name: HANA_HOST
               valueFrom:
@@ -87,8 +84,6 @@ spec:
               mountPath: /tmp
             - name: cache-dir
               mountPath: /home/mcp/.cache
-            - name: kuzu-data
-              mountPath: /app/kuzu_data
           livenessProbe:
             httpGet:
               path: /health
@@ -119,9 +114,6 @@ spec:
         - name: cache-dir
           emptyDir:
             sizeLimit: "1Gi"
-        - name: kuzu-data
-          emptyDir:
-            sizeLimit: "2Gi"
       imagePullSecrets:
         - name: dockerhub-plturrell
 

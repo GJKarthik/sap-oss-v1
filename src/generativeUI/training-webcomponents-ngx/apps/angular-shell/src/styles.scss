@@ -1,9 +1,6 @@
 /**
- * SAP AI Experience - "Unibody" Production Styles
- * Refined for WWDC-level finish: Material Honesty, Physics-based motion.
+ * SAP AI Experience global styles.
  */
-
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* Cinematic Palette */
@@ -90,7 +87,9 @@ body {
 :root ui5-page::part(content) { padding: 0; }
 
 /* RTL Adjustments */
-[dir="rtl"] { font-family: 'IBM Plex Sans Arabic', sans-serif; }
+[dir="rtl"] {
+  font-family: var(--sapFontFamily, "72 Arabic", "72", "72Full", Arial, Helvetica, sans-serif);
+}
 
 /* ── Accessibility: Reduced Motion ─────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

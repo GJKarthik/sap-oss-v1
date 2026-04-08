@@ -15,6 +15,10 @@ from typing import Iterator
 from pathlib import Path
 from itertools import product
 
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from pipeline.team_context import TeamContext, GLOBAL_CONTEXT, COUNTRY_FILTER_VALUES
+
 
 @dataclass
 class Column:
@@ -447,15 +451,29 @@ class TrainingDataGenerator:
     Generates large-scale synthetic Text-to-SQL training data.
     
     Target: 100K+ examples per domain.
+    Supports optional TeamContext for country/domain-scoped generation.
     """
     
-    def __init__(self, domains: list[Domain], seed: int = 42):
-        self.domains = {d.name: d for d in domains}
+    def __init__(self, domains: list[Domain], seed: int = 42,
+                 team_context: TeamContext | None = None):
+        self.team_context = team_context or GLOBAL_CONTEXT
+        
+        # Filter domains by team context
+        if self.team_context.domain:
+            self.domains = {d.name: d for d in domains if d.name == self.team_context.domain}
+        else:
+            self.domains = {d.name: d for d in domains}
+        
         self.random = random.Random(seed)
         
-        # Sample values for substitution
+        # Sample values for substitution — scoped by team country when set
+        if self.team_context.country:
+            country_codes = [self.team_context.country]
+        else:
+            country_codes = ["US", "UK", "DE", "FR", "JP", "CN", "SG", "HK", "AU", "CA"]
+        
         self.sample_values = {
-            "country_codes": ["US", "UK", "DE", "FR", "JP", "CN", "SG", "HK", "AU", "CA"],
+            "country_codes": country_codes,
             "entity_types": ["BANK", "SUBSIDIARY", "BRANCH", "HOLDING"],
             "currencies": ["USD", "EUR", "GBP", "JPY", "CHF", "SGD", "HKD", "AUD"],
             "sectors": ["Energy", "Financials", "Technology", "Healthcare", "Consumer", "Industrial", "Materials", "Utilities"],
@@ -674,6 +692,7 @@ def generate_training_data(
     output_dir: str = "data/training",
     examples_per_domain: int = 100000,
     validate: bool = True,
+    team_context: TeamContext | None = None,
 ) -> dict[str, int]:
     """
     Generate and save training data for all domains.
@@ -682,6 +701,7 @@ def generate_training_data(
         output_dir: Directory to save training files
         examples_per_domain: Number of examples per domain
         validate: Whether to validate SQL queries
+        team_context: Optional team context for scoped generation
         
     Returns:
         Dict mapping domain to example count
@@ -699,7 +719,9 @@ def generate_training_data(
         BTP_TREASURY_DOMAIN,
     ]
     
-    generator = TrainingDataGenerator(domains)
+    generator = TrainingDataGenerator(domains, team_context=team_context)
+    if team_context and not team_context.is_global:
+        print(f"Team context: {team_context.team_id}")
     all_data = generator.generate_all(examples_per_domain)
     
     # Optionally validate
@@ -751,13 +773,17 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", default="data/training", help="Output directory")
     parser.add_argument("--examples", type=int, default=100000, help="Examples per domain")
     parser.add_argument("--no-validate", action="store_true", help="Skip validation")
+    parser.add_argument("--team", type=str, default="", help="Team context (e.g. 'AE:treasury')")
     
     args = parser.parse_args()
+    
+    team_ctx = TeamContext.from_cli(args.team) if args.team else None
     
     stats = generate_training_data(
         output_dir=args.output_dir,
         examples_per_domain=args.examples,
         validate=not args.no_validate,
+        team_context=team_ctx,
     )
     
     print("\nGeneration Summary:")

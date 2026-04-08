@@ -11,8 +11,8 @@ This deployment guide provides a tiered approach to deploying the SAP AI Fabric 
 │                         TIER 0: INFRASTRUCTURE                               │
 │                         (Must be deployed first)                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  SAP HANA Cloud (External/BTP)  │  SAP AI Core (External/BTP)  │  Elasticsearch │
-│  Port: 443                      │  OAuth + Deployments          │  Port: 9200    │
+│  SAP HANA Cloud (External/BTP)  │  SAP AI Core (External/BTP)  │  Redis         │
+│  Port: 443                      │  OAuth + Deployments          │  Port: 6379    │
 └─────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
@@ -20,8 +20,8 @@ This deployment guide provides a tiered approach to deploying the SAP AI Fabric 
 │                         TIER 1: MCP SERVERS                                  │
 │                         (Core services)                                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  OData Vocabularies MCP  │  Elasticsearch MCP  │  LangChain HANA MCP        │
-│  Port: 9150              │  Port: 9120         │  Port: 9160                 │
+│  OData Vocabularies MCP  │  LangChain HANA MCP                               │
+│  Port: 9150              │  Port: 9160                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
@@ -133,9 +133,7 @@ Or check individual services:
 
 | Service | Health Check URL |
 |---------|------------------|
-| Elasticsearch | `curl http://localhost:9200/_cluster/health` |
 | OData Vocabularies | `curl http://localhost:9150/health` |
-| Elasticsearch MCP | `curl http://localhost:9120/health` |
 | LangChain HANA MCP | `curl http://localhost:9160/health` |
 | vLLM | `curl http://localhost:8080/health` |
 | AI-Core-PAL | `curl http://localhost:9881/health` |
@@ -190,15 +188,6 @@ See `deploy/.env.example` for all required environment variables.
 | `HANA_USER` | HANA database user |
 | `HANA_PASSWORD` | HANA database password |
 | `HANA_SCHEMA` | HANA schema (default: `PAL_STORE`) |
-
-### Elasticsearch
-
-| Variable | Description |
-|----------|-------------|
-| `ES_HOST` | Elasticsearch host (default: `localhost`) |
-| `ES_PORT` | Elasticsearch port (default: 9200) |
-| `ES_USERNAME` | Elasticsearch username (optional) |
-| `ES_PASSWORD` | Elasticsearch password (optional) |
 
 ## Troubleshooting
 

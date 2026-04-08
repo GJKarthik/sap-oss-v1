@@ -37,9 +37,8 @@ interface SearchResponse {
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/rag"
-        targetLabel="Search Studio (RAG)"
-        icon="documents"
-        relationLabel="Related — full RAG engine with HANA Vector Search:">
+        targetLabelKey="crossApp.target.aifabricRag"
+        icon="documents">
       </app-cross-app-link>
 
       <header class="page-header">

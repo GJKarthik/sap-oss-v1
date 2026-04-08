@@ -11,7 +11,7 @@ export const environment = {
   },
   features: {
     enableChat: true,
-    enableGraphExplorer: true,
+    enableLineageExplorer: true,
     enableModelOptimizer: true,
   },
   version: '1.0.0',

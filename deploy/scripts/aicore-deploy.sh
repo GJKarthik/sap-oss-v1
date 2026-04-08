@@ -38,7 +38,6 @@ IMAGE_TAG="${IMAGE_TAG:-latest}"
 # Service definitions: name -> (context, dockerfile, ai_core_scenario)
 declare -A SERVICE_CONTEXTS=(
     ["odata-vocabularies-mcp"]="../src/data/odata-vocabularies-main"
-    ["elasticsearch-mcp"]="../src/intelligence/elasticsearch-main"
     ["langchain-hana-mcp"]="../src/data/langchain-integration-for-sap-hana-cloud-main"
     ["vllm"]="../src/intelligence/vllm-main"
     ["ai-core-pal"]="../src/intelligence/ai-core-pal"
@@ -48,7 +47,6 @@ declare -A SERVICE_CONTEXTS=(
 
 declare -A SERVICE_DOCKERFILES=(
     ["odata-vocabularies-mcp"]="Dockerfile"
-    ["elasticsearch-mcp"]="mcp_server/Dockerfile"
     ["langchain-hana-mcp"]="Dockerfile"
     ["vllm"]="Dockerfile.qwen3-q8"
     ["ai-core-pal"]="Dockerfile"

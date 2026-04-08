@@ -76,7 +76,7 @@
 | 4 | Streaming Core | Foundation | Real-time delivery |
 | 5 | MCP PAL | Intelligence | Forecasting |
 | 6 | Data Cleaning Copilot | Intelligence | Data quality |
-| 7 | Elasticsearch | Foundation | Knowledge search |
+| 7 | HANA Vector Store | Foundation | Knowledge search |
 | 8 | GenAI Toolkit | Intelligence | Custom ML |
 | 9 | LangChain Integration | Orchestration | Vector store |
 | 10 | Mangle Query | Foundation | Data transformation |

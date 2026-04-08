@@ -17,9 +17,11 @@ import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AppStore } from '../../store/app.store';
 import { I18nService } from '../../services/i18n.service';
+import { WorkspaceService } from '../../services/workspace.service';
 import {
   TRAINING_NAV_GROUPS,
   TRAINING_ROUTE_LINKS,
+  TrainingRouteGroupId,
   resolveTrainingGroup,
 } from '../../app.navigation';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
@@ -32,26 +34,36 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a href="#main-content" class="skip-link" (click)="skipToMain($event)">{{ i18n.t('shell.skipToMain') }}</a>
-    <div class="app-canvas" [ngClass]="store.atmosphericClass()" [style.transform]="canvasTransform()"></div>
+    <div
+      class="app-canvas"
+      aria-hidden="true"
+      [ngClass]="store.atmosphericClass()"
+      [style.transform]="canvasTransform()"></div>
 
-    <div class="app-shell" [class.rtl]="i18n.isRtl()" (mousemove)="onMouseMove($event)">
+    <div
+      class="app-shell"
+      [class.rtl]="i18n.isRtl()"
+      [class.app-shell--reduced-motion]="reducedMotion()"
+      (mousemove)="onMouseMove($event)">
       <header class="app-header">
         <ui5-shellbar
           [primaryTitle]="i18n.t('app.title')"
           [secondaryTitle]="i18n.t('app.subtitle')"
           (profile-click)="onProfileClick($event)">
           <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
-          <ui5-button icon="search" slot="endContent" (click)="toggleSearch()" [attr.aria-label]="i18n.t('shell.searchAriaLabel')"></ui5-button>
-          <ui5-button icon="globe" slot="endContent" (click)="i18n.nextLanguage()" [attr.aria-label]="i18n.t('shell.langAriaLabel')">{{ i18n.languageLabel() }}</ui5-button>
-          <ui5-button icon="settings" slot="endContent" [attr.aria-label]="i18n.t('shell.settingsAriaLabel')"></ui5-button>
+          <ui5-shellbar-item icon="search" [text]="i18n.t('shell.searchAriaLabel')" (ui5Click)="toggleSearch()"></ui5-shellbar-item>
+          <ui5-shellbar-item icon="globe" [text]="i18n.t('shell.langAriaLabel')" (ui5Click)="toggleLanguageMenu($event)"></ui5-shellbar-item>
+          <ui5-shellbar-item icon="settings" [text]="i18n.t('shell.settingsAriaLabel')" (ui5Click)="navigateTo('/workspace')"></ui5-shellbar-item>
         </ui5-shellbar>
+
       </header>
 
       <div class="app-body">
         <nav class="app-nav-island slideUp" role="navigation" [attr.aria-label]="i18n.t('shell.mainNavAriaLabel')">
           <div class="nav-group-stack">
-            @for (group of navGroups; track group.id) {
+            @for (group of navGroups(); track group.id) {
               <button
+                type="button"
                 class="nav-island-item"
                 [class.active]="activeGroupId() === group.id"
                 [attr.aria-current]="activeGroupId() === group.id ? 'page' : null"
@@ -69,6 +81,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
               <div class="pill-track">
                 @for (route of activeGroupRoutes(); track route.path) {
                   <button
+                    type="button"
                     class="pill-item"
                     [class.pill-item--active]="isRouteActive(route.path)"
                     [attr.aria-current]="isRouteActive(route.path) ? 'page' : null"
@@ -87,7 +100,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
       </div>
     </div>
 
-    <!-- Spotlight Command Palette (WWDC Polish) -->
+    <!-- Spotlight Command Palette -->
     <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="i18n.t('shell.spotlightTitle')" (close)="showSearch.set(false)">
       <div class="spotlight-body">
         <ui5-input #searchInput class="spotlight-input" [placeholder]="i18n.t('shell.spotlightPlaceholder')" (input)="onSearchInput($event)">
@@ -96,7 +109,7 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
         
         <ui5-list class="spotlight-results" separators="None">
           @for (res of filteredResults(); track res.path) {
-            <ui5-li icon="navigation-right-arrow" [description]="res.group" (click)="jumpTo(res.path)">
+            <ui5-li icon="navigation-right-arrow" [description]="i18n.t(groupLabelKey(res.group))" (click)="jumpTo(res.path)">
               {{ i18n.t(res.labelKey) }}
             </ui5-li>
           }
@@ -112,9 +125,18 @@ import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
         <ui5-button icon="log" design="Negative" (click)="logout()">{{ i18n.t('app.signOut') }}</ui5-button>
       </div>
     </ui5-popover>
+
+    <ui5-menu #langMenu (item-click)="onLanguageClick($event)">
+      @for (lang of i18n.supportedLangs; track lang) {
+        <ui5-menu-item [text]="i18n.langLabels[lang]" [id]="lang" [icon]="i18n.currentLang() === lang ? 'accept' : null"></ui5-menu-item>
+      }
+    </ui5-menu>
   `,
   styles: [`
     .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100vw; position: relative; z-index: 1; overflow: hidden; }
+    .app-shell--reduced-motion .app-nav-island,
+    .app-shell--reduced-motion .pill-item,
+    .app-shell--reduced-motion .nav-label { transition: none; }
     .app-header { flex-shrink: 0; }
     .app-body { flex: 1; display: flex; padding: 1.5rem; gap: 1.5rem; overflow: hidden; }
     
@@ -165,35 +187,70 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
+  private readonly workspace = inject(WorkspaceService);
   
   @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
+  @ViewChild('langMenu') langMenu!: ElementRef<any>;
   @ViewChild('searchDialog') searchDialog!: ElementRef<any>;
   @ViewChild('searchInput') searchInput!: ElementRef<any>;
 
-  readonly navGroups = TRAINING_NAV_GROUPS;
-  readonly activeGroupId = signal('home');
+  readonly activeGroupId = signal<TrainingRouteGroupId>('home');
+  readonly currentPath = signal('/dashboard');
   readonly showSearch = signal(false);
   readonly searchQuery = signal('');
+  readonly reducedMotion = signal(false);
   
-  // Magnetic Canvas Logic (rAF-throttled)
+  // Decorative canvas movement is disabled for reduced-motion users.
   readonly mouseX = signal(0);
   readonly mouseY = signal(0);
-  readonly canvasTransform = computed(() => `translate(${this.mouseX() / 100}px, ${this.mouseY() / 100}px) scale(1.05)`);
+  readonly canvasTransform = computed(() =>
+    this.reducedMotion()
+      ? 'none'
+      : `translate(${this.mouseX() / 100}px, ${this.mouseY() / 100}px) scale(1.05)`,
+  );
   private rafId: number | null = null;
+  private motionMediaQuery?: MediaQueryList;
 
   private routerSub?: Subscription;
 
+  readonly visibleRouteLinks = computed(() => {
+    const visibleRoutes = new Set(this.workspace.visibleNavLinks().map((link) => link.route));
+    return TRAINING_ROUTE_LINKS.filter((link) => visibleRoutes.has(link.path));
+  });
+
+  readonly navGroups = computed(() =>
+    TRAINING_NAV_GROUPS.filter((group) =>
+      this.visibleRouteLinks().some((link) => link.group === group.id),
+    ),
+  );
+
   readonly activeGroupRoutes = computed(() => {
-    return TRAINING_ROUTE_LINKS.filter(link => link.group === this.activeGroupId());
+    const group = this.activeGroupId();
+    const currentPath = this.currentPath();
+    const groupRoutes = this.visibleRouteLinks().filter((link) => link.group === group);
+    const primaryRoutes = groupRoutes.filter((link) => link.tier === 'primary');
+    const activeRoute = TRAINING_ROUTE_LINKS.find(
+      (link) => currentPath === link.path || currentPath.startsWith(`${link.path}/`),
+    );
+
+    if (activeRoute && !primaryRoutes.some((link) => link.path === activeRoute.path)) {
+      return [...primaryRoutes, activeRoute];
+    }
+
+    return primaryRoutes;
   });
 
   readonly filteredResults = computed(() => {
-    const q = this.searchQuery().toLowerCase();
-    if (!q) return TRAINING_ROUTE_LINKS.slice(0, 5);
-    return TRAINING_ROUTE_LINKS.filter(link => 
-      this.i18n.t(link.labelKey).toLowerCase().includes(q) || 
-      link.group.toLowerCase().includes(q)
-    );
+    const q = this.searchQuery().trim().toLowerCase();
+    const routes = this.visibleRouteLinks().filter((link) => {
+      if (!q) {
+        return link.tier === 'primary';
+      }
+      return this.i18n.t(link.labelKey).toLowerCase().includes(q)
+        || this.i18n.t(this.groupLabelKey(link.group)).toLowerCase().includes(q);
+    });
+
+    return routes.slice(0, 8);
   });
 
   @HostListener('window:keydown', ['$event'])
@@ -205,15 +262,36 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.setupMotionPreference();
     this.updateActiveGroup(this.router.url);
     this.routerSub = this.router.events.pipe(filter((e: Event): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => this.updateActiveGroup(e.url));
   }
 
-  ngOnDestroy() { this.routerSub?.unsubscribe(); }
-  private updateActiveGroup(url: string) { this.activeGroupId.set(resolveTrainingGroup(url)); }
+  ngOnDestroy() {
+    this.routerSub?.unsubscribe();
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+    this.teardownMotionPreference();
+  }
+  private updateActiveGroup(url: string) {
+    const currentPath = url.split('?')[0].split('#')[0] || '/dashboard';
+    this.currentPath.set(currentPath);
+    this.activeGroupId.set(resolveTrainingGroup(currentPath));
+  }
+  groupLabelKey(group: TrainingRouteGroupId): string {
+    const keys: Record<TrainingRouteGroupId, string> = {
+      home: 'navGroup.home',
+      data: 'navGroup.data',
+      assist: 'navGroup.assist',
+      operations: 'navGroup.operations',
+    };
+    return keys[group];
+  }
   groupIcon(id: string): string {
-    const icons: Record<string, string> = { home: 'home', 'data-factory': 'folder', assistants: 'discussion-2', mlops: 'process' };
+    const icons: Record<string, string> = { home: 'home', data: 'folder', assist: 'discussion-2', operations: 'process' };
     return icons[id] || 'grid';
   }
   isRouteActive(path: string): boolean { return this.router.url.startsWith(path); }
@@ -233,6 +311,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   jumpTo(path: string) { this.searchDialog.nativeElement.close(); this.navigateTo(path); }
 
   onMouseMove(e: MouseEvent) {
+    if (this.reducedMotion()) {
+      return;
+    }
     if (this.rafId !== null) return;
     this.rafId = requestAnimationFrame(() => {
       this.mouseX.set(e.clientX - window.innerWidth / 2);
@@ -243,9 +324,66 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   skipToMain(event: globalThis.Event) {
     event.preventDefault();
-    document.getElementById('main-content')?.focus();
+    const main = document.getElementById('main-content');
+    main?.focus();
+    main?.scrollIntoView({ block: 'start' });
   }
 
   onProfileClick(event: any) { this.profilePopover.nativeElement.opener = event.detail.targetRef; this.profilePopover.nativeElement.open = true; }
+  
+  toggleLanguageMenu(event: any) {
+    const menu = this.langMenu.nativeElement;
+    menu.opener = event.detail.targetRef;
+    menu.open = true;
+  }
+
+  onLanguageClick(event: any) {
+    const langId = event.detail.item.id;
+    if (langId) {
+      this.i18n.setLanguage(langId as any);
+    }
+  }
+
   logout() { this.auth.clearToken(); this.router.navigate(['/login']); }
+
+  private setupMotionPreference(): void {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    this.motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.applyMotionPreference(this.motionMediaQuery.matches);
+
+    if (typeof this.motionMediaQuery.addEventListener === 'function') {
+      this.motionMediaQuery.addEventListener('change', this.handleMotionPreferenceChange);
+      return;
+    }
+
+    this.motionMediaQuery.addListener(this.handleMotionPreferenceChange);
+  }
+
+  private teardownMotionPreference(): void {
+    if (!this.motionMediaQuery) {
+      return;
+    }
+
+    if (typeof this.motionMediaQuery.removeEventListener === 'function') {
+      this.motionMediaQuery.removeEventListener('change', this.handleMotionPreferenceChange);
+      return;
+    }
+
+    this.motionMediaQuery.removeListener(this.handleMotionPreferenceChange);
+  }
+
+  private readonly handleMotionPreferenceChange = (event: MediaQueryListEvent): void => {
+    this.applyMotionPreference(event.matches);
+  };
+
+  private applyMotionPreference(matches: boolean): void {
+    this.reducedMotion.set(matches);
+    if (matches) {
+      this.mouseX.set(0);
+      this.mouseY.set(0);
+    }
+  }
 }

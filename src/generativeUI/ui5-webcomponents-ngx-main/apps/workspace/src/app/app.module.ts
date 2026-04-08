@@ -6,8 +6,6 @@ import {BrowserModule} from '@angular/platform-browser';
 import {AppComponent} from './app.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Ui5ThemingModule} from '@ui5/theming-ngx';
-import {FundamentalStylesComponentsModule} from "@fundamental-styles/theming-ngx";
-import {Ui5FundamentalThemingModule} from "@fundamental-styles/theming-ngx/theming";
 import {Ui5WebcomponentsThemingModule} from "@ui5/webcomponents-ngx/theming";
 import {Ui5WebcomponentsIconsModule} from "@ui5/webcomponents-ngx/icons";
 import {Ui5WebcomponentsModule} from '@ui5/webcomponents-ngx';
@@ -65,10 +63,6 @@ import { firstValueFrom } from 'rxjs';
                 loadChildren: () => import('./modules/forms/forms.module').then(m => m.FormsModule)
             },
             {
-                path: 'child-module',
-                loadChildren: () => import('./modules/child/child.module').then(m => m.ChildModule)
-            },
-            {
                 path: 'joule',
                 loadChildren: () => import('./modules/joule/joule.module').then(m => m.JouleModule)
             },
@@ -105,10 +99,8 @@ import { firstValueFrom } from 'rxjs';
                 loadChildren: () => import('./modules/not-found/not-found.module').then(m => m.NotFoundModule)
             }
         ]),
-        Ui5WebcomponentsModule,
         Ui5WebcomponentsThemingModule.forRoot(),
-        FundamentalStylesComponentsModule,
-        Ui5FundamentalThemingModule], providers: [
+    ], providers: [
         provideHttpClient(withInterceptorsFromDi()),
         { provide: HTTP_INTERCEPTORS, useClass: RequestTraceInterceptor, multi: true },
         {

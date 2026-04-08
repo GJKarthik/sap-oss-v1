@@ -28,9 +28,8 @@ interface GraphEdge { source: string; target: string; label: string; }
       <app-cross-app-link
         targetApp="training"
         targetRoute="/schema-browser"
-        targetLabel="Schema Browser"
-        icon="database"
-        relationLabel="Related:">
+        targetLabelKey="nav.schemaBrowser"
+        icon="database">
       </app-cross-app-link>
 
       <div class="lineage-content" role="region" [attr.aria-label]="i18n.t('lineage.lineageExplorer')">
@@ -46,7 +45,7 @@ interface GraphEdge { source: string; target: string; label: string; }
           <div class="summary-item"><span>{{ 'lineage.nodes' | translate }}</span><ui5-tag design="Information">{{ summary.node_count }}</ui5-tag></div>
           <div class="summary-item"><span>{{ 'lineage.edgesLabel' | translate }}</span><ui5-tag design="Information">{{ summary.edge_count }}</ui5-tag></div>
           <div class="summary-item" *ngIf="summary.status"><span>{{ 'lineage.statusLabel' | translate }}</span>
-            <ui5-tag [design]="summary.status === 'kuzu_unavailable' || summary.status === 'unavailable' ? 'Critical' : (summary.status === 'loading' ? 'Information' : 'Positive')">{{ summary.status }}</ui5-tag>
+            <ui5-tag [design]="statusTagDesign(summary.status)">{{ summary.status }}</ui5-tag>
           </div>
           <div class="summary-spacer"></div>
           <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'graph' ? 'Emphasized' : 'Default'" (click)="viewMode = 'graph'">{{ 'lineage.graph' | translate }}</ui5-button>
@@ -105,10 +104,10 @@ interface GraphEdge { source: string; target: string; label: string; }
           <ui5-card-header slot="header" [titleText]="'lineage.graphQuery' | translate" [subtitleText]="'lineage.graphQuerySubtitle' | translate"></ui5-card-header>
           <div class="query-area">
             <div class="query-presets">
-              <ui5-button *ngFor="let q of presetQueries" design="Default" (click)="cypherQuery = q.query; runQuery()">{{ q.label }}</ui5-button>
+              <ui5-button *ngFor="let q of presetQueries" design="Default" (click)="lineageQuery = q.query; runQuery()">{{ q.label }}</ui5-button>
             </div>
-            <ui5-textarea id="cypher-query" ngDefaultControl [(ngModel)]="cypherQuery" placeholder="MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25" [rows]="3" accessible-name="Cypher query input"></ui5-textarea>
-            <ui5-button design="Emphasized" icon="play" (click)="runQuery()" [disabled]="loading || !cypherQuery.trim()">{{ loading ? ('lineage.running' | translate) : ('lineage.runQuery' | translate) }}</ui5-button>
+            <ui5-textarea id="lineage-query" ngDefaultControl [(ngModel)]="lineageQuery" placeholder="SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE FROM LINEAGE_RELATIONSHIPS LIMIT 25" [rows]="3" accessible-name="Lineage query input"></ui5-textarea>
+            <ui5-button design="Emphasized" icon="play" (click)="runQuery()" [disabled]="loading || !lineageQuery.trim()">{{ loading ? ('lineage.running' | translate) : ('lineage.runQuery' | translate) }}</ui5-button>
           </div>
           <app-empty-state *ngIf="!loading && !queryResult && !summaryLoading && !graphNodes.length" icon="explorer" [title]="'lineage.runQueryAction' | translate" [description]="'lineage.runQueryDesc' | translate"></app-empty-state>
         </ui5-card>
@@ -153,7 +152,7 @@ export class LineageComponent implements OnInit {
   readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
 
-  cypherQuery = 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25';
+  lineageQuery = 'SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE FROM LINEAGE_RELATIONSHIPS LIMIT 25';
   queryResult: { rows: unknown[]; rowCount: number } | null = null;
   summary: { node_count: number; edge_count: number; status?: string; error?: string } = { node_count: 0, edge_count: 0, status: 'loading' };
   loading = false;
@@ -170,10 +169,10 @@ export class LineageComponent implements OnInit {
 
   get presetQueries() {
     return [
-      { label: this.i18n.t('lineage.allNodes'), query: 'MATCH (n) RETURN n LIMIT 30' },
-      { label: this.i18n.t('lineage.allRelationships'), query: 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25' },
-      { label: this.i18n.t('lineage.sourceTables'), query: 'MATCH (n:Table) RETURN n LIMIT 20' },
-      { label: this.i18n.t('lineage.fullLineage'), query: 'MATCH p=(s)-[*]->(t) RETURN p LIMIT 15' },
+      { label: this.i18n.t('lineage.allNodes'), query: 'SELECT OBJECT_NAME AS name, OBJECT_TYPE AS type FROM LINEAGE_NODES LIMIT 30' },
+      { label: this.i18n.t('lineage.allRelationships'), query: 'SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE FROM LINEAGE_RELATIONSHIPS LIMIT 25' },
+      { label: this.i18n.t('lineage.sourceTables'), query: 'SELECT OBJECT_NAME AS name, OBJECT_TYPE AS type FROM LINEAGE_NODES WHERE OBJECT_TYPE = \'Table\' LIMIT 20' },
+      { label: this.i18n.t('lineage.fullLineage'), query: 'SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE, PATH_DEPTH FROM LINEAGE_RELATIONSHIPS ORDER BY PATH_DEPTH ASC LIMIT 15' },
     ];
   }
 
@@ -206,6 +205,13 @@ export class LineageComponent implements OnInit {
     });
   }
 
+  statusTagDesign(status?: string): 'Critical' | 'Information' | 'Positive' {
+    if (!status) return 'Information';
+    if (status === 'loading') return 'Information';
+    if (status.includes('unavailable') || status.includes('error')) return 'Critical';
+    return 'Positive';
+  }
+
   private enrichWithVocab(): void {
     this.mcpService.getRagContext('data lineage entity types', 'EntityType').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (context: unknown) => {
@@ -227,10 +233,10 @@ export class LineageComponent implements OnInit {
   }
 
   runQuery(): void {
-    if (!this.cypherQuery.trim()) return;
+    if (!this.lineageQuery.trim()) return;
     this.loading = true;
     this.error = '';
-    this.mcpService.kuzuQuery(this.cypherQuery).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.mcpService.runLineageQuery(this.lineageQuery).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: r => { this.queryResult = r; this.buildGraph(r.rows); this.loading = false; },
       error: () => { this.error = this.i18n.t('lineage.queryFailed'); this.loading = false; }
     });

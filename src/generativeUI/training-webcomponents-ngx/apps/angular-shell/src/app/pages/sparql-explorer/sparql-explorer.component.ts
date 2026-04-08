@@ -22,9 +22,8 @@ import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
       <app-cross-app-link
         targetApp="training"
         targetRoute="/analytical-dashboard"
-        targetLabel="Analytical Dashboard"
-        icon="chart-table-view"
-        relationLabel="Related:">
+        targetLabelKey="nav.analyticalDashboard"
+        icon="chart-table-view">
       </app-cross-app-link>
 
       <div class="sparql-content" role="main" [attr.aria-label]="i18n.t('sparql.title')">

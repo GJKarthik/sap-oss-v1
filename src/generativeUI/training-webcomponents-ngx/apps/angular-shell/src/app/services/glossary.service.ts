@@ -1,5 +1,6 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { TranslationMemoryService, TMEntry } from './translation-memory.service';
+import { TeamContextService } from './team-context.service';
 
 export interface GlossaryEntry {
   ar: string;
@@ -27,6 +28,7 @@ export interface CrossCheckFinding {
 })
 export class GlossaryService {
   private readonly tm = inject(TranslationMemoryService);
+  private readonly teamCtx = inject(TeamContextService);
   private readonly _overrides = signal<TMEntry[]>([]);
 
   private readonly _entries = signal<GlossaryEntry[]>([
@@ -68,10 +70,19 @@ export class GlossaryService {
 
   constructor() {
     this.loadOverrides();
+    // Re-load overrides whenever team context changes
+    effect(() => {
+      const _teamId = this.teamCtx.teamId();
+      this.loadOverrides();
+    });
   }
 
   loadOverrides(): void {
-    this.tm.list().subscribe({
+    const teamId = this.teamCtx.teamId();
+    const source$ = teamId && teamId !== 'global'
+      ? this.tm.listForTeam(teamId)
+      : this.tm.list();
+    source$.subscribe({
       next: entries => this._overrides.set(entries.filter(e => e.is_approved)),
       error: () => { /* non-critical: TM overrides unavailable */ }
     });
@@ -139,9 +150,12 @@ export class GlossaryService {
    * Generates a string of strict linguistic constraints for LLM system prompts.
    */
   getSystemPromptSnippet(): string {
+    const scopeLabel = this.teamCtx.displayLabel();
     let snippet = '\n[STRICT LINGUISTIC CONSTRAINTS - IFRS/CPA BANKING STANDARDS]\n';
+    snippet += `Team context: ${scopeLabel}\n`;
     snippet += 'You MUST use the following official translations for all technical banking terms:\n';
     
+    snippet += '\n[GLOBAL TERMS]\n';
     this._entries().forEach(e => {
       snippet += `- ${e.en} <-> ${e.ar} (${e.category})\n`;
     });
@@ -154,7 +168,8 @@ export class GlossaryService {
     if (translations.length > 0) {
       snippet += '\n[CORRECTION OVERRIDES - HUMAN-APPROVED TRANSLATIONS]\n';
       translations.forEach(o => {
-        snippet += `- ${o.source_text} -> ${o.target_text} (${o.source_lang} to ${o.target_lang})\n`;
+        const scope = o.scope_level ? ` [${o.scope_level}]` : '';
+        snippet += `- ${o.source_text} -> ${o.target_text} (${o.source_lang} to ${o.target_lang})${scope}\n`;
       });
     }
 

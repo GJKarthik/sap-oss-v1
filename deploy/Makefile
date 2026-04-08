@@ -185,12 +185,6 @@ aicore-all:
 # Start only infrastructure for local dev
 dev-infra: tier0
 
-# Quick test - start ES and run health check
-test-es:
-	docker compose -f docker-compose.tier0.yml up -d elasticsearch
-	@sleep 10
-	@curl -s http://localhost:9200/_cluster/health | jq .
-
 # Prune unused resources
 prune:
 	docker system prune -f
@@ -203,9 +197,6 @@ network:
 # ============================================================================
 # Individual Service Management
 # ============================================================================
-
-start-es:
-	docker compose -f docker-compose.tier0.yml up -d elasticsearch
 
 start-redis:
 	docker compose -f docker-compose.tier0.yml up -d redis

@@ -38,9 +38,8 @@ interface SqlPair {
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/data"
-        targetLabel="Vector Store Explorer"
-        icon="database"
-        relationLabel="Related — explore HANA vector stores:">
+        targetLabelKey="crossApp.target.aifabricData"
+        icon="database">
       </app-cross-app-link>
 
       <div class="page-header">

@@ -14,10 +14,9 @@ import {
   createDefaultWorkspaceSettings,
 } from './workspace.types';
 
-export type AppId = 'aifabric' | 'training' | 'joule';
-
 const STORAGE_KEY = 'training.workspace.v1';
 const SAVE_DEBOUNCE_MS = 1000;
+const USER_ID_STORAGE_KEY = 'training.workspace.userId';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
@@ -47,7 +46,8 @@ export class WorkspaceService {
   });
 
   activeWorkspace(): { id: string } | null {
-    return null;
+    const id = this._settings().identity.userId.trim();
+    return id ? { id } : null;
   }
 
   readonly effectiveApiBaseUrl = computed(() =>
@@ -66,6 +66,16 @@ export class WorkspaceService {
     const localRaw = this.loadFromLocalStorage();
     if (localRaw) {
       this._settings.set(localRaw);
+    }
+    this.syncStoredUserId(this._settings().identity.userId);
+
+    const externalWorkspaceId = this.workspaceIdFromUrl();
+    if (externalWorkspaceId && externalWorkspaceId !== this._settings().identity.userId) {
+      this.patch((s: WorkspaceSettings) => ({
+        ...s,
+        identity: { ...s.identity, userId: externalWorkspaceId },
+      }));
+      return;
     }
   }
 
@@ -118,6 +128,7 @@ export class WorkspaceService {
     defaults.updatedAt = new Date().toISOString();
     this._settings.set(defaults);
     this.saveToLocalStorage(defaults);
+    this.syncStoredUserId(userId);
     this.saveSubject.next();
   }
 
@@ -132,6 +143,7 @@ export class WorkspaceService {
   private saveToLocalStorage(settings: WorkspaceSettings): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      this.syncStoredUserId(settings.identity.userId);
     } catch { /* storage full */ }
   }
 
@@ -153,5 +165,24 @@ export class WorkspaceService {
       map(() => void 0),
       catchError(() => of(void 0)),
     );
+  }
+
+  private workspaceIdFromUrl(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const workspaceId = new URLSearchParams(window.location.search).get('workspace')?.trim();
+    return workspaceId || null;
+  }
+
+  private syncStoredUserId(userId: string): void {
+    try {
+      if (typeof localStorage !== 'undefined' && userId) {
+        localStorage.setItem(USER_ID_STORAGE_KEY, userId);
+      }
+    } catch {
+      // ignore storage errors
+    }
   }
 }

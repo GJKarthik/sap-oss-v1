@@ -115,7 +115,8 @@ class TestPersonalDataClassifier:
         
         personal_patterns = [
             "email", "mail", "phone", "telephone", "mobile", "fax",
-            "address", "street", "city", "postal", "zip", 
+            "address", "street", "city", "postal", "zip",
+            "country", "state", "province",
             "name", "firstname", "lastname", "fullname", "surname",
             "ssn", "social", "tax", "passport", "license", "national",
             "birthday", "birthdate", "dob", "age"

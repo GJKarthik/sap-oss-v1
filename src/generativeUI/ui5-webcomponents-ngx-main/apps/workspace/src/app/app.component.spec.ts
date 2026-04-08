@@ -1,6 +1,7 @@
 import { Router } from '@angular/router';
 import { AppComponent } from './app.component';
 import { LearnPathService } from './core/learn-path.service';
+import { ProductNavigationService } from './core/product-navigation.service';
 import { WorkspaceService } from './core/workspace.service';
 
 jest.mock('@angular/core', () => {
@@ -46,11 +47,19 @@ function makeI18nService(): { setLanguage: jest.Mock } {
 function makeWorkspaceService() {
   return {
     settings: () => ({ theme: 'sap_horizon', language: 'en' }),
+    navConfig: () => ({ defaultLandingPath: '/' }),
     visibleNavLinks: () => [],
     visibleHomeCards: () => [],
     updateTheme: jest.fn(),
     updateLanguage: jest.fn(),
   } as unknown as WorkspaceService;
+}
+
+function makeProductNavigationService() {
+  return {
+    navigateToLanding: jest.fn(),
+    navigateToApp: jest.fn(),
+  } as unknown as ProductNavigationService;
 }
 
 describe('AppComponent language switch', () => {
@@ -66,6 +75,7 @@ describe('AppComponent language switch', () => {
       makeLearnPath(),
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
+      makeProductNavigationService(),
     );
 
     component.onLanguageChange({
@@ -84,6 +94,7 @@ describe('AppComponent language switch', () => {
       makeLearnPath(),
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
+      makeProductNavigationService(),
     );
 
     component.onLanguageChange({
@@ -94,5 +105,43 @@ describe('AppComponent language switch', () => {
     expect(document.documentElement.getAttribute('dir')).toBe('ltr');
     expect(document.documentElement.getAttribute('lang')).toBe('en');
     expect(localStorage.getItem('ui5-language')).toBe('en');
+  });
+});
+
+describe('AppComponent navigation', () => {
+  it('delegates landing navigation to the product navigation service', () => {
+    const productNavigation = makeProductNavigationService();
+    const component = new AppComponent(
+      makeRouter(),
+      makeLearnPath(),
+      makeI18nService() as unknown as any,
+      makeWorkspaceService(),
+      productNavigation,
+    );
+
+    component.openLanding();
+
+    expect(productNavigation.navigateToLanding).toHaveBeenCalled();
+  });
+
+  it('delegates product-switch selection through the product navigation service', () => {
+    const productNavigation = makeProductNavigationService();
+    const component = new AppComponent(
+      makeRouter(),
+      makeLearnPath(),
+      makeI18nService() as unknown as any,
+      makeWorkspaceService(),
+      productNavigation,
+    );
+
+    component.onProductSelect({
+      detail: {
+        item: {
+          getAttribute: jest.fn().mockReturnValue('training'),
+        },
+      },
+    });
+
+    expect(productNavigation.navigateToApp).toHaveBeenCalledWith('training');
   });
 });

@@ -24,9 +24,8 @@ import { I18nService } from '../../services/i18n.service';
       <app-cross-app-link
         targetApp="training"
         targetRoute="/schema-browser"
-        targetLabel="Schema Browser"
-        icon="database"
-        relationLabel="Related:">
+        targetLabelKey="nav.schemaBrowser"
+        icon="database">
       </app-cross-app-link>
 
       <div class="ad-content" role="main" aria-label="Analytical Dashboard">

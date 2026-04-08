@@ -1,78 +1,76 @@
 # ════════════════════════════════════════════════════════════════════════════
-# SAP AI Experience – Microservice Architecture
-# Tiered topology per sap-ai-experience-map.yaml
+# SAP AI Experience – Microservice Architecture (100% Python Production)
 # ════════════════════════════════════════════════════════════════════════════
 
 version: '3.8'
 
 services:
 
-  # ── Tier 1 ─ API Gateway & Orchestration ────────────────────────────────
+  # ── API Gateway & UI ──────────────────────────────────────────────────
 
   api-gateway:
     image: nginx:alpine
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    labels:
-      sap.ai.tier: "api_gateway"
-      sap.ai.service: "nginx-router"
     depends_on:
-      - model-optimizer
-      - data-copilot
-      - odata-schema
+      - angular-shell
+      - api-server
       - vllm
-      - elasticsearch
-      - arabic-ocr
     networks: [platform-network]
 
-  model-optimizer:
+  angular-shell:
     build:
-      context: ./src/training/nvidia-modelopt
-      dockerfile: Dockerfile
+      context: ./src/generativeUI/training-webcomponents-ngx
+      dockerfile: apps/angular-shell/Dockerfile
     restart: unless-stopped
-    ports:
-      - "8001:8001"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
     environment:
-      - PORT=8001
-      - MODEL_CACHE_DIR=/app/models
-    volumes:
-      - model-cache:/app/models
+      - SAP_API_BASE_URL=http://api-server:8002
     labels:
-      sap.ai.tier: "model_orchestration"
-      sap.ai.service: "nvidia-model-optimizer"
+      sap.ai.tier: "frontend"
+      sap.ai.service: "horizon-cinematic-shell"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks: [platform-network]
 
-  data-copilot:
+  # ── Orchestration Hub ──────────────────────────────────────────────────
+
+  api-server:
     build:
       context: ./src/generativeUI/training-webcomponents-ngx/packages/api-server
       dockerfile: Dockerfile.suite
     restart: unless-stopped
     ports:
       - "8002:8002"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
     environment:
       - PORT=8002
-      - HANA_URL=${HANA_URL}
+      - HANA_HOST=fea6d8c0-6075-4a0d-8429-28412013ab85.hana.prod-ap11.hanacloud.ondemand.com
+      - HANA_PORT=443
+      - HANA_USER=AINUCLEUS
+      - HANA_PASSWORD=hU0*Waf5C&
       - VLLM_URL=http://vllm:8080
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
     labels:
-      sap.ai.tier: "data_engineering"
-      sap.ai.service: "data-cleaning-copilot"
+      sap.ai.tier: "orchestration"
+      sap.ai.service: "api-server-hub"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     depends_on: [vllm]
     networks: [platform-network]
 
-  # ── Tier 2 ─ Sovereign LLM Plane ────────────────────────────────────────
+  # ── Sovereignty & Intelligence Plane ────────────────────────────────────
 
   vllm:
     build:
@@ -84,109 +82,31 @@ services:
     environment:
       - PORT=8080
       - MODEL_PATH=/app/models
-      - METRICS_BIND=127.0.0.1
       - VLLM_DEVICE=cpu
+      - VLLM_TARGET_DEVICE=cpu
     volumes:
       - model-cache:/app/models
     labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "enterprise-sovereign-llm"
-      sap.ai.data_security: "on-premise-only"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      sap.ai.tier: "intelligence"
+      sap.ai.service: "turboquant-inference"
     networks: [platform-network]
 
-  elasticsearch:
-    image: elasticsearch:8.12.0
-    restart: unless-stopped
-    ports:
-      - "9200:9200"
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    labels:
-      sap.ai.tier: "data_storage"
-      sap.ai.service: "vector-search-engine"
-    networks: [platform-network]
-
-  odata-schema:
+  model-optimizer:
     build:
-      context: ./src/data/odata-vocabularies-main
+      context: ./src/training/nvidia-modelopt
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8003:8003"
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
+      - "8001:8001"
     environment:
-      - PORT=8003
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "odata-schema"
-      sap.ai.data_security: "public"
+      - PORT=8001
     volumes:
-      - ./src/data/odata-vocabularies-main/vocabularies:/app/vocabularies:ro
+      - model-cache:/app/models
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    networks: [platform-network]
-
-  mcp-pal:
-    build:
-      context: ./src/intelligence/ai-core-pal
-      dockerfile: Dockerfile
-      args:
-        - ZIG_TARGET=aarch64-linux-gnu
-    restart: unless-stopped
-    ports:
-      - "8020:8020"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-    environment:
-      - PORT=8020
-      - HANA_URL=${HANA_URL}
-      - VLLM_URL=http://vllm:8080
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "mcp-pal-deep-learning"
-    depends_on: [vllm]
-    networks: [platform-network]
-
-  embedded-hana:
-    build:
-      context: ./src/data/langchain-integration-for-sap-hana-cloud-main
-      dockerfile: deploy/aicore/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8050:8050"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-    environment:
-      - PORT=8050
-      - HANA_URL=${HANA_URL}
-      - VLLM_URL=http://vllm:8080
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "embedded-hana"
-    depends_on: [vllm]
     networks: [platform-network]
 
   arabic-ocr:
@@ -196,27 +116,21 @@ services:
     restart: unless-stopped
     ports:
       - "8060:8060"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-    environment:
-      - PORT=8060
-      - OCR_LANGUAGES=ara+eng
-      - OCR_DPI=300
-      - OCR_MAX_WORKERS=2
-      - OCR_MAX_CONCURRENT=4
-      - OCR_MAX_UPLOAD_BYTES=104857600
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "arabic-ocr"
+    networks: [platform-network]
+
+  odata-schema:
+    build:
+      context: ./src/data/odata-vocabularies-main
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./src/data/odata-vocabularies-main/vocabularies:/app/vocabularies:ro
     networks: [platform-network]
 
 volumes:
   model-cache:
-    driver: local
-  es-data:
     driver: local
 networks:
   platform-network:

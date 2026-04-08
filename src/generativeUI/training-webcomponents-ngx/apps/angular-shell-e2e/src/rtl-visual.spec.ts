@@ -166,7 +166,7 @@ test.describe('RTL Visual Regression Tests', () => {
     });
 
     test('code/SQL blocks stay LTR inside RTL container', async ({ page }) => {
-      await page.goto('/hippocpp', { waitUntil: 'networkidle' });
+      await page.goto('/hana-explorer', { waitUntil: 'networkidle' });
       await page.waitForTimeout(500);
       const queryEditor = page.locator('.query-editor');
       // Code blocks should have dir="ltr" or be isolated

@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ExperienceHealthService } from '../../core/experience-health.service';
+import { ProductNavigationService } from '../../core/product-navigation.service';
 import { WorkspaceHistoryService } from '../../core/workspace-history.service';
 import { environment } from '../../../environments/environment';
 
@@ -45,6 +46,7 @@ export class OcrPageComponent implements OnInit {
   constructor(
     private readonly http: HttpClient,
     private readonly healthService: ExperienceHealthService,
+    private readonly productNavigation: ProductNavigationService,
     private readonly historyService: WorkspaceHistoryService,
   ) {}
 
@@ -249,7 +251,7 @@ export class OcrPageComponent implements OnInit {
   }
 
   openCrossApp(): void {
-    window.location.href = '/training/document-ocr';
+    this.productNavigation.navigateToApp('training', '/document-ocr');
   }
 
   private getOcrRequestOptions(): { headers?: HttpHeaders } {

@@ -62,8 +62,8 @@ print_usage() {
     echo "Usage: $0 [TIER] [OPTIONS]"
     echo ""
     echo "Tiers:"
-    echo "  tier0     Deploy infrastructure (Elasticsearch, Redis, Gateway)"
-    echo "  tier1     Deploy MCP servers (OData, ES MCP, LangChain HANA MCP)"
+    echo "  tier0     Deploy infrastructure (Redis, Gateway)"
+    echo "  tier1     Deploy MCP servers (OData, LangChain HANA MCP)"
     echo "  tier2     Deploy intelligence layer (vLLM, AI-Core-PAL, GenAI Toolkit)"
     echo "  tier3     Deploy training services (ModelOpt)"
     echo "  all       Deploy all tiers in order"
@@ -133,7 +133,6 @@ check_env_file() {
 create_volumes() {
     log_step "Creating volume directories..."
     
-    mkdir -p "$DEPLOY_DIR/volumes/es-data"
     mkdir -p "$DEPLOY_DIR/volumes/redis-data"
     mkdir -p "$DEPLOY_DIR/volumes/model-cache"
     mkdir -p "$DEPLOY_DIR/volumes/modelopt-outputs"
@@ -212,10 +211,6 @@ deploy_tier0() {
     
     deploy_compose "docker-compose.tier0.yml" "Tier 0 (Infrastructure)"
     
-    # Wait for Elasticsearch
-    sleep 5
-    wait_for_healthy "Elasticsearch" "http://localhost:${ES_PORT:-9200}/_cluster/health" 60
-    
     # Wait for Redis
     wait_for_healthy "Redis" "http://localhost:${REDIS_PORT:-6379}" 10 || {
         # Redis doesn't have HTTP endpoint, check with redis-cli
@@ -234,11 +229,6 @@ deploy_tier1() {
     log_info "═══════════════════════════════════════════════════════════════"
     log_info "TIER 1: MCP Servers"
     log_info "═══════════════════════════════════════════════════════════════"
-    
-    # Check Tier 0 dependencies
-    if ! curl -sf "http://localhost:${ES_PORT:-9200}/_cluster/health" &> /dev/null; then
-        log_warning "Elasticsearch not running. Deploy Tier 0 first or continuing anyway..."
-    fi
     
     deploy_compose "docker-compose.tier1.yml" "Tier 1 (MCP Servers)"
     

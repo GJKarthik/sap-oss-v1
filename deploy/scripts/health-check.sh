@@ -37,7 +37,6 @@ fi
 # ============================================================================
 
 declare -A TIER0_SERVICES=(
-    ["Elasticsearch"]="http://localhost:${ES_PORT:-9200}/_cluster/health"
     ["Redis"]="redis://localhost:${REDIS_PORT:-6379}"
     ["API Gateway"]="http://localhost:8000"
 )
@@ -45,7 +44,6 @@ declare -A TIER0_SERVICES=(
 declare -A TIER1_SERVICES=(
     ["OData Vocabularies MCP"]="http://localhost:${ODATA_MCP_PORT:-9150}/health"
     ["OData Schema"]="http://localhost:${ODATA_SCHEMA_PORT:-8003}/health"
-    ["Elasticsearch MCP"]="http://localhost:${ES_MCP_PORT:-9120}/health"
     ["LangChain HANA MCP"]="http://localhost:${LANGCHAIN_HANA_MCP_PORT:-9160}/health"
     ["Agent Router"]="http://localhost:${AGENT_ROUTER_PORT:-8010}/health"
 )
@@ -63,7 +61,6 @@ declare -A TIER3_SERVICES=(
     ["ModelOpt API"]="http://localhost:${MODELOPT_API_PORT:-8001}/health"
     ["ModelOpt UI"]="http://localhost:${MODELOPT_UI_PORT:-8082}/health"
     ["Training Pipeline"]="http://localhost:8091/health"
-    ["KuzuDB"]="tcp://localhost:7687"
 )
 
 # ============================================================================

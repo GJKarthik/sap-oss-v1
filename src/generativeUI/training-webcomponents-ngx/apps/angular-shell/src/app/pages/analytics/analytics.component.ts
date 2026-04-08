@@ -55,9 +55,8 @@ interface AnalyticsResponse {
       <app-cross-app-link
         targetApp="training"
         targetRoute="/data-explorer"
-        targetLabel="Data Explorer"
-        icon="database"
-        relationLabel="Related:">
+        targetLabelKey="nav.dataExplorer"
+        icon="database">
       </app-cross-app-link>
 
       @if (loading()) {

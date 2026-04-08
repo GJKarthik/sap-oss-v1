@@ -1,5 +1,5 @@
-# LangChain HANA Integration — — MCP Server for Kyma
-# Port 9140 | No heavy avpy — pure ste —bp+ op iotal kuzu for graph-RAG
+# LangChain HANA Integration MCP Server for Kyma
+# Port 9140 | HANA-native vector and retrieval workflows only
 #
 # Build:
 #   dodklr build ib pltu rell/l+ gchain-hana-mcp:1.0.0 .

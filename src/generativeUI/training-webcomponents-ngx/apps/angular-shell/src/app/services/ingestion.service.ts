@@ -157,7 +157,20 @@ export class IngestionService {
           break;
       }
 
-      // Auto-approve if trust level is set
+      // Confidence-based auto-approve: items with confidence >= 0.9 are approved automatically
+      const AUTO_APPROVE_THRESHOLD = 0.9;
+      batch.termPairs.forEach((t) => {
+        if (t.status === 'pending' && t.confidence >= AUTO_APPROVE_THRESHOLD) {
+          t.status = 'approved';
+        }
+      });
+      batch.paragraphPairs.forEach((p) => {
+        if (p.status === 'pending' && p.confidence >= AUTO_APPROVE_THRESHOLD) {
+          p.status = 'approved';
+        }
+      });
+
+      // Explicit full auto-approve if trust level is set (overrides any remaining pending)
       if (trustLevel === 'auto_approve') {
         batch.termPairs.forEach((t) => {
           if (t.status === 'pending') t.status = 'approved';
@@ -541,7 +554,8 @@ export class IngestionService {
       pair_type: 'translation' as const,
     }));
 
-    const allEntries = options.toTm ? [...tmEntries, ...paraTmEntries] : [];
+    // Always save to TM — backend auto-vectorizes approved entries into HANA
+    const allEntries = [...tmEntries, ...paraTmEntries];
 
     return this.tm.saveBatch(allEntries).pipe(
       tap((result) => {
@@ -556,9 +570,8 @@ export class IngestionService {
         };
         this.lastCommitResult.set(commitResult);
 
-        if (options.toGlossary) {
-          this.glossary.loadOverrides();
-        }
+        // Always refresh glossary — vectorization is handled server-side
+        this.glossary.loadOverrides();
       }),
       map((result) => ({
         termsSaved: Math.min(result.saved, approvedTerms.length),

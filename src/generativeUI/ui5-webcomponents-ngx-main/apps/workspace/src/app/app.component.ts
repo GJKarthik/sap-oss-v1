@@ -7,6 +7,7 @@ import { LearnPathService } from './core/learn-path.service';
 import { I18nService } from '@ui5/webcomponents-ngx/i18n';
 import { WorkspaceService } from './core/workspace.service';
 import { NavLinkDatum } from './core/workspace.types';
+import { ProductNavigationService, ProductAppId } from './core/product-navigation.service';
 
 @Component({
     selector: 'ui-angular-root',
@@ -34,6 +35,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private learnPath: LearnPathService,
     private i18nService: I18nService,
     private workspaceService: WorkspaceService,
+    private productNavigation: ProductNavigationService,
   ) {
     effect(() => {
       const settings = this.workspaceService.settings();
@@ -55,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get navLinks(): NavLinkDatum[] {
-    return this.workspaceService.visibleNavLinks().filter((link) => link.path !== '/workspace');
+    return this.workspaceService.visibleNavLinks().filter((link) => link.showInShellbar && link.path !== '/workspace');
   }
 
   trackByPath(_index: number, link: NavLinkDatum): string {
@@ -82,6 +84,11 @@ export class AppComponent implements OnInit, OnDestroy {
         this.updateLearnPathBanner();
       });
 
+    if (this.router.url === '/' && this.workspaceService.navConfig().defaultLandingPath !== '/') {
+      this.openLanding();
+      return;
+    }
+
     this.updateLearnPathBanner();
   }
 
@@ -103,14 +110,18 @@ export class AppComponent implements OnInit, OnDestroy {
     this.router.navigate([path]);
   }
 
+  openLanding(): void {
+    this.productNavigation.navigateToLanding();
+  }
+
   openProducts(event: any): void {
     this.productPopover.nativeElement.showAt(event.detail.targetRef);
   }
 
   onProductSelect(event: any): void {
-    const url = event.detail.item.getAttribute('data-url');
-    if (url) {
-      window.location.href = url;
+    const appId = event.detail.item.getAttribute('data-app') as ProductAppId | null;
+    if (appId) {
+      this.productNavigation.navigateToApp(appId);
     }
   }
 

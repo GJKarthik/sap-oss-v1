@@ -10,6 +10,8 @@ export interface TMDbContext {
   data_type?: string;
 }
 
+export type TMScopeLevel = 'global' | 'domain' | 'country' | 'team';
+
 export interface TMEntry {
   id?: string;
   source_text: string;
@@ -21,6 +23,8 @@ export interface TMEntry {
   created_at?: string;
   pair_type?: TMPairType;
   db_context?: TMDbContext;
+  team_id?: string;
+  scope_level?: TMScopeLevel;
 }
 
 export interface TMBackendMeta {
@@ -50,6 +54,11 @@ export class TranslationMemoryService {
 
   delete(entryId: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/${entryId}`);
+  }
+
+  /** Gets all entries scoped to a specific team (includes global fallback). */
+  listForTeam(teamId: string): Observable<TMEntry[]> {
+    return this.http.get<TMEntry[]>(this.base, { params: { team_id: teamId } });
   }
 
   /** Gets all approved overrides for a specific language pair. */

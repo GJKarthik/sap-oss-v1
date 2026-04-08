@@ -25,6 +25,11 @@ dataProduct:
     defaultBackend: "vllm"
     auditLevel: "full"
 
+  x-team-access:
+    defaultAccess: "read"
+    countryRestrictions: []          # empty = all countries
+    domainRestrictions: ["performance"]
+
   x-prompting-policy:
     systemPrompt: |
       You are a financial performance analytics assistant for HANA BPC data.

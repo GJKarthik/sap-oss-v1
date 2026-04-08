@@ -6,7 +6,7 @@ Provides detailed status for all components including:
 - Vocabulary loading
 - Embeddings
 - HANA Cloud connectivity
-- Elasticsearch connectivity
+- HANA vector store connectivity
 - Memory usage
 - Uptime
 """
@@ -91,7 +91,7 @@ class HealthChecker:
         self._vocabularies = None
         self._embeddings = None
         self._hana_connector = None
-        self._es_client = None
+        self._hana_vector_client = None
         self._auth_middleware = None
         self._last_check: Optional[HealthCheckResult] = None
         self._check_cache_seconds = 5  # Cache health results for 5 seconds
@@ -109,9 +109,9 @@ class HealthChecker:
         """Register HANA connector for health checking"""
         self._hana_connector = connector
     
-    def register_elasticsearch(self, client):
-        """Register Elasticsearch client for health checking"""
-        self._es_client = client
+    def register_hana_vector(self, client):
+        """Register HANA vector store client for health checking"""
+        self._hana_vector_client = client
     
     def register_auth(self, middleware):
         """Register auth middleware for health checking"""
@@ -259,39 +259,39 @@ class HealthChecker:
                 message=str(e)
             )
     
-    def check_elasticsearch(self) -> ComponentHealth:
-        """Check Elasticsearch connectivity"""
+    def check_hana_vector(self) -> ComponentHealth:
+        """Check HANA vector store connectivity"""
         start = time.time()
         
-        if self._es_client is None:
+        if self._hana_vector_client is None:
             return ComponentHealth(
-                name="elasticsearch",
+                name="hana_vector",
                 status=HealthStatus.DEGRADED,
-                message="Elasticsearch client not configured"
+                message="HANA vector store client not configured"
             )
         
         try:
-            stats = self._es_client.get_stats()
+            stats = self._hana_vector_client.get_stats()
             latency = (time.time() - start) * 1000
             
             if not stats.get("connected", False):
                 return ComponentHealth(
-                    name="elasticsearch",
+                    name="hana_vector",
                     status=HealthStatus.DEGRADED,
                     latency_ms=latency,
-                    message="Elasticsearch not connected",
+                    message="HANA vector store not connected",
                     details=stats
                 )
             
             return ComponentHealth(
-                name="elasticsearch",
+                name="hana_vector",
                 status=HealthStatus.HEALTHY,
                 latency_ms=latency,
                 details=stats
             )
         except Exception as e:
             return ComponentHealth(
-                name="elasticsearch",
+                name="hana_vector",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=(time.time() - start) * 1000,
                 message=str(e)
@@ -344,7 +344,7 @@ class HealthChecker:
         checks["vocabularies"] = self.check_vocabularies()
         checks["embeddings"] = self.check_embeddings()
         checks["hana"] = self.check_hana()
-        checks["elasticsearch"] = self.check_elasticsearch()
+        checks["hana_vector"] = self.check_hana_vector()
         checks["auth"] = self.check_auth()
         
         # Determine overall status

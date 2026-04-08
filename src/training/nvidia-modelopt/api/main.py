@@ -23,7 +23,6 @@ from .job_executor import get_executor
 from .auth import verify_auth, check_rate_limit
 from .metrics import router as metrics_router, request_count, request_latency, request_errors
 from .logging_config import setup_logging, get_logger
-from .kuzu_store import get_kuzu_store
 from pathlib import Path
 
 # Read version from root VERSION file
@@ -319,78 +318,6 @@ async def gpu_status():
             "cuda_version": "N/A",
             "supported_formats": ["int8", "int4_awq", "w4a16"],  # CPU fallback
         }
-
-
-# ---------------------------------------------------------------------------
-# Graph RAG endpoints — kuzu_index and kuzu_query MCP tools
-# ---------------------------------------------------------------------------
-
-class GraphIndexRequest(BaseModel):
-    pair_id: str
-    question: str
-    sql: str
-    domain: str
-    difficulty: str
-    source: str = "template_expansion"
-    template_id: Optional[str] = None
-    table_name: Optional[str] = None
-    pattern_text: Optional[str] = None
-    agg_func: Optional[str] = None
-    complexity: Optional[str] = None
-
-
-class GraphQueryRequest(BaseModel):
-    cypher: str
-    params: Optional[dict] = None
-
-
-@app.post("/graph/index", dependencies=[Depends(verify_auth), Depends(check_rate_limit)])
-async def kuzu_index(req: GraphIndexRequest):
-    """Index a training pair and its relationships into the graph store."""
-    store = get_kuzu_store()
-    if not store.available():
-        return {"status": "unavailable", "message": "Graph store not initialised"}
-
-    store.upsert_training_pair(
-        req.pair_id, req.question, req.sql, req.domain, req.difficulty, req.source
-    )
-    if req.template_id:
-        store.upsert_prompt_template(req.template_id, req.domain, "", "", 0)
-        store.link_pair_to_template(req.pair_id, req.template_id)
-    if req.table_name:
-        store.upsert_schema_table(req.table_name, "", req.domain)
-        store.link_pair_to_table(req.pair_id, req.table_name)
-    if req.pattern_text:
-        store.upsert_sql_pattern(
-            req.pattern_text,
-            req.agg_func or "NONE",
-            req.complexity or req.difficulty,
-        )
-        store.link_pair_to_pattern(req.pair_id, req.pattern_text)
-
-    return {"status": "indexed", "pair_id": req.pair_id}
-
-
-@app.post("/graph/query")
-async def kuzu_query(req: GraphQueryRequest):
-    """Execute a read-only Cypher query against the graph store."""
-    store = get_kuzu_store()
-    if not store.available():
-        return {"status": "unavailable", "rows": []}
-    try:
-        rows = store.query(req.cypher, req.params)
-        return {"status": "ok", "rows": rows, "count": len(rows)}
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-
-
-@app.get("/graph/stats")
-async def kuzu_stats():
-    """Return basic graph store statistics."""
-    store = get_kuzu_store()
-    if not store.available():
-        return {"available": False, "pair_count": 0}
-    return {"available": True, "pair_count": store.get_pair_count()}
 
 
 if __name__ == "__main__":

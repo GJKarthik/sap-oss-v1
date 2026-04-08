@@ -353,14 +353,87 @@ async def get_tm_meta():
     }
 
 
+GLOSSARY_VECTOR_TABLE = "GLOSSARY_VECTORS"
+
+
+async def _auto_vectorize_tm_entry(entry: Dict[str, Any]) -> bool:
+    """Embed a TM entry and upsert into the glossary vector table."""
+    try:
+        entry_id = entry.get("id", "")
+        source = entry.get("source_text", "")
+        target = entry.get("target_text", "")
+        if not source or not target:
+            return False
+
+        text = f"{source} — {target}"
+        embedding = await get_embedding(text)
+
+        meta = {
+            "source_lang": entry.get("source_lang", ""),
+            "target_lang": entry.get("target_lang", ""),
+            "category": entry.get("category", "general"),
+            "pair_type": entry.get("pair_type", "translation"),
+            "tm_id": entry_id,
+        }
+
+        _ensure_vector_table(GLOSSARY_VECTOR_TABLE)
+        safe_table = _quote_identifier(GLOSSARY_VECTOR_TABLE)
+        conn = _hana_connection()
+        cursor = conn.cursor()
+        vec_str = "[" + ",".join(map(str, embedding)) + "]"
+        meta_str = json.dumps(meta)
+
+        # Upsert: delete old vector for this TM entry, then insert new one
+        cursor.execute(
+            f'DELETE FROM {safe_table} WHERE "METADATA" LIKE ?',
+            (f'%"tm_id": "{entry_id}"%',),
+        )
+        cursor.execute(
+            f'INSERT INTO {safe_table} ("ID", "CONTENT", "METADATA", "EMBEDDING") VALUES (?, ?, ?, TO_REAL_VECTOR(?))',
+            (entry_id, text, meta_str, vec_str),
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as exc:
+        logger.warning("auto_vectorize_failed", error=str(exc), tm_id=entry.get("id"))
+        return False
+
+
 @router.post("/tm", response_model=Dict[str, Any])
 async def save_tm_entry(body: TMEntry):
-    return get_store().save_tm_entry(body.dict())
+    saved = get_store().save_tm_entry(body.dict())
+    # Auto-vectorize approved entries
+    if saved.get("is_approved"):
+        await _auto_vectorize_tm_entry(saved)
+    return saved
+
+
+@router.post("/tm/vectorize-batch", response_model=Dict[str, Any])
+async def vectorize_tm_batch():
+    """Vectorize all approved TM entries into the glossary vector table."""
+    entries = get_store().list_collection("translation_memory")
+    approved = [e for e in entries if e.get("is_approved")]
+    success = 0
+    for entry in approved:
+        if await _auto_vectorize_tm_entry(entry):
+            success += 1
+    return {"total": len(approved), "vectorized": success}
 
 
 @router.delete("/tm/{entry_id}")
 async def delete_tm_entry(entry_id: str):
     get_store().delete_tm_entry(entry_id)
+    # Also remove from vector table
+    try:
+        safe_table = _quote_identifier(GLOSSARY_VECTOR_TABLE)
+        conn = _hana_connection()
+        cursor = conn.cursor()
+        cursor.execute(f'DELETE FROM {safe_table} WHERE "ID" = ?', (entry_id,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
     return {"status": "deleted"}
 
 

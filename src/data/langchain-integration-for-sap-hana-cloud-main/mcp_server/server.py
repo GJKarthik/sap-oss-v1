@@ -16,18 +16,6 @@ import re
 import urllib.request
 import urllib.error
 
-# Graph-RAG: load KùzuDB store with graceful fallback
-_kuzu_store_factory = None
-try:
-    from mcp_server.kuzu_store import get_kuzu_store as _get_kuzu_store
-    _kuzu_store_factory = _get_kuzu_store
-except ImportError:
-    try:
-        from kuzu_store import get_kuzu_store as _get_kuzu_store  # type: ignore[import]
-        _kuzu_store_factory = _get_kuzu_store
-    except ImportError:
-        _kuzu_store_factory = None
-
 # HANA Cloud connection settings (same env vars as deploy/aicore and sap_openai_server)
 HANA_HOST = os.environ.get("HANA_HOST", "")
 HANA_PORT = int(os.environ.get("HANA_PORT", "443"))
@@ -532,68 +520,6 @@ class MCPServer:
             },
         }
 
-        # Graph-RAG: index HANA entities into KùzuDB
-        self.tools["kuzu_index"] = {
-            "name": "kuzu_index",
-            "description": (
-                "Index LangChain HANA entities into the embedded KùzuDB graph database. "
-                "Stores HanaVectorStore nodes, EmbeddingDeployment nodes, HanaSchema nodes, "
-                "and their relationships (USES_DEPLOYMENT, LIVES_IN, RELATED_SCHEMA). "
-                "Call before langchain_rag_chain to enable graph-context enrichment."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "vector_stores": {
-                        "type": "string",
-                        "description": (
-                            "JSON array of vector store definitions: "
-                            "[{storeId, tableName?, embeddingModel?, schema?, "
-                            "usesDeployment?: string, livesIn?: string}]"
-                        ),
-                    },
-                    "deployments": {
-                        "type": "string",
-                        "description": (
-                            "JSON array of embedding deployment definitions: "
-                            "[{deploymentId, modelName?, resourceGroup?, status?}]"
-                        ),
-                    },
-                    "schemas": {
-                        "type": "string",
-                        "description": (
-                            "JSON array of HANA schema definitions: "
-                            "[{schemaId, schemaName?, classification?, relatedSchema?: string}]"
-                        ),
-                    },
-                },
-            },
-        }
-
-        # Graph-RAG: run a read-only Cypher query against KùzuDB
-        self.tools["kuzu_query"] = {
-            "name": "kuzu_query",
-            "description": (
-                "Execute a read-only Cypher query against the embedded KùzuDB graph database "
-                "and return matching rows as JSON. "
-                "Use for vector store traversal, deployment lookup, schema classification."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "cypher": {
-                        "type": "string",
-                        "description": "Cypher query string (MATCH … RETURN only)",
-                    },
-                    "params": {
-                        "type": "string",
-                        "description": "Query parameters as JSON object (optional)",
-                    },
-                },
-                "required": ["cypher"],
-            },
-        }
-
     def _register_resources(self):
         self.resources["langchain://vectorstores"] = {
             "uri": "langchain://vectorstores",
@@ -958,17 +884,6 @@ class MCPServer:
                     "status": "degraded-fallback",
                 }
 
-        # L4 — attach graph context from KùzuDB when available
-        if _kuzu_store_factory is not None:
-            try:
-                store = _kuzu_store_factory()
-                if store.available():
-                    ctx = store.get_store_context(table_name)
-                    if ctx:
-                        base["graphContext"] = ctx
-            except Exception:
-                pass
-
         return base
 
     def _handle_langchain_embeddings(self, args: dict) -> dict:
@@ -1105,104 +1020,6 @@ class MCPServer:
                 "reason": str(e),
             }
 
-    # -------------------------------------------------------------------------
-    # Kuzu tool handlers
-    # -------------------------------------------------------------------------
-
-    def _handle_kuzu_index(self, args: dict) -> dict:
-        if _kuzu_store_factory is None:
-            return {"error": 'KùzuDB not available; add kuzu>=0.7.0 to pyproject.toml'}
-        store = _kuzu_store_factory()
-        if not store.available():
-            return {"error": 'KùzuDB not installed; add kuzu>=0.7.0 to pyproject.toml'}
-        store.ensure_schema()
-
-        stores_indexed = 0
-        deployments_indexed = 0
-        schemas_indexed = 0
-
-        # Index deployments first (referenced by stores)
-        raw_deployments = parse_json_arg(args.get("deployments", "[]"), [])
-        if isinstance(raw_deployments, list):
-            for d in raw_deployments:
-                if not isinstance(d, dict):
-                    continue
-                deployment_id = str(d.get("deploymentId", "")).strip()
-                if not deployment_id:
-                    continue
-                store.upsert_deployment(
-                    deployment_id,
-                    str(d.get("modelName", "")),
-                    str(d.get("resourceGroup", "default")),
-                    str(d.get("status", "unknown")),
-                )
-                deployments_indexed += 1
-
-        # Index schemas
-        raw_schemas = parse_json_arg(args.get("schemas", "[]"), [])
-        if isinstance(raw_schemas, list):
-            for h in raw_schemas:
-                if not isinstance(h, dict):
-                    continue
-                schema_id = str(h.get("schemaId", "")).strip()
-                if not schema_id:
-                    continue
-                store.upsert_schema(
-                    schema_id,
-                    str(h.get("schemaName", "")),
-                    str(h.get("classification", "internal")),
-                )
-                schemas_indexed += 1
-                related = str(h.get("relatedSchema", "")).strip()
-                if related:
-                    store.link_schemas(schema_id, related)
-
-        # Index vector stores + links
-        raw_stores = parse_json_arg(args.get("vector_stores", "[]"), [])
-        if isinstance(raw_stores, list):
-            for s in raw_stores:
-                if not isinstance(s, dict):
-                    continue
-                store_id = str(s.get("storeId", "")).strip()
-                if not store_id:
-                    continue
-                store.upsert_vector_store(
-                    store_id,
-                    str(s.get("tableName", "")),
-                    str(s.get("embeddingModel", "")),
-                    str(s.get("schema", "")),
-                )
-                stores_indexed += 1
-                uses_dep = str(s.get("usesDeployment", "")).strip()
-                if uses_dep:
-                    store.link_store_deployment(store_id, uses_dep)
-                lives_in = str(s.get("livesIn", "")).strip()
-                if lives_in:
-                    store.link_store_schema(store_id, lives_in)
-
-        return {"stores_indexed": stores_indexed, "deployments_indexed": deployments_indexed, "schemas_indexed": schemas_indexed}
-
-    def _handle_kuzu_query(self, args: dict) -> dict:
-        cypher = str(args.get("cypher", "") or "").strip()
-        if not cypher:
-            return {"error": "cypher is required"}
-        # Only allow MATCH, RETURN, WITH, UNWIND, OPTIONAL, CALL (read-only) at any position.
-        # Reject any write keyword anywhere in the query to prevent subquery/UNION bypass.
-        import re
-        _WRITE_KEYWORDS = re.compile(r'\b(CREATE|MERGE|DELETE|DETACH|SET|REMOVE|DROP|ALTER)\b', re.IGNORECASE)
-        if _WRITE_KEYWORDS.search(cypher):
-            return {"error": "Write Cypher statements are not permitted via this tool"}
-        if _kuzu_store_factory is None:
-            return {"error": 'KùzuDB not available; add kuzu>=0.7.0 to pyproject.toml'}
-        store = _kuzu_store_factory()
-        if not store.available():
-            return {"error": 'KùzuDB not installed; add kuzu>=0.7.0 to pyproject.toml'}
-        params = parse_json_arg(args.get("params", "{}"), {})
-        if not isinstance(params, dict):
-            params = {}
-        rows = store.run_query(cypher, params)
-        return {"rows": rows, "rowCount": len(rows)}
-
     def handle_request(self, request: MCPRequest) -> MCPResponse:
         method = request.method
         params = request.params
@@ -1242,8 +1059,6 @@ class MCPServer:
                     "langchain_split_text": self._handle_langchain_split_text,
                     "rerank_results": self._handle_rerank_results,
                     "mangle_query": self._handle_mangle_query,
-                    "kuzu_index": self._handle_kuzu_index,
-                    "kuzu_query": self._handle_kuzu_query,
                 }
                 handler = handlers.get(tool_name)
                 if not handler:
@@ -1379,7 +1194,7 @@ Server: http://localhost:{port}
 Tools: langchain_chat, langchain_vector_store, langchain_add_documents,
        langchain_similarity_search, langchain_rag_chain, langchain_embeddings,
        langchain_load_documents, langchain_split_text, rerank_results,
-       mangle_query, kuzu_index, kuzu_query
+       mangle_query
 
 Resources: langchain://vectorstores, langchain://chains, mangle://facts
 """)

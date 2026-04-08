@@ -75,7 +75,7 @@ export const NAV_LINK_DATA: NavLinkDatum[] = [
     subtitleKey: 'HOME_CARD_FORMS_SUBTITLE',
     descriptionKey: 'HOME_CARD_FORMS_DESC',
     buttonKey: 'HOME_CARD_FORMS_BTN',
-    showInShellbar: true,
+    showInShellbar: false,
     showOnHome: true,
   },
   {
@@ -119,7 +119,7 @@ export const NAV_LINK_DATA: NavLinkDatum[] = [
     subtitleKey: 'HOME_CARD_COMPONENTS_SUBTITLE',
     descriptionKey: 'HOME_CARD_COMPONENTS_DESC',
     buttonKey: 'HOME_CARD_COMPONENTS_BTN',
-    showInShellbar: true,
+    showInShellbar: false,
     showOnHome: true,
   },
   {
@@ -130,7 +130,7 @@ export const NAV_LINK_DATA: NavLinkDatum[] = [
     subtitleKey: 'HOME_CARD_MCP_SUBTITLE',
     descriptionKey: 'HOME_CARD_MCP_DESC',
     buttonKey: 'HOME_CARD_MCP_BTN',
-    showInShellbar: true,
+    showInShellbar: false,
     showOnHome: true,
   },
   {
@@ -163,8 +163,8 @@ export const NAV_LINK_DATA: NavLinkDatum[] = [
     subtitleKey: 'HOME_CARD_WORKSPACE_SUBTITLE',
     descriptionKey: 'HOME_CARD_WORKSPACE_DESC',
     buttonKey: 'HOME_CARD_WORKSPACE_BTN',
-    showInShellbar: true,
-    showOnHome: true,
+    showInShellbar: false,
+    showOnHome: false,
   },
 ];
 

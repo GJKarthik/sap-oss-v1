@@ -265,12 +265,21 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.appStore.setPipelineState(s);
       this.appendLine(msg.text || '');
       this.updateStagesFromState(s);
+      if (s === 'completed') {
+        this.toast.success(msg.text || 'Pipeline finished');
+      } else if (s === 'error') {
+        this.toast.error(msg.text || 'Pipeline failed');
+      }
     }
   }
 
   private parseLine(text: string): LogLine {
-    if (text.includes('✅') || text.includes('success')) return { text, kind: 'success' };
-    if (text.includes('❌') || text.includes('error')) return { text, kind: 'error' };
+    const trimmed = text.trim();
+    const lower = trimmed.toLowerCase();
+    if (trimmed.startsWith('#') || trimmed.startsWith('--')) return { text, kind: 'dim' };
+    if (trimmed.includes('✅') || lower.includes('success')) return { text, kind: 'success' };
+    if (trimmed.includes('❌') || trimmed.includes('💥') || lower.includes('error') || lower.includes('fail')) return { text, kind: 'error' };
+    if (trimmed.includes('⚠') || lower.includes('warn')) return { text, kind: 'warn' };
     return { text, kind: 'info' };
   }
 
@@ -289,14 +298,37 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private updateStagesFromState(state: PipelineState) {
-    if (state === 'completed') this.stages.update(stages => stages.map(s => ({ ...s, status: 'done' })));
+    if (state === 'idle') {
+      this.stages.update((stages) => stages.map((stage) => ({ ...stage, status: 'idle' })));
+      return;
+    }
+
+    if (state === 'running') {
+      this.stages.update((stages) => stages.map((stage, index) => ({ ...stage, status: index === 0 ? 'running' : 'idle' })));
+      return;
+    }
+
+    if (state === 'completed') {
+      this.stages.update((stages) => stages.map((stage) => ({ ...stage, status: 'done' })));
+      return;
+    }
+
+    this.stages.update((stages) => stages.map((stage) => ({ ...stage, status: stage.status === 'running' ? 'error' : stage.status })));
   }
 
   startPipeline() {
     this.starting.set(true);
     this.http.post(`${environment.apiBaseUrl}/pipeline/start`, {}).subscribe({
-      next: () => { this.appStore.setPipelineState('running'); this.starting.set(false); },
-      error: () => this.starting.set(false)
+      next: () => {
+        this.appStore.setPipelineState('running');
+        this.updateStagesFromState('running');
+        this.starting.set(false);
+        this.toast.success('Pipeline started');
+      },
+      error: () => {
+        this.starting.set(false);
+        this.toast.error('Failed to start pipeline');
+      }
     });
   }
 

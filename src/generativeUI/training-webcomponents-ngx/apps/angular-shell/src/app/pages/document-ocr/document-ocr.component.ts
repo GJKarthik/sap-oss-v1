@@ -303,8 +303,8 @@ export class DocumentOcrComponent {
           s.processing = false;
           s.activePage = 1;
         });
-        if (res.metadata?.['demo_mode']) {
-          this.toast.info(this.i18n.t('ocr.demoMode'));
+        if (res.metadata?.['preview_mode']) {
+          this.toast.info(this.i18n.t('ocr.previewMode'));
         }
       },
       error: () => {

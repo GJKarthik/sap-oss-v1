@@ -25,6 +25,11 @@ dataProduct:
     defaultBackend: "vllm"
     auditLevel: "full"
 
+  x-team-access:
+    defaultAccess: "read"
+    countryRestrictions: []          # shared infrastructure — all countries
+    domainRestrictions: []           # shared infrastructure — all domains
+
   # --- Lineage Schema ---
   schema:
     source: "data/2_stagingschema.csv"

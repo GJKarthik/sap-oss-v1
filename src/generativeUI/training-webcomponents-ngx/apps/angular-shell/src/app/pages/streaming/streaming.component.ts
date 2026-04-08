@@ -20,9 +20,8 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
         <app-cross-app-link
           targetApp="training"
           targetRoute="/rag-studio"
-          targetLabel="RAG Studio"
-          icon="area-chart"
-          relationLabel="Related:">
+          targetLabelKey="nav.ragStudio"
+          icon="area-chart">
         </app-cross-app-link>
 
         <div slot="endContent" class="header-actions">

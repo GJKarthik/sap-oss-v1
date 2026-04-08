@@ -25,6 +25,65 @@ dataProduct:
     defaultBackend: "vllm"
     auditLevel: "full"
 
+  x-team-access:
+    defaultAccess: "read"
+    countryRestrictions: []          # empty = all countries
+    domainRestrictions: ["treasury"]
+
+  x-country-views:
+    AE:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "UNITED ARAB EMIRATES"
+      promptAppend: |
+        This user is in the UAE office. Default to UAE positions.
+        Use CBUAE regulatory terminology where applicable.
+        Support bilingual Arabic/English responses.
+      additionalGlossary:
+        - { source: "مخاطر", target: "RWA", lang: "ar→en" }
+        - { source: "القيمة السوقية", target: "Mark-to-Market", lang: "ar→en" }
+    SG:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "SINGAPORE"
+      promptAppend: |
+        This user is in the Singapore office. Default to SG positions.
+        Use MAS regulatory terminology where applicable.
+    GB:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "UNITED KINGDOM"
+      promptAppend: |
+        This user is in the UK office. Default to UK positions.
+        Use PRA/FCA regulatory terminology where applicable.
+    US:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "UNITED STATES OF AMERICA"
+      promptAppend: |
+        This user is in the US office. Default to US positions.
+        Use SEC/OCC regulatory terminology where applicable.
+    HK:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "HONG KONG"
+      promptAppend: |
+        This user is in the Hong Kong office. Default to HK positions.
+        Use HKMA regulatory terminology where applicable.
+    CN:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "CHINA"
+      promptAppend: |
+        This user is in the China office. Default to China positions.
+        Use PBOC/CBIRC regulatory terminology where applicable.
+    IN:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "INDIA"
+      promptAppend: |
+        This user is in the India office. Default to India positions.
+        Use RBI regulatory terminology where applicable.
+    TW:
+      defaultFilters:
+        GLB_FINAL_COUNTRY_NAME: "TAIWAN"
+      promptAppend: |
+        This user is in the Taiwan office. Default to Taiwan positions.
+        Use FSC regulatory terminology where applicable.
+
   x-prompting-policy:
     systemPrompt: |
       You are a Treasury analytics assistant for HANA. You help users query

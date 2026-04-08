@@ -98,47 +98,6 @@ class TestMCPServerRerankHandler(unittest.TestCase):
         self.assertIn("reranked", result)
         self.assertIsInstance(result["documents"], list)
 
-
-class TestMCPServerCypherGuard(unittest.TestCase):
-    def setUp(self):
-        self.server = MCPServer()
-
-    def test_rejects_create_at_start(self):
-        result = self.server._handle_kuzu_query({"cypher": "CREATE (n:Test)"})
-        self.assertIn("error", result)
-        self.assertIn("not permitted", result["error"])
-
-    def test_rejects_create_in_subquery(self):
-        """Regression: old guard only checked startsWith."""
-        result = self.server._handle_kuzu_query({"cypher": "MATCH (n) WITH n CREATE (m:Evil)"})
-        self.assertIn("error", result)
-
-    def test_rejects_delete_anywhere(self):
-        result = self.server._handle_kuzu_query({"cypher": "MATCH (n) DELETE n"})
-        self.assertIn("error", result)
-
-    def test_rejects_merge(self):
-        result = self.server._handle_kuzu_query({"cypher": "MERGE (n:Test {id: 1})"})
-        self.assertIn("error", result)
-
-    def test_rejects_set(self):
-        result = self.server._handle_kuzu_query({"cypher": "MATCH (n) SET n.name = 'evil'"})
-        self.assertIn("error", result)
-
-    def test_rejects_drop(self):
-        result = self.server._handle_kuzu_query({"cypher": "DROP TABLE test"})
-        self.assertIn("error", result)
-
-    def test_rejects_detach_delete(self):
-        result = self.server._handle_kuzu_query({"cypher": "MATCH (n) DETACH DELETE n"})
-        self.assertIn("error", result)
-
-    def test_rejects_empty_cypher(self):
-        result = self.server._handle_kuzu_query({"cypher": ""})
-        self.assertIn("error", result)
-        self.assertIn("required", result["error"])
-
-
 class TestMCPServerPathTraversal(unittest.TestCase):
     def setUp(self):
         self.server = MCPServer()

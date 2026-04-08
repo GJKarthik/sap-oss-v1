@@ -12,7 +12,6 @@ import { createServer } from 'http';
 import { URL } from 'url';
 import * as https from 'https';
 import * as http from 'http';
-import { getKuzuStore } from './kuzu-store';
 
 const MAX_JSON_BODY_BYTES = 1024 * 1024;
 const MAX_COMPONENTS_PER_REQUEST = 64;
@@ -360,50 +359,6 @@ class MCPServer {
       },
     });
 
-    // Graph-RAG: index component definitions into KùzuDB
-    this.tools.set("kuzu_index", {
-      name: "kuzu_index",
-      description:
-        "Index UI5 component definitions into the embedded KùzuDB graph database. " +
-        "Stores component nodes, Angular module membership (BELONGS_TO), named slots (HAS_SLOT), " +
-        "and optional co-usage relationships (CO_USED_WITH). " +
-        "Use before generate_angular_template to enable graph-context enrichment.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          components: {
-            type: "string",
-            description:
-              "JSON array of component definitions: " +
-              "[{tag_name, angular_module, npm_module?, slots?: string[], co_used_with?: string[]}]",
-          },
-        },
-        required: ["components"],
-      },
-    });
-
-    // Graph-RAG: run a read-only Cypher query against KùzuDB
-    this.tools.set("kuzu_query", {
-      name: "kuzu_query",
-      description:
-        "Execute a read-only Cypher query against the embedded KùzuDB graph database " +
-        "and return matching rows as JSON. " +
-        "Use for co-usage lookup, module discovery, slot traversal, and relationship analysis.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          cypher: {
-            type: "string",
-            description: "Cypher query string (MATCH … RETURN only)",
-          },
-          params: {
-            type: "string",
-            description: "Query parameters as JSON object (optional)",
-          },
-        },
-        required: ["cypher"],
-      },
-    });
   }
 
   private registerResources(): void {
@@ -474,107 +429,8 @@ class MCPServer {
       });
     }
 
-    // M4 — attach graph context when KùzuDB has data
-    const store = getKuzuStore();
-    let graphContext: Record<string, unknown[]> | undefined;
-    if (store.available()) {
-      graphContext = {};
-      for (const tag of components) {
-        try {
-          const ctx = store.getComponentContext(tag);
-          // getComponentContext is async; stash the promise value synchronously via a
-          // best-effort in-memory snapshot (populated after kuzu_index calls)
-          (ctx as unknown as Promise<unknown[]>).then((entries) => {
-            if (graphContext && (entries as unknown[]).length > 0) {
-              graphContext[tag] = entries as unknown[];
-            }
-          }).catch(() => { /* silent degradation */ });
-        } catch { /* silent degradation */ }
-      }
-    }
-
     const result: Record<string, unknown> = { template, components, layout };
-    if (graphContext && Object.keys(graphContext).length > 0) {
-      result['graph_context'] = graphContext;
-    }
     return result;
-  }
-
-  private async handleKuzuIndex(args: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const raw = args.components;
-    if (!raw) return { error: 'components is required' };
-
-    let defs: unknown[];
-    try {
-      defs = Array.isArray(raw) ? raw : (JSON.parse(String(raw)) as unknown[]);
-      if (!Array.isArray(defs)) return { error: 'components must be a JSON array' };
-    } catch {
-      return { error: 'components must be a valid JSON array' };
-    }
-
-    const store = getKuzuStore();
-    if (!store.available()) {
-      return { error: "KùzuDB not installed; add 'kuzu' to mcp-server/package.json dependencies" };
-    }
-    await store.ensureSchema();
-
-    let componentsIndexed = 0;
-    let slotsIndexed = 0;
-    let coUsageIndexed = 0;
-
-    for (const def of defs) {
-      if (!def || typeof def !== 'object') continue;
-      const d = def as Record<string, unknown>;
-      const tagName = String(d['tag_name'] ?? '').trim();
-      const angularModule = String(d['angular_module'] ?? '').trim();
-      if (!tagName || !angularModule) continue;
-
-      const npmModule = String(d['npm_module'] ?? '');
-      const slots: string[] = Array.isArray(d['slots'])
-        ? (d['slots'] as unknown[]).filter((s): s is string => typeof s === 'string')
-        : [];
-
-      await store.upsertComponent(tagName, angularModule, npmModule, slots);
-      componentsIndexed++;
-      slotsIndexed += slots.length;
-
-      const coUsed: string[] = Array.isArray(d['co_used_with'])
-        ? (d['co_used_with'] as unknown[]).filter((s): s is string => typeof s === 'string')
-        : [];
-      for (const peer of coUsed) {
-        await store.linkCoUsage(tagName, peer);
-        coUsageIndexed++;
-      }
-    }
-
-    void metrics.record('tool.kuzu_index', 1, { components: componentsIndexed });
-    return { components_indexed: componentsIndexed, slots_indexed: slotsIndexed, co_usage_indexed: coUsageIndexed };
-  }
-
-  private async handleKuzuQuery(args: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const cypher = String(args.cypher ?? '').trim();
-    if (!cypher) return { error: 'cypher is required' };
-
-    const upperCypher = cypher.toUpperCase().trimStart();
-    for (const disallowed of ['CREATE ', 'MERGE ', 'DELETE ', 'SET ', 'REMOVE ', 'DROP ']) {
-      if (upperCypher.startsWith(disallowed)) {
-        return { error: 'Write Cypher statements are not permitted via this tool' };
-      }
-    }
-
-    let params: Record<string, unknown> = {};
-    if (args.params) {
-      try { params = JSON.parse(String(args.params)) as Record<string, unknown>; } catch { /* ignore */ }
-    }
-
-    const store = getKuzuStore();
-    if (!store.available()) {
-      return { error: "KùzuDB not installed; add 'kuzu' to mcp-server/package.json dependencies" };
-    }
-
-    const rows = await store.runQuery(cypher, params);
-    void metrics.record('tool.kuzu_query', 1, { row_count: rows.length });
-    return { rows, row_count: rows.length };
   }
 
   private handleGenerateModuleImports(args: Record<string, unknown>): Record<string, unknown> {
@@ -692,21 +548,9 @@ class MCPServer {
           search_components: (a) => this.handleSearchComponents(a),
           validate_template: (a) => this.handleValidateTemplate(a),
         };
-        // Async tools: mangle_query, kuzu_index, kuzu_query
+        // Async tools: mangle_query
         if (toolName === 'mangle_query') {
           return this.handleMangleQuery(args).then((result) => {
-            void metrics.record(`tool.${toolName}`, 1, { tool: toolName, ts: Date.now() });
-            return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } };
-          }).catch((e: unknown) => ({ jsonrpc: "2.0", id, error: { code: -32603, message: String(e) } }));
-        }
-        if (toolName === 'kuzu_index') {
-          return this.handleKuzuIndex(args).then((result) => {
-            void metrics.record(`tool.${toolName}`, 1, { tool: toolName, ts: Date.now() });
-            return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } };
-          }).catch((e: unknown) => ({ jsonrpc: "2.0", id, error: { code: -32603, message: String(e) } }));
-        }
-        if (toolName === 'kuzu_query') {
-          return this.handleKuzuQuery(args).then((result) => {
             void metrics.record(`tool.${toolName}`, 1, { tool: toolName, ts: Date.now() });
             return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } };
           }).catch((e: unknown) => ({ jsonrpc: "2.0", id, error: { code: -32603, message: String(e) } }));

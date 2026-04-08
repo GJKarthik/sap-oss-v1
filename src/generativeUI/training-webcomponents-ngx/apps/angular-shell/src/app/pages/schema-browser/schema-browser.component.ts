@@ -24,9 +24,8 @@ import { I18nService } from '../../services/i18n.service';
       <app-cross-app-link
         targetApp="training"
         targetRoute="/data-quality"
-        targetLabel="Data Quality"
-        icon="quality-issue"
-        relationLabel="Related:">
+        targetLabelKey="nav.dataQuality"
+        icon="quality-issue">
       </app-cross-app-link>
 
       <div class="sb-content" role="main" aria-label="Schema Browser">

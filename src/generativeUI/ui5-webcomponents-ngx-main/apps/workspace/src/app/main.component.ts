@@ -16,8 +16,8 @@ interface HomeJourney {
   cards: NavLinkDatum[];
 }
 
-const LEARN_PATHS = ['/forms', '/components', '/mcp'];
-const USE_PATHS = ['/joule', '/generative', '/ocr'];
+const EXPLORE_PATHS = ['/forms', '/components', '/mcp'];
+const WORK_PATHS = ['/joule', '/generative', '/ocr'];
 const SUPPORTED_LANGUAGE_COUNT = 7;
 const LIVE_SERVICE_COUNT = 3;
 
@@ -38,7 +38,7 @@ export class MainComponent {
 
   get homeStats(): HomeStat[] {
     return [
-      { value: String(this.homeCards.length), labelKey: 'HOME_STAT_DEMOS' },
+      { value: String(this.homeCards.length), labelKey: 'HOME_STAT_AREAS' },
       { value: String(LIVE_SERVICE_COUNT), labelKey: 'HOME_STAT_SERVICES' },
       { value: String(SUPPORTED_LANGUAGE_COUNT), labelKey: 'HOME_STAT_LANGUAGES' },
     ];
@@ -50,12 +50,12 @@ export class MainComponent {
       {
         labelKey: 'HOME_JOURNEY_LEARN_LABEL',
         bodyKey: 'HOME_JOURNEY_LEARN_BODY',
-        cards: this.cardsForPaths(cards, LEARN_PATHS),
+        cards: this.cardsForPaths(cards, EXPLORE_PATHS),
       },
       {
         labelKey: 'HOME_JOURNEY_USE_LABEL',
         bodyKey: 'HOME_JOURNEY_USE_BODY',
-        cards: this.cardsForPaths(cards, USE_PATHS),
+        cards: this.cardsForPaths(cards, WORK_PATHS),
       },
     ].filter((journey) => journey.cards.length > 0);
   }
@@ -70,6 +70,10 @@ export class MainComponent {
 
   trackByPath(_index: number, card: NavLinkDatum): string {
     return card.path;
+  }
+
+  cardDescriptionId(index: number): string {
+    return `home-card-desc-${index}`;
   }
 
   private cardsForPaths(cards: NavLinkDatum[], paths: string[]): NavLinkDatum[] {

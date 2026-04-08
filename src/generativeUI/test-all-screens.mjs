@@ -9,7 +9,7 @@ const TRAINING_BASE = 'http://localhost:53175';
 const UI5_BASE = 'http://localhost:4202';
 
 const TRAINING_ROUTES = [
-  '/dashboard', '/pipeline', '/model-optimizer', '/hippocpp',
+  '/dashboard', '/pipeline', '/model-optimizer', '/hana-explorer',
   '/data-explorer', '/data-cleaning', '/chat', '/compare',
   '/registry', '/document-ocr', '/semantic-search', '/analytics',
   '/glossary-manager', '/arabic-wizard',

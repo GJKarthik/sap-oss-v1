@@ -207,8 +207,8 @@ export class ArabicWizardComponent implements OnDestroy {
         this.progress.set(100);
         this.ocrResult.set(result);
         this.isProcessing.set(false);
-        if (result.metadata?.['demo_mode']) {
-          this.toast.info(this.i18n.t('ocr.demoMode'));
+        if (result.metadata?.['preview_mode']) {
+          this.toast.info(this.i18n.t('ocr.previewMode'));
         }
       },
       error: () => {

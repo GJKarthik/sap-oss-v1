@@ -8,12 +8,12 @@ describe('Joule route navigation', () => {
     cy.visit('/');
   });
 
-  it('renders the Joule AI button on the main page', () => {
-    cy.get('ui5-button').contains('Joule AI').should('be.visible');
+  it('renders the Joule entry point on the main page', () => {
+    cy.get('[data-testid="home-open-joule"]').should('be.visible');
   });
 
-  it('navigates to /joule when the Joule AI button is clicked', () => {
-    cy.get('ui5-button').contains('Joule AI').click();
+  it('navigates to /joule when the home entry point is clicked', () => {
+    cy.get('[data-testid="home-open-joule"]').click();
     cy.url().should('include', '/joule');
   });
 

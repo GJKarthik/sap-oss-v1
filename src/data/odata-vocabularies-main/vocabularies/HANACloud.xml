@@ -203,7 +203,7 @@ Used with Analytics.RecursiveHierarchy for full hierarchy support.</String>
       <Term Name="DeltaTracking" Type="HANACloud.DeltaTrackingType" AppliesTo="EntitySet EntityType">
         <Annotation Term="Core.Description" String="Change data capture configuration for HANA sync"/>
         <Annotation Term="Core.LongDescription">
-          <String>Configures how changes are tracked for delta loads from HANA to Elasticsearch.
+          <String>Configures how changes are tracked for delta loads within HANA Cloud.
 Used by the BatchETL sync pipeline in mangle-query-service.</String>
         </Annotation>
       </Term>

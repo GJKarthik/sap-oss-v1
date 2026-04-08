@@ -59,7 +59,7 @@ The platform comprises three architectural tiers, mapped to SAP-OSS directories:
 │  src/intelligence/vllm-main/        (nLocalModels - LLM Inference)│
 │  src/data/langchain-integration-*/  (nDeductiveDatabase)        │
 │  src/data/ai-core-streaming/        (Streaming Service)         │
-│  src/intelligence/elasticsearch-*   (Search Service)            │
+│  src/data/odata-vocabularies-main/  (HANA Vector Store)         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService } from '../../services/i18n.service';
 import { GlossaryService } from '../../services/glossary.service';
-import { TranslationMemoryService, TMEntry, TMBackendMeta } from '../../services/translation-memory.service';
+import { TranslationMemoryService, TMEntry, TMBackendMeta, TMScopeLevel } from '../../services/translation-memory.service';
+import { TeamContextService } from '../../services/team-context.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -19,6 +20,7 @@ export class GlossaryManagerComponent implements OnInit {
   readonly i18n = inject(I18nService);
   readonly glossary = inject(GlossaryService);
   private readonly tm = inject(TranslationMemoryService);
+  readonly teamCtx = inject(TeamContextService);
   private readonly toast = inject(ToastService);
 
   readonly tmEntries = signal<TMEntry[]>([]);
@@ -27,6 +29,7 @@ export class GlossaryManagerComponent implements OnInit {
   readonly tmBackend = signal<TMBackendMeta['backend']>('sqlite');
   searchQuery = '';
   pairTypeFilter = signal<string>('all');
+  scopeFilter = signal<string>('all');
 
   newEntry: TMEntry = {
     source_text: '',
@@ -44,7 +47,11 @@ export class GlossaryManagerComponent implements OnInit {
 
   loadTM(): void {
     this.isLoading.set(true);
-    this.tm.list().subscribe({
+    const teamId = this.teamCtx.teamId();
+    const source$ = teamId && teamId !== 'global'
+      ? this.tm.listForTeam(teamId)
+      : this.tm.list();
+    source$.subscribe({
       next: (entries) => {
         this.tmEntries.set(entries);
         this.isLoading.set(false);
@@ -66,7 +73,13 @@ export class GlossaryManagerComponent implements OnInit {
   saveNewEntry(): void {
     if (!this.newEntry.source_text || !this.newEntry.target_text) return;
 
-    this.tm.save(this.newEntry).subscribe({
+    // Inherit current team context for new entries
+    const entry: TMEntry = {
+      ...this.newEntry,
+      team_id: this.teamCtx.teamId(),
+      scope_level: this.teamCtx.scopeLevel() as TMScopeLevel,
+    };
+    this.tm.save(entry).subscribe({
       next: () => {
         this.toast.success(this.i18n.t('chat.tmSaved'));
         this.showAddForm.set(false);
@@ -124,6 +137,10 @@ export class GlossaryManagerComponent implements OnInit {
     if (pt !== 'all') {
       entries = entries.filter(e => (e.pair_type || 'translation') === pt);
     }
+    const sf = this.scopeFilter();
+    if (sf !== 'all') {
+      entries = entries.filter(e => (e.scope_level || 'global') === sf);
+    }
     if (!this.searchQuery) return entries;
     const q = this.searchQuery.toLowerCase();
     return entries.filter(e =>
@@ -131,6 +148,19 @@ export class GlossaryManagerComponent implements OnInit {
       e.target_text.toLowerCase().includes(q) ||
       (e.category?.toLowerCase().includes(q))
     );
+  }
+
+  /** Label for the scope level badge shown on each entry. */
+  scopeLabel(entry: TMEntry): string {
+    return entry.scope_level || 'global';
+  }
+
+  /** Whether an entry is inherited from a parent scope (read-only in current context). */
+  isInherited(entry: TMEntry): boolean {
+    const entryScope = entry.scope_level || 'global';
+    const currentScope = this.teamCtx.scopeLevel();
+    const order = ['global', 'domain', 'country', 'team'];
+    return order.indexOf(entryScope) < order.indexOf(currentScope);
   }
 
   exportJson(): void {

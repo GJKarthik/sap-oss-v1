@@ -132,7 +132,6 @@ Edit `.env` and fill in the values for the services you want to use:
 | `OPENAI_INTERNAL_TOKEN` | Internal token for `/v1/hana/*` routes | OpenAI-compat server |
 | `OPENAI_OCR_INTERNAL_TOKEN` | Internal token for `/v1/ocr/*` routes (`X-OCR-Token`) | OCR extraction routes |
 | `OPENAI_OCR_MAX_UPLOAD_BYTES` / `OPENAI_OCR_ALLOWED_MIME_TYPES` | OCR upload size and MIME guardrails | OCR extraction routes |
-| `KUZU_DB_PATH` | KùzuDB directory path (`:memory:` for dev) | Graph-RAG features |
 
 > **Note:** All services degrade gracefully when credentials are not set — the app starts and in-memory fallbacks are used.
 
@@ -218,7 +217,7 @@ yarn harness:ci
 
 Reports are written to `artifacts/harness/workspace-report.json` and `artifacts/harness/workspace-report.md`.
 
-### 7. Live Demo Preflight and E2E
+### 7. Live Workspace Readiness and E2E
 
 For server-hosted deployments, operators can run readiness checks directly in the UI from the global **Service Health** panel (Shell header area) using the **Check Now** action.
 
@@ -271,7 +270,7 @@ libs/
   genui-collab/        Real-time CRDT-backed collaboration (WebSocket)
   openai-server/       OpenAI-compatible proxy → SAP AI Core + HANA Vector
 
-mcp-server/            MCP server — Express + Mangle reasoning, KùzuDB graph-RAG
+mcp-server/            MCP server — Express + Mangle reasoning
 ```
 
 ---

@@ -5,6 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
@@ -24,7 +25,7 @@ interface RegistryEntry {
 @Component({
   selector: 'app-registry',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -132,7 +133,7 @@ interface RegistryEntry {
                   <td>
                     <div class="actions">
                       @if (m.deployed) {
-                        <a [href]="'/training/compare'" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
+                        <a [routerLink]="['/compare']" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
                       }
                       @if (m.status === 'completed' && !m.deployed) {
                         <ui5-button design="Emphasized" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</ui5-button>

@@ -90,7 +90,7 @@ export interface RAGResult {
   answer: string;
   status: string;
   source?: string;
-  graphContext?: unknown;
+  relationshipContext?: unknown;
 }
 
 export interface DashboardStats {
@@ -502,13 +502,13 @@ export class McpService {
   }
 
   // ===========================================================================
-  // KùzuDB Graph
+  // Lineage
   // ===========================================================================
 
-  kuzuQuery(cypher: string, params?: Record<string, unknown>): Observable<{ rows: unknown[]; rowCount: number }> {
+  runLineageQuery(query: string, params?: Record<string, unknown>): Observable<{ rows: unknown[]; rowCount: number }> {
     return this.withRequestTimeout(
       this.http.post<{ rows: unknown[]; row_count: number }>(`${environment.apiBaseUrl}/lineage/query`, {
-        cypher,
+        query,
         params,
       })
     ).pipe(
@@ -539,7 +539,7 @@ export class McpService {
     );
   }
 
-  kuzuIndex(entities: {
+  syncLineageIndex(entities: {
     vector_stores?: unknown[];
     deployments?: unknown[];
     schemas?: unknown[];

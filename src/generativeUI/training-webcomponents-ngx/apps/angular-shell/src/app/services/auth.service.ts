@@ -47,6 +47,33 @@ export class AuthService {
   }
 
   /**
+   * Best-effort user identifier derived from the auth token payload.
+   * Falls back to null when the token is absent or not a JWT.
+   */
+  getUserId(): string | null {
+    const token = this._token();
+    if (!token) {
+      return null;
+    }
+
+    const [, payload] = token.split('.');
+    if (!payload) {
+      return null;
+    }
+
+    try {
+      const claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
+        sub?: string;
+        user_id?: string;
+        email?: string;
+      };
+      return claims.sub || claims.user_id || claims.email || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Clears the authentication token.
    */
   clearToken(): void {

@@ -15,15 +15,19 @@ This creates a comprehensive mapping of:
 import json
 import re
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Any
 from dataclasses import dataclass, field
 from collections import defaultdict
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from pipeline.team_context import TeamContext, GLOBAL_CONTEXT
+
 # Paths relative to project root
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-ES_MAPPINGS_PATH = PROJECT_ROOT / "src/intelligence/elasticsearch-main/es_mappings"
-INTELLIGENCE_PATH = PROJECT_ROOT / "src/intelligence/elasticsearch-main/intelligence"
+ARCHIVE_MAPPINGS_PATH = PROJECT_ROOT / "archive/elasticsearch-main/es_mappings"
+ARCHIVE_INTELLIGENCE_PATH = PROJECT_ROOT / "archive/elasticsearch-main/intelligence"
 
 
 @dataclass
@@ -174,14 +178,23 @@ class SemanticAliasExtractor:
         ),
     ]
     
-    def __init__(self):
+    def __init__(self, team_context: Optional[TeamContext] = None):
+        self.team_context = team_context or GLOBAL_CONTEXT
         self.columns: Dict[str, ColumnAlias] = {}
         self.alias_to_column: Dict[str, List[str]] = defaultdict(list)
-        self.table_mappings = self.TABLE_MAPPINGS.copy()
+        
+        # Filter table mappings by team domain when set
+        if self.team_context.domain:
+            self.table_mappings = [
+                m for m in self.TABLE_MAPPINGS
+                if m.domain == self.team_context.domain
+            ] or self.TABLE_MAPPINGS.copy()
+        else:
+            self.table_mappings = self.TABLE_MAPPINGS.copy()
         
     def load_entity_metadata(self, metadata_path: Optional[Path] = None) -> int:
         """Load aliases from entity metadata indices."""
-        path = metadata_path or (ES_MAPPINGS_PATH / "entity_metadata_indices.json")
+        path = metadata_path or (ARCHIVE_MAPPINGS_PATH / "entity_metadata_indices.json")
         
         if not path.exists():
             print(f"Warning: Entity metadata not found at {path}")
@@ -194,8 +207,8 @@ class SemanticAliasExtractor:
             
             # Extract from entity_measures
             measures_schema = data.get("indices", {}).get("entity_measures", {})
-            # In actual use, we'd query Elasticsearch for documents
-            # For now, we use the schema to understand structure
+            # In actual use, we'd query HANA vector store for documents
+            # For now, we use the archived schema to understand structure
             
             # Extract from entity_dimensions
             dims_schema = data.get("indices", {}).get("entity_dimensions", {})
@@ -416,7 +429,16 @@ class SemanticAliasExtractor:
 
 def main():
     """Generate semantic alias training data."""
-    extractor = SemanticAliasExtractor()
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate semantic alias training data")
+    parser.add_argument("--team", type=str, default="", help="Team context (e.g. 'AE:treasury')")
+    args = parser.parse_args()
+    
+    team_ctx = TeamContext.from_cli(args.team) if args.team else None
+    extractor = SemanticAliasExtractor(team_context=team_ctx)
+    
+    if team_ctx and not team_ctx.is_global:
+        print(f"Team context: {team_ctx.team_id}")
     
     # Load all sources
     extractor.load_business_glossary()
@@ -424,6 +446,8 @@ def main():
     
     # Generate training data
     output_dir = Path(__file__).parent.parent / "data" / "semantic_aliases"
+    if team_ctx and not team_ctx.is_global:
+        output_dir = output_dir / team_ctx.team_id.replace(":", "_")
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Generate training examples

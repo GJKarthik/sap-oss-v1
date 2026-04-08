@@ -83,7 +83,7 @@ See `.github/workflows/ci-*.yml` for the secret reference pattern.
 
 ## 5. CI pipeline
 
-Each PR triggers `.github/workflows/ci-hippocpp-parity.yml` (adapt as needed):
+Each PR triggers the workspace CI workflow (adapt as needed):
 
 1. `npm ci`
 2. `npx nx run-many --target=lint --all`

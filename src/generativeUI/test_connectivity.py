@@ -13,9 +13,7 @@ DEPLOYMENT_ID_LLM = "d08cd08073c92a85"
 DEPLOYMENT_ID_EMBEDDING = "dc9b452a67bfcaa5"
 
 PAL_MCP_URL = "https://ai-core-pal.c-054c570.kyma.ondemand.com"
-ES_MCP_URL = "https://es-mcp.c-054c570.kyma.ondemand.com"
-# Using X-API-Key as a common variant if Authorization header fails for RPC
-ES_MCP_APIKEY = "7a6a727e33f799768ae3a3d54c5f3e84122d9302137314840396e7260e9df63f"
+HANA_MCP_URL = "http://localhost:9160"
 
 def get_token():
     response = requests.post(
@@ -112,9 +110,8 @@ if __name__ == "__main__":
         test_mcp_list("PAL MCP", PAL_MCP_URL, "None") # PAL doesn't need auth here
         print("")
         
-        es_auth = f"Apikey {ES_MCP_APIKEY}"
-        test_health("ES MCP", ES_MCP_URL, headers={"Authorization": es_auth})
-        test_mcp_list("ES MCP", ES_MCP_URL, es_auth)
+        test_health("HANA MCP", HANA_MCP_URL)
+        test_mcp_list("HANA MCP", HANA_MCP_URL, "None")
         
     except Exception as e:
         print(f"CRITICAL ERROR: {e}")

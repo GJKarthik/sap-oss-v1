@@ -137,3 +137,88 @@ class HanaClient:
         sql = f'INSERT INTO "{schema}"."{table}" ("QUESTION", "SQL_TEXT", "DOMAIN", "DIFFICULTY") VALUES (?, ?, ?, ?)'
         data = [(p["question"], p["sql"], p["domain"], p["difficulty"]) for p in pairs]
         return self.execute_many(sql, data)
+
+    # =========================================================================
+    # Team Context queries
+    # =========================================================================
+
+    def get_team_config(self, team_id: str) -> dict[str, Any] | None:
+        """Fetch a single team configuration row."""
+        rows = self.execute(
+            'SELECT "TEAM_ID", "COUNTRY", "DOMAIN", "DISPLAY_NAME", "LOCALE", "IS_ACTIVE" '
+            'FROM "FINSIGHT_CORE"."TEAM_CONFIG" WHERE "TEAM_ID" = ? AND "IS_ACTIVE" = TRUE',
+            (team_id,),
+        )
+        return rows[0] if rows else None
+
+    def list_team_configs(self) -> list[dict[str, Any]]:
+        """List all active team configurations."""
+        return self.execute(
+            'SELECT "TEAM_ID", "COUNTRY", "DOMAIN", "DISPLAY_NAME", "LOCALE" '
+            'FROM "FINSIGHT_CORE"."TEAM_CONFIG" WHERE "IS_ACTIVE" = TRUE '
+            'ORDER BY "COUNTRY", "DOMAIN"'
+        )
+
+    def get_team_glossary(self, scope_level: str, scope_key: str) -> list[dict[str, Any]]:
+        """Fetch approved glossary entries for a scope level and key."""
+        return self.execute(
+            'SELECT "ID", "SOURCE_TEXT", "TARGET_TEXT", "SOURCE_LANG", "TARGET_LANG", '
+            '"CATEGORY", "PAIR_TYPE", "SCOPE_LEVEL", "TEAM_ID", "IS_APPROVED" '
+            'FROM "FINSIGHT_CORE"."TEAM_GLOSSARY" '
+            'WHERE "SCOPE_LEVEL" = ? AND "TEAM_ID" = ? AND "IS_APPROVED" = TRUE',
+            (scope_level, scope_key),
+        )
+
+    def upsert_team_glossary_entry(
+        self,
+        entry_id: str,
+        team_id: str,
+        scope_level: str,
+        source_text: str,
+        target_text: str,
+        source_lang: str = "en",
+        target_lang: str = "ar",
+        category: str = "financial",
+        pair_type: str = "translation",
+        is_approved: bool = True,
+    ) -> int:
+        """Insert or update a team glossary entry."""
+        return self.execute_many(
+            'UPSERT "FINSIGHT_CORE"."TEAM_GLOSSARY" '
+            '("ID", "TEAM_ID", "SCOPE_LEVEL", "SOURCE_TEXT", "TARGET_TEXT", '
+            '"SOURCE_LANG", "TARGET_LANG", "CATEGORY", "PAIR_TYPE", "IS_APPROVED", '
+            '"UPDATED_AT") '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) '
+            'WITH PRIMARY KEY',
+            [(entry_id, team_id, scope_level, source_text, target_text,
+              source_lang, target_lang, category, pair_type, is_approved)],
+        )
+
+    def get_team_product_access(self, team_id: str) -> list[dict[str, Any]]:
+        """Fetch data product access entries for a team."""
+        return self.execute(
+            'SELECT "PRODUCT_ID", "ACCESS_LEVEL" '
+            'FROM "FINSIGHT_CORE"."TEAM_PRODUCT_ACCESS" WHERE "TEAM_ID" = ?',
+            (team_id,),
+        )
+
+    def get_team_prompt_override(self, team_id: str, product_id: str) -> dict[str, Any] | None:
+        """Fetch prompt override for a team and product (or wildcard '*')."""
+        rows = self.execute(
+            'SELECT "SYSTEM_PROMPT_APPEND", "TEMPERATURE", "MAX_TOKENS" '
+            'FROM "FINSIGHT_CORE"."TEAM_PROMPT_OVERRIDE" '
+            'WHERE "TEAM_ID" = ? AND ("PRODUCT_ID" = ? OR "PRODUCT_ID" = \'*\') '
+            'ORDER BY CASE WHEN "PRODUCT_ID" = \'*\' THEN 0 ELSE 1 END',
+            (team_id, product_id),
+        )
+        return rows[0] if rows else None
+
+    def get_team_training_config(self, team_id: str) -> dict[str, Any] | None:
+        """Fetch training configuration for a team."""
+        rows = self.execute(
+            'SELECT "DOMAIN", "INCLUDE_PATTERNS", "EXCLUDE_PATTERNS", '
+            '"CUSTOM_TEMPLATES_PATH", "ENABLE_BILINGUAL", "COUNTRY_FILTER" '
+            'FROM "FINSIGHT_CORE"."TEAM_TRAINING_CONFIG" WHERE "TEAM_ID" = ?',
+            (team_id,),
+        )
+        return rows[0] if rows else None

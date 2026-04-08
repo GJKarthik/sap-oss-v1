@@ -144,22 +144,22 @@ test.describe('Visual Regression Tests', () => {
     });
   });
 
-  test.describe('HippoCPP Page', () => {
-    test('hippocpp page matches baseline', async ({ page }) => {
-      await page.goto('/hippocpp', { waitUntil: 'networkidle' });
+  test.describe('HANA Explorer Page', () => {
+    test('hana explorer page matches baseline', async ({ page }) => {
+      await page.goto('/hana-explorer', { waitUntil: 'networkidle' });
       await page.waitForTimeout(500);
       
-      await expect(page).toHaveScreenshot('hippocpp-full.png', {
+      await expect(page).toHaveScreenshot('hana-explorer-full.png', {
         fullPage: true,
         animations: 'disabled',
       });
     });
 
-    test('cypher query editor matches baseline', async ({ page }) => {
-      await page.goto('/hippocpp', { waitUntil: 'networkidle' });
+    test('hana query editor matches baseline', async ({ page }) => {
+      await page.goto('/hana-explorer', { waitUntil: 'networkidle' });
       
       const queryEditor = page.locator('.query-editor');
-      await expect(queryEditor).toHaveScreenshot('cypher-editor.png', {
+      await expect(queryEditor).toHaveScreenshot('hana-query-editor.png', {
         animations: 'disabled',
       });
     });

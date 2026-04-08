@@ -1,25 +1,26 @@
 /**
- * Cross-App Link Banner Component — Training Console
+ * Cross-App Link Banner Component — SAP AI Workbench
  *
  * Displays a contextual banner linking to a related feature in another app.
  * Carries workspace context so the target app auto-joins the same workspace.
  */
 
 import { Component, CUSTOM_ELEMENTS_SCHEMA, Input, inject } from '@angular/core';
-import { WorkspaceService, AppId } from '../services/workspace.service';
+import { I18nService } from '../services/i18n.service';
+import { AppId, AppLinkService } from '../services/app-link.service';
 
 @Component({
   selector: 'app-cross-app-link',
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <div class="cross-app-banner" role="complementary" [attr.aria-label]="'Related: ' + targetLabel">
+    <div class="cross-app-banner" role="complementary" [attr.aria-label]="resolvedRelationLabel + ' ' + resolvedTargetLabel">
       <ui5-icon [attr.name]="icon" class="banner-icon"></ui5-icon>
       <div class="banner-text">
-        <span class="banner-label">{{ relationLabel }}</span>
-        <span class="banner-target"><strong>{{ targetLabel }}</strong> in {{ appDisplayName }}</span>
+        <span class="banner-label">{{ resolvedRelationLabel }}</span>
+        <span class="banner-target"><strong>{{ resolvedTargetLabel }}</strong> {{ i18n.t('crossApp.inApp') }} {{ appDisplayName }}</span>
       </div>
-      <ui5-button design="Transparent" icon="action" (click)="navigate()">Open</ui5-button>
+      <ui5-button design="Transparent" icon="action" (click)="navigate()">{{ i18n.t('crossApp.open') }}</ui5-button>
     </div>
   `,
   styles: [`
@@ -39,24 +40,41 @@ import { WorkspaceService, AppId } from '../services/workspace.service';
 export class CrossAppLinkComponent {
   @Input({ required: true }) targetApp!: AppId;
   @Input({ required: true }) targetRoute!: string;
-  @Input({ required: true }) targetLabel!: string;
+  @Input() targetLabel = '';
+  @Input() targetLabelKey = '';
   @Input() icon = 'action';
-  @Input() relationLabel = 'Related feature in another app:';
+  @Input() relationLabel = '';
+  @Input() relationLabelKey = '';
 
-  private readonly ws = inject(WorkspaceService);
+  readonly i18n = inject(I18nService);
+  private readonly appLinks = inject(AppLinkService);
 
   get appDisplayName(): string {
-    switch (this.targetApp) {
-      case 'aifabric': return 'AI Fabric Console';
-      case 'training': return 'Training Console';
-      case 'joule': return 'Joule Workspace';
-      default: return this.targetApp;
+    return this.i18n.t(this.appLinks.appDisplayNameKey(this.targetApp));
+  }
+
+  get resolvedTargetLabel(): string {
+    if (this.targetLabelKey) {
+      return this.i18n.t(this.targetLabelKey);
     }
+
+    const inferredKey = this.appLinks.targetLabelKey(this.targetApp, this.targetRoute);
+    if (inferredKey) {
+      return this.i18n.t(inferredKey);
+    }
+
+    return this.targetLabel || this.targetRoute;
+  }
+
+  get resolvedRelationLabel(): string {
+    if (this.relationLabelKey) {
+      return this.i18n.t(this.relationLabelKey);
+    }
+
+    return this.relationLabel || this.i18n.t('crossApp.related');
   }
 
   navigate(): void {
-    const active = this.ws.activeWorkspace();
-    const wsParam = active ? `?workspace=${active.id}` : '';
-    window.location.href = `/${this.targetApp}${this.targetRoute}${wsParam}`;
+    this.appLinks.navigate(this.targetApp, this.targetRoute);
   }
 }

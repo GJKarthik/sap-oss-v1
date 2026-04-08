@@ -10,12 +10,17 @@ import argparse
 # CRITICAL: Force spawn method BEFORE any vLLM/TurboQuant import
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
+# Device type logic - MUST BE SET BEFORE IMPORTING VLLM
+device = os.getenv("VLLM_DEVICE", "cuda")
+if device == "cpu":
+    os.environ["VLLM_TARGET_DEVICE"] = "cpu"
+
 from turboquant.integration.vllm import set_mode
 from vllm.entrypoints.openai.api_server import run_server, make_arg_parser
 
 if __name__ == "__main__":
     # === Parameters from ServingTemplate (env vars) ===
-    model_name          = os.environ.get("MODEL", "Qwen/Qwen3.5-35B-A3B-FP8")
+    model_name          = os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct-GGUF")
     data_type           = os.environ.get("DATA_TYPE", "auto")
     gpu_mem_util        = float(os.environ.get("GPU_MEM_UTIL", "0.95"))
     max_model_len       = int(os.environ.get("MAX_MODEL_LEN", "16384"))
@@ -39,10 +44,16 @@ if __name__ == "__main__":
         "--enable-prefix-caching",
         "--enable-chunked-prefill",
         "--tensor-parallel-size", "1",
-        "--language-model-only",
         "--kv-cache-dtype", kv_cache_dtype,
     ]
     
+    if device == "cpu":
+        cli.extend(["--device", "cpu"])
+    else:
+        # GPU optimizations
+        print(f"🚀 TurboQuant KV-Cache ENABLED → hybrid mode (3b keys / 4b values)")
+        # cli.extend(["--kv-cache-dtype", "fp8"]) # Managed by env var above
+
     # Add quantization flag only if specified (AWQ models need it, FP8 doesn't)
     if quantization:
         cli.extend(["--quantization", quantization])
@@ -53,20 +64,10 @@ if __name__ == "__main__":
     cli_args = parser.parse_args(cli)
 
     # ← Activate TurboQuant KV compression BEFORE run_server creates the engine
-    # This sets global state that the engine will use when it's created
-    set_mode("hybrid")
+    if device != "cpu":
+        set_mode("hybrid")
 
-    # Device type logic
-    device = os.getenv("VLLM_DEVICE", "cuda")
     print(f"🚀 Device target: {device}")
     
-    if device == "cpu":
-        cli_args.extend(["--device", "cpu"])
-    else:
-        # GPU optimizations
-        print(f"🚀 TurboQuant KV-Cache ENABLED → hybrid mode (3b keys / 4b values)")
-        cli_args.extend(["--kv-cache-dtype", "fp8"])
-        print(f"   ~31% KV savings | L40S concurrency throttle ready")
-
     # Start OpenAI-compatible server - it will create the engine internally (only ONCE)
     asyncio.run(run_server(cli_args))

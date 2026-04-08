@@ -1,15 +1,15 @@
 <div class="home-page">
   <section class="home-hero">
     <div class="home-hero__content">
-      <span class="home-hero__eyebrow">{{ 'HOME_AUDIT_BADGE' | ui5I18n }}</span>
-      <h1 class="home-hero__title">{{ 'HOME_HERO_TITLE_KEYNOTE' | ui5I18n }}</h1>
-      <p class="home-hero__subtitle">{{ 'HOME_HERO_SUBTITLE_KEYNOTE' | ui5I18n }}</p>
+      <span class="home-hero__eyebrow">{{ 'HOME_HERO_BADGE' | ui5I18n }}</span>
+      <h1 class="home-hero__title">{{ 'HOME_HERO_TITLE' | ui5I18n }}</h1>
+      <p class="home-hero__subtitle">{{ 'HOME_HERO_SUBTITLE' | ui5I18n }}</p>
 
       <div class="home-hero__actions">
-        <ui5-button design="Emphasized" icon="form" (click)="navigateTo('/forms')">
+        <ui5-button data-testid="home-open-forms" design="Emphasized" icon="form" (click)="navigateTo('/forms')">
           {{ 'HOME_CARD_FORMS_BTN' | ui5I18n }}
         </ui5-button>
-        <ui5-button design="Transparent" icon="ai" (click)="navigateTo('/joule')">
+        <ui5-button data-testid="home-open-joule" design="Transparent" icon="ai" (click)="navigateTo('/joule')">
           {{ 'HOME_CARD_JOULE_BTN' | ui5I18n }}
         </ui5-button>
       </div>
@@ -67,18 +67,17 @@
       <p class="home-section-heading__copy">{{ 'HOME_SECTION_SUBTITLE' | ui5I18n }}</p>
     </div>
 
-    <div class="home-cards">
-      <ui5-card
-        *ngFor="let card of homeCards; trackBy: trackByPath"
+    <div class="home-cards" role="list">
+      <article
+        *ngFor="let card of homeCards; trackBy: trackByPath; let i = index"
         class="home-card"
-        (click)="navigateTo(card.path)"
-        tabindex="0"
-        (keydown.enter)="navigateTo(card.path)"
-        (keydown.space)="$event.preventDefault(); navigateTo(card.path)"
-        role="link"
-        [accessibleName]="card.titleKey | ui5I18n"
-        [attr.aria-label]="(card.titleKey | ui5I18n) + ' - ' + (card.subtitleKey | ui5I18n)">
-        <div class="home-card__body">
+        role="listitem">
+        <button
+          type="button"
+          class="home-card__surface"
+          (click)="navigateTo(card.path)"
+          [attr.aria-label]="(card.titleKey | ui5I18n) + '. ' + (card.subtitleKey | ui5I18n)"
+          [attr.aria-describedby]="cardDescriptionId(i)">
           <div class="home-card__top">
             <span class="home-card__icon" aria-hidden="true">
               <ui5-icon [name]="card.icon"></ui5-icon>
@@ -89,15 +88,16 @@
             </div>
           </div>
 
-          <p class="home-card__desc">{{ card.descriptionKey | ui5I18n }}</p>
+          <p class="home-card__desc" [id]="cardDescriptionId(i)">{{ card.descriptionKey | ui5I18n }}</p>
 
           <div class="home-card__footer">
-            <ui5-button (click)="$event.stopPropagation(); navigateTo(card.path)">
+            <span class="home-card__cta">
               {{ card.buttonKey | ui5I18n }}
-            </ui5-button>
+              <ui5-icon name="navigation-right-arrow" aria-hidden="true"></ui5-icon>
+            </span>
           </div>
-        </div>
-      </ui5-card>
+        </button>
+      </article>
     </div>
   </section>
 </div>

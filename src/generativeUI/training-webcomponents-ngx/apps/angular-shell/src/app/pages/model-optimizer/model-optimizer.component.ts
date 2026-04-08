@@ -11,7 +11,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
 import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
 import { JobDetailComponent } from '../../components/job-detail/job-detail.component';
-import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
 interface ModelInfo {
   name: string;
@@ -53,7 +52,7 @@ interface JobResponse {
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, Ui5WebcomponentsModule, LocaleNumberPipe],
+  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, Ui5WebcomponentsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

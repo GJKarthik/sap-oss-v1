@@ -8,7 +8,7 @@
     [secondaryTitle]="'APP_SUBTITLE' | ui5I18n"
     show-product-switch="true"
     [accessibilityAttributes]="shellbarA11y"
-    (logoClick)="navigateTo('/')"
+    (logoClick)="openLanding()"
     (product-switch-click)="openProducts($event)">
   </ui5-shellbar>
 
@@ -50,10 +50,10 @@
 
   <ui5-popover #productPopover [headerText]="'PRODUCT_SWITCHER' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
     <ui5-list (item-click)="onProductSelect($event)">
-      <ui5-li icon="home" data-url="/aifabric/">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
-      <ui5-li icon="process" data-url="/training/">{{ 'PRODUCT_TRAINING' | ui5I18n }}</ui5-li>
-      <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">{{ 'PRODUCT_SAC' | ui5I18n }}</ui5-li>
-      <ui5-li icon="grid" data-url="/ui5/" selected>{{ 'PRODUCT_JOULE' | ui5I18n }}</ui5-li>
+      <ui5-li icon="home" data-app="aifabric">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
+      <ui5-li icon="process" data-app="training">{{ 'PRODUCT_TRAINING' | ui5I18n }}</ui5-li>
+      <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-app="sac">{{ 'PRODUCT_SAC' | ui5I18n }}</ui5-li>
+      <ui5-li icon="grid" data-app="experience" selected>{{ 'PRODUCT_JOULE' | ui5I18n }}</ui5-li>
     </ui5-list>
   </ui5-popover>
 

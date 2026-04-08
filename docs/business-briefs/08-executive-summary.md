@@ -64,7 +64,7 @@ Every service in the Orchestration and Intelligence layers is built on SAP open-
 | **Interaction** | UI5 Web Components, OData Vocabularies | [`SAP/ui5-webcomponents-ngx`](https://github.com/SAP/ui5-webcomponents-ngx) | Enterprise chat, semantic standards |
 | **Orchestration** | AI SDK JS, CAP LLM Plugin, LangChain | [`SAP/ai-sdk-js`](https://github.com/SAP/ai-sdk-js), [`SAP/cap-llm-plugin`](https://github.com/SAP/cap-llm-plugin) | Model routing, RAG, privacy |
 | **Intelligence** | MCP PAL, Data Copilot, GenAI Toolkit | [`SAP/generative-ai-toolkit-for-sap-hana-cloud`](https://github.com/SAP/generative-ai-toolkit-for-sap-hana-cloud) | Forecasting, data quality, ML |
-| **Foundation** | Streaming Core, vLLM, Mangle, Elasticsearch | Custom + open source | Performance, search, transformation |
+| **Foundation** | Streaming Core, vLLM, Mangle, HANA Vector Store | Custom + open source | Performance, search, transformation |
 | **Governance** | World Monitor | Custom | Observability, tracing, audit |
 
 *For the complete service catalog, see [04-ensemble-of-services.md](04-ensemble-of-services.md).*
@@ -194,7 +194,7 @@ flowchart LR
 | 4 | Streaming Core | Foundation | Custom (Zig) | Real-time delivery |
 | 5 | MCP PAL | Intelligence | Custom | Sales forecast |
 | 6 | Data Cleaning Copilot | Intelligence | Custom | Data quality audit |
-| 7 | Elasticsearch | Foundation | Elastic/ES | Knowledge search |
+| 7 | HANA Vector Store | Foundation | SAP HANA Cloud | Knowledge search |
 | 8 | GenAI Toolkit | Intelligence | [`SAP/generative-ai-toolkit-for-sap-hana-cloud`](https://github.com/SAP/generative-ai-toolkit-for-sap-hana-cloud) | Custom ML |
 | 9 | LangChain Integration | Orchestration | [`SAP/langchain-integration-for-sap-hana-cloud`](https://github.com/SAP/langchain-integration-for-sap-hana-cloud) | Vector store |
 | 10 | Mangle Query | Foundation | Custom | Log transformation |
