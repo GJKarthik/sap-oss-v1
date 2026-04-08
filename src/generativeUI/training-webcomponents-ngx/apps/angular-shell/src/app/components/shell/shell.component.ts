@@ -213,7 +213,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   ngOnDestroy() { this.routerSub?.unsubscribe(); }
   private updateActiveGroup(url: string) { this.activeGroupId.set(resolveTrainingGroup(url)); }
   groupIcon(id: string): string {
-    const icons: Record<string, string> = { home: 'home', 'data-factory': 'folder', 'ai-lab': 'discussion-2', mlops: 'process' };
+    const icons: Record<string, string> = { home: 'home', 'data-factory': 'folder', assistants: 'discussion-2', mlops: 'process' };
     return icons[id] || 'grid';
   }
   isRouteActive(path: string): boolean { return this.router.url.startsWith(path); }

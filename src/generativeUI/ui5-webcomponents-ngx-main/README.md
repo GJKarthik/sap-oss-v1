@@ -93,7 +93,7 @@ Angular Versions Support: Our versions offer Angular support. More information c
 
 ---
 
-## Generative AI Playground — Development Setup
+## Generative AI Workspace — Development Setup
 
 This monorepo includes a full **Generative UI** stack on top of the Angular wrapper library. The following services are needed to use the Joule AI and Collaboration features.
 
@@ -138,10 +138,10 @@ Edit `.env` and fill in the values for the services you want to use:
 
 ### OCR token wiring (frontend)
 
-The playground sends OCR auth header from Angular environment config:
+The workspace sends OCR auth header from Angular environment config:
 
 ```ts
-// apps/playground/src/environments/environment.ts
+// apps/workspace/src/environments/environment.ts
 export const environment = {
   // ...
   ocrInternalToken: '',
@@ -157,32 +157,32 @@ export const environment = {
 ### 3. Start All Services
 
 ```bash
-# Start everything (playground + MCP server + OpenAI-compat server)
+# Start everything (workspace + MCP server + OpenAI-compat server)
 yarn start:all
 ```
 
 Or start services individually:
 
 ```bash
-yarn start:playground   # Angular dev server on http://localhost:4200
+yarn start:workspace   # Angular dev server on http://localhost:4200
 yarn start:mcp          # MCP server on http://localhost:9160
 yarn start:openai       # OpenAI-compat server on http://localhost:8400
 ```
 
-The Angular dev server proxies `/ag-ui/*` to the MCP server automatically via `apps/playground/proxy.conf.js`. Override the target with:
+The Angular dev server proxies `/ag-ui/*` to the MCP server automatically via `apps/workspace/proxy.conf.js`. Override the target with:
 
 ```bash
-AGENT_URL=http://my-agent:9160 yarn start:playground
+AGENT_URL=http://my-agent:9160 yarn start:workspace
 ```
 
-### 4. Playground Routes
+### 4. Workspace Routes
 
 | Route | Description |
 |-------|-------------|
-| `/` | Landing page — links to all demos |
+| `/` | Landing page — links to all work areas |
 | `/forms` | UI5 form components with Angular reactive forms |
 | `/joule` | Joule AI — generative UI driven by AG-UI streaming |
-| `/collab` | Real-time multi-user collaboration demo |
+| `/collab` | Real-time multi-user collaboration workspace |
 | `/generative` | Strict live schema generation and renderer flow |
 | `/components` | Live component/model catalog from OpenAI-compatible backend |
 | `/mcp` | Live MCP tools discovery and invocation |
@@ -192,7 +192,7 @@ AGENT_URL=http://my-agent:9160 yarn start:playground
 
 ```bash
 yarn build:prod
-# Output: dist/apps/playground/
+# Output: dist/apps/workspace/
 ```
 
 ### 6. Running Unit Tests
@@ -201,28 +201,28 @@ yarn build:prod
 yarn nx test ui5-angular
 ```
 
-### 7. Harness-Based Demo Operation
+### 7. Harness-Based Workspace Operation
 
-Use the UI5 harness for deterministic pre-demo checks and machine-readable output:
+Use the UI5 harness for deterministic preflight checks and machine-readable output:
 
 ```bash
 # Flexible local mode (allows degraded behavior)
 yarn harness:run --mode dev-flex --profile local-live
 
-# Strict demo mode (real backend requirements enforced)
-yarn harness:demo
+# Strict workspace mode (real backend requirements enforced)
+yarn harness:workspace
 
 # Strict CI mode with live e2e included
 yarn harness:ci
 ```
 
-Reports are written to `artifacts/harness/demo-report.json` and `artifacts/harness/demo-report.md`.
+Reports are written to `artifacts/harness/workspace-report.json` and `artifacts/harness/workspace-report.md`.
 
 ### 7. Live Demo Preflight and E2E
 
 For server-hosted deployments, operators can run readiness checks directly in the UI from the global **Service Health** panel (Shell header area) using the **Check Now** action.
 
-Run readiness checks before a live demo:
+Run readiness checks before a live workspace session:
 
 ```bash
 yarn live:preflight
@@ -244,23 +244,23 @@ Run live-only E2E (no AG-UI stubs/intercepts):
 yarn e2e:live
 ```
 
-Run repeatable demo reliability checks (preflight + live pages + guided tour):
+Run repeatable workspace readiness checks (preflight + live pages + learn path):
 
 ```bash
-yarn demo:verify
+yarn readiness:verify
 ```
 
 Customize repetitions:
 
 ```bash
-DEMO_VERIFY_ATTEMPTS=3 yarn demo:verify
+READINESS_VERIFY_ATTEMPTS=3 yarn readiness:verify
 ```
 
 ### 8. Architecture Overview
 
 ```
 apps/
-  playground/          Angular app — Fiori shell, lazy-loaded feature modules
+  workspace/          Angular app — Fiori shell, lazy-loaded feature modules
 
 libs/
   ui5-angular/         Angular wrapper for @ui5/webcomponents (main library)

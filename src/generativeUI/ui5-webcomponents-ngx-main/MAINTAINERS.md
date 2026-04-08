@@ -11,7 +11,7 @@ The project is divided into 2 main parts:
   - `angular-generator` - Contains logic for generating the Angular components and directives from `ComponentData` interface.
   - `fs-commit` - Contains logic for committing the generated files to the filesystem(or any other persistence layer).
 
-There is also an application for seeing the generated components in action - `playground` and
+There is also an application for seeing the generated components in action - `workspace` and
 storybook stories for the generated components and their documentation.
 
 Project also contains `webcomponents-nx`, which contains executor and generator for creating

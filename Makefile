@@ -39,8 +39,8 @@ TECH_REPORTS_TEX := $(wildcard $(TECH_REPORTS_DIR)/*.tex)
         sbom-vuln sbom-spdx sbom-diff-check sbom-sign sbom-verify sbom-snapshot \
         sbom-scan-licenses sbom-scan-licenses-strict \
         sbom-add-spdx-headers sbom-add-spdx-headers-dry-run \
-        sbom-ml-lineage sbom-slsa sbom-mangle-audit sbom-mangle-build \
-        sbom-mangle-audit-strict sbom-vuln-offline sbom-sarif sbom-full-audit sbom-parity
+        sbom-ml-lineage sbom-slsa \
+        sbom-vuln-offline sbom-sarif sbom-full-audit sbom-parity
 
 # ── Step 1: collect git lineage JSON ────────────────────────────────────────
 scripts/sbom-lineage/lineage.json:
@@ -243,29 +243,12 @@ sbom-ml-lineage:
 sbom-slsa:
 	python3 $(SBOM_DIR)/slsa_provenance.py
 
-# ── Mangle Datalog policy engine ─────────────────────────────────────────────
-# Build the mg binary from mangle-main/ (requires Go):
-sbom-mangle-build:
-	cd mangle-main && go build -o ../$(SBOM_DIR)/bin/mg ./interpreter/mg/...
-	@echo "mg binary built at $(SBOM_DIR)/bin/mg"
-
-# Run Mangle Datalog policy audit across all BOMs:
-sbom-mangle-audit: sbom-mangle-build
-	python3 $(SBOM_DIR)/mangle_audit.py
-
-# Run with strict mode (exit 1 on BLOCKED_LICENSE):
-sbom-mangle-audit-strict: sbom-mangle-build
-	python3 $(SBOM_DIR)/mangle_audit.py \
-	  --fail-on-blocked \
-	  --fail-on-transitive-copyleft
-
-# ── Full professional audit pipeline (PwC + QB + Mangle parity) ──────────────
+# ── Full professional audit pipeline (PwC + QB parity) ──────────────────────
 # Runs all checks in sequence; any FAIL stops the pipeline.
-sbom-full-audit: sbom-audit-policy sbom-mangle-audit-strict sbom-scan-licenses \
+sbom-full-audit: sbom-audit-policy sbom-scan-licenses \
                  sbom-vuln-offline sbom-spdx sbom-ml-lineage sbom-slsa sbom-sign
 	@echo "Full professional audit complete."
 	@echo "  - Policy gates:       passed"
-	@echo "  - Mangle Datalog:     $(SBOM_DIR)/bin/mg"
 	@echo "  - Source scan:        $(BOMS_DIR)/scan/"
 	@echo "  - SPDX 2.3 export:   $(BOMS_DIR)/spdx/"
 	@echo "  - ML lineage:         $(BOMS_DIR)/ml/"
@@ -279,14 +262,13 @@ sbom-full-audit: sbom-audit-policy sbom-mangle-audit-strict sbom-scan-licenses \
 # ── SARIF 2.1.0 output (industry / QB standard) ──────────────────────────────
 # Generates SARIF from all available input files; skips any that don't exist.
 sbom-sarif:
-	python3 $(SBOM_DIR)/mangle_audit.py   --json 2>/dev/null > /tmp/_mangle.json; true
 	python3 $(SBOM_DIR)/audit_sbom.py     --json 2>/dev/null > /tmp/_audit.json;  true
 	python3 $(SBOM_DIR)/scan_licenses.py  --json 2>/dev/null > /tmp/_scan.json;   true
 	python3 $(SBOM_DIR)/sbom_to_sarif.py \
-	  --mangle-json /tmp/_mangle.json \
 	  --audit-json  /tmp/_audit.json  \
 	  --scan-json   /tmp/_scan.json
 	@echo "SARIF: $(BOMS_DIR)/sarif/sbom-findings.sarif.json"
+
 	@echo "Upload: gh api repos/{owner}/{repo}/code-scanning/sarifs --field sarif=@$(BOMS_DIR)/sarif/sbom-findings.sarif.json --field ref=\$$(git rev-parse HEAD)"
 
 # ── Complete parity target — the one-stop command ────────────────────────────

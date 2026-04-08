@@ -8,8 +8,8 @@
 
 ```bash
 # Production Angular build
-npx nx build playground --configuration=production
-# Output: dist/apps/playground/
+npx nx build workspace --configuration=production
+# Output: dist/apps/workspace/
 ```
 
 ---
@@ -49,11 +49,11 @@ cf restage ui5-ngx-agent
 ```bash
 cf push ui5-ngx-frontend \
   --buildpack staticfile_buildpack \
-  -p dist/apps/playground \
+  -p dist/apps/workspace \
   --memory 64M
 ```
 
-The `nginx.conf` at the repo root must be copied into `dist/apps/playground/` before push, or referenced via a `Staticfile` with `root: .`.
+The `nginx.conf` at the repo root must be copied into `dist/apps/workspace/` before push, or referenced via a `Staticfile` with `root: .`.
 
 ### Critical nginx directives for SSE
 
@@ -88,8 +88,8 @@ Each PR triggers `.github/workflows/ci-hippocpp-parity.yml` (adapt as needed):
 1. `npm ci`
 2. `npx nx run-many --target=lint --all`
 3. `npx nx run-many --target=test --all`
-4. `npx nx build playground --configuration=production`
-5. `npx nx e2e playground-e2e --configuration=ci`
+4. `npx nx build workspace --configuration=production`
+5. `npx nx e2e workspace-e2e --configuration=ci`
 
 ---
 

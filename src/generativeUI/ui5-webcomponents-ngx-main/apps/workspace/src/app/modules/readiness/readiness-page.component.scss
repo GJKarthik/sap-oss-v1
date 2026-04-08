@@ -1,0 +1,99 @@
+.readiness-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(0, 112, 242, 0.1), transparent 28rem),
+    var(--sapBackgroundColor, #f5f5f5);
+}
+
+.readiness-page__hero {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--sapList_BorderColor, rgba(95, 101, 109, 0.16));
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(232, 244, 253, 0.72));
+  box-shadow: var(--sapContent_Shadow1, 0 12px 30px rgba(15, 23, 42, 0.08));
+}
+
+.readiness-page__eyebrow {
+  display: inline-flex;
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sapBrandColor, #0070f2);
+}
+
+.readiness-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.readiness-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.readiness-page__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--sapContent_LabelColor);
+  max-width: 42rem;
+  line-height: 1.6;
+}
+
+.readiness-page__meta {
+  font-size: 0.75rem;
+  color: var(--sapContent_LabelColor);
+}
+
+.readiness-page__services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.readiness-page__service {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(0, 112, 242, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.readiness-page__service-name {
+  font-weight: 600;
+}
+
+.readiness-page__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.readiness-page__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+}
+
+@media (max-width: 768px) {
+  .readiness-page {
+    padding: 1rem;
+  }
+
+  .readiness-page__header {
+    flex-direction: column;
+  }
+}

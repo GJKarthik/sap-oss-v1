@@ -22,9 +22,12 @@ RUN groupadd -r aicore && useradd -r -g aicore aicore
 
 WORKDIR /app
 
-# Copy requirements
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Project files for pip install
+COPY pyproject.toml README.md ./
+COPY langchain_hana/ ./langchain_hana/
+
+# Install project
+RUN pip install --no-cache-dir .
 
 # Install additional dependencies for OpenAI server
 RUN pip install --no-cache-dir \
@@ -32,8 +35,7 @@ RUN pip install --no-cache-dir \
     uvicorn[standard]>=0.27.0 \
     openai>=1.10.0
 
-# Copy source
-COPY langchain_hana/ ./langchain_hana/
+# Server source
 COPY deploy/aicore/server.py ./server.py
 
 RUN chown -R aicore:aicore /app

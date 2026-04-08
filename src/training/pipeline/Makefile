@@ -1,19 +1,20 @@
 # =============================================================================
-# Text-to-SQL Pipeline — Makefile
+# Text-to-SQL Pipeline — Makefile (Python + SAP HANA Cloud)
 #
-# Orchestrates all 7 stages of the data pipeline:
+# Orchestrates all stages of the data pipeline:
 #   1. Pre-convert: Excel → CSV (Python)
-#   2. Schema extraction (Zig)
-#   3. Hierarchy parsing (Zig)
-#   4. Template parsing (Zig)
-#   5. Template expansion + SQL generation (Zig)
-#   6. Mangle validation (Mangle)
-#   7. Spider/BIRD formatting (Zig)
+#   2. Schema extraction (Python)
+#   3. Template parsing (Python)
+#   4. Template expansion + SQL generation (Python)
+#   5. SQL validation (Python)
+#   6. Spider/BIRD formatting (Python)
+#   7. Upload to HANA Cloud (Python, optional)
 # =============================================================================
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
 PYTHON ?= python3
+PIPELINE := $(PYTHON) -m pipeline
 DATA_DIR := ../data
 CSV_DIR := output/intermediate/csv
 SCHEMA_JSON := output/intermediate/schema.json
@@ -25,7 +26,7 @@ SPIDER_DIR := output/spider
 
 .PHONY: all clean test help
 
-all: preconvert build-zig extract-schema parse-templates expand format-spider ## Run the full pipeline
+all: preconvert extract-schema parse-templates expand format-spider ## Run the full pipeline
 	@echo "✅ Pipeline complete — output in $(SPIDER_DIR)/"
 
 # ── Stage 1: Excel → CSV ─────────────────────────────────────────────────────
@@ -36,74 +37,65 @@ preconvert: ## Stage 1: Convert Excel files to CSV
 	@mkdir -p $(CSV_DIR)
 	cd preconvert && $(PYTHON) excel_to_csv.py ../../$(DATA_DIR) ../../pipeline/$(CSV_DIR)
 
-# ── Stage 2: Build Zig pipeline ──────────────────────────────────────────────
-
-.PHONY: build-zig
-build-zig: ## Build the Zig pipeline binary
-	cd zig && zig build
-
-# ── Stage 3: Extract schema ──────────────────────────────────────────────────
+# ── Stage 2: Extract schema ──────────────────────────────────────────────────
 
 .PHONY: extract-schema
-extract-schema: build-zig ## Stage 3: Extract schema from staging CSVs
-	@echo "Stage 3: Extracting schema …"
+extract-schema: ## Stage 2: Extract schema from staging CSVs (Python)
+	@echo "Stage 2: Extracting schema …"
 	@mkdir -p output/intermediate
-	cd zig && ./zig-out/bin/text2sql-pipeline extract-schema ../$(CSV_DIR) ../$(SCHEMA_JSON) 2>/dev/null || \
-		echo "⚠  Schema extraction not yet wired into main.zig CLI"
+	cd .. && $(PIPELINE) extract-schema pipeline/$(CSV_DIR)/staging.csv pipeline/$(SCHEMA_JSON)
 
-# ── Stage 4: Parse templates ─────────────────────────────────────────────────
+# ── Stage 3: Parse templates ─────────────────────────────────────────────────
 
 .PHONY: parse-templates
-parse-templates: build-zig ## Stage 4: Parse prompt templates
-	@echo "Stage 4: Parsing templates …"
-	cd zig && ./zig-out/bin/text2sql-pipeline parse-templates ../$(CSV_DIR) ../$(TEMPLATES_JSON) 2>/dev/null || \
-		echo "⚠  Template parsing not yet wired into main.zig CLI"
+parse-templates: ## Stage 3: Parse prompt templates (Python)
+	@echo "Stage 3: Parsing templates …"
+	cd .. && $(PIPELINE) parse-templates pipeline/$(CSV_DIR)/templates.csv banking pipeline/$(TEMPLATES_JSON)
 
-# ── Stage 5: Expand templates ────────────────────────────────────────────────
+# ── Stage 4: Expand templates ────────────────────────────────────────────────
 
 .PHONY: expand
-expand: build-zig ## Stage 5: Expand templates into text-SQL pairs
-	@echo "Stage 5: Expanding templates …"
-	cd zig && ./zig-out/bin/text2sql-pipeline expand ../$(SCHEMA_JSON) ../$(TEMPLATES_JSON) ../$(PAIRS_JSON) 2>/dev/null || \
-		echo "⚠  Template expansion not yet wired into main.zig CLI"
+expand: ## Stage 4: Expand templates into text-SQL pairs (Python)
+	@echo "Stage 4: Expanding templates …"
+	cd .. && $(PIPELINE) expand pipeline/$(CSV_DIR)/templates.csv pipeline/$(PAIRS_JSON) 500
 
-# ── Stage 6: Mangle validation ───────────────────────────────────────────────
+# ── Stage 5: Validate SQL ────────────────────────────────────────────────────
 
 .PHONY: validate
-validate: ## Stage 6: Validate with Mangle rules
-	@echo "Stage 6: Mangle validation …"
-	@echo "  schema_validation.mg — checking …"
-	@echo "  sql_validation.mg — checking …"
-	@echo "  domain_constraints.mg — checking …"
-	@echo "  coverage_rules.mg — checking …"
-	@echo "  spider_format.mg — checking …"
-	@echo "  ⚠  Mangle runtime not yet integrated"
+validate: ## Stage 5: Validate generated SQL pairs
+	@echo "Stage 5: SQL validation …"
+	cd .. && $(PYTHON) schema_pipeline/sql_validator.py pipeline/$(PAIRS_JSON)
 
-# ── Stage 7: Format for Spider/BIRD ──────────────────────────────────────────
+# ── Stage 6: Format for Spider/BIRD ──────────────────────────────────────────
 
 .PHONY: format-spider
-format-spider: build-zig ## Stage 7: Format output as Spider/BIRD dataset
-	@echo "Stage 7: Formatting for Spider/BIRD …"
+format-spider: ## Stage 6: Format output as Spider/BIRD dataset (Python)
+	@echo "Stage 6: Formatting for Spider/BIRD …"
 	@mkdir -p $(SPIDER_DIR)
-	cd zig && ./zig-out/bin/text2sql-pipeline format-spider ../$(PAIRS_JSON) ../$(SPIDER_DIR) 2>/dev/null || \
-		echo "⚠  Spider formatting not yet wired into main.zig CLI"
+	cd .. && $(PIPELINE) format-spider pipeline/$(PAIRS_JSON) pipeline/$(SPIDER_DIR)
+
+# ── Stage 7: Upload to HANA Cloud (optional) ─────────────────────────────────
+
+.PHONY: upload
+upload: ## Stage 7: Upload training pairs to HANA Cloud
+	@echo "Stage 7: Uploading to HANA Cloud …"
+	cd .. && $(PIPELINE) upload pipeline/$(PAIRS_JSON)
 
 # ── Testing ──────────────────────────────────────────────────────────────────
 
-test: test-python test-zig ## Run all pipeline tests
+test: test-preconvert test-pipeline ## Run all pipeline tests
 
-.PHONY: test-python test-zig
-test-python: ## Test Python pre-converter
+.PHONY: test-preconvert test-pipeline
+test-preconvert: ## Test Python pre-converter
 	cd preconvert && $(PYTHON) -m pytest test_preconvert.py -v --tb=short
 
-test-zig: ## Test Zig pipeline modules
-	cd zig && zig build test
+test-pipeline: ## Test Python pipeline modules
+	cd .. && $(PYTHON) -m pytest pipeline/tests/ -v --tb=short
 
 # ── Utilities ────────────────────────────────────────────────────────────────
 
 clean: ## Remove all generated output
 	rm -rf output/
-	rm -rf zig/zig-out zig/zig-cache zig/.zig-cache
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

@@ -8,10 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf zig-linux-x86_64-0.14.0.tar.xz /var/lib/apt/lists/*
 ENV PATH="/opt/zig:${PATH}"
 WORKDIR /build
+ARG ZIG_TARGET=native
 COPY zig/ ./zig/
 COPY mangle/ ./mangle/
 WORKDIR /build/zig
-RUN zig build -Doptimize=ReleaseFast || echo "WARNING: Zig build completed with warnings"
+RUN zig build -Doptimize=ReleaseFast -Dtarget=${ZIG_TARGET}
 
 FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 RUN apt-get update && apt-get install -y --no-install-recommends \

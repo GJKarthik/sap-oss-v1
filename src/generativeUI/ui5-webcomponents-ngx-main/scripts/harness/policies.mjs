@@ -1,5 +1,5 @@
 const MODES = {
-  'demo-safe': {
+  'workspace-safe': {
     allowedDestructive: false,
     strictRealBackends: true,
     continueOnNonRequiredFailure: false,

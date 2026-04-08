@@ -1,0 +1,120 @@
+<div class="joule-page">
+  <section class="joule-hero">
+    <div class="joule-hero__copy">
+      <span class="joule-hero__eyebrow">{{ 'NAV_JOULE' | ui5I18n }}</span>
+      <ui5-title level="H2">{{ 'HOME_CARD_JOULE_TITLE' | ui5I18n }}</ui5-title>
+      <p>{{ 'HOME_CARD_JOULE_DESC' | ui5I18n }}</p>
+    </div>
+    <div class="joule-hero__meta">
+      <div class="joule-hero__stat">
+        <span class="joule-hero__stat-label">{{ 'JOULE_STATE_LABEL' | ui5I18n : state }}</span>
+        <span class="state-badge state-badge--{{ state }}" role="status" [attr.aria-label]="'Streaming state: ' + state">
+          {{ state }}
+        </span>
+      </div>
+      <div class="joule-hero__stat">
+        <span class="joule-hero__stat-label">{{ 'COLLAB_PARTICIPANTS_TITLE' | ui5I18n }}</span>
+        <ui5-tag design="Set2" color-scheme="8">{{ participants.length }}</ui5-tag>
+      </div>
+    </div>
+  </section>
+
+  <div class="joule-layout">
+    <section class="joule-chat-panel">
+      <div class="joule-panel__header">
+        <ui5-title level="H5">{{ 'HOME_CARD_JOULE_TITLE' | ui5I18n }}</ui5-title>
+        <p>{{ 'HOME_CARD_JOULE_SUBTITLE' | ui5I18n }}</p>
+      </div>
+
+      @if (participants.length > 0) {
+        <div class="presence-strip" role="status" aria-label="Active collaborators">
+          <span class="presence-label">{{ 'JOULE_PRESENCE_LABEL' | ui5I18n }}</span>
+          @for (p of participants; track p.userId) {
+            <span
+              class="presence-avatar"
+              [title]="p.displayName"
+              [style.background]="p.color"
+              [attr.aria-label]="p.displayName">
+              {{ p.displayName.charAt(0).toUpperCase() }}
+            </span>
+          }
+        </div>
+      }
+
+      <joule-chat
+        [endpoint]="agUiEndpoint"
+        transport="sse"
+        title="Joule"
+        [attr.placeholder]="'JOULE_CHAT_PLACEHOLDER' | ui5I18n"
+        [autoConnect]="!routeBlocked"
+        securityClass="internal">
+      </joule-chat>
+    </section>
+
+    <section class="joule-output-panel">
+      <div class="joule-panel__header">
+        <ui5-title level="H5">{{ 'HOME_CARD_GENERATIVE_TITLE' | ui5I18n }}</ui5-title>
+        <p>{{ 'HOME_CARD_GENERATIVE_SUBTITLE' | ui5I18n }}</p>
+      </div>
+
+      @if (connectionError) {
+        <div class="error-banner" role="alert">
+          <ui5-message-strip
+            design="Negative"
+            (close)="dismissError()">
+            {{ connectionError }}
+          </ui5-message-strip>
+          <div class="error-recovery">
+            <ui5-button design="Emphasized" icon="refresh" (click)="retryConnection()">
+              {{ 'JOULE_RETRY' | ui5I18n }}
+            </ui5-button>
+            <ui5-button design="Transparent" icon="reset" (click)="clearSession()">
+              {{ 'JOULE_CLEAR' | ui5I18n }}
+            </ui5-button>
+          </div>
+        </div>
+      }
+
+      <div class="output-header">
+        @if (pendingActions.length > 0) {
+          <ui5-button
+            design="Attention"
+            icon="warning"
+            (click)="toggleGovernancePanel()">
+            {{ 'JOULE_REVIEW_ACTIONS' | ui5I18n : pendingActions.length }}
+          </ui5-button>
+        }
+
+        @if (state !== 'idle') {
+          <ui5-button design="Transparent" icon="refresh" (click)="clearSession()">
+            {{ 'JOULE_CLEAR' | ui5I18n }}
+          </ui5-button>
+        }
+      </div>
+
+      @if (showGovernancePanel && pendingActions.length > 0) {
+        <div class="governance-panel-wrapper" role="region" aria-label="Governance review panel">
+          <div class="governance-panel-header">
+            <span>{{ 'JOULE_PENDING_ACTIONS' | ui5I18n : pendingActions.length }}</span>
+            <ui5-button design="Transparent" icon="decline" accessible-name="Close panel" (click)="toggleGovernancePanel()"></ui5-button>
+          </div>
+          <genui-governance-review-panel></genui-governance-review-panel>
+        </div>
+      }
+
+      @if (schema) {
+        <genui-outlet [schema]="schema"></genui-outlet>
+      } @else {
+        <div class="empty-state" role="status" aria-label="Waiting for agent output">
+          <div class="empty-state__icon" aria-hidden="true">🤖</div>
+          <p class="empty-state__text">{{ 'JOULE_EMPTY_STATE' | ui5I18n }}</p>
+          @if (state === 'streaming') {
+            <p class="empty-state__hint">{{ 'JOULE_RECEIVING' | ui5I18n }}</p>
+          } @else {
+            <p class="empty-state__hint">{{ 'JOULE_ASK_HINT' | ui5I18n }}</p>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>

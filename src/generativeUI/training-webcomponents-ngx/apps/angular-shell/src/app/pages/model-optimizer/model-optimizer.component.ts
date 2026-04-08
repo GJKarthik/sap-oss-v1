@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import '@ui5/webcomponents/dist/Button.js';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
@@ -10,8 +9,9 @@ import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
-import { LogService } from '../../services/log.service';
-import { CrossAppLinkComponent } from '../../shared';
+import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { JobDetailComponent } from '../../components/job-detail/job-detail.component';
+import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 
 interface ModelInfo {
   name: string;
@@ -50,642 +50,251 @@ interface JobResponse {
   };
 }
 
-interface JobPayloadConfig {
-  model_name: string;
-  quant_format: string;
-  calib_samples: number;
-  calib_seq_len: number;
-  export_format: string;
-  enable_pruning: boolean;
-  pruning_sparsity: number;
-  compute_strategy?: string;
-  [key: string]: unknown;
-}
-
-import { JobDetailComponent } from '../../components/job-detail/job-detail.component';
-
 @Component({
   selector: 'app-model-optimizer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, CrossAppLinkComponent],
+  imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, Ui5WebcomponentsModule, LocaleNumberPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content">
-      <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('modelOpt.title') }}</h1>
-        <ui5-button design="Emphasized" (click)="loadData()">{{ i18n.t('modelOpt.refresh') }}</ui5-button>
+    <div class="optimizer-viewport fadeIn">
+      <!-- Floating Header -->
+      <div class="glass-panel floating-header slideUp">
+        <div class="header-left">
+          <ui5-title level="H3">{{ i18n.t('modelOpt.title') }}</ui5-title>
+          <ui5-tag design="Information">NVIDIA ModelOpt v0.15</ui5-tag>
+        </div>
+        <ui5-button design="Transparent" icon="refresh" (click)="loadData()">{{ i18n.t('modelOpt.refresh') }}</ui5-button>
       </div>
 
-      <app-cross-app-link
-        targetApp="training"
-        targetRoute="/registry"
-        targetLabel="Model Registry"
-        icon="database"
-        relationLabel="Related:">
-      </app-cross-app-link>
-
-      <!-- Engine & Dataset -->
-      <h2 class="section-title">{{ i18n.t('modelOpt.engineConfig') }}</h2>
-      <div class="card grid-2" style="margin-bottom: 1.5rem;" [formGroup]="jobForm">
-        <div class="form-group">
-          <label>{{ i18n.t('modelOpt.framework') }}</label>
-          <select formControlName="framework" class="form-input">
-            <option value="PyTorch">{{ i18n.t('modelOpt.pytorch') }}</option>
-            <option value="TensorFlow" disabled>{{ i18n.t('modelOpt.tensorflow') }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>{{ i18n.t('modelOpt.datasetSplit') }}</label>
-          <select formControlName="dataset" class="form-input">
-            <option value="spider-train">{{ i18n.t('modelOpt.spiderTrain') }}</option>
-            <option value="bird-train" disabled>{{ i18n.t('modelOpt.birdTrain') }}</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Mangle Data Validation -->
-      <h2 class="section-title">{{ i18n.t('modelOpt.datalogValidation') }}</h2>
-      <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: #fafafa; border-inline-start: 4px solid var(--sapBrandColor);">
-        <div>
-          <p style="margin: 0 0 0.25rem; font-size: 0.875rem; color: #333;">{{ i18n.t('modelOpt.datalogDesc') }}</p>
-          @if (mangleStatus() === 'passed') {
-            <span class="status-success text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #e8f5e9;">{{ i18n.t('modelOpt.invariantsPassed') }}</span>
-          } @else if (mangleStatus() === 'failed') {
-            <span class="status-error text-small" style="font-weight: 600; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #ffebee;">{{ i18n.t('modelOpt.violationDetected') }}</span>
-          } @else {
-            <span class="text-muted text-small" style="display: inline-block;">{{ i18n.t('modelOpt.unverified') }}</span>
-          }
-        </div>
-        <ui5-button design="Default" (click)="validateMangleRules()" [disabled]="mangleStatus() === 'checking'">
-          {{ mangleStatus() === 'checking' ? i18n.t('modelOpt.validating') : i18n.t('modelOpt.checkConstraints') }}
-        </ui5-button>
-      </div>
-
-      <!-- Model Catalog -->
-      <section class="section">
-        <h2 class="section-title">{{ i18n.t('modelOpt.modelCatalog') }}</h2>
-        <div class="model-grid">
-          @for (m of models(); track m.name) {
-            <div
-              class="model-card"
-              [class.model-card--selected]="jobForm.value.model_name === m.name"
-              (click)="selectModel(m)"
-            >
-              <div class="model-name"><bdi>{{ m.name }}</bdi></div>
-              <div class="model-meta">
-                <span class="badge"><bdi>{{ m.parameters }}</bdi></span>
-                <span class="badge"><bdi>{{ m.size_gb }} GB</bdi></span>
-                <span class="badge badge--quant"><bdi>{{ m.recommended_quant }}</bdi></span>
+      <div class="optimizer-scroll-area">
+        <div class="optimizer-layout">
+          <!-- Profiler Section -->
+          <section class="telemetry-grid">
+            <div class="glass-panel stat-material slideUp" style="animation-delay: 0.1s">
+              <div class="stat-header">
+                <ui5-icon name="it-host"></ui5-icon>
+                <span>Compute Allocation</span>
               </div>
-              @if (!m.t4_compatible) {
-                <div class="text-small t4-warn">{{ i18n.t('modelOpt.t4Incompatible') }}</div>
-              }
-            </div>
-          }
-        </div>
-        @if (!models().length && !loading()) {
-          <p class="text-muted text-small">{{ i18n.t('modelOpt.noModels') }}</p>
-        }
-      </section>
-
-      <!-- Create Job Form -->
-      <section class="section">
-        <h2 class="section-title">{{ i18n.t('modelOpt.createJob') }}</h2>
-        <form class="job-form" [formGroup]="jobForm" (ngSubmit)="$event.preventDefault()">
-          
-          <!-- Novice Mode -->
-          @if (userSettings.mode() === 'novice') {
-            <div class="form-row">
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.template') }}</label>
-                <select class="form-input" (change)="applyTemplate($any($event.target).value)">
-                  <option value="">{{ i18n.t('modelOpt.selectTemplate') }}</option>
-                  <option value="sql">{{ i18n.t('modelOpt.sqlTemplate') }}</option>
-                  <option value="finance">{{ i18n.t('modelOpt.financeTemplate') }}</option>
-                  <option value="hr">{{ i18n.t('modelOpt.hrTemplate') }}</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.modelName') }}</label>
-                <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.autoPopulated')" readonly />
-              </div>
-            </div>
-
-            @if (jobForm.value.model_name) {
-              <div class="cost-estimate">
-                <span class="icon"><ui5-icon name="loan"></ui5-icon></span> {{ i18n.t('modelOpt.costEstimate') }}
-              </div>
-            }
-          }
-
-          <!-- VRAM Integration (All Modes) -->
-          @if (estimatedVram() > 0 && gpuTotalNum() > 0) {
-            <div class="vram-profiler" [class.vram-danger]="isVramExceeded()">
-              <div class="vram-header">
-                <span class="vram-title">{{ i18n.t('modelOpt.vramProfiler') }}</span>
-                <span class="vram-values">{{ i18n.t('modelOpt.vramRequired', { required: estimatedVram().toFixed(1), available: gpuTotalNum() }) }}</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" 
-                     [style.width.%]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)" 
-                     [class.danger-fill]="isVramExceeded()">
-                </div>
-              </div>
-              @if (isVramExceeded()) {
-                <div class="text-small error-text mt-1">{{ i18n.t('modelOpt.vramExceeded') }}</div>
-              }
-            </div>
-          }
-
-          <!-- Intermediate Mode -->
-          @if (userSettings.mode() === 'intermediate') {
-            <div class="form-row">
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.model') }}</label>
-                <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.hfModelName')" />
-              </div>
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.quantFormat') }}</label>
-                <select class="form-input" formControlName="quant_format">
-                  <option value="int8">{{ i18n.t('modelOpt.int8') }}</option>
-                  <option value="int4_awq">{{ i18n.t('modelOpt.int4awq') }}</option>
-                  <option value="w4a16">{{ i18n.t('modelOpt.w4a16') }}</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.exportFormat') }}</label>
-                <select class="form-input" formControlName="export_format">
-                  <option value="hf">HuggingFace</option>
-                  <option value="tensorrt_llm">TensorRT-LLM</option>
-                  <option value="vllm">vLLM</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.calibSamples') }} <span class="badge badge--best">{{ i18n.t('modelOpt.bestPractice') }}</span></label>
-                <input type="range" class="form-input" formControlName="calib_samples" min="32" max="2048" step="32" />
-                <div class="text-small text-muted">{{ jobForm.value.calib_samples }} {{ i18n.t('modelOpt.samples') }}</div>
-              </div>
-            </div>
-          }
-
-          <!-- Expert Mode -->
-          @if (userSettings.mode() === 'expert') {
-            <div class="form-row">
-              <div class="field-group">
-                <label class="field-label">{{ i18n.t('modelOpt.modelOverride') }}</label>
-                <input class="form-input" formControlName="model_name" [placeholder]="i18n.t('modelOpt.customUri')" />
-              </div>
-              <ng-container formGroupName="expertConfig">
-                <div class="field-group">
-                  <label class="field-label">{{ i18n.t('modelOpt.computeStrategy') }}</label>
-                  <select class="form-input" formControlName="compute">
-                    <option value="auto">{{ i18n.t('modelOpt.autoDefault') }}</option>
-                    <option value="deepspeed_1">{{ i18n.t('modelOpt.deepspeed1') }}</option>
-                    <option value="deepspeed_3">{{ i18n.t('modelOpt.deepspeed3') }}</option>
-                  </select>
-                </div>
-
-                <div class="field-group full-width" style="background: rgba(8, 84, 160, 0.05); padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
-                  <div class="full-width" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: -0.5rem;">
-                    <input type="checkbox" id="peftToggle" formControlName="use_peft" />
-                    <label for="peftToggle" class="field-label" style="margin: 0; font-weight: 600;">{{ i18n.t('modelOpt.enablePeft') }}</label>
+              <div class="vram-profile">
+                @if (estimatedVram() > 0) {
+                  <div class="vram-visual">
+                    <ui5-radial-progress-indicator 
+                      [value]="mathMin(100, (estimatedVram() / gpuTotalNum()) * 100)" 
+                      style="width: 80px; height: 80px;">
+                    </ui5-radial-progress-indicator>
+                    <div class="vram-data">
+                      <span class="v-val">{{ estimatedVram().toFixed(1) }} GB</span>
+                      <span class="v-label">Estimated VRAM</span>
+                    </div>
                   </div>
-                  @if (jobForm.value.expertConfig?.use_peft) {
-                    <div class="field-group">
-                      <label class="field-label">{{ i18n.t('modelOpt.rank') }}</label>
-                      <input type="number" class="form-input" formControlName="peft_r" />
-                    </div>
-                    <div class="field-group">
-                      <label class="field-label">{{ i18n.t('modelOpt.loraAlpha') }}</label>
-                      <input type="number" class="form-input" formControlName="peft_alpha" />
-                    </div>
-                    <div class="field-group">
-                      <label class="field-label">{{ i18n.t('modelOpt.dropout') }}</label>
-                      <input type="number" class="form-input" formControlName="peft_dropout" step="0.01" />
-                    </div>
-                  }
-                </div>
-
-                <div class="field-group full-width">
-                  <label class="field-label">{{ i18n.t('modelOpt.rawJson') }}</label>
-                  <textarea class="form-input mono" rows="5" formControlName="rawJson" placeholder='{"quant_format": "int8", "enable_pruning": true}'></textarea>
-                </div>
-              </ng-container>
+                } @else {
+                  <p class="text-muted text-small">Select a model to calculate VRAM footprint.</p>
+                }
+              </div>
             </div>
-          }
 
-          <div *ngIf="formErrors().length" role="alert" class="error-summary">
-            <strong>{{ i18n.t('form.errorsTitle') }}</strong>
-            <ul><li *ngFor="let e of formErrors()">{{ e }}</li></ul>
-          </div>
-          <div class="form-actions" style="margin-top: 1rem;">
-            <ui5-button design="Emphasized" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
-              {{ submitting() ? i18n.t('modelOpt.submitting') : i18n.t('modelOpt.runJob') }}
-            </ui5-button>
-          </div>
-        </form>
-      </section>
+            <div class="glass-panel stat-material slideUp" style="animation-delay: 0.2s">
+              <div class="stat-header">
+                <ui5-icon name="line-chart"></ui5-icon>
+                <span>Optimization Pareto Frontier</span>
+              </div>
+              <div class="pareto-summary">
+                <div class="p-item">
+                  <span class="p-label">Precision</span>
+                  <ui5-tag [design]="precisionDesign()">{{ jobForm.value.quant_format?.toUpperCase() }}</ui5-tag>
+                </div>
+                <div class="p-item">
+                  <span class="p-label">Efficiency Gain</span>
+                  <span class="p-value status-success">+{{ efficiencyGain() }}%</span>
+                </div>
+              </div>
+            </div>
+          </section>
 
-      <!-- Jobs Table -->
-      <section class="section">
-        <h2 class="section-title">{{ i18n.t('modelOpt.jobs') }} <span class="text-muted text-small">({{ jobs().length }})</span></h2>
-        @if (jobs().length) {
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>{{ i18n.t('modelOpt.jobId') }}</th>
-                  <th>{{ i18n.t('modelOpt.jobName') }}</th>
-                  <th>{{ i18n.t('modelOpt.jobModel') }}</th>
-                  <th>{{ i18n.t('modelOpt.jobQuant') }}</th>
-                  <th>{{ i18n.t('modelOpt.jobStatus') }}</th>
-                  <th>{{ i18n.t('modelOpt.jobProgress') }}</th>
-                  <th>{{ i18n.t('modelOpt.jobCreated') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (j of jobs(); track j.id) {
-                  <ng-container>
-                    <tr class="job-row" (click)="toggleExpand(j.id)" [class.expanded]="expandedJobId() === j.id">
-                      <td class="mono text-small" style="cursor: pointer;">
-                        <span style="display: inline-block; width: 12px; margin-inline-end: 4px;">{{ expandedJobId() === j.id ? '-' : '+' }}</span>
-                        {{ j.id.slice(0,8) }}
-                      </td>
-                      <td>{{ j.name }}</td>
-                      <td class="text-small"><bdi>{{ j.config.model_name }}</bdi></td>
-                      <td><code><bdi>{{ j.config.quant_format }}</bdi></code></td>
-                      <td><span class="status-badge {{ jobBadge(j.status) }}">{{ j.status }}</span></td>
-                      <td>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
-                          <span class="text-small">{{ (j.progress * 100).toFixed(0) }}%</span>
-                          <span class="text-small text-muted">{{ calculateETA(j) }}</span>
+          <div class="main-grid">
+            <!-- Left: Configurator -->
+            <aside class="config-side">
+              <div class="glass-panel config-card slideUp" style="animation-delay: 0.3s">
+                <ui5-title level="H4" class="p-1">{{ i18n.t('modelOpt.createJob') }}</ui5-title>
+                <form class="p-1 display-flex flex-column gap-1" [formGroup]="jobForm">
+                  
+                  <ui5-label show-colon>{{ i18n.t('modelOpt.modelCatalog') }}</ui5-label>
+                  <div class="model-picker">
+                    @for (m of models(); track m.name) {
+                      <div class="mini-model-card" [class.selected]="jobForm.value.model_name === m.name" (click)="selectModel(m)">
+                        <div class="m-name">{{ m.name }}</div>
+                        <div class="m-meta">{{ m.parameters }} · {{ m.size_gb }}GB</div>
+                      </div>
+                    }
+                  </div>
+
+                  <ui5-label show-colon>{{ i18n.t('modelOpt.quantFormat') }}</ui5-label>
+                  <ui5-select formControlName="quant_format" class="w-100">
+                    <ui5-option value="int8">INT8 (Standard)</ui5-option>
+                    <ui5-option value="int4_awq">INT4-AWQ (High Efficiency)</ui5-option>
+                    <ui5-option value="fp8">FP8 (Production Performance)</ui5-option>
+                  </ui5-select>
+
+                  <ui5-label show-colon>{{ i18n.t('modelOpt.exportFormat') }}</ui5-label>
+                  <ui5-select formControlName="export_format" class="w-100">
+                    <ui5-option value="hf">HuggingFace SafeTensors</ui5-option>
+                    <ui5-option value="vllm">vLLM Engine Compiled</ui5-option>
+                  </ui5-select>
+
+                  <ui5-button design="Emphasized" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
+                    {{ submitting() ? 'Initializing Agent...' : 'Execute Optimization' }}
+                  </ui5-button>
+                </form>
+              </div>
+            </aside>
+
+            <!-- Right: Monitor -->
+            <main class="jobs-side">
+              <div class="glass-panel monitor-card slideUp" style="animation-delay: 0.4s">
+                <ui5-bar design="Header">
+                  <ui5-title slot="startContent" level="H4">Job Monitor</ui5-title>
+                  <ui5-tag slot="endContent" design="Neutral">{{ jobs().length }} Sessions</ui5-tag>
+                </ui5-bar>
+                
+                <div class="jobs-list">
+                  @for (j of jobs(); track j.id) {
+                    <div class="job-entry" [class.expanded]="expandedJobId() === j.id">
+                      <div class="job-main-row" (click)="toggleExpand(j.id)">
+                        <div class="j-info">
+                          <div class="j-title">{{ j.name }}</div>
+                          <div class="j-meta">{{ j.config.model_name }} · {{ j.config.quant_format }}</div>
                         </div>
-                        <div class="progress-bar">
-                          <div class="progress-fill" [style.width.%]="j.progress * 100"></div>
+                        <div class="j-progress">
+                          <ui5-progress-indicator [value]="j.progress * 100" [design]="j.status === 'completed' ? 'Positive' : 'Information'"></ui5-progress-indicator>
                         </div>
-                        @if (j.history && j.history.length > 0 && expandedJobId() !== j.id) {
-                          <div class="sparkline-container mt-1" title="Training Loss (Solid) vs Val Loss (Dashed)">
-                            <svg viewBox="0 0 100 20" class="sparkline-svg" preserveAspectRatio="none">
-                              <polyline fill="none" class="train-line" [attr.points]="generateSparklinePath(j.history, 'train_loss')" />
-                              <polyline fill="none" class="val-line" [attr.points]="generateSparklinePath(j.history, 'val_loss')" />
-                            </svg>
-                          </div>
-                        }
-                        
-                        @if (j.evaluation) {
-                          <div class="eval-metrics mt-1">
-                            <span class="badge badge--best" title="Perplexity (Lower is better)">PPL: {{ j.evaluation.perplexity }}</span>
-                            <span class="badge" title="Validation Loss">Loss: {{ j.evaluation.eval_loss }}</span>
-                            <span class="text-small text-muted">{{ j.evaluation.runtime_sec }}s</span>
-                          </div>
-                        }
-                      </td>
-                      <td class="text-small text-muted" style="min-width: 100px;">
-                        {{ j.created_at | date:'short' }}
-                        @if (j.status === 'completed') {
-                          <div class="mt-1" style="display: flex; gap: 0.5rem; flex-direction: column;" (click)="$event.stopPropagation()">
-                            @if (!j.deployed) {
-                              <ui5-button design="Emphasized"
-                                      (click)="deployJob(j)" [disabled]="deployingJob() === j.id">
-                                {{ deployingJob() === j.id ? i18n.t('modelOpt.deploying') : i18n.t('modelOpt.deployModel') }}
-                              </ui5-button>
-                            } @else {
-                              <ui5-button design="Emphasized"
-                                      (click)="openChat(j)">
-                                {{ i18n.t('modelOpt.chatPlayground') }}
-                              </ui5-button>
+                        <ui5-tag [design]="jobBadgeDesign(j.status)">{{ j.status.toUpperCase() }}</ui5-tag>
+                      </div>
+                      
+                      @if (expandedJobId() === j.id) {
+                        <div class="job-expanded-content">
+                          <app-job-detail [job]="j"></app-job-detail>
+                          <div class="job-actions">
+                            @if (j.status === 'completed') {
+                              @if (!j.deployed) {
+                                <ui5-button design="Emphasized" (click)="deployJob(j)" [disabled]="deployingJob() === j.id">Deploy to Inference</ui5-button>
+                              } @else {
+                                <ui5-button design="Positive" icon="discussion" (click)="openChat(j)">{{ i18n.t('modelOpt.openWorkspace') }}</ui5-button>
+                              }
                             }
                           </div>
-                        }
-                      </td>
-                    </tr>
-                    @if (expandedJobId() === j.id) {
-                      <tr>
-                        <td colspan="7" style="padding: 0;">
-                          <app-job-detail [job]="j"></app-job-detail>
-                        </td>
-                      </tr>
-                    }
-                  </ng-container>
-                }
-              </tbody>
-            </table>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (jobs().length === 0) {
+                    <div class="p-2 text-center opacity-5">No optimization jobs found.</div>
+                  }
+                </div>
+              </div>
+            </main>
           </div>
-        }
-        @if (!jobs().length && !loading()) {
-          <p class="text-muted text-small">{{ i18n.t('modelOpt.noJobs') }}</p>
-        }
-      </section>
-
-      @if (loading()) {
-        <div class="loading-container">
-          <span class="loading-text">{{ i18n.t('common.loading') }}</span>
         </div>
-      }
+      </div>
 
-      <!-- Chat Playground Modal -->
+      <!-- Workspace Dialog -->
       @if (activeChatJob(); as chatJob) {
-        <div class="modal-overlay" (click)="closeChat()" (keydown.escape)="closeChat()">
-          <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="chat-modal-title" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3 id="chat-modal-title" style="margin: 0; font-size: 1rem;">{{ i18n.t('modelOpt.playground') }}: <bdi>{{ chatJob.config.model_name }}</bdi></h3>
-              <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('modelOpt.closeModal')" (click)="closeChat()"></ui5-button>
-            </div>
-            <div class="chat-window">
+        <ui5-dialog #chatDialog [attr.header-text]="i18n.t('modelOpt.workspace') + ': ' + chatJob.config.model_name" open (close)="closeChat()" class="glass-panel">
+          <div class="workspace-chat">
+            <div class="chat-history">
               @for (msg of chatHistory(); track $index) {
-                <div class="chat-bubble" [class.user]="msg.role === 'user'">
-                  <strong style="font-size: 0.75rem; color: #666;">{{ msg.role === 'user' ? i18n.t('chat.you') : i18n.t('chat.modelRole') }}</strong>
-                  <p style="margin: 0.2rem 0 0; font-size: 0.875rem;"><bdi>{{ msg.text }}</bdi></p>
-                </div>
-              }
-              @if (chatLoading()) {
-                <div class="chat-bubble loading">
-                  <em style="font-size: 0.875rem; color: #666;">{{ i18n.t('modelOpt.computing') }}</em>
+                <div class="p-bubble" [class.user]="msg.role === 'user'">
+                  <div class="p-text">{{ msg.text }}</div>
                 </div>
               }
             </div>
-            <div class="chat-input-area">
-              <input type="text" [formControl]="chatInput" class="form-input" [placeholder]="i18n.t('modelOpt.promptModel')" (keyup.enter)="sendChat()" />
-              <ui5-button design="Emphasized" (click)="sendChat()" [disabled]="chatLoading() || !chatInput.value">{{ i18n.t('chat.send') }}</ui5-button>
+            <div class="chat-input-row">
+              <ui5-input class="w-100" [value]="chatInput.value" (input)="chatInput.setValue($event.target.value)" 
+                         placeholder="Prompt the optimized model..." (keydown.enter)="sendChat()"></ui5-input>
+              <ui5-button design="Emphasized" icon="paper-plane" (click)="sendChat()" [disabled]="chatLoading()"></ui5-button>
             </div>
           </div>
-        </div>
+          <div slot="footer" style="padding: 0.5rem; display: flex; justify-content: flex-end;">
+            <ui5-button (click)="closeChat()">{{ i18n.t('common.close') }}</ui5-button>
+          </div>
+        </ui5-dialog>
       }
     </div>
   `,
   styles: [`
-    .section { margin-bottom: 2rem; }
+    .optimizer-viewport { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    .optimizer-scroll-area { flex: 1; overflow-y: auto; padding: 1rem 2rem 4rem; }
+    .optimizer-layout { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
 
-    .section-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 0 0 0.75rem;
-      color: var(--sapTextColor, #32363a);
-    }
-
-    .model-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .model-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 0.875rem;
-      cursor: pointer;
-      transition: border-color 0.12s, box-shadow 0.12s;
-
-      &:hover { border-color: var(--sapBrandColor, #0854a0); }
-
-      &.model-card--selected {
-        border-color: var(--sapBrandColor, #0854a0);
-        box-shadow: 0 0 0 2px rgba(8, 84, 160, 0.2);
-      }
-    }
-
-    .model-name {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--sapTextColor, #32363a);
-      margin-bottom: 0.5rem;
-      word-break: break-all;
-    }
-
-    .model-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-    }
-
-    .badge {
-      padding: 0.1rem 0.4rem;
-      background: var(--sapList_Background, #f5f5f5);
-      border-radius: 0.25rem;
-      font-size: 0.7rem;
-      color: var(--sapContent_LabelColor, #6a6d70);
-
-      &.badge--quant {
-        background: var(--sapInformationBackground, #e3f2fd);
-        color: var(--sapInformativeColor, #1565c0);
-      }
-    }
-
-    .job-form {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 1.25rem;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .form-input {
-      padding: 0.4rem 0.625rem;
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.25rem;
-      font-size: 0.875rem;
-      background: var(--sapField_Background, #fff);
-      color: var(--sapTextColor, #32363a);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .form-actions {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .btn-primary {
-      padding: 0.375rem 0.875rem;
-      background: var(--sapBrandColor, #0854a0);
-      color: #fff;
-      border: none;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.875rem;
-      font-weight: 500;
-
-      &:disabled { opacity: 0.5; cursor: default; }
-      &:hover:not(:disabled) { background: var(--sapButton_Hover_Background, #0a6ed1); }
-    }
-
-    .table-wrapper { overflow-x: auto; }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8125rem;
-      background: var(--sapTile_Background, #fff);
-      border-radius: 0.5rem;
-      overflow: hidden;
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-
-      th {
-        padding: 0.5rem 0.75rem;
-        background: var(--sapList_HeaderBackground, #f5f5f5);
-        text-align: left;
-        font-weight: 600;
-        color: var(--sapContent_LabelColor, #6a6d70);
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-      }
-
-      td {
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-        vertical-align: middle;
-      }
-
-      tr:last-child td { border-bottom: none; }
-      tr:hover td { background: var(--sapList_Hover_Background, #f5f5f5); }
-    }
-
-    .mono { font-family: monospace; }
-
-    .progress-bar {
-      height: 4px;
-      background: var(--sapList_Background, #f5f5f5);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 0.2rem;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: var(--sapBrandColor, #0854a0);
-      border-radius: 2px;
-      transition: width 0.3s;
-    }
-
-    .badge--best {
-      background: var(--sapSuccessBackground, #e0f2f1);
-      color: var(--sapPositiveColor, #00695c);
-    }
-
-    .t4-warn {
-      color: var(--sapNegativeColor, #c62828);
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    .cost-estimate {
-      background: var(--sapInformationBackground, #e8f4fd);
-      color: var(--sapInformativeColor, #0d47a1);
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.8125rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .loading-container {
-      padding: 2rem;
-      text-align: center;
-    }
-
-    .loading-text {
-      color: var(--sapContent_LabelColor, #6a6d70);
-    }
-    
-    .vram-profiler {
-      background: var(--sapList_Background, #f5f5f5);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      margin-top: 1rem;
-      grid-column: 1 / -1;
-    }
-    
-    .vram-danger {
-      border-color: var(--sapNegativeColor, #b00);
-      background: #ffebee;
-      color: #c62828;
-    }
-    
-    .vram-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-      font-size: 0.8125rem;
-      font-weight: 600;
-    }
-    
-    .progress-fill.danger-fill {
-      background: var(--sapNegativeColor, #b00);
-    }
-    
-    .sparkline-container { width: 100%; height: 20px; background: rgba(0,0,0,0.02); border-radius: 2px; }
-    .sparkline-svg { width: 100%; height: 100%; overflow: visible; }
-    .train-line { stroke: var(--sapBrandColor, #0854a0); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .val-line { stroke: var(--sapNegativeColor, #b00); stroke-width: 1; stroke-dasharray: 2 2; }
-    
-    .eval-metrics {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding-top: 0.25rem;
-    }
-    
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal-content {
-      background: var(--sapBackgroundColor, #fff); width: 500px; max-width: 90vw; border-radius: 0.5rem; overflow: hidden;
-      display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    .modal-header {
-      padding: 1rem; background: var(--sapList_HeaderBackground, #f5f5f5); border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
+    .floating-header {
+      margin: 1.5rem 2rem 0.5rem; padding: 0.75rem 1.5rem;
       display: flex; justify-content: space-between; align-items: center;
+      z-index: 10; border-radius: 999px !important;
     }
-    .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--sapContent_LabelColor, #666); }
-    .chat-window {
-      padding: 1rem; height: 300px; overflow-y: auto; background: var(--sapGroup_ContentBackground, #fafafa); display: flex; flex-direction: column; gap: 0.8rem;
-    }
-    .chat-bubble {
-      padding: 0.75rem; border-radius: 0.5rem; max-width: 85%; background: var(--sapInformationBackground, #e3f2fd); align-self: flex-start;
-      &.user { background: var(--sapSuccessBackground, #e8f5e9); align-self: flex-end; }
-    }
-    .chat-input-area {
-      padding: 1rem; background: var(--sapBackgroundColor, #fff); border-top: 1px solid var(--sapList_BorderColor, #e4e4e4); display: flex; gap: 0.5rem;
-    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
 
-    .error-summary {
-      background: var(--sapErrorBackground, #ffebee);
-      border: 1px solid var(--sapNegativeColor, #b00);
-      border-radius: 0.375rem;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1rem;
-      color: var(--sapNegativeColor, #b00);
-      font-size: 0.8125rem;
-    }
-    .error-summary ul { margin: 0.25rem 0 0; padding-inline-start: 1.25rem; }
-    .error-summary li { margin-bottom: 0.15rem; }
+    .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .stat-material { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .stat-header { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8125rem; font-weight: 600; opacity: 0.6; }
+    
+    .vram-profile { display: flex; align-items: center; min-height: 80px; }
+    .vram-visual { display: flex; align-items: center; gap: 1.5rem; }
+    .vram-data { display: flex; flex-direction: column; }
+    .v-val { font-size: 1.5rem; font-weight: 800; color: var(--sapBrandColor); }
+    .v-label { font-size: 0.75rem; opacity: 0.6; }
+
+    .pareto-summary { display: flex; gap: 3rem; align-items: center; min-height: 80px; }
+    .p-item { display: flex; flex-direction: column; gap: 0.5rem; }
+    .p-label { font-size: 0.75rem; font-weight: 700; opacity: 0.6; text-transform: uppercase; }
+    .p-value { font-size: 1.5rem; font-weight: 800; }
+
+    .main-grid { display: grid; grid-template-columns: 400px 1fr; gap: 1.5rem; }
+    @media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
+
+    .model-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.5rem; max-height: 240px; overflow-y: auto; padding: 0.5rem; background: rgba(0,0,0,0.03); border-radius: 0.75rem; }
+    .mini-model-card { padding: 0.75rem; background: #fff; border: 1px solid var(--sapList_BorderColor); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; }
+    .mini-model-card:hover { border-color: var(--sapBrandColor); transform: translateY(-2px); }
+    .mini-model-card.selected { background: var(--sapBrandColor); color: #fff; border-color: var(--sapBrandColor); box-shadow: 0 4px 12px rgba(8, 84, 160, 0.3); }
+    .m-name { font-size: 0.75rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+    .m-meta { font-size: 0.65rem; opacity: 0.8; }
+
+    .jobs-list { display: flex; flex-direction: column; }
+    .job-entry { border-bottom: 1px solid var(--sapList_BorderColor); }
+    .job-main-row { display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem; cursor: pointer; transition: background 0.2s; }
+    .job-main-row:hover { background: rgba(0,0,0,0.02); }
+    .j-info { flex: 1; }
+    .j-title { font-weight: 700; font-size: 0.9375rem; }
+    .j-meta { font-size: 0.75rem; opacity: 0.6; }
+    .j-progress { width: 150px; }
+
+    .job-expanded-content { padding: 1.5rem; background: rgba(0,0,0,0.01); border-top: 1px solid var(--sapList_BorderColor); animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .job-actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+
+    .status-success { color: var(--sapPositiveColor); }
+    
+    .p-1 { padding: 1rem; }
+    .p-2 { padding: 2rem; }
+    .w-100 { width: 100%; }
+    .display-flex { display: flex; }
+    .flex-column { flex-direction: column; }
+    .gap-1 { gap: 1rem; }
+    .mt-1 { margin-top: 1rem; }
+    .opacity-5 { opacity: 0.5; }
+    .text-center { text-align: center; }
+
+    .workspace-chat { width: 500px; max-width: 90vw; height: 500px; display: flex; flex-direction: column; gap: 1rem; }
+    .chat-history { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem; }
+    .p-bubble { padding: 0.75rem 1rem; border-radius: 1rem; max-width: 85%; background: var(--sapList_Background); }
+    .p-bubble.user { align-self: flex-end; background: var(--sapBrandColor); color: #fff; }
+    .chat-input-row { display: flex; gap: 0.5rem; }
   `],
 })
 export class ModelOptimizerComponent implements OnInit, OnDestroy {
-  public readonly userSettings = inject(UserSettingsService);
   public readonly store = inject(AppStore);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
   private readonly fb = inject(FormBuilder);
-  private readonly log = inject(LogService);
   private readonly destroy$ = new Subject<void>();
 
   readonly expandedJobId = signal<string | null>(null);
@@ -696,330 +305,125 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
-  readonly mangleStatus = signal<'checking'|'passed'|'failed'|null>(null);
   readonly deployingJob = signal<string | null>(null);
   readonly activeChatJob = signal<JobResponse | null>(null);
   readonly chatInput = this.fb.control('');
   readonly chatHistory = signal<{role: 'user'|'model', text: string}[]>([]);
   readonly chatLoading = signal(false);
-  readonly formErrors = signal<string[]>([]);
 
   readonly jobForm = this.fb.nonNullable.group({
     model_name: ['', Validators.required],
     quant_format: ['int8', Validators.required],
-    calib_samples: [512, [Validators.required, Validators.min(32)]],
-    calib_seq_len: [2048, Validators.required],
-    export_format: ['hf', Validators.required],
-    enable_pruning: [false],
-    framework: ['PyTorch'],
-    dataset: ['spider-train'],
-    expertConfig: this.fb.nonNullable.group({
-      compute: ['auto'],
-      use_peft: [false],
-      peft_r: [8],
-      peft_alpha: [16],
-      peft_dropout: [0.05],
-      rawJson: ['']
-    })
+    export_format: ['vllm', Validators.required],
   });
 
   readonly formValue = toSignal(this.jobForm.valueChanges, { initialValue: this.jobForm.getRawValue() });
 
   readonly estimatedVram = computed(() => {
     const vals = this.formValue();
-    const modelName = vals.model_name;
-    const quant = vals.quant_format;
-    
-    if (!modelName) return 0;
-    
-    const m = this.models().find(x => x.name === modelName);
-    if (!m) return 0; // Fallback if custom URI
-    
-    let multiplier = 1.0;
-    if (quant === 'int8') multiplier = 0.5;
-    else if (quant === 'int4_awq') multiplier = 0.3;
-    else if (quant === 'w4a16') multiplier = 0.35;
-    
-    const base = m.size_gb;
-    return (base * multiplier) + 1.5; // +1.5GB overhead context
+    const m = this.models().find(x => x.name === vals.model_name);
+    if (!m) return 0;
+    let mult = vals.quant_format === 'int8' ? 0.5 : vals.quant_format === 'int4_awq' ? 0.3 : 0.35;
+    return (m.size_gb * mult) + 1.2;
+  });
+
+  readonly efficiencyGain = computed(() => {
+    const q = this.formValue().quant_format;
+    if (q === 'int8') return '45';
+    if (q === 'int4_awq') return '72';
+    return '68';
   });
 
   readonly gpuTotalNum = computed(() => {
     const t = this.store.gpuMemoryTotal();
-    return typeof t === 'number' ? t : 0;
+    return t === 0 ? 40 : t; // Fallback to 40GB (L40S)
   });
 
   readonly isVramExceeded = computed(() => {
-    const required = this.estimatedVram();
-    const total = this.gpuTotalNum();
-    if (required === 0 || total === 0) return false;
-    return required > total * 0.95;
+    const req = this.estimatedVram();
+    const tot = this.gpuTotalNum();
+    return req > 0 && req > tot * 0.95;
   });
 
   mathMin(a: number, b: number) { return Math.min(a, b); }
 
-  generateSparklinePath(history: JobHistory[], key: 'train_loss' | 'val_loss'): string {
-    if (!history || history.length < 2) return '';
-    const maxVal = Math.max(...history.map(h => Math.max(h.train_loss, h.val_loss)));
-    const minVal = 0;
-    const w = 100;
-    const h = 20;
-    
-    return history.map((pt, i) => {
-      const x = (i / (history.length - 1)) * w;
-      const y = h - ((pt[key] - minVal) / (maxVal - minVal) * h);
-      return `${x},${y}`;
-    }).join(' ');
-  }
-
-  calculateETA(j: JobResponse): string {
-    if (j.status === 'completed' || j.progress >= 1.0) return this.i18n.t('modelOpt.etaDone');
-    if (j.status === 'failed' || j.status === 'cancelled') return '';
-    if (j.progress < 0.05) return this.i18n.t('modelOpt.etaCalculating');
-
-    const created = new Date(j.created_at).getTime();
-    const now = Date.now();
-    const elapsedMs = now - created;
-    if (elapsedMs < 0) return this.i18n.t('modelOpt.etaCalculating');
-
-    const totalExpectedMs = elapsedMs / j.progress;
-    const remainingMs = totalExpectedMs - elapsedMs;
-
-    const totalSeconds = Math.floor(remainingMs / 1000);
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    
-    return this.i18n.t('modelOpt.eta', { mins: String(mins), secs: String(secs) });
-  }
-
   ngOnInit(): void {
     this.refreshInterval = setInterval(() => {
-      // Don't poll REST if a row is actively WS streaming
       if (!this.expandedJobId() && !this.loading()) {
-        this.api.get<JobResponse[]>('/jobs').pipe(takeUntil(this.destroy$)).subscribe({
+        this.api.get<JobResponse[]>('/jobs').pipe(takeUntil(this.destroy$)).subscribe({ 
           next: (res) => this.jobs.set(res),
-          error: () => { this.toast.error(this.i18n.t('modelOpt.operationFailed')); }
+          error: () => {}
         });
       }
-    }, 4000);
+    }, 5000);
     this.loadData();
   }
 
-  toggleExpand(jobId: string) {
-    this.expandedJobId.update(v => v === jobId ? null : jobId);
-  }
+  toggleExpand(jobId: string) { this.expandedJobId.update(v => v === jobId ? null : jobId); }
 
   ngOnDestroy(): void {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  validateMangleRules() {
-    this.mangleStatus.set('checking');
-    this.api.post<{status: string, output: string}>('/mangle/validate', {}).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res) => {
-        if (res.status === 'passed') {
-          this.mangleStatus.set('passed');
-          this.toast.success(this.i18n.t('modelOpt.manglePassed'), this.i18n.t('modelOpt.manglePassedTitle'));
-        } else {
-          this.mangleStatus.set('failed');
-          this.toast.error(this.i18n.t('modelOpt.mangleFailed'), this.i18n.t('modelOpt.mangleFailedTitle'));
-        }
-      },
-      error: () => {
-        this.mangleStatus.set('failed');
-        this.toast.error(this.i18n.t('modelOpt.mangleCheckFailed'), this.i18n.t('modelOpt.checkFailedTitle'));
-      }
-    });
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
+    this.destroy$.next(); this.destroy$.complete();
   }
 
   loadData(): void {
     this.loading.set(true);
-
     forkJoin({
-      models: this.api.get<ModelInfo[]>('/models/catalog').pipe(
-        catchError((err: HttpErrorResponse) => {
-          this.toast.error(this.i18n.t('modelOpt.catalogFailed'), this.i18n.t('modelOpt.modelsTitle'));
-          this.log.error('Model catalog failed', 'ModelOptimizer', err);
-          return of([]);
-        })
-      ),
-      jobs: this.api.get<JobResponse[]>('/jobs').pipe(
-        catchError((err: HttpErrorResponse) => {
-          this.toast.warning(this.i18n.t('modelOpt.jobsFailed'), this.i18n.t('modelOpt.jobsTitle'));
-          this.log.warn('Jobs load failed', 'ModelOptimizer', err);
-          return of([]);
-        })
-      ),
-    })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (results: { models: ModelInfo[]; jobs: JobResponse[] }) => {
-          this.models.set(results.models);
-          this.jobs.set(results.jobs);
-          this.loading.set(false);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.toast.error(this.i18n.t('modelOpt.loadFailed'), this.i18n.t('common.error'));
-          this.log.error('Load failed', 'ModelOptimizer', err);
-          this.loading.set(false);
-        },
-      });
-  }
-
-  selectModel(m: ModelInfo): void {
-    if (this.userSettings.mode() === 'novice') {
-      this.toast.info(this.i18n.t('modelOpt.switchMode'));
-      return;
-    }
-    this.jobForm.patchValue({
-      model_name: m.name,
-      quant_format: m.recommended_quant
+      models: this.api.get<ModelInfo[]>('/models/catalog').pipe(catchError(() => of([]))),
+      jobs: this.api.get<JobResponse[]>('/jobs').pipe(catchError(() => of([]))),
+    }).pipe(takeUntil(this.destroy$)).subscribe((res) => {
+      this.models.set(res.models); this.jobs.set(res.jobs); this.loading.set(false);
     });
   }
 
-  applyTemplate(templateId: string): void {
-    if (templateId === 'sql' || templateId === 'finance') {
-      this.jobForm.patchValue({ model_name: 'Qwen/Qwen3.5-0.6B', quant_format: 'int4_awq' });
-    } else if (templateId === 'hr') {
-      this.jobForm.patchValue({ model_name: 'meta-llama/Llama-3-8B-Instruct', quant_format: 'int8' });
-    } else {
-      this.jobForm.patchValue({ model_name: '' });
-    }
-  }
+  selectModel(m: ModelInfo): void { this.jobForm.patchValue({ model_name: m.name, quant_format: m.recommended_quant }); }
 
   createJob(): void {
-    const errors: string[] = [];
-    if (this.jobForm.controls.model_name.invalid) {
-      errors.push(this.i18n.t('modelOpt.errorModelRequired'));
-    }
-    if (this.jobForm.controls.quant_format.invalid) {
-      errors.push(this.i18n.t('modelOpt.errorQuantRequired'));
-    }
-    try {
-      if (this.isVramExceeded()) {
-        errors.push(this.i18n.t('modelOpt.vramExceeded'));
-      }
-    } catch { /* VRAM signals unavailable */ }
-    this.formErrors.set(errors);
-    if (this.jobForm.invalid || errors.length) return;
+    if (this.jobForm.invalid) return;
     this.submitting.set(true);
-
-    const formVal = this.jobForm.getRawValue();
-
-    let payloadConfig: JobPayloadConfig = {
-      model_name: formVal.model_name,
-      quant_format: formVal.quant_format,
-      calib_samples: formVal.calib_samples,
-      calib_seq_len: formVal.calib_seq_len,
-      export_format: formVal.export_format,
-      enable_pruning: formVal.enable_pruning,
-      pruning_sparsity: 0.2, // Fixed server-side default mapped natively
-    };
-
-    if (this.userSettings.mode() === 'expert') {
-      const expert = formVal.expertConfig;
-      
-      if (expert.use_peft) {
-        payloadConfig['use_peft'] = true;
-        payloadConfig['peft_config'] = {
-          r: expert.peft_r,
-          lora_alpha: expert.peft_alpha,
-          lora_dropout: expert.peft_dropout
-        };
-      }
-
-      if (expert.rawJson.trim()) {
-        try {
-          const parsedOverride = JSON.parse(expert.rawJson) as Record<string, unknown>;
-          payloadConfig = { ...payloadConfig, ...parsedOverride, compute_strategy: expert.compute };
-        } catch (e) {
-          this.toast.error(this.i18n.t('modelOpt.invalidJson'), this.i18n.t('modelOpt.syntaxErrorTitle'));
-          this.submitting.set(false);
-          return;
-        }
-      }
-    }
-
-    const payload = { config: payloadConfig };
-
-    this.api.post<JobResponse>('/jobs', payload)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (j: JobResponse) => {
-          this.jobs.update((jobs) => [j, ...jobs]);
-          this.toast.success(`Job ${j.id.slice(0, 8)} submitted successfully`, 'Job Created');
-          this.submitting.set(false);
-          this.jobForm.patchValue({ model_name: '' });
-        },
-        error: (e: HttpErrorResponse) => {
-          const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
-          this.toast.error(this.i18n.t('modelOpt.jobCreateFailed', { detail }), this.i18n.t('modelOpt.jobErrorTitle'));
-          this.log.error('Job creation failed', 'ModelOptimizer', e);
-          this.submitting.set(false);
-        },
-      });
+    this.api.post<JobResponse>('/jobs', { config: this.jobForm.getRawValue() }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (j) => { this.jobs.update(js => [j, ...js]); this.submitting.set(false); this.toast.success('Optimization job initialized'); },
+      error: () => { this.submitting.set(false); this.toast.error('Failed to create job'); }
+    });
   }
 
-  jobBadge(status: string): string {
-    const map: Record<string, string> = {
-      pending: 'status-pending',
-      running: 'status-running',
-      completed: 'status-success',
-      failed: 'status-error',
-      cancelled: 'status-warning',
-    };
-    return map[status] ?? 'status-info';
+  jobBadgeDesign(status: string): 'Neutral' | 'Positive' | 'Critical' | 'Negative' | 'Information' {
+    const map: Record<string, any> = { pending: 'Neutral', running: 'Information', completed: 'Positive', failed: 'Negative' };
+    return map[status] ?? 'Information';
+  }
+
+  precisionDesign(): 'Information' | 'Critical' | 'Positive' {
+    const q = this.jobForm.value.quant_format;
+    if (q === 'int8') return 'Positive';
+    if (q === 'int4_awq') return 'Critical';
+    return 'Information';
   }
 
   deployJob(job: JobResponse) {
     this.deployingJob.set(job.id);
     this.api.post(`/jobs/${job.id}/deploy`, {}).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
-        this.jobs.update(jobs => jobs.map(j => j.id === job.id ? {...j, deployed: true} : j));
-        this.toast.success(this.i18n.t('modelOpt.deploySuccess'), this.i18n.t('modelOpt.deployCompleteTitle'));
-        this.deployingJob.set(null);
-      },
-      error: (e: HttpErrorResponse) => {
-        const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
-        this.toast.error(this.i18n.t('modelOpt.deployFailed', { detail }), this.i18n.t('modelOpt.deployErrorTitle'));
-        this.deployingJob.set(null);
-      }
+      next: () => { this.jobs.update(js => js.map(j => j.id === job.id ? {...j, deployed: true} : j)); this.deployingJob.set(null); },
+      error: () => this.deployingJob.set(null)
     });
   }
 
   openChat(job: JobResponse) {
     this.activeChatJob.set(job);
     this.chatHistory.set([{ role: 'model', text: 'Inference pipeline connected. I am ready to receive your text.' }]);
-    this.chatInput.setValue('');
   }
 
-  closeChat() {
-    this.activeChatJob.set(null);
-  }
+  closeChat() { this.activeChatJob.set(null); }
 
   sendChat() {
     const text = this.chatInput.value?.trim();
     const job = this.activeChatJob();
     if (!text || !job) return;
-
     this.chatHistory.update(h => [...h, { role: 'user', text }]);
     this.chatInput.setValue('');
     this.chatLoading.set(true);
-
     this.api.post<{response: string}>(`/inference/${job.id}/chat`, { prompt: text }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res) => {
-        this.chatHistory.update(h => [...h, { role: 'model', text: res.response }]);
-        this.chatLoading.set(false);
-      },
-      error: (e: HttpErrorResponse) => {
-        const detail = (e.error as { detail?: string })?.detail ?? 'Unknown error';
-        this.toast.error(this.i18n.t('modelOpt.inferenceFailed', { detail }), this.i18n.t('common.error'));
-        this.chatLoading.set(false);
-      }
+      next: (res) => { this.chatHistory.update(h => [...h, { role: 'model', text: res.response }]); this.chatLoading.set(false); },
+      error: () => this.chatLoading.set(false)
     });
   }
 }

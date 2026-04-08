@@ -3,55 +3,57 @@
 # Tiered topology per sap-ai-experience-map.yaml
 # ════════════════════════════════════════════════════════════════════════════
 
+version: '3.8'
+
 services:
 
-  # ── Tier 1 ─ SAP Analytics Cloud : Gen UI Experiences ────────────────────
+  # ── Tier 1 ─ API Gateway & Orchestration ────────────────────────────────
 
-  world-monitor:
+  api-gateway:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    labels:
+      sap.ai.tier: "api_gateway"
+      sap.ai.service: "nginx-router"
+    depends_on:
+      - model-optimizer
+      - data-copilot
+      - odata-schema
+      - vllm
+      - elasticsearch
+      - arabic-ocr
+    networks: [platform-network]
+
+  model-optimizer:
     build:
-      context: ./src/generativeUI/world-monitor-main
+      context: ./src/training/nvidia-modelopt
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - VLLM_URL=http://vllm:8080
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - MANGLE_ROUTER_URL=http://agent-router:8010
+      - "8001:8001"
     deploy:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
-    labels:
-      sap.ai.tier: "sap_analytics_cloud"
-      sap.ai.service: "world-monitor"
-      sap.ai.data_security: "internal/confidential"
-    depends_on: [agent-router, elasticsearch, vllm]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks: [platform-network]
-
-  geni-ui:
-    build:
-      context: ./src/generativeUI/training-webcomponents-ngx
-      dockerfile: apps/angular-shell/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8080:80"
+          memory: 1G
     environment:
-      - SAP_API_BASE_URL=http://api-gateway:80
-    depends_on: [api-gateway]
+      - PORT=8001
+      - MODEL_CACHE_DIR=/app/models
+    volumes:
+      - model-cache:/app/models
+    labels:
+      sap.ai.tier: "model_orchestration"
+      sap.ai.service: "nvidia-model-optimizer"
     networks: [platform-network]
 
   data-copilot:
     build:
       context: ./src/generativeUI/training-webcomponents-ngx/packages/api-server
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.suite
     restart: unless-stopped
     ports:
       - "8002:8002"
@@ -62,32 +64,20 @@ services:
           memory: 512M
     environment:
       - PORT=8002
-      - MANGLE_ROUTER_URL=http://agent-router:8010
-      - ODATA_SERVICE_URL=http://odata-schema:8003
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
-      - AICORE_BASE_URL=${AICORE_BASE_URL}
-      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
-      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
-      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP}
+      - HANA_URL=${HANA_URL}
+      - VLLM_URL=http://vllm:8080
     labels:
-      sap.ai.tier: "sap_analytics_cloud"
+      sap.ai.tier: "data_engineering"
       sap.ai.service: "data-cleaning-copilot"
-      sap.ai.data_security: "confidential"
-    depends_on: [agent-router, odata-schema, elasticsearch]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    depends_on: [vllm]
     networks: [platform-network]
 
-  # ── Tier 3 ─ AI Core ────────────────────────────────────────────────────
+  # ── Tier 2 ─ Sovereign LLM Plane ────────────────────────────────────────
 
   vllm:
     build:
-      context: ./src/intelligence/vllm-main
-      dockerfile: Dockerfile
+      context: ./src/intelligence/vllm-turboquant
+      dockerfile: Dockerfile.vllm-l40s-turboquant
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -95,19 +85,13 @@ services:
       - PORT=8080
       - MODEL_PATH=/app/models
       - METRICS_BIND=127.0.0.1
+      - VLLM_DEVICE=cpu
     volumes:
       - model-cache:/app/models
     labels:
       sap.ai.tier: "ai_core"
       sap.ai.service: "enterprise-sovereign-llm"
       sap.ai.data_security: "on-premise-only"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -123,53 +107,13 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          memory: 2G
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g
     labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "search"
-      sap.ai.data_security: "index-based"
-    volumes:
-      - es-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks: [platform-network]
-
-  agent-router:
-    build:
-      context: ./src/data/mangle-query-service
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8010:8010"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-    environment:
-      - PORT=8010
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - VLLM_URL=http://vllm:8080
-      - ODATA_SERVICE_URL=http://odata-schema:8003
-      - HANA_URL=${HANA_URL}
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "agent-router"
-      sap.ai.data_security: "governance-hub"
-    depends_on: [elasticsearch, vllm, odata-schema]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      sap.ai.tier: "data_storage"
+      sap.ai.service: "vector-search-engine"
     networks: [platform-network]
 
   odata-schema:
@@ -203,6 +147,8 @@ services:
     build:
       context: ./src/intelligence/ai-core-pal
       dockerfile: Dockerfile
+      args:
+        - ZIG_TARGET=aarch64-linux-gnu
     restart: unless-stopped
     ports:
       - "8020:8020"
@@ -215,43 +161,16 @@ services:
       - PORT=8020
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
-      - METRICS_BIND=127.0.0.1
     labels:
       sap.ai.tier: "ai_core"
       sap.ai.service: "mcp-pal-deep-learning"
-      sap.ai.data_security: "confidential"
-    depends_on: [agent-router, vllm]
-    networks: [platform-network]
-
-  # ── Tier 3 ─ AI Core ────────────────────────────────────────────────────
-    build:
-      context: ./src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8040:8040"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-    environment:
-      - PORT=8040
-      - HANA_URL=${HANA_URL}
-      - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
-    labels:
-      sap.ai.tier: "ai_core"
-      sap.ai.service: "ai-prompt-agent"
-      sap.ai.data_security: "confidential"
-    depends_on: [agent-router, vllm]
+    depends_on: [vllm]
     networks: [platform-network]
 
   embedded-hana:
     build:
       context: ./src/data/langchain-integration-for-sap-hana-cloud-main
-      dockerfile: Dockerfile
+      dockerfile: deploy/aicore/Dockerfile
     restart: unless-stopped
     ports:
       - "8050:8050"
@@ -264,12 +183,10 @@ services:
       - PORT=8050
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
     labels:
       sap.ai.tier: "ai_core"
       sap.ai.service: "embedded-hana"
-      sap.ai.data_security: "confidential"
-    depends_on: [agent-router, vllm]
+    depends_on: [vllm]
     networks: [platform-network]
 
   arabic-ocr:
@@ -291,68 +208,9 @@ services:
       - OCR_MAX_WORKERS=2
       - OCR_MAX_CONCURRENT=4
       - OCR_MAX_UPLOAD_BYTES=104857600
-      - OCR_ALLOWED_CALLBACK_HOSTS=${OCR_ALLOWED_CALLBACK_HOSTS:-}
-      - OCR_WEBHOOK_SECRET=${OCR_WEBHOOK_SECRET:-}
     labels:
       sap.ai.tier: "ai_core"
       sap.ai.service: "arabic-ocr"
-      sap.ai.data_security: "confidential"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8060/ocr/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-    networks: [platform-network]
-
-  # ── Tier 4 ─ FinSight SAP BTP/BDC ──────────────────────────────────────
-
-  model-optimizer:
-    build:
-      context: ./src/training/nvidia-modelopt
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8001:8001"
-    environment:
-      - PORT=8001
-      - LOG_LEVEL=INFO
-    labels:
-      sap.ai.tier: "finsight_btp_bdc"
-      sap.ai.service: "object-store-for-model"
-      sap.ai.data_security: "confidential"
-    volumes:
-      - model-cache:/app/models
-      - ./src/training/nvidia-modelopt/outputs:/app/outputs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks: [platform-network]
-
-  # ── Infrastructure ─────────────────────────────────────────────────────
-
-  api-gateway:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "8000:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - agent-router
-      - odata-schema
-      - vllm
-      - elasticsearch
-      - arabic-ocr
     networks: [platform-network]
 
 volumes:

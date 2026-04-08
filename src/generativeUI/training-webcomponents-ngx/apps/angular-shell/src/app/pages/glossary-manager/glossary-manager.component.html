@@ -27,6 +27,12 @@
   <!-- Search/filter bar -->
   <div class="filter-bar">
     <input type="text" class="search-input" [placeholder]="i18n.t('glossary.searchPlaceholder')" [(ngModel)]="searchQuery" />
+    <div class="pair-type-chips">
+      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'all'" (click)="pairTypeFilter.set('all')">{{ i18n.t('glossary.pairTypeAll') }}</button>
+      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'translation'" (click)="pairTypeFilter.set('translation')">{{ i18n.t('glossary.pairTypeTranslation') }}</button>
+      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'alias'" (click)="pairTypeFilter.set('alias')">{{ i18n.t('glossary.pairTypeAlias') }}</button>
+      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'db_field_mapping'" (click)="pairTypeFilter.set('db_field_mapping')">{{ i18n.t('glossary.pairTypeDbField') }}</button>
+    </div>
     <span class="result-count">{{ filteredTmEntries().length }} {{ i18n.t('glossary.of') }} {{ tmEntries().length }} {{ i18n.t('glossary.overridesLabel') }}</span>
   </div>
 

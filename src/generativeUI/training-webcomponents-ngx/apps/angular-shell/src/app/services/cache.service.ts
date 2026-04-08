@@ -26,7 +26,7 @@ interface CacheConfig {
 const DEFAULT_CACHE_CONFIGS: Record<string, CacheConfig> = {
   '/health': { staleTime: 30_000, maxAge: 60_000 },
   '/gpu/status': { staleTime: 10_000, maxAge: 30_000 },
-  '/graph/stats': { staleTime: 60_000, maxAge: 120_000 },
+  '/hana/stats': { staleTime: 60_000, maxAge: 120_000 },
   '/models/catalog': { staleTime: 300_000, maxAge: 600_000 },
   '/jobs': { staleTime: 5_000, maxAge: 15_000 },
 };

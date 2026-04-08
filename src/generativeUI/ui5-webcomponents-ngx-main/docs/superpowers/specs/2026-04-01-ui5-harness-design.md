@@ -2,17 +2,17 @@
 
 ## Objective
 
-Create a lightweight orchestration harness for `ui5-webcomponents-ngx-main` that makes live demo operation deterministic, fast to verify, and safe to run repeatedly on developer machines and CI.
+Create a lightweight orchestration harness for `ui5-webcomponents-ngx-main` that makes live workspace operation deterministic, fast to verify, and safe to run repeatedly on developer machines and CI.
 
 The harness is a workflow layer over existing scripts and services, not a replacement runtime.
 
 ## Scope
 
 In scope:
-- Orchestrate existing commands (`start:*`, `live:preflight`, `demo:verify`, route checks).
+- Orchestrate existing commands (`start:*`, `live:preflight`, `readiness:verify`, route checks).
 - Provide one command for presenters/operators.
 - Emit structured status reports for humans and automation.
-- Enforce mode-based safety policies (demo-safe vs dev-flex).
+- Enforce mode-based safety policies (workspace-safe vs dev-flex).
 
 Out of scope:
 - Replacing Nx, Cypress, MCP server, or OpenAI proxy internals.
@@ -22,7 +22,7 @@ Out of scope:
 
 Single command:
 
-`yarn harness:run --mode demo-safe --profile local-live`
+`yarn harness:run --mode workspace-safe --profile local-live`
 
 Expected behavior:
 1. Validate environment and required ports.
@@ -38,7 +38,7 @@ Expected behavior:
 - `scripts/harness/ui5-harness.mjs`
   - Main entrypoint, argument parsing, orchestration state machine.
 - `scripts/harness/policies.mjs`
-  - Mode policies (`demo-safe`, `dev-flex`, `ci-strict`).
+  - Mode policies (`workspace-safe`, `dev-flex`, `ci-strict`).
 - `scripts/harness/checks/*.mjs`
   - Discrete checks:
   - `env-check.mjs`
@@ -72,9 +72,9 @@ Transitions:
 
 ## Modes
 
-- `demo-safe`
+- `workspace-safe`
   - No destructive actions.
-  - Strict real-backend enforcement for demo routes.
+  - Strict real-backend enforcement for workspace routes.
   - Fail fast on missing required dependencies.
 - `dev-flex`
   - Allows degraded/no-auth local behavior with warnings.
@@ -93,7 +93,7 @@ Transitions:
 
 ## JSON report
 
-Write `artifacts/harness/demo-report.json`:
+Write `artifacts/harness/workspace-report.json`:
 
 - `runId`
 - `timestamp`
@@ -107,7 +107,7 @@ Write `artifacts/harness/demo-report.json`:
 
 ## Markdown report
 
-Write `artifacts/harness/demo-report.md` with:
+Write `artifacts/harness/workspace-report.md` with:
 - headline verdict
 - failed/blocked reasons
 - top remediation actions
@@ -143,7 +143,7 @@ Each failure must include:
 4. Add JSON/Markdown reporters.
 5. Add scripts:
    - `harness:run`
-   - `harness:demo`
+   - `harness:workspace`
    - `harness:ci`
 6. Add unit tests for:
    - verdict mapping
@@ -152,9 +152,9 @@ Each failure must include:
 
 ## Acceptance Criteria
 
-- One command yields a deterministic verdict in local demo environment.
+- One command yields a deterministic verdict in the local workspace environment.
 - Operator sees clear reasons and next actions when not `READY`.
-- CI can parse `demo-report.json` and fail reliably on `BLOCKED`.
+- CI can parse `workspace-report.json` and fail reliably on `BLOCKED`.
 - Existing scripts remain backward compatible.
 
 ## Recommendation

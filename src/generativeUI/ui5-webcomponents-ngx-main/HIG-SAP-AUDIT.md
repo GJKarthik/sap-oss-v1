@@ -1,6 +1,6 @@
-# HIG & SAP Design Library Audit — UI5 Playground
+# HIG & SAP Design Library Audit — UI5 Workspace
 
-**Project:** `ui5-webcomponents-ngx-main/apps/playground`
+**Project:** `ui5-webcomponents-ngx-main/apps/workspace`
 **Date:** 2025-01-XX
 **Auditor:** Cascade (automated)
 **Standards:** Apple HIG, SAP Fiori 3 Horizon, WCAG 2.1 AA
@@ -50,13 +50,13 @@
 **Status:** Fixed — Skip link and `id="main-content"` added. Skip-link styles added to `styles.scss`.
 
 ### A-06 🟡 Busy indicators lack screen-reader text — ✅ FIXED
-**File:** `component-playground-page.component.html` line 21, `mcp-page.component.html` line 24, `ocr-page.component.html` line 81
+**File:** `model-catalog-page.component.html` line 21, `mcp-page.component.html` line 24, `ocr-page.component.html` line 81
 **Issue:** `<ui5-busy-indicator>` is used without an explicit `text` attribute. Screen readers announce it as a generic busy indicator without context.
 **Fix:** Add `[text]="'LOADING' | ui5I18n"` to each busy indicator.
 **Status:** Fixed — Descriptive `text` attribute added to all three busy indicators.
 
 ### A-07 🟡 Collab participant avatars lack accessible names — ✅ FIXED
-**File:** `collab-demo.component.html` lines 55–66
+**File:** `collaboration-page.component.html` lines 55–66
 **Issue:** Participant avatar circles use inline styles for `background` but no `aria-label` or `title` to identify the participant for screen readers.
 **Fix:** Add `[attr.aria-label]="participant.name"` and `role="img"` to each avatar element.
 **Status:** Fixed — `role="img"` and `aria-label` added. Also replaced `color: white` with `var(--sapContent_ContrastTextColor)`.
@@ -113,7 +113,7 @@
 
 ### D-01 🟡 Inconsistent loading patterns
 **Issue:** Different pages use different loading indicators:
-- `component-playground` and `ocr` use `<ui5-busy-indicator>`
+- `model-catalog` and `ocr` use `<ui5-busy-indicator>`
 - `joule-shell` uses state badges
 - `mcp-page` uses inline text "Loading…"
 - Home page cards have no loading state
@@ -121,7 +121,7 @@
 **Fix:** Standardize on `<ui5-busy-indicator>` with descriptive `text` for all async operations.
 
 ### D-02 🟡 No confirmation for destructive actions
-**File:** `collab-demo.component.html`
+**File:** `collaboration-page.component.html`
 **Issue:** "Leave Room" action executes immediately without confirmation. Users may accidentally disconnect from collaboration.
 **Fix:** Add `ui5-dialog` confirmation before executing `leaveRoom()`.
 
@@ -155,7 +155,7 @@
 
 ### F-01 🟡 No `prefers-reduced-motion` guard — ✅ FIXED
 **File:** All SCSS files
-**Issue:** The playground app has no `@media (prefers-reduced-motion: reduce)` query. The `home-card` hover transition, Joule state badge transitions, and router animations all run regardless of user preference.
+**Issue:** The workspace app has no `@media (prefers-reduced-motion: reduce)` query. The `home-card` hover transition, Joule state badge transitions, and router animations all run regardless of user preference.
 **Fix:** Add global reduced-motion guard to `styles.scss`.
 **Status:** Fixed — Global `@media (prefers-reduced-motion: reduce)` guard added to `styles.scss`.
 
@@ -192,4 +192,4 @@
 
 | Scan | Result |
 |------|--------|
-| `snyk code test --severity-threshold=medium apps/playground/src` | ✅ 0 issues |
+| `snyk code test --severity-threshold=medium apps/workspace/src` | ✅ 0 issues |

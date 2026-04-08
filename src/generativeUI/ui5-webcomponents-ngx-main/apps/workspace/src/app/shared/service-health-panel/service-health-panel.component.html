@@ -1,0 +1,33 @@
+<section class="service-health-panel" aria-label="Service Health">
+  <div class="service-health-panel__header">
+    <div class="service-health-panel__title">
+      <span class="service-health-panel__eyebrow">{{ 'HEALTH_PANEL_TITLE' | ui5I18n }}</span>
+      <span class="service-health-panel__subtitle">{{ 'HEALTH_PANEL_SUBTITLE' | ui5I18n }}</span>
+    </div>
+    <div class="service-health-panel__actions">
+      <ui5-tag [design]="allOffline ? 'Information' : (blocking ? 'Negative' : 'Positive')">
+        {{ allOffline ? ('HEALTH_PANEL_OFFLINE_TAG' | ui5I18n) : (blocking ? ('HEALTH_PANEL_BLOCKED' | ui5I18n) : ('HEALTH_PANEL_READY' | ui5I18n)) }}
+      </ui5-tag>
+      <ui5-button design="Transparent" [disabled]="loading" (click)="refreshHealth()">
+        {{ loading ? ('HEALTH_PANEL_CHECKING' | ui5I18n) : ('HEALTH_PANEL_CHECK_NOW' | ui5I18n) }}
+      </ui5-button>
+    </div>
+  </div>
+
+  <ui5-message-strip [design]="allOffline ? 'Information' : (blocking ? 'Negative' : 'Positive')" hide-close-button>
+    {{ summaryText }}
+  </ui5-message-strip>
+
+  <div class="service-health-panel__meta" *ngIf="lastCheckedAt">
+    {{ 'HEALTH_PANEL_LAST_CHECKED' | ui5I18n : lastCheckedAt }}
+  </div>
+
+  <div class="service-health-panel__checks" *ngIf="!allOffline">
+    <div class="service-health-panel__row" *ngFor="let check of checks">
+      <span class="service-health-panel__service">{{ check.name }}</span>
+      <span class="service-health-panel__status" [class.service-health-panel__status--bad]="!check.ok">
+        {{ getCheckStatusText(check) }}
+      </span>
+    </div>
+  </div>
+</section>

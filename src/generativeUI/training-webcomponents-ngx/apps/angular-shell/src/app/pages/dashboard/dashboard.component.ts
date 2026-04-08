@@ -183,7 +183,7 @@ export class DashboardComponent implements OnInit {
   readonly components = computed<PlatformComponent[]>(() => [
     { icon: 'process', name: this.i18n.t('dashboard.comp.pipeline'), desc: this.i18n.t('dashboard.comp.pipelineDesc'), status: 'Production', badge: 'status-success' },
     { icon: 'machine', name: this.i18n.t('dashboard.comp.modelOpt'), desc: this.i18n.t('dashboard.comp.modelOptDesc'), status: 'Active', badge: 'status-success' },
-    { icon: 'chain-link', name: this.i18n.t('dashboard.comp.hippocpp'), desc: this.i18n.t('dashboard.comp.hippocppDesc'), status: 'Ready', badge: 'status-info' },
+    { icon: 'database', name: this.i18n.t('dashboard.comp.hanaCloud'), desc: this.i18n.t('dashboard.comp.hanaCloudDesc'), status: 'Ready', badge: 'status-info' },
     { icon: 'folder', name: this.i18n.t('dashboard.comp.dataAssets'), desc: this.i18n.t('dashboard.comp.dataAssetsDesc'), status: 'Ready', badge: 'status-info' },
   ]);
 

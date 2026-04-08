@@ -147,10 +147,41 @@ export class GlossaryService {
     });
 
     const overrides = this._overrides();
-    if (overrides.length > 0) {
-      snippet += '\n[CORRECTION OVERRIDES - MUST FOLLOW THESE INSTEAD OF GENERAL KNOWLEDGE]\n';
-      overrides.forEach(o => {
+    const translations = overrides.filter(o => !o.pair_type || o.pair_type === 'translation');
+    const aliases = overrides.filter(o => o.pair_type === 'alias');
+    const dbMappings = overrides.filter(o => o.pair_type === 'db_field_mapping');
+
+    if (translations.length > 0) {
+      snippet += '\n[CORRECTION OVERRIDES - HUMAN-APPROVED TRANSLATIONS]\n';
+      translations.forEach(o => {
         snippet += `- ${o.source_text} -> ${o.target_text} (${o.source_lang} to ${o.target_lang})\n`;
+      });
+    }
+
+    if (aliases.length > 0) {
+      snippet += '\n[ALIAS TERMS - USE INTERCHANGEABLY]\n';
+      const grouped = new Map<string, string[]>();
+      aliases.forEach(o => {
+        const key = `${o.source_lang}:${o.category || 'general'}`;
+        const group = grouped.get(key) || [];
+        group.push(o.source_text, o.target_text);
+        grouped.set(key, group);
+      });
+      grouped.forEach((terms, key) => {
+        const lang = key.split(':')[0];
+        const unique = [...new Set(terms)];
+        snippet += `- ${unique.join(' = ')} (${lang})\n`;
+      });
+    }
+
+    if (dbMappings.length > 0) {
+      snippet += '\n[DATABASE FIELD MAPPINGS - USE NATURAL LANGUAGE IN RESPONSES]\n';
+      dbMappings.forEach(o => {
+        const ctx = o.db_context;
+        const ctxStr = ctx
+          ? ` (${ctx.table_name ? ctx.table_name + '.' : ''}${ctx.column_name || o.source_text}${ctx.data_type ? ', ' + ctx.data_type : ''})`
+          : '';
+        snippet += `- ${o.source_text} -> "${o.target_text}"${ctxStr}\n`;
       });
     }
     

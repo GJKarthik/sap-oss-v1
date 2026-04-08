@@ -19,7 +19,7 @@ The production deployment target is SAP BTP / Cloud Foundry, where WebSocket sup
 
 **Default transport is SSE.** WebSocket remains a supported alternative, selectable via `AgUiModule.forRoot({ transport: 'websocket' })` or the `transport` input on `<joule-chat>`.
 
-The `proxy.conf.json` in `apps/playground` proxies `/ag-ui/*` to `localhost:8080`, which is the default uvicorn bind port for `ui5_ngx_agent.py`. The nginx production config must forward the same path with `proxy_set_header Connection ''` and `proxy_buffering off` to preserve SSE semantics.
+The `proxy.conf.json` in `apps/workspace` proxies `/ag-ui/*` to `localhost:8080`, which is the default uvicorn bind port for `ui5_ngx_agent.py`. The nginx production config must forward the same path with `proxy_set_header Connection ''` and `proxy_buffering off` to preserve SSE semantics.
 
 ## Consequences
 

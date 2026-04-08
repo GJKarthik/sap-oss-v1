@@ -5,7 +5,7 @@ import { ToastService } from '../services/toast.service';
 
 /**
  * Global HTTP error interceptor providing consistent fault handling across all
- * native OS Subprocess API calls (PyTorch training, Zig pipeline, HippoCPP, Mangle).
+ * native OS Subprocess API calls (PyTorch training, Python pipeline, HANA Cloud).
  * Translates low-level HTTP codes into human-readable diagnostics for Data Scientists.
  */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
@@ -72,9 +72,8 @@ function handleError(error: HttpErrorResponse, toast: ToastService, url: string)
   }
 
   if (error.status >= 500) {
-    const origin = url.includes('/pipeline') ? 'Zig Pipeline'
-      : url.includes('/graph') ? 'HippoCPP Engine'
-      : url.includes('/mangle') ? 'Mangle Datalog'
+    const origin = url.includes('/pipeline') ? 'Python Pipeline'
+      : url.includes('/hana') ? 'HANA Cloud'
       : url.includes('/jobs') ? 'PyTorch Orchestrator'
       : url.includes('/inference') ? 'Inference Engine'
       : 'Enterprise API';

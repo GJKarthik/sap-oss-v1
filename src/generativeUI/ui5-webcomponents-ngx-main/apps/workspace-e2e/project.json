@@ -1,0 +1,26 @@
+{
+  "name": "workspace-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/workspace-e2e/src",
+  "tags": ["scope:e2e", "type:e2e"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/workspace-e2e/cypress.config.ts",
+        "testingType": "e2e",
+        "devServerTarget": "workspace:serve:development"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "workspace:serve:production"
+        },
+        "ci": {
+          "ci": true,
+          "devServerTarget": "workspace:serve:production"
+        }
+      }
+    }
+  }
+}

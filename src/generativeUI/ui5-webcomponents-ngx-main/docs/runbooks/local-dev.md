@@ -57,7 +57,7 @@ For local dev without SAP AI Core, set `USE_LOCAL_OLLAMA=true` and have Ollama r
 ## 3. Start the Angular dev server
 
 ```bash
-npx nx serve playground
+npx nx serve workspace
 ```
 
 The webpack dev server starts on **http://localhost:4200**.  
@@ -88,10 +88,10 @@ E2E tests require the Angular dev server to be running (handled automatically by
 
 ```bash
 # Headless (CI)
-npx nx e2e playground-e2e --configuration=ci
+npx nx e2e workspace-e2e --configuration=ci
 
 # Interactive
-npx nx e2e playground-e2e --watch
+npx nx e2e workspace-e2e --watch
 ```
 
 ---
@@ -122,7 +122,7 @@ npx nx run-many --target=lint --all
 → Pre-existing IDE artifact; `npm ci` + IDE reload resolves it. The monorepo uses TypeScript path aliases in `tsconfig.base.json`, not installed packages.
 
 **Cypress `cy.interceptAgUi` not found**  
-→ Ensure `apps/playground-e2e/src/support/e2e.ts` is listed as `supportFile` in `cypress.config.ts`. The `commands.ts` import chain handles registration.
+→ Ensure `apps/workspace-e2e/src/support/e2e.ts` is listed as `supportFile` in `cypress.config.ts`. The `commands.ts` import chain handles registration.
 
 **`AICORE_AUTH_URL` SSRF guard error on startup**  
 → The agent validates all env-var URLs at import time. Ensure the URL uses `https://` and does not target `169.254.*` (cloud metadata) prefixes.

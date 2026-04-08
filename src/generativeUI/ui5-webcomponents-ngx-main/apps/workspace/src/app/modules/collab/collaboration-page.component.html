@@ -1,0 +1,121 @@
+<section class="collab-page">
+  <div class="collab-hero">
+    <div class="collab-hero__copy">
+      <span class="collab-hero__eyebrow">{{ 'NAV_COLLAB' | ui5I18n }}</span>
+      <ui5-title level="H2">{{ 'COLLAB_PAGE_TITLE' | ui5I18n }}</ui5-title>
+      <p>{{ 'HOME_CARD_COLLAB_DESC' | ui5I18n }}</p>
+    </div>
+    <ui5-tag class="collab-hero__status" [design]="connectionState === 'connected' ? 'Positive' : connectionState === 'connecting' ? 'Information' : 'Negative'">
+      {{ connectionState }}
+    </ui5-tag>
+  </div>
+
+  <div class="collab-grid">
+    <ui5-card class="collab-card collab-card--wide">
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_SESSION_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_SESSION_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div class="collab-card__body collab-card__body--stack">
+        <div class="collab-session">
+          <ui5-label show-colon>{{ 'COLLAB_ROOM_ID_LABEL' | ui5I18n }}</ui5-label>
+          <ui5-input
+            [value]="roomId"
+            (input)="roomId = $any($event.target).value"
+            class="collab-session__input">
+          </ui5-input>
+          <ui5-button
+            design="Emphasized"
+            [disabled]="connectionState === 'connected' || connectionState === 'connecting'"
+            (click)="joinRoom()">
+            {{ 'COLLAB_JOIN_ROOM' | ui5I18n }}
+          </ui5-button>
+          <ui5-button
+            design="Negative"
+            [disabled]="connectionState === 'disconnected'"
+            (click)="confirmLeave()">
+            {{ 'COLLAB_LEAVE_ROOM' | ui5I18n }}
+          </ui5-button>
+        </div>
+        @if (connectionState !== 'connected') {
+          <ui5-message-strip design="Information">
+            {{ 'COLLAB_NO_SERVER_MSG' | ui5I18n }}
+          </ui5-message-strip>
+        }
+      </div>
+    </ui5-card>
+
+    <ui5-card class="collab-card">
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_PARTICIPANTS_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_PARTICIPANTS_ONLINE' | ui5I18n : participants.length"></ui5-card-header>
+      <div class="collab-card__body">
+        @if (participants.length === 0) {
+          <div class="collab-empty">{{ 'COLLAB_NO_PARTICIPANTS' | ui5I18n }}</div>
+        }
+        <div class="collab-participants">
+          @for (p of participants; track p.userId) {
+          <div class="collab-participant">
+            <span
+              [style.background]="p.color"
+              class="collab-participant__avatar"
+              role="img"
+              [attr.aria-label]="p.displayName">
+              {{ p.displayName.charAt(0).toUpperCase() }}
+            </span>
+            <div>
+              <div class="collab-participant__name">{{ p.displayName }}</div>
+              <div class="collab-participant__meta">
+                {{ p.status }}
+                @if (p.location) { · {{ p.location }} }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </ui5-card>
+
+    <ui5-card class="collab-card">
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_CURSOR_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_CURSOR_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div class="collab-card__body">
+        <div
+          (mousemove)="broadcastCursor($event)"
+          class="collab-canvas">
+          <span class="collab-canvas__hint">
+            {{ 'COLLAB_CURSOR_HINT' | ui5I18n }}
+          </span>
+          @for (c of cursors; track c.userId) {
+          <span
+            [style.left.px]="c.x"
+            [style.top.px]="c.y"
+            class="collab-canvas__cursor"
+            [style.background]="getCursorColor(c.userId)"
+            [title]="c.userId">
+          </span>
+          }
+        </div>
+      </div>
+    </ui5-card>
+
+    <ui5-card class="collab-card">
+      <ui5-card-header slot="header" [attr.title-text]="'COLLAB_EVENT_LOG_TITLE' | ui5I18n" [attr.subtitle-text]="'COLLAB_EVENT_LOG_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div class="collab-card__body">
+        <div class="collab-log-actions">
+          <ui5-button design="Transparent" (click)="clearLog()">{{ 'COLLAB_CLEAR' | ui5I18n }}</ui5-button>
+        </div>
+        <div class="event-log">
+          @for (entry of log; track $index) {
+          <div class="event-log__entry">{{ entry }}</div>
+          }
+          @if (log.length === 0) {
+          <div class="event-log__empty">{{ 'COLLAB_NO_EVENTS' | ui5I18n }}</div>
+          }
+        </div>
+      </div>
+    </ui5-card>
+  </div>
+
+  <ui5-dialog #leaveConfirmDialog [attr.header-text]="'COLLAB_LEAVE_CONFIRM_TITLE' | ui5I18n">
+    <p style="padding:1rem;">{{ 'COLLAB_LEAVE_CONFIRM_TEXT' | ui5I18n }}</p>
+    <div slot="footer" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.5rem 1rem;">
+      <ui5-button design="Transparent" (click)="cancelLeave()">{{ 'COLLAB_LEAVE_CONFIRM_CANCEL' | ui5I18n }}</ui5-button>
+      <ui5-button design="Negative" (click)="onConfirmLeave()">{{ 'COLLAB_LEAVE_CONFIRM_LEAVE' | ui5I18n }}</ui5-button>
+    </div>
+  </ui5-dialog>
+</section>

@@ -1,0 +1,176 @@
+<!-- Interaction Patterns Page -->
+<ui5-page background-design="Solid">
+  <ui5-bar slot="header" design="Header">
+    <ui5-title slot="startContent" level="H3">{{ 'FORMS_PAGE_TITLE' | ui5I18n }}</ui5-title>
+  </ui5-bar>
+
+  <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;" role="main" aria-label="Interaction patterns">
+
+    <!-- Radio Buttons Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_RADIO_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_RADIO_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <ui5-button (click)="updateRadioFormModel()">setValue("Option 1")</ui5-button>
+          <ui5-text>Value: <b>{{ radioControl.value }}</b> | Touched: {{ radioControl.touched }}</ui5-text>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <ui5-radio-button name="GroupA" text="Option 1" value="Option 1" [formControl]="radioControl"></ui5-radio-button>
+          <ui5-radio-button name="GroupA" text="Option 2" value="Option 2" [formControl]="radioControl"></ui5-radio-button>
+          <ui5-radio-button name="GroupA" text="Option 3" value="Option 3" [formControl]="radioControl"></ui5-radio-button>
+        </div>
+      </div>
+    </ui5-card>
+
+    <!-- Select Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_SELECT_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_SELECT_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <ui5-button (click)="updateSelectFormModel()">setValue("phone")</ui5-button>
+          <ui5-text>Value: <b>{{ selectControl.value }}</b> | Touched: {{ selectControl.touched }}</ui5-text>
+        </div>
+        <ui5-select [formControl]="selectControl" style="min-width: 200px;">
+          <ui5-option value="phone">Phone</ui5-option>
+          <ui5-option value="tablet">Tablet</ui5-option>
+          <ui5-option value="desktop">Desktop</ui5-option>
+        </ui5-select>
+      </div>
+    </ui5-card>
+
+    <!-- Checkbox Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_CHECKBOX_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_CHECKBOX_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <ui5-button (click)="updateCbFormModel()">setValue(true)</ui5-button>
+          <ui5-text>Value: <b>{{ cbControl.value }}</b> | Touched: {{ cbControl.touched }}</ui5-text>
+        </div>
+        <ui5-checkbox [attr.text]="'FORMS_CHECKBOX_LABEL' | ui5I18n" [formControl]="cbControl"></ui5-checkbox>
+      </div>
+    </ui5-card>
+
+    <!-- Input Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_INPUT_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_INPUT_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <ui5-button (click)="updateInpFormModel()">setValue("form updated")</ui5-button>
+          <ui5-text>Value: <b>{{ inpControl.value }}</b> | Touched: {{ inpControl.touched }}</ui5-text>
+        </div>
+        <ui5-input [attr.placeholder]="'FORMS_INPUT_PLACEHOLDER' | ui5I18n" [formControl]="inpControl" style="min-width: 300px;"></ui5-input>
+      </div>
+    </ui5-card>
+
+    <!-- DatePicker Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_DATEPICKER_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_DATEPICKER_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <ui5-button (click)="updateDPFormModel()">setValue("29 мая 2024 г.")</ui5-button>
+          <ui5-text>Value: <b>{{ dpControl.value }}</b> | Touched: {{ dpControl.touched }}</ui5-text>
+        </div>
+        <ui5-date-picker [formControl]="dpControl"></ui5-date-picker>
+      </div>
+    </ui5-card>
+
+    <!-- Profile Form Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_PROFILE_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_PROFILE_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem;">
+
+        @if (submitted && submittedData) {
+        <div style="margin-bottom: 1rem;">
+          <ui5-message-strip design="Positive" (close)="resetForm()">
+            Submitted — Name: <b>{{ submittedData.name }}</b>, Email: <b>{{ submittedData.email }}</b>
+          </ui5-message-strip>
+        </div>
+        }
+
+        <form [formGroup]="profileForm" (ngSubmit)="handleSubmit()" style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
+
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <ui5-label for="nameInp" required show-colon>{{ 'FORMS_LABEL_NAME' | ui5I18n }}</ui5-label>
+            <ui5-input
+              id="nameInp"
+              formControlName="name"
+              [attr.placeholder]="'FORMS_PLACEHOLDER_NAME' | ui5I18n"
+              [attr.value-state]="profileForm.controls.name.invalid && profileForm.controls.name.touched ? 'Negative' : 'None'">
+              <div slot="valueStateMessage">{{ 'FORMS_ERROR_NAME_REQUIRED' | ui5I18n }}</div>
+            </ui5-input>
+            @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
+            <ui5-text style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
+              {{ 'FORMS_ERROR_NAME_REQUIRED' | ui5I18n }}
+            </ui5-text>
+            }
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <ui5-label for="emailInp" required show-colon>{{ 'FORMS_LABEL_EMAIL' | ui5I18n }}</ui5-label>
+            <ui5-input
+              id="emailInp"
+              formControlName="email"
+              [attr.placeholder]="'FORMS_PLACEHOLDER_EMAIL' | ui5I18n"
+              [attr.value-state]="profileForm.controls.email.invalid && profileForm.controls.email.touched ? 'Negative' : 'None'">
+              @if (profileForm.controls.email.errors?.['required']) {
+                <div slot="valueStateMessage">{{ 'FORMS_ERROR_EMAIL_REQUIRED' | ui5I18n }}</div>
+              } @else if (profileForm.controls.email.errors?.['email']) {
+                <div slot="valueStateMessage">{{ 'FORMS_ERROR_EMAIL_INVALID' | ui5I18n }}</div>
+              }
+            </ui5-input>
+            @if (profileForm.controls.email.invalid && profileForm.controls.email.touched) {
+            <ui5-text style="color: var(--sapNegativeColor, #bb0000); font-size: 0.75rem;">
+              @if (profileForm.controls.email.errors?.['required']) { {{ 'FORMS_ERROR_EMAIL_REQUIRED' | ui5I18n }} }
+              @if (profileForm.controls.email.errors?.['email']) { {{ 'FORMS_ERROR_EMAIL_INVALID' | ui5I18n }} }
+            </ui5-text>
+            }
+          </div>
+
+          <div style="display: flex; gap: 0.75rem;">
+            <ui5-button design="Emphasized" type="Submit" [disabled]="!profileForm.valid">{{ 'FORMS_BTN_SUBMIT' | ui5I18n }}</ui5-button>
+            <ui5-button design="Transparent" type="Button" (click)="resetForm()">{{ 'FORMS_BTN_RESET' | ui5I18n }}</ui5-button>
+          </div>
+
+        </form>
+      </div>
+    </ui5-card>
+
+    <!-- Data Table Card -->
+    <ui5-card>
+      <ui5-card-header slot="header" [attr.title-text]="'FORMS_TABLE_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_TABLE_SUBTITLE' | ui5I18n"></ui5-card-header>
+      <div style="padding: 1rem;">
+        <ui5-table overflow-mode="Popin">
+          <ui5-table-header-row slot="headerRow">
+            <ui5-table-header-cell width="300px">{{ 'FORMS_TABLE_COL_PRODUCT' | ui5I18n }}</ui5-table-header-cell>
+            <ui5-table-header-cell width="200px">{{ 'FORMS_TABLE_COL_SUPPLIER' | ui5I18n }}</ui5-table-header-cell>
+            <ui5-table-header-cell width="200px">{{ 'FORMS_TABLE_COL_DIMENSIONS' | ui5I18n }}</ui5-table-header-cell>
+            <ui5-table-header-cell width="100px">{{ 'FORMS_TABLE_COL_WEIGHT' | ui5I18n }}</ui5-table-header-cell>
+            <ui5-table-header-cell width="150px">{{ 'FORMS_TABLE_COL_PRICE' | ui5I18n }}</ui5-table-header-cell>
+          </ui5-table-header-row>
+          <ui5-table-row>
+            <ui5-table-cell><ui5-label><b>Notebook Basic 15</b><br>HT-1000</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label>Very Best Screens</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label>30 x 18 x 3 cm</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label style="color: var(--sapPositiveColor, #2b7c2b)"><b>4.2</b> KG</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label><b>956</b> EUR</ui5-label></ui5-table-cell>
+          </ui5-table-row>
+          <ui5-table-row>
+            <ui5-table-cell><ui5-label><b>Notebook Basic 17</b><br>HT-1001</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label>Smartcards</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label>29 x 17 x 3.1 cm</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label style="color: var(--sapPositiveColor, #2b7c2b)"><b>4.5</b> KG</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label><b>1249</b> EUR</ui5-label></ui5-table-cell>
+          </ui5-table-row>
+          <ui5-table-row>
+            <ui5-table-cell><ui5-label><b>Notebook Basic 18</b><br>HT-1002</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label>Technocom</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label>32 x 21 x 4 cm</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label style="color: var(--sapPositiveColor, #2b7c2b)"><b>3.7</b> KG</ui5-label></ui5-table-cell>
+            <ui5-table-cell><ui5-label><b>29</b> EUR</ui5-label></ui5-table-cell>
+          </ui5-table-row>
+        </ui5-table>
+      </div>
+    </ui5-card>
+
+  </div>
+</ui5-page>

@@ -1,0 +1,65 @@
+<!-- App Shell -->
+<a class="skip-link" href="#main-content" (click)="skipToMain($event)">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
+<div class="app-shell">
+
+  <!-- Fiori ShellBar -->
+  <ui5-shellbar
+    [primaryTitle]="'APP_TITLE' | ui5I18n"
+    [secondaryTitle]="'APP_SUBTITLE' | ui5I18n"
+    show-product-switch="true"
+    [accessibilityAttributes]="shellbarA11y"
+    (logoClick)="navigateTo('/')"
+    (product-switch-click)="openProducts($event)">
+  </ui5-shellbar>
+
+  <!-- Top nav bar with active route highlight -->
+  <nav class="app-nav" role="navigation" aria-label="Main navigation">
+    <button
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/')"
+      [attr.aria-current]="isActive('/') ? 'page' : null"
+      (click)="navigateTo('/')">
+      {{ 'NAV_HOME' | ui5I18n }}
+    </button>
+    <button
+      *ngFor="let link of navLinks; trackBy: trackByPath"
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive(link.path)"
+      [attr.aria-current]="isActive(link.path) ? 'page' : null"
+      (click)="navigateTo(link.path)">
+      {{ link.labelKey | ui5I18n }}
+    </button>
+
+    <div class="app-nav__spacer"></div>
+    <ui5-button class="app-nav__workspace" design="Transparent" icon="action-settings" (click)="navigateTo('/workspace')">
+      {{ 'NAV_WORKSPACE' | ui5I18n }}
+    </ui5-button>
+  </nav>
+
+  <section class="learn-path-banner" *ngIf="learnPathActive && !learnPathDismissed" aria-label="Learn path controls">
+    <div class="learn-path-banner__left">
+      <ui5-tag design="Information">{{ 'LEARN_PATH_LABEL' | ui5I18n }} {{ learnPathProgress }}</ui5-tag>
+      <span>{{ 'LEARN_PATH_CURRENT_STEP' | ui5I18n }}: {{ learnPathStepLabel }}</span>
+    </div>
+    <div class="learn-path-banner__actions">
+      <ui5-button data-testid="learn-path-next" design="Emphasized" (click)="advanceLearnPath()">{{ 'LEARN_PATH_NEXT' | ui5I18n }}</ui5-button>
+      <ui5-button data-testid="learn-path-end" design="Transparent" (click)="endLearnPath()">{{ 'LEARN_PATH_END' | ui5I18n }}</ui5-button>
+      <ui5-button data-testid="learn-path-dismiss" design="Transparent" (click)="dismissLearnPath()">{{ 'LEARN_PATH_DISMISS' | ui5I18n }}</ui5-button>
+    </div>
+  </section>
+
+  <ui5-popover #productPopover [headerText]="'PRODUCT_SWITCHER' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+    <ui5-list (item-click)="onProductSelect($event)">
+      <ui5-li icon="home" data-url="/aifabric/">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
+      <ui5-li icon="process" data-url="/training/">{{ 'PRODUCT_TRAINING' | ui5I18n }}</ui5-li>
+      <ui5-li icon="BusinessSuiteInAppSymbols/product-switch" data-url="/sac/">{{ 'PRODUCT_SAC' | ui5I18n }}</ui5-li>
+      <ui5-li icon="grid" data-url="/ui5/" selected>{{ 'PRODUCT_JOULE' | ui5I18n }}</ui5-li>
+    </ui5-list>
+  </ui5-popover>
+
+  <!-- Main Content -->
+  <main class="app-content" id="main-content" tabindex="-1">
+    <router-outlet></router-outlet>
+  </main>
+
+</div>

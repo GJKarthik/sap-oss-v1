@@ -1,0 +1,147 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 SAP SE
+
+:host {
+  display: block;
+  height: 100%;
+  background:
+    radial-gradient(circle at top, rgba(0, 112, 242, 0.08), transparent 32rem),
+    var(--sapBackgroundColor, #f5f6f7);
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 1000;
+  padding: 0.5rem 1rem;
+  background: var(--sapShell_Background);
+  color: var(--sapShell_TextColor);
+
+  &:focus {
+    top: 0;
+  }
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+ui5-shellbar {
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    var(--sapShellColor, #354a5e);
+  border-bottom: 1px solid var(--sapShell_BorderColor, #213750);
+  padding: 0.625rem 1rem;
+  flex-shrink: 0;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar { display: none; }
+  scrollbar-width: none;
+}
+
+
+
+.app-nav__item {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--sapShell_TextColor, #d1e8ff);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0 0.9rem;
+  min-height: 2rem;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  &--active {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.14);
+    font-weight: 600;
+  }
+}
+
+.app-nav__spacer {
+  flex: 1;
+}
+
+.app-nav__workspace {
+  margin-inline-start: 0.5rem;
+}
+
+.app-content {
+  flex: 1;
+  overflow: auto;
+  background: transparent;
+
+  @media (max-width: 768px) {
+    overflow-x: hidden;
+  }
+}
+
+.learn-path-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--sapInformationBackground);
+  border-bottom: 1px solid var(--sapInformationBorderColor);
+}
+
+.learn-path-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.learn-path-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+
+// ---------------------------------------------------------------------------
+// Tablet breakpoint
+// ---------------------------------------------------------------------------
+
+@media (max-width: 1024px) {
+  .app-nav {
+    padding: 0.5rem;
+    gap: 0.125rem;
+  }
+
+  .app-nav__item {
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+// BiDi isolation for technical content (always LTR regardless of page direction)
+code, pre, .technical {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

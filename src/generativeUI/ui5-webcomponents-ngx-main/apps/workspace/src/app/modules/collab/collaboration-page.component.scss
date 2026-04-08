@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024 SAP SE
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.collab-page {
+  display: grid;
+  gap: 1.5rem;
+  min-height: 100%;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top left, rgba(0, 112, 242, 0.1), transparent 26rem),
+    var(--sapBackgroundColor, #f5f5f5);
+}
+
+.collab-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--sapList_BorderColor, rgba(95, 101, 109, 0.16));
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(232, 244, 253, 0.72));
+  box-shadow: var(--sapContent_Shadow1, 0 12px 30px rgba(15, 23, 42, 0.08));
+}
+
+.collab-hero__copy {
+  display: grid;
+  gap: 0.5rem;
+
+  p {
+    margin: 0;
+    max-width: 42rem;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    line-height: 1.6;
+  }
+}
+
+.collab-hero__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sapBrandColor, #0070f2);
+}
+
+.collab-hero__status {
+  align-self: start;
+  text-transform: capitalize;
+}
+
+.collab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.collab-card {
+  overflow: hidden;
+}
+
+.collab-card--wide {
+  grid-column: 1 / -1;
+}
+
+.collab-card__body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.collab-card__body--stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.collab-session {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.collab-session__input {
+  min-width: 220px;
+}
+
+.collab-empty {
+  color: var(--sapContent_LabelColor, #6a6d70);
+  font-size: 0.875rem;
+}
+
+.collab-participants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.collab-participant {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+  background: var(--sapBackgroundColor, #fff);
+}
+
+.collab-participant__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: var(--sapContent_ContrastTextColor, #fff);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.collab-participant__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.collab-participant__meta {
+  font-size: 0.75rem;
+  color: var(--sapContent_LabelColor, #6a6d70);
+}
+
+.collab-canvas {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  border: 2px dashed var(--sapGroup_TitleBorderColor, #d9d9d9);
+  border-radius: 0.75rem;
+  background: var(--sapBackgroundColor, #f5f5f5);
+  cursor: crosshair;
+  overflow: hidden;
+}
+
+.collab-canvas__hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--sapContent_LabelColor, #6a6d70);
+  font-size: 0.875rem;
+  pointer-events: none;
+}
+
+.collab-canvas__cursor {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.collab-log-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.event-log {
+  font-family: monospace;
+  font-size: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--sapBackgroundColor, #f5f5f5);
+  border: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+
+  &__entry {
+    margin-bottom: 0.2rem;
+    line-height: 1.4;
+  }
+
+  &__empty {
+    color: var(--sapContent_LabelColor, #6a6d70);
+  }
+}
+
+@media (max-width: 960px) {
+  .collab-page {
+    padding: 1rem;
+  }
+
+  .collab-hero,
+  .collab-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-hero {
+    flex-direction: column;
+  }
+}

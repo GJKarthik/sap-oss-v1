@@ -7,7 +7,7 @@ import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { CrossAppLinkComponent } from '../../shared';
 
-interface GraphStats {
+interface HanaStats {
   available: boolean;
   pair_count: number;
 }
@@ -20,7 +20,7 @@ interface QueryResult {
 
 interface QueryPreset {
   label: string;
-  cypher: string;
+  sql: string;
 }
 
 interface ArchLayer {
@@ -30,16 +30,16 @@ interface ArchLayer {
 }
 
 @Component({
-  selector: 'app-hippocpp',
+  selector: 'app-hana-explorer',
   standalone: true,
   imports: [CommonModule, FormsModule, CrossAppLinkComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-content" role="main" aria-label="HIPPO CPP inference">
+    <div class="page-content" role="main" aria-label="HANA Cloud Explorer">
       <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('hippocpp.title') }}</h1>
-        <ui5-button design="Default" (click)="loadStats()" aria-label="Refresh stats">{{ i18n.t('hippocpp.refresh') }}</ui5-button>
+        <h1 class="page-title">{{ i18n.t('hanaExplorer.title') }}</h1>
+        <ui5-button design="Default" (click)="loadStats()" aria-label="Refresh stats">{{ i18n.t('hanaExplorer.refresh') }}</ui5-button>
       </div>
 
       <app-cross-app-link
@@ -52,58 +52,58 @@ interface ArchLayer {
 
       <!-- About -->
       <div class="about-card">
-        <p>{{ i18n.t('hippocpp.about') }}</p>
+        <p>{{ i18n.t('hanaExplorer.about') }}</p>
         <div class="tech-pills">
-          <span class="pill pill--zig">Zig 0.15.1</span>
-          <span class="pill pill--mojo">Mojo GPU</span>
-          <span class="pill pill--mangle">Mangle Datalog</span>
-          <span class="pill pill--python">Python bindings</span>
+          <span class="pill pill--hana">SAP HANA Cloud</span>
+          <span class="pill pill--python">Python hdbcli</span>
+          <span class="pill pill--vector">Vector Engine</span>
+          <span class="pill pill--sql">SQL Console</span>
         </div>
       </div>
 
       <!-- Stats -->
-      <div class="stats-grid" style="margin-bottom: 1.5rem;" role="region" aria-label="HIPPO CPP statistics">
+      <div class="stats-grid" style="margin-bottom: 1.5rem;" role="region" aria-label="HANA Cloud statistics">
         <div class="stat-card">
           <div class="stat-value">
             <span class="status-badge {{ stats()?.available ? 'status-success' : 'status-error' }}">
-              {{ stats()?.available ? i18n.t('hippocpp.available') : i18n.t('hippocpp.unavailable') }}
+              {{ stats()?.available ? i18n.t('hanaExplorer.available') : i18n.t('hanaExplorer.unavailable') }}
             </span>
           </div>
-          <div class="stat-label">{{ i18n.t('hippocpp.graphStore') }}</div>
+          <div class="stat-label">{{ i18n.t('hanaExplorer.hanaConnection') }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ stats()?.pair_count ?? '—' }}</div>
-          <div class="stat-label">{{ i18n.t('hippocpp.pairsIndexed') }}</div>
+          <div class="stat-label">{{ i18n.t('hanaExplorer.pairsStored') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">1,251</div>
-          <div class="stat-label">{{ i18n.t('hippocpp.zigFiles') }}</div>
+          <div class="stat-value">6</div>
+          <div class="stat-label">{{ i18n.t('hanaExplorer.schemas') }}</div>
         </div>
       </div>
 
-      <!-- Cypher Query Sandbox -->
+      <!-- SQL Query Sandbox -->
       <section class="section">
-        <h2 class="section-title">{{ i18n.t('hippocpp.querySandbox') }}</h2>
+        <h2 class="section-title">{{ i18n.t('hanaExplorer.querySandbox') }}</h2>
         <div class="query-card">
           <div class="query-presets">
-            <span class="preset-label">{{ i18n.t('hippocpp.presets') }}</span>
+            <span class="preset-label">{{ i18n.t('hanaExplorer.presets') }}</span>
             @for (p of presets; track p.label) {
-              <ui5-button design="Default" (click)="setQuery(p.cypher)">{{ p.label }}</ui5-button>
+              <ui5-button design="Default" (click)="setQuery(p.sql)">{{ p.label }}</ui5-button>
             }
           </div>
           <textarea
             class="query-editor"
-            [(ngModel)]="cypher"
-            name="cypher"
-            aria-label="Cypher query editor"
+            [(ngModel)]="sql"
+            name="sql"
+            aria-label="SQL query editor"
             rows="4"
-            placeholder="MATCH (n) RETURN n LIMIT 10"
+            placeholder="SELECT * FROM TRAINING_PAIRS LIMIT 10"
           ></textarea>
           <div class="query-actions">
-            <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="!cypher.trim() || querying()">
-              {{ querying() ? i18n.t('hippocpp.running') : i18n.t('hippocpp.execute') }}
+            <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="!sql.trim() || querying()">
+              {{ querying() ? i18n.t('hanaExplorer.running') : i18n.t('hanaExplorer.execute') }}
             </ui5-button>
-            <ui5-button design="Transparent" (click)="clearResults()">{{ i18n.t('hippocpp.clear') }}</ui5-button>
+            <ui5-button design="Transparent" (click)="clearResults()">{{ i18n.t('hanaExplorer.clear') }}</ui5-button>
           </div>
         </div>
 
@@ -114,7 +114,7 @@ interface ArchLayer {
               <span class="status-badge {{ res.status === 'ok' ? 'status-success' : 'status-error' }}">
                 {{ res.status }}
               </span>
-              <span class="text-small text-muted">{{ res.count }} {{ i18n.t('hippocpp.row') }}</span>
+              <span class="text-small text-muted">{{ res.count }} {{ i18n.t('hanaExplorer.row') }}</span>
             </div>
             @if (res.rows.length) {
               <div class="table-wrapper">
@@ -138,7 +138,7 @@ interface ArchLayer {
                 </table>
               </div>
             } @else {
-              <p class="text-muted text-small">{{ i18n.t('hippocpp.noRows') }}</p>
+              <p class="text-muted text-small">{{ i18n.t('hanaExplorer.noRows') }}</p>
             }
           </div>
         }
@@ -150,7 +150,7 @@ interface ArchLayer {
 
       <!-- Architecture -->
       <section class="section">
-        <h2 class="section-title">{{ i18n.t('hippocpp.architecture') }}</h2>
+        <h2 class="section-title">{{ i18n.t('hanaExplorer.architecture') }}</h2>
         <div class="arch-grid">
           @for (layer of archLayers; track layer.name) {
             <div class="arch-card">
@@ -185,21 +185,10 @@ interface ArchLayer {
       font-size: 0.75rem;
       font-weight: 500;
 
-      &.pill--zig    { background: var(--sapWarningBackground, #fff3e0); color: var(--sapCriticalColor, #e65100); }
-      &.pill--mojo   { background: var(--sapErrorBackground, #fce4ec); color: var(--sapNegativeColor, #880e4f); }
-      &.pill--mangle { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #1b5e20); }
-      &.pill--python { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #0d47a1); }
-    }
-
-    .btn-refresh {
-      padding: 0.375rem 0.875rem;
-      background: var(--sapBrandColor, #0854a0);
-      color: var(--sapButton_Emphasized_TextColor, #fff);
-      border: none;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.875rem;
-      &:hover { background: var(--sapButton_Hover_Background, #0a6ed1); }
+      &.pill--hana   { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #0d47a1); }
+      &.pill--python { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #1b5e20); }
+      &.pill--vector { background: var(--sapWarningBackground, #fff3e0); color: var(--sapCriticalColor, #e65100); }
+      &.pill--sql    { background: var(--sapNeutralBackground, #f5f5f5); color: var(--sapTextColor, #32363a); }
     }
 
     .section { margin-bottom: 2rem; }
@@ -229,17 +218,6 @@ interface ArchLayer {
 
     .preset-label { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
 
-    .preset-btn {
-      padding: 0.15rem 0.5rem;
-      background: var(--sapList_Background, #f5f5f5);
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      color: var(--sapTextColor, #32363a);
-      &:hover { background: var(--sapList_Hover_Background, #e8e8e8); }
-    }
-
     .query-editor {
       width: 100%;
       box-sizing: border-box;
@@ -255,29 +233,6 @@ interface ArchLayer {
     }
 
     .query-actions { display: flex; gap: 0.5rem; align-items: center; }
-
-    .btn-primary {
-      padding: 0.375rem 0.875rem;
-      background: var(--sapBrandColor, #0854a0);
-      color: var(--sapButton_Emphasized_TextColor, #fff);
-      border: none;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.875rem;
-      &:disabled { opacity: 0.5; cursor: default; }
-      &:hover:not(:disabled) { background: var(--sapButton_Hover_Background, #0a6ed1); }
-    }
-
-    .btn-secondary {
-      padding: 0.375rem 0.875rem;
-      background: transparent;
-      color: var(--sapTextColor, #32363a);
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.875rem;
-      &:hover { background: var(--sapList_Hover_Background, #f5f5f5); }
-    }
 
     .results-section { margin-top: 1rem; }
 
@@ -359,28 +314,26 @@ export class HippocppComponent implements OnInit, OnDestroy {
   readonly i18n = inject(I18nService);
   private readonly destroy$ = new Subject<void>();
 
-  readonly stats = signal<GraphStats | null>(null);
+  readonly stats = signal<HanaStats | null>(null);
   readonly result = signal<QueryResult | null>(null);
   readonly querying = signal(false);
   readonly queryError = signal('');
 
-  cypher = 'MATCH (n) RETURN n LIMIT 10';
+  sql = 'SELECT * FROM TRAINING_PAIRS LIMIT 10';
 
   readonly presets: QueryPreset[] = [
-    { label: this.i18n.t('hippocpp.presetAllNodes'), cypher: 'MATCH (n) RETURN n LIMIT 10' },
-    { label: this.i18n.t('hippocpp.presetTrainingPairs'), cypher: 'MATCH (p:TrainingPair) RETURN p LIMIT 20' },
-    { label: this.i18n.t('hippocpp.presetCountPairs'), cypher: 'MATCH (p:TrainingPair) RETURN count(p) AS total' },
+    { label: this.i18n.t('hanaExplorer.presetAllTables'), sql: 'SELECT TABLE_NAME, SCHEMA_NAME FROM SYS.TABLES WHERE SCHEMA_NAME NOT LIKE \'SYS%\' LIMIT 20' },
+    { label: this.i18n.t('hanaExplorer.presetTrainingPairs'), sql: 'SELECT * FROM TRAINING_PAIRS LIMIT 20' },
+    { label: this.i18n.t('hanaExplorer.presetCountPairs'), sql: 'SELECT COUNT(*) AS total FROM TRAINING_PAIRS' },
   ];
 
   readonly archLayers: ArchLayer[] = [
-    { icon: 'edit', name: this.i18n.t('hippocpp.archParser'), desc: this.i18n.t('hippocpp.archParserDesc') },
-    { icon: 'compare', name: this.i18n.t('hippocpp.archPlanner'), desc: this.i18n.t('hippocpp.archPlannerDesc') },
-    { icon: 'process', name: this.i18n.t('hippocpp.archOptimizer'), desc: this.i18n.t('hippocpp.archOptimizerDesc') },
-    { icon: 'tags', name: this.i18n.t('hippocpp.archProcessor'), desc: this.i18n.t('hippocpp.archProcessorDesc') },
-    { icon: 'folder', name: this.i18n.t('hippocpp.archStorage'), desc: this.i18n.t('hippocpp.archStorageDesc') },
-    { icon: 'folder', name: this.i18n.t('hippocpp.archCatalog'), desc: this.i18n.t('hippocpp.archCatalogDesc') },
-    { icon: 'machine', name: this.i18n.t('hippocpp.archMojoGpu'), desc: this.i18n.t('hippocpp.archMojoGpuDesc') },
-    { icon: 'document', name: this.i18n.t('hippocpp.archMangle'), desc: this.i18n.t('hippocpp.archMangleDesc') },
+    { icon: 'database', name: this.i18n.t('hanaExplorer.archColumnStore'), desc: this.i18n.t('hanaExplorer.archColumnStoreDesc') },
+    { icon: 'search', name: this.i18n.t('hanaExplorer.archVectorEngine'), desc: this.i18n.t('hanaExplorer.archVectorEngineDesc') },
+    { icon: 'process', name: this.i18n.t('hanaExplorer.archSqlEngine'), desc: this.i18n.t('hanaExplorer.archSqlEngineDesc') },
+    { icon: 'tags', name: this.i18n.t('hanaExplorer.archSchemaRegistry'), desc: this.i18n.t('hanaExplorer.archSchemaRegistryDesc') },
+    { icon: 'folder', name: this.i18n.t('hanaExplorer.archPersistence'), desc: this.i18n.t('hanaExplorer.archPersistenceDesc') },
+    { icon: 'shield', name: this.i18n.t('hanaExplorer.archSecurity'), desc: this.i18n.t('hanaExplorer.archSecurityDesc') },
   ];
 
   readonly resultColumns = () => {
@@ -399,30 +352,30 @@ export class HippocppComponent implements OnInit, OnDestroy {
   }
 
   loadStats(): void {
-    this.api.get<GraphStats>('/graph/stats')
+    this.api.get<HanaStats>('/hana/stats')
       .pipe(
         takeUntil(this.destroy$),
         catchError(() => {
-          this.toast.warning('Graph stats unavailable', 'Graph');
+          this.toast.warning('HANA stats unavailable', 'HANA Cloud');
           return of(null);
         })
       )
       .subscribe({
-        next: (s: GraphStats | null) => this.stats.set(s),
+        next: (s: HanaStats | null) => this.stats.set(s),
       });
   }
 
   setQuery(q: string): void {
-    this.cypher = q;
+    this.sql = q;
   }
 
   runQuery(): void {
-    if (!this.cypher.trim()) return;
+    if (!this.sql.trim()) return;
     this.querying.set(true);
     this.queryError.set('');
     this.result.set(null);
 
-    this.api.post<QueryResult>('/graph/query', { cypher: this.cypher })
+    this.api.post<QueryResult>('/hana/query', { sql: this.sql })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (r: QueryResult) => {

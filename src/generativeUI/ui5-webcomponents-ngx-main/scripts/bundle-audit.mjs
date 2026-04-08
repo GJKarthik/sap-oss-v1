@@ -4,11 +4,11 @@
 /**
  * Bundle size audit for GenUI libraries.
  *
- * Reads the production build output of the playground app and reports
+ * Reads the production build output of the workspace app and reports
  * the sizes of the GenUI lazy chunks, flagging any that exceed budget.
  *
  * Usage:
- *   node scripts/bundle-audit.mjs [--dir dist/apps/playground] [--budget 150]
+ *   node scripts/bundle-audit.mjs [--dir dist/apps/workspace] [--budget 150]
  *
  * Exit code:
  *   0 - all chunks within budget
@@ -24,7 +24,7 @@ const getArg = (flag, def) => {
   return i !== -1 ? args[i + 1] : def;
 };
 
-const DIST_DIR = getArg('--dir', 'dist/apps/playground');
+const DIST_DIR = getArg('--dir', 'dist/apps/workspace');
 const BUDGET_KB = Number(getArg('--budget', '150'));
 
 // Chunks that belong to GenUI libs (matched by filename fragment)
@@ -43,7 +43,7 @@ async function collectChunks(dir) {
     files = await readdir(dir);
   } catch {
     console.error(`ERROR: build output directory not found: ${dir}`);
-    console.error('Run `npx nx build playground --configuration=production` first.');
+    console.error('Run `npx nx build workspace --configuration=production` first.');
     process.exit(2);
   }
 

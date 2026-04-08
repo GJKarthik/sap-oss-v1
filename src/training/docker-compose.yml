@@ -1,7 +1,7 @@
 # =============================================================================
 # training-main — Enterprise Orchestrator (V2)
 # =============================================================================
-# Consolidated Deployment: GenerativeUI + HippoCPP + Pipeline
+# Consolidated Deployment: GenerativeUI + Python Pipeline + HANA Cloud
 # Usage: docker compose up -d
 
 version: '3.8'
@@ -24,7 +24,6 @@ services:
     volumes:
       # Mount the upstream directories so FastAPI can Subprocess them natively
       - ./pipeline:/app/src/training/pipeline
-      - ./hippocpp:/app/src/training/hippocpp
       - ~/.cache/huggingface:/root/.cache/huggingface
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]

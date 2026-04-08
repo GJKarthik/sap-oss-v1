@@ -24,8 +24,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check nvidia-modelopt/api/ hippocpp/python/hippocpp/
-      - run: ruff format --check nvidia-modelopt/api/ hippocpp/python/hippocpp/
+      - run: ruff check nvidia-modelopt/api/ pipeline/
+      - run: ruff format --check nvidia-modelopt/api/ pipeline/
 
   # ── Python tests ───────────────────────────────────────────────────────────
   test-python:
@@ -54,19 +54,22 @@ jobs:
           name: python-coverage
           path: nvidia-modelopt/coverage.xml
 
-  # ── Zig build & test ──────────────────────────────────────────────────────
-  test-zig:
-    name: Test Zig
+  # ── Pipeline tests ──────────────────────────────────────────────────────
+  test-pipeline:
+    name: Test Pipeline (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: actions/setup-python@v5
         with:
-          version: "0.13.0"
-      - name: Build
-        run: cd hippocpp/zig && zig build
-      - name: Test
-        run: cd hippocpp/zig && zig build test
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install pytest
+      - name: Run pipeline tests
+        run: python -m pytest pipeline/tests/ -v --tb=short
 
   # ── Angular lint & test ────────────────────────────────────────────────────
   test-ui:
@@ -98,46 +101,18 @@ jobs:
       - name: Build API image
         run: docker build -t modelopt-api:ci nvidia-modelopt/
 
-  # ── Parity gate ────────────────────────────────────────────────────────────
-  parity-gate:
-    name: HippoCPP Parity Gate
+  # ── Benchmarks ───────────────────────────────────────────────────────────
+  benchmarks:
+    name: Pipeline Benchmarks
     runs-on: ubuntu-latest
-    needs: [test-zig]
+    needs: [test-pipeline]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Verify parity matrix
-        run: |
-          echo "Checking PARITY-SUMMARY.json..."
-          if [ -f hippocpp/PARITY-SUMMARY.json ]; then
-            python -c "
-          import json, sys
-          data = json.load(open('hippocpp/PARITY-SUMMARY.json'))
-          pct = data.get('coverage_percent', 0)
-          print(f'Parity coverage: {pct}%')
-          if pct < 95:
-              print(f'FAIL: Parity coverage {pct}% < 95% threshold')
-              sys.exit(1)
-          print('PASS')
-          "
-          else
-            echo "No PARITY-SUMMARY.json found — skipping gate"
-          fi
-
-
-
-  # ── Benchmarks ───────────────────────────────────────────────────────────
-  benchmarks:
-    name: Pipeline Benchmarks
-    runs-on: ubuntu-latest
-    needs: [test-zig]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: mlugg/setup-zig@v2
-        with:
-          version: 0.15.1
+      - name: Install dependencies
+        run: pip install pytest
       - name: Run pipeline benchmarks
         run: ./benchmarks/bench_pipeline.sh
       - name: Upload benchmark results

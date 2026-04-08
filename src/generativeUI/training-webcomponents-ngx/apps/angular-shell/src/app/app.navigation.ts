@@ -4,7 +4,7 @@
  * Defines route links, nav groups, expert routes, and group resolution.
  */
 
-export type TrainingRouteGroupId = 'home' | 'data-factory' | 'ai-lab' | 'mlops';
+export type TrainingRouteGroupId = 'home' | 'data-factory' | 'assistants' | 'mlops';
 
 export interface TrainingRouteLink {
   path: string;
@@ -32,25 +32,26 @@ export const TRAINING_ROUTE_LINKS: TrainingRouteLink[] = [
   { path: '/lineage', labelKey: 'nav.lineage', icon: 'org-chart', group: 'data-factory', tier: 'secondary' },
   { path: '/vocab-search', labelKey: 'nav.vocabSearch', icon: 'grid', group: 'data-factory', tier: 'expert' },
 
-  // -- Hub 3: AI Lab --
-  { path: '/chat', labelKey: 'nav.chat', icon: 'discussion-2', group: 'ai-lab', tier: 'primary' },
-  { path: '/rag-studio', labelKey: 'nav.ragStudio', icon: 'database', group: 'ai-lab', tier: 'primary' },
-  { path: '/semantic-search', labelKey: 'nav.semanticSearch', icon: 'search', group: 'ai-lab', tier: 'primary' },
-  { path: '/document-ocr', labelKey: 'nav.documentOcr', icon: 'document', group: 'ai-lab', tier: 'secondary' },
-  { path: '/playground', labelKey: 'nav.playground', icon: 'lab', group: 'ai-lab', tier: 'secondary' },
-  { path: '/sparql-explorer', labelKey: 'nav.sparqlExplorer', icon: 'syntax', group: 'ai-lab', tier: 'expert' },
-  { path: '/analytical-dashboard', labelKey: 'nav.analyticalDashboard', icon: 'chart-table-view', group: 'ai-lab', tier: 'expert' },
-  { path: '/streaming', labelKey: 'nav.streaming', icon: 'monitor-payments', group: 'ai-lab', tier: 'expert' },
+  // -- Hub 3: Assistants --
+  { path: '/chat', labelKey: 'nav.chat', icon: 'discussion-2', group: 'assistants', tier: 'primary' },
+  { path: '/rag-studio', labelKey: 'nav.ragStudio', icon: 'database', group: 'assistants', tier: 'primary' },
+  { path: '/semantic-search', labelKey: 'nav.semanticSearch', icon: 'search', group: 'assistants', tier: 'primary' },
+  { path: '/document-ocr', labelKey: 'nav.documentOcr', icon: 'document', group: 'assistants', tier: 'secondary' },
+  { path: '/pal-workbench', labelKey: 'nav.palWorkbench', icon: 'action', group: 'assistants', tier: 'secondary' },
+  { path: '/sparql-explorer', labelKey: 'nav.sparqlExplorer', icon: 'syntax', group: 'assistants', tier: 'expert' },
+  { path: '/analytical-dashboard', labelKey: 'nav.analyticalDashboard', icon: 'chart-table-view', group: 'assistants', tier: 'expert' },
+  { path: '/streaming', labelKey: 'nav.streaming', icon: 'monitor-payments', group: 'assistants', tier: 'expert' },
 
   // -- Hub 4: MLOps Studio --
   { path: '/pipeline', labelKey: 'nav.pipeline', icon: 'process', group: 'mlops', tier: 'primary' },
   { path: '/deployments', labelKey: 'nav.deployments', icon: 'shipping-status', group: 'mlops', tier: 'primary' },
   { path: '/model-optimizer', labelKey: 'nav.modelOptimizer', icon: 'machine', group: 'mlops', tier: 'primary' },
   { path: '/registry', labelKey: 'nav.registry', icon: 'tags', group: 'mlops', tier: 'secondary' },
-  { path: '/hippocpp', labelKey: 'nav.hippocpp', icon: 'chain-link', group: 'mlops', tier: 'secondary' },
+  { path: '/hana-explorer', labelKey: 'nav.hanaExplorer', icon: 'database', group: 'mlops', tier: 'secondary' },
   { path: '/compare', labelKey: 'nav.compare', icon: 'compare', group: 'mlops', tier: 'secondary' },
   { path: '/governance', labelKey: 'nav.governance', icon: 'shield', group: 'mlops', tier: 'secondary' },
   { path: '/analytics', labelKey: 'nav.analytics', icon: 'lead', group: 'mlops', tier: 'secondary' },
+  { path: '/pair-studio', labelKey: 'nav.pairStudio', icon: 'translate', group: 'mlops', tier: 'primary' },
   { path: '/glossary-manager', labelKey: 'nav.glossaryManager', icon: 'activity-items', group: 'mlops', tier: 'expert' },
   { path: '/arabic-wizard', labelKey: 'nav.arabicWizard', icon: 'learning-assistant', group: 'mlops', tier: 'expert' },
   { path: '/prompts', labelKey: 'nav.promptLibrary', icon: 'document-text', group: 'mlops', tier: 'secondary' },
@@ -60,7 +61,7 @@ export const TRAINING_ROUTE_LINKS: TrainingRouteLink[] = [
 export const TRAINING_NAV_GROUPS: TrainingNavGroup[] = [
   { id: 'home', labelKey: 'navGroup.home', defaultPath: '/dashboard' },
   { id: 'data-factory', labelKey: 'navGroup.data', defaultPath: '/data-explorer' },
-  { id: 'ai-lab', labelKey: 'navGroup.assistants', defaultPath: '/chat' },
+  { id: 'assistants', labelKey: 'navGroup.assistants', defaultPath: '/chat' },
   { id: 'mlops', labelKey: 'navGroup.operations', defaultPath: '/pipeline' },
 ];
 

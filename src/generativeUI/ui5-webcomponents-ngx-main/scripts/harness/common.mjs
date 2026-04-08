@@ -27,7 +27,7 @@ export function safeError(error) {
 
 export function parseArgs(argv) {
   const args = {
-    mode: 'demo-safe',
+    mode: 'workspace-safe',
     profile: 'local-live',
     includeE2E: false,
     outputDir: 'artifacts/harness',

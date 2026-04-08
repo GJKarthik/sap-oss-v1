@@ -3,10 +3,13 @@ RAG (Retrieval-Augmented Generation) and Translation Memory (TM) routes.
 """
 
 import json
+import math
+import re
+import time
 import uuid
 import os
 import httpx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -119,6 +122,8 @@ class TMEntry(BaseModel):
     target_lang: str
     category: str = "general"
     is_approved: bool = False
+    pair_type: Optional[str] = "translation"
+    db_context: Optional[Dict[str, str]] = None
 
 
 class SemanticSearchRequest(BaseModel):
@@ -357,3 +362,308 @@ async def save_tm_entry(body: TMEntry):
 async def delete_tm_entry(entry_id: str):
     get_store().delete_tm_entry(entry_id)
     return {"status": "deleted"}
+
+
+# ---------------------------------------------------------------------------
+# Alignment models & endpoint
+# ---------------------------------------------------------------------------
+
+class AlignTextRegion(BaseModel):
+    text: str
+    confidence: float = 1.0
+    language: str = "auto"
+
+class AlignOcrPage(BaseModel):
+    page_number: int
+    text: str
+    text_regions: List[AlignTextRegion] = Field(default_factory=list)
+
+class AlignSource(BaseModel):
+    pages: List[AlignOcrPage]
+    lang: str
+
+class AlignOptions(BaseModel):
+    granularity: Literal["paragraph", "sentence"] = "paragraph"
+    extractTerms: bool = True
+    existingGlossary: Optional[List[Dict[str, str]]] = None
+
+class AlignRequest(BaseModel):
+    source: AlignSource
+    target: AlignSource
+    options: AlignOptions = Field(default_factory=AlignOptions)
+
+class AlignedParagraph(BaseModel):
+    sourceText: str
+    targetText: str
+    sourcePage: int
+    targetPage: int
+    confidence: float
+    alignmentMethod: str
+
+class ExtractedTerm(BaseModel):
+    sourceTerm: str
+    targetTerm: str
+    sourceLang: str
+    targetLang: str
+    category: str = "general"
+    confidence: float = 0.8
+    extractionMethod: str = "llm_extraction"
+
+class AlignStats(BaseModel):
+    totalSourceParagraphs: int
+    totalTargetParagraphs: int
+    alignedCount: int
+    unalignedCount: int
+    termsExtracted: int
+    processingTimeMs: int
+
+class AlignResponse(BaseModel):
+    paragraphPairs: List[AlignedParagraph]
+    termPairs: List[ExtractedTerm]
+    stats: AlignStats
+
+
+def _split_paragraphs(pages: List[AlignOcrPage]) -> List[Dict[str, Any]]:
+    """Split OCR pages into paragraph-level chunks."""
+    paragraphs: List[Dict[str, Any]] = []
+    for page in pages:
+        text = page.text.strip()
+        if not text:
+            continue
+        blocks = re.split(r"\n\s*\n", text)
+        for block in blocks:
+            block = block.strip()
+            if len(block) > 10:
+                paragraphs.append({"text": block, "page": page.page_number})
+    return paragraphs
+
+
+def _extract_numbers(text: str) -> List[str]:
+    """Extract numeric patterns from text for number anchoring."""
+    western = re.findall(r"[\d][\d,.\'\s]{2,}[\d]", text)
+    arabic_indic = re.findall(r"[\u0660-\u0669][\u0660-\u0669,.\'\s]{2,}[\u0660-\u0669]", text)
+    return western + arabic_indic
+
+
+def _number_overlap(nums_a: List[str], nums_b: List[str]) -> float:
+    """Score overlap of numeric patterns between two texts."""
+    if not nums_a or not nums_b:
+        return 0.0
+    set_a = set(n.replace(" ", "").replace(",", "") for n in nums_a)
+    set_b = set(n.replace(" ", "").replace(",", "") for n in nums_b)
+    if not set_a or not set_b:
+        return 0.0
+    intersection = set_a & set_b
+    return len(intersection) / max(len(set_a), len(set_b))
+
+
+def _structural_align(
+    source_paras: List[Dict[str, Any]],
+    target_paras: List[Dict[str, Any]],
+    glossary: Optional[List[Dict[str, str]]] = None,
+) -> List[AlignedParagraph]:
+    """Rule-based structural alignment using four heuristics."""
+    aligned: List[AlignedParagraph] = []
+    used_targets: set = set()
+    total_source = len(source_paras)
+    total_target = len(target_paras)
+
+    glossary_map: Dict[str, str] = {}
+    if glossary:
+        for g in glossary:
+            if "en" in g and "ar" in g:
+                glossary_map[g["en"].lower()] = g["ar"]
+                glossary_map[g["ar"]] = g["en"].lower()
+
+    for si, sp in enumerate(source_paras):
+        best_score = 0.0
+        best_idx = -1
+        best_method = "structural"
+        s_nums = _extract_numbers(sp["text"])
+
+        for ti, tp in enumerate(target_paras):
+            if ti in used_targets:
+                continue
+
+            score = 0.0
+            method = "structural"
+
+            # 1. Page position (weight 0.3)
+            if total_source > 0 and total_target > 0:
+                s_pos = si / max(total_source, 1)
+                t_pos = ti / max(total_target, 1)
+                pos_score = max(0, 1.0 - abs(s_pos - t_pos) * 3)
+                score += pos_score * 0.3
+
+            # 2. Number anchoring (weight 0.3)
+            t_nums = _extract_numbers(tp["text"])
+            num_score = _number_overlap(s_nums, t_nums)
+            if num_score > 0:
+                method = "number_anchor"
+            score += num_score * 0.3
+
+            # 3. Heading/glossary match (weight 0.25)
+            heading_score = 0.0
+            s_lower = sp["text"].lower()
+            for key, val in glossary_map.items():
+                if key in s_lower and val in tp["text"]:
+                    heading_score = 1.0
+                    method = "heading_match"
+                    break
+            score += heading_score * 0.25
+
+            # 4. Length ratio (weight 0.15)
+            s_len = len(sp["text"])
+            t_len = len(tp["text"])
+            if s_len > 0 and t_len > 0:
+                ratio = t_len / s_len
+                expected = 1.2 if _contains_arabic(tp["text"]) else 1.0
+                len_score = max(0, 1.0 - abs(ratio - expected) * 2)
+                score += len_score * 0.15
+
+            if score > best_score:
+                best_score = score
+                best_idx = ti
+                best_method = method
+
+        if best_idx >= 0 and best_score >= 0.35:
+            used_targets.add(best_idx)
+            aligned.append(AlignedParagraph(
+                sourceText=sp["text"],
+                targetText=target_paras[best_idx]["text"],
+                sourcePage=sp["page"],
+                targetPage=target_paras[best_idx]["page"],
+                confidence=round(min(1.0, best_score), 3),
+                alignmentMethod=best_method,
+            ))
+
+    return aligned
+
+
+async def _extract_terms_llm(
+    pairs: List[AlignedParagraph],
+    source_lang: str,
+    target_lang: str,
+) -> List[ExtractedTerm]:
+    """Use LLM to extract term pairs from aligned paragraphs."""
+    terms: List[ExtractedTerm] = []
+    batch_size = 5
+
+    for i in range(0, len(pairs), batch_size):
+        batch = pairs[i:i + batch_size]
+        prompt_parts = []
+        for idx, p in enumerate(batch):
+            prompt_parts.append(
+                f"Pair {idx + 1}:\nSource ({source_lang}): {p.sourceText[:500]}\n"
+                f"Target ({target_lang}): {p.targetText[:500]}"
+            )
+
+        system_prompt = (
+            f"You are a bilingual terminology extraction engine. Given aligned paragraphs "
+            f"in {source_lang} and {target_lang}, extract all technical term pairs.\n\n"
+            f"For each pair, return:\n"
+            f"- sourceTerm: the term in the source language\n"
+            f"- targetTerm: the equivalent in the target language\n"
+            f"- category: one of [income_statement, balance_sheet, regulatory, schema, general]\n"
+            f"- confidence: 0.0-1.0\n\n"
+            f"Also identify:\n"
+            f"- Alias terms (same language, different surface forms for the same concept)\n"
+            f"- DB field references (column names, table names mapped to natural language)\n\n"
+            f"Return JSON array only. No explanation."
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(
+                    f"{VLLM_URL}/v1/chat/completions",
+                    json={
+                        "model": "default",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": "\n\n".join(prompt_parts)},
+                        ],
+                        "temperature": 0.1,
+                        "max_tokens": 2000,
+                    },
+                )
+                resp.raise_for_status()
+                content = resp.json()["choices"][0]["message"]["content"]
+                # Parse JSON from response (may be wrapped in markdown)
+                json_str = content
+                if "```" in json_str:
+                    json_str = re.search(r"```(?:json)?\s*([\s\S]*?)```", json_str)
+                    json_str = json_str.group(1) if json_str else content
+                extracted = json.loads(json_str)
+                if isinstance(extracted, list):
+                    for item in extracted:
+                        terms.append(ExtractedTerm(
+                            sourceTerm=item.get("sourceTerm", ""),
+                            targetTerm=item.get("targetTerm", ""),
+                            sourceLang=source_lang,
+                            targetLang=target_lang,
+                            category=item.get("category", "general"),
+                            confidence=float(item.get("confidence", 0.8)),
+                            extractionMethod="llm_extraction",
+                        ))
+        except Exception as exc:
+            logger.warning("llm_term_extraction_failed", error=str(exc), batch=i)
+
+    return terms
+
+
+def _dedup_terms(
+    terms: List[ExtractedTerm],
+    glossary: Optional[List[Dict[str, str]]] = None,
+) -> List[ExtractedTerm]:
+    """Deduplicate extracted terms and mark glossary matches."""
+    seen: Dict[str, ExtractedTerm] = {}
+    glossary_terms: set = set()
+    if glossary:
+        for g in glossary:
+            for v in g.values():
+                glossary_terms.add(v.lower().strip())
+
+    for term in terms:
+        key = f"{term.sourceTerm.lower().strip()}||{term.targetTerm.lower().strip()}"
+        existing = seen.get(key)
+        if existing is None or term.confidence > existing.confidence:
+            seen[key] = term
+
+    return list(seen.values())
+
+
+@router.post("/tm/align", response_model=AlignResponse)
+async def align_documents(body: AlignRequest):
+    """Align two OCR documents and extract term pairs."""
+    start_ms = int(time.time() * 1000)
+
+    source_paras = _split_paragraphs(body.source.pages)
+    target_paras = _split_paragraphs(body.target.pages)
+
+    # Step 1: Structural alignment
+    aligned = _structural_align(
+        source_paras, target_paras, body.options.existingGlossary
+    )
+
+    # Step 2: LLM term extraction on aligned pairs
+    term_pairs: List[ExtractedTerm] = []
+    if body.options.extractTerms and aligned:
+        term_pairs = await _extract_terms_llm(
+            aligned, body.source.lang, body.target.lang
+        )
+        term_pairs = _dedup_terms(term_pairs, body.options.existingGlossary)
+
+    elapsed = int(time.time() * 1000) - start_ms
+
+    return AlignResponse(
+        paragraphPairs=aligned,
+        termPairs=term_pairs,
+        stats=AlignStats(
+            totalSourceParagraphs=len(source_paras),
+            totalTargetParagraphs=len(target_paras),
+            alignedCount=len(aligned),
+            unalignedCount=len(source_paras) - len(aligned),
+            termsExtracted=len(term_pairs),
+            processingTimeMs=elapsed,
+        ),
+    )

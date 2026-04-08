@@ -9,17 +9,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "training-main"
 version = "0.1.0"
-description = "Text-to-SQL training data pipeline, model optimizer, and HippoCPP graph engine"
+description = "Text-to-SQL training data pipeline, model optimizer, and SAP HANA Cloud backend"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 
 [project.optional-dependencies]
-# Graph-RAG backend: prefer hippocpp (vendored Zig port), fall back to upstream kuzu
-graph = [
-    "hippocpp>=0.1.0",
-]
-graph-fallback = [
-    "kuzu>=0.7.0",
+# SAP HANA Cloud connectivity
+hana = [
+    "hdbcli>=2.20.15",
 ]
 # Full development environment
 dev = [
@@ -30,12 +27,14 @@ dev = [
     "pydantic>=2.0",
     "ruff>=0.4",
     "mypy>=1.8",
+    "pandas>=2.1.0",
+    "openpyxl>=3.1.0",
 ]
 
 [tool.pytest.ini_options]
 testpaths = [
     "nvidia-modelopt/tests",
-    "hippocpp/python/tests",
+    "pipeline/tests",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -50,7 +49,7 @@ filterwarnings = [
 [tool.coverage.run]
 source = [
     "nvidia-modelopt/api",
-    "hippocpp/python/hippocpp",
+    "pipeline",
 ]
 omit = [
     "*/tests/*",
@@ -77,7 +76,7 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["api", "hippocpp"]
+known-first-party = ["api", "pipeline"]
 
 [tool.mypy]
 python_version = "3.10"

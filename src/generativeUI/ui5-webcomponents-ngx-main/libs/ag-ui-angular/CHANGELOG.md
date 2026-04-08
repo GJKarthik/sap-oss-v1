@@ -18,7 +18,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Incoming gap detection** — `AgUiClient.handleEvent()` validates incoming `seq` values and warns on gaps; tracker is reset on `lifecycle.run_started`.
 - **Jest tests** (`ag-ui-events.spec.ts`) — 14 unit tests covering `SequenceTracker` (nextOutSeq, trackIncoming, reset, clear) and `parseAgUiEvent` (defaults, type guards, snapshot).
 - **Storybook story** (`joule-chat.component.stories.ts`) — 4 stories: Default, WithRouteBadge, WebSocketTransport, ConfidentialData.
-- **Production integration** — `JouleChatComponent` integrated into `apps/playground` `/joule` lazy route with real Python agent backend via `proxy.conf.json`.
+- **Production integration** — `JouleChatComponent` integrated into `apps/workspace` `/joule` lazy route with real Python agent backend via `proxy.conf.json`.
 
 ### Changed
 - `AgUiClient.handleEvent()` — sequence tracker reset wired to `lifecycle.run_started` to correctly handle reconnects.

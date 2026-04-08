@@ -26,6 +26,7 @@ export class GlossaryManagerComponent implements OnInit {
   readonly showAddForm = signal(false);
   readonly tmBackend = signal<TMBackendMeta['backend']>('sqlite');
   searchQuery = '';
+  pairTypeFilter = signal<string>('all');
 
   newEntry: TMEntry = {
     source_text: '',
@@ -118,9 +119,14 @@ export class GlossaryManagerComponent implements OnInit {
   }
 
   filteredTmEntries(): TMEntry[] {
-    if (!this.searchQuery) return this.tmEntries();
+    let entries = this.tmEntries();
+    const pt = this.pairTypeFilter();
+    if (pt !== 'all') {
+      entries = entries.filter(e => (e.pair_type || 'translation') === pt);
+    }
+    if (!this.searchQuery) return entries;
     const q = this.searchQuery.toLowerCase();
-    return this.tmEntries().filter(e =>
+    return entries.filter(e =>
       e.source_text.toLowerCase().includes(q) ||
       e.target_text.toLowerCase().includes(q) ||
       (e.category?.toLowerCase().includes(q))

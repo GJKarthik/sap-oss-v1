@@ -9,7 +9,7 @@
  * do NOT appear in chunks they should not be in.
  *
  * Usage:
- *   node scripts/tree-shaking-test.mjs [--dir dist/apps/playground]
+ *   node scripts/tree-shaking-test.mjs [--dir dist/apps/workspace]
  *
  * Exit code:
  *   0 - checks pass
@@ -22,7 +22,7 @@ import { join } from 'node:path';
 
 const args = process.argv.slice(2);
 const getArg = (flag, def) => { const i = args.indexOf(flag); return i !== -1 ? args[i + 1] : def; };
-const DIST_DIR = getArg('--dir', 'dist/apps/playground');
+const DIST_DIR = getArg('--dir', 'dist/apps/workspace');
 
 /**
  * Symbols that must appear in the build output if the lazy joule chunk loaded:
@@ -52,7 +52,7 @@ async function loadChunks(dir) {
     files = await readdir(dir);
   } catch {
     console.error(`ERROR: build output directory not found: ${dir}`);
-    console.error('Run `npx nx build playground --configuration=production` first.');
+    console.error('Run `npx nx build workspace --configuration=production` first.');
     process.exit(2);
   }
   return files.filter(f => f.endsWith('.js') || f.endsWith('.mjs'));

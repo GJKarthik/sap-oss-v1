@@ -1,0 +1,385 @@
+<div class="pair-studio-page" [dir]="i18n.dir()" role="main" [attr.aria-label]="i18n.t('pairStudio.title')">
+
+  <!-- ================================================================== -->
+  <!-- PANEL 1: Upload Zone                                                -->
+  <!-- ================================================================== -->
+  <section class="panel upload-panel" *ngIf="!batch() || batch()?.error">
+    <div class="page-header">
+      <div>
+        <h1>{{ i18n.t('pairStudio.title') }}</h1>
+        <p class="subtitle">{{ i18n.t('pairStudio.subtitle') }}</p>
+      </div>
+    </div>
+
+    <div class="upload-layout">
+      <!-- Left: Configuration -->
+      <div class="config-card card">
+        <h3>{{ i18n.t('pairStudio.uploadConfig') }}</h3>
+
+        <div class="field-group">
+          <label>{{ i18n.t('pairStudio.pairType') }}</label>
+          <select [(ngModel)]="pairType">
+            <option value="translation">{{ i18n.t('pairStudio.typeTranslation') }}</option>
+            <option value="alias">{{ i18n.t('pairStudio.typeAlias') }}</option>
+            <option value="db_field_mapping">{{ i18n.t('pairStudio.typeDbField') }}</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>{{ i18n.t('pairStudio.sourceLang') }}</label>
+          <select [(ngModel)]="sourceLang">
+            <option value="auto">{{ i18n.t('pairStudio.autoDetect') }}</option>
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
+            <option value="id">Bahasa</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>{{ i18n.t('pairStudio.targetLang') }}</label>
+          <select [(ngModel)]="targetLang">
+            <option value="auto">{{ i18n.t('pairStudio.autoDetect') }}</option>
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
+            <option value="id">Bahasa</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>{{ i18n.t('pairStudio.trustLevel') }}</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="trustLevel" value="auto_approve" [(ngModel)]="trustLevel" />
+              {{ i18n.t('pairStudio.autoApprove') }}
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="trustLevel" value="review_first" [(ngModel)]="trustLevel" />
+              {{ i18n.t('pairStudio.reviewFirst') }}
+            </label>
+          </div>
+        </div>
+
+        <ui5-button
+          design="Emphasized"
+          icon="media-play"
+          [disabled]="!canProcess()"
+          (click)="processFiles()">
+          {{ i18n.t('pairStudio.processFiles') }}
+        </ui5-button>
+      </div>
+
+      <!-- Right: Drop Zone -->
+      <div
+        class="drop-zone card"
+        [class.drag-over]="isDragOver()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="fileInput.click()"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="i18n.t('pairStudio.dropZoneLabel')">
+
+        <input
+          #fileInput
+          type="file"
+          multiple
+          accept=".pdf,.csv,.json,.tmx,.xlsx,.sql,.hdbtable,.hdbdd"
+          style="display:none"
+          (change)="onFileSelect($event)" />
+
+        @if (droppedFiles().length === 0) {
+          <div class="drop-placeholder">
+            <span class="drop-icon">📄</span>
+            <p>{{ i18n.t('pairStudio.dropHere') }}</p>
+            <p class="drop-formats">PDF · CSV · JSON · TMX · XLSX · SQL · DDL</p>
+            <p class="drop-hint">{{ i18n.t('pairStudio.orClickBrowse') }}</p>
+          </div>
+        } @else {
+          <div class="file-chips">
+            @for (file of droppedFiles(); track file.name; let i = $index) {
+              <div class="file-chip">
+                <span class="file-chip-name">{{ file.name }}</span>
+                <span class="file-chip-size">{{ (file.size / 1024).toFixed(0) }}KB</span>
+                <button class="file-chip-remove" (click)="removeFile(i); $event.stopPropagation()" aria-label="Remove">✕</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    @if (processing()) {
+      <div class="progress-section">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" [style.width.%]="progress()"></div>
+        </div>
+        <span class="progress-label">{{ progressLabel() }}</span>
+      </div>
+    }
+
+    <!-- Error display -->
+    @if (batch()?.error) {
+      <div class="error-banner" role="alert">
+        <span>{{ batch()?.error }}</span>
+        <ui5-button design="Transparent" (click)="discardBatch()">{{ i18n.t('pairStudio.dismiss') }}</ui5-button>
+      </div>
+    }
+  </section>
+
+  <!-- ================================================================== -->
+  <!-- PANEL 2: Review Table                                               -->
+  <!-- ================================================================== -->
+  @if (batch() && !batch()?.processing && !batch()?.error && !commitResult()) {
+    <section class="panel review-panel">
+      <div class="page-header">
+        <div>
+          <h1>{{ i18n.t('pairStudio.reviewTitle') }}</h1>
+          <p class="subtitle">
+            {{ batch()!.termPairs.length }} {{ i18n.t('pairStudio.termPairs') }} ·
+            {{ batch()!.paragraphPairs.length }} {{ i18n.t('pairStudio.paragraphPairs') }}
+          </p>
+        </div>
+        <div class="header-actions">
+          <ui5-button design="Default" (click)="startNewBatch()">{{ i18n.t('pairStudio.newBatch') }}</ui5-button>
+        </div>
+      </div>
+
+      <!-- Batch actions toolbar -->
+      <div class="toolbar">
+        <ui5-button design="Positive" icon="accept" (click)="approveSelected()" [disabled]="selectedTermIndices().size === 0 && selectedParagraphIndices().size === 0">
+          {{ i18n.t('pairStudio.approveSelected') }}
+        </ui5-button>
+        <ui5-button design="Negative" icon="decline" (click)="rejectSelected()" [disabled]="selectedTermIndices().size === 0 && selectedParagraphIndices().size === 0">
+          {{ i18n.t('pairStudio.rejectSelected') }}
+        </ui5-button>
+        <ui5-button design="Default" (click)="approveAllPending()">
+          {{ i18n.t('pairStudio.approveAll') }}
+        </ui5-button>
+
+        <div class="toolbar-spacer"></div>
+
+        <!-- Filters -->
+        <select class="filter-select" [ngModel]="filterPairType()" (ngModelChange)="filterPairType.set($event)">
+          <option value="all">{{ i18n.t('pairStudio.allTypes') }}</option>
+          <option value="translation">{{ i18n.t('pairStudio.typeTranslation') }}</option>
+          <option value="alias">{{ i18n.t('pairStudio.typeAlias') }}</option>
+          <option value="db_field_mapping">{{ i18n.t('pairStudio.typeDbField') }}</option>
+        </select>
+        <select class="filter-select" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+          <option value="all">{{ i18n.t('pairStudio.allStatuses') }}</option>
+          <option value="pending">{{ i18n.t('pairStudio.statusPending') }}</option>
+          <option value="approved">{{ i18n.t('pairStudio.statusApproved') }}</option>
+          <option value="rejected">{{ i18n.t('pairStudio.statusRejected') }}</option>
+        </select>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button
+          class="tab"
+          [class.tab--active]="activeTab() === 'terms'"
+          (click)="activeTab.set('terms')">
+          {{ i18n.t('pairStudio.tabTerms') }} ({{ batch()!.termPairs.length }})
+        </button>
+        <button
+          class="tab"
+          [class.tab--active]="activeTab() === 'paragraphs'"
+          (click)="activeTab.set('paragraphs')">
+          {{ i18n.t('pairStudio.tabParagraphs') }} ({{ batch()!.paragraphPairs.length }})
+        </button>
+      </div>
+
+      <!-- Term Pairs Table -->
+      @if (activeTab() === 'terms') {
+        <div class="card table-wrap">
+          <table [attr.aria-label]="i18n.t('pairStudio.tabTerms')">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" (change)="toggleAllTerms()" /></th>
+                <th>{{ i18n.t('pairStudio.colSource') }}</th>
+                <th>{{ i18n.t('pairStudio.colTarget') }}</th>
+                <th>{{ i18n.t('pairStudio.colType') }}</th>
+                <th>{{ i18n.t('pairStudio.colCategory') }}</th>
+                <th>{{ i18n.t('pairStudio.colConfidence') }}</th>
+                <th>{{ i18n.t('pairStudio.colStatus') }}</th>
+                <th>{{ i18n.t('pairStudio.colActions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (term of filteredTerms(); track $index; let i = $index) {
+                <tr [class.row-dim]="term.existsInGlossary" [class.row-rejected]="term.status === 'rejected'">
+                  <td><input type="checkbox" [checked]="selectedTermIndices().has(i)" (change)="toggleTermSelection(i)" /></td>
+                  <td><bdi>{{ term.sourceTerm }}</bdi> <span class="lang-tag">{{ term.sourceLang }}</span></td>
+                  <td>
+                    @if (editingTermIndex() === i) {
+                      <input type="text" class="inline-edit" [ngModel]="term.targetTerm" (ngModelChange)="saveEditTerm(i, { targetTerm: $event })" (keydown.escape)="cancelEditTerm()" />
+                    } @else {
+                      <bdi>{{ term.targetTerm }}</bdi> <span class="lang-tag">{{ term.targetLang }}</span>
+                    }
+                  </td>
+                  <td><span class="type-tag" [attr.data-type]="term.pairType">{{ term.pairType }}</span></td>
+                  <td><span class="cat-tag">{{ term.category }}</span></td>
+                  <td><span class="confidence-badge" [ngClass]="confidenceClass(term.confidence)">{{ (term.confidence * 100).toFixed(0) }}%</span></td>
+                  <td>
+                    <span class="status-chip" [class.approved]="term.status === 'approved'" [class.rejected]="term.status === 'rejected'">
+                      {{ term.status }}
+                    </span>
+                    @if (term.existsInGlossary) {
+                      <span class="tm-badge">{{ i18n.t('pairStudio.alreadyInTm') }}</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="action-row">
+                      @if (term.status === 'pending') {
+                        <ui5-button design="Positive" icon="accept" (click)="approveTerm(i)" [title]="i18n.t('pairStudio.approve')"></ui5-button>
+                        <ui5-button design="Negative" icon="decline" (click)="rejectTerm(i)" [title]="i18n.t('pairStudio.reject')"></ui5-button>
+                      }
+                      <ui5-button design="Default" icon="edit" (click)="startEditTerm(i)" [title]="i18n.t('pairStudio.edit')"></ui5-button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="empty-cell">{{ i18n.t('pairStudio.noTerms') }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- Paragraph Pairs Table -->
+      @if (activeTab() === 'paragraphs') {
+        <div class="card table-wrap">
+          <table [attr.aria-label]="i18n.t('pairStudio.tabParagraphs')">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" /></th>
+                <th>{{ i18n.t('pairStudio.colSourceText') }}</th>
+                <th>{{ i18n.t('pairStudio.colTargetText') }}</th>
+                <th>{{ i18n.t('pairStudio.colLangs') }}</th>
+                <th>{{ i18n.t('pairStudio.colConfidence') }}</th>
+                <th>{{ i18n.t('pairStudio.colPage') }}</th>
+                <th>{{ i18n.t('pairStudio.colStatus') }}</th>
+                <th>{{ i18n.t('pairStudio.colActions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (para of filteredParagraphs(); track $index; let i = $index) {
+                <tr [class.row-rejected]="para.status === 'rejected'">
+                  <td><input type="checkbox" [checked]="selectedParagraphIndices().has(i)" (change)="toggleParagraphSelection(i)" /></td>
+                  <td class="text-cell"><bdi>{{ truncate(para.sourceText) }}</bdi></td>
+                  <td class="text-cell"><bdi>{{ truncate(para.targetText) }}</bdi></td>
+                  <td>{{ para.sourceLang }}→{{ para.targetLang }}</td>
+                  <td><span class="confidence-badge" [ngClass]="confidenceClass(para.confidence)">{{ (para.confidence * 100).toFixed(0) }}%</span></td>
+                  <td>{{ para.page || '—' }}</td>
+                  <td>
+                    <span class="status-chip" [class.approved]="para.status === 'approved'" [class.rejected]="para.status === 'rejected'">
+                      {{ para.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="action-row">
+                      @if (para.status === 'pending') {
+                        <ui5-button design="Positive" icon="accept" (click)="approveParagraph(i)" [title]="i18n.t('pairStudio.approve')"></ui5-button>
+                        <ui5-button design="Negative" icon="decline" (click)="rejectParagraph(i)" [title]="i18n.t('pairStudio.reject')"></ui5-button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="empty-cell">{{ i18n.t('pairStudio.noParagraphs') }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- Commit Summary (inline at bottom of review) -->
+      <div class="commit-summary card">
+        <h3>{{ i18n.t('pairStudio.readyToCommit') }}</h3>
+        <div class="commit-stats">
+          <span>📊 {{ ingestion.approvedTermCount() }} {{ i18n.t('pairStudio.termsApproved') }}, {{ ingestion.rejectedTermCount() }} {{ i18n.t('pairStudio.termsRejected') }}</span>
+          <span>📄 {{ ingestion.approvedParagraphCount() }} {{ i18n.t('pairStudio.paragraphsApproved') }}, {{ ingestion.rejectedParagraphCount() }} {{ i18n.t('pairStudio.paragraphsRejected') }}</span>
+          <span>🏷️ {{ newGlossaryCount() }} {{ i18n.t('pairStudio.newGlossaryEntries') }}</span>
+          <span>🔄 {{ updatedEntryCount() }} {{ i18n.t('pairStudio.updatedEntries') }}</span>
+        </div>
+
+        <div class="commit-destinations">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="commitToTm" />
+            {{ i18n.t('pairStudio.destTm') }}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="commitToGlossary" />
+            {{ i18n.t('pairStudio.destGlossary') }}
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="commitToVector" />
+            {{ i18n.t('pairStudio.destVector') }}
+          </label>
+        </div>
+
+        <div class="commit-actions">
+          <ui5-button
+            design="Emphasized"
+            icon="accept"
+            [disabled]="committing() || (ingestion.approvedTermCount() === 0 && ingestion.approvedParagraphCount() === 0)"
+            (click)="commitBatch()">
+            {{ i18n.t('pairStudio.commitButton') }}
+          </ui5-button>
+          <ui5-button design="Negative" (click)="discardBatch()">
+            {{ i18n.t('pairStudio.discardBatch') }}
+          </ui5-button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ================================================================== -->
+  <!-- PANEL 3: Post-Commit Result                                         -->
+  <!-- ================================================================== -->
+  @if (commitResult()) {
+    <section class="panel result-panel">
+      <div class="result-card card">
+        <h2>{{ i18n.t('pairStudio.commitComplete') }}</h2>
+        <div class="result-stats">
+          <div class="result-stat">
+            <span class="result-stat-value">{{ commitResult()!.termsSaved }}</span>
+            <span class="result-stat-label">{{ i18n.t('pairStudio.termsSaved') }}</span>
+          </div>
+          <div class="result-stat">
+            <span class="result-stat-value">{{ commitResult()!.paragraphsSaved }}</span>
+            <span class="result-stat-label">{{ i18n.t('pairStudio.paragraphsSaved') }}</span>
+          </div>
+          <div class="result-stat">
+            <span class="result-stat-value">{{ commitResult()!.newGlossaryEntries }}</span>
+            <span class="result-stat-label">{{ i18n.t('pairStudio.newGlossaryEntries') }}</span>
+          </div>
+        </div>
+        @if (commitResult()!.termsFailed > 0) {
+          <div class="error-banner" role="alert">
+            {{ commitResult()!.termsSaved + commitResult()!.paragraphsSaved }} {{ i18n.t('pairStudio.of') }}
+            {{ commitResult()!.termsSaved + commitResult()!.paragraphsSaved + commitResult()!.termsFailed }} {{ i18n.t('pairStudio.entriesSaved') }}.
+            {{ commitResult()!.termsFailed }} {{ i18n.t('pairStudio.entriesFailed') }}.
+          </div>
+        }
+        <ui5-button design="Emphasized" (click)="startNewBatch()">
+          {{ i18n.t('pairStudio.startAnother') }}
+        </ui5-button>
+      </div>
+    </section>
+  }
+</div>

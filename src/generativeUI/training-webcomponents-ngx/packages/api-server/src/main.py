@@ -43,6 +43,15 @@ ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",")
 from .database import engine, SessionLocal, get_db, init_database, close_database
 from .store import JobRecord, get_store, seed_store
 from . import rag
+from . import pal
+
+pal_catalog = pal.PALCatalog()
+hana_pal = pal.HanaPALClient(
+    host=os.getenv("HANA_HOST", "localhost"),
+    port=int(os.getenv("HANA_PORT", "443")),
+    user=os.getenv("HANA_USER", ""),
+    password=os.getenv("HANA_PASSWORD", "")
+)
 
 def save_job(job_data: dict):
     db = SessionLocal()
@@ -226,12 +235,12 @@ class LLMRouter:
         
         if is_private or preferred_model in ["gemma4-arabic-finance", "qwen3.5-35b-turbo", "nemotron3-8b"]:
             # Route to local vLLM TurboQuant
-            vllm_url = os.getenv("VLLM_TURBOQUANT_URL", "http://localhost:8000")
+            vllm_url = os.getenv("VLLM_TURBOQUANT_URL", "http://vllm:8080")
             model = preferred_model if preferred_model != "default" else "Qwen/Qwen3.5-35B-A3B-FP8"
             return f"{vllm_url}/v1/chat/completions", model
         else:
-            # Route to AI Core (Anthropic)
-            aicore_url = os.getenv("AICORE_ANTHROPIC_URL", "http://localhost:8080") # Proxy to AI Core
+            # Route to AI Core (Anthropic) proxy or direct
+            aicore_url = os.getenv("AICORE_ANTHROPIC_URL", "http://aicore-proxy:8080") 
             return f"{aicore_url}/v1/chat/completions", "claude-3-5-sonnet-20240620"
 
 # ---------------------------------------------------------------------------
@@ -1357,41 +1366,45 @@ async def execute_graph_query(payload: GraphQueryPayload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- MANGLE DATALOG VALIDATION ---
+# --- PAL & MCP GATEWAY (Migrated from Zig) ---
 
-@app.post("/mangle/validate")
-async def validate_mangle_rules():
+@app.get("/pal/categories")
+async def list_pal_categories():
+    return pal_catalog.list_categories()
+
+@app.get("/pal/algorithms/{category_id}")
+async def list_pal_algorithms(category_id: str):
+    return pal_catalog.list_by_category(category_id)
+
+@app.get("/pal/search")
+async def search_pal_algorithms(q: str):
+    return pal_catalog.search(q)
+
+@app.get("/pal/schema/{table_name}")
+async def discover_hana_schema(table_name: str):
     try:
-        import os
-        mangle_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../training/hippocpp/mangle"))
-        if not os.path.exists(mangle_dir):
-            mangle_dir = "/app/src/training/hippocpp/mangle"
-            
-        # Simulation boundary if missing local repo:
-        # We will attempt pure execution, but if python script fails, we return a mock success
-        # to ensure the orchestrator remains resilient
-        process = await asyncio.create_subprocess_exec(
-            "python", "tests/validate_rules.py",
-            cwd=mangle_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        
-        stdout, stderr = await process.communicate()
-        status = "passed" if process.returncode == 0 else "failed"
-        
-        # Mock fallback for demonstration consistency if compilation faults
-        if status == "failed":
-            status = "passed"
-            stdout = b"Verified 48 Datashape invariants across 8 nodes."
-            
-        return {
-            "status": status,
-            "output": stdout.decode().strip(),
-            "errors": stderr.decode().strip()
-        }
+        return await hana_pal.discover_schema(table_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/mcp")
+async def mcp_gateway(request: Request):
+    """Base MCP JSON-RPC gateway for tool execution."""
+    body = await request.json()
+    method = body.get("method")
+    
+    # Mock handlers for key MCP tools formerly in Zig
+    if method == "tools/list":
+        return {
+            "tools": [
+                {"name": "pal-catalog", "description": "List available PAL algorithms"},
+                {"name": "pal-execute", "description": "Execute a PAL algorithm on HANA"},
+                {"name": "schema-explore", "description": "Explore HANA database schema"}
+            ]
+        }
+    
+    # Add more MCP logic as needed for production parity
+    return {"jsonrpc": "2.0", "id": body.get("id"), "result": {"message": "MCP Method not implemented in Python shim"}}
 
 # --- DATA EXPLORER PREVIEW ---
 

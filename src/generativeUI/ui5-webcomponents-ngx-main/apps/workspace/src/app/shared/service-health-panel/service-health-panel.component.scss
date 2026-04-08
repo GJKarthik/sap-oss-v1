@@ -1,0 +1,95 @@
+.service-health-panel {
+  padding: 1.25rem;
+  border: 1px solid var(--sapList_BorderColor, rgba(95, 101, 109, 0.16));
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.72)),
+    var(--sapObjectHeader_Background);
+  box-shadow: var(--sapContent_Shadow1, 0 12px 30px rgba(15, 23, 42, 0.08));
+}
+
+.service-health-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.service-health-panel__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.service-health-panel__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sapBrandColor, #0070f2);
+}
+
+.service-health-panel__subtitle {
+  color: var(--sapContent_LabelColor);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.service-health-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.service-health-panel__meta {
+  margin-top: 0.75rem;
+  color: var(--sapContent_LabelColor);
+  font-size: 0.75rem;
+}
+
+.service-health-panel__checks {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.service-health-panel__row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--sapList_BorderColor, rgba(95, 101, 109, 0.16));
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.service-health-panel__service {
+  font-weight: 600;
+  color: var(--sapTextColor);
+}
+
+.service-health-panel__status {
+  color: var(--sapPositiveTextColor);
+  font-size: 0.8125rem;
+  text-align: right;
+}
+
+.service-health-panel__status--bad {
+  color: var(--sapNegativeTextColor);
+}
+
+@media (max-width: 768px) {
+  .service-health-panel__row,
+  .service-health-panel__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .service-health-panel__status {
+    text-align: left;
+  }
+}

@@ -31,7 +31,7 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'hippocpp',
+        path: 'hana-explorer',
         loadComponent: () =>
           import('./pages/hippocpp/hippocpp.component').then((m) => m.HippocppComponent),
       },
@@ -82,6 +82,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/analytics/analytics.component').then(
             (m) => m.AnalyticsComponent
+          ),
+      },
+      {
+        path: 'pair-studio',
+        loadComponent: () =>
+          import('./pages/pair-studio/pair-studio.component').then(
+            (m) => m.PairStudioComponent
           ),
       },
       {
@@ -169,10 +176,10 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'playground',
+        path: 'pal-workbench',
         loadComponent: () =>
-          import('./pages/playground/playground.component').then(
-            (m) => m.PlaygroundComponent
+          import('./pages/pal-workbench/pal-workbench.component').then(
+            (m) => m.PalWorkbenchComponent
           ),
       },
       {

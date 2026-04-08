@@ -1,6 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, of, map } from 'rxjs';
+
+export type TMPairType = 'translation' | 'alias' | 'db_field_mapping';
+
+export interface TMDbContext {
+  table_name?: string;
+  column_name?: string;
+  data_type?: string;
+}
 
 export interface TMEntry {
   id?: string;
@@ -11,6 +19,8 @@ export interface TMEntry {
   category: string;
   is_approved: boolean;
   created_at?: string;
+  pair_type?: TMPairType;
+  db_context?: TMDbContext;
 }
 
 export interface TMBackendMeta {
@@ -48,6 +58,37 @@ export class TranslationMemoryService {
       map((entries) => entries.filter((entry) => (
         entry.source_lang === sourceLang && entry.target_lang === targetLang
       )))
+    );
+  }
+
+  /** Bulk-save an array of TM entries. Returns per-entry success/failure counts. */
+  saveBatch(entries: TMEntry[]): Observable<{ saved: number; failed: number; failedIds: string[] }> {
+    if (entries.length === 0) {
+      return of({ saved: 0, failed: 0, failedIds: [] });
+    }
+
+    const requests = entries.map((entry, idx) =>
+      this.save(entry).pipe(
+        map(() => ({ success: true, idx })),
+        map((r) => r),
+      )
+    );
+
+    return forkJoin(requests).pipe(
+      map((results) => {
+        let saved = 0;
+        let failed = 0;
+        const failedIds: string[] = [];
+        results.forEach((r, i) => {
+          if (r.success) {
+            saved++;
+          } else {
+            failed++;
+            failedIds.push(entries[i].id || String(i));
+          }
+        });
+        return { saved, failed, failedIds };
+      })
     );
   }
 }

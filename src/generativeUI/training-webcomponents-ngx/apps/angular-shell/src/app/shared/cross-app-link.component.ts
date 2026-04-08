@@ -49,7 +49,7 @@ export class CrossAppLinkComponent {
     switch (this.targetApp) {
       case 'aifabric': return 'AI Fabric Console';
       case 'training': return 'Training Console';
-      case 'joule': return 'Joule Playground';
+      case 'joule': return 'Joule Workspace';
       default: return this.targetApp;
     }
   }

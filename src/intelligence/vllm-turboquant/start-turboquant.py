@@ -56,13 +56,17 @@ if __name__ == "__main__":
     # This sets global state that the engine will use when it's created
     set_mode("hybrid")
 
-    print(f"🚀 TurboQuant KV-Cache ENABLED → hybrid mode (3b keys / 4b values)")
-    print(f"   Model: {model_name}")
-    print(f"   GPU Mem Util: {gpu_mem_util}")
-    print(f"   Max Model Len: {max_model_len}")
-    print(f"   KV Cache Dtype: {kv_cache_dtype}")
-    print(f"   Quantization: {quantization if quantization else 'native (no flag)'}")
-    print(f"   ~31% KV savings | L40S concurrency throttle ready")
+    # Device type logic
+    device = os.getenv("VLLM_DEVICE", "cuda")
+    print(f"🚀 Device target: {device}")
+    
+    if device == "cpu":
+        cli_args.extend(["--device", "cpu"])
+    else:
+        # GPU optimizations
+        print(f"🚀 TurboQuant KV-Cache ENABLED → hybrid mode (3b keys / 4b values)")
+        cli_args.extend(["--kv-cache-dtype", "fp8"])
+        print(f"   ~31% KV savings | L40S concurrency throttle ready")
 
     # Start OpenAI-compatible server - it will create the engine internally (only ONCE)
     asyncio.run(run_server(cli_args))

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export function writeMarkdownReport(outputDir, report) {
-  const path = resolve(outputDir, 'demo-report.md');
+  const path = resolve(outputDir, 'workspace-report.md');
   mkdirSync(outputDir, { recursive: true });
 
   const failed = report.checks.filter((item) => item.status === 'fail');
@@ -31,4 +31,3 @@ export function writeMarkdownReport(outputDir, report) {
   writeFileSync(path, `${lines.join('\n')}\n`);
   return path;
 }
-

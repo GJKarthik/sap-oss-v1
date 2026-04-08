@@ -151,8 +151,8 @@ export const routes: Routes = [
       {
         path: 'pal-workbench',
         loadComponent: () =>
-          import('./pages/playground/playground.component').then(
-            (m) => m.PlaygroundComponent
+          import('./pages/pal-workbench/pal-workbench.component').then(
+            (m) => m.PalWorkbenchComponent
           ),
       },
     ],

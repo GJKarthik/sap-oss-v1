@@ -1,15 +1,13 @@
 # =============================================================================
-# training-main — Root Makefile
+# training-main — Root Makefile (Python + SAP HANA Cloud)
 # =============================================================================
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
 # Directories
 MODELOPT_DIR  := nvidia-modelopt
-HIPPO_ZIG_DIR := hippocpp/zig
-HIPPO_PY_DIR  := hippocpp/python
+PIPELINE_DIR  := pipeline
 UI_DIR        := $(MODELOPT_DIR)/ui
-PARITY_DIR    := hippocpp/parity
 
 # Python
 PYTHON ?= python3
@@ -20,43 +18,32 @@ PYTHON ?= python3
 
 all: build test lint ## Build everything, run all tests, then lint
 
-build: build-zig build-ui ## Build Zig library and Angular UI
+build: build-ui ## Build Angular UI
 
-test: test-python test-zig test-ui ## Run all test suites
+test: test-python test-pipeline test-ui ## Run all test suites
 
 lint: lint-python lint-ui ## Lint all code
 
 format: format-python ## Auto-format all code
 
-clean: clean-zig clean-ui clean-python ## Remove all build artifacts
+clean: clean-ui clean-python clean-pipeline ## Remove all build artifacts
 
-# ── Zig ──────────────────────────────────────────────────────────────────────
+# ── Python (ModelOpt API + Pipeline) ─────────────────────────────────────────
 
-.PHONY: build-zig test-zig clean-zig
+.PHONY: test-python test-pipeline lint-python format-python clean-python clean-pipeline
 
-build-zig: ## Build HippoCPP Zig library
-	cd $(HIPPO_ZIG_DIR) && zig build
-
-test-zig: ## Run Zig tests
-	cd $(HIPPO_ZIG_DIR) && zig build test
-
-clean-zig: ## Clean Zig build artifacts
-	rm -rf $(HIPPO_ZIG_DIR)/zig-out $(HIPPO_ZIG_DIR)/zig-cache $(HIPPO_ZIG_DIR)/.zig-cache
-
-# ── Python (ModelOpt API + HippoCPP bindings) ────────────────────────────────
-
-.PHONY: test-python lint-python format-python clean-python
-
-test-python: ## Run Python tests with pytest
+test-python: ## Run ModelOpt Python tests with pytest
 	cd $(MODELOPT_DIR) && $(PYTHON) -m pytest tests/ -v --tb=short
-	cd $(HIPPO_PY_DIR) && $(PYTHON) -m pytest tests/ -v --tb=short 2>/dev/null || true
+
+test-pipeline: ## Run text-to-SQL pipeline tests
+	$(PYTHON) -m pytest $(PIPELINE_DIR)/tests/ -v --tb=short
 
 lint-python: ## Lint Python with ruff
-	$(PYTHON) -m ruff check $(MODELOPT_DIR)/api/ $(HIPPO_PY_DIR)/hippocpp/ --config pyproject.toml 2>/dev/null || \
+	$(PYTHON) -m ruff check $(MODELOPT_DIR)/api/ $(PIPELINE_DIR)/ --config pyproject.toml 2>/dev/null || \
 		echo "⚠  ruff not installed — run: pip install ruff"
 
 format-python: ## Format Python with ruff
-	$(PYTHON) -m ruff format $(MODELOPT_DIR)/api/ $(HIPPO_PY_DIR)/hippocpp/ --config pyproject.toml 2>/dev/null || \
+	$(PYTHON) -m ruff format $(MODELOPT_DIR)/api/ $(PIPELINE_DIR)/ --config pyproject.toml 2>/dev/null || \
 		echo "⚠  ruff not installed — run: pip install ruff"
 
 clean-python: ## Clean Python caches
@@ -64,6 +51,9 @@ clean-python: ## Clean Python caches
 	find . -type d -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true
 	find . -name '.coverage' -delete 2>/dev/null || true
 	rm -rf .pytest_cache htmlcov .mypy_cache .ruff_cache
+
+clean-pipeline: ## Clean pipeline output
+	rm -rf $(PIPELINE_DIR)/output/
 
 # ── Angular UI ───────────────────────────────────────────────────────────────
 
@@ -102,13 +92,15 @@ docker-up: ## Start all services (API + UI)
 docker-down: ## Stop all services
 	docker compose down
 
-# ── Parity ───────────────────────────────────────────────────────────────────
+# ── Pipeline ─────────────────────────────────────────────────────────────────
 
-.PHONY: parity-check
+.PHONY: pipeline pipeline-upload
 
-parity-check: ## Run HippoCPP parity checks against upstream Kuzu
-	cd $(PARITY_DIR) && $(PYTHON) -m pytest corpus/ -v --tb=short 2>/dev/null || \
-		echo "Run parity harness manually — see hippocpp/PARITY-MATRIX.md"
+pipeline: ## Run the full text-to-SQL pipeline
+	cd $(PIPELINE_DIR) && $(MAKE) all
+
+pipeline-upload: ## Upload training pairs to HANA Cloud
+	cd $(PIPELINE_DIR) && $(MAKE) upload
 
 # ── Setup ────────────────────────────────────────────────────────────────────
 
@@ -118,7 +110,8 @@ setup: setup-python setup-ui ## Install all dependencies
 
 setup-python: ## Install Python dependencies
 	cd $(MODELOPT_DIR) && pip install -r requirements.txt
-	pip install fastapi uvicorn[standard] pytest ruff mypy
+	pip install -r $(PIPELINE_DIR)/requirements.txt
+	pip install fastapi uvicorn[standard] pytest ruff mypy hdbcli
 
 setup-ui: ## Install Angular dependencies
 	cd $(UI_DIR) && npm ci
@@ -137,7 +130,7 @@ serve-api-dev: ## Start ModelOpt API server (dev, auto-reload)
 
 bench: bench-pipeline ## Run all benchmarks
 
-bench-pipeline: ## Benchmark Zig pipeline (build, test, release times)
+bench-pipeline: ## Benchmark Python pipeline
 	./benchmarks/bench_pipeline.sh
 
 bench-api: ## Benchmark API latency (requires running server)
