@@ -171,7 +171,13 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
             id="panel-schema" role="tabpanel" aria-labelledby="tab-schema"
             class="dpm__panel fadeIn">
             @if (schemaFields().length > 0) {
-              <ui5-table accessible-name="Schema fields">
+              <ui5-toolbar>
+                <ui5-title level="H5">{{ i18n.t('dpm.tab.schema') }}</ui5-title>
+                <ui5-toolbar-spacer></ui5-toolbar-spacer>
+                <ui5-tag design="Set2" color-scheme="8">{{ schemaFields().length }} {{ i18n.t('dpm.fields', { count: schemaFields().length }) }}</ui5-tag>
+              </ui5-toolbar>
+              <ui5-table accessible-name="Schema fields" overflow-mode="Popin">
+                <ui5-table-growing type="Scroll" slot="features" growing-text="More fields"></ui5-table-growing>
                 <ui5-table-header-row slot="headerRow">
                   <ui5-table-header-cell>Technical Name</ui5-table-header-cell>
                   <ui5-table-header-cell>Business Name</ui5-table-header-cell>

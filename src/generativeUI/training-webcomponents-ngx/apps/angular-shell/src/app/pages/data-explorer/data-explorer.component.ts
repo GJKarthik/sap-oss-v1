@@ -128,7 +128,7 @@ interface SqlPair {
               <ui5-title level="H4" class="detail-title"><bdi>{{ sel.name }}</bdi></ui5-title>
               <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('dataExplorer.closeDetail')" (click)="clearSelection()"></ui5-button>
             </div>
-            <ui5-table accessible-name="Asset details" class="info-table">
+            <ui5-table accessible-name="Asset details" class="info-table" overflow-mode="Popin">
               <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.type') }}</ui5-table-cell><ui5-table-cell>{{ sel.type.toUpperCase() }}</ui5-table-cell></ui5-table-row>
               <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.category') }}</ui5-table-cell><ui5-table-cell>{{ sel.category }}</ui5-table-cell></ui5-table-row>
               <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.size') }}</ui5-table-cell><ui5-table-cell>{{ sel.size }}</ui5-table-cell></ui5-table-row>

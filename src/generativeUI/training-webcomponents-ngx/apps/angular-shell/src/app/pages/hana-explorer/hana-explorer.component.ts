@@ -114,12 +114,15 @@ interface ArchLayer {
         <!-- Results -->
         @if (result(); as res) {
           <div class="results-section">
-            <div class="result-header">
+            <ui5-toolbar>
+              <ui5-title level="H5">{{ i18n.t('hanaExplorer.queryResults') }}</ui5-title>
+              <ui5-toolbar-spacer></ui5-toolbar-spacer>
               <ui5-tag [attr.color-scheme]="res.status === 'ok' ? '8' : '2'">{{ res.status }}</ui5-tag>
-              <span class="text-small text-muted">{{ res.count }} {{ i18n.t('hanaExplorer.row') }}</span>
-            </div>
+              <ui5-tag design="Set2" color-scheme="1">{{ res.count }} {{ i18n.t('hanaExplorer.row') }}</ui5-tag>
+            </ui5-toolbar>
             @if (res.rows.length) {
-              <ui5-table accessible-name="Query results">
+              <ui5-table accessible-name="Query results" overflow-mode="Popin">
+                <ui5-table-growing type="Scroll" slot="features" growing-text="More rows"></ui5-table-growing>
                 <ui5-table-header-row slot="headerRow">
                   @for (col of resultColumns(); track col) {
                     <ui5-table-header-cell>{{ col }}</ui5-table-header-cell>

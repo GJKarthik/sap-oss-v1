@@ -101,9 +101,14 @@
           </div>
 
           <div class="review-section">
-            <ui5-title level="H5">{{ i18n.t('wizard.review.financialFields') }}</ui5-title>
             @if (financialFields().length > 0) {
-              <ui5-table accessible-name="Financial fields">
+              <ui5-toolbar>
+                <ui5-title level="H5">{{ i18n.t('wizard.review.financialFields') }}</ui5-title>
+                <ui5-toolbar-spacer></ui5-toolbar-spacer>
+                <ui5-tag design="Set2" color-scheme="8">{{ financialFields().length }} fields</ui5-tag>
+              </ui5-toolbar>
+              <ui5-table accessible-name="Financial fields" overflow-mode="Popin">
+                <ui5-table-growing type="Scroll" slot="features" growing-text="More fields"></ui5-table-growing>
                 <ui5-table-header-row slot="headerRow">
                   <ui5-table-header-cell>{{ i18n.t('wizard.review.fieldAr') }}</ui5-table-header-cell>
                   <ui5-table-header-cell>{{ i18n.t('wizard.review.fieldEn') }}</ui5-table-header-cell>

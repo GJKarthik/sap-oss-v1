@@ -92,10 +92,13 @@
           <div class="tables-tab">
             @for (table of currentPageTables(); track table.table_index) {
               <div class="detected-table">
-                <ui5-title level="H5">{{ i18n.t('ocr.table') }} {{ table.table_index + 1 }}
-                  <ui5-tag design="Set2" color-scheme="1">({{ table.rows }}×{{ table.columns }}, {{ i18n.t('ocr.confidence') }}: {{ table.confidence | localeNumber:'decimal':1:1 }}%)</ui5-tag>
-                </ui5-title>
-                <ui5-table dir="auto" accessible-name="Detected table">
+                <ui5-toolbar>
+                  <ui5-title level="H5">{{ i18n.t('ocr.table') }} {{ table.table_index + 1 }}</ui5-title>
+                  <ui5-toolbar-spacer></ui5-toolbar-spacer>
+                  <ui5-tag design="Set2" color-scheme="1">{{ table.rows }}×{{ table.columns }}</ui5-tag>
+                  <ui5-tag design="Set2" color-scheme="8">{{ i18n.t('ocr.confidence') }}: {{ table.confidence | localeNumber:'decimal':1:1 }}%</ui5-tag>
+                </ui5-toolbar>
+                <ui5-table dir="auto" accessible-name="Detected table {{ table.table_index + 1 }}" overflow-mode="Popin">
                   @for (row of getTableRows(table); track $index) {
                     <ui5-table-row>
                       @for (cell of row; track $index) {
