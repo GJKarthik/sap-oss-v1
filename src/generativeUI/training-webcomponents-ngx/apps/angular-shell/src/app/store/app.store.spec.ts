@@ -1,7 +1,15 @@
+import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AppStore, GpuTelemetry, HealthStatus } from './app.store';
+import { ApiService } from '../services/api.service';
+import { of } from 'rxjs';
+
+const mockApiService = {
+  get: () => of(null),
+  post: () => of(null),
+};
 
 const MOCK_HEALTH: HealthStatus = {
   status: 'healthy',
@@ -84,5 +92,81 @@ describe('AppStore', () => {
     expect(store.pipelineState()).toBe('error');
     expect(store.platformNarrative()).toBe('narrative.hanaOffline');
     expect(store.healthBadge()).toBe('Negative');
+  });
+});
+
+describe('AppStore mode extension', () => {
+  let store: InstanceType<typeof AppStore>;
+  let httpMock: HttpTestingController;
+
+  function flushDashboardRequests(): void {
+    httpMock.expectOne('/api/health').flush(MOCK_HEALTH);
+    httpMock.expectOne('/api/gpu/status').flush(MOCK_GPU);
+  }
+
+  beforeEach(() => {
+    localStorage.removeItem('sap-ai-workbench-mode');
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    store = TestBed.inject(AppStore);
+    httpMock = TestBed.inject(HttpTestingController);
+    flushDashboardRequests();
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.removeItem('sap-ai-workbench-mode');
+  });
+
+  it('initializes with chat mode by default', () => {
+    expect(store.activeMode()).toBe('chat');
+  });
+
+  it('setMode updates activeMode signal', () => {
+    store.setMode('training');
+    expect(store.activeMode()).toBe('training');
+  });
+
+  it('setMode persists to localStorage', () => {
+    store.setMode('cowork');
+    expect(localStorage.getItem('sap-ai-workbench-mode')).toBe('cowork');
+  });
+
+  it('reads persisted mode from localStorage on init', () => {
+    // Use a fresh Injector (not the root singleton) so withState() re-reads localStorage.
+    localStorage.setItem('sap-ai-workbench-mode', 'training');
+    const injector = Injector.create({
+      providers: [
+        AppStore,
+        { provide: ApiService, useValue: mockApiService },
+      ],
+    });
+    const freshStore = runInInjectionContext(injector, () => injector.get(AppStore));
+    expect(freshStore.activeMode()).toBe('training');
+  });
+
+  it('aiCapabilities returns correct confirmationLevel for each mode', () => {
+    store.setMode('chat');
+    expect(store.aiCapabilities().confirmationLevel).toBe('conversational');
+
+    store.setMode('cowork');
+    expect(store.aiCapabilities().confirmationLevel).toBe('per-action');
+
+    store.setMode('training');
+    expect(store.aiCapabilities().confirmationLevel).toBe('autonomous');
+  });
+
+  it('routeRelevance returns mode-specific suggested routes', () => {
+    store.setMode('chat');
+    expect(store.routeRelevance().suggested).toContain('/chat');
+
+    store.setMode('training');
+    expect(store.routeRelevance().suggested).toContain('/pipeline');
+  });
+
+  it('modeThemeClass returns correct CSS class', () => {
+    store.setMode('cowork');
+    expect(store.modeThemeClass()).toBe('mode-cowork');
   });
 });

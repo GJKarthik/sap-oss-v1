@@ -10,6 +10,8 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, of, interval, forkJoin, Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import type { AppMode } from '../shared/utils/mode.types';
+import { getModeCapabilities, getRouteRelevance, getContextPills } from '../shared/utils/mode.helpers';
 
 export interface HealthStatus {
   status: string;
@@ -33,6 +35,7 @@ interface AppState {
   gpu: { data: GpuTelemetry | null; loading: boolean };
   pipelineState: 'idle' | 'running' | 'completed' | 'error';
   trainingPairCount: number;
+  activeMode: AppMode;
 }
 
 function inferPipelineState(
@@ -49,12 +52,13 @@ function inferPipelineState(
 
 export const AppStore = signalStore(
   { providedIn: 'root' },
-  withState<AppState>({
+  withState<AppState>(() => ({
     health: { data: null, loading: false },
     gpu: { data: null, loading: false },
     pipelineState: 'idle',
     trainingPairCount: 13952,
-  }),
+    activeMode: (localStorage.getItem('sap-ai-workbench-mode') as AppMode) ?? ('chat' as AppMode),
+  })),
   withComputed((store) => ({
     isHealthy: computed(() => store.health.data()?.status === 'healthy'),
     gpuUtilization: computed(() => store.gpu.data()?.utilization ?? 0),
@@ -85,6 +89,10 @@ export const AppStore = signalStore(
     // ── Dashboard helpers ────────────────────────────────────────────────
     isDashboardLoading: computed(() => store.health.loading() || store.gpu.loading()),
     healthBadge: computed(() => store.health.data()?.status === 'healthy' ? 'Positive' : 'Negative'),
+    aiCapabilities: computed(() => getModeCapabilities(store.activeMode())),
+    routeRelevance: computed(() => getRouteRelevance(store.activeMode())),
+    contextPills: computed(() => getContextPills(store.activeMode())),
+    modeThemeClass: computed(() => `mode-${store.activeMode()}`),
   })),
   withMethods((store, api = inject(ApiService)) => ({
     loadDashboardData: rxMethod<void>(
@@ -108,6 +116,10 @@ export const AppStore = signalStore(
       )
     ),
     setPipelineState: (state: 'idle' | 'running' | 'completed' | 'error') => patchState(store, { pipelineState: state }),
+    setMode: (mode: AppMode) => {
+      patchState(store, { activeMode: mode });
+      localStorage.setItem('sap-ai-workbench-mode', mode);
+    },
     forceRefresh: () => {
       patchState(store, (s) => ({ health: { ...s.health, loading: true }, gpu: { ...s.gpu, loading: true } }));
       forkJoin({
