@@ -139,7 +139,8 @@
     <ui5-card>
       <ui5-card-header slot="header" [attr.title-text]="'FORMS_TABLE_TITLE' | ui5I18n" [attr.subtitle-text]="'FORMS_TABLE_SUBTITLE' | ui5I18n"></ui5-card-header>
       <div style="padding: 1rem;">
-        <ui5-table overflow-mode="Popin">
+        <ui5-table overflow-mode="Popin" accessible-name="Product catalog">
+          <ui5-table-selection slot="features"></ui5-table-selection>
           <ui5-table-header-row slot="headerRow">
             <ui5-table-header-cell width="300px">{{ 'FORMS_TABLE_COL_PRODUCT' | ui5I18n }}</ui5-table-header-cell>
             <ui5-table-header-cell width="200px">{{ 'FORMS_TABLE_COL_SUPPLIER' | ui5I18n }}</ui5-table-header-cell>

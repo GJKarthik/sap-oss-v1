@@ -140,6 +140,18 @@ export class PairStudioComponent {
     this.filterStatus.set(event.detail?.selectedOption?.value ?? 'all');
   }
 
+  onTermSelectionChange(event: any): void {
+    const rows = event.detail?.selectedRows || [];
+    const indices = new Set<number>(rows.map((r: any) => parseInt(r.getAttribute('data-index'), 10)).filter((n: number) => !isNaN(n)));
+    this.selectedTermIndices.set(indices);
+  }
+
+  onParagraphSelectionChange(event: any): void {
+    const rows = event.detail?.selectedRows || [];
+    const indices = new Set<number>(rows.map((r: any) => parseInt(r.getAttribute('data-index'), 10)).filter((n: number) => !isNaN(n)));
+    this.selectedParagraphIndices.set(indices);
+  }
+
   onTabSelect(event: any): void {
     const key = event.detail?.tab?.getAttribute?.('data-key');
     if (key === 'terms' || key === 'paragraphs') {

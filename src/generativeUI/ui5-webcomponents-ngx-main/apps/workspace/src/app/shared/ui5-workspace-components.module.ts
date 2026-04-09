@@ -32,11 +32,17 @@ import { TableComponent } from '@ui5/webcomponents-ngx/main/table';
 import { TableCellComponent } from '@ui5/webcomponents-ngx/main/table-cell';
 import { TableHeaderCellComponent } from '@ui5/webcomponents-ngx/main/table-header-cell';
 import { TableHeaderRowComponent } from '@ui5/webcomponents-ngx/main/table-header-row';
+import { TableGrowingComponent } from '@ui5/webcomponents-ngx/main/table-growing';
 import { TableRowComponent } from '@ui5/webcomponents-ngx/main/table-row';
+import { TableSelectionComponent } from '@ui5/webcomponents-ngx/main/table-selection';
 import { TagComponent } from '@ui5/webcomponents-ngx/main/tag';
 import { TextComponent } from '@ui5/webcomponents-ngx/main/text';
 import { TextAreaComponent } from '@ui5/webcomponents-ngx/main/text-area';
 import { TitleComponent } from '@ui5/webcomponents-ngx/main/title';
+import { ToolbarComponent } from '@ui5/webcomponents-ngx/main/toolbar';
+import { ToolbarButtonComponent } from '@ui5/webcomponents-ngx/main/toolbar-button';
+import { ToolbarSeparatorComponent } from '@ui5/webcomponents-ngx/main/toolbar-separator';
+import { ToolbarSpacerComponent } from '@ui5/webcomponents-ngx/main/toolbar-spacer';
 // Fiori components
 import { IllustratedMessageComponent } from '@ui5/webcomponents-ngx/fiori/illustrated-message';
 import { NavigationLayoutComponent } from '@ui5/webcomponents-ngx/fiori/navigation-layout';
@@ -87,11 +93,17 @@ const imports = [
   TableCellComponent,
   TableHeaderCellComponent,
   TableHeaderRowComponent,
+  TableGrowingComponent,
   TableRowComponent,
+  TableSelectionComponent,
   TagComponent,
   TextComponent,
   TextAreaComponent,
   TitleComponent,
+  ToolbarComponent,
+  ToolbarButtonComponent,
+  ToolbarSeparatorComponent,
+  ToolbarSpacerComponent,
   // Fiori
   IllustratedMessageComponent,
   NavigationLayoutComponent,

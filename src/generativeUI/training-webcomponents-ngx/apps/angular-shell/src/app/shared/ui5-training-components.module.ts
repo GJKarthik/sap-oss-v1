@@ -33,10 +33,19 @@ import { TableComponent } from '@ui5/webcomponents-ngx/main/table';
 import { TableCellComponent } from '@ui5/webcomponents-ngx/main/table-cell';
 import { TableHeaderCellComponent } from '@ui5/webcomponents-ngx/main/table-header-cell';
 import { TableHeaderRowComponent } from '@ui5/webcomponents-ngx/main/table-header-row';
+import { TableGrowingComponent } from '@ui5/webcomponents-ngx/main/table-growing';
 import { TableRowComponent } from '@ui5/webcomponents-ngx/main/table-row';
+import { TableRowActionComponent } from '@ui5/webcomponents-ngx/main/table-row-action';
+import { TableRowActionNavigationComponent } from '@ui5/webcomponents-ngx/main/table-row-action-navigation';
+import { TableSelectionComponent } from '@ui5/webcomponents-ngx/main/table-selection';
+import { TableSelectionMultiComponent } from '@ui5/webcomponents-ngx/main/table-selection-multi';
 import { TagComponent } from '@ui5/webcomponents-ngx/main/tag';
 import { TextAreaComponent } from '@ui5/webcomponents-ngx/main/text-area';
 import { TitleComponent } from '@ui5/webcomponents-ngx/main/title';
+import { ToolbarComponent } from '@ui5/webcomponents-ngx/main/toolbar';
+import { ToolbarButtonComponent } from '@ui5/webcomponents-ngx/main/toolbar-button';
+import { ToolbarSeparatorComponent } from '@ui5/webcomponents-ngx/main/toolbar-separator';
+import { ToolbarSpacerComponent } from '@ui5/webcomponents-ngx/main/toolbar-spacer';
 // Fiori components
 import { NavigationLayoutComponent } from '@ui5/webcomponents-ngx/fiori/navigation-layout';
 import { PageComponent } from '@ui5/webcomponents-ngx/fiori/page';
@@ -49,6 +58,8 @@ import { SideNavigationItemComponent } from '@ui5/webcomponents-ngx/fiori/side-n
 import { UserMenuComponent } from '@ui5/webcomponents-ngx/fiori/user-menu';
 import { UserMenuAccountComponent } from '@ui5/webcomponents-ngx/fiori/user-menu-account';
 import { UserMenuItemComponent } from '@ui5/webcomponents-ngx/fiori/user-menu-item';
+import { ViewSettingsDialogComponent } from '@ui5/webcomponents-ngx/fiori/view-settings-dialog';
+import { SortItemComponent } from '@ui5/webcomponents-ngx/fiori/sort-item';
 
 const imports = [
   // Main
@@ -84,11 +95,20 @@ const imports = [
   TableComponent,
   TableCellComponent,
   TableHeaderCellComponent,
+  TableGrowingComponent,
   TableHeaderRowComponent,
   TableRowComponent,
+  TableRowActionComponent,
+  TableRowActionNavigationComponent,
+  TableSelectionComponent,
+  TableSelectionMultiComponent,
   TagComponent,
   TextAreaComponent,
   TitleComponent,
+  ToolbarComponent,
+  ToolbarButtonComponent,
+  ToolbarSeparatorComponent,
+  ToolbarSpacerComponent,
   // Fiori
   NavigationLayoutComponent,
   PageComponent,
@@ -101,6 +121,8 @@ const imports = [
   UserMenuComponent,
   UserMenuAccountComponent,
   UserMenuItemComponent,
+  ViewSettingsDialogComponent,
+  SortItemComponent,
 ];
 
 @NgModule({

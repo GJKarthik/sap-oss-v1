@@ -76,11 +76,14 @@
 
   <!-- Section 1: Translation Memory (Human-in-the-loop) -->
   <section class="section">
-    <div class="section-header">
-      <ui5-title level="H4">{{ i18n.t('glossary.tmSection') }}</ui5-title>
+    <ui5-toolbar>
+      <ui5-title level="H5">{{ i18n.t('glossary.tmSection') }}</ui5-title>
+      <ui5-toolbar-spacer></ui5-toolbar-spacer>
       <ui5-tag design="Set2" color-scheme="8">{{ filteredTmEntries().length }} {{ i18n.t('glossary.overridesLabel') }}</ui5-tag>
-    </div>
-    <ui5-table [accessibleName]="i18n.t('glossary.tmSection')">
+      <ui5-toolbar-separator></ui5-toolbar-separator>
+      <ui5-toolbar-button icon="download" text="{{ i18n.t('glossary.export') }}" (click)="exportJson()"></ui5-toolbar-button>
+    </ui5-toolbar>
+    <ui5-table [accessibleName]="i18n.t('glossary.tmSection')" overflow-mode="Popin">
       <ui5-table-header-row slot="headerRow">
         <ui5-table-header-cell>{{ i18n.t('glossary.colSource') }}</ui5-table-header-cell>
         <ui5-table-header-cell>{{ i18n.t('glossary.colApprovedMapping') }}</ui5-table-header-cell>
@@ -117,11 +120,13 @@
 
   <!-- Section 2: Official Static Glossary -->
   <section class="section">
-    <div class="section-header">
-      <ui5-title level="H4">{{ i18n.t('glossary.staticSection') }}</ui5-title>
+    <ui5-toolbar>
+      <ui5-title level="H5">{{ i18n.t('glossary.staticSection') }}</ui5-title>
+      <ui5-toolbar-spacer></ui5-toolbar-spacer>
       <ui5-tag design="Set2" color-scheme="8">{{ glossary.entries().length }} {{ i18n.t('glossary.termsLabel') }}</ui5-tag>
-    </div>
-    <ui5-table [accessibleName]="i18n.t('glossary.staticSection')">
+    </ui5-toolbar>
+    <ui5-table [accessibleName]="i18n.t('glossary.staticSection')" overflow-mode="Popin">
+      <ui5-table-growing type="Scroll" slot="features" growing-text="More entries"></ui5-table-growing>
       <ui5-table-header-row slot="headerRow">
         <ui5-table-header-cell>{{ i18n.t('glossary.colTermEnglish') }}</ui5-table-header-cell>
         <ui5-table-header-cell>{{ i18n.t('glossary.colTranslationArabic') }}</ui5-table-header-cell>

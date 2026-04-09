@@ -109,13 +109,14 @@ interface AnalyticsResponse {
         </div>
 
         <div class="table-section">
-          <div class="chart-header">
-            <ui5-title level="H4">{{ i18n.t('analytics.trendsTitle') }}</ui5-title>
-            <div class="filter-row">
-              <ui5-input [placeholder]="i18n.t('analytics.filterBySource')" [value]="sourceFilter" (input)="sourceFilter = $any($event).target.value"></ui5-input>
-            </div>
-          </div>
-          <ui5-table accessible-name="Analytics data">
+          <ui5-toolbar>
+            <ui5-title level="H5">{{ i18n.t('analytics.trendsTitle') }}</ui5-title>
+            <ui5-toolbar-spacer></ui5-toolbar-spacer>
+            <ui5-input [placeholder]="i18n.t('analytics.filterBySource')" [value]="sourceFilter" (input)="sourceFilter = $any($event).target.value" icon="search"></ui5-input>
+            <ui5-toolbar-separator></ui5-toolbar-separator>
+            <ui5-toolbar-button icon="download" text="CSV" (click)="exportCsv()"></ui5-toolbar-button>
+          </ui5-toolbar>
+          <ui5-table accessible-name="Analytics data" overflow-mode="Popin">
             <ui5-table-header-row slot="headerRow">
               <ui5-table-header-cell (click)="toggleSort('source')" style="cursor:pointer">{{ i18n.t('analytics.col.source') }} {{ sortIcon('source') }}</ui5-table-header-cell>
               <ui5-table-header-cell (click)="toggleSort('date')" style="cursor:pointer">{{ i18n.t('analytics.col.date') }} {{ sortIcon('date') }}</ui5-table-header-cell>

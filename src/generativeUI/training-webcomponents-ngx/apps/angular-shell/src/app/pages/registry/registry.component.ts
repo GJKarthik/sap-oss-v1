@@ -78,7 +78,14 @@ interface RegistryEntry {
 
       <!-- Registry Table -->
       @if (filtered().length) {
-        <ui5-table accessible-name="Registered models">
+        <ui5-toolbar slot="toolbar" class="table-toolbar">
+          <ui5-title level="H5">{{ i18n.t('registry.title') }}</ui5-title>
+          <ui5-toolbar-spacer></ui5-toolbar-spacer>
+          <ui5-tag design="Set2" color-scheme="8">{{ filtered().length }} {{ i18n.t('registry.totalJobs') }}</ui5-tag>
+          <ui5-toolbar-separator></ui5-toolbar-separator>
+          <ui5-toolbar-button icon="refresh" text="{{ i18n.t('registry.refresh') }}" (click)="load()"></ui5-toolbar-button>
+        </ui5-toolbar>
+        <ui5-table accessible-name="Registered models" overflow-mode="Popin">
           <ui5-table-header-row slot="headerRow">
             <ui5-table-header-cell>{{ i18n.t('registry.tagId') }}</ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('registry.model') }}</ui5-table-header-cell>
@@ -130,14 +137,19 @@ interface RegistryEntry {
               <ui5-table-cell>
                 <div class="actions">
                   @if (m.deployed) {
-                    <a [routerLink]="['/compare']" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
+                    <ui5-button design="Default" icon="compare" [routerLink]="['/compare']">{{ i18n.t('registry.compare') }}</ui5-button>
                   }
                   @if (m.status === 'completed' && !m.deployed) {
                     <ui5-button design="Emphasized" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</ui5-button>
                   }
-                  <ui5-button design="Negative" (click)="deleteJob(m.id)">{{ i18n.t('registry.delete') }}</ui5-button>
+                  <ui5-button design="Negative" icon="delete" (click)="deleteJob(m.id)" [accessibleName]="i18n.t('registry.delete')"></ui5-button>
                 </div>
               </ui5-table-cell>
+              @if (m.deployed) {
+                <ui5-table-row-action slot="actions">
+                  <ui5-table-row-action-navigation></ui5-table-row-action-navigation>
+                </ui5-table-row-action>
+              }
             </ui5-table-row>
           }
         </ui5-table>
