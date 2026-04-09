@@ -52,20 +52,7 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
           </ui5-message-strip>
 
           <div *ngIf="loading" class="generative-loading" role="status" aria-label="Generating UI">
-            <div class="generative-skeleton-card">
-              <div class="generative-skeleton-card__header">
-                <div class="generative-skeleton__bar generative-skeleton--header"></div>
-              </div>
-              <div class="generative-skeleton-card__body">
-                <div class="generative-skeleton__bar generative-skeleton--wide"></div>
-                <div class="generative-skeleton__bar generative-skeleton--medium"></div>
-                <div class="generative-skeleton__bar generative-skeleton--narrow"></div>
-              </div>
-              <div class="generative-skeleton-card__footer">
-                <div class="generative-skeleton__bar generative-skeleton--btn"></div>
-              </div>
-            </div>
-            <span>{{ 'GENERATIVE_LOADING' | ui5I18n }}</span>
+            <ui5-busy-indicator active size="L" [text]="'GENERATIVE_LOADING' | ui5I18n"></ui5-busy-indicator>
           </div>
 
           <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button>
@@ -210,52 +197,6 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
       border-radius: 0.75rem;
       background: rgba(255, 255, 255, 0.82);
       border: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-    }
-
-    .generative-skeleton-card {
-      border-radius: 1rem;
-      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-      background: rgba(255, 255, 255, 0.84);
-      overflow: hidden;
-    }
-
-    .generative-skeleton-card__header {
-      padding: 1rem;
-      border-bottom: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-    }
-
-    .generative-skeleton-card__body {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      padding: 1rem;
-    }
-
-    .generative-skeleton-card__footer {
-      padding: 0.75rem 1rem;
-      border-top: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-    }
-
-    .generative-skeleton__bar {
-      border-radius: 0.375rem;
-      background: linear-gradient(90deg, var(--sapList_Background, #f5f5f5) 25%, rgba(255,255,255,0.6) 50%, var(--sapList_Background, #f5f5f5) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease-in-out infinite;
-    }
-
-    .generative-skeleton--header { height: 0.875rem; width: 35%; }
-    .generative-skeleton--wide { height: 0.75rem; width: 100%; }
-    .generative-skeleton--medium { height: 0.75rem; width: 75%; }
-    .generative-skeleton--narrow { height: 0.75rem; width: 50%; }
-    .generative-skeleton--btn { height: 2rem; width: 7rem; border-radius: 0.5rem; }
-
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .generative-skeleton__bar { animation: none; }
     }
 
     .generative-card--intent pre {
