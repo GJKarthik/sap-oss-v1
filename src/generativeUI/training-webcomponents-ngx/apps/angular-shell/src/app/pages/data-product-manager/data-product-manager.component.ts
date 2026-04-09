@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 
 import {
   DataProductService,
@@ -38,33 +39,36 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
 @Component({
   selector: 'app-data-product-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule],
   template: `
     <div class="dpm" role="main" [attr.aria-label]="i18n.t('dpm.title')">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Data Product Manager"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
+
       <!-- ─── Header ─── -->
       <header class="dpm__header">
         <div>
-          <h1 class="dpm__title">{{ i18n.t('dpm.title') }}</h1>
+          <ui5-title level="H3" class="dpm__title">{{ i18n.t('dpm.title') }}</ui5-title>
           <p class="dpm__subtitle" aria-live="polite">
             {{ i18n.t('dpm.productsRegistered', { count: products().length }) }}
-            <span *ngIf="teamCtx.teamId() !== 'global'" class="dpm__scope-badge" role="status">
+            <ui5-tag *ngIf="teamCtx.teamId() !== 'global'" design="Set2" color-scheme="6">
               {{ teamCtx.displayLabel() }}
-            </span>
+            </ui5-tag>
           </p>
         </div>
         <div class="dpm__actions">
-          <button
-            class="dpm__btn dpm__btn--primary"
+          <ui5-button
+            design="Emphasized"
             [disabled]="trainingJobId()"
-            [attr.aria-busy]="!!trainingJobId()"
             (click)="generateTrainingData()">
             @if (trainingJobId()) {
-              <span class="dpm__spinner" aria-hidden="true"></span>
               {{ i18n.t('dpm.generating') }}
             } @else {
               {{ i18n.t('dpm.generateTraining') }}
             }
-          </button>
+          </ui5-button>
         </div>
       </header>
 
@@ -85,11 +89,8 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
       <!-- ─── Error State ─── -->
       @if (viewState() === 'error' && !selectedProduct()) {
         <div class="dpm__state" role="alert">
-          <div class="dpm__state-icon">!</div>
-          <p>{{ i18n.t('dpm.loadFailed') }}</p>
-          <button class="dpm__btn dpm__btn--primary" (click)="loadProducts()">
-            {{ i18n.t('common.refresh') }}
-          </button>
+          <ui5-message-strip design="Negative" hide-close-button>{{ i18n.t('dpm.loadFailed') }}</ui5-message-strip>
+          <ui5-button design="Emphasized" (click)="loadProducts()">{{ i18n.t('common.refresh') }}</ui5-button>
         </div>
       }
 
@@ -119,12 +120,10 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
               (keydown.enter)="selectProduct(p.id)"
               (keydown.space)="selectProduct(p.id); $event.preventDefault()">
               <div class="dpm__card-top">
-                <span class="dpm__badge dpm__badge--domain">{{ p.domain }}</span>
-                <span class="dpm__badge dpm__badge--security" [attr.data-level]="p.dataSecurityClass">
-                  {{ p.dataSecurityClass }}
-                </span>
+                <ui5-tag design="Set2" color-scheme="6">{{ p.domain }}</ui5-tag>
+                <ui5-tag design="Set2" color-scheme="1">{{ p.dataSecurityClass }}</ui5-tag>
               </div>
-              <h3 class="dpm__card-title">{{ p.name }}</h3>
+              <ui5-title level="H5" class="dpm__card-title">{{ p.name }}</ui5-title>
               <p class="dpm__card-desc">{{ p.description | slice:0:120 }}{{ p.description.length > 120 ? '…' : '' }}</p>
               <footer class="dpm__card-meta">
                 <span>{{ i18n.t('dpm.fields', { count: p.fieldCount }) }}</span>
@@ -145,35 +144,26 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
       <!-- ─── Detail Panel ─── -->
       @if (selectedProduct()) {
         <section class="dpm__detail fadeSlideIn" role="region" [attr.aria-label]="selectedProduct()!.raw['dataProduct']?.['name']">
-          <button
+          <ui5-button
             #backBtn
-            class="dpm__back"
+            design="Transparent"
+            icon="navigation-right-arrow"
             (click)="clearSelection()"
-            [attr.aria-label]="i18n.t('dpm.back')">
-            &larr; {{ i18n.t('dpm.back') }}
-          </button>
+            [accessibleName]="i18n.t('dpm.back')">
+            {{ i18n.t('dpm.back') }}
+          </ui5-button>
 
           <div class="dpm__detail-header">
-            <h2>{{ selectedProduct()!.raw['dataProduct']?.['name'] }}</h2>
-            <span class="dpm__badge dpm__badge--domain">{{ selectedProduct()!.raw['dataProduct']?.['domain'] }}</span>
+            <ui5-title level="H4">{{ selectedProduct()!.raw['dataProduct']?.['name'] }}</ui5-title>
+            <ui5-tag design="Set2" color-scheme="6">{{ selectedProduct()!.raw['dataProduct']?.['domain'] }}</ui5-tag>
           </div>
 
           <!-- Tabs -->
-          <div class="dpm__tabs" role="tablist" [attr.aria-label]="i18n.t('dpm.title')">
+          <ui5-tabcontainer (tab-select)="onTabSelect($event)">
             @for (tab of tabs; track tab.key) {
-              <button
-                role="tab"
-                [id]="'tab-' + tab.key"
-                [attr.aria-selected]="activeTab() === tab.key"
-                [attr.aria-controls]="'panel-' + tab.key"
-                [class.dpm__tabs-active]="activeTab() === tab.key"
-                (click)="activeTab.set(tab.key)"
-                (keydown.arrowRight)="focusNextTab($event)"
-                (keydown.arrowLeft)="focusPrevTab($event)">
-                {{ i18n.t(tab.labelKey) }}
-              </button>
+              <ui5-tab [text]="i18n.t(tab.labelKey)" [selected]="activeTab() === tab.key" [attr.data-key]="tab.key"></ui5-tab>
             }
-          </div>
+          </ui5-tabcontainer>
 
           <!-- Schema Tab -->
           <div
@@ -181,22 +171,22 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
             id="panel-schema" role="tabpanel" aria-labelledby="tab-schema"
             class="dpm__panel fadeIn">
             @if (schemaFields().length > 0) {
-              <div class="dpm__table" role="table" [attr.aria-label]="i18n.t('dpm.tab.schema')">
-                <div class="dpm__row dpm__row--header" role="row">
-                  <span role="columnheader">Technical Name</span>
-                  <span role="columnheader">Business Name</span>
-                  <span role="columnheader">Type</span>
-                  <span role="columnheader">Description</span>
-                </div>
-                @for (field of schemaFields(); track field.technicalName; let fi = $index) {
-                  <div class="dpm__row" role="row" [style.animation-delay]="fi * 20 + 'ms'">
-                    <span role="cell" class="dpm__mono">{{ field.technicalName }}</span>
-                    <span role="cell">{{ field.businessName }}</span>
-                    <span role="cell" class="dpm__mono dpm__muted">{{ field.dataType }}</span>
-                    <span role="cell" class="dpm__muted">{{ field.description | slice:0:80 }}</span>
-                  </div>
+              <ui5-table accessible-name="Schema fields">
+                <ui5-table-header-row slot="headerRow">
+                  <ui5-table-header-cell>Technical Name</ui5-table-header-cell>
+                  <ui5-table-header-cell>Business Name</ui5-table-header-cell>
+                  <ui5-table-header-cell>Type</ui5-table-header-cell>
+                  <ui5-table-header-cell>Description</ui5-table-header-cell>
+                </ui5-table-header-row>
+                @for (field of schemaFields(); track field.technicalName) {
+                  <ui5-table-row>
+                    <ui5-table-cell><code>{{ field.technicalName }}</code></ui5-table-cell>
+                    <ui5-table-cell>{{ field.businessName }}</ui5-table-cell>
+                    <ui5-table-cell><code>{{ field.dataType }}</code></ui5-table-cell>
+                    <ui5-table-cell>{{ field.description | slice:0:80 }}</ui5-table-cell>
+                  </ui5-table-row>
                 }
-              </div>
+              </ui5-table>
             } @else {
               <p class="dpm__empty-text">{{ i18n.t('dpm.noSchema') }}</p>
             }
@@ -208,23 +198,21 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
             id="panel-access" role="tabpanel" aria-labelledby="tab-access"
             class="dpm__panel fadeIn">
             <div class="dpm__form">
-              <label class="dpm__label" for="access-level">{{ i18n.t('dpm.defaultAccess') }}</label>
-              <select id="access-level" class="dpm__input" [(ngModel)]="editAccess.defaultAccess">
-                <option value="read">Read</option>
-                <option value="write">Write</option>
-                <option value="admin">Admin</option>
-                <option value="none">None</option>
-              </select>
+              <ui5-label show-colon for="access-level">{{ i18n.t('dpm.defaultAccess') }}</ui5-label>
+              <ui5-select id="access-level" (change)="onAccessLevelChange($event)">
+                <ui5-option value="read" [attr.selected]="editAccess.defaultAccess === 'read' ? true : null">Read</ui5-option>
+                <ui5-option value="write" [attr.selected]="editAccess.defaultAccess === 'write' ? true : null">Write</ui5-option>
+                <ui5-option value="admin" [attr.selected]="editAccess.defaultAccess === 'admin' ? true : null">Admin</ui5-option>
+                <ui5-option value="none" [attr.selected]="editAccess.defaultAccess === 'none' ? true : null">None</ui5-option>
+              </ui5-select>
 
-              <label class="dpm__label" for="domain-restrict">{{ i18n.t('dpm.domainRestrictions') }}</label>
-              <input id="domain-restrict" class="dpm__input" type="text" [(ngModel)]="editAccess.domainRestrictionsStr" placeholder="treasury, esg" />
+              <ui5-label show-colon for="domain-restrict">{{ i18n.t('dpm.domainRestrictions') }}</ui5-label>
+              <ui5-input id="domain-restrict" [value]="editAccess.domainRestrictionsStr" placeholder="treasury, esg" (change)="editAccess.domainRestrictionsStr = $any($event).target.value"></ui5-input>
 
-              <label class="dpm__label" for="country-restrict">{{ i18n.t('dpm.countryRestrictions') }}</label>
-              <input id="country-restrict" class="dpm__input" type="text" [(ngModel)]="editAccess.countryRestrictionsStr" placeholder="AE, GB" />
+              <ui5-label show-colon for="country-restrict">{{ i18n.t('dpm.countryRestrictions') }}</ui5-label>
+              <ui5-input id="country-restrict" [value]="editAccess.countryRestrictionsStr" placeholder="AE, GB" (change)="editAccess.countryRestrictionsStr = $any($event).target.value"></ui5-input>
 
-              <button class="dpm__btn dpm__btn--primary" (click)="saveAccess()" [attr.aria-busy]="savingAccess()">
-                {{ i18n.t('dpm.saveAccess') }}
-              </button>
+              <ui5-button design="Emphasized" (click)="saveAccess()">{{ i18n.t('dpm.saveAccess') }}</ui5-button>
             </div>
           </div>
 
@@ -270,15 +258,10 @@ type ViewState = 'loading' | 'loaded' | 'error' | 'empty';
             <p class="dpm__muted">{{ i18n.t('dpm.promptHint') }}</p>
             <div class="dpm__form dpm__form--inline">
               <div>
-                <label class="dpm__label" for="prompt-country">{{ i18n.t('dpm.countryOverride') }}</label>
-                <input id="prompt-country" class="dpm__input" type="text" [(ngModel)]="promptPreviewCountry" placeholder="e.g. AE" />
+                <ui5-label show-colon for="prompt-country">{{ i18n.t('dpm.countryOverride') }}</ui5-label>
+                <ui5-input id="prompt-country" [value]="promptPreviewCountry" placeholder="e.g. AE" (change)="promptPreviewCountry = $any($event).target.value"></ui5-input>
               </div>
-              <button
-                class="dpm__btn dpm__btn--primary"
-                [attr.aria-busy]="loadingPrompt()"
-                (click)="loadPromptPreview()">
-                {{ i18n.t('dpm.previewPrompt') }}
-              </button>
+              <ui5-button design="Emphasized" (click)="loadPromptPreview()">{{ i18n.t('dpm.previewPrompt') }}</ui5-button>
             </div>
 
             @if (loadingPrompt()) {
@@ -744,16 +727,14 @@ export class DataProductManagerComponent implements OnInit {
     });
   }
 
-  /** Keyboard arrow navigation between tabs */
-  focusNextTab(event: KeyboardEvent): void {
-    const btn = event.target as HTMLElement;
-    const next = btn.nextElementSibling as HTMLElement | null;
-    if (next) { next.focus(); }
+  /** Handle ui5-tabcontainer tab selection */
+  onTabSelect(event: any): void {
+    const key = event.detail?.tab?.getAttribute?.('data-key');
+    if (key) { this.activeTab.set(key); }
   }
 
-  focusPrevTab(event: KeyboardEvent): void {
-    const btn = event.target as HTMLElement;
-    const prev = btn.previousElementSibling as HTMLElement | null;
-    if (prev) { prev.focus(); }
+  /** Handle ui5-select change for access level */
+  onAccessLevelChange(event: any): void {
+    this.editAccess.defaultAccess = event.detail?.selectedOption?.value ?? 'read';
   }
 }

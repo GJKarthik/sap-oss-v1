@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  CUSTOM_ELEMENTS_SCHEMA,
   OnDestroy,
   computed,
   inject,
@@ -9,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { Subject, takeUntil } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
@@ -46,8 +46,7 @@ interface CompletionResponse {
 @Component({
   selector: 'app-arabic-wizard',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocaleNumberPipe, DecimalPipe, BilingualDateComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, LocaleNumberPipe, DecimalPipe, BilingualDateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './arabic-wizard.component.html',
   styleUrls: ['./arabic-wizard.component.scss'],

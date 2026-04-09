@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, ViewChild, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { WorkspaceService } from '../../services/workspace.service';
@@ -17,10 +17,13 @@ import '@ui5/webcomponents/dist/Dialog.js';
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="workspace-page">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Workspace Settings"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <div class="workspace-hero">
         <h2>{{ i18n.t('workspace.title') }}</h2>
         <p class="workspace-hero__subtitle">{{ i18n.t('workspace.subtitle') }}</p>
@@ -178,13 +181,13 @@ export class WorkspaceComponent {
     const healthUrl = url.replace(/\/$/, '') + '/health';
     this.http.get(healthUrl, { observe: 'response' }).pipe(
       catchError(() => of({ status: 0 })),
-    ).subscribe(r => {
+    ).subscribe((r: { status: number }) => {
       this.connStatus[key] = (r.status >= 200 && r.status < 400) ? 'ok' : 'error';
     });
   }
 
   isNavVisible(route: string): boolean {
-    const item = this.ws.navConfig().items.find(i => i.route === route);
+    const item = this.ws.navConfig().items.find((i: { route: string; visible: boolean }) => i.route === route);
     return !item || item.visible;
   }
 
