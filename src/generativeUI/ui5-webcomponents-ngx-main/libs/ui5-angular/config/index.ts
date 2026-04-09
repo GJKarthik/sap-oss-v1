@@ -25,7 +25,7 @@ export class Ui5WebcomponentsConfigModule {
           provide: 'rootConfig',
           useFactory: () => {
             Object.entries(config).filter(([, val]) => val !== undefined).forEach(([key, val]) => {
-              setters[key](val);
+              setters[key as keyof Ui5Config](val);
             });
             return config;
           }
