@@ -101,16 +101,18 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-.app-nav-island {
-  background: rgba(255, 255, 255, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
-  backdrop-filter: blur(30px) saturate(150%) !important;
+/* Side Navigation Liquid Glass */
+:root ui5-side-navigation {
+  backdrop-filter: saturate(150%) blur(24px);
+  -webkit-backdrop-filter: saturate(150%) blur(24px);
+  background: rgba(255, 255, 255, 0.06);
+  border-inline-end: 0.5px solid rgba(255, 255, 255, 0.1);
 }
 
-.context-pill-bar .pill-track {
-  background: rgba(255, 255, 255, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(20px) !important;
+/* NavigationLayout fills remaining space */
+:root ui5-navigation-layout {
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── Typography & Refinement ─────────────────────────────────────────────── */

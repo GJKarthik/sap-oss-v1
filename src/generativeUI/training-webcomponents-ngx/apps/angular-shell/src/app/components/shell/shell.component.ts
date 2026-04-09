@@ -45,69 +45,101 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
       [class.rtl]="i18n.isRtl()"
       [class.app-shell--reduced-motion]="reducedMotion()"
       (mousemove)="onMouseMove($event)">
-      <header class="app-header">
-        <ui5-shellbar
-          [primaryTitle]="i18n.t('app.title')"
-          [secondaryTitle]="i18n.t('app.subtitle')"
-          (profile-click)="onProfileClick($event)"
-          (custom-item-click)="onCustomItemClick($event)">
-          <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
-          <ui5-shellbar-item id="action-search" icon="search" [text]="i18n.t('shell.searchAriaLabel')"></ui5-shellbar-item>
-          <ui5-shellbar-item id="action-lang" icon="globe" [text]="i18n.t('shell.langAriaLabel')"></ui5-shellbar-item>
-          <ui5-shellbar-item id="action-settings" icon="settings" [text]="i18n.t('shell.settingsAriaLabel')"></ui5-shellbar-item>
-        </ui5-shellbar>
 
-      </header>
+      <!-- ── Fiori ShellBar ── -->
+      <ui5-shellbar
+        [primaryTitle]="i18n.t('app.title')"
+        [secondaryTitle]="i18n.t('app.subtitle')"
+        [accessibilityAttributes]="shellbarA11y"
+        (profile-click)="toggleUserMenu($event)"
+        (custom-item-click)="onCustomItemClick($event)">
 
-      <div class="app-body">
-        <nav class="app-nav-island slideUp" role="navigation" [attr.aria-label]="i18n.t('shell.mainNavAriaLabel')">
-          <div class="nav-group-stack">
-            @for (group of navGroups(); track group.id) {
-              <button
-                type="button"
-                class="nav-island-item"
-                [class.active]="activeGroupId() === group.id"
-                [attr.aria-current]="activeGroupId() === group.id ? 'page' : null"
-                (click)="navigateTo(group.defaultPath)">
-                <ui5-icon [name]="groupIcon(group.id)"></ui5-icon>
-                <span class="nav-label">{{ i18n.t(group.labelKey) }}</span>
-              </button>
-            }
-          </div>
-        </nav>
+        <ui5-shellbar-search
+          slot="searchField"
+          [placeholder]="i18n.t('shell.spotlightPlaceholder')"
+          show-clear-icon="true"
+          (ui5Search)="onShellSearch($event)">
+        </ui5-shellbar-search>
 
-        <main id="main-content" class="app-viewport" tabindex="-1">
-          @if (activeGroupRoutes().length > 1) {
-            <div class="context-pill-bar slideUp">
-              <div class="pill-track">
-                @for (route of activeGroupRoutes(); track route.path) {
-                  <button
-                    type="button"
-                    class="pill-item"
-                    [class.pill-item--active]="isRouteActive(route.path)"
-                    [attr.aria-current]="isRouteActive(route.path) ? 'page' : null"
-                    (click)="navigateTo(route.path)">
-                    {{ i18n.t(route.labelKey) }}
-                  </button>
-                }
-              </div>
-            </div>
+        <ui5-avatar
+          id="shell-profile-avatar"
+          slot="profile"
+          shape="Circle"
+          size="XS"
+          initials="AI"
+          color-scheme="Accent6"
+          interactive="true"
+          [accessibleName]="i18n.t('shell.account')">
+        </ui5-avatar>
+
+        <ui5-shellbar-item id="action-lang" icon="globe" [text]="i18n.t('shell.langAriaLabel')"></ui5-shellbar-item>
+      </ui5-shellbar>
+
+      <!-- ── User Menu ── -->
+      <ui5-user-menu
+        [open]="userMenuOpen()"
+        opener="shell-profile-avatar"
+        show-manage-account="false"
+        (ui5ItemClick)="onUserMenuItemClick($event)"
+        (ui5SignOutClick)="logout()"
+        (ui5Close)="userMenuOpen.set(false)">
+        <ui5-user-menu-account
+          slot="account"
+          avatarInitials="AI"
+          [titleText]="i18n.t('app.title')"
+          [subtitleText]="i18n.t('app.subtitle')">
+        </ui5-user-menu-account>
+        <ui5-user-menu-item icon="action-settings" [text]="i18n.t('shell.settingsAriaLabel')" data-path="/workspace"></ui5-user-menu-item>
+      </ui5-user-menu>
+
+      <!-- ── Language Menu ── -->
+      <ui5-menu #langMenu (item-click)="onLanguageClick($event)">
+        @for (lang of i18n.supportedLangs; track lang) {
+          <ui5-menu-item [text]="i18n.langLabels[lang]" [id]="lang" [icon]="i18n.currentLang() === lang ? 'accept' : null"></ui5-menu-item>
+        }
+      </ui5-menu>
+
+      <!-- ── NavigationLayout + SideNavigation + Content ── -->
+      <ui5-navigation-layout mode="Auto">
+        <ui5-side-navigation
+          slot="sideContent"
+          (ui5SelectionChange)="onSideNavSelect($event)">
+
+          @for (group of navGroups(); track group.id) {
+            <ui5-side-navigation-group [text]="i18n.t(group.labelKey)" [expanded]="activeGroupId() === group.id">
+              @for (route of groupRoutes(group.id); track route.path) {
+                <ui5-side-navigation-item
+                  [text]="i18n.t(route.labelKey)"
+                  [icon]="route.icon"
+                  [selected]="isRouteActive(route.path)"
+                  [attr.data-path]="route.path">
+                </ui5-side-navigation-item>
+              }
+            </ui5-side-navigation-group>
           }
 
-          <div class="content-container" [class.content-container--with-pills]="activeGroupRoutes().length > 1">
-            <router-outlet></router-outlet>
-          </div>
+          <ui5-side-navigation-item
+            slot="fixedItems"
+            [text]="i18n.t('shell.settingsAriaLabel')"
+            icon="action-settings"
+            [selected]="isRouteActive('/workspace')"
+            data-path="/workspace">
+          </ui5-side-navigation-item>
+        </ui5-side-navigation>
+
+        <!-- ── Main Viewport ── -->
+        <main id="main-content" class="app-viewport" tabindex="-1">
+          <router-outlet></router-outlet>
         </main>
-      </div>
+      </ui5-navigation-layout>
     </div>
 
-    <!-- Spotlight Command Palette -->
+    <!-- ── Spotlight Command Palette (Cmd+K) ── -->
     <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="i18n.t('shell.spotlightTitle')" (close)="showSearch.set(false)">
       <div class="spotlight-body">
         <ui5-input #searchInput class="spotlight-input" [placeholder]="i18n.t('shell.spotlightPlaceholder')" (input)="onSearchInput($event)">
           <ui5-icon slot="icon" name="search"></ui5-icon>
         </ui5-input>
-        
         <ui5-list class="spotlight-results" separators="None">
           @for (res of filteredResults(); track res.path) {
             <ui5-li icon="navigation-right-arrow" [description]="i18n.t(groupLabelKey(res.group))" (click)="jumpTo(res.path)">
@@ -120,51 +152,36 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         </ui5-list>
       </div>
     </ui5-dialog>
-
-    <ui5-popover #profilePopover [attr.header-text]="i18n.t('shell.account')">
-      <div style="width: 200px; padding: 1rem;">
-        <ui5-button icon="log" design="Negative" (click)="logout()">{{ i18n.t('app.signOut') }}</ui5-button>
-      </div>
-    </ui5-popover>
-
-    <ui5-menu #langMenu (item-click)="onLanguageClick($event)">
-      @for (lang of i18n.supportedLangs; track lang) {
-        <ui5-menu-item [text]="i18n.langLabels[lang]" [id]="lang" [icon]="i18n.currentLang() === lang ? 'accept' : null"></ui5-menu-item>
-      }
-    </ui5-menu>
   `,
   styles: [`
-    .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100vw; position: relative; z-index: 1; overflow: hidden; }
-    .app-shell--reduced-motion .app-nav-island,
-    .app-shell--reduced-motion .pill-item,
-    .app-shell--reduced-motion .nav-label { transition: none; }
-    .app-header { flex-shrink: 0; }
-    .app-body { flex: 1; display: flex; padding: 1.5rem; gap: 1.5rem; overflow: hidden; }
-    
-    .app-nav-island {
-      width: 80px; display: flex; flex-direction: column; background: var(--glass-bg);
-      backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 2rem;
-      box-shadow: var(--shadow-ambient); padding: 1rem 0; transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      overflow: hidden;
+    .app-shell {
+      display: flex; flex-direction: column; height: 100vh; width: 100vw;
+      position: relative; z-index: 1; overflow: hidden;
     }
-    .app-nav-island:hover, .app-nav-island:focus-within { width: 200px; }
-    .nav-group-stack { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
-    .nav-island-item {
-      display: flex; align-items: center; gap: 1.25rem; width: 100%; border: none; background: transparent;
-      padding: 1rem 1.75rem; cursor: pointer; color: var(--sapContent_LabelColor); position: relative;
-    }
-    .nav-label { font-size: 0.875rem; font-weight: 600; white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
-    .app-nav-island:hover .nav-label, .app-nav-island:focus-within .nav-label { opacity: 1; }
-    .nav-island-item.active { color: var(--sapBrandColor); }
-    .nav-island-item.active::before { content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 4px; background: var(--sapBrandColor); border-radius: 0 4px 4px 0; }
+    .app-shell--reduced-motion * { transition: none !important; }
 
-    .app-viewport { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-    .context-pill-bar { position: absolute; top: 0; left: 0; right: 0; height: 60px; display: flex; align-items: center; justify-content: center; z-index: 10; }
-    .pill-track { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 0.25rem; display: flex; gap: 0.25rem; box-shadow: var(--shadow-ambient); }
-    .pill-item { border: none; background: transparent; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--sapContent_LabelColor); cursor: pointer; transition: all 0.3s; }
-    .pill-item--active { background: var(--sapBrandColor); color: #fff; }
-    .content-container { flex: 1; overflow-y: auto; }
-    .content-container--with-pills { padding-top: 75px; }
+    /* ── ShellBar Liquid Glass ── */
+    ui5-shellbar {
+      flex-shrink: 0; position: relative; z-index: 10;
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.12), 0 4px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ── NavigationLayout fills remaining space ── */
+    ui5-navigation-layout { flex: 1; min-height: 0; overflow: hidden; }
+
+    /* ── Side Navigation Liquid Glass ── */
+    ui5-side-navigation {
+      backdrop-filter: saturate(150%) blur(24px);
+      -webkit-backdrop-filter: saturate(150%) blur(24px);
+      background: rgba(255, 255, 255, 0.06);
+      border-inline-end: 0.5px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* ── Main Viewport ── */
+    .app-viewport { flex: 1; overflow-y: auto; }
 
     /* ── Skip Link ── */
     .skip-link {
@@ -175,10 +192,14 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
     }
     .skip-link:focus { top: 0; }
 
-    /* ── Spotlight Polish ── */
+    /* ── Spotlight Command Palette ── */
     :host .spotlight-dialog { --sapDialog_Content_Padding: 0; border-radius: 1.5rem; }
     .spotlight-body { width: 600px; max-width: 90vw; display: flex; flex-direction: column; }
-    .spotlight-input { width: 100%; padding: 1.5rem; --sapField_BorderColor: transparent; --sapField_Focus_BorderColor: transparent; font-size: 1.25rem; }
+    .spotlight-input {
+      width: 100%; padding: 1.5rem;
+      --sapField_BorderColor: transparent; --sapField_Focus_BorderColor: transparent;
+      font-size: 1.25rem;
+    }
     .spotlight-results { max-height: 400px; overflow-y: auto; }
     .no-results { padding: 2rem; text-align: center; opacity: 0.5; }
   `],
@@ -189,19 +210,24 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
   private readonly workspace = inject(WorkspaceService);
-  
-  @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
+
   @ViewChild('langMenu') langMenu!: ElementRef<any>;
   @ViewChild('searchDialog') searchDialog!: ElementRef<any>;
   @ViewChild('searchInput') searchInput!: ElementRef<any>;
+
+  readonly shellbarA11y = {
+    logo: { name: 'SAP AI Workbench' },
+    profile: { name: 'User Profile', hasPopup: 'menu' as const },
+  };
 
   readonly activeGroupId = signal<TrainingRouteGroupId>('home');
   readonly currentPath = signal('/dashboard');
   readonly showSearch = signal(false);
   readonly searchQuery = signal('');
   readonly reducedMotion = signal(false);
-  
-  // Decorative canvas movement is disabled for reduced-motion users.
+  readonly userMenuOpen = signal(false);
+
+  // Decorative canvas movement
   readonly mouseX = signal(0);
   readonly mouseY = signal(0);
   readonly canvasTransform = computed(() =>
@@ -211,7 +237,6 @@ export class ShellComponent implements OnInit, OnDestroy {
   );
   private rafId: number | null = null;
   private motionMediaQuery?: MediaQueryList;
-
   private routerSub?: Subscription;
 
   readonly visibleRouteLinks = computed(() => {
@@ -225,32 +250,13 @@ export class ShellComponent implements OnInit, OnDestroy {
     ),
   );
 
-  readonly activeGroupRoutes = computed(() => {
-    const group = this.activeGroupId();
-    const currentPath = this.currentPath();
-    const groupRoutes = this.visibleRouteLinks().filter((link) => link.group === group);
-    const primaryRoutes = groupRoutes.filter((link) => link.tier === 'primary');
-    const activeRoute = TRAINING_ROUTE_LINKS.find(
-      (link) => currentPath === link.path || currentPath.startsWith(`${link.path}/`),
-    );
-
-    if (activeRoute && !primaryRoutes.some((link) => link.path === activeRoute.path)) {
-      return [...primaryRoutes, activeRoute];
-    }
-
-    return primaryRoutes;
-  });
-
   readonly filteredResults = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
     const routes = this.visibleRouteLinks().filter((link) => {
-      if (!q) {
-        return link.tier === 'primary';
-      }
+      if (!q) return link.tier === 'primary';
       return this.i18n.t(link.labelKey).toLowerCase().includes(q)
         || this.i18n.t(this.groupLabelKey(link.group)).toLowerCase().includes(q);
     });
-
     return routes.slice(0, 8);
   });
 
@@ -265,8 +271,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.setupMotionPreference();
     this.updateActiveGroup(this.router.url);
-    this.routerSub = this.router.events.pipe(filter((e: Event): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(e => this.updateActiveGroup(e.url));
+    this.routerSub = this.router.events
+      .pipe(filter((e: Event): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.updateActiveGroup(e.url));
   }
 
   ngOnDestroy() {
@@ -277,27 +284,70 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
     this.teardownMotionPreference();
   }
+
+  // --- Navigation ---
+
   private updateActiveGroup(url: string) {
     const currentPath = url.split('?')[0].split('#')[0] || '/dashboard';
     this.currentPath.set(currentPath);
     this.activeGroupId.set(resolveTrainingGroup(currentPath));
   }
+
   groupLabelKey(group: TrainingRouteGroupId): string {
     const keys: Record<TrainingRouteGroupId, string> = {
-      home: 'navGroup.home',
-      data: 'navGroup.data',
-      assist: 'navGroup.assist',
-      operations: 'navGroup.operations',
+      home: 'navGroup.home', data: 'navGroup.data',
+      assist: 'navGroup.assist', operations: 'navGroup.operations',
     };
     return keys[group];
   }
-  groupIcon(id: string): string {
-    const icons: Record<string, string> = { home: 'home', data: 'folder', assist: 'discussion-2', operations: 'process' };
-    return icons[id] || 'grid';
+
+  /** Returns visible routes for a given nav group (used by side-navigation groups) */
+  groupRoutes(groupId: TrainingRouteGroupId) {
+    return this.visibleRouteLinks().filter((link) => link.group === groupId);
   }
-  isRouteActive(path: string): boolean { return this.router.url.startsWith(path); }
-  navigateTo(path: string) { this.router.navigate([path]); }
-  
+
+  isRouteActive(path: string): boolean {
+    return this.router.url.startsWith(path);
+  }
+
+  navigateTo(path: string) {
+    this.router.navigate([path]);
+  }
+
+  // --- Side Navigation ---
+
+  onSideNavSelect(event: any): void {
+    const path = event.detail?.item?.getAttribute?.('data-path');
+    if (path) this.router.navigate([path]);
+  }
+
+  // --- ShellBar ---
+
+  toggleUserMenu(_event: any): void {
+    this.userMenuOpen.set(!this.userMenuOpen());
+  }
+
+  onUserMenuItemClick(event: any): void {
+    const path = event.detail?.item?.getAttribute?.('data-path');
+    if (path) {
+      this.userMenuOpen.set(false);
+      this.router.navigate([path]);
+    }
+  }
+
+  onShellSearch(_event: any): void {
+    this.toggleSearch();
+  }
+
+  onCustomItemClick(event: any) {
+    const icon = event.detail.item.icon;
+    if (icon === 'globe') {
+      this.toggleLanguageMenu(event);
+    }
+  }
+
+  // --- Search Spotlight ---
+
   toggleSearch() {
     const dialog = this.searchDialog.nativeElement;
     if (dialog.open) {
@@ -312,12 +362,37 @@ export class ShellComponent implements OnInit, OnDestroy {
     const input = e.target as HTMLInputElement | null;
     this.searchQuery.set(input?.value ?? '');
   }
-  jumpTo(path: string) { this.searchDialog.nativeElement.close(); this.navigateTo(path); }
+
+  jumpTo(path: string) {
+    this.searchDialog.nativeElement.close();
+    this.navigateTo(path);
+  }
+
+  // --- Language ---
+
+  toggleLanguageMenu(event: any) {
+    const menu = this.langMenu.nativeElement;
+    menu.opener = event.detail.targetRef;
+    menu.open = true;
+  }
+
+  onLanguageClick(event: CustomEvent) {
+    const langId = event.detail.item.id as Language | undefined;
+    if (langId) this.i18n.setLanguage(langId);
+  }
+
+  // --- Auth ---
+
+  logout() {
+    this.userMenuOpen.set(false);
+    this.auth.clearToken();
+    this.router.navigate(['/login']);
+  }
+
+  // --- Canvas / Motion ---
 
   onMouseMove(e: MouseEvent) {
-    if (this.reducedMotion()) {
-      return;
-    }
+    if (this.reducedMotion()) return;
     if (this.rafId !== null) return;
     this.rafId = requestAnimationFrame(() => {
       this.mouseX.set(e.clientX - window.innerWidth / 2);
@@ -333,64 +408,24 @@ export class ShellComponent implements OnInit, OnDestroy {
     main?.scrollIntoView({ block: 'start' });
   }
 
-  onProfileClick(event: CustomEvent) { this.profilePopover.nativeElement.opener = event.detail.targetRef; this.profilePopover.nativeElement.open = true; }
-  
-  onCustomItemClick(event: any) {
-    const item = event.detail.item;
-    const icon = item.icon;
-    
-    if (icon === 'search') {
-      this.toggleSearch();
-    } else if (icon === 'globe') {
-      this.toggleLanguageMenu(event);
-    } else if (icon === 'settings') {
-      this.navigateTo('/workspace');
-    }
-  }
-
-  toggleLanguageMenu(event: any) {
-    const menu = this.langMenu.nativeElement;
-    // custom-item-click event detail contains targetRef
-    menu.opener = event.detail.targetRef;
-    menu.open = true;
-  }
-
-  onLanguageClick(event: CustomEvent) {
-    const langId = event.detail.item.id as Language | undefined;
-    if (langId) {
-      this.i18n.setLanguage(langId);
-    }
-  }
-
-  logout() { this.auth.clearToken(); this.router.navigate(['/login']); }
-
   private setupMotionPreference(): void {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     this.motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.applyMotionPreference(this.motionMediaQuery.matches);
-
     if (typeof this.motionMediaQuery.addEventListener === 'function') {
       this.motionMediaQuery.addEventListener('change', this.handleMotionPreferenceChange);
-      return;
+    } else {
+      this.motionMediaQuery.addListener(this.handleMotionPreferenceChange);
     }
-
-    this.motionMediaQuery.addListener(this.handleMotionPreferenceChange);
   }
 
   private teardownMotionPreference(): void {
-    if (!this.motionMediaQuery) {
-      return;
-    }
-
+    if (!this.motionMediaQuery) return;
     if (typeof this.motionMediaQuery.removeEventListener === 'function') {
       this.motionMediaQuery.removeEventListener('change', this.handleMotionPreferenceChange);
-      return;
+    } else {
+      this.motionMediaQuery.removeListener(this.handleMotionPreferenceChange);
     }
-
-    this.motionMediaQuery.removeListener(this.handleMotionPreferenceChange);
   }
 
   private readonly handleMotionPreferenceChange = (event: MediaQueryListEvent): void => {
@@ -399,9 +434,6 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   private applyMotionPreference(matches: boolean): void {
     this.reducedMotion.set(matches);
-    if (matches) {
-      this.mouseX.set(0);
-      this.mouseY.set(0);
-    }
+    if (matches) { this.mouseX.set(0); this.mouseY.set(0); }
   }
 }
