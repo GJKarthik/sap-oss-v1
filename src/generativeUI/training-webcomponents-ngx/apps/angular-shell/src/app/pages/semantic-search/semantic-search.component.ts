@@ -45,24 +45,25 @@ interface SearchResponse {
       </app-cross-app-link>
 
       <header class="page-header">
-        <h1 class="page-title">{{ i18n.t('semanticSearch.title') }}</h1>
+        <ui5-title level="H3">{{ i18n.t('semanticSearch.title') }}</ui5-title>
         <p class="page-subtitle">{{ i18n.t('semanticSearch.subtitle') }}</p>
       </header>
 
       <div class="search-bar" role="search" aria-label="Semantic search query">
         <div class="search-input-row">
-          <input
+          <ui5-input
             class="search-input"
-            [(ngModel)]="query"
+            [value]="query"
+            (input)="query = $any($event).target.value"
             [placeholder]="i18n.t('semanticSearch.placeholder')"
             (keydown.enter)="search()"
-            aria-label="Search query"
-          />
-          <select class="store-select" [(ngModel)]="selectedStore" aria-label="Vector store">
+            accessible-name="Search query"
+          ></ui5-input>
+          <ui5-select accessible-name="Vector store" (change)="onStoreChange($event)">
             @for (s of stores; track s) {
-              <option [value]="s">{{ s }}</option>
+              <ui5-option [value]="s" [attr.selected]="selectedStore === s ? true : null">{{ s }}</ui5-option>
             }
-          </select>
+          </ui5-select>
           <ui5-button design="Emphasized" [disabled]="searching() || !query.trim()" (click)="search()">
             {{ searching() ? i18n.t('semanticSearch.searching') : i18n.t('semanticSearch.search') }}
           </ui5-button>
@@ -84,12 +85,12 @@ interface SearchResponse {
           <div class="results-header">
             <span>{{ i18n.t('semanticSearch.resultsCount', { count: totalResults() }) }}</span>
             <div class="results-actions">
-              <select class="filter-select" [(ngModel)]="minScoreFilter" (ngModelChange)="applyFilter()">
-                <option value="0">{{ i18n.t('semanticSearch.allScores') }}</option>
-                <option value="0.5">≥ 50%</option>
-                <option value="0.7">≥ 70%</option>
-                <option value="0.8">≥ 80%</option>
-              </select>
+              <ui5-select (change)="onMinScoreChange($event)">
+                <ui5-option value="0" [attr.selected]="minScoreFilter === '0' ? true : null">{{ i18n.t('semanticSearch.allScores') }}</ui5-option>
+                <ui5-option value="0.5" [attr.selected]="minScoreFilter === '0.5' ? true : null">≥ 50%</ui5-option>
+                <ui5-option value="0.7" [attr.selected]="minScoreFilter === '0.7' ? true : null">≥ 70%</ui5-option>
+                <ui5-option value="0.8" [attr.selected]="minScoreFilter === '0.8' ? true : null">≥ 80%</ui5-option>
+              </ui5-select>
               <ui5-button design="Transparent" icon="download" (click)="exportResults()" [attr.aria-label]="i18n.t('semanticSearch.export')">{{ i18n.t('semanticSearch.export') }}</ui5-button>
             </div>
           </div>
@@ -100,12 +101,10 @@ interface SearchResponse {
                 @if (r.page) {
                   <span class="result-page">{{ i18n.t('semanticSearch.page') }} {{ r.page }}</span>
                 }
-                <span class="result-score" [class.high]="r.score >= 0.8" [class.medium]="r.score >= 0.5 && r.score < 0.8">
-                  {{ (r.score * 100).toFixed(1) }}%
-                </span>
-                <span class="lang-badge" [class.lang-badge--ar]="r.language === 'ar'">
+                <ui5-tag [attr.color-scheme]="r.score >= 0.8 ? '8' : r.score >= 0.5 ? '1' : '2'">{{ (r.score * 100).toFixed(1) }}%</ui5-tag>
+                <ui5-tag [attr.color-scheme]="r.language === 'ar' ? '8' : '6'">
                   {{ r.language === 'ar' ? i18n.t('chat.languageBadge.ar') : i18n.t('chat.languageBadge.en') }}
-                </span>
+                </ui5-tag>
               </div>
               <div class="result-text"><bdi>{{ r.text }}</bdi></div>
             </div>
@@ -116,10 +115,10 @@ interface SearchResponse {
       <!-- Search History -->
       @if (searchHistory.length > 0) {
         <div class="search-history">
-          <h3 class="history-title">{{ i18n.t('semanticSearch.recentSearches') }}</h3>
+          <ui5-title level="H5">{{ i18n.t('semanticSearch.recentSearches') }}</ui5-title>
           <div class="history-chips">
             @for (h of searchHistory; track h) {
-              <button class="history-chip" (click)="rerunSearch(h)">{{ h }}</button>
+              <ui5-button design="Default" (click)="rerunSearch(h)">{{ h }}</ui5-button>
             }
           </div>
         </div>
@@ -262,6 +261,15 @@ export class SemanticSearchComponent implements OnDestroy {
   stores = ['default', 'financial_reports', 'regulatory_docs'];
   minScoreFilter = '0';
   searchHistory: string[] = [];
+
+  onStoreChange(event: any): void {
+    this.selectedStore = event.detail?.selectedOption?.value ?? 'default';
+  }
+
+  onMinScoreChange(event: any): void {
+    this.minScoreFilter = event.detail?.selectedOption?.value ?? '0';
+    this.applyFilter();
+  }
 
   filteredResults(): SearchResult[] {
     const minScore = parseFloat(this.minScoreFilter) || 0;
