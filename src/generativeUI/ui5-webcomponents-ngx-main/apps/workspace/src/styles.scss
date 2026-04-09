@@ -336,3 +336,178 @@ ui5-title, h1, h2, h3 {
     animation: none !important;
   }
 }
+
+// ---------------------------------------------------------------------------
+// 4. Interactive surface — cursor + press feedback (Jobs: "if you can click it…")
+// ---------------------------------------------------------------------------
+
+ui5-button,
+ui5-link,
+ui5-avatar[interactive],
+ui5-card,
+ui5-side-navigation-item,
+ui5-shellbar-item,
+ui5-li,
+ui5-list-item,
+ui5-tab,
+ui5-tag,
+ui5-menu-item,
+ui5-user-menu-item,
+ui5-product-switch-item,
+ui5-breadcrumbs-item,
+[interactive],
+[role="button"],
+[role="link"],
+[role="tab"],
+[role="menuitem"],
+[role="option"] {
+  cursor: pointer;
+}
+
+// Press feedback — scale(0.97) on :active for cards and buttons
+ui5-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+ui5-button:active,
+ui5-tag:active {
+  transform: scale(0.95);
+  transition: transform 0.08s ease;
+}
+
+ui5-li:active,
+ui5-list-item:active {
+  transform: scale(0.99);
+  transition: transform 0.08s ease;
+}
+
+// Hover glow on cards (supplement the slideUpIn animation)
+ui5-card:hover {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+// ---------------------------------------------------------------------------
+// 5. Responsive breakpoints (Apple: 5+ adaptive layouts)
+// ---------------------------------------------------------------------------
+
+// Tablet portrait (600–899px)
+@media (min-width: 600px) and (max-width: 899px) {
+  ui5-card {
+    min-width: 280px;
+  }
+}
+
+// Tablet landscape / small desktop (900–1199px)
+@media (min-width: 900px) and (max-width: 1199px) {
+  .app-content {
+    padding: 0.5rem;
+  }
+}
+
+// Large desktop (1200–1599px)
+@media (min-width: 1200px) {
+  .app-content {
+    padding: 0.75rem;
+  }
+  ui5-card {
+    max-width: 600px;
+  }
+}
+
+// XL / Ultra-wide (1600px+)
+@media (min-width: 1600px) {
+  .app-content {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 6. Route transition choreography (crossfade + slide)
+// ---------------------------------------------------------------------------
+
+@keyframes routeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+router-outlet + * {
+  animation: routeFadeIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  router-outlet + * {
+    animation: none !important;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. Typography weight range + hover/active polish
+// ---------------------------------------------------------------------------
+
+// Display-level headings (H1–H2): bold + tight
+ui5-title[level="H1"],
+ui5-title[level="H2"] {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+// Section headings (H3–H4): semi-bold
+ui5-title[level="H3"],
+ui5-title[level="H4"] {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+// Subsection (H5–H6): medium
+ui5-title[level="H5"],
+ui5-title[level="H6"] {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+// Labels: lighter for hierarchy contrast
+ui5-label {
+  font-weight: 400;
+}
+
+// Card header title: semi-bold
+ui5-card-header {
+  letter-spacing: -0.015em;
+}
+
+// Hover state for list items (subtle background shift)
+ui5-li:hover,
+ui5-list-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+  transition: background 0.2s ease;
+}
+
+// Tag hover
+ui5-tag:hover {
+  filter: brightness(1.05);
+  transition: filter 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  ui5-li:hover,
+  ui5-list-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  ui5-card:hover {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}

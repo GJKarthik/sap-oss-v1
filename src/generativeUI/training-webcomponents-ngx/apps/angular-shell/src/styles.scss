@@ -373,3 +373,122 @@ ui5-table {
 :root h1, :root h2, :root h3, :root ui5-title {
   letter-spacing: -0.025em;
 }
+
+/* ── 4. Interactive Surface — Cursor + Press Feedback ─────────────────── */
+
+ui5-button,
+ui5-link,
+ui5-avatar[interactive],
+ui5-card,
+ui5-side-navigation-item,
+ui5-shellbar-item,
+ui5-li,
+ui5-tab,
+ui5-tag,
+ui5-menu-item,
+ui5-user-menu-item,
+ui5-breadcrumbs-item,
+[interactive],
+[role="button"],
+[role="link"],
+[role="tab"],
+[role="menuitem"],
+[role="option"] {
+  cursor: pointer;
+}
+
+ui5-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+ui5-button:active,
+ui5-tag:active {
+  transform: scale(0.95);
+  transition: transform 0.08s ease;
+}
+
+ui5-li:active {
+  transform: scale(0.99);
+  transition: transform 0.08s ease;
+}
+
+ui5-li:hover {
+  background: rgba(0, 0, 0, 0.03);
+  transition: background 0.2s ease;
+}
+
+ui5-tag:hover {
+  filter: brightness(1.05);
+  transition: filter 0.2s ease;
+}
+
+/* ── 5. Responsive Breakpoints ────────────────────────────────────────── */
+
+@media (min-width: 600px) and (max-width: 899px) {
+  ui5-card { min-width: 280px; }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .app-viewport { padding: 0.5rem; }
+}
+
+@media (min-width: 1200px) {
+  .app-viewport { padding: 0.75rem; }
+  ui5-card { max-width: 600px; }
+}
+
+@media (min-width: 1600px) {
+  .app-viewport {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+}
+
+/* ── 6. Route Transition Choreography ─────────────────────────────────── */
+
+@keyframes routeFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+router-outlet + * {
+  animation: routeFadeIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  router-outlet + * { animation: none !important; }
+}
+
+/* ── 7. Typography Weight Range ───────────────────────────────────────── */
+
+ui5-title[level="H1"],
+ui5-title[level="H2"] {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+ui5-title[level="H3"],
+ui5-title[level="H4"] {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+ui5-title[level="H5"],
+ui5-title[level="H6"] {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+ui5-label { font-weight: 400; }
+ui5-card-header { letter-spacing: -0.015em; }
+
+@media (prefers-color-scheme: dark) {
+  ui5-li:hover { background: rgba(255, 255, 255, 0.06); }
+  ui5-card:hover {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}
