@@ -11,7 +11,7 @@
   </app-cross-app-link>
 
   <header class="ocr-header">
-    <h1>{{ i18n.t('ocr.title') }}</h1>
+    <ui5-title level="H3">{{ i18n.t('ocr.title') }}</ui5-title>
     <p class="ocr-subtitle">{{ i18n.t('ocr.subtitle') }}</p>
   </header>
 
@@ -38,13 +38,12 @@
         </div>
       } @else {
         <div class="upload-content">
-          <span class="upload-icon">📄</span>
+          <ui5-icon name="document" class="upload-icon"></ui5-icon>
           <p class="upload-title">{{ i18n.t('ocr.upload.title') }}</p>
           <p class="upload-hint">{{ i18n.t('ocr.upload.hint') }}</p>
-          <label class="upload-btn">
-            {{ i18n.t('ocr.upload.browse') }}
-            <input #fileInput type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
-          </label>
+          <ui5-file-uploader accept=".pdf" hide-input (change)="onFileSelected($event)">
+            <ui5-button design="Emphasized">{{ i18n.t('ocr.upload.browse') }}</ui5-button>
+          </ui5-file-uploader>
         </div>
       }
     </div>
@@ -59,10 +58,9 @@
         <ui5-button design="Default" (click)="exportJson()">{{ i18n.t('ocr.exportJson') }}</ui5-button>
         <ui5-button design="Default" (click)="exportText()">{{ i18n.t('ocr.exportText') }}</ui5-button>
         <div class="actions-spacer"></div>
-        <label class="action-btn">
-          {{ i18n.t('ocr.uploadAnother') }}
-          <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
-        </label>
+        <ui5-file-uploader accept=".pdf" hide-input (change)="onFileSelected($event)">
+          <ui5-button design="Default">{{ i18n.t('ocr.uploadAnother') }}</ui5-button>
+        </ui5-file-uploader>
       </div>
 
       <!-- Tabs -->
@@ -94,20 +92,18 @@
           <div class="tables-tab">
             @for (table of currentPageTables(); track table.table_index) {
               <div class="detected-table">
-                <h3>{{ i18n.t('ocr.table') }} {{ table.table_index + 1 }}
-                  <span class="table-meta">({{ table.rows }}×{{ table.columns }}, {{ i18n.t('ocr.confidence') }}: {{ table.confidence | localeNumber:'decimal':1:1 }}%)</span>
-                </h3>
-                <div class="table-wrapper">
-                  <table dir="auto">
-                    @for (row of getTableRows(table); track $index) {
-                      <tr>
-                        @for (cell of row; track $index) {
-                          <td>{{ cell }}</td>
-                        }
-                      </tr>
-                    }
-                  </table>
-                </div>
+                <ui5-title level="H5">{{ i18n.t('ocr.table') }} {{ table.table_index + 1 }}
+                  <ui5-tag design="Set2" color-scheme="1">({{ table.rows }}×{{ table.columns }}, {{ i18n.t('ocr.confidence') }}: {{ table.confidence | localeNumber:'decimal':1:1 }}%)</ui5-tag>
+                </ui5-title>
+                <ui5-table dir="auto" accessible-name="Detected table">
+                  @for (row of getTableRows(table); track $index) {
+                    <ui5-table-row>
+                      @for (cell of row; track $index) {
+                        <ui5-table-cell>{{ cell }}</ui5-table-cell>
+                      }
+                    </ui5-table-row>
+                  }
+                </ui5-table>
               </div>
             }
             @if (currentPageTables().length === 0) {
@@ -173,7 +169,7 @@
             @if (aiExtraction()) {
               <div class="ai-extraction-results">
                 <div class="ai-header">
-                  <h3>{{ i18n.t('ocr.ai.summaryTitle') }}</h3>
+                  <ui5-title level="H5">{{ i18n.t('ocr.ai.summaryTitle') }}</ui5-title>
                   <span class="ai-badge">LLM Powered</span>
                 </div>
 
@@ -221,7 +217,7 @@
             } @else {
               <div class="ai-empty-state">
                 <div class="ai-empty-icon">🤖</div>
-                <h3>{{ i18n.t('ocr.ai.emptyTitle') }}</h3>
+                <ui5-title level="H5">{{ i18n.t('ocr.ai.emptyTitle') }}</ui5-title>
                 <ui5-button design="Emphasized" (click)="runAiExtraction()" [disabled]="extractingAi()">
                   @if (extractingAi()) { <span class="spinner"></span> }
                   ✨ {{ i18n.t('ocr.ai.runAction') }}

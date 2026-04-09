@@ -4,7 +4,7 @@
     <ui5-breadcrumbs-item text="Arabic Wizard"></ui5-breadcrumbs-item>
   </ui5-breadcrumbs>
   <div class="wizard-header">
-    <h1>{{ i18n.t('wizard.title') }}</h1>
+    <ui5-title level="H3">{{ i18n.t('wizard.title') }}</ui5-title>
     <p class="wizard-subtitle">{{ i18n.t('wizard.subtitle') }}</p>
   </div>
 
@@ -30,7 +30,7 @@
   <div class="wizard-content">
     @if (currentStep() === 0) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.upload.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('wizard.upload.title') }}</ui5-title>
         <p class="step-instructions">{{ i18n.t('wizard.upload.instructions') }}</p>
 
         @if (!isProcessing() && !ocrResult()) {
@@ -45,7 +45,7 @@
             <p class="upload-label">{{ i18n.t('wizard.upload.dropHere') }}</p>
             <p class="upload-hint">{{ i18n.t('wizard.upload.browseHint') }}</p>
             <ui5-button design="Emphasized" type="button">{{ i18n.t('wizard.upload.browse') }}</ui5-button>
-            <input #fileInput type="file" accept=".pdf" hidden (change)="onFileSelected($event)" />
+            <input #fileInput type="file" accept=".pdf" style="display:none" (change)="onFileSelected($event)" />
           </div>
         }
 
@@ -70,7 +70,7 @@
 
     @if (currentStep() === 1) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.review.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('wizard.review.title') }}</ui5-title>
         <p class="step-instructions">{{ i18n.t('wizard.review.instructions') }}</p>
 
         @if (ocrResult(); as result) {
@@ -90,7 +90,7 @@
           </div>
 
           <div class="review-section">
-            <h3>{{ i18n.t('wizard.review.extractedText') }}</h3>
+            <ui5-title level="H5">{{ i18n.t('wizard.review.extractedText') }}</ui5-title>
             <div class="page-nav">
               <ui5-button design="Transparent" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</ui5-button>
               <span>{{ i18n.t('wizard.review.pageNav', { current: currentPage(), total: result.total_pages }) }}</span>
@@ -101,34 +101,30 @@
           </div>
 
           <div class="review-section">
-            <h3>{{ i18n.t('wizard.review.financialFields') }}</h3>
+            <ui5-title level="H5">{{ i18n.t('wizard.review.financialFields') }}</ui5-title>
             @if (financialFields().length > 0) {
-              <table class="fields-table">
-                <thead>
-                  <tr>
-                    <th>{{ i18n.t('wizard.review.fieldAr') }}</th>
-                    <th>{{ i18n.t('wizard.review.fieldEn') }}</th>
-                    <th>{{ i18n.t('wizard.review.value') }}</th>
-                    <th>{{ i18n.t('wizard.review.page') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (field of financialFields(); track field.key_ar + field.page) {
-                    <tr>
-                      <td dir="rtl">{{ field.key_ar }}</td>
-                      <td>{{ field.key_en }}</td>
-                      <td>
-                        @if (isDate(field.value)) {
-                          <app-bilingual-date [date]="field.value" [showLabels]="false"></app-bilingual-date>
-                        } @else {
-                          {{ field.value }}
-                        }
-                      </td>
-                      <td>{{ field.page }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+              <ui5-table accessible-name="Financial fields">
+                <ui5-table-header-row slot="headerRow">
+                  <ui5-table-header-cell>{{ i18n.t('wizard.review.fieldAr') }}</ui5-table-header-cell>
+                  <ui5-table-header-cell>{{ i18n.t('wizard.review.fieldEn') }}</ui5-table-header-cell>
+                  <ui5-table-header-cell>{{ i18n.t('wizard.review.value') }}</ui5-table-header-cell>
+                  <ui5-table-header-cell>{{ i18n.t('wizard.review.page') }}</ui5-table-header-cell>
+                </ui5-table-header-row>
+                @for (field of financialFields(); track field.key_ar + field.page) {
+                  <ui5-table-row>
+                    <ui5-table-cell dir="rtl">{{ field.key_ar }}</ui5-table-cell>
+                    <ui5-table-cell>{{ field.key_en }}</ui5-table-cell>
+                    <ui5-table-cell>
+                      @if (isDate(field.value)) {
+                        <app-bilingual-date [date]="field.value" [showLabels]="false"></app-bilingual-date>
+                      } @else {
+                        {{ field.value }}
+                      }
+                    </ui5-table-cell>
+                    <ui5-table-cell>{{ field.page }}</ui5-table-cell>
+                  </ui5-table-row>
+                }
+              </ui5-table>
             } @else {
               <p class="empty-state">{{ i18n.t('wizard.review.noFinancialFields') }}</p>
             }
@@ -139,7 +135,7 @@
 
     @if (currentStep() === 2) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.analyze.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('wizard.analyze.title') }}</ui5-title>
         <p class="step-instructions">{{ i18n.t('wizard.analyze.instructions') }}</p>
         <div class="system-prompt-badge">{{ i18n.t('wizard.analyze.systemPromptActive') }}</div>
 
@@ -161,13 +157,14 @@
           </div>
 
           <form class="chat-input-row" (ngSubmit)="sendChatMessage()">
-            <textarea
+            <ui5-textarea
               class="chat-input"
-              [(ngModel)]="chatInput"
-              name="chatInput"
+              [value]="chatInput"
+              (input)="chatInput = $any($event).target.value"
               rows="2"
               [placeholder]="i18n.t('wizard.analyze.askQuestion')"
-              (keydown.enter)="onChatEnter($event)"></textarea>
+              (keydown.enter)="onChatEnter($event)"
+              growing></ui5-textarea>
             <ui5-button design="Emphasized" (click)="sendChatMessage()" [disabled]="!chatInput.trim() || chatSending()">
               {{ chatSending() ? i18n.t('wizard.analyze.sending') : i18n.t('wizard.analyze.send') }}
             </ui5-button>
@@ -178,23 +175,23 @@
 
     @if (currentStep() === 3) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.export.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('wizard.export.title') }}</ui5-title>
         <p class="step-instructions">{{ i18n.t('wizard.export.instructions') }}</p>
 
         <div class="export-cards">
           <div class="export-card" (click)="exportJson()">
             <div class="export-icon">📋</div>
-            <h3>{{ i18n.t('wizard.export.json') }}</h3>
+            <ui5-title level="H5">{{ i18n.t('wizard.export.json') }}</ui5-title>
             <p>{{ i18n.t('wizard.export.jsonDesc') }}</p>
           </div>
           <div class="export-card" (click)="exportText()">
             <div class="export-icon">📝</div>
-            <h3>{{ i18n.t('wizard.export.text') }}</h3>
+            <ui5-title level="H5">{{ i18n.t('wizard.export.text') }}</ui5-title>
             <p>{{ i18n.t('wizard.export.textDesc') }}</p>
           </div>
           <div class="export-card" (click)="exportSummary()">
             <div class="export-icon">📊</div>
-            <h3>{{ i18n.t('wizard.export.summary') }}</h3>
+            <ui5-title level="H5">{{ i18n.t('wizard.export.summary') }}</ui5-title>
             <p>{{ i18n.t('wizard.export.summaryDesc') }}</p>
           </div>
         </div>

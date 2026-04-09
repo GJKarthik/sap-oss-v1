@@ -36,7 +36,7 @@ import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
           <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('sparql.queryInterface') }}" attr.attr.subtitle-text="{{  i18n.t('sparql.querySubtitle') }}"></ui5-card-header>
           <div class="card-content">
             <div class="field-group">
-              <label class="field-label">{{ i18n.t('sparql.query') }}</label>
+              <ui5-label class="field-label">{{ i18n.t('sparql.query') }}</ui5-label>
               <ui5-textarea ngDefaultControl name="sparqlQuery" [(ngModel)]="sparqlQuery" [rows]="6" placeholder="SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 10" accessible-name="SPARQL query"></ui5-textarea>
             </div>
             <div class="actions">

@@ -36,7 +36,7 @@ interface PromptTemplate {
         <ui5-breadcrumbs-item text="Prompt Library"></ui5-breadcrumbs-item>
       </ui5-breadcrumbs>
       <header class="page-header">
-        <h2>{{ i18n.t('promptLibrary.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('promptLibrary.title') }}</ui5-title>
         <div class="header-actions">
           <ui5-input [placeholder]="i18n.t('promptLibrary.searchPlaceholder')" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" style="min-width: 200px;"></ui5-input>
           <ui5-button design="Emphasized" icon="add" (click)="showCreate.set(!showCreate())">{{ showCreate() ? i18n.t('common.cancel') : i18n.t('promptLibrary.newPrompt') }}</ui5-button>
@@ -69,7 +69,7 @@ interface PromptTemplate {
       <!-- Create form -->
       @if (showCreate()) {
         <div class="create-form">
-          <h3>{{ i18n.t('promptLibrary.newPromptTemplate') }}</h3>
+          <ui5-title level="H5">{{ i18n.t('promptLibrary.newPromptTemplate') }}</ui5-title>
           <ui5-input ngDefaultControl [(ngModel)]="draftName" name="name" [placeholder]="i18n.t('promptLibrary.promptName')" style="width: 100%;"></ui5-input>
           <ui5-input ngDefaultControl [(ngModel)]="draftCategory" name="category" [placeholder]="i18n.t('promptLibrary.category')" style="width: 100%;"></ui5-input>
           <ui5-input ngDefaultControl [(ngModel)]="draftDescription" name="desc" [placeholder]="i18n.t('promptLibrary.description')" style="width: 100%;"></ui5-input>
@@ -126,7 +126,7 @@ interface PromptTemplate {
               <h5>{{ i18n.t('promptLibrary.testVariables') }}</h5>
               @for (v of templateVars(); track v) {
                 <div class="var-input">
-                  <label>{{ v }}</label>
+                  <ui5-label>{{ v }}</ui5-label>
                   <ui5-input ngDefaultControl [(ngModel)]="testValues[v]" [placeholder]="'Enter ' + v + '...'" style="width: 100%;"></ui5-input>
                 </div>
               }

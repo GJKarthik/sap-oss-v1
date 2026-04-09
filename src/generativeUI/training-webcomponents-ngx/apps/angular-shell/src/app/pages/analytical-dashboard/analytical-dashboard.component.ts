@@ -40,22 +40,22 @@ import { I18nService } from '../../services/i18n.service';
           <div class="card-content">
             <div class="form-grid">
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.calcView') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.calcView') }}</ui5-label>
                 <ui5-select ngDefaultControl name="calcView" [(ngModel)]="selectedCalcView" accessible-name="Select calculation view">
                   <ui5-option value="">{{ i18n.t('analyticalDashboard.selectCalcView') }}</ui5-option>
                   <ui5-option *ngFor="let cv of calcViews" [value]="cv">{{ cv }}</ui5-option>
                 </ui5-select>
               </div>
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.dimensions') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.dimensions') }}</ui5-label>
                 <ui5-input ngDefaultControl name="dimensions" [(ngModel)]="dimensionsInput" placeholder="{{ i18n.t('analyticalDashboard.dimensionsPlaceholder') }}" accessible-name="Dimensions (comma-separated)"></ui5-input>
               </div>
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.measures') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.measures') }}</ui5-label>
                 <ui5-input ngDefaultControl name="measures" [(ngModel)]="measuresInput" placeholder="{{ i18n.t('analyticalDashboard.measuresPlaceholder') }}" accessible-name="Measures (comma-separated)"></ui5-input>
               </div>
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.aggregation') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.aggregation') }}</ui5-label>
                 <ui5-select ngDefaultControl name="aggregation" [(ngModel)]="aggregation" accessible-name="Aggregation type">
                   <ui5-option value="SUM">SUM</ui5-option>
                   <ui5-option value="COUNT">COUNT</ui5-option>

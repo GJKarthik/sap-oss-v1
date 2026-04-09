@@ -74,7 +74,7 @@ interface InvocationEntry {
 
             <div class="card-content">
               <div class="field-group">
-                <label for="pal-tool-select" class="field-label">{{ 'palWorkbench.tool' | translate }}</label>
+                <ui5-label for="pal-tool-select" class="field-label">{{ 'palWorkbench.tool' | translate }}</ui5-label>
                 <ui5-select
                   id="pal-tool-select"
                   ngDefaultControl
@@ -100,7 +100,7 @@ interface InvocationEntry {
               </div>
 
               <div class="field-group">
-                <label for="pal-tool-args" class="field-label">{{ 'palWorkbench.argumentsJson' | translate }}</label>
+                <ui5-label for="pal-tool-args" class="field-label">{{ 'palWorkbench.argumentsJson' | translate }}</ui5-label>
                 <ui5-textarea
                   id="pal-tool-args"
                   ngDefaultControl

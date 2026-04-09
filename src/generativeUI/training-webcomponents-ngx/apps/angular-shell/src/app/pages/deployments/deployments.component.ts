@@ -96,9 +96,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
           </ui5-card-header>
           <form class="form-grid" (ngSubmit)="createDeployment()">
             <div class="field-group">
-              <label for="scenario-id" class="field-label">
+              <ui5-label for="scenario-id" class="field-label">
                 {{ 'deployments.scenarioId' | translate }} <span class="required" aria-hidden="true">*</span>
-              </label>
+              </ui5-label>
               <ui5-input
                 id="scenario-id"
                 ngDefaultControl
@@ -110,9 +110,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
               </ui5-input>
             </div>
             <div class="field-group">
-              <label for="config-json" class="field-label">
+              <ui5-label for="config-json" class="field-label">
                 {{ 'deployments.configurationJson' | translate }}
-              </label>
+              </ui5-label>
               <ui5-textarea
                 id="config-json"
                 ngDefaultControl

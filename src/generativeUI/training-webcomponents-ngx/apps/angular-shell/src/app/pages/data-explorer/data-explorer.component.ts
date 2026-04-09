@@ -128,15 +128,13 @@ interface SqlPair {
               <ui5-title level="H4" class="detail-title"><bdi>{{ sel.name }}</bdi></ui5-title>
               <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('dataExplorer.closeDetail')" (click)="clearSelection()"></ui5-button>
             </div>
-            <table class="info-table">
-              <tbody>
-                <tr><td>{{ i18n.t('dataExplorer.type') }}</td><td>{{ sel.type.toUpperCase() }}</td></tr>
-                <tr><td>{{ i18n.t('dataExplorer.category') }}</td><td>{{ sel.category }}</td></tr>
-                <tr><td>{{ i18n.t('dataExplorer.size') }}</td><td>{{ sel.size }}</td></tr>
-                <tr><td>{{ i18n.t('dataExplorer.description') }}</td><td>{{ sel.description }}</td></tr>
-                <tr><td>{{ i18n.t('dataExplorer.location') }}</td><td><code><bdi>data/{{ sel.name }}</bdi></code></td></tr>
-              </tbody>
-            </table>
+            <ui5-table accessible-name="Asset details" class="info-table">
+              <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.type') }}</ui5-table-cell><ui5-table-cell>{{ sel.type.toUpperCase() }}</ui5-table-cell></ui5-table-row>
+              <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.category') }}</ui5-table-cell><ui5-table-cell>{{ sel.category }}</ui5-table-cell></ui5-table-row>
+              <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.size') }}</ui5-table-cell><ui5-table-cell>{{ sel.size }}</ui5-table-cell></ui5-table-row>
+              <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.description') }}</ui5-table-cell><ui5-table-cell>{{ sel.description }}</ui5-table-cell></ui5-table-row>
+              <ui5-table-row><ui5-table-cell>{{ i18n.t('dataExplorer.location') }}</ui5-table-cell><ui5-table-cell><code><bdi>data/{{ sel.name }}</bdi></code></ui5-table-cell></ui5-table-row>
+            </ui5-table>
           </div>
         }
       }

@@ -39,15 +39,15 @@ interface AnalyticsResponse {
       <header class="page-header">
         <div class="header-row">
           <div>
-            <h1 class="page-title">{{ i18n.t('analytics.title') }}</h1>
+            <ui5-title level="H3">{{ i18n.t('analytics.title') }}</ui5-title>
             <p class="page-subtitle">{{ i18n.t('analytics.subtitle') }}</p>
           </div>
           <div class="header-actions">
-            <select class="store-select" [(ngModel)]="selectedStore" (ngModelChange)="loadData()">
+            <ui5-select (change)="onStoreChange($event)">
               @for (s of stores; track s) {
-                <option [value]="s">{{ s }}</option>
+                <ui5-option [value]="s" [attr.selected]="selectedStore === s ? true : null">{{ s }}</ui5-option>
               }
-            </select>
+            </ui5-select>
             <ui5-button design="Default" (click)="loadData()" [disabled]="loading()">
               {{ i18n.t('analytics.refresh') }}
             </ui5-button>
@@ -88,7 +88,7 @@ interface AnalyticsResponse {
         <!-- Bar Chart -->
         <div class="chart-section">
           <div class="chart-header">
-            <h2 class="section-title">{{ i18n.t('analytics.trendsTitle') }}</h2>
+            <ui5-title level="H4">{{ i18n.t('analytics.trendsTitle') }}</ui5-title>
             <ui5-button design="Transparent" icon="download" (click)="exportCsv()">CSV</ui5-button>
           </div>
           <div class="chart-container">
@@ -110,34 +110,30 @@ interface AnalyticsResponse {
 
         <div class="table-section">
           <div class="chart-header">
-            <h2 class="section-title">{{ i18n.t('analytics.trendsTitle') }}</h2>
+            <ui5-title level="H4">{{ i18n.t('analytics.trendsTitle') }}</ui5-title>
             <div class="filter-row">
-              <input type="text" class="filter-input" [placeholder]="i18n.t('analytics.filterBySource')" [(ngModel)]="sourceFilter" />
+              <ui5-input [placeholder]="i18n.t('analytics.filterBySource')" [value]="sourceFilter" (input)="sourceFilter = $any($event).target.value"></ui5-input>
             </div>
           </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th class="sortable" (click)="toggleSort('source')">{{ i18n.t('analytics.col.source') }} {{ sortIcon('source') }}</th>
-                <th class="sortable" (click)="toggleSort('date')">{{ i18n.t('analytics.col.date') }} {{ sortIcon('date') }}</th>
-                <th class="sortable" (click)="toggleSort('revenue')">{{ i18n.t('analytics.col.revenue') }} {{ sortIcon('revenue') }}</th>
-                <th class="sortable" (click)="toggleSort('profit')">{{ i18n.t('analytics.col.profit') }} {{ sortIcon('profit') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of filteredRows(); track row.source + row.date) {
-                <tr>
-                  <td>{{ row.source }}</td>
-                  <td>{{ row.date }}</td>
-                  <td>{{ row.revenue | localeNumber:'1.0-0' }}</td>
-                  <td>{{ row.profit | localeNumber:'1.0-0' }}</td>
-                </tr>
-              }
-              @if (filteredRows().length === 0) {
-                <tr><td colspan="4" class="empty-cell">{{ i18n.t('analytics.noDataMatchingFilter') }}</td></tr>
-              }
-            </tbody>
-          </table>
+          <ui5-table accessible-name="Analytics data">
+            <ui5-table-header-row slot="headerRow">
+              <ui5-table-header-cell (click)="toggleSort('source')" style="cursor:pointer">{{ i18n.t('analytics.col.source') }} {{ sortIcon('source') }}</ui5-table-header-cell>
+              <ui5-table-header-cell (click)="toggleSort('date')" style="cursor:pointer">{{ i18n.t('analytics.col.date') }} {{ sortIcon('date') }}</ui5-table-header-cell>
+              <ui5-table-header-cell (click)="toggleSort('revenue')" style="cursor:pointer">{{ i18n.t('analytics.col.revenue') }} {{ sortIcon('revenue') }}</ui5-table-header-cell>
+              <ui5-table-header-cell (click)="toggleSort('profit')" style="cursor:pointer">{{ i18n.t('analytics.col.profit') }} {{ sortIcon('profit') }}</ui5-table-header-cell>
+            </ui5-table-header-row>
+            @for (row of filteredRows(); track row.source + row.date) {
+              <ui5-table-row>
+                <ui5-table-cell>{{ row.source }}</ui5-table-cell>
+                <ui5-table-cell>{{ row.date }}</ui5-table-cell>
+                <ui5-table-cell>{{ row.revenue | localeNumber:'1.0-0' }}</ui5-table-cell>
+                <ui5-table-cell>{{ row.profit | localeNumber:'1.0-0' }}</ui5-table-cell>
+              </ui5-table-row>
+            }
+            @if (filteredRows().length === 0) {
+              <ui5-table-row><ui5-table-cell colspan="4">{{ i18n.t('analytics.noDataMatchingFilter') }}</ui5-table-cell></ui5-table-row>
+            }
+          </ui5-table>
         </div>
       }
     </div>
@@ -268,6 +264,11 @@ export class AnalyticsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  onStoreChange(event: any): void {
+    this.selectedStore = event.detail?.selectedOption?.value ?? 'default';
+    this.loadData();
   }
 
   loadData(): void {

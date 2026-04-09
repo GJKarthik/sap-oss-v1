@@ -19,22 +19,21 @@ import { I18nService } from '../../services/i18n.service';
       <div class="login-card" role="region" aria-label="Authentication">
         <div class="login-brand">
           <span class="login-icon"><ui5-icon name="machine"></ui5-icon></span>
-          <h1 class="login-title">{{ i18n.t('login.title') }}</h1>
+          <ui5-title level="H3" class="login-title">{{ i18n.t('login.title') }}</ui5-title>
           <p class="login-subtitle">{{ i18n.t('login.subtitle') }}</p>
         </div>
 
         <form class="login-form" (ngSubmit)="submit()" aria-label="Login form">
           <div class="field-group">
-            <label class="field-label" for="apiKey">{{ i18n.t('login.apiKey') }} <span class="text-muted">{{ i18n.t('login.optional') }}</span></label>
-            <input
+            <ui5-label class="field-label" for="apiKey">{{ i18n.t('login.apiKey') }} <span class="text-muted">{{ i18n.t('login.optional') }}</span></ui5-label>
+            <ui5-input
               id="apiKey"
-              type="password"
+              type="Password"
               class="login-input"
-              [(ngModel)]="apiKey"
-              name="apiKey"
+              [value]="apiKey"
+              (input)="apiKey = $any($event).target.value"
               [placeholder]="i18n.t('login.placeholder')"
-              autocomplete="current-password"
-            />
+            ></ui5-input>
           </div>
 
           <ui5-button design="Emphasized" (click)="submit()" style="width: 100%;">{{ i18n.t('login.submit') }}</ui5-button>

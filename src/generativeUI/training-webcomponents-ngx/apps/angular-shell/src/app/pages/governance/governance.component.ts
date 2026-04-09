@@ -41,7 +41,7 @@ interface ApiPolicy {
         <ui5-breadcrumbs-item text="Governance"></ui5-breadcrumbs-item>
       </ui5-breadcrumbs>
       <header class="page-header">
-        <h2>{{ i18n.t('governance.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('governance.title') }}</ui5-title>
         <p class="subtitle">{{ i18n.t('governance.subtitle') }}</p>
       </header>
 
@@ -60,7 +60,7 @@ interface ApiPolicy {
 
       <!-- Pending Approvals -->
       <section class="section">
-        <h3>{{ i18n.t('governance.pendingApprovals') }} <ui5-tag>{{ apiApprovals.length }}</ui5-tag></h3>
+        <ui5-title level="H5">{{ i18n.t('governance.pendingApprovals') }} <ui5-tag>{{ apiApprovals.length }}</ui5-tag></ui5-title>
         @if (apiApprovals.length > 0) {
           @for (approval of apiApprovals; track approval.id) {
             <div class="approval-card">
@@ -104,7 +104,7 @@ interface ApiPolicy {
 
       <!-- Team Policies -->
       <section class="section">
-        <h3>{{ i18n.t('governance.teamPolicies') }}</h3>
+        <ui5-title level="H5">{{ i18n.t('governance.teamPolicies') }}</ui5-title>
         @if (apiPolicies.length > 0) {
           @for (policy of apiPolicies; track policy.id) {
             <div class="policy-card">

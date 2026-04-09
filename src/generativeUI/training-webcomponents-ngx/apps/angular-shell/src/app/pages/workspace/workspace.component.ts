@@ -20,7 +20,7 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         <ui5-breadcrumbs-item text="Workspace Settings"></ui5-breadcrumbs-item>
       </ui5-breadcrumbs>
       <div class="workspace-hero">
-        <h2>{{ i18n.t('workspace.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('workspace.title') }}</ui5-title>
         <p class="workspace-hero__subtitle">{{ i18n.t('workspace.subtitle') }}</p>
       </div>
 
@@ -30,15 +30,15 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.identity')" [attr.subtitle-text]="ws.identity().userId"></ui5-card-header>
           <div class="card-body">
             <div class="field">
-              <label>{{ i18n.t('workspace.displayName') }}</label>
+              <ui5-label>{{ i18n.t('workspace.displayName') }}</ui5-label>
               <ui5-input [value]="ws.identity().displayName" (change)="onIdentity('displayName', $event)"></ui5-input>
             </div>
             <div class="field">
-              <label>{{ i18n.t('workspace.teamName') }}</label>
+              <ui5-label>{{ i18n.t('workspace.teamName') }}</ui5-label>
               <ui5-input [value]="ws.identity().teamName" (change)="onIdentity('teamName', $event)"></ui5-input>
             </div>
             <div class="field">
-              <label>{{ i18n.t('workspace.userId') }}</label>
+              <ui5-label>{{ i18n.t('workspace.userId') }}</ui5-label>
               <ui5-tag design="Set2" color-scheme="6">{{ ws.identity().userId }}</ui5-tag>
             </div>
           </div>
@@ -49,14 +49,14 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.backend')"></ui5-card-header>
           <div class="card-body">
             <div class="field field--row">
-              <label>{{ i18n.t('workspace.apiBaseUrl') }}</label>
+              <ui5-label>{{ i18n.t('workspace.apiBaseUrl') }}</ui5-label>
               <ui5-input class="field__input" [value]="ws.backendConfig().apiBaseUrl" (change)="onBackend('apiBaseUrl', $event)"></ui5-input>
               <ui5-button design="Transparent" (click)="testUrl(ws.backendConfig().apiBaseUrl, 'api')">{{ i18n.t('workspace.testConnection') }}</ui5-button>
               @if (connStatus['api'] === 'ok') { <ui5-tag design="Set2" color-scheme="8">{{ i18n.t('workspace.connected') }}</ui5-tag> }
               @if (connStatus['api'] === 'error') { <ui5-tag design="Set2" color-scheme="1">{{ i18n.t('workspace.unreachable') }}</ui5-tag> }
             </div>
             <div class="field field--row">
-              <label>{{ i18n.t('workspace.collabWs') }}</label>
+              <ui5-label>{{ i18n.t('workspace.collabWs') }}</ui5-label>
               <ui5-input class="field__input" [value]="ws.backendConfig().collabWsUrl" (change)="onBackend('collabWsUrl', $event)"></ui5-input>
             </div>
           </div>
@@ -82,15 +82,15 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           <ui5-card-header slot="header" [attr.title-text]="i18n.t('workspace.modelPrefs')"></ui5-card-header>
           <div class="card-body">
             <div class="field">
-              <label>{{ i18n.t('workspace.defaultModel') }}</label>
+              <ui5-label>{{ i18n.t('workspace.defaultModel') }}</ui5-label>
               <ui5-input [value]="ws.modelPreferences().defaultModel" placeholder="gpt-4o, gemma-4, etc." (change)="onModel('defaultModel', $event)"></ui5-input>
             </div>
             <div class="field">
-              <label>{{ i18n.t('workspace.temperature') }}</label>
+              <ui5-label>{{ i18n.t('workspace.temperature') }}</ui5-label>
               <ui5-step-input [value]="ws.modelPreferences().temperature" [min]="0" [max]="2" [step]="0.1" (change)="onTemperature($event)"></ui5-step-input>
             </div>
             <div class="field">
-              <label>{{ i18n.t('workspace.systemPrompt') }}</label>
+              <ui5-label>{{ i18n.t('workspace.systemPrompt') }}</ui5-label>
               <ui5-textarea [value]="ws.modelPreferences().systemPrompt" [rows]="4" growing (change)="onModel('systemPrompt', $event)"></ui5-textarea>
             </div>
           </div>
