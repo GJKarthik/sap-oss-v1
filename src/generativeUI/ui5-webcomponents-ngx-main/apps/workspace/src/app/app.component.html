@@ -1,20 +1,29 @@
 <!-- App Shell — SAP Fiori NavigationLayout + ShellBar + SideNavigation -->
+<!-- WWDC Sapphire-level polish: Liquid Glass chrome, spring interactions -->
 <a class="skip-link" href="#main-content" (click)="skipToMain($event)">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
 
-<!-- Fiori ShellBar — top-level chrome -->
+<!-- ═══ Fiori ShellBar — Liquid Glass top chrome ═══ -->
 <ui5-shellbar
   [primaryTitle]="'APP_TITLE' | ui5I18n"
   [secondaryTitle]="'APP_SUBTITLE' | ui5I18n"
   show-notifications="true"
   show-product-switch="true"
-  [notificationsCount]="'3'"
+  [notificationsCount]="notificationCount"
   [accessibilityAttributes]="shellbarA11y"
   (logoClick)="openLanding()"
   (profile-click)="toggleUserMenu($event)"
   (product-switch-click)="openProducts($event)"
   (notifications-click)="onNotificationsClick($event)">
 
-  <!-- Shell Search (slot=searchField) -->
+  <!-- SAP Logo (slot=logo) -->
+  <img slot="logo"
+    src="assets/sap-logo.svg"
+    alt="SAP"
+    width="48"
+    height="24"
+    onerror="this.style.display='none'" />
+
+  <!-- Shell Search (slot=searchField) — Fiori global search -->
   <ui5-shellbar-search
     slot="searchField"
     [placeholder]="'SEARCH_PLACEHOLDER' | ui5I18n"
@@ -22,7 +31,7 @@
     (ui5Search)="onSearch($event)">
   </ui5-shellbar-search>
 
-  <!-- Profile Avatar (slot=profile) -->
+  <!-- Profile Avatar (slot=profile) — circle + status ring via CSS -->
   <ui5-avatar
     id="shellbar-avatar"
     slot="profile"
@@ -31,11 +40,11 @@
     [initials]="userInitials"
     color-scheme="Accent6"
     interactive="true"
-    [accessibleName]="userName">
+    [accessibleName]="userName + ' — ' + userTeam">
   </ui5-avatar>
 </ui5-shellbar>
 
-<!-- User Menu popover (anchored to shellbar avatar) -->
+<!-- ═══ User Menu — glass popover ═══ -->
 <ui5-user-menu
   #userMenu
   [open]="userMenuOpen"
@@ -49,12 +58,13 @@
     [avatarInitials]="userInitials"
     [titleText]="userName"
     [subtitleText]="userEmail"
-    [description]="userTeam">
+    [description]="userRole + ' · ' + userTeam">
   </ui5-user-menu-account>
+  <ui5-user-menu-item icon="palette" text="Theme" data-path="/workspace"></ui5-user-menu-item>
   <ui5-user-menu-item icon="action-settings" text="Workspace Settings" data-path="/workspace"></ui5-user-menu-item>
 </ui5-user-menu>
 
-<!-- Product Switcher popover -->
+<!-- ═══ Product Switcher — glass popover ═══ -->
 <ui5-popover #productPopover [headerText]="'PRODUCT_SWITCHER' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
   <ui5-list (item-click)="onProductSelect($event)">
     <ui5-li icon="home" data-app="aifabric">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
@@ -64,14 +74,15 @@
   </ui5-list>
 </ui5-popover>
 
-<!-- NavigationLayout wraps SideNavigation + content -->
+<!-- ═══ NavigationLayout — Liquid Glass sidebar + content ═══ -->
 <ui5-navigation-layout [mode]="sideNavMode">
 
-  <!-- Fiori Side Navigation (slot=sideContent) -->
+  <!-- Fiori Side Navigation with grouped items -->
   <ui5-side-navigation
     slot="sideContent"
     (ui5SelectionChange)="onSideNavSelect($event)">
 
+    <!-- Home -->
     <ui5-side-navigation-item
       text="Home"
       icon="home"
@@ -79,6 +90,7 @@
       data-path="/">
     </ui5-side-navigation-item>
 
+    <!-- Dynamic nav items -->
     <ui5-side-navigation-item
       *ngFor="let link of navLinks; trackBy: trackByPath"
       [text]="link.labelKey | ui5I18n"
@@ -87,7 +99,7 @@
       [attr.data-path]="link.path">
     </ui5-side-navigation-item>
 
-    <!-- Fixed items at bottom -->
+    <!-- Fixed items — pinned to bottom -->
     <ui5-side-navigation-item
       slot="fixedItems"
       text="Settings"
@@ -97,9 +109,9 @@
     </ui5-side-navigation-item>
   </ui5-side-navigation>
 
-  <!-- Main Content area -->
+  <!-- ═══ Main Content ═══ -->
   <div class="app-content-wrapper">
-    <!-- Learn path banner -->
+    <!-- Learn path banner (glass-treated) -->
     <section class="learn-path-banner" *ngIf="learnPathActive && !learnPathDismissed" aria-label="Learn path controls">
       <div class="learn-path-banner__left">
         <ui5-tag design="Information">{{ 'LEARN_PATH_LABEL' | ui5I18n }} {{ learnPathProgress }}</ui5-tag>

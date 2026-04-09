@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
+@use '../styles/liquid-glass' as glass;
 
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 // Host — full viewport
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 
 :host {
   display: flex;
@@ -13,44 +14,58 @@
   background: var(--sapBackgroundColor, #f5f6f7);
 }
 
-// ---------------------------------------------------------------------------
-// Skip link (A11y)
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
+// Skip link (A11y — WCAG 2.1 bypass block)
+// ═══════════════════════════════════════════════════════════════════
 
 .skip-link {
   position: absolute;
   top: -100%;
-  left: 0;
-  z-index: 1000;
-  padding: 0.5rem 1rem;
-  background: var(--sapShell_Background);
-  color: var(--sapShell_TextColor);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: var(--sapBrandColor, #0070f2);
+  color: #fff;
+  border-radius: 0 0 0.75rem 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.25s glass.$spring-ease;
 
   &:focus {
     top: 0;
   }
 }
 
-// ---------------------------------------------------------------------------
-// ShellBar — Liquid Glass treatment
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
+// ShellBar — Liquid Glass treatment (WWDC Sapphire level)
+// ═══════════════════════════════════════════════════════════════════
 
 ui5-shellbar {
   position: relative;
   z-index: 10;
-  // Liquid Glass: frosted translucency with subtle depth
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  background: rgba(var(--sapShell_Background_RGB, 53, 74, 94), 0.72);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 0.5px 0 rgba(255, 255, 255, 0.12),
-    0 4px 30px rgba(0, 0, 0, 0.08);
+  @include glass.glass-shellbar;
+  @include glass.respect-motion;
+
+  // Specular top-edge highlight — the "liquid" refraction
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0) 40%
+    );
+    z-index: 1;
+  }
 }
 
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 // Navigation Layout — fills remaining viewport below ShellBar
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 
 ui5-navigation-layout {
   flex: 1;
@@ -58,21 +73,71 @@ ui5-navigation-layout {
   overflow: hidden;
 }
 
-// ---------------------------------------------------------------------------
-// Side Navigation — Liquid Glass sidebar
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
+// Side Navigation — Liquid Glass sidebar with active indicator glow
+// ═══════════════════════════════════════════════════════════════════
 
 ui5-side-navigation {
-  // Liquid Glass: translucent sidebar
-  backdrop-filter: saturate(150%) blur(24px);
-  -webkit-backdrop-filter: saturate(150%) blur(24px);
-  background: rgba(255, 255, 255, 0.06);
-  border-inline-end: 0.5px solid rgba(255, 255, 255, 0.1);
+  @include glass.glass-sidebar(0.06);
+  @include glass.respect-motion;
+
+  // Active item glow indicator (via ::part when supported)
+  ui5-side-navigation-item[selected] {
+    @include glass.glass-active-indicator;
+  }
+
+  // Hover lift on items
+  ui5-side-navigation-item {
+    @include glass.glass-hover-lift;
+    @include glass.glass-focus-ring;
+    border-radius: 0.5rem;
+    margin: 0.125rem 0.375rem;
+  }
 }
 
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
+// Profile Avatar — status ring + spring interaction
+// ═══════════════════════════════════════════════════════════════════
+
+ui5-avatar[slot="profile"] {
+  @include glass.avatar-status-ring(#2b7c2b, 2px);
+  transition: transform 0.3s glass.$spring-ease,
+              box-shadow 0.3s glass.$glass-ease;
+
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 2px #2b7c2b,
+                0 0 0 3px rgba(255, 255, 255, 0.8),
+                0 0 12px rgba(0, 112, 242, 0.2);
+  }
+
+  &:active {
+    transform: scale(0.95);
+    transition-duration: 0.1s;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// User Menu — glass popover
+// ═══════════════════════════════════════════════════════════════════
+
+ui5-user-menu {
+  --_ui5-v2-5-0_popover_border_radius: 1rem;
+  @include glass.inner-glow;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Product Switcher — glass popover
+// ═══════════════════════════════════════════════════════════════════
+
+ui5-popover {
+  --_ui5-v2-5-0_popover_border_radius: 1rem;
+  @include glass.inner-glow;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // Content wrapper
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 
 .app-content-wrapper {
   display: flex;
@@ -91,9 +156,9 @@ ui5-side-navigation {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Learn Path Banner
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
+// Learn Path Banner — glass treatment
+// ═══════════════════════════════════════════════════════════════════
 
 .learn-path-banner {
   display: flex;
@@ -101,6 +166,7 @@ ui5-side-navigation {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.5rem 1rem;
+  @include glass.glass-toolbar;
   background: var(--sapInformationBackground);
   border-bottom: 1px solid var(--sapInformationBorderColor);
   flex-shrink: 0;
@@ -119,9 +185,9 @@ ui5-side-navigation {
   gap: 0.5rem;
 }
 
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 // BiDi isolation for technical content
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════
 
 code, pre, .technical {
   direction: ltr;

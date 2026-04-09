@@ -46,14 +46,28 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
       [class.app-shell--reduced-motion]="reducedMotion()"
       (mousemove)="onMouseMove($event)">
 
-      <!-- ── Fiori ShellBar ── -->
+      <!-- ═══ Fiori ShellBar — Liquid Glass top chrome ═══ -->
       <ui5-shellbar
         [primaryTitle]="i18n.t('app.title')"
         [secondaryTitle]="i18n.t('app.subtitle')"
+        show-notifications="true"
+        show-product-switch="true"
+        [notificationsCount]="'0'"
         [accessibilityAttributes]="shellbarA11y"
+        (logoClick)="navigateTo('/dashboard')"
         (profile-click)="toggleUserMenu($event)"
+        (notifications-click)="onNotificationsClick($event)"
         (custom-item-click)="onCustomItemClick($event)">
 
+        <!-- SAP Logo -->
+        <img slot="logo"
+          src="assets/sap-logo.svg"
+          alt="SAP"
+          width="48"
+          height="24"
+          onerror="this.style.display='none'" />
+
+        <!-- Shell Search — Fiori global search -->
         <ui5-shellbar-search
           slot="searchField"
           [placeholder]="i18n.t('shell.spotlightPlaceholder')"
@@ -61,12 +75,13 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           (ui5Search)="onShellSearch($event)">
         </ui5-shellbar-search>
 
+        <!-- Profile Avatar — circle + status ring via CSS -->
         <ui5-avatar
           id="shell-profile-avatar"
           slot="profile"
           shape="Circle"
           size="XS"
-          initials="AI"
+          [initials]="userInitials()"
           color-scheme="Accent6"
           interactive="true"
           [accessibleName]="i18n.t('shell.account')">
@@ -75,20 +90,22 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         <ui5-shellbar-item id="action-lang" icon="globe" [text]="i18n.t('shell.langAriaLabel')"></ui5-shellbar-item>
       </ui5-shellbar>
 
-      <!-- ── User Menu ── -->
+      <!-- ═══ User Menu — glass popover ═══ -->
       <ui5-user-menu
         [open]="userMenuOpen()"
         opener="shell-profile-avatar"
-        show-manage-account="false"
+        show-manage-account="true"
         (ui5ItemClick)="onUserMenuItemClick($event)"
         (ui5SignOutClick)="logout()"
         (ui5Close)="userMenuOpen.set(false)">
         <ui5-user-menu-account
           slot="account"
-          avatarInitials="AI"
-          [titleText]="i18n.t('app.title')"
-          [subtitleText]="i18n.t('app.subtitle')">
+          [avatarInitials]="userInitials()"
+          [titleText]="userDisplayName()"
+          [subtitleText]="userSubtitle()"
+          [description]="i18n.t('app.subtitle')">
         </ui5-user-menu-account>
+        <ui5-user-menu-item icon="palette" [text]="i18n.t('shell.themeLabel')" data-path="/workspace"></ui5-user-menu-item>
         <ui5-user-menu-item icon="action-settings" [text]="i18n.t('shell.settingsAriaLabel')" data-path="/workspace"></ui5-user-menu-item>
       </ui5-user-menu>
 
@@ -154,46 +171,112 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
     </ui5-dialog>
   `,
   styles: [`
+    /* ═══ Layout ═══ */
     .app-shell {
       display: flex; flex-direction: column; height: 100vh; width: 100vw;
       position: relative; z-index: 1; overflow: hidden;
     }
-    .app-shell--reduced-motion * { transition: none !important; }
+    .app-shell--reduced-motion * { transition: none !important; animation: none !important; }
 
-    /* ── ShellBar Liquid Glass ── */
+    /* ═══ ShellBar — Liquid Glass (WWDC Sapphire) ═══ */
     ui5-shellbar {
       flex-shrink: 0; position: relative; z-index: 10;
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-bottom: 0.5px solid rgba(255, 255, 255, 0.18);
-      box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.12), 0 4px 30px rgba(0, 0, 0, 0.08);
+      background: rgba(var(--sapShell_Background_RGB, 53, 74, 94), 0.72);
+      border-top: 0.5px solid rgba(255, 255, 255, 0.28);
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 0.5px 0 rgba(255, 255, 255, 0.12),
+        0 4px 30px rgba(0, 0, 0, 0.08);
+      transition: background 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    /* Specular top-edge highlight — the "liquid" refraction */
+    ui5-shellbar::before {
+      content: ''; position: absolute; inset: 0;
+      pointer-events: none; border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 40%);
+      z-index: 1;
     }
 
-    /* ── NavigationLayout fills remaining space ── */
+    /* ═══ NavigationLayout ═══ */
     ui5-navigation-layout { flex: 1; min-height: 0; overflow: hidden; }
 
-    /* ── Side Navigation Liquid Glass ── */
+    /* ═══ Side Navigation — Liquid Glass sidebar ═══ */
     ui5-side-navigation {
       backdrop-filter: saturate(150%) blur(24px);
       -webkit-backdrop-filter: saturate(150%) blur(24px);
       background: rgba(255, 255, 255, 0.06);
       border-inline-end: 0.5px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease, width 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    /* Hover lift on nav items */
+    ui5-side-navigation-item {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                  background 0.2s ease;
+      border-radius: 0.5rem;
+      margin: 0.125rem 0.375rem;
+    }
+    ui5-side-navigation-item:hover {
+      transform: translateY(-1px) scale(1.005);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    ui5-side-navigation-item:active {
+      transform: translateY(0) scale(0.995);
+      transition-duration: 0.1s;
+    }
+    /* Active indicator glow */
+    ui5-side-navigation-item[selected] {
+      position: relative;
+    }
+    ui5-side-navigation-item[selected]::after {
+      content: ''; position: absolute;
+      inset-inline-start: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 60%;
+      border-radius: 0 3px 3px 0;
+      background: var(--sapBrandColor, #0070f2);
+      box-shadow: 0 0 8px rgba(0, 112, 242, 0.4);
     }
 
-    /* ── Main Viewport ── */
+    /* ═══ Profile Avatar — status ring + spring ═══ */
+    ui5-avatar[slot="profile"] {
+      box-shadow: 0 0 0 2px #2b7c2b, 0 0 0 3px rgba(255,255,255,0.8);
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                  box-shadow 0.3s ease;
+    }
+    ui5-avatar[slot="profile"]:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 2px #2b7c2b, 0 0 0 3px rgba(255,255,255,0.8),
+                  0 0 12px rgba(0,112,242,0.2);
+    }
+    ui5-avatar[slot="profile"]:active { transform: scale(0.95); transition-duration: 0.1s; }
+
+    /* ═══ User Menu — glass popover ═══ */
+    ui5-user-menu { --_ui5-v2-5-0_popover_border_radius: 1rem; }
+
+    /* ═══ Main Viewport ═══ */
     .app-viewport { flex: 1; overflow-y: auto; }
 
-    /* ── Skip Link ── */
+    /* ═══ Skip Link (A11y) ═══ */
     .skip-link {
       position: absolute; top: -100%; left: 50%; transform: translateX(-50%);
       background: var(--sapBrandColor); color: #fff; padding: 0.75rem 1.5rem;
       border-radius: 0 0 0.75rem 0.75rem; z-index: 9999; font-weight: 600;
-      text-decoration: none; transition: top 0.2s;
+      text-decoration: none;
+      transition: top 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .skip-link:focus { top: 0; }
 
-    /* ── Spotlight Command Palette ── */
-    :host .spotlight-dialog { --sapDialog_Content_Padding: 0; border-radius: 1.5rem; }
+    /* ═══ Spotlight Command Palette — glass dialog ═══ */
+    :host .spotlight-dialog {
+      --sapDialog_Content_Padding: 0;
+      border-radius: 1.5rem;
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+    }
     .spotlight-body { width: 600px; max-width: 90vw; display: flex; flex-direction: column; }
     .spotlight-input {
       width: 100%; padding: 1.5rem;
@@ -202,6 +285,15 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
     }
     .spotlight-results { max-height: 400px; overflow-y: auto; }
     .no-results { padding: 2rem; text-align: center; opacity: 0.5; }
+
+    /* ═══ Reduced motion ═══ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+      }
+    }
   `],
 })
 export class ShellComponent implements OnInit, OnDestroy {
@@ -219,6 +311,28 @@ export class ShellComponent implements OnInit, OnDestroy {
     logo: { name: 'SAP AI Workbench' },
     profile: { name: 'User Profile', hasPopup: 'menu' as const },
   };
+
+  /** User identity — derived from auth token */
+  readonly userInitials = computed(() => {
+    const token = this.auth.token();
+    if (!token) return 'AI';
+    const name = token.split('@')[0] || 'AI';
+    const parts = name.split(/[._-]/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  });
+
+  readonly userDisplayName = computed(() => {
+    const token = this.auth.token();
+    if (!token) return this.i18n.t('app.title');
+    const name = token.split('@')[0] || '';
+    return name.split(/[._-]/).map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || this.i18n.t('app.title');
+  });
+
+  readonly userSubtitle = computed(() => {
+    const token = this.auth.token();
+    return token ? token.substring(0, 24) + '…' : this.i18n.t('app.subtitle');
+  });
 
   readonly activeGroupId = signal<TrainingRouteGroupId>('home');
   readonly currentPath = signal('/dashboard');
@@ -333,6 +447,10 @@ export class ShellComponent implements OnInit, OnDestroy {
       this.userMenuOpen.set(false);
       this.router.navigate([path]);
     }
+  }
+
+  onNotificationsClick(_event: any): void {
+    // Placeholder for notification popover
   }
 
   onShellSearch(_event: any): void {

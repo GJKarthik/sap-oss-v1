@@ -83,7 +83,15 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get userTeam(): string {
-    return this.workspaceService.identity().teamName || '';
+    return this.workspaceService.identity().teamName || 'AI Platform';
+  }
+
+  get userRole(): string {
+    return (this.workspaceService.identity() as any).role || 'Developer';
+  }
+
+  get notificationCount(): string {
+    return '3';
   }
 
   get navLinks(): NavLinkDatum[] {

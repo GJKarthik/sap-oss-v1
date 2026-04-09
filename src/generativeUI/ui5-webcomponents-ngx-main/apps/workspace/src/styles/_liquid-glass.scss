@@ -1,0 +1,142 @@
+// ═══════════════════════════════════════════════════════════════════
+// Liquid Glass Design System — WWDC / Sapphire-level polish
+// Inspired by Apple's Liquid Glass (WWDC 2025) + SAP Fiori Horizon
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Timing Functions ──
+$spring-ease: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+$glass-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+// ── Glass Layers ──
+// Liquid Glass is composed of: background blur + tinted fill +
+// specular highlight (top edge) + inner shadow (depth) + outer shadow
+
+@mixin glass-base($blur: 20px, $saturate: 180%, $bg-alpha: 0.72) {
+  backdrop-filter: saturate($saturate) blur($blur);
+  -webkit-backdrop-filter: saturate($saturate) blur($blur);
+  background: rgba(var(--sapShell_Background_RGB, 53, 74, 94), $bg-alpha);
+}
+
+@mixin specular-highlight {
+  // Top-edge light catch — the "liquid" in liquid glass
+  border-top: 0.5px solid rgba(255, 255, 255, 0.28);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-left: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-right: 0.5px solid rgba(255, 255, 255, 0.12);
+}
+
+@mixin inner-glow {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),     // specular top highlight
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05),           // bottom subtle shadow
+    0 1px 3px rgba(0, 0, 0, 0.06),                 // micro drop shadow
+    0 8px 32px rgba(0, 0, 0, 0.08);                // ambient depth
+}
+
+@mixin glass-depth-shadow {
+  box-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.12),           // specular hairline
+    0 4px 30px rgba(0, 0, 0, 0.08),                 // ambient
+    0 1px 2px rgba(0, 0, 0, 0.04);                  // contact
+}
+
+// ── Composites ──
+
+@mixin glass-shellbar {
+  @include glass-base(20px, 180%, 0.72);
+  @include specular-highlight;
+  @include glass-depth-shadow;
+  transition: background 0.4s $glass-ease, box-shadow 0.4s $glass-ease;
+}
+
+@mixin glass-sidebar($bg-alpha: 0.06) {
+  @include glass-base(24px, 150%, $bg-alpha);
+  background: rgba(255, 255, 255, $bg-alpha);
+  border-inline-end: 0.5px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.3s $glass-ease, width 0.35s $spring-ease;
+}
+
+@mixin glass-card {
+  @include glass-base(16px, 140%, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+  @include specular-highlight;
+  @include inner-glow;
+  border-radius: 1rem;
+  transition: transform 0.35s $spring-ease, box-shadow 0.35s $glass-ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      0 12px 40px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@mixin glass-toolbar {
+  @include glass-base(12px, 160%, 0.04);
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+// ── Interactive States ──
+
+@mixin glass-hover-lift {
+  transition: transform 0.3s $spring-ease,
+              box-shadow 0.3s $glass-ease,
+              background 0.2s ease;
+  &:hover {
+    transform: translateY(-1px) scale(1.005);
+    background: rgba(255, 255, 255, 0.12);
+  }
+  &:active {
+    transform: translateY(0) scale(0.995);
+    transition-duration: 0.1s;
+  }
+}
+
+@mixin glass-focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--sapContent_FocusColor, #0070f2);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+}
+
+// ── Active Indicator ──
+
+@mixin glass-active-indicator {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    border-radius: 0 3px 3px 0;
+    background: var(--sapBrandColor, #0070f2);
+    box-shadow: 0 0 8px rgba(0, 112, 242, 0.4);
+    transition: height 0.3s $spring-ease, opacity 0.3s ease;
+  }
+}
+
+// ── Avatar Status Ring ──
+
+@mixin avatar-status-ring($color: #2b7c2b, $size: 2px) {
+  box-shadow: 0 0 0 $size $color,
+              0 0 0 ($size + 1px) rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+}
+
+// ── Reduced Motion ──
+
+@mixin respect-motion {
+  @media (prefers-reduced-motion: reduce) {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
