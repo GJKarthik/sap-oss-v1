@@ -7,17 +7,42 @@
   --aura-primary: rgba(0, 143, 211, 0.15);
   --aura-secondary: rgba(161, 31, 133, 0.12);
   --aura-tertiary: rgba(255, 255, 255, 0.05);
-  
+
   --glass-bg: rgba(255, 255, 255, 0.45);
   --glass-border: rgba(255, 255, 255, 0.35);
   --glass-border-light: rgba(255, 255, 255, 0.5);
-  
+
   --shadow-ambient: 0 20px 50px rgba(0, 0, 0, 0.08);
   --shadow-float: 0 30px 60px rgba(0, 0, 0, 0.12);
-  
+
   /* Standardizing Spring Physics */
   --spring-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
   --fluid-transition: 0.4s var(--spring-easing);
+
+  /* Canvas */
+  --canvas-bg: #fbfbfd;
+  --text-primary: #1d1d1f;
+  --text-muted: #86868b;
+}
+
+/* ── Dark Mode — Inverted Glass Materials ─────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --aura-primary: rgba(0, 143, 211, 0.25);
+    --aura-secondary: rgba(161, 31, 133, 0.22);
+    --aura-tertiary: rgba(255, 255, 255, 0.03);
+
+    --glass-bg: rgba(30, 30, 30, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-light: rgba(255, 255, 255, 0.18);
+
+    --shadow-ambient: 0 20px 50px rgba(0, 0, 0, 0.3);
+    --shadow-float: 0 30px 60px rgba(0, 0, 0, 0.4);
+
+    --canvas-bg: #0a0a0a;
+    --text-primary: #f5f5f7;
+    --text-muted: #a1a1a6;
+  }
 }
 
 body {
@@ -25,7 +50,7 @@ body {
   padding: 0;
   font-family: "72", "72Full", Arial, Helvetica, sans-serif;
   background-color: #f0f2f5;
-  color: var(--sapTextColor);
+  color: var(--text-primary, var(--sapTextColor));
   overflow: hidden;
 }
 
@@ -33,7 +58,7 @@ body {
 .app-canvas {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: #fbfbfd;
+  background: var(--canvas-bg, #fbfbfd);
   z-index: -1;
   overflow: hidden;
 }
@@ -66,7 +91,7 @@ body {
 
 /* Atmospheric State Overrides */
 .app-canvas.aura--weaving {
-  --aura-primary: rgba(161, 31, 133, 0.3); 
+  --aura-primary: rgba(161, 31, 133, 0.3);
   --aura-secondary: rgba(0, 143, 211, 0.2);
 }
 
@@ -276,10 +301,10 @@ ui5-table {
 :root h1, :root h2, :root h3, :root ui5-title {
   letter-spacing: -0.03em;
   font-weight: 800;
-  color: #1d1d1f;
+  color: var(--text-primary, #1d1d1f);
 }
 
-.text-muted { color: #86868b; font-weight: 500; }
+.text-muted { color: var(--text-muted, #86868b); font-weight: 500; }
 
 .fadeIn { animation: fadeIn 0.8s var(--spring-easing) forwards; }
 .slideUp { animation: slideUp 0.8s var(--spring-easing) forwards; }
@@ -309,3 +334,42 @@ ui5-table {
 /* ── Keyboard Focus Rings ──────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid var(--sapBrandColor, #0071e3); outline-offset: 2px; border-radius: 8px; }
 :focus:not(:focus-visible) { outline: none; }
+
+
+/* ── Staggered Entrance Animations (WWDC keynote choreography) ────────── */
+
+@keyframes slideUpIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+ui5-card {
+  animation: slideUpIn 0.6s var(--spring-easing) backwards;
+}
+
+ui5-card:nth-child(1) { animation-delay: 0ms; }
+ui5-card:nth-child(2) { animation-delay: 60ms; }
+ui5-card:nth-child(3) { animation-delay: 60ms; }
+ui5-card:nth-child(4) { animation-delay: 120ms; }
+ui5-card:nth-child(5) { animation-delay: 180ms; }
+ui5-card:nth-child(6) { animation-delay: 240ms; }
+ui5-card:nth-child(7) { animation-delay: 300ms; }
+ui5-card:nth-child(8) { animation-delay: 360ms; }
+
+ui5-page {
+  animation: fadeScaleIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+}
+
+ui5-table {
+  animation: slideUpIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s backwards;
+}
+
+/* Letter-spacing on headings (Apple tight tracking) */
+:root h1, :root h2, :root h3, :root ui5-title {
+  letter-spacing: -0.025em;
+}

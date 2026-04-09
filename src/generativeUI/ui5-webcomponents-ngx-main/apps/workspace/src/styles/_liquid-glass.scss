@@ -140,3 +140,39 @@ $bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
     transform: none !important;
   }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Dark Mode — Inverted Glass Materials
+// ═══════════════════════════════════════════════════════════════════
+
+// CSS custom properties for glass that invert in dark mode
+:root {
+  --lg-surface: rgba(255, 255, 255, 0.45);
+  --lg-surface-border: rgba(255, 255, 255, 0.35);
+  --lg-specular-top: rgba(255, 255, 255, 0.15);
+  --lg-specular-bottom: rgba(0, 0, 0, 0.05);
+  --lg-ambient-shadow: rgba(0, 0, 0, 0.08);
+  --lg-float-shadow: rgba(0, 0, 0, 0.12);
+  --lg-canvas-bg: #fbfbfd;
+  --lg-canvas-primary: rgba(0, 143, 211, 0.12);
+  --lg-canvas-secondary: rgba(161, 31, 133, 0.1);
+  --lg-text-primary: #1d1d1f;
+  --lg-text-muted: #86868b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --lg-surface: rgba(30, 30, 30, 0.65);
+    --lg-surface-border: rgba(255, 255, 255, 0.12);
+    --lg-specular-top: rgba(255, 255, 255, 0.08);
+    --lg-specular-bottom: rgba(0, 0, 0, 0.2);
+    --lg-ambient-shadow: rgba(0, 0, 0, 0.3);
+    --lg-float-shadow: rgba(0, 0, 0, 0.4);
+    --lg-canvas-bg: #0a0a0a;
+    --lg-canvas-primary: rgba(0, 143, 211, 0.2);
+    --lg-canvas-secondary: rgba(161, 31, 133, 0.18);
+    --lg-text-primary: #f5f5f7;
+    --lg-text-muted: #a1a1a6;
+  }
+}

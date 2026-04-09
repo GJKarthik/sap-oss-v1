@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { LearnPathService } from './core/learn-path.service';
@@ -18,6 +18,24 @@ import { ProductNavigationService, ProductAppId } from './core/product-navigatio
 export class AppComponent implements OnInit, OnDestroy {
   currentTheme = 'sap_horizon';
   currentLanguage = 'en';
+
+  // ── Ambient mesh parallax ──
+  private mouseX = 0;
+  private mouseY = 0;
+  private rafId: number | null = null;
+  private reducedMotion = false;
+  canvasTransform = 'none';
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(e: MouseEvent): void {
+    if (this.reducedMotion || this.rafId !== null) return;
+    this.rafId = requestAnimationFrame(() => {
+      this.mouseX = e.clientX - window.innerWidth / 2;
+      this.mouseY = e.clientY - window.innerHeight / 2;
+      this.canvasTransform = `translate(${this.mouseX / 100}px, ${this.mouseY / 100}px) scale(1.05)`;
+      this.rafId = null;
+    });
+  }
   shellbarA11y = {
     logo: { name: 'SAP AI Experience' },
     profile: { name: 'User Profile', hasPopup: 'menu' as const },
@@ -102,7 +120,16 @@ export class AppComponent implements OnInit, OnDestroy {
     return link.path;
   }
 
+  private motionMql?: MediaQueryList;
+
   ngOnInit(): void {
+    // Detect reduced motion preference
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      this.motionMql = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.reducedMotion = this.motionMql.matches;
+      this.motionMql.addEventListener?.('change', this.onMotionChange);
+    }
+
     this.currentTheme = this.workspaceService.settings().theme || 'sap_horizon';
     this.applyTheme(this.currentTheme);
     this.learnPathDismissed = localStorage.getItem('learn-path-dismissed') === 'true';
@@ -263,9 +290,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateLearnPathBanner();
   }
 
+  private readonly onMotionChange = (e: MediaQueryListEvent) => {
+    this.reducedMotion = e.matches;
+    if (e.matches) this.canvasTransform = 'none';
+  };
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.motionMql?.removeEventListener?.('change', this.onMotionChange);
+    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
   }
 
   private applyLanguage(language: string): void {

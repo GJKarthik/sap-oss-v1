@@ -285,3 +285,54 @@ ui5-table {
     unicode-bidi: isolate;
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// Staggered entrance animations (WWDC keynote choreography)
+// ---------------------------------------------------------------------------
+
+@keyframes slideUpIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+// Apply to ui5-card in any layout
+ui5-card {
+  animation: slideUpIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+// Stagger cards within grids — each successive card delays 60ms
+ui5-card:nth-child(1) { animation-delay: 0ms; }
+ui5-card:nth-child(2) { animation-delay: 60ms; }
+ui5-card:nth-child(3) { animation-delay: 120ms; }
+ui5-card:nth-child(4) { animation-delay: 180ms; }
+ui5-card:nth-child(5) { animation-delay: 240ms; }
+ui5-card:nth-child(6) { animation-delay: 300ms; }
+ui5-card:nth-child(7) { animation-delay: 360ms; }
+ui5-card:nth-child(8) { animation-delay: 420ms; }
+
+// Page-level fade+scale
+ui5-page {
+  animation: fadeScaleIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+}
+
+// Tables slide up
+ui5-table {
+  animation: slideUpIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s backwards;
+}
+
+// Letter-spacing on headings (Apple tight tracking)
+ui5-title, h1, h2, h3 {
+  letter-spacing: -0.025em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ui5-card, ui5-page, ui5-table {
+    animation: none !important;
+  }
+}

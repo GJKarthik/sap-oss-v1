@@ -1,5 +1,9 @@
 <!-- App Shell — SAP Fiori NavigationLayout + ShellBar + SideNavigation -->
 <!-- WWDC Sapphire-level polish: Liquid Glass chrome, spring interactions -->
+
+<!-- ═══ Ambient Mesh Background (Liquid Glass Aura) ═══ -->
+<div class="app-canvas" aria-hidden="true" [style.transform]="canvasTransform"></div>
+
 <a class="skip-link" href="#main-content" (click)="skipToMain($event)">{{ 'SKIP_TO_CONTENT' | ui5I18n }}</a>
 
 <!-- ═══ Fiori ShellBar — Liquid Glass top chrome ═══ -->

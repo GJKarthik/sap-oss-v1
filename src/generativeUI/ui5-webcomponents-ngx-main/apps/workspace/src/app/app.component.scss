@@ -12,6 +12,53 @@
   height: 100vh;
   overflow: hidden;
   background: var(--sapBackgroundColor, #f5f6f7);
+  position: relative;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Ambient Mesh Background — Liquid Glass Aura (WWDC Sapphire)
+// ═══════════════════════════════════════════════════════════════════
+
+.app-canvas {
+  position: fixed;
+  inset: 0;
+  background: var(--lg-canvas-bg, #fbfbfd);
+  z-index: -1;
+  overflow: hidden;
+  will-change: transform;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 140vmax;
+    height: 140vmax;
+    top: -70vmax;
+    left: -70vmax;
+    background: radial-gradient(circle, var(--lg-canvas-primary) 0%, transparent 70%);
+    animation: liquidFlow 25s infinite alternate ease-in-out;
+    filter: blur(80px);
+    opacity: 0.5;
+  }
+
+  &::after {
+    top: auto; left: auto;
+    bottom: -70vmax;
+    right: -70vmax;
+    background: radial-gradient(circle, var(--lg-canvas-secondary) 0%, transparent 70%);
+    animation: liquidFlow 30s infinite alternate-reverse ease-in-out;
+  }
+}
+
+@keyframes liquidFlow {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(20%, 10%) rotate(15deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-canvas::before, .app-canvas::after {
+    animation: none;
+    opacity: 0.3;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
