@@ -29,7 +29,7 @@ interface DeployedModel {
         <ui5-breadcrumbs-item text="Compare"></ui5-breadcrumbs-item>
       </ui5-breadcrumbs>
       <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('compare.title') }}</h1>
+        <ui5-title level="H3">{{ i18n.t('compare.title') }}</ui5-title>
         <span class="text-muted text-small">{{ i18n.t('compare.subtitle') }}</span>
       </div>
 
@@ -43,28 +43,28 @@ interface DeployedModel {
       <!-- Model selectors -->
       <div class="selector-row">
         <div class="model-selector">
-          <label><strong>{{ i18n.t('compare.modelA') }}</strong></label>
-          <select [(ngModel)]="modelA" class="sel-input">
-            <option value="">{{ i18n.t('compare.select') }}</option>
+          <ui5-label show-colon><strong>{{ i18n.t('compare.modelA') }}</strong></ui5-label>
+          <ui5-select (change)="onModelAChange($event)">
+            <ui5-option value="" [attr.selected]="!modelA ? true : null">{{ i18n.t('compare.select') }}</ui5-option>
             @for (m of deployedModels(); track m.id) {
-              <option [value]="m.id"><bdi>{{ m.label }}</bdi></option>
+              <ui5-option [value]="m.id" [attr.selected]="modelA === m.id ? true : null">{{ m.label }}</ui5-option>
             }
-          </select>
+          </ui5-select>
           @if (modelA) {
-            <span class="badge-model"><bdi>{{ modelNameFor(modelA) }}</bdi></span>
+            <ui5-tag design="Set2" color-scheme="6"><bdi>{{ modelNameFor(modelA) }}</bdi></ui5-tag>
           }
         </div>
         <div class="vs-divider">{{ i18n.t('compare.vs') }}</div>
         <div class="model-selector">
-          <label><strong>{{ i18n.t('compare.modelB') }}</strong></label>
-          <select [(ngModel)]="modelB" class="sel-input">
-            <option value="">{{ i18n.t('compare.select') }}</option>
+          <ui5-label show-colon><strong>{{ i18n.t('compare.modelB') }}</strong></ui5-label>
+          <ui5-select (change)="onModelBChange($event)">
+            <ui5-option value="" [attr.selected]="!modelB ? true : null">{{ i18n.t('compare.select') }}</ui5-option>
             @for (m of deployedModels(); track m.id) {
-              <option [value]="m.id"><bdi>{{ m.label }}</bdi></option>
+              <ui5-option [value]="m.id" [attr.selected]="modelB === m.id ? true : null">{{ m.label }}</ui5-option>
             }
-          </select>
+          </ui5-select>
           @if (modelB) {
-            <span class="badge-model"><bdi>{{ modelNameFor(modelB) }}</bdi></span>
+            <ui5-tag design="Set2" color-scheme="6"><bdi>{{ modelNameFor(modelB) }}</bdi></ui5-tag>
           }
         </div>
       </div>
@@ -81,9 +81,10 @@ interface DeployedModel {
 
       <!-- Shared prompt input -->
       <div class="prompt-bar">
-        <input class="prompt-input" [(ngModel)]="prompt"
+        <ui5-input class="prompt-input" [value]="prompt"
+               (input)="prompt = $any($event).target.value"
                [placeholder]="i18n.t('compare.placeholder')"
-               (keyup.enter)="runComparison()" />
+               (keydown.enter)="runComparison()"></ui5-input>
         <ui5-button design="Emphasized" (click)="runComparison()"
                 [disabled]="!modelA || !modelB || !prompt.trim() || loading()">
           {{ loading() ? i18n.t('compare.running') : i18n.t('compare.compare') }}
@@ -136,7 +137,7 @@ interface DeployedModel {
         <!-- History -->
         @if (history().length > 0) {
           <div class="history-section">
-            <h2 class="section-title">{{ i18n.t('compare.history') }}</h2>
+            <ui5-title level="H4">{{ i18n.t('compare.history') }}</ui5-title>
             @for (h of history(); track $index) {
               <div class="history-card">
                 <p class="history-q"><strong>Q:</strong> {{ h.query }}</p>
@@ -241,6 +242,14 @@ export class CompareComponent implements OnInit {
       },
       error: () => this.toast.error(this.i18n.t('compare.loadModelsFailed'))
     });
+  }
+
+  onModelAChange(event: any): void {
+    this.modelA = event.detail?.selectedOption?.value ?? '';
+  }
+
+  onModelBChange(event: any): void {
+    this.modelB = event.detail?.selectedOption?.value ?? '';
   }
 
   modelNameFor(id: string): string {

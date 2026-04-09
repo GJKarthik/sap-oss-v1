@@ -35,7 +35,7 @@ interface RegistryEntry {
         <ui5-breadcrumbs-item text="Registry"></ui5-breadcrumbs-item>
       </ui5-breadcrumbs>
       <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('registry.title') }}</h1>
+        <ui5-title level="H3">{{ i18n.t('registry.title') }}</ui5-title>
         <ui5-button design="Default" (click)="load()" aria-label="Refresh registry">{{ i18n.t('registry.refresh') }}</ui5-button>
       </div>
 
@@ -67,89 +67,80 @@ interface RegistryEntry {
 
       <!-- Filter bar -->
       <div class="filter-bar" role="search" aria-label="Filter models">
-        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()" aria-label="Filter by status">
-          <option value="">{{ i18n.t('registry.allStatus') }}</option>
-          <option value="completed">{{ i18n.t('registry.completed') }}</option>
-          <option value="running">{{ i18n.t('registry.running') }}</option>
-          <option value="failed">{{ i18n.t('registry.failed') }}</option>
-        </select>
-        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem;">
-          <input type="checkbox" [(ngModel)]="showDeployedOnly" (ngModelChange)="applyFilter()" />
-          {{ i18n.t('registry.deployedOnly') }}
-        </label>
+        <ui5-select accessible-name="Filter by status" (change)="onFilterStatusChange($event)">
+          <ui5-option value="" [attr.selected]="!filterStatus ? true : null">{{ i18n.t('registry.allStatus') }}</ui5-option>
+          <ui5-option value="completed" [attr.selected]="filterStatus === 'completed' ? true : null">{{ i18n.t('registry.completed') }}</ui5-option>
+          <ui5-option value="running" [attr.selected]="filterStatus === 'running' ? true : null">{{ i18n.t('registry.running') }}</ui5-option>
+          <ui5-option value="failed" [attr.selected]="filterStatus === 'failed' ? true : null">{{ i18n.t('registry.failed') }}</ui5-option>
+        </ui5-select>
+        <ui5-checkbox [text]="i18n.t('registry.deployedOnly')" [checked]="showDeployedOnly" (change)="showDeployedOnly = !showDeployedOnly; applyFilter()"></ui5-checkbox>
       </div>
 
       <!-- Registry Table -->
       @if (filtered().length) {
-        <div class="table-wrapper">
-          <table class="data-table" aria-label="Registered models">
-            <thead>
-              <tr>
-                <th>{{ i18n.t('registry.tagId') }}</th>
-                <th>{{ i18n.t('registry.model') }}</th>
-                <th>{{ i18n.t('registry.status') }}</th>
-                <th>{{ i18n.t('registry.quant') }}</th>
-                <th>{{ i18n.t('registry.eval') }}</th>
-                <th>{{ i18n.t('registry.lossFinal') }}</th>
-                <th>{{ i18n.t('registry.created') }}</th>
-                <th>{{ i18n.t('registry.actions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (m of filtered(); track m.id) {
-                <tr>
-                  <td>
-                    @if (editingTag() === m.id) {
-                      <div style="display: flex; gap: 0.3rem;">
-                        <input class="tag-input" [(ngModel)]="tagDraft"
-                               (keyup.enter)="saveTag(m.id)" (keyup.escape)="cancelTag()" />
-                        <ui5-button design="Emphasized" (click)="saveTag(m.id)">✓</ui5-button>
-                        <ui5-button design="Transparent" (click)="cancelTag()">✕</ui5-button>
-                      </div>
+        <ui5-table accessible-name="Registered models">
+          <ui5-table-header-row slot="headerRow">
+            <ui5-table-header-cell>{{ i18n.t('registry.tagId') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.model') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.status') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.quant') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.eval') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.lossFinal') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.created') }}</ui5-table-header-cell>
+            <ui5-table-header-cell>{{ i18n.t('registry.actions') }}</ui5-table-header-cell>
+          </ui5-table-header-row>
+          @for (m of filtered(); track m.id) {
+            <ui5-table-row>
+              <ui5-table-cell>
+                @if (editingTag() === m.id) {
+                  <div style="display: flex; gap: 0.3rem;">
+                    <ui5-input [value]="tagDraft" (input)="tagDraft = $any($event).target.value"
+                               (keydown.enter)="saveTag(m.id)" (keydown.escape)="cancelTag()"></ui5-input>
+                    <ui5-button design="Emphasized" (click)="saveTag(m.id)">✓</ui5-button>
+                    <ui5-button design="Transparent" (click)="cancelTag()">✕</ui5-button>
+                  </div>
+                } @else {
+                  <div class="tag-cell" (click)="startTag(m)">
+                    @if (m.tag) {
+                      <ui5-tag design="Set2" color-scheme="6">{{ m.tag }}</ui5-tag>
                     } @else {
-                      <div class="tag-cell" (click)="startTag(m)">
-                        @if (m.tag) {
-                          <span class="tag-badge">{{ m.tag }}</span>
-                        } @else {
-                          <span class="tag-placeholder">{{ i18n.t('registry.addTag') }}</span>
-                        }
-                        <code class="id-code">{{ m.id.slice(0, 8) }}</code>
-                      </div>
+                      <span class="tag-placeholder">{{ i18n.t('registry.addTag') }}</span>
                     }
-                  </td>
-                  <td class="text-small"><strong>{{ m.config['model_name'] }}</strong></td>
-                  <td>
-                    <span class="status-badge status-{{ m.status }}">{{ m.status }}</span>
-                    @if (m.deployed) { <span class="deployed-badge">{{ i18n.t('registry.live') }}</span> }
-                  </td>
-                  <td><code class="text-small">{{ m.config['quant_format'] ?? '—' }}</code></td>
-                  <td class="text-small">
-                    @if (m.evaluation) {
-                      <span class="eval-perplexity">PPL {{ m.evaluation.perplexity }}</span>
-                    } @else { <span class="text-muted">—</span> }
-                  </td>
-                  <td class="text-small">
-                    @if (m.history?.length) {
-                      {{ m.history[m.history.length - 1].loss.toFixed(4) }}
-                    } @else { <span class="text-muted">—</span> }
-                  </td>
-                  <td class="text-small text-muted">{{ m.created_at | date:'short' }}</td>
-                  <td>
-                    <div class="actions">
-                      @if (m.deployed) {
-                        <a [routerLink]="['/compare']" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
-                      }
-                      @if (m.status === 'completed' && !m.deployed) {
-                        <ui5-button design="Emphasized" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</ui5-button>
-                      }
-                      <ui5-button design="Negative" (click)="deleteJob(m.id)">{{ i18n.t('registry.delete') }}</ui5-button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                    <code class="id-code">{{ m.id.slice(0, 8) }}</code>
+                  </div>
+                }
+              </ui5-table-cell>
+              <ui5-table-cell><strong>{{ m.config['model_name'] }}</strong></ui5-table-cell>
+              <ui5-table-cell>
+                <ui5-tag [attr.color-scheme]="m.status === 'completed' ? '8' : m.status === 'running' ? '6' : m.status === 'failed' ? '2' : '1'">{{ m.status }}</ui5-tag>
+                @if (m.deployed) { <ui5-tag color-scheme="8">{{ i18n.t('registry.live') }}</ui5-tag> }
+              </ui5-table-cell>
+              <ui5-table-cell><code>{{ m.config['quant_format'] ?? '—' }}</code></ui5-table-cell>
+              <ui5-table-cell>
+                @if (m.evaluation) {
+                  <ui5-tag color-scheme="8">PPL {{ m.evaluation.perplexity }}</ui5-tag>
+                } @else { <span class="text-muted">—</span> }
+              </ui5-table-cell>
+              <ui5-table-cell>
+                @if (m.history?.length) {
+                  {{ m.history[m.history.length - 1].loss.toFixed(4) }}
+                } @else { <span class="text-muted">—</span> }
+              </ui5-table-cell>
+              <ui5-table-cell>{{ m.created_at | date:'short' }}</ui5-table-cell>
+              <ui5-table-cell>
+                <div class="actions">
+                  @if (m.deployed) {
+                    <a [routerLink]="['/compare']" class="btn-xs btn-compare">{{ i18n.t('registry.compare') }}</a>
+                  }
+                  @if (m.status === 'completed' && !m.deployed) {
+                    <ui5-button design="Emphasized" (click)="deploy(m)">{{ i18n.t('registry.deploy') }}</ui5-button>
+                  }
+                  <ui5-button design="Negative" (click)="deleteJob(m.id)">{{ i18n.t('registry.delete') }}</ui5-button>
+                </div>
+              </ui5-table-cell>
+            </ui5-table-row>
+          }
+        </ui5-table>
       } @else {
         <div class="empty-state">
           <p class="text-muted">{{ i18n.t('registry.noMatch') }}</p>
@@ -241,6 +232,11 @@ export class RegistryComponent implements OnInit {
       },
       error: () => { this.loading = false; this.toast.error(this.i18n.t('registry.loadFailed'), this.i18n.t('common.error')); }
     });
+  }
+
+  onFilterStatusChange(event: any): void {
+    this.filterStatus = event.detail?.selectedOption?.value ?? '';
+    this.applyFilter();
   }
 
   applyFilter() {

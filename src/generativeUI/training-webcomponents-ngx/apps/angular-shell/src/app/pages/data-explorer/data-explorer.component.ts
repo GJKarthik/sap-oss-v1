@@ -47,7 +47,7 @@ interface SqlPair {
       </app-cross-app-link>
 
       <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('dataExplorer.title') }}</h1>
+        <ui5-title level="H3">{{ i18n.t('dataExplorer.title') }}</ui5-title>
         <div class="tab-bar">
           <ui5-button [design]="activeTab() === 'assets' ? 'Emphasized' : 'Default'" (click)="setTab('assets')">{{ i18n.t('dataExplorer.dataAssets') }}</ui5-button>
           <ui5-button [design]="activeTab() === 'pairs' ? 'Emphasized' : 'Default'" (click)="setTab('pairs')">{{ i18n.t('dataExplorer.sqlPairs') }}</ui5-button>
@@ -58,13 +58,13 @@ interface SqlPair {
       <!-- Tab: Data Assets -->
       @if (activeTab() === 'assets') {
         <div class="filter-bar" style="margin-bottom: 1rem;">
-          <input class="search-input" [(ngModel)]="searchTerm" [placeholder]="i18n.t('dataExplorer.filterAssets')" />
-          <select class="filter-select" [(ngModel)]="filterCategory">
-            <option value="">{{ i18n.t('dataExplorer.allCategories') }}</option>
+          <ui5-input class="search-input" [value]="searchTerm" (input)="searchTerm = $any($event).target.value" [placeholder]="i18n.t('dataExplorer.filterAssets')"></ui5-input>
+          <ui5-select (change)="onCategoryChange($event)">
+            <ui5-option value="" [attr.selected]="!filterCategory ? true : null">{{ i18n.t('dataExplorer.allCategories') }}</ui5-option>
             @for (c of categories(); track c) {
-              <option [value]="c">{{ c }}</option>
+              <ui5-option [value]="c" [attr.selected]="filterCategory === c ? true : null">{{ c }}</ui5-option>
             }
-          </select>
+          </ui5-select>
         </div>
 
         <div class="stats-grid" style="margin-bottom:1.5rem">
@@ -125,7 +125,7 @@ interface SqlPair {
           <div class="detail-panel">
             <div class="detail-header">
               <span class="detail-icon"><ui5-icon [name]="iconFor(sel.type)"></ui5-icon></span>
-              <h2 class="detail-title"><bdi>{{ sel.name }}</bdi></h2>
+              <ui5-title level="H4" class="detail-title"><bdi>{{ sel.name }}</bdi></ui5-title>
               <ui5-button design="Transparent" icon="decline" [attr.aria-label]="i18n.t('dataExplorer.closeDetail')" (click)="clearSelection()"></ui5-button>
             </div>
             <table class="info-table">
@@ -164,13 +164,13 @@ interface SqlPair {
           </div>
 
           <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
-            <label style="font-size: 0.875rem; font-weight: 600;">{{ i18n.t('dataExplorer.filterDifficulty') }}</label>
-            <select class="filter-select" [(ngModel)]="difficultyFilter" (ngModelChange)="loadPairs()">
-              <option value="">{{ i18n.t('dataExplorer.all') }}</option>
-              <option value="easy">{{ i18n.t('dataExplorer.easy') }}</option>
-              <option value="medium">{{ i18n.t('dataExplorer.medium') }}</option>
-              <option value="hard">{{ i18n.t('dataExplorer.hard') }}</option>
-            </select>
+            <ui5-label show-colon>{{ i18n.t('dataExplorer.filterDifficulty') }}</ui5-label>
+            <ui5-select (change)="onDifficultyChange($event)">
+              <ui5-option value="" [attr.selected]="!difficultyFilter ? true : null">{{ i18n.t('dataExplorer.all') }}</ui5-option>
+              <ui5-option value="easy" [attr.selected]="difficultyFilter === 'easy' ? true : null">{{ i18n.t('dataExplorer.easy') }}</ui5-option>
+              <ui5-option value="medium" [attr.selected]="difficultyFilter === 'medium' ? true : null">{{ i18n.t('dataExplorer.medium') }}</ui5-option>
+              <ui5-option value="hard" [attr.selected]="difficultyFilter === 'hard' ? true : null">{{ i18n.t('dataExplorer.hard') }}</ui5-option>
+            </ui5-select>
             <span class="text-small text-muted">{{ i18n.t('dataExplorer.source') }}: {{ pairSource() }}</span>
           </div>
         </div>
@@ -322,6 +322,15 @@ export class DataExplorerComponent implements OnInit {
   readonly templateCount = computed(() => this.assets.filter(a => a.type === 'template').length);
 
   ngOnInit() {
+    this.loadPairs();
+  }
+
+  onCategoryChange(event: any): void {
+    this.filterCategory = event.detail?.selectedOption?.value ?? '';
+  }
+
+  onDifficultyChange(event: any): void {
+    this.difficultyFilter = (event.detail?.selectedOption?.value ?? '') as Difficulty;
     this.loadPairs();
   }
 

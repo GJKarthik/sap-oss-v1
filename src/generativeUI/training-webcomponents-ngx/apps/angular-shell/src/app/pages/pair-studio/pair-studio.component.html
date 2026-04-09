@@ -187,7 +187,7 @@
       @if (activeTab() === 'terms') {
         <ui5-table [accessibleName]="i18n.t('pairStudio.tabTerms')">
           <ui5-table-header-row slot="headerRow">
-            <ui5-table-header-cell><ui5-check-box (change)="toggleAllTerms()"></ui5-check-box></ui5-table-header-cell>
+            <ui5-table-header-cell><ui5-checkbox (change)="toggleAllTerms()"></ui5-checkbox></ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('pairStudio.colSource') }}</ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('pairStudio.colTarget') }}</ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('pairStudio.colType') }}</ui5-table-header-cell>
@@ -198,7 +198,7 @@
           </ui5-table-header-row>
           @for (term of filteredTerms(); track $index; let i = $index) {
             <ui5-table-row>
-              <ui5-table-cell><ui5-check-box [checked]="selectedTermIndices().has(i)" (change)="toggleTermSelection(i)"></ui5-check-box></ui5-table-cell>
+              <ui5-table-cell><ui5-checkbox [checked]="selectedTermIndices().has(i)" (change)="toggleTermSelection(i)"></ui5-checkbox></ui5-table-cell>
               <ui5-table-cell><bdi>{{ term.sourceTerm }}</bdi> <ui5-tag design="Set2" color-scheme="3">{{ term.sourceLang }}</ui5-tag></ui5-table-cell>
               <ui5-table-cell>
                 @if (editingTermIndex() === i) {
@@ -238,7 +238,7 @@
       @if (activeTab() === 'paragraphs') {
         <ui5-table [accessibleName]="i18n.t('pairStudio.tabParagraphs')">
           <ui5-table-header-row slot="headerRow">
-            <ui5-table-header-cell><ui5-check-box (change)="toggleAllParagraphs()"></ui5-check-box></ui5-table-header-cell>
+            <ui5-table-header-cell><ui5-checkbox (change)="toggleAllParagraphs()"></ui5-checkbox></ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('pairStudio.colSourceText') }}</ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('pairStudio.colTargetText') }}</ui5-table-header-cell>
             <ui5-table-header-cell>{{ i18n.t('pairStudio.colLangs') }}</ui5-table-header-cell>
@@ -249,7 +249,7 @@
           </ui5-table-header-row>
           @for (para of filteredParagraphs(); track $index; let i = $index) {
             <ui5-table-row>
-              <ui5-table-cell><ui5-check-box [checked]="selectedParagraphIndices().has(i)" (change)="toggleParagraphSelection(i)"></ui5-check-box></ui5-table-cell>
+              <ui5-table-cell><ui5-checkbox [checked]="selectedParagraphIndices().has(i)" (change)="toggleParagraphSelection(i)"></ui5-checkbox></ui5-table-cell>
               <ui5-table-cell><bdi>{{ truncate(para.sourceText) }}</bdi></ui5-table-cell>
               <ui5-table-cell><bdi>{{ truncate(para.targetText) }}</bdi></ui5-table-cell>
               <ui5-table-cell>{{ para.sourceLang }}→{{ para.targetLang }}</ui5-table-cell>
@@ -286,9 +286,9 @@
         </div>
 
         <div class="commit-destinations">
-          <ui5-check-box [text]="i18n.t('pairStudio.destTm')" [checked]="commitToTm" (change)="commitToTm = !commitToTm"></ui5-check-box>
-          <ui5-check-box [text]="i18n.t('pairStudio.destGlossary')" [checked]="commitToGlossary" (change)="commitToGlossary = !commitToGlossary"></ui5-check-box>
-          <ui5-check-box [text]="i18n.t('pairStudio.destVector')" [checked]="commitToVector" (change)="commitToVector = !commitToVector"></ui5-check-box>
+          <ui5-checkbox [text]="i18n.t('pairStudio.destTm')" [checked]="commitToTm" (change)="commitToTm = !commitToTm"></ui5-checkbox>
+          <ui5-checkbox [text]="i18n.t('pairStudio.destGlossary')" [checked]="commitToGlossary" (change)="commitToGlossary = !commitToGlossary"></ui5-checkbox>
+          <ui5-checkbox [text]="i18n.t('pairStudio.destVector')" [checked]="commitToVector" (change)="commitToVector = !commitToVector"></ui5-checkbox>
         </div>
 
         <div class="commit-actions">
