@@ -68,12 +68,15 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           height="24"
           onerror="this.style.display='none'" />
 
-        <!-- Shell Search — Fiori global search -->
+        <!-- Shell Search — Fiori global search with suggestions -->
         <ui5-shellbar-search
           slot="searchField"
           [placeholder]="i18n.t('shell.spotlightPlaceholder')"
           show-clear-icon="true"
           (ui5Search)="onShellSearch($event)">
+          @for (route of visibleRouteLinks(); track route.path) {
+            <ui5-search-item [text]="i18n.t(route.labelKey)" [icon]="route.icon" [attr.data-path]="route.path"></ui5-search-item>
+          }
         </ui5-shellbar-search>
 
         <!-- Profile Avatar — circle + status ring via CSS -->

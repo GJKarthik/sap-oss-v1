@@ -48,6 +48,7 @@ import { IllustratedMessageComponent } from '@ui5/webcomponents-ngx/fiori/illust
 import { NavigationLayoutComponent } from '@ui5/webcomponents-ngx/fiori/navigation-layout';
 import { PageComponent } from '@ui5/webcomponents-ngx/fiori/page';
 import { SearchComponent } from '@ui5/webcomponents-ngx/fiori/search';
+import { SearchItemComponent } from '@ui5/webcomponents-ngx/fiori/search-item';
 import { ShellBarComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar';
 import { ShellBarItemComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar-item';
 import { ShellBarSearchComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar-search';
@@ -109,6 +110,7 @@ const imports = [
   NavigationLayoutComponent,
   PageComponent,
   SearchComponent,
+  SearchItemComponent,
   ShellBarComponent,
   ShellBarItemComponent,
   ShellBarSearchComponent,

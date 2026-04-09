@@ -29,6 +29,9 @@
     [placeholder]="'SEARCH_PLACEHOLDER' | ui5I18n"
     show-clear-icon="true"
     (ui5Search)="onSearch($event)">
+    @for (link of navLinks; track link.path) {
+      <ui5-search-item [text]="link.labelKey | ui5I18n" [icon]="link.icon" [attr.data-path]="link.path"></ui5-search-item>
+    }
   </ui5-shellbar-search>
 
   <!-- Profile Avatar (slot=profile) — circle + status ring via CSS -->

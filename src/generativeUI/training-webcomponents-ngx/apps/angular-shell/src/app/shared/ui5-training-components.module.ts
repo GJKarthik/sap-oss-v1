@@ -51,6 +51,7 @@ import { NavigationLayoutComponent } from '@ui5/webcomponents-ngx/fiori/navigati
 import { PageComponent } from '@ui5/webcomponents-ngx/fiori/page';
 import { ShellBarComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar';
 import { ShellBarItemComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar-item';
+import { SearchItemComponent } from '@ui5/webcomponents-ngx/fiori/search-item';
 import { ShellBarSearchComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar-search';
 import { SideNavigationComponent } from '@ui5/webcomponents-ngx/fiori/side-navigation';
 import { SideNavigationGroupComponent } from '@ui5/webcomponents-ngx/fiori/side-navigation-group';
@@ -114,6 +115,7 @@ const imports = [
   PageComponent,
   ShellBarComponent,
   ShellBarItemComponent,
+  SearchItemComponent,
   ShellBarSearchComponent,
   SideNavigationComponent,
   SideNavigationGroupComponent,
