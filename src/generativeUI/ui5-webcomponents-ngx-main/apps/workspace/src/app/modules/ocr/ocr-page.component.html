@@ -1,13 +1,15 @@
 <section class="ocr-page">
+  <ui5-breadcrumbs>
+    <ui5-breadcrumbs-item href="/" text="Home"></ui5-breadcrumbs-item>
+    <ui5-breadcrumbs-item text="OCR Invoice Demo"></ui5-breadcrumbs-item>
+  </ui5-breadcrumbs>
+
   <!-- Cross-app link to production OCR in SAP AI Workbench -->
-  <div class="cross-app-banner" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1rem;background:var(--sapInformationBackground,#e8f2ff);border:1px solid var(--sapInformativeBorderColor,#5b9bd5);border-radius:0.5rem;margin-bottom:1rem;">
-    <ui5-icon name="document" style="font-size:1.25rem;color:var(--sapInformativeColor,#0854a0);"></ui5-icon>
-    <div style="flex:1;display:flex;flex-direction:column;gap:0.125rem;">
-      <span style="font-size:0.75rem;color:var(--sapContent_LabelColor);">Production OCR pipeline:</span>
-      <span style="font-size:0.875rem;"><strong>Document OCR</strong> in SAP AI Workbench</span>
-    </div>
-    <ui5-button design="Transparent" icon="action" (click)="openCrossApp()">Open</ui5-button>
-  </div>
+  <ui5-message-strip class="cross-app-banner" design="Information" hide-close-button>
+    <ui5-icon slot="icon" name="document"></ui5-icon>
+    Production OCR pipeline: <strong>Document OCR</strong> in SAP AI Workbench
+    <ui5-button slot="action" design="Transparent" icon="action" (click)="openCrossApp()">Open</ui5-button>
+  </ui5-message-strip>
 
   <ui5-title level="H3">{{ 'OCR_PAGE_TITLE' | ui5I18n }}</ui5-title>
 
@@ -38,14 +40,13 @@
   </ui5-textarea>
 
   <div class="ocr-page__controls">
-    <ui5-label for="ocr-file">{{ 'OCR_UPLOAD_LABEL' | ui5I18n }}</ui5-label>
-    <input
-      #fileInput
-      id="ocr-file"
-      type="file"
+    <ui5-file-uploader
+      #fileUploader
       accept=".txt,.pdf,.png,.jpg,.jpeg,.webp"
       [disabled]="loading || routeBlocked"
-      (change)="onFileSelected($event)" />
+      (change)="onFileSelected($event)">
+      <ui5-button icon="upload" [disabled]="loading || routeBlocked">{{ 'OCR_UPLOAD_LABEL' | ui5I18n }}</ui5-button>
+    </ui5-file-uploader>
     <span *ngIf="selectedFileName">{{ selectedFileName }}</span>
   </div>
 
@@ -55,8 +56,8 @@
     role="button"
     tabindex="0"
     [attr.aria-label]="'OCR_DROPZONE_HINT' | ui5I18n"
-    (keydown.enter)="fileInput.click()"
-    (keydown.space)="fileInput.click()"
+    (keydown.enter)="fileUploader.element.click()"
+    (keydown.space)="fileUploader.element.click()"
     (dragover)="onDragOver($event)"
     (dragleave)="onDragLeave($event)"
     (drop)="onDrop($event)">
@@ -117,28 +118,21 @@
     </ui5-list>
 
     <ui5-title level="H5">{{ 'OCR_LINE_ITEMS' | ui5I18n }}</ui5-title>
-    <div class="ocr-line-items-table-wrapper">
-      <table class="ocr-line-items-table">
-        <caption class="sr-only">{{ 'OCR_LINE_ITEMS' | ui5I18n }}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{{ 'OCR_LINEITEM_COL_DESC_EN' | ui5I18n }}</th>
-            <th scope="col">{{ 'OCR_LINEITEM_COL_DESC_AR' | ui5I18n }}</th>
-            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_QTY' | ui5I18n }}</th>
-            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_UNIT_PRICE' | ui5I18n }}</th>
-            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_TOTAL' | ui5I18n }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of result.line_items">
-            <td>{{ item.description_en || '-' }}</td>
-            <td>{{ item.description_ar || '-' }}</td>
-            <td class="ocr-line-items-table__num">{{ item.quantity | localeNumber }}</td>
-            <td class="ocr-line-items-table__num">{{ item.unit_price | localeCurrency:'SAR' }}</td>
-            <td class="ocr-line-items-table__num">{{ item.total | localeCurrency:'SAR' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <ui5-table accessible-name="Line items">
+      <ui5-table-header-row slot="headerRow">
+        <ui5-table-header-cell>{{ 'OCR_LINEITEM_COL_DESC_EN' | ui5I18n }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ 'OCR_LINEITEM_COL_DESC_AR' | ui5I18n }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ 'OCR_LINEITEM_COL_QTY' | ui5I18n }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ 'OCR_LINEITEM_COL_UNIT_PRICE' | ui5I18n }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ 'OCR_LINEITEM_COL_TOTAL' | ui5I18n }}</ui5-table-header-cell>
+      </ui5-table-header-row>
+      <ui5-table-row *ngFor="let item of result.line_items">
+        <ui5-table-cell>{{ item.description_en || '-' }}</ui5-table-cell>
+        <ui5-table-cell>{{ item.description_ar || '-' }}</ui5-table-cell>
+        <ui5-table-cell>{{ item.quantity | localeNumber }}</ui5-table-cell>
+        <ui5-table-cell>{{ item.unit_price | localeCurrency:'SAR' }}</ui5-table-cell>
+        <ui5-table-cell>{{ item.total | localeCurrency:'SAR' }}</ui5-table-cell>
+      </ui5-table-row>
+    </ui5-table>
   </div>
 </section>

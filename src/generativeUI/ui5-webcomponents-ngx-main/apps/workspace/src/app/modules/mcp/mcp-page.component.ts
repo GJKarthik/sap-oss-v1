@@ -101,6 +101,10 @@ export class McpPageComponent implements OnInit {
     this.lastCallResult = '';
   }
 
+  onArgsChange(event: Event): void {
+    this.toolArgs = (event.target as any)?.value ?? '{}';
+  }
+
   invokeSelectedTool(): void {
     if (!this.selectedTool || this.routeBlocked) {
       return;

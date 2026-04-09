@@ -15,7 +15,7 @@ import { NAV_LINK_DATA } from '../../core/workspace.types';
 })
 export class WorkspaceSettingsComponent {
   @ViewChild('resetDialog') resetDialog!: ElementRef<any>;
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  // fileInput ViewChild removed — now using ui5-file-uploader
 
   readonly allNavLinks = NAV_LINK_DATA;
   // Connection test status per service
@@ -130,12 +130,9 @@ export class WorkspaceSettingsComponent {
     URL.revokeObjectURL(url);
   }
 
-  triggerImport(): void {
-    this.fileInput?.nativeElement?.click();
-  }
-
   onImportFile(event: Event): void {
-    const file = (event.target as HTMLInputElement)?.files?.[0];
+    const detail = (event as CustomEvent)?.detail;
+    const file = detail?.files?.[0] ?? (event.target as HTMLInputElement)?.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {

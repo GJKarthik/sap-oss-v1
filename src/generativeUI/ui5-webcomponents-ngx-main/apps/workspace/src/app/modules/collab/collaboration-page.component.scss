@@ -109,16 +109,8 @@
   background: var(--sapBackgroundColor, #fff);
 }
 
-.collab-participant__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  color: var(--sapContent_ContrastTextColor, #fff);
-  font-weight: 700;
-  font-size: 0.8rem;
+.collab-participant ui5-avatar {
+  flex-shrink: 0;
 }
 
 .collab-participant__name {

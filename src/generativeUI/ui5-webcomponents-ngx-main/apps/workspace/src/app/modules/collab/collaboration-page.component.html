@@ -51,13 +51,13 @@
         <div class="collab-participants">
           @for (p of participants; track p.userId) {
           <div class="collab-participant">
-            <span
-              [style.background]="p.color"
-              class="collab-participant__avatar"
-              role="img"
-              [attr.aria-label]="p.displayName">
-              {{ p.displayName.charAt(0).toUpperCase() }}
-            </span>
+            <ui5-avatar
+              shape="Circle"
+              size="S"
+              [initials]="p.displayName.charAt(0).toUpperCase()"
+              [colorScheme]="'Accent' + ((($index % 10) + 1))"
+              [accessibleName]="p.displayName">
+            </ui5-avatar>
             <div>
               <div class="collab-participant__name">{{ p.displayName }}</div>
               <div class="collab-participant__meta">

@@ -1,4 +1,8 @@
 <section class="model-catalog" role="main" aria-label="Model catalog">
+  <ui5-breadcrumbs>
+    <ui5-breadcrumbs-item href="/" text="Home"></ui5-breadcrumbs-item>
+    <ui5-breadcrumbs-item text="Model Catalog"></ui5-breadcrumbs-item>
+  </ui5-breadcrumbs>
   <ui5-title level="H3">{{ 'MODEL_CATALOG_TITLE' | ui5I18n }}</ui5-title>
 
   <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>

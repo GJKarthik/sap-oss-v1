@@ -57,32 +57,13 @@
   border-radius: 0.5rem;
 }
 
-.ocr-line-items-table-wrapper {
-  overflow-x: auto;
-}
-
-.ocr-line-items-table {
+ui5-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
+  margin-top: 0.5rem;
 }
 
-.ocr-line-items-table th,
-.ocr-line-items-table td {
-  border: 1px solid var(--sapList_BorderColor);
-  padding: 0.5rem 0.625rem;
-  text-align: start;
-  vertical-align: top;
-}
-
-.ocr-line-items-table thead th {
-  background: var(--sapList_HeaderBackground);
-  font-weight: 600;
-}
-
-.ocr-line-items-table__num {
-  text-align: end !important;
-  white-space: nowrap;
+.cross-app-banner {
+  margin-bottom: 1rem;
 }
 
 pre {

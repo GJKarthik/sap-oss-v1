@@ -12,6 +12,7 @@ import { CardHeaderComponent } from '@ui5/webcomponents-ngx/main/card-header';
 import { CheckBoxComponent } from '@ui5/webcomponents-ngx/main/check-box';
 import { DatePickerComponent } from '@ui5/webcomponents-ngx/main/date-picker';
 import { DialogComponent } from '@ui5/webcomponents-ngx/main/dialog';
+import { FileUploaderComponent } from '@ui5/webcomponents-ngx/main/file-uploader';
 import { IconComponent } from '@ui5/webcomponents-ngx/main/icon';
 import { InputComponent } from '@ui5/webcomponents-ngx/main/input';
 import { LabelComponent } from '@ui5/webcomponents-ngx/main/label';
@@ -66,6 +67,7 @@ const imports = [
   CheckBoxComponent,
   DatePickerComponent,
   DialogComponent,
+  FileUploaderComponent,
   IconComponent,
   InputComponent,
   LabelComponent,

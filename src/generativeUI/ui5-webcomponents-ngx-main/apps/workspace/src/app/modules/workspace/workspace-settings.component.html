@@ -13,7 +13,7 @@
       </ui5-card-header>
       <div class="workspace-card__body">
         <div class="workspace-field">
-          <label>{{ 'THEME_LABEL' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'THEME_LABEL' | ui5I18n }}</ui5-label>
           <ui5-select (change)="onThemeChange($event)">
             <ui5-option value="sap_horizon" [attr.selected]="ws.settings().theme === 'sap_horizon' ? true : null">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
             <ui5-option value="sap_horizon_dark" [attr.selected]="ws.settings().theme === 'sap_horizon_dark' ? true : null">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
@@ -22,7 +22,7 @@
           </ui5-select>
         </div>
         <div class="workspace-field">
-          <label>{{ 'LANGUAGE_LABEL' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'LANGUAGE_LABEL' | ui5I18n }}</ui5-label>
           <ui5-select (change)="onLanguageChange($event)">
             <ui5-option value="en" [attr.selected]="ws.settings().language === 'en' ? true : null">{{ 'LANGUAGE_EN' | ui5I18n }}</ui5-option>
             <ui5-option value="ar" [attr.selected]="ws.settings().language === 'ar' ? true : null">{{ 'LANGUAGE_AR' | ui5I18n }}</ui5-option>
@@ -45,14 +45,14 @@
       </ui5-card-header>
       <div class="workspace-card__body">
         <div class="workspace-field">
-          <label>{{ 'WS_IDENTITY_DISPLAY_NAME' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_IDENTITY_DISPLAY_NAME' | ui5I18n }}</ui5-label>
           <ui5-input
             [value]="ws.identity().displayName"
             (change)="onDisplayNameChange($event)">
           </ui5-input>
         </div>
         <div class="workspace-field">
-          <label>{{ 'WS_IDENTITY_TEAM_NAME' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_IDENTITY_TEAM_NAME' | ui5I18n }}</ui5-label>
           <ui5-input
             [value]="ws.identity().teamName"
             [attr.placeholder]="'WS_IDENTITY_TEAM_NAME' | ui5I18n"
@@ -60,7 +60,7 @@
           </ui5-input>
         </div>
         <div class="workspace-field">
-          <label>{{ 'WS_IDENTITY_USER_ID' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_IDENTITY_USER_ID' | ui5I18n }}</ui5-label>
           <ui5-tag design="Set2" color-scheme="6">{{ ws.identity().userId }}</ui5-tag>
         </div>
       </div>
@@ -74,7 +74,7 @@
       </ui5-card-header>
       <div class="workspace-card__body">
         <div class="workspace-field workspace-field--row">
-          <label>{{ 'WS_BACKEND_OPENAI_URL' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_BACKEND_OPENAI_URL' | ui5I18n }}</ui5-label>
           <ui5-input
             class="workspace-field__input"
             [value]="ws.backendConfig().openAiBaseUrl"
@@ -87,7 +87,7 @@
           <ui5-tag *ngIf="connectionStatus['openai'] === 'error'" design="Set2" color-scheme="1">{{ 'WS_BACKEND_UNREACHABLE' | ui5I18n }}</ui5-tag>
         </div>
         <div class="workspace-field workspace-field--row">
-          <label>{{ 'WS_BACKEND_MCP_URL' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_BACKEND_MCP_URL' | ui5I18n }}</ui5-label>
           <ui5-input
             class="workspace-field__input"
             [value]="ws.backendConfig().mcpBaseUrl"
@@ -100,7 +100,7 @@
           <ui5-tag *ngIf="connectionStatus['mcp'] === 'error'" design="Set2" color-scheme="1">{{ 'WS_BACKEND_UNREACHABLE' | ui5I18n }}</ui5-tag>
         </div>
         <div class="workspace-field workspace-field--row">
-          <label>{{ 'WS_BACKEND_AGUI_URL' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_BACKEND_AGUI_URL' | ui5I18n }}</ui5-label>
           <ui5-input
             class="workspace-field__input"
             [value]="ws.backendConfig().agUiEndpoint"
@@ -108,7 +108,7 @@
           </ui5-input>
         </div>
         <div class="workspace-field workspace-field--row">
-          <label>{{ 'WS_BACKEND_COLLAB_WS' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_BACKEND_COLLAB_WS' | ui5I18n }}</ui5-label>
           <ui5-input
             class="workspace-field__input"
             [value]="ws.backendConfig().collabWsUrl"
@@ -116,7 +116,7 @@
           </ui5-input>
         </div>
         <div class="workspace-field workspace-field--row">
-          <label>{{ 'WS_BACKEND_OCR_TOKEN' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_BACKEND_OCR_TOKEN' | ui5I18n }}</ui5-label>
           <ui5-input
             class="workspace-field__input"
             type="Password"
@@ -135,7 +135,7 @@
       </ui5-card-header>
       <div class="workspace-card__body">
         <div class="workspace-field">
-          <label>{{ 'WS_NAV_DEFAULT_PAGE' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_NAV_DEFAULT_PAGE' | ui5I18n }}</ui5-label>
           <ui5-select (change)="onDefaultLandingChange($event)">
             <ui5-option value="/" [attr.selected]="ws.navConfig().defaultLandingPath === '/' ? true : null">Home</ui5-option>
             <ui5-option
@@ -167,7 +167,7 @@
       </ui5-card-header>
       <div class="workspace-card__body">
         <div class="workspace-field">
-          <label>{{ 'WS_MODEL_DEFAULT' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_MODEL_DEFAULT' | ui5I18n }}</ui5-label>
           <ui5-input
             [value]="ws.modelPreferences().defaultModel"
             placeholder="gpt-4o, gemma-4, etc."
@@ -175,7 +175,7 @@
           </ui5-input>
         </div>
         <div class="workspace-field">
-          <label>{{ 'WS_MODEL_TEMPERATURE' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_MODEL_TEMPERATURE' | ui5I18n }}</ui5-label>
           <ui5-step-input
             [value]="ws.modelPreferences().temperature"
             [min]="0" [max]="2" [step]="0.1"
@@ -183,7 +183,7 @@
           </ui5-step-input>
         </div>
         <div class="workspace-field">
-          <label>{{ 'WS_MODEL_SYSTEM_PROMPT' | ui5I18n }}</label>
+          <ui5-label show-colon>{{ 'WS_MODEL_SYSTEM_PROMPT' | ui5I18n }}</ui5-label>
           <ui5-textarea
             [value]="ws.modelPreferences().systemPrompt"
             [rows]="4"
@@ -204,10 +204,9 @@
         <ui5-button design="Default" icon="download" (click)="exportSettings()">
           {{ 'WS_DATA_EXPORT' | ui5I18n }}
         </ui5-button>
-        <ui5-button design="Default" icon="upload" (click)="triggerImport()">
-          {{ 'WS_DATA_IMPORT' | ui5I18n }}
-        </ui5-button>
-        <input #fileInput type="file" accept=".json" style="display:none" (change)="onImportFile($event)">
+        <ui5-file-uploader accept=".json" hide-input (change)="onImportFile($event)">
+          <ui5-button design="Default" icon="upload">{{ 'WS_DATA_IMPORT' | ui5I18n }}</ui5-button>
+        </ui5-file-uploader>
         <ui5-button design="Negative" icon="delete" (click)="openResetDialog()">
           {{ 'WS_DATA_RESET' | ui5I18n }}
         </ui5-button>
