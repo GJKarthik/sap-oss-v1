@@ -29,7 +29,7 @@
       @if (participants.length > 0) {
         <div class="presence-strip" role="status" aria-label="Active collaborators">
           <span class="presence-label">{{ 'JOULE_PRESENCE_LABEL' | ui5I18n }}</span>
-          <ui5-avatar-group type="Individual">
+          <ui5-avatar-group type="Individual" [accessibleName]="'COLLAB_PARTICIPANTS_TITLE' | ui5I18n">
             @for (p of participants; track p.userId) {
               <ui5-avatar
                 shape="Circle"

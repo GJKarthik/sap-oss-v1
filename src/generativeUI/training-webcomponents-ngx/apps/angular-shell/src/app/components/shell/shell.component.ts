@@ -56,6 +56,7 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         [accessibilityAttributes]="shellbarA11y"
         (logoClick)="navigateTo('/dashboard')"
         (profile-click)="toggleUserMenu($event)"
+        (product-switch-click)="openProducts($event)"
         (notifications-click)="onNotificationsClick($event)"
         (custom-item-click)="onCustomItemClick($event)">
 
@@ -84,6 +85,7 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           [initials]="userInitials()"
           color-scheme="Accent6"
           interactive="true"
+          fallback-icon="person-placeholder"
           [accessibleName]="i18n.t('shell.account')">
         </ui5-avatar>
 
@@ -115,6 +117,16 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           <ui5-menu-item [text]="i18n.langLabels[lang]" [id]="lang" [icon]="i18n.currentLang() === lang ? 'accept' : null"></ui5-menu-item>
         }
       </ui5-menu>
+
+      <!-- ── Product Switcher — glass popover ── -->
+      <ui5-popover #productPopover [headerText]="i18n.t('product.switcher')" placement-type="Bottom" horizontal-align="Right">
+        <ui5-list (item-click)="onProductSelect($event)">
+          <ui5-li icon="home" data-app="aifabric">{{ i18n.t('product.aiFabric') }}</ui5-li>
+          <ui5-li icon="process" data-app="training" selected>{{ i18n.t('product.training') }}</ui5-li>
+          <ui5-li icon="chart-table-view" data-app="sac">{{ i18n.t('product.sac') }}</ui5-li>
+          <ui5-li icon="grid" data-app="experience">{{ i18n.t('product.joule') }}</ui5-li>
+        </ui5-list>
+      </ui5-popover>
 
       <!-- ── NavigationLayout + SideNavigation + Content ── -->
       <ui5-navigation-layout mode="Auto">
@@ -306,6 +318,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   @ViewChild('langMenu') langMenu!: ElementRef<any>;
   @ViewChild('searchDialog') searchDialog!: ElementRef<any>;
   @ViewChild('searchInput') searchInput!: ElementRef<any>;
+  @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
   readonly shellbarA11y = {
     logo: { name: 'SAP AI Workbench' },
@@ -451,6 +464,14 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   onNotificationsClick(_event: any): void {
     // Placeholder for notification popover
+  }
+
+  openProducts(event: any): void {
+    this.productPopover.nativeElement.showAt(event.detail.targetRef);
+  }
+
+  onProductSelect(_event: any): void {
+    this.productPopover.nativeElement.close();
   }
 
   onShellSearch(_event: any): void {
