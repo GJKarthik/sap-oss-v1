@@ -1,8 +1,9 @@
 import {
-  Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy,
+  Component, ChangeDetectionStrategy,
   signal, inject, OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
@@ -19,11 +20,14 @@ interface DeployedModel {
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Compare"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('compare.title') }}</h1>
         <span class="text-muted text-small">{{ i18n.t('compare.subtitle') }}</span>

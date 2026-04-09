@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { ApiError, ApiService } from '../../services/api.service';
@@ -32,11 +33,14 @@ interface ArchLayer {
 @Component({
   selector: 'app-hana-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content" role="main" aria-label="HANA Cloud Explorer">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="HANA Explorer"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <div class="page-header">
         <h1 class="page-title">{{ i18n.t('hanaExplorer.title') }}</h1>
         <ui5-button design="Default" (click)="loadStats()" aria-label="Refresh stats">{{ i18n.t('hanaExplorer.refresh') }}</ui5-button>

@@ -1,8 +1,8 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy,
-  CUSTOM_ELEMENTS_SCHEMA,
-} from '@angular/core';
+  } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { I18nService } from '../../services/i18n.service';
@@ -28,11 +28,14 @@ interface AnalyticsResponse {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocaleNumberPipe, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, LocaleNumberPipe, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-container" [class.rtl]="i18n.isRtl()">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Analytics"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <header class="page-header">
         <div class="header-row">
           <div>

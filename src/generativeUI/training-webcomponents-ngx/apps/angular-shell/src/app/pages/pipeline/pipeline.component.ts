@@ -1,5 +1,5 @@
 import {
-  Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy,
+  Component, ChangeDetectionStrategy,
   signal, inject, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, NgZone, computed
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -29,10 +29,13 @@ interface LogLine {
   selector: 'app-pipeline',
   standalone: true,
   imports: [CommonModule, Ui5TrainingComponentsModule, PipelineFlowComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mission-control fadeIn">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Pipeline"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <div class="floating-header glass-panel slideUp">
         <div class="header-left">
           <ui5-title level="H3">{{ i18n.t('pipeline.title') }}</ui5-title>

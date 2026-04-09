@@ -1,5 +1,6 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { I18nService } from '../../services/i18n.service';
@@ -30,11 +31,14 @@ interface SqlPair {
 @Component({
   selector: 'app-data-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Data Explorer"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/data"

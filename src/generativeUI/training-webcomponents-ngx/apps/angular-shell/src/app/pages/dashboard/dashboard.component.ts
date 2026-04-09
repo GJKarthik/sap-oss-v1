@@ -1,7 +1,6 @@
 import {
   Component,
   OnInit,
-  CUSTOM_ELEMENTS_SCHEMA,
   ChangeDetectionStrategy,
   inject,
   computed,
@@ -25,10 +24,13 @@ interface PlatformComponent {
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, Ui5TrainingComponentsModule, LocaleNumberPipe],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dashboard-viewport fadeIn" [attr.aria-busy]="store.isDashboardLoading()">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Dashboard"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <!-- Floating Header -->
       <div class="glass-panel floating-header slideUp">
         <div class="header-left">

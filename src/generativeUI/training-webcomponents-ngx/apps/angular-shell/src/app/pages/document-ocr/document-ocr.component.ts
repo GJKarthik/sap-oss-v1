@@ -1,8 +1,9 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, computed,
-  CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild, effect,
+  ElementRef, ViewChild, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { Router } from '@angular/router';
 import { I18nService } from '../../services/i18n.service';
 import {
@@ -46,8 +47,7 @@ export interface OcrCurationState {
 @Component({
   selector: 'app-document-ocr',
   standalone: true,
-  imports: [CommonModule, LocaleNumberPipe, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, LocaleNumberPipe, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './document-ocr.component.html',
   styleUrls: ['./document-ocr.component.scss'],

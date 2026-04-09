@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
@@ -53,10 +53,13 @@ interface JobResponse {
   selector: 'app-model-optimizer',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, JobDetailComponent, Ui5TrainingComponentsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="optimizer-viewport fadeIn">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Model Optimizer"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <!-- Floating Header -->
       <div class="glass-panel floating-header slideUp">
         <div class="header-left">

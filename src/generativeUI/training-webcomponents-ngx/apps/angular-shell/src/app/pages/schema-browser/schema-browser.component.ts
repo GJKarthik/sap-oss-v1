@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
@@ -11,9 +11,12 @@ import { I18nService } from '../../services/i18n.service';
   selector: 'app-schema-browser',
   standalone: true,
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Schema Browser"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ i18n.t('schemaBrowser.title') }}</ui5-title>
         <ui5-button slot="endContent" icon="refresh" (click)="loadTables()" [disabled]="loading">
@@ -34,7 +37,7 @@ import { I18nService } from '../../services/i18n.service';
         <div class="columns">
           <!-- Table List -->
           <ui5-card class="tables-card">
-            <ui5-card-header slot="header" title-text="{{ i18n.t('schemaBrowser.tables') }}" [additionalText]="tableNames.length + ''"></ui5-card-header>
+            <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('schemaBrowser.tables') }}" [additionalText]="tableNames.length + ''"></ui5-card-header>
             <ui5-list *ngIf="tableNames.length > 0; else noTables" mode="SingleSelect" (item-click)="onTableSelect($event)" aria-label="HANA tables">
               <ui5-li *ngFor="let table of tableNames; trackBy: trackByTable" [selected]="table === selectedTableName">
                 {{ table }}
@@ -49,7 +52,7 @@ import { I18nService } from '../../services/i18n.service';
           <div class="detail-col">
             @if (selectedSchema) {
               <ui5-card>
-                <ui5-card-header slot="header" [titleText]="selectedSchema.name" subtitle-text="{{ i18n.t('schemaBrowser.columnDetails') }}"
+                <ui5-card-header slot="header" [titleText]="selectedSchema.name" attr.attr.subtitle-text="{{  i18n.t('schemaBrowser.columnDetails') }}"
                   [additionalText]="selectedSchema.columns.length + ' columns'"></ui5-card-header>
                 <div class="card-content">
                   <div class="actions-row">
@@ -100,7 +103,7 @@ import { I18nService } from '../../services/i18n.service';
 
               @if (generatedAnnotations) {
                 <ui5-card>
-                  <ui5-card-header slot="header" title-text="{{ i18n.t('schemaBrowser.generatedAnnotations') }}"></ui5-card-header>
+                  <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('schemaBrowser.generatedAnnotations') }}"></ui5-card-header>
                   <div class="card-content">
                     @if (validationResult) {
                       <ui5-message-strip [design]="validationResult.valid ? 'Positive' : 'Negative'">

@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { I18nService } from '../../services/i18n.service';
 import { GlossaryService } from '../../services/glossary.service';
@@ -10,8 +11,7 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-glossary-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './glossary-manager.component.html',
   styleUrls: ['./glossary-manager.component.scss']

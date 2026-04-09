@@ -26,6 +26,10 @@ function readErrorMessage(error: unknown, fallback: string): string {
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="RAG Studio"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <app-cross-app-link
         targetApp="training"
         targetRoute="/semantic-search"

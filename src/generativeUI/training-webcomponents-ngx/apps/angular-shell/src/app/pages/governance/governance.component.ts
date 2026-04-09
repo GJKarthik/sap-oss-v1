@@ -5,7 +5,8 @@
  * Uses Angular 20 standalone + @if/@for control flow.
  */
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { TeamGovernanceService, PendingApproval } from '../../services/team-governance.service';
@@ -14,13 +15,7 @@ import { AuthService } from '../../services/auth.service';
 import { I18nService } from '../../services/i18n.service';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
-import '@ui5/webcomponents/dist/Card.js';
-import '@ui5/webcomponents/dist/Tag.js';
-import '@ui5/webcomponents/dist/Button.js';
-import '@ui5/webcomponents/dist/Icon.js';
-import '@ui5/webcomponents/dist/Dialog.js';
-import '@ui5/webcomponents/dist/TextArea.js';
-import '@ui5/webcomponents/dist/Label.js';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { CrossAppLinkComponent } from '../../shared';
 
 interface ApiApproval {
@@ -37,11 +32,14 @@ interface ApiPolicy {
 @Component({
   selector: 'app-governance',
   standalone: true,
-  imports: [CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="governance-page" role="main" [attr.aria-label]="i18n.t('governance.title')">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Governance"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <header class="page-header">
         <h2>{{ i18n.t('governance.title') }}</h2>
         <p class="subtitle">{{ i18n.t('governance.subtitle') }}</p>

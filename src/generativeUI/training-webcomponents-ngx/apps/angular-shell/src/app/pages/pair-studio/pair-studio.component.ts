@@ -4,9 +4,9 @@ import {
   inject,
   signal,
   computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-} from '@angular/core';
+  } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 
 import { I18nService } from '../../services/i18n.service';
@@ -17,8 +17,7 @@ import { PairType, TrustLevel, TermPair, ParagraphPair } from './pair-studio.typ
 @Component({
   selector: 'app-pair-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pair-studio.component.html',
   styleUrls: ['./pair-studio.component.scss'],

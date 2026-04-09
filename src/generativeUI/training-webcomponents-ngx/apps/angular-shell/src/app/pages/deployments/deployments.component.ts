@@ -32,6 +32,10 @@ function readErrorMessage(error: unknown, fallback: string): string {
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, ConfirmationDialogComponent, EmptyStateComponent, DateFormatPipe, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Deployments"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ 'deployments.title' | translate }}</ui5-title>
         <ui5-button

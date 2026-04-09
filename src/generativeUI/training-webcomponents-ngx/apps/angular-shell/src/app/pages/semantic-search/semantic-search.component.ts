@@ -1,8 +1,8 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, OnDestroy,
-  CUSTOM_ELEMENTS_SCHEMA,
-} from '@angular/core';
+  } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { I18nService } from '../../services/i18n.service';
 import { ApiService } from '../../services/api.service';
@@ -29,11 +29,14 @@ interface SearchResponse {
 @Component({
   selector: 'app-semantic-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-container" [class.rtl]="i18n.isRtl()" role="main" aria-label="Semantic search">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Semantic Search"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/rag"

@@ -1,22 +1,17 @@
 import { Component, ChangeDetectionStrategy, inject, ViewChild, ElementRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { WorkspaceService } from '../../services/workspace.service';
 import { TRAINING_NAV_LINKS } from '../../services/workspace.types';
 import { I18nService } from '../../services/i18n.service';
-import '@ui5/webcomponents/dist/Card.js';
-import '@ui5/webcomponents/dist/CardHeader.js';
-import '@ui5/webcomponents/dist/Input.js';
-import '@ui5/webcomponents/dist/StepInput.js';
-import '@ui5/webcomponents/dist/TextArea.js';
-import '@ui5/webcomponents/dist/Switch.js';
-import '@ui5/webcomponents/dist/Tag.js';
-import '@ui5/webcomponents/dist/Button.js';
-import '@ui5/webcomponents/dist/Dialog.js';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 
 @Component({
   selector: 'app-workspace',
   standalone: true,
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="workspace-page">
