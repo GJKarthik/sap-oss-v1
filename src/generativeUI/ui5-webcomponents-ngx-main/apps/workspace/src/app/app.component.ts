@@ -20,11 +20,18 @@ export class AppComponent implements OnInit, OnDestroy {
   currentLanguage = 'en';
   shellbarA11y = {
     logo: { name: 'SAP AI Experience' },
+    profile: { name: 'User Profile', hasPopup: 'menu' as const },
   };
   learnPathActive = false;
   learnPathDismissed = false;
   learnPathStepLabel = '';
   learnPathProgress = '';
+
+  // User menu state
+  userMenuOpen = false;
+
+  // Side navigation mode: Auto handles responsive collapse
+  sideNavMode: 'Auto' | 'Collapsed' | 'Expanded' = 'Auto';
 
   @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
@@ -54,6 +61,29 @@ export class AppComponent implements OnInit, OnDestroy {
         localStorage.setItem('ui5-language', settings.language);
       }
     });
+  }
+
+  // --- User profile derived from workspace identity ---
+
+  get userName(): string {
+    return this.workspaceService.identity().displayName || 'SAP AI User';
+  }
+
+  get userInitials(): string {
+    const name = this.userName;
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  get userEmail(): string {
+    return this.workspaceService.identity().userId || '';
+  }
+
+  get userTeam(): string {
+    return this.workspaceService.identity().teamName || '';
   }
 
   get navLinks(): NavLinkDatum[] {
@@ -114,6 +144,20 @@ export class AppComponent implements OnInit, OnDestroy {
     this.productNavigation.navigateToLanding();
   }
 
+  // --- ShellBar events ---
+
+  toggleUserMenu(_event: any): void {
+    this.userMenuOpen = !this.userMenuOpen;
+  }
+
+  onNotificationsClick(_event: any): void {
+    // Placeholder for notification popover
+  }
+
+  onSearch(_event: any): void {
+    // Placeholder for global search handling
+  }
+
   openProducts(event: any): void {
     this.productPopover.nativeElement.showAt(event.detail.targetRef);
   }
@@ -122,6 +166,31 @@ export class AppComponent implements OnInit, OnDestroy {
     const appId = event.detail.item.getAttribute('data-app') as ProductAppId | null;
     if (appId) {
       this.productNavigation.navigateToApp(appId);
+    }
+  }
+
+  // --- User Menu events ---
+
+  onUserMenuItemClick(event: any): void {
+    const path = event.detail?.item?.getAttribute?.('data-path');
+    if (path) {
+      this.userMenuOpen = false;
+      this.router.navigate([path]);
+    }
+  }
+
+  onSignOut(): void {
+    this.userMenuOpen = false;
+    // Sign-out placeholder
+  }
+
+  // --- Side Navigation ---
+
+  onSideNavSelect(event: any): void {
+    const item = event.detail?.item;
+    const path = item?.getAttribute?.('data-path');
+    if (path) {
+      this.router.navigate([path]);
     }
   }
 

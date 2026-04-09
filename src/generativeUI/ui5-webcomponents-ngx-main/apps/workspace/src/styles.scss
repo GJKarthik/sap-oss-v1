@@ -124,6 +124,80 @@ ui5-page {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Apple Liquid Glass — global theme layer
+// Inspired by Apple WWDC 2025 Liquid Glass design language.
+// Frosted translucency, specular highlights, vibrancy, depth.
+// ---------------------------------------------------------------------------
+
+:root {
+  // RGB triplets for rgba() composition
+  --sapShell_Background_RGB: 53, 74, 94;
+  --lg-blur: 20px;
+  --lg-saturation: 180%;
+  --lg-surface: rgba(255, 255, 255, 0.52);
+  --lg-surface-elevated: rgba(255, 255, 255, 0.72);
+  --lg-border: rgba(255, 255, 255, 0.22);
+  --lg-border-subtle: rgba(255, 255, 255, 0.10);
+  --lg-specular: rgba(255, 255, 255, 0.45);
+  --lg-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --lg-shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --lg-radius: 1.25rem;
+  --lg-radius-sm: 0.75rem;
+  --lg-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Liquid Glass card mixin
+%lg-card {
+  background: var(--lg-surface);
+  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  border: 0.5px solid var(--lg-border);
+  border-radius: var(--lg-radius);
+  box-shadow: var(--lg-shadow);
+  // Top specular highlight
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      var(--lg-specular) 0%,
+      transparent 40%
+    );
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    padding: 0.5px;
+    opacity: 0.6;
+  }
+}
+
+// Apply Liquid Glass to UI5 cards globally
+ui5-card {
+  @extend %lg-card;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--lg-transition), box-shadow var(--lg-transition);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--lg-shadow-elevated);
+  }
+}
+
+// Liquid Glass dialogs
+ui5-dialog::part(content) {
+  backdrop-filter: saturate(var(--lg-saturation)) blur(calc(var(--lg-blur) * 1.5));
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(calc(var(--lg-blur) * 1.5));
+}
+
+// Liquid Glass popovers
+ui5-popover {
+  --_ui5_popup_content_background: var(--lg-surface-elevated);
+}
 
 // ---------------------------------------------------------------------------
 // RTL global support
