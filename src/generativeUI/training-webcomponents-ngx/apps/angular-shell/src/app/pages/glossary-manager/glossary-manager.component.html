@@ -5,20 +5,19 @@
   </ui5-breadcrumbs>
   <div class="page-header">
     <div>
-      <h1>{{ i18n.t('glossary.title') }}</h1>
+      <ui5-title level="H3">{{ i18n.t('glossary.title') }}</ui5-title>
       <p class="subtitle">{{ i18n.t('glossary.subtitle') }}</p>
       <div class="backend-row">
-        <span class="backend-label">{{ i18n.t('glossary.backend.label') }}</span>
-        <span class="backend-chip" [class.backend-chip--hana]="tmBackend() === 'hana'">
-          {{ tmBackendLabel() }}
-        </span>
+        <ui5-label>{{ i18n.t('glossary.backend.label') }}</ui5-label>
+        <ui5-tag [attr.color-scheme]="tmBackend() === 'hana' ? '6' : '1'">{{ tmBackendLabel() }}</ui5-tag>
       </div>
     </div>
     <div class="header-actions">
       <ui5-button design="Default" icon="download" (click)="exportJson()">{{ i18n.t('glossary.export') }}</ui5-button>
-      <ui5-button design="Default" icon="upload" (click)="importFileInput.click()">{{ i18n.t('glossary.import') }}</ui5-button>
-      <input #importFileInput type="file" accept=".json,.csv" style="display:none" (change)="onImport($event)" />
-      <ui5-button design="Emphasized" (click)="showAddForm.set(true)">+ {{ i18n.t('glossary.addTerm') }}</ui5-button>
+      <ui5-file-uploader accept=".json,.csv" hide-input (change)="onImportFile($event)">
+        <ui5-button design="Default" icon="upload">{{ i18n.t('glossary.import') }}</ui5-button>
+      </ui5-file-uploader>
+      <ui5-button design="Emphasized" icon="add" (click)="showAddForm.set(true)">{{ i18n.t('glossary.addTerm') }}</ui5-button>
     </div>
   </div>
 
@@ -30,123 +29,113 @@
 
   <!-- Search/filter bar -->
   <div class="filter-bar">
-    <input type="text" class="search-input" [placeholder]="i18n.t('glossary.searchPlaceholder')" [(ngModel)]="searchQuery" />
+    <ui5-input [placeholder]="i18n.t('glossary.searchPlaceholder')" [value]="searchQuery" (input)="searchQuery = $any($event).target.value" icon="search" class="search-input"></ui5-input>
     <div class="pair-type-chips">
-      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'all'" (click)="pairTypeFilter.set('all')">{{ i18n.t('glossary.pairTypeAll') }}</button>
-      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'translation'" (click)="pairTypeFilter.set('translation')">{{ i18n.t('glossary.pairTypeTranslation') }}</button>
-      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'alias'" (click)="pairTypeFilter.set('alias')">{{ i18n.t('glossary.pairTypeAlias') }}</button>
-      <button class="pair-type-chip" [class.active]="pairTypeFilter() === 'db_field_mapping'" (click)="pairTypeFilter.set('db_field_mapping')">{{ i18n.t('glossary.pairTypeDbField') }}</button>
+      <ui5-button [design]="pairTypeFilter() === 'all' ? 'Emphasized' : 'Default'" (click)="pairTypeFilter.set('all')">{{ i18n.t('glossary.pairTypeAll') }}</ui5-button>
+      <ui5-button [design]="pairTypeFilter() === 'translation' ? 'Emphasized' : 'Default'" (click)="pairTypeFilter.set('translation')">{{ i18n.t('glossary.pairTypeTranslation') }}</ui5-button>
+      <ui5-button [design]="pairTypeFilter() === 'alias' ? 'Emphasized' : 'Default'" (click)="pairTypeFilter.set('alias')">{{ i18n.t('glossary.pairTypeAlias') }}</ui5-button>
+      <ui5-button [design]="pairTypeFilter() === 'db_field_mapping' ? 'Emphasized' : 'Default'" (click)="pairTypeFilter.set('db_field_mapping')">{{ i18n.t('glossary.pairTypeDbField') }}</ui5-button>
     </div>
-    <span class="result-count">{{ filteredTmEntries().length }} {{ i18n.t('glossary.of') }} {{ tmEntries().length }} {{ i18n.t('glossary.overridesLabel') }}</span>
+    <ui5-tag design="Set2" color-scheme="1">{{ filteredTmEntries().length }} {{ i18n.t('glossary.of') }} {{ tmEntries().length }} {{ i18n.t('glossary.overridesLabel') }}</ui5-tag>
   </div>
 
   @if (showAddForm()) {
-    <div class="add-form card">
-      <h3>{{ i18n.t('glossary.addTitle') }}</h3>
+    <ui5-card>
+      <ui5-card-header slot="header" attr.title-text="{{ i18n.t('glossary.addTitle') }}"></ui5-card-header>
       <div class="form-grid">
         <div class="field-group">
-          <label>{{ i18n.t('glossary.sourceLang') }}</label>
-          <select [(ngModel)]="newEntry.source_lang">
-            <option value="en">{{ i18n.t('glossary.langEnglish') }}</option>
-            <option value="ar">{{ i18n.t('glossary.langArabic') }}</option>
-          </select>
+          <ui5-label show-colon>{{ i18n.t('glossary.sourceLang') }}</ui5-label>
+          <ui5-select (change)="onSourceLangChange($event)">
+            <ui5-option value="en" [attr.selected]="newEntry.source_lang === 'en' ? true : null">{{ i18n.t('glossary.langEnglish') }}</ui5-option>
+            <ui5-option value="ar" [attr.selected]="newEntry.source_lang === 'ar' ? true : null">{{ i18n.t('glossary.langArabic') }}</ui5-option>
+          </ui5-select>
         </div>
         <div class="field-group">
-          <label>{{ i18n.t('glossary.sourceText') }}</label>
-          <input type="text" [(ngModel)]="newEntry.source_text" [placeholder]="i18n.t('glossary.placeholderSource')" />
+          <ui5-label show-colon>{{ i18n.t('glossary.sourceText') }}</ui5-label>
+          <ui5-input [value]="newEntry.source_text" [placeholder]="i18n.t('glossary.placeholderSource')" (input)="newEntry.source_text = $any($event).target.value"></ui5-input>
         </div>
         <div class="field-group">
-          <label>{{ i18n.t('glossary.targetText') }}</label>
-          <input type="text" [(ngModel)]="newEntry.target_text" [placeholder]="i18n.t('glossary.placeholderTarget')" />
+          <ui5-label show-colon>{{ i18n.t('glossary.targetText') }}</ui5-label>
+          <ui5-input [value]="newEntry.target_text" [placeholder]="i18n.t('glossary.placeholderTarget')" (input)="newEntry.target_text = $any($event).target.value"></ui5-input>
         </div>
         <div class="field-group">
-          <label>{{ i18n.t('glossary.category') }}</label>
-          <select [(ngModel)]="newEntry.category">
-            <option value="financial">{{ i18n.t('glossary.catFinancial') }}</option>
-            <option value="regulatory">{{ i18n.t('glossary.catRegulatory') }}</option>
-            <option value="general">{{ i18n.t('glossary.catGeneral') }}</option>
-          </select>
+          <ui5-label show-colon>{{ i18n.t('glossary.category') }}</ui5-label>
+          <ui5-select (change)="onCategoryChange($event)">
+            <ui5-option value="financial" [attr.selected]="newEntry.category === 'financial' ? true : null">{{ i18n.t('glossary.catFinancial') }}</ui5-option>
+            <ui5-option value="regulatory" [attr.selected]="newEntry.category === 'regulatory' ? true : null">{{ i18n.t('glossary.catRegulatory') }}</ui5-option>
+            <ui5-option value="general" [attr.selected]="newEntry.category === 'general' ? true : null">{{ i18n.t('glossary.catGeneral') }}</ui5-option>
+          </ui5-select>
         </div>
       </div>
       <div class="form-actions">
         <ui5-button design="Emphasized" (click)="saveNewEntry()">{{ i18n.t('glossary.saveOverride') }}</ui5-button>
         <ui5-button design="Transparent" (click)="showAddForm.set(false)">{{ i18n.t('common.cancel') }}</ui5-button>
       </div>
-    </div>
+    </ui5-card>
   }
 
   <!-- Section 1: Translation Memory (Human-in-the-loop) -->
   <section class="section">
     <div class="section-header">
-      <h2>{{ i18n.t('glossary.tmSection') }}</h2>
-      <span class="badge">{{ filteredTmEntries().length }} {{ i18n.t('glossary.overridesLabel') }}</span>
+      <ui5-title level="H4">{{ i18n.t('glossary.tmSection') }}</ui5-title>
+      <ui5-tag design="Set2" color-scheme="8">{{ filteredTmEntries().length }} {{ i18n.t('glossary.overridesLabel') }}</ui5-tag>
     </div>
-    <div class="card table-wrap">
-      <table [attr.aria-label]="i18n.t('glossary.tmSection')">
-        <thead>
-          <tr>
-            <th>{{ i18n.t('glossary.colSource') }}</th>
-            <th>{{ i18n.t('glossary.colApprovedMapping') }}</th>
-            <th>{{ i18n.t('glossary.category') }}</th>
-            <th>{{ i18n.t('common.status') }}</th>
-            <th>{{ i18n.t('glossary.colActions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (e of filteredTmEntries(); track e.id) {
-            <tr>
-              <td><bdi>{{ e.source_text }}</bdi> <span class="lang-tag">{{ e.source_lang }}</span></td>
-              <td><bdi>{{ e.target_text }}</bdi> <span class="lang-tag">{{ e.target_lang }}</span></td>
-              <td><span class="cat-tag">{{ e.category }}</span></td>
-              <td>
-                <span class="status-chip" [class.approved]="e.is_approved">
-                  {{ e.is_approved ? i18n.t('glossary.statusApproved') : i18n.t('glossary.statusPending') }}
-                </span>
-              </td>
-              <td>
-                <div class="action-row">
-                  <ui5-button *ngIf="!e.is_approved" design="Default" icon="accept" (click)="approveEntry(e)" [title]="i18n.t('glossary.approve')"></ui5-button>
-                  <ui5-button design="Negative" icon="delete" (click)="deleteEntry(e.id)" [title]="i18n.t('common.delete')"></ui5-button>
-                </div>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="5" class="empty-cell">{{ i18n.t('glossary.noOverrides') }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <ui5-table [accessibleName]="i18n.t('glossary.tmSection')">
+      <ui5-table-header-row slot="headerRow">
+        <ui5-table-header-cell>{{ i18n.t('glossary.colSource') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('glossary.colApprovedMapping') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('glossary.category') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('common.status') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('glossary.colActions') }}</ui5-table-header-cell>
+      </ui5-table-header-row>
+      @for (e of filteredTmEntries(); track e.id) {
+        <ui5-table-row>
+          <ui5-table-cell><bdi>{{ e.source_text }}</bdi> <ui5-tag design="Set2" color-scheme="3">{{ e.source_lang }}</ui5-tag></ui5-table-cell>
+          <ui5-table-cell><bdi>{{ e.target_text }}</bdi> <ui5-tag design="Set2" color-scheme="3">{{ e.target_lang }}</ui5-tag></ui5-table-cell>
+          <ui5-table-cell><ui5-tag>{{ e.category }}</ui5-tag></ui5-table-cell>
+          <ui5-table-cell>
+            <ui5-tag [attr.color-scheme]="e.is_approved ? '8' : '1'">
+              {{ e.is_approved ? i18n.t('glossary.statusApproved') : i18n.t('glossary.statusPending') }}
+            </ui5-tag>
+          </ui5-table-cell>
+          <ui5-table-cell>
+            <div class="action-row">
+              @if (!e.is_approved) {
+                <ui5-button design="Default" icon="accept" (click)="approveEntry(e)" [accessibleName]="i18n.t('glossary.approve')"></ui5-button>
+              }
+              <ui5-button design="Negative" icon="delete" (click)="deleteEntry(e.id)" [accessibleName]="i18n.t('common.delete')"></ui5-button>
+            </div>
+          </ui5-table-cell>
+        </ui5-table-row>
+      } @empty {
+        <ui5-table-row>
+          <ui5-table-cell colspan="5">{{ i18n.t('glossary.noOverrides') }}</ui5-table-cell>
+        </ui5-table-row>
+      }
+    </ui5-table>
   </section>
 
   <!-- Section 2: Official Static Glossary -->
   <section class="section">
     <div class="section-header">
-      <h2>{{ i18n.t('glossary.staticSection') }}</h2>
-      <span class="badge">{{ glossary.entries().length }} {{ i18n.t('glossary.termsLabel') }}</span>
+      <ui5-title level="H4">{{ i18n.t('glossary.staticSection') }}</ui5-title>
+      <ui5-tag design="Set2" color-scheme="8">{{ glossary.entries().length }} {{ i18n.t('glossary.termsLabel') }}</ui5-tag>
     </div>
-    <div class="card table-wrap">
-      <table [attr.aria-label]="i18n.t('glossary.staticSection')">
-        <thead>
-          <tr>
-            <th>{{ i18n.t('glossary.colTermEnglish') }}</th>
-            <th>{{ i18n.t('glossary.colTranslationArabic') }}</th>
-            <th>{{ i18n.t('glossary.category') }}</th>
-            <th>{{ i18n.t('glossary.colIfrsContext') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (e of glossary.entries(); track e.en) {
-            <tr>
-              <td><strong>{{ e.en }}</strong></td>
-              <td dir="rtl">{{ e.ar }}</td>
-              <td><span class="cat-tag">{{ e.category }}</span></td>
-              <td><span class="ifrs-tag">{{ e.ifrs_context }}</span></td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <ui5-table [accessibleName]="i18n.t('glossary.staticSection')">
+      <ui5-table-header-row slot="headerRow">
+        <ui5-table-header-cell>{{ i18n.t('glossary.colTermEnglish') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('glossary.colTranslationArabic') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('glossary.category') }}</ui5-table-header-cell>
+        <ui5-table-header-cell>{{ i18n.t('glossary.colIfrsContext') }}</ui5-table-header-cell>
+      </ui5-table-header-row>
+      @for (e of glossary.entries(); track e.en) {
+        <ui5-table-row>
+          <ui5-table-cell><strong>{{ e.en }}</strong></ui5-table-cell>
+          <ui5-table-cell dir="rtl">{{ e.ar }}</ui5-table-cell>
+          <ui5-table-cell><ui5-tag>{{ e.category }}</ui5-tag></ui5-table-cell>
+          <ui5-table-cell><ui5-tag design="Set2" color-scheme="5">{{ e.ifrs_context }}</ui5-tag></ui5-table-cell>
+        </ui5-table-row>
+      }
+    </ui5-table>
   </section>
 </div>

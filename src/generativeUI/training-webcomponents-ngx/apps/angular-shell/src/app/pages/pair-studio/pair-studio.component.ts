@@ -117,6 +117,47 @@ export class PairStudioComponent {
   });
 
   // ---------------------------------------------------------------------------
+  // UI5 select/tab event handlers
+  // ---------------------------------------------------------------------------
+
+  onPairTypeChange(event: any): void {
+    this.pairType = event.detail?.selectedOption?.value ?? 'translation';
+  }
+
+  onSourceLangChange(event: any): void {
+    this.sourceLang = event.detail?.selectedOption?.value ?? 'auto';
+  }
+
+  onTargetLangChange(event: any): void {
+    this.targetLang = event.detail?.selectedOption?.value ?? 'auto';
+  }
+
+  onFilterPairTypeChange(event: any): void {
+    this.filterPairType.set(event.detail?.selectedOption?.value ?? 'all');
+  }
+
+  onFilterStatusChange(event: any): void {
+    this.filterStatus.set(event.detail?.selectedOption?.value ?? 'all');
+  }
+
+  onTabSelect(event: any): void {
+    const key = event.detail?.tab?.getAttribute?.('data-key');
+    if (key === 'terms' || key === 'paragraphs') {
+      this.activeTab.set(key);
+    }
+  }
+
+  toggleAllParagraphs(): void {
+    const paras = this.filteredParagraphs();
+    const set = this.selectedParagraphIndices();
+    if (set.size === paras.length) {
+      this.selectedParagraphIndices.set(new Set());
+    } else {
+      this.selectedParagraphIndices.set(new Set(paras.map((_, i) => i)));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Upload zone handlers
   // ---------------------------------------------------------------------------
 

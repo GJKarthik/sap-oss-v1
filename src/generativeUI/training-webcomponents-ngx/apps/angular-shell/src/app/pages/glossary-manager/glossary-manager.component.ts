@@ -163,6 +163,34 @@ export class GlossaryManagerComponent implements OnInit {
     return order.indexOf(entryScope) < order.indexOf(currentScope);
   }
 
+  onSourceLangChange(event: any): void {
+    this.newEntry.source_lang = event.detail?.selectedOption?.value ?? 'en';
+  }
+
+  onCategoryChange(event: any): void {
+    this.newEntry.category = event.detail?.selectedOption?.value ?? 'financial';
+  }
+
+  onImportFile(event: any): void {
+    const files = event.detail?.files || event.target?.files;
+    if (!files?.length) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const entries: TMEntry[] = JSON.parse(reader.result as string);
+        if (!Array.isArray(entries)) { this.toast.error(this.i18n.t('glossary.invalidFileFormat')); return; }
+        let saved = 0;
+        entries.forEach(entry => {
+          if (entry.source_text && entry.target_text) {
+            this.tm.save(entry).subscribe({ next: () => { saved++; if (saved === entries.length) { this.loadTM(); this.glossary.loadOverrides(); this.toast.success(this.i18n.t('glossary.importedEntries', { count: String(saved) })); } } });
+          }
+        });
+      } catch { this.toast.error(this.i18n.t('glossary.failedParseFile')); }
+    };
+    reader.readAsText(file);
+  }
+
   exportJson(): void {
     const data = this.tmEntries();
     if (data.length === 0) return;

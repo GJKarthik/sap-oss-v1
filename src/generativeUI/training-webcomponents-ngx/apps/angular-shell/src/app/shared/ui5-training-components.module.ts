@@ -7,8 +7,10 @@ import { BreadcrumbsItemComponent } from '@ui5/webcomponents-ngx/main/breadcrumb
 import { BusyIndicatorComponent } from '@ui5/webcomponents-ngx/main/busy-indicator';
 import { ButtonComponent } from '@ui5/webcomponents-ngx/main/button';
 import { CardComponent } from '@ui5/webcomponents-ngx/main/card';
+import { CheckBoxComponent } from '@ui5/webcomponents-ngx/main/check-box';
 import { CardHeaderComponent } from '@ui5/webcomponents-ngx/main/card-header';
 import { DialogComponent } from '@ui5/webcomponents-ngx/main/dialog';
+import { FileUploaderComponent } from '@ui5/webcomponents-ngx/main/file-uploader';
 import { IconComponent } from '@ui5/webcomponents-ngx/main/icon';
 import { InputComponent } from '@ui5/webcomponents-ngx/main/input';
 import { LabelComponent } from '@ui5/webcomponents-ngx/main/label';
@@ -20,6 +22,7 @@ import { MessageStripComponent } from '@ui5/webcomponents-ngx/main/message-strip
 import { OptionComponent } from '@ui5/webcomponents-ngx/main/option';
 import { PopoverComponent } from '@ui5/webcomponents-ngx/main/popover';
 import { ProgressIndicatorComponent } from '@ui5/webcomponents-ngx/main/progress-indicator';
+import { RadioButtonComponent } from '@ui5/webcomponents-ngx/main/radio-button';
 import { SelectComponent } from '@ui5/webcomponents-ngx/main/select';
 import { SplitButtonComponent } from '@ui5/webcomponents-ngx/main/split-button';
 import { StepInputComponent } from '@ui5/webcomponents-ngx/main/step-input';
@@ -29,6 +32,7 @@ import { TabContainerComponent } from '@ui5/webcomponents-ngx/main/tab-container
 import { TableComponent } from '@ui5/webcomponents-ngx/main/table';
 import { TableCellComponent } from '@ui5/webcomponents-ngx/main/table-cell';
 import { TableHeaderCellComponent } from '@ui5/webcomponents-ngx/main/table-header-cell';
+import { TableHeaderRowComponent } from '@ui5/webcomponents-ngx/main/table-header-row';
 import { TableRowComponent } from '@ui5/webcomponents-ngx/main/table-row';
 import { TagComponent } from '@ui5/webcomponents-ngx/main/tag';
 import { TextAreaComponent } from '@ui5/webcomponents-ngx/main/text-area';
@@ -56,7 +60,9 @@ const imports = [
   ButtonComponent,
   CardComponent,
   CardHeaderComponent,
+  CheckBoxComponent,
   DialogComponent,
+  FileUploaderComponent,
   IconComponent,
   InputComponent,
   LabelComponent,
@@ -68,6 +74,7 @@ const imports = [
   OptionComponent,
   PopoverComponent,
   ProgressIndicatorComponent,
+  RadioButtonComponent,
   SelectComponent,
   SplitButtonComponent,
   StepInputComponent,
@@ -77,6 +84,7 @@ const imports = [
   TableComponent,
   TableCellComponent,
   TableHeaderCellComponent,
+  TableHeaderRowComponent,
   TableRowComponent,
   TagComponent,
   TextAreaComponent,
