@@ -25,11 +25,13 @@ import {
   resolveTrainingGroup,
 } from '../../app.navigation';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
+import { ModeSwitcherComponent } from '../../shared/components/mode-switcher/mode-switcher.component';
+import { getRouteRelevance } from '../../shared/utils/mode.helpers';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, Ui5TrainingComponentsModule],
+  imports: [CommonModule, RouterOutlet, Ui5TrainingComponentsModule, ModeSwitcherComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -51,14 +53,15 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         [primaryTitle]="i18n.t('app.title')"
         [secondaryTitle]="i18n.t('app.subtitle')"
         show-notifications="true"
-        show-product-switch="true"
         [notificationsCount]="'0'"
         [accessibilityAttributes]="shellbarA11y"
         (logoClick)="navigateTo('/dashboard')"
         (profile-click)="toggleUserMenu($event)"
-        (product-switch-click)="openProducts($event)"
         (notifications-click)="onNotificationsClick($event)"
         (custom-item-click)="onCustomItemClick($event)">
+
+        <!-- ═══ Mode Switcher (replaces product-switch) ═══ -->
+        <app-mode-switcher slot="startContent"></app-mode-switcher>
 
         <!-- SAP Logo -->
         <img slot="logo"
@@ -121,16 +124,6 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         }
       </ui5-menu>
 
-      <!-- ── Product Switcher — glass popover ── -->
-      <ui5-popover #productPopover [headerText]="i18n.t('product.switcher')" placement-type="Bottom" horizontal-align="Right">
-        <ui5-list (item-click)="onProductSelect($event)">
-          <ui5-li icon="home" data-app="aifabric">{{ i18n.t('product.aiFabric') }}</ui5-li>
-          <ui5-li icon="process" data-app="training" selected>{{ i18n.t('product.training') }}</ui5-li>
-          <ui5-li icon="chart-table-view" data-app="sac">{{ i18n.t('product.sac') }}</ui5-li>
-          <ui5-li icon="grid" data-app="experience">{{ i18n.t('product.joule') }}</ui5-li>
-        </ui5-list>
-      </ui5-popover>
-
       <!-- ── NavigationLayout + SideNavigation + Content ── -->
       <ui5-navigation-layout mode="Auto">
         <ui5-side-navigation
@@ -138,13 +131,19 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
           (ui5SelectionChange)="onSideNavSelect($event)">
 
           @for (group of navGroups(); track group.id) {
-            <ui5-side-navigation-group [text]="i18n.t(group.labelKey)" [expanded]="activeGroupId() === group.id">
+            <ui5-side-navigation-group
+              [text]="i18n.t(group.labelKey)"
+              [expanded]="activeGroupId() === group.id"
+              [style.opacity]="groupOpacity(group.id)"
+              [style.transition]="'opacity 0.3s ease'">
               @for (route of groupRoutes(group.id); track route.path) {
                 <ui5-side-navigation-item
                   [text]="i18n.t(route.labelKey)"
                   [icon]="route.icon"
                   [selected]="isRouteActive(route.path)"
-                  [attr.data-path]="route.path">
+                  [attr.data-path]="route.path"
+                  [style.opacity]="routeOpacity(route)"
+                  [style.transition]="'opacity 0.3s ease'">
                 </ui5-side-navigation-item>
               }
             </ui5-side-navigation-group>
@@ -161,6 +160,20 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
 
         <!-- ── Main Viewport ── -->
         <main id="main-content" class="app-viewport" tabindex="-1">
+          <!-- Mode context pills -->
+          @if (store.modePills().length > 0) {
+            <div class="mode-pills" role="toolbar" [attr.aria-label]="i18n.t('mode.pillsLabel')">
+              @for (pill of store.modePills(); track pill.action) {
+                <ui5-button
+                  design="Transparent"
+                  [icon]="pill.icon"
+                  (click)="onPillClick(pill.action)"
+                  class="mode-pill">
+                  {{ i18n.t(pill.labelKey) }}
+                </ui5-button>
+              }
+            </div>
+          }
           <router-outlet></router-outlet>
         </main>
       </ui5-navigation-layout>
@@ -255,6 +268,20 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
       box-shadow: 0 0 8px rgba(0, 112, 242, 0.4);
     }
 
+    /* ═══ Mode Pills Bar ═══ */
+    .mode-pills {
+      display: flex;
+      gap: 0.375rem;
+      padding: 0.5rem 1rem 0;
+      flex-wrap: wrap;
+    }
+    .mode-pill {
+      font-size: 0.8125rem;
+      opacity: 0.8;
+      transition: opacity 0.2s ease;
+    }
+    .mode-pill:hover { opacity: 1; }
+
     /* ═══ Profile Avatar — status ring + spring ═══ */
     ui5-avatar[slot="profile"] {
       box-shadow: 0 0 0 2px #2b7c2b, 0 0 0 3px rgba(255,255,255,0.8);
@@ -321,7 +348,6 @@ export class ShellComponent implements OnInit, OnDestroy {
   @ViewChild('langMenu') langMenu!: ElementRef<any>;
   @ViewChild('searchDialog') searchDialog!: ElementRef<any>;
   @ViewChild('searchInput') searchInput!: ElementRef<any>;
-  @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
   readonly shellbarA11y = {
     logo: { name: 'SAP AI Workbench' },
@@ -469,16 +495,29 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Placeholder for notification popover
   }
 
-  openProducts(event: any): void {
-    this.productPopover.nativeElement.showAt(event.detail.targetRef);
-  }
-
-  onProductSelect(_event: any): void {
-    this.productPopover.nativeElement.close();
-  }
-
   onShellSearch(_event: any): void {
     this.toggleSearch();
+  }
+
+  // ── Mode helpers ──────────────────────────────────────────────────
+
+  groupOpacity(groupId: TrainingRouteGroupId): string {
+    const relevance = this.store.modeConfig().groupRelevance[groupId] ?? 0.5;
+    return String(Math.max(0.4, relevance));
+  }
+
+  routeOpacity(route: { group: TrainingRouteGroupId; modeRelevance?: any }): string {
+    const relevance = getRouteRelevance(
+      this.store.activeMode(),
+      route.group,
+      route.modeRelevance,
+    );
+    return String(Math.max(0.4, relevance));
+  }
+
+  onPillClick(action: string): void {
+    // Navigate to chat with the pill action as a query param
+    this.router.navigate(['/chat'], { queryParams: { action } });
   }
 
   onCustomItemClick(event: any) {
