@@ -230,6 +230,158 @@ ui5-table {
 }
 
 // ---------------------------------------------------------------------------
+// Shadow DOM ::part() theming — glass treatment on INTERNAL surfaces
+// ---------------------------------------------------------------------------
+
+// Card internals — the content area and header title/subtitle
+ui5-card::part(root) {
+  background: var(--lg-surface, rgba(255, 255, 255, 0.45));
+  border-radius: var(--lg-radius);
+}
+
+ui5-card::part(content) {
+  background: transparent;
+  padding: 1rem;
+}
+
+ui5-card-header::part(root) {
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom: 0.5px solid var(--lg-border-subtle, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+ui5-card-header::part(title) {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+ui5-card-header::part(subtitle) {
+  opacity: 0.7;
+}
+
+// Dialog internals — frosted header and footer
+ui5-dialog::part(header) {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+ui5-dialog::part(footer) {
+  background: rgba(255, 255, 255, 0.06);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+// Popover internals
+ui5-popover::part(header) {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+ui5-popover::part(footer) {
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+// Popup content area (inherited by Dialog + Popover)
+ui5-dialog::part(content),
+ui5-popover::part(content) {
+  background: transparent;
+}
+
+// Page content — transparent so glass surfaces show through
+ui5-page::part(content) {
+  background: transparent;
+  padding: 0;
+}
+
+// ShellBar root — glass material on the internal container
+ui5-shellbar::part(root) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+// Button internals — subtle glass on the button surface
+ui5-button::part(button) {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+// Input internals — glass input field
+ui5-input::part(input) {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 0.5rem;
+}
+
+// Bar internals (used in page headers)
+ui5-bar::part(bar) {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+// Panel internals
+ui5-panel::part(header) {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+ui5-panel::part(content) {
+  background: transparent;
+}
+
+// Tag internals — subtle glass pill
+ui5-tag::part(root) {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+// List items — hover glass lift
+ui5-li::part(native-li) {
+  border-radius: 0.375rem;
+  margin: 0.0625rem 0.25rem;
+  transition: background 0.2s ease;
+}
+
+ui5-li::part(native-li):hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+// Dark mode overrides for ::part() internals
+@media (prefers-color-scheme: dark) {
+  ui5-card::part(root) {
+    background: var(--lg-surface, rgba(30, 30, 30, 0.65));
+  }
+
+  ui5-card-header::part(root) {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  ui5-dialog::part(header),
+  ui5-popover::part(header) {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  ui5-bar::part(bar),
+  ui5-panel::part(header) {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  ui5-li::part(native-li):hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // RTL global support
 // ---------------------------------------------------------------------------
 
