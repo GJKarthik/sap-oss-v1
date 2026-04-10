@@ -24,6 +24,10 @@ interface InvocationEntry {
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="PAL Workbench"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ 'palWorkbench.title' | translate }}</ui5-title>
 
@@ -70,7 +74,7 @@ interface InvocationEntry {
 
             <div class="card-content">
               <div class="field-group">
-                <label for="pal-tool-select" class="field-label">{{ 'palWorkbench.tool' | translate }}</label>
+                <ui5-label for="pal-tool-select" class="field-label">{{ 'palWorkbench.tool' | translate }}</ui5-label>
                 <ui5-select
                   id="pal-tool-select"
                   ngDefaultControl
@@ -96,7 +100,7 @@ interface InvocationEntry {
               </div>
 
               <div class="field-group">
-                <label for="pal-tool-args" class="field-label">{{ 'palWorkbench.argumentsJson' | translate }}</label>
+                <ui5-label for="pal-tool-args" class="field-label">{{ 'palWorkbench.argumentsJson' | translate }}</ui5-label>
                 <ui5-textarea
                   id="pal-tool-args"
                   ngDefaultControl

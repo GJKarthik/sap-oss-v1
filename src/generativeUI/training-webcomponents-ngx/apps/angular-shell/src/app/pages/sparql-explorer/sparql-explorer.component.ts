@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
@@ -12,9 +12,12 @@ import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
   selector: 'app-sparql-explorer',
   standalone: true,
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="SPARQL Explorer"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ i18n.t('sparql.title') }}</ui5-title>
       </ui5-bar>
@@ -30,10 +33,10 @@ import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="false" (close)="error = ''" role="alert">{{ error }}</ui5-message-strip>
 
         <ui5-card>
-          <ui5-card-header slot="header" title-text="{{ i18n.t('sparql.queryInterface') }}" subtitle-text="{{ i18n.t('sparql.querySubtitle') }}"></ui5-card-header>
+          <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('sparql.queryInterface') }}" attr.attr.subtitle-text="{{  i18n.t('sparql.querySubtitle') }}"></ui5-card-header>
           <div class="card-content">
             <div class="field-group">
-              <label class="field-label">{{ i18n.t('sparql.query') }}</label>
+              <ui5-label class="field-label">{{ i18n.t('sparql.query') }}</ui5-label>
               <ui5-textarea ngDefaultControl name="sparqlQuery" [(ngModel)]="sparqlQuery" [rows]="6" placeholder="SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 10" accessible-name="SPARQL query"></ui5-textarea>
             </div>
             <div class="actions">

@@ -14,6 +14,10 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
   imports: [CommonModule, Ui5TrainingComponentsModule, EmptyStateComponent, TranslatePipe, CrossAppLinkComponent],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Streaming"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ 'streaming.searchOperations' | translate }}</ui5-title>
 

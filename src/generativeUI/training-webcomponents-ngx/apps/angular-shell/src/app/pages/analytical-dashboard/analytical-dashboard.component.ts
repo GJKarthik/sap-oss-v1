@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
@@ -11,9 +11,12 @@ import { I18nService } from '../../services/i18n.service';
   selector: 'app-analytical-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Analytical Dashboard"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ i18n.t('analyticalDashboard.title') }}</ui5-title>
         <ui5-button slot="endContent" icon="refresh" (click)="loadCalcViews()" [disabled]="loading">
@@ -33,26 +36,26 @@ import { I18nService } from '../../services/i18n.service';
 
         <!-- Query Builder -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="{{ i18n.t('analyticalDashboard.queryBuilder') }}" subtitle-text="{{ i18n.t('analyticalDashboard.queryBuilderSubtitle') }}"></ui5-card-header>
+          <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('analyticalDashboard.queryBuilder') }}" attr.attr.subtitle-text="{{  i18n.t('analyticalDashboard.queryBuilderSubtitle') }}"></ui5-card-header>
           <div class="card-content">
             <div class="form-grid">
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.calcView') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.calcView') }}</ui5-label>
                 <ui5-select ngDefaultControl name="calcView" [(ngModel)]="selectedCalcView" accessible-name="Select calculation view">
                   <ui5-option value="">{{ i18n.t('analyticalDashboard.selectCalcView') }}</ui5-option>
                   <ui5-option *ngFor="let cv of calcViews" [value]="cv">{{ cv }}</ui5-option>
                 </ui5-select>
               </div>
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.dimensions') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.dimensions') }}</ui5-label>
                 <ui5-input ngDefaultControl name="dimensions" [(ngModel)]="dimensionsInput" placeholder="{{ i18n.t('analyticalDashboard.dimensionsPlaceholder') }}" accessible-name="Dimensions (comma-separated)"></ui5-input>
               </div>
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.measures') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.measures') }}</ui5-label>
                 <ui5-input ngDefaultControl name="measures" [(ngModel)]="measuresInput" placeholder="{{ i18n.t('analyticalDashboard.measuresPlaceholder') }}" accessible-name="Measures (comma-separated)"></ui5-input>
               </div>
               <div class="field-group">
-                <label class="field-label">{{ i18n.t('analyticalDashboard.aggregation') }}</label>
+                <ui5-label class="field-label">{{ i18n.t('analyticalDashboard.aggregation') }}</ui5-label>
                 <ui5-select ngDefaultControl name="aggregation" [(ngModel)]="aggregation" accessible-name="Aggregation type">
                   <ui5-option value="SUM">SUM</ui5-option>
                   <ui5-option value="COUNT">COUNT</ui5-option>
@@ -84,7 +87,7 @@ import { I18nService } from '../../services/i18n.service';
 
           <!-- Results Table -->
           <ui5-card>
-            <ui5-card-header slot="header" title-text="{{ i18n.t('analyticalDashboard.results') }}"
+            <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('analyticalDashboard.results') }}"
               [additionalText]="queryResult.total + ' rows'" [subtitleText]="aggregation + ' aggregation'"></ui5-card-header>
             @if (queryResult.rows.length > 0) {
               <div class="table-wrapper">

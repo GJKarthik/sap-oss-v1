@@ -1,4 +1,8 @@
 <section class="mcp-page" role="main" aria-label="MCP tool explorer">
+  <ui5-breadcrumbs>
+    <ui5-breadcrumbs-item href="/" text="Home"></ui5-breadcrumbs-item>
+    <ui5-breadcrumbs-item text="MCP Tool Explorer"></ui5-breadcrumbs-item>
+  </ui5-breadcrumbs>
   <ui5-title level="H3">{{ 'MCP_PAGE_TITLE' | ui5I18n }}</ui5-title>
 
   <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button role="alert">
@@ -37,13 +41,15 @@
       <ui5-title level="H5">Arguments (JSON)</ui5-title>
       <ui5-button design="Transparent" icon="reset" (click)="toolArgs = '{}'">Clear</ui5-button>
     </div>
-    <textarea
+    <ui5-textarea
       class="mcp-page__args-editor"
-      [(ngModel)]="toolArgs"
-      rows="6"
-      spellcheck="false"
-      placeholder='{ "key": "value" }'
-      aria-label="Tool arguments JSON editor"></textarea>
+      [value]="toolArgs"
+      (change)="onArgsChange($event)"
+      [rows]="6"
+      growing
+      [placeholder]="'{ &quot;key&quot;: &quot;value&quot; }'"
+      accessible-name="Tool arguments JSON editor">
+    </ui5-textarea>
     <ui5-message-strip *ngIf="argsError" design="Negative" hide-close-button>
       {{ argsError }}
     </ui5-message-strip>

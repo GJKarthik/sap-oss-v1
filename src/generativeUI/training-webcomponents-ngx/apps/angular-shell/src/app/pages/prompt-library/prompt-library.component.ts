@@ -5,14 +5,15 @@
  * Uses Angular 20 standalone + @if/@for control flow.
  */
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { I18nService } from '../../services/i18n.service';
 import { ToastService } from '../../services/toast.service';
-import '@ui5/webcomponents/dist/Card.js';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import '@ui5/webcomponents/dist/Tag.js';
 import '@ui5/webcomponents/dist/Button.js';
 import '@ui5/webcomponents/dist/Input.js';
@@ -26,13 +27,16 @@ interface PromptTemplate {
 @Component({
   selector: 'app-prompt-library',
   standalone: true,
-  imports: [FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="prompt-page">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Prompt Library"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <header class="page-header">
-        <h2>{{ i18n.t('promptLibrary.title') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('promptLibrary.title') }}</ui5-title>
         <div class="header-actions">
           <ui5-input [placeholder]="i18n.t('promptLibrary.searchPlaceholder')" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" style="min-width: 200px;"></ui5-input>
           <ui5-button design="Emphasized" icon="add" (click)="showCreate.set(!showCreate())">{{ showCreate() ? i18n.t('common.cancel') : i18n.t('promptLibrary.newPrompt') }}</ui5-button>
@@ -65,7 +69,7 @@ interface PromptTemplate {
       <!-- Create form -->
       @if (showCreate()) {
         <div class="create-form">
-          <h3>{{ i18n.t('promptLibrary.newPromptTemplate') }}</h3>
+          <ui5-title level="H5">{{ i18n.t('promptLibrary.newPromptTemplate') }}</ui5-title>
           <ui5-input ngDefaultControl [(ngModel)]="draftName" name="name" [placeholder]="i18n.t('promptLibrary.promptName')" style="width: 100%;"></ui5-input>
           <ui5-input ngDefaultControl [(ngModel)]="draftCategory" name="category" [placeholder]="i18n.t('promptLibrary.category')" style="width: 100%;"></ui5-input>
           <ui5-input ngDefaultControl [(ngModel)]="draftDescription" name="desc" [placeholder]="i18n.t('promptLibrary.description')" style="width: 100%;"></ui5-input>
@@ -122,7 +126,7 @@ interface PromptTemplate {
               <h5>{{ i18n.t('promptLibrary.testVariables') }}</h5>
               @for (v of templateVars(); track v) {
                 <div class="var-input">
-                  <label>{{ v }}</label>
+                  <ui5-label>{{ v }}</ui5-label>
                   <ui5-input ngDefaultControl [(ngModel)]="testValues[v]" [placeholder]="'Enter ' + v + '...'" style="width: 100%;"></ui5-input>
                 </div>
               }

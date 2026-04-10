@@ -1091,8 +1091,8 @@
   "glossary.pairTypeTranslation": "Übersetzung",
   "glossary.pairTypeAlias": "Alias",
   "glossary.pairTypeDbField": "DB-Feld",
-  "navGroup.home": "Ueberblick",
   "navGroup.data": "Daten vorbereiten",
   "navGroup.assist": "Fragen und analysieren",
-  "navGroup.operations": "Ausfuehren und optimieren"
+  "navGroup.mlops": "Pipelines & MLOps",
+  "navGroup.content": "Sprache & Inhalte"
 }

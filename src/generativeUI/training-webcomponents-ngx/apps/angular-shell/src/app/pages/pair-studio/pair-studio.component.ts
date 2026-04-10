@@ -4,9 +4,9 @@ import {
   inject,
   signal,
   computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-} from '@angular/core';
+  } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 
 import { I18nService } from '../../services/i18n.service';
@@ -17,8 +17,7 @@ import { PairType, TrustLevel, TermPair, ParagraphPair } from './pair-studio.typ
 @Component({
   selector: 'app-pair-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pair-studio.component.html',
   styleUrls: ['./pair-studio.component.scss'],
@@ -116,6 +115,59 @@ export class PairStudioComponent {
     if (!batch) return 0;
     return batch.termPairs.filter((t) => t.status === 'approved' && t.existsInGlossary).length;
   });
+
+  // ---------------------------------------------------------------------------
+  // UI5 select/tab event handlers
+  // ---------------------------------------------------------------------------
+
+  onPairTypeChange(event: any): void {
+    this.pairType = event.detail?.selectedOption?.value ?? 'translation';
+  }
+
+  onSourceLangChange(event: any): void {
+    this.sourceLang = event.detail?.selectedOption?.value ?? 'auto';
+  }
+
+  onTargetLangChange(event: any): void {
+    this.targetLang = event.detail?.selectedOption?.value ?? 'auto';
+  }
+
+  onFilterPairTypeChange(event: any): void {
+    this.filterPairType.set(event.detail?.selectedOption?.value ?? 'all');
+  }
+
+  onFilterStatusChange(event: any): void {
+    this.filterStatus.set(event.detail?.selectedOption?.value ?? 'all');
+  }
+
+  onTermSelectionChange(event: any): void {
+    const rows = event.detail?.selectedRows || [];
+    const indices = new Set<number>(rows.map((r: any) => parseInt(r.getAttribute('data-index'), 10)).filter((n: number) => !isNaN(n)));
+    this.selectedTermIndices.set(indices);
+  }
+
+  onParagraphSelectionChange(event: any): void {
+    const rows = event.detail?.selectedRows || [];
+    const indices = new Set<number>(rows.map((r: any) => parseInt(r.getAttribute('data-index'), 10)).filter((n: number) => !isNaN(n)));
+    this.selectedParagraphIndices.set(indices);
+  }
+
+  onTabSelect(event: any): void {
+    const key = event.detail?.tab?.getAttribute?.('data-key');
+    if (key === 'terms' || key === 'paragraphs') {
+      this.activeTab.set(key);
+    }
+  }
+
+  toggleAllParagraphs(): void {
+    const paras = this.filteredParagraphs();
+    const set = this.selectedParagraphIndices();
+    if (set.size === paras.length) {
+      this.selectedParagraphIndices.set(new Set());
+    } else {
+      this.selectedParagraphIndices.set(new Set(paras.map((_, i) => i)));
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Upload zone handlers

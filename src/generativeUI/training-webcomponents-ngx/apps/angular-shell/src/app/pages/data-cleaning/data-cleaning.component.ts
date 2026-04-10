@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
@@ -40,11 +41,14 @@ interface DataCleaningWorkflowEventsResponse {
 @Component({
   selector: 'app-data-cleaning',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content" role="main" aria-label="Data cleaning workspace">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Data Cleaning"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <app-cross-app-link
         targetApp="aifabric"
         targetRoute="/data-quality"
@@ -53,18 +57,18 @@ interface DataCleaningWorkflowEventsResponse {
       </app-cross-app-link>
 
       <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('dataCleaning.title') }}</h1>
+        <ui5-title level="H3">{{ i18n.t('dataCleaning.title') }}</ui5-title>
         <p class="text-muted">{{ i18n.t('dataCleaning.subtitle') }}</p>
       </div>
 
       <div class="toolbar">
-        <span class="status-pill" [class.status-pill--ok]="healthStatus() === 'ok'">
+        <ui5-tag [attr.color-scheme]="healthStatus() === 'ok' ? '8' : '2'">
           {{ i18n.t('dataCleaning.backend') }}: {{ healthStatus() }}
-        </span>
+        </ui5-tag>
         @if (activeWorkflowId()) {
-          <span class="status-pill" [class.status-pill--ok]="workflowStatus() === 'completed'">
+          <ui5-tag [attr.color-scheme]="workflowStatus() === 'completed' ? '8' : '1'">
             {{ i18n.t('dataCleaning.workflow') }}: {{ workflowStatus() }}
-          </span>
+          </ui5-tag>
         }
         <ui5-button design="Default" (click)="refreshAll()" [disabled]="loadingHealth() || loadingChecks()">
           {{ i18n.t('dataCleaning.refresh') }}
@@ -76,7 +80,7 @@ interface DataCleaningWorkflowEventsResponse {
 
       <div class="grid">
         <section class="panel">
-          <h2>{{ i18n.t('dataCleaning.copilotChat') }}</h2>
+          <ui5-title level="H5">{{ i18n.t('dataCleaning.copilotChat') }}</ui5-title>
           <div class="chat-log" role="log" aria-label="Copilot conversation" aria-live="polite">
             @if (!messages().length) {
               <div class="empty">{{ i18n.t('dataCleaning.emptyChat') }}</div>
@@ -89,14 +93,15 @@ interface DataCleaningWorkflowEventsResponse {
             }
           </div>
           <form class="chat-input-row" (ngSubmit)="sendMessage()" role="form" aria-label="Chat input">
-            <textarea
+            <ui5-textarea
               class="chat-input"
-              name="prompt"
-              [(ngModel)]="prompt"
+              [value]="prompt"
+              (input)="prompt = $any($event).target.value"
               rows="2"
               [placeholder]="i18n.t('dataCleaning.placeholder')"
-              aria-label="Message to copilot"
-            ></textarea>
+              accessible-name="Message to copilot"
+              growing
+            ></ui5-textarea>
             <ui5-button design="Emphasized" (click)="sendMessage()" [disabled]="sending() || !prompt.trim()">
               {{ sending() ? '...' : i18n.t('dataCleaning.send') }}
             </ui5-button>
@@ -111,7 +116,7 @@ interface DataCleaningWorkflowEventsResponse {
         </section>
 
         <section class="panel">
-          <h2>{{ i18n.t('dataCleaning.generatedChecks') }}</h2>
+          <ui5-title level="H5">{{ i18n.t('dataCleaning.generatedChecks') }}</ui5-title>
           @if (loadingChecks()) {
             <div class="empty">{{ i18n.t('dataCleaning.loadingChecks') }}</div>
           } @else if (!checks().length) {
@@ -124,7 +129,7 @@ interface DataCleaningWorkflowEventsResponse {
             </div>
           }
 
-          <h2>{{ i18n.t('dataCleaning.workflowEvents') }}</h2>
+          <ui5-title level="H5">{{ i18n.t('dataCleaning.workflowEvents') }}</ui5-title>
           @if (!workflowEvents().length) {
             <div class="empty">{{ i18n.t('dataCleaning.noEvents') }}</div>
           } @else {

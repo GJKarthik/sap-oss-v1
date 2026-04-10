@@ -194,17 +194,9 @@
   font-weight: 600;
 }
 
-.presence-avatar {
+ui5-avatar-group {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  color: var(--sapContent_ContrastTextColor, #fff);
-  font-size: 0.65rem;
-  font-weight: 700;
-  cursor: default;
 }
 
 genui-outlet {

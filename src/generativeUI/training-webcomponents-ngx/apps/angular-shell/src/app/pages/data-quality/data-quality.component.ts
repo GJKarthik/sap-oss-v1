@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
@@ -13,9 +13,12 @@ import { ToastService } from '../../services/toast.service';
   selector: 'app-data-quality',
   standalone: true,
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid" class="dq-aura-bg">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Data Quality"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ i18n.t('dataQuality.title') }}</ui5-title>
         <div slot="endContent" style="display: flex; gap: 0.5rem; align-items: center;">

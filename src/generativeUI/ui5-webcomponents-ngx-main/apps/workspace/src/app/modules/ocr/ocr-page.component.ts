@@ -98,7 +98,9 @@ export class OcrPageComponent implements OnInit {
   }
 
   async onFileSelected(event: Event): Promise<void> {
-    const file = (event.target as HTMLInputElement)?.files?.[0];
+    // ui5-file-uploader emits files via detail.files; native input uses target.files
+    const detail = (event as CustomEvent)?.detail;
+    const file = detail?.files?.[0] ?? (event.target as HTMLInputElement)?.files?.[0];
     if (!file) {
       return;
     }

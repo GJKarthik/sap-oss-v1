@@ -1091,8 +1091,8 @@
   "glossary.pairTypeTranslation": "Terjemahan",
   "glossary.pairTypeAlias": "Alias",
   "glossary.pairTypeDbField": "Bidang DB",
-  "navGroup.home": "Ringkasan",
   "navGroup.data": "Siapkan Data",
   "navGroup.assist": "Tanya dan Analisis",
-  "navGroup.operations": "Jalankan dan Optimalkan"
+  "navGroup.mlops": "Pipeline & MLOps",
+  "navGroup.content": "Bahasa & Konten"
 }

@@ -1,4 +1,8 @@
 <section class="model-catalog" role="main" aria-label="Model catalog">
+  <ui5-breadcrumbs>
+    <ui5-breadcrumbs-item href="/" text="Home"></ui5-breadcrumbs-item>
+    <ui5-breadcrumbs-item text="Model Catalog"></ui5-breadcrumbs-item>
+  </ui5-breadcrumbs>
   <ui5-title level="H3">{{ 'MODEL_CATALOG_TITLE' | ui5I18n }}</ui5-title>
 
   <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
@@ -38,29 +42,26 @@
   <div class="model-catalog__snippets" *ngIf="!loading && models.length > 0">
     <ui5-title level="H4">Integration Snippets</ui5-title>
 
-    <div class="snippet-card">
-      <div class="snippet-header">
-        <span class="snippet-lang">cURL</span>
-        <ui5-button design="Transparent" icon="copy" (click)="copyToClipboard(curlSnippet)" aria-label="Copy cURL snippet"></ui5-button>
-      </div>
+    <ui5-card class="snippet-card">
+      <ui5-card-header slot="header" title-text="cURL" [attr.additional-text]="'curl'">
+        <ui5-button slot="action" design="Transparent" icon="copy" (click)="copyToClipboard(curlSnippet)" aria-label="Copy cURL snippet"></ui5-button>
+      </ui5-card-header>
       <pre class="snippet-code"><code>{{ curlSnippet }}</code></pre>
-    </div>
+    </ui5-card>
 
-    <div class="snippet-card">
-      <div class="snippet-header">
-        <span class="snippet-lang">Python</span>
-        <ui5-button design="Transparent" icon="copy" (click)="copyToClipboard(pythonSnippet)" aria-label="Copy Python snippet"></ui5-button>
-      </div>
+    <ui5-card class="snippet-card">
+      <ui5-card-header slot="header" title-text="Python" [attr.additional-text]="'python'">
+        <ui5-button slot="action" design="Transparent" icon="copy" (click)="copyToClipboard(pythonSnippet)" aria-label="Copy Python snippet"></ui5-button>
+      </ui5-card-header>
       <pre class="snippet-code"><code>{{ pythonSnippet }}</code></pre>
-    </div>
+    </ui5-card>
 
-    <div class="snippet-card">
-      <div class="snippet-header">
-        <span class="snippet-lang">TypeScript</span>
-        <ui5-button design="Transparent" icon="copy" (click)="copyToClipboard(tsSnippet)" aria-label="Copy TypeScript snippet"></ui5-button>
-      </div>
+    <ui5-card class="snippet-card">
+      <ui5-card-header slot="header" title-text="TypeScript" [attr.additional-text]="'typescript'">
+        <ui5-button slot="action" design="Transparent" icon="copy" (click)="copyToClipboard(tsSnippet)" aria-label="Copy TypeScript snippet"></ui5-button>
+      </ui5-card-header>
       <pre class="snippet-code"><code>{{ tsSnippet }}</code></pre>
-    </div>
+    </ui5-card>
   </div>
 
   <ui5-message-strip *ngIf="copySuccess" design="Positive" [hideCloseButton]="false" (close)="copySuccess = ''">

@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AppStore, GpuTelemetry, HealthStatus } from './app.store';
+import { AppMode } from '../shared/utils/mode.types';
+import { MODE_STORAGE_KEY, DEFAULT_MODE } from '../shared/utils/mode.config';
 
 const MOCK_HEALTH: HealthStatus = {
   status: 'healthy',
@@ -84,5 +86,94 @@ describe('AppStore', () => {
     expect(store.pipelineState()).toBe('error');
     expect(store.platformNarrative()).toBe('narrative.hanaOffline');
     expect(store.healthBadge()).toBe('Negative');
+  });
+
+  // ── Mode signal tests ──────────────────────────────────────────────
+
+  describe('mode state', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('initializes with default mode (chat)', () => {
+      expect(store.activeMode()).toBe('chat');
+    });
+
+    it('setMode updates activeMode signal', () => {
+      store.setMode('cowork');
+      expect(store.activeMode()).toBe('cowork');
+
+      store.setMode('training');
+      expect(store.activeMode()).toBe('training');
+    });
+
+    it('setMode persists to localStorage', () => {
+      store.setMode('training');
+      expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('training');
+    });
+
+    it('modeConfig computed returns correct config for active mode', () => {
+      store.setMode('chat');
+      expect(store.modeConfig().id).toBe('chat');
+      expect(store.modeConfig().icon).toBe('discussion-2');
+
+      store.setMode('cowork');
+      expect(store.modeConfig().id).toBe('cowork');
+      expect(store.modeConfig().icon).toBe('collaborate');
+
+      store.setMode('training');
+      expect(store.modeConfig().id).toBe('training');
+      expect(store.modeConfig().icon).toBe('process');
+    });
+
+    it('modePills computed returns mode-specific pills', () => {
+      store.setMode('chat');
+      const chatPills = store.modePills();
+      expect(chatPills.length).toBe(2);
+      expect(chatPills.map(p => p.action)).toEqual(['ask', 'explain']);
+
+      store.setMode('cowork');
+      const coworkPills = store.modePills();
+      expect(coworkPills.length).toBe(3);
+      expect(coworkPills.map(p => p.action)).toContain('propose');
+
+      store.setMode('training');
+      const trainingPills = store.modePills();
+      expect(trainingPills.length).toBe(3);
+      expect(trainingPills.map(p => p.action)).toContain('run');
+    });
+
+    it('modeSystemPrompt computed changes with mode', () => {
+      store.setMode('chat');
+      expect(store.modeSystemPrompt()).toContain('helpful');
+
+      store.setMode('cowork');
+      expect(store.modeSystemPrompt()).toContain('collaborative');
+
+      store.setMode('training');
+      expect(store.modeSystemPrompt()).toContain('autonomous');
+    });
+
+    it('modeConfirmationLevel computed changes with mode', () => {
+      store.setMode('chat');
+      expect(store.modeConfirmationLevel()).toBe('always');
+
+      store.setMode('cowork');
+      expect(store.modeConfirmationLevel()).toBe('destructive-only');
+
+      store.setMode('training');
+      expect(store.modeConfirmationLevel()).toBe('never');
+    });
+
+    it('persists mode to localStorage and reads it back', () => {
+      store.setMode('training');
+      expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('training');
+
+      store.setMode('cowork');
+      expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('cowork');
+
+      store.setMode('chat');
+      expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('chat');
+    });
   });
 });

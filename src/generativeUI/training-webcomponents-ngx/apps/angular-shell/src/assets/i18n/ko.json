@@ -1091,8 +1091,8 @@
   "glossary.pairTypeTranslation": "번역",
   "glossary.pairTypeAlias": "별칭",
   "glossary.pairTypeDbField": "DB 필드",
-  "navGroup.home": "개요",
   "navGroup.data": "데이터 준비",
   "navGroup.assist": "질문하고 분석하기",
-  "navGroup.operations": "실행하고 최적화하기"
+  "navGroup.mlops": "파이프라인 & MLOps",
+  "navGroup.content": "언어 & 콘텐츠"
 }

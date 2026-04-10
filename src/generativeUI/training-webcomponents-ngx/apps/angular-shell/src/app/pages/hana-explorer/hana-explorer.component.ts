@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { ApiError, ApiService } from '../../services/api.service';
@@ -32,13 +33,16 @@ interface ArchLayer {
 @Component({
   selector: 'app-hana-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-content" role="main" aria-label="HANA Cloud Explorer">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="HANA Explorer"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <div class="page-header">
-        <h1 class="page-title">{{ i18n.t('hanaExplorer.title') }}</h1>
+        <ui5-title level="H3">{{ i18n.t('hanaExplorer.title') }}</ui5-title>
         <ui5-button design="Default" (click)="loadStats()" aria-label="Refresh stats">{{ i18n.t('hanaExplorer.refresh') }}</ui5-button>
       </div>
 
@@ -53,10 +57,10 @@ interface ArchLayer {
       <div class="about-card">
         <p>{{ i18n.t('hanaExplorer.about') }}</p>
         <div class="tech-pills">
-          <span class="pill pill--hana">SAP HANA Cloud</span>
-          <span class="pill pill--python">Python hdbcli</span>
-          <span class="pill pill--vector">Vector Engine</span>
-          <span class="pill pill--sql">SQL Console</span>
+          <ui5-tag design="Set2" color-scheme="6">SAP HANA Cloud</ui5-tag>
+          <ui5-tag design="Set2" color-scheme="8">Python hdbcli</ui5-tag>
+          <ui5-tag design="Set2" color-scheme="1">Vector Engine</ui5-tag>
+          <ui5-tag design="Set2" color-scheme="3">SQL Console</ui5-tag>
         </div>
       </div>
 
@@ -64,11 +68,11 @@ interface ArchLayer {
       <div class="stats-grid" style="margin-bottom: 1.5rem;" role="region" aria-label="HANA Cloud statistics">
         <div class="stat-card">
           <div class="stat-value">
-            <span class="status-badge {{ stats()?.available ? 'status-success' : 'status-error' }}">
+            <ui5-tag [attr.color-scheme]="stats()?.available ? '8' : '2'">
               {{ stats()?.available ? i18n.t('hanaExplorer.available') : i18n.t('hanaExplorer.unavailable') }}
-            </span>
+            </ui5-tag>
           </div>
-          <div class="stat-label">{{ i18n.t('hanaExplorer.hanaConnection') }}</div>
+          <ui5-label>{{ i18n.t('hanaExplorer.hanaConnection') }}</ui5-label>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{ stats()?.pair_count ?? '—' }}</div>
@@ -82,22 +86,23 @@ interface ArchLayer {
 
       <!-- SQL Query Sandbox -->
       <section class="section">
-        <h2 class="section-title">{{ i18n.t('hanaExplorer.querySandbox') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('hanaExplorer.querySandbox') }}</ui5-title>
         <div class="query-card">
           <div class="query-presets">
-            <span class="preset-label">{{ i18n.t('hanaExplorer.presets') }}</span>
+            <ui5-label>{{ i18n.t('hanaExplorer.presets') }}</ui5-label>
             @for (p of presets; track p.label) {
               <ui5-button design="Default" (click)="setQuery(p.sql)">{{ p.label }}</ui5-button>
             }
           </div>
-          <textarea
+          <ui5-textarea
             class="query-editor"
-            [(ngModel)]="sql"
-            name="sql"
-            aria-label="SQL query editor"
+            [value]="sql"
+            (change)="sql = $any($event).target.value"
+            accessible-name="SQL query editor"
             rows="4"
             placeholder="SELECT * FROM TRAINING_PAIRS LIMIT 10"
-          ></textarea>
+            growing
+          ></ui5-textarea>
           <div class="query-actions">
             <ui5-button design="Emphasized" (click)="runQuery()" [disabled]="!sql.trim() || querying()">
               {{ querying() ? i18n.t('hanaExplorer.running') : i18n.t('hanaExplorer.execute') }}
@@ -109,33 +114,28 @@ interface ArchLayer {
         <!-- Results -->
         @if (result(); as res) {
           <div class="results-section">
-            <div class="result-header">
-              <span class="status-badge {{ res.status === 'ok' ? 'status-success' : 'status-error' }}">
-                {{ res.status }}
-              </span>
-              <span class="text-small text-muted">{{ res.count }} {{ i18n.t('hanaExplorer.row') }}</span>
-            </div>
+            <ui5-toolbar>
+              <ui5-title level="H5">{{ i18n.t('hanaExplorer.queryResults') }}</ui5-title>
+              <ui5-toolbar-spacer></ui5-toolbar-spacer>
+              <ui5-tag [attr.color-scheme]="res.status === 'ok' ? '8' : '2'">{{ res.status }}</ui5-tag>
+              <ui5-tag design="Set2" color-scheme="1">{{ res.count }} {{ i18n.t('hanaExplorer.row') }}</ui5-tag>
+            </ui5-toolbar>
             @if (res.rows.length) {
-              <div class="table-wrapper">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      @for (col of resultColumns(); track col) {
-                        <th>{{ col }}</th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of res.rows; track $index) {
-                      <tr>
-                        @for (col of resultColumns(); track col) {
-                          <td class="text-small mono">{{ formatCell(row[col]) }}</td>
-                        }
-                      </tr>
+              <ui5-table accessible-name="Query results" overflow-mode="Popin">
+                <ui5-table-growing type="Scroll" slot="features" growing-text="More rows"></ui5-table-growing>
+                <ui5-table-header-row slot="headerRow">
+                  @for (col of resultColumns(); track col) {
+                    <ui5-table-header-cell>{{ col }}</ui5-table-header-cell>
+                  }
+                </ui5-table-header-row>
+                @for (row of res.rows; track $index) {
+                  <ui5-table-row>
+                    @for (col of resultColumns(); track col) {
+                      <ui5-table-cell><code>{{ formatCell(row[col]) }}</code></ui5-table-cell>
                     }
-                  </tbody>
-                </table>
-              </div>
+                  </ui5-table-row>
+                }
+              </ui5-table>
             } @else {
               <p class="text-muted text-small">{{ i18n.t('hanaExplorer.noRows') }}</p>
             }
@@ -143,13 +143,13 @@ interface ArchLayer {
         }
 
         @if (queryError()) {
-          <div class="error-banner">{{ queryError() }}</div>
+          <ui5-message-strip design="Negative">{{ queryError() }}</ui5-message-strip>
         }
       </section>
 
       <!-- Architecture -->
       <section class="section">
-        <h2 class="section-title">{{ i18n.t('hanaExplorer.architecture') }}</h2>
+        <ui5-title level="H4">{{ i18n.t('hanaExplorer.architecture') }}</ui5-title>
         <div class="arch-grid">
           @for (layer of archLayers; track layer.name) {
             <div class="arch-card">

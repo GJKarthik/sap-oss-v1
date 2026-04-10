@@ -1,5 +1,6 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, OnInit, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnDestroy, OnInit, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
@@ -47,11 +48,14 @@ interface CompletionResponse {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocaleDatePipe, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, Ui5TrainingComponentsModule, FormsModule, LocaleDatePipe, CrossAppLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="chat-layout" [class.rtl]="i18n.isRtl()">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Chat"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <app-cross-app-link
         targetApp="training"
         targetRoute="/rag-studio"
@@ -61,29 +65,29 @@ interface CompletionResponse {
 
       <!-- Sidebar -->
       <div class="chat-sidebar">
-        <h2 class="sidebar-title">{{ i18n.t('chat.settings') }}</h2>
+        <ui5-title level="H5">{{ i18n.t('chat.settings') }}</ui5-title>
         <div class="field-group">
-          <label class="field-label">{{ i18n.t('chat.model') }}</label>
-          <select class="setting-input" dir="ltr" [(ngModel)]="model">
-            <option [value]="model">{{ model }}</option>
+          <ui5-label show-colon>{{ i18n.t('chat.model') }}</ui5-label>
+          <ui5-select dir="ltr" (change)="onModelChange($event)">
+            <ui5-option [value]="model" selected>{{ model }}</ui5-option>
             @for (m of availableModels(); track m) {
               @if (m !== model) {
-                <option [value]="m">{{ m }}</option>
+                <ui5-option [value]="m">{{ m }}</ui5-option>
               }
             }
-          </select>
+          </ui5-select>
         </div>
         <div class="field-group">
-          <label class="field-label">{{ i18n.t('chat.systemPrompt') }}</label>
-          <textarea class="setting-textarea" [(ngModel)]="systemPrompt" rows="5"
-            placeholder="You are a helpful SQL assistant…"></textarea>
+          <ui5-label show-colon>{{ i18n.t('chat.systemPrompt') }}</ui5-label>
+          <ui5-textarea [value]="systemPrompt" (change)="systemPrompt = $any($event).target.value" rows="5"
+            placeholder="You are a helpful SQL assistant…" growing></ui5-textarea>
         </div>
         <div class="field-group">
-          <label class="field-label">{{ i18n.t('chat.maxTokens') }}: {{ maxTokens }}</label>
+          <ui5-label>{{ i18n.t('chat.maxTokens') }}: {{ maxTokens }}</ui5-label>
           <input type="range" [(ngModel)]="maxTokens" min="64" max="4096" step="64" class="range-input" />
         </div>
         <div class="field-group">
-          <label class="field-label">{{ i18n.t('chat.temperature') }}: {{ temperature.toFixed(2) }}</label>
+          <ui5-label>{{ i18n.t('chat.temperature') }}: {{ temperature.toFixed(2) }}</ui5-label>
           <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.05" class="range-input" />
         </div>
         <ui5-button design="Negative" (click)="clearChat()">{{ i18n.t('chat.clearChat') }}</ui5-button>
@@ -137,12 +141,12 @@ interface CompletionResponse {
                       }
                       @if (f.showForm) {
                         <div class="override-form">
-                          <input
+                          <ui5-input
                             class="override-input"
                             [value]="f.overrideInput"
                             (input)="setOverrideInput(m.ts, f.sourceTerm, $event)"
                             [placeholder]="i18n.t('chat.overridePlaceholder')"
-                          />
+                          ></ui5-input>
                           <ui5-button design="Emphasized" [disabled]="f.saving" (click)="saveOverride(m.ts, f)">
                             {{ i18n.t('chat.saveOverride') }}
                           </ui5-button>
@@ -167,14 +171,16 @@ interface CompletionResponse {
         </div>
 
         <form class="chat-input-row" (ngSubmit)="send()">
-          <textarea
+          <ui5-textarea
             class="chat-input"
-            [(ngModel)]="userInput"
+            [value]="userInput"
+            (input)="userInput = $any($event).target.value"
             name="userInput"
             rows="2"
             [placeholder]="i18n.t('chat.inputPlaceholder')"
             (keydown.enter)="onEnter($event)"
-          ></textarea>
+            growing
+          ></ui5-textarea>
           <ui5-button design="Emphasized" type="submit" (click)="send()" [disabled]="!userInput.trim() || sending()">
             {{ sending() ? i18n.t('chat.sending') : i18n.t('chat.send') }}
           </ui5-button>
@@ -583,6 +589,10 @@ export class ChatComponent implements OnDestroy, OnInit {
           // Models endpoint unavailable — leave dropdown with current model only
         },
       });
+  }
+
+  onModelChange(event: any): void {
+    this.model = event.detail?.selectedOption?.value ?? this.model;
   }
 
   usePrompt(s: string): void {

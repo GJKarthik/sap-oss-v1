@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { LearnPathService } from './core/learn-path.service';
@@ -18,13 +18,38 @@ import { ProductNavigationService, ProductAppId } from './core/product-navigatio
 export class AppComponent implements OnInit, OnDestroy {
   currentTheme = 'sap_horizon';
   currentLanguage = 'en';
+
+  // ── Ambient mesh parallax ──
+  private mouseX = 0;
+  private mouseY = 0;
+  private rafId: number | null = null;
+  private reducedMotion = false;
+  canvasTransform = 'none';
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(e: MouseEvent): void {
+    if (this.reducedMotion || this.rafId !== null) return;
+    this.rafId = requestAnimationFrame(() => {
+      this.mouseX = e.clientX - window.innerWidth / 2;
+      this.mouseY = e.clientY - window.innerHeight / 2;
+      this.canvasTransform = `translate(${this.mouseX / 100}px, ${this.mouseY / 100}px) scale(1.05)`;
+      this.rafId = null;
+    });
+  }
   shellbarA11y = {
     logo: { name: 'SAP AI Experience' },
+    profile: { name: 'User Profile', hasPopup: 'menu' as const },
   };
   learnPathActive = false;
   learnPathDismissed = false;
   learnPathStepLabel = '';
   learnPathProgress = '';
+
+  // User menu state
+  userMenuOpen = false;
+
+  // Side navigation mode: Auto handles responsive collapse
+  sideNavMode: 'Auto' | 'Collapsed' | 'Expanded' = 'Auto';
 
   @ViewChild('productPopover') productPopover!: ElementRef<any>;
 
@@ -56,6 +81,37 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  // --- User profile derived from workspace identity ---
+
+  get userName(): string {
+    return this.workspaceService.identity().displayName || 'SAP AI User';
+  }
+
+  get userInitials(): string {
+    const name = this.userName;
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  get userEmail(): string {
+    return this.workspaceService.identity().userId || '';
+  }
+
+  get userTeam(): string {
+    return this.workspaceService.identity().teamName || 'AI Platform';
+  }
+
+  get userRole(): string {
+    return (this.workspaceService.identity() as any).role || 'Developer';
+  }
+
+  get notificationCount(): string {
+    return '3';
+  }
+
   get navLinks(): NavLinkDatum[] {
     return this.workspaceService.visibleNavLinks().filter((link) => link.showInShellbar && link.path !== '/workspace');
   }
@@ -64,7 +120,16 @@ export class AppComponent implements OnInit, OnDestroy {
     return link.path;
   }
 
+  private motionMql?: MediaQueryList;
+
   ngOnInit(): void {
+    // Detect reduced motion preference
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      this.motionMql = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.reducedMotion = this.motionMql.matches;
+      this.motionMql.addEventListener?.('change', this.onMotionChange);
+    }
+
     this.currentTheme = this.workspaceService.settings().theme || 'sap_horizon';
     this.applyTheme(this.currentTheme);
     this.learnPathDismissed = localStorage.getItem('learn-path-dismissed') === 'true';
@@ -114,6 +179,20 @@ export class AppComponent implements OnInit, OnDestroy {
     this.productNavigation.navigateToLanding();
   }
 
+  // --- ShellBar events ---
+
+  toggleUserMenu(_event: any): void {
+    this.userMenuOpen = !this.userMenuOpen;
+  }
+
+  onNotificationsClick(_event: any): void {
+    // Placeholder for notification popover
+  }
+
+  onSearch(_event: any): void {
+    // Placeholder for global search handling
+  }
+
   openProducts(event: any): void {
     this.productPopover.nativeElement.showAt(event.detail.targetRef);
   }
@@ -122,6 +201,31 @@ export class AppComponent implements OnInit, OnDestroy {
     const appId = event.detail.item.getAttribute('data-app') as ProductAppId | null;
     if (appId) {
       this.productNavigation.navigateToApp(appId);
+    }
+  }
+
+  // --- User Menu events ---
+
+  onUserMenuItemClick(event: any): void {
+    const path = event.detail?.item?.getAttribute?.('data-path');
+    if (path) {
+      this.userMenuOpen = false;
+      this.router.navigate([path]);
+    }
+  }
+
+  onSignOut(): void {
+    this.userMenuOpen = false;
+    // Sign-out placeholder
+  }
+
+  // --- Side Navigation ---
+
+  onSideNavSelect(event: any): void {
+    const item = event.detail?.item;
+    const path = item?.getAttribute?.('data-path');
+    if (path) {
+      this.router.navigate([path]);
     }
   }
 
@@ -186,9 +290,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateLearnPathBanner();
   }
 
+  private readonly onMotionChange = (e: MediaQueryListEvent) => {
+    this.reducedMotion = e.matches;
+    if (e.matches) this.canvasTransform = 'none';
+  };
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.motionMql?.removeEventListener?.('change', this.onMotionChange);
+    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
   }
 
   private applyLanguage(language: string): void {

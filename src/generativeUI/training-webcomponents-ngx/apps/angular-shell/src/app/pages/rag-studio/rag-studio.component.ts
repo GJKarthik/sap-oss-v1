@@ -26,6 +26,10 @@ function readErrorMessage(error: unknown, fallback: string): string {
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent, TranslatePipe],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="RAG Studio"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <app-cross-app-link
         targetApp="training"
         targetRoute="/semantic-search"
@@ -86,9 +90,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
           <ui5-card-header slot="header" [titleText]="'ragStudio.createKnowledgeBase' | translate" [subtitleText]="'ragStudio.registerKnowledgeBase' | translate"></ui5-card-header>
           <form class="form-grid" (ngSubmit)="createStore()">
             <div class="field-group">
-              <label for="table-name-input" class="field-label">
+              <ui5-label for="table-name-input" class="field-label">
                 {{ 'ragStudio.tableName' | translate }} <span class="required">*</span>
-              </label>
+              </ui5-label>
               <ui5-input
                 id="table-name-input"
                 ngDefaultControl
@@ -100,7 +104,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
               </ui5-input>
             </div>
             <div class="field-group">
-              <label for="embedding-model-input" class="field-label">{{ 'ragStudio.embeddingModel' | translate }}</label>
+              <ui5-label for="embedding-model-input" class="field-label">{{ 'ragStudio.embeddingModel' | translate }}</ui5-label>
               <ui5-input
                 id="embedding-model-input"
                 ngDefaultControl
@@ -176,9 +180,9 @@ function readErrorMessage(error: unknown, fallback: string): string {
 
               <div *ngIf="showDocumentForm && canManage" class="form-grid bordered-section">
                 <div class="field-group">
-                  <label for="documents-input" class="field-label">
+                  <ui5-label for="documents-input" class="field-label">
                     {{ 'ragStudio.documentsLabel' | translate }} <span class="required">*</span>
-                  </label>
+                  </ui5-label>
                   <ui5-textarea
                     id="documents-input"
                     ngDefaultControl
@@ -203,7 +207,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 
               <div class="query-area">
                 <div class="field-group">
-                  <label for="query-input" class="field-label">{{ 'ragStudio.searchQuery' | translate }}</label>
+                  <ui5-label for="query-input" class="field-label">{{ 'ragStudio.searchQuery' | translate }}</ui5-label>
                   <ui5-textarea
                     id="query-input"
                     ngDefaultControl

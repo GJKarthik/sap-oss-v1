@@ -44,15 +44,7 @@
 }
 
 .mcp-page__args-editor {
-  font-family: monospace;
-  font-size: 0.8rem;
-  padding: 0.75rem;
-  border: 1px solid var(--sapField_BorderColor);
-  border-radius: 0.5rem;
-  background: var(--sapField_Background);
-  color: var(--sapTextColor);
-  resize: vertical;
-  min-height: 80px;
+  width: 100%;
 }
 
 .mcp-page__result {

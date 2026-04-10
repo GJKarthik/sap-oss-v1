@@ -10,6 +10,13 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, of, interval, forkJoin, Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import { AppMode } from '../shared/utils/mode.types';
+import {
+  getModeConfig,
+  getPillsForMode,
+  loadPersistedMode,
+  persistMode,
+} from '../shared/utils/mode.helpers';
 
 export interface HealthStatus {
   status: string;
@@ -33,6 +40,7 @@ interface AppState {
   gpu: { data: GpuTelemetry | null; loading: boolean };
   pipelineState: 'idle' | 'running' | 'completed' | 'error';
   trainingPairCount: number;
+  activeMode: AppMode;
 }
 
 function inferPipelineState(
@@ -54,6 +62,7 @@ export const AppStore = signalStore(
     gpu: { data: null, loading: false },
     pipelineState: 'idle',
     trainingPairCount: 13952,
+    activeMode: loadPersistedMode(),
   }),
   withComputed((store) => ({
     isHealthy: computed(() => store.health.data()?.status === 'healthy'),
@@ -85,6 +94,12 @@ export const AppStore = signalStore(
     // ── Dashboard helpers ────────────────────────────────────────────────
     isDashboardLoading: computed(() => store.health.loading() || store.gpu.loading()),
     healthBadge: computed(() => store.health.data()?.status === 'healthy' ? 'Positive' : 'Negative'),
+
+    // ── Mode computeds ────────────────────────────────────────────────
+    modeConfig: computed(() => getModeConfig(store.activeMode())),
+    modePills: computed(() => getPillsForMode(store.activeMode())),
+    modeSystemPrompt: computed(() => getModeConfig(store.activeMode()).systemPromptPrefix),
+    modeConfirmationLevel: computed(() => getModeConfig(store.activeMode()).confirmationLevel),
   })),
   withMethods((store, api = inject(ApiService)) => ({
     loadDashboardData: rxMethod<void>(
@@ -108,6 +123,10 @@ export const AppStore = signalStore(
       )
     ),
     setPipelineState: (state: 'idle' | 'running' | 'completed' | 'error') => patchState(store, { pipelineState: state }),
+    setMode: (mode: AppMode) => {
+      patchState(store, { activeMode: mode });
+      persistMode(mode);
+    },
     forceRefresh: () => {
       patchState(store, (s) => ({ health: { ...s.health, loading: true }, gpu: { ...s.gpu, loading: true } }));
       forkJoin({

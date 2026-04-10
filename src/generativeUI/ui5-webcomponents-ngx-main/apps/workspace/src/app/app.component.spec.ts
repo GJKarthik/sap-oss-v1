@@ -48,6 +48,7 @@ function makeWorkspaceService() {
   return {
     settings: () => ({ theme: 'sap_horizon', language: 'en' }),
     navConfig: () => ({ defaultLandingPath: '/' }),
+    identity: () => ({ displayName: 'SAP AI User', userId: 'test-user', teamName: 'Test Team' }),
     visibleNavLinks: () => [],
     visibleHomeCards: () => [],
     updateTheme: jest.fn(),

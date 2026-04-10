@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
@@ -12,9 +12,12 @@ import { ToastService } from '../../services/toast.service';
   selector: 'app-vocab-search',
   standalone: true,
   imports: [CommonModule, FormsModule, Ui5TrainingComponentsModule, EmptyStateComponent, CrossAppLinkComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ui5-page background-design="Solid">
+      <ui5-breadcrumbs>
+        <ui5-breadcrumbs-item href="/dashboard" text="Home"></ui5-breadcrumbs-item>
+        <ui5-breadcrumbs-item text="Vocab Search"></ui5-breadcrumbs-item>
+      </ui5-breadcrumbs>
       <ui5-bar slot="header" design="Header">
         <ui5-title slot="startContent" level="H3">{{ i18n.t('vocabSearch.title') }}</ui5-title>
         <ui5-button slot="endContent" icon="refresh" (click)="loadStats()" [disabled]="loading">
@@ -48,7 +51,7 @@ import { ToastService } from '../../services/toast.service';
 
         <!-- Search Form -->
         <ui5-card>
-          <ui5-card-header slot="header" title-text="{{ i18n.t('vocabSearch.searchTitle') }}" subtitle-text="{{ i18n.t('vocabSearch.searchSubtitle') }}"></ui5-card-header>
+          <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('vocabSearch.searchTitle') }}" attr.attr.subtitle-text="{{  i18n.t('vocabSearch.searchSubtitle') }}"></ui5-card-header>
           <div class="card-content">
             <div class="search-row">
               <ui5-input ngDefaultControl name="searchQuery" [(ngModel)]="searchQuery" placeholder="{{ i18n.t('vocabSearch.searchPlaceholder') }}" accessible-name="Search vocabulary terms" style="flex:1" (keyup.enter)="search()"></ui5-input>
@@ -70,7 +73,7 @@ import { ToastService } from '../../services/toast.service';
         <!-- Results -->
         @if (results.length > 0) {
           <ui5-card>
-            <ui5-card-header slot="header" title-text="{{ i18n.t('vocabSearch.results') }}" [additionalText]="results.length + ''"></ui5-card-header>
+            <ui5-card-header slot="header" attr.attr.title-text="{{  i18n.t('vocabSearch.results') }}" [additionalText]="results.length + ''"></ui5-card-header>
             <div class="results-list">
               @for (term of results; track term.name) {
                 <div class="result-item" [class.selected]="selectedTerm === term" (click)="selectedTerm = term" role="button" tabindex="0">
