@@ -1,0 +1,55 @@
+<h2>Three Approaches: Mode Switcher in Shell Bar</h2>
+<p class="subtitle">How to bring Chat / Cowork / Training modes into your SAP AI workbench</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Signal-Driven Mode State (Recommended)</h3>
+      <p><strong>How it works:</strong> A single <code>activeMode</code> signal in AppStore drives everything. The shell bar gets a segmented control (3 pills: Chat / Cowork / Training) replacing the product switcher. Switching modes updates the signal, which cascades via computed properties:</p>
+      <ul>
+        <li><strong>Nav:</strong> <code>suggestedRoutes()</code> computed from mode — highlights relevant routes, dims others</li>
+        <li><strong>AI behavior:</strong> <code>aiCapabilities()</code> computed from mode — chat = conversational, cowork = plan-and-preview, training = autonomous execution</li>
+        <li><strong>Context pill bar:</strong> Shows mode-specific quick actions</li>
+      </ul>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Fits your existing signal/computed architecture perfectly</li><li>Single source of truth — no state sync issues</li><li>Minimal new components (just the switcher + mode-aware computeds)</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Every mode-aware component needs to read the signal</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Route-Based Modes</h3>
+      <p><strong>How it works:</strong> Modes map to route prefixes: <code>/chat/*</code>, <code>/cowork/*</code>, <code>/training/*</code>. The shell bar switcher navigates between route groups. Each group has its own layout shell with mode-specific chrome.</p>
+      <ul>
+        <li><strong>Nav:</strong> Each route group defines its own nav links</li>
+        <li><strong>AI behavior:</strong> Mode resolved from URL, injected via route data</li>
+        <li><strong>Context pill bar:</strong> Different pill sets per route group</li>
+      </ul>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Deep-linkable — URLs encode the mode</li><li>Clean separation of concerns per mode</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Breaks your "shared context" requirement — route changes reset state</li><li>Major refactor of existing 24+ routes</li><li>Duplicated layouts across mode shells</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Service-Injected Mode Context</h3>
+      <p><strong>How it works:</strong> A new <code>ModeService</code> (injectable, not in store) manages mode state and exposes mode-aware tool registries. Components inject it to get current capabilities. The shell bar switcher calls <code>modeService.setMode()</code>.</p>
+      <ul>
+        <li><strong>Nav:</strong> ModeService provides <code>getRouteRelevance(route, mode)</code></li>
+        <li><strong>AI behavior:</strong> ModeService provides tool registry per mode</li>
+        <li><strong>Context pill bar:</strong> ModeService provides quick-action templates</li>
+      </ul>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Encapsulates all mode logic in one service</li><li>Easy to test mode transitions</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Parallel state system alongside your existing signalStore — risks drift</li><li>Components need both AppStore and ModeService</li><li>Goes against your established @ngrx/signals pattern</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

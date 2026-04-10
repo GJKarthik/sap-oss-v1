@@ -15,6 +15,7 @@ import {
   NavLinkDatum,
   NAV_LINK_DATA,
   createDefaultWorkspaceSettings,
+  normalizeWorkspaceTheme,
 } from './workspace.types';
 
 const STORAGE_KEY = 'sap-ai-experience.workspace.v1';
@@ -92,7 +93,9 @@ export class WorkspaceService {
   initialize(): Observable<void> {
     const localRaw = this.loadFromLocalStorage();
     if (localRaw) {
-      this._settings.set(localRaw);
+      const normalizedLocal = this.normalizeSettings(localRaw);
+      this._settings.set(normalizedLocal);
+      this.saveToLocalStorage(normalizedLocal);
     }
 
     const externalWorkspaceId = this.workspaceIdFromUrl();
@@ -120,8 +123,9 @@ export class WorkspaceService {
       catchError(() => of(null)),
       map(serverSettings => {
         if (serverSettings) {
-          this._settings.set(serverSettings);
-          this.saveToLocalStorage(serverSettings);
+          const normalizedServerSettings = this.normalizeSettings(serverSettings);
+          this._settings.set(normalizedServerSettings);
+          this.saveToLocalStorage(normalizedServerSettings);
           return;
         }
         // local or default settings already loaded before the network request
@@ -148,7 +152,7 @@ export class WorkspaceService {
   }
 
   updateTheme(theme: string): void {
-    this.patch(s => ({ ...s, theme }));
+    this.patch(s => ({ ...s, theme: normalizeWorkspaceTheme(theme) }));
   }
 
   updateLanguage(language: string): void {
@@ -165,9 +169,10 @@ export class WorkspaceService {
     try {
       const parsed = JSON.parse(json) as WorkspaceSettings;
       if (parsed.version !== 1) return false;
-      parsed.updatedAt = new Date().toISOString();
-      this._settings.set(parsed);
-      this.saveToLocalStorage(parsed);
+      const normalized = this.normalizeSettings(parsed);
+      normalized.updatedAt = new Date().toISOString();
+      this._settings.set(normalized);
+      this.saveToLocalStorage(normalized);
       this.saveSubject.next();
       return true;
     } catch {
@@ -242,5 +247,12 @@ export class WorkspaceService {
       map(() => void 0),
       catchError(() => of(void 0)),
     );
+  }
+
+  private normalizeSettings(settings: WorkspaceSettings): WorkspaceSettings {
+    return {
+      ...settings,
+      theme: normalizeWorkspaceTheme(settings.theme),
+    };
   }
 }

@@ -8,13 +8,17 @@
     <div class="joule-hero__meta">
       <div class="joule-hero__stat">
         <span class="joule-hero__stat-label">{{ 'JOULE_STATE_LABEL' | ui5I18n : state }}</span>
-        <span class="state-badge state-badge--{{ state }}" role="status" [attr.aria-label]="'Streaming state: ' + state">
+        <span class="state-badge state-badge--{{ state }}" role="status">
           {{ state }}
         </span>
       </div>
       <div class="joule-hero__stat">
         <span class="joule-hero__stat-label">{{ 'COLLAB_PARTICIPANTS_TITLE' | ui5I18n }}</span>
-        <ui5-tag design="Set2" color-scheme="8">{{ participants.length }}</ui5-tag>
+        <ui5-avatar-group type="Individual">
+          @for (p of participants; track p.userId) {
+            <ui5-avatar [initials]="p.displayName.charAt(0).toUpperCase()" [style.background]="p.color" interactive></ui5-avatar>
+          }
+        </ui5-avatar-group>
       </div>
     </div>
   </section>
@@ -25,21 +29,6 @@
         <ui5-title level="H5">{{ 'HOME_CARD_JOULE_TITLE' | ui5I18n }}</ui5-title>
         <p>{{ 'HOME_CARD_JOULE_SUBTITLE' | ui5I18n }}</p>
       </div>
-
-      @if (participants.length > 0) {
-        <div class="presence-strip" role="status" aria-label="Active collaborators">
-          <span class="presence-label">{{ 'JOULE_PRESENCE_LABEL' | ui5I18n }}</span>
-          @for (p of participants; track p.userId) {
-            <span
-              class="presence-avatar"
-              [title]="p.displayName"
-              [style.background]="p.color"
-              [attr.aria-label]="p.displayName">
-              {{ p.displayName.charAt(0).toUpperCase() }}
-            </span>
-          }
-        </div>
-      }
 
       <joule-chat
         [endpoint]="agUiEndpoint"

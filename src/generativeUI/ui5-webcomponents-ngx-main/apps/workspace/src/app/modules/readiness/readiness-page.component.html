@@ -1,50 +1,56 @@
 <section class="readiness-page" role="main" aria-label="System readiness">
-  <div class="readiness-page__hero">
-    <div class="readiness-page__header">
-      <div>
-        <span class="readiness-page__eyebrow">{{ 'NAV_READINESS' | ui5I18n }}</span>
-        <ui5-title level="H3">{{ 'READINESS_PAGE_TITLE' | ui5I18n }}</ui5-title>
-        <p class="readiness-page__subtitle">{{ 'READINESS_SUBTITLE' | ui5I18n }}</p>
+  <header class="readiness-header">
+    <div class="readiness-header__copy">
+      <span class="readiness-header__eyebrow">{{ 'NAV_READINESS' | ui5I18n }}</span>
+      <ui5-title level="H2">{{ 'READINESS_PAGE_TITLE' | ui5I18n }}</ui5-title>
+      <p>{{ 'READINESS_SUBTITLE' | ui5I18n }}</p>
+    </div>
+    
+    <div class="readiness-header__actions">
+      <ui5-button design="Transparent" icon="refresh" [disabled]="loading" (click)="refresh()">
+        {{ loading ? ('READINESS_CHECKING' | ui5I18n) : ('READINESS_CHECK_NOW' | ui5I18n) }}
+      </ui5-button>
+      <ui5-button design="Emphasized" [disabled]="loading || !workspaceReady" (click)="openLearnPath()">
+        {{ 'READINESS_OPEN_LEARN_PATH' | ui5I18n }}
+      </ui5-button>
+    </div>
+  </header>
+
+  <div class="readiness-hero">
+    <div class="readiness-hero__status">
+      <div class="status-indicator" [class.status-indicator--ready]="workspaceReady">
+        <ui5-icon [name]="workspaceReady ? 'accept' : 'alert'"></ui5-icon>
       </div>
-      <div class="readiness-page__actions">
-        <ui5-button data-testid="readiness-check-now" design="Transparent" [disabled]="loading" (click)="refresh()">
-          {{ loading ? ('READINESS_CHECKING' | ui5I18n) : ('READINESS_CHECK_NOW' | ui5I18n) }}
-        </ui5-button>
-        <ui5-button data-testid="readiness-open-learn-path" design="Emphasized" [disabled]="loading || !workspaceReady" (click)="openLearnPath()">
-          {{ 'READINESS_OPEN_LEARN_PATH' | ui5I18n }}
-        </ui5-button>
+      <div class="status-copy">
+        <h3>{{ workspaceReady ? ('READINESS_STATUS_READY' | ui5I18n) : ('READINESS_STATUS_BLOCKED' | ui5I18n) }}</h3>
+        <p>{{ workspaceReady ? ('READINESS_WORKSPACE_READY' | ui5I18n) : ('READINESS_WORKSPACE_BLOCKED' | ui5I18n) }}</p>
       </div>
     </div>
 
-    <div class="readiness-page__services" *ngIf="serviceChecks.length > 0">
-      <div class="readiness-page__service" *ngFor="let check of serviceChecks">
-        <span class="readiness-page__service-name">{{ check.name }}</span>
-        <ui5-tag [design]="check.ok ? 'Positive' : 'Negative'">
-          {{ check.ok ? ('READINESS_STATUS_READY' | ui5I18n) : ('READINESS_STATUS_BLOCKED' | ui5I18n) }}
-        </ui5-tag>
+    <div class="readiness-hero__services" *ngIf="serviceChecks.length > 0">
+      <div class="service-chip" *ngFor="let check of serviceChecks">
+        <span class="service-chip__dot" [class.service-chip__dot--ok]="check.ok"></span>
+        <span class="service-chip__name">{{ check.name }}</span>
       </div>
     </div>
   </div>
 
-  <ui5-message-strip [design]="workspaceReady ? 'Positive' : 'Negative'" hide-close-button>
-    {{ workspaceReady ? ('READINESS_WORKSPACE_READY' | ui5I18n) : ('READINESS_WORKSPACE_BLOCKED' | ui5I18n) }}
-  </ui5-message-strip>
-
-  <div class="readiness-page__meta" *ngIf="lastCheckedAt">{{ 'READINESS_LAST_CHECKED' | ui5I18n : lastCheckedAt }}</div>
-
-  <ui5-message-strip *ngIf="workspaceReady" design="Positive" hide-close-button>
-    {{ 'READINESS_ALL_GO' | ui5I18n }}
-  </ui5-message-strip>
-
-  <div class="readiness-page__cards" role="list" aria-label="Route readiness status">
-    <ui5-card *ngFor="let route of routeStatuses" class="readiness-page__card">
+  <div class="readiness-grid">
+    <ui5-card *ngFor="let route of routeStatuses" class="readiness-card">
       <ui5-card-header slot="header" [attr.title-text]="route.labelKey | ui5I18n" [attr.subtitle-text]="route.route"></ui5-card-header>
-      <div class="readiness-page__card-body">
-        <ui5-tag [design]="route.blocking ? 'Negative' : 'Positive'">
-          {{ route.blocking ? ('READINESS_STATUS_BLOCKED' | ui5I18n) : ('READINESS_STATUS_READY' | ui5I18n) }}
-        </ui5-tag>
-        <span>{{ route.blocking ? route.reason : ('READINESS_STATUS_READY' | ui5I18n) }}</span>
+      <div class="readiness-card__body">
+        <div class="route-status">
+          <ui5-tag [design]="route.blocking ? 'Negative' : 'Positive'" color-scheme="6">
+            {{ route.blocking ? ('READINESS_STATUS_BLOCKED' | ui5I18n) : ('READINESS_STATUS_READY' | ui5I18n) }}
+          </ui5-tag>
+          <span class="route-reason">{{ route.blocking ? route.reason : 'Route is healthy' }}</span>
+        </div>
       </div>
     </ui5-card>
   </div>
+
+  <footer class="readiness-footer" *ngIf="lastCheckedAt">
+    <ui5-icon name="history"></ui5-icon>
+    <span>{{ 'READINESS_LAST_CHECKED' | ui5I18n : lastCheckedAt }}</span>
+  </footer>
 </section>

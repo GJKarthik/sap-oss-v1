@@ -1,0 +1,135 @@
+<h2>Design Section 2: State Architecture</h2>
+<p class="subtitle">How activeMode flows through your existing @ngrx/signals store</p>
+
+<div class="section">
+  <h3>Signal Flow Diagram</h3>
+  <div class="mockup">
+    <div class="mockup-header">Signal Cascade: Mode → Computed Properties → Components</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8; padding: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Source Signal -->
+        <div style="text-align: center;">
+          <div style="display: inline-block; background: linear-gradient(135deg, #0a6ed1, #1a8fff); padding: 10px 24px; border-radius: 8px; color: white; font-weight: bold; font-size: 14px;">
+            activeMode: signal&lt;'chat' | 'cowork' | 'training'&gt;
+          </div>
+          <div style="color: rgba(255,255,255,0.3); font-size: 20px; margin: 4px 0;">↓</div>
+        </div>
+
+        <!-- Computed Layer -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="color: #1a8fff; font-weight: 600; font-size: 12px; margin-bottom: 6px;">COMPUTED</div>
+            <div style="color: #e0e0e0; font-size: 13px; font-weight: 500;">aiCapabilities()</div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 4px;">system prompt, tool registry, confirmation level</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="color: #1a8fff; font-weight: 600; font-size: 12px; margin-bottom: 6px;">COMPUTED</div>
+            <div style="color: #e0e0e0; font-size: 13px; font-weight: 500;">routeRelevance()</div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 4px;">suggested vs dimmed routes per mode</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="color: #1a8fff; font-weight: 600; font-size: 12px; margin-bottom: 6px;">COMPUTED</div>
+            <div style="color: #e0e0e0; font-size: 13px; font-weight: 500;">contextPills()</div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 4px;">quick actions & status for current mode</div>
+          </div>
+        </div>
+
+        <div style="color: rgba(255,255,255,0.3); font-size: 20px; text-align: center;">↓</div>
+
+        <!-- Consumer Layer -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+          <div style="background: rgba(10,110,209,0.1); border: 1px dashed rgba(10,110,209,0.3); border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="color: rgba(255,255,255,0.5); font-size: 11px;">READS</div>
+            <div style="color: #e0e0e0; font-size: 12px; margin-top: 2px;">ShellBar<br/>Component</div>
+          </div>
+          <div style="background: rgba(10,110,209,0.1); border: 1px dashed rgba(10,110,209,0.3); border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="color: rgba(255,255,255,0.5); font-size: 11px;">READS</div>
+            <div style="color: #e0e0e0; font-size: 12px; margin-top: 2px;">NavIsland<br/>Component</div>
+          </div>
+          <div style="background: rgba(10,110,209,0.1); border: 1px dashed rgba(10,110,209,0.3); border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="color: rgba(255,255,255,0.5); font-size: 11px;">READS</div>
+            <div style="color: #e0e0e0; font-size: 12px; margin-top: 2px;">ContextPill<br/>Bar</div>
+          </div>
+          <div style="background: rgba(10,110,209,0.1); border: 1px dashed rgba(10,110,209,0.3); border-radius: 6px; padding: 10px; text-align: center;">
+            <div style="color: rgba(255,255,255,0.5); font-size: 11px;">READS</div>
+            <div style="color: #e0e0e0; font-size: 12px; margin-top: 2px;">Chat / AI<br/>Services</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>AppStore Extension</h3>
+  <div class="mockup">
+    <div class="mockup-header">app.store.ts — new mode slice (additions only)</div>
+    <div class="mockup-body" style="font-family: 'SF Mono', monospace; font-size: 12px; line-height: 1.7; padding: 16px; color: #c9d1d9;">
+      <div><span style="color: #ff7b72;">type</span> <span style="color: #79c0ff;">AppMode</span> = <span style="color: #a5d6ff;">'chat'</span> | <span style="color: #a5d6ff;">'cowork'</span> | <span style="color: #a5d6ff;">'training'</span>;</div>
+      <br/>
+      <div style="color: #8b949e;">// Added to signalStore()</div>
+      <div><span style="color: #79c0ff;">activeMode</span>: <span style="color: #a5d6ff;">'chat'</span>,  <span style="color: #8b949e;">// initial state</span></div>
+      <br/>
+      <div style="color: #8b949e;">// New computed properties</div>
+      <div><span style="color: #d2a8ff;">withComputed</span>(store => ({</div>
+      <div>&nbsp;&nbsp;<span style="color: #79c0ff;">aiCapabilities</span>: <span style="color: #d2a8ff;">computed</span>(() => <span style="color: #d2a8ff;">getModeCapabilities</span>(store.activeMode())),</div>
+      <div>&nbsp;&nbsp;<span style="color: #79c0ff;">routeRelevance</span>: <span style="color: #d2a8ff;">computed</span>(() => <span style="color: #d2a8ff;">getRouteRelevance</span>(store.activeMode())),</div>
+      <div>&nbsp;&nbsp;<span style="color: #79c0ff;">contextPills</span>:&nbsp;&nbsp;<span style="color: #d2a8ff;">computed</span>(() => <span style="color: #d2a8ff;">getContextPills</span>(store.activeMode())),</div>
+      <div>&nbsp;&nbsp;<span style="color: #79c0ff;">modeThemeClass</span>: <span style="color: #d2a8ff;">computed</span>(() => <span style="color: #a5d6ff;">`mode-${</span>store.activeMode()<span style="color: #a5d6ff;">}`</span>),</div>
+      <div>}))</div>
+      <br/>
+      <div style="color: #8b949e;">// New method</div>
+      <div><span style="color: #d2a8ff;">withMethods</span>(store => ({</div>
+      <div>&nbsp;&nbsp;<span style="color: #79c0ff;">setMode</span>(mode: <span style="color: #79c0ff;">AppMode</span>) { <span style="color: #d2a8ff;">patchState</span>(store, { activeMode: mode }); }</div>
+      <div>}))</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Mode Configuration Map</h3>
+  <div class="mockup">
+    <div class="mockup-header">mode.config.ts — pure data, no services</div>
+    <div class="mockup-body" style="font-family: 'SF Mono', monospace; font-size: 12px; line-height: 1.7; padding: 16px; color: #c9d1d9;">
+      <div><span style="color: #ff7b72;">export const</span> <span style="color: #79c0ff;">MODE_CONFIG</span>: Record&lt;AppMode, ModeConfig&gt; = {</div>
+      <div>&nbsp;&nbsp;<span style="color: #a5d6ff;">chat</span>: {</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;label: <span style="color: #a5d6ff;">'Chat'</span>, icon: <span style="color: #a5d6ff;">'discussion'</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;confirmationLevel: <span style="color: #a5d6ff;">'none'</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;suggestedRoutes: [<span style="color: #a5d6ff;">'/dashboard'</span>, <span style="color: #a5d6ff;">'/chat'</span>, <span style="color: #a5d6ff;">'/semantic-search'</span>],</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;systemPromptPrefix: <span style="color: #a5d6ff;">'You are a conversational assistant...'</span>,</div>
+      <div>&nbsp;&nbsp;},</div>
+      <div>&nbsp;&nbsp;<span style="color: #a5d6ff;">cowork</span>: {</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;label: <span style="color: #a5d6ff;">'Cowork'</span>, icon: <span style="color: #a5d6ff;">'collaborate'</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;confirmationLevel: <span style="color: #a5d6ff;">'per-action'</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;suggestedRoutes: [<span style="color: #a5d6ff;">'/rag-studio'</span>, <span style="color: #a5d6ff;">'/analytics'</span>, <span style="color: #a5d6ff;">'/expression-builder'</span>],</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;systemPromptPrefix: <span style="color: #a5d6ff;">'Plan before acting. Present previews...'</span>,</div>
+      <div>&nbsp;&nbsp;},</div>
+      <div>&nbsp;&nbsp;<span style="color: #a5d6ff;">training</span>: {</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;label: <span style="color: #a5d6ff;">'Training'</span>, icon: <span style="color: #a5d6ff;">'accelerated'</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;confirmationLevel: <span style="color: #a5d6ff;">'none'</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;suggestedRoutes: [<span style="color: #a5d6ff;">'/pipeline'</span>, <span style="color: #a5d6ff;">'/data-explorer'</span>, <span style="color: #a5d6ff;">'/model-optimizer'</span>, ...],</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;systemPromptPrefix: <span style="color: #a5d6ff;">'Execute autonomously. Run pipelines...'</span>,</div>
+      <div>&nbsp;&nbsp;},</div>
+      <div>};</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>State architecture looks right</h3>
+        <p>Signal flow, store extension, and config map make sense — continue to next section</p>
+      </div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">~</div>
+      <div class="content">
+        <h3>Needs changes</h3>
+        <p>I'll describe adjustments in the terminal</p>
+      </div>
+    </div>
+  </div>
+</div>

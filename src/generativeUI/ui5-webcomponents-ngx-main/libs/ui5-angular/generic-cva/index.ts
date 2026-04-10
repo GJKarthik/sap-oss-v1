@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 interface CvaComponent<ValueType = any> {
-  element: Element;
+  element: Element & { disabled?: boolean };
   cvaValue: ValueType;
 }
 
@@ -29,7 +29,7 @@ class GenericControlValueAccessor<ValueType = any>
   host!: CvaComponent<ValueType>;
 
   setDisabledState = (isDisabled: boolean): void => {
-    this.host.element['disabled'] = isDisabled;
+    this.host.element.disabled = isDisabled;
   };
 
   registerOnChange(fn: (newVal: ValueType) => void): void {

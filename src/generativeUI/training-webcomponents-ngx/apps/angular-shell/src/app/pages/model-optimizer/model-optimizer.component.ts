@@ -96,7 +96,7 @@ interface JobResponse {
             <div class="glass-panel stat-material slideUp" style="animation-delay: 0.2s">
               <div class="stat-header">
                 <ui5-icon name="line-chart"></ui5-icon>
-                <span>Optimization Pareto Frontier</span>
+                <span>VRAM Pareto Frontier</span>
               </div>
               <div class="pareto-summary">
                 <div class="p-item">
@@ -142,7 +142,7 @@ interface JobResponse {
                   </ui5-select>
 
                   <ui5-button design="Emphasized" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
-                    {{ submitting() ? 'Initializing Agent...' : 'Execute Optimization' }}
+                    {{ submitting() ? 'Preparing Forge…' : 'Launch Tuning Run' }}
                   </ui5-button>
                 </form>
               </div>
@@ -152,7 +152,7 @@ interface JobResponse {
             <main class="jobs-side">
               <div class="glass-panel monitor-card slideUp" style="animation-delay: 0.4s">
                 <ui5-bar design="Header">
-                  <ui5-title slot="startContent" level="H4">Job Monitor</ui5-title>
+                  <ui5-title slot="startContent" level="H4">Run Monitor</ui5-title>
                   <ui5-tag slot="endContent" design="Neutral">{{ jobs().length }} Sessions</ui5-tag>
                 </ui5-bar>
                 

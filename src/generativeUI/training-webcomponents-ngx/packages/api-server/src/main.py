@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from sqlalchemy import create_engine, Column, String, Float, JSON, Boolean, DateTime
+from sqlalchemy import create_engine, Column, String, Float, JSON, Boolean, DateTime, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -46,8 +46,11 @@ from .store import JobRecord, get_store, seed_store
 from . import rag
 from . import pal
 from . import data_products
+from . import personal_knowledge
+from . import workspace_api
+from .identity import resolve_request_identity
 
-from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD
+from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD, HANA_ENCRYPT
 
 pal_catalog = pal.PALCatalog()
 hana_pal = pal.HanaPALClient(
@@ -205,9 +208,11 @@ limiter = Limiter(key_func=get_remote_address)
 
 import structlog
 import time
+from structlog.contextvars import bind_contextvars, clear_contextvars
 
 structlog.configure(
     processors=[
+        structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.JSONRenderer()
@@ -423,7 +428,9 @@ app.add_middleware(
 )
 
 app.include_router(rag.router, prefix="/rag", tags=["RAG"])
+app.include_router(personal_knowledge.router, prefix="/knowledge", tags=["Personal Knowledge"])
 app.include_router(data_products.router, prefix="/data-products", tags=["Data Products"])
+app.include_router(workspace_api.router, prefix="/workspace", tags=["Workspace"])
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
@@ -436,6 +443,14 @@ async def security_headers_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def structlog_middleware(request: Request, call_next):
+    clear_contextvars()
+    identity = resolve_request_identity(request)
+    bind_contextvars(
+        request_id=request.headers.get("x-request-id", str(uuid.uuid4())),
+        user_id=identity.user_id,
+        user_email=identity.email,
+        auth_source=identity.auth_source,
+    )
     start_time = time.time()
     try:
         response = await call_next(request)
@@ -446,6 +461,8 @@ async def structlog_middleware(request: Request, call_next):
         process_time = time.time() - start_time
         logger.exception("request_failed", method=request.method, path=request.url.path, error=str(e), duration_s=round(process_time, 4))
         raise
+    finally:
+        clear_contextvars()
 
 
 # ---------------------------------------------------------------------------
@@ -720,7 +737,7 @@ async def health() -> dict:
     db_status = "healthy"
     try:
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
     except Exception:
         db_status = "unhealthy"
@@ -1486,43 +1503,177 @@ async def get_pipeline_status():
 
 # --- HANA CLOUD EXPLORER ---
 
+HANA_PREVIEW_PAIR_COUNT = 13952
+
+
+def _hana_preview_rows(sql: str) -> list[dict[str, Any]]:
+    normalized = sql.lower()
+    if "count" in normalized:
+        return [{"total": HANA_PREVIEW_PAIR_COUNT}]
+    return [
+        {"TABLE_NAME": "TRAINING_PAIRS", "SCHEMA_NAME": "FINSIGHT_CORE", "ROW_COUNT": HANA_PREVIEW_PAIR_COUNT},
+        {"TABLE_NAME": "ODATA_VOCAB", "SCHEMA_NAME": "ODATA_VOCAB", "ROW_COUNT": 4200},
+        {"TABLE_NAME": "PAL_EMBEDDINGS", "SCHEMA_NAME": "PAL_STORE", "ROW_COUNT": 8100},
+    ]
+
+
+def _has_hana_credentials() -> bool:
+    return bool(HANA_HOST and HANA_USER and HANA_PASSWORD)
+
+
+def _hana_connection():
+    import hdbcli.dbapi as hdbcli  # type: ignore
+
+    return hdbcli.connect(
+        address=HANA_HOST,
+        port=HANA_PORT,
+        user=HANA_USER,
+        password=HANA_PASSWORD,
+        encrypt=HANA_ENCRYPT,
+    )
+
+
+def _to_json_safe(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, datetime):
+        return value.isoformat() + "Z"
+    if isinstance(value, bytes):
+        try:
+            return value.decode("utf-8")
+        except Exception:
+            return value.hex()
+    return str(value)
+
+
+def _is_read_only_sql(sql: str) -> bool:
+    normalized = sql.strip().lower().lstrip("(")
+    if not normalized:
+        return False
+    if not normalized.startswith(("select", "with", "explain")):
+        return False
+
+    blocked = (
+        " insert ",
+        " update ",
+        " delete ",
+        " merge ",
+        " upsert ",
+        " drop ",
+        " alter ",
+        " create ",
+        " truncate ",
+        " grant ",
+        " revoke ",
+        " commit ",
+        " rollback ",
+        " call ",
+    )
+    padded = f" {normalized} "
+    return not any(token in padded for token in blocked)
+
+
+def _is_user_sql_error(detail: str) -> bool:
+    normalized = detail.lower()
+    indicators = (
+        "syntax error",
+        "invalid table",
+        "table unknown",
+        "invalid column",
+        "column unknown",
+        "insufficient privilege",
+        "feature not supported",
+    )
+    return any(indicator in normalized for indicator in indicators)
+
+
+def _hana_stats_response(available: bool, mode: str, reason: str | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "available": available,
+        "pair_count": HANA_PREVIEW_PAIR_COUNT,
+        "mode": mode,
+    }
+    if reason:
+        payload["reason"] = reason
+    return payload
+
+
+def _preview_hana_query_response(reason: str, sql: str) -> dict[str, Any]:
+    rows = _hana_preview_rows(sql)
+    return {
+        "status": "ok",
+        "mode": "preview",
+        "reason": reason,
+        "rows": rows,
+        "count": len(rows),
+    }
+
+
+def _execute_hana_query_live(sql: str) -> list[dict[str, Any]]:
+    conn = _hana_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        columns = [column[0] for column in cursor.description or []]
+        rows = cursor.fetchmany(200)
+        if not columns:
+            return []
+        return [
+            {columns[index]: _to_json_safe(value) for index, value in enumerate(row)}
+            for row in rows
+        ]
+    finally:
+        conn.close()
+
 @app.get("/hana/stats")
 async def get_hana_stats():
     """Return HANA Cloud connection status and training pair count."""
+    if not _has_hana_credentials():
+        return _hana_stats_response(False, "preview", "credentials_missing")
+
     try:
-        import os
-        hana_host = os.getenv("HANA_HOST", "")
-        available = bool(hana_host)
-        return {"available": available, "pair_count": 13952}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        conn = _hana_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1 FROM DUMMY")
+            cursor.fetchone()
+        finally:
+            conn.close()
+        return _hana_stats_response(True, "live")
+    except Exception as exc:
+        logger.warning("hana_stats_preview_fallback", error=str(exc))
+        return _hana_stats_response(False, "preview", "reconnecting")
 
 class HanaQueryPayload(BaseModel):
     sql: str
 
 @app.post("/hana/query")
 async def execute_hana_query(payload: HanaQueryPayload):
-    """Execute a read-only SQL query against HANA Cloud (or return sample data)."""
+    """Execute a read-only SQL query against HANA Cloud, with a preview fallback for transient failures."""
+    sql = payload.sql.strip()
+    if not sql:
+        raise HTTPException(status_code=400, detail="SQL query is required.")
+
+    if not _is_read_only_sql(sql):
+        raise HTTPException(status_code=400, detail="Only read-only SELECT, WITH, or EXPLAIN queries are allowed.")
+
+    if not _has_hana_credentials():
+        return _preview_hana_query_response("credentials_missing", sql)
+
     try:
-        import os
-        hana_host = os.getenv("HANA_HOST", "")
-
-        # If HANA is not configured, return sample data so the UI never crashes
-        if "count" in payload.sql.lower():
-            return {"status": "ok", "rows": [{"total": 13952}], "count": 1}
-        else:
-            return {
-                "status": "ok",
-                "rows": [
-                    {"TABLE_NAME": "TRAINING_PAIRS", "SCHEMA_NAME": "FINSIGHT_CORE", "ROW_COUNT": 13952},
-                    {"TABLE_NAME": "ODATA_VOCAB", "SCHEMA_NAME": "ODATA_VOCAB", "ROW_COUNT": 4200},
-                    {"TABLE_NAME": "PAL_EMBEDDINGS", "SCHEMA_NAME": "PAL_STORE", "ROW_COUNT": 8100}
-                ],
-                "count": 3
-            }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        rows = _execute_hana_query_live(sql)
+        return {
+            "status": "ok",
+            "mode": "live",
+            "rows": rows,
+            "count": len(rows),
+        }
+    except Exception as exc:
+        detail = str(exc)
+        logger.warning("hana_query_failed", error=detail)
+        if _is_user_sql_error(detail):
+            raise HTTPException(status_code=400, detail=detail)
+        return _preview_hana_query_response("reconnecting", sql)
 
 
 class LineageQueryPayload(BaseModel):
@@ -1541,7 +1692,7 @@ _LINEAGE_NODES = [
     {"id": "tbl-vocab", "name": "ODATA_VOCAB", "type": "Table"},
     {"id": "tbl-pal-embeddings", "name": "PAL_EMBEDDINGS", "type": "Table"},
     {"id": "pipe-rag", "name": "RAG Studio", "type": "Pipeline"},
-    {"id": "pipe-optimizer", "name": "Model Optimizer", "type": "Pipeline"},
+    {"id": "pipe-optimizer", "name": "Model Forge", "type": "Pipeline"},
 ]
 
 _LINEAGE_RELATIONSHIPS = [

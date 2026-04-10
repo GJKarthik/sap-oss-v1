@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { McpService } from '../../services/mcp.service';
 import { EmptyStateComponent, CrossAppLinkComponent } from '../../shared';
-import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
-import { ToastService } from '../../services/toast.service';
+import {
+  PersonalKnowledgeBase,
+  PersonalKnowledgeService,
+} from '../../services/personal-knowledge.service';
 
 interface GraphNode { id: string; label: string; type: string; x: number; y: number; }
 interface GraphEdge { source: string; target: string; label: string; }
@@ -19,42 +20,42 @@ interface GraphEdge { source: string; target: string; label: string; }
   template: `
     <ui5-page background-design="Solid">
       <ui5-bar slot="header" design="Header">
-        <ui5-title slot="startContent" level="H3">{{ 'lineage.dataLineage' | translate }}</ui5-title>
-        <ui5-button slot="endContent" icon="refresh" (click)="refresh()" [disabled]="loading" [attr.aria-label]="i18n.t('lineage.refreshLineage')">
+        <ui5-title slot="startContent" level="H3">Personal Knowledge Graph</ui5-title>
+        <ui5-button slot="endContent" icon="refresh" (click)="refresh()" [disabled]="loading" aria-label="Refresh knowledge graph">
           {{ loading ? ('common.loading' | translate) : ('common.refresh' | translate) }}
         </ui5-button>
       </ui5-bar>
 
       <app-cross-app-link
         targetApp="training"
-        targetRoute="/schema-browser"
-        targetLabelKey="nav.schemaBrowser"
+        targetRoute="/rag-studio"
+        targetLabelKey="nav.ragStudio"
         icon="database">
       </app-cross-app-link>
 
-      <div class="lineage-content" role="region" [attr.aria-label]="i18n.t('lineage.lineageExplorer')">
+      <div class="lineage-content" role="region" aria-label="Personal knowledge graph explorer">
         <div class="loading-container" *ngIf="summaryLoading" role="status" aria-live="polite">
           <ui5-busy-indicator active size="M"></ui5-busy-indicator>
-          <span class="loading-text">{{ 'lineage.loadingGraph' | translate }}</span>
+          <span class="loading-text">Loading knowledge graph…</span>
         </div>
 
         <ui5-message-strip *ngIf="error" design="Negative" [hideCloseButton]="false" (close)="error = ''" role="alert">{{ error }}</ui5-message-strip>
 
         <!-- Summary bar -->
         <div class="summary-bar">
-          <div class="summary-item"><span>{{ 'lineage.nodes' | translate }}</span><ui5-tag design="Information">{{ summary.node_count }}</ui5-tag></div>
-          <div class="summary-item"><span>{{ 'lineage.edgesLabel' | translate }}</span><ui5-tag design="Information">{{ summary.edge_count }}</ui5-tag></div>
-          <div class="summary-item" *ngIf="summary.status"><span>{{ 'lineage.statusLabel' | translate }}</span>
+          <div class="summary-item"><span>Nodes</span><ui5-tag design="Information">{{ summary.node_count }}</ui5-tag></div>
+          <div class="summary-item"><span>Relationships</span><ui5-tag design="Information">{{ summary.edge_count }}</ui5-tag></div>
+          <div class="summary-item" *ngIf="summary.status"><span>Status</span>
             <ui5-tag [design]="statusTagDesign(summary.status)">{{ summary.status }}</ui5-tag>
           </div>
           <div class="summary-spacer"></div>
-          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'graph' ? 'Emphasized' : 'Default'" (click)="viewMode = 'graph'">{{ 'lineage.graph' | translate }}</ui5-button>
-          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'table' ? 'Emphasized' : 'Default'" (click)="viewMode = 'table'">{{ 'lineage.table' | translate }}</ui5-button>
+          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'graph' ? 'Emphasized' : 'Default'" (click)="viewMode = 'graph'">Graph</ui5-button>
+          <ui5-button *ngIf="graphNodes.length" [design]="viewMode === 'table' ? 'Emphasized' : 'Default'" (click)="viewMode = 'table'">Table</ui5-button>
         </div>
 
         <!-- Visual graph -->
         <ui5-card *ngIf="graphNodes.length && viewMode === 'graph'" class="graph-card">
-          <ui5-card-header slot="header" [titleText]="'lineage.lineageGraph' | translate" [subtitleText]="graphNodes.length + ' ' + i18n.t('lineage.nodes') + ' \u00b7 ' + graphEdges.length + ' ' + i18n.t('lineage.edgesLabel')"></ui5-card-header>
+          <ui5-card-header slot="header" titleText="Knowledge Graph" [subtitleText]="graphNodes.length + ' nodes · ' + graphEdges.length + ' relationships'"></ui5-card-header>
           <div class="graph-viewport" #graphViewport>
             <svg [attr.width]="svgWidth" [attr.height]="svgHeight" class="graph-svg">
               <defs>
@@ -80,11 +81,11 @@ interface GraphEdge { source: string; target: string; label: string; }
           <ui5-card-header slot="header" [titleText]="selectedNode.label" [subtitleText]="'Type: ' + selectedNode.type">
           </ui5-card-header>
           <div class="detail-body">
-            <div class="detail-row"><span class="detail-label">{{ 'lineage.id' | translate }}</span><span>{{ selectedNode.id }}</span></div>
-            <div class="detail-row"><span class="detail-label">{{ 'lineage.type' | translate }}</span><ui5-tag design="Information">{{ selectedNode.type }}</ui5-tag></div>
-            <div class="detail-row"><span class="detail-label">{{ 'lineage.connections' | translate }}</span><span>{{ getConnectionCount(selectedNode.id) }} {{ 'lineage.edges' | translate }}</span></div>
+            <div class="detail-row"><span class="detail-label">ID</span><span>{{ selectedNode.id }}</span></div>
+            <div class="detail-row"><span class="detail-label">Type</span><ui5-tag design="Information">{{ selectedNode.type }}</ui5-tag></div>
+            <div class="detail-row"><span class="detail-label">Connections</span><span>{{ getConnectionCount(selectedNode.id) }} edges</span></div>
             <div *ngIf="vocabAnnotations[selectedNode.id]" class="annotation-badges">
-              <span class="detail-label">{{ 'lineage.vocabAnnotations' | translate }}</span>
+              <span class="detail-label">Signals</span>
               <div class="badge-row">
                 <ui5-badge *ngFor="let ann of vocabAnnotations[selectedNode.id]" [colorScheme]="ann.colorScheme">{{ ann.label }}</ui5-badge>
               </div>
@@ -95,21 +96,28 @@ interface GraphEdge { source: string; target: string; label: string; }
 
         <!-- Table view -->
         <ui5-card *ngIf="graphNodes.length && viewMode === 'table'">
-          <ui5-card-header slot="header" [titleText]="'lineage.queryResults' | translate" [subtitleText]="queryResult?.rowCount + ' rows'"></ui5-card-header>
+          <ui5-card-header slot="header" titleText="Graph Results" [subtitleText]="queryResult?.rowCount + ' rows'"></ui5-card-header>
           <div class="result-area"><pre>{{ queryResult?.rows | json }}</pre></div>
         </ui5-card>
 
         <!-- Query input -->
         <ui5-card>
-          <ui5-card-header slot="header" [titleText]="'lineage.graphQuery' | translate" [subtitleText]="'lineage.graphQuerySubtitle' | translate"></ui5-card-header>
+          <ui5-card-header slot="header" titleText="Graph Query" subtitleText="Explore remembered bases, documents, wiki pages, and inferred concepts."></ui5-card-header>
           <div class="query-area">
+            <div class="field-group">
+              <label class="detail-label">Scope</label>
+              <select class="graph-select" [(ngModel)]="selectedKnowledgeBaseId" (ngModelChange)="refresh()">
+                <option value="">All knowledge bases</option>
+                <option *ngFor="let base of knowledgeBases" [value]="base.id">{{ base.name }}</option>
+              </select>
+            </div>
             <div class="query-presets">
               <ui5-button *ngFor="let q of presetQueries" design="Default" (click)="lineageQuery = q.query; runQuery()">{{ q.label }}</ui5-button>
             </div>
-            <ui5-textarea id="lineage-query" ngDefaultControl [(ngModel)]="lineageQuery" placeholder="SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE FROM LINEAGE_RELATIONSHIPS LIMIT 25" [rows]="3" accessible-name="Lineage query input"></ui5-textarea>
-            <ui5-button design="Emphasized" icon="play" (click)="runQuery()" [disabled]="loading || !lineageQuery.trim()">{{ loading ? ('lineage.running' | translate) : ('lineage.runQuery' | translate) }}</ui5-button>
+            <ui5-textarea id="lineage-query" ngDefaultControl [(ngModel)]="lineageQuery" placeholder="show graph relationships" [rows]="3" accessible-name="Knowledge graph query input"></ui5-textarea>
+            <ui5-button design="Emphasized" icon="play" (click)="runQuery()" [disabled]="loading || !lineageQuery.trim()">{{ loading ? 'Running…' : 'Run Query' }}</ui5-button>
           </div>
-          <app-empty-state *ngIf="!loading && !queryResult && !summaryLoading && !graphNodes.length" icon="explorer" [title]="'lineage.runQueryAction' | translate" [description]="'lineage.runQueryDesc' | translate"></app-empty-state>
+          <app-empty-state *ngIf="!loading && !queryResult && !summaryLoading && !graphNodes.length" icon="explorer" title="Explore your graph" description="Run a graph query to see how knowledge bases, documents, wiki pages, and concepts connect."></app-empty-state>
         </ui5-card>
       </div>
     </ui5-page>
@@ -140,6 +148,16 @@ interface GraphEdge { source: string; target: string; label: string; }
     .annotation-badges { display: flex; flex-direction: column; gap: 0.25rem; }
     .badge-row { display: flex; gap: 0.25rem; flex-wrap: wrap; }
     .query-area { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .field-group { display: flex; flex-direction: column; gap: 0.4rem; max-width: 320px; }
+    .graph-select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--sapField_BorderColor, #89919a);
+      border-radius: 0.375rem;
+      background: var(--sapField_Background, #fff);
+      color: var(--sapTextColor, #32363a);
+      font: inherit;
+    }
     .query-presets { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .result-area { padding: 1rem; border-top: 1px solid var(--sapList_BorderColor); }
     pre { background: var(--sapList_Background); padding: 1rem; overflow: auto; max-height: 300px; border-radius: 0.25rem; margin: 0; font-family: 'SFMono-Regular', Consolas, monospace; font-size: var(--sapFontSmallSize); }
@@ -147,17 +165,17 @@ interface GraphEdge { source: string; target: string; label: string; }
   `]
 })
 export class LineageComponent implements OnInit {
-  private readonly mcpService = inject(McpService);
+  private readonly knowledge = inject(PersonalKnowledgeService);
   private readonly destroyRef = inject(DestroyRef);
-  readonly i18n = inject(I18nService);
-  private readonly toast = inject(ToastService);
 
-  lineageQuery = 'SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE FROM LINEAGE_RELATIONSHIPS LIMIT 25';
+  lineageQuery = 'show graph relationships';
   queryResult: { rows: unknown[]; rowCount: number } | null = null;
   summary: { node_count: number; edge_count: number; status?: string; error?: string } = { node_count: 0, edge_count: 0, status: 'loading' };
   loading = false;
   summaryLoading = true;
   error = '';
+  knowledgeBases: PersonalKnowledgeBase[] = [];
+  selectedKnowledgeBaseId = '';
 
   graphNodes: GraphNode[] = [];
   graphEdges: GraphEdge[] = [];
@@ -169,19 +187,26 @@ export class LineageComponent implements OnInit {
 
   get presetQueries() {
     return [
-      { label: this.i18n.t('lineage.allNodes'), query: 'SELECT OBJECT_NAME AS name, OBJECT_TYPE AS type FROM LINEAGE_NODES LIMIT 30' },
-      { label: this.i18n.t('lineage.allRelationships'), query: 'SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE FROM LINEAGE_RELATIONSHIPS LIMIT 25' },
-      { label: this.i18n.t('lineage.sourceTables'), query: 'SELECT OBJECT_NAME AS name, OBJECT_TYPE AS type FROM LINEAGE_NODES WHERE OBJECT_TYPE = \'Table\' LIMIT 20' },
-      { label: this.i18n.t('lineage.fullLineage'), query: 'SELECT SOURCE_NAME, TARGET_NAME, RELATIONSHIP_TYPE, PATH_DEPTH FROM LINEAGE_RELATIONSHIPS ORDER BY PATH_DEPTH ASC LIMIT 15' },
+      { label: 'Graph relationships', query: 'show graph relationships' },
+      { label: 'Knowledge bases', query: 'show knowledge base nodes' },
+      { label: 'Document sources', query: 'show documents' },
+      { label: 'Wiki pages', query: 'show wiki pages' },
+      { label: 'Concepts', query: 'show concepts' },
     ];
   }
 
   private readonly NODE_COLORS: Record<string, string> = {
-    Table: '#0854a0', Column: '#107e3e', Pipeline: '#e9730c',
-    Model: '#bb0000', Dataset: '#6c32a9', default: '#5b738b',
+    KnowledgeBase: '#0854a0',
+    WikiPage: '#107e3e',
+    Document: '#e9730c',
+    Concept: '#6c32a9',
+    default: '#5b738b',
   };
 
-  ngOnInit(): void { this.loadSummary(); }
+  ngOnInit(): void {
+    this.loadKnowledgeBases();
+    this.loadSummary();
+  }
 
   refresh(): void { this.loadSummary(); this.queryResult = null; this.graphNodes = []; this.graphEdges = []; this.selectedNode = null; }
 
@@ -195,11 +220,11 @@ export class LineageComponent implements OnInit {
   private loadSummary(): void {
     this.summaryLoading = true;
     this.error = '';
-    this.mcpService.graphSummary().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.knowledge.getGraphSummary(this.selectedKnowledgeBaseId || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: summary => {
         this.summary = { ...summary, status: summary.status || 'ready' };
         this.summaryLoading = false;
-        this.enrichWithVocab();
+        this.runQuery();
       },
       error: () => { this.summary = { node_count: 0, edge_count: 0, status: 'unavailable' }; this.summaryLoading = false; }
     });
@@ -212,23 +237,14 @@ export class LineageComponent implements OnInit {
     return 'Positive';
   }
 
-  private enrichWithVocab(): void {
-    this.mcpService.getRagContext('data lineage entity types', 'EntityType').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (context: unknown) => {
-        if (context && typeof context === 'object') {
-          const ctx = context as Record<string, unknown>;
-          const annotations = ctx['annotations'] as Record<string, unknown[]> | undefined;
-          if (annotations) {
-            for (const [entityId, anns] of Object.entries(annotations)) {
-              this.vocabAnnotations[entityId] = (anns as Array<{ term: string; vocabulary: string }>).map(a => ({
-                label: `${a.vocabulary}.${a.term}`,
-                colorScheme: a.vocabulary === 'Analytics' ? '8' : a.vocabulary === 'PersonalData' ? '1' : '6',
-              }));
-            }
-          }
-        }
+  private loadKnowledgeBases(): void {
+    this.knowledge.listBases().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (bases) => {
+        this.knowledgeBases = bases;
       },
-      error: () => { this.toast.error(this.i18n.t('lineage.operationFailed')); },
+      error: () => {
+        this.knowledgeBases = [];
+      },
     });
   }
 
@@ -236,9 +252,9 @@ export class LineageComponent implements OnInit {
     if (!this.lineageQuery.trim()) return;
     this.loading = true;
     this.error = '';
-    this.mcpService.runLineageQuery(this.lineageQuery).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: r => { this.queryResult = r; this.buildGraph(r.rows); this.loading = false; },
-      error: () => { this.error = this.i18n.t('lineage.queryFailed'); this.loading = false; }
+    this.knowledge.queryGraph(this.lineageQuery, { baseId: this.selectedKnowledgeBaseId || undefined }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: r => { this.queryResult = { rows: r.rows, rowCount: r.row_count }; this.buildGraph(r.rows); this.loading = false; },
+      error: () => { this.error = 'Knowledge graph query failed'; this.loading = false; }
     });
   }
 
@@ -246,35 +262,39 @@ export class LineageComponent implements OnInit {
   private buildGraph(rows: unknown[]): void {
     const nodeMap = new Map<string, GraphNode>();
     const edges: GraphEdge[] = [];
+    this.vocabAnnotations = {};
 
     for (const row of rows) {
       if (!row || typeof row !== 'object') continue;
-      const values = Object.values(row as Record<string, unknown>);
-      for (const val of values) {
-        if (val && typeof val === 'object') {
-          const v = val as Record<string, unknown>;
-          if (v['_id'] || v['id'] || v['name']) {
-            const id = String(v['_id'] ?? v['id'] ?? v['name']);
-            if (!nodeMap.has(id)) {
-              const label = String(v['name'] ?? v['label'] ?? v['title'] ?? id).slice(0, 20);
-              const type = String(v['_label'] ?? v['type'] ?? v['kind'] ?? 'Node');
-              nodeMap.set(id, { id, label, type, x: 0, y: 0 });
-            }
-          }
-          if (v['_src'] && v['_dst']) {
-            edges.push({ source: String(v['_src']), target: String(v['_dst']), label: String(v['_label'] ?? v['type'] ?? '') });
-          }
+      const record = row as Record<string, unknown>;
+      if (record['source_id'] && record['target_id']) {
+        const sourceId = String(record['source_id']);
+        const targetId = String(record['target_id']);
+        const sourceName = String(record['source_name'] ?? sourceId).slice(0, 20);
+        const targetName = String(record['target_name'] ?? targetId).slice(0, 20);
+        const sourceType = String(record['source_type'] ?? 'Node');
+        const targetType = String(record['target_type'] ?? 'Node');
+        if (!nodeMap.has(sourceId)) {
+          nodeMap.set(sourceId, { id: sourceId, label: sourceName, type: sourceType, x: 0, y: 0 });
         }
+        if (!nodeMap.has(targetId)) {
+          nodeMap.set(targetId, { id: targetId, label: targetName, type: targetType, x: 0, y: 0 });
+        }
+        edges.push({ source: sourceId, target: targetId, label: String(record['relationship'] ?? '') });
+        if (targetType === 'Concept') {
+          const relationship = String(record['relationship'] ?? 'related');
+          this.vocabAnnotations[targetId] = [{ label: relationship, colorScheme: '8' }];
+        }
+        continue;
       }
-    }
 
-    // If no structured graph data, create nodes from row keys
-    if (nodeMap.size === 0 && rows.length > 0) {
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i] as Record<string, unknown>;
-        const id = String(row['id'] ?? row['name'] ?? `row-${i}`);
-        const label = String(row['name'] ?? row['label'] ?? row['title'] ?? id).slice(0, 20);
-        nodeMap.set(id, { id, label, type: String(row['type'] ?? 'Result'), x: 0, y: 0 });
+      if (record['id'] || record['name']) {
+        const id = String(record['id'] ?? record['name']);
+        const label = String(record['name'] ?? record['label'] ?? id).slice(0, 20);
+        const type = String(record['type'] ?? 'Node');
+        if (!nodeMap.has(id)) {
+          nodeMap.set(id, { id, label, type, x: 0, y: 0 });
+        }
       }
     }
 

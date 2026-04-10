@@ -13,6 +13,7 @@ import { LocaleNumberPipe } from '../../shared/pipes/locale-number.pipe';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { DocumentContextService } from '../../services/document-context.service';
 import { CrossAppLinkComponent } from '../../shared/cross-app-link.component';
+import { PersonalKnowledgeService } from '../../services/personal-knowledge.service';
 
 export interface OcrCurationState {
   /** The raw PDF File object uploaded by the user. */
@@ -59,6 +60,7 @@ export class DocumentOcrComponent {
   private readonly router = inject(Router);
   private readonly userSettings = inject(UserSettingsService);
   private readonly documentContext = inject(DocumentContextService);
+  private readonly knowledge = inject(PersonalKnowledgeService);
 
   // Canvas ref for pdf.js rendering
   @ViewChild('pageCanvas') private _canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -154,6 +156,7 @@ export class DocumentOcrComponent {
   readonly isDragOver = signal(false);
   readonly activeTab = signal<'text' | 'tables' | 'financial' | 'metadata' | 'ai'>('text');
   readonly tabs: ('text' | 'tables' | 'financial' | 'metadata' | 'ai')[] = ['text', 'tables', 'financial', 'metadata', 'ai'];
+  readonly savingToKnowledge = signal(false);
 
   constructor() {
     // Poll health on startup
@@ -353,6 +356,58 @@ export class DocumentOcrComponent {
     });
   }
 
+  rememberInKnowledgeBase(): void {
+    const state = this._state();
+    if (!state.result || this.savingToKnowledge()) {
+      return;
+    }
+
+    const fileName = state.sourceFile?.name ?? state.result.file_path;
+    const documents = [
+      `OCR capture from ${fileName}\n\n${this.allText()}`,
+    ];
+    const metadatas: Array<Record<string, unknown>> = [
+      {
+        source: 'document-ocr',
+        file_name: fileName,
+        page_count: state.result.total_pages,
+        confidence: state.result.overall_confidence,
+      },
+    ];
+
+    if (state.aiResult) {
+      documents.push(this.serializeAiExtraction(state.aiResult, fileName));
+      metadatas.push({
+        source: 'document-ocr-ai',
+        file_name: fileName,
+        document_type: state.aiResult.document_type,
+      });
+    }
+
+    this.savingToKnowledge.set(true);
+    this.knowledge.ensureBase({
+      name: 'Document Intake Memory',
+      description: 'OCR captures, translated documents, and guided review artifacts that should remain available in the personal agent.',
+    }).subscribe({
+      next: (base) => {
+        this.knowledge.addDocuments(base.id, documents, metadatas).subscribe({
+          next: () => {
+            this.toast.success(`Saved ${fileName} to ${base.name}`);
+            this.savingToKnowledge.set(false);
+          },
+          error: () => {
+            this.toast.error('Failed to save document to personal knowledge');
+            this.savingToKnowledge.set(false);
+          },
+        });
+      },
+      error: () => {
+        this.toast.error('Failed to open personal knowledge');
+        this.savingToKnowledge.set(false);
+      },
+    });
+  }
+
   // ─── Pagination ──────────────────────────────────────────────────────────────
 
   prevPage(): void {
@@ -425,6 +480,23 @@ export class DocumentOcrComponent {
       grid.push(row);
     }
     return grid;
+  }
+
+  private serializeAiExtraction(result: OcrExtractionResult, fileName: string): string {
+    const financialFields = result.financial_fields
+      .map((field) => `- ${field.key}: ${field.value}`)
+      .join('\n');
+    const complianceChecks = result.compliance_checks
+      .map((check) => `- ${check.check}: ${check.passed ? 'passed' : 'failed'}${check.details ? ` (${check.details})` : ''}`)
+      .join('\n');
+
+    return [
+      `AI extraction for ${fileName}`,
+      `Document type: ${result.document_type}`,
+      `English summary:\n${result.translated_en}`,
+      `Financial fields:\n${financialFields || '- none'}`,
+      `Compliance checks:\n${complianceChecks || '- none'}`,
+    ].join('\n\n');
   }
 
   // ─── pdf.js rendering ────────────────────────────────────────────────────────

@@ -17,8 +17,6 @@
           <ui5-select (change)="onThemeChange($event)">
             <ui5-option value="sap_horizon" [attr.selected]="ws.settings().theme === 'sap_horizon' ? true : null">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
             <ui5-option value="sap_horizon_dark" [attr.selected]="ws.settings().theme === 'sap_horizon_dark' ? true : null">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
-            <ui5-option value="sap_fiori_3" [attr.selected]="ws.settings().theme === 'sap_fiori_3' ? true : null">{{ 'THEME_QUARTZ_LIGHT' | ui5I18n }}</ui5-option>
-            <ui5-option value="sap_fiori_3_dark" [attr.selected]="ws.settings().theme === 'sap_fiori_3_dark' ? true : null">{{ 'THEME_QUARTZ_DARK' | ui5I18n }}</ui5-option>
           </ui5-select>
         </div>
         <div class="workspace-field">

@@ -1,7 +1,14 @@
 <div class="wizard-page" [class.rtl]="i18n.isRtl()">
   <div class="wizard-header">
-    <h1>{{ i18n.t('wizard.title') }}</h1>
-    <p class="wizard-subtitle">{{ i18n.t('wizard.subtitle') }}</p>
+    <div>
+      <h1>{{ i18n.t('linguist.title') }}</h1>
+      <p class="wizard-subtitle">{{ i18n.t('linguist.subtitle') }}</p>
+    </div>
+    @if (ocrResult()) {
+      <ui5-button design="Default" (click)="rememberInKnowledgeBase()" [disabled]="knowledgeSaving()">
+        {{ knowledgeSaving() ? 'Saving…' : 'Remember in Personal Knowledge' }}
+      </ui5-button>
+    }
   </div>
 
   <div class="wizard-progress" role="navigation" aria-label="Wizard steps">
@@ -26,8 +33,8 @@
   <div class="wizard-content">
     @if (currentStep() === 0) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.upload.title') }}</h2>
-        <p class="step-instructions">{{ i18n.t('wizard.upload.instructions') }}</p>
+        <h2>{{ i18n.t('linguist.upload.title') }}</h2>
+        <p class="step-instructions">{{ i18n.t('linguist.upload.instructions') }}</p>
 
         @if (!isProcessing() && !ocrResult()) {
           <div
@@ -38,16 +45,16 @@
             (drop)="onDrop($event)"
             (click)="fileInput.click()">
             <div class="upload-icon">📄</div>
-            <p class="upload-label">{{ i18n.t('wizard.upload.dropHere') }}</p>
-            <p class="upload-hint">{{ i18n.t('wizard.upload.browseHint') }}</p>
-            <ui5-button design="Emphasized" type="button">{{ i18n.t('wizard.upload.browse') }}</ui5-button>
+            <p class="upload-label">{{ i18n.t('linguist.upload.dropHere') }}</p>
+            <p class="upload-hint">{{ i18n.t('linguist.upload.browseHint') }}</p>
+            <ui5-button design="Emphasized" type="button">{{ i18n.t('linguist.upload.browse') }}</ui5-button>
             <input #fileInput type="file" accept=".pdf" hidden (change)="onFileSelected($event)" />
           </div>
         }
 
         @if (isProcessing()) {
           <div class="processing-area">
-            <p class="processing-label">{{ i18n.t('wizard.upload.processing') }}</p>
+            <p class="processing-label">{{ i18n.t('linguist.upload.processing') }}</p>
             <div class="progress-bar-container">
               <div class="progress-bar-fill" [style.width.%]="progress()"></div>
             </div>
@@ -58,7 +65,7 @@
         @if (ocrResult() && !isProcessing()) {
           <div class="upload-complete">
             <div class="success-icon">✅</div>
-            <p>{{ i18n.t('wizard.upload.complete') }}</p>
+            <p>{{ i18n.t('linguist.upload.complete') }}</p>
           </div>
         }
       </div>
@@ -66,46 +73,46 @@
 
     @if (currentStep() === 1) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.review.title') }}</h2>
-        <p class="step-instructions">{{ i18n.t('wizard.review.instructions') }}</p>
+        <h2>{{ i18n.t('linguist.review.title') }}</h2>
+        <p class="step-instructions">{{ i18n.t('linguist.review.instructions') }}</p>
 
         @if (ocrResult(); as result) {
           <div class="review-stats">
             <div class="stat-card">
-              <span class="stat-label">{{ i18n.t('wizard.review.totalPages') }}</span>
+              <span class="stat-label">{{ i18n.t('linguist.review.totalPages') }}</span>
               <span class="stat-value">{{ result.total_pages }}</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">{{ i18n.t('wizard.review.overallConfidence') }}</span>
+              <span class="stat-label">{{ i18n.t('linguist.review.overallConfidence') }}</span>
               <span class="stat-value">{{ result.overall_confidence | localeNumber:'decimal':1:1 }}%</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">{{ i18n.t('wizard.review.processingTime') }}</span>
+              <span class="stat-label">{{ i18n.t('linguist.review.processingTime') }}</span>
               <span class="stat-value">{{ result.total_processing_time_s | localeNumber:'decimal':2:2 }}s</span>
             </div>
           </div>
 
           <div class="review-section">
-            <h3>{{ i18n.t('wizard.review.extractedText') }}</h3>
+            <h3>{{ i18n.t('linguist.review.extractedText') }}</h3>
             <div class="page-nav">
               <ui5-button design="Transparent" [disabled]="currentPage() <= 1" (click)="prevPage()">‹</ui5-button>
-              <span>{{ i18n.t('wizard.review.pageNav', { current: currentPage(), total: result.total_pages }) }}</span>
+              <span>{{ i18n.t('linguist.review.pageNav', { current: currentPage(), total: result.total_pages }) }}</span>
               <ui5-button design="Transparent" [disabled]="currentPage() >= result.total_pages" (click)="nextPage()">›</ui5-button>
             </div>
             <pre class="ocr-text" dir="auto" [contentEditable]="true" (blur)="onTextEdit($event)">{{ currentPageText() }}</pre>
-            <p class="edit-hint">{{ i18n.t('wizard.review.editHint') }}</p>
+            <p class="edit-hint">{{ i18n.t('linguist.review.editHint') }}</p>
           </div>
 
           <div class="review-section">
-            <h3>{{ i18n.t('wizard.review.financialFields') }}</h3>
+            <h3>{{ i18n.t('linguist.review.financialFields') }}</h3>
             @if (financialFields().length > 0) {
               <table class="fields-table">
                 <thead>
                   <tr>
-                    <th>{{ i18n.t('wizard.review.fieldAr') }}</th>
-                    <th>{{ i18n.t('wizard.review.fieldEn') }}</th>
-                    <th>{{ i18n.t('wizard.review.value') }}</th>
-                    <th>{{ i18n.t('wizard.review.page') }}</th>
+                    <th>{{ i18n.t('linguist.review.fieldAr') }}</th>
+                    <th>{{ i18n.t('linguist.review.fieldEn') }}</th>
+                    <th>{{ i18n.t('linguist.review.value') }}</th>
+                    <th>{{ i18n.t('linguist.review.page') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,7 +133,7 @@
                 </tbody>
               </table>
             } @else {
-              <p class="empty-state">{{ i18n.t('wizard.review.noFinancialFields') }}</p>
+              <p class="empty-state">{{ i18n.t('linguist.review.noFinancialFields') }}</p>
             }
           </div>
         }
@@ -135,9 +142,9 @@
 
     @if (currentStep() === 2) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.analyze.title') }}</h2>
-        <p class="step-instructions">{{ i18n.t('wizard.analyze.instructions') }}</p>
-        <div class="system-prompt-badge">{{ i18n.t('wizard.analyze.systemPromptActive') }}</div>
+        <h2>{{ i18n.t('linguist.analyze.title') }}</h2>
+        <p class="step-instructions">{{ i18n.t('linguist.analyze.instructions') }}</p>
+        <div class="system-prompt-badge">{{ i18n.t('linguist.analyze.systemPromptActive') }}</div>
 
         <div class="chat-area">
           <div class="chat-messages-area">
@@ -162,10 +169,10 @@
               [(ngModel)]="chatInput"
               name="chatInput"
               rows="2"
-              [placeholder]="i18n.t('wizard.analyze.askQuestion')"
+              [placeholder]="i18n.t('linguist.analyze.askQuestion')"
               (keydown.enter)="onChatEnter($event)"></textarea>
             <ui5-button design="Emphasized" (click)="sendChatMessage()" [disabled]="!chatInput.trim() || chatSending()">
-              {{ chatSending() ? i18n.t('wizard.analyze.sending') : i18n.t('wizard.analyze.send') }}
+              {{ chatSending() ? i18n.t('linguist.analyze.sending') : i18n.t('linguist.analyze.send') }}
             </ui5-button>
           </form>
         </div>
@@ -174,24 +181,24 @@
 
     @if (currentStep() === 3) {
       <div class="step-panel">
-        <h2>{{ i18n.t('wizard.export.title') }}</h2>
-        <p class="step-instructions">{{ i18n.t('wizard.export.instructions') }}</p>
+        <h2>{{ i18n.t('linguist.export.title') }}</h2>
+        <p class="step-instructions">{{ i18n.t('linguist.export.instructions') }}</p>
 
         <div class="export-cards">
           <div class="export-card" (click)="exportJson()">
             <div class="export-icon">📋</div>
-            <h3>{{ i18n.t('wizard.export.json') }}</h3>
-            <p>{{ i18n.t('wizard.export.jsonDesc') }}</p>
+            <h3>{{ i18n.t('linguist.export.json') }}</h3>
+            <p>{{ i18n.t('linguist.export.jsonDesc') }}</p>
           </div>
           <div class="export-card" (click)="exportText()">
             <div class="export-icon">📝</div>
-            <h3>{{ i18n.t('wizard.export.text') }}</h3>
-            <p>{{ i18n.t('wizard.export.textDesc') }}</p>
+            <h3>{{ i18n.t('linguist.export.text') }}</h3>
+            <p>{{ i18n.t('linguist.export.textDesc') }}</p>
           </div>
           <div class="export-card" (click)="exportSummary()">
             <div class="export-icon">📊</div>
-            <h3>{{ i18n.t('wizard.export.summary') }}</h3>
-            <p>{{ i18n.t('wizard.export.summaryDesc') }}</p>
+            <h3>{{ i18n.t('linguist.export.summary') }}</h3>
+            <p>{{ i18n.t('linguist.export.summaryDesc') }}</p>
           </div>
         </div>
       </div>
@@ -201,17 +208,17 @@
   <div class="wizard-nav">
     @if (currentStep() > 0) {
       <ui5-button design="Transparent" (click)="previousStep()">
-        {{ i18n.t('wizard.nav.previous') }}
+        {{ i18n.t('linguist.nav.previous') }}
       </ui5-button>
     }
     <div class="nav-spacer"></div>
     @if (currentStep() < steps.length - 1) {
       <ui5-button design="Emphasized" [disabled]="!canAdvance()" (click)="nextStep()">
-        {{ i18n.t('wizard.nav.next') }}
+        {{ i18n.t('linguist.nav.next') }}
       </ui5-button>
     } @else {
       <ui5-button design="Emphasized" (click)="startOver()">
-        {{ i18n.t('wizard.nav.startOver') }}
+        {{ i18n.t('linguist.nav.startOver') }}
       </ui5-button>
     }
   </div>

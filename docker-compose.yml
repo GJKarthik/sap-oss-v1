@@ -1,8 +1,6 @@
 # ════════════════════════════════════════════════════════════════════════════
-# SAP AI Experience – Microservice Architecture (100% Python Production)
+# SAP AI Experience – Microservice Architecture (Production Default)
 # ════════════════════════════════════════════════════════════════════════════
-
-version: '3.8'
 
 services:
 
@@ -15,7 +13,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - angular-shell
       - api-server
@@ -50,15 +48,23 @@ services:
       - "8002:8002"
     environment:
       - PORT=8002
-      - HANA_HOST=fea6d8c0-6075-4a0d-8429-28412013ab85.hana.prod-ap11.hanacloud.ondemand.com
-      - HANA_PORT=443
-      - HANA_USER=AINUCLEUS
-      - HANA_PASSWORD=hU0*Waf5C&
+      - HANA_HOST=${HANA_HOST:?Set HANA_HOST in root .env}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER_FILE=/run/secrets/hana_user
+      - HANA_PASSWORD_FILE=/run/secrets/hana_password
+      - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
+      - HANA_ENCRYPT=${HANA_ENCRYPT:-true}
       - VLLM_URL=http://vllm:8080
-      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
-      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
-      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
-      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_CLIENT_ID_FILE=/run/secrets/aicore_client_id
+      - AICORE_CLIENT_SECRET_FILE=/run/secrets/aicore_client_secret
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL:?Set AICORE_AUTH_URL in root .env}
+      - AICORE_BASE_URL=${AICORE_BASE_URL:?Set AICORE_BASE_URL in root .env}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+    secrets:
+      - hana_user
+      - hana_password
+      - aicore_client_id
+      - aicore_client_secret
     labels:
       sap.ai.tier: "orchestration"
       sap.ai.service: "api-server-hub"
@@ -135,3 +141,13 @@ volumes:
 networks:
   platform-network:
     driver: bridge
+
+secrets:
+  hana_user:
+    file: ${HANA_USER_FILE_SOURCE:-./.secrets/hana_user}
+  hana_password:
+    file: ${HANA_PASSWORD_FILE_SOURCE:-./.secrets/hana_password}
+  aicore_client_id:
+    file: ${AICORE_CLIENT_ID_FILE_SOURCE:-./.secrets/aicore_client_id}
+  aicore_client_secret:
+    file: ${AICORE_CLIENT_SECRET_FILE_SOURCE:-./.secrets/aicore_client_secret}

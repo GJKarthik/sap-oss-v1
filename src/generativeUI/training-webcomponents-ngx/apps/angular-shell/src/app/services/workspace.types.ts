@@ -38,6 +38,21 @@ export interface WorkspaceSettings {
   updatedAt: string;
 }
 
+export const PRODUCT_THEMES = ['sap_horizon', 'sap_horizon_dark'] as const;
+export type ProductTheme = (typeof PRODUCT_THEMES)[number];
+
+export function normalizeWorkspaceTheme(theme: string | null | undefined): ProductTheme {
+  switch (theme) {
+    case 'sap_horizon_dark':
+    case 'sap_fiori_3_dark':
+      return 'sap_horizon_dark';
+    case 'sap_horizon':
+    case 'sap_fiori_3':
+    default:
+      return 'sap_horizon';
+  }
+}
+
 export interface TrainingNavLink {
   route: string;
   labelKey: string;
@@ -74,7 +89,7 @@ export const TRAINING_NAV_LINKS: TrainingNavLink[] = [
   { route: '/governance', labelKey: 'nav.governance', icon: 'shield' },
   { route: '/analytics', labelKey: 'nav.analytics', icon: 'lead' },
   { route: '/glossary-manager', labelKey: 'nav.glossaryManager', icon: 'activity-items' },
-  { route: '/arabic-wizard', labelKey: 'nav.arabicWizard', icon: 'learning-assistant' },
+  { route: '/document-linguist', labelKey: 'nav.documentLinguist', icon: 'learning-assistant' },
   { route: '/prompts', labelKey: 'nav.promptLibrary', icon: 'document-text' },
   { route: '/workspace', labelKey: 'nav.workspace', icon: 'action-settings' },
 ];
@@ -118,7 +133,7 @@ export function createDefaultWorkspaceSettings(): WorkspaceSettings {
       temperature: 0.7,
       systemPrompt: '',
     },
-    theme: 'sap_horizon',
+    theme: normalizeWorkspaceTheme('sap_horizon'),
     language: 'en',
     updatedAt: new Date().toISOString(),
   };

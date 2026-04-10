@@ -1,0 +1,147 @@
+<h2>Design Section 3: Component Behavior & Cowork Flow</h2>
+<p class="subtitle">How existing components react to mode changes + the plan-and-preview confirmation UX</p>
+
+<div class="section">
+  <h3>Nav Island: Route Highlighting</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">💬 Chat Mode</div>
+      <div class="mockup-body" style="padding: 16px; font-family: system-ui; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="padding: 8px 12px; background: rgba(10,110,209,0.2); border-left: 3px solid #0a6ed1; border-radius: 0 6px 6px 0; color: white; font-weight: 600;">Dashboard</div>
+          <div style="padding: 8px 12px; background: rgba(10,110,209,0.2); border-left: 3px solid #0a6ed1; border-radius: 0 6px 6px 0; color: white; font-weight: 600;">Chat</div>
+          <div style="padding: 8px 12px; background: rgba(10,110,209,0.2); border-left: 3px solid #0a6ed1; border-radius: 0 6px 6px 0; color: white; font-weight: 600;">Semantic Search</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">Data Explorer</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">Pipeline</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">RAG Studio</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">Model Optimizer</div>
+        </div>
+        <div style="margin-top: 10px; color: rgba(255,255,255,0.25); font-size: 11px; font-style: italic;">Dimmed routes still clickable — not hidden</div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">⚡ Training Mode</div>
+      <div class="mockup-body" style="padding: 16px; font-family: system-ui; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">Dashboard</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">Chat</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">Semantic Search</div>
+          <div style="padding: 8px 12px; background: rgba(10,110,209,0.2); border-left: 3px solid #0a6ed1; border-radius: 0 6px 6px 0; color: white; font-weight: 600;">Data Explorer</div>
+          <div style="padding: 8px 12px; background: rgba(10,110,209,0.2); border-left: 3px solid #0a6ed1; border-radius: 0 6px 6px 0; color: white; font-weight: 600;">Pipeline</div>
+          <div style="padding: 8px 12px; color: rgba(255,255,255,0.35); border-radius: 6px;">RAG Studio</div>
+          <div style="padding: 8px 12px; background: rgba(10,110,209,0.2); border-left: 3px solid #0a6ed1; border-radius: 0 6px 6px 0; color: white; font-weight: 600;">Model Optimizer</div>
+        </div>
+        <div style="margin-top: 10px; color: rgba(255,255,255,0.25); font-size: 11px; font-style: italic;">Dimmed routes still clickable — not hidden</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Cowork Mode: Plan-and-Preview Flow</h3>
+  <div class="mockup">
+    <div class="mockup-header">🤝 Cowork — AI proposes → user approves → AI executes</div>
+    <div class="mockup-body" style="padding: 20px; font-family: system-ui; font-size: 13px;">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Step 1: User asks -->
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="min-width: 28px; height: 28px; background: #3a3a5c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #e0e0e0;">U</div>
+          <div style="background: rgba(255,255,255,0.08); border-radius: 12px 12px 12px 4px; padding: 10px 14px; color: #e0e0e0;">
+            "Create a RAG pipeline for the product catalog with chunking and embeddings"
+          </div>
+        </div>
+
+        <!-- Step 2: AI proposes plan -->
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="min-width: 28px; height: 28px; background: #0a6ed1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: white;">AI</div>
+          <div style="flex: 1;">
+            <div style="background: rgba(10,110,209,0.1); border: 1px solid rgba(10,110,209,0.25); border-radius: 12px 12px 12px 4px; padding: 14px;">
+              <div style="color: #1a8fff; font-weight: 600; font-size: 12px; margin-bottom: 8px;">PROPOSED PLAN</div>
+              <div style="color: #e0e0e0; line-height: 1.6;">
+                <div style="margin-bottom: 6px;">I'll set up a 3-step pipeline:</div>
+                <div style="padding-left: 12px; border-left: 2px solid rgba(10,110,209,0.3); margin-bottom: 4px;">1. <strong>Ingest</strong> — connect to product catalog CSV, 2.4k rows</div>
+                <div style="padding-left: 12px; border-left: 2px solid rgba(10,110,209,0.3); margin-bottom: 4px;">2. <strong>Chunk</strong> — 512 token sliding window, 64 overlap</div>
+                <div style="padding-left: 12px; border-left: 2px solid rgba(10,110,209,0.3);">3. <strong>Embed</strong> — bge-small-en-v1.5, store in vector index</div>
+              </div>
+            </div>
+            <!-- Action buttons -->
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+              <div style="padding: 6px 16px; background: linear-gradient(135deg, #0a6ed1, #1a8fff); border-radius: 6px; color: white; font-size: 12px; font-weight: 600; cursor: pointer;">Approve</div>
+              <div style="padding: 6px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer;">Edit plan</div>
+              <div style="padding: 6px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer;">Reject</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Executing -->
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="min-width: 28px; height: 28px; background: #0a6ed1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: white;">AI</div>
+          <div style="background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25); border-radius: 12px 12px 12px 4px; padding: 14px; flex: 1;">
+            <div style="color: #27ae60; font-weight: 600; font-size: 12px; margin-bottom: 8px;">EXECUTING</div>
+            <div style="color: #e0e0e0; display: flex; flex-direction: column; gap: 4px;">
+              <div>✅ Step 1: Ingested 2,411 rows from product_catalog.csv</div>
+              <div>✅ Step 2: Generated 8,847 chunks (512t / 64 overlap)</div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="width: 12px; height: 12px; border: 2px solid #1a8fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                Step 3: Embedding chunks... 62%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Files to Create / Modify</h3>
+  <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 2px 16px; font-size: 13px; font-family: system-ui; padding: 12px 0;">
+    <div style="color: #27ae60; font-weight: 600;">NEW</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">shared/config/mode.config.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">Mode definitions map</div>
+
+    <div style="color: #27ae60; font-weight: 600;">NEW</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">shared/types/mode.types.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">AppMode, ModeConfig, AiCapabilities types</div>
+
+    <div style="color: #27ae60; font-weight: 600;">NEW</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">components/mode-switcher/mode-switcher.component.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">Segmented control component</div>
+
+    <div style="color: #27ae60; font-weight: 600;">NEW</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">components/cowork-plan/cowork-plan.component.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">Plan preview card with approve/edit/reject</div>
+
+    <div style="color: #e8a838; font-weight: 600;">EDIT</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">store/app.store.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">Add activeMode + computed properties</div>
+
+    <div style="color: #e8a838; font-weight: 600;">EDIT</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">components/shell/shell.component.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">Replace product switcher, bind mode class</div>
+
+    <div style="color: #e8a838; font-weight: 600;">EDIT</div>
+    <div style="color: #e0e0e0; font-family: monospace; font-size: 12px;">app.navigation.ts</div>
+    <div style="color: rgba(255,255,255,0.4);">Add mode relevance metadata to routes</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>Design complete — write the spec</h3>
+        <p>Component behavior, cowork flow, and file manifest all look good</p>
+      </div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">~</div>
+      <div class="content">
+        <h3>Needs changes</h3>
+        <p>I'll describe adjustments in the terminal</p>
+      </div>
+    </div>
+  </div>
+</div>

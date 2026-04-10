@@ -52,6 +52,9 @@
       <!-- Actions Bar -->
       <div class="actions-bar">
         <ui5-button design="Emphasized" (click)="sendToChat()">{{ i18n.t('ocr.sendToChat') }}</ui5-button>
+        <ui5-button design="Default" (click)="rememberInKnowledgeBase()" [disabled]="savingToKnowledge()">
+          {{ savingToKnowledge() ? 'Saving…' : 'Remember in Personal Knowledge' }}
+        </ui5-button>
         <ui5-button design="Default" (click)="exportJson()">{{ i18n.t('ocr.exportJson') }}</ui5-button>
         <ui5-button design="Default" (click)="exportText()">{{ i18n.t('ocr.exportText') }}</ui5-button>
         <div class="actions-spacer"></div>

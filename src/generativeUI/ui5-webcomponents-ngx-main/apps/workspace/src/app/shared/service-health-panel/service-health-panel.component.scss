@@ -3,7 +3,7 @@
   border: 1px solid var(--sapList_BorderColor, rgba(95, 101, 109, 0.16));
   border-radius: 1.5rem;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.72)),
+    linear-gradient(180deg, var(--liquid-glass-bg), var(--liquid-glass-bg)),
     var(--sapObjectHeader_Background);
   box-shadow: var(--sapContent_Shadow1, 0 12px 30px rgba(15, 23, 42, 0.08));
 }
@@ -64,7 +64,7 @@
   padding: 0.875rem 1rem;
   border: 1px solid var(--sapList_BorderColor, rgba(95, 101, 109, 0.16));
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--liquid-glass-bg);
 }
 
 .service-health-panel__service {

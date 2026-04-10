@@ -2,6 +2,7 @@ export const environment = {
   production: false,
   apiBaseUrl: '/api',
   requireAuth: false,
+  authMode: 'none',
   enableDebugLogs: true,
   toastDuration: {
     success: 5000,

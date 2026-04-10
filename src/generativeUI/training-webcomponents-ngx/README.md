@@ -67,7 +67,8 @@ yarn install
 ```bash
 yarn nx serve angular-shell
 # → http://localhost:4200
-# API calls proxied to http://localhost:8001 via proxy.conf.json
+# API calls proxied to http://localhost:8004 via proxy.conf.json
+# OCR calls proxied to http://localhost:8060
 ```
 
 ### 3. (Optional) Start the FastAPI proxy
@@ -76,7 +77,7 @@ yarn nx serve angular-shell
 cd packages/api-server
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn src.main:app --reload --port 8000
+uvicorn src.main:app --reload --port 8004
 ```
 
 ## Production Build
@@ -89,21 +90,33 @@ yarn nx build angular-shell --configuration production
 ## Docker Compose
 
 ```bash
-# Requires training-webcomponents-ngx-modelopt:latest image
-docker compose up
-# Frontend → http://localhost:8080
-# API proxy → http://localhost:8000
-# ModelOpt → http://localhost:8001
+# From the repo root, set production secrets first:
+cp .env.example .env
+cp -R .secrets.example .secrets
+
+# Then start the production-style gateway:
+docker compose -f docker-compose.yml up -d
+# Public app → http://localhost
+
+# For local development through the gateway:
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d api-gateway
+# Public app still → http://localhost
+# Live Angular dev app → http://localhost:4200
 ```
+
+For real production values:
+- Edit `.env` for non-secret config like `HANA_HOST`, `AICORE_AUTH_URL`, and `AICORE_BASE_URL`.
+- Replace the files in `.secrets/` with the real credentials.
 
 ## Authentication
 
-Auth is **optional**. Controlled by `window.__TRAINING_CONFIG__.requireAuth`:
+Auth is controlled by `window.__TRAINING_CONFIG__`:
 
-- `false` (default) — no login required
-- `true` — redirects to `/login`, token stored in `sessionStorage`
+- `authMode: 'none'` with `requireAuth: false` — open access, no login required
+- `authMode: 'token'` with `requireAuth: true` — redirects to `/login`, bearer token stored in `sessionStorage`
+- `authMode: 'edge'` with `requireAuth: true` — ingress or edge proxy handles sign-in, and the SPA stays same-origin behind that boundary
 
-API key can be set at any time via the sidebar input in the shell layout.
+For Kyma production, the recommended browser-facing model is `authMode: 'edge'` with an OIDC edge such as IAS or XSUAA in front of the gateway.
 
 ## Environment Variables
 

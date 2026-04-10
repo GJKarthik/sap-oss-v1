@@ -23,19 +23,28 @@ export class ApiError extends Error {
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 const MAX_RETRIES = 2;
 const RETRY_BASE_MS = 500;
+const HANA_TRANSIENT_MESSAGE =
+  'HANA Cloud is reconnecting. The workspace will stay available in preview mode until the live connection returns.';
 
 function isRetryable(err: HttpErrorResponse): boolean {
   return err.status === 0 || RETRYABLE_STATUSES.has(err.status);
 }
 
 function normalise(err: HttpErrorResponse, url: string): ApiError {
-  let detail = 'An unexpected error occurred.';
+  let detail = fallbackDetail(url, err.status);
   if (err.error) {
     if (typeof err.error === 'string') detail = err.error;
     else if (err.error?.detail) detail = String(err.error.detail);
     else if (err.error?.message) detail = String(err.error.message);
   }
   return new ApiError(err.status, detail, url, err);
+}
+
+function fallbackDetail(url: string, status: number): string {
+  if (url.includes('/hana') && (status === 0 || status === 502 || status === 503 || status === 504)) {
+    return HANA_TRANSIENT_MESSAGE;
+  }
+  return 'An unexpected error occurred.';
 }
 
 @Injectable({ providedIn: 'root' })

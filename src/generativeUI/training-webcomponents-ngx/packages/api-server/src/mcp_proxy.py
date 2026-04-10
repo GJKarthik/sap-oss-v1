@@ -44,11 +44,18 @@ def _health_url(target_url: str) -> str:
     return target_url.rstrip("/") + "/health"
 
 
+def _friendly_service_error(service_name: str, status_code: int | None = None) -> str:
+    if service_name == "HANA Cloud":
+        if status_code in (502, 503, 504) or status_code is None:
+            return "HANA Cloud is reconnecting. Please try again in a moment."
+    return f"{service_name} is currently unavailable."
+
+
 def _get_correlation_id(request: Request) -> str:
     return request.headers.get("X-Correlation-ID") or f"training-proxy-{id(request)}"
 
 
-async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
+async def _forward(target_url: str, body: dict, correlation_id: str, service_name: str) -> dict:
     """Forward a JSON-RPC body to the target MCP server and return its response."""
     headers = {
         "Content-Type": "application/json",
@@ -61,16 +68,16 @@ async def _forward(target_url: str, body: dict, correlation_id: str) -> dict:
             return resp.json()
     except httpx.ConnectError as exc:
         logger.error("MCP proxy connect error", target=target_url, error=str(exc))
-        return _jsonrpc_error(body, -32001, f"Cannot reach MCP service at {target_url}: {exc}")
+        return _jsonrpc_error(body, -32001, _friendly_service_error(service_name))
     except httpx.HTTPStatusError as exc:
         logger.error("MCP proxy HTTP error", target=target_url, status=exc.response.status_code)
-        return _jsonrpc_error(body, -32002, f"MCP service returned {exc.response.status_code}")
+        return _jsonrpc_error(body, -32002, _friendly_service_error(service_name, exc.response.status_code))
     except httpx.RequestError as exc:
         logger.error("MCP proxy request error", target=target_url, error=str(exc))
-        return _jsonrpc_error(body, -32001, f"Cannot reach MCP service at {target_url}: {exc}")
+        return _jsonrpc_error(body, -32001, _friendly_service_error(service_name))
     except Exception as exc:
         logger.error("MCP proxy unexpected error", target=target_url, error=str(exc))
-        return _jsonrpc_error(body, -32000, f"MCP proxy error: {exc}")
+        return _jsonrpc_error(body, -32000, _friendly_service_error(service_name))
 
 
 async def _probe_health(service_name: str, target_url: str) -> dict:
@@ -85,7 +92,11 @@ async def _probe_health(service_name: str, target_url: str) -> dict:
             return {"status": "ok", "service": service_name}
     except Exception as exc:
         logger.warning("MCP health probe failed", service=service_name, error=str(exc))
-        return {"status": "error", "service": service_name, "error": str(exc)}
+        return {
+            "status": "degraded",
+            "service": service_name,
+            "error": _friendly_service_error("HANA Cloud" if service_name == "langchain-hana-mcp" else service_name),
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +109,7 @@ async def vocab_proxy(request: Request):
     body = await request.json()
     corr_id = _get_correlation_id(request)
     logger.info("MCP proxy -> vocab", method=body.get("method"), correlation_id=corr_id)
-    return await _forward(VOCAB_MCP_URL, body, corr_id)
+    return await _forward(VOCAB_MCP_URL, body, corr_id, "OData vocabularies")
 
 
 @router.get("/vocab/health", summary="OData Vocabularies MCP health")
@@ -117,7 +128,7 @@ async def hana_proxy(request: Request):
     body = await request.json()
     corr_id = _get_correlation_id(request)
     logger.info("MCP proxy -> hana", method=body.get("method"), correlation_id=corr_id)
-    return await _forward(HANA_MCP_URL, body, corr_id)
+    return await _forward(HANA_MCP_URL, body, corr_id, "HANA Cloud")
 
 
 @router.get("/hana/health", summary="LangChain HANA MCP health")
@@ -135,7 +146,7 @@ async def combined_health():
     """Aggregate health from both MCP backends."""
     vocab = await _probe_health("odata-vocabularies-mcp", VOCAB_MCP_URL)
     hana = await _probe_health("langchain-hana-mcp", HANA_MCP_URL)
-    all_healthy = vocab.get("status") != "error" and hana.get("status") != "error"
+    all_healthy = vocab.get("status") not in {"error", "degraded"} and hana.get("status") not in {"error", "degraded"}
     return {
         "status": "healthy" if all_healthy else "degraded",
         "services": {"vocab": vocab, "hana": hana},

@@ -5,6 +5,9 @@ import { DashboardComponent } from './dashboard.component';
 import { AppStore } from '../../store/app.store';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
+import { NavigationAssistantService } from '../../services/navigation-assistant.service';
+import { DashboardLayoutService } from '../../services/dashboard-layout.service';
+import { AppLinkService } from '../../services/app-link.service';
 
 const MOCK_STORE = {
   health: signal({
@@ -54,6 +57,25 @@ const MOCK_I18N = {
   currentLang: () => 'en',
 };
 
+const MOCK_NAVIGATION_ASSISTANT = {
+  pinnedEntries: () => [],
+  recentEntries: () => [],
+  suggestedEntries: () => [],
+  isPinned: jest.fn(() => false),
+};
+
+const MOCK_LAYOUT = {
+  orderedWidgets: () => ['hubMap', 'priorityActions', 'quickAccess', 'liveSignals', 'productFamily'],
+  isVisible: jest.fn(() => true),
+  toggleVisibility: jest.fn(),
+  move: jest.fn(),
+  reset: jest.fn(),
+};
+
+const MOCK_APP_LINKS = {
+  navigate: jest.fn(),
+};
+
 describe('DashboardComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -63,6 +85,9 @@ describe('DashboardComponent', () => {
         { provide: ToastService, useValue: MOCK_TOAST },
         { provide: Router, useValue: MOCK_ROUTER },
         { provide: I18nService, useValue: MOCK_I18N },
+        { provide: NavigationAssistantService, useValue: MOCK_NAVIGATION_ASSISTANT },
+        { provide: DashboardLayoutService, useValue: MOCK_LAYOUT },
+        { provide: AppLinkService, useValue: MOCK_APP_LINKS },
       ],
     }).compileComponents();
 
@@ -70,6 +95,8 @@ describe('DashboardComponent', () => {
     MOCK_STORE.forceRefresh.mockClear();
     MOCK_ROUTER.navigate.mockClear();
     MOCK_TOAST.info.mockClear();
+    MOCK_NAVIGATION_ASSISTANT.isPinned.mockClear();
+    MOCK_APP_LINKS.navigate.mockClear();
   });
 
   it('should create', () => {
@@ -97,18 +124,26 @@ describe('DashboardComponent', () => {
     expect(MOCK_TOAST.info).toHaveBeenCalledWith('dashboard.refreshMsg');
   });
 
-  it('routes each overview card to a live product page', () => {
+  it('routes the priority actions to live product pages', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
-    const cards = fixture.componentInstance.components();
+    const cards = fixture.componentInstance.priorityActions();
 
-    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'process')!);
-    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'machine')!);
-    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'database')!);
-    fixture.componentInstance.navigateTo(cards.find((card) => card.icon === 'folder')!);
+    fixture.componentInstance.navigateToRoute(cards.find((card) => card.icon === 'process')!.path);
+    fixture.componentInstance.navigateToRoute(cards.find((card) => card.icon === 'machine')!.path);
+    fixture.componentInstance.navigateToRoute(cards.find((card) => card.icon === 'database')!.path);
+    fixture.componentInstance.navigateToRoute(cards.find((card) => card.icon === 'learning-assistant')!.path);
 
     expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(1, ['/pipeline']);
     expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(2, ['/model-optimizer']);
     expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(3, ['/hana-explorer']);
-    expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(4, ['/data-explorer']);
+    expect(MOCK_ROUTER.navigate).toHaveBeenNthCalledWith(4, ['/document-linguist']);
+  });
+
+  it('opens SAP AI Experience from the mission hero', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+
+    fixture.componentInstance.openExperience();
+
+    expect(MOCK_APP_LINKS.navigate).toHaveBeenCalledWith('experience', '/');
   });
 });

@@ -12,7 +12,7 @@ const TRAINING_ROUTES = [
   '/dashboard', '/pipeline', '/model-optimizer', '/hana-explorer',
   '/data-explorer', '/data-cleaning', '/chat', '/compare',
   '/registry', '/document-ocr', '/semantic-search', '/analytics',
-  '/glossary-manager', '/arabic-wizard',
+  '/glossary-manager', '/document-linguist',
 ];
 
 const AIFABRIC_BASE = 'http://localhost:4203';

@@ -7,12 +7,12 @@
 
 import { Component, EventEmitter, Input, NO_ERRORS_SCHEMA, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../ui5-training-components.module';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, Ui5TrainingComponentsModule],
   schemas: [NO_ERRORS_SCHEMA],
   template: `
     <div class="empty-state" role="status" [attr.aria-label]="title">

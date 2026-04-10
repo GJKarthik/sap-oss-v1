@@ -17,7 +17,7 @@ const PERSONA_ROUTES: Record<Persona, Set<string>> = {
   ]),
   'ml-engineer': new Set([
     ...CORE_ROUTES,
-    '/model-optimizer', '/compare', '/registry', '/glossary-manager', '/document-ocr',
+    '/model-optimizer', '/compare', '/registry', '/glossary-manager', '/document-ocr', '/document-linguist',
     '/semantic-search', '/pipeline', '/deployments', '/governance',
   ]),
   'developer': new Set(TRAINING_ROUTE_LINKS.map((r) => r.path)),

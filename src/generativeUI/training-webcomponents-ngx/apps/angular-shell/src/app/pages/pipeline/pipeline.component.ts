@@ -4,12 +4,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { take } from 'rxjs/operators';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
 import { environment } from '../../../environments/environment';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { AppStore } from '../../store/app.store';
 import { PipelineFlowComponent, FlowStage } from '../../shared/components/pipeline-flow/pipeline-flow.component';
+import { RealtimeConnectionService } from '../../services/realtime-connection.service';
 
 type PipelineState = 'idle' | 'running' | 'completed' | 'error';
 type StageStatus = 'idle' | 'running' | 'done' | 'error';
@@ -75,7 +77,7 @@ interface LogLine {
 
           <section class="terminal-container glass-panel slideUp" [style.--stagger]="'0.3s'">
             <div class="terminal-header">
-              <ui5-icon name="command-line-interface"></ui5-icon>
+              <ui5-icon name="command-line-interfaces"></ui5-icon>
               <span>{{ i18n.t('pipeline.binaryStreamLogs') }}</span>
             </div>
             <div class="terminal-body" #terminalBody role="log" aria-live="polite" aria-label="Pipeline execution logs">
@@ -121,60 +123,103 @@ interface LogLine {
     </div>
   `,
   styles: [`
-    .mission-control { height: 100%; display: flex; flex-direction: column; overflow: hidden; padding: 1.5rem 2rem; gap: 1.5rem; }
+    .mission-control { 
+      height: 100%; display: flex; flex-direction: column; overflow: hidden; 
+      padding: clamp(1rem, 4vw, 3rem); gap: 2rem; 
+      background: radial-gradient(circle at 100% 0%, rgba(0, 112, 242, 0.08), transparent 40rem);
+    }
     
-    .floating-header { padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 999px; }
+    .floating-header { 
+      padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center; 
+      background: var(--liquid-glass-bg);
+      backdrop-filter: var(--liquid-glass-blur);
+      border: var(--liquid-glass-border);
+      box-shadow: var(--liquid-glass-shadow);
+      border-radius: 999px; 
+    }
     .slideUp, .fadeIn { animation-delay: var(--stagger, 0s); }
-    .header-left, .header-right { display: flex; align-items: center; gap: 1rem; }
-    .live-indicator { font-size: 0.65rem; font-weight: 800; color: var(--sapPositiveColor); border: 1px solid currentColor; padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .header-left, .header-right { display: flex; align-items: center; gap: 1.25rem; }
+    .header-left ui5-title { margin: 0; font-weight: 800; }
+    .live-indicator { 
+      font-size: 0.7rem; font-weight: 800; color: var(--color-success); 
+      background: rgba(var(--color-success-rgb), 0.1); padding: 0.25rem 0.75rem; border-radius: 999px; 
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
 
-    .mission-layout { flex: 1; display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; overflow: hidden; }
-    .center-stage { display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; padding-right: 0.5rem; }
-    .side-stage { display: flex; flex-direction: column; gap: 1rem; }
+    .mission-layout { flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 2rem; overflow: hidden; }
+    .center-stage { display: flex; flex-direction: column; gap: 2rem; overflow-y: auto; padding-right: 0.5rem; }
+    .side-stage { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .glass-panel {
+      background: var(--liquid-glass-bg);
+      backdrop-filter: var(--liquid-glass-blur);
+      border: var(--liquid-glass-border);
+      box-shadow: var(--liquid-glass-shadow);
+      border-radius: 28px;
+    }
 
     /* ── Concurrency Matrix ──────────────────────────────────────────────── */
-    .concurrency-section { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-    .card-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .concurrency-section { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; }
     .thread-grid { 
       display: grid; 
       grid-template-columns: repeat(16, 1fr); 
       grid-template-rows: repeat(4, 1fr);
-      gap: 4px; height: 80px; 
+      gap: 6px; height: 100px; 
     }
     .thread-cell { 
-      background: rgba(0,0,0,0.05); border-radius: 2px; position: relative; overflow: hidden; 
-      transition: opacity 0.1s;
+      background: rgba(0,0,0,0.04); border-radius: 4px; position: relative; overflow: hidden; 
+      transition: opacity 0.15s;
     }
-    .thread-cell.active { background: color-mix(in srgb, var(--sapBrandColor) 20%, transparent); }
+    .thread-cell.active { background: rgba(var(--color-primary-rgb), 0.1); }
     .cell-fill { 
       position: absolute; bottom: 0; left: 0; right: 0; 
-      background: var(--sapBrandColor); opacity: 0.6;
-      transition: height 0.3s var(--spring-easing);
+      background: var(--color-primary); opacity: 0.8;
+      transition: height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
-    .concurrency-footer { display: flex; gap: 2rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.75rem; }
-    .footer-stat { font-size: 0.75rem; color: var(--sapContent_LabelColor); }
-    .footer-stat strong { color: var(--sapTextColor); }
+    .concurrency-footer { display: flex; gap: 2.5rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.25rem; }
+    .footer-stat { font-size: 0.8125rem; color: var(--text-secondary); font-weight: 500; }
+    .footer-stat strong { color: var(--text-primary); font-weight: 700; margin-left: 0.5rem; }
 
     /* ── Terminal ── */
-    .terminal-container { flex: 1; display: flex; flex-direction: column; min-height: 300px; overflow: hidden; }
-    .terminal-header { padding: 0.75rem 1.25rem; background: rgba(0,0,0,0.03); display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; font-weight: 700; opacity: 0.7; }
-    .terminal-body { flex: 1; background: #0d1117; padding: 1.5rem; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 0.8125rem; color: #e6edf3; }
-    .log-line { line-height: 1.6; margin-bottom: 0.25rem; }
+    .terminal-container { flex: 1; display: flex; flex-direction: column; min-height: 350px; overflow: hidden; }
+    .terminal-header { 
+      padding: 1rem 1.5rem; background: rgba(0,0,0,0.03); 
+      display: flex; align-items: center; gap: 0.75rem; 
+      font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .terminal-body { 
+      flex: 1; background: var(--code-bg); padding: 1.5rem; overflow-y: auto; 
+      font-family: var(--sapFontFamilyMono, monospace); font-size: 0.875rem; color: #e6edf3; 
+      line-height: 1.6;
+    }
+    .log-line { margin-bottom: 0.25rem; }
     .log-line--success { color: #7ee787; }
     .log-line--error { color: #ff7b72; }
+    .log-line--warn { color: #d29922; }
     
     .cursor-blink { display: inline-block; width: 8px; height: 15px; background: #7ee787; animation: blink 1s step-end infinite; vertical-align: middle; }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-    .mini-stage-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; font-size: 0.8125rem; opacity: 0.4; }
-    .mini-stage-item.done { opacity: 1; color: var(--sapPositiveColor); }
-    .mini-stage-item.running { opacity: 1; color: var(--sapBrandColor); font-weight: bold; }
+    .mini-stage-item { 
+      display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; 
+      font-size: 0.875rem; font-weight: 500; color: var(--text-secondary);
+      border-radius: 12px; transition: all 0.2s;
+    }
+    .mini-stage-item.done { color: var(--color-success); background: rgba(var(--color-success-rgb), 0.05); }
+    .mini-stage-item.running { color: var(--color-primary); background: rgba(var(--color-primary-rgb), 0.05); font-weight: 700; }
 
-    .p-1 { padding: 1rem; }
+    .mini-stat { display: flex; flex-direction: column; gap: 0.5rem; }
+    .mini-stat .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; }
+
+    .stages-mini-list { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; }
+    
+    .p-1 { padding: 1.5rem; }
     .display-flex { display: flex; }
     .flex-column { flex-direction: column; }
-    .gap-1 { gap: 1rem; }
-    .mt-1 { margin-top: 1rem; }
+    .gap-1 { gap: 1.25rem; }
+    .mt-1 { margin-top: 1.5rem; }
     .opacity-6 { opacity: 0.6; }
   `],
 })
@@ -184,6 +229,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly i18n = inject(I18nService);
   private readonly zone = inject(NgZone);
   private readonly appStore = inject(AppStore);
+  private readonly realtime = inject(RealtimeConnectionService);
 
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
 
@@ -213,6 +259,9 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   private ws: WebSocket | null = null;
   private shouldAutoScroll = true;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private destroyed = false;
 
   ngOnInit() { 
     this.connectWebSocket();
@@ -220,7 +269,10 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
   
   ngOnDestroy() { 
+    this.destroyed = true;
     this.ws?.close(); 
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     if (this.threadInterval) clearInterval(this.threadInterval);
     if (this.pipelineState() !== 'running') this.appStore.setPipelineState('idle');
   }
@@ -241,15 +293,76 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private connectWebSocket() {
-    const wsBase = environment.apiBaseUrl.startsWith('http')
-      ? environment.apiBaseUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
-      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
-    const wsUrl = `${wsBase}/ws/pipeline`;
+    if (this.destroyed) {
+      return;
+    }
 
-    this.ws = new WebSocket(wsUrl);
-    this.ws.onopen = () => this.zone.run(() => this.wsConnected.set(true));
+    this.realtime.probeApiHealth().pipe(take(1)).subscribe((ready) => {
+      if (!ready) {
+        this.zone.run(() => this.wsConnected.set(false));
+        this.scheduleReconnect();
+        return;
+      }
+
+      this.openWebSocket();
+    });
+  }
+
+  private openWebSocket(): void {
+    const wsUrl = this.realtime.buildWebSocketUrl('/ws/pipeline');
+
+    try {
+      this.ws = new WebSocket(wsUrl);
+    } catch {
+      this.zone.run(() => this.wsConnected.set(false));
+      this.scheduleReconnect();
+      return;
+    }
+
+    this.ws.onopen = () => this.zone.run(() => {
+      this.wsConnected.set(true);
+      this.startHeartbeat();
+    });
     this.ws.onmessage = (event) => this.zone.run(() => { try { this.handleMessage(JSON.parse(event.data)); } catch { } });
-    this.ws.onclose = () => { this.zone.run(() => this.wsConnected.set(false)); setTimeout(() => this.connectWebSocket(), 3000); };
+    this.ws.onclose = () => {
+      this.stopHeartbeat();
+      this.zone.run(() => this.wsConnected.set(false));
+      this.scheduleReconnect();
+    };
+    this.ws.onerror = () => {
+      this.stopHeartbeat();
+      this.ws?.close();
+    };
+  }
+
+  private startHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+    }
+
+    this.heartbeatTimer = setInterval(() => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send('ping');
+      }
+    }, 25000);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.destroyed || this.reconnectTimer) {
+      return;
+    }
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connectWebSocket();
+    }, 3000);
   }
 
   private handleMessage(msg: Record<string, unknown>) {

@@ -3,6 +3,9 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 
+const HANA_TRANSIENT_MESSAGE =
+  'HANA Cloud is reconnecting. The workspace will stay available in preview mode until the live connection returns.';
+
 /**
  * Global HTTP error interceptor providing consistent fault handling across all
  * native OS Subprocess API calls (PyTorch training, Python pipeline, HANA Cloud).
@@ -24,6 +27,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
 function handleError(error: HttpErrorResponse, toast: ToastService, url: string): void {
   const detail = getErrorDetail(error);
+  const isHanaRequest = url.includes('/hana');
+
+  if (isHanaRequest && (error.status === 0 || error.status === 502 || error.status === 503 || error.status === 504)) {
+    toast.warning(HANA_TRANSIENT_MESSAGE, 'HANA Cloud');
+    return;
+  }
 
   if (error.status === 0) {
     toast.error(
@@ -72,6 +81,11 @@ function handleError(error: HttpErrorResponse, toast: ToastService, url: string)
   }
 
   if (error.status >= 500) {
+    if (isHanaRequest) {
+      toast.warning(detail || HANA_TRANSIENT_MESSAGE, 'HANA Cloud');
+      return;
+    }
+
     const origin = url.includes('/pipeline') ? 'Python Pipeline'
       : url.includes('/hana') ? 'HANA Cloud'
       : url.includes('/jobs') ? 'PyTorch Orchestrator'

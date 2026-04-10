@@ -1,7 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, OnInit, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, of, switchMap, map, catchError, takeUntil } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
@@ -11,6 +11,13 @@ import { GlossaryService, CrossCheckFinding } from '../../services/glossary.serv
 import { LogService } from '../../services/log.service';
 import { TranslationMemoryService } from '../../services/translation-memory.service';
 import { CrossAppLinkComponent } from '../../shared';
+import { DocumentContextService } from '../../services/document-context.service';
+import { WorkspaceService } from '../../services/workspace.service';
+import {
+  PersonalKnowledgeBase,
+  PersonalKnowledgeQueryResult,
+  PersonalKnowledgeService,
+} from '../../services/personal-knowledge.service';
 
 /** CrossCheckFinding enriched with UI-state for the inline override form. */
 interface AuditFinding extends CrossCheckFinding {
@@ -72,6 +79,29 @@ interface CompletionResponse {
               }
             }
           </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Personal knowledge</label>
+          <select
+            class="setting-input"
+            dir="ltr"
+            [ngModel]="selectedKnowledgeBaseId()"
+            (ngModelChange)="selectedKnowledgeBaseId.set($event)">
+            <option value="">No personal knowledge</option>
+            @for (base of knowledgeBases(); track base.id) {
+              <option [value]="base.id">{{ base.name }}</option>
+            }
+          </select>
+          @if (documentContextSummary()) {
+            <div class="usage-info">
+              <span class="text-small text-muted">{{ documentContextSummary() }}</span>
+            </div>
+          }
+          @if (knowledgeSyncing()) {
+            <div class="usage-info">
+              <span class="text-small text-muted">Syncing document context into personal knowledge…</span>
+            </div>
+          }
         </div>
         <div class="field-group">
           <label class="field-label">{{ i18n.t('chat.systemPrompt') }}</label>
@@ -169,395 +199,155 @@ interface CompletionResponse {
         <form class="chat-input-row" (ngSubmit)="send()">
           <textarea
             class="chat-input"
-            [(ngModel)]="userInput"
-            name="userInput"
-            rows="2"
-            [placeholder]="i18n.t('chat.inputPlaceholder')"
-            (keydown.enter)="onEnter($event)"
+            rows="1"
+            [(ngModel)]="prompt"
+            name="prompt"
+            [placeholder]="i18n.t('chat.placeholder')"
+            [disabled]="sending()"
+            (keydown.enter)="handleKeyDown($event)"
           ></textarea>
-          <ui5-button design="Emphasized" type="submit" (click)="send()" [disabled]="!userInput.trim() || sending()">
-            {{ sending() ? i18n.t('chat.sending') : i18n.t('chat.send') }}
-          </ui5-button>
+          <button type="submit" class="send-btn" [disabled]="!prompt.trim() || sending()" aria-label="Send message">
+            <ui5-icon name="paper-plane"></ui5-icon>
+          </button>
         </form>
       </div>
     </div>
   `,
   styles: [`
-    :host { display: flex; height: 100%; }
-
-    .chat-layout {
-      display: flex;
-      width: 100%;
-      height: calc(100vh - 3rem);
-      overflow: hidden;
+    .chat-layout { 
+      display: grid; grid-template-columns: 340px 1fr; height: 100%; overflow: hidden; 
+      background: radial-gradient(circle at 0% 100%, rgba(0, 112, 242, 0.08), transparent 40rem);
     }
 
     .chat-sidebar {
-      width: 260px;
-      background: var(--sapBaseColor, #fff);
-      border-inline-end: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+      padding: 2rem; background: var(--liquid-glass-bg); backdrop-filter: var(--liquid-glass-blur);
+      border-right: var(--liquid-glass-border); display: flex; flex-direction: column; gap: 1.5rem;
       overflow-y: auto;
-      flex-shrink: 0;
     }
 
-    @media (max-width: 768px) {
-      .chat-sidebar { display: none; }
-    }
+    .sidebar-title { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; margin: 0 0 0.5rem; }
 
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-
-    .rtl .chat-sidebar {
-      order: 1;
-    }
-
-    .rtl .chat-main {
-      order: 0;
-    }
-
-    .rtl .message--user { align-self: flex-start; }
-    .rtl .message--assistant { align-self: flex-end; }
-
-    .sidebar-title {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      margin: 0;
-      color: var(--sapTextColor, #32363a);
-    }
+    .field-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .field-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; }
 
     .setting-input, .setting-textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.375rem 0.5rem;
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.25rem;
-      font-size: 0.8125rem;
-      background: var(--sapField_Background, #fff);
-      color: var(--sapTextColor, #32363a);
-      resize: vertical;
+      width: 100%; background: var(--surface-secondary); border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 12px; padding: 0.75rem 1rem; font-size: 0.9rem; color: var(--text-primary);
+      transition: all 0.2s;
     }
+    .setting-input:focus, .setting-textarea:focus { background: #fff; border-color: var(--color-primary); outline: none; box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.1); }
 
-    .range-input { width: 100%; }
+    .range-input { width: 100%; accent-color: var(--color-primary); margin: 0.5rem 0; }
 
-    .btn-danger {
-      padding: 0.375rem 0.75rem;
-      background: transparent;
-      color: var(--sapNegativeColor, #b00);
-      border: 1px solid var(--sapNegativeColor, #b00);
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.8125rem;
-      &:hover { background: #ffebee; }
-    }
+    .chat-main { display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
-    .usage-info { padding-top: 0.25rem; }
+    .messages-area { flex: 1; overflow-y: auto; padding: 2.5rem; display: flex; flex-direction: column; gap: 2rem; }
 
-    .chat-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    .message { max-width: 85%; display: flex; flex-direction: column; gap: 0.5rem; position: relative; }
+    .message--user { align-self: flex-end; align-items: flex-end; }
+    .message--assistant { align-self: flex-start; }
 
-    .messages-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 0.75rem;
-      text-align: center;
-      color: var(--sapContent_LabelColor, #6a6d70);
-    }
-
-    .empty-icon { font-size: 3rem; }
-
-    .suggestion-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
-
-    .chip {
-      padding: 0.3rem 0.75rem;
-      background: var(--sapList_Background, #f5f5f5);
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 1rem;
-      cursor: pointer;
-      font-size: 0.8125rem;
-      color: var(--sapTextColor, #32363a);
-      &:hover { background: var(--sapList_Hover_Background, #e8e8e8); }
-    }
-
-    .message {
-      max-width: 75%;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      animation: fadeIn 0.15s ease-out;
-
-      &.message--user {
-        align-self: flex-end;
-        background: var(--sapBrandColor, #0854a0);
-        color: var(--sapButton_Emphasized_TextColor, #fff);
-      }
-
-      &.message--assistant {
-        align-self: flex-start;
-        background: var(--sapBaseColor, #fff);
-        border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-        color: var(--sapTextColor, #32363a);
-      }
-    }
-
-    .message-role {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      opacity: 0.7;
-      margin-bottom: 0.25rem;
-    }
-
+    .message-role { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem; }
+    
     .message-content {
-      font-size: 0.875rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
+      padding: 1.25rem 1.5rem; border-radius: 20px; font-size: 1rem; line-height: 1.5;
+      background: #fff; border: 1px solid rgba(0, 0, 0, 0.04); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+      color: var(--text-primary);
     }
+    .message--user .message-content { background: var(--color-primary); color: #fff; border: none; box-shadow: 0 8px 24px rgba(var(--color-primary-rgb), 0.2); }
 
-    .message-ts { margin-top: 0.25rem; opacity: 0.6; }
+    .message-ts { font-size: 0.7rem; color: var(--text-secondary); }
 
-    .lang-badge {
-      display: inline-block;
-      font-size: 0.6rem;
-      font-weight: 700;
-      padding: 0.1rem 0.35rem;
-      border-radius: 0.2rem;
-      background: var(--sapInformationBackground, #e0f0ff);
-      color: var(--sapInformationColor, #0854a0);
-      margin-inline-start: 0.35rem;
-      vertical-align: middle;
-      letter-spacing: 0.04em;
-    }
-
-    .lang-badge--ar {
-      background: var(--sapSuccessBackground, #e6f4ea);
-      color: var(--sapPositiveColor, #107e3e);
-    }
-
-    /* ── Translation Audit Panel ───────────────────────────────────────── */
-
-    .audit-panel {
-      margin-top: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      background: var(--sapWarningBackground, #fef7e0);
-      border: 1px solid var(--sapWarningBorderColor, #f0ab00);
-      border-radius: 0.375rem;
-      font-size: 0.8125rem;
-    }
-
-    .audit-heading {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--sapCriticalColor, #e76500);
-      margin-bottom: 0.5rem;
-    }
-
-    .audit-finding {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      padding: 0.25rem 0;
-      border-bottom: 1px dashed var(--sapWarningBorderColor, #f0ab00);
-      &:last-child { border-bottom: none; }
-    }
-
-    .audit-term { font-weight: 600; color: var(--sapNegativeColor, #b00); }
-    .audit-arrow { opacity: 0.5; }
-    .audit-expected { font-weight: 600; color: var(--sapPositiveColor, #107e3e); }
-
-    .btn-override {
-      margin-inline-start: auto;
-      padding: 0.15rem 0.5rem;
-      background: transparent;
-      color: var(--sapBrandColor, #0854a0);
-      border: 1px solid var(--sapBrandColor, #0854a0);
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      &:hover { background: var(--sapInformationBackground, #e0f0ff); }
-    }
-
-    .override-form {
-      display: flex;
-      gap: 0.35rem;
-      align-items: center;
-      flex-wrap: wrap;
-      width: 100%;
-      margin-top: 0.25rem;
-    }
-
-    .override-input {
-      flex: 1;
-      min-width: 8rem;
-      padding: 0.25rem 0.5rem;
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.25rem;
-      font-size: 0.8125rem;
-      background: var(--sapField_Background, #fff);
-      color: var(--sapTextColor, #32363a);
-    }
-
-    .btn-save {
-      padding: 0.25rem 0.6rem;
-      background: var(--sapPositiveColor, #107e3e);
-      color: #fff;
-      border: none;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      &:disabled { opacity: 0.5; cursor: default; }
-      &:hover:not(:disabled) { background: var(--sapPositiveTextColor, #0d6633); }
-    }
-
-    .btn-cancel {
-      padding: 0.25rem 0.6rem;
-      background: transparent;
-      color: var(--sapContent_LabelColor, #6a6d70);
-      border: 1px solid var(--sapContent_LabelColor, #6a6d70);
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      &:hover { background: var(--sapList_Hover_Background, #e8e8e8); }
-    }
-
-    /* ────────────────────────────────────────────────────────────────── */
-
-    .typing-indicator {
-      display: flex;
-      gap: 0.3rem;
-      padding: 0.75rem 1rem;
-      align-self: flex-start;
-
-      span {
-        width: 8px;
-        height: 8px;
-        background: var(--sapContent_LabelColor, #6a6d70);
-        border-radius: 50%;
-        animation: bounce 1s infinite;
-
-        &:nth-child(2) { animation-delay: 0.15s; }
-        &:nth-child(3) { animation-delay: 0.3s; }
-      }
-    }
-
-    @keyframes bounce {
-      0%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-6px); }
-    }
-
-    .chat-input-row {
-      display: flex;
-      gap: 0.5rem;
-      padding: 0.75rem 1.25rem;
-      border-top: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-      background: var(--sapBaseColor, #fff);
+    .chat-input-row { 
+      padding: 2rem 2.5rem; background: var(--liquid-glass-bg); backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(0, 0, 0, 0.05); display: flex; gap: 1rem; align-items: flex-end;
     }
 
     .chat-input {
-      flex: 1;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-      background: var(--sapField_Background, #fff);
-      color: var(--sapTextColor, #32363a);
-      resize: none;
-      font-family: inherit;
+      flex: 1; background: #fff; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 24px;
+      padding: 1rem 1.5rem; font-size: 1rem; line-height: 1.5; resize: none; max-height: 200px;
+      transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
+    .chat-input:focus { border-color: var(--color-primary); outline: none; box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.1); }
 
-    .send-btn {
-      padding: 0.5rem 1rem;
-      background: var(--sapBrandColor, #0854a0);
-      color: #fff;
-      border: none;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-size: 1rem;
-      align-self: flex-end;
-      &:disabled { opacity: 0.5; cursor: default; }
-      &:hover:not(:disabled) { background: var(--sapButton_Hover_Background, #0a6ed1); }
-    }
+    .send-btn { width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--color-primary); color: #fff; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px rgba(var(--color-primary-rgb), 0.3); }
+    .send-btn:hover { transform: scale(1.05); box-shadow: 0 10px 24px rgba(var(--color-primary-rgb), 0.4); }
+    .send-btn:disabled { background: #d2d2d7; color: #fff; cursor: not-allowed; box-shadow: none; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; text-align: center; opacity: 0.5; }
+    .empty-icon { font-size: 4rem; color: var(--color-primary); }
+    .empty-state p { font-size: 1.25rem; font-weight: 600; margin: 0; }
 
-    @media (prefers-reduced-motion: reduce) {
-      .message { animation: none; }
-      .typing-indicator span { animation: none; }
-    }
+    .suggestion-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+
+    .typing-indicator { align-self: flex-start; background: rgba(0, 0, 0, 0.03); padding: 1rem 1.5rem; border-radius: 20px; display: flex; gap: 4px; }
+    .typing-indicator span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-secondary); animation: bounce 1.4s infinite ease-in-out both; }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+    .audit-panel { margin-top: 1rem; background: rgba(var(--color-warning-rgb), 0.05); border: 1px solid rgba(var(--color-warning-rgb), 0.15); border-radius: 16px; padding: 1.25rem; }
+    .audit-heading { font-size: 0.75rem; font-weight: 700; color: var(--color-warning); text-transform: uppercase; margin-bottom: 1rem; }
+    .audit-finding { display: grid; grid-template-columns: auto auto auto 1fr; gap: 1rem; align-items: center; margin-bottom: 0.75rem; }
+    .audit-term { font-weight: 700; }
+    .audit-expected { color: var(--color-success); font-weight: 700; }
+
+    .lang-badge { font-size: 0.65rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 4px; background: rgba(0, 0, 0, 0.05); }
+    .lang-badge--ar { color: var(--color-primary); background: rgba(var(--color-primary-rgb), 0.1); }
   `],
 })
-export class ChatComponent implements OnDestroy, OnInit {
-  @ViewChild('messagesArea') messagesArea!: ElementRef<HTMLDivElement>;
-
+export class ChatComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
+  private readonly log = inject(LogService);
   private readonly glossary = inject(GlossaryService);
   private readonly tm = inject(TranslationMemoryService);
-  private readonly log = inject(LogService);
-  private readonly destroy$ = new Subject<void>();
+  private readonly documentContext = inject(DocumentContextService);
+  private readonly knowledge = inject(PersonalKnowledgeService);
+  private readonly workspace = inject(WorkspaceService);
+
+  @ViewChild('messagesArea') private messagesArea?: ElementRef;
 
   readonly messages = signal<ChatMessage[]>([]);
   readonly sending = signal(false);
-  readonly lastUsage = signal<{ total_tokens: number } | null>(null);
+  readonly lastUsage = signal<CompletionResponse['usage'] | null>(null);
   readonly availableModels = signal<string[]>([]);
+  readonly knowledgeBases = signal<PersonalKnowledgeBase[]>([]);
+  readonly selectedKnowledgeBaseId = signal<string>('');
+  readonly knowledgeSyncing = signal(false);
 
-
-  userInput = '';
-  model = 'Qwen/Qwen3.5-0.6B';
+  prompt = '';
+  model = 'gpt-4o';
   systemPrompt = '';
   maxTokens = 1024;
   temperature = 0.7;
 
-  readonly suggestions = computed(() => [
-    this.i18n.t('chat.suggestion1'),
-    this.i18n.t('chat.suggestion2'),
-    this.i18n.t('chat.suggestion3'),
-  ]);
+  private rememberedDocumentKey = '';
+  private readonly destroy$ = new Subject<void>();
 
-  private readonly localeEffect = effect(() => {
-    this.i18n.currentLang();
-    this.systemPrompt = this.i18n.t('chat.defaultSystemPrompt');
-    this.model = this.i18n.t('chat.defaultModel');
+  readonly documentContextSummary = computed(() => {
+    const ctx = this.documentContext.context();
+    if (!ctx) return '';
+    return `Active context: ${ctx.fileName} (${ctx.result.total_pages} pages, ${ctx.financialFields.length} fields)`;
   });
+
+  readonly suggestions = () => [
+    this.i18n.t('chat.suggest1'),
+    this.i18n.t('chat.suggest2'),
+    this.i18n.t('chat.suggest3'),
+  ];
+
+  constructor() {
+    effect(() => {
+      this.rememberActiveDocumentContext();
+    });
+  }
 
   ngOnInit(): void {
     this.loadModels();
+    this.initializeKnowledge();
+    this.systemPrompt = this.i18n.t('chat.defaultSystemPrompt');
   }
 
   ngOnDestroy(): void {
@@ -565,89 +355,205 @@ export class ChatComponent implements OnDestroy, OnInit {
     this.destroy$.complete();
   }
 
-  /** Detect if text is predominantly Arabic by checking for Arabic Unicode range. */
-  detectLang(text: string): 'ar' | 'en' {
-    const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
-    return arabicChars > text.length * 0.3 ? 'ar' : 'en';
-  }
-
   private loadModels(): void {
-    this.api.listModels()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp) => {
-          const ids = resp.data?.map(m => m.id) ?? [];
-          this.availableModels.set(ids);
-        },
-        error: () => {
-          // Models endpoint unavailable — leave dropdown with current model only
-        },
-      });
+    this.api.get<{ models: string[] }>('/chat/models')
+      .pipe(takeUntil(this.destroy$), catchError(() => of({ models: ['gpt-4o', 'gpt-3.5-turbo'] })))
+      .subscribe(res => this.availableModels.set(res.models));
   }
 
-  usePrompt(s: string): void {
-    this.userInput = s;
+  private initializeKnowledge(): void {
+    this.knowledge.listBases()
+      .pipe(takeUntil(this.destroy$), catchError(() => of([])))
+      .subscribe(bases => this.knowledgeBases.set(bases));
   }
 
-  onEnter(event: KeyboardEvent): void {
-    if (!event.shiftKey) {
+  usePrompt(p: string): void {
+    this.prompt = p;
+    this.send();
+  }
+
+  detectLang(text: string): 'ar' | 'en' {
+    const arabicPattern = /[\u0600-\u06FF]/;
+    return arabicPattern.test(text) ? 'ar' : 'en';
+  }
+
+  handleKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.send();
     }
   }
 
   send(): void {
-    const content = this.userInput.trim();
-    if (!content || this.sending()) return;
+    const p = this.prompt.trim();
+    if (!p || this.sending()) return;
 
-    this.messages.update((msgs: ChatMessage[]) => [...msgs, { role: 'user', content, ts: new Date() }]);
-    this.userInput = '';
+    const userMsg: ChatMessage = { role: 'user', content: p, ts: new Date() };
+    this.messages.update(prev => [...prev, userMsg]);
+    this.prompt = '';
     this.sending.set(true);
     this.scrollToBottom();
 
-    // Gap 1: prepend live glossary constraints + approved overrides to every API call.
-    const resolvedSystemPrompt = this.systemPrompt + this.glossary.getSystemPromptSnippet();
+    const kbId = this.selectedKnowledgeBaseId();
+    let knowledgeTask = of<PersonalKnowledgeQueryResult | null>(null);
 
-    const payload: CompletionRequest = {
-      model: this.model,
-      stream: false,
-      max_tokens: this.maxTokens,
-      temperature: this.temperature,
-      messages: [
-        { role: 'system', content: resolvedSystemPrompt },
-        ...this.messages().map((m: ChatMessage) => ({ role: m.role, content: m.content })),
-      ],
-    };
+    if (kbId) {
+      knowledgeTask = this.knowledge.queryBase(kbId, p).pipe(catchError(() => of(null)));
+    }
 
-    this.api.post<CompletionResponse>('/v1/chat/completions', payload)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp: CompletionResponse) => {
-          const reply = resp.choices?.[0]?.message?.content ?? '(empty response)';
+    knowledgeTask.pipe(
+      switchMap((knowledge) => {
+        const history = this.messages().map(m => ({ role: m.role, content: m.content }));
+        const systemPromptPlusKnowledge = this.buildContextualSystemPrompt(knowledge);
 
-          // Gap 3: cross-check the reply for non-standard IFRS/CPA terms.
-          const replyLang = this.detectLang(reply);
-          const rawFindings = this.glossary.crossCheck(reply, replyLang);
-          const auditFindings: AuditFinding[] = rawFindings.map(f => ({
+        const req: CompletionRequest = {
+          model: this.model,
+          messages: [
+            { role: 'system', content: systemPromptPlusKnowledge },
+            ...history
+          ],
+          stream: false,
+          max_tokens: this.maxTokens,
+          temperature: this.temperature
+        };
+
+        return this.api.post<CompletionResponse>('/chat/completions', req);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (res) => {
+        const content = res.choices[0].message.content;
+        const assistantMsg: ChatMessage = { role: 'assistant', content, ts: new Date() };
+
+        // Cross-check glossary
+        const findings = this.glossary.crossCheck(content, this.detectLang(content));
+        if (findings.length > 0) {
+          assistantMsg.auditFindings = findings.map(f => ({
             ...f,
             overrideInput: f.expectedTerm,
             showForm: false,
-            saving: false,
+            saving: false
           }));
+        }
+        this.messages.update(prev => [...prev, assistantMsg]);
+        this.sending.set(false);
+        this.lastUsage.set(res.usage);
+        this.scrollToBottom();
 
-          this.messages.update((msgs: ChatMessage[]) => [
-            ...msgs,
-            { role: 'assistant', content: reply, ts: new Date(), auditFindings },
-          ]);
-          if (resp.usage) this.lastUsage.set(resp.usage);
-          this.sending.set(false);
-          this.scrollToBottom();
+        // Auto-log to history if configured
+        this.log.info('Chat exchanged', 'Chat');
+
+        // Capture exchange in knowledge base if active
+        const activeKb = this.knowledgeBases().find(b => b.id === kbId);
+        if (activeKb) {
+          this.rememberExchange(activeKb, p, content);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.toast.error(err.error?.detail || 'Failed to get completion', 'AI Bridge');
+        this.sending.set(false);
+      }
+    });
+  }
+
+  private buildContextualSystemPrompt(knowledge: PersonalKnowledgeQueryResult | null): string {
+    const segments = [this.systemPrompt];
+
+    if (knowledge && knowledge.context_docs.length > 0) {
+      const knowledgeSnippet = knowledge.context_docs
+        .map((m) => `[${m.metadata['source'] || 'knowledge'}]: ${m.content}`)
+        .join('\n\n');
+      segments.push(`Additional relevant context from personal knowledge:\n${knowledgeSnippet}`);
+    }
+
+    const activeDocumentContext = this.documentContext.context();
+    if (activeDocumentContext) {
+      const documentSnippet = activeDocumentContext.result.pages
+        .slice(0, 3)
+        .map((page) => page.text)
+        .join('\n\n')
+        .slice(0, 2400);
+      const fieldSummary = activeDocumentContext.financialFields
+        .slice(0, 8)
+        .map((field) => `${field.key_en}: ${field.value}`)
+        .join('\n');
+      segments.push(
+        `Active document context from ${activeDocumentContext.fileName}:\n${documentSnippet}\n${fieldSummary}`.trim(),
+      );
+    }
+
+    return segments.filter(Boolean).join('\n\n');
+  }
+
+  private rememberActiveDocumentContext(): void {
+    const context = this.documentContext.context();
+    if (!context || this.rememberedDocumentKey === context.fileName) {
+      return;
+    }
+
+    this.knowledgeSyncing.set(true);
+    const fileName = context.fileName;
+    const notes = [
+      `Document: ${fileName}\n\n${context.result.pages.map((page) => page.text).join('\n\n---\n\n')}`,
+    ];
+    if (context.financialFields.length > 0) {
+      notes.push(
+        `Financial field summary for ${fileName}\n\n${context.financialFields
+          .map((field) => `${field.key_en}: ${field.value} (page ${field.page})`)
+          .join('\n')}`,
+      );
+    }
+
+    this.knowledge.ensureBase({
+      name: 'Document Intake Memory',
+      description: 'Documents, OCR captures, and guided analysis that should remain available in chat.',
+    })
+      .pipe(
+        switchMap((base) =>
+          this.knowledge.addDocuments(
+            base.id,
+            notes,
+            notes.map((_, index) => ({
+              source: index === 0 ? 'document-context' : 'financial-summary',
+              file_name: fileName,
+              page_count: context.result.total_pages,
+            })),
+          ).pipe(map(() => base)),
+        ),
+        takeUntil(this.destroy$),
+      )
+      .subscribe({
+        next: (base) => {
+          this.rememberedDocumentKey = fileName;
+          this.selectedKnowledgeBaseId.set(base.id);
+          this.initializeKnowledge();
+          this.knowledgeSyncing.set(false);
         },
-        error: (e: HttpErrorResponse) => {
-          const detail = (e.error as { detail?: string })?.detail ?? 'Request failed — is the ModelOpt backend running?';
-          this.toast.error(detail, this.i18n.t('chat.errorTitle'));
-          this.log.error('Chat request failed', 'Chat', e);
-          this.sending.set(false);
+        error: () => {
+          this.knowledgeSyncing.set(false);
+        },
+      });
+  }
+
+  private rememberExchange(base: PersonalKnowledgeBase, userPrompt: string, assistantReply: string): void {
+    const note = [
+      `Conversation turn in ${base.name}`,
+      `User: ${userPrompt}`,
+      `Assistant: ${assistantReply}`,
+    ].join('\n\n');
+
+    this.knowledge.addDocuments(base.id, [note], [{
+      source: 'chat',
+      model: this.model,
+      temperature: this.temperature,
+    }])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.initializeKnowledge();
+        },
+        error: () => {
+          // Memory capture should not interrupt chat UX.
         },
       });
   }

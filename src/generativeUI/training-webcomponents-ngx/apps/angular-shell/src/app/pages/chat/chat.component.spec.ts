@@ -49,8 +49,9 @@ describe('ChatComponent', () => {
   });
 
   afterEach(() => {
-    // Flush any pending init requests (e.g. /api/v1/models from ngOnInit)
-    httpMock.match(() => true).forEach(r => r.flush({}));
+    httpMock.match('/api/v1/models').forEach((request) => request.flush({ data: [] }));
+    httpMock.match('/api/rag/tm').forEach((request) => request.flush([]));
+    httpMock.match((request) => request.url.startsWith('/api/knowledge/bases')).forEach((request) => request.flush([]));
     httpMock.verify();
   });
 
@@ -97,6 +98,61 @@ describe('ChatComponent', () => {
     expect(component.messages()[1].role).toBe('assistant');
     expect(component.messages()[1].content).toBe('Hi there');
     expect(component.lastUsage()?.total_tokens).toBe(15);
+  }));
+
+  it('send() should query the selected knowledge base before calling chat completions', fakeAsync(() => {
+    component.knowledgeBases.set([
+      {
+        id: 'kb-1',
+        owner_id: 'personal-user',
+        name: 'Launch Memory',
+        slug: 'launch-memory',
+        description: '',
+        embedding_model: 'default',
+        documents_added: 2,
+        wiki_pages: 1,
+        created_at: '2026-04-08T00:00:00Z',
+        updated_at: '2026-04-08T00:00:00Z',
+        storage_backend: 'preview',
+      },
+    ]);
+    component.selectedKnowledgeBaseId.set('kb-1');
+    component.userInput = 'What matters for launch?';
+
+    component.send();
+
+    const knowledgeReq = httpMock.expectOne('/api/knowledge/bases/kb-1/query');
+    expect(knowledgeReq.request.method).toBe('POST');
+    knowledgeReq.flush({
+      knowledge_base_id: 'kb-1',
+      owner_id: 'personal-user',
+      query: 'What matters for launch?',
+      answer: 'Launch depends on HANA rollout readiness.',
+      context_docs: [{ id: 'doc-1', content: 'HANA rollout readiness', metadata: {}, score: 0.92 }],
+      suggested_wiki_page: 'overview',
+      source: 'preview',
+      status: 'completed',
+    });
+
+    const chatReq = httpMock.expectOne('/api/v1/chat/completions');
+    expect(chatReq.request.body.messages[0].content).toContain('Launch depends on HANA rollout readiness.');
+    chatReq.flush({
+      choices: [{ message: { content: 'Focus on the HANA rollout and owner alignment.' } }],
+      usage: { total_tokens: 32 },
+    });
+
+    const rememberReq = httpMock.expectOne('/api/knowledge/bases/kb-1/documents');
+    expect(rememberReq.request.method).toBe('POST');
+    rememberReq.flush({
+      knowledge_base_id: 'kb-1',
+      documents_added: 1,
+      wiki_pages_updated: 0,
+      status: 'indexed',
+      storage_backend: 'preview',
+    });
+
+    tick();
+    expect(component.messages()[1].content).toContain('Focus on the HANA rollout');
   }));
 
   it('onEnter() triggers send if shiftKey is false', () => {

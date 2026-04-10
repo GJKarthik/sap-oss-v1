@@ -2,6 +2,7 @@ import { Router } from '@angular/router';
 import { AppComponent } from './app.component';
 import { LearnPathService } from './core/learn-path.service';
 import { ProductNavigationService } from './core/product-navigation.service';
+import { QuickAccessService } from './core/quick-access.service';
 import { WorkspaceService } from './core/workspace.service';
 
 jest.mock('@angular/core', () => {
@@ -62,6 +63,19 @@ function makeProductNavigationService() {
   } as unknown as ProductNavigationService;
 }
 
+function makeQuickAccessService() {
+  return {
+    isPinned: jest.fn().mockReturnValue(false),
+    canPin: jest.fn().mockReturnValue(true),
+    pinnedEntries: () => [],
+    recentEntries: () => [],
+    suggestedEntries: () => [],
+    search: jest.fn().mockReturnValue([]),
+    recordVisit: jest.fn(),
+    togglePinned: jest.fn(),
+  } as unknown as QuickAccessService;
+}
+
 describe('AppComponent language switch', () => {
   beforeEach(() => {
     document.documentElement.setAttribute('dir', 'ltr');
@@ -76,6 +90,7 @@ describe('AppComponent language switch', () => {
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
       makeProductNavigationService(),
+      makeQuickAccessService(),
     );
 
     component.onLanguageChange({
@@ -95,6 +110,7 @@ describe('AppComponent language switch', () => {
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
       makeProductNavigationService(),
+      makeQuickAccessService(),
     );
 
     component.onLanguageChange({
@@ -117,6 +133,7 @@ describe('AppComponent navigation', () => {
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
       productNavigation,
+      makeQuickAccessService(),
     );
 
     component.openLanding();
@@ -132,6 +149,7 @@ describe('AppComponent navigation', () => {
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
       productNavigation,
+      makeQuickAccessService(),
     );
 
     component.onProductSelect({

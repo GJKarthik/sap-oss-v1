@@ -50,7 +50,7 @@ export class GenericCva extends AngularGeneratedFile {
       host!: CvaComponent<ValueType>;
 
       setDisabledState = (isDisabled: boolean): void => {
-        this.host.element["disabled"] = isDisabled;
+        this.host.element.disabled = isDisabled;
       };
 
       registerOnChange(fn: (newVal: ValueType) => void): void {
@@ -71,7 +71,7 @@ export class GenericCva extends AngularGeneratedFile {
   cvaComponentInterfaceCode = (): string => {
     return `
     interface CvaComponent<ValueType = any> {
-      element: Element;
+      element: Element & { disabled?: boolean };
       cvaValue: ValueType;
     }
     `

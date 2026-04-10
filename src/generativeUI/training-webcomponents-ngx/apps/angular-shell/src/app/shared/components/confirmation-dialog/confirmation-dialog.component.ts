@@ -7,7 +7,7 @@
 
 import { Component, ElementRef, EventEmitter, Input, NO_ERRORS_SCHEMA, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Ui5WebcomponentsModule } from '@ui5/webcomponents-ngx';
+import { Ui5TrainingComponentsModule } from '../../ui5-training-components.module';
 
 export interface ConfirmationDialogData {
   title: string;
@@ -22,7 +22,7 @@ export interface ConfirmationDialogData {
 @Component({
   selector: 'app-confirmation-dialog',
   standalone: true,
-  imports: [CommonModule, Ui5WebcomponentsModule],
+  imports: [CommonModule, Ui5TrainingComponentsModule],
   schemas: [NO_ERRORS_SCHEMA],
   template: `
     <ui5-dialog

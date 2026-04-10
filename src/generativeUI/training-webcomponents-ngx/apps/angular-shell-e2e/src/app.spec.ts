@@ -16,9 +16,9 @@ test.describe('Training Console Enterprise Suite', () => {
     });
   });
 
-  test('should complete Expert Model Optimizer flow', async ({ page }) => {
+  test('should complete Expert Model Forge flow', async ({ page }) => {
     await page.goto('/model-optimizer');
-    await expect(page.locator('h1.page-title', { hasText: 'Model Optimizer' })).toBeVisible();
+    await expect(page.locator('ui5-title', { hasText: 'Model Forge' })).toBeVisible();
 
     // Toggle User Mode to Expert
     const modeSelect = page.locator('select');

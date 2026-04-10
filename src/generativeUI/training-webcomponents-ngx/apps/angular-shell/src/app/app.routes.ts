@@ -99,10 +99,10 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'arabic-wizard',
+        path: 'document-linguist',
         loadComponent: () =>
-          import('./pages/arabic-wizard/arabic-wizard.component').then(
-            (m) => m.ArabicWizardComponent
+          import('./pages/document-linguist/document-linguist.component').then(
+            (m) => m.DocumentLinguistComponent
           ),
       },
       {

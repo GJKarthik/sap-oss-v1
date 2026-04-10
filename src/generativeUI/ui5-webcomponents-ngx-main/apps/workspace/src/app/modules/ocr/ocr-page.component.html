@@ -1,144 +1,149 @@
 <section class="ocr-page">
-  <!-- Cross-app link to production OCR in SAP AI Workbench -->
-  <div class="cross-app-banner" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1rem;background:var(--sapInformationBackground,#e8f2ff);border:1px solid var(--sapInformativeBorderColor,#5b9bd5);border-radius:0.5rem;margin-bottom:1rem;">
-    <ui5-icon name="document" style="font-size:1.25rem;color:var(--sapInformativeColor,#0854a0);"></ui5-icon>
-    <div style="flex:1;display:flex;flex-direction:column;gap:0.125rem;">
-      <span style="font-size:0.75rem;color:var(--sapContent_LabelColor);">Production OCR pipeline:</span>
-      <span style="font-size:0.875rem;"><strong>Document OCR</strong> in SAP AI Workbench</span>
+  <header class="ocr-header">
+    <div class="ocr-header__copy">
+      <span class="ocr-header__eyebrow">{{ 'NAV_OCR' | ui5I18n }}</span>
+      <ui5-title level="H2">{{ 'OCR_PAGE_TITLE' | ui5I18n }}</ui5-title>
     </div>
-    <ui5-button design="Transparent" icon="action" (click)="openCrossApp()">Open</ui5-button>
-  </div>
+    
+    <div class="cross-app-card" (click)="openCrossApp()">
+      <ui5-icon name="document"></ui5-icon>
+      <div class="cross-app-card__info">
+        <span class="cross-app-card__label">Production Pipeline</span>
+        <span class="cross-app-card__title">SAP AI Workbench</span>
+      </div>
+      <ui5-icon name="navigation-right-arrow"></ui5-icon>
+    </div>
+  </header>
 
-  <ui5-title level="H3">{{ 'OCR_PAGE_TITLE' | ui5I18n }}</ui5-title>
+  <div class="ocr-grid">
+    <div class="ocr-main-panel">
+      <ui5-card class="ocr-card">
+        <ui5-card-header slot="header" [attr.title-text]="'OCR_UPLOAD_LABEL' | ui5I18n"></ui5-card-header>
+        <div class="ocr-card__body">
+          <div class="ocr-controls">
+            <ui5-label for="ocr-language">{{ 'OCR_LANGUAGE_LABEL' | ui5I18n }}</ui5-label>
+            <ui5-select id="ocr-language" [disabled]="loading || routeBlocked" (change)="language = $any($event).detail.selectedOption.value">
+              <ui5-option value="ar" [attr.selected]="language === 'ar' ? true : null">{{ 'LANGUAGE_AR' | ui5I18n }}</ui5-option>
+              <ui5-option value="en" [attr.selected]="language === 'en' ? true : null">{{ 'LANGUAGE_EN' | ui5I18n }}</ui5-option>
+            </ui5-select>
+          </div>
 
-  <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button>
-    {{ blockingReason }}
-  </ui5-message-strip>
+          <div
+            class="ocr-dropzone"
+            [class.ocr-dropzone--active]="isDragOver"
+            role="button"
+            tabindex="0"
+            (click)="fileInput.click()"
+            (keydown.enter)="fileInput.click()"
+            (keydown.space)="fileInput.click()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)">
+            <ui5-icon name="upload-to-cloud"></ui5-icon>
+            <p>{{ 'OCR_DROPZONE_HINT' | ui5I18n }}</p>
+            <input
+              #fileInput
+              type="file"
+              hidden
+              accept=".txt,.pdf,.png,.jpg,.jpeg,.webp"
+              (change)="onFileSelected($event)" />
+          </div>
 
-  <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button>
-    {{ lastError }}
-  </ui5-message-strip>
+          <div class="ocr-actions">
+            <ui5-button design="Emphasized" [disabled]="loading || routeBlocked || !selectedFileName" (click)="processDocument()">
+              {{ 'OCR_PROCESS_BUTTON' | ui5I18n }}
+            </ui5-button>
+            <ui5-button design="Transparent" [disabled]="loadingHistory || routeBlocked" (click)="loadRecentDocuments()">
+              {{ 'OCR_REFRESH_HISTORY' | ui5I18n }}
+            </ui5-button>
+          </div>
+        </div>
+      </ui5-card>
 
-  <div class="ocr-page__controls">
-    <ui5-label for="ocr-language">{{ 'OCR_LANGUAGE_LABEL' | ui5I18n }}</ui5-label>
-    <ui5-select id="ocr-language" [disabled]="loading || routeBlocked" (change)="language = $any($event).detail.selectedOption.value">
-      <ui5-option value="ar" [attr.selected]="language === 'ar' ? true : null">{{ 'LANGUAGE_AR' | ui5I18n }}</ui5-option>
-      <ui5-option value="en" [attr.selected]="language === 'en' ? true : null">{{ 'LANGUAGE_EN' | ui5I18n }}</ui5-option>
-    </ui5-select>
-  </div>
+      <ui5-card *ngIf="selectedFileName" class="ocr-card ocr-card--preview">
+        <ui5-card-header slot="header" [attr.title-text]="'OCR_FILE_PREVIEW_TITLE' | ui5I18n" [attr.subtitle-text]="selectedFileName"></ui5-card-header>
+        <div class="ocr-card__body">
+          <div class="preview-container">
+            <img *ngIf="filePreviewType === 'image' && filePreviewUrl" [src]="filePreviewUrl" [alt]="selectedFileName" class="preview-image" />
+            
+            <div *ngIf="filePreviewType === 'pdf'" class="preview-note">
+              <ui5-icon name="pdf-attachment"></ui5-icon>
+              <p>{{ 'OCR_PREVIEW_PDF_NOTE' | ui5I18n }}</p>
+              <pre>{{ filePreviewTextSnippet }}</pre>
+            </div>
 
-  <ui5-textarea
-    [rows]="8"
-    growing
-    growing-max-lines="16"
-    [value]="documentText"
-    [placeholder]="'OCR_TEXT_PLACEHOLDER' | ui5I18n"
-    [disabled]="loading || routeBlocked"
-    (input)="documentText = $any($event).target.value">
-  </ui5-textarea>
+            <pre *ngIf="filePreviewType === 'text'" class="preview-text">{{ filePreviewTextSnippet || documentText || '-' }}</pre>
 
-  <div class="ocr-page__controls">
-    <ui5-label for="ocr-file">{{ 'OCR_UPLOAD_LABEL' | ui5I18n }}</ui5-label>
-    <input
-      #fileInput
-      id="ocr-file"
-      type="file"
-      accept=".txt,.pdf,.png,.jpg,.jpeg,.webp"
-      [disabled]="loading || routeBlocked"
-      (change)="onFileSelected($event)" />
-    <span *ngIf="selectedFileName">{{ selectedFileName }}</span>
-  </div>
-
-  <div
-    class="ocr-page__dropzone"
-    [class.ocr-page__dropzone--active]="isDragOver"
-    role="button"
-    tabindex="0"
-    [attr.aria-label]="'OCR_DROPZONE_HINT' | ui5I18n"
-    (keydown.enter)="fileInput.click()"
-    (keydown.space)="fileInput.click()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave($event)"
-    (drop)="onDrop($event)">
-    {{ 'OCR_DROPZONE_HINT' | ui5I18n }}
-  </div>
-
-  <div *ngIf="selectedFileName" class="ocr-page__preview">
-    <ui5-title level="H5">{{ 'OCR_FILE_PREVIEW_TITLE' | ui5I18n }}</ui5-title>
-    <div class="ocr-page__preview-meta">{{ selectedFileName }} ({{ selectedFileMimeType || 'n/a' }})</div>
-    <div class="ocr-page__actions">
-      <ui5-button design="Transparent" icon="decline" (click)="clearSelectedFile()">
-        {{ 'OCR_CLEAR_FILE' | ui5I18n }}
-      </ui5-button>
+            <div *ngIf="filePreviewType === 'generic'" class="preview-note">
+              <ui5-icon name="document"></ui5-icon>
+              <p>{{ 'OCR_PREVIEW_GENERIC_NOTE' | ui5I18n }}</p>
+            </div>
+          </div>
+          <div class="preview-actions">
+            <ui5-button design="Transparent" icon="decline" (click)="clearSelectedFile()">{{ 'OCR_CLEAR_FILE' | ui5I18n }}</ui5-button>
+          </div>
+        </div>
+      </ui5-card>
     </div>
 
-    <img *ngIf="filePreviewType === 'image' && filePreviewUrl" [src]="filePreviewUrl" [alt]="selectedFileName" class="ocr-page__preview-image" />
+    <div class="ocr-results-panel" *ngIf="result">
+      <ui5-card class="ocr-card">
+        <ui5-card-header slot="header" [attr.title-text]="'OCR_FINANCIAL_FIELDS' | ui5I18n"></ui5-card-header>
+        <div class="ocr-card__body">
+          <div class="financial-grid">
+            <div class="financial-field" *ngFor="let field of result.financial_fields">
+              <span class="financial-field__label">{{ field.key }}</span>
+              <span class="financial-field__value">{{ field.value | localeCurrency:'SAR' }}</span>
+              <ui5-tag design="Information" color-scheme="6">{{ field.confidence | localePercent }}</ui5-tag>
+            </div>
+          </div>
+        </div>
+      </ui5-card>
 
-    <div *ngIf="filePreviewType === 'pdf'" class="ocr-page__preview-note">
-      {{ 'OCR_PREVIEW_PDF_NOTE' | ui5I18n }} {{ filePreviewTextSnippet }}
-    </div>
+      <ui5-card class="ocr-card ocr-card--wide">
+        <ui5-card-header slot="header" [attr.title-text]="'OCR_LINE_ITEMS' | ui5I18n"></ui5-card-header>
+        <div class="ocr-card__body">
+          <div class="ocr-table-container">
+            <table class="ocr-premium-table">
+              <thead>
+                <tr>
+                  <th>{{ 'OCR_LINEITEM_COL_DESC_EN' | ui5I18n }}</th>
+                  <th>{{ 'OCR_LINEITEM_COL_DESC_AR' | ui5I18n }}</th>
+                  <th class="num">{{ 'OCR_LINEITEM_COL_QTY' | ui5I18n }}</th>
+                  <th class="num">{{ 'OCR_LINEITEM_COL_UNIT_PRICE' | ui5I18n }}</th>
+                  <th class="num">{{ 'OCR_LINEITEM_COL_TOTAL' | ui5I18n }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of result.line_items">
+                  <td>{{ item.description_en || '-' }}</td>
+                  <td class="arabic">{{ item.description_ar || '-' }}</td>
+                  <td class="num">{{ item.quantity | localeNumber }}</td>
+                  <td class="num">{{ item.unit_price | localeCurrency:'SAR' }}</td>
+                  <td class="num total">{{ item.total | localeCurrency:'SAR' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </ui5-card>
 
-    <pre *ngIf="filePreviewType === 'text'">{{ filePreviewTextSnippet || documentText || '-' }}</pre>
-
-    <div *ngIf="filePreviewType === 'generic'" class="ocr-page__preview-note">
-      {{ 'OCR_PREVIEW_GENERIC_NOTE' | ui5I18n }} {{ filePreviewTextSnippet }}
-    </div>
-  </div>
-
-  <div class="ocr-page__actions">
-    <ui5-button design="Emphasized" [disabled]="loading || routeBlocked" (click)="processDocument()">
-      {{ 'OCR_PROCESS_BUTTON' | ui5I18n }}
-    </ui5-button>
-    <ui5-button design="Transparent" [disabled]="loadingHistory || routeBlocked" (click)="loadRecentDocuments()">
-      {{ 'OCR_REFRESH_HISTORY' | ui5I18n }}
-    </ui5-button>
-  </div>
-
-  <ui5-busy-indicator *ngIf="loading || loadingHistory" active size="M" [text]="'LOADING' | ui5I18n"></ui5-busy-indicator>
-
-  <ui5-list *ngIf="recentDocuments.length > 0" separators="Inner">
-    <ui5-li *ngFor="let document of recentDocuments" (click)="loadDocument(document.id)">
-      {{ document.label }}
-    </ui5-li>
-  </ui5-list>
-
-  <div *ngIf="result" class="ocr-page__results">
-    <ui5-title level="H5">{{ 'OCR_RESULT_AR' | ui5I18n }}</ui5-title>
-    <pre>{{ result.original_ar || '-' }}</pre>
-
-    <ui5-title level="H5">{{ 'OCR_RESULT_EN' | ui5I18n }}</ui5-title>
-    <pre>{{ result.translated_en || '-' }}</pre>
-
-    <ui5-title level="H5">{{ 'OCR_FINANCIAL_FIELDS' | ui5I18n }}</ui5-title>
-    <ui5-list separators="Inner">
-      <ui5-li *ngFor="let field of result.financial_fields">
-        <bdi>{{ field.key }}</bdi>: <bdi>{{ field.value | localeCurrency:'SAR' }}</bdi> (<bdi>{{ field.confidence | localePercent }}</bdi>)
-      </ui5-li>
-    </ui5-list>
-
-    <ui5-title level="H5">{{ 'OCR_LINE_ITEMS' | ui5I18n }}</ui5-title>
-    <div class="ocr-line-items-table-wrapper">
-      <table class="ocr-line-items-table">
-        <caption class="sr-only">{{ 'OCR_LINE_ITEMS' | ui5I18n }}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{{ 'OCR_LINEITEM_COL_DESC_EN' | ui5I18n }}</th>
-            <th scope="col">{{ 'OCR_LINEITEM_COL_DESC_AR' | ui5I18n }}</th>
-            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_QTY' | ui5I18n }}</th>
-            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_UNIT_PRICE' | ui5I18n }}</th>
-            <th scope="col" class="ocr-line-items-table__num">{{ 'OCR_LINEITEM_COL_TOTAL' | ui5I18n }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of result.line_items">
-            <td>{{ item.description_en || '-' }}</td>
-            <td>{{ item.description_ar || '-' }}</td>
-            <td class="ocr-line-items-table__num">{{ item.quantity | localeNumber }}</td>
-            <td class="ocr-line-items-table__num">{{ item.unit_price | localeCurrency:'SAR' }}</td>
-            <td class="ocr-line-items-table__num">{{ item.total | localeCurrency:'SAR' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="ocr-text-comparison">
+        <ui5-card class="ocr-card">
+          <ui5-card-header slot="header" [attr.title-text]="'OCR_RESULT_AR' | ui5I18n"></ui5-card-header>
+          <div class="ocr-card__body">
+            <pre class="arabic-text">{{ result.original_ar || '-' }}</pre>
+          </div>
+        </ui5-card>
+        <ui5-card class="ocr-card">
+          <ui5-card-header slot="header" [attr.title-text]="'OCR_RESULT_EN' | ui5I18n"></ui5-card-header>
+          <div class="ocr-card__body">
+            <pre>{{ result.translated_en || '-' }}</pre>
+          </div>
+        </ui5-card>
+      </div>
     </div>
   </div>
+
+  <ui5-busy-indicator *ngIf="loading || loadingHistory" active size="M" class="ocr-loader"></ui5-busy-indicator>
 </section>

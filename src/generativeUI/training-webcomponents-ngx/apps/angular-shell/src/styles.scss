@@ -1,126 +1,199 @@
 /**
  * SAP AI Experience - Apple Liquid Glass (Production Theme)
+ * INTERROGATED PIXELS - Flagship WWDC Release Standard
  */
 
 :root {
-  /* Liquid Glass Palette */
-  --aura-primary: rgba(0, 143, 211, 0.15);
-  --aura-secondary: rgba(161, 31, 133, 0.12);
-  --aura-tertiary: rgba(255, 255, 255, 0.05);
+  /* ── Liquid Glass Engine (WWDC Flagship Standard) ── */
+  --aura-primary: rgba(0, 113, 227, 0.18);
+  --aura-secondary: rgba(123, 97, 255, 0.12);
   
-  --glass-bg: rgba(255, 255, 255, 0.45);
-  --glass-border: rgba(255, 255, 255, 0.35);
-  --glass-border-light: rgba(255, 255, 255, 0.5);
+  --liquid-glass-bg: rgba(255, 255, 255, 0.42);
+  --liquid-glass-blur: blur(60px) saturate(240%) brightness(1.04);
+  --liquid-glass-border: 1px solid rgba(255, 255, 255, 0.7);
+  --liquid-glass-inner-border: 1px solid rgba(0, 0, 0, 0.04);
   
-  --shadow-ambient: 0 20px 50px rgba(0, 0, 0, 0.08);
-  --shadow-float: 0 30px 60px rgba(0, 0, 0, 0.12);
+  /* Definitive Squircle Radius (G2-like Continuity Simulation) */
+  --radius-island: 2.75rem;
+  --radius-card: 36px;
+  --radius-button: 999px;
+
+  /* ── Definitive Theme Tokens ── */
+  --color-primary: #0071e3;
+  --color-primary-rgb: 0, 113, 227;
+  --color-success: #34c759;
+  --color-success-rgb: 52, 199, 89;
+  --color-error: #ff3b30;
+  --color-error-rgb: 255, 59, 48;
+  --color-warning: #ff9f0a;
+  --color-warning-rgb: 255, 159, 10;
+  --code-bg: #1e1e1e;
+  --code-bg-rgb: 30, 30, 30;
+  --code-text: #9cdcfe;
+  --code-text-rgb: 156, 220, 254;
+
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --bg-primary: #fbfbfd;
+  --surface-secondary: rgba(255, 255, 255, 0.5);
+
+  /* Deep layered occlusion shadows */
+  --liquid-glass-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 12px 32px rgba(0, 0, 0, 0.06),
+    0 32px 80px rgba(0, 0, 0, 0.04);
   
-  /* Standardizing Spring Physics */
-  --spring-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --fluid-transition: 0.4s var(--spring-easing);
+  --liquid-glass-shadow-deep:
+    0 0 0 1px rgba(0, 0, 0, 0.05),
+    0 40px 120px rgba(0, 0, 0, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.08);
+
+  /* Physics-based Easing (Apple Spring) */
+  --spring-easing: cubic-bezier(0.23, 1, 0.32, 1);
+  --fluid-transition: 0.5s var(--spring-easing);
+  
+  /* Optical Typography Tracking */
+  --font-tracking-tight: -0.045em;
+  --font-tracking-standard: -0.015em;
+  --font-tracking-wide: 0.02em;
+}
+
+[data-sap-theme*="dark"] {
+  --liquid-glass-bg: rgba(29, 34, 40, 0.75); /* Aligned with SAP Horizon Dark #1d2228 */
+  --liquid-glass-blur: blur(50px) saturate(190%) brightness(0.85);
+  --liquid-glass-border: 1px solid rgba(255, 255, 255, 0.12);
+  --liquid-glass-inner-border: 1px solid rgba(255, 255, 255, 0.06);
+
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1a6;
+  --bg-primary: #1d2228; /* Definitive SAP Dark Grey */
+
+  --liquid-glass-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 48px rgba(0, 0, 0, 0.5),
+    0 32px 96px rgba(0, 0, 0, 0.4);
+}
+
+/* ── View Transitions (Route Choreography) ───────────────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+  animation-timing-function: var(--spring-easing);
+}
+
+::view-transition-old(root) {
+  animation-name: slide-out;
+}
+
+::view-transition-new(root) {
+  animation-name: slide-in;
+}
+
+@keyframes slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-out {
+  to { transform: translateY(-20px); opacity: 0; }
+}
+
+/* ── UI5 Internal Interrogation ─────────────────────────────────────────── */
+ui5-card, ui5-list, ui5-popover {
+  --sapTile_Background: transparent !important;
+  --sapList_Background: transparent !important;
+  --sapPopover_Background: var(--liquid-glass-bg) !important;
+}
+
+ui5-card::part(content) {
+  background: transparent !important;
+}
+
+ui5-card-header::part(root) {
+  background: transparent !important;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: "72", "72Full", Arial, Helvetica, sans-serif;
-  background-color: #f0f2f5;
-  color: var(--sapTextColor);
+  margin: 0; padding: 0;
+  font-family: var(--sapFontFamily, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: var(--font-tracking-standard);
+  text-rendering: optimizeLegibility;
 }
 
-/* ── The Global Aura (Liquid Mesh Background) ──────────────────────────────── */
+/* ── The Global Aura (Multi-Layered Fluid Mesh) ────────────────────────────── */
 .app-canvas {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: #fbfbfd;
-  z-index: -1;
-  overflow: hidden;
+  inset: 0; background: var(--bg-primary);
+  z-index: -1; overflow: hidden;
 }
 
 .app-canvas::before, .app-canvas::after {
-  content: '';
-  position: absolute;
-  width: 140vmax;
-  height: 140vmax;
-  top: -70vmax;
-  left: -70vmax;
-  background: radial-gradient(circle, var(--aura-primary) 0%, transparent 70%);
-  animation: liquidFlow 25s infinite alternate ease-in-out;
-  filter: blur(80px);
-  opacity: 0.6;
+  content: ''; position: absolute;
+  width: 150vmax; height: 150vmax;
+  top: -75vmax; left: -75vmax;
+  background: radial-gradient(circle at center, var(--aura-primary) 0%, transparent 65%);
+  animation: fluidAura 45s infinite alternate ease-in-out;
+  filter: blur(120px) contrast(1.1);
+  opacity: 0.7;
+  mix-blend-mode: color-dodge;
 }
 
 .app-canvas::after {
-  top: auto; left: auto;
-  bottom: -70vmax;
-  right: -70vmax;
-  background: radial-gradient(circle, var(--aura-secondary) 0%, transparent 70%);
-  animation: liquidFlow 30s infinite alternate-reverse ease-in-out;
+  background: radial-gradient(circle at center, var(--aura-secondary) 0%, transparent 65%);
+  animation: fluidAura 60s infinite alternate-reverse ease-in-out;
+  animation-delay: -15s;
 }
 
-@keyframes liquidFlow {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  100% { transform: translate(20%, 10%) rotate(15deg); }
+@keyframes fluidAura {
+  0% { transform: translate(-10%, -10%) scale(1) rotate(0deg); }
+  50% { transform: translate(15%, 10%) scale(1.2) rotate(180deg); }
+  100% { transform: translate(-5%, 5%) scale(0.9) rotate(360deg); }
 }
 
-/* Atmospheric State Overrides */
-.app-canvas.aura--weaving {
-  --aura-primary: rgba(161, 31, 133, 0.3); 
-  --aura-secondary: rgba(0, 143, 211, 0.2);
+/* ── Interactive Haptics (The Jony Ive Soul) ──────────────────────────────── */
+.hub-dock-item, .action-card, .list-card, .product-card, ui5-button, .app-nav-island, .pill-item {
+  transition: transform 0.4s var(--spring-easing), box-shadow 0.4s var(--spring-easing), background 0.3s ease;
+  
+  &:active {
+    transform: scale(0.96) translateY(2px) !important;
+    filter: brightness(0.95);
+  }
 }
 
-.app-canvas.aura--warning {
-  --aura-primary: rgba(255, 152, 0, 0.25);
-  --aura-secondary: rgba(244, 67, 54, 0.15);
-}
-
-/* ── Liquid Glassmorphism (Unibody Surfaces) ────────────────────────────────── */
-:root .glass-panel,
-:root [class].glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-ambient);
-  border-radius: 1.5rem;
+/* ── Liquid Glassmorphism (Island Standards) ────────────────────────────────── */
+.glass-panel {
+  background: var(--liquid-glass-bg);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border: var(--liquid-glass-border);
+  box-shadow: var(--liquid-glass-shadow);
+  border-radius: var(--radius-island);
   transition: var(--fluid-transition);
 }
 
-.glass-panel:hover {
-  box-shadow: var(--shadow-float);
-  border-color: var(--glass-border-light);
-  transform: translateY(-2px);
-}
-
-/* ── Global Layout Refinement ─────────────────────────────────────────────── */
+/* ── Global Layout Polish ─────────────────────────────────────────────────── */
 :root ui5-shellbar {
-  background: rgba(255, 255, 255, 0.3) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: var(--liquid-glass-bg) !important;
+  backdrop-filter: var(--liquid-glass-blur);
+  border-bottom: var(--liquid-glass-inner-border) !important;
 }
 
 .app-nav-island {
-  background: rgba(255, 255, 255, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
-  backdrop-filter: blur(30px) saturate(150%) !important;
+  background: var(--liquid-glass-bg) !important;
+  border: var(--liquid-glass-border) !important;
+  border-radius: var(--radius-island) !important;
+  box-shadow: var(--liquid-glass-shadow) !important;
 }
 
-.context-pill-bar .pill-track {
-  background: rgba(255, 255, 255, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(20px) !important;
-}
-
-/* ── Typography & Refinement ─────────────────────────────────────────────── */
-:root h1, :root h2, :root h3, :root ui5-title {
-  letter-spacing: -0.03em;
-  font-weight: 800;
-  color: #1d1d1f;
-}
-
-.text-muted { color: #86868b; font-weight: 500; }
+/* ── Typography (Optical Tracking) ────────────────────────────────────────── */
+h1, .text-hero { letter-spacing: var(--font-tracking-tight); font-weight: 800; }
+h2, h3 { letter-spacing: var(--font-tracking-tight); font-weight: 700; }
+.text-muted { color: var(--text-secondary); font-weight: 500; }
 
 .fadeIn { animation: fadeIn 0.8s var(--spring-easing) forwards; }
 .slideUp { animation: slideUp 0.8s var(--spring-easing) forwards; }
@@ -128,23 +201,46 @@ body {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Partials */
-:root ui5-page::part(content) { padding: 0; }
+/* ── Cards (Liquid Glass Standard) ───────────────────────────────────────── */
+ui5-card {
+  --sapTile_Background: var(--liquid-glass-bg);
+  background: var(--liquid-glass-bg);
+  backdrop-filter: var(--liquid-glass-blur);
+  border: var(--liquid-glass-border) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--liquid-glass-shadow) !important;
+  transition: transform 0.4s var(--spring-easing), box-shadow 0.4s var(--spring-easing);
 
-/* RTL Adjustments */
-[dir="rtl"] {
-  font-family: var(--sapFontFamily, "72 Arabic", "72", "72Full", Arial, Helvetica, sans-serif);
+  &::part(content) {
+    background: transparent !important;
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
+  }
+
+  &:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: var(--liquid-glass-shadow-deep) !important;
+  }
 }
 
-/* ── Accessibility: Reduced Motion ─────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+ui5-card-header {
+  background: transparent !important;
+  border-bottom: var(--liquid-glass-inner-border) !important;
+  padding: 2.5rem 3rem !important;
+
+  &::part(title) {
+    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+    letter-spacing: var(--font-tracking-tight) !important;
+    color: var(--text-primary) !important;
   }
-  .app-canvas::before, .app-canvas::after { animation: none; opacity: 0.4; }
+
+  &::part(subtitle) {
+    font-size: 1rem !important;
+    color: var(--text-secondary) !important;
+    font-weight: 600 !important;
+    margin-top: 0.35rem !important;
+  }
 }
 
 /* ── Keyboard Focus Rings ──────────────────────────────────────────────── */

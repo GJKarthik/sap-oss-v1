@@ -7,9 +7,11 @@ import { cacheInterceptor } from './interceptors/cache.interceptor';
 import { diagnosticsInterceptor } from './interceptors/diagnostics.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
 import { timeoutInterceptor } from './interceptors/timeout.interceptor';
+import { workspaceContextInterceptor } from './interceptors/workspace-context.interceptor';
 import { GlobalErrorHandler } from './core/global-error-handler';
 import { I18nService } from './services/i18n.service';
 import { WorkspaceService } from './services/workspace.service';
+import { teamContextInterceptor } from './services/team-context.service';
 
 /**
  * Application configuration with providers for routing, HTTP client,
@@ -28,7 +30,15 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authInterceptor, timeoutInterceptor, cacheInterceptor, diagnosticsInterceptor, errorInterceptor])
+      withInterceptors([
+        workspaceContextInterceptor,
+        teamContextInterceptor,
+        authInterceptor,
+        timeoutInterceptor,
+        cacheInterceptor,
+        diagnosticsInterceptor,
+        errorInterceptor,
+      ])
     ),
   ],
 };

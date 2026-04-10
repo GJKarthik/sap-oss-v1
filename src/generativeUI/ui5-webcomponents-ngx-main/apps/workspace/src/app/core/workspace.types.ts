@@ -50,6 +50,21 @@ export interface WorkspaceSettings {
   updatedAt: string;
 }
 
+export const PRODUCT_THEMES = ['sap_horizon', 'sap_horizon_dark'] as const;
+export type ProductTheme = (typeof PRODUCT_THEMES)[number];
+
+export function normalizeWorkspaceTheme(theme: string | null | undefined): ProductTheme {
+  switch (theme) {
+    case 'sap_horizon_dark':
+    case 'sap_fiori_3_dark':
+      return 'sap_horizon_dark';
+    case 'sap_horizon':
+    case 'sap_fiori_3':
+    default:
+      return 'sap_horizon';
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Navigation Link Data
 // ---------------------------------------------------------------------------
@@ -216,7 +231,7 @@ export function createDefaultWorkspaceSettings(): WorkspaceSettings {
       systemPrompt: '',
       moduleOverrides: {},
     },
-    theme: 'sap_horizon',
+    theme: normalizeWorkspaceTheme('sap_horizon'),
     language: 'en',
     updatedAt: new Date().toISOString(),
   };

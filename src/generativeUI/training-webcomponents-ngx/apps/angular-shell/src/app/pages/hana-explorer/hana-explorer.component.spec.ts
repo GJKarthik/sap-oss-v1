@@ -11,10 +11,10 @@ describe('HanaExplorerComponent', () => {
   let component: HanaExplorerComponent;
   let fixture: ReturnType<typeof TestBed.createComponent<HanaExplorerComponent>>;
   let httpMock: HttpTestingController;
-  let toastSpy: jest.Mocked<Pick<ToastService, 'success' | 'error' | 'warning'>>;
+  let toastSpy: jest.Mocked<Pick<ToastService, 'success' | 'error' | 'warning' | 'info'>>;
 
   beforeEach(async () => {
-    toastSpy = { success: jest.fn(), error: jest.fn(), warning: jest.fn() };
+    toastSpy = { success: jest.fn(), error: jest.fn(), warning: jest.fn(), info: jest.fn() };
 
     await TestBed.configureTestingModule({
       imports: [HanaExplorerComponent],
@@ -53,6 +53,19 @@ describe('HanaExplorerComponent', () => {
     tick();
     expect(component.stats()?.available).toBe(true);
     expect(component.stats()?.pair_count).toBe(123);
+  }));
+
+  it('should expose preview mode when HANA stats are degraded', fakeAsync(() => {
+    httpMock.expectOne('/api/hana/stats').flush({
+      available: false,
+      pair_count: 13952,
+      mode: 'preview',
+      reason: 'reconnecting',
+    });
+    tick();
+
+    expect(component.stats()?.mode).toBe('preview');
+    expect(component.hanaNotice(component.stats()?.reason)).toBe('hanaExplorer.previewReconnect');
   }));
 
   it('should set stats to null and call warning toast when HANA stats fail', fakeAsync(() => {

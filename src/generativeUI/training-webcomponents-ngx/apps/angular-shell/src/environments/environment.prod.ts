@@ -1,7 +1,8 @@
 export const environment = {
   production: true,
-  apiBaseUrl: '/api',
+  apiBaseUrl: window.__TRAINING_CONFIG__?.apiBaseUrl ?? '/api',
   requireAuth: window.__TRAINING_CONFIG__?.requireAuth ?? false,
+  authMode: window.__TRAINING_CONFIG__?.authMode ?? (window.__TRAINING_CONFIG__?.requireAuth ? 'token' : 'none'),
   enableDebugLogs: false,
   toastDuration: {
     success: 3000,

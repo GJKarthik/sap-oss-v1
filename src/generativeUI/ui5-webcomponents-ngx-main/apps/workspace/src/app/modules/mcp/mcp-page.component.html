@@ -1,55 +1,79 @@
 <section class="mcp-page" role="main" aria-label="MCP tool explorer">
-  <ui5-title level="H3">{{ 'MCP_PAGE_TITLE' | ui5I18n }}</ui5-title>
-
-  <ui5-message-strip *ngIf="routeBlocked" design="Negative" hide-close-button role="alert">
-    {{ blockingReason }}
-  </ui5-message-strip>
-
-  <ui5-message-strip *ngIf="lastError" design="Negative" hide-close-button role="alert">
-    {{ lastError }}
-  </ui5-message-strip>
-
-  <div class="mcp-page__controls" role="toolbar" aria-label="Tool selection and actions">
-    <ui5-select [disabled]="loading || routeBlocked" (change)="onToolSelect($event)" accessible-name="Select MCP tool">
-      <ui5-option *ngFor="let tool of tools" [value]="tool" [attr.selected]="tool === selectedTool ? true : null">
-        {{ tool }}
-      </ui5-option>
-    </ui5-select>
-
-    <ui5-button design="Emphasized" [disabled]="invoking || loading || routeBlocked || !selectedTool" (click)="invokeSelectedTool()">
-      {{ 'MCP_INVOKE_TOOL' | ui5I18n }}
-    </ui5-button>
-
-    <ui5-button design="Transparent" [disabled]="loading || routeBlocked" (click)="loadTools()">
-      {{ 'MCP_REFRESH_TOOLS' | ui5I18n }}
-    </ui5-button>
-  </div>
-
-  <!-- Tool description -->
-  <div *ngIf="selectedToolMeta" class="mcp-page__tool-info">
-    <div class="tool-info__name">{{ selectedToolMeta.name }}</div>
-    <div *ngIf="selectedToolMeta.description" class="tool-info__desc">{{ selectedToolMeta.description }}</div>
-  </div>
-
-  <!-- Argument builder -->
-  <div *ngIf="selectedTool && !routeBlocked" class="mcp-page__args">
-    <div class="args-header">
-      <ui5-title level="H5">Arguments (JSON)</ui5-title>
-      <ui5-button design="Transparent" icon="reset" (click)="toolArgs = '{}'">Clear</ui5-button>
+  <header class="mcp-header">
+    <div class="mcp-header__copy">
+      <span class="mcp-header__eyebrow">{{ 'NAV_MCP' | ui5I18n }}</span>
+      <ui5-title level="H2">{{ 'MCP_PAGE_TITLE' | ui5I18n }}</ui5-title>
     </div>
-    <textarea
-      class="mcp-page__args-editor"
-      [(ngModel)]="toolArgs"
-      rows="6"
-      spellcheck="false"
-      placeholder='{ "key": "value" }'
-      aria-label="Tool arguments JSON editor"></textarea>
-    <ui5-message-strip *ngIf="argsError" design="Negative" hide-close-button>
-      {{ argsError }}
-    </ui5-message-strip>
+    
+    <div class="mcp-header__actions">
+      <ui5-button design="Transparent" [disabled]="loading || routeBlocked" icon="refresh" (click)="loadTools()">
+        {{ 'MCP_REFRESH_TOOLS' | ui5I18n }}
+      </ui5-button>
+    </div>
+  </header>
+
+  <div class="mcp-grid">
+    <div class="mcp-sidebar">
+      <ui5-card class="mcp-card">
+        <ui5-card-header slot="header" title-text="Tool Selection"></ui5-card-header>
+        <div class="mcp-card__body">
+          <ui5-select [disabled]="loading || routeBlocked" (change)="onToolSelect($event)" class="tool-select">
+            <ui5-option *ngFor="let tool of tools" [value]="tool" [attr.selected]="tool === selectedTool ? true : null">
+              {{ tool }}
+            </ui5-option>
+          </ui5-select>
+
+          <div *ngIf="selectedToolMeta" class="tool-meta">
+            <div class="tool-meta__name">{{ selectedToolMeta.name }}</div>
+            <div *ngIf="selectedToolMeta.description" class="tool-meta__desc">{{ selectedToolMeta.description }}</div>
+          </div>
+        </div>
+      </ui5-card>
+
+      <ui5-card *ngIf="selectedTool && !routeBlocked" class="mcp-card">
+        <ui5-card-header slot="header" title-text="Arguments (JSON)"></ui5-card-header>
+        <div class="mcp-card__body">
+          <textarea
+            class="mcp-editor"
+            [(ngModel)]="toolArgs"
+            rows="8"
+            spellcheck="false"
+            placeholder='{ "key": "value" }'></textarea>
+          
+          <div class="mcp-card__actions">
+            <ui5-button design="Emphasized" [disabled]="invoking || loading" (click)="invokeSelectedTool()">
+              {{ 'MCP_INVOKE_TOOL' | ui5I18n }}
+            </ui5-button>
+            <ui5-button design="Transparent" (click)="toolArgs = '{}'">Reset</ui5-button>
+          </div>
+
+          <ui5-message-strip *ngIf="argsError" design="Negative" hide-close-button>
+            {{ argsError }}
+          </ui5-message-strip>
+        </div>
+      </ui5-card>
+    </div>
+
+    <div class="mcp-main">
+      <ui5-card class="mcp-card mcp-card--results">
+        <ui5-card-header slot="header" title-text="Invocation Result"></ui5-card-header>
+        <div class="mcp-card__body">
+          <ui5-busy-indicator *ngIf="invoking" active size="M" class="mcp-loader"></ui5-busy-indicator>
+          
+          <div *ngIf="lastCallResult" class="result-container">
+            <pre class="result-code"><code>{{ lastCallResult }}</code></pre>
+          </div>
+
+          <div *ngIf="!lastCallResult && !invoking" class="result-empty">
+            <ui5-icon name="activities"></ui5-icon>
+            <p>Invoke a tool to see results</p>
+          </div>
+
+          <ui5-message-strip *ngIf="lastError" design="Negative" class="error-strip">
+            {{ lastError }}
+          </ui5-message-strip>
+        </div>
+      </ui5-card>
+    </div>
   </div>
-
-  <ui5-busy-indicator *ngIf="loading || invoking" active size="M" [text]="'LOADING' | ui5I18n"></ui5-busy-indicator>
-
-  <pre *ngIf="lastCallResult" class="mcp-page__result" role="region" aria-label="Tool invocation result" aria-live="polite"><bdi>{{ lastCallResult }}</bdi></pre>
 </section>

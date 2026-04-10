@@ -24,9 +24,11 @@ export class Ui5WebcomponentsConfigModule {
         {
           provide: 'rootConfig',
           useFactory: () => {
-            Object.entries(config).filter(([, val]) => val !== undefined).forEach(([key, val]) => {
-              setters[key](val);
-            });
+            for (const [key, val] of Object.entries(config) as Array<[keyof Ui5Config, Ui5Config[keyof Ui5Config] | undefined]>) {
+              if (val !== undefined) {
+                setters[key](val);
+              }
+            }
             return config;
           }
         }

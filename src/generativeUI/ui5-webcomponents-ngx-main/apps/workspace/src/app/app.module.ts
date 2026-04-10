@@ -6,7 +6,6 @@ import {BrowserModule} from '@angular/platform-browser';
 import {AppComponent} from './app.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Ui5ThemingModule} from '@ui5/theming-ngx';
-import {Ui5WebcomponentsThemingModule} from "@ui5/webcomponents-ngx/theming";
 import {Ui5WebcomponentsConfigModule} from '@ui5/webcomponents-ngx/config';
 import {Ui5I18nModule} from "@ui5/webcomponents-ngx/i18n";
 import {RouterModule} from "@angular/router";
@@ -98,7 +97,6 @@ import { Ui5WorkspaceComponentsModule } from './shared/ui5-workspace-components.
                 loadChildren: () => import('./modules/not-found/not-found.module').then(m => m.NotFoundModule)
             }
         ]),
-        Ui5WebcomponentsThemingModule.forRoot(),
     ], providers: [
         provideHttpClient(withInterceptorsFromDi()),
         { provide: HTTP_INTERCEPTORS, useClass: RequestTraceInterceptor, multi: true },

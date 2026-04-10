@@ -3,6 +3,7 @@ import { AvatarComponent } from '@ui5/webcomponents-ngx/main/avatar';
 import { BarComponent } from '@ui5/webcomponents-ngx/main/bar';
 import { BusyIndicatorComponent } from '@ui5/webcomponents-ngx/main/busy-indicator';
 import { ButtonComponent } from '@ui5/webcomponents-ngx/main/button';
+import { CalendarComponent } from '@ui5/webcomponents-ngx/main/calendar';
 import { CardComponent } from '@ui5/webcomponents-ngx/main/card';
 import { CardHeaderComponent } from '@ui5/webcomponents-ngx/main/card-header';
 import { DialogComponent } from '@ui5/webcomponents-ngx/main/dialog';
@@ -31,13 +32,13 @@ import { TextAreaComponent } from '@ui5/webcomponents-ngx/main/text-area';
 import { TitleComponent } from '@ui5/webcomponents-ngx/main/title';
 import { PageComponent } from '@ui5/webcomponents-ngx/fiori/page';
 import { ShellBarComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar';
-import { ShellBarItemComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar-item';
 
 const imports = [
   AvatarComponent,
   BarComponent,
   BusyIndicatorComponent,
   ButtonComponent,
+  CalendarComponent,
   CardComponent,
   CardHeaderComponent,
   DialogComponent,
@@ -55,7 +56,6 @@ const imports = [
   ProgressIndicatorComponent,
   SelectComponent,
   ShellBarComponent,
-  ShellBarItemComponent,
   StepInputComponent,
   SwitchComponent,
   TabComponent,

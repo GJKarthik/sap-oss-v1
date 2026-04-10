@@ -173,7 +173,7 @@ interface DeployedModel {
       font-size: 0.8125rem; font-weight: 600; color: var(--sapTextColor, #32363a); }
     .winner-badge { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveTextColor, #2e7d32); padding: 2px 8px; border-radius: 1rem;
       font-size: 0.7rem; font-weight: 600; }
-    .result-sql { margin: 0; padding: 0.875rem; background: var(--sapShell_Background, #1e1e1e); color: var(--sapShell_TextColor, #9cdcfe);
+    .result-sql { margin: 0; padding: 0.875rem; background: var(--sapShell_Background, var(--code-bg)); color: var(--sapShell_TextColor, var(--code-text));
       font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.8rem;
       white-space: pre-wrap; word-break: break-all; min-height: 80px; }
     .metrics-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }

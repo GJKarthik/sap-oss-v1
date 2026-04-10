@@ -186,7 +186,7 @@ import { ToastService } from '../../services/toast.service';
     .glass-card {
       background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      border: 1px solid var(--liquid-glass-bg);
       border-radius: 1rem;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
     }
@@ -208,7 +208,7 @@ import { ToastService } from '../../services/toast.service';
     @media (min-width: 1200px) { .results-grid { grid-template-columns: 1fr 400px; } }
 
     .terminal-code { 
-      background: #1e1e1e; color: #9cdcfe; padding: 1.5rem; border-radius: 0.75rem; 
+      background: var(--code-bg); color: var(--code-text); padding: 1.5rem; border-radius: 0.75rem; 
       font-family: monospace; font-size: 0.8125rem; line-height: 1.6; max-height: 600px; overflow-y: auto;
       box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
     }

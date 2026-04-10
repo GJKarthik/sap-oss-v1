@@ -10,12 +10,16 @@ import { CrossAppLinkComponent } from '../../shared';
 interface HanaStats {
   available: boolean;
   pair_count: number;
+  mode?: 'live' | 'preview';
+  reason?: 'credentials_missing' | 'reconnecting';
 }
 
 interface QueryResult {
   status: string;
   rows: Record<string, unknown>[];
   count: number;
+  mode?: 'live' | 'preview';
+  reason?: 'credentials_missing' | 'reconnecting';
 }
 
 interface QueryPreset {
@@ -50,7 +54,7 @@ interface ArchLayer {
       </app-cross-app-link>
 
       <!-- About -->
-      <div class="about-card">
+      <div class="about-card glass-panel">
         <p>{{ i18n.t('hanaExplorer.about') }}</p>
         <div class="tech-pills">
           <span class="pill pill--hana">SAP HANA Cloud</span>
@@ -61,7 +65,7 @@ interface ArchLayer {
       </div>
 
       <!-- Stats -->
-      <div class="stats-grid" style="margin-bottom: 1.5rem;" role="region" aria-label="HANA Cloud statistics">
+      <div class="stats-grid" role="region" aria-label="HANA Cloud statistics">
         <div class="stat-card">
           <div class="stat-value">
             <span class="status-badge {{ stats()?.available ? 'status-success' : 'status-error' }}">
@@ -80,10 +84,14 @@ interface ArchLayer {
         </div>
       </div>
 
+      @if (stats()?.mode === 'preview') {
+        <div class="info-banner">{{ hanaNotice(stats()?.reason) }}</div>
+      }
+
       <!-- SQL Query Sandbox -->
       <section class="section">
         <h2 class="section-title">{{ i18n.t('hanaExplorer.querySandbox') }}</h2>
-        <div class="query-card">
+        <div class="query-card glass-panel">
           <div class="query-presets">
             <span class="preset-label">{{ i18n.t('hanaExplorer.presets') }}</span>
             @for (p of presets; track p.label) {
@@ -95,7 +103,7 @@ interface ArchLayer {
             [(ngModel)]="sql"
             name="sql"
             aria-label="SQL query editor"
-            rows="4"
+            rows="6"
             placeholder="SELECT * FROM TRAINING_PAIRS LIMIT 10"
           ></textarea>
           <div class="query-actions">
@@ -108,13 +116,16 @@ interface ArchLayer {
 
         <!-- Results -->
         @if (result(); as res) {
-          <div class="results-section">
+          <div class="results-section fadeIn">
             <div class="result-header">
               <span class="status-badge {{ res.status === 'ok' ? 'status-success' : 'status-error' }}">
                 {{ res.status }}
               </span>
               <span class="text-small text-muted">{{ res.count }} {{ i18n.t('hanaExplorer.row') }}</span>
             </div>
+            @if (res.mode === 'preview') {
+              <div class="info-banner">{{ hanaNotice(res.reason) }}</div>
+            }
             @if (res.rows.length) {
               <div class="table-wrapper">
                 <table class="data-table">
@@ -163,144 +174,147 @@ interface ArchLayer {
     </div>
   `,
   styles: [`
-    .about-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.875rem;
-      color: var(--sapTextColor, #32363a);
-
-      p { margin: 0 0 0.75rem; }
-      a { color: var(--sapLinkColor, #0854a0); }
+    .page-content { 
+      padding: clamp(1.5rem, 4vw, 4rem); 
+      display: flex; flex-direction: column; gap: 2.5rem;
+      background: radial-gradient(circle at 0% 100%, rgba(0, 112, 242, 0.08), transparent 40rem);
     }
 
-    .tech-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; }
+    .page-title { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+
+    .about-card {
+      background: var(--liquid-glass-bg);
+      backdrop-filter: var(--liquid-glass-blur);
+      border: var(--liquid-glass-border);
+      box-shadow: var(--liquid-glass-shadow);
+      border-radius: 24px;
+      padding: 2rem;
+      font-size: 1.1rem;
+      color: #424245;
+      line-height: 1.5;
+
+      p { margin: 0 0 1.25rem; }
+    }
+
+    .tech-pills { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 
     .pill {
-      padding: 0.2rem 0.6rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-
-      &.pill--hana   { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #0d47a1); }
-      &.pill--python { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #1b5e20); }
-      &.pill--vector { background: var(--sapWarningBackground, #fff3e0); color: var(--sapCriticalColor, #e65100); }
-      &.pill--sql    { background: var(--sapNeutralBackground, #f5f5f5); color: var(--sapTextColor, #32363a); }
-    }
-
-    .section { margin-bottom: 2rem; }
-
-    .section-title {
-      font-size: 1rem;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8125rem;
       font-weight: 600;
-      margin: 0 0 0.75rem;
-      color: var(--sapTextColor, #32363a);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+
+      &.pill--hana   { background: rgba(var(--color-primary-rgb), 0.1); color: var(--color-primary); }
+      &.pill--python { background: rgba(var(--color-success-rgb), 0.1); color: var(--color-success); }
+      &.pill--vector { background: rgba(var(--color-warning-rgb), 0.1); color: var(--color-warning); }
+      &.pill--sql    { background: rgba(123, 97, 255, 0.1); color: #7b61ff; }
     }
+
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+      gap: 1.5rem; 
+    }
+
+    .stat-card {
+      padding: 2rem;
+      background: #fff;
+      border-radius: 24px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: all 0.2s;
+
+      &:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); }
+    }
+
+    .stat-value { font-size: 2.5rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+    .stat-label { font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
     .query-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-    }
-
-    .query-presets {
+      padding: 2rem;
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 1.5rem;
     }
 
-    .preset-label { font-size: 0.75rem; color: var(--sapContent_LabelColor, #6a6d70); }
+    .query-presets { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .preset-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
 
     .query-editor {
       width: 100%;
-      box-sizing: border-box;
-      padding: 0.625rem;
-      border: 1px solid var(--sapField_BorderColor, #89919a);
-      border-radius: 0.25rem;
-      font-family: 'SFMono-Regular', Consolas, monospace;
-      font-size: 0.8125rem;
-      background: var(--sapField_Background, #fafafa);
-      color: var(--sapTextColor, #32363a);
+      background: var(--code-bg);
+      color: var(--code-text);
+      border: none;
+      border-radius: 16px;
+      padding: 1.5rem;
+      font-family: var(--sapFontFamilyMono, monospace);
+      font-size: 0.9rem;
+      line-height: 1.6;
       resize: vertical;
-      margin-bottom: 0.75rem;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .query-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .query-actions { display: flex; gap: 1rem; }
 
-    .results-section { margin-top: 1rem; }
+    .results-section {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 28px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
 
-    .result-header {
+    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+
+    .table-wrapper { overflow-x: auto; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.05); }
+    .data-table { 
+      width: 100%; border-collapse: collapse; 
+      th { text-align: left; padding: 1rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
+      td { padding: 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(0, 0, 0, 0.03); }
+    }
+
+    .arch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+    .arch-card {
+      padding: 2rem;
+      background: var(--bg-primary);
+      border-radius: 24px;
+      border: 1px solid rgba(0, 0, 0, 0.03);
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.5rem;
+      flex-direction: column;
+      gap: 1rem;
+      transition: all 0.2s;
+
+      &:hover { background: #fff; transform: scale(1.02); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); }
     }
 
-    .table-wrapper { overflow-x: auto; }
+    .arch-icon { width: 3.5rem; height: 3.5rem; border-radius: 12px; background: rgba(var(--color-primary-rgb), 0.08); display: flex; align-items: center; justify-content: center; color: var(--color-primary); font-size: 1.5rem; }
+    .arch-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+    .arch-desc { font-size: 0.875rem; line-height: 1.5; color: var(--text-secondary); }
 
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8125rem;
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      overflow: hidden;
-
-      th {
-        padding: 0.5rem 0.75rem;
-        background: var(--sapList_HeaderBackground, #f5f5f5);
-        text-align: start;
-        font-weight: 600;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--sapContent_LabelColor, #6a6d70);
-        border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-      }
-
-      td {
-        padding: 0.4rem 0.75rem;
-        border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
-      }
-
-      tr:last-child td { border-bottom: none; }
+    .status-badge {
+      font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 999px;
+      &.status-success { background: rgba(var(--color-success-rgb), 0.1); color: var(--color-success); }
+      &.status-error { background: rgba(var(--color-error-rgb), 0.1); color: var(--color-error); }
     }
 
-    .mono { font-family: 'SFMono-Regular', Consolas, monospace; }
+    .section-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
+
+    .mono { font-family: var(--sapFontFamilyMono, monospace); }
+
+    .info-banner {
+      padding: 1rem 1.5rem; background: rgba(var(--color-primary-rgb), 0.05); color: var(--color-primary);
+      border-radius: 16px; font-size: 0.95rem; margin: 0 0 1.5rem; font-weight: 500;
+    }
 
     .error-banner {
-      padding: 0.75rem 1rem;
-      background: var(--sapErrorBackground, #ffebee);
-      color: var(--sapNegativeColor, #c62828);
-      border-radius: 0.25rem;
-      font-size: 0.875rem;
-      margin-top: 0.5rem;
+      padding: 1rem 1.5rem; background: rgba(var(--color-error-rgb), 0.05); color: var(--color-error);
+      border-radius: 16px; font-size: 0.95rem; margin-top: 1rem; font-weight: 500;
     }
-
-    .arch-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .arch-card {
-      background: var(--sapTile_Background, #fff);
-      border: 1px solid var(--sapTile_BorderColor, #e4e4e4);
-      border-radius: 0.5rem;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .arch-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
-    .arch-name { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
-    .arch-desc { font-size: 0.75rem; }
 
     @media (max-width: 768px) {
       .arch-grid { grid-template-columns: 1fr; }
@@ -368,6 +382,12 @@ export class HanaExplorerComponent implements OnInit, OnDestroy {
     this.sql = q;
   }
 
+  hanaNotice(reason?: 'credentials_missing' | 'reconnecting'): string {
+    return reason === 'credentials_missing'
+      ? this.i18n.t('hanaExplorer.previewCredentials')
+      : this.i18n.t('hanaExplorer.previewReconnect');
+  }
+
   runQuery(): void {
     if (!this.sql.trim()) return;
     this.querying.set(true);
@@ -380,7 +400,7 @@ export class HanaExplorerComponent implements OnInit, OnDestroy {
         next: (r: QueryResult) => {
           this.result.set(r);
           this.querying.set(false);
-          if (r.status === 'ok') {
+          if (r.status === 'ok' && r.mode !== 'preview') {
             this.toast.success(`Query returned ${r.count} row(s)`, 'Query Complete');
           }
         },

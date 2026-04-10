@@ -1,70 +1,148 @@
 .model-catalog {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 2.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    radial-gradient(circle at 0% 100%, rgba(0, 112, 242, 0.08), transparent 40rem),
+    var(--bg-primary);
 }
 
-.model-catalog__actions {
+.catalog-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.model-catalog__hint {
-  color: var(--sapContent_LabelColor);
-  font-size: 0.875rem;
-}
-
-.model-catalog__model-row {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 2rem;
 }
 
-.model-catalog__copy-btn {
-  opacity: 0.5;
-  &:hover { opacity: 1; }
+.catalog-header__eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+  display: block;
 }
 
-.model-catalog__snippets {
+.catalog-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.catalog-hint {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.catalog-card {
+  background: var(--liquid-glass-bg);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border-radius: 28px;
+  border: var(--liquid-glass-border);
+  box-shadow: var(--liquid-glass-shadow);
+  
+  &::part(content) {
+    background: transparent;
+  }
+}
+
+.catalog-card__body {
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
 }
 
-.snippet-card {
-  border: 1px solid var(--sapList_BorderColor, #e4e4e4);
-  border-radius: 0.5rem;
-  overflow: hidden;
+.catalog-card__body--snippets {
+  gap: 1.5rem;
+  padding: 2rem;
 }
 
-.snippet-header {
+.model-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.4rem 0.75rem;
-  background: var(--sapList_HeaderBackground, #f5f5f5);
-  border-bottom: 1px solid var(--sapList_BorderColor, #e4e4e4);
+  padding: 1rem 1.25rem;
+  background: var(--surface-secondary);
+  border-radius: 16px;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--liquid-glass-bg);
+    transform: translateX(4px);
+    border-color: rgba(var(--color-primary-rgb), 0.2);
+  }
 }
 
-.snippet-lang {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--sapContent_LabelColor, #6a6d70);
-  text-transform: uppercase;
+.model-row__info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.model-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.snippet-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.snippet-box__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+  }
 }
 
 .snippet-code {
   margin: 0;
-  padding: 0.75rem;
-  background: var(--sapShell_Background, #1e1e1e);
-  color: var(--sapShell_TextColor, #9cdcfe);
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 0.8rem;
-  white-space: pre-wrap;
-  word-break: break-all;
+  padding: 1.25rem;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: 16px;
+  font-family: var(--sapFontFamilyMono, monospace);
+  font-size: 0.8125rem;
+  line-height: 1.5;
   overflow-x: auto;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.copy-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100;
+}
+
+@media (max-width: 1200px) {
+  .catalog-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .catalog-header { flex-direction: column; align-items: flex-start; }
 }

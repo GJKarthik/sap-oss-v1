@@ -155,6 +155,21 @@ describe('ApiService', () => {
       const apiError = expectApiError(err);
       expect(apiError.detail).toBe('An unexpected error occurred.');
     }));
+
+    it('should use a HANA-specific fallback detail for transient gateway failures', fakeAsync(() => {
+      let err: ApiError | undefined;
+
+      service.get('/hana/query').subscribe({ error: (e) => (err = e) });
+
+      httpMock.expectOne('/api/hana/query').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      tick(500);
+      httpMock.expectOne('/api/hana/query').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      tick(1000);
+      httpMock.expectOne('/api/hana/query').flush(null, { status: 502, statusText: 'Bad Gateway' });
+
+      const apiError = expectApiError(err);
+      expect(apiError.detail).toContain('HANA Cloud is reconnecting');
+    }));
   });
 
   describe('retry behaviour', () => {

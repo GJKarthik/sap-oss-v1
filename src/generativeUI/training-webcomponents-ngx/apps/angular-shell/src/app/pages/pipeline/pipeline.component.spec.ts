@@ -6,6 +6,8 @@ import { provideZoneChangeDetection, signal } from '@angular/core';
 import { PipelineComponent } from './pipeline.component';
 import { ToastService } from '../../services/toast.service';
 import { AppStore } from '../../store/app.store';
+import { RealtimeConnectionService } from '../../services/realtime-connection.service';
+import { of } from 'rxjs';
 
 const MOCK_ENV_URL = 'http://localhost:8001';
 
@@ -36,6 +38,10 @@ describe('PipelineComponent', () => {
   let httpMock: HttpTestingController;
   let toastSpy: jest.Mocked<Pick<ToastService, 'success' | 'error'>>;
   let wsMock: ReturnType<typeof makeWsMock>;
+  const realtime = {
+    buildWebSocketUrl: jest.fn(() => 'ws://localhost:8001/ws/pipeline'),
+    probeApiHealth: jest.fn(() => of(true)),
+  };
   const pipelineState = signal<'idle' | 'running' | 'completed' | 'error'>('idle');
   const appStore = {
     pipelineState,
@@ -47,6 +53,8 @@ describe('PipelineComponent', () => {
     wsMock = makeWsMock();
     pipelineState.set('idle');
     appStore.setPipelineState.mockClear();
+    realtime.buildWebSocketUrl.mockClear();
+    realtime.probeApiHealth.mockClear();
 
     jest.spyOn(global, 'WebSocket').mockImplementation(() => wsMock as unknown as WebSocket);
     jest.spyOn(global, 'setTimeout').mockImplementation((fn: TimerHandler) => { (fn as () => void)(); return 0 as unknown as ReturnType<typeof setTimeout>; });
@@ -59,6 +67,7 @@ describe('PipelineComponent', () => {
         provideZoneChangeDetection({ eventCoalescing: true }),
         { provide: ToastService, useValue: toastSpy },
         { provide: AppStore, useValue: appStore },
+        { provide: RealtimeConnectionService, useValue: realtime },
       ],
     }).compileComponents();
 
@@ -95,6 +104,8 @@ describe('PipelineComponent', () => {
   // ── WebSocket connectivity ───────────────────────────────────────────────────
 
   it('should mark wsConnected=true on WebSocket open', () => {
+    expect(realtime.probeApiHealth).toHaveBeenCalled();
+    expect(realtime.buildWebSocketUrl).toHaveBeenCalledWith('/ws/pipeline');
     wsMock.onopen?.(new Event('open'));
     expect(component.wsConnected()).toBe(true);
   });

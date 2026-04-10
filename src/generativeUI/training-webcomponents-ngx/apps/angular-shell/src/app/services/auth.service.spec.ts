@@ -77,5 +77,73 @@ describe('AuthService', () => {
       service.setToken('valid-token');
       expect(service.isAuthenticated).toBe(true);
     });
+
+    it('should return true for edge auth even when no local token exists', () => {
+      window.__TRAINING_CONFIG__ = { requireAuth: true, authMode: 'edge' };
+      expect(service.isAuthenticated).toBe(true);
+    });
+  });
+
+  describe('authMode helpers', () => {
+    it('should derive token mode from requireAuth when authMode is omitted', () => {
+      window.__TRAINING_CONFIG__ = { requireAuth: true };
+      expect(service.authMode).toBe('token');
+    });
+
+    it('should not attach bearer headers in edge mode', () => {
+      window.__TRAINING_CONFIG__ = { requireAuth: true, authMode: 'edge' };
+      service.setToken('stale-token');
+      expect(service.shouldAttachBearer()).toBe(false);
+    });
+
+    it('should expose runtime login and logout urls', () => {
+      window.__TRAINING_CONFIG__ = {
+        authMode: 'edge',
+        loginUrl: '/oauth2/start?rd=%2F',
+        logoutUrl: '/oauth2/sign_out',
+      };
+      expect(service.loginUrl).toBe('/oauth2/start?rd=%2F');
+      expect(service.logoutUrl).toBe('/oauth2/sign_out');
+    });
+
+    it('prefers a resolved edge identity over token parsing', () => {
+      service.setResolvedIdentity({
+        userId: 'btp.user@example.com',
+        displayName: 'SAP Operator',
+        authenticated: true,
+        authSource: 'edge_header',
+      });
+
+      expect(service.getUserId()).toBe('btp.user@example.com');
+    });
+  });
+
+  describe('logout', () => {
+    it('should navigate to login in token mode', () => {
+      const router = { navigate: jest.fn() } as any;
+      window.__TRAINING_CONFIG__ = { requireAuth: true, authMode: 'token' };
+      service.setToken('valid-token');
+
+      service.logout(router);
+
+      expect(service.token()).toBeNull();
+      expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    });
+
+    it('should redirect to the edge logout url in edge mode', () => {
+      const router = { navigate: jest.fn() } as any;
+      const redirectTo = jest.spyOn(service as any, 'redirectTo').mockImplementation(() => undefined);
+      window.__TRAINING_CONFIG__ = {
+        requireAuth: true,
+        authMode: 'edge',
+        logoutUrl: '/oauth2/sign_out',
+      };
+
+      service.logout(router);
+
+      expect(redirectTo).toHaveBeenCalledWith('/oauth2/sign_out');
+      expect(router.navigate).not.toHaveBeenCalled();
+      redirectTo.mockRestore();
+    });
   });
 });

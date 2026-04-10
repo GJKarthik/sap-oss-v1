@@ -49,24 +49,16 @@
           <div class="collab-empty">{{ 'COLLAB_NO_PARTICIPANTS' | ui5I18n }}</div>
         }
         <div class="collab-participants">
-          @for (p of participants; track p.userId) {
-          <div class="collab-participant">
-            <span
-              [style.background]="p.color"
-              class="collab-participant__avatar"
-              role="img"
-              [attr.aria-label]="p.displayName">
-              {{ p.displayName.charAt(0).toUpperCase() }}
-            </span>
-            <div>
-              <div class="collab-participant__name">{{ p.displayName }}</div>
-              <div class="collab-participant__meta">
-                {{ p.status }}
-                @if (p.location) { · {{ p.location }} }
-              </div>
-            </div>
-          </div>
-          }
+          <ui5-avatar-group type="Individual">
+            @for (p of participants; track p.userId) {
+              <ui5-avatar 
+                [initials]="p.displayName.charAt(0).toUpperCase()" 
+                [style.background]="p.color"
+                interactive
+                [attr.aria-label]="p.displayName">
+              </ui5-avatar>
+            }
+          </ui5-avatar-group>
         </div>
       </div>
     </ui5-card>

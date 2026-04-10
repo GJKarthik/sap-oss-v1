@@ -1,6 +1,8 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, effect, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './components/toast/toast.component';
+import { WorkspaceService } from './services/workspace.service';
+import { normalizeWorkspaceTheme } from './services/workspace.types';
 
 @Component({
   selector: 'app-root',
@@ -13,4 +15,13 @@ import { ToastComponent } from './components/toast/toast.component';
     <app-toast />
   `,
 })
-export class AppComponent {}
+export class AppComponent {
+  private readonly workspace = inject(WorkspaceService);
+
+  constructor() {
+    effect(() => {
+      const theme = normalizeWorkspaceTheme(this.workspace.settings().theme);
+      document.documentElement.setAttribute('data-sap-theme', theme);
+    });
+  }
+}

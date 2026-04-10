@@ -20,18 +20,20 @@ import { I18nService } from '../../services/i18n.service';
         </div>
 
         <form class="login-form" (ngSubmit)="submit()" aria-label="Login form">
-          <div class="field-group">
-            <label class="field-label" for="apiKey">{{ i18n.t('login.apiKey') }} <span class="text-muted">{{ i18n.t('login.optional') }}</span></label>
-            <input
-              id="apiKey"
-              type="password"
-              class="login-input"
-              [(ngModel)]="apiKey"
-              name="apiKey"
-              [placeholder]="i18n.t('login.placeholder')"
-              autocomplete="current-password"
-            />
-          </div>
+          @if (authMode !== 'edge') {
+            <div class="field-group">
+              <label class="field-label" for="apiKey">{{ i18n.t('login.apiKey') }} <span class="text-muted">{{ i18n.t('login.optional') }}</span></label>
+              <input
+                id="apiKey"
+                type="password"
+                class="login-input"
+                [(ngModel)]="apiKey"
+                name="apiKey"
+                [placeholder]="i18n.t('login.placeholder')"
+                autocomplete="current-password"
+              />
+            </div>
+          }
 
           <ui5-button design="Emphasized" (click)="submit()" style="width: 100%;">{{ i18n.t('login.submit') }}</ui5-button>
         </form>
@@ -128,7 +130,18 @@ export class LoginComponent {
   private readonly router = inject(Router);
   apiKey = '';
 
+  readonly authMode = this.auth.authMode;
+  readonly loginUrl = this.auth.loginUrl;
+
   submit(): void {
+    if (this.authMode === 'edge') {
+      if (this.loginUrl) {
+        window.location.assign(this.loginUrl);
+        return;
+      }
+      this.router.navigate(['/dashboard']);
+      return;
+    }
     if (this.apiKey.trim()) {
       this.auth.setToken(this.apiKey.trim());
     }

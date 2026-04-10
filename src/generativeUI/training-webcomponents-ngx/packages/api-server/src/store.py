@@ -49,6 +49,17 @@ class TranslationMemoryRecord(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
+class WorkspaceSettingsRecord(Base):
+    __tablename__ = "workspace_settings"
+    owner_id = Column(String, primary_key=True, index=True)
+    settings = Column(JSON, default=dict)
+    identity_email = Column(String, nullable=True)
+    identity_display_name = Column(String, nullable=True)
+    auth_source = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Store:
     def __init__(self):
         self.SessionLocal = SessionLocal

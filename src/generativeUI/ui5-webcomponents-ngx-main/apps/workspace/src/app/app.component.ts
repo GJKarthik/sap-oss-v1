@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect, signal, computed, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { LearnPathService } from './core/learn-path.service';
 import { I18nService } from '@ui5/webcomponents-ngx/i18n';
 import { WorkspaceService } from './core/workspace.service';
-import { NavLinkDatum } from './core/workspace.types';
+import { NavLinkDatum, normalizeWorkspaceTheme } from './core/workspace.types';
 import { ProductNavigationService, ProductAppId } from './core/product-navigation.service';
+import { QuickAccessService } from './core/quick-access.service';
 
 @Component({
     selector: 'ui-angular-root',
@@ -25,8 +26,25 @@ export class AppComponent implements OnInit, OnDestroy {
   learnPathDismissed = false;
   learnPathStepLabel = '';
   learnPathProgress = '';
+  readonly currentPath = signal('/');
+  readonly searchQuery = signal('');
+  readonly currentPagePinned = computed(() => this.quickAccess.isPinned(this.currentPath()));
+  readonly canPinCurrentPage = computed(() => this.quickAccess.canPin(this.currentPath()));
+  readonly pinnedQuickAccess = computed(() =>
+    this.quickAccess.pinnedEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 4),
+  );
+  readonly recentQuickAccess = computed(() =>
+    this.quickAccess.recentEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 4),
+  );
+  readonly suggestedQuickAccess = computed(() =>
+    this.quickAccess.suggestedEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 5),
+  );
+  readonly searchQuickAccess = computed(() => this.quickAccess.search(this.searchQuery()));
 
   @ViewChild('productPopover') productPopover!: ElementRef<any>;
+  @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
+  @ViewChild('searchDialog') searchDialog!: ElementRef<any>;
+  @ViewChild('searchInput') searchInput!: ElementRef<any>;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -36,13 +54,15 @@ export class AppComponent implements OnInit, OnDestroy {
     private i18nService: I18nService,
     private workspaceService: WorkspaceService,
     private productNavigation: ProductNavigationService,
-  ) {
+    private quickAccess: QuickAccessService,
+    ) {
     effect(() => {
       const settings = this.workspaceService.settings();
-      if (settings.theme && settings.theme !== this.currentTheme) {
-        this.currentTheme = settings.theme;
-        this.applyTheme(settings.theme);
-        localStorage.setItem('ui5-theme', settings.theme);
+      const theme = normalizeWorkspaceTheme(settings.theme);
+      if (theme !== this.currentTheme) {
+        this.currentTheme = theme;
+        this.applyTheme(theme);
+        localStorage.setItem('ui5-theme', theme);
       }
 
       if (
@@ -65,9 +85,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.currentTheme = this.workspaceService.settings().theme || 'sap_horizon';
+    this.currentTheme = normalizeWorkspaceTheme(this.workspaceService.settings().theme);
     this.applyTheme(this.currentTheme);
     this.learnPathDismissed = localStorage.getItem('learn-path-dismissed') === 'true';
+    this.currentPath.set(this.normalizePath(this.router.url));
+    this.quickAccess.recordVisit(this.router.url);
 
     const savedLanguage = this.workspaceService.settings().language || localStorage.getItem('ui5-language');
     const language = savedLanguage && this.SUPPORTED_LANGS.includes(savedLanguage) ? savedLanguage : 'en';
@@ -80,6 +102,8 @@ export class AppComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe((event) => {
+        this.currentPath.set(this.normalizePath(event.urlAfterRedirects));
+        this.quickAccess.recordVisit(event.urlAfterRedirects);
         this.learnPath.syncWithUrl(event.urlAfterRedirects);
         this.updateLearnPathBanner();
       });
@@ -110,12 +134,51 @@ export class AppComponent implements OnInit, OnDestroy {
     this.router.navigate([path]);
   }
 
+  toggleSearch(): void {
+    const dialog = this.searchDialog.nativeElement;
+    if (dialog.open) {
+      dialog.close();
+      return;
+    }
+
+    this.searchQuery.set('');
+    dialog.show();
+    setTimeout(() => this.searchInput.nativeElement.focus(), 100);
+  }
+
+  onSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    this.searchQuery.set(input?.value ?? '');
+  }
+
+  jumpTo(path: string): void {
+    this.searchDialog.nativeElement.close();
+    void this.router.navigate([path]);
+  }
+
+  toggleCurrentPagePin(): void {
+    this.quickAccess.togglePinned(this.currentPath());
+  }
+
+  togglePinned(path: string, event: Event): void {
+    event.stopPropagation();
+    this.quickAccess.togglePinned(path);
+  }
+
+  isPinned(path: string): boolean {
+    return this.quickAccess.isPinned(path);
+  }
+
   openLanding(): void {
     this.productNavigation.navigateToLanding();
   }
 
   openProducts(event: any): void {
     this.productPopover.nativeElement.showAt(event.detail.targetRef);
+  }
+
+  openProfile(event: any): void {
+    this.profilePopover.nativeElement.showAt(event.detail.targetRef);
   }
 
   onProductSelect(event: any): void {
@@ -125,16 +188,13 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  onMenuItemClick(event: Event): void {
-    const detail = (event as CustomEvent).detail;
-    const path = detail?.item?.getAttribute?.('data-path');
-    if (path) {
-      this.router.navigate([path]);
-    }
+  onSignOut(): void {
+    console.log('Signing out...');
+    this.profilePopover.nativeElement.close();
   }
 
   onThemeChange(event: Event): void {
-    const theme = (event as CustomEvent).detail?.selectedOption?.value;
+    const theme = normalizeWorkspaceTheme((event as CustomEvent).detail?.selectedOption?.value);
     if (theme) {
       this.currentTheme = theme;
       this.applyTheme(theme);
@@ -191,6 +251,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      this.toggleSearch();
+    }
+  }
+
   private applyLanguage(language: string): void {
     this.currentLanguage = language;
     const ui5Language = this.UI5_LANGUAGE_MAP[language] || 'en';
@@ -200,7 +268,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private applyTheme(theme: string): void {
-    document.documentElement.setAttribute('data-sap-theme', theme);
+    const normalizedTheme = normalizeWorkspaceTheme(theme);
+    document.documentElement.setAttribute('data-sap-theme', normalizedTheme);
   }
 
   private updateLearnPathBanner(): void {
@@ -215,5 +284,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.learnPathStepLabel = step.label;
     this.learnPathProgress = `${this.learnPath.currentIndex + 1}/${this.learnPath.steps.length}`;
+  }
+
+  private normalizePath(path: string): string {
+    const normalized = path.split('?')[0].split('#')[0].trim();
+    if (!normalized) {
+      return '/';
+    }
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
   }
 }

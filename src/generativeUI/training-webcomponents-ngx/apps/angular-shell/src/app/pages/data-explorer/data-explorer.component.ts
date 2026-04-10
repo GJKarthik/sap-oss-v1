@@ -268,7 +268,7 @@ interface SqlPair {
     .pair-id { font-family: monospace; }
     .pair-question { margin: 0.75rem 1rem 0.5rem; font-size: 0.875rem; color: var(--sapTextColor, #333); font-weight: 500; }
     .pair-sql {
-      margin: 0; padding: 0.75rem 1rem; background: var(--sapShell_Background, #1e1e1e); color: var(--sapShell_TextColor, #9cdcfe); font-size: 0.8rem;
+      margin: 0; padding: 0.75rem 1rem; background: var(--sapShell_Background, var(--code-bg)); color: var(--sapShell_TextColor, var(--code-text)); font-size: 0.8rem;
       font-family: 'SFMono-Regular', Consolas, monospace; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
     }
   `],

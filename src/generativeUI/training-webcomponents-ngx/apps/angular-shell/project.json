@@ -48,6 +48,10 @@
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
+      "options": {
+        "host": "0.0.0.0",
+        "proxyConfig": "apps/angular-shell/proxy.conf.json"
+      },
       "configurations": {
         "production": {
           "buildTarget": "angular-shell:build:production"
@@ -56,10 +60,7 @@
           "buildTarget": "angular-shell:build:development"
         }
       },
-      "defaultConfiguration": "development",
-      "options": {
-        "proxyConfig": "apps/angular-shell/proxy.conf.json"
-      }
+      "defaultConfiguration": "development"
     },
     "test": {
       "executor": "@nx/jest:jest",

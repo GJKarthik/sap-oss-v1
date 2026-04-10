@@ -8,7 +8,7 @@
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "uvicorn src.main:app --reload --port 8000",
+        "command": "uvicorn src.main:app --reload --port 8004",
         "cwd": "packages/api-server"
       }
     }

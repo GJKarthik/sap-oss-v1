@@ -4,9 +4,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { take } from 'rxjs/operators';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { environment } from '../../../environments/environment';
+import { RealtimeConnectionService } from '../../services/realtime-connection.service';
 
 interface JobResponse {
   id: string;
@@ -138,6 +139,7 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly zone = inject(NgZone);
+  private readonly realtime = inject(RealtimeConnectionService);
 
   readonly wsConnected = signal(false);
   readonly liveStatus = signal<string>('pending');
@@ -155,6 +157,8 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private ws: WebSocket | null = null;
   private reconnect: ReturnType<typeof setTimeout> | null = null;
+  private heartbeat: ReturnType<typeof setInterval> | null = null;
+  private destroyed = false;
   // Loss data: [step, loss]
   private lossPoints: [number, number][] = [];
 
@@ -171,17 +175,40 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
     this.ws?.close();
     if (this.reconnect) clearTimeout(this.reconnect);
+    if (this.heartbeat) clearInterval(this.heartbeat);
   }
 
   private connect() {
-    const wsBase = environment.apiBaseUrl.startsWith('http')
-      ? environment.apiBaseUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
-      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
-    this.ws = new WebSocket(`${wsBase}/ws/jobs/${this.job.id}`);
+    if (this.destroyed) {
+      return;
+    }
 
-    this.ws.onopen = () => this.zone.run(() => this.wsConnected.set(true));
+    this.realtime.probeApiHealth().pipe(take(1)).subscribe((ready) => {
+      if (!ready) {
+        this.zone.run(() => this.wsConnected.set(false));
+        this.scheduleReconnect();
+        return;
+      }
+
+      this.openSocket();
+    });
+  }
+
+  private openSocket(): void {
+    try {
+      this.ws = new WebSocket(this.realtime.buildWebSocketUrl(`/ws/jobs/${this.job.id}`));
+    } catch {
+      this.scheduleReconnect();
+      return;
+    }
+
+    this.ws.onopen = () => this.zone.run(() => {
+      this.wsConnected.set(true);
+      this.startHeartbeat();
+    });
 
     this.ws.onmessage = (ev: MessageEvent) => this.zone.run(() => {
       try {
@@ -191,18 +218,45 @@ export class JobDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.ws.onclose = () => {
+      this.stopHeartbeat();
       this.zone.run(() => this.wsConnected.set(false));
-      if (['running', 'pending'].includes(this.liveStatus())) {
-        this.reconnect = setTimeout(() => this.connect(), 3000);
-      }
+      this.scheduleReconnect();
     };
 
-    this.ws.onerror = () => this.ws?.close();
+    this.ws.onerror = () => {
+      this.stopHeartbeat();
+      this.ws?.close();
+    };
+  }
 
-    // Heartbeat
-    setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) this.ws.send('ping');
+  private scheduleReconnect(): void {
+    if (this.destroyed || this.reconnect || !['running', 'pending'].includes(this.liveStatus())) {
+      return;
+    }
+
+    this.reconnect = setTimeout(() => {
+      this.reconnect = null;
+      this.connect();
+    }, 3000);
+  }
+
+  private startHeartbeat(): void {
+    if (this.heartbeat) {
+      clearInterval(this.heartbeat);
+    }
+
+    this.heartbeat = setInterval(() => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send('ping');
+      }
     }, 25000);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeat) {
+      clearInterval(this.heartbeat);
+      this.heartbeat = null;
+    }
   }
 
   private handleMsg(msg: Record<string, unknown>) {

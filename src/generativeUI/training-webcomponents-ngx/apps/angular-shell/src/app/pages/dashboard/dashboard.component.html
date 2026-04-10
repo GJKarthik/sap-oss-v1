@@ -1,0 +1,235 @@
+<div class="dashboard-shell" [attr.aria-busy]="store.isDashboardLoading()">
+  <header class="dashboard-hero slideUp">
+    <div class="dashboard-hero__copy">
+      <span class="dashboard-hero__eyebrow">{{ i18n.t('dashboard.heroBadge') }}</span>
+      <ui5-title level="H1">{{ i18n.t('dashboard.heroTitle') }}</ui5-title>
+      <p class="dashboard-hero__body">{{ i18n.t('dashboard.heroBody') }}</p>
+      <p class="dashboard-hero__narrative" role="status" aria-live="polite">{{ i18n.t(store.platformNarrative()) }}</p>
+
+      <div class="dashboard-hero__hub-dock" role="navigation" aria-label="Primary hubs">
+        @for (hub of hubCards(); track hub.id) {
+          <button type="button" class="hub-dock-item" (click)="navigateToRoute(hub.path)">
+            <span class="hub-dock-item__icon"><ui5-icon [name]="hub.icon"></ui5-icon></span>
+            <span class="hub-dock-item__copy">
+              <strong>{{ i18n.t(groupLabelKey(hub.id)) }}</strong>
+              <span>{{ i18n.t(hub.bodyKey) }}</span>
+            </span>
+          </button>
+        }
+      </div>
+
+      <div class="dashboard-hero__actions">
+        <ui5-button design="Emphasized" icon="process" (click)="navigateToRoute('/pipeline')">
+          {{ i18n.t('dashboard.heroPrimaryCta') }}
+        </ui5-button>
+        <ui5-button design="Transparent" icon="folder" (click)="navigateToRoute('/data-explorer')">
+          {{ i18n.t('dashboard.heroDataCta') }}
+        </ui5-button>
+      </div>
+    </div>
+
+    <div class="dashboard-hero__metrics">
+      <article class="hero-metric">
+        <span class="hero-metric__label">{{ i18n.t('dashboard.platformHealth') }}</span>
+        <div class="hero-metric__value-row">
+          <strong>{{ store.health().data?.status ?? '—' }}</strong>
+          <ui5-tag [design]="store.healthBadge()" color-scheme="6">{{ i18n.t('dashboard.coreService') }}</ui5-tag>
+        </div>
+        <div class="hero-metric__chips">
+          <span class="status-chip" [class.status-chip--active]="getDepStatus('hana_vector') === 'healthy'">HANA</span>
+          <span class="status-chip" [class.status-chip--active]="getDepStatus('vllm_turboquant') === 'healthy'">vLLM</span>
+          <span class="status-chip" [class.status-chip--active]="getDepStatus('database') === 'healthy'">API</span>
+        </div>
+      </article>
+
+      <article class="hero-metric">
+        <span class="hero-metric__label">{{ i18n.t('dashboard.computeStatus') }}</span>
+        <div class="hero-metric__value-row">
+          <strong>{{ store.gpuUtilization() }}%</strong>
+          <span>{{ i18n.t('dashboard.vramUsage') }}</span>
+        </div>
+        <ui5-progress-indicator [value]="store.gpuUtilization()" design="Information"></ui5-progress-indicator>
+      </article>
+
+      <article class="hero-metric">
+        <span class="hero-metric__label">{{ i18n.t('dashboard.trainingPairs') }}</span>
+        <div class="hero-metric__value-row">
+          <strong>{{ store.trainingPairCount() | localeNumber }}</strong>
+          <span>{{ i18n.t('dashboard.hanaActive') }}</span>
+        </div>
+        <p class="hero-metric__detail">{{ i18n.t('dashboard.heroPairsDetail') }}</p>
+      </article>
+    </div>
+  </header>
+
+  <section class="dashboard-toolbar fadeIn">
+    <div class="dashboard-toolbar__copy">
+      <ui5-title level="H4">{{ i18n.t('dashboard.widgetControlTitle') }}</ui5-title>
+      <p>{{ i18n.t('dashboard.widgetControlBody') }}</p>
+    </div>
+
+    <div class="dashboard-toolbar__actions">
+      <ui5-button design="Transparent" icon="action-settings" (click)="openLayoutDialog()">
+        {{ i18n.t('dashboard.customize') }}
+      </ui5-button>
+      <ui5-button design="Transparent" icon="refresh" (click)="refresh()" [disabled]="store.isDashboardLoading()">
+        {{ store.isDashboardLoading() ? i18n.t('dashboard.refreshing') : i18n.t('dashboard.refresh') }}
+      </ui5-button>
+    </div>
+  </section>
+
+  <div class="dashboard-grid fadeIn">
+    @for (widgetId of visibleWidgets(); track widgetId; let i = $index) {
+      <ui5-card 
+        class="dashboard-widget-card fadeIn" 
+        [class.dashboard-widget-card--wide]="widgetId === 'hubMap' || widgetId === 'productFamily'"
+        [style.--stagger]="i * 0.1 + 's'">
+        <ui5-card-header slot="header" [attr.title-text]="i18n.t(widgetTitleKey(widgetId))"></ui5-card-header>
+        
+        <div class="widget-body">
+          @switch (widgetId) {
+            @case ('hubMap') {
+              <div class="hub-grid">
+                @for (hub of hubCards(); track hub.id) {
+                  <button type="button" class="hub-card" (click)="navigateToRoute(hub.path)">
+                    <span class="hub-card__icon"><ui5-icon [name]="hub.icon"></ui5-icon></span>
+                    <div class="hub-card__copy">
+                      <span class="hub-card__eyebrow">{{ i18n.t(groupLabelKey(hub.id)) }}</span>
+                      <p class="hub-card__body">{{ i18n.t(hub.bodyKey) }}</p>
+                    </div>
+                    <ui5-icon name="navigation-right-arrow"></ui5-icon>
+                  </button>
+                }
+              </div>
+            }
+
+            @case ('priorityActions') {
+              <div class="action-list">
+                @for (entry of priorityActions(); track entry.path) {
+                  <button type="button" class="action-card" (click)="navigateToRoute(entry.path)">
+                    <span class="action-card__icon"><ui5-icon [name]="entry.icon"></ui5-icon></span>
+                    <div class="action-card__copy">
+                      <strong>{{ i18n.t(entry.labelKey) }}</strong>
+                      <p>{{ i18n.t(getActionDescription(entry)) }}</p>
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+
+            @case ('quickAccess') {
+              <div class="list-stack">
+                @if (quickAccessEntries().length > 0) {
+                  @for (entry of quickAccessEntries(); track entry.path) {
+                    <button type="button" class="list-card" (click)="navigateToRoute(entry.path)">
+                      <span class="list-card__icon"><ui5-icon [name]="entry.icon"></ui5-icon></span>
+                      <div class="list-card__copy">
+                        <span class="list-card__eyebrow">{{ i18n.t(groupLabelKey(entry.group)) }}</span>
+                        <strong>{{ i18n.t(entry.labelKey) }}</strong>
+                      </div>
+                      <ui5-icon [name]="navigationAssistant.isPinned(entry.path) ? 'favorite' : 'navigation-right-arrow'"></ui5-icon>
+                    </button>
+                  }
+                } @else {
+                  <div class="empty-panel">
+                    <p>{{ i18n.t('dashboard.noQuickAccess') }}</p>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('liveSignals') {
+              <div class="signal-grid">
+                <article class="signal-card">
+                  <span>{{ i18n.t('dashboard.platformHealth') }}</span>
+                  <strong>{{ store.health().data?.status ?? '—' }}</strong>
+                  <p>{{ i18n.t(store.platformNarrative()) }}</p>
+                </article>
+                <article class="signal-card">
+                  <span>{{ i18n.t('dashboard.computeStatus') }}</span>
+                  <strong>{{ store.gpuUtilization() }}%</strong>
+                  <p>{{ i18n.t('dashboard.heroComputeDetail') }}</p>
+                </article>
+                <article class="signal-card">
+                  <span>{{ i18n.t('dashboard.trainingPairs') }}</span>
+                  <strong>{{ store.trainingPairCount() | localeNumber }}</strong>
+                  <p>{{ i18n.t('dashboard.insightsPrefix') }} {{ store.trainingPairCount() | localeNumber }} {{ i18n.t('dashboard.insightsSuffix') }}</p>
+                </article>
+              </div>
+            }
+
+            @case ('productFamily') {
+              <div class="product-grid">
+                @for (card of productCards(); track card.appId) {
+                  <button type="button" class="product-card" (click)="launchProduct(card)">
+                    <span class="product-card__icon"><ui5-icon [name]="card.icon"></ui5-icon></span>
+                    <div class="product-card__copy">
+                      <span class="product-card__eyebrow">{{ i18n.t(card.titleKey) }}</span>
+                      <p>{{ i18n.t(card.bodyKey) }}</p>
+                    </div>
+                    <ui5-icon name="navigation-right-arrow"></ui5-icon>
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+      </ui5-card>
+    }
+
+    <!-- Launch Readiness Calendar Card -->
+    <ui5-card class="dashboard-widget-card dashboard-widget-card--wide fadeIn" style="--stagger: 0.5s">
+      <ui5-card-header slot="header" title-text="Launch Readiness" subtitle-text="Milestone tracking and deployment windows"></ui5-card-header>
+      <div class="widget-body widget-body--calendar">
+        <div class="calendar-layout">
+          <ui5-calendar class="readiness-calendar"></ui5-calendar>
+          <div class="milestone-list">
+            @for (m of milestones; track m.title) {
+              <div class="milestone-item">
+                <span class="milestone-dot milestone-dot--{{ m.status }}"></span>
+                <div class="milestone-copy">
+                  <strong>{{ m.title }}</strong>
+                  <span>{{ m.subtitle }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </ui5-card>
+  </div>
+
+  <ui5-dialog #layoutDialog [attr.header-text]="i18n.t('dashboard.customizeTitle')">
+    <div class="layout-dialog">
+      @for (widgetId of widgetIds; track widgetId) {
+        <div class="layout-row">
+          <div class="layout-row__copy">
+            <strong>{{ i18n.t(widgetTitleKey(widgetId)) }}</strong>
+            <span>{{ isWidgetVisible(widgetId) ? i18n.t('workspace.visible') : i18n.t('common.hidden') }}</span>
+          </div>
+          <div class="layout-row__actions">
+            <ui5-button
+              design="Transparent"
+              [icon]="isWidgetVisible(widgetId) ? 'decline' : 'accept'"
+              (click)="toggleWidget(widgetId)">
+            </ui5-button>
+            <ui5-button
+              design="Transparent"
+              icon="slim-arrow-up"
+              (click)="moveWidget(widgetId, 'up')">
+            </ui5-button>
+            <ui5-button
+              design="Transparent"
+              icon="slim-arrow-down"
+              (click)="moveWidget(widgetId, 'down')">
+            </ui5-button>
+          </div>
+        </div>
+      }
+    </div>
+    <div slot="footer" class="layout-dialog__footer">
+      <ui5-button design="Transparent" (click)="resetLayout()">{{ i18n.t('dashboard.resetLayout') }}</ui5-button>
+      <ui5-button design="Emphasized" (click)="closeLayoutDialog()">{{ i18n.t('common.close') }}</ui5-button>
+    </div>
+  </ui5-dialog>
+</div>
