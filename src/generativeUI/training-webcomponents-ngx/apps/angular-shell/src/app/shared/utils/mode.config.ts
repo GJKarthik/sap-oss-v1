@@ -9,10 +9,10 @@ export const MODE_CONFIG: Record<AppMode, ModeConfig> = {
     systemPromptPrefix: 'You are a helpful SAP AI assistant. Answer questions, explain concepts, and guide the user.',
     confirmationLevel: 'always',
     groupRelevance: {
-      home: 1.0,
       assist: 1.0,
       data: 0.6,
-      operations: 0.4,
+      content: 0.5,
+      mlops: 0.4,
     },
   },
   cowork: {
@@ -23,10 +23,10 @@ export const MODE_CONFIG: Record<AppMode, ModeConfig> = {
     systemPromptPrefix: 'You are a collaborative AI partner. Propose actionable plans, await approval before executing. Show your reasoning.',
     confirmationLevel: 'destructive-only',
     groupRelevance: {
-      home: 0.8,
       assist: 0.8,
       data: 1.0,
-      operations: 1.0,
+      mlops: 1.0,
+      content: 0.8,
     },
   },
   training: {
@@ -37,10 +37,10 @@ export const MODE_CONFIG: Record<AppMode, ModeConfig> = {
     systemPromptPrefix: 'You are an autonomous pipeline executor. Run tasks end-to-end, report results. Minimize interruptions.',
     confirmationLevel: 'never',
     groupRelevance: {
-      home: 0.4,
       assist: 0.6,
       data: 0.8,
-      operations: 1.0,
+      mlops: 1.0,
+      content: 0.7,
     },
   },
 };

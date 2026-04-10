@@ -19,6 +19,7 @@ import { AppStore } from '../../store/app.store';
 import { I18nService, Language } from '../../services/i18n.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import {
+  DASHBOARD_ROUTE,
   TRAINING_NAV_GROUPS,
   TRAINING_ROUTE_LINKS,
   TrainingRouteGroupId,
@@ -129,6 +130,14 @@ import { getRouteRelevance } from '../../shared/utils/mode.helpers';
         <ui5-side-navigation
           slot="sideContent"
           (ui5SelectionChange)="onSideNavSelect($event)">
+
+          <!-- Pinned Dashboard — standalone top-level item -->
+          <ui5-side-navigation-item
+            [text]="i18n.t(dashboardRoute.labelKey)"
+            [icon]="dashboardRoute.icon"
+            [selected]="isRouteActive(dashboardRoute.path)"
+            [attr.data-path]="dashboardRoute.path">
+          </ui5-side-navigation-item>
 
           @for (group of navGroups(); track group.id) {
             <ui5-side-navigation-group
@@ -376,7 +385,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     return token ? token.substring(0, 24) + '…' : this.i18n.t('app.subtitle');
   });
 
-  readonly activeGroupId = signal<TrainingRouteGroupId>('home');
+  readonly dashboardRoute = DASHBOARD_ROUTE;
+  readonly activeGroupId = signal<TrainingRouteGroupId>('data');
   readonly currentPath = signal('/dashboard');
   readonly showSearch = signal(false);
   readonly searchQuery = signal('');
@@ -451,8 +461,8 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   groupLabelKey(group: TrainingRouteGroupId): string {
     const keys: Record<TrainingRouteGroupId, string> = {
-      home: 'navGroup.home', data: 'navGroup.data',
-      assist: 'navGroup.assist', operations: 'navGroup.operations',
+      data: 'navGroup.data', assist: 'navGroup.assist',
+      mlops: 'navGroup.mlops', content: 'navGroup.content',
     };
     return keys[group];
   }

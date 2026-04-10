@@ -1091,8 +1091,8 @@
   "glossary.pairTypeTranslation": "Traduction",
   "glossary.pairTypeAlias": "Alias",
   "glossary.pairTypeDbField": "Champ BD",
-  "navGroup.home": "Vue d'ensemble",
   "navGroup.data": "Preparer les donnees",
   "navGroup.assist": "Questionner et analyser",
-  "navGroup.operations": "Executer et optimiser"
+  "navGroup.mlops": "Pipelines & MLOps",
+  "navGroup.content": "Langue & Contenu"
 }

@@ -1091,8 +1091,8 @@
   "glossary.pairTypeTranslation": "翻译",
   "glossary.pairTypeAlias": "别名",
   "glossary.pairTypeDbField": "数据库字段",
-  "navGroup.home": "概览",
   "navGroup.data": "准备数据",
   "navGroup.assist": "提问与分析",
-  "navGroup.operations": "运行与优化"
+  "navGroup.mlops": "管道与MLOps",
+  "navGroup.content": "语言与内容"
 }

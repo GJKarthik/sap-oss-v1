@@ -70,16 +70,16 @@ describe('mode.helpers', () => {
 
   // ── getGroupRelevance ──
 
-  it('chat mode highlights home and assist groups', () => {
-    expect(getGroupRelevance('chat', 'home')).toBe(1.0);
+  it('chat mode highlights assist group, dims mlops', () => {
     expect(getGroupRelevance('chat', 'assist')).toBe(1.0);
-    expect(getGroupRelevance('chat', 'operations')).toBe(0.4);
+    expect(getGroupRelevance('chat', 'content')).toBe(0.5);
+    expect(getGroupRelevance('chat', 'mlops')).toBe(0.4);
   });
 
-  it('training mode highlights operations and data groups', () => {
-    expect(getGroupRelevance('training', 'operations')).toBe(1.0);
+  it('training mode highlights mlops and data groups', () => {
+    expect(getGroupRelevance('training', 'mlops')).toBe(1.0);
     expect(getGroupRelevance('training', 'data')).toBe(0.8);
-    expect(getGroupRelevance('training', 'home')).toBe(0.4);
+    expect(getGroupRelevance('training', 'content')).toBe(0.7);
   });
 
   it('returns 0.5 fallback for unknown group', () => {
@@ -99,7 +99,7 @@ describe('mode.helpers', () => {
   });
 
   it('falls back to group relevance when no route override at all', () => {
-    const relevance = getRouteRelevance('training', 'operations', undefined);
+    const relevance = getRouteRelevance('training', 'mlops', undefined);
     expect(relevance).toBe(1.0);
   });
 
