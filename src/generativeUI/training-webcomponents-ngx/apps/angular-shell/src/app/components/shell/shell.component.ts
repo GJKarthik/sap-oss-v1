@@ -11,12 +11,13 @@ import {
   signal,
   HostListener,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd, Event } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AppStore } from '../../store/app.store';
 import { I18nService, Language } from '../../services/i18n.service';
+import { NavigationAssistantService } from '../../services/navigation-assistant.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import {
   TRAINING_NAV_GROUPS,
@@ -25,11 +26,13 @@ import {
   resolveTrainingGroup,
 } from '../../app.navigation';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
+import { ModeSwitcherComponent } from '../../shared/components/mode-switcher/mode-switcher.component';
+import type { ContextPill } from '../../shared/utils/mode.types';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, Ui5TrainingComponentsModule],
+  imports: [CommonModule, NgClass, RouterOutlet, Ui5TrainingComponentsModule, ModeSwitcherComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -44,19 +47,44 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
       class="app-shell"
       [class.rtl]="i18n.isRtl()"
       [class.app-shell--reduced-motion]="reducedMotion()"
+      [ngClass]="store.modeThemeClass()"
       (mousemove)="onMouseMove($event)">
       <header class="app-header">
         <ui5-shellbar
           [primaryTitle]="i18n.t('app.title')"
           [secondaryTitle]="i18n.t('app.subtitle')"
-          (profile-click)="onProfileClick($event)"
-          (custom-item-click)="onCustomItemClick($event)">
-          <ui5-avatar slot="profile" icon="customer" interactive></ui5-avatar>
-          <ui5-shellbar-item id="action-search" icon="search" [text]="i18n.t('shell.searchAriaLabel')"></ui5-shellbar-item>
-          <ui5-shellbar-item id="action-lang" icon="globe" [text]="i18n.t('shell.langAriaLabel')"></ui5-shellbar-item>
-          <ui5-shellbar-item id="action-settings" icon="settings" [text]="i18n.t('shell.settingsAriaLabel')"></ui5-shellbar-item>
+          show-notifications
+          notifications-count="4"
+          show-co-pilot
+          (logo-click)="navigateTo('/dashboard')"
+          (notifications-click)="onNotificationsClick($event)"
+          (co-pilot-click)="onCoPilotClick($event)"
+          (profile-click)="onProfileClick($event)">
+          <ui5-avatar #profileTrigger slot="profile" [initials]="userInitials()" [colorScheme]="avatarColorScheme()" shape="Circle" size="S" interactive style="box-shadow: 0 0 0 2px rgba(255,255,255,0.4), var(--liquid-glass-shadow);"></ui5-avatar>
         </ui5-shellbar>
+        <div class="header-actions">
+          <app-mode-switcher></app-mode-switcher>
+          <ui5-button icon="home" design="Transparent" (click)="navigateTo('/dashboard')" aria-label="Open dashboard"></ui5-button>
+          <ui5-button #searchButton icon="search" design="Transparent" (click)="toggleSearch()" [attr.aria-label]="i18n.t('shell.searchAriaLabel')"></ui5-button>
+          
+          <div class="header-actions__team" style="padding: 0 0.75rem; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); margin: 0 0.5rem;">
+            <ui5-avatar-group type="Individual">
+              <ui5-avatar initials="SJ" color-scheme="Accent1" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
+              <ui5-avatar initials="JI" color-scheme="Accent6" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
+            </ui5-avatar-group>
+          </div>
 
+          <ui5-button #languageButton icon="globe" design="Transparent" (click)="toggleLanguageMenu($event)" [attr.aria-label]="i18n.t('shell.langAriaLabel')"></ui5-button>
+          @if (canPinCurrentPage()) {
+            <ui5-button
+              icon="favorite"
+              design="Transparent"
+              [class.header-actions__pin--active]="currentPagePinned()"
+              (click)="toggleCurrentPagePin()"
+              [attr.aria-label]="currentPagePinned() ? i18n.t('shell.unpinPage', { page: currentPageLabel() }) : i18n.t('shell.pinPage', { page: currentPageLabel() })"></ui5-button>
+          }
+          <ui5-button icon="settings" design="Transparent" (click)="navigateTo('/workspace')" [attr.aria-label]="i18n.t('shell.settingsAriaLabel')"></ui5-button>
+        </div>
       </header>
 
       <div class="app-body">
@@ -67,6 +95,7 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
                 type="button"
                 class="nav-island-item"
                 [class.active]="activeGroupId() === group.id"
+                [class.mode-suggested]="isModeRelevantGroup(group.id)"
                 [attr.aria-current]="activeGroupId() === group.id ? 'page' : null"
                 (click)="navigateTo(group.defaultPath)">
                 <ui5-icon [name]="groupIcon(group.id)"></ui5-icon>
@@ -77,6 +106,19 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
         </nav>
 
         <main id="main-content" class="app-viewport" tabindex="-1">
+          @if (store.contextPills().length > 0) {
+            <div class="mode-pill-bar slideUp">
+              <div class="pill-track">
+                @for (pill of store.contextPills(); track pill.label) {
+                  <button class="pill-item pill-item--mode" (click)="onModePillClick(pill)">
+                    <ui5-icon [name]="pill.icon" class="pill-icon"></ui5-icon>
+                    {{ pill.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
           @if (activeGroupRoutes().length > 1) {
             <div class="context-pill-bar slideUp">
               <div class="pill-track">
@@ -102,28 +144,167 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
     </div>
 
     <!-- Spotlight Command Palette -->
-    <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="i18n.t('shell.spotlightTitle')" (close)="showSearch.set(false)">
+    <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="i18n.t('shell.spotlightTitle')" (close)="closeSearchDialog()">
       <div class="spotlight-body">
-        <ui5-input #searchInput class="spotlight-input" [placeholder]="i18n.t('shell.spotlightPlaceholder')" (input)="onSearchInput($event)">
-          <ui5-icon slot="icon" name="search"></ui5-icon>
-        </ui5-input>
-        
-        <ui5-list class="spotlight-results" separators="None">
-          @for (res of filteredResults(); track res.path) {
-            <ui5-li icon="navigation-right-arrow" [description]="i18n.t(groupLabelKey(res.group))" (click)="jumpTo(res.path)">
-              {{ i18n.t(res.labelKey) }}
-            </ui5-li>
+        <div class="spotlight-input-wrapper">
+          <ui5-icon name="search" class="spotlight-search-icon"></ui5-icon>
+          <input
+            #searchInput
+            class="spotlight-native-input"
+            [placeholder]="i18n.t('shell.spotlightPlaceholder')"
+            (input)="onSearchInput($event)"
+            [value]="searchQuery()"
+            spellcheck="false"
+            autocomplete="off" />
+          <ui5-button
+            *ngIf="searchQuery()"
+            icon="decline"
+            design="Transparent"
+            class="spotlight-clear-btn"
+            (click)="searchQuery.set(''); selectedSearchIndex.set(0)"></ui5-button>
+        </div>
+
+        <div class="spotlight-results" #resultsList>
+          @if (!searchQuery().trim()) {
+            @if (pinnedEntries().length > 0) {
+              <section class="spotlight-section">
+                <div class="spotlight-section__title">{{ i18n.t('shell.savedPages') }}</div>
+                @for (res of pinnedEntries(); track res.path) {
+                  <div class="spotlight-entry" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === res.path">
+                    <button type="button" class="spotlight-entry__main" (click)="jumpTo(res.path)">
+                      <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="res.icon"></ui5-icon></span>
+                      <span class="spotlight-entry__copy">
+                        <span class="spotlight-entry__eyebrow">{{ i18n.t(groupLabelKey(res.group)) }}</span>
+                        <span class="spotlight-entry__title">{{ i18n.t(res.labelKey) }}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="spotlight-entry__pin spotlight-entry__pin--active"
+                      (click)="togglePinned(res.path, $event)"
+                      [attr.aria-label]="i18n.t('shell.unpinPage', { page: i18n.t(res.labelKey) })">
+                      <ui5-icon name="favorite"></ui5-icon>
+                    </button>
+                  </div>
+                }
+              </section>
+            }
+
+            @if (recentEntries().length > 0) {
+              <section class="spotlight-section">
+                <div class="spotlight-section__title">{{ i18n.t('shell.recentPages') }}</div>
+                @for (res of recentEntries(); track res.path) {
+                  <div class="spotlight-entry" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === res.path">
+                    <button type="button" class="spotlight-entry__main" (click)="jumpTo(res.path)">
+                      <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="res.icon"></ui5-icon></span>
+                      <span class="spotlight-entry__copy">
+                        <span class="spotlight-entry__eyebrow">{{ i18n.t(groupLabelKey(res.group)) }}</span>
+                        <span class="spotlight-entry__title">{{ i18n.t(res.labelKey) }}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="spotlight-entry__pin"
+                      (click)="togglePinned(res.path, $event)"
+                      [attr.aria-label]="i18n.t('shell.pinPage', { page: i18n.t(res.labelKey) })">
+                      <ui5-icon name="favorite"></ui5-icon>
+                    </button>
+                  </div>
+                }
+              </section>
+            }
+
+            <section class="spotlight-section">
+              <div class="spotlight-section__title">{{ i18n.t('shell.suggestedPages') }}</div>
+              @for (res of suggestedEntries(); track res.path) {
+                <div class="spotlight-entry" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === res.path">
+                  <button type="button" class="spotlight-entry__main" (click)="jumpTo(res.path)">
+                    <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="res.icon"></ui5-icon></span>
+                    <span class="spotlight-entry__copy">
+                      <span class="spotlight-entry__eyebrow">{{ i18n.t(groupLabelKey(res.group)) }}</span>
+                      <span class="spotlight-entry__title">{{ i18n.t(res.labelKey) }}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    class="spotlight-entry__pin"
+                    [class.spotlight-entry__pin--active]="isPinned(res.path)"
+                    (click)="togglePinned(res.path, $event)"
+                    [attr.aria-label]="isPinned(res.path) ? i18n.t('shell.unpinPage', { page: i18n.t(res.labelKey) }) : i18n.t('shell.pinPage', { page: i18n.t(res.labelKey) })">
+                    <ui5-icon name="favorite"></ui5-icon>
+                  </button>
+                </div>
+              }
+            </section>
+          } @else {
+            @if (searchResults().length > 0) {
+              <section class="spotlight-section">
+                <div class="spotlight-section__title">{{ i18n.t('common.search') }}</div>
+                @for (res of searchResults(); track res.path) {
+                  <div class="spotlight-entry" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === res.path">
+                    <button type="button" class="spotlight-entry__main" (click)="jumpTo(res.path)">
+                      <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="res.icon"></ui5-icon></span>
+                      <span class="spotlight-entry__copy">
+                        <span class="spotlight-entry__eyebrow">{{ i18n.t(groupLabelKey(res.group)) }}</span>
+                        <span class="spotlight-entry__title">{{ i18n.t(res.labelKey) }}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="spotlight-entry__pin"
+                      [class.spotlight-entry__pin--active]="isPinned(res.path)"
+                      (click)="togglePinned(res.path, $event)"
+                      [attr.aria-label]="isPinned(res.path) ? i18n.t('shell.unpinPage', { page: i18n.t(res.labelKey) }) : i18n.t('shell.pinPage', { page: i18n.t(res.labelKey) })">
+                      <ui5-icon name="favorite"></ui5-icon>
+                    </button>
+                  </div>
+                }
+              </section>
+            } @else {
+              <div class="no-results">{{ i18n.t('shell.noMatches') }}</div>
+            }
           }
-          @if (filteredResults().length === 0) {
-            <div class="no-results">{{ i18n.t('shell.noMatches') }}</div>
-          }
-        </ui5-list>
+        </div>
       </div>
     </ui5-dialog>
 
-    <ui5-popover #profilePopover [attr.header-text]="i18n.t('shell.account')">
-      <div style="width: 200px; padding: 1rem;">
-        <ui5-button icon="log" design="Negative" (click)="logout()">{{ i18n.t('app.signOut') }}</ui5-button>
+    <ui5-popover #notificationsPopover [headerText]="i18n.t('common.notifications')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+      <div class="user-menu">
+        <ui5-list separators="Inner">
+          <ui5-li icon="message-information" description="System update complete">Platform Health: OK</ui5-li>
+          <ui5-li icon="message-warning" description="High VRAM usage detected">GPU Alert</ui5-li>
+          <ui5-li icon="message-success" description="Model 'Titan-v2' is ready">Deployment Success</ui5-li>
+          <ui5-li icon="group" description="Jony Ive joined the workspace">New Collaborator</ui5-li>
+        </ui5-list>
+        <footer class="user-menu__footer">
+          <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">View All</ui5-button>
+        </footer>
+      </div>
+    </ui5-popover>
+
+    <ui5-popover #profilePopover [headerText]="i18n.t('shell.profileTitle')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+      <div class="user-menu">
+        <header class="user-menu__header">
+          <div class="avatar-container" style="position: relative; margin-bottom: 0.5rem;">
+            <ui5-avatar [initials]="userInitials()" [colorScheme]="avatarColorScheme()" shape="Circle" size="XL" style="box-shadow: 0 12px 32px rgba(0,0,0,0.15); border: 4px solid #fff;"></ui5-avatar>
+            <div class="status-indicator" style="position: absolute; bottom: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-success); border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+          </div>
+          <div class="user-menu__info">
+            <span class="user-menu__name">{{ userDisplayName() }}</span>
+            <span class="user-menu__role">{{ userTeamName() || 'Chief Design Officer' }}</span>
+            <span class="user-menu__email">{{ userShortId() }}</span>
+          </div>
+        </header>
+
+        <ui5-list separators="None">
+          <ui5-li icon="settings" (click)="closeProfile()">{{ i18n.t('shell.settings') }}</ui5-li>
+          <ui5-li icon="palette">{{ i18n.t('shell.appearance') }}</ui5-li>
+          <ui5-li icon="customer">{{ i18n.t('shell.account') }}</ui5-li>
+        </ui5-list>
+
+        <footer class="user-menu__footer">
+          <ui5-button design="Transparent" (click)="logout()" style="width: 100%; color: var(--color-error); font-weight: 700;">{{ i18n.t('shell.logout') }}</ui5-button>
+        </footer>
       </div>
     </ui5-popover>
 
@@ -138,49 +319,221 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
     .app-shell--reduced-motion .app-nav-island,
     .app-shell--reduced-motion .pill-item,
     .app-shell--reduced-motion .nav-label { transition: none; }
-    .app-header { flex-shrink: 0; }
+    .app-header { flex-shrink: 0; position: relative; }
+    
+    .header-actions {
+      position: absolute;
+      top: 0;
+      right: 4.5rem;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 3;
+      pointer-events: auto;
+    }
+
+    .header-actions__team {
+      display: flex;
+      align-items: center;
+      margin: 0 0.5rem;
+    }
+
+    .header-actions ui5-button {
+      --sapButton_Lite_Background: transparent;
+      --sapButton_Lite_Hover_Background: rgba(0, 0, 0, 0.04);
+      border-radius: 999px;
+    }
+
     .app-body { flex: 1; display: flex; padding: 1.5rem; gap: 1.5rem; overflow: hidden; }
     
     .app-nav-island {
-      width: 80px; display: flex; flex-direction: column; background: var(--glass-bg);
-      backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 2rem;
-      box-shadow: var(--shadow-ambient); padding: 1rem 0; transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      width: 80px; display: flex; flex-direction: column; 
+      background: var(--liquid-glass-bg);
+      backdrop-filter: var(--liquid-glass-blur);
+      -webkit-backdrop-filter: var(--liquid-glass-blur);
+      border: var(--liquid-glass-border); 
+      border-radius: 2.25rem;
+      box-shadow: var(--liquid-glass-shadow); 
+      padding: 1rem 0; 
+      transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
       overflow: hidden;
+      z-index: 100;
     }
-    .app-nav-island:hover, .app-nav-island:focus-within { width: 200px; }
-    .nav-group-stack { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+    .app-nav-island:hover, .app-nav-island:focus-within { width: 220px; }
+    .nav-group-stack { display: flex; flex-direction: column; gap: 0.25rem; width: 100%; }
     .nav-island-item {
-      display: flex; align-items: center; gap: 1.25rem; width: 100%; border: none; background: transparent;
-      padding: 1rem 1.75rem; cursor: pointer; color: var(--sapContent_LabelColor); position: relative;
+      display: flex; align-items: center; gap: 1.5rem; width: 100%; border: none; background: transparent;
+      padding: 1.25rem 1.75rem; cursor: pointer; color: #424245; position: relative;
+      transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
-    .nav-label { font-size: 0.875rem; font-weight: 600; white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
-    .app-nav-island:hover .nav-label, .app-nav-island:focus-within .nav-label { opacity: 1; }
-    .nav-island-item.active { color: var(--sapBrandColor); }
-    .nav-island-item.active::before { content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 4px; background: var(--sapBrandColor); border-radius: 0 4px 4px 0; }
+    .nav-island-item:hover { 
+      background: rgba(0, 0, 0, 0.04); 
+      color: #1d1d1f;
+      transform: scale(1.02) translateX(2px);
+    }
+    .nav-label { 
+      font-size: 0.95rem; font-weight: 600; white-space: nowrap; opacity: 0; 
+      letter-spacing: var(--font-letter-spacing-tight);
+      transition: opacity 0.3s var(--spring-easing); 
+    }
+    .app-nav-island:hover .nav-label, .app-nav-island:focus-within .nav-label { opacity: 1; transition-delay: 0.1s; }
+    .nav-island-item.active { color: var(--color-primary); }
+    .nav-island-item.active ui5-icon { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(var(--color-primary-rgb), 0.3)); }
+    .nav-island-item.active::before { 
+      content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 4px; 
+      background: var(--color-primary); border-radius: 0 4px 4px 0; 
+      box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.4);
+      animation: indicator-pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes indicator-pulse {
+      0%, 100% { transform: scaleY(1); opacity: 1; }
+      50% { transform: scaleY(1.2); opacity: 0.7; }
+    }
+
+    .nav-island-item {
+      transition: opacity 200ms ease, border-color 200ms ease;
+    }
+
+    .nav-island-item:not(.active):not(.mode-suggested) {
+      opacity: 0.35;
+    }
+
+    .nav-island-item.mode-suggested:not(.active) {
+      opacity: 1;
+      border-left: 3px solid var(--sapLink_Active_Color, #0a6ed1);
+    }
 
     .app-viewport { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-    .context-pill-bar { position: absolute; top: 0; left: 0; right: 0; height: 60px; display: flex; align-items: center; justify-content: center; z-index: 10; }
-    .pill-track { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 0.25rem; display: flex; gap: 0.25rem; box-shadow: var(--shadow-ambient); }
-    .pill-item { border: none; background: transparent; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--sapContent_LabelColor); cursor: pointer; transition: all 0.3s; }
-    .pill-item--active { background: var(--sapBrandColor); color: #fff; }
-    .content-container { flex: 1; overflow-y: auto; }
-    .content-container--with-pills { padding-top: 75px; }
-
-    /* ── Skip Link ── */
-    .skip-link {
-      position: absolute; top: -100%; left: 50%; transform: translateX(-50%);
-      background: var(--sapBrandColor); color: #fff; padding: 0.75rem 1.5rem;
-      border-radius: 0 0 0.75rem 0.75rem; z-index: 9999; font-weight: 600;
-      text-decoration: none; transition: top 0.2s;
+    .context-pill-bar { position: absolute; top: 0; left: 0; right: 0; height: 64px; display: flex; align-items: center; justify-content: center; z-index: 10; }
+    .pill-track { 
+      background: var(--liquid-glass-bg); 
+      backdrop-filter: var(--liquid-glass-blur);
+      border: var(--liquid-glass-border); 
+      border-radius: 999px; padding: 0.35rem; display: flex; gap: 0.35rem; 
+      box-shadow: var(--liquid-glass-shadow); 
     }
-    .skip-link:focus { top: 0; }
+    .pill-item { 
+      border: none; background: transparent; padding: 0.5rem 1.5rem; border-radius: 999px; 
+      font-size: 0.8125rem; font-weight: 600; color: #424245; cursor: pointer; 
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    }
+    .pill-item--active { background: var(--color-primary); color: #fff; box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3); transform: scale(1.05); }
+    .content-container { flex: 1; overflow-y: auto; }
+    .content-container--with-pills { padding-top: 80px; }
 
-    /* ── Spotlight Polish ── */
-    :host .spotlight-dialog { --sapDialog_Content_Padding: 0; border-radius: 1.5rem; }
-    .spotlight-body { width: 600px; max-width: 90vw; display: flex; flex-direction: column; }
-    .spotlight-input { width: 100%; padding: 1.5rem; --sapField_BorderColor: transparent; --sapField_Focus_BorderColor: transparent; font-size: 1.25rem; }
-    .spotlight-results { max-height: 400px; overflow-y: auto; }
-    .no-results { padding: 2rem; text-align: center; opacity: 0.5; }
+    .mode-pill-bar {
+      position: absolute;
+      top: 3.5rem;
+      left: 6rem;
+      z-index: 9;
+    }
+
+    .pill-item--mode {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.6875rem;
+      opacity: 0.7;
+    }
+
+    .pill-item--mode .pill-icon {
+      font-size: 0.75rem;
+    }
+
+    /* ── Spotlight / Search Polish ── */
+    :host .spotlight-dialog { --sapDialog_Content_Padding: 0; border-radius: 24px; box-shadow: var(--liquid-glass-shadow-deep); }
+    .spotlight-body { 
+      width: 680px; max-width: 90vw; display: flex; flex-direction: column; 
+      background: var(--liquid-glass-bg);
+      backdrop-filter: var(--liquid-glass-blur);
+      border-radius: 24px;
+      overflow: hidden;
+    }
+    
+    .spotlight-input-wrapper {
+      display: flex; align-items: center; padding: 1.5rem 2rem; 
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+    .spotlight-search-icon { font-size: 1.5rem; color: #86868b; margin-right: 1.25rem; }
+    .spotlight-native-input {
+      flex: 1; border: none; background: transparent; 
+      font-size: 1.5rem; font-weight: 500; color: #1d1d1f;
+      letter-spacing: var(--font-letter-spacing-tight);
+      outline: none;
+    }
+    .spotlight-native-input::placeholder { color: #86868b; opacity: 0.6; }
+    .spotlight-clear-btn { position: absolute; right: 1.5rem; }
+
+    .spotlight-results { max-height: 520px; overflow-y: auto; display: grid; gap: 1.5rem; padding: 1.5rem; scrollbar-width: none; }
+    .spotlight-results::-webkit-scrollbar { display: none; }
+    .spotlight-section { display: grid; gap: 0.75rem; animation: results-slide-in 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) both; }
+    
+    @keyframes results-slide-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .spotlight-section__title { 
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; 
+      text-transform: uppercase; color: #86868b; padding: 0 0.75rem; 
+    }
+    
+    .spotlight-entry { 
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; 
+      border-radius: 18px; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .spotlight-entry__main, .spotlight-entry__pin {
+      border: var(--liquid-glass-inner-border);
+      background: rgba(255, 255, 255, 0.5);
+      color: inherit;
+      border-radius: 18px;
+      transition: inherit;
+    }
+    .spotlight-entry__main {
+      display: grid; grid-template-columns: auto minmax(0, 1fr);
+      gap: 1.25rem; align-items: center; width: 100%; padding: 1.15rem;
+      text-align: left; cursor: pointer;
+    }
+    .spotlight-entry:hover .spotlight-entry__main, .spotlight-entry.selected .spotlight-entry__main {
+      border-color: rgba(var(--color-primary-rgb), 0.3);
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+    }
+    .spotlight-entry.selected .spotlight-entry__main {
+      outline: 2px solid var(--color-primary); outline-offset: -2px;
+    }
+    .spotlight-entry__icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 3rem; height: 3rem; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.12), rgba(var(--color-primary-rgb), 0.04));
+      color: var(--color-primary);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .spotlight-entry__copy { display: flex; flex-direction: column; gap: 0.15rem; }
+    .spotlight-entry__eyebrow { font-size: 0.75rem; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.04em; }
+    .spotlight-entry__title { font-size: 1.05rem; font-weight: 700; color: #1d1d1f; letter-spacing: var(--font-letter-spacing-tight); }
+
+    /* ── User Menu (Fiori Gold) ── */
+    .user-menu { width: 340px; display: flex; flex-direction: column; background: var(--liquid-glass-bg); backdrop-filter: var(--liquid-glass-blur); }
+    .user-menu__header {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 3rem 2rem 2rem; text-align: center; gap: 1.25rem;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), transparent);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .user-menu__info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .user-menu__name { font-size: 1.35rem; font-weight: 800; color: #1d1d1f; letter-spacing: -0.03em; }
+    .user-menu__role { font-size: 0.9rem; color: #86868b; font-weight: 600; letter-spacing: 0.01em; }
+    .user-menu__email { font-size: 0.8125rem; color: #86868b; font-family: var(--sapFontFamilyMono, monospace); }
+    .user-menu__footer {
+      padding: 1.25rem; display: flex; justify-content: center;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    ui5-li { --sapList_ItemHeight: 3.75rem; font-weight: 600; }
   `],
 })
 export class ShellComponent implements OnInit, OnDestroy {
@@ -188,17 +541,22 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
+  private readonly navigationAssistant = inject(NavigationAssistantService);
   private readonly workspace = inject(WorkspaceService);
-  
-  @ViewChild('profilePopover') profilePopover!: ElementRef<any>;
-  @ViewChild('langMenu') langMenu!: ElementRef<any>;
-  @ViewChild('searchDialog') searchDialog!: ElementRef<any>;
-  @ViewChild('searchInput') searchInput!: ElementRef<any>;
+  @ViewChild('profilePopover', { read: ElementRef }) profilePopover!: ElementRef<any>;
+  @ViewChild('notificationsPopover', { read: ElementRef }) notificationsPopover!: ElementRef<any>;
+  @ViewChild('langMenu', { read: ElementRef }) langMenu!: ElementRef<any>;
+  @ViewChild('searchDialog', { read: ElementRef }) searchDialog!: ElementRef<any>;
+  @ViewChild('searchInput', { read: ElementRef }) searchInput!: ElementRef<any>;
+  @ViewChild('profileTrigger', { read: ElementRef }) profileTrigger!: ElementRef<any>;
+  @ViewChild('searchButton', { read: ElementRef }) searchButton!: ElementRef<any>;
+  @ViewChild('languageButton', { read: ElementRef }) languageButton!: ElementRef<any>;
 
   readonly activeGroupId = signal<TrainingRouteGroupId>('home');
   readonly currentPath = signal('/dashboard');
   readonly showSearch = signal(false);
   readonly searchQuery = signal('');
+  readonly selectedSearchIndex = signal(0);
   readonly reducedMotion = signal(false);
   
   // Decorative canvas movement is disabled for reduced-motion users.
@@ -241,32 +599,90 @@ export class ShellComponent implements OnInit, OnDestroy {
     return primaryRoutes;
   });
 
-  readonly filteredResults = computed(() => {
-    const q = this.searchQuery().trim().toLowerCase();
-    const routes = this.visibleRouteLinks().filter((link) => {
-      if (!q) {
-        return link.tier === 'primary';
-      }
-      return this.i18n.t(link.labelKey).toLowerCase().includes(q)
-        || this.i18n.t(this.groupLabelKey(link.group)).toLowerCase().includes(q);
-    });
-
-    return routes.slice(0, 8);
+  readonly searchResults = computed(() => {
+    return this.navigationAssistant.search(
+      this.searchQuery(),
+      (key) => this.i18n.t(key),
+      (group) => this.i18n.t(this.groupLabelKey(group)),
+    );
   });
+
+  readonly effectiveSearchEntries = computed(() => {
+    if (this.searchQuery().trim()) {
+      return this.searchResults();
+    }
+    const pinned = this.pinnedEntries();
+    const recent = this.recentEntries();
+    const suggested = this.suggestedEntries();
+    
+    const combined = [...pinned, ...recent, ...suggested];
+    const seen = new Set<string>();
+    return combined.filter(entry => {
+      if (seen.has(entry.path)) return false;
+      seen.add(entry.path);
+      return true;
+    }).slice(0, 10);
+  });
+
+  readonly currentPagePinned = computed(() => this.navigationAssistant.isPinned(this.currentPath()));
+  readonly canPinCurrentPage = computed(() => this.navigationAssistant.canPin(this.currentPath()));
+  readonly currentPageLabel = computed(() => {
+    const active = TRAINING_ROUTE_LINKS.find((link) => link.path === this.currentPath());
+    return active ? this.i18n.t(active.labelKey) : this.i18n.t('nav.dashboard');
+  });
+  readonly pinnedEntries = computed(() =>
+    this.navigationAssistant.pinnedEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 4),
+  );
+  readonly recentEntries = computed(() =>
+    this.navigationAssistant.recentEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 4),
+  );
+  readonly suggestedEntries = computed(() =>
+    this.navigationAssistant.suggestedEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 5),
+  );
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
       event.preventDefault();
       this.toggleSearch();
+      return;
+    }
+
+    if (this.showSearch()) {
+      this.handleSearchKeyDown(event);
+    }
+  }
+
+  handleSearchKeyDown(event: KeyboardEvent) {
+    const entries = this.effectiveSearchEntries();
+    if (entries.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.selectedSearchIndex.update(i => (i + 1) % entries.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.selectedSearchIndex.update(i => (i - 1 + entries.length) % entries.length);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const entry = entries[this.selectedSearchIndex()];
+      if (entry) {
+        this.jumpTo(entry.path);
+      }
+    } else if (event.key === 'Escape') {
+      this.closeSearchDialog();
     }
   }
 
   ngOnInit() {
     this.setupMotionPreference();
     this.updateActiveGroup(this.router.url);
+    this.navigationAssistant.recordVisit(this.router.url);
     this.routerSub = this.router.events.pipe(filter((e: Event): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(e => this.updateActiveGroup(e.url));
+      .subscribe(e => {
+        this.updateActiveGroup(e.urlAfterRedirects);
+        this.navigationAssistant.recordVisit(e.urlAfterRedirects);
+      });
   }
 
   ngOnDestroy() {
@@ -295,24 +711,63 @@ export class ShellComponent implements OnInit, OnDestroy {
     const icons: Record<string, string> = { home: 'home', data: 'folder', assist: 'discussion-2', operations: 'process' };
     return icons[id] || 'grid';
   }
+  isModeRelevantGroup(groupId: TrainingRouteGroupId): boolean {
+    const suggested = this.store.routeRelevance().suggested;
+    return TRAINING_ROUTE_LINKS
+      .filter(link => link.group === groupId)
+      .some(link => suggested.includes(link.path));
+  }
   isRouteActive(path: string): boolean { return this.router.url.startsWith(path); }
   navigateTo(path: string) { this.router.navigate([path]); }
+
+  onModePillClick(pill: ContextPill): void {
+    if (pill.action === 'navigate' && pill.target) {
+      this.navigateTo(pill.target);
+    }
+  }
+
+  isPinned(path: string): boolean {
+    return this.navigationAssistant.isPinned(path);
+  }
+
+  toggleCurrentPagePin(): void {
+    this.navigationAssistant.togglePinned(this.currentPath());
+  }
+
+  togglePinned(path: string, event: globalThis.Event): void {
+    event.stopPropagation();
+    this.navigationAssistant.togglePinned(path);
+  }
   
   toggleSearch() {
-    const dialog = this.searchDialog.nativeElement;
-    if (dialog.open) {
-      dialog.close();
-    } else {
-      dialog.show();
-      setTimeout(() => this.searchInput.nativeElement.focus(), 100);
+    const dialog = this.searchDialog?.nativeElement;
+    if (!dialog) {
+      return;
     }
+
+    if (dialog.open) {
+      this.closeSearchDialog();
+      return;
+    }
+
+    this.searchQuery.set('');
+    this.showSearch.set(true);
+    if (typeof dialog.show === 'function') {
+      dialog.show();
+    } else {
+      dialog.open = true;
+    }
+    setTimeout(() => this.searchInput?.nativeElement?.focus?.(), 100);
   }
 
   onSearchInput(e: globalThis.Event) {
     const input = e.target as HTMLInputElement | null;
     this.searchQuery.set(input?.value ?? '');
   }
-  jumpTo(path: string) { this.searchDialog.nativeElement.close(); this.navigateTo(path); }
+  jumpTo(path: string) {
+    this.closeSearchDialog();
+    this.navigateTo(path);
+  }
 
   onMouseMove(e: MouseEvent) {
     if (this.reducedMotion()) {
@@ -333,26 +788,20 @@ export class ShellComponent implements OnInit, OnDestroy {
     main?.scrollIntoView({ block: 'start' });
   }
 
-  onProfileClick(event: CustomEvent) { this.profilePopover.nativeElement.opener = event.detail.targetRef; this.profilePopover.nativeElement.open = true; }
-  
-  onCustomItemClick(event: any) {
-    const item = event.detail.item;
-    const icon = item.icon;
-    
-    if (icon === 'search') {
-      this.toggleSearch();
-    } else if (icon === 'globe') {
-      this.toggleLanguageMenu(event);
-    } else if (icon === 'settings') {
-      this.navigateTo('/workspace');
-    }
+  onProfileClick(event: any) {
+    this.openAnchoredOverlay(this.profilePopover, this.resolveOpener(event, this.profileTrigger));
+  }
+
+  onNotificationsClick(event: any) {
+    this.openAnchoredOverlay(this.notificationsPopover, this.resolveOpener(event));
+  }
+
+  onCoPilotClick(event: any) {
+    this.navigateTo('/chat');
   }
 
   toggleLanguageMenu(event: any) {
-    const menu = this.langMenu.nativeElement;
-    // custom-item-click event detail contains targetRef
-    menu.opener = event.detail.targetRef;
-    menu.open = true;
+    this.openAnchoredOverlay(this.langMenu, this.resolveOpener(event, this.languageButton));
   }
 
   onLanguageClick(event: CustomEvent) {
@@ -362,7 +811,52 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  logout() { this.auth.clearToken(); this.router.navigate(['/login']); }
+  closeProfile() {
+    const popover = this.profilePopover?.nativeElement;
+    if (!popover) {
+      return;
+    }
+
+    if (typeof popover.close === 'function') {
+      popover.close();
+    } else {
+      popover.open = false;
+    }
+  }
+
+  logout() { this.closeProfile(); this.auth.logout(this.router); }
+
+  readonly userDisplayName = computed(() => {
+    const name = this.workspace.identity().displayName?.trim();
+    return name || 'User';
+  });
+
+  readonly userTeamName = computed(() => this.workspace.identity().teamName?.trim() || '');
+
+  readonly userShortId = computed(() => {
+    const id = this.workspace.identity().userId;
+    return id.length > 12 ? id.slice(0, 12) + '...' : id;
+  });
+
+  readonly userInitials = computed(() => {
+    const name = this.userDisplayName();
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  });
+
+  readonly avatarColorScheme = computed(() => {
+    const schemes = ['Accent1', 'Accent2', 'Accent3', 'Accent5', 'Accent6', 'Accent8', 'Accent9', 'Accent10'] as const;
+    const name = this.userDisplayName();
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = ((hash << 5) - hash) + name.charCodeAt(i);
+      hash |= 0;
+    }
+    return schemes[Math.abs(hash) % schemes.length];
+  });
 
   private setupMotionPreference(): void {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -403,5 +897,39 @@ export class ShellComponent implements OnInit, OnDestroy {
       this.mouseX.set(0);
       this.mouseY.set(0);
     }
+  }
+
+  closeSearchDialog(): void {
+    const dialog = this.searchDialog?.nativeElement;
+    this.showSearch.set(false);
+    if (!dialog) {
+      return;
+    }
+
+    if (typeof dialog.close === 'function') {
+      dialog.close();
+    } else {
+      dialog.open = false;
+    }
+  }
+
+  private resolveOpener(event: any, fallback?: ElementRef<any>): HTMLElement | null {
+    const candidates = [event?.detail?.targetRef, event?.currentTarget, event?.target, fallback?.nativeElement];
+    return candidates.find((candidate): candidate is HTMLElement => candidate instanceof HTMLElement) ?? null;
+  }
+
+  private openAnchoredOverlay(overlayRef: ElementRef<any> | undefined, opener: HTMLElement | null): void {
+    const overlay = overlayRef?.nativeElement;
+    if (!overlay || !opener) {
+      return;
+    }
+
+    if (typeof overlay.showAt === 'function') {
+      overlay.showAt(opener);
+      return;
+    }
+
+    overlay.opener = opener;
+    overlay.open = true;
   }
 }
