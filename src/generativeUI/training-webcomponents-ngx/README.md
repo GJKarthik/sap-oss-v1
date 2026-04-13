@@ -42,7 +42,7 @@ training-webcomponents-ngx/
 | UI components | SAP UI5 Web Components via `@ui5/webcomponents-ngx` |
 | State | Angular signals + RxJS |
 | Styling | SAP Fiori CSS variables + SCSS |
-| Build | Nx 20 monorepo |
+| Build | Nx 22 monorepo |
 | Backend proxy | FastAPI + httpx (async reverse proxy) |
 | Containerisation | Docker + nginx |
 

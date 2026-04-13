@@ -15,7 +15,7 @@ Everything that works and is available on the [@ui5/webcomponents](https://sap.g
 
 ## Requirements and Setup
 
-* Angular 16 or higher. Other versions will not work because of the new Angular `required` inputs feature.
+* Angular 16 or higher (tested with Angular 20). Other versions will not work because of the new Angular `required` inputs feature.
 
 ### Installation
 
@@ -185,6 +185,9 @@ AGENT_URL=http://my-agent:9160 yarn start:workspace
 | `/generative` | Strict live schema generation and renderer flow |
 | `/components` | Live component/model catalog from OpenAI-compatible backend |
 | `/mcp` | Live MCP tools discovery and invocation |
+| `/ocr` | Document intelligence — invoice and document extraction |
+| `/readiness` | Service health dashboard and readiness checks |
+| `/workspace` | Workspace settings — theme, language, nav preferences |
 | `/**` | 404 Not Found page |
 
 ### 5. Building for Production
