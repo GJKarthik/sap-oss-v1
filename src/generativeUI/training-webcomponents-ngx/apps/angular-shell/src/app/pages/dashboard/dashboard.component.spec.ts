@@ -37,6 +37,8 @@ const MOCK_STORE = {
   gpuUtilization: signal(25),
   trainingPairCount: signal(1200),
   platformNarrative: signal('narrative.healthy'),
+  activeMode: signal<'chat' | 'cowork' | 'training'>('training'),
+  routeRelevance: signal({ suggested: [], all: [] }),
   loadDashboardData: jest.fn(),
   forceRefresh: jest.fn(),
 };
@@ -89,7 +91,17 @@ describe('DashboardComponent', () => {
         { provide: DashboardLayoutService, useValue: MOCK_LAYOUT },
         { provide: AppLinkService, useValue: MOCK_APP_LINKS },
       ],
-    }).compileComponents();
+    });
+    TestBed.overrideComponent(DashboardComponent, {
+      set: {
+        template: `
+          <div>
+            <span class="gpu">{{ store.gpuUtilization() }}%</span>
+          </div>
+        `,
+      },
+    });
+    TestBed.compileComponents();
 
     MOCK_STORE.loadDashboardData.mockClear();
     MOCK_STORE.forceRefresh.mockClear();

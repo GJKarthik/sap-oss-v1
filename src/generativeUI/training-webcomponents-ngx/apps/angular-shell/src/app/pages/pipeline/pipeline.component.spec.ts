@@ -2,6 +2,7 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideZoneChangeDetection, signal } from '@angular/core';
+import type { AppMode } from '../../shared/utils/mode.types';
 
 import { PipelineComponent } from './pipeline.component';
 import { ToastService } from '../../services/toast.service';
@@ -36,23 +37,28 @@ describe('PipelineComponent', () => {
   let component: PipelineComponent;
   let fixture: any;
   let httpMock: HttpTestingController;
-  let toastSpy: jest.Mocked<Pick<ToastService, 'success' | 'error'>>;
+  let toastSpy: jest.Mocked<Pick<ToastService, 'success' | 'error' | 'info'>>;
   let wsMock: ReturnType<typeof makeWsMock>;
   const realtime = {
     buildWebSocketUrl: jest.fn(() => 'ws://localhost:8001/ws/pipeline'),
     probeApiHealth: jest.fn(() => of(true)),
   };
   const pipelineState = signal<'idle' | 'running' | 'completed' | 'error'>('idle');
+  const activeMode = signal<AppMode>('training');
   const appStore = {
     pipelineState,
+    activeMode,
     setPipelineState: jest.fn((state: 'idle' | 'running' | 'completed' | 'error') => pipelineState.set(state)),
+    setMode: jest.fn((mode: AppMode) => activeMode.set(mode)),
   };
 
   beforeEach(async () => {
-    toastSpy = { success: jest.fn(), error: jest.fn() };
+    toastSpy = { success: jest.fn(), error: jest.fn(), info: jest.fn() };
     wsMock = makeWsMock();
     pipelineState.set('idle');
+    activeMode.set('training');
     appStore.setPipelineState.mockClear();
+    appStore.setMode.mockClear();
     realtime.buildWebSocketUrl.mockClear();
     realtime.probeApiHealth.mockClear();
 
@@ -101,6 +107,25 @@ describe('PipelineComponent', () => {
     stages.forEach(s => expect(s.status).toBe('idle'));
   });
 
+  it('should switch to training mode before launching when active mode is chat', () => {
+    activeMode.set('chat');
+
+    component.startPipeline();
+
+    httpMock.expectNone(`${MOCK_ENV_URL}/pipeline/start`);
+    expect(appStore.setMode).toHaveBeenCalledWith('training');
+    expect(toastSpy.info).toHaveBeenCalled();
+  });
+
+  it('should require confirmation before launching when active mode is cowork', () => {
+    activeMode.set('cowork');
+
+    component.startPipeline();
+
+    httpMock.expectNone(`${MOCK_ENV_URL}/pipeline/start`);
+    expect(component.confirmExecutionOpen()).toBe(true);
+  });
+
   // ── WebSocket connectivity ───────────────────────────────────────────────────
 
   it('should mark wsConnected=true on WebSocket open', () => {
@@ -127,6 +152,18 @@ describe('PipelineComponent', () => {
     wsMock.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ type: 'log', text: 'Processing row 42' }) }));
     expect(component.logLines()).toHaveLength(1);
     expect(component.logLines()[0].text).toBe('Processing row 42');
+  });
+
+  it('should advance pipeline stages sequentially from log markers', () => {
+    wsMock.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ type: 'log', text: 'Extracting schema' }) }));
+    let stages = component.stages();
+    expect(stages[0].status).toBe('done');
+    expect(stages[1].status).toBe('running');
+
+    wsMock.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ type: 'log', text: 'Formatting output' }) }));
+    stages = component.stages();
+    expect(stages[4].status).toBe('done');
+    expect(stages[5].status).toBe('running');
   });
 
   it('should set completed state and toast on "done" message with completed', () => {

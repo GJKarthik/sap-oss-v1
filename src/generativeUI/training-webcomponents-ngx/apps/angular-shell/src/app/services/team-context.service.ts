@@ -6,7 +6,7 @@
  * Auto-attaches X-Team-Context header to all API requests.
  */
 
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
 
 export interface TeamContextState {

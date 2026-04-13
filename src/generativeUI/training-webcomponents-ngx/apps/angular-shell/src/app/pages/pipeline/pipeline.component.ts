@@ -439,13 +439,15 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private appendLine(text: string) { 
-    this.logLines.update(lines => [...lines, this.parseLine(text)]); 
-    if (text.toLowerCase().includes('converting')) this.setStageStatus(1, 'running');
-    if (text.toLowerCase().includes('extracting')) { this.setStageStatus(1, 'done'); this.setStageStatus(3, 'running'); }
-    if (text.toLowerCase().includes('parsing')) { this.setStageStatus(3, 'done'); this.setStageStatus(4, 'running'); }
-    if (text.toLowerCase().includes('expanding')) { this.setStageStatus(4, 'done'); this.setStageStatus(5, 'running'); }
-    if (text.toLowerCase().includes('validating')) { this.setStageStatus(5, 'done'); this.setStageStatus(6, 'running'); }
-    if (text.toLowerCase().includes('formatting')) { this.setStageStatus(6, 'done'); this.setStageStatus(7, 'running'); }
+    const lower = text.toLowerCase();
+    this.logLines.update(lines => [...lines, this.parseLine(text)]);
+
+    if (lower.includes('converting')) this.setStageStatus(1, 'running');
+    if (lower.includes('extracting')) { this.setStageStatus(1, 'done'); this.setStageStatus(2, 'running'); }
+    if (lower.includes('parsing')) { this.setStageStatus(2, 'done'); this.setStageStatus(3, 'running'); }
+    if (lower.includes('expanding')) { this.setStageStatus(3, 'done'); this.setStageStatus(4, 'running'); }
+    if (lower.includes('validating')) { this.setStageStatus(4, 'done'); this.setStageStatus(5, 'running'); }
+    if (lower.includes('formatting')) { this.setStageStatus(5, 'done'); this.setStageStatus(6, 'running'); }
   }
 
   private setStageStatus(num: number, status: StageStatus) {

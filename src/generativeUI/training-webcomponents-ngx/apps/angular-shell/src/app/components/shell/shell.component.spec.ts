@@ -146,8 +146,8 @@ describe('ShellComponent', () => {
   });
 
   it('delegates logout to AuthService', () => {
-    component.onSignOut();
-    expect(MOCK_AUTH.logout).toHaveBeenCalled();
+    component.logout();
+    expect(MOCK_AUTH.logout).toHaveBeenCalledWith(MOCK_ROUTER);
   });
 
   it('records page visit on navigation', () => {
