@@ -11,7 +11,7 @@ import { GCounter, ORSet } from '../crdt';
 
 function makeConfig(overrides: Partial<CollabConfig> = {}): CollabConfig {
   return {
-    websocketUrl: 'ws://localhost:9090/collab',
+    websocketUrl: 'wss://example.com/collab',
     userId: 'user-test',
     displayName: 'Test User',
     ...overrides,

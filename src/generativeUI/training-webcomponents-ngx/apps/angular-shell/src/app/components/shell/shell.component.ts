@@ -29,6 +29,12 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
 import { ModeSwitcherComponent } from '../../shared/components/mode-switcher/mode-switcher.component';
 import type { ContextPill } from '../../shared/utils/mode.types';
 
+interface ShellNotificationItem {
+  icon: string;
+  title: string;
+  description: string;
+}
+
 @Component({
   selector: 'app-shell',
   standalone: true,
@@ -54,7 +60,7 @@ import type { ContextPill } from '../../shared/utils/mode.types';
           [primaryTitle]="i18n.t('app.title')"
           [secondaryTitle]="i18n.t('app.subtitle')"
           show-notifications
-          notifications-count="4"
+          [attr.notifications-count]="shellNotifications().length"
           show-co-pilot
           (logo-click)="navigateTo('/dashboard')"
           (notifications-click)="onNotificationsClick($event)"
@@ -67,11 +73,8 @@ import type { ContextPill } from '../../shared/utils/mode.types';
           <ui5-button icon="home" design="Transparent" (click)="navigateTo('/dashboard')" aria-label="Open dashboard"></ui5-button>
           <ui5-button #searchButton icon="search" design="Transparent" (click)="toggleSearch()" [attr.aria-label]="i18n.t('shell.searchAriaLabel')"></ui5-button>
           
-          <div class="header-actions__team" style="padding: 0 0.75rem; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); margin: 0 0.5rem;">
-            <ui5-avatar-group type="Individual">
-              <ui5-avatar initials="SJ" color-scheme="Accent1" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
-              <ui5-avatar initials="JI" color-scheme="Accent6" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
-            </ui5-avatar-group>
+          <div class="header-actions__team">
+            <span class="workspace-context">{{ currentWorkspaceLabel() }}</span>
           </div>
 
           <ui5-button #languageButton icon="globe" design="Transparent" (click)="toggleLanguageMenu($event)" [attr.aria-label]="i18n.t('shell.langAriaLabel')"></ui5-button>
@@ -270,14 +273,17 @@ import type { ContextPill } from '../../shared/utils/mode.types';
 
     <ui5-popover #notificationsPopover [headerText]="i18n.t('common.notifications')" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
       <div class="user-menu">
-        <ui5-list separators="Inner">
-          <ui5-li icon="message-information" description="System update complete">Platform Health: OK</ui5-li>
-          <ui5-li icon="message-warning" description="High VRAM usage detected">GPU Alert</ui5-li>
-          <ui5-li icon="message-success" description="Model 'Titan-v2' is ready">Deployment Success</ui5-li>
-          <ui5-li icon="group" description="Jony Ive joined the workspace">New Collaborator</ui5-li>
-        </ui5-list>
+        @if (shellNotifications().length > 0) {
+          <ui5-list separators="Inner">
+            @for (notification of shellNotifications(); track notification.title + notification.description) {
+              <ui5-li [icon]="notification.icon" [description]="notification.description">{{ notification.title }}</ui5-li>
+            }
+          </ui5-list>
+        } @else {
+          <div class="notification-empty">No active notifications</div>
+        }
         <footer class="user-menu__footer">
-          <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">View All</ui5-button>
+          <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">Close</ui5-button>
         </footer>
       </div>
     </ui5-popover>
@@ -291,7 +297,7 @@ import type { ContextPill } from '../../shared/utils/mode.types';
           </div>
           <div class="user-menu__info">
             <span class="user-menu__name">{{ userDisplayName() }}</span>
-            <span class="user-menu__role">{{ userTeamName() || 'Chief Design Officer' }}</span>
+            <span class="user-menu__role">{{ userTeamName() || 'Personal workspace' }}</span>
             <span class="user-menu__email">{{ userShortId() }}</span>
           </div>
         </header>
@@ -337,6 +343,16 @@ import type { ContextPill } from '../../shared/utils/mode.types';
       display: flex;
       align-items: center;
       margin: 0 0.5rem;
+      padding: 0 0.75rem;
+      border-left: 1px solid rgba(0,0,0,0.05);
+      border-right: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .workspace-context {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      white-space: nowrap;
     }
 
     .header-actions ui5-button {
@@ -399,7 +415,7 @@ import type { ContextPill } from '../../shared/utils/mode.types';
     }
 
     .nav-island-item:not(.active):not(.mode-suggested) {
-      opacity: 0.35;
+      opacity: 0.55;
     }
 
     .nav-island-item.mode-suggested:not(.active) {
@@ -560,6 +576,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   readonly searchQuery = signal('');
   readonly selectedSearchIndex = signal(0);
   readonly reducedMotion = signal(false);
+  readonly activeMode = this.store.activeMode;
   
   // Decorative canvas movement is disabled for reduced-motion users.
   readonly mouseX = signal(0);
@@ -624,6 +641,54 @@ export class ShellComponent implements OnInit, OnDestroy {
       seen.add(entry.path);
       return true;
     }).slice(0, 10);
+  });
+  readonly shellNotifications = computed<ShellNotificationItem[]>(() => {
+    const notifications: ShellNotificationItem[] = [];
+    const health = this.store.health().data;
+    const gpu = this.store.gpu().data;
+    const pipelineState = this.store.pipelineState();
+
+    if (health) {
+      if (health.status === 'healthy') {
+        notifications.push({
+          icon: 'message-success',
+          title: 'Platform health is stable',
+          description: 'Core services are reachable and ready for work.',
+        });
+      } else {
+        notifications.push({
+          icon: 'message-warning',
+          title: 'Platform health needs attention',
+          description: 'One or more upstream dependencies are degraded.',
+        });
+      }
+    }
+
+    if (pipelineState === 'running') {
+      notifications.push({
+        icon: 'process',
+        title: 'Pipeline execution is active',
+        description: 'Training jobs are currently running in the execution backend.',
+      });
+    }
+
+    if (gpu && gpu.utilization >= 85) {
+      notifications.push({
+        icon: 'machine',
+        title: 'GPU pressure is elevated',
+        description: `Utilization is at ${gpu.utilization}% and may affect new runs.`,
+      });
+    }
+
+    if (notifications.length === 0) {
+      notifications.push({
+        icon: 'message-information',
+        title: 'Workspace is quiet',
+        description: `No immediate issues detected while ${this.activeMode()} mode is active.`,
+      });
+    }
+
+    return notifications.slice(0, 4);
   });
 
   readonly currentPagePinned = computed(() => this.navigationAssistant.isPinned(this.currentPath()));
@@ -858,6 +923,13 @@ export class ShellComponent implements OnInit, OnDestroy {
       hash |= 0;
     }
     return schemes[Math.abs(hash) % schemes.length];
+  });
+
+  readonly currentWorkspaceLabel = computed(() => {
+    const team = this.userTeamName();
+    const mode = this.activeMode();
+    const modeLabel = mode.charAt(0).toUpperCase() + mode.slice(1);
+    return team ? `${team} • ${modeLabel}` : `${modeLabel} workspace`;
   });
 
   private setupMotionPreference(): void {

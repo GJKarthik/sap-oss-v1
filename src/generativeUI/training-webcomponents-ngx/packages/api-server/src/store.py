@@ -8,14 +8,13 @@ the same SQLAlchemy engine as every other table.
 
 from __future__ import annotations
 
-import hashlib
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, JSON, String, Text
 
-from .database import Base, IS_HANA, SessionLocal, db_backend_label
+from .database import Base, SessionLocal, db_backend_label
 
 StoreCollection = Literal["jobs", "vector_stores", "translation_memory"]
 
@@ -97,6 +96,16 @@ class UserRecord(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class AuditLogRecord(Base):
+    """Durable sink for GenUI governance batches (POST /audit/batch)."""
+
+    __tablename__ = "audit_log"
+    id = Column(String(256), primary_key=True, index=True)
+    user_id = Column(String(256), index=True, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    record = Column(JSON, nullable=False)
+
+
 # ---------------------------------------------------------------------------
 # Store — high-level data-access façade
 # ---------------------------------------------------------------------------
@@ -121,6 +130,7 @@ class Store:
             "tm_count": self._count(TranslationMemoryRecord),
             "users_count": self._count(UserRecord),
             "notifications_count": self._count(NotificationRecord),
+            "audit_log_count": self._count(AuditLogRecord),
         }
 
     def _count(self, model) -> int:
@@ -367,6 +377,23 @@ class Store:
         db = self.SessionLocal()
         try:
             return [self._user_to_dict(u) for u in db.query(UserRecord).limit(limit).all()]
+        finally:
+            db.close()
+
+    def insert_audit_batch(self, records: List[Dict[str, Any]]) -> int:
+        """Persist GenUI governance audit rows (each dict is one PersistedAuditEntry-shaped object)."""
+        db = self.SessionLocal()
+        try:
+            for rec in records:
+                uid = str(rec.get("userId") or "").strip() or None
+                row = AuditLogRecord(
+                    id=str(uuid.uuid4()),
+                    user_id=uid,
+                    record=rec,
+                )
+                db.add(row)
+            db.commit()
+            return len(records)
         finally:
             db.close()
 

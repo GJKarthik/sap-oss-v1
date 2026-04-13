@@ -18,6 +18,7 @@ import {
   mergeCrdtValues,
   serializeCrdtValue,
 } from '../crdt';
+import { assertSafeCollaborationWebSocketUrl } from '../utils/collab-url-validation';
 
 // =============================================================================
 // Types
@@ -317,6 +318,7 @@ export class CollaborationService implements OnDestroy {
 
   constructor(@Optional() @Inject(COLLAB_CONFIG) config?: CollabConfig) {
     if (config) {
+      assertSafeCollaborationWebSocketUrl(config.websocketUrl);
       this.config = config;
     }
   }
@@ -325,6 +327,7 @@ export class CollaborationService implements OnDestroy {
    * Configure the service.
    */
   configure(config: CollabConfig): void {
+    assertSafeCollaborationWebSocketUrl(config.websocketUrl);
     this.config = config;
   }
 
@@ -335,6 +338,8 @@ export class CollaborationService implements OnDestroy {
     if (!this.config) {
       throw new Error('CollaborationService not configured');
     }
+
+    assertSafeCollaborationWebSocketUrl(this.config.websocketUrl);
 
     if (this.currentRoomId) {
       await this.leaveRoom();

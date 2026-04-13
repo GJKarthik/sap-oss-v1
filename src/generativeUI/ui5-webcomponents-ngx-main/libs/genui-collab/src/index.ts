@@ -30,6 +30,9 @@ export type {
   VectorClockLike,
 } from './lib/crdt';
 
+// WebSocket URL guard (SSRF-style misuse)
+export { assertSafeCollaborationWebSocketUrl } from './lib/utils/collab-url-validation';
+
 // Service
 export {
   CollaborationService,

@@ -5,12 +5,12 @@
 
 :root {
   /* ── Liquid Glass Engine (WWDC Flagship Standard) ── */
-  --aura-primary: rgba(0, 113, 227, 0.18);
-  --aura-secondary: rgba(123, 97, 255, 0.12);
+  --aura-primary: rgba(0, 113, 227, 0.12);
+  --aura-secondary: rgba(123, 97, 255, 0.08);
   
-  --liquid-glass-bg: rgba(255, 255, 255, 0.42);
-  --liquid-glass-blur: blur(60px) saturate(240%) brightness(1.04);
-  --liquid-glass-border: 1px solid rgba(255, 255, 255, 0.7);
+  --liquid-glass-bg: rgba(255, 255, 255, 0.56);
+  --liquid-glass-blur: blur(42px) saturate(180%) brightness(1.02);
+  --liquid-glass-border: 1px solid rgba(255, 255, 255, 0.6);
   --liquid-glass-inner-border: 1px solid rgba(0, 0, 0, 0.04);
   
   /* Definitive Squircle Radius (G2-like Continuity Simulation) */
@@ -41,17 +41,17 @@
   --liquid-glass-shadow: 
     0 0 0 1px rgba(0, 0, 0, 0.03),
     0 2px 4px rgba(0, 0, 0, 0.04),
-    0 12px 32px rgba(0, 0, 0, 0.06),
-    0 32px 80px rgba(0, 0, 0, 0.04);
+    0 8px 24px rgba(0, 0, 0, 0.05),
+    0 24px 56px rgba(0, 0, 0, 0.035);
   
   --liquid-glass-shadow-deep:
     0 0 0 1px rgba(0, 0, 0, 0.05),
-    0 40px 120px rgba(0, 0, 0, 0.28),
-    0 10px 24px rgba(0, 0, 0, 0.08);
+    0 28px 84px rgba(0, 0, 0, 0.2),
+    0 8px 20px rgba(0, 0, 0, 0.06);
 
   /* Physics-based Easing (Apple Spring) */
   --spring-easing: cubic-bezier(0.23, 1, 0.32, 1);
-  --fluid-transition: 0.5s var(--spring-easing);
+  --fluid-transition: 0.38s var(--spring-easing);
   
   /* Optical Typography Tracking */
   --font-tracking-tight: -0.045em;
@@ -61,7 +61,7 @@
 
 [data-sap-theme*="dark"] {
   --liquid-glass-bg: rgba(29, 34, 40, 0.75); /* Aligned with SAP Horizon Dark #1d2228 */
-  --liquid-glass-blur: blur(50px) saturate(190%) brightness(0.85);
+  --liquid-glass-blur: blur(38px) saturate(165%) brightness(0.9);
   --liquid-glass-border: 1px solid rgba(255, 255, 255, 0.12);
   --liquid-glass-inner-border: 1px solid rgba(255, 255, 255, 0.06);
 
@@ -78,7 +78,7 @@
 /* ── View Transitions (Route Choreography) ───────────────────────────────── */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.5s;
+  animation-duration: 0.35s;
   animation-timing-function: var(--spring-easing);
 }
 
@@ -137,15 +137,15 @@ body {
   width: 150vmax; height: 150vmax;
   top: -75vmax; left: -75vmax;
   background: radial-gradient(circle at center, var(--aura-primary) 0%, transparent 65%);
-  animation: fluidAura 45s infinite alternate ease-in-out;
-  filter: blur(120px) contrast(1.1);
-  opacity: 0.7;
-  mix-blend-mode: color-dodge;
+  animation: fluidAura 60s infinite alternate ease-in-out;
+  filter: blur(90px) contrast(1.05);
+  opacity: 0.45;
+  mix-blend-mode: screen;
 }
 
 .app-canvas::after {
   background: radial-gradient(circle at center, var(--aura-secondary) 0%, transparent 65%);
-  animation: fluidAura 60s infinite alternate-reverse ease-in-out;
+  animation: fluidAura 80s infinite alternate-reverse ease-in-out;
   animation-delay: -15s;
 }
 
@@ -195,8 +195,8 @@ h1, .text-hero { letter-spacing: var(--font-tracking-tight); font-weight: 800; }
 h2, h3 { letter-spacing: var(--font-tracking-tight); font-weight: 700; }
 .text-muted { color: var(--text-secondary); font-weight: 500; }
 
-.fadeIn { animation: fadeIn 0.8s var(--spring-easing) forwards; }
-.slideUp { animation: slideUp 0.8s var(--spring-easing) forwards; }
+.fadeIn { animation: fadeIn 0.55s var(--spring-easing) forwards; }
+.slideUp { animation: slideUp 0.55s var(--spring-easing) forwards; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
@@ -218,7 +218,7 @@ ui5-card {
   }
 
   &:hover {
-    transform: translateY(-8px) scale(1.01);
+    transform: translateY(-5px) scale(1.006);
     box-shadow: var(--liquid-glass-shadow-deep) !important;
   }
 }

@@ -16,6 +16,30 @@ export interface ServiceCheck {
   error?: string;
 }
 
+export interface TrainingCapabilitiesPayload {
+  db_backend: string;
+  database: string;
+  hana_vector: string;
+  vllm_turboquant: string;
+  aicore_configured: boolean;
+  aicore_reachable: string;
+  pal_route: string;
+}
+
+export interface StackLayerCheck {
+  id: string;
+  labelKey: string;
+  status: string;
+  /** false = failing layer; true = healthy or intentionally optional (unconfigured). */
+  ok: boolean;
+}
+
+export interface TrainingStackResult {
+  layers: StackLayerCheck[];
+  blocksWorkspace: boolean;
+  httpError?: string;
+}
+
 export interface RouteReadiness {
   route: ExperienceRoute;
   blocking: boolean;
@@ -60,6 +84,62 @@ export class ExperienceHealthService {
       this.checkService('OpenAI'),
       this.checkService('MCP'),
     ]);
+  }
+
+  /**
+   * Training API aggregated capabilities (HANA vector, vLLM, AI Core, PAL upstream).
+   * Uses environment.trainingApiUrl (gateway /api/v1/training or local absolute URL).
+   */
+  fetchTrainingStack(): Observable<TrainingStackResult> {
+    const base = environment.trainingApiUrl.replace(/\/$/, '');
+    const url = `${base}/capabilities`;
+    return this.http.get<TrainingCapabilitiesPayload>(url).pipe(
+      map((p) => {
+        const layers: StackLayerCheck[] = [
+          {
+            id: 'database',
+            labelKey: 'READINESS_LAYER_DATABASE',
+            status: p.database,
+            ok: p.database === 'healthy',
+          },
+          {
+            id: 'hana_vector',
+            labelKey: 'READINESS_LAYER_HANA_VECTOR',
+            status: p.hana_vector,
+            ok: p.hana_vector === 'healthy' || p.hana_vector === 'unconfigured',
+          },
+          {
+            id: 'vllm_turboquant',
+            labelKey: 'READINESS_LAYER_VLLM',
+            status: p.vllm_turboquant,
+            ok: p.vllm_turboquant === 'healthy',
+          },
+          {
+            id: 'aicore',
+            labelKey: 'READINESS_LAYER_AICORE',
+            status: p.aicore_configured ? p.aicore_reachable : 'unconfigured',
+            ok: !p.aicore_configured || p.aicore_reachable === 'healthy',
+          },
+          {
+            id: 'pal_route',
+            labelKey: 'READINESS_LAYER_PAL',
+            status: p.pal_route,
+            ok: p.pal_route === 'healthy' || p.pal_route === 'unconfigured',
+          },
+        ];
+        const blocksWorkspace =
+          p.database !== 'healthy' ||
+          (p.aicore_configured && p.aicore_reachable === 'unhealthy');
+        return { layers, blocksWorkspace };
+      }),
+      catchError((err: { message?: string }) =>
+        of({
+          layers: [] as StackLayerCheck[],
+          blocksWorkspace: true,
+          httpError: err?.message ?? 'Request failed',
+        }),
+      ),
+    );
   }
 
   private checkService(name: ServiceName): Observable<ServiceCheck> {

@@ -13,7 +13,7 @@
 | Agent-generated UIs cannot access routes/resources outside their schema | ✅ Pass | `SchemaValidator` only permits component creation; no router manipulation |
 | `GovernanceService.isBlocked(action)` enforced before tool calls | ✅ Pass | `pendingActions$` requires explicit `confirmAction` or `rejectAction` |
 | Role-based policy (`PolicyConfig.roles`) enforced per tool call | ✅ Pass | `requiresConfirmation` returns true for unlisted roles |
-| SSE endpoint (`/ag-ui/run`) authenticated by upstream proxy | ⚠️ Review | Authentication delegated to deployment layer (nginx/BTP router) — not enforced in library |
+| SSE endpoint (`/ag-ui/run`) authenticated by upstream proxy | ✅ Fixed | `SseTransport` supports optional `authToken` (query param on `EventSource` + `Authorization: Bearer` on POST); suite gateway forwards `Authorization` to upstream. Apps set `agUiAuthToken` / `sse.authToken`; upstream must still validate. |
 
 ---
 
@@ -58,7 +58,7 @@
 |---|---|---|
 | `nx.json` cloud token uses env var substitution | ✅ Fixed | `nxCloudAccessToken` references `${NX_CLOUD_ACCESS_TOKEN}` — no plaintext token committed |
 | DOMPurify `FORCE_BODY` not set | ⚠️ Fixed (this release) | `applyProps` now uses `{ ALLOWED_TAGS: [], ALLOWED_ATTR: [] }` — strips all HTML |
-| `SchemaValidator` strict mode defaults to `false` | ℹ️ Info | Warnings do not block rendering; apps requiring strict mode must opt in via `configure({ strict: true })` |
+| `SchemaValidator` strict mode defaults to `true` | ✅ Fixed | Unknown schema version and other warnings invalidate the schema by default; apps needing lenient behavior use `validate(schema, { strict: false })` or `configure({ strict: false })`. |
 | MCP server bearer auth middleware | ✅ Fixed | `requireBearerAuth` enforced on `/mcp`; logs a warning if `MCP_AUTH_TOKEN` is unset (localhost-only fallback) |
 
 ---
@@ -82,7 +82,7 @@ Run `yarn audit` for a full npm advisory report.
 
 | Control | Status | Notes |
 |---|---|---|
-| Joule `/ag-ui/run` endpoint requires authentication | ⚠️ Deployment | Library does not enforce auth — must be handled at BTP router / nginx level |
+| Joule `/ag-ui/run` endpoint requires authentication | ✅ Fixed (config) | Same as A01: optional client token + gateway `Authorization` passthrough; production must configure tokens and enforce validation on the agent/MCP upstream. |
 | MCP server bearer token | ✅ Pass | `MCP_SERVER_BEARER_TOKEN` env var checked in `ui5_ngx_agent.py` middleware |
 | `CollaborationService` WebSocket auth | ✅ Fixed | `CollabConfig.authToken` is sent as a query parameter on the WebSocket handshake and included in the `join` message payload. Consuming apps must set `authToken` for production. |
 
@@ -93,7 +93,7 @@ Run `yarn audit` for a full npm advisory report.
 | Control | Status | Notes |
 |---|---|---|
 | Agent schema validated before render | ✅ Pass | `SchemaValidator.validate()` called in `DynamicRenderer.render()` before any DOM mutation |
-| `GovernanceService` audit log tamper-resistance | ℹ️ Info | In-memory audit log — no persistence by default; production deployments should forward to an immutable store (HANA, Splunk, etc.) |
+| `GovernanceService` audit log tamper-resistance | ✅ Fixed | `AuditService` can POST batches to the training api-server `POST /audit/batch` (HANA/SQLite via SQLAlchemy). Workspace Joule wires `audit.endpoint` + optional `requestHeaders` (`X-Internal-Token` when `AUDIT_SINK_TOKEN` is set). |
 | `SequenceTracker` gap detection | ✅ Pass | Gaps logged as warnings; no silent event drop |
 
 ---
@@ -113,7 +113,7 @@ Run `yarn audit` for a full npm advisory report.
 | Control | Status | Notes |
 |---|---|---|
 | `proxy.conf.json` target is localhost only | ✅ Pass | `http://localhost:8080` — no user-controlled redirect |
-| `CollaborationService` WebSocket URL | ⚠️ Review | `wsUrl` is a constructor argument — consuming apps must not derive it from user input |
+| `CollaborationService` WebSocket URL | ✅ Fixed | `assertSafeCollaborationWebSocketUrl` blocks `ws`/`wss` targets on private/metadata hosts; same-origin path-only URLs (e.g. `/collab`) are allowed. |
 | OpenAI-compatible server HANA endpoints | ✅ Fixed | `validateRemoteUrl` rejects private/metadata IPs (169.254.x, 100.100.x, 10.x, 172.16-31.x, 192.168.x, localhost, ::1) for all env-sourced URLs |
 
 ---
@@ -122,16 +122,28 @@ Run `yarn audit` for a full npm advisory report.
 
 | Category | Pass | Warning/Review | Blocked |
 |---|---|---|---|
-| A01 Access Control | 3 | 1 | 0 |
+| A01 Access Control | 4 | 0 | 0 |
 | A02 Crypto | 3 | 0 | 0 |
 | A03 Injection | 9 | 0 | 0 |
 | A04 Insecure Design | 4 | 0 | 0 |
-| A05 Misconfiguration | 4 | 1 | 0 |
+| A05 Misconfiguration | 4 | 0 | 0 |
 | A06 Outdated Deps | 7 | 0 | 0 |
-| A07 Auth Failures | 2 | 1 | 0 |
-| A08 Data Integrity | 3 | 1 | 0 |
+| A07 Auth Failures | 3 | 0 | 0 |
+| A08 Data Integrity | 3 | 0 | 0 |
 | A09 Logging | 3 | 0 | 0 |
-| A10 SSRF | 2 | 1 | 0 |
-| **Total** | **40** | **4** | **0** |
+| A10 SSRF | 3 | 0 | 0 |
+| **Total** | **44** | **0** | **0** |
 
-No blockers. Four remaining review items are deployment/configuration concerns (SSE endpoint auth delegated to deployment proxy, DOMPurify strict mode opt-in, audit log persistence, CollaborationService WebSocket URL validation at consuming-app level).
+No blockers. Production still **must** configure AG-UI tokens, upstream validation, and (recommended) `AUDIT_SINK_TOKEN` for the audit sink.
+
+---
+
+## Configuration reference (GenUI / gateway / training API)
+
+| Variable / setting | Purpose |
+|---|---|
+| Workspace `agUiAuthToken` | Optional bearer token: SSE query param + POST `Authorization` for AG-UI |
+| Gateway `location /ag-ui/` | Forwards `Authorization` from client to upstream (`proxy_set_header Authorization $http_authorization`) |
+| Training API `AUDIT_SINK_TOKEN` | If set, `POST /audit/batch` (and `GET /audit/batch` refresh) require matching `X-Internal-Token` |
+| Workspace `auditSinkToken` | Sent as `X-Internal-Token` on audit flush/query when set |
+| `CollaborationService` `websocketUrl` | Must be a safe `ws`/`wss` URL or same-origin path (e.g. `/collab`); private hosts rejected |

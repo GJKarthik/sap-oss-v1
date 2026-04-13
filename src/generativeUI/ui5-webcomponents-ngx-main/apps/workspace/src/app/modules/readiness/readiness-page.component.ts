@@ -5,6 +5,7 @@ import {
   ExperienceHealthService,
   ExperienceRoute,
   ServiceCheck,
+  StackLayerCheck,
 } from '../../core/experience-health.service';
 import { LearnPathService } from '../../core/learn-path.service';
 
@@ -26,6 +27,8 @@ export class ReadinessPageComponent implements OnInit {
   workspaceReady = false;
   lastCheckedAt: string | null = null;
   serviceChecks: ServiceCheck[] = [];
+  stackLayers: StackLayerCheck[] = [];
+  stackError: string | null = null;
   routeStatuses: RouteStatus[] = [];
 
   constructor(
@@ -42,6 +45,7 @@ export class ReadinessPageComponent implements OnInit {
     this.loading = true;
     forkJoin({
       services: this.healthService.checkAllServices(),
+      stack: this.healthService.fetchTrainingStack(),
       generative: this.healthService.checkRouteReadiness('generative'),
       joule: this.healthService.checkRouteReadiness('joule'),
       components: this.healthService.checkRouteReadiness('components'),
@@ -49,6 +53,8 @@ export class ReadinessPageComponent implements OnInit {
       ocr: this.healthService.checkRouteReadiness('ocr'),
     }).subscribe((result) => {
       this.serviceChecks = result.services;
+      this.stackLayers = result.stack.layers;
+      this.stackError = result.stack.httpError ?? null;
       this.routeStatuses = [
         this.toStatus('generative', 'NAV_GENERATIVE', result.generative.blocking, result.generative.checks),
         this.toStatus('joule', 'NAV_JOULE', result.joule.blocking, result.joule.checks),
@@ -59,7 +65,8 @@ export class ReadinessPageComponent implements OnInit {
 
       const servicesHealthy = this.serviceChecks.every((check) => check.ok);
       const routesHealthy = this.routeStatuses.every((route) => !route.blocking);
-      this.workspaceReady = servicesHealthy && routesHealthy;
+      const stackOk = !result.stack.blocksWorkspace;
+      this.workspaceReady = servicesHealthy && routesHealthy && stackOk;
       this.lastCheckedAt = new Date().toISOString();
       this.loading = false;
     });

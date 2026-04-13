@@ -13,11 +13,14 @@ import { I18nService } from '../../services/i18n.service';
 import { IngestionService } from '../../services/ingestion.service';
 import { ToastService } from '../../services/toast.service';
 import { PairType, TrustLevel, TermPair, ParagraphPair } from './pair-studio.types';
+import { AppStore } from '../../store/app.store';
+import { ConfirmationDialogComponent, type ConfirmationDialogData } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import type { AppMode } from '../../shared/utils/mode.types';
 
 @Component({
   selector: 'app-pair-studio',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmationDialogComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pair-studio.component.html',
@@ -26,6 +29,7 @@ import { PairType, TrustLevel, TermPair, ParagraphPair } from './pair-studio.typ
 export class PairStudioComponent {
   readonly i18n = inject(I18nService);
   readonly ingestion = inject(IngestionService);
+  readonly store = inject(AppStore);
   private readonly toast = inject(ToastService);
 
   // ---------------------------------------------------------------------------
@@ -45,6 +49,7 @@ export class PairStudioComponent {
   selectedTermIndices = signal<Set<number>>(new Set());
   selectedParagraphIndices = signal<Set<number>>(new Set());
   editingTermIndex = signal<number | null>(null);
+  editingTargetTerm = signal('');
 
   // Filter state
   filterPairType = signal<string>('all');
@@ -57,6 +62,7 @@ export class PairStudioComponent {
   commitToGlossary = true;
   commitToVector = false;
   committing = signal(false);
+  commitConfirmationOpen = signal(false);
 
   // ---------------------------------------------------------------------------
   // Computed
@@ -67,8 +73,48 @@ export class PairStudioComponent {
   readonly progress = this.ingestion.progress;
   readonly progressLabel = this.ingestion.progressLabel;
   readonly commitResult = this.ingestion.lastCommitResult;
+  readonly activeMode = this.store.activeMode;
 
   readonly canProcess = computed(() => this.droppedFiles().length > 0 && !this.processing());
+  readonly processButtonLabel = computed(() =>
+    this.activeMode() === 'chat' ? 'Review extracted pairs' : this.i18n.t('pairStudio.processFiles'),
+  );
+  readonly commitButtonLabel = computed(() => {
+    const labels: Record<AppMode, string> = {
+      chat: 'Switch to training',
+      cowork: 'Approve and commit',
+      training: this.i18n.t('pairStudio.commitButton'),
+    };
+    return labels[this.activeMode()];
+  });
+  readonly modeBanner = computed(() => {
+    const banners: Record<AppMode, { title: string; body: string; actionLabel: string }> = {
+      chat: {
+        title: 'Chat mode is read-only for commit actions.',
+        body: 'You can inspect extracted pairs here, but writing to translation memory or glossary requires training mode.',
+        actionLabel: 'Enable training mode',
+      },
+      cowork: {
+        title: 'Cowork mode requires explicit approval.',
+        body: 'Processing stays available, but commits will open a confirmation step before any shared data is changed.',
+        actionLabel: 'Keep cowork mode',
+      },
+      training: {
+        title: 'Training mode is live.',
+        body: 'Approved pairs can be committed directly into shared translation memory and glossary stores.',
+        actionLabel: 'Training ready',
+      },
+    };
+    return banners[this.activeMode()];
+  });
+  readonly commitConfirmationData = computed<ConfirmationDialogData>(() => ({
+    title: 'Confirm Pair Studio commit',
+    message: 'Cowork mode requires approval before glossary or translation memory entries are written. Continue with this batch commit?',
+    confirmText: 'Commit batch',
+    cancelText: 'Keep reviewing',
+    confirmDesign: 'Positive',
+    icon: 'accept',
+  }));
 
   readonly filteredTerms = computed(() => {
     const batch = this.batch();
@@ -184,6 +230,7 @@ export class PairStudioComponent {
   // ---------------------------------------------------------------------------
 
   toggleTermSelection(index: number): void {
+    if (index < 0) return;
     const set = new Set(this.selectedTermIndices());
     if (set.has(index)) set.delete(index);
     else set.add(index);
@@ -193,18 +240,43 @@ export class PairStudioComponent {
   toggleAllTerms(): void {
     const terms = this.filteredTerms();
     const set = this.selectedTermIndices();
-    if (set.size === terms.length) {
+    const visibleIndices = terms
+      .map((term) => this.termIndex(term))
+      .filter((index): index is number => index >= 0);
+    const allSelected =
+      visibleIndices.length > 0 &&
+      visibleIndices.every((index) => set.has(index));
+
+    if (allSelected) {
       this.selectedTermIndices.set(new Set());
     } else {
-      this.selectedTermIndices.set(new Set(terms.map((_, i) => i)));
+      this.selectedTermIndices.set(new Set(visibleIndices));
     }
   }
 
   toggleParagraphSelection(index: number): void {
+    if (index < 0) return;
     const set = new Set(this.selectedParagraphIndices());
     if (set.has(index)) set.delete(index);
     else set.add(index);
     this.selectedParagraphIndices.set(set);
+  }
+
+  toggleAllParagraphs(): void {
+    const paragraphs = this.filteredParagraphs();
+    const set = this.selectedParagraphIndices();
+    const visibleIndices = paragraphs
+      .map((paragraph) => this.paragraphIndex(paragraph))
+      .filter((index): index is number => index >= 0);
+    const allSelected =
+      visibleIndices.length > 0 &&
+      visibleIndices.every((index) => set.has(index));
+
+    if (allSelected) {
+      this.selectedParagraphIndices.set(new Set());
+    } else {
+      this.selectedParagraphIndices.set(new Set(visibleIndices));
+    }
   }
 
   approveSelected(): void {
@@ -232,32 +304,82 @@ export class PairStudioComponent {
   }
 
   approveTerm(index: number): void {
+    if (index < 0) return;
     this.ingestion.updateTermStatus(index, 'approved');
   }
 
   rejectTerm(index: number): void {
+    if (index < 0) return;
     this.ingestion.updateTermStatus(index, 'rejected');
   }
 
   startEditTerm(index: number): void {
+    const term = this.batch()?.termPairs[index];
+    if (!term) return;
     this.editingTermIndex.set(index);
+    this.editingTargetTerm.set(term.targetTerm);
   }
 
-  saveEditTerm(index: number, updates: Partial<TermPair>): void {
-    this.ingestion.updateTermPair(index, updates);
+  saveEditTerm(): void {
+    const index = this.editingTermIndex();
+    if (index === null) return;
+
+    const targetTerm = this.editingTargetTerm().trim();
+    if (!targetTerm) {
+      this.toast.error('Target term cannot be empty.');
+      return;
+    }
+
+    this.ingestion.updateTermPair(index, { targetTerm });
     this.editingTermIndex.set(null);
+    this.editingTargetTerm.set('');
   }
 
   cancelEditTerm(): void {
     this.editingTermIndex.set(null);
+    this.editingTargetTerm.set('');
   }
 
   approveParagraph(index: number): void {
+    if (index < 0) return;
     this.ingestion.updateParagraphStatus(index, 'approved');
   }
 
   rejectParagraph(index: number): void {
+    if (index < 0) return;
     this.ingestion.updateParagraphStatus(index, 'rejected');
+  }
+
+  termIndex(term: TermPair): number {
+    const batch = this.batch();
+    return batch ? batch.termPairs.indexOf(term) : -1;
+  }
+
+  paragraphIndex(paragraph: ParagraphPair): number {
+    const batch = this.batch();
+    return batch ? batch.paragraphPairs.indexOf(paragraph) : -1;
+  }
+
+  trackTerm(_index: number, term: TermPair): string {
+    return [
+      term.sourceTerm,
+      term.targetTerm,
+      term.sourceLang,
+      term.targetLang,
+      term.category,
+      term.confidence,
+    ].join('|');
+  }
+
+  trackParagraph(_index: number, paragraph: ParagraphPair): string {
+    return [
+      paragraph.sourceText,
+      paragraph.targetText,
+      paragraph.sourceLang,
+      paragraph.targetLang,
+      paragraph.page ?? '',
+      paragraph.confidence,
+    ].join('|');
   }
 
   confidenceClass(confidence: number): string {
@@ -275,6 +397,21 @@ export class PairStudioComponent {
   // ---------------------------------------------------------------------------
 
   commitBatch(): void {
+    if (this.activeMode() === 'chat') {
+      this.store.setMode('training');
+      this.toast.info('Training mode enabled. Review the batch and commit again when ready.');
+      return;
+    }
+
+    if (this.activeMode() === 'cowork') {
+      this.commitConfirmationOpen.set(true);
+      return;
+    }
+
+    this.commitBatchNow();
+  }
+
+  commitBatchNow(): void {
     this.committing.set(true);
     this.ingestion
       .commit({
@@ -297,11 +434,19 @@ export class PairStudioComponent {
       });
   }
 
+  switchToTrainingMode(): void {
+    if (this.activeMode() !== 'training') {
+      this.store.setMode('training');
+      this.toast.info('Training mode enabled for live Pair Studio actions.');
+    }
+  }
+
   discardBatch(): void {
     this.ingestion.discardBatch();
     this.droppedFiles.set([]);
     this.selectedTermIndices.set(new Set());
     this.selectedParagraphIndices.set(new Set());
+    this.cancelEditTerm();
   }
 
   startNewBatch(): void {

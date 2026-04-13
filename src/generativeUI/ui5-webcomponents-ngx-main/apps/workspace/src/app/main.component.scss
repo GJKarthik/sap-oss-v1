@@ -89,7 +89,7 @@
 
 .hero-panel-card {
   transition: transform 0.4s var(--spring-easing);
-  &:hover { transform: translateX(-8px); }
+  &:hover { transform: translateX(-5px); }
 }
 
 .card-body {
@@ -181,8 +181,8 @@
 
   &:hover {
     background: #fff;
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
     border-color: rgba(var(--color-primary-rgb), 0.3);
   }
 }
@@ -225,9 +225,9 @@
   transition: all 0.4s var(--spring-easing);
 
   &:hover {
-    transform: translateY(-10px);
+    transform: translateY(-6px);
     background: #fff;
-    box-shadow: 0 32px 64px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 22px 44px rgba(0, 0, 0, 0.07);
     border-color: rgba(var(--color-primary-rgb), 0.3);
   }
 }
@@ -269,9 +269,9 @@
   transition: all 0.4s var(--spring-easing);
 
   &:hover {
-    transform: translateY(-8px) scale(1.02);
+    transform: translateY(-5px) scale(1.01);
     background: #fff;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.07);
     border-color: rgba(var(--color-primary-rgb), 0.2);
   }
 }

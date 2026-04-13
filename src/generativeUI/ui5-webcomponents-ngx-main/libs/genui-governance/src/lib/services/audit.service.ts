@@ -147,6 +147,8 @@ export interface AuditConfig {
   backend?: string;
   /** Batch size for sending */
   batchSize?: number;
+  /** Extra HTTP headers for POST to {@link endpoint} (e.g. `X-Internal-Token` for audit sink). */
+  requestHeaders?: Record<string, string>;
 }
 
 interface PersistedAuditEntry {
@@ -359,7 +361,10 @@ export class AuditService implements OnDestroy {
     if (!this.config.endpoint) {
       return this.query(options);
     }
-    const response = await fetch(this.buildQueryUrl(options), { method: 'GET' });
+    const response = await fetch(this.buildQueryUrl(options), {
+      method: 'GET',
+      headers: { ...(this.config.requestHeaders || {}) },
+    });
     if (!response.ok) {
       throw new Error(`Audit query failed: ${response.status}`);
     }
@@ -583,7 +588,10 @@ export class AuditService implements OnDestroy {
     try {
       await fetch(this.config.endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.config.requestHeaders || {}),
+        },
         body: JSON.stringify({
           entries: await this.toPersistedEntries(batch),
         }),

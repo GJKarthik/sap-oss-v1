@@ -75,7 +75,7 @@ const DEFAULT_CONFIG: ValidatorConfig = {
   maxDepth: 20,
   sanitize: true,
   allowUnknown: false,
-  strict: false,
+  strict: true,
 };
 
 // =============================================================================

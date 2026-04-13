@@ -18,5 +18,26 @@
     "changeOrigin": true,
     "pathRewrite": { "^/api/training": "" },
     "logLevel": "info"
+  },
+  "/api/v1/training": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/v1/training": "" },
+    "logLevel": "info"
+  },
+  "/api/v1/ui5/openai": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/v1/ui5/openai": "" },
+    "logLevel": "info"
+  },
+  "/api/v1/ui5/mcp": {
+    "target": "http://localhost:9160",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/v1/ui5/mcp": "" },
+    "logLevel": "info"
   }
 }

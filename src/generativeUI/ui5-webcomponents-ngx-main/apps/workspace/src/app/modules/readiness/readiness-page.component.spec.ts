@@ -18,6 +18,7 @@ function createHealthServiceMock(overrides: Partial<ExperienceHealthService> = {
         blocking: false,
         checks: [{ name: 'AG-UI', ok: true, status: 200, url: '/health' }],
       }),
+    fetchTrainingStack: () => of({ layers: [], blocksWorkspace: false }),
     ...overrides,
   } as unknown as ExperienceHealthService;
 }

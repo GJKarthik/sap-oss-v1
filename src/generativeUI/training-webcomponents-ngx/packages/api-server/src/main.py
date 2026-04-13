@@ -49,9 +49,22 @@ from . import personal_knowledge
 from . import workspace_api
 from . import notification_api
 from . import auth_api
+from . import audit_sink_api
 from .identity import resolve_request_identity
+from .llm_circuit_breaker import LLMCircuitBreaker
 
-from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD, HANA_ENCRYPT
+from .hana_config import (
+    HANA_ENCRYPT,
+    HANA_HOST,
+    HANA_PASSWORD,
+    HANA_PORT,
+    HANA_USER,
+    AICORE_BASE_URL,
+    PAL_UPSTREAM_URL,
+    aicore_fully_configured,
+    aicore_anthropic_proxy_base,
+    vllm_probe_base_url,
+)
 
 pal_catalog = pal.PALCatalog()
 hana_pal = pal.HanaPALClient(
@@ -216,13 +229,17 @@ structlog.configure(
 )
 logger = structlog.get_logger("training-webcomponents-ngx")
 
+_llm_circuit = LLMCircuitBreaker.from_env()
+
 # ---------------------------------------------------------------------------
 # LLM Routing Strategy
 # ---------------------------------------------------------------------------
 
 class LLMRouter:
     @staticmethod
-    def get_endpoint_and_model(messages: list[dict[str, str]], preferred_model: str = "default") -> tuple[str, str]:
+    def get_endpoint_and_model(
+        messages: list[dict[str, str]], preferred_model: str = "default",
+    ) -> tuple[str, str, str]:
         """
         Routes queries based on privacy and data type:
         - Metadata/Public -> AI Core (Anthropic)
@@ -236,36 +253,73 @@ class LLMRouter:
         
         if is_private or preferred_model in ["gemma4-arabic-finance", "qwen3.5-35b-turbo", "nemotron3-8b"]:
             # Route to local vLLM TurboQuant
-            vllm_url = os.getenv("VLLM_TURBOQUANT_URL", "http://vllm:8080")
+            vllm_url = vllm_probe_base_url()
             model = preferred_model if preferred_model != "default" else "Qwen/Qwen3.5-35B-A3B-FP8"
             
             # RESILIENCE: Check if vllm is actually reachable, otherwise return local mock indicator
             # In a production router, this would be a circuit breaker
-            return f"{vllm_url}/v1/chat/completions", model
+            return f"{vllm_url}/v1/chat/completions", model, "vllm"
         else:
             # Route to AI Core (Anthropic) proxy or direct
-            aicore_url = os.getenv("AICORE_ANTHROPIC_URL", "http://aicore-proxy:8080") 
-            return f"{aicore_url}/v1/chat/completions", "claude-3-5-sonnet-20240620"
+            aicore_url = aicore_anthropic_proxy_base()
+            return (
+                f"{aicore_url}/v1/chat/completions",
+                "claude-3-5-sonnet-20240620",
+                "aicore",
+            )
+
+
+async def _upstream_chat_completions(
+    circuit_key: str,
+    endpoint: str,
+    payload: dict[str, Any],
+    timeout: float,
+) -> Optional[dict[str, Any]]:
+    """POST chat completions upstream; honors circuit breaker. Returns None on skip/failure."""
+    import httpx
+
+    if not await _llm_circuit.allow_request(circuit_key):
+        logger.info("llm_circuit_open", circuit=circuit_key, endpoint=endpoint)
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(
+                endpoint,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+        if resp.status_code == 200:
+            await _llm_circuit.record_success(circuit_key)
+            return resp.json()
+        await _llm_circuit.record_failure(circuit_key)
+        logger.warning(
+            "llm_upstream_non_200",
+            status_code=resp.status_code,
+            endpoint=endpoint,
+            circuit=circuit_key,
+        )
+    except Exception as e:
+        await _llm_circuit.record_failure(circuit_key)
+        logger.warning("llm_upstream_error", error=str(e), endpoint=endpoint, circuit=circuit_key)
+    return None
+
 
 async def _call_llm_with_fallback(messages: list, preferred_model: str = "default"):
     """
     Attempts to call the routed LLM, but falls back to native simulation
     if the endpoint is unreachable or errors out.
     """
-    endpoint, model = LLMRouter.get_endpoint_and_model(messages, preferred_model)
-    
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.post(
-                endpoint,
-                json={"model": model, "messages": messages},
-                headers={"Content-Type": "application/json"}
-            )
-            if resp.status_code == 200:
-                return resp.json()
-    except Exception as e:
-        logger.warning("llm_call_failed", error=str(e), endpoint=endpoint)
-    
+    endpoint, model, circuit_key = LLMRouter.get_endpoint_and_model(messages, preferred_model)
+
+    data = await _upstream_chat_completions(
+        circuit_key,
+        endpoint,
+        {"model": model, "messages": messages},
+        5.0,
+    )
+    if data is not None:
+        return data
+
     # Fallback to internal analytical synthesis
     simulated_text = simulate_analytical_response(messages)
     return {
@@ -425,6 +479,7 @@ app.include_router(data_products.router, prefix="/data-products", tags=["Data Pr
 app.include_router(workspace_api.router, prefix="/workspace", tags=["Workspace"])
 app.include_router(notification_api.router, prefix="/notifications", tags=["Notifications"])
 app.include_router(auth_api.router, prefix="/auth", tags=["Auth"])
+app.include_router(audit_sink_api.router, prefix="/audit", tags=["Audit"])
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
@@ -722,12 +777,10 @@ async def collab_websocket(websocket: WebSocket, room: str = "default"):
             await _collab_broadcast(room_id, {"type": "leave", "roomId": room_id, "userId": user_id})
 
 
-@app.get("/health")
-async def health() -> dict:
-    """Detailed health check for production telemetry."""
+async def _gather_stack_dependencies() -> dict[str, Any]:
+    """Shared dependency probes for /health and /capabilities."""
     import httpx
-    
-    # 1. Check database (HANA or SQLite)
+
     backend = db_backend_label()
     db_status = "healthy"
     try:
@@ -737,10 +790,8 @@ async def health() -> dict:
     except Exception:
         db_status = "unhealthy"
 
-    # 2. Check HANA Vector Engine
     hana_status = "unhealthy"
     try:
-        # Avoid full connection if credentials missing
         if rag.HANA_USER:
             conn = rag._hana_connection()
             conn.close()
@@ -750,30 +801,95 @@ async def health() -> dict:
     except Exception:
         hana_status = "unhealthy"
 
-    # 3. Check vLLM TurboQuant
+    vllm_base = vllm_probe_base_url()
     vllm_status = "unhealthy"
     try:
-        vllm_url = os.getenv("VLLM_TURBOQUANT_URL", "http://localhost:8000")
         async with httpx.AsyncClient(timeout=2.0) as client:
-            resp = await client.get(f"{vllm_url}/health")
+            resp = await client.get(f"{vllm_base}/health")
             if resp.status_code == 200:
                 vllm_status = "healthy"
     except Exception:
         vllm_status = "unhealthy"
 
+    aicore_configured = aicore_fully_configured()
+    aicore_reachable = "unconfigured"
+    if aicore_configured:
+        aicore_reachable = "unhealthy"
+        try:
+            root = AICORE_BASE_URL.rstrip("/")
+            async with httpx.AsyncClient(timeout=2.0, follow_redirects=True) as client:
+                resp = await client.get(f"{root}/")
+                if resp.status_code < 500:
+                    aicore_reachable = "healthy"
+        except Exception:
+            aicore_reachable = "unhealthy"
+
+    pal_status = "unconfigured"
+    pu = PAL_UPSTREAM_URL.strip()
+    if pu:
+        pal_status = "unhealthy"
+        try:
+            root = pu.rstrip("/")
+            async with httpx.AsyncClient(timeout=2.0, follow_redirects=True) as client:
+                resp = await client.get(f"{root}/")
+                if resp.status_code < 500:
+                    pal_status = "healthy"
+        except Exception:
+            pal_status = "unhealthy"
+
+    return {
+        "db_backend": backend,
+        "database": db_status,
+        "hana_vector": hana_status,
+        "vllm_turboquant": vllm_status,
+        "aicore_configured": aicore_configured,
+        "aicore_reachable": aicore_reachable,
+        "pal_route": pal_status,
+    }
+
+
+@app.get("/health")
+async def health() -> dict:
+    """Detailed health check for production telemetry."""
+    deps = await _gather_stack_dependencies()
+    db_status = deps["database"]
+    vllm_status = deps["vllm_turboquant"]
     overall = "healthy" if db_status == "healthy" and vllm_status == "healthy" else "degraded"
-    if db_status != "healthy": overall = "unavailable"
+    if db_status != "healthy":
+        overall = "unavailable"
+    elif deps["aicore_configured"] and deps["aicore_reachable"] == "unhealthy":
+        overall = "degraded"
 
     return {
         "status": overall,
         "service": "training-webcomponents-ngx-api",
-        "db_backend": backend,
+        "db_backend": deps["db_backend"],
         "dependencies": {
-            "database": db_status,
-            "hana_vector": hana_status,
-            "vllm_turboquant": vllm_status
+            "database": deps["database"],
+            "hana_vector": deps["hana_vector"],
+            "vllm_turboquant": deps["vllm_turboquant"],
+            "aicore": deps["aicore_reachable"],
+            "pal_route": deps["pal_route"],
         },
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "aicore_configured": deps["aicore_configured"],
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@app.get("/capabilities")
+async def capabilities() -> dict:
+    """Structured stack capabilities for UI readiness (no secrets)."""
+    deps = await _gather_stack_dependencies()
+    return {
+        "service": "training-webcomponents-ngx-api",
+        "db_backend": deps["db_backend"],
+        "database": deps["database"],
+        "hana_vector": deps["hana_vector"],
+        "vllm_turboquant": deps["vllm_turboquant"],
+        "aicore_configured": deps["aicore_configured"],
+        "aicore_reachable": deps["aicore_reachable"],
+        "pal_route": deps["pal_route"],
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
@@ -1128,30 +1244,26 @@ async def openai_models():
 @app.post("/v1/chat/completions")
 async def openai_chat_completions(body: OpenAIChatRequest):
     # 1. Route based on content and model preference
-    endpoint, model = LLMRouter.get_endpoint_and_model(body.messages, body.model)
-    
+    endpoint, model, circuit_key = LLMRouter.get_endpoint_and_model(body.messages, body.model)
+
     reply = None
     usage = None
 
-    # 2. Attempt real inference
-    try:
-        import httpx
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                endpoint,
-                json={
-                    "model": model,
-                    "messages": body.messages,
-                    "max_tokens": body.max_tokens,
-                    "temperature": body.temperature
-                }
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                reply = data["choices"][0]["message"]["content"]
-                usage = data.get("usage")
-    except Exception as e:
-        logger.warning("inference_routing_failed", endpoint=endpoint, error=str(e))
+    # 2. Attempt real inference (circuit breaker shared with _call_llm_with_fallback)
+    data = await _upstream_chat_completions(
+        circuit_key,
+        endpoint,
+        {
+            "model": model,
+            "messages": body.messages,
+            "max_tokens": body.max_tokens,
+            "temperature": body.temperature,
+        },
+        60.0,
+    )
+    if data is not None:
+        reply = data["choices"][0]["message"]["content"]
+        usage = data.get("usage")
 
     # 3. Fallback if real inference failed or skipped
     if reply is None:

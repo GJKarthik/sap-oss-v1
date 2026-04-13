@@ -1,5 +1,8 @@
-# Workspace app - CI: lint, test, build
-# Runs on changes under src/generativeUI/ui5-webcomponents-ngx-main/
+# Workspace app - CI: lint, test, build (unit + build only on every PR).
+#
+# This workflow does NOT start Docker backends or run Cypress against live services.
+# For stack-level checks (compose + /capabilities smoke + live-marked E2E), use
+# workflow_dispatch: "CI (Workspace integration)" (.github/workflows/ci-workspace-integration.yml).
 
 name: CI (Workspace)
 

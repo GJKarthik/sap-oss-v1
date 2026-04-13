@@ -17,10 +17,26 @@ import { JouleShellComponent } from './joule-shell.component';
   imports: [
     CommonModule,
     Ui5I18nModule,
-    AgUiModule.forRoot({ endpoint: environment.agUiEndpoint, transport: 'sse', autoConnect: false }),
+    AgUiModule.forRoot({
+      endpoint: environment.agUiEndpoint,
+      transport: 'sse',
+      autoConnect: false,
+      ...(environment.agUiAuthToken
+        ? { sse: { authToken: environment.agUiAuthToken } }
+        : {}),
+    }),
     GenUiRendererModule.forRoot({ allowedComponents: 'fiori-standard', sanitize: true }),
     GenUiStreamingModule.forRoot(),
-    GenUiGovernanceModule.forRoot(),
+    GenUiGovernanceModule.forRoot({
+      audit: {
+        level: 'standard',
+        endpoint: `${environment.trainingApiUrl.replace(/\/$/, '')}/audit/batch`,
+        batchSize: 25,
+        ...(environment.auditSinkToken
+          ? { requestHeaders: { 'X-Internal-Token': environment.auditSinkToken } }
+          : {}),
+      },
+    }),
     GenUiCollabModule.forRoot(),
     RouterModule.forChild([
       { path: '', component: JouleShellComponent },

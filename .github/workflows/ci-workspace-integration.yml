@@ -1,0 +1,87 @@
+# Workspace integration: Docker backends + HTTP smoke + optional live Cypress subset.
+# Too heavy for every PR; run manually or on a schedule when you need stack-level confidence.
+#
+# Prerequisites: Docker. Uses compose overlay to publish training-api:8000 and ui5-mcp:9160.
+
+name: CI (Workspace integration)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly Monday 06:00 UTC — disable by removing this block if undesired
+    - cron: '0 6 * * 1'
+
+defaults:
+  run:
+    working-directory: src/generativeUI/ui5-webcomponents-ngx-main
+
+jobs:
+  docker-smoke-and-live-e2e:
+    name: Compose backends, smoke training API, live E2E subset
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/generativeUI/ui5-webcomponents-ngx-main/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Start training-api and ui5-mcp
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker compose \
+            -f src/generativeUI/docker-compose.yml \
+            -f src/generativeUI/docker-compose.workspace-e2e.yml \
+            up -d --build training-api ui5-mcp
+
+      - name: Wait for training /health
+        working-directory: ${{ github.workspace }}
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sfS http://localhost:8000/health >/dev/null; then
+              echo "training-api healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "timeout waiting for training-api"
+          docker compose -f src/generativeUI/docker-compose.yml logs training-api || true
+          exit 1
+
+      - name: Wait for MCP /health
+        working-directory: ${{ github.workspace }}
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sfS http://localhost:9160/health >/dev/null; then
+              echo "ui5-mcp healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "timeout waiting for ui5-mcp"
+          docker compose -f src/generativeUI/docker-compose.yml logs ui5-mcp || true
+          exit 1
+
+      - name: Smoke GET /capabilities
+        run: curl -sfS http://localhost:8000/capabilities | head -c 400
+
+      - name: E2E (Cypress) with live backends for describeLive specs
+        run: yarn nx run workspace-e2e:e2e --configuration=ci
+        env:
+          CI: true
+          TRAINING_API_URL: http://localhost:8000
+          AGENT_URL: http://localhost:9160
+          CYPRESS_LIVE_BACKENDS: 'true'
+
+      - name: Compose logs on failure
+        if: failure()
+        working-directory: ${{ github.workspace }}
+        run: docker compose -f src/generativeUI/docker-compose.yml logs --tail 200

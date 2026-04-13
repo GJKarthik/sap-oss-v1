@@ -7,8 +7,12 @@
 export const environment = {
   production: false,
   agUiEndpoint: '/ag-ui/run',
+  /** Optional: sent as SSE query param and Bearer on POST; leave empty for local dev. */
+  agUiAuthToken: '',
   openAiBaseUrl: 'http://localhost:8400',
   trainingApiUrl: 'http://localhost:8000',
+  /** Optional: must match training api-server AUDIT_SINK_TOKEN when that env is set. */
+  auditSinkToken: '',
   ocrInternalToken: '',
   mcpBaseUrl: 'http://localhost:9160/mcp',
   requireRealBackends: true as const,

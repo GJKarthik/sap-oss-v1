@@ -1,0 +1,18 @@
+# Overlay: expose training API and MCP on the host for local or CI runs where
+# `nx serve workspace` + Cypress use TRAINING_API_URL / AGENT_URL (see proxy.conf.js).
+#
+# Usage (from repo root):
+#   docker compose -f src/generativeUI/docker-compose.yml -f src/generativeUI/docker-compose.workspace-e2e.yml up -d --build training-api ui5-mcp
+#
+# Then:
+#   export TRAINING_API_URL=http://localhost:8000 AGENT_URL=http://localhost:9160
+#   npx nx run workspace-e2e:e2e --configuration=ci
+
+services:
+  training-api:
+    ports:
+      - "8000:8000"
+
+  ui5-mcp:
+    ports:
+      - "9160:9160"

@@ -1,0 +1,55 @@
+{
+  "welcomeFile": "/index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/api/v1/training/(.*)$",
+      "target": "/$1",
+      "destination": "training_api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/api/v1/ui5/openai/(.*)$",
+      "target": "/$1",
+      "destination": "training_api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/api/v1/ui5/mcp/(.*)$",
+      "target": "/$1",
+      "destination": "ui5_mcp",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/api/v1/ui5/pal/(.*)$",
+      "target": "/$1",
+      "destination": "pal_upstream",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/ag-ui/(.*)$",
+      "target": "/ag-ui/$1",
+      "destination": "ui5_mcp",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/collab/(.*)$",
+      "target": "/collab/$1",
+      "destination": "ui5_mcp",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false,
+      "websocket": true
+    },
+    {
+      "source": "^/(.*)$",
+      "target": "/$1",
+      "localDir": ".",
+      "authenticationType": "xsuaa"
+    }
+  ]
+}

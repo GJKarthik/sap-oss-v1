@@ -4,6 +4,34 @@
   margin: 0 auto;
 }
 
+.mode-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgba(8, 84, 160, 0.06);
+  border: 1px solid rgba(8, 84, 160, 0.12);
+}
+
+.mode-banner__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  strong {
+    color: var(--sapTextColor, #32363a);
+    font-size: 0.95rem;
+  }
+
+  span {
+    color: var(--sapContent_LabelColor, #6a6d70);
+    font-size: 0.85rem;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Shared
 // ---------------------------------------------------------------------------

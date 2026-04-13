@@ -3,10 +3,14 @@
 export const environment = {
   production: true,
   agUiEndpoint: '/ag-ui/run',
-  openAiBaseUrl: '/api/openai',
-  trainingApiUrl: '/api/training',
+  agUiAuthToken: '',
+  /** Suite gateway canonical paths (see gateway/README.md). Legacy /api/* aliases exist in nginx. */
+  openAiBaseUrl: '/api/v1/ui5/openai',
+  trainingApiUrl: '/api/v1/training',
+  auditSinkToken: '',
   ocrInternalToken: '',
-  mcpBaseUrl: '/api/mcp',
+  /** Must end with `/mcp` so ExperienceHealthService can derive `/health`. */
+  mcpBaseUrl: '/api/v1/ui5/mcp/mcp',
   requireRealBackends: true as const,
   collabWsUrl: '/collab',
   collabUserId: 'sap-ai-user-default',

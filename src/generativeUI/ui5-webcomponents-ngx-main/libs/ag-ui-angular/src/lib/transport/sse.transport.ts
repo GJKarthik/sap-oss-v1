@@ -23,6 +23,13 @@ export interface SseTransportConfig extends TransportConfig {
   headers?: Record<string, string>;
   /** Event types to listen for (default: ['message']) */
   eventTypes?: string[];
+  /**
+   * Optional bearer token for POST /messages. Also appended as a query parameter on the
+   * EventSource URL (EventSource cannot send Authorization headers).
+   */
+  authToken?: string;
+  /** Query parameter name for {@link authToken} on the SSE URL (default: `token`). */
+  authQueryParam?: string;
 }
 
 /**
@@ -46,6 +53,17 @@ export class SseTransport implements AgUiTransport {
 
   constructor(private config: SseTransportConfig) {}
 
+  /** Append auth token to URL for EventSource (no custom headers support). */
+  private appendAuthQuery(url: string): string {
+    const token = this.config.authToken?.trim();
+    if (!token) {
+      return url;
+    }
+    const param = (this.config.authQueryParam || 'token').trim() || 'token';
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}${encodeURIComponent(param)}=${encodeURIComponent(token)}`;
+  }
+
   /**
    * Connect to the SSE endpoint
    */
@@ -64,6 +82,7 @@ export class SseTransport implements AgUiTransport {
           const separator = url.includes('?') ? '&' : '?';
           url += `${separator}lastEventId=${encodeURIComponent(this.lastEventId)}`;
         }
+        url = this.appendAuthQuery(url);
 
         // Create EventSource
         // Note: EventSource doesn't support custom headers natively
@@ -134,12 +153,18 @@ export class SseTransport implements AgUiTransport {
     // Convention: /sse/events → /sse/messages
     const sendEndpoint = this.config.endpoint.replace(/\/events$/, '/messages');
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.config.headers || {}),
+    };
+    const token = this.config.authToken?.trim();
+    if (token && !headers['Authorization'] && !headers['authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(sendEndpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.config.headers || {}),
-      },
+      headers,
       credentials: this.config.withCredentials ? 'include' : 'same-origin',
       body: JSON.stringify(message),
     });

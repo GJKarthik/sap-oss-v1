@@ -13,6 +13,12 @@ export default defineConfig({
       },
       ciWebServerCommand: 'npx nx serve workspace --configuration=production',
     }),
+    // After preset merge: CI sets CYPRESS_LIVE_BACKENDS=true to enable describeLive specs.
+    env: {
+      LIVE_BACKENDS:
+        process.env.CYPRESS_LIVE_BACKENDS === 'true' ||
+        process.env.CI_LIVE_BACKENDS === 'true',
+    },
     baseUrl: 'http://localhost:4200',
     video: false,
     screenshotOnRunFailure: true,

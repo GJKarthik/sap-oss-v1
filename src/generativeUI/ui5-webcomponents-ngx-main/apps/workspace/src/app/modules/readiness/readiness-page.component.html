@@ -33,6 +33,22 @@
         <span class="service-chip__name">{{ check.name }}</span>
       </div>
     </div>
+
+    <div class="readiness-stack" *ngIf="stackError || stackLayers.length > 0">
+      <ui5-title level="H4" class="readiness-stack__title">{{ 'READINESS_STACK_TITLE' | ui5I18n }}</ui5-title>
+      <p class="readiness-stack__error" *ngIf="stackError">
+        {{ 'READINESS_STACK_ERROR' | ui5I18n }} <span class="readiness-stack__error-detail">{{ stackError }}</span>
+      </p>
+      <div class="readiness-stack__grid" *ngIf="stackLayers.length > 0">
+        <div class="stack-layer" *ngFor="let layer of stackLayers">
+          <span class="stack-layer__dot" [class.stack-layer__dot--ok]="layer.ok"></span>
+          <div class="stack-layer__text">
+            <span class="stack-layer__name">{{ layer.labelKey | ui5I18n }}</span>
+            <span class="stack-layer__status">{{ layer.status }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="readiness-grid">

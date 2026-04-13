@@ -24,6 +24,7 @@ import {
 } from '../../app.navigation';
 import { DashboardLayoutService, DashboardWidgetId } from '../../services/dashboard-layout.service';
 import { AppLinkService } from '../../services/app-link.service';
+import type { AppMode } from '../../shared/utils/mode.types';
 
 interface HubCard {
   id: TrainingRouteGroupId;
@@ -39,6 +40,13 @@ interface ProductCard {
   titleKey: string;
   bodyKey: string;
   path: string;
+}
+
+interface ModeHeroState {
+  badge: string;
+  body: string;
+  primary: TrainingRouteLink;
+  secondary: TrainingRouteLink;
 }
 
 const PRIORITY_PATHS = ['/pipeline', '/model-optimizer', '/hana-explorer', '/document-linguist'];
@@ -83,6 +91,7 @@ export class DashboardComponent implements OnInit {
   @ViewChild('layoutDialog') private layoutDialog?: ElementRef<any>;
 
   readonly visibleWidgets = this.layout.orderedWidgets;
+  readonly activeMode = this.store.activeMode;
 
   readonly quickAccessEntries = computed<TrainingRouteLink[]>(() => {
     const entries = [
@@ -122,11 +131,49 @@ export class DashboardComponent implements OnInit {
       .slice(0, 3);
   });
 
-  readonly priorityActions = computed(() =>
-    PRIORITY_PATHS
+  readonly priorityActions = computed(() => {
+    const suggested = new Set(this.store.routeRelevance().suggested);
+    const modeActions = TRAINING_ROUTE_LINKS.filter((link) => suggested.has(link.path)).slice(0, 4);
+
+    if (modeActions.length > 0) {
+      return modeActions;
+    }
+
+    return PRIORITY_PATHS
       .map((path) => TRAINING_ROUTE_LINKS.find((link) => link.path === path))
-      .filter((entry): entry is TrainingRouteLink => Boolean(entry)),
-  );
+      .filter((entry): entry is TrainingRouteLink => Boolean(entry));
+  });
+
+  readonly heroState = computed<ModeHeroState>(() => {
+    const states: Record<AppMode, { badge: string; body: string; primary: string; secondary: string }> = {
+      chat: {
+        badge: 'Chat mode',
+        body: 'Conversation-first guidance is in focus. Explore assistant routes before you execute.',
+        primary: '/chat',
+        secondary: '/semantic-search',
+      },
+      cowork: {
+        badge: 'Cowork mode',
+        body: 'Plan-and-preview collaboration is active. Review proposals before changing shared systems.',
+        primary: '/rag-studio',
+        secondary: '/analytical-dashboard',
+      },
+      training: {
+        badge: 'Training mode',
+        body: 'Execution routes are prioritized. Launch jobs, inspect data, and commit operational changes directly.',
+        primary: '/pipeline',
+        secondary: '/data-explorer',
+      },
+    };
+
+    const state = states[this.activeMode()];
+    return {
+      badge: state.badge,
+      body: state.body,
+      primary: this.findRoute(state.primary),
+      secondary: this.findRoute(state.secondary),
+    };
+  });
 
   readonly hubCards = computed<HubCard[]>(() =>
     TRAINING_NAV_GROUPS.map((group) => ({
@@ -242,5 +289,13 @@ export class DashboardComponent implements OnInit {
       operations: 'navGroup.operations',
     };
     return keys[group];
+  }
+
+  private findRoute(path: string): TrainingRouteLink {
+    const route = TRAINING_ROUTE_LINKS.find((link) => link.path === path);
+    if (!route) {
+      throw new Error(`Missing route definition for ${path}`);
+    }
+    return route;
   }
 }

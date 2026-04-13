@@ -1,4 +1,15 @@
 <div class="pair-studio-page" [dir]="i18n.dir()" role="main" [attr.aria-label]="i18n.t('pairStudio.title')">
+  <section class="mode-banner">
+    <div class="mode-banner__copy">
+      <strong>{{ modeBanner().title }}</strong>
+      <span>{{ modeBanner().body }}</span>
+    </div>
+    @if (activeMode() === 'chat') {
+      <ui5-button design="Transparent" icon="process" (click)="switchToTrainingMode()">
+        {{ modeBanner().actionLabel }}
+      </ui5-button>
+    }
+  </section>
 
   <!-- ================================================================== -->
   <!-- PANEL 1: Upload Zone                                                -->
@@ -72,7 +83,7 @@
           icon="media-play"
           [disabled]="!canProcess()"
           (click)="processFiles()">
-          {{ i18n.t('pairStudio.processFiles') }}
+          {{ processButtonLabel() }}
         </ui5-button>
       </div>
 
@@ -216,13 +227,19 @@
               </tr>
             </thead>
             <tbody>
-              @for (term of filteredTerms(); track $index; let i = $index) {
+              @for (term of filteredTerms(); track trackTerm($index, term)) {
                 <tr [class.row-dim]="term.existsInGlossary" [class.row-rejected]="term.status === 'rejected'">
-                  <td><input type="checkbox" [checked]="selectedTermIndices().has(i)" (change)="toggleTermSelection(i)" /></td>
+                  <td><input type="checkbox" [checked]="selectedTermIndices().has(termIndex(term))" (change)="toggleTermSelection(termIndex(term))" /></td>
                   <td><bdi>{{ term.sourceTerm }}</bdi> <span class="lang-tag">{{ term.sourceLang }}</span></td>
                   <td>
-                    @if (editingTermIndex() === i) {
-                      <input type="text" class="inline-edit" [ngModel]="term.targetTerm" (ngModelChange)="saveEditTerm(i, { targetTerm: $event })" (keydown.escape)="cancelEditTerm()" />
+                    @if (editingTermIndex() === termIndex(term)) {
+                      <input
+                        type="text"
+                        class="inline-edit"
+                        [ngModel]="editingTargetTerm()"
+                        (ngModelChange)="editingTargetTerm.set($event)"
+                        (keydown.enter)="saveEditTerm()"
+                        (keydown.escape)="cancelEditTerm()" />
                     } @else {
                       <bdi>{{ term.targetTerm }}</bdi> <span class="lang-tag">{{ term.targetLang }}</span>
                     }
@@ -241,10 +258,15 @@
                   <td>
                     <div class="action-row">
                       @if (term.status === 'pending') {
-                        <ui5-button design="Positive" icon="accept" (click)="approveTerm(i)" [title]="i18n.t('pairStudio.approve')"></ui5-button>
-                        <ui5-button design="Negative" icon="decline" (click)="rejectTerm(i)" [title]="i18n.t('pairStudio.reject')"></ui5-button>
+                        <ui5-button design="Positive" icon="accept" (click)="approveTerm(termIndex(term))" [title]="i18n.t('pairStudio.approve')"></ui5-button>
+                        <ui5-button design="Negative" icon="decline" (click)="rejectTerm(termIndex(term))" [title]="i18n.t('pairStudio.reject')"></ui5-button>
                       }
-                      <ui5-button design="Default" icon="edit" (click)="startEditTerm(i)" [title]="i18n.t('pairStudio.edit')"></ui5-button>
+                      @if (editingTermIndex() === termIndex(term)) {
+                        <ui5-button design="Positive" icon="accept" (click)="saveEditTerm()" [title]="i18n.t('pairStudio.approve')"></ui5-button>
+                        <ui5-button design="Transparent" icon="decline" (click)="cancelEditTerm()" [title]="i18n.t('pairStudio.dismiss')"></ui5-button>
+                      } @else {
+                        <ui5-button design="Default" icon="edit" (click)="startEditTerm(termIndex(term))" [title]="i18n.t('pairStudio.edit')"></ui5-button>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -264,7 +286,7 @@
           <table [attr.aria-label]="i18n.t('pairStudio.tabParagraphs')">
             <thead>
               <tr>
-                <th class="col-check"><input type="checkbox" /></th>
+                <th class="col-check"><input type="checkbox" (change)="toggleAllParagraphs()" /></th>
                 <th>{{ i18n.t('pairStudio.colSourceText') }}</th>
                 <th>{{ i18n.t('pairStudio.colTargetText') }}</th>
                 <th>{{ i18n.t('pairStudio.colLangs') }}</th>
@@ -275,9 +297,9 @@
               </tr>
             </thead>
             <tbody>
-              @for (para of filteredParagraphs(); track $index; let i = $index) {
+              @for (para of filteredParagraphs(); track trackParagraph($index, para)) {
                 <tr [class.row-rejected]="para.status === 'rejected'">
-                  <td><input type="checkbox" [checked]="selectedParagraphIndices().has(i)" (change)="toggleParagraphSelection(i)" /></td>
+                  <td><input type="checkbox" [checked]="selectedParagraphIndices().has(paragraphIndex(para))" (change)="toggleParagraphSelection(paragraphIndex(para))" /></td>
                   <td class="text-cell"><bdi>{{ truncate(para.sourceText) }}</bdi></td>
                   <td class="text-cell"><bdi>{{ truncate(para.targetText) }}</bdi></td>
                   <td>{{ para.sourceLang }}→{{ para.targetLang }}</td>
@@ -291,8 +313,8 @@
                   <td>
                     <div class="action-row">
                       @if (para.status === 'pending') {
-                        <ui5-button design="Positive" icon="accept" (click)="approveParagraph(i)" [title]="i18n.t('pairStudio.approve')"></ui5-button>
-                        <ui5-button design="Negative" icon="decline" (click)="rejectParagraph(i)" [title]="i18n.t('pairStudio.reject')"></ui5-button>
+                        <ui5-button design="Positive" icon="accept" (click)="approveParagraph(paragraphIndex(para))" [title]="i18n.t('pairStudio.approve')"></ui5-button>
+                        <ui5-button design="Negative" icon="decline" (click)="rejectParagraph(paragraphIndex(para))" [title]="i18n.t('pairStudio.reject')"></ui5-button>
                       }
                     </div>
                   </td>
@@ -338,7 +360,7 @@
             icon="accept"
             [disabled]="committing() || (ingestion.approvedTermCount() === 0 && ingestion.approvedParagraphCount() === 0)"
             (click)="commitBatch()">
-            {{ i18n.t('pairStudio.commitButton') }}
+            {{ commitButtonLabel() }}
           </ui5-button>
           <ui5-button design="Negative" (click)="discardBatch()">
             {{ i18n.t('pairStudio.discardBatch') }}
@@ -382,4 +404,11 @@
       </div>
     </section>
   }
+
+  <app-confirmation-dialog
+    [open]="commitConfirmationOpen()"
+    [data]="commitConfirmationData()"
+    (confirmed)="commitConfirmationOpen.set(false); commitBatchNow()"
+    (cancelled)="commitConfirmationOpen.set(false)">
+  </app-confirmation-dialog>
 </div>

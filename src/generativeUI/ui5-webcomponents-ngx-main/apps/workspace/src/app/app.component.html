@@ -50,11 +50,7 @@
       <div class="viewport-header fadeIn" *ngIf="shouldShowViewportHeader()">
         <div class="header-actions">
           <div class="app-nav__team">
-            <ui5-avatar-group type="Individual">
-              <ui5-avatar initials="SJ" color-scheme="Accent1" size="XS" class="team-avatar"></ui5-avatar>
-              <ui5-avatar initials="MW" color-scheme="Accent2" size="XS" class="team-avatar"></ui5-avatar>
-              <ui5-avatar initials="AW" color-scheme="Accent3" size="XS" class="team-avatar"></ui5-avatar>
-            </ui5-avatar-group>
+            <ui5-tag design="Information">{{ currentWorkspaceLabel() }}</ui5-tag>
           </div>
           <ui5-button
             class="app-nav__icon-action"
@@ -101,14 +97,14 @@
           <div class="status-indicator"></div>
         </div>
         <div class="user-menu__info">
-          <span class="user-menu__name">{{ 'USER_PROFILE_NAME' | ui5I18n }}</span>
-          <span class="user-menu__role">{{ 'USER_PROFILE_ROLE' | ui5I18n }}</span>
-          <span class="user-menu__email">{{ 'USER_PROFILE_EMAIL' | ui5I18n }}</span>
+          <span class="user-menu__name">{{ userDisplayName() }}</span>
+          <span class="user-menu__role">{{ userRole() }}</span>
+          <span class="user-menu__email">{{ userEmail() }}</span>
         </div>
       </header>
 
       <ui5-list separators="None">
-        <ui5-li icon="settings" (click)="profilePopover.nativeElement.close()">{{ 'USER_PROFILE_SETTINGS' | ui5I18n }}</ui5-li>
+        <ui5-li icon="settings" (click)="closeProfileMenu()">{{ 'USER_PROFILE_SETTINGS' | ui5I18n }}</ui5-li>
         <ui5-li icon="palette">
           <div class="user-menu__setting">
             <span>{{ 'USER_PROFILE_THEME' | ui5I18n }}</span>
@@ -163,7 +159,7 @@
       <div class="notification-empty" *ngIf="notifications().length === 0">No notifications</div>
       <footer class="user-menu__footer">
         <ui5-button *ngIf="unreadCount() > 0" design="Transparent" (click)="onMarkAllRead()">{{ 'NOTIFICATIONS_MARK_ALL_READ' | ui5I18n }}</ui5-button>
-        <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">{{ 'NOTIFICATIONS_CLOSE' | ui5I18n }}</ui5-button>
+        <ui5-button design="Transparent" (click)="closeNotificationsMenu()">{{ 'NOTIFICATIONS_CLOSE' | ui5I18n }}</ui5-button>
       </footer>
     </div>
   </ui5-popover>

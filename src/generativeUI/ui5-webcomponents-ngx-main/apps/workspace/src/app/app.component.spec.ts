@@ -1,6 +1,9 @@
+import { computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppComponent } from './app.component';
+import { AuthService } from './core/auth.service';
 import { LearnPathService } from './core/learn-path.service';
+import { NotificationService } from './core/notification.service';
 import { ProductNavigationService } from './core/product-navigation.service';
 import { QuickAccessService } from './core/quick-access.service';
 import { WorkspaceService } from './core/workspace.service';
@@ -76,6 +79,48 @@ function makeQuickAccessService() {
   } as unknown as QuickAccessService;
 }
 
+function makeNotificationService() {
+  return {
+    notifications: signal([]).asReadonly(),
+    unreadCount: signal(0).asReadonly(),
+    startPolling: jest.fn(),
+    stopPolling: jest.fn(),
+  } as unknown as NotificationService;
+}
+
+function makeAuthService() {
+  const user = signal<null>(null);
+  return {
+    user: user.asReadonly(),
+    token: signal(null).asReadonly(),
+    isAuthenticated: computed(() => !!user()),
+    initials: computed(() => '??'),
+    displayName: computed(() => 'Guest'),
+  } as unknown as AuthService;
+}
+
+function createAppComponent(
+  router = makeRouter(),
+  learnPath = makeLearnPath(),
+  i18n = makeI18nService() as unknown as any,
+  workspace = makeWorkspaceService(),
+  productNav = makeProductNavigationService(),
+  quickAccess = makeQuickAccessService(),
+  notifications = makeNotificationService(),
+  auth = makeAuthService(),
+) {
+  return new AppComponent(
+    router,
+    learnPath,
+    i18n,
+    workspace,
+    productNav,
+    quickAccess,
+    notifications,
+    auth,
+  );
+}
+
 describe('AppComponent language switch', () => {
   beforeEach(() => {
     document.documentElement.setAttribute('dir', 'ltr');
@@ -84,14 +129,7 @@ describe('AppComponent language switch', () => {
   });
 
   it('switches to Arabic and updates document direction', () => {
-    const component = new AppComponent(
-      makeRouter(),
-      makeLearnPath(),
-      makeI18nService() as unknown as any,
-      makeWorkspaceService(),
-      makeProductNavigationService(),
-      makeQuickAccessService(),
-    );
+    const component = createAppComponent();
 
     component.onLanguageChange({
       detail: { selectedOption: { value: 'ar' } },
@@ -104,14 +142,7 @@ describe('AppComponent language switch', () => {
   });
 
   it('switches to English and updates document direction', () => {
-    const component = new AppComponent(
-      makeRouter(),
-      makeLearnPath(),
-      makeI18nService() as unknown as any,
-      makeWorkspaceService(),
-      makeProductNavigationService(),
-      makeQuickAccessService(),
-    );
+    const component = createAppComponent();
 
     component.onLanguageChange({
       detail: { selectedOption: { value: 'en' } },
@@ -127,13 +158,12 @@ describe('AppComponent language switch', () => {
 describe('AppComponent navigation', () => {
   it('delegates landing navigation to the product navigation service', () => {
     const productNavigation = makeProductNavigationService();
-    const component = new AppComponent(
+    const component = createAppComponent(
       makeRouter(),
       makeLearnPath(),
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
       productNavigation,
-      makeQuickAccessService(),
     );
 
     component.openLanding();
@@ -143,13 +173,12 @@ describe('AppComponent navigation', () => {
 
   it('delegates product-switch selection through the product navigation service', () => {
     const productNavigation = makeProductNavigationService();
-    const component = new AppComponent(
+    const component = createAppComponent(
       makeRouter(),
       makeLearnPath(),
       makeI18nService() as unknown as any,
       makeWorkspaceService(),
       productNavigation,
-      makeQuickAccessService(),
     );
 
     component.onProductSelect({

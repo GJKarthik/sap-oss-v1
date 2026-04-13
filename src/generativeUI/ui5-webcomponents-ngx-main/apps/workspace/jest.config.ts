@@ -16,7 +16,10 @@ module.exports = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+  // Default Nx pattern only transpiles .mjs under node_modules; @ui5 ships ESM as .js — allowlist @angular + @ui5 + lit.
+  transformIgnorePatterns: [
+    'node_modules/(?!(@angular\\/|@angular-devkit\\/|@ui5\\/|lit-html\\/|lit-element\\/|lit\\/|@lit\\/|@lit-labs\\/))',
+  ],
   snapshotSerializers: [
     'jest-preset-angular/build/serializers/no-ng-attributes',
     'jest-preset-angular/build/serializers/ng-snapshot',

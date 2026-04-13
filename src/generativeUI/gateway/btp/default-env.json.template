@@ -1,0 +1,19 @@
+{
+  "destinations": [
+    {
+      "name": "training_api",
+      "url": "https://REPLACE_WITH_TRAINING_CF_URL",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "ui5_mcp",
+      "url": "https://REPLACE_WITH_MCP_CF_URL",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "pal_upstream",
+      "url": "https://REPLACE_WITH_PAL_OR_AICORE_PAL_URL",
+      "forwardAuthToken": true
+    }
+  ]
+}

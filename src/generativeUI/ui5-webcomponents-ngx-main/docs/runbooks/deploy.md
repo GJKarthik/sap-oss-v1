@@ -74,6 +74,17 @@ Without `proxy_buffering off`, nginx buffers the SSE response and the Angular cl
 
 ---
 
+## 3b. BTP Application Router (alternative edge)
+
+For **XSUAA + destinations** instead of staticfile/nginx, use the templates under [`gateway/btp`](../../../gateway/btp/README.md):
+
+- [`xs-app.json`](../../../gateway/btp/xs-app.json) — routes for `/api/v1/training/`, `/api/v1/ui5/openai/`, `/api/v1/ui5/mcp/`, `/api/v1/ui5/pal/`, `/ag-ui/`, and WebSocket `/collab/`
+- [`default-env.json.template`](../../../gateway/btp/default-env.json.template) — local destination names; in CF bind the **Destination** service and define `training_api`, `ui5_mcp`, `pal_upstream`
+
+SSE buffering: validate streaming end-to-end; if the router buffers, add nginx in front of the MCP host or follow SAP notes for your `@sap/approuter` version. The nginx snippet above remains the reference behavior.
+
+---
+
 ## 4. nx.json Cloud token
 
 `NX_CLOUD_ACCESS_TOKEN` must be set as a CI/CD secret — never in `nx.json`.  
@@ -114,3 +125,31 @@ cf rollback ui5-ngx-frontend --version <N>
 | `POST /ag-ui/run` with empty body | `400` or `422` |
 
 The last check verifies the agent rejects unauthenticated/malformed requests before returning any SSE data.
+
+---
+
+## 8. HANA: hdbcli vs REST SQL
+
+- **Training API** (FastAPI): prefers **hdbcli** via SQLAlchemy / `DATABASE_URL` or `HANA_*` — see [ADR 004: HANA connectivity and PAL](../adr/adr-004-hana-pal-gateway.md).
+- **Agent / MCP**: may use **REST SQL** with OAuth (`HANA_BASE_URL`, `HANA_AUTH_URL`, `HANA_CLIENT_ID`, `HANA_CLIENT_SECRET`) as in section 2 above.
+
+Use service bindings for HANA Cloud in both cases; align variable names per app.
+
+---
+
+## 9. BTP / gateway smoke checklist
+
+After deploy (nginx gateway, compose, or approuter):
+
+1. **Training API**: `GET …/api/v1/training/health` and `GET …/api/v1/training/capabilities` return JSON (200). Legacy alias `GET …/api/training/health` should match if enabled.
+2. **OpenAI-compat**: `GET …/api/v1/ui5/openai/health` (or training `/health` if shared) responds.
+3. **MCP**: `GET …/api/v1/ui5/mcp/health` (path may vary by mount) returns 200/401 as configured.
+4. **SSE**: open a client against `/ag-ui/run` (or your streamed route); confirm chunks arrive without long buffering (nginx `proxy_buffering off` or approuter equivalent).
+5. **WebSocket**: `wss://…/collab/…` connects when collab is enabled.
+6. **Destinations** (approuter): `training_api`, `ui5_mcp`, and `pal_upstream` resolve and forward `Authorization` where required.
+
+Repo script (optional, against a running gateway URL):
+
+```bash
+GATEWAY_URL=http://localhost:8080 bash ../../../gateway/scripts/smoke-public-paths.sh
+```

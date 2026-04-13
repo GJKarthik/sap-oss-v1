@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect, signal, computed, HostListener, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef, effect, signal, computed, HostListener, CUSTOM_ELEMENTS_SCHEMA, Signal } from '@angular/core';
 import { Router, NavigationEnd, Event, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -11,12 +11,12 @@ import { WorkspaceService } from './core/workspace.service';
 import { ProductNavigationService, ProductAppId } from './core/product-navigation.service';
 import { normalizeWorkspaceTheme } from './core/theme-utils';
 import { QuickAccessService, NavLinkDatum } from './core/quick-access.service';
-import { NotificationService } from './core/notification.service';
+import { NotificationService, Notification } from './core/notification.service';
 import { AuthService } from './core/auth.service';
 import { Ui5WorkspaceComponentsModule } from './shared/ui5-workspace-components.module';
 
 @Component({
-  selector: 'app-root',
+  selector: 'ui-angular-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, Ui5WorkspaceComponentsModule, I18nPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -31,12 +31,17 @@ export class AppComponent implements OnInit, OnDestroy {
     },
   };
 
-  readonly notifications = this.notificationService.notifications;
-  readonly unreadCount = this.notificationService.unreadCount;
+  /** Bound after constructor params (field initializers run before injection). */
+  readonly notifications!: Signal<Notification[]>;
+  readonly unreadCount!: Signal<number>;
 
-  readonly userInitials = this.authService.initials;
-  readonly userDisplayName = this.authService.displayName;
-  readonly isAuthenticated = this.authService.isAuthenticated;
+  readonly userInitials!: Signal<string>;
+  readonly userDisplayName!: Signal<string>;
+  readonly isAuthenticated!: Signal<boolean>;
+  readonly userRole!: Signal<string>;
+  readonly userEmail!: Signal<string>;
+  readonly userTeamName!: Signal<string>;
+  readonly currentWorkspaceLabel!: Signal<string>;
 
   currentTheme = 'sap_horizon';
   currentLanguage = 'en';
@@ -48,32 +53,15 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly currentPath = signal('/');
   readonly searchQuery = signal('');
   readonly selectedSearchIndex = signal(0);
-  readonly currentPagePinned = computed(() => this.quickAccess.isPinned(this.currentPath()));
-  readonly canPinCurrentPage = computed(() => this.quickAccess.canPin(this.currentPath()));
+  readonly currentPagePinned!: Signal<boolean>;
+  readonly canPinCurrentPage!: Signal<boolean>;
 
-  readonly pinnedQuickAccess = computed(() => this.quickAccess.pinnedEntries());
-  readonly recentQuickAccess = computed(() => this.quickAccess.recentEntries());
-  readonly suggestedQuickAccess = computed(() =>
-    this.quickAccess.suggestedEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 5),
-  );
-  readonly searchQuickAccess = computed(() => this.quickAccess.search(this.searchQuery()));
+  readonly pinnedQuickAccess!: Signal<NavLinkDatum[]>;
+  readonly recentQuickAccess!: Signal<NavLinkDatum[]>;
+  readonly suggestedQuickAccess!: Signal<NavLinkDatum[]>;
+  readonly searchQuickAccess!: Signal<NavLinkDatum[]>;
 
-  readonly effectiveSearchEntries = computed(() => {
-    if (this.searchQuery().trim()) {
-      return this.searchQuickAccess();
-    }
-    const pinned = this.pinnedQuickAccess();
-    const recent = this.recentQuickAccess();
-    const suggested = this.suggestedQuickAccess();
-    
-    const combined = [...pinned, ...recent, ...suggested];
-    const seen = new Set<string>();
-    return combined.filter(entry => {
-      if (seen.has(entry.path)) return false;
-      seen.add(entry.path);
-      return true;
-    }).slice(0, 10);
-  });
+  readonly effectiveSearchEntries!: Signal<NavLinkDatum[]>;
 
   @ViewChild('productPopover', { read: ElementRef }) productPopover!: ElementRef<any>;
   @ViewChild('profilePopover', { read: ElementRef }) profilePopover!: ElementRef<any>;
@@ -92,7 +80,43 @@ export class AppComponent implements OnInit, OnDestroy {
     private quickAccess: QuickAccessService,
     private notificationService: NotificationService,
     private authService: AuthService,
-    ) {
+  ) {
+    this.notifications = this.notificationService.notifications;
+    this.unreadCount = this.notificationService.unreadCount;
+    this.userInitials = this.authService.initials;
+    this.userDisplayName = this.authService.displayName;
+    this.isAuthenticated = this.authService.isAuthenticated;
+    this.userRole = computed(() => this.authService.user()?.role || 'Workspace member');
+    this.userEmail = computed(() => this.authService.user()?.email || 'Not signed in');
+    this.userTeamName = computed(() => this.authService.user()?.team_name || 'Personal workspace');
+    this.currentWorkspaceLabel = computed(() =>
+      this.isAuthenticated() ? `${this.userTeamName()} • signed in` : 'Guest workspace',
+    );
+    this.currentPagePinned = computed(() => this.quickAccess.isPinned(this.currentPath()));
+    this.canPinCurrentPage = computed(() => this.quickAccess.canPin(this.currentPath()));
+    this.pinnedQuickAccess = computed(() => this.quickAccess.pinnedEntries());
+    this.recentQuickAccess = computed(() => this.quickAccess.recentEntries());
+    this.suggestedQuickAccess = computed(() =>
+      this.quickAccess.suggestedEntries().filter((entry) => entry.path !== this.currentPath()).slice(0, 5),
+    );
+    this.searchQuickAccess = computed(() => this.quickAccess.search(this.searchQuery()));
+    this.effectiveSearchEntries = computed(() => {
+      if (this.searchQuery().trim()) {
+        return this.searchQuickAccess();
+      }
+      const pinned = this.pinnedQuickAccess();
+      const recent = this.recentQuickAccess();
+      const suggested = this.suggestedQuickAccess();
+
+      const combined = [...pinned, ...recent, ...suggested];
+      const seen = new Set<string>();
+      return combined.filter((entry) => {
+        if (seen.has(entry.path)) return false;
+        seen.add(entry.path);
+        return true;
+      }).slice(0, 10);
+    });
+
     effect(() => {
       const settings = this.workspaceService.settings();
       const theme = normalizeWorkspaceTheme(settings.theme);
@@ -244,6 +268,20 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  closeProfileMenu(): void {
+    this.closeProfile();
+  }
+
+  closeNotificationsMenu(): void {
+    const popover = this.notificationsPopover?.nativeElement;
+    if (!popover) return;
+    if (typeof popover.close === 'function') {
+      popover.close();
+    } else {
+      popover.open = false;
+    }
+  }
+
   onSignOut(): void {
     this.authService.logout();
     this.closeProfile();
@@ -378,6 +416,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const ui5Language = this.UI5_LANGUAGE_MAP[language] || 'en';
     this.i18nService.setLanguage(ui5Language);
     document.documentElement.setAttribute('lang', ui5Language.replace('_', '-'));
+    document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
     this.updateLearnPathBanner();
   }
 

@@ -49,18 +49,30 @@ describe('SchemaValidator — schemaVersion', () => {
     expect(versionWarnings).toHaveLength(0);
   });
 
-  it('emits a warning for an unknown schema version but stays valid', () => {
+  it('rejects an unknown schema version in default strict mode', () => {
     const schema: A2UiSchema = {
       component: 'ui5-button',
       schemaVersion: '99',
       props: { text: 'OK' },
     };
     const result = validator.validate(schema);
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
     const versionWarnings = result.warnings.filter(w => w.path === 'schemaVersion');
     expect(versionWarnings).toHaveLength(1);
     expect(versionWarnings[0].code).toBe('INVALID_SCHEMA');
     expect(versionWarnings[0].severity).toBe('warning');
+  });
+
+  it('allows unknown schema version as warning-only when strict is off', () => {
+    const schema: A2UiSchema = {
+      component: 'ui5-button',
+      schemaVersion: '99',
+      props: { text: 'OK' },
+    };
+    const result = validator.validate(schema, { strict: false });
+    expect(result.valid).toBe(true);
+    const versionWarnings = result.warnings.filter(w => w.path === 'schemaVersion');
+    expect(versionWarnings).toHaveLength(1);
   });
 });
 

@@ -13,6 +13,9 @@ import { TranslationMemoryService } from '../../services/translation-memory.serv
 import { CrossAppLinkComponent } from '../../shared';
 import { DocumentContextService } from '../../services/document-context.service';
 import { WorkspaceService } from '../../services/workspace.service';
+import { AppStore } from '../../store/app.store';
+import { Router } from '@angular/router';
+import type { AppMode } from '../../shared/utils/mode.types';
 import {
   PersonalKnowledgeBase,
   PersonalKnowledgeQueryResult,
@@ -126,6 +129,18 @@ interface CompletionResponse {
 
       <!-- Chat area -->
       <div class="chat-main">
+        @if (activeMode() !== 'chat') {
+          <div class="mode-banner">
+            <div class="mode-banner__copy">
+              <strong>{{ modeBanner().title }}</strong>
+              <span>{{ modeBanner().body }}</span>
+            </div>
+            <ui5-button design="Transparent" [icon]="modeBanner().actionIcon" (click)="goToModeRoute()">
+              {{ modeBanner().actionLabel }}
+            </ui5-button>
+          </div>
+        }
+
         <div class="messages-area" #messagesArea role="log" aria-live="polite" aria-relevant="additions">
           @if (!messages().length) {
             <div class="empty-state">
@@ -202,7 +217,7 @@ interface CompletionResponse {
             rows="1"
             [(ngModel)]="prompt"
             name="prompt"
-            [placeholder]="i18n.t('chat.placeholder')"
+            [placeholder]="inputPlaceholder()"
             [disabled]="sending()"
             (keydown.enter)="handleKeyDown($event)"
           ></textarea>
@@ -240,6 +255,35 @@ interface CompletionResponse {
     .range-input { width: 100%; accent-color: var(--color-primary); margin: 0.5rem 0; }
 
     .chat-main { display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+    .mode-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 2.5rem 0;
+      border-radius: 18px;
+      background: rgba(var(--color-primary-rgb), 0.06);
+      border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+    }
+
+    .mode-banner__copy {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .mode-banner__copy strong {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .mode-banner__copy span {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
 
     .messages-area { flex: 1; overflow-y: auto; padding: 2.5rem; display: flex; flex-direction: column; gap: 2rem; }
 
@@ -294,12 +338,50 @@ interface CompletionResponse {
 
     .lang-badge { font-size: 0.65rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 4px; background: rgba(0, 0, 0, 0.05); }
     .lang-badge--ar { color: var(--color-primary); background: rgba(var(--color-primary-rgb), 0.1); }
+
+    @media (max-width: 1100px) {
+      .chat-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-sidebar {
+        order: 2;
+        max-height: 38vh;
+        border-right: none;
+        border-top: var(--liquid-glass-border);
+      }
+
+      .messages-area {
+        padding: 1.5rem;
+      }
+
+      .chat-input-row {
+        padding: 1rem 1.5rem;
+      }
+
+      .mode-banner {
+        margin: 1rem 1.5rem 0;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .mode-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .message {
+        max-width: 100%;
+      }
+    }
   `],
 })
 export class ChatComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
+  readonly store = inject(AppStore);
+  private readonly router = inject(Router);
   private readonly log = inject(LogService);
   private readonly glossary = inject(GlossaryService);
   private readonly tm = inject(TranslationMemoryService);
@@ -316,6 +398,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   readonly knowledgeBases = signal<PersonalKnowledgeBase[]>([]);
   readonly selectedKnowledgeBaseId = signal<string>('');
   readonly knowledgeSyncing = signal(false);
+  readonly activeMode = this.store.activeMode;
 
   prompt = '';
   model = 'gpt-4o';
@@ -332,11 +415,62 @@ export class ChatComponent implements OnInit, OnDestroy {
     return `Active context: ${ctx.fileName} (${ctx.result.total_pages} pages, ${ctx.financialFields.length} fields)`;
   });
 
-  readonly suggestions = () => [
-    this.i18n.t('chat.suggest1'),
-    this.i18n.t('chat.suggest2'),
-    this.i18n.t('chat.suggest3'),
-  ];
+  readonly modeBanner = computed(() => {
+    const config: Record<AppMode, { title: string; body: string; actionLabel: string; actionRoute: string; actionIcon: string }> = {
+      chat: {
+        title: 'Chat mode',
+        body: 'Conversational guidance is active.',
+        actionLabel: 'Open chat',
+        actionRoute: '/chat',
+        actionIcon: 'discussion-2',
+      },
+      cowork: {
+        title: 'Cowork mode',
+        body: 'Plan-oriented collaboration is active here. Use RAG Studio or the analytical dashboard when you need structured review.',
+        actionLabel: 'Open cowork tools',
+        actionRoute: '/rag-studio',
+        actionIcon: 'collaborate',
+      },
+      training: {
+        title: 'Training mode',
+        body: 'Execution is prioritized. Move to pipeline or pair studio when the next step should change live systems.',
+        actionLabel: 'Open training routes',
+        actionRoute: '/pipeline',
+        actionIcon: 'process',
+      },
+    };
+    return config[this.activeMode()];
+  });
+
+  readonly inputPlaceholder = computed(() => {
+    const placeholders: Record<AppMode, string> = {
+      chat: this.i18n.t('chat.placeholder'),
+      cowork: 'Describe the plan you want reviewed before execution.',
+      training: 'Brief the agent on the training or ingestion task you want to run.',
+    };
+    return placeholders[this.activeMode()];
+  });
+
+  readonly suggestions = () => {
+    const suggestionsByMode: Record<AppMode, string[]> = {
+      chat: [
+        this.i18n.t('chat.suggest1'),
+        this.i18n.t('chat.suggest2'),
+        this.i18n.t('chat.suggest3'),
+      ],
+      cowork: [
+        'Draft a RAG evaluation plan for the current corpus.',
+        'Compare two deployment options and list approval checkpoints.',
+        'Summarize the next review steps for the active document context.',
+      ],
+      training: [
+        'Summarize the inputs needed before launching the pipeline.',
+        'Prepare a checklist for a large pair-ingestion run.',
+        'Explain what should be validated before committing glossary updates.',
+      ],
+    };
+    return suggestionsByMode[this.activeMode()];
+  };
 
   constructor() {
     effect(() => {
@@ -457,7 +591,10 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   private buildContextualSystemPrompt(knowledge: PersonalKnowledgeQueryResult | null): string {
-    const segments = [this.systemPrompt];
+    const segments = [
+      this.store.aiCapabilities().systemPromptPrefix,
+      this.systemPrompt,
+    ];
 
     if (knowledge && knowledge.context_docs.length > 0) {
       const knowledgeSnippet = knowledge.context_docs
@@ -483,6 +620,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     return segments.filter(Boolean).join('\n\n');
+  }
+
+  goToModeRoute(): void {
+    void this.router.navigate([this.modeBanner().actionRoute]);
   }
 
   private rememberActiveDocumentContext(): void {

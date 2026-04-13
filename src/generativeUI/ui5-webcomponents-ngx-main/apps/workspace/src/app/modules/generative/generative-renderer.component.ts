@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { GenerativeNodeBuilderComponent } from './generative-node-builder.component';
 
 export interface GenerativeNode {
   type: string;
@@ -10,10 +11,11 @@ export interface GenerativeNode {
 
 @Component({
   selector: 'app-generative-renderer',
+  imports: [GenerativeNodeBuilderComponent],
   template: `
     <app-generative-node-builder [node]="node"></app-generative-node-builder>
   `,
-  standalone: false
+  standalone: true
 })
 export class GenerativeRendererComponent {
   @Input() node!: GenerativeNode;

@@ -35,4 +35,25 @@ module.exports = {
     pathRewrite: { '^/api/training': '' },
     logLevel: 'info',
   },
+  '/api/v1/training': {
+    target: TRAINING_API_URL,
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: { '^/api/v1/training': '' },
+    logLevel: 'info',
+  },
+  '/api/v1/ui5/openai': {
+    target: TRAINING_API_URL,
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: { '^/api/v1/ui5/openai': '' },
+    logLevel: 'info',
+  },
+  '/api/v1/ui5/mcp': {
+    target: AGENT_URL,
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: { '^/api/v1/ui5/mcp': '' },
+    logLevel: 'info',
+  },
 };

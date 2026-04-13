@@ -12,6 +12,7 @@ import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-component
 import { AppStore } from '../../store/app.store';
 import { PipelineFlowComponent, FlowStage } from '../../shared/components/pipeline-flow/pipeline-flow.component';
 import { RealtimeConnectionService } from '../../services/realtime-connection.service';
+import { ConfirmationDialogComponent, type ConfirmationDialogData } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 type PipelineState = 'idle' | 'running' | 'completed' | 'error';
 type StageStatus = 'idle' | 'running' | 'done' | 'error';
@@ -30,7 +31,7 @@ interface LogLine {
 @Component({
   selector: 'app-pipeline',
   standalone: true,
-  imports: [CommonModule, Ui5TrainingComponentsModule, PipelineFlowComponent],
+  imports: [CommonModule, Ui5TrainingComponentsModule, PipelineFlowComponent, ConfirmationDialogComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -42,9 +43,10 @@ interface LogLine {
         </div>
         <div class="header-right">
           @if (wsConnected()) { <span class="live-indicator">{{ i18n.t('pipeline.liveLink') }}</span> }
+          <span class="mode-guidance">{{ modeGuidance() }}</span>
           <ui5-button design="Emphasized" icon="play" (click)="startPipeline()" 
             [disabled]="pipelineState() === 'running' || starting()">
-            {{ pipelineState() === 'running' ? i18n.t('pipeline.processingEngine') : i18n.t('pipeline.execute') }}
+            {{ pipelineState() === 'running' ? i18n.t('pipeline.processingEngine') : executeButtonLabel() }}
           </ui5-button>
         </div>
       </div>
@@ -120,6 +122,13 @@ interface LogLine {
           </ui5-card>
         </aside>
       </div>
+
+      <app-confirmation-dialog
+        [open]="confirmExecutionOpen()"
+        [data]="confirmExecutionData()"
+        (confirmed)="confirmExecutionOpen.set(false); launchPipeline()"
+        (cancelled)="confirmExecutionOpen.set(false)">
+      </app-confirmation-dialog>
     </div>
   `,
   styles: [`
@@ -140,6 +149,13 @@ interface LogLine {
     .slideUp, .fadeIn { animation-delay: var(--stagger, 0s); }
     .header-left, .header-right { display: flex; align-items: center; gap: 1.25rem; }
     .header-left ui5-title { margin: 0; font-weight: 800; }
+    .mode-guidance {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      max-width: 20rem;
+      text-align: right;
+    }
     .live-indicator { 
       font-size: 0.7rem; font-weight: 800; color: var(--color-success); 
       background: rgba(var(--color-success-rgb), 0.1); padding: 0.25rem 0.75rem; border-radius: 999px; 
@@ -234,9 +250,35 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
 
   readonly pipelineState = computed<PipelineState>(() => this.appStore.pipelineState());
+  readonly activeMode = this.appStore.activeMode;
   readonly logLines = signal<LogLine[]>([]);
   readonly starting = signal(false);
   readonly wsConnected = signal(false);
+  readonly confirmExecutionOpen = signal(false);
+  readonly confirmExecutionData = computed<ConfirmationDialogData>(() => ({
+    title: 'Review pipeline launch',
+    message: 'Cowork mode requires explicit approval before a pipeline run starts. Confirm the launch when the plan is ready.',
+    confirmText: 'Start run',
+    cancelText: 'Keep reviewing',
+    confirmDesign: 'Positive',
+    icon: 'process',
+  }));
+  readonly executeButtonLabel = computed(() => {
+    const labels = {
+      chat: 'Switch to training',
+      cowork: 'Review launch',
+      training: this.i18n.t('pipeline.execute'),
+    } as const;
+    return labels[this.activeMode()];
+  });
+  readonly modeGuidance = computed(() => {
+    const guidance = {
+      chat: 'Execution is disabled in chat mode until you switch the workspace into training.',
+      cowork: 'Cowork mode stages the run and asks for approval before execution.',
+      training: 'Training mode launches the run immediately against the live backend.',
+    } as const;
+    return guidance[this.activeMode()];
+  });
   
   // High-perf thread simulation
   readonly threads = signal(Array.from({length: 64}, () => ({ active: false, load: 0 })));
@@ -430,6 +472,25 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   startPipeline() {
+    if (this.pipelineState() === 'running' || this.starting()) {
+      return;
+    }
+
+    if (this.activeMode() === 'chat') {
+      this.appStore.setMode('training');
+      this.toast.info('Training mode enabled. Review the run configuration and launch again.');
+      return;
+    }
+
+    if (this.activeMode() === 'cowork') {
+      this.confirmExecutionOpen.set(true);
+      return;
+    }
+
+    this.launchPipeline();
+  }
+
+  launchPipeline() {
     this.starting.set(true);
     this.http.post(`${environment.apiBaseUrl}/pipeline/start`, {}).subscribe({
       next: () => {

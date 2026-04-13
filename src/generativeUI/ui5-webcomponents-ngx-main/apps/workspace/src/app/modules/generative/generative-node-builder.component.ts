@@ -5,7 +5,7 @@ import { GenerativeIntentService } from './generative-intent.service';
 @Component({
   selector: 'app-generative-node-builder',
   template: '',
-  standalone: false
+  standalone: true
 })
 export class GenerativeNodeBuilderComponent implements OnChanges {
   @Input() node!: GenerativeNode;
