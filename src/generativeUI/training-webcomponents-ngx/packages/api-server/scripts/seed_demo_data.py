@@ -3,6 +3,12 @@
 Demo Seed Data — pre-populates Translation Memory, glossary, and vector store
 for live demos. Run once against a running api-server instance.
 
+For a small in-process baseline (5 TM rows, idempotent) without HTTP:
+  * set ``SEED_DEMO_DATA=1`` before starting the API, or
+  * ``python scripts/store_admin.py migrate --seed``
+
+This script adds the full TM set, vectorize-batch, and product listing checks.
+
 Usage:
     python seed_demo_data.py [--base-url http://localhost:4200/api]
 """

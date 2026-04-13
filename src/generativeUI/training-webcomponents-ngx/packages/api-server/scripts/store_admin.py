@@ -14,8 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.database import close_database, init_database
-from src.seed import seed_store if Path("src/seed.py").exists() else lambda: None
-from src.store import StoreCollection, get_store
+from src.store import StoreCollection, get_store, seed_store
 
 BACKUP_COLLECTIONS: tuple[StoreCollection, ...] = (
     "jobs",
@@ -29,7 +28,7 @@ def _json_default(value: Any) -> str:
 async def _prepare_store(seed_reference_data: bool) -> dict[str, Any]:
     await init_database()
     if seed_reference_data:
-        seed_store()
+        seed_store(force=True)
     return get_store().health_snapshot()
 
 async def backup(output_path: Path):
@@ -72,8 +71,12 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # migrate
-    migrate_parser = subparsers.add_parser("migrate", help="Run migrations and seed reference data")
-    migrate_parser.add_argument("--seed", action="store_true", help="Seed reference data")
+    migrate_parser = subparsers.add_parser("migrate", help="Run migrations and optional reference TM seed")
+    migrate_parser.add_argument(
+        "--seed",
+        action="store_true",
+        help="Idempotent translation-memory baseline (same rows as SEED_DEMO_DATA at API startup; full demos: seed_demo_data.py)",
+    )
 
     # backup
     backup_parser = subparsers.add_parser("backup", help="Backup store collections to JSON")

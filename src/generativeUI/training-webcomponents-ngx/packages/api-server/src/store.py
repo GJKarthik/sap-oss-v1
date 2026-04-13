@@ -8,9 +8,13 @@ the same SQLAlchemy engine as every other table.
 
 from __future__ import annotations
 
+import logging
+import os
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
+
+log = logging.getLogger(__name__)
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, JSON, String, Text
 
@@ -481,6 +485,60 @@ def _derive_initials(display_name: str) -> str:
 
 _store: Optional[Store] = None
 
+# Idempotent reference rows (same content as first entries in scripts/seed_demo_data.py TM_ENTRIES).
+# Fixed IDs so ``save_tm_entry`` updates in place on repeated startup.
+_REFERENCE_TM_SEED: tuple[Dict[str, Any], ...] = (
+    {
+        "id": "seed-tm-1",
+        "source_text": "The consolidated balance sheet shows total assets of SAR 1.2 billion.",
+        "target_text": "تظهر الميزانية العمومية الموحدة إجمالي أصول بقيمة 1.2 مليار ريال سعودي.",
+        "source_lang": "en",
+        "target_lang": "ar",
+        "category": "treasury",
+        "is_approved": True,
+    },
+    {
+        "id": "seed-tm-2",
+        "source_text": "Scope 1 and Scope 2 greenhouse gas emissions decreased by 12% year-over-year.",
+        "target_text": "انخفضت انبعاثات الغازات الدفيئة للنطاق 1 والنطاق 2 بنسبة 12% على أساس سنوي.",
+        "source_lang": "en",
+        "target_lang": "ar",
+        "category": "esg",
+        "is_approved": True,
+    },
+    {
+        "id": "seed-tm-3",
+        "source_text": "The hedging effectiveness test resulted in a ratio within the 80-125% corridor.",
+        "target_text": "أسفر اختبار فعالية التحوط عن نسبة ضمن نطاق 80-125%.",
+        "source_lang": "en",
+        "target_lang": "ar",
+        "category": "treasury",
+        "is_approved": True,
+    },
+    {
+        "id": "seed-tm-4",
+        "source_text": "Operating expenses for Q3 exceeded budget by 4.2%, primarily driven by FX losses.",
+        "target_text": "تجاوزت المصاريف التشغيلية للربع الثالث الميزانية بنسبة 4.2%، مدفوعة بشكل رئيسي بخسائر صرف العملات.",
+        "source_lang": "en",
+        "target_lang": "ar",
+        "category": "performance",
+        "is_approved": True,
+    },
+    {
+        "id": "seed-tm-5",
+        "source_text": "Water intensity per unit of revenue improved to 3.8 m³/SAR million.",
+        "target_text": "تحسنت كثافة استهلاك المياه لكل وحدة إيرادات إلى 3.8 متر مكعب/مليون ريال سعودي.",
+        "source_lang": "en",
+        "target_lang": "ar",
+        "category": "esg",
+        "is_approved": True,
+    },
+)
+
+
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in ("1", "true", "yes", "on")
+
 
 def get_store() -> Store:
     global _store
@@ -489,5 +547,30 @@ def get_store() -> Store:
     return _store
 
 
-def seed_store():
-    pass
+def seed_store(*, force: bool = False) -> None:
+    """Load optional, idempotent reference data after :func:`database.init_database`.
+
+    Schema creation and empty tables are handled by ``init_database()`` only; this
+    hook adds a small translation-memory baseline when explicitly requested.
+
+    * **Default (API startup):** no rows unless ``SEED_DEMO_DATA`` is truthy
+      (``1``, ``true``, ``yes``, ``on``).
+    * **Admin CLI:** ``python scripts/store_admin.py migrate --seed`` passes
+      ``force=True`` so seeding runs without the env var.
+    * **Full demos** (vectorize batch, all TM rows, data-product checks): run
+      ``scripts/seed_demo_data.py`` against a running API.
+
+    Safe to call on every process start: rows use stable IDs and ``Store.save_tm_entry``
+    merges updates.
+    """
+    if not force and not _env_flag("SEED_DEMO_DATA"):
+        log.debug(
+            "seed_store: skipped (set SEED_DEMO_DATA=1 for startup seed, or run "
+            "'python scripts/store_admin.py migrate --seed', or use scripts/seed_demo_data.py)"
+        )
+        return
+
+    store = get_store()
+    for row in _REFERENCE_TM_SEED:
+        store.save_tm_entry(dict(row))
+    log.info("seed_store: ensured %d reference translation-memory row(s)", len(_REFERENCE_TM_SEED))

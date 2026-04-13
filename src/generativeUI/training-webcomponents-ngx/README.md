@@ -89,6 +89,8 @@ yarn nx build angular-shell --configuration production
 
 ## Docker Compose
 
+Operational checklist (platform vs suite gateway, secrets, smoke tests): [docs/runbooks/operationalize-apps.md](../../../docs/runbooks/operationalize-apps.md).
+
 ```bash
 # From the repo root, set production secrets first:
 cp .env.example .env

@@ -52,6 +52,8 @@ kubectl rollout status deployment/training-gateway -n sap-ai-services
 For SAP BTP browser access, use the edge-auth overlay after the base stack.
 This keeps the SPA same-origin and lets IAS or XSUAA handle sign-in at the edge.
 
+Standalone reference for `window.__TRAINING_CONFIG__` in edge mode: [training-config-edge.example.js](training-config-edge.example.js) (matches the ConfigMap in `training-edge-auth-overlay.yaml`).
+
 ```bash
 kubectl apply -f training-edge-auth-secrets.template.yaml
 kubectl apply -f training-edge-auth-overlay.yaml
