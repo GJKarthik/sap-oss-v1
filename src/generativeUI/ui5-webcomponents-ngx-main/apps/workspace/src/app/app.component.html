@@ -10,59 +10,76 @@
     [primaryTitle]="'APP_TITLE' | ui5I18n"
     [secondaryTitle]="'APP_SUBTITLE' | ui5I18n"
     show-product-switch="true"
+    show-notifications
+    notifications-count="4"
+    show-co-pilot
     [accessibilityAttributes]="shellbarA11y"
-    (logoClick)="openLanding()"
+    (logoClick)="navigateTo('/')"
     (product-switch-click)="openProducts($event)"
+    (notifications-click)="openNotifications($event)"
+    (co-pilot-click)="navigateTo('/joule')"
     (profile-click)="openProfile($event)">
-    <ui5-avatar slot="profile" initials="JI" color-scheme="Accent6" shape="Circle"></ui5-avatar>
+    <ui5-avatar slot="profile" initials="JI" color-scheme="Accent6" shape="Circle" size="S" interactive style="box-shadow: 0 0 0 2px rgba(255,255,255,0.4), var(--liquid-glass-shadow);"></ui5-avatar>
   </ui5-shellbar>
 
-  <!-- Top nav bar with active route highlight -->
-  <nav class="app-nav" role="navigation" aria-label="Main navigation">
-    <button
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive('/')"
-      [attr.aria-current]="isActive('/') ? 'page' : null"
-      (click)="navigateTo('/')">
-      {{ 'NAV_HOME' | ui5I18n }}
-    </button>
-    <button
-      *ngFor="let link of navLinks; trackBy: trackByPath"
-      class="app-nav__item"
-      [class.app-nav__item--active]="isActive(link.path)"
-      [attr.aria-current]="isActive(link.path) ? 'page' : null"
-      (click)="navigateTo(link.path)">
-      {{ link.labelKey | ui5I18n }}
-    </button>
+  <div class="app-body">
+    <!-- Side Navigation Island -->
+    <aside class="app-sidebar slideUp">
+      <ui5-side-navigation (selection-change)="onNavSelectionChange($event)">
+        <ui5-side-navigation-item
+          [text]="'NAV_HOME' | ui5I18n"
+          icon="home"
+          [selected]="isActive('/')"
+          data-path="/">
+        </ui5-side-navigation-item>
+        
+        <ui5-side-navigation-item
+          *ngFor="let link of navLinks; trackBy: trackByPath"
+          [text]="link.labelKey | ui5I18n"
+          [icon]="link.icon || 'circle-task'"
+          [selected]="isActive(link.path)"
+          [attr.data-path]="link.path">
+        </ui5-side-navigation-item>
 
-    <div class="app-nav__spacer"></div>
-    <div class="app-nav__team">
-      <ui5-avatar-group type="Individual">
-        <ui5-avatar initials="SJ" color-scheme="Accent1"></ui5-avatar>
-        <ui5-avatar initials="MW" color-scheme="Accent2"></ui5-avatar>
-        <ui5-avatar initials="AW" color-scheme="Accent3"></ui5-avatar>
-      </ui5-avatar-group>
-    </div>
-    <ui5-button
-      class="app-nav__icon-action"
-      design="Transparent"
-      icon="search"
-      (click)="toggleSearch()"
-      [attr.accessible-name]="'QUICK_ACCESS_SEARCH' | ui5I18n">
-    </ui5-button>
-    <ui5-button
-      *ngIf="canPinCurrentPage()"
-      class="app-nav__icon-action"
-      [class.app-nav__icon-action--active]="currentPagePinned()"
-      design="Transparent"
-      icon="favorite"
-      (click)="toggleCurrentPagePin()"
-      [attr.accessible-name]="(currentPagePinned() ? 'QUICK_ACCESS_UNPIN' : 'QUICK_ACCESS_PIN') | ui5I18n">
-    </ui5-button>
-    <ui5-button class="app-nav__workspace" design="Transparent" icon="action-settings" (click)="navigateTo('/workspace')">
-      {{ 'NAV_WORKSPACE' | ui5I18n }}
-    </ui5-button>
-  </nav>
+        <ui5-side-navigation-item slot="fixed" [text]="'NAV_WORKSPACE' | ui5I18n" icon="action-settings" (click)="navigateTo('/workspace')"></ui5-side-navigation-item>
+      </ui5-side-navigation>
+    </aside>
+
+    <!-- Main Viewport -->
+    <main class="app-viewport" id="main-content" tabindex="-1">
+      <div class="viewport-header fadeIn" *ngIf="shouldShowViewportHeader()">
+        <div class="header-actions">
+          <div class="app-nav__team">
+            <ui5-avatar-group type="Individual">
+              <ui5-avatar initials="SJ" color-scheme="Accent1" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
+              <ui5-avatar initials="MW" color-scheme="Accent2" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
+              <ui5-avatar initials="AW" color-scheme="Accent3" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
+            </ui5-avatar-group>
+          </div>
+          <ui5-button
+            class="app-nav__icon-action"
+            design="Transparent"
+            icon="search"
+            (click)="toggleSearch()"
+            [attr.accessible-name]="'QUICK_ACCESS_SEARCH' | ui5I18n">
+          </ui5-button>
+          <ui5-button
+            *ngIf="canPinCurrentPage()"
+            class="app-nav__icon-action"
+            [class.app-nav__icon-action--active]="currentPagePinned()"
+            design="Transparent"
+            icon="favorite"
+            (click)="toggleCurrentPagePin()"
+            [attr.accessible-name]="(currentPagePinned() ? 'QUICK_ACCESS_UNPIN' : 'QUICK_ACCESS_PIN') | ui5I18n">
+          </ui5-button>
+        </div>
+      </div>
+
+      <div class="content-container">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
 
   <section class="learn-path-banner" *ngIf="learnPathActive && !learnPathDismissed" aria-label="Learn path controls">
     <div class="learn-path-banner__left">
@@ -79,7 +96,10 @@
   <ui5-popover #profilePopover [headerText]="'USER_PROFILE_TITLE' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
     <div class="user-menu">
       <header class="user-menu__header">
-        <ui5-avatar initials="JI" color-scheme="Accent6" shape="Circle" size="L"></ui5-avatar>
+        <div class="avatar-container" style="position: relative; margin-bottom: 0.5rem;">
+          <ui5-avatar initials="JI" color-scheme="Accent6" shape="Circle" size="XL" style="box-shadow: 0 12px 32px rgba(0,0,0,0.15); border: 4px solid #fff;"></ui5-avatar>
+          <div class="status-indicator" style="position: absolute; bottom: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-success, #34c759); border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+        </div>
         <div class="user-menu__info">
           <span class="user-menu__name">{{ 'USER_PROFILE_NAME' | ui5I18n }}</span>
           <span class="user-menu__role">{{ 'USER_PROFILE_ROLE' | ui5I18n }}</span>
@@ -88,7 +108,7 @@
       </header>
 
       <ui5-list separators="None">
-        <ui5-li icon="settings" (click)="profilePopover.close()">{{ 'USER_PROFILE_SETTINGS' | ui5I18n }}</ui5-li>
+        <ui5-li icon="settings" (click)="profilePopover.nativeElement.close()">{{ 'USER_PROFILE_SETTINGS' | ui5I18n }}</ui5-li>
         <ui5-li icon="palette">
           <div class="user-menu__setting">
             <span>{{ 'USER_PROFILE_THEME' | ui5I18n }}</span>
@@ -114,31 +134,61 @@
       </ui5-list>
 
       <footer class="user-menu__footer">
-        <ui5-button design="Transparent" (click)="onSignOut()">{{ 'USER_PROFILE_SIGNOUT' | ui5I18n }}</ui5-button>
+        <ui5-button design="Transparent" (click)="onSignOut()" style="width: 100%; color: var(--color-error, #ff3b30); font-weight: 700;">{{ 'USER_PROFILE_SIGNOUT' | ui5I18n }}</ui5-button>
       </footer>
     </div>
   </ui5-popover>
 
   <ui5-popover #productPopover [headerText]="'PRODUCT_SWITCHER' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
-    <ui5-list (item-click)="onProductSelect($event)">
-      <ui5-li icon="home" data-app="aifabric">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
-      <ui5-li icon="process" data-app="training">{{ 'PRODUCT_TRAINING' | ui5I18n }}</ui5-li>
-      <ui5-li icon="chart-table-view" data-app="sac">{{ 'PRODUCT_SAC' | ui5I18n }}</ui5-li>
-      <ui5-li icon="grid" data-app="experience" selected>{{ 'PRODUCT_JOULE' | ui5I18n }}</ui5-li>
-    </ui5-list>
+    <div class="user-menu">
+      <ui5-list (item-click)="onProductSelect($event)" separators="None">
+        <ui5-li icon="process" data-app="training">{{ 'PRODUCT_TRAINING' | ui5I18n }}</ui5-li>
+        <ui5-li icon="grid" data-app="experience" selected>{{ 'PRODUCT_JOULE' | ui5I18n }}</ui5-li>
+        <ui5-li icon="chart-table-view" data-app="sac">{{ 'PRODUCT_SAC' | ui5I18n }}</ui5-li>
+        <ui5-li icon="home" data-app="aifabric">{{ 'PRODUCT_AI_FABRIC' | ui5I18n }}</ui5-li>
+      </ui5-list>
+    </div>
   </ui5-popover>
 
-  <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="'QUICK_ACCESS_TITLE' | ui5I18n" (close)="searchQuery.set('')">
+  <ui5-popover #notificationsPopover [headerText]="'Notifications'" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
+    <div class="user-menu">
+      <ui5-list separators="Inner">
+        <ui5-li icon="message-information" description="System update complete">Platform Health: OK</ui5-li>
+        <ui5-li icon="message-warning" description="High VRAM usage detected">GPU Alert</ui5-li>
+        <ui5-li icon="message-success" description="Model 'Titan-v2' is ready">Deployment Success</ui5-li>
+        <ui5-li icon="group" description="Jony Ive joined the workspace">New Collaborator</ui5-li>
+      </ui5-list>
+      <footer class="user-menu__footer">
+        <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">View All</ui5-button>
+      </footer>
+    </div>
+  </ui5-popover>
+
+  <ui5-dialog #searchDialog class="spotlight-dialog" [attr.header-text]="'QUICK_ACCESS_TITLE' | ui5I18n" (close)="selectedSearchIndex.set(0)">
     <div class="spotlight-body">
-      <ui5-input #searchInput class="spotlight-input" [attr.placeholder]="'QUICK_ACCESS_SEARCH' | ui5I18n" (input)="onSearchInput($event)">
-        <ui5-icon slot="icon" name="search"></ui5-icon>
-      </ui5-input>
+      <div class="spotlight-input-wrapper">
+        <ui5-icon name="search" class="spotlight-search-icon"></ui5-icon>
+        <input
+          #searchInput
+          class="spotlight-native-input"
+          [placeholder]="'QUICK_ACCESS_SEARCH' | ui5I18n"
+          (input)="onSearchInput($event)"
+          [value]="searchQuery()"
+          spellcheck="false"
+          autocomplete="off" />
+        <ui5-button
+          *ngIf="searchQuery()"
+          icon="decline"
+          design="Transparent"
+          class="spotlight-clear-btn"
+          (click)="searchQuery.set(''); selectedSearchIndex.set(0)"></ui5-button>
+      </div>
 
       <div class="spotlight-results">
         <ng-container *ngIf="!searchQuery().trim(); else searchMatches">
           <section class="spotlight-section" *ngIf="pinnedQuickAccess().length > 0">
             <div class="spotlight-section__title">{{ 'QUICK_ACCESS_SAVED' | ui5I18n }}</div>
-            <div class="spotlight-entry" *ngFor="let entry of pinnedQuickAccess(); trackBy: trackByPath">
+            <div class="spotlight-entry" *ngFor="let entry of pinnedQuickAccess(); trackBy: trackByPath" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === entry.path">
               <button type="button" class="spotlight-entry__main" (click)="jumpTo(entry.path)">
                 <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="entry.icon"></ui5-icon></span>
                 <span class="spotlight-entry__copy">
@@ -158,7 +208,7 @@
 
           <section class="spotlight-section" *ngIf="recentQuickAccess().length > 0">
             <div class="spotlight-section__title">{{ 'QUICK_ACCESS_RECENT' | ui5I18n }}</div>
-            <div class="spotlight-entry" *ngFor="let entry of recentQuickAccess(); trackBy: trackByPath">
+            <div class="spotlight-entry" *ngFor="let entry of recentQuickAccess(); trackBy: trackByPath" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === entry.path">
               <button type="button" class="spotlight-entry__main" (click)="jumpTo(entry.path)">
                 <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="entry.icon"></ui5-icon></span>
                 <span class="spotlight-entry__copy">
@@ -178,7 +228,7 @@
 
           <section class="spotlight-section">
             <div class="spotlight-section__title">{{ 'QUICK_ACCESS_SUGGESTED' | ui5I18n }}</div>
-            <div class="spotlight-entry" *ngFor="let entry of suggestedQuickAccess(); trackBy: trackByPath">
+            <div class="spotlight-entry" *ngFor="let entry of suggestedQuickAccess(); trackBy: trackByPath" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === entry.path">
               <button type="button" class="spotlight-entry__main" (click)="jumpTo(entry.path)">
                 <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="entry.icon"></ui5-icon></span>
                 <span class="spotlight-entry__copy">
@@ -201,7 +251,7 @@
         <ng-template #searchMatches>
           <section class="spotlight-section" *ngIf="searchQuickAccess().length > 0; else noSearchMatches">
             <div class="spotlight-section__title">{{ 'QUICK_ACCESS_SEARCH_RESULTS' | ui5I18n }}</div>
-            <div class="spotlight-entry" *ngFor="let entry of searchQuickAccess(); trackBy: trackByPath">
+            <div class="spotlight-entry" *ngFor="let entry of searchQuickAccess(); trackBy: trackByPath" [class.selected]="effectiveSearchEntries()[selectedSearchIndex()]?.path === entry.path">
               <button type="button" class="spotlight-entry__main" (click)="jumpTo(entry.path)">
                 <span class="spotlight-entry__icon" aria-hidden="true"><ui5-icon [name]="entry.icon"></ui5-icon></span>
                 <span class="spotlight-entry__copy">
@@ -226,10 +276,5 @@
       </div>
     </div>
   </ui5-dialog>
-
-  <!-- Main Content -->
-  <main class="app-content" id="main-content" tabindex="-1">
-    <router-outlet></router-outlet>
-  </main>
 
 </div>

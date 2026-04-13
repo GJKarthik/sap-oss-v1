@@ -1,4 +1,6 @@
 import { NgModule } from '@angular/core';
+import { AvatarComponent } from '@ui5/webcomponents-ngx/main/avatar';
+import { AvatarGroupComponent } from '@ui5/webcomponents-ngx/main/avatar-group';
 import { BarComponent } from '@ui5/webcomponents-ngx/main/bar';
 import { BusyIndicatorComponent } from '@ui5/webcomponents-ngx/main/busy-indicator';
 import { ButtonComponent } from '@ui5/webcomponents-ngx/main/button';
@@ -31,8 +33,12 @@ import { TitleComponent } from '@ui5/webcomponents-ngx/main/title';
 import { IllustratedMessageComponent } from '@ui5/webcomponents-ngx/fiori/illustrated-message';
 import { PageComponent } from '@ui5/webcomponents-ngx/fiori/page';
 import { ShellBarComponent } from '@ui5/webcomponents-ngx/fiori/shell-bar';
+import { SideNavigationComponent } from '@ui5/webcomponents-ngx/fiori/side-navigation';
+import { SideNavigationItemComponent } from '@ui5/webcomponents-ngx/fiori/side-navigation-item';
 
 const imports = [
+  AvatarComponent,
+  AvatarGroupComponent,
   BarComponent,
   BusyIndicatorComponent,
   ButtonComponent,
@@ -54,6 +60,8 @@ const imports = [
   RadioButtonComponent,
   SelectComponent,
   ShellBarComponent,
+  SideNavigationComponent,
+  SideNavigationItemComponent,
   StepInputComponent,
   SwitchComponent,
   TableComponent,
