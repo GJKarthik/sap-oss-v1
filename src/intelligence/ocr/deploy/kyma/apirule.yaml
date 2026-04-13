@@ -1,0 +1,31 @@
+apiVersion: gateway.kyma-project.io/v2
+kind: APIRule
+metadata:
+  name: arabic-ocr
+  namespace: sap-ai-services
+spec:
+  gateway: kyma-system/kyma-gateway
+  hosts:
+    - arabic-ocr.c-054c570.kyma.ondemand.com
+  service:
+    name: arabic-ocr-service
+    port: 8060
+  rules:
+    - path: /ocr/health
+      methods: ["GET"]
+      noAuth: true
+    - path: /ocr/pdf
+      methods: ["POST"]
+      noAuth: true
+    - path: /ocr/image
+      methods: ["POST"]
+      noAuth: true
+    - path: /ocr/batch
+      methods: ["POST"]
+      noAuth: true
+    - path: /ocr/metrics
+      methods: ["GET"]
+      noAuth: true
+    - path: /*
+      methods: ["GET", "POST", "OPTIONS"]
+      noAuth: true

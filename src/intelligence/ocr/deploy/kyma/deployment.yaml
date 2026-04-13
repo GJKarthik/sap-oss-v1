@@ -1,0 +1,113 @@
+# Arabic OCR Service - Kyma Deployment
+# Port 8060 | Tesseract ara+eng | FastAPI + uvicorn
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arabic-ocr-config
+  namespace: sap-ai-services
+data:
+  PORT: "8060"
+  OCR_LANGUAGES: "ara+eng"
+  OCR_DPI: "300"
+  OCR_MAX_WORKERS: "2"
+  OCR_MAX_CONCURRENT: "4"
+  OCR_MAX_UPLOAD_BYTES: "52428800"
+  OCR_ALLOWED_CALLBACK_HOSTS: ""
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arabic-ocr
+  namespace: sap-ai-services
+  labels:
+    app: arabic-ocr
+    version: "1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arabic-ocr
+  template:
+    metadata:
+      labels:
+        app: arabic-ocr
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: arabic-ocr
+          image: docker.io/plturrell/arabic-ocr:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8060
+          envFrom:
+            - configMapRef:
+                name: arabic-ocr-config
+          env:
+            - name: OCR_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: arabic-ocr-secrets
+                  key: OCR_WEBHOOK_SECRET
+                  optional: true
+          volumeMounts:
+            - name: tmp-dir
+              mountPath: /tmp
+            - name: upload-cache
+              mountPath: /app/uploads
+          livenessProbe:
+            httpGet:
+              path: /ocr/health
+              port: 8060
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ocr/health
+              port: 8060
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: tmp-dir
+          emptyDir:
+            sizeLimit: "500Mi"
+        - name: upload-cache
+          emptyDir:
+            sizeLimit: "1Gi"
+      imagePullSecrets:
+        - name: dockerhub-plturrell
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: arabic-ocr-service
+  namespace: sap-ai-services
+  labels:
+    app: arabic-ocr
+spec:
+  selector:
+    app: arabic-ocr
+  ports:
+    - name: http
+      port: 8060
+      targetPort: 8060
+  type: ClusterIP
