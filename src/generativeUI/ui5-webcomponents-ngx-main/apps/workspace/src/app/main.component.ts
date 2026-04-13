@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2023 SAP SE
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { I18nPipe } from '@ui5/webcomponents-ngx/i18n';
 import { WorkspaceService } from './core/workspace.service';
 import { NavLinkDatum } from './core/workspace.types';
 import { QuickAccessService } from './core/quick-access.service';
 import { HomeLayoutService, HomeWidgetId } from './core/home-layout.service';
 import { ProductNavigationService } from './core/product-navigation.service';
+import { Ui5WorkspaceComponentsModule } from './shared/ui5-workspace-components.module';
+import { ServiceHealthPanelComponent } from './shared/service-health-panel/service-health-panel.component';
 
 interface HomeStat {
   value: string;
@@ -45,9 +49,12 @@ const WIDGET_TITLE_KEYS: Record<HomeWidgetId, string> = {
 };
 
 @Component({
+  selector: 'app-main',
+  standalone: true,
+  imports: [CommonModule, I18nPipe, Ui5WorkspaceComponentsModule, ServiceHealthPanelComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss'],
-  standalone: false,
 })
 export class MainComponent {
   @ViewChild('layoutDialog') private layoutDialog?: ElementRef<any>;

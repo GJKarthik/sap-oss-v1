@@ -1,16 +1,19 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import {
   ExperienceHealthService,
   ServiceCheck,
 } from '../../core/experience-health.service';
-import { I18nService } from '@ui5/webcomponents-ngx/i18n';
+import { I18nPipe, I18nService } from '@ui5/webcomponents-ngx/i18n';
+import { Ui5WorkspaceComponentsModule } from '../ui5-workspace-components.module';
 
 @Component({
   selector: 'ui-angular-service-health-panel',
+  standalone: true,
+  imports: [CommonModule, I18nPipe, Ui5WorkspaceComponentsModule],
   templateUrl: './service-health-panel.component.html',
   styleUrls: ['./service-health-panel.component.scss'],
-  standalone: false,
 })
 export class ServiceHealthPanelComponent implements OnInit, OnDestroy {
   checks: ServiceCheck[] = [];
