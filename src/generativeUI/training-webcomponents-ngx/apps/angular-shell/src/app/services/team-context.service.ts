@@ -6,10 +6,8 @@
  * Auto-attaches X-Team-Context header to all API requests.
  */
 
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
-import { AuthService } from './auth.service';
-import { TeamConfigService, TeamRole } from './team-config.service';
 
 export interface TeamContextState {
   country: string;   // ISO code: AE, GB, US, SG, …
@@ -39,9 +37,6 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 @Injectable({ providedIn: 'root' })
 export class TeamContextService {
-  private readonly auth = inject(AuthService);
-  private readonly _teamConfig = inject(TeamConfigService);
-
   private readonly _country = signal<string>('');
   private readonly _domain = signal<string>('');
 
@@ -105,26 +100,11 @@ export class TeamContextService {
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  /** Current user role from TeamConfigService (defaults to 'admin' in dev). */
-  readonly currentRole = computed<TeamRole>(() => {
-    try {
-      const cfg = this._teamConfig.getTeamConfig();
-      if (!cfg) return 'admin';
-      const authWithUser = this.auth as AuthService & { getUserId?: () => string | null };
-      const userId = authWithUser.getUserId?.() || '';
-      const member = cfg.members.find(m => m.userId === userId);
-      return member?.role ?? 'admin';
-    } catch {
-      return 'admin';
-    }
-  });
-
-  /** Returns the header value for X-Team-Context (JSON with role). */
+  /** Returns the header value for X-Team-Context (request scoping only). */
   getHeaderValue(): string {
     return JSON.stringify({
       country: this._country(),
       domain: this._domain(),
-      role: this.currentRole(),
     });
   }
 

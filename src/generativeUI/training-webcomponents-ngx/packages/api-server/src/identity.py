@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-import base64
-import json
+import os
 import re
 from dataclasses import asdict, dataclass
 from typing import Any, Optional
 
 from fastapi import HTTPException, Request, status
+
+from .auth_tokens import decode_local_jwt
+
+
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 @dataclass(frozen=True)
@@ -51,20 +56,6 @@ def _first_present(mapping: Any, *keys: str) -> str:
     return ""
 
 
-def _decode_token_claims(token: str) -> dict[str, Any]:
-    parts = token.split(".")
-    if len(parts) < 2:
-        return {}
-    payload = parts[1]
-    padding = "=" * (-len(payload) % 4)
-    try:
-        decoded = base64.urlsafe_b64decode(payload + padding)
-        data = json.loads(decoded.decode("utf-8"))
-        return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
-
-
 def _identity_from_edge_headers(request: Request) -> Optional[RequestIdentity]:
     headers = request.headers
     email = _first_present(headers, "x-auth-request-email", "x-forwarded-email")
@@ -97,7 +88,7 @@ def _identity_from_bearer_token(request: Request) -> Optional[RequestIdentity]:
     if not authorization.lower().startswith("bearer "):
         return None
 
-    claims = _decode_token_claims(authorization.split(" ", 1)[1])
+    claims = decode_local_jwt(authorization.split(" ", 1)[1]) or {}
     email = _clean(str(claims.get("email", ""))).lower()
     preferred_username = _clean(str(claims.get("preferred_username", "")))
     user_id = _normalize_user_id(
@@ -124,6 +115,9 @@ def _identity_from_bearer_token(request: Request) -> Optional[RequestIdentity]:
 
 
 def _identity_from_workspace_hint(request: Request) -> Optional[RequestIdentity]:
+    if not _env_flag("ALLOW_UNAUTHENTICATED_WORKSPACE_HINTS"):
+        return None
+
     headers = request.headers
     workspace_user = _first_present(headers, "x-workspace-user")
     workspace_display_name = _first_present(headers, "x-workspace-display-name")
@@ -178,4 +172,10 @@ def resolve_effective_owner(request: Request, requested_owner_id: Optional[str] 
             )
         return identity.user_id
 
-    return requested or identity.user_id or "personal-user"
+    if requested and requested != identity.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthenticated owner overrides are disabled.",
+        )
+
+    return identity.user_id or "personal-user"

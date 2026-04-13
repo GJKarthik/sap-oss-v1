@@ -2,74 +2,56 @@
 Local user authentication — registration, login, and token-based identity.
 
 Passwords are hashed with SHA-256 + per-user salt (no external bcrypt dep).
-JWTs are signed with HS256 using ``AUTH_JWT_SECRET``.
+JWTs are signed with HS256 using a securely configured ``AUTH_JWT_SECRET``.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import os
 import secrets
 import time
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+import re
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field, field_validator
 
+from .auth_tokens import decode_local_jwt, encode_local_jwt, get_local_jwt_secret
 from .identity import resolve_request_identity
 from .store import get_store
 
 router = APIRouter()
 
-AUTH_JWT_SECRET: str = os.getenv("AUTH_JWT_SECRET", "dev-secret-change-me")
 TOKEN_EXPIRY_SECONDS: int = int(os.getenv("AUTH_TOKEN_EXPIRY", "86400"))
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 # ---------------------------------------------------------------------------
-# Lightweight JWT helpers (no PyJWT dependency)
+# Local auth helpers
 # ---------------------------------------------------------------------------
-
-def _b64url(data: bytes) -> str:
-    return urlsafe_b64encode(data).rstrip(b"=").decode()
-
-
-def _b64url_decode(s: str) -> bytes:
-    s += "=" * (-len(s) % 4)
-    return urlsafe_b64decode(s)
-
-
-def _jwt_encode(payload: dict[str, Any]) -> str:
-    header = _b64url(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
-    body = _b64url(json.dumps(payload).encode())
-    sig_input = f"{header}.{body}".encode()
-    sig = _b64url(hmac.new(AUTH_JWT_SECRET.encode(), sig_input, hashlib.sha256).digest())
-    return f"{header}.{body}.{sig}"
-
-
-def _jwt_decode(token: str) -> dict[str, Any] | None:
-    parts = token.split(".")
-    if len(parts) != 3:
-        return None
-    sig_input = f"{parts[0]}.{parts[1]}".encode()
-    expected_sig = _b64url(hmac.new(AUTH_JWT_SECRET.encode(), sig_input, hashlib.sha256).digest())
-    if not hmac.compare_digest(expected_sig, parts[2]):
-        return None
-    try:
-        payload = json.loads(_b64url_decode(parts[1]))
-    except Exception:
-        return None
-    if payload.get("exp", 0) < time.time():
-        return None
-    return payload
-
 
 def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     salt = salt or secrets.token_hex(16)
     digest = hashlib.sha256(f"{salt}:{password}".encode()).hexdigest()
     return digest, salt
+
+
+def _normalize_email(value: str) -> str:
+    email = value.strip().lower()
+    if not _EMAIL_RE.match(email):
+        raise ValueError("Invalid email address")
+    return email
+
+
+def _ensure_local_auth_available() -> None:
+    if get_local_jwt_secret():
+        return
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Local authentication is disabled until AUTH_JWT_SECRET is securely configured.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -78,15 +60,25 @@ def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
 
 
 class RegisterBody(BaseModel):
-    email: EmailStr
+    email: str
     password: str = Field(min_length=8)
     display_name: str = Field(min_length=1, max_length=256)
     team_name: str = ""
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        return _normalize_email(value)
+
 
 class LoginBody(BaseModel):
-    email: EmailStr
+    email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        return _normalize_email(value)
 
 
 class AuthTokenResponse(BaseModel):
@@ -112,14 +104,15 @@ class UserProfile(BaseModel):
 
 @router.post("/register", response_model=AuthTokenResponse, status_code=201)
 async def register(body: RegisterBody):
+    _ensure_local_auth_available()
     store = get_store()
-    existing = store.get_user_by_email(body.email.lower())
+    existing = store.get_user_by_email(body.email)
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
     digest, salt = _hash_password(body.password)
     user = store.create_user({
-        "email": body.email.lower(),
+        "email": body.email,
         "display_name": body.display_name,
         "team_name": body.team_name,
         "password_hash": f"{salt}:{digest}",
@@ -131,8 +124,9 @@ async def register(body: RegisterBody):
 
 @router.post("/login", response_model=AuthTokenResponse)
 async def login(body: LoginBody):
+    _ensure_local_auth_available()
     store = get_store()
-    user = store.get_user_by_email(body.email.lower(), include_hash=True)
+    user = store.get_user_by_email(body.email, include_hash=True)
     if not user:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
 
@@ -167,7 +161,7 @@ async def list_users():
 
 
 def _issue_token(user: dict[str, Any]) -> str:
-    return _jwt_encode({
+    return encode_local_jwt({
         "sub": user["id"],
         "email": user["email"],
         "display_name": user["display_name"],
@@ -194,8 +188,10 @@ def _resolve_authenticated_user(request: Request) -> dict[str, Any]:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing or invalid token")
 
     token = auth_header.split(" ", 1)[1]
-    claims = _jwt_decode(token)
+    claims = decode_local_jwt(token)
     if not claims:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token")
+    if claims.get("exp", 0) < time.time():
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token")
 
     store = get_store()

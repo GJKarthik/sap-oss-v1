@@ -1,0 +1,134 @@
+# =============================================================================
+# BSS Risk Assessment - Business Requirements
+# Source: Business case - BSS Risk Assessment (2).doc
+# =============================================================================
+
+requirementId: "BSS-REQ-001"
+version: "1.0.0"
+title: "BSS Risk Assessment - AI Augmentation"
+createdBy: "1498002 (S1 Badrinath)"
+createdOn: "2025-12-15"
+status: "approved"
+
+source:
+  file: "Business case - BSS Risk Assessment (2).doc"
+  extractedAt: "2026-04-13"
+
+executiveSummary:
+  description: >
+    BSS Risk Assessment is conducted during M+12 to M+15 across all Legal
+    entities, Segment & Group. AI agent assists users by highlighting high-risk
+    GL accounts, suggesting risk ratings, and proposing justification based on
+    reconciliation data, adjustment activity, and GL transaction data. Detects
+    anomalies in balances, ageing, recurring adjustments, historical trends,
+    and policy thresholds.
+  criticality: >
+    Critical Financial reporting (risk) process used for CFO attestation
+    and Risk/Audit committee reporting.
+  fteImpact:
+    currentEffort: "10-12 FTEs during M+12 to M+15"
+    expectedSavings: "1 FTE"
+  investmentRequired: "3 FTEs (AI Architect + AI Engineer, <100 days)"
+  solution: "Studio AI (in-house)"
+
+scope:
+  description: "AI automation of BSS Risk Assessment process"
+  legalEntities: 234
+  inScope:
+    - "BSS Risk Assessment"
+    - "Risk categorization (substantiated at risk, unsubstantiated unowned, unsubstantiated owned)"
+    - "Post-FCA cutoff submission consolidation"
+    - "Risk reporting packs"
+  outOfScope:
+    - "FORTM"
+    - "BSS Reconciliations"
+  reportingDimensions:
+    current: ["Legal Entity"]
+    target: ["Legal Entity", "Finance Caption", "Segment"]
+
+processSteps:
+  - stepId: "BSS-STEP-001"
+    name: "Consolidate BSS Risk Assessment"
+    timing: "M+12"
+    description: "Manual consolidation by categories: substantiated at risk, unsubstantiated unowned, unsubstantiated owned"
+    manualEffort: "high"
+    aiAugmentationOpportunity: >
+      Auto-consolidate risk assessments from structured data.
+      ML-based risk categorization from GL patterns.
+
+  - stepId: "BSS-STEP-002"
+    name: "Follow Up and Tracker Update"
+    timing: "M+12 to M+15"
+    description: "Track and update risk assessment status, follow up on outstanding items"
+    manualEffort: "high"
+    aiAugmentationOpportunity: >
+      Automated status tracking with email integration.
+      Predictive follow-up scheduling based on response patterns.
+
+  - stepId: "BSS-STEP-003"
+    name: "Post-FCA Cutoff Consolidation"
+    timing: "M+13 to M+15"
+    description: "Daily update of unsubstantiated report with manual submissions received post FCA cutoff"
+    manualEffort: "high"
+    aiAugmentationOpportunity: >
+      Auto-detect and consolidate post-cutoff submissions.
+      Trigger escalation for unsubstantiated items.
+
+  - stepId: "BSS-STEP-004"
+    name: "Risk Reporting Pack Preparation"
+    timing: "M+15"
+    description: "Prepare risk reporting packs for CFO, Risk Forum, and Audit Committee"
+    manualEffort: "high"
+    aiAugmentationOpportunity: >
+      Auto-generate risk reporting packs with narrative summaries.
+      Multi-view reports (caption, segment, LE).
+
+riskCategories:
+  - category: "substantiated_at_risk"
+    description: "Items with identified risk and supporting evidence"
+  - category: "unsubstantiated_unowned"
+    description: "Items without supporting evidence and no clear owner"
+  - category: "unsubstantiated_owned"
+    description: "Items without supporting evidence but with identified owner"
+
+aiCapabilities:
+  - "Highlight high-risk GL accounts"
+  - "Suggest risk ratings based on historical data"
+  - "Propose justification from reconciliation and adjustment data"
+  - "Detect anomalies in balances and ageing"
+  - "Identify recurring adjustments"
+  - "Analyze historical trends"
+  - "Check against policy thresholds"
+
+projectObjectives:
+  - "Process maturity improvement"
+  - "E2E process automation including risk assessment and material item identification"
+  - "Building block for SCB Finance LLM"
+
+reportingAudience:
+  - "Country CFOs"
+  - "Risk Forums"
+  - "Audit Committee"
+  - "UK ACG"
+
+implementationPlan:
+  totalDuration: "15 weeks"
+  phases:
+    - phase: 1
+      name: "Planning"
+      duration: "1 week"
+    - phase: 2
+      name: "Design"
+      duration: "2 weeks"
+    - phase: 3
+      name: "Development"
+      duration: "5 weeks"
+    - phase: 4
+      name: "Testing & Training"
+      duration: "5 weeks"
+    - phase: 5
+      name: "SIT, Governance"
+      duration: "2 weeks"
+    - phase: 6
+      name: "Go Live"
+      duration: "1 week"

@@ -1,23 +1,29 @@
 """
-Tests for the Data Products API — validation, RBAC, and CRUD.
+Tests for the Data Products API — validation, authz, and path resolution.
 """
 
+from __future__ import annotations
+
 import json
+import shutil
+import uuid
+from pathlib import Path
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
+import src.data_products as data_products_module
+from src.data_products import TeamAccessUpdate, _PRODUCT_ID_RE, _validate_product_id
 from src.main import app
-from src.data_products import (
-    _validate_product_id,
-    _require_write_access,
-    TeamAccessUpdate,
-    _PRODUCT_ID_RE,
-)
+from src.store import UserRecord
 
+EDGE_HEADERS = {
+    "X-Auth-Request-Email": "sap.operator@example.com",
+    "X-Auth-Request-Name": "SAP Operator",
+}
+TEAM_CONTEXT_HEADER = json.dumps({"country": "AE", "domain": "treasury"})
+REPO_DATA_PRODUCTS_DIR = Path("/Users/user/Documents/sap-oss/src/training/data_products")
 
-# ---------------------------------------------------------------------------
-# Fixture
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 async def client():
@@ -25,9 +31,35 @@ async def client():
         yield c
 
 
-# ---------------------------------------------------------------------------
-# Product ID validation
-# ---------------------------------------------------------------------------
+@pytest.fixture
+def isolated_data_products_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    target = tmp_path / "data_products"
+    shutil.copytree(REPO_DATA_PRODUCTS_DIR, target)
+    monkeypatch.setattr(data_products_module, "DATA_PRODUCTS_DIR", target)
+    return target
+
+
+def _set_user_role(email: str, role: str | None) -> None:
+    db = data_products_module.get_store().SessionLocal()
+    try:
+        db.query(UserRecord).filter(UserRecord.email == email).delete()
+        if role is not None:
+            db.add(
+                UserRecord(
+                    id=f"user-{uuid.uuid4().hex[:12]}",
+                    email=email,
+                    display_name="SAP Operator",
+                    initials="SO",
+                    team_name="Launch",
+                    role=role,
+                    password_hash="external-auth",
+                    auth_source="edge_header",
+                )
+            )
+        db.commit()
+    finally:
+        db.close()
+
 
 class TestProductIdValidation:
     def test_valid_ids(self):
@@ -38,32 +70,38 @@ class TestProductIdValidation:
 
     def test_rejects_path_traversal(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc:
             _validate_product_id("../../etc/passwd")
         assert exc.value.status_code == 400
 
     def test_rejects_slash(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException):
             _validate_product_id("foo/bar")
 
     def test_rejects_backslash(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException):
             _validate_product_id("foo\\bar")
 
     def test_rejects_empty(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException):
             _validate_product_id("")
 
     def test_rejects_leading_dot(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException):
             _validate_product_id(".hidden")
 
     def test_rejects_too_long(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException):
             _validate_product_id("a" * 200)
 
@@ -74,10 +112,6 @@ class TestProductIdValidation:
         assert not _PRODUCT_ID_RE.match("-starts-with-dash")
         assert not _PRODUCT_ID_RE.match(".starts-with-dot")
 
-
-# ---------------------------------------------------------------------------
-# TeamAccessUpdate validation
-# ---------------------------------------------------------------------------
 
 class TestTeamAccessValidation:
     def test_valid_access(self):
@@ -114,91 +148,18 @@ class TestTeamAccessValidation:
             TeamAccessUpdate(domainRestrictions=["a" * 65])
 
 
-# ---------------------------------------------------------------------------
-# RBAC write guard
-# ---------------------------------------------------------------------------
+def test_default_data_products_dir_points_to_real_repo_data():
+    assert data_products_module.DATA_PRODUCTS_DIR.exists()
+    assert (data_products_module.DATA_PRODUCTS_DIR / "registry.yaml").exists()
 
-class TestRBACGuard:
-    @pytest.mark.anyio
-    async def test_rejects_missing_header(self):
-        from fastapi import HTTPException
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        with pytest.raises(HTTPException) as exc:
-            await _require_write_access(req, None)
-        assert exc.value.status_code == 403
-
-    @pytest.mark.anyio
-    async def test_rejects_read_role_json(self):
-        from fastapi import HTTPException
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        header = json.dumps({"country": "AE", "domain": "treasury", "role": "viewer"})
-        with pytest.raises(HTTPException) as exc:
-            await _require_write_access(req, header)
-        assert exc.value.status_code == 403
-
-    @pytest.mark.anyio
-    async def test_allows_write_role_json(self):
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        header = json.dumps({"country": "AE", "domain": "treasury", "role": "write"})
-        result = await _require_write_access(req, header)
-        assert result == header
-
-    @pytest.mark.anyio
-    async def test_allows_admin_role_json(self):
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        header = json.dumps({"country": "AE", "domain": "treasury", "role": "admin"})
-        result = await _require_write_access(req, header)
-        assert result == header
-
-    @pytest.mark.anyio
-    async def test_allows_colon_delimited_admin(self):
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        header = "AE:treasury:team-1:admin"
-        result = await _require_write_access(req, header)
-        assert result == header
-
-    @pytest.mark.anyio
-    async def test_rejects_colon_delimited_viewer(self):
-        from fastapi import HTTPException
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        header = "AE:treasury:team-1:viewer"
-        with pytest.raises(HTTPException) as exc:
-            await _require_write_access(req, header)
-        assert exc.value.status_code == 403
-
-    @pytest.mark.anyio
-    async def test_rejects_malformed_json(self):
-        from fastapi import HTTPException
-        from unittest.mock import MagicMock
-        req = MagicMock()
-        req.url = "http://test/data-products/products/foo"
-        with pytest.raises(HTTPException) as exc:
-            await _require_write_access(req, "{bad json")
-        assert exc.value.status_code == 400
-
-
-# ---------------------------------------------------------------------------
-# API integration: list products
-# ---------------------------------------------------------------------------
 
 @pytest.mark.anyio
-async def test_list_products(client: AsyncClient):
+async def test_list_products(client: AsyncClient, isolated_data_products_dir: Path):
     response = await client.get("/data-products/products")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
+    assert len(data) > 0
 
 
 @pytest.mark.anyio
@@ -208,29 +169,60 @@ async def test_get_product_invalid_id(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_update_product_requires_auth(client: AsyncClient):
-    """PATCH without X-Team-Context header should be rejected."""
+async def test_update_product_requires_authenticated_writer(
+    client: AsyncClient,
+    isolated_data_products_dir: Path,
+):
     response = await client.patch(
         "/data-products/products/treasury-capital-markets-v1",
         json={"teamAccess": {"defaultAccess": "read"}},
+        headers={"X-Team-Context": TEAM_CONTEXT_HEADER},
     )
     assert response.status_code == 403
 
 
 @pytest.mark.anyio
-async def test_update_product_rejects_viewer(client: AsyncClient):
-    """PATCH with viewer role should be rejected."""
+async def test_update_product_rejects_spoofed_client_role_header(
+    client: AsyncClient,
+    isolated_data_products_dir: Path,
+):
+    _set_user_role(EDGE_HEADERS["X-Auth-Request-Email"].lower(), "viewer")
+
     response = await client.patch(
         "/data-products/products/treasury-capital-markets-v1",
         json={"teamAccess": {"defaultAccess": "read"}},
-        headers={"X-Team-Context": json.dumps({"country": "AE", "domain": "treasury", "role": "viewer"})},
+        headers={
+            **EDGE_HEADERS,
+            "X-Team-Context": json.dumps({"country": "AE", "domain": "treasury", "role": "admin"}),
+        },
     )
     assert response.status_code == 403
 
 
 @pytest.mark.anyio
-async def test_registry_endpoint(client: AsyncClient):
+async def test_update_product_allows_authenticated_admin_user(
+    client: AsyncClient,
+    isolated_data_products_dir: Path,
+):
+    _set_user_role(EDGE_HEADERS["X-Auth-Request-Email"].lower(), "admin")
+
+    response = await client.patch(
+        "/data-products/products/treasury-capital-markets-v1",
+        json={"teamAccess": {"defaultAccess": "write"}},
+        headers={**EDGE_HEADERS, "X-Team-Context": TEAM_CONTEXT_HEADER},
+    )
+    assert response.status_code == 200
+
+    filename = data_products_module._find_product_file("treasury-capital-markets-v1")
+    assert filename is not None
+    updated = data_products_module._load_product_yaml(filename)
+    assert updated["dataProduct"]["x-team-access"]["defaultAccess"] == "write"
+
+
+@pytest.mark.anyio
+async def test_registry_endpoint(client: AsyncClient, isolated_data_products_dir: Path):
     response = await client.get("/data-products/registry")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, dict)
+    assert data.get("products")

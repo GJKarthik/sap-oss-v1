@@ -2,6 +2,10 @@
 Tests for the Training Console API Server.
 """
 
+import base64
+import json
+import uuid
+
 import pytest
 from httpx import AsyncClient, ASGITransport
 
@@ -90,6 +94,20 @@ async def test_data_cleaning_workflow_native(client: AsyncClient):
     events_response = await client.get(f"/data-cleaning/workflow/{run_id}/events")
     assert events_response.status_code == 200
     assert len(events_response.json()["events"]) > 0
+
+
+@pytest.mark.anyio
+async def test_training_job_accepts_validate_alias(client: AsyncClient):
+    response = await client.post(
+        "/jobs/training",
+        json={"team": "finance", "examples_per_domain": 25, "validate": False},
+    )
+    assert response.status_code == 201
+    job_id = response.json()["job_id"]
+
+    job_response = await client.get(f"/jobs/{job_id}")
+    assert job_response.status_code == 200
+    assert job_response.json()["config"]["validate"] is False
 
 
 @pytest.mark.anyio
@@ -366,3 +384,119 @@ async def test_workspace_bootstrap_and_save_follow_authenticated_identity(client
     assert reloaded_data["settings"]["identity"]["userId"] == "sap.operator@example.com"
     assert reloaded_data["settings"]["identity"]["displayName"] == "SAP Operator"
     assert reloaded_data["settings"]["identity"]["teamName"] == "Launch"
+
+
+@pytest.mark.anyio
+async def test_workspace_hint_headers_are_ignored_without_opt_in(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("ALLOW_UNAUTHENTICATED_WORKSPACE_HINTS", raising=False)
+
+    response = await client.get(
+        "/workspace",
+        headers={
+            "X-Workspace-User": "shared-ws",
+            "X-Workspace-Display-Name": "Shared Workspace",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["identity"]["userId"] == "personal-user"
+    assert data["auth_source"] == "preview_fallback"
+    assert data["authenticated"] is False
+
+
+@pytest.mark.anyio
+async def test_workspace_rejects_unauthenticated_owner_override(client: AsyncClient):
+    response = await client.put(
+        "/workspace",
+        json={
+            "version": 1,
+            "identity": {
+                "userId": "spoofed-user",
+                "displayName": "Spoofed User",
+                "teamName": "Launch",
+            },
+            "backend": {"apiBaseUrl": "/api", "collabWsUrl": "/collab"},
+            "nav": {"items": []},
+            "model": {"defaultModel": "", "temperature": 0.7, "systemPrompt": ""},
+            "theme": "sap_horizon",
+            "language": "en",
+            "updatedAt": "2026-04-09T00:00:00Z",
+        },
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.anyio
+async def test_personal_knowledge_rejects_unauthenticated_owner_override(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    personal_knowledge_module._backend = None
+    monkeypatch.setattr(personal_knowledge_module, "HANA_HOST", "")
+    monkeypatch.setattr(personal_knowledge_module, "HANA_USER", "")
+    monkeypatch.setattr(personal_knowledge_module, "HANA_PASSWORD", "")
+
+    response = await client.post(
+        "/knowledge/bases",
+        json={
+            "owner_id": "someone-else",
+            "name": "Blocked Override",
+        },
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.anyio
+async def test_invalid_bearer_token_is_not_treated_as_authenticated(client: AsyncClient):
+    payload = base64.urlsafe_b64encode(
+        json.dumps({"sub": "fake-user", "email": "fake@example.com"}).encode("utf-8")
+    ).rstrip(b"=").decode("ascii")
+    fake_token = f"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{payload}.invalid-signature"
+
+    response = await client.get("/workspace", headers={"Authorization": f"Bearer {fake_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["authenticated"] is False
+    assert data["auth_source"] == "preview_fallback"
+    assert data["identity"]["userId"] == "personal-user"
+
+
+@pytest.mark.anyio
+async def test_local_auth_register_requires_secure_secret(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("AUTH_JWT_SECRET", raising=False)
+
+    response = await client.post(
+        "/auth/register",
+        json={
+            "email": "new.user@example.com",
+            "password": "supersecret123",
+            "display_name": "New User",
+        },
+    )
+    assert response.status_code == 503
+
+
+@pytest.mark.anyio
+async def test_local_auth_register_and_me_with_configured_secret(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("AUTH_JWT_SECRET", "unit-test-secret-1234567890")
+    email = f"codex-{uuid.uuid4().hex[:8]}@example.com"
+
+    register_response = await client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": "supersecret123",
+            "display_name": "Codex Operator",
+        },
+    )
+    assert register_response.status_code == 201
+    token = register_response.json()["token"]
+
+    me_response = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_response.status_code == 200
+    profile = me_response.json()
+    assert profile["email"] == email
+    assert profile["role"] == "user"

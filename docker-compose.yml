@@ -44,10 +44,9 @@ services:
       context: ./src/generativeUI/training-webcomponents-ngx/packages/api-server
       dockerfile: Dockerfile.suite
     restart: unless-stopped
-    ports:
-      - "8002:8002"
     environment:
       - PORT=8002
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:?Set AUTH_JWT_SECRET in root .env}
       - HANA_HOST=${HANA_HOST:?Set HANA_HOST in root .env}
       - HANA_PORT=${HANA_PORT:-443}
       - HANA_USER_FILE=/run/secrets/hana_user

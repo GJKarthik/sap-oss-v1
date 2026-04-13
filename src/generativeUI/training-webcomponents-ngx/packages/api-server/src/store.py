@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
 
 log = logging.getLogger(__name__)
@@ -21,6 +21,10 @@ from sqlalchemy import Boolean, Column, DateTime, Float, Integer, JSON, String, 
 from .database import Base, SessionLocal, db_backend_label
 
 StoreCollection = Literal["jobs", "vector_stores", "translation_memory"]
+
+
+def _utc_now_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 # ---------------------------------------------------------------------------
 # ORM Models  (HANA-compatible: NVARCHAR PKs ≤256, TEXT for large values)
@@ -37,7 +41,7 @@ class JobRecord(Base):
     history = Column(JSON, default=list)
     evaluation = Column(JSON, nullable=True)
     deployed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
 
 class VectorStoreRecord(Base):
@@ -45,7 +49,7 @@ class VectorStoreRecord(Base):
     table_name = Column(String(256), primary_key=True, index=True)
     embedding_model = Column(String(256), default="default")
     documents_added = Column(Float, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
 
 class TranslationMemoryRecord(Base):
@@ -57,8 +61,8 @@ class TranslationMemoryRecord(Base):
     target_lang = Column(String(5))
     category = Column(String(128), default="general")
     is_approved = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive)
 
 
 class WorkspaceSettingsRecord(Base):
@@ -68,8 +72,8 @@ class WorkspaceSettingsRecord(Base):
     identity_email = Column(String(320), nullable=True)
     identity_display_name = Column(String(256), nullable=True)
     auth_source = Column(String(64), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
 
 
 class NotificationRecord(Base):
@@ -81,7 +85,7 @@ class NotificationRecord(Base):
     description = Column(Text, default="")
     severity = Column(String(32), default="info")
     read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
 
 class UserRecord(Base):
@@ -96,8 +100,8 @@ class UserRecord(Base):
     password_hash = Column(String(256), nullable=False)
     auth_source = Column(String(64), default="local")
     last_login_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
 
 
 class AuditLogRecord(Base):
@@ -106,7 +110,7 @@ class AuditLogRecord(Base):
     __tablename__ = "audit_log"
     id = Column(String(256), primary_key=True, index=True)
     user_id = Column(String(256), index=True, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
     record = Column(JSON, nullable=False)
 
 
@@ -232,7 +236,7 @@ class Store:
             tm.target_lang = entry_data["target_lang"]
             tm.category = entry_data.get("category", "general")
             tm.is_approved = entry_data.get("is_approved", False)
-            tm.updated_at = datetime.utcnow()
+            tm.updated_at = _utc_now_naive()
 
             db.commit()
             db.refresh(tm)
@@ -372,7 +376,7 @@ class Store:
         try:
             u = db.query(UserRecord).filter(UserRecord.id == user_id).first()
             if u:
-                u.last_login_at = datetime.utcnow()
+                u.last_login_at = _utc_now_naive()
                 db.commit()
         finally:
             db.close()

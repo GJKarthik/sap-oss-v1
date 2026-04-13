@@ -22,6 +22,7 @@ products:
   - ref: "esg_sustainability.yaml"
   - ref: "performance_bpc.yaml"
   - ref: "staging_schema.yaml"
+  - ref: "../../docs/tb/machine-readable/data-product/trial-balance-review-v1.yaml"
 
 # Global policies - HANA data is confidential, always vLLM
 globalPolicies:

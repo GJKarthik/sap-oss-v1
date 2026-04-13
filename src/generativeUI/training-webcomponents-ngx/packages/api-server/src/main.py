@@ -8,17 +8,16 @@ import json
 import os
 import re
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import asyncio
-from datetime import datetime
 import uuid
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -74,12 +73,32 @@ hana_pal = pal.HanaPALClient(
     password=HANA_PASSWORD,
 )
 
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _utc_now_naive() -> datetime:
+    return _utc_now().replace(tzinfo=None)
+
+
+def _utc_now_iso() -> str:
+    return _utc_now().isoformat().replace("+00:00", "Z")
+
+
+def _serialize_utc(dt: datetime | None) -> str | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.isoformat() + "Z"
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
 def save_job(job_data: dict):
     db = SessionLocal()
     try:
         job = db.query(JobRecord).filter(JobRecord.id == job_data["id"]).first()
         if not job:
-            job = JobRecord(id=job_data["id"], created_at=datetime.utcnow())
+            job = JobRecord(id=job_data["id"], created_at=_utc_now_naive())
             db.add(job)
         
         job.status = job_data.get("status", job.status)
@@ -103,7 +122,7 @@ def get_job(job_id: str):
             "id": job.id, "status": job.status, "progress": job.progress, 
             "config": job.config, "error": job.error, "history": job.history,
             "evaluation": job.evaluation, "deployed": job.deployed,
-            "created_at": job.created_at.isoformat() + "Z"
+            "created_at": _serialize_utc(job.created_at)
         }
     finally:
         db.close()
@@ -116,7 +135,7 @@ def get_all_jobs():
             "id": job.id, "status": job.status, "progress": job.progress, 
             "config": job.config, "error": job.error, "history": job.history,
             "evaluation": job.evaluation, "deployed": job.deployed,
-            "created_at": job.created_at.isoformat() + "Z"
+            "created_at": _serialize_utc(job.created_at)
         } for job in jobs]
     finally:
         db.close()
@@ -411,7 +430,7 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
     ]
     for phase, description in steps:
         event = {
-            "ts": datetime.utcnow().isoformat() + "Z",
+            "ts": _utc_now_iso(),
             "phase": phase,
             "message": description,
             "status": "ok",
@@ -428,7 +447,7 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
     }
     run["events"].append(
         {
-            "ts": datetime.utcnow().isoformat() + "Z",
+            "ts": _utc_now_iso(),
             "phase": "completed",
             "message": "Workflow completed",
             "status": "ok",
@@ -617,10 +636,11 @@ for i, seed in enumerate([
     {"title": "Export trial-balance dataset (50k rows)", "risk_level": "medium", "requested_by": "sarah"},
 ]):
     aid = f"appr-seed-{i+1}"
+    created_at = _utc_now_iso()
     _governance_approvals[aid] = {
         "id": aid, **seed, "description": seed.get("description", ""),
         "status": "pending", "approvers": ["team-lead", "data-owner"],
-        "decisions": [], "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(),
+        "decisions": [], "created_at": created_at, "updated_at": created_at,
     }
 
 
@@ -643,7 +663,7 @@ async def get_approval(approval_id: str):
 @app.post("/governance/approvals", status_code=201)
 async def create_approval(body: ApprovalRequest):
     aid = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = _utc_now_iso()
     approval = {
         "id": aid, "title": body.title, "description": body.description,
         "risk_level": body.risk_level, "requested_by": body.requested_by,
@@ -664,7 +684,7 @@ async def decide_approval(approval_id: str, decision: dict):
         "approver": decision.get("approver", "unknown"),
         "action": decision.get("action", "approve"),  # approve | reject
         "comment": decision.get("comment", ""),
-        "decided_at": datetime.utcnow().isoformat(),
+        "decided_at": _utc_now_iso(),
     }
     a["decisions"].append(d)
     a["updated_at"] = d["decided_at"]
@@ -742,7 +762,7 @@ async def collab_websocket(websocket: WebSocket, room: str = "default"):
                         "avatarUrl": msg.get("avatarUrl"),
                         "status": "active",
                         "location": None,
-                        "joinedAt": datetime.utcnow().isoformat(),
+                        "joinedAt": _utc_now_iso(),
                     }
                 await _collab_broadcast(room_id, msg, exclude=user_id)
                 # Send sync
@@ -872,7 +892,7 @@ async def health() -> dict:
             "pal_route": deps["pal_route"],
         },
         "aicore_configured": deps["aicore_configured"],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": _utc_now_iso(),
     }
 
 
@@ -889,7 +909,7 @@ async def capabilities() -> dict:
         "aicore_configured": deps["aicore_configured"],
         "aicore_reachable": deps["aicore_reachable"],
         "pal_route": deps["pal_route"],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": _utc_now_iso(),
     }
 
 
@@ -918,7 +938,7 @@ async def data_cleaning_chat(request: DataCleaningChatRequest):
 
     generated_checks = _native_generate_checks(message)
     DATA_CLEANING_STATE["messages"].append(
-        {"role": "user", "content": message, "ts": datetime.utcnow().isoformat() + "Z"}
+        {"role": "user", "content": message, "ts": _utc_now_iso()}
     )
     DATA_CLEANING_STATE["checks"] = generated_checks
     response = (
@@ -926,7 +946,7 @@ async def data_cleaning_chat(request: DataCleaningChatRequest):
         "Run workflow to produce remediation steps and publish a cleaned snapshot."
     )
     DATA_CLEANING_STATE["messages"].append(
-        {"role": "assistant", "content": response, "ts": datetime.utcnow().isoformat() + "Z"}
+        {"role": "assistant", "content": response, "ts": _utc_now_iso()}
     )
     return {"response": response}
 
@@ -947,7 +967,7 @@ async def data_cleaning_workflow_run(request: DataCleaningWorkflowRunRequest):
         "run_id": run_id,
         "status": "pending",
         "message": message,
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": _utc_now_iso(),
         "events": [],
         "result": None,
     }
@@ -1021,9 +1041,11 @@ async def get_models_catalog() -> JSONResponse:
     return JSONResponse(content=SUPPORTED_MODELS)
 
 class TrainingGenerationRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     team: str = ""              # e.g. "AE:treasury", "treasury", "AE", or "" for global
     examples_per_domain: int = 100000
-    validate: bool = True
+    should_validate: bool = Field(default=True, alias="validate")
 
 
 async def _run_training_generation(job_id: str, team: str, examples_per_domain: int, validate: bool) -> None:
@@ -1118,19 +1140,24 @@ async def _run_training_generation(job_id: str, team: str, examples_per_domain: 
 async def start_training_generation(body: TrainingGenerationRequest, background_tasks: BackgroundTasks):
     """Trigger background training data generation for a team context."""
     job_id = f"train-{uuid.uuid4().hex[:8]}"
-    now = datetime.utcnow()
     job = {
         "id": job_id,
         "status": "pending",
         "progress": 0.0,
-        "config": {"team": body.team, "examples_per_domain": body.examples_per_domain, "validate": body.validate},
+        "config": {"team": body.team, "examples_per_domain": body.examples_per_domain, "validate": body.should_validate},
         "error": None,
         "history": [],
         "evaluation": None,
         "deployed": False,
     }
     save_job(job)
-    background_tasks.add_task(_run_training_generation, job_id, body.team, body.examples_per_domain, body.validate)
+    background_tasks.add_task(
+        _run_training_generation,
+        job_id,
+        body.team,
+        body.examples_per_domain,
+        body.should_validate,
+    )
     return {"job_id": job_id, "status": "pending"}
 
 
@@ -1339,7 +1366,7 @@ async def openai_chat_completions(body: OpenAIChatRequest):
     return {
         "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
         "object": "chat.completion",
-        "created": int(datetime.utcnow().timestamp()),
+        "created": int(_utc_now().timestamp()),
         "model": model,
         "choices": [
             {
@@ -1423,7 +1450,7 @@ async def deploy_arabic_model(job_id: str):
         "model_name": "gemma4-arabic-finance",
         "gateway_url": gateway_url,
         "gguf_path": gguf_path,
-        "deployed_at": datetime.utcnow().isoformat() + "Z",
+        "deployed_at": _utc_now_iso(),
     })
 
     job["deployed"] = True
@@ -2024,7 +2051,7 @@ async def real_worker_task(job_id: str):
             log_entry: dict = {
                 "step": process_output,
                 "loss": None,
-                "timestamp": datetime.utcnow().isoformat() + "Z"
+                "timestamp": _utc_now_iso()
             }
 
             if process_output.startswith("{") and "loss" in process_output:
@@ -2108,7 +2135,7 @@ async def ingest_ocr_dataset(payload: OcrDatasetPayload) -> JSONResponse:
 
     os.makedirs(OCR_DATASET_DIR, exist_ok=True)
 
-    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = _utc_now().strftime("%Y%m%dT%H%M%SZ")
     filename = f"ocr-dataset-{ts}.jsonl"
     filepath = os.path.join(OCR_DATASET_DIR, filename)
 
@@ -2150,7 +2177,7 @@ async def create_job(payload: JobCreatePayload) -> JSONResponse:
     
     asyncio.create_task(real_worker_task(job_id))
     
-    return JSONResponse(content={**job_record, "created_at": datetime.utcnow().isoformat() + "Z"}, status_code=201)
+    return JSONResponse(content={**job_record, "created_at": _utc_now_iso()}, status_code=201)
 
 
 # Proxy logic fully removed since we are now a native orchestration server.
@@ -2175,8 +2202,8 @@ class PromptTemplateUpdate(BaseModel):
     tags: Optional[list[str]] = None
 
 _prompt_templates: dict[str, dict] = {
-    "seed-1": {"id": "seed-1", "name": "Training Data Prep", "content": "Prepare the following dataset for model training:\n\n{{data}}\n\nClean, normalize, and split into train/val/test sets.", "category": "training", "description": "Dataset preparation prompt", "tags": ["data", "training"], "created_by": "system", "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(), "usage_count": 0, "version": 1},
-    "seed-2": {"id": "seed-2", "name": "Model Evaluation", "content": "Evaluate the model performance using:\n- Accuracy, Precision, Recall, F1\n- Confusion matrix analysis\n- Per-class performance breakdown\n\nModel: {{model_name}}\nDataset: {{dataset}}", "category": "evaluation", "description": "Comprehensive model evaluation", "tags": ["model", "evaluation", "metrics"], "created_by": "system", "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(), "usage_count": 0, "version": 1},
+    "seed-1": {"id": "seed-1", "name": "Training Data Prep", "content": "Prepare the following dataset for model training:\n\n{{data}}\n\nClean, normalize, and split into train/val/test sets.", "category": "training", "description": "Dataset preparation prompt", "tags": ["data", "training"], "created_by": "system", "created_at": _utc_now_iso(), "updated_at": _utc_now_iso(), "usage_count": 0, "version": 1},
+    "seed-2": {"id": "seed-2", "name": "Model Evaluation", "content": "Evaluate the model performance using:\n- Accuracy, Precision, Recall, F1\n- Confusion matrix analysis\n- Per-class performance breakdown\n\nModel: {{model_name}}\nDataset: {{dataset}}", "category": "evaluation", "description": "Comprehensive model evaluation", "tags": ["model", "evaluation", "metrics"], "created_by": "system", "created_at": _utc_now_iso(), "updated_at": _utc_now_iso(), "usage_count": 0, "version": 1},
 }
 
 @app.get("/api/prompts")
@@ -2204,7 +2231,8 @@ async def get_prompt(prompt_id: str):
 @app.post("/api/prompts", status_code=201)
 async def create_prompt(body: PromptTemplateCreate):
     pid = str(uuid.uuid4())
-    p = {"id": pid, "name": body.name, "content": body.content, "category": body.category, "description": body.description, "tags": body.tags, "created_by": "user", "created_at": datetime.utcnow().isoformat(), "updated_at": datetime.utcnow().isoformat(), "usage_count": 0, "version": 1}
+    now = _utc_now_iso()
+    p = {"id": pid, "name": body.name, "content": body.content, "category": body.category, "description": body.description, "tags": body.tags, "created_by": "user", "created_at": now, "updated_at": now, "usage_count": 0, "version": 1}
     _prompt_templates[pid] = p
     return p
 
@@ -2215,7 +2243,7 @@ async def update_prompt(prompt_id: str, body: PromptTemplateUpdate):
         raise HTTPException(status_code=404, detail="Prompt not found")
     for key, value in body.model_dump(exclude_none=True).items():
         p[key] = value
-    p["updated_at"] = datetime.utcnow().isoformat()
+    p["updated_at"] = _utc_now_iso()
     p["version"] = p.get("version", 1) + 1
     return p
 

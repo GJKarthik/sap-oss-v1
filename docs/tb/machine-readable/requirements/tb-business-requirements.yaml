@@ -1,0 +1,350 @@
+# =============================================================================
+# Trial Balance Review - Business Requirements
+# Source: Business case - Trial Balance (2).doc
+# For AI-augmented processing and analytics
+# =============================================================================
+
+requirementId: "TB-REQ-001"
+version: "1.0.0"
+title: "Trial Balance Review Process - AI Augmentation"
+createdBy: "1498002 (S1 Badrinath)"
+createdOn: "2025-12-14"
+status: "approved"
+
+source:
+  file: "Business case - Trial Balance (2).doc"
+  extractedAt: "2026-04-13"
+
+# ─── Executive Summary ───────────────────────────────────────────────
+executiveSummary:
+  description: >
+    Trial Balance review is conducted during M+1 to M+7 across all Legal
+    entities, Segment & Group, to understand variance & balance movements
+    between periods. An AI model produces business insights and written
+    commentaries based on GL transaction data analysis — detecting anomalies,
+    trends, unusual movements, new accounts, spikes/drops vs prior periods,
+    and material balances.
+  fteImpact:
+    currentEffort: "20-25 FTEs, ~4 hrs/day during M-2 to M+5"
+    expectedSavings: "5 FTEs"
+  investmentRequired: "3 FTEs (AI Architect + AI Engineer, <100 days)"
+  solution: "Studio AI (in-house, minimal cost)"
+
+# ─── Scope ────────────────────────────────────────────────────────────
+scope:
+  description: "AI automation of TB review at caption level with variance analysis and commentary writing"
+  legalEntities: 234
+  inScope:
+    - "Trial balance review at Finance caption level"
+    - "Variance analysis (period-over-period)"
+    - "Automated commentary writing"
+    - "Segment-level reporting view"
+    - "Legal entity-level reporting view"
+  outOfScope:
+    - "Country IFRS reporting"
+    - "BSS Risk Assessment (separate business case)"
+  countries: ["HK"]
+  reportingDimensions:
+    current: ["Legal Entity"]
+    target: ["Legal Entity", "Finance Caption", "Segment"]
+
+# ─── Stakeholders ─────────────────────────────────────────────────────
+stakeholders:
+  - role: "Process Owner"
+    name: "Modi, Piyush"
+    responsibilities:
+      - "Owns BPMN process definition"
+      - "Approves changes to TB review workflow"
+  - role: "Head of Africa GFS"
+    responsibilities:
+      - "Internal review and approval of TB summary"
+      - "FORTM pack oversight"
+  - role: "Country Stakeholders"
+    responsibilities:
+      - "Provide variance commentaries"
+      - "Confirm entry status by M+4 deadline"
+  - role: "GCFO Teams"
+    responsibilities:
+      - "Consume narrative summaries"
+      - "Review and decision-making"
+  - role: "Group Team"
+    responsibilities:
+      - "Receives FORTM pack"
+      - "Further review of TB summaries"
+  - role: "AI Architect"
+    responsibilities:
+      - "Solution design and compatibility (PSGL + S4)"
+  - role: "PPE Team / AI Architect"
+    responsibilities:
+      - "SAP integration assessment"
+
+# ─── Process Steps with AI Augmentation Opportunities ─────────────────
+processSteps:
+  - stepId: "TB-STEP-001"
+    name: "Roll Forward Prior Month File"
+    timing: "M-3"
+    description: "Copy prior month's TB working file as basis for current month"
+    inputs: ["Prior month TB file"]
+    outputs: ["Current month working file"]
+    systems: ["MS Excel", "Shared Drive"]
+    manualEffort: "low"
+    aiAugmentationOpportunity: >
+      Auto-generate current month template from prior month, pre-populate
+      known parameters, detect structural changes in chart of accounts.
+    aiPriority: "medium"
+
+  - stepId: "TB-STEP-002"
+    name: "Download PSGL and Update Master Data"
+    timing: "M-3"
+    description: "Download PSGL master account file, update accounts master sheet and parameters"
+    inputs: ["PSGL system data"]
+    outputs: ["Updated accounts master", "Parameterized working file"]
+    systems: ["PSGL", "MS Excel"]
+    manualEffort: "medium"
+    aiAugmentationOpportunity: >
+      Automated PSGL/S4 data extraction via API. Auto-detect new/changed
+      accounts. Alert on master data discrepancies. Support both PSGL and
+      S4 datasets.
+    aiPriority: "high"
+
+  - stepId: "TB-STEP-003"
+    name: "Extract Trial Balance"
+    timing: "M-3 to M+5"
+    description: "Extract TB from PSGL/S4 via SC Bridge into working file"
+    inputs: ["Parameterized working file", "PSGL/S4 data"]
+    outputs: ["TB data extract"]
+    systems: ["SC Bridge", "MS Excel"]
+    manualEffort: "high"
+    aiAugmentationOpportunity: >
+      Replace manual extraction with automated pipeline pulling from
+      PSGL/S4 APIs. Schedule extraction at optimal times. Validate data
+      completeness on extraction. Support all 234 LEs in parallel.
+    aiPriority: "critical"
+
+  - stepId: "TB-STEP-004"
+    name: "Calculate and Filter Variances"
+    timing: "M-2 to M+5"
+    description: "Compute period-over-period variances and apply materiality filters"
+    inputs: ["TB data extract"]
+    outputs: ["Filtered material variances"]
+    systems: ["MS Excel"]
+    manualEffort: "medium"
+    aiAugmentationOpportunity: >
+      ML-based materiality thresholds that adapt to account patterns.
+      Anomaly detection using historical data (spikes/drops, new accounts,
+      unusual movements). Multi-dimensional variance analysis at caption,
+      segment, and LE levels simultaneously.
+    aiPriority: "critical"
+
+  - stepId: "TB-STEP-005"
+    name: "Seek and Update Commentaries"
+    timing: "M-2 to M+5"
+    description: "Request, receive, and record variance explanations from stakeholders"
+    inputs: ["Material variance list"]
+    outputs: ["Updated variance file with commentaries"]
+    systems: ["MS Outlook", "MS Excel"]
+    participant: "Country Stakeholders"
+    manualEffort: "very high"
+    aiAugmentationOpportunity: >
+      LLM-generated draft commentaries based on GL transaction data,
+      historical patterns, and prior period explanations. Auto-route
+      commentary requests to appropriate stakeholders. Track response
+      SLAs and auto-escalate.
+    aiPriority: "critical"
+
+  - stepId: "TB-STEP-006"
+    name: "Journal Posting and Investigation"
+    timing: "M-2 to M+5"
+    description: "Check journal posting status, request postings, investigate outstanding entries"
+    inputs: ["Variance commentaries"]
+    outputs: ["Journal posting requests", "Entry status updates"]
+    systems: ["MS Outlook", "MS Excel"]
+    manualEffort: "medium"
+    aiAugmentationOpportunity: >
+      Auto-detect unposted journals from GL data. Predict which entries
+      need investigation based on historical patterns. Auto-generate
+      journal posting requests with pre-filled details.
+    aiPriority: "high"
+
+  - stepId: "TB-STEP-007"
+    name: "Track Entries and Risk Assessment"
+    timing: "M-2 to M+5"
+    description: "Track overdue entries, assess risks, categorize unexplained variances"
+    inputs: ["Overdue entries", "Unexplained variances"]
+    outputs: ["Risk assessment", "Categorized unexplained variances"]
+    systems: ["MS Excel"]
+    manualEffort: "medium"
+    aiAugmentationOpportunity: >
+      Predictive risk scoring based on entry age, amount, and team response
+      history. Auto-categorize unexplained variances using NLP classification.
+      Real-time risk dashboard with drill-down capability.
+    aiPriority: "high"
+
+  - stepId: "TB-STEP-008"
+    name: "Prepare Summary and Internal Review"
+    timing: "M+5"
+    description: "Consolidate analysis into summary, submit for internal review, incorporate changes"
+    inputs: ["Complete variance analysis", "Risk assessments", "Commentaries"]
+    outputs: ["TB review summary", "FORTM pack contribution"]
+    systems: ["MS Excel", "MS Outlook", "Shared Drive"]
+    participant: "Head of Africa GFS"
+    manualEffort: "high"
+    aiAugmentationOpportunity: >
+      Auto-generate narrative summary from structured data. Highlight
+      key risk items requiring attention. Generate FORTM pack section
+      automatically. Enable multi-user collaborative review.
+    aiPriority: "critical"
+
+# ─── Decision Points ──────────────────────────────────────────────────
+decisionPoints:
+  - decisionId: "TB-DEC-001"
+    name: "Material Variance Threshold"
+    description: "Determine if variances exceed materiality threshold"
+    currentApproach: "Manual filter criteria in Excel"
+    aiApproach: "ML-adaptive thresholds based on account category and historical patterns"
+  - decisionId: "TB-DEC-002"
+    name: "Journal Posting Required"
+    description: "Assess whether journal entries need to be posted"
+    currentApproach: "Manual check by GFS Analyst"
+    aiApproach: "Auto-detect from GL data with status tracking"
+  - decisionId: "TB-DEC-003"
+    name: "Further Investigation Required"
+    description: "Determine if additional investigation needed"
+    currentApproach: "Analyst judgment"
+    aiApproach: "Predictive model based on entry characteristics and history"
+  - decisionId: "TB-DEC-004"
+    name: "Entry Confirmation by M+4"
+    description: "Check if entry confirmations received by deadline"
+    currentApproach: "Manual email follow-up"
+    aiApproach: "Automated deadline tracking with escalation rules"
+  - decisionId: "TB-DEC-005"
+    name: "Unexplained Variance Categorization"
+    description: "Classify remaining unexplained variances"
+    currentApproach: "Manual categorization"
+    aiApproach: "NLP-based classification from transaction details"
+
+# ─── KPIs ─────────────────────────────────────────────────────────────
+kpis:
+  - kpiId: "TB-KPI-001"
+    name: "Variance Materiality Threshold"
+    description: "Threshold for flagging material variances"
+    measureType: "threshold"
+    unit: "currency"
+    currentBaseline: "Country-specific, defined in Excel parameters"
+  - kpiId: "TB-KPI-002"
+    name: "TB Review Cycle Time"
+    description: "Days from period close to FORTM pack submission"
+    measureType: "duration"
+    unit: "working_days"
+    currentBaseline: "M+1 to M+7 (7 working days)"
+    target: "Reduce by enabling daily controls"
+  - kpiId: "TB-KPI-003"
+    name: "Commentary Coverage Rate"
+    description: "Percentage of material variances with adequate commentary"
+    measureType: "percentage"
+    unit: "percent"
+    target: 100
+  - kpiId: "TB-KPI-004"
+    name: "FTE Effort"
+    description: "Total FTE-hours spent on TB review"
+    measureType: "effort"
+    unit: "FTE"
+    currentBaseline: "20-25 FTEs, ~4 hrs/day"
+    target: "15-20 FTEs (5 FTE savings)"
+  - kpiId: "TB-KPI-005"
+    name: "Unexplained Variance Rate"
+    description: "Percentage of variances without explanation at submission"
+    measureType: "percentage"
+    unit: "percent"
+    target: 0
+  - kpiId: "TB-KPI-006"
+    name: "EUC Control Compliance"
+    description: "Compliance rate with EUC controls"
+    measureType: "percentage"
+    unit: "percent"
+    target: 100
+
+# ─── Controls ─────────────────────────────────────────────────────────
+controls:
+  - controlId: "TB-CTRL-001"
+    name: "TB Data Extraction EUC"
+    eucRef: "EX/200/1353107/0001/000"
+    frequency: "monthly"
+    description: "PSGL master account data extraction control"
+  - controlId: "TB-CTRL-002"
+    name: "Variance Analysis File EUC"
+    eucRef: "EX/200/1579702/0001/000"
+    frequency: "monthly"
+    description: "TB variance analysis working file integrity"
+  - controlId: "TB-CTRL-003"
+    name: "Internal Review EUC"
+    eucRef: "EX/200/1579702/0002/000"
+    frequency: "monthly"
+    description: "Senior review control for TB summary"
+
+# ─── Risk Assessment ─────────────────────────────────────────────────
+riskAssessment:
+  - riskId: "TB-RISK-001"
+    category: "Solutions Compatibility"
+    description: "Current solutions cover PSGL datasets only; need S4 compatibility"
+    severity: "H"
+    owner: "AI Architect"
+    mitigation: "Build compatible solutions for both PSGL and S4 datasets"
+  - riskId: "TB-RISK-002"
+    category: "SAP Integration"
+    description: "AI solutions need to integrate with SAP and other applications"
+    severity: "H"
+    owner: "PPE Team / AI Architect"
+    mitigation: "Assess dependent tools and compatibility"
+
+# ─── Implementation Plan ─────────────────────────────────────────────
+implementationPlan:
+  totalDuration: "15 weeks"
+  phases:
+    - phase: 1
+      name: "Planning"
+      duration: "1 week"
+      activities: ["Business Requirements"]
+      milestones: ["BRD finalisation"]
+    - phase: 2
+      name: "Design"
+      duration: "2 weeks"
+      activities: ["Future process design", "Operating model", "RACI", "Functional Requirement Document"]
+      milestones: ["Solution design finalisation"]
+    - phase: 3
+      name: "Development"
+      duration: "5 weeks"
+      activities: ["Actual solution development"]
+      milestones: ["Solution"]
+    - phase: 4
+      name: "Testing & Training"
+      duration: "5 weeks"
+      activities: ["UAT", "Scenario testing"]
+      milestones: ["Scenario testing"]
+    - phase: 5
+      name: "SIT, Governance"
+      duration: "2 weeks"
+      activities: ["Stress testing", "Governance"]
+      milestones: ["Governance"]
+    - phase: 6
+      name: "Go Live"
+      duration: "1 week"
+      activities: ["Production"]
+      milestones: ["Production"]
+
+# ─── Project Objectives ──────────────────────────────────────────────
+projectObjectives:
+  - "Optimisation of process to improve process maturity levels"
+  - "E2E process automation including commentary writing"
+  - "Building block to create SCB Finance LLM"
+  - "Foundation for daily control operating model"
+  - "Eliminate EUCs and manual handoffs"
+  - "Enable real-time financial insight"
+
+# ─── Non-Financial Benefits ──────────────────────────────────────────
+nonFinancialBenefits:
+  - "Enhanced automated controls aligned with UK ACG requirements"
+  - "Eliminates EUCs and reduces manual process risk"
+  - "Improves Fast Close capability"
+  - "Enables daily control reporting"
+  - "Improves audit efficiency"

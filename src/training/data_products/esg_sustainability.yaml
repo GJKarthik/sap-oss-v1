@@ -238,13 +238,3 @@ dataProduct:
   quality:
     completeness: "90%"
     freshness: "monthly"
-          - technicalName: "NET_ZERO_SEC,"
-            businessName: "Net-Zero Sector"
-            fieldType: "dimension"
-          - technicalName: "FBE_Location,"
-            businessName: "Booking location"
-            fieldType: "dimension"
-          - technicalName: "Period_Date,"
-            businessName: "Period"
-            fieldType: "date"
-

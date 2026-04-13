@@ -1,0 +1,732 @@
+workbookId: hkg-pl
+name: HKG PL Review Nov 2025
+sourceFile: HKG_PL review Nov'25.xlsm
+extractedAt: '2026-04-13T10:24:26.427176+00:00'
+fileSize: 53245945
+sheetCount: 14
+allSheetNames:
+- IFRS Summary BS
+- Count of Comments
+- Checklist
+- PL Variance
+- MTD-TB
+- Names
+- Raw TB oct'25
+- Raw TB Nov'25
+- ecl check
+- Rates
+- Sheet1
+- GCOA
+- Dept Mapping
+- Base file
+sheets:
+- sheetName: PL Variance
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 4
+  fields:
+  - technicalName: COUNT_OF_VARIANCES
+    columnLetter: B
+    columnIndex: 1
+    businessName: Count of Variances
+    fieldType: measure
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Measure'
+    nullRate: 0.927
+    sampleValues:
+    - Comments to be updated
+    - Sum of USD
+    - BS
+    - PL
+  - technicalName: '0'
+    columnLetter: C
+    columnIndex: 2
+    businessName: '0'
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.873
+    sampleValues:
+    - '0'
+    - IFRS Pack Sch Description
+    - Analysis of Divends Paid & Declared
+    - Analysis of Divends Paid & Declared Total
+    - Analysis of Net Trading Income
+  - technicalName: PL_THRESHOLD
+    columnLetter: H
+    columnIndex: 7
+    businessName: PL Threshold
+    fieldType: dimension
+    dataType: DECIMAL
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.055
+    sampleValues:
+    - '%'
+    - '-0.10281288549912708'
+    - '-0.10281288549912708'
+    - '-0.19741866201646846'
+    - '-1.119092693100808'
+  - technicalName: '3000000'
+    columnLetter: J
+    columnIndex: 9
+    businessName: '3000000'
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.073
+    sampleValues:
+    - '0.1'
+    - Comments required
+    - Variance does not exceed $3M
+    - Variance does not exceed $3M
+    - Variance exceeds $3M and 10%
+- sheetName: Raw TB oct'25
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 5
+  fields:
+  - technicalName: GL_BALANCE_QUERY
+    columnLetter: A
+    columnIndex: 0
+    businessName: GL Balance Query
+    fieldType: measure
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Measure'
+    nullRate: 0.018
+    sampleValues:
+    - 'Business Unit:'
+    - 'Ledger:'
+    - 'Balance As At:'
+    - 'Balance Type:'
+    - 'Account:'
+  - technicalName: RUN_DATE
+    columnLetter: D
+    columnIndex: 3
+    businessName: Run Date
+    fieldType: date
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.273
+    sampleValues:
+    - Dept ID Desc
+    - BB District-HKI East
+    - Branch Banking - Tandem BR
+    - BB District-KLN East
+    - BB District-KLN South
+  - technicalName: '2025_11_18_00_00_00'
+    columnLetter: E
+    columnIndex: 4
+    businessName: '2025-11-18 00:00:00'
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.273
+    sampleValues:
+    - Oper Unit
+    - '156'
+    - '158'
+    - '159'
+    - '171'
+  - technicalName: RUN_TIME
+    columnLetter: G
+    columnIndex: 6
+    businessName: Run Time
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.273
+    sampleValues:
+    - Product
+    - '259'
+    - '259'
+    - '259'
+    - '259'
+  - technicalName: '21_40_52'
+    columnLetter: H
+    columnIndex: 7
+    businessName: '21:40:52'
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.273
+    sampleValues:
+    - Product Desc
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+- sheetName: Raw TB Nov'25
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 5
+  fields:
+  - technicalName: GL_BALANCE_QUERY
+    columnLetter: B
+    columnIndex: 1
+    businessName: GL Balance Query
+    fieldType: measure
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Measure'
+    nullRate: 0.018
+    sampleValues:
+    - 'Business Unit:'
+    - 'Ledger:'
+    - 'Balance As At:'
+    - 'Balance Type:'
+    - 'Account:'
+  - technicalName: RUN_DATE
+    columnLetter: E
+    columnIndex: 4
+    businessName: Run Date
+    fieldType: date
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.273
+    sampleValues:
+    - Dept ID Desc
+    - BB District-HKI East
+    - Branch Banking - Tandem BR
+    - BB District-KLN East
+    - BB District-KLN South
+  - technicalName: '2025_12_12_00_00_00'
+    columnLetter: F
+    columnIndex: 5
+    businessName: '2025-12-12 00:00:00'
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.273
+    sampleValues:
+    - Oper Unit
+    - '156'
+    - '158'
+    - '159'
+    - '171'
+  - technicalName: RUN_TIME
+    columnLetter: H
+    columnIndex: 7
+    businessName: Run Time
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.273
+    sampleValues:
+    - Product
+    - '259'
+    - '259'
+    - '259'
+    - '259'
+  - technicalName: '13_37_16'
+    columnLetter: I
+    columnIndex: 8
+    businessName: '13:37:16'
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.273
+    sampleValues:
+    - Product Desc
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+- sheetName: ecl check
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 2
+  fields:
+  - technicalName: COUNT_OF_VARIANCES
+    columnLetter: B
+    columnIndex: 1
+    businessName: Count of Variances
+    fieldType: measure
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Measure'
+    nullRate: 0.909
+    sampleValues:
+    - Comments to be updated
+    - Sum of USD
+    - BS
+    - PL
+    - Grand Total
+  - technicalName: '0'
+    columnLetter: C
+    columnIndex: 2
+    businessName: '0'
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.927
+    sampleValues:
+    - '0'
+    - IFRS Pack Sch Description
+    - Profit & Loss
+    - Profit & Loss Total
+- sheetName: Rates
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 2
+  fields:
+  - technicalName: NOV_2025___USD_RATES
+    columnLetter: A
+    columnIndex: 0
+    businessName: Nov 2025 - USD RATES
+    fieldType: measure
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Measure'
+    nullRate: 0.018
+    sampleValues:
+    - UAE Dirham
+    - Afghani
+    - Angolan Kwanza
+    - Australian Dollar
+    - Bangladesh Taka
+  - technicalName: OCT_2025___USD_RATES
+    columnLetter: F
+    columnIndex: 5
+    businessName: Oct 2025 - USD RATES
+    fieldType: measure
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Measure'
+    nullRate: 0.018
+    sampleValues:
+    - UAE Dirham
+    - Afghani
+    - Angolan Kwanza
+    - Australian Dollar
+    - Bangladesh Taka
+- sheetName: GCOA
+  headerRow: 3
+  sampleDataRows: 53
+  fieldCount: 5
+  fields:
+  - technicalName: DEFINITION
+    columnLetter: C
+    columnIndex: 2
+    businessName: DEFINITION
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - Definition
+    - All types of cash in hand (other than gold coins) including coins, local currenc
+    - This account captures customer funds that is in the process of transfers in or o
+    - This account reflects the value of cash held in ATMs.
+    - This account reflects the value of cash held in cash deposit machines
+  - technicalName: IFRS_PACK_MAPPING_REFERENCE
+    columnLetter: F
+    columnIndex: 5
+    businessName: IFRS PACK MAPPING REFERENCE
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - IFRS Pack Sch Ref
+    - 1A
+    - 1A
+    - 1A
+    - 1A
+  - technicalName: MR_PACK_REFERENCE
+    columnLetter: J
+    columnIndex: 9
+    businessName: MR PACK REFERENCE
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - MR Pack Sch Ref
+    - GP7
+    - GP7
+    - GP7
+    - GP7
+  - technicalName: RETAIL_CUBE_MAPPING
+    columnLetter: M
+    columnIndex: 12
+    businessName: RETAIL CUBE MAPPING
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - Retail Cube Mapping
+    - OTH
+    - OTH
+    - OTH
+    - OTH
+  - technicalName: FCP_CATEGORY
+    columnLetter: N
+    columnIndex: 13
+    businessName: FCP Category
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - Primary
+    - OTHER GL - NO AGEING
+    - OTHER GL - NO AGEING
+    - OTHER GL - NO AGEING
+    - OTHER GL - NO AGEING
+- sheetName: Dept Mapping
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 12
+  fields:
+  - technicalName: ACCOUNT
+    columnLetter: A
+    columnIndex: 0
+    businessName: Account
+    fieldType: identifier
+    dataType: INTEGER
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - '111101'
+    - '111101'
+    - '111101'
+    - '111101'
+    - '111101'
+  - technicalName: ACCOUNT_DESC
+    columnLetter: B
+    columnIndex: 1
+    businessName: Account Desc
+    fieldType: identifier
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - Cash in Hand
+    - Cash in Hand
+    - Cash in Hand
+    - Cash in Hand
+    - Cash in Hand
+  - technicalName: DEPT_ID
+    columnLetter: C
+    columnIndex: 2
+    businessName: Dept ID
+    fieldType: identifier
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - '1424'
+    - '1428'
+    - '1427'
+    - '1426'
+    - '1429'
+  - technicalName: DEPT_ID_DESC
+    columnLetter: D
+    columnIndex: 3
+    businessName: Dept ID Desc
+    fieldType: identifier
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - BB District-HKI East
+    - Branch Banking - Tandem BR
+    - BB District-KLN East
+    - BB District-KLN South
+    - BB District-NT East
+  - technicalName: PRODUCT
+    columnLetter: E
+    columnIndex: 4
+    businessName: Product
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - '259'
+    - '259'
+    - '259'
+    - '259'
+    - '259'
+  - technicalName: PRODUCT_DESC
+    columnLetter: F
+    columnIndex: 5
+    businessName: Product Desc
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+  - technicalName: CONCAT
+    columnLetter: G
+    columnIndex: 6
+    businessName: CONCAT
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - '1424259'
+    - '1428259'
+    - '1427259'
+    - '1426259'
+    - '1429259'
+  - technicalName: VERTICAL_FINAL_MAPPING
+    columnLetter: H
+    columnIndex: 7
+    businessName: Vertical final mapping
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+  - technicalName: VERTICAL
+    columnLetter: I
+    columnIndex: 8
+    businessName: Vertical
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - CPBB - Retail
+    - CPBB - Retail
+    - CPBB - Retail
+    - CPBB - Retail
+    - CPBB - Retail
+  - technicalName: OPER_UNIT
+    columnLetter: J
+    columnIndex: 9
+    businessName: Oper Unit
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - '156'
+    - '158'
+    - '159'
+    - '171'
+    - '173'
+  - technicalName: OPER_UNIT_DESC
+    columnLetter: K
+    columnIndex: 10
+    businessName: Oper Unit Desc
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - North Point Centre Branch
+    - Yuen Long Branch
+    - Prince Edward Road Branch
+    - Waterloo Road Branch
+    - Sheung Shui Centre Branch
+  - technicalName: VERYICAL_PB
+    columnLetter: L
+    columnIndex: 11
+    businessName: Veryical PB
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - Retail Products
+    - Retail Products
+    - Retail Products
+    - Retail Products
+    - Retail Products
+- sheetName: Base file
+  headerRow: 1
+  sampleDataRows: 55
+  fieldCount: 13
+  fields:
+  - technicalName: ABDO
+    columnLetter: A
+    columnIndex: 0
+    businessName: ABDO
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - 111101-238-1424-156
+    - 111101-238-1428-158
+    - 111101-238-1427-159
+    - 111101-238-1426-171
+    - 111101-238-1429-173
+  - technicalName: ACCOUNT
+    columnLetter: B
+    columnIndex: 1
+    businessName: Account
+    fieldType: identifier
+    dataType: INTEGER
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - '111101'
+    - '111101'
+    - '111101'
+    - '111101'
+    - '111101'
+  - technicalName: ACCOUNT_DESC
+    columnLetter: C
+    columnIndex: 2
+    businessName: Account Desc
+    fieldType: identifier
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - Cash in Hand
+    - Cash in Hand
+    - Cash in Hand
+    - Cash in Hand
+    - Cash in Hand
+  - technicalName: DEPT_ID
+    columnLetter: D
+    columnIndex: 3
+    businessName: Dept ID
+    fieldType: identifier
+    dataType: INTEGER
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - '1424'
+    - '1428'
+    - '1427'
+    - '1426'
+    - '1429'
+  - technicalName: DEPT_ID_DESC
+    columnLetter: E
+    columnIndex: 4
+    businessName: Dept ID Desc
+    fieldType: identifier
+    dataType: NVARCHAR
+    analyticsAnnotation: null
+    nullRate: 0.0
+    sampleValues:
+    - BB District-HKI East
+    - Branch Banking - Tandem BR
+    - BB District-KLN East
+    - BB District-KLN South
+    - BB District-NT East
+  - technicalName: BUSS_MAPPING_CONCAT
+    columnLetter: F
+    columnIndex: 5
+    businessName: Buss Mapping Concat
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - '1424259'
+    - '1428259'
+    - '1427259'
+    - '1426259'
+    - '1429259'
+  - technicalName: FINAL_MAPPING
+    columnLetter: G
+    columnIndex: 6
+    businessName: Final Mapping
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+  - technicalName: VERTICAL
+    columnLetter: H
+    columnIndex: 7
+    businessName: Vertical
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+    - WRB - Retail
+  - technicalName: OPER_UNIT
+    columnLetter: I
+    columnIndex: 8
+    businessName: Oper Unit
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - '156'
+    - '158'
+    - '159'
+    - '171'
+    - '173'
+  - technicalName: OPER_UNIT_DESC
+    columnLetter: J
+    columnIndex: 9
+    businessName: Oper Unit Desc
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - North Point Centre Branch
+    - Yuen Long Branch
+    - Prince Edward Road Branch
+    - Waterloo Road Branch
+    - Sheung Shui Centre Branch
+  - technicalName: PRODUCT
+    columnLetter: K
+    columnIndex: 10
+    businessName: Product
+    fieldType: dimension
+    dataType: INTEGER
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - '259'
+    - '259'
+    - '259'
+    - '259'
+    - '259'
+  - technicalName: PRODUCT_DESC
+    columnLetter: L
+    columnIndex: 11
+    businessName: Product Desc
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+    - Other AMS services
+  - technicalName: VERTICAL
+    columnLetter: M
+    columnIndex: 12
+    businessName: Vertical
+    fieldType: dimension
+    dataType: NVARCHAR
+    analyticsAnnotation: '@Analytics.Dimension'
+    nullRate: 0.0
+    sampleValues:
+    - CPBB - Retail
+    - CPBB - Retail
+    - CPBB - Retail
+    - CPBB - Retail
+    - CPBB - Retail

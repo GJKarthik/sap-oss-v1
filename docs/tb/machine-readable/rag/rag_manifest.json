@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-04-13T10:14:10.312616+00:00",
+  "input_directory": "/Users/user/Documents/sap-oss/docs/tb/machine-readable/extracted",
+  "input_files": [
+    "bpmn-tb-review-glo.md",
+    "business-case-bss-risk-assessment.md",
+    "business-case-trial-balance.md",
+    "doi-trial-balance-process.md",
+    "bss-risk-assessment-requirements.yaml",
+    "tb-business-requirements.yaml",
+    "tb-glossary.yaml",
+    "tb-review-controls.yaml",
+    "tb-review-decision-points.yaml",
+    "tb-review-workflow.yaml"
+  ],
+  "outputs": {
+    "chunks_jsonl": "rag_chunks.jsonl",
+    "chunks_csv": "rag_chunks.csv",
+    "embedding_jsonl": "rag_embedding_records.jsonl",
+    "embedding_csv": "rag_embedding_records.csv"
+  },
+  "chunking": {
+    "unit": "words",
+    "chunk_words": 220,
+    "overlap_words": 40,
+    "step": 180
+  },
+  "total_chunks": 55,
+  "total_embedding_records": 55,
+  "chunks_by_source": {
+    "bpmn-tb-review-glo.md": 12,
+    "business-case-bss-risk-assessment.md": 6,
+    "business-case-trial-balance.md": 7,
+    "doi-trial-balance-process.md": 1,
+    "bss-risk-assessment-requirements.yaml": 3,
+    "tb-business-requirements.yaml": 9,
+    "tb-glossary.yaml": 4,
+    "tb-review-controls.yaml": 2,
+    "tb-review-decision-points.yaml": 3,
+    "tb-review-workflow.yaml": 8
+  }
+}

@@ -13,11 +13,14 @@ import re
 import json
 import copy
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import structlog
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
+
+from .identity import resolve_request_identity
+from .store import get_store
 
 logger = structlog.get_logger("training-webcomponents-ngx.data_products")
 
@@ -43,42 +46,108 @@ def _validate_product_id(product_id: str) -> str:
 # Security: RBAC write guard
 # ---------------------------------------------------------------------------
 
-_WRITE_ROLES = frozenset({"write", "admin"})
+_WRITE_ROLES = frozenset({"admin", "editor", "write"})
+
+
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _normalize_role(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def _parse_team_context(header: str) -> Dict[str, str]:
+    parsed: Dict[str, str] = {}
+    cleaned = header.strip()
+    if not cleaned:
+        return parsed
+
+    if cleaned.startswith("{"):
+        try:
+            ctx = json.loads(cleaned)
+        except (json.JSONDecodeError, TypeError):
+            raise HTTPException(400, "Malformed X-Team-Context header")
+        if not isinstance(ctx, dict):
+            raise HTTPException(400, "Malformed X-Team-Context header")
+        for key in ("country", "domain", "teamId", "role"):
+            value = ctx.get(key)
+            if value is not None:
+                parsed[key] = str(value).strip()
+        return parsed
+
+    parts = [part.strip() for part in cleaned.split(":")]
+    if len(parts) > 0 and parts[0]:
+        parsed["country"] = parts[0]
+    if len(parts) > 1 and parts[1]:
+        parsed["domain"] = parts[1]
+    if len(parts) > 2 and parts[2]:
+        parsed["teamId"] = parts[2]
+    if len(parts) > 3 and parts[3]:
+        parsed["role"] = parts[3]
+    return parsed
+
+
+def _roles_from_request(request: Request) -> Set[str]:
+    identity = resolve_request_identity(request)
+    if not identity.authenticated:
+        return set()
+
+    roles: set[str] = set()
+    store = get_store()
+
+    user = None
+    if identity.email:
+        user = store.get_user_by_email(identity.email)
+    if user is None:
+        user = store.get_user_by_id(identity.user_id)
+    if user:
+        role = _normalize_role(user.get("role"))
+        if role:
+            roles.add(role)
+
+    if _env_flag("TRUST_AUTH_ROLE_HEADERS"):
+        for header_name in ("x-auth-request-role", "x-forwarded-role", "x-user-role"):
+            role = _normalize_role(request.headers.get(header_name))
+            if role:
+                roles.add(role)
+
+    return roles
 
 
 async def _require_write_access(
     request: Request,
     x_team_context: Optional[str] = Header(None),
 ) -> str:
-    """Dependency that enforces write permission via X-Team-Context header.
+    """Dependency that enforces write permission via authenticated server roles.
 
     Accepts either:
-      - JSON: {"country":"AE","domain":"treasury","role":"admin"}
-      - Colon-delimited: "AE:treasury:team-1:admin"
+      - JSON: {"country":"AE","domain":"treasury"}
+      - Colon-delimited: "AE:treasury:team-1"
 
-    If no header or no write/admin role, the request is rejected.
+    The header is treated as request context only. Authorization comes from the
+    authenticated server-side user role or, when explicitly enabled, trusted
+    upstream role headers.
     """
     if not x_team_context:
         raise HTTPException(403, "Write access requires X-Team-Context header")
 
-    role = ""
-    header = x_team_context.strip()
+    context = _parse_team_context(x_team_context)
+    identity = resolve_request_identity(request)
+    if not identity.authenticated:
+        logger.warning("write_denied_unauthenticated", path=str(request.url))
+        raise HTTPException(403, "Authenticated write access is required")
 
-    # Try JSON first (frontend sends this format)
-    if header.startswith("{"):
-        try:
-            ctx = json.loads(header)
-            role = str(ctx.get("role", "")).lower()
-        except (json.JSONDecodeError, TypeError):
-            raise HTTPException(400, "Malformed X-Team-Context header")
-    else:
-        # Colon-delimited fallback: country:domain:teamId:role
-        parts = header.split(":")
-        role = parts[-1].strip().lower() if parts else ""
-
-    if role not in _WRITE_ROLES:
-        logger.warning("write_denied", role=role, path=str(request.url))
-        raise HTTPException(403, f"Insufficient permissions: role '{role}' cannot write")
+    roles = _roles_from_request(request)
+    if not roles.intersection(_WRITE_ROLES):
+        logger.warning(
+            "write_denied",
+            user_id=identity.user_id,
+            roles=sorted(roles),
+            context=context,
+            path=str(request.url),
+        )
+        raise HTTPException(403, "Authenticated admin/editor role is required for writes")
 
     return x_team_context
 
@@ -88,8 +157,9 @@ async def _require_write_access(
 
 # Resolve the data_products directory — works both in dev and production
 _THIS_DIR = Path(__file__).resolve().parent
-_DEFAULT_DATA_PRODUCTS_DIR = _THIS_DIR.parent.parent.parent.parent / "src" / "training" / "data_products"
-DATA_PRODUCTS_DIR = Path(os.getenv("DATA_PRODUCTS_DIR", str(_DEFAULT_DATA_PRODUCTS_DIR)))
+_REPO_ROOT = _THIS_DIR.parents[5]
+_DEFAULT_DATA_PRODUCTS_DIR = _REPO_ROOT / "src" / "training" / "data_products"
+DATA_PRODUCTS_DIR = Path(os.getenv("DATA_PRODUCTS_DIR", str(_DEFAULT_DATA_PRODUCTS_DIR))).expanduser()
 
 
 def _try_load_yaml():
@@ -328,11 +398,11 @@ async def get_product(product_id: str):
 @router.patch(
     "/products/{product_id}",
     summary="Update data product",
-    description="Updates team access or country views for a data product. Requires X-Team-Context header with write or admin role. Input is validated: defaultAccess must be read/write/admin/none, restrictions must be alphanumeric.",
+    description="Updates team access or country views for a data product. Requires authenticated admin/editor privileges plus an X-Team-Context header for request scoping. Input is validated: defaultAccess must be read/write/admin/none, restrictions must be alphanumeric.",
     tags=["Data Products"],
     responses={
         400: {"description": "Invalid product ID or malformed body"},
-        403: {"description": "Insufficient permissions (missing header or wrong role)"},
+        403: {"description": "Insufficient permissions (missing header, unauthenticated request, or non-writer role)"},
         404: {"description": "Product not found"},
     },
 )
@@ -343,7 +413,7 @@ async def update_product(
 ):
     """Update team access or country views for a data product.
 
-    Requires X-Team-Context header with write or admin role.
+    Requires an authenticated admin/editor identity plus X-Team-Context.
     """
     _validate_product_id(product_id)
     filename = _find_product_file(product_id)

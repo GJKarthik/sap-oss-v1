@@ -1,0 +1,162 @@
+{
+  "generated_at": "2026-04-13T10:25:52.239074+00:00",
+  "description": "Machine-readable knowledge base for Trial Balance month-end close review process",
+  "purpose": [
+    "Generate detailed business requirements for AI-augmented TB processing",
+    "Create training/testing data files from Excel workbooks",
+    "Provide formal process and analytical logic specifications"
+  ],
+  "sourceFiles": {
+    "Business case - BSS Risk Assessment (2).doc": {
+      "size": 97792,
+      "type": ".doc"
+    },
+    "Business case - Trial Balance (2).doc": {
+      "size": 98304,
+      "type": ".doc"
+    },
+    "DOI for Trial Balance Process .docx": {
+      "size": 6583541,
+      "type": ".docx"
+    },
+    "HKG_PL review Nov'25.xlsm": {
+      "size": 53245945,
+      "type": ".xlsm"
+    },
+    "HKG_TB review Nov'25.xlsm": {
+      "size": 76989527,
+      "type": ".xlsm"
+    },
+    "Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf": {
+      "size": 65367,
+      "type": ".pdf"
+    }
+  },
+  "outputFiles": {
+    "data-product/trial-balance-review-v1.yaml": {
+      "size": 5314,
+      "modified": "2026-04-13T10:15:08.242617+00:00"
+    },
+    "training-data/hkg-pl-sample.csv": {
+      "size": 19110,
+      "modified": "2026-04-13T10:24:26.427082+00:00"
+    },
+    "training-data/hkg-pl-schema.yaml": {
+      "size": 16982,
+      "modified": "2026-04-13T10:24:26.443412+00:00"
+    },
+    "training-data/hkg-tb-sample.csv": {
+      "size": 17916,
+      "modified": "2026-04-13T10:24:25.707481+00:00"
+    },
+    "training-data/hkg-tb-schema.yaml": {
+      "size": 20228,
+      "modified": "2026-04-13T10:24:25.728497+00:00"
+    },
+    "requirements/bss-risk-assessment-requirements.yaml": {
+      "size": 4695,
+      "modified": "2026-04-13T10:13:05.875139+00:00"
+    },
+    "requirements/tb-business-requirements.yaml": {
+      "size": 14974,
+      "modified": "2026-04-13T10:13:03.687661+00:00"
+    },
+    "requirements/tb-glossary.yaml": {
+      "size": 5123,
+      "modified": "2026-04-13T10:13:27.649143+00:00"
+    },
+    "rag/rag_chunks.jsonl": {
+      "size": 88383,
+      "modified": "2026-04-13T10:14:10.309462+00:00"
+    },
+    "rag/rag_embedding_records.csv": {
+      "size": 86969,
+      "modified": "2026-04-13T10:14:10.312046+00:00"
+    },
+    "rag/rag_embedding_records.jsonl": {
+      "size": 94040,
+      "modified": "2026-04-13T10:14:10.310940+00:00"
+    },
+    "rag/rag_manifest.json": {
+      "size": 1294,
+      "modified": "2026-04-13T10:14:10.312893+00:00"
+    },
+    "scripts/build_rag_chunks.py": {
+      "size": 6604,
+      "modified": "2026-04-13T10:13:52.353095+00:00"
+    },
+    "scripts/extract_docs.py": {
+      "size": 5717,
+      "modified": "2026-04-13T10:14:01.835131+00:00"
+    },
+    "scripts/extract_pdf.py": {
+      "size": 7821,
+      "modified": "2026-04-13T10:14:01.835370+00:00"
+    },
+    "scripts/extract_xlsx.py": {
+      "size": 8955,
+      "modified": "2026-04-13T10:24:19.762732+00:00"
+    },
+    "extracted/bpmn-elements.json": {
+      "size": 2264,
+      "modified": "2026-04-13T10:14:01.831123+00:00"
+    },
+    "extracted/bpmn-tb-review-glo.md": {
+      "size": 9154,
+      "modified": "2026-04-13T10:14:01.831370+00:00"
+    },
+    "extracted/business-case-bss-risk-assessment.md": {
+      "size": 8908,
+      "modified": "2026-04-13T10:14:01.831654+00:00"
+    },
+    "extracted/business-case-trial-balance.md": {
+      "size": 9824,
+      "modified": "2026-04-13T10:14:01.831918+00:00"
+    },
+    "extracted/doi-trial-balance-process.md": {
+      "size": 865,
+      "modified": "2026-04-13T10:14:01.834114+00:00"
+    },
+    "extracted/doi-images/doi-image-001.emf": {
+      "size": 8148,
+      "modified": "2026-04-13T10:14:01.832361+00:00"
+    },
+    "extracted/doi-images/doi-image-002.emf": {
+      "size": 8272,
+      "modified": "2026-04-13T10:14:01.832624+00:00"
+    },
+    "extracted/doi-images/doi-image-003.png": {
+      "size": 43650,
+      "modified": "2026-04-13T10:14:01.833278+00:00"
+    },
+    "extracted/doi-images/doi-image-004.emf": {
+      "size": 8132,
+      "modified": "2026-04-13T10:14:01.833911+00:00"
+    },
+    "process/tb-review-controls.yaml": {
+      "size": 2675,
+      "modified": "2026-04-13T10:14:01.834397+00:00"
+    },
+    "process/tb-review-decision-points.yaml": {
+      "size": 4275,
+      "modified": "2026-04-13T10:14:01.834594+00:00"
+    },
+    "process/tb-review-workflow.yaml": {
+      "size": 12501,
+      "modified": "2026-04-13T10:14:01.834899+00:00"
+    }
+  },
+  "layers": {
+    "extracted": "Raw text extracted from source documents (Markdown with frontmatter)",
+    "requirements": "Structured business requirements and glossary (YAML)",
+    "process": "Formal workflow specification, decision points, control matrix (YAML)",
+    "training-data": "Workbook schemas, sample data, validation rules (YAML/CSV)",
+    "rag": "Embedding-ready chunks for vector store ingestion (JSONL/CSV)",
+    "data-product": "ODPS 4.1 Data Product definition for app integration (YAML)"
+  },
+  "statistics": {
+    "sourceFileCount": 6,
+    "outputFileCount": 28,
+    "totalOutputSizeBytes": 522793
+  }
+}
