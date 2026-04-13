@@ -35,6 +35,9 @@ export async function runRoutesCheck({ policy }) {
     code: failed.length === 0 ? null : 'UI_ROUTE_BLOCKED',
     message: failed.length === 0 ? 'All required routes are reachable' : `${failed.length} routes failed`,
     evidence: { routes },
+    remediation:
+      failed.length === 0
+        ? null
+        : `Ensure dev server is running on :4200. Failed: ${failed.map((r) => r.route).join(', ')}`,
   };
 }
-

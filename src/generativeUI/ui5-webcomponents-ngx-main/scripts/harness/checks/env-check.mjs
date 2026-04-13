@@ -12,6 +12,6 @@ export async function runEnvCheck({ policy }) {
     code: ok ? null : 'CONFIG_MISSING',
     message: ok ? 'Environment requirements satisfied' : `Missing required env vars: ${missing.join(', ')}`,
     evidence: { missing },
+    remediation: ok ? null : `Copy .env.example to .env and fill in: ${missing.join(', ')}`,
   };
 }
-

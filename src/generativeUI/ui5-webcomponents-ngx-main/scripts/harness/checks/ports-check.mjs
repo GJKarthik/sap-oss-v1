@@ -24,6 +24,6 @@ export async function runPortsCheck() {
       ? 'Required ports are active'
       : `Expected service ports not active: ${missing.join(', ')}`,
     evidence: { listening },
+    remediation: ok ? null : `Start services: yarn start:all (needs ports ${missing.join(', ')})`,
   };
 }
-

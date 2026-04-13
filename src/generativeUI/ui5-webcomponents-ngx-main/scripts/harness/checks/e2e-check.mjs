@@ -15,6 +15,6 @@ export async function runE2ECheck() {
     code: status === 0 ? null : 'E2E_FAILURE',
     message: status === 0 ? 'Live E2E verification passed' : `Live E2E verification failed with exit ${status}`,
     evidence: { exitCode: status },
+    remediation: status === 0 ? null : 'Review Cypress output above. Common fix: wait for services to stabilize, then re-run.',
   };
 }
-

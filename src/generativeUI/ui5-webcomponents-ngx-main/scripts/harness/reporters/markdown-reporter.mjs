@@ -6,26 +6,41 @@ export function writeMarkdownReport(outputDir, report) {
   mkdirSync(outputDir, { recursive: true });
 
   const failed = report.checks.filter((item) => item.status === 'fail');
+  const remediations = failed
+    .filter((item) => item.remediation)
+    .map((item) => `- **${item.code || item.name}**: ${item.remediation}`);
+
   const lines = [
     '# UI5 Harness Report',
     '',
-    `- Verdict: **${report.verdict}**`,
-    `- Mode: \`${report.mode}\``,
-    `- Profile: \`${report.profile}\``,
-    `- Timestamp: \`${report.timestamp}\``,
+    `**Verdict: ${report.verdict}**`,
+    '',
+    `| Field | Value |`,
+    `|-------|-------|`,
+    `| Run ID | \`${report.runId}\` |`,
+    `| Mode | \`${report.mode}\` |`,
+    `| Profile | \`${report.profile}\` |`,
+    `| Timestamp | \`${report.timestamp}\` |`,
+    `| Exit Code | \`${report.exitCode}\` |`,
     '',
     '## Checks',
     '',
+    '| Check | Required | Status | Code |',
+    '|-------|----------|--------|------|',
     ...report.checks.map(
       (check) =>
-        `- [${check.status === 'pass' ? 'x' : ' '}] \`${check.name}\` (${check.required ? 'required' : 'optional'}) - ${check.message}`,
+        `| ${check.name} | ${check.required ? 'yes' : 'no'} | ${check.status === 'pass' ? 'PASS' : 'FAIL'} | ${check.code || '-'} |`,
     ),
     '',
     '## Blockers',
     '',
     ...(failed.length
       ? failed.map((check) => `- \`${check.code || 'UNKNOWN'}\`: ${check.message}`)
-      : ['- None']),
+      : ['None.']),
+    '',
+    '## Remediation',
+    '',
+    ...(remediations.length ? remediations : ['No action required.']),
   ];
 
   writeFileSync(path, `${lines.join('\n')}\n`);

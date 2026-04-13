@@ -14,7 +14,7 @@ function env(name) {
 async function checkHealth(name, url) {
   const startMs = Date.now();
   try {
-    const response = await fetch(url, { method: 'GET' });
+    const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5000) });
     return {
       name,
       url,
@@ -46,6 +46,7 @@ async function checkMcpRpc(url) {
       method: 'POST',
       headers,
       body: JSON.stringify({ jsonrpc: '2.0', id: 'harness-tools-list', method: 'tools/list' }),
+      signal: AbortSignal.timeout(5000),
     });
     const data = await response.json().catch(() => ({}));
     const ok = response.ok && Array.isArray(data?.result?.tools);
@@ -88,6 +89,9 @@ export async function runServicesCheck() {
         ? 'All core services are reachable'
         : `${failed.length} service checks failed`,
     evidence: { services },
+    remediation:
+      failed.length === 0
+        ? null
+        : `Start missing services: ${failed.map((s) => s.name).join(', ')}. Run: yarn start:all`,
   };
 }
-
