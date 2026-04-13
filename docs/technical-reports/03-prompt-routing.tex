@@ -123,7 +123,7 @@ export interface RouteDecision {
 }
 \end{lstlisting}
 
-\subsection{SERVICE\_ROUTING Map (8 Services)}
+\subsection{SERVICE\_ROUTING Map (7 Services)}
 
 The \texttt{SERVICE\_ROUTING} constant maps service identifiers to backend
 targets. This is the second-highest priority after forced headers
@@ -138,7 +138,6 @@ const SERVICE_ROUTING: Record<string, RouteBackend> = {
   'odata-vocabularies': 'aicore-streaming',
   'ui5-webcomponents-ngx': 'aicore-streaming',
   'world-monitor': 'aicore-streaming',
-  'sac-ai-widget': 'aicore-streaming',
 };
 \end{lstlisting}
 
@@ -156,7 +155,6 @@ const SERVICE_ROUTING: Record<string, RouteBackend> = {
 \texttt{odata-vocabularies} & \texttt{aicore-streaming} \\
 \texttt{ui5-webcomponents-ngx} & \texttt{aicore-streaming} \\
 \texttt{world-monitor} & \texttt{aicore-streaming} \\
-\texttt{sac-ai-widget} & \texttt{aicore-streaming} \\
 \bottomrule
 \end{tabular}
 \end{table}
