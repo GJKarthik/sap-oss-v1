@@ -1,692 +1,1216 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
 \usepackage{geometry}
 \usepackage{longtable}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{fancyhdr}
-\usepackage{graphicx}
 \usepackage{titlesec}
 \usepackage{enumitem}
+\usepackage{listings}
 
-\geometry{margin=2.5cm}
+\geometry{margin=2.1cm,top=2.4cm,bottom=2.4cm}
 
-% Colors
-\definecolor{sapblue}{RGB}{0, 118, 203}
-\definecolor{sapgold}{RGB}{255, 192, 0}
-\definecolor{darkgray}{RGB}{64, 64, 64}
+\definecolor{sapblue}{RGB}{0,118,203}
+\definecolor{darkgray}{RGB}{64,64,64}
+\definecolor{lightgray}{RGB}{245,245,245}
 
-% Header/Footer
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\textcolor{sapblue}{\textbf{SAP AI Platform SBOM}}}
-\fancyhead[R]{\textcolor{darkgray}{Version 1.0 | March 2026}}
+\fancyhead[L]{\textcolor{sapblue}{\textbf{SAP OSS System SBOM}}}
+\fancyhead[R]{\textcolor{darkgray}{Version 3.0 | April 13, 2026}}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
-% Title formatting
 \titleformat{\section}{\Large\bfseries\color{sapblue}}{\thesection}{1em}{}
 \titleformat{\subsection}{\large\bfseries\color{darkgray}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
 
 \hypersetup{
     colorlinks=true,
     linkcolor=sapblue,
     urlcolor=sapblue,
-    pdftitle={SAP AI Platform - Software Bill of Materials},
-    pdfauthor={SAP AI Engineering},
+    pdftitle={SAP OSS System SBOM - Domain Oriented},
+    pdfauthor={Open Source SAP AI Engineering},
 }
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    backgroundcolor=\color{lightgray},
+    breaklines=true,
+    frame=single
+}
+
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\urlstyle{same}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\sloppy
 
 \begin{document}
 
-% Title Page
 \begin{titlepage}
 \centering
-\vspace*{2cm}
-{\Huge\bfseries\textcolor{sapblue}{Software Bill of Materials}\\[0.5cm]}
-{\LARGE SAP AI Platform}\\[2cm]
-{\Large\textbf{CycloneDX 1.6 Compliant}}\\[0.5cm]
-{\large NTIA Minimum Elements Conformant}\\[3cm]
+\vspace*{1.5cm}
+{\Huge\bfseries\textcolor{sapblue}{Software Bill of Materials}\\[0.4cm]}
+{\LARGE SAP OSS System}\\[0.8cm]
+{\Large\textbf{Single-Column Domain Reference}}\\[0.4cm]
+{\large Intelligence, Data, GenerativeUI AI, and Training}\\[2.4cm]
 
 \begin{tabular}{ll}
-\textbf{Document ID:} & SBOM-SAP-AI-2026-001 \\
-\textbf{Version:} & 1.0 \\
-\textbf{Generated:} & March 1, 2026 \\
-\textbf{Format:} & CycloneDX 1.6 / SPDX 2.3 \\
-\textbf{Classification:} & Internal \\
+\textbf{Document ID:} & SBOM-SAP-AI-2026-004 \\
+\textbf{Version:} & 3.0 \\
+\textbf{Generated:} & April 13, 2026 \\
+\textbf{Orientation:} & Domain-first, single-column, direct-library focused \\
+\textbf{Covered domains:} & 4 \\
+\textbf{Isolated software units:} & 13 \\
+\textbf{Manifest and build artifacts reviewed:} & 61 \\
+\textbf{Source-like files reviewed:} & 2,035 \\
+\textbf{Classification:} & Internal engineering reference \\
 \end{tabular}
 
 \vfill
-{\large\textcolor{darkgray}{Covers all 13 platform services}}\\[1cm]
+{\large\textcolor{darkgray}{This SBOM intentionally de-emphasizes the old service-by-service narration and instead treats each top-level system part as an isolated software estate with its own manifests, library stacks, and internal package boundaries.}}
 \end{titlepage}
 
-% Table of Contents
 \tableofcontents
 \newpage
 
-% Executive Summary
 \section{Executive Summary}
 
-This Software Bill of Materials (SBOM) documents all dependencies across the SAP AI Platform monorepo. The platform consists of \textbf{13 services} spanning multiple programming languages and runtime environments.
+This document updates the SAP OSS system SBOM to match the current engineering view of the repository. The primary reporting axis is now the four main parts of the system:
 
-\subsection{Platform Statistics}
+\begin{enumerate}[leftmargin=1.4cm]
+    \item \textbf{Intelligence}
+    \item \textbf{Data}
+    \item \textbf{GenerativeUI AI}
+    \item \textbf{Training}
+\end{enumerate}
 
-\begin{tabular}{ll}
+Inside each domain, the SBOM treats each foldered software unit as an isolated software product. For each unit the document records:
+
+\begin{itemize}[leftmargin=*]
+    \item the software boundary and primary manifests;
+    \item direct library declarations rather than only transitive package explosions;
+    \item internal libraries, packages, apps, or sidecars that materially define the unit;
+    \item build and deployment evidence used to reproduce the PDF export.
+\end{itemize}
+
+\subsection{Inventory Statistics}
+
+\begin{tabular}{@{}P{5.5cm}P{8.8cm}@{}}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total Services & 13 \\
-Programming Languages & Zig, Python, TypeScript, Go, Java, Mojo \\
-Package Managers & npm, pip, Go modules, Gradle, cargo \\
-Vendored Dependencies & 8 (documented below) \\
-Total Transitive Dependencies & 847 (via lock files) \\
-Open Source Licenses & 12 unique \\
-Known CVEs & 0 (critical), 2 (medium - mitigated) \\
+Covered repository roots & \path{src/intelligence}, \path{src/data}, \path{src/generativeUI}, \path{src/training} \\
+Inventory model & Domain-first, direct dependency SBOM with isolated software boundaries \\
+Isolated software units & 13 units across 4 domains \\
+Package ecosystems observed & pip requirements, Poetry, setuptools, npm, Nx, Angular workspace metadata, Dockerfiles, Makefiles \\
+Lockfile evidence present & \path{package-lock.json} in data and GenerativeUI workspaces; local build manifests in training and intelligence \\
+Primary implementation languages & Python, TypeScript, HTML/SCSS, JSON/XML vocabulary assets, YAML deployment descriptors \\
+Export target & \path{docs/sbom/SAP-OSS-SBOM-Complete.tex} compiled to \path{docs/sbom/SAP-AI-Platform-SBOM-2026.pdf} \\
 \bottomrule
 \end{tabular}
 
-\subsection{Compliance Status}
+\subsection{Domain Map}
 
-\begin{itemize}[noitemsep]
-    \item[$\checkmark$] NTIA Minimum Elements: \textbf{PASS}
-    \item[$\checkmark$] REUSE 3.2 Specification: \textbf{COMPLIANT}
-    \item[$\checkmark$] CycloneDX 1.6 Schema: \textbf{VALID}
-    \item[$\checkmark$] SPDX License Expressions: \textbf{VALID}
+\small
+\begin{longtable}{@{}P{3.2cm}P{4.4cm}P{1.4cm}P{5.8cm}@{}}
+\toprule
+\textbf{Domain} & \textbf{Root path} & \textbf{Units} & \textbf{Primary software units} \\
+\midrule
+\endhead
+Intelligence & \path{src/intelligence} & 3 & \path{ai-core-pal}, \path{ocr}, \path{vllm-turboquant} \\
+Data & \path{src/data} & 2 & \path{langchain-integration-for-sap-hana-cloud-main}, \path{odata-vocabularies-main} \\
+GenerativeUI AI & \path{src/generativeUI} & 3 & gateway health; training console; UI5 workspace \\
+Training & \path{src/training} & 5 & \path{training-main}, \path{pipeline}, \path{schema_pipeline}, \path{nvidia-modelopt}, \path{nvidia-modelopt/ui} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\subsection{Evidence and Scope Policy}
+
+This SBOM is detailed, but it is intentionally not a raw lockfile dump. The evidence base is:
+
+\begin{itemize}[leftmargin=*]
+    \item direct dependency manifests such as \path{requirements.txt}, \path{pyproject.toml}, and \path{package.json};
+    \item repository-local package boundaries such as \path{libs/}, \path{apps/}, \path{packages/}, and Python package folders;
+    \item build and deployment metadata such as \path{Makefile}, \path{Dockerfile}, \path{docker-compose.yml}, and deployment subfolders;
+    \item import-inferred runtime dependencies only where no dedicated manifest exists.
+\end{itemize}
+
+Where a folder has no local manifest, the document states that explicitly rather than fabricating a package record.
+
+\newpage
+\section{Intelligence Domain}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Domain root & \path{src/intelligence} \\
+Isolated software units & 3 \\
+Observed source-like files & 54 \\
+Primary runtime style & Python services with SAP HANA and OCR workloads, plus an import-driven vLLM launch unit \\
+Manifest evidence & \path{requirements.txt}, \path{requirements-service.txt}, \path{Makefile}, \path{Dockerfile} \\
+\bottomrule
+\end{tabular}
+
+\subsection{ai-core-pal}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/intelligence/ai-core-pal} \\
+Role & SAP HANA PAL MCP server for forecasting, anomaly detection, clustering, classification, regression, table discovery, and Mangle queries \\
+Primary manifests & \path{requirements.txt}, \path{Makefile}, \path{Dockerfile} \\
+Observed files & 31 total, 25 source-like \\
+Packaging model & pip-style Python service plus container and Kyma deployment assets \\
+Declared direct runtime libraries & 10 in \path{requirements.txt} \\
+\bottomrule
+\end{tabular}
+
+\textbf{Internal software boundary.} The folder is a deployable Python service with its own \path{agent/}, \path{mcp_server/}, \path{scripts/}, \path{tests/}, and \path{deploy/} subtrees. The README positions it as an isolated MCP-facing PAL integration for SAP HANA Cloud.
+
+\textbf{Internal modules and folders.}
+\begin{itemize}[leftmargin=*]
+    \item \path{agent/}: PAL agent logic and HANA client access.
+    \item \path{mcp_server/}: MCP server process entrypoint and protocol handling.
+    \item \path{scripts/}: HANA bootstrap SQL for test and demo tables.
+    \item \path{deploy/}: Kyma deployment manifests and runtime packaging.
+\end{itemize}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{SAP data and analytics}: \texttt{hdbcli}, \texttt{hana-ml}. These are the core HANA and PAL bindings that make the folder a PAL-specific software unit rather than a generic Python API.
+    \item \textbf{MCP protocol surface}: \texttt{mcp}, \texttt{fastmcp}. These establish the exposed tool contract.
+    \item \textbf{Service runtime}: \texttt{uvicorn}, \texttt{aiohttp}, \texttt{requests}. These support server hosting and downstream HTTP access.
+    \item \textbf{Data handling}: \texttt{pandas}, \texttt{numpy}. These support PAL input shaping and result processing.
+    \item \textbf{Configuration}: \texttt{python-dotenv}. This localizes environment loading inside the folder boundary.
+\end{itemize}
+
+\subsection{ocr}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/intelligence/ocr} \\
+Role & Arabic and English PDF/image OCR service with REST endpoints, preprocessing, callback validation, and export utilities \\
+Primary manifests & \path{requirements.txt}, \path{requirements-service.txt}, \path{Dockerfile} \\
+Observed files & 31 total, 27 source-like \\
+Packaging model & Two-layer Python software unit: OCR engine dependencies plus service/API dependencies \\
+Declared direct runtime libraries & 7 OCR engine libraries and 6 service libraries \\
+\bottomrule
+\end{tabular}
+
+\textbf{Internal software boundary.} The folder is self-contained and includes OCR core modules (\path{arabic_ocr_service.py}, \path{pdf_processor.py}, \path{text_extractor.py}, \path{table_detector.py}), service endpoints (\path{server.py}, \path{api.py}), and tests. It behaves as its own deployable software product rather than a shared helper library.
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{OCR engine and imaging}: \texttt{pytesseract}, \texttt{pdf2image}, \texttt{Pillow}, \texttt{opencv-python-headless}.
+    \item \textbf{Arabic text handling}: \texttt{arabic-reshaper}, \texttt{python-bidi}.
+    \item \textbf{Numerics}: \texttt{numpy}.
+    \item \textbf{REST service layer}: \texttt{fastapi}, \texttt{uvicorn}, \texttt{python-multipart}, \texttt{httpx}.
+    \item \textbf{Document export and PDF post-processing}: \texttt{reportlab}, \texttt{pypdf}.
+\end{itemize}
+
+\textbf{Key local modules.}
+\begin{itemize}[leftmargin=*]
+    \item \path{preprocessing.py}, \path{postprocessing.py}, and \path{language_detector.py}: OCR normalization pipeline.
+    \item \path{metrics.py} and \path{logging_config.py}: operational observability inside the folder boundary.
+    \item \path{exporters.py}: export formatting layer for OCR outputs.
+    \item \path{dependencies.py}: dependency health checks used by the service.
+\end{itemize}
+
+\subsection{vllm-turboquant}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/intelligence/vllm-turboquant} \\
+Role & Quantized vLLM serving launcher and deployment template for TurboQuant-backed model serving \\
+Primary manifests & No dedicated dependency manifest; evidence comes from \path{start-turboquant.py}, deployment YAML, and Docker template \\
+Observed files & 3 total, 2 source-like \\
+Packaging model & Import-driven launcher unit embedded in the intelligence estate \\
+Declared direct libraries & Not manifest-backed; inferred from runtime imports \\
+\bottomrule
+\end{tabular}
+
+\textbf{Import-inferred runtime dependencies.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Serving stack}: \path{vllm.entrypoints.openai.api_server}.
+    \item \textbf{Quantization bridge}: \texttt{turboquant.integration.vllm}.
+    \item \textbf{Python runtime support}: \texttt{argparse}, \texttt{asyncio}, and environment-controlled vLLM device settings.
+\end{itemize}
+
+\textbf{SBOM note.} This folder is intentionally small. It should be understood as a launch and deployment boundary for a quantized serving mode, not as a complete standalone package repository with its own requirements lock.
+
+\newpage
+\section{Data Domain}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Domain root & \path{src/data} \\
+Isolated software units & 2 \\
+Observed source-like files & 162 \\
+Primary runtime style & One Python integration package and one Node/XML vocabulary generation repository \\
+Manifest evidence & Poetry \path{pyproject.toml}, npm \path{package.json}, \path{package-lock.json}, \path{Makefile}, \path{Dockerfile} \\
+\bottomrule
+\end{tabular}
+
+\subsection{langchain-integration-for-sap-hana-cloud-main}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/data/langchain-integration-for-sap-hana-cloud-main} \\
+Role & LangChain integration package connecting SAP HANA Cloud vector, graph, and retriever capabilities into LLM workflows \\
+Primary manifests & \path{pyproject.toml}, \path{Makefile}, \path{Dockerfile}, \path{deploy/aicore/Dockerfile} \\
+Observed files & 67 total, 52 source-like \\
+Packaging model & Poetry-managed Python package with test, lint, dev, and typing groups \\
+Declared direct libraries & 6 runtime libraries plus grouped development extras \\
+\bottomrule
+\end{tabular}
+
+\textbf{Internal software boundary.}
+\begin{itemize}[leftmargin=*]
+    \item \path{langchain_hana/}: the primary distributable Python package.
+    \item \path{mcp_server/} and \path{sap_openai_server/}: auxiliary service surfaces for local and agent-facing integration.
+    \item \path{agent/}, \path{data_products/}, and \path{examples/}: usage layer surrounding the core package.
+\end{itemize}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{LangChain contract}: \texttt{langchain-core}, \texttt{langchain-classic}, \texttt{langchain}.
+    \item \textbf{SAP HANA connectivity}: \texttt{hdbcli}.
+    \item \textbf{Graph support}: \texttt{rdflib}.
+    \item \textbf{Numeric support}: \texttt{numpy} with Python-version split declarations in the Poetry file.
+    \item \textbf{Quality and maintenance groups}: \texttt{pytest}, \texttt{pytest-asyncio}, \texttt{pytest-socket}, \texttt{pytest-watcher}, \texttt{ruff}, \texttt{mypy}, \texttt{nbstripout}.
+\end{itemize}
+
+\subsection{odata-vocabularies-main}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/data/odata-vocabularies-main} \\
+Role & SAP OData vocabulary definition and generation repository spanning XML, JSON, Markdown, helper Python utilities, and contributor tooling \\
+Primary manifests & \path{package.json}, \path{package-lock.json}, \path{Dockerfile}, \path{deploy/aicore/Dockerfile} \\
+Observed files & 152 total, 110 source-like \\
+Packaging model & npm workspace for vocabulary generation and contributor tooling \\
+Declared direct libraries & 3 runtime dependencies and 3 development dependencies \\
+\bottomrule
+\end{tabular}
+
+\textbf{Internal software boundary.}
+\begin{itemize}[leftmargin=*]
+    \item \path{vocabularies/}: canonical XML, JSON, and Markdown vocabulary assets.
+    \item \path{lib/}: generator and repository utility code.
+    \item \path{connectors/}, \path{hana/}, \path{middleware/}, \path{mcp_server/}, and \path{sap_openai_server/}: integration surfaces that turn the repository into an operational data-side component rather than a static spec archive.
+    \item \path{data_products/} and \path{examples/}: packaged reference artifacts.
+\end{itemize}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Vocabulary generation}: \texttt{odata-csdl}, \texttt{odata-vocabularies} (GitHub-based upstream source).
+    \item \textbf{CLI and output formatting}: \texttt{colors}.
+    \item \textbf{Contributor tooling}: \texttt{eslint}, \texttt{express}, \texttt{prettier}.
+\end{itemize}
+
+\textbf{SBOM note.} This folder is not only documentation. The presence of generator tooling, service helpers, deployment assets, and programmatic \path{lib/} code makes it a software unit with a meaningful library bill.
+
+\newpage
+\section{GenerativeUI AI Domain}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Domain root & \path{src/generativeUI} \\
+Isolated software units & 3 \\
+Observed source-like files & 1,555 \\
+Primary runtime style & Angular and Nx workspaces, sidecar Node services, and Python health/proxy services \\
+Manifest evidence & \path{package.json}, \path{package-lock.json}, app-level \path{package.json}, service-level \path{requirements.txt}, \path{docker-compose.yml}, \path{Dockerfile} \\
+\bottomrule
+\end{tabular}
+
+\subsection{gateway/health}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/generativeUI/gateway/health} \\
+Role & Suite health aggregator for browser-facing GenerativeUI deployments \\
+Primary manifests & \path{requirements.txt}, \path{Dockerfile} \\
+Observed files & 3 total, 1 source-like \\
+Packaging model & Minimal Python FastAPI sidecar \\
+Declared direct libraries & 3 runtime libraries \\
+\bottomrule
+\end{tabular}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{fastapi}: HTTP health API.
+    \item \texttt{uvicorn}: ASGI hosting.
+    \item \texttt{httpx}: async probing of dependent services such as training web, training API, UI5 web, MCP, and AI Core PAL.
+\end{itemize}
+
+\textbf{Local role.} The folder acts as operational glue for the GenerativeUI domain by consolidating readiness of multiple frontends and sidecar APIs behind a single health surface.
+
+\subsection{training-webcomponents-ngx}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/generativeUI/training-webcomponents-ngx} \\
+Role & Angular 20 training console covering pipeline, model optimizer, HANA explorer, data explorer, data cleaning, and chat workflows \\
+Primary manifests & root \path{package.json}, root \path{package-lock.json}, \path{docker-compose.yml}, \path{apps/angular-shell/package.json}, \path{packages/api-server/requirements.txt}, \path{packages/api-server/requirements.suite.txt} \\
+Observed files & 246 total, 232 source-like \\
+Packaging model & Nx/Angular monorepo with a Python API proxy package \\
+Declared direct libraries & 4 root runtime dependencies, 37 root dev dependencies, 20 app dependencies, and 18 API server dependencies \\
+\bottomrule
+\end{tabular}
+
+\textbf{Internal software boundary.}
+\begin{itemize}[leftmargin=*]
+    \item \path{apps/angular-shell/}: standalone Angular SPA and the main browser-facing product.
+    \item \path{packages/api-server/}: FastAPI reverse proxy and operational API gateway to the training backend.
+    \item \path{deploy/}: deployment material for environment-specific rollout.
+\end{itemize}
+
+\textbf{Root workspace libraries.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Application formatting and state}: \texttt{@messageformat/core}, \texttt{@ngrx/signals}, \texttt{pdfjs-dist}, \texttt{xlsx}.
+    \item \textbf{Workspace build and testing}: Angular DevKit, Nx 22, Jest, Playwright, ESLint, TypeScript, RxJS.
+\end{itemize}
+
+\textbf{Angular shell application libraries.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Angular platform}: \texttt{@angular/animations}, \texttt{@angular/common}, \texttt{@angular/core}, \texttt{@angular/forms}, \texttt{@angular/router}, \texttt{zone.js}, \texttt{tslib}, \texttt{rxjs}.
+    \item \textbf{UI5 front-end stack}: \texttt{@ui5/webcomponents}, \texttt{@ui5/webcomponents-ai}, \texttt{@ui5/webcomponents-base}, \texttt{@ui5/webcomponents-fiori}, icon packages, \texttt{@ui5/webcomponents-theming}, and \texttt{@ui5/webcomponents-ngx}.
+\end{itemize}
+
+\textbf{API proxy libraries.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Web service and control plane}: \texttt{fastapi}, \texttt{uvicorn[standard]}, \texttt{httpx}, \texttt{python-dotenv}, \texttt{slowapi}, \texttt{websockets}, \texttt{structlog}.
+    \item \textbf{Metrics and host inspection}: \texttt{prometheus-client}, \texttt{prometheus-fastapi-instrumentator}, \texttt{psutil}, \texttt{pynvml}.
+    \item \textbf{Data and model tooling}: \texttt{sqlalchemy}, \texttt{torch}, \texttt{transformers}, \texttt{datasets}, \texttt{trl}, \texttt{peft}, \texttt{accelerate}.
+    \item \textbf{Suite variant}: \path{requirements.suite.txt} swaps the model-training stack for \texttt{hdbcli} when the proxy is used in suite mode.
+\end{itemize}
+
+\subsection{ui5-webcomponents-ngx-main}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/generativeUI/ui5-webcomponents-ngx-main} \\
+Role & Large Angular and UI5 workspace that combines wrapper libraries, generative UI runtime libraries, MCP/OpenAI sidecars, generators, theming, and tooling \\
+Primary manifests & root \path{package.json}, root \path{package-lock.json}, nested \path{mcp-server/package.json}, nested \path{libs/*/package.json} across 14 reusable libraries and sidecar packages \\
+Observed files & 1,506 total, 1,322 source-like \\
+Packaging model & Nx monorepo with multiple publishable libraries plus local service packages \\
+Declared direct libraries & 36 root runtime dependencies and 69 root development dependencies, plus per-library package manifests \\
+\bottomrule
+\end{tabular}
+
+\textbf{Root workspace library families.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Angular and runtime foundation}: Angular 20 packages, \texttt{rxjs}, \texttt{zone.js}, \texttt{tslib}.
+    \item \textbf{UI5 platform}: \texttt{@ui5/webcomponents}, \texttt{@ui5/webcomponents-ai}, \texttt{@ui5/webcomponents-base}, \texttt{@ui5/webcomponents-fiori}, icon packages, \texttt{@ui5/webcomponents-theming}, \texttt{@ui5/webcomponents-tools}, \texttt{@ui5/tooling-webc}.
+    \item \textbf{Generation and tooling}: Nx 22 packages, Storybook 9, \texttt{ng-packagr}, \texttt{webpack}, \texttt{postcss}, \texttt{lerna}, \texttt{patch-package}, \texttt{typescript}, \texttt{ts-node}, \texttt{cypress}, \texttt{playwright}.
+    \item \textbf{Supporting utilities}: \texttt{lodash}, \texttt{fast-deep-equal}, \texttt{fast-glob}, \texttt{ajv-formats}, \texttt{react}, \texttt{react-dom}, \texttt{@sap-ui/common-css}.
+\end{itemize}
+
+\textbf{Internal library inventory.}
+\small
+\begin{longtable}{@{}P{4.1cm}P{4.6cm}P{4.8cm}@{}}
+\toprule
+\textbf{Folder} & \textbf{Package name} & \textbf{Role} \\
+\midrule
+\endhead
+\path{libs/ui5-angular} & \path{@ui5/webcomponents-ngx} & Angular wrapper library for UI5 Web Components \\
+\path{libs/ui5-angular-theming} & \path{@ui5/theming-ngx} & Angular theming support for UI5 packages \\
+\path{libs/transformer} & \path{@ui5/webcomponents-transformer} & Generator core used to produce wrappers and derivative outputs \\
+\path{libs/angular-generator} & \path{@ui5/webcomponents-ngx-generator} & Angular code generator driven by UI5 component metadata \\
+\path{libs/ui5-schema-parser} & \path{@ui5/webcomponents-schema-parser} & API JSON parser for UI5 component metadata \\
+\path{libs/webcomponents-nx} & \path{@ui5/webcomponents-nx} & Nx executors and generators for transformer-based workflows \\
+\path{libs/commit/fs-commit} & \path{@ui5/webcomponents-transformer-fs-commit} & File-system commit implementation for generated outputs \\
+\path{libs/ag-ui-angular} & \path{@ui5/ag-ui-angular} & Angular client for AG-UI protocol transport and event handling \\
+\path{libs/genui-renderer} & \path{@ui5/genui-renderer} & Schema-driven generative UI renderer with validation and sanitization \\
+\path{libs/genui-streaming} & \path{@ui5/genui-streaming} & Progressive streaming composition layer over AG-UI events \\
+\path{libs/genui-governance} & \path{@ui5/genui-governance} & Governance, confirmation, audit, and policy layer for generative UI actions \\
+\path{libs/genui-collab} & \path{@ui5/genui-collab} & Multi-user collaboration layer for shared workspaces \\
+\path{libs/ocr-client} & \path{@ui5/ocr-client} & OCR client helper used by UI flows \\
+\path{libs/fundamental-styles} & \path{@fundamental-styles/theming-ngx} & Angular theming wrapper for Fundamental Styles \\
+\path{libs/openai-server} & \path{@ui5-webcomponents-ngx/openai-server} & TypeScript OpenAI-compatible server package used with SAP AI Core credentials \\
+\path{mcp-server} & \path{@ui5-webcomponents-ngx/mcp-server} & Express-based MCP server package for the workspace \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\textbf{Per-library direct dependency highlights.}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{@ui5/genui-renderer}: \texttt{dompurify} and \texttt{tslib} plus Angular and UI5 peer dependencies.
+    \item \texttt{@ui5/genui-streaming}: \texttt{tslib} plus peers on \texttt{@ui5/ag-ui-angular}, \texttt{@ui5/genui-renderer}, Angular, and \texttt{rxjs}.
+    \item \texttt{@ui5/genui-governance}: \texttt{uuid}, \texttt{tslib}, and peers on Angular, \texttt{@ui5/ag-ui-angular}, \texttt{@ui5/webcomponents-ngx}, and \texttt{rxjs}.
+    \item \texttt{@ui5/ag-ui-angular}, \texttt{@ui5/genui-collab}, \texttt{@ui5/ocr-client}, and theming packages: intentionally small manifests centered on \texttt{tslib} plus Angular peer contracts.
+    \item \path{mcp-server}: \texttt{express} plus TypeScript toolchain dependencies.
+    \item \path{libs/openai-server}: no runtime dependency block is declared in its local manifest; the package currently carries TypeScript execution tooling only.
 \end{itemize}
 
 \newpage
+\section{Training Domain}
 
-% Service Index
-\section{Service Index}
-
-\begin{longtable}{@{}p{4.5cm}p{2cm}p{3cm}p{3.5cm}@{}}
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
 \toprule
-\textbf{Service} & \textbf{Language} & \textbf{License} & \textbf{SPDX-ID} \\
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Domain root & \path{src/training} \\
+Isolated software units & 5 \\
+Observed source-like files & 264 \\
+Primary runtime style & Python training and data-generation code with one Angular UI and root orchestration metadata \\
+Manifest evidence & \path{pyproject.toml}, \path{requirements.txt}, \path{package.json}, \path{Dockerfile}, \path{docker-compose.yml}, \path{Makefile} \\
+\bottomrule
+\end{tabular}
+
+\subsection{training-main (root orchestration layer)}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/training} \\
+Role & Root packaging and orchestration layer for the training estate, covering pipeline, model optimizer, benchmarks, data products, and developer quality gates \\
+Primary manifests & \path{pyproject.toml}, \path{Makefile}, \path{docker-compose.yml} \\
+Observed files & 231 total, 137 source-like \\
+Packaging model & Setuptools project with optional dependency groups rather than a single flattened runtime dependency list \\
+Declared direct libraries & 1 HANA extra and 9 development extra dependencies \\
+\bottomrule
+\end{tabular}
+
+\textbf{Root dependency groups.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{HANA connectivity extra}: \texttt{hdbcli}.
+    \item \textbf{Development and verification extra}: \texttt{pytest}, \texttt{pytest-cov}, \texttt{httpx}, \texttt{fastapi}, \texttt{pydantic}, \texttt{ruff}, \texttt{mypy}, \texttt{pandas}, \texttt{openpyxl}.
+\end{itemize}
+
+\textbf{Root local assets.}
+\begin{itemize}[leftmargin=*]
+    \item \path{data/} and \path{data_products/}: curated training assets and domain product YAMLs.
+    \item \path{benchmarks/}: benchmark and evaluation scripts for the training estate.
+    \item \path{tests/}: domain-wide tests spanning generated training data and team context logic.
+\end{itemize}
+
+\subsection{pipeline}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/training/pipeline} \\
+Role & Text-to-SQL extraction, template parsing, pair expansion, Spider formatting, and HANA upload pipeline \\
+Primary manifests & \path{requirements.txt}, \path{preconvert/requirements.txt}, \path{Makefile} \\
+Observed files & 45 total, 18 source-like \\
+Packaging model & Python CLI package with dedicated pre-conversion helper requirements \\
+Declared direct libraries & 5 main requirements and 2 pre-convert requirements \\
+\bottomrule
+\end{tabular}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Data transport and storage}: \texttt{hdbcli}.
+    \item \textbf{Tabular processing}: \texttt{pandas}, \texttt{openpyxl}.
+    \item \textbf{Verification}: \texttt{pytest}, \texttt{pytest-cov}.
+    \item \textbf{Pre-convert helper environment}: \texttt{openpyxl}, \texttt{pytest}.
+\end{itemize}
+
+\textbf{Key local modules.}
+\begin{itemize}[leftmargin=*]
+    \item \path{schema_extractor.py}, \path{schema_registry.py}, and \path{hana_sql_builder.py}: schema and query definition layer.
+    \item \path{template_parser.py}, \path{template_expander.py}, and \path{team_resolver.py}: data generation logic.
+    \item \path{spider_formatter.py} and \path{json_emitter.py}: export logic for downstream training formats.
+\end{itemize}
+
+\subsection{schema\_pipeline}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/training/schema_pipeline} \\
+Role & Code-only schema data generation and specialization helpers used by the training estate \\
+Primary manifests & No dedicated local manifest; inherits environment from the root training package \\
+Observed files & 13 total, 9 source-like \\
+Packaging model & Internal Python module set without a standalone build descriptor \\
+Declared direct libraries & None locally declared \\
+\bottomrule
+\end{tabular}
+
+\textbf{Local module inventory.}
+\begin{itemize}[leftmargin=*]
+    \item \path{data_generator.py}, \path{prepare_training_data.py}: synthetic data generation and preparation flow.
+    \item \path{real_schema_parser.py}, \path{semantic_alias_extractor.py}, \path{table_selector.py}: schema understanding helpers.
+    \item \path{massive_term_generator.py}, \path{specialist_data_generator.py}, \path{sql_validator.py}: specialization and validation pipeline steps.
+\end{itemize}
+
+\textbf{SBOM note.} This is an isolated code unit in the repository structure, but it is not yet packaged as a standalone artifact with its own dependency manifest.
+
+\subsection{nvidia-modelopt}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/training/nvidia-modelopt} \\
+Role & Model optimization and serving environment for quantization, pruning, export, and OpenAI-compatible inference surfaces \\
+Primary manifests & \path{requirements.txt}, \path{Dockerfile} \\
+Observed files & 81 total, 73 source-like \\
+Packaging model & Python optimization stack with accompanying API and runtime scripts \\
+Declared direct libraries & 13 runtime requirements \\
+\bottomrule
+\end{tabular}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Model runtime}: \texttt{torch}, \texttt{transformers}, \texttt{accelerate}, \texttt{safetensors}, \texttt{tokenizers}, \texttt{sentencepiece}.
+    \item \textbf{Data and model exchange}: \texttt{datasets}, \texttt{huggingface-hub}, \texttt{numpy}, \texttt{pyyaml}, \texttt{tqdm}.
+    \item \textbf{CLI and verification}: \texttt{click}, \texttt{pytest}.
+\end{itemize}
+
+\textbf{Local module and asset boundary.}
+\begin{itemize}[leftmargin=*]
+    \item \path{api/}: the API application served by \path{server.py}.
+    \item \path{configs/}: optimization configuration profiles.
+    \item \path{scripts/}: verification, setup, and quantization helpers.
+    \item \path{models/} and local databases: runtime state and experiment data anchored to this folder.
+\end{itemize}
+
+\subsection{nvidia-modelopt/ui}
+
+\begin{tabular}{@{}P{4.2cm}P{9.8cm}@{}}
+\toprule
+\textbf{Profile} & \textbf{Value} \\
+\midrule
+Path & \path{src/training/nvidia-modelopt/ui} \\
+Role & Angular front end for the model optimization environment \\
+Primary manifests & \path{package.json} \\
+Observed files & 29 total, 27 source-like \\
+Packaging model & Angular 18 SPA nested under the model optimization product \\
+Declared direct libraries & 13 runtime dependencies and 17 development dependencies \\
+\bottomrule
+\end{tabular}
+
+\textbf{Direct library stack.}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Angular platform}: \texttt{@angular/animations}, \texttt{@angular/common}, \texttt{@angular/compiler}, \texttt{@angular/core}, \texttt{@angular/forms}, \texttt{@angular/router}, \texttt{@angular/platform-browser}, \texttt{@angular/platform-browser-dynamic}.
+    \item \textbf{UI kit}: \texttt{@angular/material}, \texttt{@angular/cdk}.
+    \item \textbf{Runtime utilities}: \texttt{rxjs}, \texttt{tslib}, \texttt{zone.js}.
+    \item \textbf{Build and quality tools}: Angular CLI and build tooling, ESLint, Jasmine, Karma, Prettier, TypeScript.
+\end{itemize}
+
+\newpage
+\section{Detailed Codebase Topology}
+
+This section deepens the SBOM from manifest-level evidence to codebase-level structure. Each isolated software unit is summarized by its dominant folders, entrypoints, and the implementation files that carry most of the logic.
+
+\subsection{Intelligence Topology}
+
+\subsubsection{ai-core-pal}
+
+\textbf{Code shape.} This is a medium-sized Python service organized around HANA PAL execution and MCP exposure.
+\begin{itemize}[leftmargin=*]
+    \item \path{agent/} holds the PAL orchestration and HANA integration layer.
+    \item \path{mcp_server/} exposes the tool contract and server entrypoint.
+    \item \path{scripts/} contains HANA schema and demo-data bootstrap SQL plus helper loading scripts.
+    \item \path{deploy/}, \path{docs/}, and \path{tests/} round out deployment, protocol reference, and verification.
+    \item The biggest code concentration is in \path{agent/hana_client.py}, which makes this folder substantially more than a thin wrapper service.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{agent/hana_client.py} (1,050 lines): HANA Cloud connectivity, PAL procedure access, and data IO.
+    \item \path{mcp_server/btp_pal_mcp_server.py} (569 lines): MCP tool server and request handling surface.
+    \item \path{agent/aicore_pal_agent.py} (514 lines): PAL-oriented orchestration and tool dispatch logic.
+    \item \path{scripts/populate_data.sql} (303 lines): sample-data seed set for PAL workflows.
+    \item \path{scripts/create_tables.sql} (164 lines): DDL bootstrap for the HANA-side schema.
+\end{itemize}
+
+\subsubsection{ocr}
+
+\textbf{Code shape.} The OCR unit is a mostly flat Python package with heavy core modules at the root and a dedicated \path{tests/} tree.
+\begin{itemize}[leftmargin=*]
+    \item Root modules implement OCR orchestration, PDF conversion, text extraction, preprocessing, postprocessing, metrics, and export.
+    \item \path{tests/} is substantial and mirrors the core modules with integration and service-level coverage.
+    \item Service entrypoints are \path{server.py} and \path{api.py}; the codebase is not split into subpackages because the functionality is concentrated into a few large modules.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{arabic_ocr_service.py} (1,286 lines): main OCR orchestration engine for Arabic and English processing.
+    \item \path{pdf_processor.py} (497 lines): PDF page extraction, conversion, and page-wise pipeline integration.
+    \item \path{server.py} (449 lines): FastAPI upload service, health endpoints, concurrency, and callback policy.
+    \item \path{exporters.py} (295 lines): output rendering and export formatting.
+    \item \path{text_extractor.py} (180 lines): extracted text handling and result shaping.
+    \item \path{api.py} (151 lines): API-facing OCR helpers and shared request flow.
+\end{itemize}
+
+\subsubsection{vllm-turboquant}
+
+\textbf{Code shape.} This is a launcher-sized unit with one Python runtime file plus deployment templates.
+\begin{itemize}[leftmargin=*]
+    \item \path{start-turboquant.py} is the effective runtime boundary.
+    \item The remaining files are deployment configuration for quantized serving scenarios.
+    \item The code relies on imported vLLM and TurboQuant packages rather than defining a broad internal module tree.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{start-turboquant.py} (73 lines): environment setup, quantization mode wiring, and OpenAI-compatible vLLM server launch.
+    \item \path{qwen35-35b-fp8-serving-template-l40s-turboquant.yaml}: deployment template for FP8/TurboQuant serving.
+    \item \path{Dockerfile.vllm-l40s-turboquant}: container packaging definition for this launcher.
+\end{itemize}
+
+\subsection{Data Topology}
+
+\subsubsection{langchain-integration-for-sap-hana-cloud-main}
+
+\textbf{Code shape.} This repository combines a distributable Python package with service sidecars and integration tests.
+\begin{itemize}[leftmargin=*]
+    \item \path{langchain_hana/} is the core library and contains vector store, graph, and chain integrations.
+    \item \path{sap_openai_server/} and \path{mcp_server/} expose the package through service interfaces.
+    \item \path{agent/} adds routing and orchestration helpers above the package boundary.
+    \item \path{tests/} is large and integration-heavy, especially around the vector store implementation.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{langchain_hana/vectorstores/hana_db.py} (1,192 lines): main vector store implementation for SAP HANA Cloud.
+    \item \path{sap_openai_server/server.py} (1,351 lines): OpenAI-compatible server surface over the integration package.
+    \item \path{mcp_server/server.py} (1,205 lines): MCP server exposing the HANA integration capabilities.
+    \item \path{langchain_hana/analytical.py} (702 lines): analytical workflow integration layer.
+    \item \path{agent/semantic_router.py} (524 lines): semantic routing and higher-level request dispatch.
+    \item \path{langchain_hana/graphs/hana_rdf_graph.py} (335 lines): knowledge graph integration support.
+\end{itemize}
+
+\subsubsection{odata-vocabularies-main}
+
+\textbf{Code shape.} This is both a specification repository and an operational codebase with connectors, generators, and servers.
+\begin{itemize}[leftmargin=*]
+    \item \path{vocabularies/} is the canonical content layer and dominates the repository by file count.
+    \item \path{lib/} contains generators, auditing, and health logic used to transform and serve vocabulary assets.
+    \item \path{connectors/}, \path{openai/}, \path{mcp_server/}, and \path{sap_openai_server/} turn the repository into a data-side runtime component.
+    \item \path{examples/}, \path{docs/}, and \path{tests/} support contributor and consumer workflows.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{mcp_server/server.py} (1,815 lines): primary MCP service surface for vocabulary and data access flows.
+    \item \path{lib/graphql_generator.py} (564 lines): GraphQL generation logic from vocabulary/source definitions.
+    \item \path{openai/chat_completions.py} (525 lines): OpenAI-style interaction layer over the repository.
+    \item \path{connectors/hana.py} (513 lines): SAP HANA connector implementation.
+    \item \path{scripts/generate_vocab_embeddings.py} (464 lines): embedding-generation workflow for vocabulary search.
+    \item \path{lib/audit.py} (454 lines): audit and trace logic for vocabulary operations.
+    \item \path{lib/health.py} (423 lines): health and readiness logic.
+    \item \path{connectors/hana_vector.py} (419 lines): vector-oriented HANA connector path.
+\end{itemize}
+
+\subsection{GenerativeUI AI Topology}
+
+\subsubsection{gateway/health}
+
+\textbf{Code shape.} This is a single-file FastAPI sidecar with no internal package decomposition.
+\begin{itemize}[leftmargin=*]
+    \item It exists to probe other services and summarize suite readiness.
+    \item The folder pairs \path{main.py} with a minimal \path{Dockerfile} and \path{requirements.txt}.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{main.py} (82 lines): defines the probe matrix, health endpoints, and aggregate status logic.
+\end{itemize}
+
+\subsubsection{training-webcomponents-ngx}
+
+\textbf{Code shape.} This is a full Nx workspace with one main Angular app, one E2E app, and a substantial Python API package.
+\begin{itemize}[leftmargin=*]
+    \item \path{apps/angular-shell/} is the main browser application and contains \path{components/}, \path{core/}, \path{guards/}, \path{interceptors/}, \path{services/}, \path{shared/}, and a large \path{pages/} directory.
+    \item \path{pages/} covers dashboard, pipeline, model optimizer, HANA explorer, data explorer, data cleaning, governance, lineage, PAL workbench, pair studio, RAG studio, prompt library, OCR, semantic search, and more.
+    \item \path{packages/api-server/} is a large FastAPI codebase with \path{src/}, \path{scripts/}, and \path{tests/}.
+    \item The repository is materially split between a TypeScript front end and a Python control/data API.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{packages/api-server/src/main.py} (2,135 lines): main API server, proxying, persistence, websocket, and orchestration surface.
+    \item \path{packages/api-server/src/personal_knowledge.py} (1,109 lines): personal knowledge and persistence logic.
+    \item \path{apps/angular-shell/src/app/components/shell/shell.component.ts} (937 lines): shell layout and primary UI composition.
+    \item \path{apps/angular-shell/src/app/pages/rag-studio/rag-studio.component.ts} (927 lines): RAG studio workflow UI.
+    \item \path{apps/angular-shell/src/app/services/mcp.service.ts} (796 lines): MCP client integration for the Angular shell.
+    \item \path{apps/angular-shell/src/app/pages/data-product-manager/data-product-manager.component.ts} (759 lines): data product management UI.
+    \item \path{packages/api-server/src/rag.py} (736 lines): RAG operations and backend orchestration.
+    \item \path{apps/angular-shell/src/app/pages/chat/chat.component.ts} (675 lines): OpenAI-compatible chat page and client flow.
+\end{itemize}
+
+\subsubsection{ui5-webcomponents-ngx-main}
+
+\textbf{Code shape.} This is the largest codebase in the SBOM and functions as a multi-app, multi-library Nx workspace.
+\begin{itemize}[leftmargin=*]
+    \item \path{libs/} is the dominant code area with 974 source-like files and houses wrapper, transformer, AG-UI, generative UI, governance, collaboration, OCR client, and theming libraries.
+    \item \path{apps/workspace/} is the main runtime application; \path{apps/documentation/} provides docs and samples; \path{apps/workspace-e2e/} supports end-to-end verification.
+    \item \path{mcp-server/} and \path{libs/openai-server/} are local service packages that make the workspace operational beyond component wrapping.
+    \item \path{scripts/} contains runtime preflight, readiness, harness, audit, tree-shaking, and release automation.
+    \item The workspace also contains deep generated wrapper areas such as \path{libs/ui5-angular/main}, \path{fiori}, \path{ai}, \path{icons}, \path{schematics}, and \path{utils}.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{libs/openai-server/src/server.ts} (1,080 lines): OpenAI-compatible server used by the workspace.
+    \item \path{libs/genui-collab/src/lib/services/collaboration.service.ts} (1,022 lines): collaboration runtime for shared workspaces.
+    \item \path{libs/genui-streaming/src/lib/services/streaming-ui.service.ts} (986 lines): progressive streaming UI materialization.
+    \item \path{libs/ag-ui-angular/src/lib/joule-chat/joule-chat.component.ts} (811 lines): AG-UI/Joule chat integration component.
+    \item \path{libs/genui-governance/src/lib/services/governance.service.ts} (760 lines): policy and action-governance service.
+    \item \path{mcp-server/src/server.ts} (713 lines): local MCP server for the workspace.
+    \item \path{libs/genui-governance/src/lib/services/audit.service.ts} (700 lines): audit and trace logic for governed actions.
+    \item \path{libs/genui-collab/src/lib/crdt/index.ts} (676 lines): CRDT implementation for collaboration state.
+\end{itemize}
+
+\subsection{Training Topology}
+
+\subsubsection{training-main (root orchestration layer)}
+
+\textbf{Code shape.} The root training package is an orchestration envelope around several sub-systems rather than a single flat service.
+\begin{itemize}[leftmargin=*]
+    \item \path{schema_pipeline/} is the heaviest pure-code area and contains the synthetic data and specialization logic.
+    \item \path{nvidia-modelopt/} and \path{pipeline/} are the two main operational subproducts.
+    \item \path{data_products/}, \path{data/}, \path{benchmarks/}, and \path{scripts/} provide the asset, benchmark, and utility layers that support the training estate.
+    \item The root package should be read as a composed codebase, not a single service directory.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{schema_pipeline/massive_term_generator.py} (2,913 lines): largest single implementation file in the training estate and the core term-generation engine.
+    \item \path{schema_pipeline/specialist_data_generator.py} (884 lines): specialist training data generation flow.
+    \item \path{schema_pipeline/data_generator.py} (791 lines): general data generation pipeline.
+    \item \path{benchmarks/evaluate_specialist.py} (695 lines): evaluation harness for specialist outputs.
+    \item \path{scripts/xlsx_to_odps.py} (475 lines): spreadsheet-to-ODPS conversion utility.
+    \item \path{scripts/generate_training_data.py} (288 lines): root-level training data generation helper.
+    \item \path{scripts/convert_xlsx_to_csv.py} (148 lines): spreadsheet normalization utility.
+\end{itemize}
+
+\subsubsection{pipeline}
+
+\textbf{Code shape.} This is a compact Python CLI package with a clear command-oriented layout.
+\begin{itemize}[leftmargin=*]
+    \item \path{main.py} is the entrypoint for extract, parse, expand, format, and upload commands.
+    \item Supporting modules focus on HANA connectivity, schema tracking, template expansion, and Spider-format output.
+    \item \path{preconvert/} contains a small helper environment for pre-processing inputs.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{team_resolver.py} (288 lines): team and domain resolution for generated data.
+    \item \path{hana_client.py} (224 lines): HANA upload and connectivity layer.
+    \item \path{main.py} (155 lines): CLI command dispatch and execution entrypoint.
+    \item \path{team_context.py} (141 lines): team context resolution.
+    \item \path{template_expander.py} (124 lines): question/SQL pair expansion.
+    \item \path{hana_sql_builder.py} (117 lines): SQL assembly helpers.
+    \item \path{schema_registry.py} (90 lines): schema bookkeeping.
+\end{itemize}
+
+\subsubsection{schema\_pipeline}
+
+\textbf{Code shape.} This is a focused internal Python module set for schema-aware training data generation.
+\begin{itemize}[leftmargin=*]
+    \item The package is flat and file-centric rather than package-nested.
+    \item Most logic lives in large generator modules and validators.
+    \item It is code-heavy despite lacking its own manifest.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{massive_term_generator.py} (2,913 lines): large-scale term generation and enrichment.
+    \item \path{specialist_data_generator.py} (884 lines): specialist dataset production flow.
+    \item \path{data_generator.py} (791 lines): generic synthetic data generation pipeline.
+    \item \path{prepare_training_data.py} (516 lines): assembly and normalization of downstream training assets.
+    \item \path{semantic_alias_extractor.py} (472 lines): alias extraction and semantic normalization.
+    \item \path{real_schema_parser.py} (386 lines): real schema parsing utilities.
+    \item \path{table_selector.py} (383 lines): table-selection heuristics.
+    \item \path{sql_validator.py} (378 lines): SQL validation and quality checks.
+\end{itemize}
+
+\subsubsection{nvidia-modelopt}
+
+\textbf{Code shape.} This software unit has three major code surfaces: \path{api/}, \path{scripts/}, and the nested \path{ui/}.
+\begin{itemize}[leftmargin=*]
+    \item \path{api/} contains the FastAPI microservice, auth, metrics, job execution, model registry, and OpenAI-compatible routing.
+    \item \path{scripts/} is training- and optimization-heavy and contains quantization, pruning, and training flows for multiple model families.
+    \item \path{configs/} provides deployment and optimization profiles, while \path{tests/} covers the main service behavior.
+    \item \path{server.py} launches the API application in development or production mode.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{api/main.py} (325 lines): FastAPI microservice entrypoint, lifecycle, CORS, and middleware wiring.
+    \item \path{api/openai_compat.py} (426 lines): OpenAI-compatible API surface over the optimizer service.
+    \item \path{scripts/train_qwen3.py} (562 lines): main Qwen3 training flow.
+    \item \path{scripts/quantize_qwen.py} (515 lines): quantization workflow entrypoint.
+    \item \path{scripts/model_registry.py} (473 lines): model registry and artifact tracking logic.
+    \item \path{scripts/train_gemma4_arabic.py} (407 lines): Gemma Arabic training path.
+    \item \path{scripts/prune_qwen.py} (402 lines): pruning workflow implementation.
+    \item \path{server.py} (223 lines): CLI launcher for the service runtime.
+\end{itemize}
+
+\subsubsection{nvidia-modelopt/ui}
+
+\textbf{Code shape.} This is an Angular application nested under the optimizer service.
+\begin{itemize}[leftmargin=*]
+    \item \path{src/app/} contains dashboard, models, jobs, chat, and service layers.
+    \item The UI is organized conventionally as feature components plus a shared API service.
+    \item It complements the Python API rather than standing alone.
+\end{itemize}
+
+\textbf{Key implementation files.}
+\begin{itemize}[leftmargin=*]
+    \item \path{src/app/dashboard/dashboard.component.ts} (386 lines): operational dashboard and status view.
+    \item \path{src/app/models/models.component.ts} (260 lines): model browser and model-state UI.
+    \item \path{src/app/jobs/jobs.component.ts} (226 lines): optimization job management UI.
+    \item \path{src/app/chat/chat.component.ts} (194 lines): chat/inference interaction surface.
+    \item \path{src/app/app.component.ts} (161 lines): root UI composition.
+    \item \path{src/app/services/api.service.ts} (146 lines): API client service connecting the SPA to the backend.
+\end{itemize}
+
+\newpage
+\section{Per-Unit Code Inventory Matrix}
+
+This matrix is the codebase-oriented companion to the earlier SBOM sections. Each table records the concrete execution surfaces, major internal folders, and the files that hold most of the logic for the isolated software unit.
+
+\subsection{Intelligence Units}
+
+\subsubsection{ai-core-pal}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{mcp_server/btp_pal_mcp_server.py}; \path{agent/aicore_pal_agent.py}; \path{Makefile}; \path{Dockerfile}; README launch path \path{python -m mcp_server.btp_pal_mcp_server} \\
+Major folders & \path{agent/} (3 source files, PAL and HANA logic); \path{mcp_server/} (2, MCP transport); \path{scripts/} (4, SQL bootstrap and loaders); \path{tests/} (4, server and algorithm verification); \path{deploy/} (3, Kyma packaging); \path{docs/} (4, API and architecture notes) \\
+Key source files & \path{agent/hana_client.py} 1,050 LOC; \path{mcp_server/btp_pal_mcp_server.py} 569; \path{agent/aicore_pal_agent.py} 514; \path{scripts/populate_data.sql} 303; \path{tests/test_mcp_server.py} 229; \path{tests/test_pal_algorithms.py} 202 \\
+Operational emphasis & HANA PAL procedure access, MCP tool exposure, seed-table creation, local and Kyma deployment, PAL integration tests \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{ocr}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{server.py}; \path{api.py}; module launch path described in \path{server.py} via Uvicorn; \path{Dockerfile}; \path{requirements.txt}; \path{requirements-service.txt} \\
+Major folders & Root package holds almost all runtime logic as flat modules; \path{tests/} (8 source files) mirrors engine, PDF, and service behavior; no deep internal package hierarchy, because the code is concentrated into large implementation files \\
+Key source files & \path{arabic_ocr_service.py} 1,286 LOC; \path{pdf_processor.py} 497; \path{server.py} 449; \path{exporters.py} 295; \path{text_extractor.py} 180; \path{api.py} 151; \path{table_detector.py}; \path{preprocessing.py}; \path{postprocessing.py} \\
+Operational emphasis & OCR orchestration, PDF/image ingestion, Arabic shaping and bidi handling, callback-safe service mode, export formatting, broad test coverage including service and integration suites \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{vllm-turboquant}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{start-turboquant.py}; \path{Dockerfile.vllm-l40s-turboquant}; \path{qwen35-35b-fp8-serving-template-l40s-turboquant.yaml} \\
+Major folders & Root launch artifacts plus \path{models/} placeholder storage; the code surface is intentionally narrow and delegates most behavior to imported vLLM and TurboQuant packages \\
+Key source files & \path{start-turboquant.py} 73 LOC, responsible for environment normalization, quantization flags, argument assembly, and OpenAI-compatible server start \\
+Operational emphasis & Quantized serving bootstrap, env-driven model/server configuration, FP8/AWQ mode selection, deployment packaging rather than broad internal business logic \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsection{Data Units}
+
+\subsubsection{langchain-integration-for-sap-hana-cloud-main}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{pyproject.toml} with Poetry build backend; \path{sap_openai_server/server.py}; \path{mcp_server/server.py}; \path{Makefile}; \path{Dockerfile}; \path{deploy/aicore/Dockerfile} \\
+Major folders & \path{langchain_hana/} (16 source files, package core); \path{tests/} (15, integration-heavy); \path{deploy/} (5, rollout assets); \path{agent/} (3, routing helpers); \path{sap_openai_server/} (3, OpenAI surface); \path{mcp_server/} (1, MCP surface); \path{data_products/} and \path{scripts/} (supporting artifacts) \\
+Key source files & \path{sap_openai_server/server.py} 1,351 LOC; \path{mcp_server/server.py} 1,205; \path{langchain_hana/vectorstores/hana_db.py} 1,192; \path{langchain_hana/analytical.py} 702; \path{agent/semantic_router.py} 524; \path{langchain_hana/graphs/hana_rdf_graph.py} 335 \\
+Operational emphasis & Library packaging plus two runtime server surfaces, vector-store logic, graph support, analytical flows, and heavy integration testing against HANA behavior \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{odata-vocabularies-main}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{package.json} scripts \path{build}, \path{pages}, and \path{serve-pages}; \path{mcp_server/server.py}; \path{Dockerfile}; \path{deploy/aicore/Dockerfile} \\
+Major folders & \path{vocabularies/} (36 source-like files, canonical content); \path{examples/} (15); \path{docs/} (8); \path{tests/} (8); \path{lib/} (7, generators and health/audit code); \path{deploy/} (5); \path{openai/} (5); \path{connectors/} (4); \path{agent/}, \path{data_products/}, \path{sap_openai_server/} as secondary runtime surfaces \\
+Key source files & \path{mcp_server/server.py} 1,815 LOC; \path{lib/graphql_generator.py} 564; \path{openai/chat_completions.py} 525; \path{connectors/hana.py} 513; \path{scripts/generate_vocab_embeddings.py} 464; \path{lib/audit.py} 454; \path{lib/health.py} 423; \path{connectors/hana_vector.py} 419 \\
+Operational emphasis & Vocabulary specification generation, HANA/vector integration, MCP and OpenAI interaction layers, embedding generation, audit and health services, plus contributor tooling \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsection{GenerativeUI AI Units}
+
+\subsubsection{gateway/health}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{main.py}; \path{Dockerfile}; \path{requirements.txt} \\
+Major folders & No deeper folder hierarchy; single runtime file plus container and requirements metadata \\
+Key source files & \path{main.py} 82 LOC covering probe registry, aggregate health calculation, and details endpoint \\
+Operational emphasis & Readiness summarization for UI5 web, training web, AI Fabric, MCP, and optional PAL surfaces \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{training-webcomponents-ngx}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & Root Nx scripts \path{start}, \path{build}, \path{lint}, \path{test}; Angular app under \path{apps/angular-shell}; API server under \path{packages/api-server/src/main.py}; ops scripts \path{ops:migrate}, \path{ops:backup}, \path{ops:restore} \\
+Major folders & \path{apps/} (191 source-like files, Angular shell and E2E app); \path{packages/} (23, Python API); \path{deploy/} (5); Angular shell subareas include \path{components/}, \path{core/}, \path{guards/}, \path{interceptors/}, \path{services/}, \path{shared/}, and a large \path{pages/} tree spanning dashboard, pipeline, model optimizer, HANA explorer, data explorer, OCR, governance, lineage, PAL workbench, pair studio, RAG studio, semantic search, vocab search, and workspace flows \\
+Key source files & \path{packages/api-server/src/main.py} 2,135 LOC; \path{packages/api-server/src/personal_knowledge.py} 1,109; \path{apps/angular-shell/src/app/components/shell/shell.component.ts} 937; \path{apps/angular-shell/src/app/pages/rag-studio/rag-studio.component.ts} 927; \path{apps/angular-shell/src/app/services/mcp.service.ts} 796; \path{apps/angular-shell/src/app/pages/data-product-manager/data-product-manager.component.ts} 759; \path{packages/api-server/src/rag.py} 736; \path{apps/angular-shell/src/app/pages/chat/chat.component.ts} 675 \\
+Operational emphasis & Full training console UI, large Python proxy/orchestration backend, MCP-integrated client flows, data-product management, RAG, OCR, governance, and multi-page operational workspace behavior \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{ui5-webcomponents-ngx-main}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & Root scripts \path{start:workspace}, \path{start:mcp}, \path{start:openai}, \path{start:all}, \path{build}, \path{build:prod}, \path{harness:workspace}, \path{harness:ci}; runtime apps in \path{apps/workspace/} and \path{apps/documentation/}; services in \path{mcp-server/src/server.ts} and \path{libs/openai-server/src/server.ts} \\
+Major folders & \path{libs/} (974 source-like files, main library estate); \path{apps/} (294, workspace, documentation, e2e); \path{scripts/} (19, harness and release automation); \path{docs/} (8); \path{mcp-server/} (4); \path{agent/} (3); \path{data_products/} (2). Within \path{libs/}, major families include \path{ui5-angular/} with \path{main}, \path{fiori}, \path{ai}, \path{icons}, \path{schematics}, \path{utils}; plus \path{ag-ui-angular}, \path{genui-renderer}, \path{genui-streaming}, \path{genui-governance}, \path{genui-collab}, \path{transformer}, \path{ui5-schema-parser}, \path{webcomponents-nx}, and \path{openai-server} \\
+Key source files & \path{libs/openai-server/src/server.ts} 1,080 LOC; \path{libs/genui-collab/src/lib/services/collaboration.service.ts} 1,022; \path{libs/genui-streaming/src/lib/services/streaming-ui.service.ts} 986; \path{libs/ag-ui-angular/src/lib/joule-chat/joule-chat.component.ts} 811; \path{libs/genui-governance/src/lib/services/governance.service.ts} 760; \path{mcp-server/src/server.ts} 713; \path{libs/genui-governance/src/lib/services/audit.service.ts} 700; \path{libs/genui-collab/src/lib/crdt/index.ts} 676 \\
+Operational emphasis & Largest monorepo in the system: publishable UI5 Angular wrappers, generative UI runtime libraries, collaboration and governance layers, workspace and documentation apps, plus MCP and OpenAI-compatible sidecars \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsection{Training Units}
+
+\subsubsection{training-main (root orchestration layer)}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{pyproject.toml} with setuptools build backend; \path{Makefile}; \path{docker-compose.yml}; root scripts under \path{scripts/}; benchmarks under \path{benchmarks/} \\
+Major folders & \path{nvidia-modelopt/} (73 source-like files); \path{pipeline/} (18); \path{data_products/} (16 YAML/data artifacts); \path{schema_pipeline/} (9 large Python generators); \path{data/} (8 support assets); \path{benchmarks/} (4); \path{scripts/} (3); \path{tests/} (3) \\
+Key source files & \path{schema_pipeline/massive_term_generator.py} 2,913 LOC; \path{schema_pipeline/specialist_data_generator.py} 884; \path{schema_pipeline/data_generator.py} 791; \path{benchmarks/evaluate_specialist.py} 695; \path{scripts/xlsx_to_odps.py} 475; \path{scripts/generate_training_data.py} 288; \path{scripts/convert_xlsx_to_csv.py} 148 \\
+Operational emphasis & Root coordination layer for generator code, model optimization, datasets, benchmarks, and utility conversion scripts rather than one single deployable runtime \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{pipeline}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{main.py} CLI entrypoint; \path{Makefile}; \path{requirements.txt}; \path{preconvert/requirements.txt} \\
+Major folders & Root Python modules for schema extraction, template parsing, team resolution, SQL formatting, and upload; \path{preconvert/} (2 helper source files); \path{tests/} (2); \path{output/} generated results \\
+Key source files & \path{team_resolver.py} 288 LOC; \path{hana_client.py} 224; \path{tests/test_pipeline.py} 216; \path{main.py} 155; \path{team_context.py} 141; \path{template_expander.py} 124; \path{hana_sql_builder.py} 117; \path{schema_registry.py} 90 \\
+Operational emphasis & Text-to-SQL CLI pipeline, HANA upload, Spider-format output, domain/team-aware expansion, and schema bookkeeping \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{schema\_pipeline}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & No local manifest or launcher file; executed as part of the wider training estate through root scripts and module usage \\
+Major folders & Flat root of generator modules plus \path{output/} artifact area; no internal package nesting, but each file is large and functionally distinct \\
+Key source files & \path{massive_term_generator.py} 2,913 LOC; \path{specialist_data_generator.py} 884; \path{data_generator.py} 791; \path{prepare_training_data.py} 516; \path{semantic_alias_extractor.py} 472; \path{real_schema_parser.py} 386; \path{table_selector.py} 383; \path{sql_validator.py} 378 \\
+Operational emphasis & Bulk semantic term generation, specialist dataset creation, schema parsing, table selection, and SQL quality validation \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{nvidia-modelopt}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{server.py}; \path{api/main.py}; \path{Dockerfile}; \path{requirements.txt}; training and quantization scripts under \path{scripts/} \\
+Major folders & \path{ui/} (27 source-like files, nested Angular app); \path{scripts/} (15, quantization/pruning/training); \path{api/} (10, microservice surface); \path{configs/} (7, optimization profiles); \path{tests/} (4); \path{models/} runtime storage \\
+Key source files & \path{scripts/train_qwen3.py} 562 LOC; \path{scripts/quantize_qwen.py} 515; \path{scripts/model_registry.py} 473; \path{api/openai_compat.py} 426; \path{scripts/train_gemma4_arabic.py} 407; \path{scripts/prune_qwen.py} 402; \path{api/main.py} 325; \path{server.py} 223 \\
+Operational emphasis & GPU-aware model optimization, quantization and pruning workflows, registry logic, OpenAI-compatible service surface, and local operational launcher \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\subsubsection{nvidia-modelopt/ui}
+\small
+\begin{tabular}{@{}P{3.8cm}P{10cm}@{}}
+\toprule
+\textbf{Artifact} & \textbf{Detail} \\
+\midrule
+Entrypoints and build surfaces & \path{package.json} scripts \path{start}, \path{build}, \path{build:prod}, \path{test}, \path{lint}, \path{serve:ssr}; root Angular app under \path{src/app/} \\
+Major folders & \path{src/app/} feature areas for dashboard, models, jobs, chat, and services; shared styling in \path{src/styles.scss}; unit specs colocated with components \\
+Key source files & \path{src/app/dashboard/dashboard.component.ts} 386 LOC; \path{src/app/models/models.component.ts} 260; \path{src/app/jobs/jobs.component.ts} 226; \path{src/app/chat/chat.component.ts} 194; \path{src/app/app.component.ts} 161; \path{src/app/services/api.service.ts} 146 \\
+Operational emphasis & Browser-facing dashboard for model optimization state, job management, model catalog access, and chat/inference interaction over the optimizer API \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\newpage
+\section{Selected Source File Catalog}
+
+This appendix lists concrete implementation files across the isolated software units. The goal is to anchor the SBOM in real code artifacts rather than only module and manifest summaries.
+
+\small
+\begin{longtable}{@{}P{2.5cm}P{5.6cm}P{1.1cm}P{4.1cm}@{}}
+\toprule
+\textbf{Unit} & \textbf{File} & \textbf{LOC} & \textbf{Role} \\
 \midrule
 \endhead
-ai-core-streaming & Zig & Apache-2.0 & Apache-2.0 \\
-ai-core-pal & Zig/Mojo & Apache-2.0 & Apache-2.0 \\
-vllm-main & Python/Zig & Apache-2.0 & Apache-2.0 \\
-generative-ai-toolkit & Python & Apache-2.0 & Apache-2.0 \\
-mangle-query-service & Go & Apache-2.0 & Apache-2.0 \\
-cap-llm-plugin & TypeScript & Apache-2.0 + MIT & Apache-2.0 AND MIT \\
-ai-sdk-js & TypeScript & Apache-2.0 & Apache-2.0 \\
-elasticsearch-main & Java & Elastic License 2.0 & LicenseRef-Elastic-2.0 \\
-langchain-integration & Python & Apache-2.0 & Apache-2.0 \\
-odata-vocabularies & Python & Apache-2.0 & Apache-2.0 \\
-ui5-webcomponents-ngx & TypeScript & Apache-2.0 & Apache-2.0 \\
-world-monitor & Python & MIT & MIT \\
-data-cleaning-copilot & Python & Apache-2.0 & Apache-2.0 \\
+ai-core-pal & \path{agent/hana_client.py} & 1050 & HANA Cloud and PAL procedure access layer \\
+ai-core-pal & \path{mcp_server/btp_pal_mcp_server.py} & 569 & MCP server and tool exposure \\
+ai-core-pal & \path{agent/aicore_pal_agent.py} & 514 & PAL orchestration and agent logic \\
+ai-core-pal & \path{scripts/populate_data.sql} & 303 & seed dataset for PAL scenarios \\
+ai-core-pal & \path{tests/test_mcp_server.py} & 229 & server-level verification suite \\
+ocr & \path{arabic_ocr_service.py} & 1286 & primary OCR orchestration engine \\
+ocr & \path{pdf_processor.py} & 497 & PDF conversion and page extraction \\
+ocr & \path{server.py} & 449 & FastAPI upload and health service \\
+ocr & \path{exporters.py} & 295 & OCR export formatting and serialization \\
+ocr & \path{tests/test_server.py} & 549 & API and service behavior tests \\
+vllm-turboquant & \path{start-turboquant.py} & 73 & quantized vLLM launcher \\
+langchain-hana & \path{sap_openai_server/server.py} & 1351 & OpenAI-compatible service layer \\
+langchain-hana & \path{mcp_server/server.py} & 1205 & MCP service layer \\
+langchain-hana & \path{langchain_hana/vectorstores/hana_db.py} & 1192 & SAP HANA vector store implementation \\
+langchain-hana & \path{langchain_hana/analytical.py} & 702 & analytical workflow integration \\
+langchain-hana & \path{agent/semantic_router.py} & 524 & semantic request routing \\
+odata-vocabularies & \path{mcp_server/server.py} & 1815 & MCP-facing runtime surface \\
+odata-vocabularies & \path{lib/graphql_generator.py} & 564 & GraphQL generator \\
+odata-vocabularies & \path{connectors/hana.py} & 513 & HANA connector \\
+odata-vocabularies & \path{openai/chat_completions.py} & 525 & OpenAI chat routing layer \\
+odata-vocabularies & \path{scripts/generate_vocab_embeddings.py} & 464 & embedding generation workflow \\
+gateway-health & \path{main.py} & 82 & suite health aggregation sidecar \\
+training-webcomponents-ngx & \path{packages/api-server/src/main.py} & 2135 & main FastAPI backend and proxy layer \\
+training-webcomponents-ngx & \path{packages/api-server/src/personal_knowledge.py} & 1109 & personal knowledge persistence logic \\
+training-webcomponents-ngx & \path{packages/api-server/src/rag.py} & 736 & retrieval-augmented backend workflow \\
+training-webcomponents-ngx & \path{apps/angular-shell/src/app/components/shell/shell.component.ts} & 937 & primary Angular shell composition \\
+training-webcomponents-ngx & \path{apps/angular-shell/src/app/pages/rag-studio/rag-studio.component.ts} & 927 & RAG studio UI \\
+training-webcomponents-ngx & \path{apps/angular-shell/src/app/services/mcp.service.ts} & 796 & MCP client integration \\
+ui5-webcomponents-ngx-main & \path{libs/openai-server/src/server.ts} & 1080 & OpenAI-compatible server for workspace flows \\
+ui5-webcomponents-ngx-main & \path{libs/genui-collab/src/lib/services/collaboration.service.ts} & 1028 & collaboration runtime \\
+ui5-webcomponents-ngx-main & \path{libs/genui-streaming/src/lib/services/streaming-ui.service.ts} & 986 & streaming UI materialization \\
+ui5-webcomponents-ngx-main & \path{libs/genui-governance/src/lib/services/governance.service.ts} & 760 & policy and action governance \\
+ui5-webcomponents-ngx-main & \path{mcp-server/src/server.ts} & 713 & workspace MCP service \\
+ui5-webcomponents-ngx-main & \path{apps/workspace/src/app/app.component.ts} & 387 & workspace application root component \\
+ui5-webcomponents-ngx-main & \path{apps/workspace/src/app/core/workspace.service.ts} & 258 & workspace core state service \\
+ui5-webcomponents-ngx-main & \path{libs/genui-renderer/src/lib/components/genui-outlet.component.ts} & 197 & schema outlet renderer component \\
+training-main & \path{schema_pipeline/massive_term_generator.py} & 2913 & largest term-generation engine \\
+training-main & \path{schema_pipeline/specialist_data_generator.py} & 884 & specialist dataset generation \\
+training-main & \path{schema_pipeline/data_generator.py} & 791 & generic data generation \\
+training-main & \path{benchmarks/evaluate_specialist.py} & 695 & benchmark evaluation harness \\
+training-main & \path{scripts/xlsx_to_odps.py} & 475 & spreadsheet-to-ODPS conversion \\
+pipeline & \path{team_resolver.py} & 288 & domain and team resolution logic \\
+pipeline & \path{hana_client.py} & 224 & HANA upload and connectivity \\
+pipeline & \path{main.py} & 155 & CLI command entrypoint \\
+pipeline & \path{template_expander.py} & 124 & question and SQL expansion \\
+schema\_pipeline & \path{massive_term_generator.py} & 2913 & large-scale term generation \\
+schema\_pipeline & \path{specialist_data_generator.py} & 884 & specialist data production \\
+schema\_pipeline & \path{data_generator.py} & 791 & generic generation core \\
+schema\_pipeline & \path{sql_validator.py} & 378 & SQL quality validation \\
+schema\_pipeline & \path{table_selector.py} & 383 & table selection heuristics \\
+nvidia-modelopt & \path{scripts/train_qwen3.py} & 562 & Qwen3 training workflow \\
+nvidia-modelopt & \path{scripts/quantize_qwen.py} & 515 & quantization workflow \\
+nvidia-modelopt & \path{api/openai_compat.py} & 426 & OpenAI-compatible backend routes \\
+nvidia-modelopt & \path{api/main.py} & 325 & FastAPI microservice entrypoint \\
+nvidia-modelopt & \path{server.py} & 224 & service launcher \\
+nvidia-modelopt/ui & \path{src/app/dashboard/dashboard.component.ts} & 386 & dashboard UI \\
+nvidia-modelopt/ui & \path{src/app/models/models.component.ts} & 260 & model browser UI \\
+nvidia-modelopt/ui & \path{src/app/jobs/jobs.component.ts} & 226 & job management UI \\
+nvidia-modelopt/ui & \path{src/app/services/api.service.ts} & 146 & backend API client \\
 \bottomrule
 \end{longtable}
+\normalsize
 
 \newpage
+\section{Manifest Evidence and Export}
 
-% Detailed SBOM by Service
-\section{ai-core-streaming}
+\subsection{Primary Files Used for This SBOM}
 
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
+\small
+\begin{longtable}{@{}P{4.5cm}P{8.4cm}@{}}
 \toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & ai-core-streaming \\
-Version & 2.0.0 \\
-Type & Application \\
-BOM-Ref & pkg:generic/sap/ai-core-streaming@2.0.0 \\
-License & Apache-2.0 \\
-Supplier & SAP SE \\
-\bottomrule
-\end{tabular}
-
-\subsection{Vendored Dependencies}
-
-\subsubsection{deps/llama/llama.zig}
-
-\begin{tabular}{@{}p{4cm}p{9cm}@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & Custom Zig LLaMA inference engine \\
-Origin & SAP-internal port of llama.cpp concepts \\
-GGUF Version & 2--3 \\
-Architectures & LLaMA, Mistral, Phi, Gemma, Qwen, DeepSeek \\
-License & Apache-2.0 \\
-Upstream & \url{https://github.com/ggerganov/llama.cpp} (MIT) \\
-CVEs & None \\
-\bottomrule
-\end{tabular}
-
-\subsubsection{deps/cuda/cuda\_kernels.h}
-
-\begin{tabular}{@{}p{4cm}p{9cm}@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & CUDA CPU-fallback kernel header \\
-Type & Header-only library \\
-CUDA Target & 12.x \\
-License & Apache-2.0 \\
-Notes & CPU-only implementations; no NVIDIA binary linked \\
-\bottomrule
-\end{tabular}
-
-\subsection{Zig Standard Library}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Version & 0.13.0 \\
-License & MIT \\
-SPDX-ID & MIT \\
-\bottomrule
-\end{tabular}
-
-\newpage
-
-\section{ai-core-pal}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & ai-core-pal \\
-Version & 1.0.0 \\
-Type & Application \\
-BOM-Ref & pkg:generic/sap/ai-core-pal@1.0.0 \\
-License & Apache-2.0 \\
-Languages & Zig, Mojo \\
-\bottomrule
-\end{tabular}
-
-\subsection{Mojo Dependencies}
-
-\begin{tabular}{@{}p{4cm}p{9cm}@{}}
-\toprule
-\textbf{Component} & \textbf{Details} \\
-\midrule
-Mojo stdlib & Modular Community License \\
-Python interop & PSF-2.0 (CPython $\geq$ 3.10) \\
-Modules used & collections.Dict, python.Python, sys.env\_get\_string \\
-\bottomrule
-\end{tabular}
-
-\newpage
-
-\section{vllm-main}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & vllm-main \\
-Version & 0.9.0 \\
-Type & Application \\
-BOM-Ref & pkg:pypi/vllm@0.9.0 \\
-License & Apache-2.0 \\
-Upstream & \url{https://github.com/vllm-project/vllm} \\
-\bottomrule
-\end{tabular}
-
-\subsection{Key Python Dependencies}
-
-\begin{longtable}{@{}lllp{4cm}@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
+\textbf{File} & \textbf{Why it matters} \\
 \midrule
 \endhead
-torch & 2.5.0 & BSD-3-Clause & BSD-3-Clause \\
-transformers & 4.46.0 & Apache-2.0 & Apache-2.0 \\
-tiktoken & 0.8.0 & MIT & MIT \\
-numpy & 1.26.0 & BSD-3-Clause & BSD-3-Clause \\
-fastapi & 0.115.0 & MIT & MIT \\
-uvicorn & 0.32.0 & BSD-3-Clause & BSD-3-Clause \\
-pydantic & 2.9.0 & MIT & MIT \\
-ray & 2.38.0 & Apache-2.0 & Apache-2.0 \\
-triton & 3.1.0 & MIT & MIT \\
-xformers & 0.0.28 & BSD-3-Clause & BSD-3-Clause \\
+\path{docs/sbom/SAP-OSS-SBOM-Complete.tex} & Primary single-column LaTeX source for this updated SBOM \\
+\path{docs/sbom/compile-sbom.sh} & Repeatable local export path to the PDF artifact \\
+\path{intelligence/ai-core-pal/requirements.txt} & Direct libraries for PAL MCP service \\
+\path{intelligence/ocr/requirements.txt} & OCR engine dependency evidence \\
+\path{intelligence/ocr/requirements-service.txt} & REST service dependency evidence for OCR \\
+\path{data/langchain-integration-for-sap-hana-cloud-main/pyproject.toml} & Poetry package definition for LangChain HANA integration \\
+\path{data/odata-vocabularies-main/package.json} & Direct Node dependencies for vocabulary generation tooling \\
+\path{generativeUI/training-webcomponents-ngx/package.json} & Root front-end workspace dependencies for the training console \\
+\path{generativeUI/training-webcomponents-ngx/apps/angular-shell/package.json} & Browser application dependency surface \\
+\path{generativeUI/training-webcomponents-ngx/packages/api-server/requirements.txt} & API proxy runtime dependencies \\
+\path{generativeUI/ui5-webcomponents-ngx-main/package.json} & Root dependency surface of the large UI5 workspace \\
+\path{generativeUI/ui5-webcomponents-ngx-main/libs/*/package.json} & Per-library isolated software declarations inside the UI5 workspace \\
+\path{training/pyproject.toml} & Root training package and quality-gate definition \\
+\path{training/pipeline/requirements.txt} & Text-to-SQL pipeline dependencies \\
+\path{training/nvidia-modelopt/requirements.txt} & Model optimization dependency surface \\
+\path{training/nvidia-modelopt/ui/package.json} & Front-end bill for the optimization console \\
 \bottomrule
 \end{longtable}
+\normalsize
 
-\newpage
+\subsection{Export Procedure}
 
-\section{generative-ai-toolkit}
+The canonical export path for this document is:
 
-\subsection{Component Information}
+\begin{lstlisting}
+cd docs/sbom
+./compile-sbom.sh
+\end{lstlisting}
 
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & generative-ai-toolkit-for-sap-hana-cloud \\
-Version & 1.2.0 \\
-Type & Library \\
-BOM-Ref & pkg:pypi/hana-ai@1.2.0 \\
-License & Apache-2.0 \\
-\bottomrule
-\end{tabular}
+Expected output:
 
-\subsection{Key Dependencies}
+\begin{lstlisting}
+docs/sbom/SAP-AI-Platform-SBOM-2026.pdf
+\end{lstlisting}
 
-\begin{longtable}{@{}lllp{4cm}@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-hdbcli & 2.21.0 & SAP EULA & LicenseRef-SAP-HANA-Client \\
-hana-ml & 2.21.0 & SAP EULA & LicenseRef-SAP-HANA-ML \\
-langchain & 0.3.0 & MIT & MIT \\
-openai & 1.54.0 & Apache-2.0 & Apache-2.0 \\
-pandas & 2.2.0 & BSD-3-Clause & BSD-3-Clause \\
-\bottomrule
-\end{longtable}
+\subsection{Interpretation Guidance}
 
-\newpage
-
-\section{mangle-query-service}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & mangle-query-service \\
-Version & 1.0.0 \\
-Type & Application \\
-BOM-Ref & pkg:golang/sap/mangle-query-service@1.0.0 \\
-License & Apache-2.0 \\
-Go Version & 1.22 \\
-\bottomrule
-\end{tabular}
-
-\subsection{Go Module Dependencies}
-
-\begin{longtable}{@{}p{5cm}lll@{}}
-\toprule
-\textbf{Module} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-github.com/elastic/go-elasticsearch/v8 & 8.15.0 & Apache-2.0 & Apache-2.0 \\
-github.com/SAP/go-hdb & 1.12.0 & Apache-2.0 & Apache-2.0 \\
-github.com/gin-gonic/gin & 1.10.0 & MIT & MIT \\
-github.com/google/uuid & 1.6.0 & BSD-3-Clause & BSD-3-Clause \\
-go.uber.org/zap & 1.27.0 & MIT & MIT \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{cap-llm-plugin}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & cap-llm-plugin \\
-Version & 1.8.0 \\
-Type & Library \\
-BOM-Ref & pkg:npm/@sap/cap-llm-plugin@1.8.0 \\
-License & Apache-2.0 \\
-Node Version & $\geq$ 18.0.0 \\
-\bottomrule
-\end{tabular}
-
-\subsection{npm Dependencies}
-
-\begin{longtable}{@{}p{5cm}lll@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-@sap/cds & 8.5.0 & SAP Developer License & LicenseRef-SAP-CDS \\
-@sap-ai-sdk/ai-api & 1.5.0 & Apache-2.0 & Apache-2.0 \\
-@sap-ai-sdk/langchain & 1.5.0 & Apache-2.0 & Apache-2.0 \\
-langchain & 0.3.0 & MIT & MIT \\
-@langchain/core & 0.3.0 & MIT & MIT \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{ai-sdk-js}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & @sap-ai-sdk \\
-Version & 1.5.0 \\
-Type & Library \\
-BOM-Ref & pkg:npm/@sap-ai-sdk/core@1.5.0 \\
-License & Apache-2.0 \\
-\bottomrule
-\end{tabular}
-
-\subsection{npm Dependencies}
-
-\begin{longtable}{@{}p{5cm}lll@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-@sap-cloud-sdk/http-client & 3.24.0 & Apache-2.0 & Apache-2.0 \\
-@sap-cloud-sdk/util & 3.24.0 & Apache-2.0 & Apache-2.0 \\
-axios & 1.7.0 & MIT & MIT \\
-typescript & 5.6.0 & Apache-2.0 & Apache-2.0 \\
-jest & 29.7.0 & MIT & MIT \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{elasticsearch-main}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & elasticsearch \\
-Version & 9.4.0 \\
-Type & Application \\
-BOM-Ref & pkg:maven/org.elasticsearch/elasticsearch@9.4.0 \\
-License & Elastic License 2.0 / AGPL-3.0 / SSPL-1.0 \\
-\bottomrule
-\end{tabular}
-
-\subsection{Gradle Dependencies}
-
-\begin{longtable}{@{}p{4cm}lll@{}}
-\toprule
-\textbf{Component} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-Apache Lucene & 10.3.2 & Apache-2.0 & Apache-2.0 \\
-OpenJDK & 25.0.2+10 & GPL-2.0-CPE & GPL-2.0-with-CPE \\
-Jackson Databind & 2.15.0 & Apache-2.0 & Apache-2.0 \\
-SnakeYAML & 2.0 & Apache-2.0 & Apache-2.0 \\
-Netty & 4.1.100 & Apache-2.0 & Apache-2.0 \\
-Log4j 2 & 2.22.0 & Apache-2.0 & Apache-2.0 \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{langchain-integration}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & langchain-integration-for-sap-hana-cloud \\
-Version & 0.5.0 \\
-Type & Library \\
-BOM-Ref & pkg:pypi/langchain-hana@0.5.0 \\
-License & Apache-2.0 \\
-\bottomrule
-\end{tabular}
-
-\subsection{Python Dependencies}
-
-\begin{longtable}{@{}lllp{4cm}@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-langchain & 0.3.0 & MIT & MIT \\
-langchain-core & 0.3.0 & MIT & MIT \\
-langchain-community & 0.3.0 & MIT & MIT \\
-hdbcli & 2.21.0 & SAP EULA & LicenseRef-SAP \\
-sentence-transformers & 3.3.0 & Apache-2.0 & Apache-2.0 \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{odata-vocabularies}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & odata-vocabularies \\
-Version & 1.0.0 \\
-Type & Library \\
-BOM-Ref & pkg:generic/sap/odata-vocabularies@1.0.0 \\
-License & Apache-2.0 \\
-\bottomrule
-\end{tabular}
-
-\subsection{Python Dependencies}
-
-\begin{longtable}{@{}lllp{4cm}@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-fastapi & 0.115.0 & MIT & MIT \\
-uvicorn & 0.32.0 & BSD-3-Clause & BSD-3-Clause \\
-pydantic & 2.9.0 & MIT & MIT \\
-lxml & 5.3.0 & BSD-3-Clause & BSD-3-Clause \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{ui5-webcomponents-ngx}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & ui5-webcomponents-ngx \\
-Version & 0.4.0 \\
-Type & Library \\
-BOM-Ref & pkg:npm/@pds/ui5-angular@0.4.0 \\
-License & Apache-2.0 \\
-Angular Version & 18.x \\
-\bottomrule
-\end{tabular}
-
-\subsection{npm Dependencies}
-
-\begin{longtable}{@{}p{5cm}lll@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-@angular/core & 18.2.0 & MIT & MIT \\
-@angular/common & 18.2.0 & MIT & MIT \\
-@ui5/webcomponents & 2.5.0 & Apache-2.0 & Apache-2.0 \\
-@ui5/webcomponents-fiori & 2.5.0 & Apache-2.0 & Apache-2.0 \\
-rxjs & 7.8.0 & Apache-2.0 & Apache-2.0 \\
-zone.js & 0.15.0 & MIT & MIT \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{world-monitor}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & world-monitor \\
-Version & 1.0.0 \\
-Type & Application \\
-BOM-Ref & pkg:pypi/world-monitor@1.0.0 \\
-License & MIT \\
-\bottomrule
-\end{tabular}
-
-\subsection{Python Dependencies}
-
-\begin{longtable}{@{}lllp{4cm}@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-flask & 3.1.0 & BSD-3-Clause & BSD-3-Clause \\
-requests & 2.32.0 & Apache-2.0 & Apache-2.0 \\
-prometheus-client & 0.21.0 & Apache-2.0 & Apache-2.0 \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-\section{data-cleaning-copilot}
-
-\subsection{Component Information}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Name & data-cleaning-copilot \\
-Version & 1.0.0 \\
-Type & Application \\
-BOM-Ref & pkg:pypi/data-cleaning-copilot@1.0.0 \\
-License & Apache-2.0 \\
-\bottomrule
-\end{tabular}
-
-\subsection{Python Dependencies}
-
-\begin{longtable}{@{}lllp{4cm}@{}}
-\toprule
-\textbf{Package} & \textbf{Version} & \textbf{License} & \textbf{SPDX-ID} \\
-\midrule
-\endhead
-pandas & 2.2.0 & BSD-3-Clause & BSD-3-Clause \\
-numpy & 1.26.0 & BSD-3-Clause & BSD-3-Clause \\
-scikit-learn & 1.5.0 & BSD-3-Clause & BSD-3-Clause \\
-fastapi & 0.115.0 & MIT & MIT \\
-openai & 1.54.0 & Apache-2.0 & Apache-2.0 \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-% Vulnerability Summary
-\section{Vulnerability Summary}
-
-\subsection{Scan Results}
-
-\begin{tabular}{@{}llll@{}}
-\toprule
-\textbf{Severity} & \textbf{Count} & \textbf{Status} & \textbf{Notes} \\
-\midrule
-Critical & 0 & -- & -- \\
-High & 0 & -- & -- \\
-Medium & 2 & Mitigated & See below \\
-Low & 5 & Accepted & Dev dependencies only \\
-\bottomrule
-\end{tabular}
-
-\subsection{Medium Severity Issues (Mitigated)}
-
-\begin{enumerate}
-    \item \textbf{CVE-2024-XXXX} - Jackson Databind pre-2.16
-    \begin{itemize}
-        \item Affected: elasticsearch-main
-        \item Mitigation: Upgrade to 2.17.x scheduled for Q2 2026
-        \item Risk: Low (requires local access)
-    \end{itemize}
-    
-    \item \textbf{CVE-2024-YYYY} - Prototype pollution in lodash
-    \begin{itemize}
-        \item Affected: ai-sdk-js (dev dependency)
-        \item Mitigation: Not in production bundle
-        \item Risk: None (development only)
-    \end{itemize}
-\end{enumerate}
-
-\newpage
-
-% License Summary
-\section{License Summary}
-
-\begin{longtable}{@{}p{5cm}p{3cm}p{5cm}@{}}
-\toprule
-\textbf{License} & \textbf{SPDX-ID} & \textbf{Services Using} \\
-\midrule
-\endhead
-Apache License 2.0 & Apache-2.0 & 11 services \\
-MIT License & MIT & 8 services (deps) \\
-BSD 3-Clause & BSD-3-Clause & 6 services (deps) \\
-Elastic License 2.0 & LicenseRef-Elastic-2.0 & elasticsearch-main \\
-Modular Community License & LicenseRef-Modular & ai-core-pal (Mojo) \\
-SAP Developer License & LicenseRef-SAP & HANA clients \\
-GPL-2.0-with-classpath-exception & GPL-2.0-CPE & OpenJDK (runtime) \\
-PSF-2.0 & PSF-2.0 & CPython (runtime) \\
-\bottomrule
-\end{longtable}
-
-\newpage
-
-% Appendix
-\section{Appendix: SBOM Generation}
-
-\subsection{Generation Command}
-
-To regenerate this SBOM in CycloneDX JSON format:
-
-\begin{verbatim}
-cd /Users/user/Documents/sap-oss
-make sbom-generate
-\end{verbatim}
-
-\subsection{Verification}
-
-\begin{verbatim}
-# Validate CycloneDX schema
-cyclonedx validate --input-file sbom.json
-
-# Check REUSE compliance
-reuse lint
-
-# Scan for vulnerabilities
-snyk test --all-projects
-\end{verbatim}
-
-\subsection{Document Control}
-
-\begin{tabular}{@{}lll@{}}
-\toprule
-\textbf{Version} & \textbf{Date} & \textbf{Changes} \\
-\midrule
-1.0 & 2026-03-01 & Initial release - all 13 services \\
-\bottomrule
-\end{tabular}
-
-\vfill
-
-\begin{center}
-\textcolor{sapblue}{\rule{0.8\textwidth}{0.4pt}}\\[0.5cm]
-{\small Generated by SAP AI Engineering | Confidential}
-\end{center}
+\begin{itemize}[leftmargin=*]
+    \item Use this document when the engineering question is ``which library stacks define each main part of the system?'' rather than ``which individual file belongs to which service?''
+    \item Use lockfiles only when a downstream process requires transitive expansion. This document intentionally prioritizes direct bills of material because that is the most stable view for the current four-domain architecture.
+    \item Treat code-only units without local manifests as controlled gaps in packaging metadata, not omissions in the document.
+\end{itemize}
 
 \end{document}

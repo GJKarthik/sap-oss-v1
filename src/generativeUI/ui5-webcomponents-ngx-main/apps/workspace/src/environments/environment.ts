@@ -8,6 +8,7 @@ export const environment = {
   production: false,
   agUiEndpoint: '/ag-ui/run',
   openAiBaseUrl: 'http://localhost:8400',
+  trainingApiUrl: 'http://localhost:8000',
   ocrInternalToken: '',
   mcpBaseUrl: 'http://localhost:9160/mcp',
   requireRealBackends: true as const,

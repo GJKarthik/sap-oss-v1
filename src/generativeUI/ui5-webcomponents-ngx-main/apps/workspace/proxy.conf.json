@@ -11,5 +11,12 @@
     "changeOrigin": true,
     "ws": true,
     "logLevel": "info"
+  },
+  "/api/training": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/training": "" },
+    "logLevel": "info"
   }
 }

@@ -11,6 +11,8 @@ import { WorkspaceService } from './core/workspace.service';
 import { ProductNavigationService, ProductAppId } from './core/product-navigation.service';
 import { normalizeWorkspaceTheme } from './core/theme-utils';
 import { QuickAccessService, NavLinkDatum } from './core/quick-access.service';
+import { NotificationService } from './core/notification.service';
+import { AuthService } from './core/auth.service';
 import { Ui5WorkspaceComponentsModule } from './shared/ui5-workspace-components.module';
 
 @Component({
@@ -29,12 +31,12 @@ export class AppComponent implements OnInit, OnDestroy {
     },
   };
 
-  readonly notifications = [
-    { icon: 'message-information', title: 'Platform Health: OK', description: 'System update complete' },
-    { icon: 'message-warning', title: 'GPU Alert', description: 'High VRAM usage detected' },
-    { icon: 'message-success', title: 'Deployment Success', description: "Model 'Titan-v2' is ready" },
-    { icon: 'group', title: 'New Collaborator', description: 'Jony Ive joined the workspace' },
-  ];
+  readonly notifications = this.notificationService.notifications;
+  readonly unreadCount = this.notificationService.unreadCount;
+
+  readonly userInitials = this.authService.initials;
+  readonly userDisplayName = this.authService.displayName;
+  readonly isAuthenticated = this.authService.isAuthenticated;
 
   currentTheme = 'sap_horizon';
   currentLanguage = 'en';
@@ -88,6 +90,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private workspaceService: WorkspaceService,
     private productNavigation: ProductNavigationService,
     private quickAccess: QuickAccessService,
+    private notificationService: NotificationService,
+    private authService: AuthService,
     ) {
     effect(() => {
       const settings = this.workspaceService.settings();
@@ -118,6 +122,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.notificationService.startPolling();
+    this.authService.fetchMe().subscribe();
     this.currentTheme = normalizeWorkspaceTheme(this.workspaceService.settings().theme);
     this.applyTheme(this.currentTheme);
     this.learnPathDismissed = localStorage.getItem('learn-path-dismissed') === 'true';
@@ -239,8 +245,17 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   onSignOut(): void {
-    console.log('Signing out...');
+    this.authService.logout();
     this.closeProfile();
+    this.router.navigate(['/']);
+  }
+
+  onMarkAllRead(): void {
+    this.notificationService.markAllRead();
+  }
+
+  onMarkRead(notificationId: string): void {
+    this.notificationService.markRead(notificationId);
   }
 
   onThemeChange(event: globalThis.Event): void {
@@ -298,6 +313,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.notificationService.stopPolling();
     this.destroy$.next();
     this.destroy$.complete();
   }

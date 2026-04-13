@@ -34,22 +34,26 @@ if [ "$1" == "--docker" ]; then
     
 else
     # Check for pdflatex
-    if ! command -v pdflatex &> /dev/null; then
-        echo "❌ pdflatex not found!"
+    if command -v pdflatex &> /dev/null; then
+        echo "📄 Compiling $TEX_FILE with pdflatex..."
+        echo ""
+
+        # Run twice to resolve references
+        pdflatex -interaction=nonstopmode "$TEX_FILE" || true
+        pdflatex -interaction=nonstopmode "$TEX_FILE"
+    elif command -v tectonic &> /dev/null; then
+        echo "📄 Compiling $TEX_FILE with tectonic..."
+        echo ""
+        tectonic -C "$TEX_FILE" --outdir "$SCRIPT_DIR"
+    else
+        echo "❌ No local TeX engine found!"
         echo ""
         echo "Install options:"
         echo "  macOS:   brew install --cask mactex"
-        echo "  Ubuntu:  sudo apt-get install texlive-full"
+        echo "  Fallback: install tectonic"
         echo "  Docker:  $0 --docker"
         exit 1
     fi
-
-    echo "📄 Compiling $TEX_FILE..."
-    echo ""
-    
-    # Run twice to resolve references
-    pdflatex -interaction=nonstopmode "$TEX_FILE" || true
-    pdflatex -interaction=nonstopmode "$TEX_FILE"
 fi
 
 # Rename output

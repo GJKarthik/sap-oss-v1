@@ -4,6 +4,7 @@ export const environment = {
   production: true,
   agUiEndpoint: '/ag-ui/run',
   openAiBaseUrl: '/api/openai',
+  trainingApiUrl: '/api/training',
   ocrInternalToken: '',
   mcpBaseUrl: '/api/mcp',
   requireRealBackends: true as const,

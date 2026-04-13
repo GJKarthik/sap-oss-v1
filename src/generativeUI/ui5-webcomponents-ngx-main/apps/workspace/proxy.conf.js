@@ -12,6 +12,7 @@
 
 const AGENT_URL = process.env['AGENT_URL'] || 'http://localhost:9160';
 const COLLAB_URL = process.env['COLLAB_URL'] || 'http://localhost:9161';
+const TRAINING_API_URL = process.env['TRAINING_API_URL'] || 'http://localhost:8000';
 
 module.exports = {
   '/ag-ui': {
@@ -25,6 +26,13 @@ module.exports = {
     secure: false,
     changeOrigin: true,
     ws: true,
+    logLevel: 'info',
+  },
+  '/api/training': {
+    target: TRAINING_API_URL,
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: { '^/api/training': '' },
     logLevel: 'info',
   },
 };

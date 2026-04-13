@@ -1,27 +1,36 @@
-import os
+"""
+Unified persistence store — all tables live on whatever engine ``database.py``
+resolved (HANA Cloud or SQLite).
+
+The raw ``hdbcli`` TM fallback has been removed; translation-memory now uses
+the same SQLAlchemy engine as every other table.
+"""
+
+from __future__ import annotations
+
+import hashlib
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Float, JSON, String
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, JSON, String, Text
 
-from .database import Base, SessionLocal
+from .database import Base, IS_HANA, SessionLocal, db_backend_label
 
 StoreCollection = Literal["jobs", "vector_stores", "translation_memory"]
-TranslationMemoryBackend = Literal["sqlite", "hana"]
 
-from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD, HANA_ENCRYPT
-
-HANA_TM_TABLE = "TRANSLATION_MEMORY"
+# ---------------------------------------------------------------------------
+# ORM Models  (HANA-compatible: NVARCHAR PKs ≤256, TEXT for large values)
+# ---------------------------------------------------------------------------
 
 
 class JobRecord(Base):
     __tablename__ = "jobs"
-    id = Column(String, primary_key=True, index=True)
-    status = Column(String, default="pending")
+    id = Column(String(256), primary_key=True, index=True)
+    status = Column(String(64), default="pending")
     progress = Column(Float, default=0.0)
     config = Column(JSON, default={})
-    error = Column(String, nullable=True)
+    error = Column(Text, nullable=True)
     history = Column(JSON, default=list)
     evaluation = Column(JSON, nullable=True)
     deployed = Column(Boolean, default=False)
@@ -30,20 +39,20 @@ class JobRecord(Base):
 
 class VectorStoreRecord(Base):
     __tablename__ = "vector_stores"
-    table_name = Column(String, primary_key=True, index=True)
-    embedding_model = Column(String, default="default")
+    table_name = Column(String(256), primary_key=True, index=True)
+    embedding_model = Column(String(256), default="default")
     documents_added = Column(Float, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class TranslationMemoryRecord(Base):
     __tablename__ = "translation_memory"
-    id = Column(String, primary_key=True, index=True)
-    source_text = Column(String, index=True)
-    target_text = Column(String)
+    id = Column(String(256), primary_key=True, index=True)
+    source_text = Column(Text, index=True)
+    target_text = Column(Text)
     source_lang = Column(String(5))
     target_lang = Column(String(5))
-    category = Column(String, default="general")
+    category = Column(String(128), default="general")
     is_approved = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -51,291 +60,117 @@ class TranslationMemoryRecord(Base):
 
 class WorkspaceSettingsRecord(Base):
     __tablename__ = "workspace_settings"
-    owner_id = Column(String, primary_key=True, index=True)
+    owner_id = Column(String(256), primary_key=True, index=True)
     settings = Column(JSON, default=dict)
-    identity_email = Column(String, nullable=True)
-    identity_display_name = Column(String, nullable=True)
-    auth_source = Column(String, nullable=True)
+    identity_email = Column(String(320), nullable=True)
+    identity_display_name = Column(String(256), nullable=True)
+    auth_source = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class NotificationRecord(Base):
+    __tablename__ = "notifications"
+    id = Column(String(256), primary_key=True, index=True)
+    user_id = Column(String(256), index=True, nullable=False)
+    icon = Column(String(128), default="message-information")
+    title = Column(String(512), nullable=False)
+    description = Column(Text, default="")
+    severity = Column(String(32), default="info")
+    read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UserRecord(Base):
+    __tablename__ = "users"
+    id = Column(String(256), primary_key=True, index=True)
+    email = Column(String(320), unique=True, index=True, nullable=False)
+    display_name = Column(String(256), nullable=False)
+    initials = Column(String(4), default="")
+    team_name = Column(String(256), default="")
+    avatar_url = Column(Text, nullable=True)
+    role = Column(String(64), default="user")
+    password_hash = Column(String(256), nullable=False)
+    auth_source = Column(String(64), default="local")
+    last_login_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Store — high-level data-access façade
+# ---------------------------------------------------------------------------
 
 
 class Store:
     def __init__(self):
         self.SessionLocal = SessionLocal
 
-    def translation_memory_backend(self) -> TranslationMemoryBackend:
-        if not HANA_USER:
-            return "sqlite"
-        try:
-            import hdbcli.dbapi  # type: ignore  # noqa: F401
-        except ImportError:
-            return "sqlite"
-        return "hana"
+    def db_backend(self) -> str:
+        return db_backend_label()
+
+    # ---- Health ------------------------------------------------------------
 
     def health_snapshot(self) -> Dict[str, Any]:
         return {
             "status": "healthy",
+            "db_backend": self.db_backend(),
             "db_active": True,
-            "jobs_count": self._count_jobs(),
-            "vector_stores_count": self._count_vector_stores(),
-            "tm_count": self._count_tm(),
-            "translation_memory_backend": self.translation_memory_backend(),
+            "jobs_count": self._count(JobRecord),
+            "vector_stores_count": self._count(VectorStoreRecord),
+            "tm_count": self._count(TranslationMemoryRecord),
+            "users_count": self._count(UserRecord),
+            "notifications_count": self._count(NotificationRecord),
         }
 
-    def _count_jobs(self) -> int:
+    def _count(self, model) -> int:
         db = self.SessionLocal()
         try:
-            return db.query(JobRecord).count()
+            return db.query(model).count()
         finally:
             db.close()
 
-    def _count_vector_stores(self) -> int:
-        db = self.SessionLocal()
-        try:
-            return db.query(VectorStoreRecord).count()
-        finally:
-            db.close()
-
-    def _count_tm(self) -> int:
-        if self.translation_memory_backend() == "hana":
-            return self._count_tm_hana()
-
-        db = self.SessionLocal()
-        try:
-            return db.query(TranslationMemoryRecord).count()
-        finally:
-            db.close()
-
-    def _hana_connection(self):
-        import hdbcli.dbapi as hdbcli  # type: ignore
-
-        return hdbcli.connect(
-            address=HANA_HOST,
-            port=HANA_PORT,
-            user=HANA_USER,
-            password=HANA_PASSWORD,
-            encrypt=HANA_ENCRYPT,
-        )
-
-    def _ensure_hana_tm_table(self, cursor) -> None:
-        cursor.execute(
-            "SELECT COUNT(*) FROM SYS.TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?",
-            (HANA_TM_TABLE,),
-        )
-        row = cursor.fetchone()
-        if row and int(row[0]) > 0:
-            return
-
-        cursor.execute(
-            f'''
-            CREATE TABLE "{HANA_TM_TABLE}" (
-                "ID" NVARCHAR(100) PRIMARY KEY,
-                "SOURCE_TEXT" NCLOB,
-                "TARGET_TEXT" NCLOB,
-                "SOURCE_LANG" NVARCHAR(5),
-                "TARGET_LANG" NVARCHAR(5),
-                "CATEGORY" NVARCHAR(100),
-                "IS_APPROVED" BOOLEAN,
-                "CREATED_AT" TIMESTAMP,
-                "UPDATED_AT" TIMESTAMP
-            )
-            '''
-        )
-
-    def _tm_row_to_dict(self, row) -> Dict[str, Any]:
-        created_at = row[7]
-        updated_at = row[8]
-        return {
-            "id": row[0],
-            "source_text": row[1],
-            "target_text": row[2],
-            "source_lang": row[3],
-            "target_lang": row[4],
-            "category": row[5],
-            "is_approved": bool(row[6]),
-            "created_at": created_at.isoformat() + "Z" if created_at else None,
-            "updated_at": updated_at.isoformat() + "Z" if updated_at else None,
-        }
-
-    def _count_tm_hana(self) -> int:
-        conn = self._hana_connection()
-        try:
-            cursor = conn.cursor()
-            self._ensure_hana_tm_table(cursor)
-            cursor.execute(f'SELECT COUNT(*) FROM "{HANA_TM_TABLE}"')
-            row = cursor.fetchone()
-            return int(row[0]) if row else 0
-        finally:
-            conn.close()
-
-    def _list_tm_hana(self) -> List[Dict[str, Any]]:
-        conn = self._hana_connection()
-        try:
-            cursor = conn.cursor()
-            self._ensure_hana_tm_table(cursor)
-            cursor.execute(
-                f'''
-                SELECT
-                    "ID",
-                    "SOURCE_TEXT",
-                    "TARGET_TEXT",
-                    "SOURCE_LANG",
-                    "TARGET_LANG",
-                    "CATEGORY",
-                    "IS_APPROVED",
-                    "CREATED_AT",
-                    "UPDATED_AT"
-                FROM "{HANA_TM_TABLE}"
-                ORDER BY "UPDATED_AT" DESC, "CREATED_AT" DESC
-                '''
-            )
-            return [self._tm_row_to_dict(row) for row in cursor.fetchall()]
-        finally:
-            conn.close()
-
-    def _save_tm_entry_hana(self, entry_data: Dict[str, Any]) -> Dict[str, Any]:
-        conn = self._hana_connection()
-        try:
-            cursor = conn.cursor()
-            self._ensure_hana_tm_table(cursor)
-            now = datetime.utcnow()
-            tm_id = entry_data.get("id") or str(uuid.uuid4())
-
-            cursor.execute(
-                f'SELECT "CREATED_AT" FROM "{HANA_TM_TABLE}" WHERE "ID" = ?',
-                (tm_id,),
-            )
-            existing = cursor.fetchone()
-            created_at = existing[0] if existing else now
-
-            if existing:
-                cursor.execute(
-                    f'''
-                    UPDATE "{HANA_TM_TABLE}"
-                    SET
-                        "SOURCE_TEXT" = ?,
-                        "TARGET_TEXT" = ?,
-                        "SOURCE_LANG" = ?,
-                        "TARGET_LANG" = ?,
-                        "CATEGORY" = ?,
-                        "IS_APPROVED" = ?,
-                        "UPDATED_AT" = ?
-                    WHERE "ID" = ?
-                    ''',
-                    (
-                        entry_data["source_text"],
-                        entry_data["target_text"],
-                        entry_data["source_lang"],
-                        entry_data["target_lang"],
-                        entry_data.get("category", "general"),
-                        bool(entry_data.get("is_approved", False)),
-                        now,
-                        tm_id,
-                    ),
-                )
-            else:
-                cursor.execute(
-                    f'''
-                    INSERT INTO "{HANA_TM_TABLE}" (
-                        "ID",
-                        "SOURCE_TEXT",
-                        "TARGET_TEXT",
-                        "SOURCE_LANG",
-                        "TARGET_LANG",
-                        "CATEGORY",
-                        "IS_APPROVED",
-                        "CREATED_AT",
-                        "UPDATED_AT"
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''',
-                    (
-                        tm_id,
-                        entry_data["source_text"],
-                        entry_data["target_text"],
-                        entry_data["source_lang"],
-                        entry_data["target_lang"],
-                        entry_data.get("category", "general"),
-                        bool(entry_data.get("is_approved", False)),
-                        created_at,
-                        now,
-                    ),
-                )
-
-            conn.commit()
-            cursor.execute(
-                f'''
-                SELECT
-                    "ID",
-                    "SOURCE_TEXT",
-                    "TARGET_TEXT",
-                    "SOURCE_LANG",
-                    "TARGET_LANG",
-                    "CATEGORY",
-                    "IS_APPROVED",
-                    "CREATED_AT",
-                    "UPDATED_AT"
-                FROM "{HANA_TM_TABLE}"
-                WHERE "ID" = ?
-                ''',
-                (tm_id,),
-            )
-            return self._tm_row_to_dict(cursor.fetchone())
-        finally:
-            conn.close()
+    # ---- Collection helpers ------------------------------------------------
 
     def list_collection(self, collection: StoreCollection) -> List[Dict[str, Any]]:
-        if collection == "translation_memory" and self.translation_memory_backend() == "hana":
-            return self._list_tm_hana()
-
         db = self.SessionLocal()
         try:
             if collection == "jobs":
-                jobs = db.query(JobRecord).all()
-                return [self._to_dict(j) for j in jobs]
+                return [self._job_to_dict(j) for j in db.query(JobRecord).all()]
             if collection == "vector_stores":
-                stores = db.query(VectorStoreRecord).all()
-                return [self._store_to_dict(s) for s in stores]
+                return [self._store_to_dict(s) for s in db.query(VectorStoreRecord).all()]
             if collection == "translation_memory":
-                tm = db.query(TranslationMemoryRecord).all()
-                return [self._tm_to_dict(t) for t in tm]
+                return [self._tm_to_dict(t) for t in db.query(TranslationMemoryRecord).all()]
             return []
         finally:
             db.close()
 
-    def _to_dict(self, job: JobRecord) -> Dict[str, Any]:
-        return {
-            "id": job.id,
-            "status": job.status,
-            "progress": job.progress,
-            "config": job.config,
-            "error": job.error,
-            "history": job.history,
-            "evaluation": job.evaluation,
-            "deployed": job.deployed,
-            "created_at": job.created_at.isoformat() + "Z" if job.created_at else None,
-        }
+    def clear_collection(self, collection: StoreCollection):
+        db = self.SessionLocal()
+        try:
+            if collection == "jobs":
+                db.query(JobRecord).delete()
+            elif collection == "vector_stores":
+                db.query(VectorStoreRecord).delete()
+            elif collection == "translation_memory":
+                db.query(TranslationMemoryRecord).delete()
+            db.commit()
+        finally:
+            db.close()
 
-    def _store_to_dict(self, s: VectorStoreRecord) -> Dict[str, Any]:
-        return {
-            "table_name": s.table_name,
-            "embedding_model": s.embedding_model,
-            "documents_added": int(s.documents_added),
-            "created_at": s.created_at.isoformat() + "Z" if s.created_at else None,
-        }
+    def restore_item(self, collection: StoreCollection, item: Dict[str, Any]):
+        db = self.SessionLocal()
+        try:
+            if collection == "jobs":
+                job = JobRecord(**item)
+                if isinstance(job.created_at, str):
+                    job.created_at = datetime.fromisoformat(job.created_at.replace("Z", ""))
+                db.merge(job)
+            db.commit()
+        finally:
+            db.close()
 
-    def _tm_to_dict(self, t: TranslationMemoryRecord) -> Dict[str, Any]:
-        return {
-            "id": t.id,
-            "source_text": t.source_text,
-            "target_text": t.target_text,
-            "source_lang": t.source_lang,
-            "target_lang": t.target_lang,
-            "category": t.category,
-            "is_approved": t.is_approved,
-            "created_at": t.created_at.isoformat() + "Z" if t.created_at else None,
-            "updated_at": t.updated_at.isoformat() + "Z" if t.updated_at else None,
-        }
+    # ---- Vector stores -----------------------------------------------------
 
     def get_vector_store(self, table_name: str) -> Optional[Dict[str, Any]]:
         db = self.SessionLocal()
@@ -366,10 +201,9 @@ class Store:
         finally:
             db.close()
 
-    def save_tm_entry(self, entry_data: Dict[str, Any]) -> Dict[str, Any]:
-        if self.translation_memory_backend() == "hana":
-            return self._save_tm_entry_hana(entry_data)
+    # ---- Translation memory ------------------------------------------------
 
+    def save_tm_entry(self, entry_data: Dict[str, Any]) -> Dict[str, Any]:
         db = self.SessionLocal()
         try:
             tm_id = entry_data.get("id") or str(uuid.uuid4())
@@ -393,17 +227,6 @@ class Store:
             db.close()
 
     def delete_tm_entry(self, entry_id: str) -> None:
-        if self.translation_memory_backend() == "hana":
-            conn = self._hana_connection()
-            try:
-                cursor = conn.cursor()
-                self._ensure_hana_tm_table(cursor)
-                cursor.execute(f'DELETE FROM "{HANA_TM_TABLE}" WHERE "ID" = ?', (entry_id,))
-                conn.commit()
-            finally:
-                conn.close()
-            return
-
         db = self.SessionLocal()
         try:
             entry = db.query(TranslationMemoryRecord).filter(TranslationMemoryRecord.id == entry_id).first()
@@ -413,41 +236,220 @@ class Store:
         finally:
             db.close()
 
-    def clear_collection(self, collection: StoreCollection):
-        if collection == "translation_memory" and self.translation_memory_backend() == "hana":
-            conn = self._hana_connection()
-            try:
-                cursor = conn.cursor()
-                self._ensure_hana_tm_table(cursor)
-                cursor.execute(f'DELETE FROM "{HANA_TM_TABLE}"')
-                conn.commit()
-            finally:
-                conn.close()
-            return
+    # ---- Notifications -----------------------------------------------------
 
+    def list_notifications(self, user_id: str, *, limit: int = 50) -> List[Dict[str, Any]]:
         db = self.SessionLocal()
         try:
-            if collection == "jobs":
-                db.query(JobRecord).delete()
-            if collection == "vector_stores":
-                db.query(VectorStoreRecord).delete()
-            if collection == "translation_memory":
-                db.query(TranslationMemoryRecord).delete()
-            db.commit()
+            q = (
+                db.query(NotificationRecord)
+                .filter(NotificationRecord.user_id == user_id)
+                .order_by(NotificationRecord.created_at.desc())
+                .limit(limit)
+            )
+            return [self._notification_to_dict(n) for n in q.all()]
         finally:
             db.close()
 
-    def restore_item(self, collection: StoreCollection, item: Dict[str, Any]):
+    def unread_count(self, user_id: str) -> int:
         db = self.SessionLocal()
         try:
-            if collection == "jobs":
-                job = JobRecord(**item)
-                if isinstance(job.created_at, str):
-                    job.created_at = datetime.fromisoformat(job.created_at.replace("Z", ""))
-                db.merge(job)
-            db.commit()
+            return (
+                db.query(NotificationRecord)
+                .filter(NotificationRecord.user_id == user_id, NotificationRecord.read == False)  # noqa: E712
+                .count()
+            )
         finally:
             db.close()
+
+    def create_notification(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        db = self.SessionLocal()
+        try:
+            record = NotificationRecord(
+                id=data.get("id") or str(uuid.uuid4()),
+                user_id=data["user_id"],
+                icon=data.get("icon", "message-information"),
+                title=data["title"],
+                description=data.get("description", ""),
+                severity=data.get("severity", "info"),
+            )
+            db.add(record)
+            db.commit()
+            db.refresh(record)
+            return self._notification_to_dict(record)
+        finally:
+            db.close()
+
+    def mark_notification_read(self, notification_id: str, user_id: str) -> bool:
+        db = self.SessionLocal()
+        try:
+            n = (
+                db.query(NotificationRecord)
+                .filter(NotificationRecord.id == notification_id, NotificationRecord.user_id == user_id)
+                .first()
+            )
+            if not n:
+                return False
+            n.read = True
+            db.commit()
+            return True
+        finally:
+            db.close()
+
+    def mark_all_read(self, user_id: str) -> int:
+        db = self.SessionLocal()
+        try:
+            count = (
+                db.query(NotificationRecord)
+                .filter(NotificationRecord.user_id == user_id, NotificationRecord.read == False)  # noqa: E712
+                .update({"read": True})
+            )
+            db.commit()
+            return count
+        finally:
+            db.close()
+
+    # ---- Users -------------------------------------------------------------
+
+    def get_user_by_email(self, email: str, *, include_hash: bool = False) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            u = db.query(UserRecord).filter(UserRecord.email == email).first()
+            if not u:
+                return None
+            d = self._user_to_dict(u)
+            if include_hash:
+                d["_password_hash"] = u.password_hash
+            return d
+        finally:
+            db.close()
+
+    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            u = db.query(UserRecord).filter(UserRecord.id == user_id).first()
+            return self._user_to_dict(u) if u else None
+        finally:
+            db.close()
+
+    def create_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        db = self.SessionLocal()
+        try:
+            user = UserRecord(
+                id=data.get("id") or str(uuid.uuid4()),
+                email=data["email"],
+                display_name=data["display_name"],
+                initials=data.get("initials", _derive_initials(data["display_name"])),
+                team_name=data.get("team_name", ""),
+                avatar_url=data.get("avatar_url"),
+                role=data.get("role", "user"),
+                password_hash=data["password_hash"],
+                auth_source=data.get("auth_source", "local"),
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            return self._user_to_dict(user)
+        finally:
+            db.close()
+
+    def update_user_login(self, user_id: str) -> None:
+        db = self.SessionLocal()
+        try:
+            u = db.query(UserRecord).filter(UserRecord.id == user_id).first()
+            if u:
+                u.last_login_at = datetime.utcnow()
+                db.commit()
+        finally:
+            db.close()
+
+    def list_users(self, *, limit: int = 100) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            return [self._user_to_dict(u) for u in db.query(UserRecord).limit(limit).all()]
+        finally:
+            db.close()
+
+    # ---- Serializers -------------------------------------------------------
+
+    @staticmethod
+    def _job_to_dict(job: JobRecord) -> Dict[str, Any]:
+        return {
+            "id": job.id,
+            "status": job.status,
+            "progress": job.progress,
+            "config": job.config,
+            "error": job.error,
+            "history": job.history,
+            "evaluation": job.evaluation,
+            "deployed": job.deployed,
+            "created_at": job.created_at.isoformat() + "Z" if job.created_at else None,
+        }
+
+    @staticmethod
+    def _store_to_dict(s: VectorStoreRecord) -> Dict[str, Any]:
+        return {
+            "table_name": s.table_name,
+            "embedding_model": s.embedding_model,
+            "documents_added": int(s.documents_added),
+            "created_at": s.created_at.isoformat() + "Z" if s.created_at else None,
+        }
+
+    @staticmethod
+    def _tm_to_dict(t: TranslationMemoryRecord) -> Dict[str, Any]:
+        return {
+            "id": t.id,
+            "source_text": t.source_text,
+            "target_text": t.target_text,
+            "source_lang": t.source_lang,
+            "target_lang": t.target_lang,
+            "category": t.category,
+            "is_approved": t.is_approved,
+            "created_at": t.created_at.isoformat() + "Z" if t.created_at else None,
+            "updated_at": t.updated_at.isoformat() + "Z" if t.updated_at else None,
+        }
+
+    @staticmethod
+    def _notification_to_dict(n: NotificationRecord) -> Dict[str, Any]:
+        return {
+            "id": n.id,
+            "user_id": n.user_id,
+            "icon": n.icon,
+            "title": n.title,
+            "description": n.description,
+            "severity": n.severity,
+            "read": n.read,
+            "created_at": n.created_at.isoformat() + "Z" if n.created_at else None,
+        }
+
+    @staticmethod
+    def _user_to_dict(u: UserRecord) -> Dict[str, Any]:
+        return {
+            "id": u.id,
+            "email": u.email,
+            "display_name": u.display_name,
+            "initials": u.initials,
+            "team_name": u.team_name,
+            "avatar_url": u.avatar_url,
+            "role": u.role,
+            "auth_source": u.auth_source,
+            "last_login_at": u.last_login_at.isoformat() + "Z" if u.last_login_at else None,
+            "created_at": u.created_at.isoformat() + "Z" if u.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _derive_initials(display_name: str) -> str:
+    parts = display_name.strip().split()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[-1][0]).upper()
+    if parts:
+        return parts[0][:2].upper()
+    return "??"
 
 
 _store: Optional[Store] = None
@@ -461,5 +463,4 @@ def get_store() -> Store:
 
 
 def seed_store():
-    # Placeholder for reference data seeding if needed
     pass

@@ -19,8 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from sqlalchemy import create_engine, Column, String, Float, JSON, Boolean, DateTime, text
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import text
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -41,13 +40,15 @@ _allowed_origins_raw = os.getenv(
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]
 
 # --- DATABASE PERSISTENCE SETUP ---
-from .database import engine, SessionLocal, get_db, init_database, close_database
+from .database import engine, SessionLocal, get_db, init_database, close_database, db_backend_label
 from .store import JobRecord, get_store, seed_store
 from . import rag
 from . import pal
 from . import data_products
 from . import personal_knowledge
 from . import workspace_api
+from . import notification_api
+from . import auth_api
 from .identity import resolve_request_identity
 
 from .hana_config import HANA_HOST, HANA_PORT, HANA_USER, HANA_PASSWORD, HANA_ENCRYPT
@@ -97,7 +98,7 @@ def get_job(job_id: str):
 def get_all_jobs():
     db = SessionLocal()
     try:
-        jobs = db.query(JobRecord).all()
+        jobs = db.query(JobRecord).order_by(JobRecord.created_at.desc()).all()
         return [{
             "id": job.id, "status": job.status, "progress": job.progress, 
             "config": job.config, "error": job.error, "history": job.history,
@@ -106,15 +107,6 @@ def get_all_jobs():
         } for job in jobs]
     finally:
         db.close()
-
-    jobs = db.query(JobRecord).order_by(JobRecord.created_at.desc()).all()
-    db.close()
-    return [{
-        "id": j.id, "status": j.status, "progress": j.progress, 
-        "config": j.config, "error": j.error, "history": j.history,
-        "evaluation": j.evaluation, "deployed": j.deployed,
-        "created_at": j.created_at.isoformat() + "Z"
-    } for j in jobs]
 
 from src.telemetry import get_system_telemetry
 
@@ -431,6 +423,8 @@ app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 app.include_router(personal_knowledge.router, prefix="/knowledge", tags=["Personal Knowledge"])
 app.include_router(data_products.router, prefix="/data-products", tags=["Data Products"])
 app.include_router(workspace_api.router, prefix="/workspace", tags=["Workspace"])
+app.include_router(notification_api.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(auth_api.router, prefix="/auth", tags=["Auth"])
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
@@ -733,11 +727,12 @@ async def health() -> dict:
     """Detailed health check for production telemetry."""
     import httpx
     
-    # 1. Check SQLite/Local DB
+    # 1. Check database (HANA or SQLite)
+    backend = db_backend_label()
     db_status = "healthy"
     try:
         db = SessionLocal()
-        db.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1" + (" FROM DUMMY" if backend == "hana" else "")))
         db.close()
     except Exception:
         db_status = "unhealthy"
@@ -772,6 +767,7 @@ async def health() -> dict:
     return {
         "status": overall,
         "service": "training-webcomponents-ngx-api",
+        "db_backend": backend,
         "dependencies": {
             "database": db_status,
             "hana_vector": hana_status,

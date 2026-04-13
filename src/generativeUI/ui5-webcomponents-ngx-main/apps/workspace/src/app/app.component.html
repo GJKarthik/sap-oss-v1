@@ -11,7 +11,7 @@
     [secondaryTitle]="'APP_SUBTITLE' | ui5I18n"
     show-product-switch="true"
     show-notifications
-    notifications-count="4"
+    [attr.notifications-count]="unreadCount()"
     show-co-pilot
     [accessibilityAttributes]="shellbarA11y"
     (logoClick)="navigateTo('/')"
@@ -19,7 +19,7 @@
     (notifications-click)="openNotifications($event)"
     (co-pilot-click)="navigateTo('/joule')"
     (profile-click)="openProfile($event)">
-    <ui5-avatar slot="profile" initials="JI" color-scheme="Accent6" shape="Circle" size="S" interactive class="shellbar-avatar"></ui5-avatar>
+    <ui5-avatar slot="profile" [attr.initials]="userInitials()" color-scheme="Accent6" shape="Circle" size="S" interactive class="shellbar-avatar"></ui5-avatar>
   </ui5-shellbar>
 
   <div class="app-body">
@@ -97,7 +97,7 @@
     <div class="user-menu">
       <header class="user-menu__header">
         <div class="avatar-container">
-          <ui5-avatar initials="JI" color-scheme="Accent6" shape="Circle" size="XL" class="profile-avatar"></ui5-avatar>
+          <ui5-avatar [attr.initials]="userInitials()" color-scheme="Accent6" shape="Circle" size="XL" class="profile-avatar"></ui5-avatar>
           <div class="status-indicator"></div>
         </div>
         <div class="user-menu__info">
@@ -154,12 +154,16 @@
     <div class="user-menu">
       <ui5-list separators="Inner">
         <ui5-li
-          *ngFor="let n of notifications"
+          *ngFor="let n of notifications()"
           [icon]="n.icon"
-          [description]="n.description">{{ n.title }}</ui5-li>
+          [description]="n.description"
+          [class.notification--unread]="!n.read"
+          (click)="onMarkRead(n.id)">{{ n.title }}</ui5-li>
       </ui5-list>
+      <div class="notification-empty" *ngIf="notifications().length === 0">No notifications</div>
       <footer class="user-menu__footer">
-        <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">View All</ui5-button>
+        <ui5-button *ngIf="unreadCount() > 0" design="Transparent" (click)="onMarkAllRead()">{{ 'NOTIFICATIONS_MARK_ALL_READ' | ui5I18n }}</ui5-button>
+        <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">{{ 'NOTIFICATIONS_CLOSE' | ui5I18n }}</ui5-button>
       </footer>
     </div>
   </ui5-popover>
