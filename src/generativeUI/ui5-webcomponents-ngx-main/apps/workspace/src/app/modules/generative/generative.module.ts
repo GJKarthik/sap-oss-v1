@@ -8,11 +8,12 @@ import { Ui5I18nModule } from '@ui5/webcomponents-ngx/i18n';
 import { Ui5WorkspaceComponentsModule } from '../../shared/ui5-workspace-components.module';
 
 @NgModule({
-  declarations: [GenerativePageComponent, GenerativeRendererComponent, GenerativeNodeBuilderComponent],
+  declarations: [GenerativeRendererComponent, GenerativeNodeBuilderComponent],
   imports: [
     CommonModule,
     Ui5WorkspaceComponentsModule,
     Ui5I18nModule,
+    GenerativePageComponent,
     RouterModule.forChild([
       { path: '', component: GenerativePageComponent }
     ])

@@ -1,13 +1,21 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { GenerativeNode } from './generative-renderer.component';
 import { GenerativeIntentService, UIIntent } from './generative-intent.service';
 import { Subscription } from 'rxjs';
 import { GenerativeRuntimeService } from './generative-runtime.service';
 import { ExperienceHealthService } from '../../core/experience-health.service';
 import { WorkspaceHistoryService } from '../../core/workspace-history.service';
+import { Ui5WorkspaceComponentsModule } from '../../shared/ui5-workspace-components.module';
+import { Ui5I18nModule, I18nPipe } from '@ui5/webcomponents-ngx/i18n';
+import { GenerativeRendererComponent } from './generative-renderer.component';
 
 @Component({
   selector: 'app-generative-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, Ui5WorkspaceComponentsModule, I18nPipe, GenerativeRendererComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <section class="generative-page" role="main" aria-label="Generative UI workspace">
       <header class="generative-header">
@@ -42,54 +50,65 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
               <div class="generative-suggestions">
                 <span class="generative-suggestions__title">Quick Starts</span>
                 <div class="generative-suggestions__items">
-                  <ui5-button
-                    *ngFor="let starterPrompt of starterPrompts"
-                    design="Transparent"
-                    (click)="setPrompt(starterPrompt)">
-                    {{ starterPrompt }}
-                  </ui5-button>
+                  @for (starterPrompt of starterPrompts; track starterPrompt) {
+                    <ui5-button
+                      design="Transparent"
+                      (click)="setPrompt(starterPrompt)">
+                      {{ starterPrompt }}
+                    </ui5-button>
+                  }
                 </div>
               </div>
             </div>
           </ui5-card>
 
-          <ui5-card *ngIf="lastIntent" class="generative-card generative-card--intent">
-            <ui5-card-header
-              slot="header"
-              [attr.title-text]="'GENERATIVE_LAST_INTENT' | ui5I18n"
-              [attr.subtitle-text]="lastIntent.action">
-            </ui5-card-header>
-            <div class="generative-card__body">
-              <pre class="intent-pre">{{ prettyPrint(lastIntent.payload) }}</pre>
-            </div>
-          </ui5-card>
+          @if (lastIntent) {
+            <ui5-card class="generative-card generative-card--intent">
+              <ui5-card-header
+                slot="header"
+                [attr.title-text]="'GENERATIVE_LAST_INTENT' | ui5I18n"
+                [attr.subtitle-text]="lastIntent.action">
+              </ui5-card-header>
+              <div class="card-body">
+                <pre class="intent-pre">{{ prettyPrint(lastIntent.payload) }}</pre>
+              </div>
+            </ui5-card>
+          }
         </aside>
 
         <main class="generative-main">
-          <div *ngIf="loading" class="generative-loading-stage">
-            <div class="liquid-skeleton">
-              <div class="liquid-skeleton__header"></div>
-              <div class="liquid-skeleton__body">
-                <div class="liquid-skeleton__line"></div>
-                <div class="liquid-skeleton__line"></div>
-                <div class="liquid-skeleton__line"></div>
+          @if (loading) {
+            <div class="generative-loading-stage">
+              <div class="liquid-skeleton">
+                <div class="liquid-skeleton__header"></div>
+                <div class="liquid-skeleton__body">
+                  <div class="liquid-skeleton__line"></div>
+                  <div class="liquid-skeleton__line"></div>
+                  <div class="liquid-skeleton__line"></div>
+                </div>
               </div>
+              <span class="loading-label">{{ 'GENERATIVE_LOADING' | ui5I18n }}</span>
             </div>
-            <span class="loading-label">{{ 'GENERATIVE_LOADING' | ui5I18n }}</span>
-          </div>
+          }
 
-          <div *ngIf="!loading && uiSchema" class="generative-stage">
-            <app-generative-renderer [node]="uiSchema"></app-generative-renderer>
-          </div>
+          @if (!loading && uiSchema) {
+            <div class="generative-stage">
+              <app-generative-renderer [node]="uiSchema"></app-generative-renderer>
+            </div>
+          }
 
-          <div *ngIf="!uiSchema && !loading" class="generative-empty-stage">
-             <ui5-icon name="collections-insight"></ui5-icon>
-             <p>{{ 'GENERATIVE_EMPTY_HINT' | ui5I18n }}</p>
-          </div>
+          @if (!uiSchema && !loading) {
+            <div class="generative-empty-stage">
+               <ui5-icon name="collections-insight"></ui5-icon>
+               <p>{{ 'GENERATIVE_EMPTY_HINT' | ui5I18n }}</p>
+            </div>
+          }
           
-          <ui5-message-strip *ngIf="lastError" design="Negative" class="error-strip">
-            {{ lastError }}
-          </ui5-message-strip>
+          @if (lastError) {
+            <ui5-message-strip design="Negative" class="error-strip">
+              {{ lastError }}
+            </ui5-message-strip>
+          }
         </main>
       </div>
     </section>
@@ -265,143 +284,6 @@ import { WorkspaceHistoryService } from '../../core/workspace-history.service';
       .generative-sidebar { width: 100%; }
     }
   `],
-
-      gap: 1rem;
-    }
-
-    .generative-loading {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      color: var(--sapContent_LabelColor, #6a6d70);
-      padding: 0.85rem 1rem;
-      border-radius: 0.75rem;
-      background: var(--liquid-glass-bg);
-      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-    }
-
-    .generative-skeleton-card {
-      border-radius: 1rem;
-      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-      background: var(--liquid-glass-bg);
-      overflow: hidden;
-    }
-
-    .generative-skeleton-card__header {
-      padding: 1rem;
-      border-bottom: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-    }
-
-    .generative-skeleton-card__body {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      padding: 1rem;
-    }
-
-    .generative-skeleton-card__footer {
-      padding: 0.75rem 1rem;
-      border-top: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-    }
-
-    .generative-skeleton__bar {
-      border-radius: 0.375rem;
-      background: linear-gradient(90deg, var(--sapList_Background, #f5f5f5) 25%, var(--liquid-glass-bg) 50%, var(--sapList_Background, #f5f5f5) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease-in-out infinite;
-    }
-
-    .generative-skeleton--header { height: 0.875rem; width: 35%; }
-    .generative-skeleton--wide { height: 0.75rem; width: 100%; }
-    .generative-skeleton--medium { height: 0.75rem; width: 75%; }
-    .generative-skeleton--narrow { height: 0.75rem; width: 50%; }
-    .generative-skeleton--btn { height: 2rem; width: 7rem; border-radius: 0.5rem; }
-
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .generative-skeleton__bar { animation: none; }
-    }
-
-    .generative-card--intent pre {
-      margin: 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-      padding: 0.85rem;
-      border-radius: 0.75rem;
-      background: var(--sapList_Background, #f5f5f5);
-      border: 1px solid var(--sapList_BorderColor, #d9d9d9);
-      font-size: 0.8rem;
-    }
-
-    .generative-render {
-      grid-column: 1 / -1;
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    .generative-render__header {
-      display: grid;
-      gap: 0.35rem;
-    }
-
-    .generative-render__title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .generative-render__actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .generative-render__header ui5-title,
-    .generative-render__header p {
-      margin: 0;
-    }
-
-    .generative-render__header p {
-      color: var(--sapContent_LabelColor, #6a6d70);
-    }
-
-    .generative-render__stage {
-      min-height: 420px;
-      padding: 1rem;
-      border-radius: 1rem;
-      border: 1px solid color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-      background: var(--liquid-glass-bg);
-      box-shadow: var(--sapContent_Shadow1, 0 2px 8px rgba(0, 0, 0, 0.12));
-    }
-
-    .generative-empty {
-      display: grid;
-      place-items: center;
-      min-height: 320px;
-      color: var(--sapContent_LabelColor, #6a6d70);
-      text-align: center;
-      padding: 1rem;
-      border-radius: 0.9rem;
-      border: 1px dashed color-mix(in srgb, var(--sapList_BorderColor, #d9d9d9) 88%, white);
-      background: color-mix(in srgb, white 92%, var(--sapList_Background, #f5f5f5));
-    }
-
-    @media (max-width: 960px) {
-      .generative-page {
-        padding: 1rem;
-      }
-
-      .generative-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `],
-  standalone: false
 })
 export class GenerativePageComponent implements OnInit, OnDestroy {
   uiSchema: GenerativeNode | null = null;
