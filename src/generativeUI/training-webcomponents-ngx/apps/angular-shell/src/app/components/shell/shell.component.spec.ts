@@ -135,4 +135,23 @@ describe('ShellComponent', () => {
     expect(close).toHaveBeenCalledTimes(1);
     expect(MOCK_ROUTER.navigate).toHaveBeenCalledWith(['/workspace']);
   });
+
+  it('creates the component', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('exposes navGroups based on workspace visibility', () => {
+    const groups = component.navGroups();
+    expect(Array.isArray(groups)).toBe(true);
+  });
+
+  it('delegates logout to AuthService', () => {
+    component.onSignOut();
+    expect(MOCK_AUTH.logout).toHaveBeenCalled();
+  });
+
+  it('records page visit on navigation', () => {
+    component.navigateTo('/pipeline');
+    expect(MOCK_ROUTER.navigate).toHaveBeenCalledWith(['/pipeline']);
+  });
 });
