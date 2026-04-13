@@ -1,0 +1,25 @@
+{
+  "tasks": [
+    "Send Request to Is the Journal Journal Not Posted Update Risk Prepare Summary R",
+    "Download PSGL Roll Forward Prior U a p n d d a C te o m Pa p r a a r m at e iv te e r s s Update 'Accounts Extract Trial Balance Up V d a a ri t a e n T c B e A D n e a ta ly il s s i s in Ca B lc e u tw la e te e n V a P r r i i a o n r ce Filter Variances Comm U e p n d t a a t r e ies for Un C e h x e p c l k a i f n o e r d fur J th o e u r r n a a c l t i P o o n s r t e e q d u , i N re o d Comm Up en d t a a t r e ies in Ch In e v c e k s t if ig F a u t r io th n er Check for Material Send For Internal R a e n v d i e In w c I o n r t p e o rn ra a t l e ly V a a t r t i a a c n h c e e d s t a o n i d t f R o is r k M +5 FORTM Pa S c e k n t Summary",
+    "Track Entries and Trial Balance Review",
+    "Seek Commentaries"
+  ],
+  "gateways": [
+    "Download PSGL Roll Forward Prior U a p n d d a C te o m Pa p r a a r m at e iv te e r s s Update 'Accounts Extract Trial Balance Up V d a a ri t a e n T c B e A D n e a ta ly il s s i s in Ca B lc e u tw la e te e n V a P r r i i a o n r ce Filter Variances Comm U e p n d t a a t r e ies for Un C e h x e p c l k a i f n o e r d fur J th o e u r r n a a c l t i P o o n s r t e e q d u , i N re o d Comm Up en d t a a t r e ies in Ch In e v c e k s t if ig F a u t r io th n er Check for Material Send For Internal R a e n v d i e In w c I o n r t p e o rn ra a t l e ly V a a t r t i a a c n h c e e d s t a o n i d t f R o is r k M +5 FORTM Pa S c e k n t Summary"
+  ],
+  "events": [
+    "FORTM Pack Summary of Material Pack",
+    "Master Account File Month File to Reflect Current... Master' Sheet File in Current... Month and Curren... Bases Set Criteria Variances Variances MS-E-xcel-1 MS Outlook-1 MS-E-xcel-1 Shared Drive Variance File Required Variances MS-E-xcel-1 Shared Drive MS-E-xcel-1 Shared Drive Review Changes, if Any inclusion in FORTM Pack",
+    "Prepare Schedule work M -3 M -3 M -3 M -3 M -3 to M +5 M -2 to M +5 M -2 to M +5 M -2 to M +5 M -2 to M +5 M -2 to M +5 M -2 to M +5 M -2 to M +5 R R M -2 to M +5 M +5 M +5"
+  ],
+  "data_objects": [],
+  "participants": [],
+  "systems": [
+    "MS Excel",
+    "MS Outlook",
+    "PSGL",
+    "SC Bridge",
+    "Shared Drive"
+  ]
+}

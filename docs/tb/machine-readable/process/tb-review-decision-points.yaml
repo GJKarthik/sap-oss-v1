@@ -1,0 +1,96 @@
+# =============================================================================
+# Trial Balance Review - Decision Points
+# Extracted gateway logic for programmatic consumption
+# =============================================================================
+
+workflowRef: "tb-review-glo"
+
+decisionPoints:
+  - id: "DP-001"
+    name: "Material Variance Check"
+    stateRef: "CHECK_MATERIAL_VARIANCES"
+    timing: "M-2 to M+5"
+    description: "Determine if filtered variances exceed materiality threshold"
+    inputMetric: "variance_amount"
+    operator: "exceeds_threshold"
+    threshold: "materiality_limit"
+    thresholdNote: "Country-specific; defined in parameters sheet"
+    outcomes:
+      - condition: "Variances Are Material"
+        action: "seek_commentaries"
+        description: "Request explanations from country stakeholders"
+      - condition: "Variances Not Material"
+        action: "proceed_to_unexplained_check"
+        description: "Skip commentary phase, check for unexplained items"
+    aiAugmentation:
+      opportunity: "Auto-classify variance materiality using ML threshold tuning"
+      dataNeeded: ["variance_amount", "account_category", "historical_thresholds"]
+
+  - id: "DP-002"
+    name: "Journal Posting Status"
+    stateRef: "IS_JOURNAL_POSTED"
+    timing: "M-2 to M+5"
+    description: "Check whether related journal entries have been posted"
+    inputMetric: "journal_status"
+    outcomes:
+      - condition: "Journal Posted, No further action required"
+        action: "proceed_to_unexplained_check"
+      - condition: "Journal Posting Required"
+        action: "send_posting_request"
+        description: "Email request to post journal"
+      - condition: "Journal Not Posted"
+        action: "investigate_further"
+        description: "Check if further investigation needed"
+    aiAugmentation:
+      opportunity: "Auto-detect unposted journals from GL data and trigger alerts"
+      dataNeeded: ["journal_id", "posting_status", "posting_date", "responsible_team"]
+
+  - id: "DP-003"
+    name: "Further Investigation Required"
+    stateRef: "CHECK_FURTHER_INVESTIGATION"
+    timing: "M-2 to M+5"
+    description: "Assess whether additional investigation is needed for unposted entries"
+    inputMetric: "investigation_status"
+    outcomes:
+      - condition: "Further Investigation Not Required"
+        action: "proceed_to_unexplained_check"
+      - condition: "Further Investigation Required"
+        action: "check_entries_with_team"
+        description: "Contact responsible team for entry status"
+    aiAugmentation:
+      opportunity: "Predict investigation need based on entry age, amount, and historical patterns"
+      dataNeeded: ["entry_age_days", "entry_amount", "entry_type", "historical_resolution_rate"]
+
+  - id: "DP-004"
+    name: "Entry Confirmation Status"
+    stateRef: "CHECK_CONFIRMATION"
+    timing: "M-2 to M+5"
+    description: "Check if entry confirmations received by M+4 deadline"
+    inputMetric: "confirmation_received"
+    deadline: "M+4"
+    outcomes:
+      - condition: "Confirmation Received / Entries Posted by M+4"
+        action: "proceed_to_unexplained_check"
+      - condition: "Confirmation Not Received / Entries Not Posted by M+4"
+        action: "track_and_risk_assess"
+        description: "Track overdue entries and perform risk analysis"
+    aiAugmentation:
+      opportunity: "Auto-escalate approaching M+4 deadline with predictive risk scoring"
+      dataNeeded: ["entry_id", "days_to_deadline", "team_response_history"]
+
+  - id: "DP-005"
+    name: "Unexplained Variance Check"
+    stateRef: "CHECK_UNEXPLAINED"
+    timing: "M-2 to M+5"
+    description: "Final check for variances without adequate explanation"
+    inputMetric: "unexplained_variance_count"
+    outcomes:
+      - condition: "No Unexplained Variances"
+        action: "prepare_summary"
+        description: "All variances explained, proceed to summary"
+      - condition: "Unexplained Variances"
+        action: "categorize_unexplained"
+        description: "Classify and document remaining unexplained items"
+    aiAugmentation:
+      opportunity: "Auto-generate draft commentaries for unexplained variances using LLM"
+      dataNeeded: ["variance_amount", "account_description", "historical_commentaries", "transaction_detail"]

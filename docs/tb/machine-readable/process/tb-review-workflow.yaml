@@ -1,0 +1,363 @@
+# =============================================================================
+# Trial Balance Review - Month End Close Controls (GLO)
+# State Machine Specification
+# Source: BPMN diagram + Business Case documents
+# =============================================================================
+
+workflowId: "tb-review-glo"
+version: "1.0.0"
+title: "Operation of Month End Close Controls - Trial Balance Review - GLO"
+processOwner: "Modi, Piyush"
+lastChanged: "2025-05-23T19:50:30Z"
+scope: "GLO (Global)"
+sourceFiles:
+  - "Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf"
+  - "Business case - Trial Balance (2).doc"
+
+# Timeline phases relative to month-end
+timeline:
+  - phase: "preparation"
+    timing: "M-3"
+    description: "Setup: roll forward prior month file, update parameters and master data"
+  - phase: "extraction"
+    timing: "M-3 to M+5"
+    description: "Extract TB from PSGL/S4 and load into variance analysis file"
+  - phase: "analysis"
+    timing: "M-2 to M+5"
+    description: "Variance calculation, commentary collection, investigation, risk assessment"
+  - phase: "review"
+    timing: "M+5"
+    description: "Internal review, incorporate changes, send FORTM pack summary"
+
+states:
+  - stateId: "START"
+    type: "start_event"
+    name: "Prepare Schedule Work Day"
+    description: "Month-end close cycle begins"
+    transitions:
+      - target: "ROLL_FORWARD"
+
+  - stateId: "ROLL_FORWARD"
+    type: "task"
+    name: "Roll Forward Prior Month File"
+    timing: "M-3"
+    description: "Copy prior month's TB working file as basis for current month"
+    systems: ["MS Excel", "Shared Drive"]
+    inputs: ["Prior month TB file"]
+    outputs: ["Current month working file"]
+    transitions:
+      - target: "DOWNLOAD_PSGL"
+
+  - stateId: "DOWNLOAD_PSGL"
+    type: "task"
+    name: "Download PSGL Master Account File"
+    timing: "M-3"
+    description: "Download latest PSGL/S4 master account data"
+    systems: ["PSGL", "MS Excel"]
+    inputs: ["PSGL system"]
+    outputs: ["Master account file"]
+    transitions:
+      - target: "UPDATE_ACCOUNTS_MASTER"
+
+  - stateId: "UPDATE_ACCOUNTS_MASTER"
+    type: "task"
+    name: "Update Accounts Master Sheet"
+    timing: "M-3"
+    description: "Refresh accounts master sheet with latest PSGL data"
+    systems: ["MS Excel"]
+    inputs: ["Master account file"]
+    outputs: ["Updated accounts master"]
+    transitions:
+      - target: "UPDATE_PARAMETERS"
+
+  - stateId: "UPDATE_PARAMETERS"
+    type: "task"
+    name: "Update Parameters and Comparatives to Reflect Current Period"
+    timing: "M-3"
+    description: "Set period parameters and comparative figures for current month"
+    systems: ["MS Excel"]
+    inputs: ["Updated accounts master"]
+    outputs: ["Parameterized working file"]
+    transitions:
+      - target: "EXTRACT_TB"
+
+  - stateId: "EXTRACT_TB"
+    type: "task"
+    name: "Extract Trial Balance"
+    timing: "M-3 to M+5"
+    description: "Extract TB data from PSGL/S4 via SC Bridge into working file"
+    systems: ["SC Bridge", "MS Excel"]
+    inputs: ["Parameterized working file", "PSGL/S4 data"]
+    outputs: ["TB data extract"]
+    transitions:
+      - target: "UPDATE_TB_DETAILS"
+
+  - stateId: "UPDATE_TB_DETAILS"
+    type: "task"
+    name: "Update TB Details in Variance Analysis File"
+    timing: "M-2 to M+5"
+    description: "Load extracted TB data into the variance analysis file"
+    systems: ["MS Excel", "Shared Drive"]
+    inputs: ["TB data extract"]
+    outputs: ["Populated variance analysis file"]
+    eucRef: "EX/200/1579702/0001/000"
+    transitions:
+      - target: "CALCULATE_VARIANCE"
+
+  - stateId: "CALCULATE_VARIANCE"
+    type: "task"
+    name: "Calculate Variance Between Prior Month and Current"
+    timing: "M-2 to M+5"
+    description: "Compute period-over-period variances for all GL accounts"
+    systems: ["MS Excel"]
+    inputs: ["Populated variance analysis file"]
+    outputs: ["Variance calculations"]
+    transitions:
+      - target: "FILTER_VARIANCES"
+
+  - stateId: "FILTER_VARIANCES"
+    type: "task"
+    name: "Filter Variances Based on Set Criteria"
+    timing: "M-2 to M+5"
+    description: "Apply materiality thresholds and filters to identify significant variances"
+    systems: ["MS Excel"]
+    inputs: ["Variance calculations"]
+    outputs: ["Filtered material variances"]
+    transitions:
+      - target: "CHECK_MATERIAL_VARIANCES"
+
+  - stateId: "CHECK_MATERIAL_VARIANCES"
+    type: "gateway_exclusive"
+    name: "Check for Material Variances"
+    timing: "M-2 to M+5"
+    description: "Decision: are there material variances requiring commentary?"
+    transitions:
+      - condition: "Variances Are Material"
+        target: "SEEK_COMMENTARIES"
+      - condition: "Variances Not Material"
+        target: "CHECK_UNEXPLAINED"
+
+  - stateId: "SEEK_COMMENTARIES"
+    type: "task"
+    name: "Seek Commentaries on Variances"
+    timing: "M-2 to M+5"
+    description: "Request variance explanations from country stakeholders"
+    systems: ["MS Outlook"]
+    participant: "Country Stakeholders"
+    inputs: ["Material variance list"]
+    outputs: ["Commentary requests sent"]
+    transitions:
+      - target: "RECEIVE_COMMENTARIES"
+
+  - stateId: "RECEIVE_COMMENTARIES"
+    type: "intermediate_event"
+    name: "Receive Commentaries on Variances"
+    timing: "M-2 to M+5"
+    description: "Wait for and collect variance explanations from stakeholders"
+    participant: "Country Stakeholders"
+    transitions:
+      - target: "UPDATE_COMMENTARIES"
+
+  - stateId: "UPDATE_COMMENTARIES"
+    type: "task"
+    name: "Update Commentaries in Variance File"
+    timing: "M-2 to M+5"
+    description: "Record received commentaries in the variance analysis file"
+    systems: ["MS Excel"]
+    inputs: ["Received commentaries"]
+    outputs: ["Updated variance file with commentaries"]
+    transitions:
+      - target: "UPDATE_VARIANCE_COMMENTARIES"
+
+  - stateId: "UPDATE_VARIANCE_COMMENTARIES"
+    type: "task"
+    name: "Update Variance Commentaries"
+    timing: "M-2 to M+5"
+    description: "Finalize and validate all variance commentaries"
+    systems: ["MS Excel"]
+    transitions:
+      - target: "IS_JOURNAL_POSTED"
+
+  - stateId: "IS_JOURNAL_POSTED"
+    type: "gateway_exclusive"
+    name: "Is the Journal Posted?"
+    timing: "M-2 to M+5"
+    description: "Check status of related journal entries"
+    transitions:
+      - condition: "Journal Posted, No further action required"
+        target: "CHECK_UNEXPLAINED"
+      - condition: "Journal Posting Required"
+        target: "SEND_JOURNAL_REQUEST"
+      - condition: "Journal Not Posted"
+        target: "CHECK_FURTHER_INVESTIGATION"
+
+  - stateId: "SEND_JOURNAL_REQUEST"
+    type: "task"
+    name: "Send Request to Post Journal"
+    timing: "M-2 to M+5"
+    description: "Request journal posting from responsible team"
+    systems: ["MS Outlook"]
+    transitions:
+      - target: "CHECK_FURTHER_INVESTIGATION"
+
+  - stateId: "CHECK_FURTHER_INVESTIGATION"
+    type: "gateway_exclusive"
+    name: "Check if Further Investigation Required"
+    timing: "M-2 to M+5"
+    description: "Determine if additional investigation is needed for entries"
+    transitions:
+      - condition: "Further Investigation Not Required"
+        target: "CHECK_UNEXPLAINED"
+      - condition: "Further Investigation Required"
+        target: "CHECK_ENTRIES_STATUS"
+
+  - stateId: "CHECK_ENTRIES_STATUS"
+    type: "task"
+    name: "Check with Respective Team on Entries Status"
+    timing: "M-2 to M+5"
+    description: "Follow up with teams on outstanding entries"
+    systems: ["MS Outlook"]
+    inputs: ["Outstanding entries list"]
+    outputs: ["Entry status updates"]
+    transitions:
+      - target: "CHECK_CONFIRMATION"
+
+  - stateId: "CHECK_CONFIRMATION"
+    type: "gateway_exclusive"
+    name: "Check if Confirmation on Entries Status Received"
+    timing: "M-2 to M+5"
+    description: "Evaluate whether entry confirmations received by M+4 deadline"
+    transitions:
+      - condition: "Confirmation on Entries Status Received/Entries Posted by M+4"
+        target: "CHECK_UNEXPLAINED"
+      - condition: "Confirmation on Entries Status not Received/Entries Not Posted by M+4"
+        target: "TRACK_ENTRIES"
+
+  - stateId: "TRACK_ENTRIES"
+    type: "task"
+    name: "Track Entries and Perform Risk Analysis"
+    timing: "M-2 to M+5"
+    description: "Track overdue entries and assess associated risks"
+    systems: ["MS Excel"]
+    inputs: ["Overdue entries"]
+    outputs: ["Risk analysis for unconfirmed entries"]
+    transitions:
+      - target: "UPDATE_RISK"
+
+  - stateId: "UPDATE_RISK"
+    type: "task"
+    name: "Update Risk Assessment"
+    timing: "M-2 to M+5"
+    description: "Update risk assessment in working file for tracked entries"
+    systems: ["MS Excel"]
+    transitions:
+      - target: "CHECK_UNEXPLAINED"
+
+  - stateId: "CHECK_UNEXPLAINED"
+    type: "gateway_exclusive"
+    name: "Check for Unexplained Variances"
+    timing: "M-2 to M+5"
+    description: "Final check: are there variances without adequate explanation?"
+    transitions:
+      - condition: "No Unexplained Variances"
+        target: "PREPARE_SUMMARY"
+      - condition: "Unexplained Variances"
+        target: "CATEGORIZE_UNEXPLAINED"
+
+  - stateId: "CATEGORIZE_UNEXPLAINED"
+    type: "task"
+    name: "Categorize Unexplained Variances"
+    timing: "M-2 to M+5"
+    description: "Classify and document remaining unexplained variances"
+    systems: ["MS Excel", "Shared Drive"]
+    transitions:
+      - target: "PREPARE_SUMMARY"
+
+  - stateId: "PREPARE_SUMMARY"
+    type: "task"
+    name: "Prepare Summary for Material Variances and Risk"
+    timing: "M-2 to M+5"
+    description: "Consolidate variance analysis, commentaries, and risk into summary report"
+    systems: ["MS Excel"]
+    inputs: ["Complete variance analysis", "Risk assessments", "Commentaries"]
+    outputs: ["Material variance summary", "Risk summary"]
+    transitions:
+      - target: "SEND_INTERNAL_REVIEW"
+
+  - stateId: "SEND_INTERNAL_REVIEW"
+    type: "task"
+    name: "Send For Internal Review"
+    timing: "M+5"
+    description: "Submit variance summary to Head of Africa GFS for review"
+    systems: ["MS Outlook", "Shared Drive"]
+    participant: "Head of Africa GFS"
+    transitions:
+      - target: "REVIEW_INCORPORATE"
+
+  - stateId: "REVIEW_INCORPORATE"
+    type: "task"
+    name: "Review Internally and Incorporate Changes"
+    timing: "M+5"
+    description: "Internal review by Head of GFS; incorporate feedback"
+    systems: ["MS Excel", "Shared Drive"]
+    participant: "Head of Africa GFS"
+    eucRef: "EX/200/1579702/0002/000"
+    transitions:
+      - target: "SEND_FORTM"
+
+  - stateId: "SEND_FORTM"
+    type: "task"
+    name: "Send Summary for Inclusion in FORTM Pack"
+    timing: "M+5"
+    description: "Submit final TB review summary for FORTM reporting pack"
+    systems: ["MS Outlook", "Shared Drive"]
+    outputs: ["FORTM pack contribution"]
+    transitions:
+      - target: "END"
+
+  - stateId: "END"
+    type: "end_event"
+    name: "Trial Balance Review Completed for Month"
+    description: "FORTM Pack Summary Sent - cycle complete"
+
+# Data objects used across the workflow
+dataObjects:
+  - objectId: "DO-001"
+    name: "MS Excel Variance Analysis File"
+    type: "spreadsheet"
+    eucRef: "EX/200/1579702/0001/000"
+    description: "Primary working file for TB variance analysis"
+  - objectId: "DO-002"
+    name: "Shared Drive"
+    type: "file_share"
+    description: "Central file storage for TB review artifacts"
+  - objectId: "DO-003"
+    name: "PSGL Master Account File"
+    type: "system_extract"
+    description: "Primary Subledger/General Ledger master data"
+  - objectId: "DO-004"
+    name: "SC Bridge"
+    type: "system_interface"
+    description: "System bridge for TB data extraction"
+  - objectId: "DO-005"
+    name: "FORTM Pack"
+    type: "report_package"
+    description: "Financial Operations Review and Tracking Monthly reporting package"
+
+# Process participants / lanes
+participants:
+  - participantId: "PART-001"
+    name: "GFS Analyst"
+    type: "human"
+    role: "primary_executor"
+    description: "Performs TB extraction, variance analysis, and summary preparation"
+  - participantId: "PART-002"
+    name: "Head of Africa GFS"
+    type: "human"
+    role: "reviewer"
+    description: "Reviews and approves TB summary before FORTM submission"
+  - participantId: "PART-003"
+    name: "Country Stakeholders"
+    type: "group"
+    role: "commentary_providers"
+    description: "Provide variance explanations and entry status confirmations"

@@ -1,0 +1,65 @@
+# =============================================================================
+# Trial Balance Review - Control Matrix
+# EUC and process controls from BPMN diagram
+# =============================================================================
+
+workflowRef: "tb-review-glo"
+
+controls:
+  - controlId: "EUC-001"
+    eucReference: "EX/200/1353107/0001/000"
+    controlObjective: "TB data extraction and master account file integrity"
+    controlType: "preventive"
+    frequency: "monthly"
+    timing: "M-3"
+    owner: "GFS Analyst"
+    evidenceLocation: "Shared Drive"
+    relatedStates: ["DOWNLOAD_PSGL", "EXTRACT_TB"]
+    description: "Ensures PSGL master account data is correctly downloaded and loaded"
+
+  - controlId: "EUC-002"
+    eucReference: "EX/200/1579702/0001/000"
+    controlObjective: "TB Variance Analysis file integrity and calculation accuracy"
+    controlType: "detective"
+    frequency: "monthly"
+    timing: "M-2 to M+5"
+    owner: "GFS Analyst"
+    evidenceLocation: "Shared Drive"
+    relatedStates: ["UPDATE_TB_DETAILS", "CALCULATE_VARIANCE", "FILTER_VARIANCES"]
+    description: "Ensures variance calculations in the Excel working file are accurate"
+
+  - controlId: "EUC-003"
+    eucReference: "EX/200/1579702/0002/000"
+    controlObjective: "Internal review and approval of TB summary"
+    controlType: "detective"
+    frequency: "monthly"
+    timing: "M+5"
+    owner: "Head of Africa GFS"
+    evidenceLocation: "Shared Drive"
+    relatedStates: ["REVIEW_INCORPORATE"]
+    description: "Senior review of variance summary before FORTM pack submission"
+
+controlRisks:
+  - riskId: "CR-001"
+    description: "Manual data extraction prone to errors and EUC risks"
+    currentMitigation: "EUC controls EX/200/1353107/0001/000 and EX/200/1579702/0001/000"
+    severity: "high"
+    aiMitigation: "Automated extraction eliminates manual data handling"
+
+  - riskId: "CR-002"
+    description: "Delayed commentary responses from country stakeholders"
+    currentMitigation: "Email follow-ups, M+4 deadline escalation"
+    severity: "medium"
+    aiMitigation: "Auto-generated draft commentaries reduce dependency on stakeholders"
+
+  - riskId: "CR-003"
+    description: "Incomplete variance analysis due to time constraints (M+1 to M+7)"
+    currentMitigation: "20-25 FTEs manually processing during close period"
+    severity: "high"
+    aiMitigation: "AI-driven anomaly detection and automated analysis across all 234 LEs"
+
+  - riskId: "CR-004"
+    description: "Manual process not scalable to daily control operating model"
+    currentMitigation: "None - monthly batch only"
+    severity: "medium"
+    aiMitigation: "Foundation for daily automated TB monitoring"
