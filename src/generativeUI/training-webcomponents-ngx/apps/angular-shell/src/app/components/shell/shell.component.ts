@@ -348,48 +348,50 @@ import type { ContextPill } from '../../shared/utils/mode.types';
     .app-body { flex: 1; display: flex; padding: 1.5rem; gap: 1.5rem; overflow: hidden; }
     
     .app-nav-island {
-      width: 80px; display: flex; flex-direction: column; 
+      width: 84px; display: flex; flex-direction: column; 
       background: var(--liquid-glass-bg);
       backdrop-filter: var(--liquid-glass-blur);
       -webkit-backdrop-filter: var(--liquid-glass-blur);
       border: var(--liquid-glass-border); 
-      border-radius: 2.25rem;
+      border-radius: var(--radius-island);
       box-shadow: var(--liquid-glass-shadow); 
-      padding: 1rem 0; 
-      transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      padding: 1.5rem 0; 
+      transition: width 0.5s var(--spring-easing);
       overflow: hidden;
       z-index: 100;
     }
-    .app-nav-island:hover, .app-nav-island:focus-within { width: 220px; }
-    .nav-group-stack { display: flex; flex-direction: column; gap: 0.25rem; width: 100%; }
+    .app-nav-island:hover, .app-nav-island:focus-within { width: 240px; box-shadow: var(--liquid-glass-shadow-deep); }
+    .nav-group-stack { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
     .nav-island-item {
-      display: flex; align-items: center; gap: 1.5rem; width: 100%; border: none; background: transparent;
-      padding: 1.25rem 1.75rem; cursor: pointer; color: #424245; position: relative;
-      transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+      display: flex; align-items: center; gap: 1.75rem; width: 100%; border: none; background: transparent;
+      padding: 1.5rem 2rem; cursor: pointer; color: var(--text-secondary); position: relative;
+      transition: all 0.3s var(--spring-easing);
     }
     .nav-island-item:hover { 
-      background: rgba(0, 0, 0, 0.04); 
-      color: #1d1d1f;
-      transform: scale(1.02) translateX(2px);
+      background: rgba(255, 255, 255, 0.1); 
+      color: var(--text-primary);
+      transform: translateX(4px);
     }
     .nav-label { 
-      font-size: 0.95rem; font-weight: 600; white-space: nowrap; opacity: 0; 
-      letter-spacing: var(--font-letter-spacing-tight);
-      transition: opacity 0.3s var(--spring-easing); 
+      font-size: 1rem; font-weight: 700; white-space: nowrap; opacity: 0; 
+      letter-spacing: var(--font-tracking-tight);
+      transition: opacity 0.3s var(--spring-easing), transform 0.3s var(--spring-easing); 
+      transform: translateX(-10px);
     }
-    .app-nav-island:hover .nav-label, .app-nav-island:focus-within .nav-label { opacity: 1; transition-delay: 0.1s; }
+    .app-nav-island:hover .nav-label, .app-nav-island:focus-within .nav-label { opacity: 1; transform: translateX(0); transition-delay: 0.1s; }
+    
     .nav-island-item.active { color: var(--color-primary); }
-    .nav-island-item.active ui5-icon { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(var(--color-primary-rgb), 0.3)); }
+    .nav-island-item.active ui5-icon { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(var(--color-primary-rgb), 0.4)); }
     .nav-island-item.active::before { 
-      content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 4px; 
-      background: var(--color-primary); border-radius: 0 4px 4px 0; 
-      box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.4);
-      animation: indicator-pulse 2s infinite ease-in-out;
+      content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 5px; 
+      background: var(--color-primary); border-radius: 0 6px 6px 0; 
+      box-shadow: 0 0 20px var(--color-primary);
+      animation: indicator-glow 3s infinite ease-in-out;
     }
 
-    @keyframes indicator-pulse {
-      0%, 100% { transform: scaleY(1); opacity: 1; }
-      50% { transform: scaleY(1.2); opacity: 0.7; }
+    @keyframes indicator-glow {
+      0%, 100% { opacity: 1; transform: scaleY(1); }
+      50% { opacity: 0.6; transform: scaleY(1.3); filter: brightness(1.5); }
     }
 
     .nav-island-item {
