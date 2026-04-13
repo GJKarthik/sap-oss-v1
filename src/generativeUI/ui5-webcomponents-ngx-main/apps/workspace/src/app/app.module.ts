@@ -22,8 +22,8 @@ import { WorkspaceService } from './core/workspace.service';
 import { firstValueFrom } from 'rxjs';
 import { Ui5WorkspaceComponentsModule } from './shared/ui5-workspace-components.module';
 
-@NgModule({ declarations: [AppComponent, MainComponent, ServiceHealthPanelComponent],
-    bootstrap: [AppComponent], imports: [Ui5WorkspaceComponentsModule,
+@NgModule({ declarations: [MainComponent, ServiceHealthPanelComponent],
+    bootstrap: [AppComponent], imports: [AppComponent, Ui5WorkspaceComponentsModule,
         BrowserModule,
         FormsModule,
         ReactiveFormsModule,

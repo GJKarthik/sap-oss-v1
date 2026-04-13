@@ -1,6 +1,8 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { NAV_LINK_DATA, NavLinkDatum } from './workspace.types';
 
+export { NavLinkDatum };
+
 interface QuickAccessState {
   pinnedPaths: string[];
   recentPaths: string[];

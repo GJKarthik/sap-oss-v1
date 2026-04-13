@@ -40,6 +40,18 @@ export class LearnPathService {
     return this.steps[this.currentIndex] ?? null;
   }
 
+  isActive(): boolean {
+    return this.active;
+  }
+
+  progress(): number {
+    return this.currentIndex + 1;
+  }
+
+  currentStepLabel(): string {
+    return this.currentStep?.label ?? '';
+  }
+
   start(): LearnPathStep {
     this.state$.next({ active: true, index: 0 });
     return this.steps[0];
