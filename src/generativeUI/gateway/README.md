@@ -8,12 +8,13 @@ Edge layer for the generativeUI suite. Consists of an **nginx reverse proxy**, a
 |------|------|
 | `nginx.conf.template` | nginx config with env-var substitution for upstream routing |
 | `health/` | FastAPI service that polls upstream health endpoints and reports aggregate status |
-| `placeholders/sac/` | Static stub page served when the SAC app is not deployed |
 | `placeholders/ui5/` | Static stub page served when the UI5 workspace is not deployed |
 
 ## Running
 
 The gateway is started via the root `docker-compose.yml` as the `suite-gateway` service. It is not intended to run standalone.
+
+End-to-end operational checklist (secrets, compose, smoke tests, UI5 E2E): [docs/runbooks/operationalize-apps.md](../../../docs/runbooks/operationalize-apps.md).
 
 ```bash
 # From src/generativeUI/

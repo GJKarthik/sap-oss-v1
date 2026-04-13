@@ -18,7 +18,6 @@ CHECKS: list[tuple[str, str, bool]] = [
     ("aifabric_api", env("AIFABRIC_API_HEALTH_URL", "http://aifabric-api:8000/health"), True),
     ("training_web", env("TRAINING_WEB_HEALTH_URL", "http://training-web/"), True),
     ("training_api", env("TRAINING_API_HEALTH_URL", "http://training-api/health"), True),
-    ("sac_web", env("SAC_WEB_HEALTH_URL", "http://sac-web/health"), False),
     ("ui5_web", env("UI5_WEB_HEALTH_URL", "http://ui5-web/health"), False),
     ("ui5_mcp", env("UI5_MCP_HEALTH_URL", "http://ui5-mcp:9160/health"), False),
     ("cap_llm_openai", env("CAP_LLM_HEALTH_URL", "http://cap-llm-plugin:8080/health"), False),

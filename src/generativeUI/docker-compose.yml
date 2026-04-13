@@ -7,7 +7,6 @@ services:
       - aifabric-api
       - training-web
       - training-api
-      - sac-web
       - ui5-web
       - ui5-mcp
     ports:
@@ -27,7 +26,6 @@ services:
       AIFABRIC_API_HEALTH_URL: http://aifabric-api:8000/health
       TRAINING_WEB_HEALTH_URL: http://training-web/
       TRAINING_API_HEALTH_URL: http://training-api:8000/health
-      SAC_WEB_HEALTH_URL: http://sac-web/health
       UI5_WEB_HEALTH_URL: http://ui5-web/health
       UI5_MCP_HEALTH_URL: http://ui5-mcp:9160/health
       AI_CORE_PAL_HEALTH_URL: ${AI_CORE_PAL_HEALTH_URL:-}
@@ -72,12 +70,6 @@ services:
       - training-api
     environment:
       SAP_API_BASE_URL: http://training-api:8000
-    restart: unless-stopped
-
-  sac-web:
-    build:
-      context: ./sac-webcomponents-ngx
-      dockerfile: Dockerfile.suite
     restart: unless-stopped
 
   ui5-web:
