@@ -5,8 +5,6 @@
 # Usage: docker-compose -f docker-compose.full.yml up -d
 # ============================================================================
 
-version: '3.8'
-
 services:
   # ═══════════════════════════════════════════════════════════════════════════
   # TIER 0: INFRASTRUCTURE
@@ -49,7 +47,7 @@ services:
       timeout: 10s
       retries: 3
     depends_on:
-      - agent-router
+      - ai-core-pal
       - odata-schema
       - vllm
     networks:
@@ -149,8 +147,8 @@ services:
 
   vllm:
     build:
-      context: ../src/intelligence/vllm-main
-      dockerfile: Dockerfile.qwen3-q8
+      context: ../src/intelligence/vllm-turboquant
+      dockerfile: Dockerfile.vllm-l40s-turboquant
     container_name: sap-ai-vllm
     ports:
       - "${VLLM_PORT:-8080}:8080"
@@ -184,9 +182,50 @@ services:
       - sap-ai-fabric-network
     restart: unless-stopped
 
+  ai-core-pal:
+    build:
+      context: ../src/intelligence/ai-core-pal
+      dockerfile: Dockerfile
+    container_name: sap-ai-core-pal
+    ports:
+      - "${AICORE_PAL_PORT:-9881}:8084"
+    environment:
+      - PORT=8084
+      - HOST=${AICORE_PAL_HOST:-0.0.0.0}
+      - MCP_PORT=8084
+      - HANA_HOST=${HANA_HOST}
+      - HANA_PORT=${HANA_PORT:-443}
+      - HANA_USER=${HANA_USER}
+      - HANA_PASSWORD=${HANA_PASSWORD}
+      - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
+      - HANA_URL=${HANA_URL}
+      - PRIVATE_LLM_URL=${PRIVATE_LLM_URL:-http://vllm:8080}
+      - VLLM_URL=http://vllm:8080
+      - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
+      - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
+      - AICORE_AUTH_URL=${AICORE_AUTH_URL}
+      - AICORE_BASE_URL=${AICORE_BASE_URL}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    labels:
+      sap.ai.tier: "tier2-intelligence"
+      sap.ai.service: "ai-core-pal"
+    depends_on:
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - sap-ai-fabric-network
+    restart: unless-stopped
+
   genai-toolkit:
     build:
-      context: ../src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
+      context: ../src/data/langchain-integration-for-sap-hana-cloud-main
       dockerfile: Dockerfile
     container_name: sap-ai-genai-toolkit
     ports:

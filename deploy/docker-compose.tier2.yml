@@ -5,8 +5,6 @@
 # Usage: docker-compose -f docker-compose.tier2.yml up -d
 # ============================================================================
 
-version: '3.8'
-
 services:
   # ─────────────────────────────────────────────────────────────────────────
   # vLLM Inference Server
@@ -15,8 +13,8 @@ services:
   # ─────────────────────────────────────────────────────────────────────────
   vllm:
     build:
-      context: ../src/intelligence/vllm-main
-      dockerfile: Dockerfile.qwen3-q8
+      context: ../src/intelligence/vllm-turboquant
+      dockerfile: Dockerfile.vllm-l40s-turboquant
     container_name: sap-ai-vllm
     ports:
       - "${VLLM_PORT:-8080}:8080"
@@ -57,7 +55,7 @@ services:
   # ─────────────────────────────────────────────────────────────────────────
   # AI-Core-PAL (Mesh Gateway)
   # HANA PAL integration with MCP protocol support
-  # Depends on: HANA Cloud, vLLM, Agent Router
+  # Depends on: HANA Cloud and vLLM
   # ─────────────────────────────────────────────────────────────────────────
   ai-core-pal:
     build:
@@ -65,11 +63,11 @@ services:
       dockerfile: Dockerfile
     container_name: sap-ai-core-pal
     ports:
-      - "${AICORE_PAL_PORT:-9881}:8080"
+      - "${AICORE_PAL_PORT:-9881}:8084"
     environment:
-      - PORT=8080
+      - PORT=8084
       - HOST=${AICORE_PAL_HOST:-0.0.0.0}
-      - MCP_PORT=${MCP_PORT:-9881}
+      - MCP_PORT=8084
       # HANA Cloud connection
       - HANA_HOST=${HANA_HOST}
       - HANA_PORT=${HANA_PORT:-443}
@@ -96,7 +94,7 @@ services:
       vllm:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,7 +110,7 @@ services:
   # ─────────────────────────────────────────────────────────────────────────
   genai-toolkit:
     build:
-      context: ../src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main
+      context: ../src/data/langchain-integration-for-sap-hana-cloud-main
       dockerfile: Dockerfile
     container_name: sap-ai-genai-toolkit
     ports:
@@ -166,9 +164,10 @@ services:
       dockerfile: Dockerfile
     container_name: sap-ai-mcp-pal
     ports:
-      - "${MCP_PAL_PORT:-8020}:8020"
+      - "${MCP_PAL_PORT:-8020}:8084"
     environment:
-      - PORT=8020
+      - PORT=8084
+      - MCP_PORT=8084
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -180,7 +179,7 @@ services:
       vllm:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8020/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -234,35 +233,27 @@ services:
   # ─────────────────────────────────────────────────────────────────────────
   data-cleaning-copilot:
     build:
-      context: ../src/generativeUI/training-webcomponents-ngx
-      dockerfile: Dockerfile
+      context: ../src/generativeUI/training-webcomponents-ngx/packages/api-server
+      dockerfile: Dockerfile.suite
     container_name: sap-ai-data-cleaning-copilot
     ports:
       - "${DATA_CLEANING_MCP_PORT:-9110}:9110"
     environment:
-      - MCP_SERVER_PORT=9110
-      - MCP_SERVER_HOST=0.0.0.0
-      # HANA Cloud connection (for schema analysis)
+      - PORT=9110
       - HANA_HOST=${HANA_HOST}
       - HANA_PORT=${HANA_PORT:-443}
       - HANA_USER=${HANA_USER}
       - HANA_PASSWORD=${HANA_PASSWORD}
       - HANA_SCHEMA=${HANA_SCHEMA:-PAL_STORE}
       - HANA_URL=${HANA_URL}
-      # vLLM endpoint for on-premise LLM (PII data)
       - VLLM_URL=http://vllm:8080
-      - PRIVATE_LLM_URL=http://vllm:8080
-      # AI Core credentials (for cloud LLM fallback)
       - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
       - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
       - AICORE_AUTH_URL=${AICORE_AUTH_URL}
       - AICORE_BASE_URL=${AICORE_BASE_URL}
       - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
-      # Cross-agent MCP endpoints
-      - LANGCHAIN_MCP_URL=http://embedded-hana:8050/mcp
-      - CONTEXT_MCP_URL=http://odata-vocab:9150/mcp
-      - CONSOLE_API_URL=http://api-server:8000/api/v1
-      # Observability
+      - VOCAB_MCP_URL=http://odata-vocabularies-mcp:9150/mcp
+      - HANA_MCP_URL=http://embedded-hana:8050/mcp
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     labels:

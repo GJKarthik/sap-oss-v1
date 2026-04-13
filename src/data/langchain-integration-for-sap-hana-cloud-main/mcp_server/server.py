@@ -86,6 +86,24 @@ MAX_REMOTE_ENDPOINTS = int(os.environ.get("MCP_MAX_REMOTE_ENDPOINTS", "25"))
 REMOTE_MCP_TIMEOUT_SECONDS = int(os.environ.get("MCP_REMOTE_TIMEOUT_SECONDS", "3"))
 
 
+def resolve_listen_port(argv: list[str] | None = None) -> int:
+    if argv is None:
+        import sys
+
+        argv = sys.argv[1:]
+
+    for arg in argv:
+        if arg.startswith("--port="):
+            return int(arg.split("=", 1)[1])
+
+    for env_name in ("MCP_PORT", "PORT"):
+        env_value = (os.environ.get(env_name) or "").strip()
+        if env_value:
+            return int(env_value)
+
+    return 9140
+
+
 def clamp_int(value: Any, default: int, min_value: int, max_value: int) -> int:
     try:
         parsed = int(value)
@@ -359,7 +377,7 @@ class MCPServer:
         self.resources = {}
         self.facts = {}
         self.local_mcp_endpoint = normalize_mcp_endpoint(
-            os.environ.get("LANGCHAIN_MCP_ENDPOINT", f"http://localhost:{os.environ.get('MCP_PORT', '9140')}/mcp")
+            os.environ.get("LANGCHAIN_MCP_ENDPOINT", f"http://localhost:{resolve_listen_port([])}/mcp")
         )
         self.hana_mcp_endpoint = normalize_mcp_endpoint(
             os.environ.get("LANGCHAIN_HANA_MCP_ENDPOINT", "http://localhost:9130/mcp")
@@ -1125,11 +1143,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 def main():
-    import sys
-    port = 9140
-    for arg in sys.argv[1:]:
-        if arg.startswith("--port="):
-            port = int(arg.split("=")[1])
+    port = resolve_listen_port()
 
     server = ThreadedHTTPServer(("", port), MCPHandler)
     print(f"""

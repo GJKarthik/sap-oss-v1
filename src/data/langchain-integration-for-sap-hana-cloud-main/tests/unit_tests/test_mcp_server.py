@@ -19,6 +19,7 @@ from mcp_server.server import (
     _recursive_split,
     clamp_int,
     parse_json_arg,
+    resolve_listen_port,
 )
 
 
@@ -55,6 +56,45 @@ class TestParseJsonArg(unittest.TestCase):
     def test_returns_fallback_for_none(self):
         result = parse_json_arg(None, "default")
         self.assertEqual(result, "default")
+
+
+class TestResolveListenPort(unittest.TestCase):
+    def test_prefers_cli_argument(self):
+        self.assertEqual(resolve_listen_port(["--port=9999"]), 9999)
+
+    def test_falls_back_to_mcp_port_env(self):
+        old_mcp_port = os.environ.get("MCP_PORT")
+        old_port = os.environ.get("PORT")
+        try:
+            os.environ["MCP_PORT"] = "9160"
+            os.environ["PORT"] = "8050"
+            self.assertEqual(resolve_listen_port([]), 9160)
+        finally:
+            if old_mcp_port is None:
+                os.environ.pop("MCP_PORT", None)
+            else:
+                os.environ["MCP_PORT"] = old_mcp_port
+            if old_port is None:
+                os.environ.pop("PORT", None)
+            else:
+                os.environ["PORT"] = old_port
+
+    def test_uses_port_env_when_mcp_port_is_missing(self):
+        old_mcp_port = os.environ.get("MCP_PORT")
+        old_port = os.environ.get("PORT")
+        try:
+            os.environ.pop("MCP_PORT", None)
+            os.environ["PORT"] = "8084"
+            self.assertEqual(resolve_listen_port([]), 8084)
+        finally:
+            if old_mcp_port is None:
+                os.environ.pop("MCP_PORT", None)
+            else:
+                os.environ["MCP_PORT"] = old_mcp_port
+            if old_port is None:
+                os.environ.pop("PORT", None)
+            else:
+                os.environ["PORT"] = old_port
 
 
 class TestRecursiveSplit(unittest.TestCase):

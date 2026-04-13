@@ -560,7 +560,7 @@ if __name__ == "__main__":
     from aiohttp import web
     
     host = os.environ.get("MCP_HOST", "0.0.0.0")
-    port = int(os.environ.get("MCP_PORT", "8084"))
+    port = int(os.environ.get("MCP_PORT") or os.environ.get("PORT", "8084"))
     
     logger.info(f"Starting ai-core-pal MCP server on {host}:{port}")
     logger.info(f"HANA available: {_HANA_AVAILABLE}")

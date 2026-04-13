@@ -39,16 +39,16 @@ IMAGE_TAG="${IMAGE_TAG:-latest}"
 declare -A SERVICE_CONTEXTS=(
     ["odata-vocabularies-mcp"]="../src/data/odata-vocabularies-main"
     ["langchain-hana-mcp"]="../src/data/langchain-integration-for-sap-hana-cloud-main"
-    ["vllm"]="../src/intelligence/vllm-main"
+    ["vllm"]="../src/intelligence/vllm-turboquant"
     ["ai-core-pal"]="../src/intelligence/ai-core-pal"
-    ["genai-toolkit"]="../src/intelligence/generative-ai-toolkit-for-sap-hana-cloud-main"
+    ["genai-toolkit"]="../src/data/langchain-integration-for-sap-hana-cloud-main"
     ["modelopt-api"]="../src/training/nvidia-modelopt"
 )
 
 declare -A SERVICE_DOCKERFILES=(
     ["odata-vocabularies-mcp"]="Dockerfile"
     ["langchain-hana-mcp"]="Dockerfile"
-    ["vllm"]="Dockerfile.qwen3-q8"
+    ["vllm"]="Dockerfile.vllm-l40s-turboquant"
     ["ai-core-pal"]="Dockerfile"
     ["genai-toolkit"]="Dockerfile"
     ["modelopt-api"]="Dockerfile"
