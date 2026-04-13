@@ -19,7 +19,7 @@
     (notifications-click)="openNotifications($event)"
     (co-pilot-click)="navigateTo('/joule')"
     (profile-click)="openProfile($event)">
-    <ui5-avatar slot="profile" initials="JI" color-scheme="Accent6" shape="Circle" size="S" interactive style="box-shadow: 0 0 0 2px rgba(255,255,255,0.4), var(--liquid-glass-shadow);"></ui5-avatar>
+    <ui5-avatar slot="profile" initials="JI" color-scheme="Accent6" shape="Circle" size="S" interactive class="shellbar-avatar"></ui5-avatar>
   </ui5-shellbar>
 
   <div class="app-body">
@@ -51,9 +51,9 @@
         <div class="header-actions">
           <div class="app-nav__team">
             <ui5-avatar-group type="Individual">
-              <ui5-avatar initials="SJ" color-scheme="Accent1" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
-              <ui5-avatar initials="MW" color-scheme="Accent2" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
-              <ui5-avatar initials="AW" color-scheme="Accent3" size="XS" style="box-shadow: 0 0 0 2px #fff;"></ui5-avatar>
+              <ui5-avatar initials="SJ" color-scheme="Accent1" size="XS" class="team-avatar"></ui5-avatar>
+              <ui5-avatar initials="MW" color-scheme="Accent2" size="XS" class="team-avatar"></ui5-avatar>
+              <ui5-avatar initials="AW" color-scheme="Accent3" size="XS" class="team-avatar"></ui5-avatar>
             </ui5-avatar-group>
           </div>
           <ui5-button
@@ -96,9 +96,9 @@
   <ui5-popover #profilePopover [headerText]="'USER_PROFILE_TITLE' | ui5I18n" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
     <div class="user-menu">
       <header class="user-menu__header">
-        <div class="avatar-container" style="position: relative; margin-bottom: 0.5rem;">
-          <ui5-avatar initials="JI" color-scheme="Accent6" shape="Circle" size="XL" style="box-shadow: 0 12px 32px rgba(0,0,0,0.15); border: 4px solid #fff;"></ui5-avatar>
-          <div class="status-indicator" style="position: absolute; bottom: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-success, #34c759); border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+        <div class="avatar-container">
+          <ui5-avatar initials="JI" color-scheme="Accent6" shape="Circle" size="XL" class="profile-avatar"></ui5-avatar>
+          <div class="status-indicator"></div>
         </div>
         <div class="user-menu__info">
           <span class="user-menu__name">{{ 'USER_PROFILE_NAME' | ui5I18n }}</span>
@@ -112,7 +112,7 @@
         <ui5-li icon="palette">
           <div class="user-menu__setting">
             <span>{{ 'USER_PROFILE_THEME' | ui5I18n }}</span>
-            <ui5-select (change)="onThemeChange($event)" style="width: 140px;">
+            <ui5-select (change)="onThemeChange($event)" class="user-menu__select">
               <ui5-option value="sap_horizon" [selected]="currentTheme === 'sap_horizon'">{{ 'THEME_HORIZON' | ui5I18n }}</ui5-option>
               <ui5-option value="sap_horizon_dark" [selected]="currentTheme === 'sap_horizon_dark'">{{ 'THEME_HORIZON_DARK' | ui5I18n }}</ui5-option>
               <ui5-option value="sap_fiori_quartz_light" [selected]="currentTheme === 'sap_fiori_quartz_light'">{{ 'THEME_QUARTZ_LIGHT' | ui5I18n }}</ui5-option>
@@ -123,7 +123,7 @@
         <ui5-li icon="world">
           <div class="user-menu__setting">
             <span>{{ 'USER_PROFILE_LANGUAGE' | ui5I18n }}</span>
-            <ui5-select (change)="onLanguageChange($event)" style="width: 140px;">
+            <ui5-select (change)="onLanguageChange($event)" class="user-menu__select">
               <ui5-option value="en" [selected]="currentLanguage === 'en'">English</ui5-option>
               <ui5-option value="ar" [selected]="currentLanguage === 'ar'">العربية</ui5-option>
               <ui5-option value="fr" [selected]="currentLanguage === 'fr'">Français</ui5-option>
@@ -134,7 +134,7 @@
       </ui5-list>
 
       <footer class="user-menu__footer">
-        <ui5-button design="Transparent" (click)="onSignOut()" style="width: 100%; color: var(--color-error, #ff3b30); font-weight: 700;">{{ 'USER_PROFILE_SIGNOUT' | ui5I18n }}</ui5-button>
+        <ui5-button design="Transparent" class="signout-btn" (click)="onSignOut()">{{ 'USER_PROFILE_SIGNOUT' | ui5I18n }}</ui5-button>
       </footer>
     </div>
   </ui5-popover>
@@ -153,10 +153,10 @@
   <ui5-popover #notificationsPopover [headerText]="'Notifications'" placement-type="Bottom" vertical-align="Bottom" horizontal-align="Right">
     <div class="user-menu">
       <ui5-list separators="Inner">
-        <ui5-li icon="message-information" description="System update complete">Platform Health: OK</ui5-li>
-        <ui5-li icon="message-warning" description="High VRAM usage detected">GPU Alert</ui5-li>
-        <ui5-li icon="message-success" description="Model 'Titan-v2' is ready">Deployment Success</ui5-li>
-        <ui5-li icon="group" description="Jony Ive joined the workspace">New Collaborator</ui5-li>
+        <ui5-li
+          *ngFor="let n of notifications"
+          [icon]="n.icon"
+          [description]="n.description">{{ n.title }}</ui5-li>
       </ui5-list>
       <footer class="user-menu__footer">
         <ui5-button design="Transparent" (click)="notificationsPopover.nativeElement.close()">View All</ui5-button>

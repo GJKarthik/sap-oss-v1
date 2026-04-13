@@ -29,6 +29,13 @@ export class AppComponent implements OnInit, OnDestroy {
     },
   };
 
+  readonly notifications = [
+    { icon: 'message-information', title: 'Platform Health: OK', description: 'System update complete' },
+    { icon: 'message-warning', title: 'GPU Alert', description: 'High VRAM usage detected' },
+    { icon: 'message-success', title: 'Deployment Success', description: "Model 'Titan-v2' is ready" },
+    { icon: 'group', title: 'New Collaborator', description: 'Jony Ive joined the workspace' },
+  ];
+
   currentTheme = 'sap_horizon';
   currentLanguage = 'en';
   learnPathActive = false;
@@ -277,8 +284,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   endLearnPath(): void {
+    this.learnPathDismissed = true;
     this.learnPath.stop();
-    localStorage.setItem('ui5-learn-path-dismissed', 'true');
+    localStorage.setItem('learn-path-dismissed', 'true');
     this.updateLearnPathBanner();
   }
 
