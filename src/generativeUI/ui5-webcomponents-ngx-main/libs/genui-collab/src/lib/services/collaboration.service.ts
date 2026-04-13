@@ -172,6 +172,8 @@ export interface CollabConfig {
   userId: string;
   displayName: string;
   avatarUrl?: string;
+  /** Bearer token sent as a query parameter on the WebSocket handshake and in the join message. */
+  authToken?: string;
   cursorThrottleMs?: number;
   presenceIntervalMs?: number;
   reconnectDelayMs?: number;
@@ -343,7 +345,10 @@ export class CollaborationService implements OnDestroy {
 
     return new Promise((resolve, reject) => {
       try {
-        const url = `${this.config!.websocketUrl}?room=${roomId}`;
+        let url = `${this.config!.websocketUrl}?room=${roomId}`;
+        if (this.config!.authToken) {
+          url += `&token=${encodeURIComponent(this.config!.authToken)}`;
+        }
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
@@ -356,6 +361,7 @@ export class CollaborationService implements OnDestroy {
             userId: this.config!.userId,
             displayName: this.config!.displayName,
             avatarUrl: this.config!.avatarUrl,
+            ...(this.config!.authToken ? { token: this.config!.authToken } : {}),
           });
 
           this.startPresenceHeartbeat();

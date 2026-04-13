@@ -37,7 +37,7 @@
 | `javascript:` URI in props | ✅ Pass | Covered by `XSS_PATTERNS` regex in `SchemaValidator` |
 | `data:text/html` injection | ✅ Pass | Covered by `XSS_PATTERNS` regex |
 | Event handler name abuse (`onXxx` props) | ✅ Pass | `validateProps` rejects any prop starting with `on` with `INVALID_PROP` error |
-| Agent SSE stream injection (SSE comment smuggling) | ⚠️ Review | `SseTransport` does not validate `data:` line format; a compromised SSE stream could emit non-AG-UI JSON — mitigated by JSON.parse throwing and `AgUiClient` swallowing the error |
+| Agent SSE stream injection (SSE comment smuggling) | ✅ Fixed | `SseTransport` validates that parsed JSON has a `type` field before routing; non-AG-UI payloads are dropped with a console warning. Oversized events (>512 KB) are also rejected. |
 
 ---
 
@@ -56,10 +56,10 @@
 
 | Control | Status | Notes |
 |---|---|---|
-| `nx.json` cloud token committed as plaintext | ⚠️ Known | Read-only Nx Cloud token — rotate before public repo fork (see TECHNICAL-ASSESSMENT §Security) |
+| `nx.json` cloud token uses env var substitution | ✅ Fixed | `nxCloudAccessToken` references `${NX_CLOUD_ACCESS_TOKEN}` — no plaintext token committed |
 | DOMPurify `FORCE_BODY` not set | ⚠️ Fixed (this release) | `applyProps` now uses `{ ALLOWED_TAGS: [], ALLOWED_ATTR: [] }` — strips all HTML |
 | `SchemaValidator` strict mode defaults to `false` | ℹ️ Info | Warnings do not block rendering; apps requiring strict mode must opt in via `configure({ strict: true })` |
-| MCP server has no auth middleware | ⚠️ Known | Internal service only; not to be exposed beyond localhost/VPC |
+| MCP server bearer auth middleware | ✅ Fixed | `requireBearerAuth` enforced on `/mcp`; logs a warning if `MCP_AUTH_TOKEN` is unset (localhost-only fallback) |
 
 ---
 
@@ -84,7 +84,7 @@ Run `yarn audit` for a full npm advisory report.
 |---|---|---|
 | Joule `/ag-ui/run` endpoint requires authentication | ⚠️ Deployment | Library does not enforce auth — must be handled at BTP router / nginx level |
 | MCP server bearer token | ✅ Pass | `MCP_SERVER_BEARER_TOKEN` env var checked in `ui5_ngx_agent.py` middleware |
-| `CollaborationService` WebSocket auth | ⚠️ Review | Current implementation sends `join` message with `userId` only — no token; collaboration server must validate |
+| `CollaborationService` WebSocket auth | ✅ Fixed | `CollabConfig.authToken` is sent as a query parameter on the WebSocket handshake and included in the `join` message payload. Consuming apps must set `authToken` for production. |
 
 ---
 
@@ -114,7 +114,7 @@ Run `yarn audit` for a full npm advisory report.
 |---|---|---|
 | `proxy.conf.json` target is localhost only | ✅ Pass | `http://localhost:8080` — no user-controlled redirect |
 | `CollaborationService` WebSocket URL | ⚠️ Review | `wsUrl` is a constructor argument — consuming apps must not derive it from user input |
-| OpenAI-compatible server HANA endpoints | ⚠️ Known | HANA URLs come from env vars; env var values should be validated to prevent SSRF to cloud metadata endpoints |
+| OpenAI-compatible server HANA endpoints | ✅ Fixed | `validateRemoteUrl` rejects private/metadata IPs (169.254.x, 100.100.x, 10.x, 172.16-31.x, 192.168.x, localhost, ::1) for all env-sourced URLs |
 
 ---
 
@@ -124,14 +124,14 @@ Run `yarn audit` for a full npm advisory report.
 |---|---|---|---|
 | A01 Access Control | 3 | 1 | 0 |
 | A02 Crypto | 3 | 0 | 0 |
-| A03 Injection | 8 | 1 | 0 |
+| A03 Injection | 9 | 0 | 0 |
 | A04 Insecure Design | 4 | 0 | 0 |
-| A05 Misconfiguration | 2 | 3 | 0 |
+| A05 Misconfiguration | 4 | 1 | 0 |
 | A06 Outdated Deps | 7 | 0 | 0 |
-| A07 Auth Failures | 1 | 2 | 0 |
+| A07 Auth Failures | 2 | 1 | 0 |
 | A08 Data Integrity | 3 | 1 | 0 |
 | A09 Logging | 3 | 0 | 0 |
-| A10 SSRF | 1 | 2 | 0 |
-| **Total** | **35** | **10** | **0** |
+| A10 SSRF | 2 | 1 | 0 |
+| **Total** | **40** | **4** | **0** |
 
-No blockers. Ten review items are deployment/configuration concerns rather than library code defects.
+No blockers. Four remaining review items are deployment/configuration concerns (SSE endpoint auth delegated to deployment proxy, DOMPurify strict mode opt-in, audit log persistence, CollaborationService WebSocket URL validation at consuming-app level).

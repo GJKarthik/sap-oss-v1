@@ -203,24 +203,29 @@ export class SseTransport implements AgUiTransport {
         return;
       }
 
-      // Parse the event data
+      // Parse and validate the event data
       let data: unknown;
       try {
         data = JSON.parse(event.data);
       } catch {
-        // If not JSON, wrap as text delta
+        // Non-JSON payloads are only accepted as text deltas
         data = {
           type: 'text.delta',
           delta: event.data,
         };
       }
 
-      // Parse into typed AG-UI event
+      // Validate that parsed data conforms to AG-UI event shape (must have a type field)
+      if (data !== null && typeof data === 'object' && !('type' in (data as Record<string, unknown>))) {
+        console.warn('[SSE Transport] Dropped event without "type" field — possible stream injection');
+        return;
+      }
+
       const agUiEvent = parseAgUiEvent(data);
       if (agUiEvent) {
         this.eventsSubject.next(agUiEvent);
       } else {
-        console.warn('[SSE Transport] Failed to parse event:', data);
+        console.warn('[SSE Transport] Unrecognized event type, dropped:', data);
       }
     } catch (error) {
       console.error('[SSE Transport] Error handling message:', error);
